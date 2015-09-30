@@ -33,9 +33,18 @@ def is_function(f, arg_count, coroutine=False):
         # otherwise the user should make an explicit function.
         return arg_count == 1
 
+    argspec = getargspec(f)
+    if argspec.varargs:
+        # we can't check the arg count if there's a *args parameter
+        # so you're on your own at that point
+        # unfortunately, the asyncio.coroutine decorator wraps with
+        # *args and **kw so we can't count arguments with the old async
+        # syntax, only the new syntax.
+        return True
+
     # getargspec includes 'self' in the arg count, even though
     # it's not part of calling the function. So take it out.
-    return len(getargspec(f).args) - ismethod(f) == arg_count
+    return len(argspec.args) - ismethod(f) == arg_count
 
 
 # could use numpy.arange here, but

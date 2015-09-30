@@ -80,8 +80,9 @@ class Parameter(Metadatable):
         self._save_val(value)
         return value
 
-    async def get_async(self):
-        value = await self._get_async()
+    @asyncio.coroutine
+    def get_async(self):
+        value = yield from self._get_async()
         self._save_val(value)
         return value
 
@@ -129,9 +130,10 @@ class Parameter(Metadatable):
         self._set(value)
         self._save_val(value)
 
-    async def _validate_and_set_async(self, value):
+    @asyncio.coroutine
+    def _validate_and_set_async(self, value):
         self.validate(value)
-        await self._set_async(value)
+        yield from self._set_async(value)
         self._save_val(value)
 
     def _sweep_steps(self, value):
@@ -168,17 +170,18 @@ class Parameter(Metadatable):
         self._set(value)
         self._save_val(value)
 
-    async def _validate_and_sweep_async(self, value):
+    @asyncio.coroutine
+    def _validate_and_sweep_async(self, value):
         self.validate(value)
         step_finish_ts = datetime.now()
 
         for step_val in self._sweep_steps(value):
-            await self._set_async(step_val)
+            yield from self._set_async(step_val)
             self._save_val(step_val)
             step_finish_ts += timedelta(seconds=self._sweep_delay)
-            await asyncio.sleep(wait_secs(step_finish_ts))
+            yield from asyncio.sleep(wait_secs(step_finish_ts))
 
-        await self._set_async(value)
+        yield from self._set_async(value)
         self._save_val(value)
 
     def set_sweep(self, sweep_step, sweep_delay, max_val_age=None):
@@ -250,7 +253,7 @@ class SweepValues(object):
         then it is iterated over in a sweep:
 
         for value in sv:
-            sv.set(value)  # or await sv.set_async(value)
+            sv.set(value)  # or (await / yield from) sv.set_async(value)
                            # set(_async) just shortcuts sv._parameter.set
             sleep(delay)
             measure()

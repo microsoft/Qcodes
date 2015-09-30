@@ -18,11 +18,13 @@ class IPInstrument(BaseInstrument):
         self.socket.settimeout(float(timeout))
         self._timeout = timeout
 
-    async def write_async(self, cmd):
+    @asyncio.coroutine
+    def write_async(self, cmd):
         data = cmd + self.terminator
         self.socket.send(data.encode())
 
-    async def ask_async(self, cmd):
+    @asyncio.coroutine
+    def ask_async(self, cmd):
         data = cmd + self.terminator
         self.socket.send(data.encode())
         # TODO: async? what's the 512?

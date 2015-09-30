@@ -1,3 +1,5 @@
+import asyncio
+
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import syncable_command
 from qcodes.utils.validators import Validator
@@ -67,6 +69,7 @@ class Function(Metadatable):
         self.validate(args)
         return self._call(*args)
 
-    async def call_async(self, *args):
+    @asyncio.coroutine
+    def call_async(self, *args):
         self.validate(args)
-        return await self._call_async(*args)
+        return (yield from self._call_async(*args))

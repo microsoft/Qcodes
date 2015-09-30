@@ -7,39 +7,59 @@ from qcodes.utils.sync_async import (wait_for_async, mock_async, mock_sync,
                                      syncable_command, NoCommandError)
 
 
+@asyncio.coroutine
+def async1(v):
+    return v**2
+
+
+@asyncio.coroutine
+def async2(v, n):
+    for i in range(n):
+        yield from asyncio.sleep(0.001)
+    return v**2
+
+
+@asyncio.coroutine
+def async3(v, n):
+    return (yield from async2(v, n))
+
+
+try:
+    from qcodes.tests.py35_syntax import async1_new, async2_new, async3_new
+    py35 = True
+except:
+    py35 = False
+    print('python 3.5+ not found, only testing older async syntax',
+          file=sys.stderr)
+
+
 class TestAsync(TestCase):
-    async def async1(self, v):
-        return v**2
-
-    async def async2(self, v, n):
-        for i in range(n):
-            await asyncio.sleep(0.001)
-        return v**2
-
-    async def async3(self, v, n):
-        return await self.async2(v, n)
-
     def test_simple(self):
-        self.assertEqual(wait_for_async(self.async1, 2), 4)
+        self.assertEqual(wait_for_async(async1, 2), 4)
+        if py35:
+            self.assertEqual(wait_for_async(async1_new, 2), 4)
 
-    def test_await(self):
+    def check_time(self, f, a, b, out, tmin, tmax):
         t1 = time()
-        self.assertEqual(wait_for_async(self.async2, 3, 100), 9)
+        self.assertEqual(wait_for_async(f, a, b), out)
         t2 = time()
-        self.assertGreaterEqual(t2 - t1, 0.1)
+        self.assertGreaterEqual(t2 - t1, tmin)
         # measure of how good async timing is
         # answer: about a fraction of a millisecond, and always
         # longer than specified, never shorter
         # TODO: make some benchmarks so we can understand this on
         # different systems where it's deployed
-        self.assertLess(t2 - t1, 0.2)
+        self.assertLess(t2 - t1, tmax)
+
+    def test_await(self):
+        self.check_time(async2, 3, 100, 9, 0.1, 0.2)
+        if py35:
+            self.check_time(async2_new, 3, 100, 9, 0.1, 0.2)
 
     def test_chain(self):
-        t1 = time()
-        self.assertEqual(wait_for_async(self.async3, 5, 100), 25)
-        t2 = time()
-        self.assertGreaterEqual(t2 - t1, 0.1)
-        self.assertLess(t2 - t1, 0.2)
+        self.check_time(async3, 5, 100, 25, 0.1, 0.2)
+        if py35:
+            self.check_time(async3_new, 5, 100, 25, 0.1, 0.2)
 
     def test_mock_async(self):
         def sync_no_args():
@@ -68,17 +88,30 @@ class TestAsync(TestCase):
             wait_for_async(mock_async(sync_no_args), a=0)
 
     def test_mock_sync(self):
-        f1 = mock_sync(self.async1)
-        f2 = mock_sync(self.async2)
-        f3 = mock_sync(self.async3)
+        f1 = mock_sync(async1)
+        f2 = mock_sync(async2)
+        f3 = mock_sync(async3)
 
         self.assertEqual(f1(6), 36)
         self.assertEqual(f2(7, n=10), 49)
         self.assertEqual(f3(8, 5), 64)
 
+        if py35:
+            f1 = mock_sync(async1_new)
+            f2 = mock_sync(async2_new)
+            f3 = mock_sync(async3_new)
+
+            self.assertEqual(f1(6), 36)
+            self.assertEqual(f2(7, n=10), 49)
+            self.assertEqual(f3(8, 5), 64)
+
     def test_reentrant_wait_for_async(self):
-        f = mock_sync(mock_async(mock_sync(self.async1)))
+        f = mock_sync(mock_async(mock_sync(async1)))
         self.assertEqual(f(9), 81)
+
+        if py35:
+            f = mock_sync(mock_async(mock_sync(async1_new)))
+            self.assertEqual(f(9), 81)
 
 
 class CustomError(Exception):
@@ -119,8 +152,9 @@ class TestSyncableCommand(TestCase):
         def f_now(x):
             return x + ' now'
 
-        async def adelay(x):
-            await asyncio.sleep(0.001)
+        @asyncio.coroutine
+        def adelay(x):
+            yield from asyncio.sleep(0.001)
             return x + ' delayed'
 
         def upper(s):
@@ -169,8 +203,9 @@ class TestSyncableCommand(TestCase):
         def myexp(a, b):
             return a ** b
 
-        async def mymod(a, b):
-            await asyncio.sleep(0.001)
+        @asyncio.coroutine
+        def mymod(a, b):
+            yield from asyncio.sleep(0.001)
             return a % b
 
         # only sync

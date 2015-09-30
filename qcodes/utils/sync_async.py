@@ -43,7 +43,8 @@ def mock_async(f):
     '''
     make a synchronous function f awaitable
     '''
-    async def f_awaitable(*args, **kwargs):
+    @asyncio.coroutine
+    def f_awaitable(*args, **kwargs):
         return f(*args, **kwargs)
 
     return f_awaitable
@@ -87,14 +88,17 @@ def syncable_command(param_count, cmd=None, acmd=None,
     def call_by_str(*args):
         return exec_str(cmd.format(*args))
 
-    async def acall_by_str(*args):
-        return await aexec_str(cmd.format(*args))
+    @asyncio.coroutine
+    def acall_by_str(*args):
+        return (yield from aexec_str(cmd.format(*args)))
 
     def call_by_str_parsed(*args):
         return parse_function(exec_str(cmd.format(*args)))
 
-    async def acall_by_str_parsed(*args):
-        return parse_function(await aexec_str(cmd.format(*args)))
+    @asyncio.coroutine
+    def acall_by_str_parsed(*args):
+        raw_value = yield from aexec_str(cmd.format(*args))
+        return parse_function(raw_value)
 
     def call_sync_by_afunction(*args):
         return wait_for_async(aexec_function, *args)
@@ -160,8 +164,9 @@ def syncable_command(param_count, cmd=None, acmd=None,
         validate_param_count(args)
         return exec_function(*args)
 
-    async def acall(*args):
+    @asyncio.coroutine
+    def acall(*args):
         validate_param_count(args)
-        return await aexec_function(*args)
+        return (yield from aexec_function(*args))
 
     return (call, acall)

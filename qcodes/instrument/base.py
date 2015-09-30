@@ -1,4 +1,5 @@
 import threading
+import asyncio
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import wait_for_async
@@ -75,7 +76,8 @@ class BaseInstrument(Metadatable):
     def write(self, cmd):
         wait_for_async(self.write_async, cmd)
 
-    async def write_async(self, cmd):
+    @asyncio.coroutine
+    def write_async(self, cmd):
         # check if the paired function is still from the base class (so we'd
         # have a recursion loop) notice that we only have to do this in one
         # of the pair, because the other will call this one.
@@ -87,7 +89,8 @@ class BaseInstrument(Metadatable):
     def read(self):
         return wait_for_async(self.read_async)
 
-    async def read_async(self):
+    @asyncio.coroutine
+    def read_async(self):
         if self.read.__func__ is BaseInstrument.read:
             raise NotImplementedError(
                 'instrument {} has no read method defined'.format(self.name))
@@ -96,7 +99,8 @@ class BaseInstrument(Metadatable):
     def ask(self, cmd):
         return wait_for_async(self.ask_async, cmd)
 
-    async def ask_async(self, cmd):
+    @asyncio.coroutine
+    def ask_async(self, cmd):
         if self.ask.__func__ is BaseInstrument.ask:
             raise NotImplementedError(
                 'instrument {} has no ask method defined'.format(self.name))
@@ -116,17 +120,20 @@ class BaseInstrument(Metadatable):
     def set(self, param_name, value):
         self.parameters[param_name].set(value)
 
-    async def set_async(self, param_name, value):
-        await self.parameters[param_name].set_async(value)
+    @asyncio.coroutine
+    def set_async(self, param_name, value):
+        yield from self.parameters[param_name].set_async(value)
 
     def get(self, param_name):
         return self.parameters[param_name].get()
 
-    async def get_async(self, param_name):
-        return await self.parameters[param_name].get_async()
+    @asyncio.coroutine
+    def get_async(self, param_name):
+        return (yield from self.parameters[param_name].get_async())
 
     def call(self, func_name, *args):
         return self.functions[func_name].call(*args)
 
-    async def call_async(self, func_name, *args):
-        return await self.functions[func_name].call_async(*args)
+    @asyncio.coroutine
+    def call_async(self, func_name, *args):
+        return (yield from self.functions[func_name].call_async(*args))

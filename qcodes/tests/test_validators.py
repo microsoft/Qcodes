@@ -9,12 +9,6 @@ class AClass(object):
     def method_a(self):
         raise RuntimeError('function should not get called')
 
-    def method_b(self, v):
-        raise RuntimeError('function should not get called')
-
-    async def method_c(self, v):
-        raise RuntimeError('function should not get called')
-
 
 def a_func():
     pass

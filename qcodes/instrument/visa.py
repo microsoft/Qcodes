@@ -28,10 +28,12 @@ class VisaInstrument(BaseInstrument):
         self.visa_handle.timeout = 1000.0 * timeout
         self._timeout = timeout
 
-    async def write_async(self, cmd):
+    @asyncio.coroutine
+    def write_async(self, cmd):
         # TODO: lock, async
         self.visa_handle.write(cmd)
 
-    async def ask_async(self, cmd):
+    @asyncio.coroutine
+    def ask_async(self, cmd):
         # TODO: lock, async
         return self.visa_handle.ask(cmd):

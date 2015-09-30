@@ -107,7 +107,7 @@ class TestParameters(TestCase):
         # explicit long form of getter
         self.assertEqual(meter.parameters['amplitude'].get(), 0)
         # both should produce the same history entry
-        self.assertEqual(len(meter.history), 2)
+        self.assertEqual(len(meter.history), 3)
         self.assertEqual(meter.history[0][1:], ('ask', 'ampl'))
         self.assertEqual(meter.history[0][1:], ('ask', 'ampl'))
 
@@ -140,7 +140,7 @@ class TestParameters(TestCase):
         for entry in gates.history + source.history + meter.history:
             self.check_ts(entry[0])
         self.assertEqual(len(gates.history), 6)
-        self.assertEqual(len(meter.history), 6)
+        self.assertEqual(len(meter.history), 7)
         self.assertEqual(len(source.history), 5)
 
         # plus enough setters to check the parameter sweep

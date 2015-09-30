@@ -73,9 +73,10 @@ class MockInstrument(BaseInstrument):
 
         self._write_inner(cmd)
 
-    async def _write_async(self, cmd):
+    @asyncio.coroutine
+    def _write_async(self, cmd):
         if self._delay:
-            await asyncio.sleep(self._delay)
+            yield from asyncio.sleep(self._delay)
 
         self._write_inner(cmd)
 
@@ -96,9 +97,10 @@ class MockInstrument(BaseInstrument):
 
         return self._read_response
 
-    async def _read_async(self):
+    @asyncio.coroutine
+    def _read_async(self):
         if self._delay:
-            await asyncio.sleep(self._delay)
+            yield from asyncio.sleep(self._delay)
 
         return self._read_response
 
@@ -108,8 +110,9 @@ class MockInstrument(BaseInstrument):
 
         return self._ask_inner(cmd)
 
-    async def _ask_async(self, cmd):
+    @asyncio.coroutine
+    def _ask_async(self, cmd):
         if self._delay:
-            await asyncio.sleep(self._delay)
+            yield from asyncio.sleep(self._delay)
 
         return self._ask_inner(cmd)

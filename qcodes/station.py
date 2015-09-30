@@ -85,9 +85,10 @@ class MeasurementSet(object):
     def get(self):
         return [p.get() for p in self._parameters]
 
-    async def get_async(self):
+    @asyncio.coroutine
+    def get_async(self):
         outputs = (p.get_async() for p in self._parameters)
-        return await asyncio.gather(*outputs)
+        return yield from asyncio.gather(*outputs)
 
     def sweep(self, *args, location=None):
         '''
@@ -108,9 +109,10 @@ class MeasurementSet(object):
         return self._storage_class(self.location, self._param_names,
                                    self._dim_size, self._storage)
 
-    async def sweep_async(self, *args, location=None):
+    @asyncio.coroutine
+    def sweep_async(self, *args, location=None):
         self._init_sweep(args, location=location)
-        await self._sweep_async(())
+        yield from self._sweep_async(())
         return self._storage_class(self.location, self._param_names,
                                    self._dim_size, self._storage)
 
@@ -156,7 +158,7 @@ class MeasurementSet(object):
     def _sweep_async(self, indices):
         current_depth = len(indices)
         if current_depth == self._sweep_depth:
-            self._store(await self.get_async(), indices)
+            self._store(yield from self.get_async(), indices)
         else:
             values, delay = self._sweep_def[current_depth]
             for i, value in enumerate(values):
@@ -169,11 +171,11 @@ class MeasurementSet(object):
                     for inner_values, _ in self._sweep_def[current_depth + 1:]:
                         setters.append(inner_values.set_async(inner_values[0]))
 
-                    await asyncio.gather(setters)
-                    await asyncio.sleep(wait_secs(finish_datetime))
+                    yield from asyncio.gather(setters)
+                    yield from asyncio.sleep(wait_secs(finish_datetime))
 
                 # sweep the next level
-                await self._sweep_async(indices + (value,))
+                yield from self._sweep_async(indices + (value,))
 
     def _store(self, vals, indices):
         pass  # TODO
