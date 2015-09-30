@@ -1,0 +1,8 @@
+{
+    "@python": 3.5,
+    "linters": {
+        "pep257": {
+            "excludes": ["*/test_*.py"]
+        }
+    }
+}
