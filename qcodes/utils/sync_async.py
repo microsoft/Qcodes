@@ -1,5 +1,4 @@
 import asyncio
-from functools import partial
 
 from qcodes.utils.helpers import is_function
 

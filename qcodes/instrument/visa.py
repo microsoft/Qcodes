@@ -1,4 +1,5 @@
 import visa
+import asyncio
 
 from qcodes.instrument.base import BaseInstrument
 
@@ -36,4 +37,4 @@ class VisaInstrument(BaseInstrument):
     @asyncio.coroutine
     def ask_async(self, cmd):
         # TODO: lock, async
-        return self.visa_handle.ask(cmd):
+        return self.visa_handle.ask(cmd)

@@ -1,9 +1,10 @@
+import time
 from datetime import datetime, timedelta
 import asyncio
 import multiprocessing as mp
 
 from qcodes.utils.metadata import Metadatable
-from qcodes.utils.helpers import is_function, make_unique
+from qcodes.utils.helpers import make_unique, wait_secs
 from qcodes.storage import get_storage_manager
 
 
@@ -88,7 +89,7 @@ class MeasurementSet(object):
     @asyncio.coroutine
     def get_async(self):
         outputs = (p.get_async() for p in self._parameters)
-        return yield from asyncio.gather(*outputs)
+        return (yield from asyncio.gather(*outputs))
 
     def sweep(self, *args, location=None):
         '''
@@ -158,7 +159,8 @@ class MeasurementSet(object):
     def _sweep_async(self, indices):
         current_depth = len(indices)
         if current_depth == self._sweep_depth:
-            self._store(yield from self.get_async(), indices)
+            values = yield from self.get_async()
+            self._store(values, indices)
         else:
             values, delay = self._sweep_def[current_depth]
             for i, value in enumerate(values):

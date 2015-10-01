@@ -1,14 +1,11 @@
 import asyncio
-import math
 from unittest import TestCase
-from time import time
 from datetime import datetime, timedelta
 
 from qcodes.instrument.base import BaseInstrument
 from qcodes.instrument.mock import MockInstrument
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType
 from qcodes.utils.sync_async import wait_for_async, NoCommandError
-from qcodes.utils.helpers import is_function
 
 
 class ModelError(Exception):
@@ -189,7 +186,7 @@ class TestParameters(TestCase):
             [0.1, 0.2, 0.3, 0.4, 0.5])
 
     def test_mock_instrument_errors(self):
-        gates, source, meter = self.gates, self.source, self.meter
+        gates, meter = self.gates, self.meter
         with self.assertRaises(ValueError):
             gates.ask('no question')
         with self.assertRaises(ValueError):
@@ -241,7 +238,7 @@ class TestParameters(TestCase):
         self.assertEqual(len(source.history), 7)  # single set
 
     def test_set_sweep_errors(self):
-        gates, source, meter = self.gates, self.source, self.meter
+        gates = self.gates
 
         # for reference, some add_parameter's that should work
         gates.add_parameter('t0', set_cmd='{}', vals=Numbers(),
@@ -307,7 +304,7 @@ class TestParameters(TestCase):
         self.assertGreater(amp_ts, datetime.now() - timedelta(seconds=1.1))
 
     def test_mock_read(self):
-        gates, source, meter = self.gates, self.source, self.meter
+        gates, meter = self.gates, self.meter
         self.assertEqual(meter.read(), self.read_response)
         self.assertEqual(wait_for_async(meter.read_async),
                          self.read_response)

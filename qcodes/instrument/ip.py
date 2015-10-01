@@ -1,4 +1,5 @@
 import socket
+import asyncio
 
 from qcodes.instrument.base import BaseInstrument
 
@@ -28,7 +29,8 @@ class IPInstrument(BaseInstrument):
         data = cmd + self.terminator
         self.socket.send(data.encode())
         # TODO: async? what's the 512?
-        # TODO: and why did athena *always* have a recv, even if there's no return?
+        # TODO: and why did athena *always* have a recv, even if there's
+        # no return?
         # if this is an instrument-specific thing (like some instruments always
         # reply "OK" to set commands) then these can override write_async
         # to ask_async with response validation

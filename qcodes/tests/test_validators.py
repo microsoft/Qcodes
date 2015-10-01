@@ -44,10 +44,10 @@ class TestAnything(TestCase):
 
     def test_failed_anything(self):
         with self.assertRaises(TypeError):
-            a = Anything(1)
+            Anything(1)
 
         with self.assertRaises(TypeError):
-            a = Anything(values=[1, 2, 3])
+            Anything(values=[1, 2, 3])
 
 
 class TestStrings(TestCase):
@@ -112,29 +112,29 @@ class TestStrings(TestCase):
 
     def test_failed_strings(self):
         with self.assertRaises(TypeError):
-            s = Strings(1, 2, 3)
+            Strings(1, 2, 3)
 
         with self.assertRaises(TypeError):
-            s = Strings(10, 9)
+            Strings(10, 9)
 
         with self.assertRaises(TypeError):
-            s = Strings(max_length=0)
+            Strings(max_length=0)
 
         with self.assertRaises(TypeError):
-            s = Strings(min_length=1e12)
+            Strings(min_length=1e12)
 
         for length in [-1, 3.5, '2', None]:
             with self.assertRaises(TypeError):
-                s = Strings(max_length=length)
+                Strings(max_length=length)
 
             with self.assertRaises(TypeError):
-                s = Strings(min_length=length)
+                Strings(min_length=length)
 
 
 class TestNumbers(TestCase):
     numbers = [0, 1, -1, 0.1, -0.1, 100, 1000000, 1.0, 3.5, -2.3e6, 5.5e15,
                1.34e-10, -2.5e-5, math.pi, math.e,
-               # warning: True==1 and False==0 - TODO: prohibit these?
+               # warning: True==1 and False==0
                True, False,
                # warning: +/- inf are allowed if max & min are not specified!
                -math.inf, math.inf]
@@ -181,17 +181,17 @@ class TestNumbers(TestCase):
 
     def test_failed_numbers(self):
         with self.assertRaises(TypeError):
-            n = Numbers(1, 2, 3)
+            Numbers(1, 2, 3)
 
         with self.assertRaises(TypeError):
-            n = Numbers(1, 1)  # min >= max
+            Numbers(1, 1)  # min >= max
 
         for val in self.not_numbers:
             with self.assertRaises(TypeError):
-                n = Numbers(max_value=val)
+                Numbers(max_value=val)
 
             with self.assertRaises(TypeError):
-                n = Numbers(min_value=val)
+                Numbers(min_value=val)
 
 
 class TestInts(TestCase):
@@ -244,17 +244,17 @@ class TestInts(TestCase):
 
     def test_failed_numbers(self):
         with self.assertRaises(TypeError):
-            n = Ints(1, 2, 3)
+            Ints(1, 2, 3)
 
         with self.assertRaises(TypeError):
-            n = Ints(1, 1)  # min >= max
+            Ints(1, 1)  # min >= max
 
         for val in self.not_ints:
             with self.assertRaises((TypeError, OverflowError)):
-                n = Ints(max_value=val)
+                Ints(max_value=val)
 
             with self.assertRaises((TypeError, OverflowError)):
-                n = Ints(min_value=val)
+                Ints(min_value=val)
 
 
 class TestEnum(TestCase):
@@ -286,7 +286,7 @@ class TestEnum(TestCase):
     def test_bad(self):
         for enum in self.not_enums:
             with self.assertRaises(TypeError):
-                e = Enum(*enum)
+                Enum(*enum)
 
 
 class TestMultiType(TestCase):
@@ -310,4 +310,4 @@ class TestMultiType(TestCase):
     def test_bad(self):
         for args in [[], [1], [Strings(), True]]:
             with self.assertRaises(TypeError):
-                m = MultiType(*args)
+                MultiType(*args)
