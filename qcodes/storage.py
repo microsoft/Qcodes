@@ -29,13 +29,13 @@ class StorageManager(object):
     I'll write this using multiprocessing Queue's, but should be easily
     extensible to other messaging systems
     '''
-    def __init__(self, query_timeout=5, storage_class=MergedCSVStorage):
+    def __init__(self, query_timeout=2):  # , storage_class=MergedCSVStorage):
         StorageManager.default = self
 
         self._query_queue = mp.Queue()
         self._response_queue = mp.Queue()
         self._error_queue = mp.Queue()
-        self._storage_class = storage_class
+        # self._storage_class = storage_class
 
         # lock is only used with queries that get responses
         # to make sure the process that asked the question is the one
@@ -43,17 +43,19 @@ class StorageManager(object):
         self._query_lock = mp.RLock()
 
         self.query_timeout = query_timeout
+        self._start_server()
 
+    # @property
+    # def storage_class(self):
+    #     return self._storage_class
+
+    def _start_server(self):
         self._server = mp.Process(target=self._run_server, daemon=True)
         self._server.start()
 
-    @property
-    def storage_class(self):
-        return self._storage_class
-
     def _run_server(self):
         StorageServer(self._query_queue, self._response_queue,
-                      self._error_queue, self._storage_class)
+                      self._error_queue)  # , self._storage_class)
 
     def write(self, *query):
         self._query_queue.put(query)
@@ -86,6 +88,10 @@ class StorageManager(object):
             self.write('halt')
         self._server.join()
 
+    def restart(self):
+        self.halt()
+        self._start_server()
+
     def set(self, key, value):
         self.write('set', key, value)
 
@@ -94,16 +100,18 @@ class StorageManager(object):
 
 
 class StorageServer(object):
-    default_period = 1  # seconds between data storage calls
+    default_storage_period = 1  # seconds between data storage calls
     queries_per_store = 5
+    default_monitor_period = 60  # seconds between monitoring storage calls
 
-    def __init__(self, query_queue, response_queue, error_queue,
-                 storage_class):
+    def __init__(self, query_queue, response_queue, error_queue):
+                 # storage_class):
         self._query_queue = query_queue
         self._response_queue = response_queue
         self._error_queue = error_queue
-        self._storage_class = storage_class
-        self._period = self.default_period
+        # self._storage_class = storage_class
+        self._storage_period = self.default_storage_period
+        self._monitor_period = self.default_monitor_period
 
         self._dict = {}  # flexible storage, for testing purposes
 
@@ -115,12 +123,13 @@ class StorageServer(object):
 
     def _run(self):
         self._running = True
-        self._next_store_ts = datetime.now()
+        next_store_ts = datetime.now()
+        next_monitor_ts = datetime.now()
 
         while self._running:
-            query_timeout = self._period / self.queries_per_store
+            read_timeout = self._storage_period / self.queries_per_store
             try:
-                query = self._query_queue.get(timeout=query_timeout)
+                query = self._query_queue.get(timeout=read_timeout)
                 getattr(self, 'handle_' + query[0])(*(query[1:]))
             except EmptyQueue:
                 pass
@@ -128,11 +137,17 @@ class StorageServer(object):
                 self._post_error(e)
 
             try:
-                if datetime.now() > self._next_store_ts:
-                    self._next_store_ts = (datetime.now() +
-                                           timedelta(seconds=self._period))
-                    self._sweep.update_storage()
-                    # TODO: monitor too? with its own timer?
+                now = datetime.now()
+
+                if now > next_store_ts:
+                    td = timedelta(seconds=self._storage_period)
+                    next_store_ts = now + td
+                    self._sweep.update_storage_wrapper()
+
+                if now > next_monitor_ts:
+                    td = timedelta(seconds=self._monitor_period)
+                    next_monitor_ts = now + td
+                    # TODO: update the monitor data storage
             except Exception as e:
                 self._post_error(e)
 
@@ -150,38 +165,38 @@ class StorageServer(object):
     # will capture queries ('<type>', arg1, arg2, ...)                   #
     ######################################################################
 
+    # _dict, set, get, and call are all just for testing/debugging
     def handle_set(self, key, value):
         self._dict[key] = value
 
     def handle_get(self, key):
         self._reply(self._dict[key])
 
+    def handle_call(self, key, method_name, args):
+        self._reply(getattr(self._dict[key], method_name)(*args))
+
     def handle_halt(self):
         self._running = False
 
-    def handle_new_sweep(self, location, param_names, dim_sizes):
+    def handle_new_sweep(self, sweep_storage_obj):
         if self._sweeping:
             raise RuntimeError('Already executing a sweep')
-        self._sweep = SweepStorage(location, param_names, dim_sizes, None)
+        self._sweep = sweep_storage_obj
+        self._sweep.init_on_server()
         self._sweeping = True
-        self._reply(self._sweep.location)
+        # send a reply, just so the client expects a response
+        # and therefore can listen for errors
+        self._reply(True)
 
     def handle_end_sweep(self):
-        self._sweep.update_storage()
+        self._sweep.update_storage_wrapper()
         self._sweeping = False
 
-    def handle_sweep_data(self, indices, values):
-        self._sweep.set_data_point(tuple(indices), values)
+    def handle_set_sweep_point(self, indices, values):
+        self._sweep.set_point(indices, values)
 
-    def handle_sweeping(self):
+    def handle_get_sweeping(self):
         self._reply(self._sweeping)
 
-    def handle_get_live_sweep(self):
-        if self._sweeping:
-            # the whole SweepStorage should be pickable, right?
-            self._reply(self._sweep)
-        else:
-            self._reply(False)
-
-    def handle_get_sweep_data(self):
-        self._reply(self._sweep.get_data())
+    def handle_get_sweep(self, attr=None):
+        self._reply(self._sweep.get(attr))

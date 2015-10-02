@@ -10,14 +10,14 @@ class NoSweep(object):
     def data_point(self, *args, **kwargs):
         raise RuntimeError('no sweep to add data to')
 
-    def update_storage(self, *args, **kwargs):
+    def update_storage_wrapper(self, *args, **kwargs):
         pass
 
 
 class SweepStorage(object):
     '''
     base class for holding and storing sweep data
-    subclasses should override update_storage
+    subclasses should override update_storage and read
 
     inputs:
         location: a string, can represent different things
@@ -29,82 +29,187 @@ class SweepStorage(object):
             starting with the sweep parameters, from outer to innermost loop
         dim_sizes: a sequence containing the size of each dimension of
             the sweep, from outer to innermost loop
-        storage_manager: if we're given a StorageManager here, check if this
-            is the live sweep, then allow syncing data from there
+        storage_manager: if we're given a StorageManager here, then this
+            instance is to be potentially connected to the storage server
+            process via this storage_manager:
+            If this is a new sweep, we create a mirror of it on the server.
+            If it's an existing sweep, we check whether it's the current live
+            sweep on the server, then allow syncing data from there
+        passthrough: if True and we have a storage_manager, don't keep a copy
+            of the data in this object, only in the server copy
+
+        param_names and dim_sizes ust be provided if and only if this is a
+        new sweep. If omitted, location must reference an existing sweep
     '''
     def __init__(self, location, param_names=None, dim_sizes=None,
-                 storage_manager=None):
-        self.location = location  # TODO: auto location?
+                 storage_manager=None, passthrough=False):
+        self.location = location  # TODO: auto location for new sweeps?
+
+        self._storage_manager = storage_manager
+
+        self._passthrough = storage_manager and passthrough
 
         if param_names and dim_sizes:
-            self.init_data(param_names, dim_sizes)
-            self.last_saved_index = -1
+            self._init_new_sweep(param_names, dim_sizes)
+
         elif param_names is None and dim_sizes is None:
-            # omitted names and dim_sizes? assume we're reading from
-            # a saved file instead
-            self.read()
+            # omitted names and dim_sizes? we're reading from a saved file
+            self._init_existing_sweep()
         else:
             raise TypeError('you must provide either both or neither of '
                             'param_names and dim_sizes')
 
+    def _init_new_sweep(self, param_names, dim_sizes):
+        self.init_data(param_names, dim_sizes)
         self.new_indices = set()
-        if storage_manager:
-            self._storage_manager = storage_manager
-        self.check_live_sweep()
-        self.sync_live()
+        self.last_saved_index = -1
+
+        if self._storage_manager:
+            # If this class was not available when storage_manager was started,
+            # we can't unpickle it on the other end.
+            # So we'll try, then restart if this error occurs, then try again.
+            #
+            # This still has a pitfall, if the class has been *changed* since
+            # starting the server, it will still have the old version.
+            # If the user does that, they need to manually restart the server,
+            # using:
+            #     storage_manager.restart()
+            try:
+                # The copy to be sent to the server should NOT be marked as
+                # syncable with the server, it's ON the server!
+                self._sync_to_server = False
+                self._storage_manager.ask('new_sweep', self)
+            except AttributeError:
+                self._storage_manager.restart()
+                self._storage_manager.ask('new_sweep', self)
+
+            self._sync_to_server = True
+
+        else:
+            self._sync_to_server = False
+
+    def _init_existing_sweep(self):
+        initialized = False
+        if self._storage_manager:
+            with self._storage_manager._query_lock:
+                if self.check_live_sweep():
+                    live_obj = self._storage_manager.ask('get_sweep')
+                    self.init_data(live_obj.param_names,
+                                   live_obj.dim_sizes,
+                                   live_obj.data)
+                    initialized = True
+
+        if not initialized:
+            self._sync_to_server = False
+            self.read()
+
+    def init_on_server(self):
+        '''
+        any changes we have to make when this object first arrives
+        on the storage server?
+        '''
+        if self._passthrough:
+            # this is where we're passing FROM!
+            # so turn off passthrough here, and make the data arrays
+            self._passthrough = False
+            self.init_data(self.param_names, self.dim_sizes,
+                           getattr(self, 'data', None))
 
     def check_live_sweep(self):
         if self._storage_manager:
-            live_sweep = self._storage_manager.ask('get_live_sweep')
-            self._is_live_sweep = (self.location == live_sweep)
+            live_location = self._storage_manager.ask('get_sweep', 'location')
+            self._sync_to_server = (self.location == live_location)
         else:
-            self._is_live_sweep = False
+            self._sync_to_server = False
+
+        return self._sync_to_server
 
     def sync_live(self):
-        if not self._is_live_sweep:
+        if not (self._sync_to_server and self._storage_manager):
             # assume that once we determine it's not the live sweep,
             # it will never be the live sweep again
             return
+
+        self._passthrough = False
         with self._storage_manager._query_lock:
             self.check_live_sweep()
-            if not self._is_live_sweep:
+            if not self._sync_to_server:
                 return
-            self.data = self._storage_manager.ask('get_sweep_data')
+            self.data = self._storage_manager.ask('get_sweep', 'data')
 
-    def init_data(self, param_names, dim_sizes):
+    def init_data(self, param_names, dim_sizes, data=None):
         self.param_names = tuple(param_names)
         self.dim_sizes = tuple(dim_sizes)
-        self.data = {}
-        for pn in self.param_names + ('ts',):
-            arr = np.ndarray(self.dim_sizes)
-            arr.fill(math.nan)
-            self.data[pn] = arr
 
-    def set_data_point(self, indices, values):
-        for pn, val in zip(self.param_names, values):
-            self.data[pn][indices] = val
+        if data:
+            self.data = data
+        elif not self._passthrough:
+            self.data = {}
+            for pn in self.param_names + ('ts',):
+                arr = np.ndarray(self.dim_sizes)
+                arr.fill(math.nan)
+                self.data[pn] = arr
 
-        self.data['ts'] = time.time()
+    def set_point(self, indices, values):
+        indices = tuple(indices)
 
-        flat_index = np.ravel_multi_index(tuple(zip(indices)),
-                                          self.dim_sizes)[0]
-        self.new_indices.add(flat_index)
+        if self._sync_to_server:
+            self._storage_manager.write('set_sweep_point', indices, values)
 
-    def get_data(self):
+        if not self._passthrough:
+            for pn, val in zip(self.param_names, values):
+                self.data[pn][indices] = val
+
+            self.data['ts'] = time.time()
+
+            flat_index = np.ravel_multi_index(tuple(zip(indices)),
+                                              self.dim_sizes)[0]
+            self.new_indices.add(flat_index)
+
+    def get(self, attr=None):
         '''
-        return the entire data set as it stands right now
-        later, if performance dictates, we can reply with a subset,
-        just the things that have changed (based on what?)
+        getter for use by storage server - either return the whole
+        object, or an attribute of it.
         '''
-        return self.data
+        if attr is None:
+            return self
+        else:
+            return getattr(self, attr)
+
+    def update_storage_wrapper(self):
+        if self._passthrough:
+            raise RuntimeError('This cobject has no data to save, '
+                               'it\'s just a passthrough to the server.')
+        if not self.new_indices:
+            return
+
+        self.update_storage()
+
+        self.new_indices = set()
+        self.last_saved_index = max(self.last_saved_index, *self.new_indices)
 
     def update_storage(self):
-        raise NotImplementedError('you must subclass SweepStorage '
-                                  'and define update_storage and read')
+        '''
+        write the data set (or changes to it) to storage
+        based on the data and definition attributes:
+            data
+            param_names
+            dim_sizes
+        and also info about what has changed since last write:
+            new_indices
+            last_saved_index
+        '''
+        raise NotImplementedError
 
     def read(self):
-        raise NotImplementedError('you must subclass SweepStorage '
-                                  'and define update_storage and read')
+        '''
+        read from a file into the data and definition attributes:
+            data (dict of numpy ndarray's)
+            param_names
+            dim_sizes
+        the file format is expected to provide all of this info
+        '''
+        raise NotImplementedError
 
 
 class MergedCSVStorage(SweepStorage):
@@ -125,9 +230,6 @@ class MergedCSVStorage(SweepStorage):
         super().__init__(location, *args, **kwargs)
 
     def update_storage(self):
-        if not self.new_indices:
-            return
-
         first_new_index = min(self.new_indices)
         last_new_index = max(self.new_indices)
 
@@ -141,9 +243,6 @@ class MergedCSVStorage(SweepStorage):
                 writer = csv.writer(f)
                 self._writeheader(writer)
                 self._writerange(writer, 0, last_new_index + 1)
-
-        self.new_indices = set()
-        self.last_saved_index = max(self.last_saved_index, last_new_index)
 
     def _writerange(self, writer, istart, iend):
         for i in range(istart, iend):
