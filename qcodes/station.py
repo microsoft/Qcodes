@@ -173,13 +173,14 @@ class MeasurementSet(object):
             values, delay = self._sweep_def[current_depth]
             for i, value in enumerate(values):
                 if i or not current_depth:
-                    finish_datetime = datetime.now() + timedelta(seconds=delay)
                     values.set(value)
 
                     # if we're changing an outer loop variable,
                     # also change any inner variables before waiting
                     for inner_values, _ in self._sweep_def[current_depth + 1:]:
                         inner_values.set(inner_values[0])
+
+                    finish_datetime = datetime.now() + timedelta(seconds=delay)
 
                     if self._monitor:
                         self._monitor.call(finish_by=finish_datetime)
@@ -201,7 +202,6 @@ class MeasurementSet(object):
             values, delay = self._sweep_def[current_depth]
             for i, value in enumerate(values):
                 if i or not current_depth:
-                    finish_datetime = datetime.now() + timedelta(seconds=delay)
                     setters = [values.set_async(value)]
 
                     # if we're changing an outer loop variable,
@@ -210,6 +210,8 @@ class MeasurementSet(object):
                         setters.append(inner_values.set_async(inner_values[0]))
 
                     yield from asyncio.gather(setters)
+
+                    finish_datetime = datetime.now() + timedelta(seconds=delay)
 
                     if self._monitor:
                         yield from self._monitor.call_async(
