@@ -147,9 +147,13 @@ class MeasurementSet(object):
             raise TypeError('SweepValues without matching delay')
 
         # find the output array size we need
-        self._dim_size = [len(vals) for vals in sweep_vals]
-        self._sweep_params = [vals.name for vals in sweep_vals]
+        self._dim_size = [len(v) for v in sweep_vals]
+        self._sweep_params = [v.name for v in sweep_vals]
         all_params = [p.name for p in self._parameters] + self._sweep_params
+
+        # do any of the sweep params support feedback?
+        self._feedback = [v for v in sweep_vals if hasattr(v, 'feedback')
+                          and callable(v.feedback)]
 
         if storage_class is None:
             storage_class = self._storage_class
@@ -162,12 +166,20 @@ class MeasurementSet(object):
         self._sweep_def = zip(sweep_vals, delays)
         self._sweep_depth = len(sweep_vals)
 
+    def _store(self, indices, set_values, measured):
+        self._storage.set_point(indices, set_values + tuple(measured))
+
+        # for adaptive sampling - pass this measurement back to
+        # any sweep param that supports feedback
+        for vals in self._feedback:
+            vals.feedback(set_values, measured)
+
     def _sweep(self, indices=(), current_values=()):
         current_depth = len(indices)
 
         if current_depth == self._sweep_depth:
-            full_point = tuple(current_values) + tuple(self.get())
-            self._storage.set_point(indices, full_point)
+            measured = self.get()
+            self._store(indices, current_values, measured)
 
         else:
             values, delay = self._sweep_def[current_depth]
@@ -195,8 +207,7 @@ class MeasurementSet(object):
 
         if current_depth == self._sweep_depth:
             measured = yield from self.get_async()
-            full_point = tuple(current_values) + tuple(measured)
-            self._storage.set_point(indices, full_point)
+            self._store(indices, current_values, measured)
 
         else:
             values, delay = self._sweep_def[current_depth]
