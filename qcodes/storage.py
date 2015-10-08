@@ -29,13 +29,12 @@ class StorageManager(object):
     I'll write this using multiprocessing Queue's, but should be easily
     extensible to other messaging systems
     '''
-    def __init__(self, query_timeout=2):  # , storage_class=MergedCSVStorage):
+    def __init__(self, query_timeout=2):
         StorageManager.default = self
 
         self._query_queue = mp.Queue()
         self._response_queue = mp.Queue()
         self._error_queue = mp.Queue()
-        # self._storage_class = storage_class
 
         # lock is only used with queries that get responses
         # to make sure the process that asked the question is the one
@@ -45,17 +44,13 @@ class StorageManager(object):
         self.query_timeout = query_timeout
         self._start_server()
 
-    # @property
-    # def storage_class(self):
-    #     return self._storage_class
-
     def _start_server(self):
         self._server = mp.Process(target=self._run_server, daemon=True)
         self._server.start()
 
     def _run_server(self):
         StorageServer(self._query_queue, self._response_queue,
-                      self._error_queue)  # , self._storage_class)
+                      self._error_queue)
 
     def write(self, *query):
         self._query_queue.put(query)
@@ -105,15 +100,15 @@ class StorageServer(object):
     default_monitor_period = 60  # seconds between monitoring storage calls
 
     def __init__(self, query_queue, response_queue, error_queue):
-                 # storage_class):
         self._query_queue = query_queue
         self._response_queue = response_queue
         self._error_queue = error_queue
-        # self._storage_class = storage_class
         self._storage_period = self.default_storage_period
         self._monitor_period = self.default_monitor_period
 
-        self._dict = {}  # flexible storage, for testing purposes
+        # flexible storage, for testing purposes
+        # but we can adapt this when we get to monitoring
+        self._dict = {}
 
         self._sweep = NoSweep()
         self._sweeping = False
@@ -148,6 +143,7 @@ class StorageServer(object):
                     td = timedelta(seconds=self._monitor_period)
                     next_monitor_ts = now + td
                     # TODO: update the monitor data storage
+
             except Exception as e:
                 self._post_error(e)
 

@@ -36,15 +36,15 @@ class Station(Metadatable):
     def add_instrument(self, instrument, name):
         name = make_unique(str(name), self.instruments)
         self.instruments[name] = instrument
+        return name
 
     def set_measurement(self, *args, **kwargs):
         '''
         create a MeasurementSet linked to this Station
         and set it as the default for this station
         '''
-        ms = MeasurementSet(*args, station=self, **kwargs)
-        self._measurement_set = ms
-        return ms
+        self._measurement_set = MeasurementSet(*args, station=self, **kwargs)
+        return self._measurement_set
 
     def sweep(self, *args, **kwargs):
         '''
@@ -71,12 +71,16 @@ class MeasurementSet(object):
     as they are known to this MeasurementSet's linked Station
     '''
     def __init__(self, *args, station=None, storage_manager=None,
-                 monitor=None):
-        self._station = station or Station.default
-        self._storage_manager = (storage_manager or
-                                 self._station.storage_manager)
-        self._monitor = monitor or self._station.monitor
-        self._storage_class = self._storage_manager.storage_class
+                 monitor=None, storage_class=None):
+        self._station = station
+        if station:
+            self._storage_manager = storage_manager or station.storage_manager
+            self._monitor = monitor or station.monitor
+            self._storage_class = storage_class or station.storage_class
+        else:
+            self._storage_manager = storage_manager
+            self._monitor = monitor
+            self._storage_class = storage_class
         self._parameters = [self._pick_param(arg) for arg in args]
 
     def _pick_param(self, param_or_string):
@@ -98,6 +102,7 @@ class MeasurementSet(object):
               background=True, use_async=True):
         '''
         execute a sweep, measuring this MeasurementSet at each point
+
         args:
             SweepValues1, delay1, SweepValues2, delay2, ...
             The first two are the outer loop, the next two are
@@ -109,6 +114,7 @@ class MeasurementSet(object):
             so we can have live plotting and other analysis in the main process
         use_async: (default True): execute the sweep asynchronously as much
             as possible
+
         returns:
             a SweepStorage object that we can use to plot
         '''
@@ -117,9 +123,16 @@ class MeasurementSet(object):
         sweep_fn = mock_sync(self._sweep_async) if use_async else self._sweep
 
         if background:
+            if not self._storage_manager:
+                raise RuntimeError('sweep can only run in the background '
+                                   'if it has a storage manager running')
+
+            # just for its side-effect of joining previous finished processes
+            mp.active_children()
+
+            # start the sweep in a new process
             self._sweep_process = mp.Process(target=sweep_fn, daemon=True)
             self._sweep_process.start()
-            time.sleep(1)  # give the process time to initialize - better way?
         else:
             sweep_fn()
 
@@ -139,8 +152,9 @@ class MeasurementSet(object):
         all_params = [p.name for p in self._parameters] + self._sweep_params
 
         if storage_class is None:
-            storage_class = self._storage_manager.storage_class
-        self._storage = storage_class(location, param_names=all_params,
+            storage_class = self._storage_class
+        self._storage = storage_class(location,
+                                      param_names=all_params,
                                       dim_sizes=self._dim_size,
                                       storage_manager=self._storage_manager,
                                       passthrough=True)
