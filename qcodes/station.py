@@ -61,6 +61,20 @@ class Station(Metadatable):
         return self.instruments[key]
 
 
+def get_bg_sweep():
+    processes = mp.active_children()
+    sweeps = [p for p in processes if getattr(p, 'is_sweep', False)]
+
+    if len(sweeps) == 1:
+        return sweeps[0]
+
+    if len(sweeps):
+        raise RuntimeError(
+            'Oops, multiple sweeps are running, how did that happen?')
+
+    return None
+
+
 class MeasurementSet(object):
     '''
     create a collection of parameters to measure and sweep
@@ -70,6 +84,9 @@ class MeasurementSet(object):
     or they can be strings of the form '{instrument}:{parameter}'
     as they are known to this MeasurementSet's linked Station
     '''
+
+    HALT = 'HALT SWEEP'
+
     def __init__(self, *args, station=None, storage_manager=None,
                  monitor=None, storage_class=None):
         self._station = station
@@ -82,6 +99,10 @@ class MeasurementSet(object):
             self._monitor = monitor
             self._storage_class = storage_class
         self._parameters = [self._pick_param(arg) for arg in args]
+
+        self.sweep_process = None
+
+        self.signal_queue = mp.Queue()  # for communicating with bg sweep
 
     def _pick_param(self, param_or_string):
         if isinstance(param_or_string, str):
@@ -99,7 +120,7 @@ class MeasurementSet(object):
         return (yield from asyncio.gather(*outputs))
 
     def sweep(self, *args, location=None, storage_class=None,
-              background=True, use_async=True):
+              background=True, use_async=True, enqueue=False):
         '''
         execute a sweep, measuring this MeasurementSet at each point
 
@@ -114,25 +135,50 @@ class MeasurementSet(object):
             so we can have live plotting and other analysis in the main process
         use_async: (default True): execute the sweep asynchronously as much
             as possible
+        enqueue: (default False): wait for a previous background sweep to
+            finish? If false, will raise an error if another sweep is running
 
         returns:
             a SweepStorage object that we can use to plot
         '''
+
+        prev_sweep = get_bg_sweep()
+
+        if prev_sweep:
+            if enqueue:
+                prev_sweep.join()  # wait until previous sweep finishes
+            else:
+                raise RuntimeError(
+                    'a sweep is already running in the background')
+
         self._init_sweep(args, location=location, storage_class=storage_class)
 
         sweep_fn = mock_sync(self._sweep_async) if use_async else self._sweep
+
+        # clear any lingering signal queue items
+        while not self.signal_queue.empty():
+            self.signal_queue.get()
 
         if background:
             if not self._storage_manager:
                 raise RuntimeError('sweep can only run in the background '
                                    'if it has a storage manager running')
 
-            # just for its side-effect of joining previous finished processes
-            mp.active_children()
-
             # start the sweep in a new process
-            self._sweep_process = mp.Process(target=sweep_fn, daemon=True)
-            self._sweep_process.start()
+            # TODO: in notebooks, errors in a background sweep will just appear
+            # the next time a command is run. Do something better?
+            # (like log them somewhere, show in monitoring window)?
+            p = mp.Process(target=sweep_fn, daemon=True)
+            p.start()
+
+            # flag this as a sweep process, and connect in its storage object
+            # so you can always find running sweeps and data even if you
+            # don't have a Station or MeasurementSet
+            p.is_sweep = True
+            p.storage = self._storage
+            p.measurement = self
+            self.sweep_process = p
+
         else:
             sweep_fn()
 
@@ -174,7 +220,15 @@ class MeasurementSet(object):
         for vals in self._feedback:
             vals.feedback(set_values, measured)
 
+    def _check_signal(self):
+        while not self.signal_queue.empty():
+            signal = self.signal_queue.get()
+            if signal == self.HALT:
+                raise KeyboardInterrupt('sweep was halted')
+
     def _sweep(self, indices=(), current_values=()):
+        self._check_signal()
+
         current_depth = len(indices)
 
         if current_depth == self._sweep_depth:
@@ -197,12 +251,15 @@ class MeasurementSet(object):
                     if self._monitor:
                         self._monitor.call(finish_by=finish_datetime)
 
+                    self._check_signal()
                     time.sleep(wait_secs(finish_datetime))
 
                 # sweep the next level
                 self._sweep(indices + (i,), current_values + (value,))
 
     def _sweep_async(self, indices=(), current_values=()):
+        self._check_signal()
+
         current_depth = len(indices)
 
         if current_depth == self._sweep_depth:
@@ -228,8 +285,22 @@ class MeasurementSet(object):
                         yield from self._monitor.call_async(
                             finish_by=finish_datetime)
 
+                    self._check_signal()
                     yield from asyncio.sleep(wait_secs(finish_datetime))
 
                 # sweep the next level
                 yield from self._sweep_async(indices + (i,),
                                              current_values + (value,))
+
+    def halt_sweep(self, timeout=5):
+        sweep = get_bg_sweep()
+        if not sweep:
+            print('No sweep running')
+            return
+
+        self.signal_queue.put(self.HALT)
+        sweep.join(timeout)
+
+        if sweep.is_alive():
+            sweep.terminate()
+            print('Background sweep did not respond, terminated')

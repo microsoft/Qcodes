@@ -3,7 +3,7 @@ from queue import Empty as EmptyQueue
 from traceback import format_exc
 from datetime import datetime, timedelta
 
-from qcodes.sweep_storage import NoSweep, SweepStorage, MergedCSVStorage
+from qcodes.sweep_storage import NoSweep
 
 
 def get_storage_manager():
