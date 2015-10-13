@@ -195,7 +195,7 @@ class MeasurementSet(object):
         # find the output array size we need
         self._dim_size = [len(v) for v in sweep_vals]
         self._sweep_params = [v.name for v in sweep_vals]
-        all_params = [p.name for p in self._parameters] + self._sweep_params
+        all_params = self._sweep_params + [p.name for p in self._parameters]
 
         # do any of the sweep params support feedback?
         self._feedback = [v for v in sweep_vals if hasattr(v, 'feedback')
@@ -209,7 +209,7 @@ class MeasurementSet(object):
                                       storage_manager=self._storage_manager,
                                       passthrough=True)
 
-        self._sweep_def = zip(sweep_vals, delays)
+        self._sweep_def = tuple(zip(sweep_vals, delays))
         self._sweep_depth = len(sweep_vals)
 
     def _store(self, indices, set_values, measured):
@@ -257,6 +257,9 @@ class MeasurementSet(object):
                 # sweep the next level
                 self._sweep(indices + (i,), current_values + (value,))
 
+        if not current_depth:
+            self._storage.close()
+
     def _sweep_async(self, indices=(), current_values=()):
         self._check_signal()
 
@@ -277,7 +280,7 @@ class MeasurementSet(object):
                     for inner_values, _ in self._sweep_def[current_depth + 1:]:
                         setters.append(inner_values.set_async(inner_values[0]))
 
-                    yield from asyncio.gather(setters)
+                    yield from asyncio.gather(*setters)
 
                     finish_datetime = datetime.now() + timedelta(seconds=delay)
 
@@ -291,6 +294,9 @@ class MeasurementSet(object):
                 # sweep the next level
                 yield from self._sweep_async(indices + (i,),
                                              current_values + (value,))
+
+        if not current_depth:
+            self._storage.close()
 
     def halt_sweep(self, timeout=5):
         sweep = get_bg_sweep()

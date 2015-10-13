@@ -45,12 +45,10 @@ class SweepStorage(object):
                  storage_manager=None, passthrough=False):
         self.location = location  # TODO: auto location for new sweeps?
 
-        self._storage_manager = storage_manager
-
         self._passthrough = storage_manager and passthrough
 
         if param_names and dim_sizes:
-            self._init_new_sweep(param_names, dim_sizes)
+            self._init_new_sweep(param_names, dim_sizes, storage_manager)
 
         elif param_names is None and dim_sizes is None:
             # omitted names and dim_sizes? we're reading from a saved file
@@ -59,12 +57,17 @@ class SweepStorage(object):
             raise TypeError('you must provide either both or neither of '
                             'param_names and dim_sizes')
 
-    def _init_new_sweep(self, param_names, dim_sizes):
+        # need to set storage_manager *after* _init_new_sweep
+        # because we can't send storage_manager through a queue
+        # to the storage_manager itself
+        self._storage_manager = storage_manager
+
+    def _init_new_sweep(self, param_names, dim_sizes, storage_manager):
         self.init_data(param_names, dim_sizes)
         self.new_indices = set()
         self.last_saved_index = -1
 
-        if self._storage_manager:
+        if storage_manager:
             # If this class was not available when storage_manager was started,
             # we can't unpickle it on the other end.
             # So we'll try, then restart if this error occurs, then try again.
@@ -78,10 +81,10 @@ class SweepStorage(object):
                 # The copy to be sent to the server should NOT be marked as
                 # syncable with the server, it's ON the server!
                 self._sync_to_server = False
-                self._storage_manager.ask('new_sweep', self)
+                storage_manager.ask('new_sweep', self)
             except AttributeError:
-                self._storage_manager.restart()
-                self._storage_manager.ask('new_sweep', self)
+                storage_manager.restart()
+                storage_manager.ask('new_sweep', self)
 
             self._sync_to_server = True
 
@@ -160,11 +163,20 @@ class SweepStorage(object):
             for pn, val in zip(self.param_names, values):
                 self.data[pn][indices] = val
 
-            self.data['ts'] = time.time()
+            self.data['ts'][indices] = time.time()
 
             flat_index = np.ravel_multi_index(tuple(zip(indices)),
                                               self.dim_sizes)[0]
             self.new_indices.add(flat_index)
+
+    def close(self):
+        if self._sync_to_server:
+            self._storage_manager.write('end_sweep')
+
+            if not self._passthrough:
+                self.sync_live()
+
+            self._sync_to_server = False
 
     def get(self, attr=None):
         '''
@@ -185,8 +197,8 @@ class SweepStorage(object):
 
         self.update_storage()
 
-        self.new_indices = set()
         self.last_saved_index = max(self.last_saved_index, *self.new_indices)
+        self.new_indices = set()
 
     def update_storage(self):
         '''
@@ -210,6 +222,9 @@ class SweepStorage(object):
         the file format is expected to provide all of this info
         '''
         raise NotImplementedError
+
+    def __getitem__(self, key):
+        return self.data[key]
 
 
 class MergedCSVStorage(SweepStorage):
@@ -277,7 +292,7 @@ class MergedCSVStorage(SweepStorage):
     def read(self):
         with open(self._path, 'r') as f:
             reader = csv.reader(f)
-            head = reader.next()
+            head = next(reader)
             self._parse_header(head)
 
             dimensions = len(self.dim_sizes)
@@ -286,6 +301,9 @@ class MergedCSVStorage(SweepStorage):
                 indices = tuple(map(int, row[1: dimensions + 1]))
                 for val, pn in zip(row[dimensions + 1:], self.param_names):
                     self.data[pn][indices] = val
+
+                self.data['ts'][indices] = datetime.strptime(
+                    row[0], '%Y-%m-%d %H:%M:%S:%f')
 
     def _parse_header(self, head):
         if head[0] != 'ts':
@@ -302,7 +320,7 @@ class MergedCSVStorage(SweepStorage):
             raise ValueError('no sweep dimensions found in header row')
 
         param_names = []
-        for param_col in range(col + 1, len(head)):
+        for param_col in range(col, len(head)):
             param_names.append(head[param_col])
         if not param_names:
             raise ValueError('no param_names found in header row')

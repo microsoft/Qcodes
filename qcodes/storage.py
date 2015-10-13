@@ -1,5 +1,5 @@
 import multiprocessing as mp
-from queue import Empty as EmptyQueue
+from queue import Empty
 from traceback import format_exc
 from datetime import datetime, timedelta
 
@@ -67,7 +67,7 @@ class StorageManager(object):
             self._query_queue.put(query)
             try:
                 res = self._response_queue.get(timeout=timeout)
-            except EmptyQueue as e:
+            except Empty as e:
                 if self._error_queue.empty():
                     # only raise if we're not about to find a deeper error
                     # I do it this way rather than just checking for errors
@@ -112,7 +112,6 @@ class StorageServer(object):
 
         self._sweep = NoSweep()
         self._sweeping = False
-        self._sweep_queue = mp.Queue()
 
         self._run()
 
@@ -126,7 +125,7 @@ class StorageServer(object):
             try:
                 query = self._query_queue.get(timeout=read_timeout)
                 getattr(self, 'handle_' + query[0])(*(query[1:]))
-            except EmptyQueue:
+            except Empty:
                 pass
             except Exception as e:
                 self._post_error(e)
