@@ -150,7 +150,7 @@ class SweepStorage(object):
             self.data = {}
             for pn in self.param_names + ('ts',):
                 arr = np.ndarray(self.dim_sizes)
-                arr.fill(math.nan)
+                arr.fill(float("nan"))
                 self.data[pn] = arr
 
     def set_point(self, indices, values):

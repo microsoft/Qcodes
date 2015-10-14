@@ -83,7 +83,7 @@ class Numbers(Validator):
     min_value <= value <= max_value
     '''
 
-    def __init__(self, min_value=-math.inf, max_value=math.inf):
+    def __init__(self, min_value=-float("inf"), max_value=float("inf")):
         if isinstance(min_value, (float, int)):
             self._min_value = min_value
         else:

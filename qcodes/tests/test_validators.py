@@ -36,7 +36,7 @@ class TestAnything(TestCase):
         a = Anything()
         for v in [None, 0, 1, 0.0, 1.2, '', 'hi!', [1, 2, 3], [],
                   {'a': 1, 'b': 2}, {}, set([1, 2, 3]), a, range(10),
-                  True, False, math.nan, math.inf, b'good',
+                  True, False, float("nan"), float("inf"), b'good',
                   AClass, AClass(), a_func]:
             self.assertTrue(a.is_valid(v))
 
@@ -137,8 +137,8 @@ class TestNumbers(TestCase):
                # warning: True==1 and False==0
                True, False,
                # warning: +/- inf are allowed if max & min are not specified!
-               -math.inf, math.inf]
-    not_numbers = ['', None, math.nan, '1', [], {}, [1, 2], {1: 1}, b'good',
+               -float("inf"), float("inf")]
+    not_numbers = ['', None, float("nan"), '1', [], {}, [1, 2], {1: 1}, b'good',
                    AClass, AClass(), a_func]
 
     def test_unlimited(self):
@@ -200,7 +200,7 @@ class TestInts(TestCase):
             # isinstance(v, bool)
             True, False]
     not_ints = [0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
-                math.pi, math.e, '', None, math.nan, math.inf, -math.inf, '1',
+                math.pi, math.e, '', None, float("nan"), float("inf"), -float("inf"), '1',
                 [], {}, [1, 2], {1: 1}, b'good', AClass, AClass(), a_func]
 
     def test_unlimited(self):
@@ -261,7 +261,7 @@ class TestEnum(TestCase):
     enums = [
         [True, False],
         [1, 2, 3],
-        [True, None, 1, 2.3, 'Hi!', b'free', (1, 2), math.inf]
+        [True, None, 1, 2.3, 'Hi!', b'free', (1, 2), float("inf")]
     ]
 
     # enum items must be immutable - tuple OK, list bad.
