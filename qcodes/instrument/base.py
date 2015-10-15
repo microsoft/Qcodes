@@ -1,4 +1,3 @@
-import threading
 import asyncio
 
 from qcodes.utils.metadata import Metadatable
@@ -14,8 +13,11 @@ class BaseInstrument(Metadatable):
         self.parameters = {}
 
         self.name = str(name)
-        # TODO: need an async-friendly non-blocking lock
-        self.lock = threading.Lock()
+        # TODO: need a sync/async, multiprocessing-friendly lock
+        # should be based on multiprocessing.Lock (or RLock)
+        # but with a non-blocking option for async use
+        # anyway threading.Lock is unpicklable on Windows
+        # self.lock = threading.Lock()
 
     def add_parameter(self, name, **kwargs):
         '''

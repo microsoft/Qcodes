@@ -10,6 +10,10 @@ from qcodes.utils.validators import Validator, Numbers, Ints
 from qcodes.sweep_values import SweepFixedValues
 
 
+def no_func(*args, **kwargs):
+    raise NotImplementedError('no function defined')
+
+
 class Parameter(Metadatable):
     def __init__(self, instrument, name,
                  get_cmd=None, async_get_cmd=None, parse_function=None,
@@ -87,15 +91,11 @@ class Parameter(Metadatable):
         return value
 
     def _set_get(self, get_cmd, async_get_cmd, parse_function):
-        def no_get():
-            raise NotImplementedError(
-                'parameter {} has no getter defined'.format(self.name))
-
         self._get, self._get_async = syncable_command(
             0, get_cmd, async_get_cmd, self._instrument.ask,
-            self._instrument.ask_async, parse_function, no_get)
+            self._instrument.ask_async, parse_function, no_func)
 
-        if self._get is not no_get:
+        if self._get is not no_func:
             self.has_get = True
 
     def _set_vals(self, vals):
@@ -109,15 +109,11 @@ class Parameter(Metadatable):
     def _set_set(self, set_cmd, async_set_cmd):
         # note: this does not set the final setter functions. that's handled
         # in self.set_sweep, when we choose a swept or non-swept setter.
-        def no_set(value):
-            raise NotImplementedError(
-                'parameter {} has no setter defined'.format(self.name))
-
         self._set, self._set_async = syncable_command(
             1, set_cmd, async_set_cmd, self._instrument.write,
-            self._instrument.write_async, no_cmd_function=no_set)
+            self._instrument.write_async, no_cmd_function=no_func)
 
-        if self._set is not no_set:
+        if self._set is not no_func:
             self.has_set = True
 
     def validate(self, value):

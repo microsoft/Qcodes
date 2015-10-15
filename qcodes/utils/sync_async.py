@@ -31,22 +31,41 @@ def wait_for_async(f, *args, **kwargs):
     return out
 
 
-def mock_sync(f):
+class mock_sync(object):
     '''
     make a coroutine into a synchronous function
+    written as a callable object rather than a closure
+    so it's picklable on Windows
     '''
-    return lambda *args, **kwargs: wait_for_async(f, *args, **kwargs)
+    def __init__(self, f):
+        self._f = f
+
+    def __call__(self, *args, **kwargs):
+        return wait_for_async(self._f, *args, **kwargs)
 
 
-def mock_async(f):
+class mock_async(object):
     '''
     make a synchronous function f awaitable
+    written as a callable object rather than a closure
+    so it's picklable on Windows
     '''
-    @asyncio.coroutine
-    def f_awaitable(*args, **kwargs):
-        return f(*args, **kwargs)
 
-    return f_awaitable
+    # feels like a hack, but _is_coroutine is what
+    # asyncio.iscoroutinefunction looks for, and it won't find it
+    # in the decorator for __call__. Note that there's also
+    # inspect.iscoroutinefunction and inspect.isfunction but
+    # these do not treat objects with __call__ as functions at all
+    # so will always fail on mock_sync and mock_async written as
+    # callable objects
+    _is_coroutine = True
+
+    def __init__(self, f):
+        self._f = f
+
+    @asyncio.coroutine
+    def __call__(self, *args, **kwargs):
+        return self._f(*args, **kwargs)
 
 
 class NoCommandError(Exception):
@@ -82,90 +101,109 @@ def syncable_command(param_count, cmd=None, acmd=None,
             call is a function (that takes param_count arguments)
             acall is a coroutine
     '''
+    return _SyncableCommand(param_count, cmd, acmd, exec_str, aexec_str,
+                            parse_function, no_cmd_function
+                            ).out()
+
+
+class _SyncableCommand(object):
+    def __init__(self, param_count, cmd, acmd, exec_str, aexec_str,
+                 parse_function, no_cmd_function):
+        self.param_count = param_count
+        self.cmd = cmd
+        self.acmd = acmd
+        self.exec_str = exec_str
+        self.aexec_str = aexec_str
+        self.parse_function = parse_function
+        self.no_cmd_function = no_cmd_function
+
+        self.exec_function = None
+        self.aexec_function = None
 
     # wrappers that may or may not be used below in constructing call / acall
-    def call_by_str(*args):
-        return exec_str(cmd.format(*args))
+    def call_by_str(self, *args):
+        return self.exec_str(self.cmd.format(*args))
 
     @asyncio.coroutine
-    def acall_by_str(*args):
-        return (yield from aexec_str(cmd.format(*args)))
+    def acall_by_str(self, *args):
+        return (yield from self.aexec_str(self.cmd.format(*args)))
 
-    def call_by_str_parsed(*args):
-        return parse_function(exec_str(cmd.format(*args)))
+    def call_by_str_parsed(self, *args):
+        return self.parse_function(self.exec_str(self.cmd.format(*args)))
 
     @asyncio.coroutine
-    def acall_by_str_parsed(*args):
-        raw_value = yield from aexec_str(cmd.format(*args))
-        return parse_function(raw_value)
+    def acall_by_str_parsed(self, *args):
+        raw_value = yield from self.aexec_str(self.cmd.format(*args))
+        return self.parse_function(raw_value)
 
-    def call_sync_by_afunction(*args):
-        return wait_for_async(aexec_function, *args)
+    def call_sync_by_afunction(self, *args):
+        return wait_for_async(self.aexec_function, *args)
 
-    # pull in all the inputs to see what was explicitly provided
-    exec_function = None
-    aexec_function = None
-
-    if isinstance(cmd, str):
-        if parse_function is None:
-            parsed = False
-        elif is_function(parse_function, 1):
-            parsed = True
-        else:
-            raise TypeError('parse_function must be a function with one arg,' +
-                            ' not {}'.format(repr(parse_function)))
-
-        if is_function(exec_str, 1):
-            exec_function = call_by_str_parsed if parsed else call_by_str
-        elif exec_str is not None:
-            raise TypeError('exec_str must be a function with one arg,' +
-                            ' not {}'.format(repr(exec_str)))
-
-        if is_function(aexec_str, 1, coroutine=True):
-            aexec_function = acall_by_str_parsed if parsed else acall_by_str
-        elif aexec_str is not None:
-            raise TypeError('aexec_str must be a coroutine with one arg')
-    elif is_function(cmd, param_count):
-        exec_function = cmd
-    elif cmd is not None:
-        raise TypeError('cmd must be a string or function with ' +
-                        '{} parameters'.format(param_count))
-
-    if is_function(acmd, param_count, coroutine=True):
-        aexec_function = acmd
-    elif acmd is not None:
-        raise TypeError('acmd must be a coroutine with ' +
-                        '{} parameters'.format(param_count))
-
-    # do we need to create the sync or async version from the other?
-    if exec_function is None:
-        if aexec_function is None:
-            # neither sync or async provided: either raise an error,
-            # or return a default function (which probably itself just
-            # raises an error when called, but need not raise an error
-            # on creation, ie if it's OK for this command to be absent)
-            if no_cmd_function is not None:
-                return (no_cmd_function, mock_async(no_cmd_function))
-            else:
-                raise NoCommandError(
-                    'not enough information to construct this command')
-        exec_function = call_sync_by_afunction
-    elif aexec_function is None:
-        aexec_function = mock_async(exec_function)
-
-    # now wrap with parameter count validation and return the two versions
-    def validate_param_count(args):
-        if len(args) != param_count:
+    # another layer to wrap the exec functions with parameter validation
+    def validate_param_count(self, args):
+        if len(args) != self.param_count:
             raise TypeError(
-                'command takes exactly {} parameters'.format(param_count))
+                'command takes exactly {} parameters'.format(self.param_count))
 
-    def call(*args):
-        validate_param_count(args)
-        return exec_function(*args)
+    def call(self, *args):
+        self.validate_param_count(args)
+        return self.exec_function(*args)
 
     @asyncio.coroutine
-    def acall(*args):
-        validate_param_count(args)
-        return (yield from aexec_function(*args))
+    def acall(self, *args):
+        self.validate_param_count(args)
+        return (yield from self.aexec_function(*args))
 
-    return (call, acall)
+    def out(self):
+        if isinstance(self.cmd, str):
+            if self.parse_function is None:
+                parsed = False
+            elif is_function(self.parse_function, 1):
+                parsed = True
+            else:
+                raise TypeError(
+                    'parse_function must be a function with one arg,' +
+                    ' not {}'.format(repr(self.parse_function)))
+
+            if is_function(self.exec_str, 1):
+                self.exec_function = (self.call_by_str_parsed if parsed else
+                                      self.call_by_str)
+            elif self.exec_str is not None:
+                raise TypeError('exec_str must be a function with one arg,' +
+                                ' not {}'.format(repr(self.exec_str)))
+
+            if is_function(self.aexec_str, 1, coroutine=True):
+                self.aexec_function = (self.acall_by_str_parsed if parsed else
+                                       self.acall_by_str)
+            elif self.aexec_str is not None:
+                raise TypeError('aexec_str must be a coroutine with one arg')
+        elif is_function(self.cmd, self.param_count):
+            self.exec_function = self.cmd
+        elif self.cmd is not None:
+            raise TypeError('cmd must be a string or function with ' +
+                            '{} parameters'.format(self.param_count))
+
+        if is_function(self.acmd, self.param_count, coroutine=True):
+            self.aexec_function = self.acmd
+        elif self.acmd is not None:
+            raise TypeError('acmd must be a coroutine with ' +
+                            '{} parameters'.format(self.param_count))
+
+        # do we need to create the sync or async version from the other?
+        if self.exec_function is None:
+            if self.aexec_function is None:
+                # neither sync or async provided: either raise an error,
+                # or return a default function (which probably itself just
+                # raises an error when called, but need not raise an error
+                # on creation, ie if it's OK for this command to be absent)
+                if self.no_cmd_function is not None:
+                    return (self.no_cmd_function,
+                            mock_async(self.no_cmd_function))
+                else:
+                    raise NoCommandError(
+                        'not enough information to construct this command')
+            self.exec_function = self.call_sync_by_afunction
+        elif self.aexec_function is None:
+            self.aexec_function = mock_async(self.exec_function)
+
+        return (self.call, self.acall)
