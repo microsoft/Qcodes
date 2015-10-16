@@ -290,6 +290,7 @@ class MergedCSVStorage(SweepStorage):
         return out
 
     def read(self):
+        self._passthrough = False
         with open(self._path, 'r') as f:
             reader = csv.reader(f)
             head = next(reader)
