@@ -23,7 +23,7 @@ class SweepValues(object):
     example usage:
         for i, value in eumerate(sv):
             sv.set(value)  # or (await / yield from) sv.set_async(value)
-                           # set(_async) just shortcuts sv._parameter.set
+                           # set(_async) just shortcuts sv.parameter.set
             sleep(delay)
             vals = measure()
             sv.feedback((i, ), vals) # optional - sweep should not assume
@@ -36,7 +36,7 @@ class SweepValues(object):
     how many there are.
     '''
     def __init__(self, parameter):
-        self._parameter = parameter
+        self.parameter = parameter
         self.name = parameter.name
         self._values = []
 
@@ -52,9 +52,9 @@ class SweepValues(object):
             self.set_async = mock_async(parameter.set)
 
     def validate(self, values):
-        if hasattr(self._parameter, 'validate'):
+        if hasattr(self.parameter, 'validate'):
             for value in values:
-                self._parameter.validate(value)
+                self.parameter.validate(value)
 
     def __iter__(self):
         raise NotImplementedError
@@ -122,7 +122,7 @@ class SweepFixedValues(SweepValues):
 
     def extend(self, new_values):
         if isinstance(new_values, SweepFixedValues):
-            if new_values._parameter is not self._parameter:
+            if new_values.parameter is not self.parameter:
                 raise TypeError(
                     'can only extend SweepFixedValues of the same parameters')
             # these values are already validated
@@ -135,7 +135,7 @@ class SweepFixedValues(SweepValues):
                 'cannot extend SweepFixedValues with {}'.format(new_values))
 
     def copy(self):
-        new_sv = SweepFixedValues(self._parameter, [])
+        new_sv = SweepFixedValues(self.parameter, [])
         # skip validation by adding values separately instead of on init
         new_sv._values = self._values[:]
         return new_sv
