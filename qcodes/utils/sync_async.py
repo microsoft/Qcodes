@@ -1,6 +1,6 @@
 import asyncio
 
-from qcodes.utils.helpers import is_function
+from .helpers import is_function
 
 
 def wait_for_async(f, *args, **kwargs):

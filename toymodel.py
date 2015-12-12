@@ -2,7 +2,7 @@
 
 import math
 
-from qcodes.instrument.mock import MockInstrument
+from qcodes import MockInstrument
 from qcodes.utils.validators import Numbers
 
 
