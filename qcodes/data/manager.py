@@ -1,100 +1,109 @@
+from datetime import datetime, timedelta
 import multiprocessing as mp
 from queue import Empty
 from traceback import format_exc
-from datetime import datetime, timedelta
+from sys import stderr
 
-from qcodes.sweep_storage import NoSweep
+from qcodes.utils.helpers import PrintableProcess
 
 
-def get_storage_manager():
+def get_data_manager():
     '''
     create or retrieve the storage manager
-    makes sure we don't accidentally create multiple StorageManager processes
+    makes sure we don't accidentally create multiple DataManager processes
     '''
-    sm = StorageManager.default
-    if sm and sm._server.is_alive():
-        return sm
-    return StorageManager()
+    dm = DataManager.default
+    if dm and dm._server.is_alive():
+        return dm
+    return DataManager()
 
 
-class StorageManager(object):
+class NoData(object):
+    def store(self, *args, **kwargs):
+        raise RuntimeError('no DataSet to add to')
+
+    def write(self, *args, **kwargs):
+        pass
+
+
+class DataManager(object):
     default = None
     '''
-    creates a separate process (StorageServer) that holds running sweeps
+    creates a separate process (DataServer) that holds running measurement
     and monitor data, and manages writing these to disk or other storage
 
-    To talk to the server, get a client with StorageManager.new_client()
-
-    StorageServer communicates with other processes through messages
-    I'll write this using multiprocessing Queue's, but should be easily
+    DataServer communicates with other processes through messages
+    Written using multiprocessing Queue's, but should be easily
     extensible to other messaging systems
     '''
     def __init__(self, query_timeout=2):
-        StorageManager.default = self
+        DataManager.default = self
 
         self._query_queue = mp.Queue()
         self._response_queue = mp.Queue()
         self._error_queue = mp.Queue()
 
-        # lock is only used with queries that get responses
+        # query_lock is only used with queries that get responses
         # to make sure the process that asked the question is the one
         # that gets the response.
-        self._query_lock = mp.RLock()
+        # Any query that does NOT expect a response can just dump it in
+        # and more on.
+        self.query_lock = mp.RLock()
 
         self.query_timeout = query_timeout
         self._start_server()
 
     def _start_server(self):
-        self._server = mp.Process(target=self._run_server, daemon=True)
+        self._server = DataServerProcess(target=self._run_server, daemon=True)
         self._server.start()
 
     def _run_server(self):
-        StorageServer(self._query_queue, self._response_queue,
-                      self._error_queue)
+        DataServer(self._query_queue, self._response_queue, self._error_queue)
 
     def write(self, *query):
         self._query_queue.put(query)
-        self.check_for_errors()
+        self._check_for_errors()
 
-    def check_for_errors(self):
+    def _check_for_errors(self):
         if not self._error_queue.empty():
-            raise self._error_queue.get()
+            errstr = self._error_queue.get()
+            errhead = '*** error on DataServer ***'
+            print(errhead + '\n\n' + errstr, file=stderr)
+            raise RuntimeError(errhead)
 
     def ask(self, *query, timeout=None):
         timeout = timeout or self.query_timeout
 
-        with self._query_lock:
+        with self.query_lock:
             self._query_queue.put(query)
             try:
                 res = self._response_queue.get(timeout=timeout)
             except Empty as e:
                 if self._error_queue.empty():
                     # only raise if we're not about to find a deeper error
-                    # I do it this way rather than just checking for errors
-                    # now) because ipython obfuscates the real error
-                    # by noting that it occurred while processing this one
                     raise e
-            self.check_for_errors()
+            self._check_for_errors()
 
             return res
 
     def halt(self):
         if self._server.is_alive():
-            self.write('halt')
+            self.ask('halt')
         self._server.join()
 
-    def restart(self):
+    def restart(self, force=False):
+        if (not force) and self.ask('get_data', 'location'):
+            raise RuntimeError('A measurement is running. Use '
+                               'restart(force=True) to override.')
         self.halt()
         self._start_server()
 
-    def set(self, key, value):
-        self.write('set', key, value)
 
-    def get(self, key, timeout=None):
-        return self.ask('get', key, timeout=timeout)
+class DataServerProcess(PrintableProcess):
+    name = 'DataServer'
 
 
-class StorageServer(object):
+class DataServer(object):
     default_storage_period = 1  # seconds between data storage calls
     queries_per_store = 5
     default_monitor_period = 60  # seconds between monitoring storage calls
@@ -106,12 +115,8 @@ class StorageServer(object):
         self._storage_period = self.default_storage_period
         self._monitor_period = self.default_monitor_period
 
-        # flexible storage, for testing purposes
-        # but we can adapt this when we get to monitoring
-        self._dict = {}
-
-        self._sweep = NoSweep()
-        self._sweeping = False
+        self._data = NoData()
+        self._measuring = False
 
         self._run()
 
@@ -133,10 +138,10 @@ class StorageServer(object):
             try:
                 now = datetime.now()
 
-                if now > next_store_ts:
+                if self._measuring and now > next_store_ts:
                     td = timedelta(seconds=self._storage_period)
                     next_store_ts = now + td
-                    self._sweep.update_storage_wrapper()
+                    self._data.write()
 
                 if now > next_monitor_ts:
                     td = timedelta(seconds=self._monitor_period)
@@ -150,48 +155,42 @@ class StorageServer(object):
         self._response_queue.put(response)
 
     def _post_error(self, e):
-        e.args = e.args + (format_exc(), )
-        self._error_queue.put(e)
+        self._error_queue.put(format_exc())
 
     ######################################################################
     # query handlers                                                     #
     #                                                                    #
     # method: handle_<type>(self, arg1, arg2, ...)                       #
     # will capture queries ('<type>', arg1, arg2, ...)                   #
+    #                                                                    #
+    # All except store_data return something, so should be used with ask #
+    # rather than write. That way they wait for the queue to flush and   #
+    # will receive errors right anyway                                   #
     ######################################################################
-
-    # _dict, set, get, and call are all just for testing/debugging
-    def handle_set(self, key, value):
-        self._dict[key] = value
-
-    def handle_get(self, key):
-        self._reply(self._dict[key])
-
-    def handle_call(self, key, method_name, args):
-        self._reply(getattr(self._dict[key], method_name)(*args))
 
     def handle_halt(self):
         self._running = False
-
-    def handle_new_sweep(self, sweep_storage_obj):
-        if self._sweeping:
-            raise RuntimeError('Already executing a sweep')
-        self._sweep = sweep_storage_obj
-        self._sweep.init_on_server()
-        self._sweeping = True
-        # send a reply, just so the client expects a response
-        # and therefore can listen for errors
         self._reply(True)
 
-    def handle_end_sweep(self):
-        self._sweep.update_storage_wrapper()
-        self._sweeping = False
+    def handle_new_data(self, data_set):
+        if self._measuring:
+            raise RuntimeError('Already executing a measurement')
 
-    def handle_set_sweep_point(self, indices, values):
-        self._sweep.set_point(indices, values)
+        self._data = data_set
+        self._data.init_on_server()
+        self._measuring = True
+        self._reply(True)
 
-    def handle_get_sweeping(self):
-        self._reply(self._sweeping)
+    def handle_end_data(self):
+        self._data.write()
+        self._measuring = False
+        self._reply(True)
 
-    def handle_get_sweep(self, attr=None):
-        self._reply(self._sweep.get(attr))
+    def handle_store_data(self, *args):
+        self._data.store(*args)
+
+    def handle_get_measuring(self):
+        self._reply(self._measuring)
+
+    def handle_get_data(self, attr=None):
+        self._reply(getattr(self._data, attr) if attr else self._data)
