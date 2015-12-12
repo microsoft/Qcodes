@@ -2,10 +2,10 @@ import asyncio
 import time
 from datetime import datetime
 
-from qcodes.instrument.base import BaseInstrument
+from .base import Instrument
 
 
-class MockInstrument(BaseInstrument):
+class MockInstrument(Instrument):
     def __init__(self, name, delay=0, model=None, keep_history=True,
                  use_async=False, read_response=None, **kwargs):
         '''

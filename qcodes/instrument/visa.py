@@ -1,10 +1,10 @@
 import visa
 import asyncio
 
-from qcodes.instrument.base import BaseInstrument
+from .base import Instrument
 
 
-class VisaInstrument(BaseInstrument):
+class VisaInstrument(Instrument):
     def __init__(self, name, address=None,
                  timeout=5, terminator='', **kwargs):
         super().__init__(name, **kwargs)

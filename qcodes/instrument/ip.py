@@ -1,10 +1,10 @@
 import socket
 import asyncio
 
-from qcodes.instrument.base import BaseInstrument
+from .base import Instrument
 
 
-class IPInstrument(BaseInstrument):
+class IPInstrument(Instrument):
     def __init__(self, name, address=None, port=None,
                  timeout=5, terminator='\n', **kwargs):
         super().__init__(name, **kwargs)

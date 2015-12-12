@@ -2,11 +2,12 @@ import asyncio
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import wait_for_async
-from qcodes.instrument.parameter import Parameter
-from qcodes.instrument.function import Function
+from qcodes.utils.helpers import safe_getattr
+from .parameter import InstrumentParameter
+from .function import Function
 
 
-class BaseInstrument(Metadatable):
+class Instrument(Metadatable):
     def __init__(self, name, **kwargs):
         super().__init__(**kwargs)
         self.functions = {}
@@ -21,7 +22,7 @@ class BaseInstrument(Metadatable):
 
     def add_parameter(self, name, **kwargs):
         '''
-        binds one Parameter to this instrument.
+        binds one InstrumentParameter to this instrument.
 
         instrument subclasses can call this repeatedly in their __init__
         for every real parameter of the instrument.
@@ -29,15 +30,16 @@ class BaseInstrument(Metadatable):
         In this sense, parameters are the state variables of the instrument,
         anything the user can set and/or get
 
-        `name` is how the Parameter will be stored within instrument.parameters
-        and also how you  address it using the shortcut methods:
+        `name` is how the InstrumentParameter will be stored within
+        instrument.parameters and also how you  address it using the
+        shortcut methods:
         instrument.set(param_name, value) etc.
 
-        see Parameter for the list of kwargs
+        see InstrumentParameter for the list of kwargs
         '''
         if name in self.parameters:
             raise KeyError('Duplicate parameter name {}'.format(name))
-        self.parameters[name] = Parameter(self, name, **kwargs)
+        self.parameters[name] = InstrumentParameter(self, name, **kwargs)
 
     def add_function(self, name, **kwargs):
         '''
@@ -83,7 +85,7 @@ class BaseInstrument(Metadatable):
         # check if the paired function is still from the base class (so we'd
         # have a recursion loop) notice that we only have to do this in one
         # of the pair, because the other will call this one.
-        if self.write.__func__ is BaseInstrument.write:
+        if self.write.__func__ is Instrument.write:
             raise NotImplementedError(
                 'instrument {} has no write method defined'.format(self.name))
         self.write(cmd)
@@ -93,7 +95,7 @@ class BaseInstrument(Metadatable):
 
     @asyncio.coroutine
     def read_async(self):
-        if self.read.__func__ is BaseInstrument.read:
+        if self.read.__func__ is Instrument.read:
             raise NotImplementedError(
                 'instrument {} has no read method defined'.format(self.name))
         return self.read()
@@ -103,7 +105,7 @@ class BaseInstrument(Metadatable):
 
     @asyncio.coroutine
     def ask_async(self, cmd):
-        if self.ask.__func__ is BaseInstrument.ask:
+        if self.ask.__func__ is Instrument.ask:
             raise NotImplementedError(
                 'instrument {} has no ask method defined'.format(self.name))
         return self.ask(cmd)
@@ -112,12 +114,16 @@ class BaseInstrument(Metadatable):
     # shortcuts to parameters & setters & getters                            #
     #                                                                        #
     #  instrument['someparam'] === instrument.parameters['someparam']        #
+    #  instrument.someparam === instrument.parameters['someparam']           #
     #  instrument.get('someparam') === instrument['someparam'].get()         #
     #  etc...                                                                #
     ##########################################################################
 
     def __getitem__(self, key):
         return self.parameters[key]
+
+    def __getattr__(self, key):
+        return safe_getattr(self, key, 'parameters')
 
     def set(self, param_name, value):
         self.parameters[param_name].set(value)
