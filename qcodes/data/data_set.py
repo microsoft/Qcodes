@@ -123,8 +123,20 @@ class DataSet(object):
 
         self._init_local()
 
+    @property
+    def is_live(self):
+        '''
+        indicate whether this DataSet thinks it is live in the DataServer
+        without actually talking to the DataServer or syncing with it
+        '''
+        return self.mode in self.SERVER_MODES and self.data_manager
+
     def check_live_data(self):
-        if self.mode in self.SERVER_MODES and self.data_manager:
+        '''
+        check whether this DataSet really *is* the one in the DataServer
+        and if it thought it was but isn't, convert it to mode=LOCAL
+        '''
+        if self.is_live:
             live_location = self.data_manager.ask('get_data', 'location')
 
             if self.location is None:
