@@ -28,6 +28,7 @@ from collections import namedtuple
 import numpy as np
 import re
 import math
+from traceback import format_exc
 
 from .data_array import DataArray
 
@@ -75,6 +76,7 @@ class Formatter(object):
                 try:
                     self.read_one_file(data_set, f, ids_read)
                 except ValueError:
+                    print(format_exc())
                     print('error reading file ' + fn)
 
     def read_one_file(self, data_set, f, ids_read):
