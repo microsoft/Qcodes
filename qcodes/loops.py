@@ -436,7 +436,7 @@ class ActiveLoop(object):
             for f in callables:
                 f(first_delay=delay,
                   loop_indices=new_indices,
-                  values=new_values)
+                  current_values=new_values)
 
                 # after the first action, no delay is inherited
                 delay = 0
