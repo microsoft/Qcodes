@@ -48,7 +48,6 @@ class DataSet(object):
         self.location = location
         self.formatter = formatter or self.default_formatter
         self.io = io or self.default_io
-        self.mode = mode
 
         if mode is None:
             if arrays:
@@ -58,6 +57,8 @@ class DataSet(object):
             else:
                 # check if this is the live measurement, make it sync if it is
                 mode = DataMode.PULL_FROM_SERVER
+
+        self.mode = mode
 
         self.arrays = {}
         if arrays:
@@ -116,62 +117,68 @@ class DataSet(object):
     def _init_live(self, data_manager):
         self.data_manager = data_manager
         with self.data_manager.query_lock:
-            if self.check_live_data():
+            if self.is_on_server:
                 live_obj = data_manager.ask('get_data')
                 self.arrays = live_obj.arrays
-                return
-
-        self._init_local()
+            else:
+                self._init_local()
 
     @property
-    def is_live(self):
+    def is_live_mode(self):
         '''
         indicate whether this DataSet thinks it is live in the DataServer
         without actually talking to the DataServer or syncing with it
         '''
-        return self.mode in self.SERVER_MODES and self.data_manager
+        return self.mode in self.SERVER_MODES and self.data_manager and True
 
-    def check_live_data(self):
+    @property
+    def is_on_server(self):
         '''
         check whether this DataSet really *is* the one in the DataServer
         and if it thought it was but isn't, convert it to mode=LOCAL
         '''
-        if self.is_live:
+        if not self.is_live_mode:
+            return False
+
+        with self.data_manager.query_lock:
             live_location = self.data_manager.ask('get_data', 'location')
 
             if self.location is None:
                 # no location given yet, pull it from the live data
                 self.location = live_location
 
-            if self.location == live_location:
-                return True
-
-        if self.mode != DataMode.LOCAL:
-            # just stopped being the live data - drop the data and reload it,
-            # in case more arrived after the live measurement ended
-            self.arrays = {}
-            self._init_local()
-
-        return False
+            return self.location == live_location
 
     def sync(self):
-        # TODO: anything we can do to reduce the amount of data to send?
-        # seems like in the most general case this would need to remember
-        # each client DataSet on the server, and what has changed since
-        # that particular client last synced (at least first and last pt)
-        if self.mode not in self.SERVER_MODES:
+        if not self.is_live_mode:
+            # LOCAL DataSet - just read it in
+            # TODO: compare timestamps to know if we need to read?
+            self.read()
             return
-        with self.data_manager.query_lock:
-            if not self.check_live_data():
-                # note that check_live_data switches us to LOCAL
-                # and reads the data set back from storage,
-                # if the server says the data isn't there anymore
-                # (ie the measurement is done)
-                return
-            live_data = self.data_manager.ask('get_data').arrays
 
-        for array_id in self.arrays:
-            self.arrays[array_id].data = live_data[array_id].data
+        with self.data_manager.query_lock:
+            if self.is_on_server:
+                # TODO: can we reduce the amount of data to send?
+                # seems like in the most general case this would need to
+                # remember each client DataSet on the server, and what has
+                # changed since that particular client last synced
+                # (at least first and last pt)
+                live_data = self.data_manager.ask('get_data').arrays
+                for array_id in self.arrays:
+                    self.arrays[array_id].data = live_data[array_id].data
+
+                measuring = self.data_manager.ask('get_measuring')
+                if not measuring:
+                    # we must have *just* stopped measuring
+                    # but the DataSet is still on the server,
+                    # so we got the data, and don't need to read.
+                    self.mode = DataMode.LOCAL
+                return
+            else:
+                # this DataSet *thought* it was on the server, but it wasn't,
+                # so we haven't synced yet and need to read from storage
+                self.mode = DataMode.LOCAL
+                self.read()
 
     def add_array(self, data_array):
         self.arrays[data_array.array_id] = data_array
