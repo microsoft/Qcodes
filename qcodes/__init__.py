@@ -5,7 +5,7 @@ from qcodes.station import Station
 from qcodes.loops import get_bg, halt_bg, Loop, Task, Wait
 
 from qcodes.data.manager import get_data_manager
-from qcodes.data.data_set import DataSet
+from qcodes.data.data_set import DataMode, DataSet
 from qcodes.data.data_array import DataArray
 from qcodes.data.format import Formatter, GNUPlotFormat
 from qcodes.data.io import DiskIO
