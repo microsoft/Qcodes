@@ -254,8 +254,8 @@ class GNUPlotFormat(Formatter):
                 set_array = DataArray(label=labels[i], array_id=array_id,
                                       set_arrays=set_arrays, size=set_size)
                 set_array.init_data()
-                set_arrays = set_arrays + (set_array, )
                 arrays[array_id] = set_array
+
             set_arrays = set_arrays + (set_array, )
             ids_read.add(array_id)
 
@@ -285,13 +285,14 @@ class GNUPlotFormat(Formatter):
             # ignore leading or trailing whitespace (including in blank lines)
             line = line.strip()
 
-            if not line and not first_point:
+            if not line:
                 # each consecutive blank line implies one more loop to reset
                 # when we read the next data point. Don't depend on the number
                 # of setpoints that change, as there could be weird cases, like
                 # bidirectional sweeps, or highly diagonal sweeps, where this
                 # is incorrect. Anyway this really only matters for >2D sweeps.
-                resetting += 1
+                if not first_point:
+                    resetting += 1
                 continue
 
             values = tuple(map(float, line.split()))
@@ -308,12 +309,15 @@ class GNUPlotFormat(Formatter):
                 if math.isnan(stored_value):
                     nparray[myindices] = value
                 elif stored_value != value:
-                    raise ValueError('inconsistent setpoint values')
+                    raise ValueError('inconsistent setpoint values',
+                                     stored_value, value, set_array.name,
+                                     myindices, indices)
 
             for value, data_array in zip(values[ndim:], data_arrays):
-                data_array.data[myindices] = value
+                data_array.data[tuple(indices)] = value
 
             indices[-1] += 1
+            first_point = False
 
     def _is_comment(self, line):
         return line[:self.comment_len] == self.comment_chars
