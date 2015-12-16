@@ -19,6 +19,8 @@ def get_data_manager():
 
 
 class NoData(object):
+    location = None
+
     def store(self, *args, **kwargs):
         raise RuntimeError('no DataSet to add to')
 
