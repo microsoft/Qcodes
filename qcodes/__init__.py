@@ -19,7 +19,7 @@ from qcodes.instrument.function import Function
 from qcodes.instrument.parameter import Parameter, InstrumentParameter
 from qcodes.instrument.sweep_values import SweepFixedValues, AdaptiveSweep
 
-from qcodes.utils.helpers import set_mp_method
+from qcodes.utils.helpers import set_mp_method, reload_code
 
 # just for convenience in debugging, so we don't have to
 # separately import multiprocessing
