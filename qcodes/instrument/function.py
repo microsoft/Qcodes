@@ -52,6 +52,9 @@ class Function(Metadatable):
             ask_or_write, ask_or_write_async, parse_function)
 
     def validate(self, args):
+        '''
+        check that all arguments to this Function are allowed
+        '''
         if len(args) != self._param_count:
             raise TypeError(
                 '{} called with {} parameters but requires {}'.format(

@@ -46,6 +46,8 @@ class DataSet(object):
     def __init__(self, location=None, mode=None, arrays=None,
                  data_manager=None, formatter=None, io=None):
         self.location = location
+        # TODO: when you change formatter or io (and there's data present)
+        # make it all look unsaved
         self.formatter = formatter or self.default_formatter
         self.io = io or self.default_io
 
@@ -109,6 +111,10 @@ class DataSet(object):
         self.data_manager = data_manager
 
     def init_on_server(self):
+        '''
+        Configure this DataSet as the DataServer copy
+        Should be run only by the DataServer itself.
+        '''
         if not self.arrays:
             raise RuntimeError('A server-side DataSet needs DataArrays.')
 
@@ -134,8 +140,8 @@ class DataSet(object):
     @property
     def is_on_server(self):
         '''
-        check whether this DataSet really *is* the one in the DataServer
-        and if it thought it was but isn't, convert it to mode=LOCAL
+        Check whether this DataSet is being mirrored in the DataServer
+        If it thought it was but isn't, convert it to mode=LOCAL
         '''
         if not self.is_live_mode:
             return False
@@ -150,6 +156,16 @@ class DataSet(object):
             return self.location == live_location
 
     def sync(self):
+        '''
+        synchronize this data set with a possibly newer version either
+        in storage or on the DataServer, depending on its mode
+        '''
+        # TODO: sync implies bidirectional... and it could be!
+        # we should keep track of last sync timestamp and last modification
+        # so we can tell whether this one, the other one, or both copies have
+        # changed (and I guess throw an error if both did? Would be cool if we
+        # could find a robust and intuitive way to make modifications to the
+        # version on the DataServer from the main copy)
         if not self.is_live_mode:
             # LOCAL DataSet - just read it in
             # TODO: compare timestamps to know if we need to read?
@@ -181,6 +197,12 @@ class DataSet(object):
                 self.read()
 
     def add_array(self, data_array):
+        '''
+        add one DataArray to this DataSet
+        '''
+        if data_array.array_id in self.arrays:
+            raise ValueError('array_id {} already exists in this '
+                             'DataSet'.format(data_array.array_id))
         self.arrays[data_array.array_id] = data_array
 
     def _clean_array_ids(self, arrays):
@@ -216,7 +238,8 @@ class DataSet(object):
 
     def store(self, loop_indices, ids_values):
         '''
-        set some collection of data points
+        Set some collection of data points
+
         loop_indices: the indices within whatever loops we are inside
         values: a dict of action_index:value or array_id:value
             where value may be an arbitrarily nested list, to record
@@ -229,9 +252,16 @@ class DataSet(object):
                 self.arrays[array_id][loop_indices] = value
 
     def read(self):
+        '''
+        Read the whole DataSet from storage, overwriting the local data
+        '''
         self.formatter.read(self)
 
     def write(self):
+        '''
+        Write the whole (or only changed parts) DataSet to storage,
+        overwriting the existing storage if any.
+        '''
         if self.mode != DataMode.LOCAL:
             raise RuntimeError('This object is connected to a DataServer '
                                'and should be saved from there.')
@@ -239,8 +269,14 @@ class DataSet(object):
         self.formatter.write(self)
 
     def close(self):
+        '''
+        Tell the DataServer that the measurement is done
+        '''
         if self.mode == DataMode.PUSH_TO_SERVER:
             self.data_manager.ask('end_data')
+
+    def plot(self, cut=None):
+        pass  # TODO
 
     def __getattr__(self, key):
         '''

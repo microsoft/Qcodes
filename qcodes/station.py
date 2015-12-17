@@ -3,6 +3,14 @@ from qcodes.utils.helpers import make_unique, safe_getattr
 
 
 class Station(Metadatable):
+    '''
+    A representation of the entire physical setup.
+
+    Lists all the connected `Instrument`s and the current default
+    measurement (a list of actions). Contains a convenience method
+    `.measure()` to measure these defaults right now, but this is separate
+    from the code used by `Loop`.
+    '''
     default = None
 
     def __init__(self, *instruments, monitor=None, default=True):
@@ -22,6 +30,12 @@ class Station(Metadatable):
         self.monitor = monitor
 
     def add_instrument(self, instrument, name=None):
+        '''
+        Record one instrument as part of this Station
+
+        Returns the name assigned this instrument, which may have
+        been changed to make it unique among previously added instruments.
+        '''
         if name is None:
             name = getattr(instrument, 'name',
                            'instrument{}'.format(len(self.instruments)))
@@ -30,9 +44,20 @@ class Station(Metadatable):
         return name
 
     def set_measurement(self, *actions):
+        '''
+        Save a set *actions as the default measurement for this Station
+
+        These actions will be executed by default by a Loop if this is the
+        default Station, and any measurements among them can be done once
+        by .measure
+        '''
         self.default_measurement = actions
 
     def measure(self, *actions):
+        '''
+        Measure any parameters in *actions, or the default measurement
+        for this station if none are provided.
+        '''
         if not actions:
             actions = self.default_measurement
 

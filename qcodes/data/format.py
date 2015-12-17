@@ -1,29 +1,3 @@
-'''
-Data file formatters
-
-Formatters translate between DataSets and data files.
-
-Each Formatter is expected to implement a write method:
-    write(self, data_set)
-
-and either read or read_one_file:
-    read(self, data_set)
-    read_one_file(data_set, f, ids_read)
-        f: a file-like object supporting .readline() and for ... in
-        ids_read: a set of array_id's we've already encountered, so
-            read_one_file can check for duplication and consistency
-
-data_set is a DataSet object, which is expected to have attributes:
-    io: an IO manager (see qcodes.io)
-    location: a string, like a file path, that identifies the DataSet and
-        tells the IO manager where to store it
-    arrays: a dict of {array_id:DataArray} to read into.
-        - read will create DataArrays that don't yet exist.
-        - write will write ALL DataArrays in the DataSet, using
-          last_saved_index and modified_range, as well as whether or not
-          it found the specified file, to determine how much to write.
-'''
-
 from collections import namedtuple
 import numpy as np
 import re
@@ -34,9 +8,39 @@ from .data_array import DataArray
 
 
 class Formatter(object):
+    '''
+    Data file formatters
+
+    Formatters translate between DataSets and data files.
+
+    Each Formatter is expected to implement a write method:
+        write(self, data_set)
+
+    and either read or read_one_file:
+        read(self, data_set)
+        read_one_file(data_set, f, ids_read)
+            f: a file-like object supporting .readline() and for ... in
+            ids_read: a set of array_id's we've already encountered, so
+                read_one_file can check for duplication and consistency
+
+    data_set is a DataSet object, which is expected to have attributes:
+        io: an IO manager (see qcodes.io)
+        location: a string, like a file path, that identifies the DataSet and
+            tells the IO manager where to store it
+        arrays: a dict of {array_id:DataArray} to read into.
+            - read will create DataArrays that don't yet exist.
+            - write will write ALL DataArrays in the DataSet, using
+              last_saved_index and modified_range, as well as whether or not
+              it found the specified file, to determine how much to write.
+    '''
     ArrayGroup = namedtuple('ArrayGroup', 'size set_arrays data name')
 
     def find_changes(self, arrays):
+        '''
+        Collect changes made to any of these arrays and determine whether
+        the WHOLE group is elligible for appending or not.
+        Subclasses may choose to use or ignore this information.
+        '''
         new_data = {}
         can_append = True
 
@@ -51,13 +55,26 @@ class Formatter(object):
         return new_data, can_append
 
     def mark_saved(self, arrays):
+        '''
+        Mark all DataArrays in this group as saved
+        '''
         for array in arrays.values():
             array.mark_saved()
 
     def write(self, data_set):
+        '''
+        Write the DataSet to storage. It is up to the Formatter to decide
+        when to overwrite completely, and when to just append or otherwise
+        update the file(s).
+        '''
         raise NotImplementedError
 
     def read(self, data_set):
+        '''
+        Read the entire DataSet by finding all files matching its location
+        (using io_manager.list) and calling read_one_file from the Formatter
+        subclass. Subclasses may alternatively override this entire method.
+        '''
         io_manager = data_set.io
         location = data_set.location
 
@@ -83,14 +100,17 @@ class Formatter(object):
         raise NotImplementedError
 
     def match_save_range(self, group, file_exists):
-        # match all full-sized arrays, which are the data arrays plus
-        # the inner loop setpoint array
+        '''
+        Find the save range that will capture all changes in an array group.
+        matches all full-sized arrays: the data arrays plus the inner loop
+        setpoint array
 
-        # note: if an outer loop has changed values (without the inner
-        # loop or measured data changing) we won't notice it here
+        note: if an outer loop has changed values (without the inner
+        loop or measured data changing) we won't notice it here
 
-        # use the inner setpoint as a base and look for differences
-        # in last_saved_index and modified_range in the data arrays
+        use the inner setpoint as a base and look for differences
+        in last_saved_index and modified_range in the data arrays
+        '''
         inner_setpoint = group.set_arrays[-1]
         last_saved_index = (inner_setpoint.last_saved_index if file_exists
                             else None)
@@ -226,6 +246,11 @@ class GNUPlotFormat(Formatter):
         self.number_format = '{:' + number_format + '}'
 
     def read_one_file(self, data_set, f, ids_read):
+        '''
+        Called by Formatter.read to bring one data file into
+        a DataSet. Setpoint data may be duplicated across multiple files,
+        but each measured DataArray must only map to one file.
+        '''
         arrays = data_set.arrays
         ids = self._read_comment_line(f).split()
         labels = self._get_labels(self._read_comment_line(f))
@@ -339,6 +364,10 @@ class GNUPlotFormat(Formatter):
             return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
 
     def write(self, data_set):
+        '''
+        Write updates in this DataSet to storage. Will choose append if
+        possible, overwrite if not.
+        '''
         io_manager = data_set.io
         location = data_set.location
         arrays = data_set.arrays

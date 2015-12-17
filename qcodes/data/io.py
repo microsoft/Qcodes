@@ -89,9 +89,15 @@ class DiskIO(object):
         return '<DiskIO, base_location={}>'.format(self.base_location)
 
     def join(self, *args):
+        '''
+        the context-dependent version of os.path.join for this io manager
+        '''
         return os.path.join(*args)
 
     def isfile(self, location):
+        '''
+        does `location` match a file?
+        '''
         path = self._add_base(location)
         return os.path.isfile(path)
 

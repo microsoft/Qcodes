@@ -19,6 +19,10 @@ def get_data_manager():
 
 
 class NoData(object):
+    '''
+    A placeholder object for DataServer to hold
+    when there is no loop running.
+    '''
     location = None
 
     def store(self, *args, **kwargs):
@@ -63,6 +67,9 @@ class DataManager(object):
         DataServer(self._query_queue, self._response_queue, self._error_queue)
 
     def write(self, *query):
+        '''
+        Send a query to the DataServer that does not expect a response.
+        '''
         self._query_queue.put(query)
         self._check_for_errors()
 
@@ -74,6 +81,9 @@ class DataManager(object):
             raise RuntimeError(errhead)
 
     def ask(self, *query, timeout=None):
+        '''
+        Send a query to the DataServer and wait for a response
+        '''
         timeout = timeout or self.query_timeout
 
         with self.query_lock:
@@ -89,11 +99,18 @@ class DataManager(object):
             return res
 
     def halt(self):
+        '''
+        Halt the DataServer and end its process
+        '''
         if self._server.is_alive():
             self.ask('halt')
         self._server.join()
 
     def restart(self, force=False):
+        '''
+        Restart the DataServer
+        Use force=True to abort a running measurement.
+        '''
         if (not force) and self.ask('get_data', 'location'):
             raise RuntimeError('A measurement is running. Use '
                                'restart(force=True) to override.')
@@ -106,6 +123,18 @@ class DataServerProcess(PrintableProcess):
 
 
 class DataServer(object):
+    '''
+    Running in its own process, receives, holds, and returns current `Loop` and
+    monitor data, and writes it to disk (or other storage)
+
+    When a `Loop` is *not* running, the DataServer also calls the monitor
+    routine. But when a `Loop` *is* running, *it* calls the monitor so that it
+    can avoid conflicts. Also while a `Loop` is running, there are
+    complementary `DataSet` objects in the loop and `DataServer` processes -
+    they are nearly identical objects, but are configured differently so that
+    the loop `DataSet` doesn't hold any data itself, it only passes that data
+    on to the `DataServer`
+    '''
     default_storage_period = 1  # seconds between data storage calls
     queries_per_store = 5
     default_monitor_period = 60  # seconds between monitoring storage calls
@@ -168,13 +197,22 @@ class DataServer(object):
     # All except store_data return something, so should be used with ask #
     # rather than write. That way they wait for the queue to flush and   #
     # will receive errors right anyway                                   #
+    #                                                                    #
+    # TODO: make a command that lists all available query handlers       #
     ######################################################################
 
     def handle_halt(self):
+        '''
+        Quit this DataServer
+        '''
         self._running = False
         self._reply(True)
 
     def handle_new_data(self, data_set):
+        '''
+        Load a new (normally empty) DataSet into the DataServer, and
+        prepare it to start receiving and storing data
+        '''
         if self._measuring:
             raise RuntimeError('Already executing a measurement')
 
@@ -184,15 +222,29 @@ class DataServer(object):
         self._reply(True)
 
     def handle_end_data(self):
+        '''
+        Mark this DataSet as complete and write its final changes to storage
+        '''
         self._data.write()
         self._measuring = False
         self._reply(True)
 
     def handle_store_data(self, *args):
+        '''
+        Put some data into the DataSet
+        This is the only query that does not return a value, so the measurement
+        loop does not need to wait for a reply.
+        '''
         self._data.store(*args)
 
     def handle_get_measuring(self):
+        '''
+        Is a measurement loop presently running?
+        '''
         self._reply(self._measuring)
 
     def handle_get_data(self, attr=None):
+        '''
+        Return the active DataSet or some attribute of it
+        '''
         self._reply(getattr(self._data, attr) if attr else self._data)

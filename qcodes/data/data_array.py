@@ -106,6 +106,9 @@ class DataArray(object):
         self._max_indices = tuple(d - 1 for d in self.size)
 
     def clear(self):
+        '''
+        Fill the (already existing) data array with nan
+        '''
         self.data.fill(float('nan'))
 
     def __setitem__(self, loop_indices, value):
@@ -174,5 +177,6 @@ class DataArray(object):
         self.last_saved_index = None
 
     def __repr__(self):
-        return '{}: {}\n{}'.format(self.__class__.__name__, self.name,
-                                   repr(self.data))
+        return '{}[{}]: {}\n{}'.format(self.__class__.__name__,
+                                       ','.join(map(str, self.size)),
+                                       self.array_id, repr(self.data))

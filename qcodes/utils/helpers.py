@@ -72,6 +72,10 @@ def permissive_range(start, stop, step):
 
 
 def wait_secs(finish_datetime):
+    '''
+    calculate the number of seconds until a given datetime
+    Does NOT wait for this time.
+    '''
     delay = (finish_datetime - datetime.now()).total_seconds()
     if delay < 0:
         logging.warning('negative delay {} sec'.format(delay))
@@ -80,6 +84,10 @@ def wait_secs(finish_datetime):
 
 
 def make_unique(s, existing):
+    '''
+    make string s unique, able to be added to a sequence `existing` of
+    existing names without duplication, by appending _<int> to it if needed
+    '''
     n = 1
     s_out = s
     existing = set(existing)
@@ -184,7 +192,7 @@ def reload_code(pattern=None, lib=False):
     '''
     reload all modules matching a given pattern
     or all (non-built-in) modules if pattern is omitted
-    lib says whether to include lib files (default False)
+    if lib is False (default), ignore the standard library and major packages
     '''
     reloaded_files = []
 
@@ -195,7 +203,11 @@ def reload_code(pattern=None, lib=False):
     return reloaded_files
 
 
-def is_good_module(module, lib):
+def is_good_module(module, lib=False):
+    '''
+    is an object (module) a module we can reload?
+    if lib is False (default), ignore the standard library and major packages
+    '''
     # take out non-modules and underscore modules
     name = getattr(module, '__name__', '_')
     if name[0] == '_' or not isinstance(module, type(sys)):
@@ -218,6 +230,11 @@ def is_good_module(module, lib):
 
 
 def reload_recurse(module, reloaded_files, lib):
+    '''
+    recursively search module for its own dependencies to reload,
+    ignoring those already in reloaded_files
+    if lib is False (default), ignore the standard library and major packages
+    '''
     if not is_good_module(module, lib) or module.__file__ in reloaded_files:
         return
 

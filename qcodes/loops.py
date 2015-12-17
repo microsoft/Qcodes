@@ -50,6 +50,10 @@ from qcodes.utils.sync_async import mock_sync
 
 
 def get_bg():
+    '''
+    find the active background measurement process, if any
+    returns None otherwise
+    '''
     processes = mp.active_children()
     loops = [p for p in processes if isinstance(p, MeasurementProcess)]
 
@@ -63,6 +67,9 @@ def get_bg():
 
 
 def halt_bg(self, timeout=5):
+    '''
+    Stop the active background measurement process, if any
+    '''
     loop = get_bg()
     if not loop:
         print('No loop running')
@@ -84,6 +91,19 @@ def halt_bg(self, timeout=5):
 
 
 class Loop(object):
+    '''
+    The entry point for creating measurement loops
+
+    Describes a sequence of `Parameter` settings to loop over. When you attach
+    `action`s to a `Loop`, it becomes an `ActiveLoop` that you can `.run()`, or
+    you can run a `Loop` directly, in which case it takes the default `action`s
+    from the default `Station`
+
+    `actions` are a sequence of things to do at each `Loop` step: they can be
+    `Parameter`s to measure, `Task`s to do (any callable that does not yield
+    data), `Wait` times, other `ActiveLoop`s to nest inside this one, or
+    `Loop`s to nest using the default `actions`.
+    '''
     def __init__(self, sweep_values, delay):
         self.sweep_values = sweep_values
         self.delay = delay
@@ -142,6 +162,14 @@ class Loop(object):
 
 
 class ActiveLoop(object):
+    '''
+    Created by attaching actions to a `Loop`, this is the object that actually
+    runs a measurement loop. An `ActiveLoop` can no longer be nested, only run,
+    or used as an action inside another `Loop` which will run the whole thing.
+
+    The `ActiveLoop` determines what `DataArray`s it will need to hold the data
+    it collects, and it creates a `DataSet` holding these `DataArray`s
+    '''
     HALT = 'HALT LOOP'
 
     def __init__(self, sweep_values, delay, *actions):
@@ -167,6 +195,12 @@ class ActiveLoop(object):
         self._monitor = None  # TODO: how to specify this?
 
     def containers(self):
+        '''
+        Finds the data arrays that will be created by the actions in this
+        loop, and nests them inside this level of the loop.
+
+        Recursively calls `.containers` on any enclosed actions.
+        '''
         loop_size = len(self.sweep_values)
         loop_array = DataArray(parameter=self.sweep_values.parameter)
         loop_array.nest(size=loop_size)

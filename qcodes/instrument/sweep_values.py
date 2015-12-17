@@ -52,11 +52,18 @@ class SweepValues(object):
             self.set_async = mock_async(parameter.set)
 
     def validate(self, values):
+        '''
+        check that all values are allowed for this Parameter
+        '''
         if hasattr(self.parameter, 'validate'):
             for value in values:
                 self.parameter.validate(value)
 
     def __iter__(self):
+        '''
+        must be overridden (along with __next__ if this returns self)
+        by a subclass to tell how to iterate over these values
+        '''
         raise NotImplementedError
 
 
@@ -98,7 +105,6 @@ class SweepFixedValues(SweepValues):
     '''
     def __init__(self, parameter, keys):
         super().__init__(parameter)
-        self._values = []
         keyset = keys if is_sequence(keys) else (keys,)
 
         for key in keyset:
@@ -175,7 +181,7 @@ class AdaptiveSweep(SweepValues):
     an example class to show how adaptive sampling might be implemented
 
     usage:
-    measurement.sweep(AdaptiveSweep(param, start, end, target_delta))
+    Loop(AdaptiveSweep(param, start, end, target_delta), delay).run()
 
     inputs:
         start: initial parameter value

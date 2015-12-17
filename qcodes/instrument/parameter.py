@@ -138,6 +138,9 @@ class Parameter(Metadatable):
             raise TypeError('vals must be a Validator')
 
     def validate(self, value):
+        '''
+        raises a ValueError if this value is not allowed for this Parameter
+        '''
         if not self._vals.is_valid(value):
             raise ValueError(
                 '{} is not a valid value for {}'.format(value, self.name))
@@ -203,6 +206,9 @@ class InstrumentParameter(Parameter):
                                  ' Parameter {}'.format(self.name))
 
     def snapshot_base(self):
+        '''
+        json state of the Parameter
+        '''
         snap = {}
         if self._last_value is not None:
             snap['value'] = self._last_value
@@ -302,6 +308,15 @@ class InstrumentParameter(Parameter):
         self._save_val(value)
 
     def set_sweep(self, sweep_step, sweep_delay, max_val_age=None):
+        '''
+        configure this Parameter to set using a stair-step sweep
+
+        This means a single .set call will generate many instrument writes
+        so that the value only changes at most sweep_step in a time sweep_delay
+
+        max_val_age: max time (in seconds) to trust a saved value. Important
+        since we need to know what value we're starting from in this sweep.
+        '''
         if sweep_step is not None or sweep_delay is not None:
             if not self._vals.is_numeric:
                 raise TypeError('you can only sweep numeric parameters')

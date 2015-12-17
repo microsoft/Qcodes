@@ -107,6 +107,13 @@ def syncable_command(param_count, cmd=None, acmd=None,
 
 
 class _SyncableCommand(object):
+    '''
+    Creates sync and async versions of the same callable
+
+    This should not be constructed directly, only by syncable_command.
+    Structured as a class because we can't use closures with spawn
+    multiprocessing.
+    '''
     def __init__(self, param_count, cmd, acmd, exec_str, aexec_str,
                  parse_function, no_cmd_function):
         self.param_count = param_count

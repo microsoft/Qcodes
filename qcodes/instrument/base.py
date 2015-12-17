@@ -78,10 +78,18 @@ class Instrument(Metadatable):
     ##########################################################################
 
     def write(self, cmd):
+        '''
+        The Instrument base class has no hardware connection. This .write
+        converts to the async version if the subclass supplies one.
+        '''
         wait_for_async(self.write_async, cmd)
 
     @asyncio.coroutine
     def write_async(self, cmd):
+        '''
+        The Instrument base class has no hardware connection. This .write_async
+        converts to the sync version if the subclass supplies one.
+        '''
         # check if the paired function is still from the base class (so we'd
         # have a recursion loop) notice that we only have to do this in one
         # of the pair, because the other will call this one.
@@ -91,20 +99,36 @@ class Instrument(Metadatable):
         self.write(cmd)
 
     def read(self):
+        '''
+        The Instrument base class has no hardware connection. This .read
+        converts to the async version if the subclass supplies one.
+        '''
         return wait_for_async(self.read_async)
 
     @asyncio.coroutine
     def read_async(self):
+        '''
+        The Instrument base class has no hardware connection. This .read_async
+        converts to the sync version if the subclass supplies one.
+        '''
         if self.read.__func__ is Instrument.read:
             raise NotImplementedError(
                 'instrument {} has no read method defined'.format(self.name))
         return self.read()
 
     def ask(self, cmd):
+        '''
+        The Instrument base class has no hardware connection. This .ask
+        converts to the async version if the subclass supplies one.
+        '''
         return wait_for_async(self.ask_async, cmd)
 
     @asyncio.coroutine
     def ask_async(self, cmd):
+        '''
+        The Instrument base class has no hardware connection. This .ask_async
+        converts to the sync version if the subclass supplies one.
+        '''
         if self.ask.__func__ is Instrument.ask:
             raise NotImplementedError(
                 'instrument {} has no ask method defined'.format(self.name))

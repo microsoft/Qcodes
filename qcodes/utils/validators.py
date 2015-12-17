@@ -5,6 +5,9 @@ BIGINT = int(1e18)
 
 
 def range_str(min_val, max_val, name):
+    '''
+    utility to represent ranges in Validator repr's
+    '''
     if max_val is not None:
         if min_val is not None:
             if max_val == min_val:
