@@ -2,7 +2,7 @@
 
 import math
 
-from qcodes import MockInstrument
+from qcodes import MockInstrument, Parameter, Loop
 from qcodes.utils.validators import Numbers
 
 
@@ -104,3 +104,18 @@ class MockMeter(MockInstrument):
         self.add_parameter('amplitude',
                            get_cmd='ampl?',
                            parse_function=float)
+
+
+class AverageGetter(Parameter):
+    def __init__(self, measured_param, sweep_values, delay):
+        super().__init__(name='avg_' + measured_param.name)
+        self.measured_param = measured_param
+        self.sweep_values = sweep_values
+        self.delay = delay
+        if hasattr(measured_param, 'label'):
+            self.label = 'Average: ' + measured_param.label
+
+    def get(self):
+        loop = Loop(self.sweep_values, self.delay).each(self.measured_param)
+        data = loop.run(background=False, data_manager=False, location=False)
+        return list(data.arrays.values())[0].mean()

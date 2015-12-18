@@ -22,6 +22,8 @@ class DataSet(object):
         what exactly this means depends on io and formatter
         if you omit *everything*, will try to pull location (and mode)
         from the live measurement
+        location=False means this is a temporary DataSet and
+        cannot be stored or read.
 
     arrays: a dict of array_id: DataArray's contained in this DataSet
 
@@ -33,6 +35,10 @@ class DataSet(object):
         DataMode.PULL_FROM_SERVER: pulls changes from the DataServer
             on calling sync(). Reverts to local if and when this
             DataSet stops being the live measurement
+
+    data_manager: usually omitted (default None) to get the default
+        DataManager. But False is different: that means do NOT connect
+        to any DataManager (implies mode=LOCAL)
 
     formatter: knows how to read and write the file format
 
@@ -51,6 +57,9 @@ class DataSet(object):
         self.formatter = formatter or self.default_formatter
         self.io = io or self.default_io
 
+        if data_manager is False:
+            # you cannot set any other mode without a DataManager
+            mode = DataMode.LOCAL
         if mode is None:
             if arrays:
                 # no mode but arrays provided - assume the user is doing
@@ -68,7 +77,7 @@ class DataSet(object):
             for array in arrays:
                 self.add_array(array)
 
-        if not data_manager:
+        if data_manager is None:
             data_manager = get_data_manager()
 
         if mode == DataMode.LOCAL:
@@ -255,6 +264,8 @@ class DataSet(object):
         '''
         Read the whole DataSet from storage, overwriting the local data
         '''
+        if self.location is False:
+            return
         self.formatter.read(self)
 
     def write(self):
@@ -266,6 +277,8 @@ class DataSet(object):
             raise RuntimeError('This object is connected to a DataServer '
                                'and should be saved from there.')
 
+        if self.location is False:
+            return
         self.formatter.write(self)
 
     def close(self):

@@ -355,7 +355,8 @@ class ActiveLoop(object):
             depends on formatter and io
         formatter: knows how to read and write the file format
         io: knows how to connect to the storage (disk vs cloud etc)
-        data_manager: a DataManager instance (omit to use default)
+        data_manager: a DataManager instance (omit to use default,
+            False to store locally and not write to disk)
         background: (default True) run this sweep in a separate process
             so we can have live plotting and other analysis in the main process
         use_async: (default True): execute the sweep asynchronously as much
@@ -374,9 +375,12 @@ class ActiveLoop(object):
             else:
                 raise RuntimeError(
                     'a loop is already running in the background')
+        if data_manager is False:
+            data_mode = DataMode.LOCAL
+        else:
+            data_mode = DataMode.PUSH_TO_SERVER
 
-        data_set = DataSet(arrays=self.containers(),
-                           mode=DataMode.PUSH_TO_SERVER,
+        data_set = DataSet(arrays=self.containers(), mode=data_mode,
                            data_manager=data_manager, location=location,
                            formatter=formatter, io=io)
         signal_queue = mp.Queue()
