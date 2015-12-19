@@ -118,4 +118,4 @@ class AverageGetter(Parameter):
     def get(self):
         loop = Loop(self.sweep_values, self.delay).each(self.measured_param)
         data = loop.run(background=False, data_manager=False, location=False)
-        return list(data.arrays.values())[0].mean()
+        return data.arrays[self.measured_param.name].mean()
