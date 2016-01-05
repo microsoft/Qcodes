@@ -58,3 +58,8 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Generated data
+*.csv
+*.data
+*.hdf5
