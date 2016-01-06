@@ -13,7 +13,8 @@ class RS_SGS100A(VisaInstrument):
     This is the qcodes driver for the Rohde & Schwarz SGS100A signal generator
 
     This driver will most likely work for multiple Rohde & Schwarz sources.
-    it would be a good
+    it would be a good idea to group all similar RS drivers together in one
+    module.
     This driver does not contain all commands available for the RS_SGS100A but
     only the ones most commonly used.
     '''
@@ -54,6 +55,7 @@ class RS_SGS100A(VisaInstrument):
                            vals=vals.Strings())
         self.add_function('reset', call_cmd='*RST')
         self.add_function('run_self_tests', call_cmd='*TST?')
+        print('Connected to \n', self.get('IDN').replace(',', '\n'))
 
     def parse_on_off(self, stat):
         if stat == '0\n':

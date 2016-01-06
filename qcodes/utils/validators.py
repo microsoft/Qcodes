@@ -50,6 +50,20 @@ class Anything(Validator):
         return '<Anything>'
 
 
+class Bool(Validator):
+    '''
+    requires a boolean
+    '''
+    def __init__(self):
+        pass
+
+    def is_valid(self, value):
+        return (isinstance(value, bool))
+
+    def __repr_(self):
+        return '<Boolean>'
+
+
 class Strings(Validator):
     '''
     requires a string
