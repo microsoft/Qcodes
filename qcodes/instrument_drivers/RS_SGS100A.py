@@ -85,3 +85,9 @@ class RS_SGS100A(VisaInstrument):
         else:
             raise ValueError('Unable to set source to %s,\
                              expected "INT" or "EXT"' % source)
+
+    def on(self):
+        self.set('status', 'on')
+
+    def off(self):
+        self.set('status', 'off')
