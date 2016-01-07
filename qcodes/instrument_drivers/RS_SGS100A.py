@@ -58,9 +58,9 @@ class RS_SGS100A(VisaInstrument):
         print('Connected to \n', self.get('IDN').replace(',', '\n'))
 
     def parse_on_off(self, stat):
-        if stat == '0\n':
+        if stat.startswith('0'):
             stat = 'Off'
-        elif stat == '1\n':
+        elif stat.startswith('1'):
             stat = 'On'
         return stat
 
