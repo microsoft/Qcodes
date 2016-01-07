@@ -144,7 +144,9 @@ class Ints(Validator):
         else:
             raise TypeError('min_value must be an integer')
 
-        if isinstance(max_value, int) and max_value > min_value:
+        if not isinstance(max_value, int):
+            raise TypeError('max_value must be an integer')
+        if max_value > min_value:
             self._max_value = max_value
         else:
             raise TypeError(
