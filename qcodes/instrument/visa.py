@@ -37,16 +37,14 @@ class VisaInstrument(Instrument):
         error messages
         '''
         if ret_code != 0:
-            raise visa.VisaIOError(ret_code[1])
+            raise visa.VisaIOError(ret_code)
 
     @asyncio.coroutine
     def write_async(self, cmd):
         # TODO: lock, async
-        # TODO: return value does not yet get passed back to the notebook but
-        # get's caught somewhere in the parameter functions
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
-        return ret_code
+        return
 
     @asyncio.coroutine
     def ask_async(self, cmd):
