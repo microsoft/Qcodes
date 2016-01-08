@@ -197,9 +197,13 @@ def reload_code(pattern=None, lib=False, site=False):
     '''
     reloaded_files = []
 
-    for module in sys.modules.values():
-        if (pattern is None or pattern in module.__name__):
-            reload_recurse(module, reloaded_files, lib, site)
+    for i in range(2):
+        # sometimes we need to reload twice to propagate all links,
+        # even though we reload the deepest modules first. Not sure if
+        # twice is always sufficient, but we'll try it.
+        for module in sys.modules.values():
+            if (pattern is None or pattern in module.__name__):
+                reload_recurse(module, reloaded_files, lib, site)
 
     return reloaded_files
 
