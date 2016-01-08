@@ -230,62 +230,87 @@ class ActiveLoop(object):
     def _parameter_arrays(self, action):
         out = []
 
-        size = getattr(action, 'size', ())
-        if isinstance(size, int):
-            size = (size,)
-            sp_blank = None
-        else:
-            size = tuple(size)
-            sp_blank = (None,) * len(size)
-
-        ndim = len(size)
-        if ndim:
-            for dim in self.size:
-                if not isinstance(dim, int) or dim <= 0:
-                    raise ValueError('size must consist of positive '
-                                     'integers, not ' + repr(dim))
-            sp_vals = getattr(action, 'setpoints', sp_blank)
-            sp_names = getattr(action, 'sp_names', sp_blank)
-            sp_labels = getattr(action, 'sp_labels', sp_blank)
-
-            if sp_blank is None:
-                sp_vals = (sp_vals,)
-                sp_names = (sp_names,)
-                sp_labels = (sp_labels,)
-
-            if (len(sp_vals) != ndim or len(sp_names) != ndim or
-                    len(sp_labels) != ndim):
-                raise ValueError('Wrong number of setpoint, setpoint names, '
-                                 'or setpoint labels provided')
-
-            for i, sp in enumerate(zip(sp_vals, sp_names, sp_labels)):
-                out.append(self._make_setpoint_array(size, i, tuple(out), *sp))
-        else:
-            setpoints = ()
-
+        # first massage all the input parameters to the general multi-name form
         if hasattr(action, 'names'):
             names = action.names
             labels = getattr(action, 'labels', names)
-            for i, (name, label) in enumerate(zip(names, labels)):
-                out.append(DataArray(name=name, label=label, size=size,
-                           action_indices=(i,), set_arrays=setpoints))
-
+            if len(labels) != len(names):
+                raise ValueError('must have equal number of names and labels')
+            action_indices = tuple((i,) for i in range(len(names)))
         elif hasattr(action, 'name'):
-            name = action.name
-            label = getattr(action, 'label', name)
-            out.append(DataArray(name=name, label=label, size=size,
-                                 action_indices=(), set_arrays=setpoints))
-
+            names = (action.name,)
+            labels = (getattr(action, 'label', action.name),)
+            action_indices = ((),)
         else:
             raise ValueError('a gettable parameter must have .name or .names')
 
+        num_arrays = len(names)
+        sizes = getattr(action, 'sizes', None)
+        sp_vals = getattr(action, 'setpoints', None)
+        sp_names = getattr(action, 'setpoint_names', None)
+        sp_labels = getattr(action, 'setpoint_labels', None)
+
+        if sizes is None:
+            sizes = (getattr(action, 'size', ()),) * num_arrays
+            sp_vals = (sp_vals,) * num_arrays
+            sp_names = (sp_names,) * num_arrays
+            sp_labels = (sp_labels,) * num_arrays
+        else:
+            sp_blank = (None,) * num_arrays
+            # _fill_blank both supplies defaults and tests length
+            # if values are supplied (for sizes it ONLY tests length)
+            sizes = self._fill_blank(sizes, sp_blank)
+            sp_vals = self._fill_blank(sp_vals, sp_blank)
+            sp_names = self._fill_blank(sp_names, sp_blank)
+            sp_labels = self._fill_blank(sp_labels, sp_blank)
+
+        # now loop through these all, to make the DataArrays
+        # record which setpoint arrays we've made, so we don't duplicate
+        all_setpoints = {}
+        for name, label, size, i, sp_vi, sp_ni, sp_li in zip(
+                names, labels, sizes, action_indices,
+                sp_vals, sp_names, sp_labels):
+
+            # convert the integer form of each size etc. to the tuple form
+            if isinstance(size, int):
+                size = (size,)
+                sp_vi = (sp_vi,)
+                sp_ni = (sp_ni,)
+                sp_li = (sp_li,)
+            elif size is None or size == ():
+                size, sp_vi, sp_ni, sp_li = (), (), (), ()
+            else:
+                sp_blank = (None,) * len(size)
+                sp_vi = self._fill_blank(sp_vi, sp_blank)
+                sp_ni = self._fill_blank(sp_ni, sp_blank)
+                sp_li = self._fill_blank(sp_li, sp_blank)
+
+            setpoints = ()
+            # loop through dimensions of size to make the setpoint arrays
+            for j, (vij, nij, lij) in enumerate(zip(sp_vi, sp_ni, sp_li)):
+                sp_def = (size[: 1 + j], j, setpoints, vij, nij, lij)
+                if sp_def not in all_setpoints:
+                    all_setpoints[sp_def] = self._make_setpoint_array(*sp_def)
+                    out.append(all_setpoints[sp_def])
+                setpoints = setpoints + (all_setpoints[sp_def],)
+
+            # finally, make the output data array with these setpoints
+            out.append(DataArray(name=name, label=label, size=size,
+                       action_indices=i, set_arrays=setpoints))
+
         return out
 
-    def _make_setpoint_array(self, size, i, prev_setpoints, vals, name, label):
-        this_size = size[: i + 1]
+    def _fill_blank(self, inputs, blanks):
+        if inputs is None:
+            return blanks
+        elif len(inputs) == len(blanks):
+            return inputs
+        else:
+            raise ValueError('Wrong number of inputs supplied')
 
+    def _make_setpoint_array(self, size, i, prev_setpoints, vals, name, label):
         if vals is None:
-            vals = self._default_setpoints(this_size)
+            vals = self._default_setpoints(size)
         elif isinstance(vals, DataArray):
             # can't simply use the DataArray, even though that's
             # what we're going to return here, because it will
@@ -303,18 +328,15 @@ class ActiveLoop(object):
             # turn any sequence into a (new) numpy array
             vals = np.array(vals)
 
-        if vals.shape != this_size:
+        if vals.shape != size:
             raise ValueError('nth setpoint array should have size matching '
                              'the first n dimensions of size.')
 
         if name is None:
-            if len(size) > 1:
-                name = 'index{}'.format(i + 1)
-            else:
-                name = 'index'
+            name = 'index{}'.format(i)
 
         return DataArray(name=name, label=label, set_arrays=prev_setpoints,
-                         size=this_size, preset_data=vals)
+                         size=size, preset_data=vals)
 
     def _default_setpoints(self, size):
         if len(size) == 1:

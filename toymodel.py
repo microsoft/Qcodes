@@ -2,7 +2,7 @@
 
 import math
 
-from qcodes import MockInstrument, Parameter, Loop
+from qcodes import MockInstrument, Parameter, Loop, DataArray
 from qcodes.utils.validators import Numbers
 
 
@@ -117,5 +117,29 @@ class AverageGetter(Parameter):
 
     def get(self):
         loop = Loop(self.sweep_values, self.delay).each(self.measured_param)
-        data = loop.run(background=False, data_manager=False, location=False)
+        data = loop.run(background=False, data_manager=False, location=False,
+                        quiet=True)
         return data.arrays[self.measured_param.name].mean()
+
+
+class AverageAndRaw(Parameter):
+    def __init__(self, measured_param, sweep_values, delay):
+        name = measured_param.name
+        super().__init__(names=(name, 'avg_' + name))
+        self.measured_param = measured_param
+        self.sweep_values = sweep_values
+        self.delay = delay
+        self.sizes = (len(sweep_values), None)
+        set_array = DataArray(parameter=sweep_values.parameter,
+                              preset_data=sweep_values)
+        self.setpoints = (set_array, None)
+        if hasattr(measured_param, 'label'):
+            self.labels = (measured_param.label,
+                           'Average: ' + measured_param.label)
+
+    def get(self):
+        loop = Loop(self.sweep_values, self.delay).each(self.measured_param)
+        data = loop.run(background=False, data_manager=False, location=False,
+                        quiet=True)
+        array = data.arrays[self.measured_param.name]
+        return (array, array.mean())
