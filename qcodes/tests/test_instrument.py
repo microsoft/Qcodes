@@ -2,7 +2,7 @@ import asyncio
 from unittest import TestCase
 from datetime import datetime, timedelta
 
-from qcodes.instrument.base import BaseInstrument
+from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType
 from qcodes.utils.sync_async import wait_for_async, NoCommandError
@@ -313,7 +313,7 @@ class TestParameters(TestCase):
                          self.read_response)
 
     def test_base_instrument_errors(self):
-        b = BaseInstrument('silent')
+        b = Instrument('silent')
 
         with self.assertRaises(NotImplementedError):
             b.read()

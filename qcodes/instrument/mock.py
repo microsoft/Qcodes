@@ -2,28 +2,28 @@ import asyncio
 import time
 from datetime import datetime
 
-from qcodes.instrument.base import BaseInstrument
+from .base import Instrument
 
 
-class MockInstrument(BaseInstrument):
+class MockInstrument(Instrument):
+    '''
+    Creates a software instrument, for modeling or testing
+    inputs:
+        name: (string) the name of this instrument
+        delay: the time (in seconds) to wait after any operation
+            to simulate communication delay
+        model: an object with write and ask methods, taking 2 or 3 args:
+            instrument: the name of the instrument
+            parameter: the name of the parameter
+            value (write only): the value to write, as a string
+
+    parameters to pass to model should be declared with:
+        get_cmd = param_name + '?'
+        set_cmd = param_name + ' {:.3f}' (specify the format & precision)
+    alternatively independent functions may still be provided.
+    '''
     def __init__(self, name, delay=0, model=None, keep_history=True,
                  use_async=False, read_response=None, **kwargs):
-        '''
-        Creates a software instrument, for modeling or testing
-        inputs:
-            name: (string) the name of this instrument
-            delay: the time (in seconds) to wait after any operation
-                to simulate communication delay
-            model: an object with write and ask methods, taking 2 or 3 args:
-                instrument: the name of the instrument
-                parameter: the name of the parameter
-                value (write only): the value to write, as a string
-
-        parameters to pass to model should be declared with:
-            get_cmd = param_name + '?'
-            set_cmd = param_name + ' {:.3f}' (specify the format & precision)
-        alternatively independent functions may still be provided.
-        '''
         super().__init__(name, **kwargs)
 
         if not isinstance(delay, (int, float)) or delay < 0:

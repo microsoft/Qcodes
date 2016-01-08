@@ -12,6 +12,9 @@ class Function(Metadatable):
         defines a function (with arbitrary parameters) that this instrument
         can execute.
 
+        You execute this function object like a normal function, or use its
+        .call method; or call it async with the .call_async method.
+
         instrument: an instrument that handles this function
         name: the local name of this parameter
         call_cmd: command to execute on instrument
@@ -52,6 +55,9 @@ class Function(Metadatable):
             ask_or_write, ask_or_write_async, parse_function)
 
     def validate(self, args):
+        '''
+        check that all arguments to this Function are allowed
+        '''
         if len(args) != self._param_count:
             raise TypeError(
                 '{} called with {} parameters but requires {}'.format(
@@ -64,6 +70,10 @@ class Function(Metadatable):
                 raise ValueError(
                     '{} is not a valid value for parameter {} of {}'.format(
                         value, i, self.name))
+
+    def __call__(self, *args):
+        self.validate(args)
+        return self._call(*args)
 
     def call(self, *args):
         self.validate(args)
