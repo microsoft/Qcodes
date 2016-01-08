@@ -388,7 +388,9 @@ class ActiveLoop(object):
 
         if use_async:
             raise NotImplementedError  # TODO
-        loop_fn = mock_sync(self._async_loop) if use_async else self._run_loop
+            loop_fn = mock_sync(self._async_loop)
+        else:
+            loop_fn = self._run_wrapper
 
         if background:
             # TODO: in notebooks, errors in a background sweep will just appear
@@ -439,6 +441,13 @@ class ActiveLoop(object):
         else:
             raise TypeError('unrecognized action', action)
 
+    def _run_wrapper(self, *args, **kwargs):
+        try:
+            self._run_loop(*args, **kwargs)
+        finally:
+            if(hasattr(self, 'data_set') and hasattr(self.data_set, 'close')):
+                self.data_set.close()
+
     def _run_loop(self, first_delay=0, action_indices=(),
                   loop_indices=(), current_values=(),
                   **ignore_kwargs):
@@ -481,9 +490,6 @@ class ActiveLoop(object):
 
             # after the first setpoint, delay reverts to the loop delay
             delay = self.delay
-
-        if not current_values:
-            self.data_set.close()
 
     def _wait(self, delay):
         finish_datetime = datetime.now() + timedelta(seconds=delay)
