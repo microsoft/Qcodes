@@ -94,15 +94,19 @@ class Loop(object):
     '''
     The entry point for creating measurement loops
 
-    Describes a sequence of `Parameter` settings to loop over. When you attach
-    `action`s to a `Loop`, it becomes an `ActiveLoop` that you can `.run()`, or
-    you can run a `Loop` directly, in which case it takes the default `action`s
-    from the default `Station`
+    sweep_values - a SweepValues or compatible object describing what
+        parameter to set in the loop and over what values
+    delay - a number of seconds to wait after setting a value before
+        continuing.
+
+    After creating a Loop, you attach `action`s to it, making an `ActiveLoop`
+    that you can `.run()`, or you can `.run()` a `Loop` directly, in which
+    case it takes the default `action`s from the default `Station`
 
     `actions` are a sequence of things to do at each `Loop` step: they can be
     `Parameter`s to measure, `Task`s to do (any callable that does not yield
-    data), `Wait` times, other `ActiveLoop`s to nest inside this one, or
-    `Loop`s to nest using the default `actions`.
+    data), `Wait` times, or other `ActiveLoop`s or `Loop`s to nest inside
+    this one.
     '''
     def __init__(self, sweep_values, delay):
         self.sweep_values = sweep_values
