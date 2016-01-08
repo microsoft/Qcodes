@@ -415,10 +415,9 @@ class GNUPlotFormat(Formatter):
 
         extra_files = existing_files - written_files
         if extra_files:
-            # TODO log this? Doesn't seem like it should raise, but we want
-            # to know about it somehow. If this data set is read back in, it
-            # will get the extra files included.
-            pass
+            print('removing obsolete files: ' + ','.join(extra_files))
+            for fn in extra_files:
+                io_manager.remove(fn)
 
     def _make_header(self, group):
         ids, labels = [], []
