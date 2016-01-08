@@ -29,10 +29,24 @@ class VisaInstrument(Instrument):
         self.visa_handle.timeout = 1000.0 * timeout
         self._timeout = timeout
 
+    def check_error(self, ret_code):
+        '''
+        Default error checking, raises an error if return code !=0
+        does not differentiate between warnings or specific error messages
+        overwrite this function in your driver if you want to add specific
+        error messages
+        '''
+        if ret_code != 0:
+            raise visa.VisaIOError(ret_code[1])
+
     @asyncio.coroutine
     def write_async(self, cmd):
         # TODO: lock, async
-        self.visa_handle.write(cmd)
+        # TODO: return value does not yet get passed back to the notebook but
+        # get's caught somewhere in the parameter functions
+        nr_bytes_written, ret_code = self.visa_handle.write(cmd)
+        self.check_error(ret_code)
+        return ret_code
 
     @asyncio.coroutine
     def ask_async(self, cmd):
