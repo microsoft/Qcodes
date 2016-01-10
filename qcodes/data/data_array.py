@@ -1,4 +1,7 @@
 import numpy as np
+import collections
+
+import qcodes
 
 
 class DataArray(object):
@@ -15,12 +18,13 @@ class DataArray(object):
     when it's first created, a DataArray has no dimensionality, you must call
     .nest for each dimension.
 
-    if preset_data is provided (a numpy array matching size) it is used to
-    initialize the data, and the array can still be nested around it.
+    if preset_data is provided it is used to initialize the data, and the array
+    can still be nested around it (making many copies of the data).
     Otherwise it is an error to nest an array that already has data.
     '''
     def __init__(self, parameter=None, name=None, label=None, array_id=None,
-                 set_arrays=(), size=(), action_indices=(), preset_data=None):
+                 set_arrays=(), size=None, action_indices=(),
+                 preset_data=None):
         if parameter is not None:
             self.name = parameter.name
             self.label = getattr(parameter, 'label', self.name)
@@ -34,8 +38,10 @@ class DataArray(object):
         self._preset = False
 
         self.data = None
-        if size:
+        if preset_data is not None:
             self.init_data(preset_data)
+        elif size is None:
+            self.size = ()
 
         self.action_indices = action_indices
         self.last_saved_index = None
@@ -54,7 +60,7 @@ class DataArray(object):
         '''
         if self.data is not None and not self._preset:
             raise RuntimeError('Only preset arrays can be nested after data '
-                               'is initialized.')
+                               'is initialized! {}'.format(self))
 
         if set_array is None:
             if self.set_arrays:
@@ -86,9 +92,20 @@ class DataArray(object):
         meaning it can still be nested around this data.
         '''
         if data is not None:
-            if data.shape != self.size:
-                raise ValueError('preset data must be a numpy array '
-                                 'with size matching the array size')
+            if not isinstance(data, np.ndarray):
+                if isinstance(data, collections.Iterator):
+                    # faster than np.array(tuple(data)) (or via list)
+                    # but requires us to assume float
+                    data = np.fromiter(data, float)
+                else:
+                    data = np.array(data)
+
+            if self.size is None:
+                self.size = data.shape
+            elif data.shape != self.size:
+                raise ValueError('preset data must be a sequence '
+                                 'with size matching the array size',
+                                 data.shape, self.size)
             self.data = data
             self._preset = True
         elif self.data is not None:

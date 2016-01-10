@@ -31,7 +31,7 @@ class Instrument(Metadatable):
         anything the user can set and/or get
 
         `name` is how the InstrumentParameter will be stored within
-        instrument.parameters and also how you  address it using the
+        instrument.parameters and also how you address it using the
         shortcut methods:
         instrument.set(param_name, value) etc.
 

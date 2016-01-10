@@ -35,10 +35,14 @@ The main thing these managers need to implement is the open context manager:
 IO managers should also implement:
 - a join method, ala os.path.join(*args).
 - a list method, that returns all objects matching location
+- a remove method, ala os.remove(path) except that it will remove directories
+    as well as files, since we're allowing "locations" to be directories
+    or files.
 '''
 
 from contextlib import contextmanager
 import os
+import shutil
 
 ALLOWED_OPEN_MODES = ('r', 'w', 'a')
 
@@ -134,6 +138,13 @@ class DiskIO(object):
                 out.append(self.join(base_location, match))
 
         return out
+
+    def remove(self, filename):
+        path = self._add_base(filename)
+        if(os.path.isdir(path)):
+            shutil.rmtree(path)
+        else:
+            os.remove(path)
 
 
 class FileWrapper(object):

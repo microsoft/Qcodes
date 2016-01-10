@@ -151,23 +151,27 @@ class Formatter(object):
         '''
         find the sets of arrays which share all the same setpoint arrays
         so each set can be grouped together into one file
-        returns dimension list, set_array list, and data_array list
+        returns ArrayGroup namedtuples
         '''
 
-        all_set_arrays = tuple(set(array.set_arrays
+        set_array_sets = tuple(set(array.set_arrays
                                    for array in arrays.values()))
-        grouped_data = [[] for _ in all_set_arrays]
+        all_set_arrays = set()
+        for set_array_set in set_array_sets:
+            all_set_arrays.update(set_array_set)
+
+        grouped_data = [[] for _ in set_array_sets]
 
         for array in arrays.values():
-            i = all_set_arrays.index(array.set_arrays)
-            if array.set_arrays[-1] != array:
+            i = set_array_sets.index(array.set_arrays)
+            if array not in all_set_arrays:  # array.set_arrays[-1] != array:
                 # don't include the setpoint array itself in the data
                 grouped_data[i].append(array)
 
         out = []
-        for set_arrays, data in zip(all_set_arrays, grouped_data):
+        for set_arrays, data in zip(set_array_sets, grouped_data):
             leni = len(set_arrays)
-            if not data and any(1 for other_set_arrays in all_set_arrays if
+            if not data and any(1 for other_set_arrays in set_array_sets if
                                 len(other_set_arrays) > leni and
                                 other_set_arrays[:leni] == set_arrays):
                 # this is an outer loop that doesn't have any data of its own,
@@ -415,10 +419,9 @@ class GNUPlotFormat(Formatter):
 
         extra_files = existing_files - written_files
         if extra_files:
-            # TODO log this? Doesn't seem like it should raise, but we want
-            # to know about it somehow. If this data set is read back in, it
-            # will get the extra files included.
-            pass
+            print('removing obsolete files: ' + ','.join(extra_files))
+            for fn in extra_files:
+                io_manager.remove(fn)
 
     def _make_header(self, group):
         ids, labels = [], []

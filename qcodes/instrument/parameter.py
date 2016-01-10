@@ -53,8 +53,8 @@ class Parameter(Metadatable):
     def __init__(self,
                  name=None, names=None,
                  label=None, labels=None,
-                 size=None, setpoints=None,
-                 setpoint_names=None, setpoint_labels=None,
+                 size=None, sizes=None,
+                 setpoints=None, setpoint_names=None, setpoint_labels=None,
                  vals=None, **kwargs):
         '''
         defines one generic parameter, not necessarily part of
@@ -73,6 +73,7 @@ class Parameter(Metadatable):
             was acquired in the hardware and all sent to the computer at once)
         4.  2 & 3 together: a sequence of arrays. All arrays should be the same
             size.
+        5.  a sequence of differently sized items
 
         Because .set only supports a single value, if a Parameter is both
         gettable AND settable, .get should return a single value too (case 1)
@@ -81,27 +82,36 @@ class Parameter(Metadatable):
 
         name: (1&3) the local name of this parameter, should be a valid
             identifier, ie no spaces or special characters
-        names: (2&4) a tuple of names
+        names: (2,4,5) a tuple of names
 
         label: (1&3) string to use as an axis label for this parameter
             defaults to name
-        labels: (2&4) a tuple of labels
+        labels: (2,4,5) a tuple of labels
 
         size: (3&4) an integer or tuple of integers for the size of array
             returned by .get(). Can be an integer only if the array is 1D, but
             as a tuple it can describe any dimensionality (including 1D)
             If size is an integer then setpoints, setpoint_names,
             and setpoint_labels should also not be wrapped in tuples.
-        setpoints: (3&4) the setpoints for the returned array of values.
-            The first array should be 1D, the second 2D, etc.
+        sizes: (5) a tuple of integers or tuples, each one as in `size`.
+
+        setpoints: (3,4,5) the setpoints for the returned array of values.
+            3&4 - This should be an array if `size` is an integer, or a
+                tuple of arrays if `size` is a tuple
+                The first array should be 1D, the second 2D, etc.
+            5 - This should be a tuple of arrays or tuples, each item as above
+                Single values should be denoted by None or (), not 1 (because 1
+                would be a length-1 array)
             Defaults to integers from zero in each respective direction
             Each may be either a DataArray, a numpy array, or a sequence
             (sequences will be converted to numpy arrays)
             NOTE: if the setpoints will be different each measurement, leave
             this out and return the setpoints (with extra names) in the get.
-        setpoint_names: (3&4) one identifier (like name) per setpoint array.
-            Ignored if setpoints are DataArrays, which already have names.
-        setpoint_labels: (3&4) one label (like label above) per setpoint array.
+        setpoint_names: (3,4,5) one identifier (like `name`) per setpoint
+            array.
+            Ignored if `setpoints` are DataArrays, which already have names.
+        setpoint_labels: (3&4) one label (like `label`) per setpoint array.
+            Overridden if `setpoints` are DataArrays and already have labels.
 
         vals: allowed values for setting this parameter (only relevant
             if it has a setter)
@@ -123,8 +133,12 @@ class Parameter(Metadatable):
         else:
             raise ValueError('either name or names is required')
 
-        if size is not None:
-            self.size = size
+        if size is not None or sizes is not None:
+            if size is not None:
+                self.size = size
+            else:
+                self.sizes = sizes
+
             self.setpoints = setpoints
             self.setpoint_names = setpoint_names
             self.setpoint_labels = setpoint_labels
