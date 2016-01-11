@@ -17,6 +17,9 @@ class RS_SGS100A(VisaInstrument):
     module.
     This driver does not contain all commands available for the RS_SGS100A but
     only the ones most commonly used.
+
+    Status: beta-version. Fully usable driver containing only the most
+    commonly used features of the RS source.
     '''
     def __init__(self, name, address):
         super().__init__(name, address)
