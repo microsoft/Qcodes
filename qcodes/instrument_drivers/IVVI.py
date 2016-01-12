@@ -27,6 +27,7 @@ class IVVI(VisaInstrument):
 
     A descriptor for the data protocol can be found at
     http://qtwork.tudelft.nl/~schouten/ivvi/doc-d5/rs232linkformat.txt
+    A copy of this file can be found at the bottom of this file.
     '''
 
     def __init__(self, name, address, reset=False, numdacs=8,
@@ -292,3 +293,65 @@ class IVVI(VisaInstrument):
     #     byte_vec = np.arange(start_byte, stop_byte+1, step)
     #     mvolt_vec = byte_vec/65535.0 * 4000.0 + polnum
     #     return mvolt_vec
+
+
+
+'''
+RS232 PROTOCOL
+-----------------------
+BAUTRATE    115200
+DATA BITS   8
+PARITY      ODD
+STOPBITS    1
+
+Descriptor data PC-> MC
+
+Byte        Name               Description                              value
+--------------------------------------------------------------------------------------------------------
+0        Descriptor size         Size of this descriptor                4 (action 2,4,6,7)
+                                                                        5 (action 7)
+                                                                        7 (action 1,3)
+                                                                        11 (action 5)
+1        Error                                                          0
+2        Data out size           Number of bytes that has to be         2 (action 0,1,3,5,6)
+                                 send by the MC after receiving         3 (action 4)
+                                 descriptor                             4 (action 7)
+                                                                        34 (action 2)
+3        Action                                                         0= no operation
+                                                                        1= set Dac value
+                                                                        2= request DAC data
+                                                                        3= continues send data to DAC
+                                                                        4= ask for Program  ion
+                                                                        5= set bits interface
+                                                                        6= generate trigger output
+                                                                        7= request data from specified DAC
+
+4        Dac nr                  Nr of DAC to be updated                1 to 16
+5        DataH                   High byte to DAC                       0 to $ff
+6        DataL                   Low byte to DAC                        0 to $ff
+7        data bit 24-31          interfaceBit24_31                      0 to $ff
+8        data bit 16-23          interfaceBit16_23                      0 to $ff
+9        data bit 08-15          interfaceBit08_15                      0 to $ff
+10       data bit 00-07          interfaceBit00_07                      0 to $ff
+--------------------------------------------------------------------------------------------------------
+
+
+Descriptor data MC-> PC
+--------------------------------------------------------------------------------------------------------
+0        Descriptor size         Size of this descriptor                1
+1        Error                   0x00 = no Error detected               1
+                                 0x01 =
+                                 0x02 =
+                                 0x04 = Parity
+                                 0x08 = Overrun
+                                 0x10 = Frame Error
+                                 0x20 = WatchDog reset detected (32)
+                                 0x40 = DAC does not exist(64)
+                                 0x80 = WrongAction (128)
+2        Version                 program version                       1
+2        DAC1                    Value of DAC1                         2
+4        DAC2                    Value of DAC2                         2
+..
+32       DAC16                   Value of DAC16                        2
+--------------------------------------------------------------------------------------------------------
+'''
