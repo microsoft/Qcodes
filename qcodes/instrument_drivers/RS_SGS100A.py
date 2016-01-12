@@ -12,14 +12,12 @@ class RS_SGS100A(VisaInstrument):
     '''
     This is the qcodes driver for the Rohde & Schwarz SGS100A signal generator
 
+    Status: beta-version.
     This driver will most likely work for multiple Rohde & Schwarz sources.
     it would be a good idea to group all similar RS drivers together in one
     module.
     This driver does not contain all commands available for the RS_SGS100A but
     only the ones most commonly used.
-
-    Status: beta-version. Fully usable driver containing only the most
-    commonly used features of the RS source.
     '''
     def __init__(self, name, address):
         super().__init__(name, address)
