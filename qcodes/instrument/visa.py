@@ -29,6 +29,12 @@ class VisaInstrument(Instrument):
         self.visa_handle.timeout = 1000.0 * timeout
         self._timeout = timeout
 
+    def __del__(self):
+        '''
+        Close the visa handle upon deleting the object
+        '''
+        self.visa_handle.close()
+
     def check_error(self, ret_code):
         '''
         Default error checking, raises an error if return code !=0

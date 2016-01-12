@@ -67,18 +67,6 @@ class IVVI(VisaInstrument):
         #                        set_cmd=self.set_dac
         #                        parse_function=
 
-    def __del__(self):
-        '''
-        Closes up the IVVI driver
-
-        Input:
-            None
-
-        Output:
-            None
-        '''
-        self.visa_handle.close()
-
     def _get_version(self):
         mes = self.ask(bytes([3, 4]))
         v = mes[2]
