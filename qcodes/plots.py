@@ -1,9 +1,6 @@
 '''
 Live plotting in Jupyter notebooks
 using the nbagg backend
-
-Ironically, this also works best with interactive mode OFF
-(or maybe doesn't care?)
 '''
 import matplotlib.pyplot as plt
 from numpy.ma import masked_invalid as masked
