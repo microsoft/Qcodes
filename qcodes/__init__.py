@@ -4,6 +4,14 @@
 from qcodes.station import Station
 from qcodes.loops import get_bg, halt_bg, Loop, Task, Wait
 
+# hack for code that should only be imported into the main (notebook) thread
+# see: http://stackoverflow.com/questions/15411967
+# in particular, importing matplotlib in the side processes takes a long
+# time and spins up other processes in order to try and get a front end
+import sys as _sys
+if 'ipy' in repr(_sys.stdout):
+    from qcodes.plots import Plot
+
 from qcodes.data.manager import get_data_manager
 from qcodes.data.data_set import DataMode, DataSet
 from qcodes.data.data_array import DataArray
