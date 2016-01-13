@@ -37,6 +37,10 @@ class DataArray(object):
         self.size = size
         self._preset = False
 
+        # store a reference up to the containing DataSet
+        # this also lets us make sure a DataArray is only in one DataSet
+        self._data_set = None
+
         self.data = None
         if preset_data is not None:
             self.init_data(preset_data)
@@ -46,6 +50,18 @@ class DataArray(object):
         self.action_indices = action_indices
         self.last_saved_index = None
         self.modified_range = None
+
+    @property
+    def data_set(self):
+        return self._data_set
+
+    @data_set.setter
+    def data_set(self, new_data_set):
+        if (self._data_set is not None and
+                new_data_set is not None and
+                self._data_set != new_data_set):
+            raise RuntimeError('A DataArray can only be part of one DataSet')
+        self._data_set = new_data_set
 
     def nest(self, size, action_index=None, set_array=None):
         '''

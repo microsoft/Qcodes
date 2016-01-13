@@ -208,11 +208,22 @@ class DataSet(object):
     def add_array(self, data_array):
         '''
         add one DataArray to this DataSet
+
+        note: DO NOT just set data_set.arrays[id] = data_array
+        because this will not check for overriding, nor set the
+        reference back to this DataSet. It would also allow you to
+        load the array in with different id than it holds itself.
+
         '''
+        # TODO: mask self.arrays so you *can't* set it directly
+
         if data_array.array_id in self.arrays:
             raise ValueError('array_id {} already exists in this '
                              'DataSet'.format(data_array.array_id))
         self.arrays[data_array.array_id] = data_array
+
+        # back-reference to the DataSet
+        data_array.data_set = self
 
     def _clean_array_ids(self, arrays):
         '''
