@@ -176,7 +176,10 @@ class Plot(object):
         # once all updaters report they're finished (by returning exactly
         # False) we stop updating the plot.
         if any_updates is False and hasattr(self, 'update_widget'):
-            self.update_widget.halt()
+            self.halt()
+
+    def halt(self):
+        self.update_widget.halt()
 
     def _draw_trace(self, config):
         if 'z' in config:
