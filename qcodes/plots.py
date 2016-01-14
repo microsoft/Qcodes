@@ -178,15 +178,6 @@ class Plot(object):
         if any_updates is False and hasattr(self, 'update_widget'):
             self.update_widget.halt()
 
-    def draw(self):
-        for ax in self.subplots:
-            ax.clear()
-
-        for trace in self.traces:
-            self._draw_trace(trace['config'])
-
-        self.fig.show()
-
     def _draw_trace(self, config):
         if 'z' in config:
             return self._draw_pcolormesh(**config)
