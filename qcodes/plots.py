@@ -212,4 +212,16 @@ class Plot(object):
                 # there's nothing to draw, and anyway it throws a warning
                 return False
 
-        return ax.pcolormesh(*args, **kwargs)
+        pc = ax.pcolormesh(*args, **kwargs)
+
+        if getattr(ax, 'qcodes_colorbar', None):
+            # update_normal doesn't seem to work...
+            ax.qcodes_colorbar.update_bruteforce(pc)
+        else:
+            # TODO: what if there are several colormeshes on this subplot,
+            # do they get the same colorscale?
+            # We should make sure they do, and have it include
+            # the full range of both.
+            ax.qcodes_colorbar = self.fig.colorbar(pc, ax=ax)
+
+        return pc
