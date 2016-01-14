@@ -47,7 +47,7 @@ require([
 
     var HiddenUpdateView = UpdateView.extend({
         display: function(message) {
-            this.$el.parents('.widget-area').hide().css('background-color', '#fff');
+            this.$el.hide();
         }
     });
     manager.WidgetManager.register_widget_view('HiddenUpdateView', HiddenUpdateView);
