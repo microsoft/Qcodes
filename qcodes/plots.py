@@ -126,6 +126,11 @@ class Plot(object):
                     kwargs[axletter] = set_array
 
     def update(self):
+        '''
+        update the data in this plot, using the updaters given with
+        Plot.add() or in the included DataSets, then include this in
+        the plot
+        '''
         any_updates = False
         for updater in self.data_updaters:
             updates = updater()
@@ -179,6 +184,9 @@ class Plot(object):
             self.halt()
 
     def halt(self):
+        '''
+        stop automatic updates to this plot, by canceling its update widget
+        '''
         self.update_widget.halt()
 
     def _draw_trace(self, config):
