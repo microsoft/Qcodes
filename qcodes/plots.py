@@ -29,13 +29,13 @@ class Plot(object):
 
     kwargs: passed along to Plot.add() to add the first data trace
     '''
-    def __init__(self, *args, figsize=(12, 5), interval=1, subplots=(1, 1),
+    def __init__(self, *args, figsize=(8, 5), interval=1, subplots=(1, 1),
                  **kwargs):
 
         if isinstance(subplots, Mapping):
-            self.fig, self.subplots = plt.subplots(**subplots)
+            self.fig, self.subplots = plt.subplots(figsize=figsize, **subplots)
         else:
-            self.fig, self.subplots = plt.subplots(*subplots)
+            self.fig, self.subplots = plt.subplots(*subplots, figsize=figsize)
         if not hasattr(self.subplots, '__len__'):
             self.subplots = (self.subplots,)
 
