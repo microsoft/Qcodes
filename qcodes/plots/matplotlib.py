@@ -12,12 +12,12 @@ from collections import Mapping
 from qcodes.widgets.widgets import HiddenUpdateWidget
 
 
-class Plot(object):
+class MatPlot(object):
     '''
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
-    in the constructor, other traces can be added with Plot.add()
+    in the constructor, other traces can be added with MatPlot.add()
 
-    args: shortcut to provide the x/y/z data. See Plot.add
+    args: shortcut to provide the x/y/z data. See MatPlot.add
 
     figsize: (width, height) tuple to pass to plt.figure
         default (12, 5)
@@ -27,7 +27,7 @@ class Plot(object):
         plt.subplots. default is a single simple subplot (1, 1)
         you can use this to pass kwargs to the plt.figure constructor
 
-    kwargs: passed along to Plot.add() to add the first data trace
+    kwargs: passed along to MatPlot.add() to add the first data trace
     '''
     def __init__(self, *args, figsize=(8, 5), interval=1, subplots=(1, 1),
                  **kwargs):
@@ -52,7 +52,7 @@ class Plot(object):
 
     def add(self, *args, updater=None, **kwargs):
         '''
-        adds one trace to this Plot.
+        adds one trace to this MatPlot.
 
         args: a way to provide x/y/z data without keywords
             The last one is the dependent data, and we look at its
@@ -171,7 +171,7 @@ class Plot(object):
     def update(self):
         '''
         update the data in this plot, using the updaters given with
-        Plot.add() or in the included DataSets, then include this in
+        MatPlot.add() or in the included DataSets, then include this in
         the plot
         '''
         any_updates = False

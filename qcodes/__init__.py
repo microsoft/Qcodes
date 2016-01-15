@@ -10,7 +10,7 @@ from qcodes.loops import get_bg, halt_bg, Loop, Task, Wait
 # time and spins up other processes in order to try and get a front end
 import sys as _sys
 if 'ipy' in repr(_sys.stdout):
-    from qcodes.plots import Plot
+    from qcodes.plots.matplotlib import MatPlot
 
 from qcodes.data.manager import get_data_manager
 from qcodes.data.data_set import DataMode, DataSet
