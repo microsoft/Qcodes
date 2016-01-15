@@ -42,6 +42,8 @@ class Plot(object):
         self.traces = []
         self.data_updaters = set()
 
+        self.title = self.fig.suptitle('')
+
         if args or kwargs:
             self.add(*args, **kwargs)
 
@@ -85,18 +87,59 @@ class Plot(object):
 
         self._find_data_in_set_arrays(kwargs)
 
+        ax = self._get_axes(kwargs)
+        if 'z' in kwargs:
+            plot_object = self._draw_pcolormesh(ax, **kwargs)
+        else:
+            plot_object = self._draw_plot(ax, **kwargs)
+
+        self._update_labels(ax, kwargs)
+        prev_default_title = self._get_default_title()
+
         self.traces.append({
             'config': kwargs,
-            'plot_object': self._draw_trace(kwargs)
+            'plot_object': plot_object
         })
+
+        if prev_default_title == self.title.get_text():
+            # in case the user has updated title, don't change it anymore
+            self.title.set_text(self._get_default_title())
 
         if updater is not None:
             self.data_updaters.add(updater)
         else:
-            for part in ('x', 'y', 'z'):
+            for part in 'xyz':
                 data_array = kwargs.get(part, '')
                 if hasattr(data_array, 'data_set'):
                     self.data_updaters.add(data_array.data_set.sync)
+
+    def _get_axes(self, config):
+        return self.subplots[config.get('subplot', 1) - 1]
+
+    def _get_default_title(self):
+        title_parts = []
+        for trace in self.traces:
+            config = trace['config']
+            for part in 'xyz':
+                data_array = config.get(part, '')
+                if hasattr(data_array, 'data_set'):
+                    location = data_array.data_set.location
+                    if location not in title_parts:
+                        title_parts.append(location)
+        return ', '.join(title_parts)
+
+    def set_title(self, title):
+        self.title.set_text(title)
+
+    def _update_labels(self, ax, config):
+        if 'x' in config and not ax.get_xlabel():
+            ax.set_xlabel(self._get_label(config['x']))
+        if 'y' in config and not ax.get_ylabel():
+            ax.set_ylabel(self._get_label(config['y']))
+
+    def _get_label(self, data_array):
+        return (getattr(data_array, 'label', '') or
+                getattr(data_array, 'name', ''))
 
     def _args_to_kwargs(self, args, kwargs, axletters, plot_func_name):
         if len(args) not in (1, len(axletters)):
@@ -149,7 +192,9 @@ class Plot(object):
                 # so instead, we'll remove and re-add the data.
                 if plot_object:
                     plot_object.remove()
-                plot_object = self._draw_pcolormesh(**config)
+
+                ax = self._get_axes(config)
+                plot_object = self._draw_pcolormesh(ax, **config)
                 trace['plot_object'] = plot_object
 
                 if plot_object:
@@ -189,20 +234,12 @@ class Plot(object):
         '''
         self.update_widget.halt()
 
-    def _draw_trace(self, config):
-        if 'z' in config:
-            return self._draw_pcolormesh(**config)
-        else:
-            return self._draw_plot(**config)
-
-    def _draw_plot(self, y, x=None, fmt=None, subplot=1, **kwargs):
-        ax = self.subplots[subplot - 1]
+    def _draw_plot(self, ax, y, x=None, fmt=None, subplot=1, **kwargs):
+        # subplot=1 is just there to strip this out of kwargs
         args = [arg for arg in [x, y, fmt] if arg is not None]
         return ax.plot(*args, **kwargs)[0]
 
-    def _draw_pcolormesh(self, z, x=None, y=None, subplot=1, **kwargs):
-        ax = self.subplots[subplot - 1]
-
+    def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1, **kwargs):
         args = [masked_invalid(arg) for arg in [x, y, z]
                 if arg is not None]
 
@@ -223,5 +260,12 @@ class Plot(object):
             # We should make sure they do, and have it include
             # the full range of both.
             ax.qcodes_colorbar = self.fig.colorbar(pc, ax=ax)
+
+            # ideally this should have been in _update_labels, but
+            # the colorbar doesn't necessarily exist there.
+            # I guess we could create the colorbar no matter what,
+            # and just give it a dummy mappable to start, so we could
+            # put this where it belongs.
+            ax.qcodes_colorbar.set_label(self._get_label(z))
 
         return pc
