@@ -1,6 +1,6 @@
 '''
 Live plotting in Jupyter notebooks
-using the nbagg backend
+using the nbagg backend and matplotlib
 '''
 import matplotlib.pyplot as plt
 from matplotlib.transforms import Bbox
