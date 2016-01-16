@@ -71,7 +71,6 @@ class IVVI(VisaInstrument):
     def _get_version(self):
         mes = self.ask(bytes([3, 4]))
         v = mes[2]
-        print(v)
         return v
 
     def get_all(self):
@@ -81,7 +80,7 @@ class IVVI(VisaInstrument):
 
     def set_dacs_zero(self):
         for i in range(self._numdacs):
-            self.set_dac(i+1, 0)
+            self._set_dac(i+1, 0)
 
     # Conversion of data
     def _mvoltage_to_bytes(self, mvoltage):
