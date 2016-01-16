@@ -61,7 +61,10 @@ class Instrument(Metadatable):
             raise KeyError('Duplicate function name {}'.format(name))
         self.functions[name] = Function(self, name, **kwargs)
 
-    def snapshot_base(self):
+    def snapshot_base(self, update=False):
+        if update:
+            for par in self.parameters:
+                self[par].get()
         return {
             'parameters': dict((name, param.snapshot())
                                for name, param in self.parameters.items()),

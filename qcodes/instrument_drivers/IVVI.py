@@ -60,12 +60,13 @@ class IVVI(VisaInstrument):
         self.add_parameter('dac voltages',
                            label='Dac voltages (mV)',
                            get_cmd=self._get_dacs)
-        # for i in range(numdacs):
-        #     self.add_parameter('ch{}'.format(i+1),
-        #                        label='Dac {} (mV)'.format(i+1),
-        #                        get_cmd=self.get_dac)
-        #                        set_cmd=self.set_dac
-        #                        parse_function=
+
+        for i in range(numdacs):
+            self.add_parameter('dac{}'.format(i+1),
+                               label='Dac {} (mV)'.format(i+1),
+                               get_cmd=self._gen_ch_get_func(self._get_dac, i+1),
+                               set_cmd=self._gen_ch_set_func(self._set_dac, i+1),
+                               vals=vals.Numbers(-2000, 2000))
 
     def _get_version(self):
         mes = self.ask(bytes([3, 4]))
@@ -75,7 +76,7 @@ class IVVI(VisaInstrument):
 
     def get_all(self):
         for par in self.parameters:
-                        self[par].get()
+            self[par].get()
         return self.snapshot()
 
     def set_dacs_zero(self):
@@ -109,7 +110,7 @@ class IVVI(VisaInstrument):
         return values
 
     # Communication with device
-    def get_dac(self, channel):
+    def _get_dac(self, channel):
         '''
         Returns dac channel in mV
         channels range from 1-numdacs
@@ -117,10 +118,10 @@ class IVVI(VisaInstrument):
         TODO add a soft version  that only looks at the values in memory instead
         of getting all values in order to return one.
         '''
-        dac_val = self._get_dacs[channel-1]
+        dac_val = self._get_dacs()[channel-1]
         return dac_val
 
-    def set_dac(self, channel, mvoltage):
+    def _set_dac(self, channel, mvoltage):
         '''
         Sets the specified dac to the specified voltage
 
@@ -254,6 +255,16 @@ class IVVI(VisaInstrument):
             return 'POS'
         else:
             return 'Invalid polarity in memory'
+
+    def _gen_ch_set_func(self, fun, ch):
+        def set_func(val):
+            return fun(ch, val)
+        return set_func
+
+    def _gen_ch_get_func(self, fun, ch):
+        def get_func():
+            return fun(ch)
+        return get_func
 
     # def byte_limited_arange(self, start, stop, step=1, pol=None, dacnr=None):
     #     '''

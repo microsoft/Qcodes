@@ -504,8 +504,9 @@ class SignalHound_USB_SA124B(Instrument):
 
         minarr = (ct.c_float * sweep_len.value)()
         maxarr = (ct.c_float * sweep_len.value)()
+        sleep(.1)  # Added extra sleep for updating issue
         err = self.dll.saGetSweep_32f(self.deviceHandle, minarr, maxarr)
-
+        sleep(.1)  # Added extra sleep
         if not err == self.saStatus['saNoError']:
             # if an error occurs tries preparing the device and then asks again
             print('Error raised in Sweep Info Query, preparing for measurement')
