@@ -15,7 +15,6 @@ class IVVI(VisaInstrument):
     '''
     Status: Alpha version, tested for basic get-set commands
         TODO:
-            - Add individual parameters per channel
             - Add individual parameters for channel polarities
             - Add range protection per channel (adjustable for next version)
             - Add ramping speed protection (mV/s parameter for each channel)
@@ -30,7 +29,7 @@ class IVVI(VisaInstrument):
     A copy of this file can be found at the bottom of this file.
     '''
 
-    def __init__(self, name, address, reset=False, numdacs=8,
+    def __init__(self, name, address, reset=False, numdacs=16,
                  polarity=['BIP', 'BIP', 'BIP', 'BIP']):
         '''
         Initialzes the IVVI, and communicates with the wrapper
@@ -38,7 +37,7 @@ class IVVI(VisaInstrument):
             name (string)        : name of the instrument
             address (string)     : ASRL address
             reset (bool)         : resets to default values, default=false
-            numdacs (int)        : number of dacs, multiple of 4, default=8
+            numdacs (int)        : number of dacs, multiple of 4, default=16
             polarity (string[4]) : list of polarities of each set of 4 dacs
                                    choose from 'BIP', 'POS', 'NEG',
                                    default=['BIP', 'BIP', 'BIP', 'BIP']
@@ -58,15 +57,17 @@ class IVVI(VisaInstrument):
         self.add_parameter('version',
                            get_cmd=self._get_version)
         self.add_parameter('dac voltages',
-                           label='Dac voltages (mV)',
+                           label='Dac voltages',
                            get_cmd=self._get_dacs)
 
         for i in range(numdacs):
             self.add_parameter('dac{}'.format(i+1),
                                label='Dac {} (mV)'.format(i+1),
+                               units='mV',
                                get_cmd=self._gen_ch_get_func(self._get_dac, i+1),
                                set_cmd=self._gen_ch_set_func(self._set_dac, i+1),
                                vals=vals.Numbers(-2000, 2000))
+        print('Initialized IVVI-rack')
 
     def _get_version(self):
         mes = self.ask(bytes([3, 4]))

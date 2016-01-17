@@ -86,23 +86,27 @@ class SignalHound_USB_SA124B(Instrument):
         self.dll = ct.CDLL("C:\Windows\System32\sa_api.dll")
         self.hf = constants()
         self.add_parameter('frequency',
-                           label='Frequency (GHz)',
+                           label='Frequency ',
+                           units='(GHz)',
                            get_cmd=self._do_get_frequency,
                            set_cmd=self._do_set_frequency,
                            parse_function=float)
         self.add_parameter('span',
-                           label='Span (GHz)',
+                           label='Span ',
+                           units='(GHz)',
                            get_cmd=self._do_get_span,
                            set_cmd=self._do_set_span,
                            parse_function=float)
         self.add_parameter('power',
-                           label='Power (dBm)',
+                           label='Power ',
+                           units='(dBm)',
                            get_cmd=self._do_get_power,
                            set_cmd=self._do_set_power,
                            vals=vals.Numbers(max_value=20),
                            parse_function=float)
         self.add_parameter('ref_lvl',
-                           label='Reference power (dBm)',
+                           label='Reference power ',
+                           units='(dBm)',
                            get_cmd=self._do_get_ref_lvl,
                            set_cmd=self._do_set_ref_lvl,
                            vals=vals.Numbers(max_value=20),
@@ -138,20 +142,23 @@ class SignalHound_USB_SA124B(Instrument):
                            set_cmd=self._do_set_decimation,
                            vals=vals.Ints(1, 8))
         self.add_parameter('bandwidth',
-                           label='Bandwidth (Hz)',
+                           label='Bandwidth',
+                           units='(Hz)',
                            get_cmd=self._do_get_bandwidth,
                            set_cmd=self._do_set_bandwidth,
                            parse_function=float)
         # rbw Resolution bandwidth in Hz. RBW can be arbitrary.
         self.add_parameter('rbw',
-                           label='Resolution Bandwidth (Hz)',
+                           label='Resolution Bandwidth',
+                           units='(Hz)',
                            get_cmd=self._do_get_rbw,
                            set_cmd=self._do_set_rbw,
                            parse_function=float)
         # vbw Video bandwidth in Hz. VBW must be less than or equal to RBW.
         #  VBW can be arbitrary. For best performance use RBW as the VBW.
         self.add_parameter('vbw',
-                           label='Video Bandwidth (Hz)',
+                           label='Video Bandwidth',
+                           units='(Hz)',
                            get_cmd=self._do_get_vbw,
                            set_cmd=self._do_set_vbw,
                            parse_function=float)
@@ -166,10 +173,11 @@ class SignalHound_USB_SA124B(Instrument):
         self.set('scale', 'log-scale')
         self.set('running', False)
         self.set('decimation', 1)
-        self.set('bandwidth', 0) # 250e3)  # in Hz
+        self.set('bandwidth', 0)
         self.set('rbw', 1e3)
         self.set('vbw', 1e3)
         self.openDevice()
+        print('Initialized SignalHound')
 
     def openDevice(self):
         self.log.info("Opening Device")
@@ -186,8 +194,6 @@ class SignalHound_USB_SA124B(Instrument):
 
         self.devOpen = True
         self._devType = self.get('device_type')
-        print("Opened Device with handle num: ", self.deviceHandle.value)
-
 
     def closeDevice(self):
         self.log.info("Closing Device with handle num: ", self.deviceHandle.value)

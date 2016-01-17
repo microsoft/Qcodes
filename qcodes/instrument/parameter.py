@@ -53,6 +53,7 @@ class Parameter(Metadatable):
     def __init__(self,
                  name=None, names=None,
                  label=None, labels=None,
+                 units=None,
                  size=None, sizes=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
                  vals=None, **kwargs):
@@ -88,6 +89,10 @@ class Parameter(Metadatable):
             defaults to name
         labels: (2,4,5) a tuple of labels
 
+        units: (1&3) string that indicates units of parameter for use in axis
+            label and snapshot
+               (2,4,5) a tuple of units
+
         size: (3&4) an integer or tuple of integers for the size of array
             returned by .get(). Can be an integer only if the array is 1D, but
             as a tuple it can describe any dimensionality (including 1D)
@@ -122,6 +127,7 @@ class Parameter(Metadatable):
         if name is not None:
             self.name = name
             self.label = name if label is None else label
+            self.units = units if units is not None else ''
 
             # vals / validate only applies to simple single-value parameters
             self._set_vals(vals)
@@ -129,6 +135,7 @@ class Parameter(Metadatable):
         elif names is not None:
             self.names = names
             self.labels = names if labels is None else names
+            self.units = units if units is not None else ['']*len(names)
 
         else:
             raise ValueError('either name or names is required')

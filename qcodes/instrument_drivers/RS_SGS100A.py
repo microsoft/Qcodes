@@ -28,19 +28,22 @@ class RS_SGS100A(VisaInstrument):
         super().__init__(name, address)
         self.add_parameter('IDN', get_cmd='*IDN?')
         self.add_parameter(name='frequency',
-                           label='Frequency (Hz)',
+                           label='Frequency',
+                           units='(Hz)',
                            get_cmd='SOUR:FREQ' + '?',
                            set_cmd='SOUR:FREQ' + ' {:.2f}',
                            parse_function=float,
                            vals=vals.Numbers(1e9, 20e9))
         self.add_parameter(name='phase',
-                           label='Phase (deg)',
+                           label='Phase',
+                           units='(deg)',
                            get_cmd='SOUR:PHAS' + '?',
                            set_cmd='SOUR:PHAS' + ' {:.2f}',
                            parse_function=float,
                            vals=vals.Numbers(0, 360))
         self.add_parameter(name='power',
-                           label='Power (dBm)',
+                           label='Power',
+                           units='(dBm)',
                            get_cmd='SOUR:POW' + '?',
                            set_cmd='SOUR:POW' + ' {:.2f}',
                            parse_function=float,
@@ -61,7 +64,7 @@ class RS_SGS100A(VisaInstrument):
                            vals=vals.Strings())
         self.add_function('reset', call_cmd='*RST')
         self.add_function('run_self_tests', call_cmd='*TST?')
-        print('Connected to \n', self.get('IDN').replace(',', '\n'))
+        print('Connected to: ', self.get('IDN').replace(',', ', '), end='')
 
     def parse_on_off(self, stat):
         if stat.startswith('0'):
