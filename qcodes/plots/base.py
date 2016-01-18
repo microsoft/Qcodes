@@ -52,7 +52,9 @@ class BasePlot(object):
         which incorporates args into kwargs, so the subclass doesn't
         need to worry about this). Data will be in `x`, `y`, and optionally
         `z`
-        should be implemented by a subclass
+
+        should be implemented by a subclass, and each call should append
+        a dictionary to self.traces, containing at least {'config': kwargs}
         '''
         raise NotImplementedError
 
