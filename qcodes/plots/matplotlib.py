@@ -6,13 +6,12 @@ import matplotlib.pyplot as plt
 from matplotlib.transforms import Bbox
 import numpy as np
 from numpy.ma import masked_invalid, getmask
-from IPython.display import display
 from collections import Mapping
 
-from qcodes.widgets.widgets import HiddenUpdateWidget
+from .base import BasePlot
 
 
-class MatPlot(object):
+class MatPlot(BasePlot):
     '''
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with MatPlot.add()
@@ -39,30 +38,16 @@ class MatPlot(object):
         if not hasattr(self.subplots, '__len__'):
             self.subplots = (self.subplots,)
 
-        self.traces = []
-        self.data_updaters = set()
-
         self.title = self.fig.suptitle('')
+
+        super().__init__(interval)
 
         if args or kwargs:
             self.add(*args, **kwargs)
 
-        self.update_widget = HiddenUpdateWidget(self.update, interval)
-        display(self.update_widget)
-
-    def add(self, *args, updater=None, **kwargs):
+    def add_to_plot(self, **kwargs):
         '''
         adds one trace to this MatPlot.
-
-        args: a way to provide x/y/z data without keywords
-            The last one is the dependent data, and we look at its
-            dimensionality to determine if it's `y` or `z`.
-            If it's `y`, it may optionally be preceded by `x`.
-            If it's `z`, it may optionally be preceded by `x` and `y`.
-
-        updater: a callable (with no args) that updates the data in this trace
-            if omitted, we will look for DataSets referenced in this data, and
-            call their sync methods.
 
         kwargs: with the following exceptions (mostly the data!), these are
             passed directly to the matplotlib plotting routine.
@@ -77,16 +62,6 @@ class MatPlot(object):
         '''
         # TODO some way to specify overlaid axes?
 
-        if args:
-            if hasattr(args[-1][0], '__len__'):
-                # 2D (or higher... but ignore this for now)
-                self._args_to_kwargs(args, kwargs, 'xyz', 'pcolormesh')
-            else:
-                # 1D
-                self._args_to_kwargs(args, kwargs, 'xy', 'plot')
-
-        self._find_data_in_set_arrays(kwargs)
-
         ax = self._get_axes(kwargs)
         if 'z' in kwargs:
             plot_object = self._draw_pcolormesh(ax, **kwargs)
@@ -94,7 +69,7 @@ class MatPlot(object):
             plot_object = self._draw_plot(ax, **kwargs)
 
         self._update_labels(ax, kwargs)
-        prev_default_title = self._get_default_title()
+        prev_default_title = self.get_default_title()
 
         self.traces.append({
             'config': kwargs,
@@ -103,83 +78,25 @@ class MatPlot(object):
 
         if prev_default_title == self.title.get_text():
             # in case the user has updated title, don't change it anymore
-            self.title.set_text(self._get_default_title())
-
-        if updater is not None:
-            self.data_updaters.add(updater)
-        else:
-            for part in 'xyz':
-                data_array = kwargs.get(part, '')
-                if hasattr(data_array, 'data_set'):
-                    self.data_updaters.add(data_array.data_set.sync)
+            self.title.set_text(self.get_default_title())
 
     def _get_axes(self, config):
         return self.subplots[config.get('subplot', 1) - 1]
-
-    def _get_default_title(self):
-        title_parts = []
-        for trace in self.traces:
-            config = trace['config']
-            for part in 'xyz':
-                data_array = config.get(part, '')
-                if hasattr(data_array, 'data_set'):
-                    location = data_array.data_set.location
-                    if location not in title_parts:
-                        title_parts.append(location)
-        return ', '.join(title_parts)
 
     def set_title(self, title):
         self.title.set_text(title)
 
     def _update_labels(self, ax, config):
         if 'x' in config and not ax.get_xlabel():
-            ax.set_xlabel(self._get_label(config['x']))
+            ax.set_xlabel(self.get_label(config['x']))
         if 'y' in config and not ax.get_ylabel():
-            ax.set_ylabel(self._get_label(config['y']))
+            ax.set_ylabel(self.get_label(config['y']))
 
-    def _get_label(self, data_array):
-        return (getattr(data_array, 'label', '') or
-                getattr(data_array, 'name', ''))
-
-    def _args_to_kwargs(self, args, kwargs, axletters, plot_func_name):
-        if len(args) not in (1, len(axletters)):
-            raise ValueError('{} needs either 1 or {} unnamed args'.format(
-                plot_func_name, len(axletters)))
-
-        arg_axletters = axletters[-len(args):]
-
-        for arg, arg_axletters in zip(args, arg_axletters):
-            if arg_axletters in kwargs:
-                raise ValueError(arg_axletters + ' data provided twice')
-            kwargs[arg_axletters] = arg
-
-    def _find_data_in_set_arrays(self, kwargs):
-        axletters = 'xyz' if 'z' in kwargs else 'xy'
-        main_data = kwargs[axletters[-1]]
-        if hasattr(main_data, 'set_arrays'):
-            num_axes = len(axletters) - 1
-            # things will probably fail if we try to plot arrays of the
-            # wrong dimension... but we'll give it a shot anyway.
-            set_arrays = main_data.set_arrays[-num_axes:]
-            # for 2D: y is outer loop, which is earlier in set_arrays,
-            # and x is the inner loop... is this the right convention?
-            set_axletters = reversed(axletters[:-1])
-            for axletter, set_array in zip(set_axletters, set_arrays):
-                if axletter not in kwargs:
-                    kwargs[axletter] = set_array
-
-    def update(self):
+    def update_plot(self):
         '''
-        update the data in this plot, using the updaters given with
-        MatPlot.add() or in the included DataSets, then include this in
-        the plot
+        update the plot. The DataSets themselves have already been updated
+        in update, here we just push the changes to the plot.
         '''
-        any_updates = False
-        for updater in self.data_updaters:
-            updates = updater()
-            if updates is not False:
-                any_updates = True
-
         # matplotlib doesn't know how to autoscale to a pcolormesh after the
         # first draw (relim ignores it...) so we have to do this ourselves
         bboxes = dict(zip(self.subplots, [[] for p in self.subplots]))
@@ -223,17 +140,6 @@ class MatPlot(object):
 
         self.fig.canvas.draw()
 
-        # once all updaters report they're finished (by returning exactly
-        # False) we stop updating the plot.
-        if any_updates is False and hasattr(self, 'update_widget'):
-            self.halt()
-
-    def halt(self):
-        '''
-        stop automatic updates to this plot, by canceling its update widget
-        '''
-        self.update_widget.halt()
-
     def _draw_plot(self, ax, y, x=None, fmt=None, subplot=1, **kwargs):
         # subplot=1 is just there to strip this out of kwargs
         args = [arg for arg in [x, y, fmt] if arg is not None]
@@ -266,6 +172,6 @@ class MatPlot(object):
             # I guess we could create the colorbar no matter what,
             # and just give it a dummy mappable to start, so we could
             # put this where it belongs.
-            ax.qcodes_colorbar.set_label(self._get_label(z))
+            ax.qcodes_colorbar.set_label(self.get_label(z))
 
         return pc
