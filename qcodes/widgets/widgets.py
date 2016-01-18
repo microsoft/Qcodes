@@ -19,12 +19,14 @@ class UpdateWidget(widgets.DOMWidget):
     interval - the period, in seconds
         can be changed later by setting the interval attribute
         interval=0 or the halt() method disables updates.
+    first_call - do we call the update function immediately, or only
+        after the first interval? default True
     '''
     _view_name = Unicode('UpdateView', sync=True)  # see widgets.js
     _message = Unicode(sync=True)
     interval = Float(sync=True)
 
-    def __init__(self, fn, interval, **kwargs):
+    def __init__(self, fn, interval, first_call=True, **kwargs):
         super().__init__(**kwargs)
 
         self._fn = fn
@@ -32,7 +34,8 @@ class UpdateWidget(widgets.DOMWidget):
 
         self.on_msg(self._handle_msg)
 
-        self._handle_msg({'init': True})
+        if first_call:
+            self._handle_msg({'init': True})
 
     def _handle_msg(self, message=None):
         self._message = str(self._fn())
@@ -46,5 +49,9 @@ class HiddenUpdateWidget(UpdateWidget):
     A variant on UpdateWidget that hides its section of the output area
     Just lets the front end periodically execute code
     that takes care of its own display.
+    by default, first_call is False here, unlike UpdateWidget
     '''
     _view_name = Unicode('HiddenUpdateView', sync=True)  # see widgets.js
+
+    def __init__(self, *args, first_call=False, **kwargs):
+        super().__init__(*args, first_call=first_call, **kwargs)

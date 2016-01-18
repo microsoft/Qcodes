@@ -31,6 +31,8 @@ class MatPlot(BasePlot):
     def __init__(self, *args, figsize=(8, 5), interval=1, subplots=(1, 1),
                  **kwargs):
 
+        super().__init__(interval)
+
         if isinstance(subplots, Mapping):
             self.fig, self.subplots = plt.subplots(figsize=figsize, **subplots)
         else:
@@ -39,8 +41,6 @@ class MatPlot(BasePlot):
             self.subplots = (self.subplots,)
 
         self.title = self.fig.suptitle('')
-
-        super().__init__(interval)
 
         if args or kwargs:
             self.add(*args, **kwargs)
