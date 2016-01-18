@@ -83,9 +83,6 @@ class MatPlot(BasePlot):
     def _get_axes(self, config):
         return self.subplots[config.get('subplot', 1) - 1]
 
-    def set_title(self, title):
-        self.title.set_text(title)
-
     def _update_labels(self, ax, config):
         if 'x' in config and not ax.get_xlabel():
             ax.set_xlabel(self.get_label(config['x']))
