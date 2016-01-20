@@ -11,6 +11,7 @@ from qcodes.loops import get_bg, halt_bg, Loop, Task, Wait
 import sys as _sys
 if 'ipy' in repr(_sys.stdout):
     from qcodes.plots.matplotlib import MatPlot
+    from qcodes.plots.pyqtgraph import QtPlot
 
 from qcodes.data.manager import get_data_manager
 from qcodes.data.data_set import DataMode, DataSet
