@@ -127,7 +127,7 @@ class Tektronix_AWG5014(VisaInstrument):
     }
 
     def __init__(self, name, setup_folder, address, reset=False,
-                 clock=1e9, numpoints=1000):
+                 clock=1e9, numpoints=1000, **kwargs):
         '''
         Initializes the AWG5014.
 
@@ -142,7 +142,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Output:
             None
         '''
-        super().__init__(name, address)
+        super().__init__(name, address, **kwargs)
 
         self._address = address
 
@@ -310,7 +310,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
         self.set('trigger_impedance', 50)
 
-        print('Connected to: ', self.get('IDN').replace(',', ', '), end='')
+        #print('Connected to: ', self.get('IDN').replace(',', ', '), end='')
 
     # Functions
     def get_all(self, update=True):
