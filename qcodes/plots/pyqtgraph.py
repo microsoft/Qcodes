@@ -64,7 +64,6 @@ class QtPlot(BasePlot):
 
         for side in ('left', 'bottom'):
             ax = subplot_object.getAxis(side)
-            ax.setGrid(0.2)
             ax.setPen(self.theme[0])
             ax._qcodes_label = ''
 
@@ -121,6 +120,8 @@ class QtPlot(BasePlot):
 
         hist = self.rpg.HistogramLUTItem()
         hist.setImageItem(img)
+        hist.axis.setPen(self.theme[0])
+        hist.axis.setLabel(self.get_label(z))
         # TODO - ensure this goes next to the correct subplot?
         self.win.addItem(hist)
 
