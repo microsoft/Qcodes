@@ -18,8 +18,8 @@ class MatPlot(BasePlot):
 
     args: shortcut to provide the x/y/z data. See MatPlot.add
 
-    figsize: (width, height) tuple to pass to plt.figure
-        default (12, 5)
+    figsize: (width, height) tuple in inches to pass to plt.figure
+        default (8, 5)
     interval: period in seconds between update checks
 
     subplots: either a sequence (args) or mapping (kwargs) to pass to
