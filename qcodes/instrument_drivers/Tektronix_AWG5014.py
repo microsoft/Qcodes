@@ -310,7 +310,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
         self.set('trigger_impedance', 50)
 
-        #print('Connected to: ', self.get('IDN').replace(',', ', '), end='')
+        print('Connected to: ', self.get('IDN').replace(',', ', '), end='')
 
     # Functions
     def get_all(self, update=True):
