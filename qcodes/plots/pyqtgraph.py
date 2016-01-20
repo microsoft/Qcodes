@@ -19,7 +19,7 @@ class QtPlot(BasePlot):
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with QtPlot.add()
 
-    args: shortcut to provide the x/y/z data. See MatPlot.add
+    args: shortcut to provide the x/y/z data. See BasePlot.add
 
     figsize: (width, height) tuple in pixels to pass to GraphicsWindow
         default (1000, 600)

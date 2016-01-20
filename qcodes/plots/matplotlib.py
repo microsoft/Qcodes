@@ -16,7 +16,7 @@ class MatPlot(BasePlot):
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with MatPlot.add()
 
-    args: shortcut to provide the x/y/z data. See MatPlot.add
+    args: shortcut to provide the x/y/z data. See BasePlot.add
 
     figsize: (width, height) tuple in inches to pass to plt.figure
         default (8, 5)
