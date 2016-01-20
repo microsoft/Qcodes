@@ -1,8 +1,6 @@
 import numpy as np
 import collections
 
-import qcodes
-
 
 class DataArray(object):
     '''
@@ -177,6 +175,13 @@ class DataArray(object):
             raise AttributeError('no data array has been created')
 
         return getattr(self.data, key)
+
+    def __len__(self):
+        '''
+        must be explicitly delegated to, because len() will look for this
+        attribute to already exist
+        '''
+        return len(self.data)
 
     def _flat_index(self, indices, index_fill):
         indices = indices + index_fill[len(indices):]
