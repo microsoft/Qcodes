@@ -23,6 +23,7 @@ class BasePlot(object):
         self.traces = []
         self.data_updaters = set()
 
+        self.interval = interval
         self.update_widget = HiddenUpdateWidget(self.update, interval)
         display(self.update_widget)
 
@@ -66,6 +67,9 @@ class BasePlot(object):
                 data_array = plot_config.get(key, '')
                 if hasattr(data_array, 'data_set'):
                     self.data_updaters.add(data_array.data_set.sync)
+
+        if self.data_updaters:
+            self.update_widget.interval = self.interval
 
     def get_default_title(self):
         '''
