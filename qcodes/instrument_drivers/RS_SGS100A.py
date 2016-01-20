@@ -1,5 +1,6 @@
 # load the qcodes path, until we have this installed as a package
 import sys
+import time
 qcpath = 'D:\GitHubRepos\Qcodes'
 if qcpath not in sys.path:
     sys.path.append(qcpath)
@@ -28,6 +29,7 @@ class RS_SGS100A(VisaInstrument):
     only the ones most commonly used.
     '''
     def __init__(self, name, address):
+        t0 = time.time()
         super().__init__(name, address)
         self.add_parameter('IDN', get_cmd='*IDN?')
         self.add_parameter(name='frequency',
@@ -67,7 +69,10 @@ class RS_SGS100A(VisaInstrument):
                            vals=vals.Strings())
         self.add_function('reset', call_cmd='*RST')
         self.add_function('run_self_tests', call_cmd='*TST?')
-        print('Connected to: ', self.get('IDN').replace(',', ', '), end='')
+        t1 = time.time()
+        print('Connected to: ',
+              self.get('IDN').replace(',', ', ').replace('\n', ' '),
+              'in %.2fs' % (t1-t0))
 
     def parse_on_off(self, stat):
         if stat.startswith('0'):

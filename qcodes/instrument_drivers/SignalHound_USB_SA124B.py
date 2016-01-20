@@ -78,8 +78,8 @@ class SignalHound_USB_SA124B(Instrument):
         '4': 'saBandwidthClamped'
     }
 
-
     def __init__(self, name):
+        t0 = time()
         self.log = logging.getLogger("Main.DeviceInt")
         logging.info(__name__ + ' : Initializing instrument SignalHound USB 124A')
         Instrument.__init__(self, name, tags=['physical'])
@@ -177,7 +177,8 @@ class SignalHound_USB_SA124B(Instrument):
         self.set('rbw', 1e3)
         self.set('vbw', 1e3)
         self.openDevice()
-        print('Initialized SignalHound')
+        t1 = time()
+        print('Initialized SignalHound in %.2fs' % (t1-t0))
 
     def openDevice(self):
         self.log.info("Opening Device")

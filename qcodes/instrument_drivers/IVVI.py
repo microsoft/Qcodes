@@ -42,6 +42,7 @@ class IVVI(VisaInstrument):
                                    choose from 'BIP', 'POS', 'NEG',
                                    default=['BIP', 'BIP', 'BIP', 'BIP']
         '''
+        t0 = time.time()
         super().__init__(name, address)
         # Set parameters
         self._address = address
@@ -67,7 +68,8 @@ class IVVI(VisaInstrument):
                                get_cmd=self._gen_ch_get_func(self._get_dac, i+1),
                                set_cmd=self._gen_ch_set_func(self._set_dac, i+1),
                                vals=vals.Numbers(-2000, 2000))
-        print('Initialized IVVI-rack')
+        t1 = time.time()
+        print('Initialized IVVI-rack in %.2fs' % (t1-t0))
 
     def _get_version(self):
         mes = self.ask(bytes([3, 4]))
