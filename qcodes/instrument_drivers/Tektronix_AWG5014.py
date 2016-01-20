@@ -127,7 +127,7 @@ class Tektronix_AWG5014(VisaInstrument):
     }
 
     def __init__(self, name, setup_folder, address, reset=False,
-                 clock=1e9, numpoints=1000):
+                 clock=1e9, numpoints=1000, **kwargs):
         '''
         Initializes the AWG5014.
 
@@ -143,7 +143,7 @@ class Tektronix_AWG5014(VisaInstrument):
             None
         '''
         t0 = time()
-        super().__init__(name, address)
+        super().__init__(name, address, **kwargs)
 
         self._address = address
 
