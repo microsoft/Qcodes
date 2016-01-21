@@ -168,6 +168,8 @@ class DataSet(object):
         '''
         synchronize this data set with a possibly newer version either
         in storage or on the DataServer, depending on its mode
+
+        returns: boolean, is this DataSet live on the server
         '''
         # TODO: sync implies bidirectional... and it could be!
         # we should keep track of last sync timestamp and last modification
@@ -179,7 +181,10 @@ class DataSet(object):
             # LOCAL DataSet - just read it in
             # TODO: compare timestamps to know if we need to read?
             self.read()
-            return
+            return False
+            # TODO - for remote live plotting, maybe set some timestamp
+            # threshold and call it static after it's been dormant a long time?
+            # I'm thinking like a minute, or ten? Maybe it's configurable?
 
         with self.data_manager.query_lock:
             if self.is_on_server:
@@ -198,21 +203,34 @@ class DataSet(object):
                     # but the DataSet is still on the server,
                     # so we got the data, and don't need to read.
                     self.mode = DataMode.LOCAL
-                return
+                    return False
+                return True
             else:
                 # this DataSet *thought* it was on the server, but it wasn't,
                 # so we haven't synced yet and need to read from storage
                 self.mode = DataMode.LOCAL
                 self.read()
+                return False
 
     def add_array(self, data_array):
         '''
         add one DataArray to this DataSet
+
+        note: DO NOT just set data_set.arrays[id] = data_array
+        because this will not check for overriding, nor set the
+        reference back to this DataSet. It would also allow you to
+        load the array in with different id than it holds itself.
+
         '''
+        # TODO: mask self.arrays so you *can't* set it directly
+
         if data_array.array_id in self.arrays:
             raise ValueError('array_id {} already exists in this '
                              'DataSet'.format(data_array.array_id))
         self.arrays[data_array.array_id] = data_array
+
+        # back-reference to the DataSet
+        data_array.data_set = self
 
     def _clean_array_ids(self, arrays):
         '''
