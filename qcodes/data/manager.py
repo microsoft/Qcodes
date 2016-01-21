@@ -4,7 +4,7 @@ from queue import Empty
 from traceback import format_exc
 from sys import stderr
 
-from qcodes.utils.helpers import PrintableProcess
+from qcodes.utils.multiprocessing import PrintableProcess
 
 
 def get_data_manager():

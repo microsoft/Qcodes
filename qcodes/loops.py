@@ -45,7 +45,8 @@ import numpy as np
 from qcodes.station import Station
 from qcodes.data.data_set import DataSet, DataMode
 from qcodes.data.data_array import DataArray
-from qcodes.utils.helpers import wait_secs, PrintableProcess
+from qcodes.utils.helpers import wait_secs
+from qcodes.utils.multiprocessing import PrintableProcess
 from qcodes.utils.sync_async import mock_sync
 
 
