@@ -31,18 +31,48 @@ def set_mp_method(method, force=False):
             '\'{}\' when trying to set \'{}\''.format(mp_method, method))
 
 
-class PrintableProcess(mp.Process):
+class QcodesProcess(mp.Process):
     '''
-    controls repr printing of the process
-    subclasses should provide a `name` attribute to go in repr()
-    if subclass.name = 'DataServer',
-    repr results in eg '<DataServer-1, started daemon>'
-    otherwise would be '<DataServerProcess(DataServerProcess...)>'
+    modified multiprocessing.Process for nicer printing and automatic
+    streaming of stdout and stderr to our StreamQueue singleton
+
+    name: string to include in repr, and in the StreamQueue
+        default 'QcodesProcess'
+    queue_streams: should we connect stdout and stderr to the StreamQueue?
+        default True
+    daemon: should this process be treated as daemonic, so it gets terminated
+        with the parent.
+        default True, overriding the base inheritance
+    any other args and kwargs are passed to multiprocessing.Process
     '''
+    def __init__(self, *args, name='QcodesProcess', queue_streams=True,
+                 daemon=True, **kwargs):
+        # make sure the singleton exists prior to launching a new process
+        self.queue_streams = queue_streams
+        if queue_streams:
+            get_stream_queue()
+        super().__init__(*args, name=name, daemon=daemon, **kwargs)
+
+    def run(self):
+        if self.queue_streams:
+            get_stream_queue().connect(str(self.name))
+        super().run()
+
     def __repr__(self):
         cname = self.__class__.__name__
-        out = super().__repr__().replace(cname + '(' + cname, self.name)
-        return out.replace(')>', '>')
+        return super().__repr__().replace(cname + '(', '').replace(')>', '>')
+
+
+def get_stream_queue():
+    '''
+    convenience function to get a singleton StreamQueue
+    note that this must be called from the main process before starting any
+    subprocesses that will use it, otherwise the subprocess will create its
+    own StreamQueue that no other processes know about
+    '''
+    if StreamQueue.instance is None:
+        StreamQueue.instance = StreamQueue()
+    return StreamQueue.instance
 
 
 class StreamQueue(object):
@@ -60,6 +90,8 @@ class StreamQueue(object):
 
     inspired by http://stackoverflow.com/questions/23947281/
     '''
+    instance = None
+
     def __init__(self, *args, **kwargs):
         self.queue = mp.Queue(*args, **kwargs)
         self._last_stream = None
@@ -100,7 +132,8 @@ class _SQWriter(object):
         self.base_stream = base_stream
 
     def write(self, msg):
-        self.queue.put((datetime.now(), self.stream_name, msg))
+        if msg:
+            self.queue.put((datetime.now(), self.stream_name, msg))
 
     def flush(self):
         # TODO - do I need the base_stream flush? doesn't seem necessary

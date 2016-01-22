@@ -46,8 +46,11 @@ from qcodes.station import Station
 from qcodes.data.data_set import DataSet, DataMode
 from qcodes.data.data_array import DataArray
 from qcodes.utils.helpers import wait_secs
-from qcodes.utils.multiprocessing import PrintableProcess
+from qcodes.utils.multiprocessing import QcodesProcess
 from qcodes.utils.sync_async import mock_sync
+
+
+MP_NAME = 'MeasurementProcess'
 
 
 def get_bg():
@@ -56,7 +59,7 @@ def get_bg():
     returns None otherwise
     '''
     processes = mp.active_children()
-    loops = [p for p in processes if isinstance(p, MeasurementProcess)]
+    loops = [p for p in processes if getattr(p, 'name', '') == MP_NAME]
 
     if len(loops) == 1:
         return loops[0]
@@ -423,7 +426,7 @@ class ActiveLoop(object):
             # TODO: in notebooks, errors in a background sweep will just appear
             # the next time a command is run. Do something better?
             # (like log them somewhere, show in monitoring window)?
-            p = MeasurementProcess(target=loop_fn, daemon=True)
+            p = QcodesProcess(target=loop_fn, name=MP_NAME)
             p.is_sweep = True
             p.signal_queue = self.signal_queue
             p.start()
@@ -526,10 +529,6 @@ class ActiveLoop(object):
 
         self._check_signal()
         time.sleep(wait_secs(finish_datetime))
-
-
-class MeasurementProcess(PrintableProcess):
-    name = 'MeasurementLoop'
 
 
 class Task(object):

@@ -4,7 +4,7 @@ from queue import Empty
 from traceback import format_exc
 from sys import stderr
 
-from qcodes.utils.multiprocessing import PrintableProcess
+from qcodes.utils.multiprocessing import QcodesProcess
 
 
 def get_data_manager():
@@ -60,7 +60,7 @@ class DataManager(object):
         self._start_server()
 
     def _start_server(self):
-        self._server = DataServerProcess(target=self._run_server, daemon=True)
+        self._server = QcodesProcess(target=self._run_server, name='DataServer')
         self._server.start()
 
     def _run_server(self):
@@ -116,10 +116,6 @@ class DataManager(object):
                                'restart(force=True) to override.')
         self.halt()
         self._start_server()
-
-
-class DataServerProcess(PrintableProcess):
-    name = 'DataServer'
 
 
 class DataServer(object):
