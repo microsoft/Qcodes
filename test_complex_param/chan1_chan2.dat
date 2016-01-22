@@ -1,5 +1,5 @@
 # chan1	chan2	amplitude
-# "chan1"	"chan2"	"amplitude"
+# "Gate Channel 1 (mV)"	"Gate Channel 2 (mV)"	"Current (nA)"
 # 30	100
 -15	-10	3.362
 -15	-9.8	3.253

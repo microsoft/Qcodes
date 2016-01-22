@@ -1,5 +1,5 @@
 # chan1	chan0	amplitude_3	amplitude_0
-# "chan1"	"chan0"	"amplitude"	"amplitude"
+# "Gate Channel 1 (mV)"	"Gate Channel 0 (mV)"	"Current (nA)"	"Current (nA)"
 # 30	54
 -15	-15	0.009	0.003
 -15	-14.5	0.009	0.004
