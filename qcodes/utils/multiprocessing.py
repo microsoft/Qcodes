@@ -98,8 +98,8 @@ class StreamQueue(object):
         self._on_new_line = True
 
     def connect(self, process_name):
-        sys.stdout = _SQWriter(self, process_name, sys.__stdout__)
-        sys.stderr = _SQWriter(self, process_name + ' ERR', sys.__stderr__)
+        sys.stdout = _SQWriter(self, process_name)
+        sys.stderr = _SQWriter(self, process_name + ' ERR')
 
     def disconnect(self):
         sys.stdout = sys.__stdout__
@@ -109,7 +109,7 @@ class StreamQueue(object):
         out = ''
         while not self.queue.empty():
             msg_time, stream_name, msg = self.queue.get()
-            timestr = msg_time.strftime('%H:%M:%S:%f')[:-3]
+            timestr = msg_time.strftime('%H:%M:%S.%f')[:-3]
             line_head = '[{} {}] '.format(timestr, stream_name)
 
             if self._on_new_line:
@@ -126,18 +126,13 @@ class StreamQueue(object):
 
 
 class _SQWriter(object):
-    def __init__(self, stream_queue, stream_name, base_stream):
+    def __init__(self, stream_queue, stream_name):
         self.queue = stream_queue.queue
         self.stream_name = stream_name
-        self.base_stream = base_stream
 
     def write(self, msg):
         if msg:
             self.queue.put((datetime.now(), self.stream_name, msg))
 
     def flush(self):
-        # TODO - do I need the base_stream flush? doesn't seem necessary
-        # we need a flush method but I don't see why it can't be a noop.
-        # if that's OK, we can take out base_stream entirely.
         pass
-        # self.base_stream.flush()
