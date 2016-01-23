@@ -1,4 +1,5 @@
 import time
+import logging
 import numpy as np
 import visa  # used for the parity constant
 # load the qcodes path, until we have this installed as a package
@@ -177,12 +178,20 @@ class IVVI(VisaInstrument):
         get dacs command takes ~450ms according to ipython timeit
         '''
         if (time.time() - self._time_last_update) > self._update_time:
-            message = bytes([self._numdacs*2+2, 2])
-            reply = self.ask(message)
-            # return reply
 
-            self._mvoltages = self._bytes_to_mvoltages(reply)
-            self._time_last_update = time.time()
+            message = bytes([self._numdacs*2+2, 2])
+            succes = False
+            i = 0
+            # workaround for an error in the readout that occurs sometimes
+            while not succes and i < 10:
+                try:
+                    reply = self.ask(message)
+                    self._mvoltages = self._bytes_to_mvoltages(reply)
+                    self._time_last_update = time.time()
+                    succes = True
+                except:
+                    logging.warning('IVVI communication error trying again')
+                    i += 1
 
         return self._mvoltages
 
@@ -210,30 +219,31 @@ class IVVI(VisaInstrument):
         Raises an error if one occurred
         Returns a list of bytes
         '''
+        # Protocol knows about the expected length of the answer
         message_len = self.write(message, raw=raw)
-        return self.read(message_len)
+        return self.read(message_len=message_len)
 
     def read(self, message_len=None):
         # because protocol has no termination chars the read reads the number
         # of bytes in the buffer
-        time.sleep(.4)
         bytes_in_buffer = 0
         timeout = 1
         t0 = time.time()
         t1 = t0
-        i=0
-        while bytes_in_buffer == 0:
+        bytes_in_buffer = 0
+        if message_len is None:
+            message_len = 1  # ensures at least 1 byte in buffer
+
+        while bytes_in_buffer < message_len:
             t1 = time.time()
             time.sleep(.05)
             bytes_in_buffer = self.visa_handle.bytes_in_buffer
             if t1-t0 > timeout:
                 raise TimeoutError()
-        if message_len is None:
-            message_len = bytes_in_buffer
         # a workaround for a timeout error in the pyvsia read_raw() function
         with(self.visa_handle.ignore_warning(visa.constants.VI_SUCCESS_MAX_CNT)):
             mes = self.visa_handle.visalib.read(
-                self.visa_handle.session, message_len)
+                self.visa_handle.session, bytes_in_buffer)
         mes = mes[0]  # cannot be done on same line for some reason
         # if mes[1] != 0:
         #     # see protocol descriptor for error codes
