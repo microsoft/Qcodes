@@ -67,7 +67,13 @@ class IVVI(VisaInstrument):
                                units='mV',
                                get_cmd=self._gen_ch_get_func(self._get_dac, i+1),
                                set_cmd=self._gen_ch_set_func(self._set_dac, i+1),
-                               vals=vals.Numbers(-2000, 2000))
+                               vals=vals.Numbers(-2000, 2000),
+                               sweep_step=10,
+                               sweep_delay=.1,
+                               max_val_age=10)
+
+        self._update_time = 5  # 5 seconds
+        self._time_last_update = 0  # ensures first call will always update
         t1 = time.time()
         print('Initialized IVVI-rack in %.2fs' % (t1-t0))
 
@@ -100,14 +106,16 @@ class IVVI(VisaInstrument):
         bytevalue = int(round(mvoltage/4000.0*65535))
         return bytevalue.to_bytes(length=2, byteorder='big')
 
-    def _bytes_to_mvoltages(self, numbers):
+    def _bytes_to_mvoltages(self, byte_mess):
         '''
         Converts a list of bytes to a list containing
         the corresponding mvoltages
         '''
         values = list(range(self._numdacs))
         for i in range(self._numdacs):
-            values[i] = ((numbers[2 + 2*i]*256 + numbers[3 + 2*i]) /
+            # takes two bytes, converts it to a 16 bit int and then divides by
+            # the range and adds the offset due to the polarity
+            values[i] = ((byte_mess[2 + 2*i]*256 + byte_mess[3 + 2*i]) /
                          65535.0*4000.0) + self.pol_num[i]
         return values
 
@@ -117,15 +125,16 @@ class IVVI(VisaInstrument):
         Returns dac channel in mV
         channels range from 1-numdacs
 
-        TODO add a soft version  that only looks at the values in memory instead
-        of getting all values in order to return one.
+        this version is a wrapper around the IVVI get function.
+        it only updates
         '''
-        dac_val = self._get_dacs()[channel-1]
-        return dac_val
+        return self._get_dacs()[channel-1]
 
     def _set_dac(self, channel, mvoltage):
         '''
-        Sets the specified dac to the specified voltage
+        Sets the specified dac to the specified voltage.
+        Will only send a command to the IVVI if the next value is different
+        than the current value within byte resolution.
 
         Input:
             mvoltage (float) : output voltage in mV
@@ -135,11 +144,25 @@ class IVVI(VisaInstrument):
             reply (string) : errormessage
         Private version of function
         '''
-        byte_val = self._mvoltage_to_bytes(mvoltage - self.pol_num[channel-1])
-        message = bytes([2, 1, channel]) + byte_val
-        time.sleep(.2)
-        reply = self.ask(message)
-        return reply
+        cur_val = self.get('dac{}'.format(channel))
+        # dac range in mV / 16 bits FIXME make range depend on polarity
+        byte_res = 4000/2**16
+        eps = 0.0001
+        # eps is a magic number to correct for an offset in the values the IVVI
+        # returns (i.e. setting 0 returns byte_res/2 = 0.030518 with rounding
+
+        # only update the value if it is different from the previous one
+        # this saves time in setting values, set cmd takes ~650ms
+        if (mvoltage > (cur_val+byte_res/2+eps) or
+                mvoltage < (cur_val - byte_res/2-eps)):
+            byte_val = self._mvoltage_to_bytes(mvoltage -
+                                               self.pol_num[channel-1])
+            message = bytes([2, 1, channel]) + byte_val
+            time.sleep(.05)
+            reply = self.ask(message)
+            self._time_last_update = 0  # ensures get command will update
+            return reply
+        return
 
     def _get_dacs(self):
         '''
@@ -153,11 +176,15 @@ class IVVI(VisaInstrument):
 
         get dacs command takes ~450ms according to ipython timeit
         '''
-        message = bytes([self._numdacs*2+2, 2])
-        reply = self.ask(message)
-        # return reply
-        mvoltages = self._bytes_to_mvoltages(reply)
-        return mvoltages
+        if (time.time() - self._time_last_update) > self._update_time:
+            message = bytes([self._numdacs*2+2, 2])
+            reply = self.ask(message)
+            # return reply
+
+            self._mvoltages = self._bytes_to_mvoltages(reply)
+            self._time_last_update = time.time()
+
+        return self._mvoltages
 
     def write(self, raw_message, raw=False):
         '''
