@@ -1,0 +1,28 @@
+.qcodes-output-view {
+    z-index: 999;
+    position: fixed;
+    bottom: 0;
+    right: 5px;
+    background-color: #ddd;
+    border: 1px solid #ccc;
+}
+
+.qcodes-output-header  {
+    float: right;
+}
+
+.qcodes-output-view span {
+    padding: 2px 6px 3px 6px;
+}
+
+.qcodes-output-view pre {
+    clear: both;
+    margin: 0;
+    border: 0;
+    border-top: 1px solid #ccc;
+    background-color: #ffe;
+    min-height: 50px;
+    max-height: 400px;
+    min-width: 400px;
+    max-width: 600px;
+}

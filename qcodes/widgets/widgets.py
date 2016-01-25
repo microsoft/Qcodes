@@ -1,14 +1,15 @@
-import os
+import sys
+import time
 
 from ipywidgets import widgets
 from traitlets import Unicode, Float
-from IPython.display import Javascript, display
 
-# load and display the javascript from this directory
-# some people use pkg_resources.resource_string for this, but that seems to
-# require an absolute path within the package, this way gives a relative path
-with open(os.path.join(os.path.split(__file__)[0], 'widgets.js')) as jsfile:
-    display(Javascript(jsfile.read()))
+from qcodes.utils.multiprocessing import get_stream_queue, QcodesProcess
+from qcodes.utils.display import display_relative
+
+
+display_relative(__file__, 'widgets.js')
+display_relative(__file__, 'widgets.css')
 
 
 class UpdateWidget(widgets.DOMWidget):
@@ -19,8 +20,8 @@ class UpdateWidget(widgets.DOMWidget):
     interval - the period, in seconds
         can be changed later by setting the interval attribute
         interval=0 or the halt() method disables updates.
-    first_call - do we call the update function immediately, or only
-        after the first interval? default True
+    first_call - do we call the update function immediately (default, True),
+        or only after the first interval?
     '''
     _view_name = Unicode('UpdateView', sync=True)  # see widgets.js
     _message = Unicode(sync=True)
@@ -31,17 +32,28 @@ class UpdateWidget(widgets.DOMWidget):
 
         self._fn = fn
         self.interval = interval
+        self.previous_interval = interval
 
-        self.on_msg(self._handle_msg)
+        # callbacks send the widget (self) as the first arg
+        # so bind to __func__ and we can leave the duplicate out
+        # of the method signature
+        self.on_msg(self.do_update.__func__)
 
         if first_call:
-            self._handle_msg({'init': True})
+            self.do_update()
 
-    def _handle_msg(self, message=None):
+    def do_update(self, content=None, buffers=None):
         self._message = str(self._fn())
 
     def halt(self):
+        if self.interval:
+            self.previous_interval = self.interval
         self.interval = 0
+
+    def restart(self, **kwargs):
+        if self.interval != self.previous_interval:
+            self.interval = self.previous_interval
+            # self.do_update()
 
 
 class HiddenUpdateWidget(UpdateWidget):
@@ -55,3 +67,36 @@ class HiddenUpdateWidget(UpdateWidget):
 
     def __init__(self, *args, first_call=False, **kwargs):
         super().__init__(*args, first_call=first_call, **kwargs)
+
+
+def get_subprocess_output():
+    '''
+    convenience function to get a singleton SubprocessOutputWidget
+    and restart it if it has been halted
+    '''
+    if SubprocessOutputWidget.instance is None:
+        return SubprocessOutputWidget()
+
+    return SubprocessOutputWidget.instance
+
+
+class SubprocessOutputWidget(UpdateWidget):
+    '''
+    Display the subprocess outputs collected by the StreamQueue
+    in a box in the notebook window
+    '''
+    _view_name = Unicode('SubprocessOutputView', sync=True)  # see widgets.js
+
+    instance = None
+
+    def __init__(self, interval=0.5):
+        if self.instance is not None:
+            raise RuntimeError(
+                'Only one instance of SubprocessOutputWidget should exist at '
+                'a time. Use the function get_subprocess_output to find or '
+                'create it.')
+
+        self.__class__.instance = self
+
+        self.stream_queue = get_stream_queue()
+        super().__init__(fn=self.stream_queue.get, interval=interval)
