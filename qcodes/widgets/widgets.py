@@ -1,11 +1,11 @@
-import sys
-import time
-
+from IPython.display import display
 from ipywidgets import widgets
+from multiprocessing import active_children
 from traitlets import Unicode, Float
 
-from qcodes.utils.multiprocessing import get_stream_queue, QcodesProcess
+from qcodes.utils.multiprocessing import get_stream_queue
 from qcodes.utils.display import display_relative
+from qcodes.loops import MP_NAME, halt_bg
 
 
 display_relative(__file__, 'widgets.js')
@@ -40,7 +40,7 @@ class UpdateWidget(widgets.DOMWidget):
         self.on_msg(self.do_update.__func__)
 
         if first_call:
-            self.do_update()
+            self.do_update({}, [])
 
     def do_update(self, content=None, buffers=None):
         self._message = str(self._fn())
@@ -53,7 +53,6 @@ class UpdateWidget(widgets.DOMWidget):
     def restart(self, **kwargs):
         if self.interval != self.previous_interval:
             self.interval = self.previous_interval
-            # self.do_update()
 
 
 class HiddenUpdateWidget(UpdateWidget):
@@ -69,34 +68,56 @@ class HiddenUpdateWidget(UpdateWidget):
         super().__init__(*args, first_call=first_call, **kwargs)
 
 
-def get_subprocess_output():
+def get_subprocess_widget():
     '''
-    convenience function to get a singleton SubprocessOutputWidget
+    convenience function to get a singleton SubprocessWidget
     and restart it if it has been halted
     '''
-    if SubprocessOutputWidget.instance is None:
-        return SubprocessOutputWidget()
+    if SubprocessWidget.instance is None:
+        return SubprocessWidget()
 
-    return SubprocessOutputWidget.instance
+    return SubprocessWidget.instance
 
 
-class SubprocessOutputWidget(UpdateWidget):
+def show_subprocess_widget():
+    display(get_subprocess_widget())
+
+
+class SubprocessWidget(UpdateWidget):
     '''
     Display the subprocess outputs collected by the StreamQueue
     in a box in the notebook window
     '''
-    _view_name = Unicode('SubprocessOutputView', sync=True)  # see widgets.js
+    _view_name = Unicode('SubprocessView', sync=True)  # see widgets.js
+    _processes = Unicode(sync=True)
 
     instance = None
 
     def __init__(self, interval=0.5):
         if self.instance is not None:
             raise RuntimeError(
-                'Only one instance of SubprocessOutputWidget should exist at '
+                'Only one instance of SubprocessWidget should exist at '
                 'a time. Use the function get_subprocess_output to find or '
                 'create it.')
 
         self.__class__.instance = self
 
         self.stream_queue = get_stream_queue()
-        super().__init__(fn=self.stream_queue.get, interval=interval)
+        super().__init__(fn=None, interval=interval)
+
+    def do_update(self, content=None, buffers=None):
+        self._message = self.stream_queue.get()
+
+        loops = []
+        others = []
+
+        for p in active_children():
+            if getattr(p, 'name', '') == MP_NAME:
+                loops.append(str(p))
+            else:
+                others.append(str(p))
+
+        self._processes = ', '.join(others + loops)
+
+        if content.get('abort'):
+            halt_bg()

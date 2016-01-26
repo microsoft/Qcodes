@@ -3,8 +3,8 @@
     position: fixed;
     bottom: 0;
     right: 5px;
-    background-color: #ddd;
-    border: 1px solid #ccc;
+    background-color: #fff;
+    box-shadow: 0 0 12px 1px rgba(87, 87, 87, 0.2);
 }
 
 .qcodes-output-header  {
@@ -13,6 +13,19 @@
 
 .qcodes-output-view span {
     padding: 2px 6px 3px 6px;
+}
+
+.qcodes-output-view .btn {
+    margin: 0 3px 0 0;
+}
+
+.qcodes-output-view .disabled {
+    opacity: 0.4;
+}
+
+.qcodes-abort-loop {
+    background-color: #844;
+    color: #fff;
 }
 
 .qcodes-output-view pre {

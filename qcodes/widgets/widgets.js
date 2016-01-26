@@ -54,12 +54,12 @@ require([
     });
     manager.WidgetManager.register_widget_view('HiddenUpdateView', HiddenUpdateView);
 
-    var SubprocessOutputView = UpdateView.extend({
+    var SubprocessView = UpdateView.extend({
         render: function() {
             var me = window.SPVIEW = this;
             me._interval = 0;
-            me._minimize = '&#8212;';
-            me._restore = '+';
+            me._minimize = '<i class="fa-minus fa"></i>';
+            me._restore = '<i class="fa-plus fa"></i>';
 
             // in case there is already an outputView present,
             // like from before restarting the kernel
@@ -68,23 +68,21 @@ require([
             me.$el
                 .appendTo('body')
                 .addClass('qcodes-output-view')
-                .css({
-                    zIndex: 999,
-                    position: 'fixed',
-                    bottom: 0,
-                    right: '5px'
-                }).html(
-                    '<div class="qcodes-output-header">' +
-                        '<span>Subprocess messages</span>' +
-                        '<button class="qcodes-clear-output disabled">Clear</button>' +
-                        '<button class="qcodes-minimize">' + me._minimize + '</button>' +
+                .html(
+                    '<div class="qcodes-output-header toolbar">' +
+                        '<span></span>' +
+                        '<button class="btn qcodes-abort-loop disabled">Abort</button>' +
+                        '<button class="btn qcodes-clear-output disabled">Clear</button>' +
+                        '<button class="btn qcodes-minimize">' + me._minimize + '</button>' +
                     '</div>' +
                     '<pre></pre>'
                 );
 
-            me.clearButton = me.$el.find('.qcodes-clear-output'),
+            me.clearButton = me.$el.find('.qcodes-clear-output');
             me.minButton = me.$el.find('.qcodes-minimize');
             me.outputArea = me.$el.find('pre');
+            me.subprocessList = me.$el.find('span');
+            me.abortButton = me.$el.find('.qcodes-abort-loop');
 
             me.clearButton.click(function() {
                 me.outputArea.html('');
@@ -94,6 +92,10 @@ require([
             me.minButton.click(function() {
                 if(me.minButton.html() === me._restore) me.restore();
                 else me.minimize();
+            });
+
+            me.abortButton.click(function() {
+                me.send({abort: true});
             });
 
             me.update();
@@ -132,7 +134,11 @@ require([
                 this.outputArea.scrollTop(initialScroll === scrollBottom ?
                     this.outputArea.prop('scrollHeight') : initialScroll);
             }
+
+            var processes = this.model.get('_processes') || 'No subprocesses';
+            this.abortButton.toggleClass('disabled', processes.indexOf('Measurement')===-1);
+            this.subprocessList.text(processes);
         }
     });
-    manager.WidgetManager.register_widget_view('SubprocessOutputView', SubprocessOutputView);
+    manager.WidgetManager.register_widget_view('SubprocessView', SubprocessView);
 });

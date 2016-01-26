@@ -12,6 +12,7 @@ import sys as _sys
 if 'ipy' in repr(_sys.stdout):
     from qcodes.plots.matplotlib import MatPlot
     from qcodes.plots.pyqtgraph import QtPlot
+    from qcodes.widgets.widgets import show_subprocess_widget
 
 from qcodes.data.manager import get_data_manager
 from qcodes.data.data_set import DataMode, DataSet
