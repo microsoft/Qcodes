@@ -53,28 +53,32 @@ from qcodes.utils.sync_async import mock_sync
 MP_NAME = 'MeasurementProcess'
 
 
-def get_bg():
+def get_bg(return_first=False):
     '''
     find the active background measurement process, if any
     returns None otherwise
+
+    return_first: if there are multiple loops running return the first anyway.
+        If false, multiple loops is a RuntimeError.
+        default False
     '''
     processes = mp.active_children()
     loops = [p for p in processes if getattr(p, 'name', '') == MP_NAME]
 
-    if len(loops) == 1:
-        return loops[0]
-
-    if len(loops):
+    if len(loops) > 1 and not return_first:
         raise RuntimeError('Oops, multiple loops are running???')
+
+    if loops:
+        return loops[0]
 
     return None
 
 
-def halt_bg(self, timeout=5):
+def halt_bg(timeout=5):
     '''
     Stop the active background measurement process, if any
     '''
-    loop = get_bg()
+    loop = get_bg(return_first=True)
     if not loop:
         print('No loop running')
         return
