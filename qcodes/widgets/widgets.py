@@ -4,7 +4,7 @@ from multiprocessing import active_children
 from traitlets import Unicode, Float
 
 from qcodes.utils.multiprocessing import get_stream_queue
-from qcodes.utils.display import display_relative
+from .display import display_relative
 from qcodes.loops import MP_NAME, halt_bg
 
 
