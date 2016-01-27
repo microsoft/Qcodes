@@ -45,32 +45,40 @@ import numpy as np
 from qcodes.station import Station
 from qcodes.data.data_set import DataSet, DataMode
 from qcodes.data.data_array import DataArray
-from qcodes.utils.helpers import wait_secs, PrintableProcess
+from qcodes.utils.helpers import wait_secs
+from qcodes.utils.multiprocessing import QcodesProcess
 from qcodes.utils.sync_async import mock_sync
 
 
-def get_bg():
+MP_NAME = 'MeasurementProcess'
+
+
+def get_bg(return_first=False):
     '''
     find the active background measurement process, if any
     returns None otherwise
+
+    return_first: if there are multiple loops running return the first anyway.
+        If false, multiple loops is a RuntimeError.
+        default False
     '''
     processes = mp.active_children()
-    loops = [p for p in processes if isinstance(p, MeasurementProcess)]
+    loops = [p for p in processes if getattr(p, 'name', '') == MP_NAME]
 
-    if len(loops) == 1:
-        return loops[0]
-
-    if len(loops):
+    if len(loops) > 1 and not return_first:
         raise RuntimeError('Oops, multiple loops are running???')
+
+    if loops:
+        return loops[0]
 
     return None
 
 
-def halt_bg(self, timeout=5):
+def halt_bg(timeout=5):
     '''
     Stop the active background measurement process, if any
     '''
-    loop = get_bg()
+    loop = get_bg(return_first=True)
     if not loop:
         print('No loop running')
         return
@@ -422,7 +430,7 @@ class ActiveLoop(object):
             # TODO: in notebooks, errors in a background sweep will just appear
             # the next time a command is run. Do something better?
             # (like log them somewhere, show in monitoring window)?
-            p = MeasurementProcess(target=loop_fn, daemon=True)
+            p = QcodesProcess(target=loop_fn, name=MP_NAME)
             p.is_sweep = True
             p.signal_queue = self.signal_queue
             p.start()
@@ -525,10 +533,6 @@ class ActiveLoop(object):
 
         self._check_signal()
         time.sleep(wait_secs(finish_datetime))
-
-
-class MeasurementProcess(PrintableProcess):
-    name = 'MeasurementLoop'
 
 
 class Task(object):
