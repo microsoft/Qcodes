@@ -1,8 +1,10 @@
-.qcodes-output-view {
-    z-index: 999;
-    position: fixed;
+.qcodes-output-view:not(.ui-draggable) {
     bottom: 0;
     right: 5px;
+}
+.qcodes-output-view {
+    position: fixed;
+    z-index: 999;
     background-color: #fff;
     box-shadow: 0 0 12px 1px rgba(87, 87, 87, 0.2);
 }
@@ -12,11 +14,18 @@
 }
 
 .qcodes-output-view span {
-    padding: 2px 6px 3px 6px;
+    padding: 2px 6px 3px 12px;
 }
 
 .qcodes-output-view .btn {
     margin: 0 3px 0 0;
+}
+
+.qcodes-output-view[qcodes-state=docked] .qcodes-docked,
+.qcodes-output-view[qcodes-state=floated] .qcodes-floated,
+.qcodes-output-view[qcodes-state=minimized] .qcodes-minimized,
+.qcodes-output-view[qcodes-state=minimized] .qcodes-content {
+    display: none;
 }
 
 .qcodes-output-view .disabled {

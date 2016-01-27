@@ -66,16 +66,18 @@ require([
             $('.qcodes-output-view').not(me.$el).remove();
 
             me.$el
-                .appendTo('body')
                 .addClass('qcodes-output-view')
+                .attr('qcodes-state', 'docked')
                 .html(
                     '<div class="qcodes-output-header toolbar">' +
                         '<span></span>' +
                         '<button class="btn qcodes-abort-loop disabled">Abort</button>' +
-                        '<button class="btn qcodes-clear-output disabled">Clear</button>' +
-                        '<button class="btn qcodes-minimize">' + me._minimize + '</button>' +
+                        '<button class="btn qcodes-clear-output disabled qcodes-content">Clear</button>' +
+                        '<button class="btn js-state qcodes-minimized"><i class="fa-minus fa"></i></button>' +
+                        '<button class="btn js-state qcodes-docked"><i class="fa-toggle-up fa"></i></button>' +
+                        '<button class="btn js-state qcodes-floated"><i class="fa-arrows fa"></i></button>' +
                     '</div>' +
-                    '<pre></pre>'
+                    '<pre class="qcodes-content"></pre>'
                 );
 
             me.clearButton = me.$el.find('.qcodes-clear-output');
@@ -89,28 +91,47 @@ require([
                 me.clearButton.addClass('disabled');
             });
 
-            me.minButton.click(function() {
-                if(me.minButton.html() === me._restore) me.restore();
-                else me.minimize();
-            });
-
             me.abortButton.click(function() {
                 me.send({abort: true});
             });
 
+            me.$el.find('.js-state').click(function() {
+                var oldState = me.$el.attr('qcodes-state'),
+                    state = this.className.substr(this.className.indexOf('qcodes'))
+                        .split('-')[1].split(' ')[0];
+
+                // not sure why I can't pop it out of the widgetarea in render, but it seems that
+                // some other bit of code resets the parent after render if I do it there.
+                // To be safe, just do it on every state click.
+                me.$el.appendTo('body');
+
+                if(oldState === 'floated') {
+                    me.$el.draggable('destroy').css({left:'', top: ''});
+                }
+
+                me.$el.attr('qcodes-state', state);
+
+                if(state === 'floated') {
+                    me.$el.draggable().css({
+                        left: window.innerWidth - me.$el.width() - 15,
+                        top: window.innerHeight - me.$el.height() - 10
+                    });
+                }
+            });
+
+            $(window).resize(function() {
+                if(me.$el.attr('qcodes-state') === 'floated') {
+                    var position = me.$el.position(),
+                        minVis = 20,
+                        maxLeft = window.innerWidth - minVis,
+                        maxTop = window.innerHeight - minVis;
+
+                    if(position.left > maxLeft) me.$el.css('left', maxLeft);
+                    if(position.top > maxTop) me.$el.css('top', maxTop);
+                }
+            });
+
             me.update();
-        },
-
-        minimize: function() {
-            this.outputArea.hide();
-            this.clearButton.hide()
-            this.minButton.html(this._restore);
-        },
-
-        restore: function() {
-            this.outputArea.show();
-            this.clearButton.show();
-            this.minButton.html(this._minimize);
         },
 
         display: function(message) {
@@ -119,10 +140,10 @@ require([
                 this.outputArea.scrollTop(this.outputArea.prop('scrollHeight'));
                 var scrollBottom = this.outputArea.scrollTop();
 
-                if(this.minButton.html() === this._restore) {
-                    this.restore();
+                if(this.$el.attr('qcodes-state') === 'minimized') {
+                    this.$el.find('.qcodes-docked').click();
                     // always scroll to the bottom if we're restoring
-                    // because there's a new message
+                    // because of a new message
                     initialScroll = scrollBottom;
                 }
 
