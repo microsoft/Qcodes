@@ -10,6 +10,14 @@ import os
 from traceback import format_exc
 
 
+def in_notebook():
+    '''
+    is this code in a process directly connected to a jupyter notebook?
+    see: http://stackoverflow.com/questions/15411967
+    '''
+    return 'ipy' in repr(sys.stdout)
+
+
 def is_sequence(obj):
     '''
     is an object a sequence? We do not consider strings to be sequences,

@@ -3,6 +3,8 @@ import sys
 from datetime import datetime
 import time
 
+from .helpers import in_notebook
+
 
 def set_mp_method(method, force=False):
     '''
@@ -48,8 +50,12 @@ class QcodesProcess(mp.Process):
     '''
     def __init__(self, *args, name='QcodesProcess', queue_streams=True,
                  daemon=True, **kwargs):
-        # make sure the singleton exists prior to launching a new process
-        self.stream_queue = queue_streams and get_stream_queue()
+        # make sure the singleton StreamQueue exists
+        # prior to launching a new process
+        if queue_streams and in_notebook():
+            self.stream_queue = get_stream_queue()
+        else:
+            self.stream_queue = None
         super().__init__(*args, name=name, daemon=daemon, **kwargs)
 
     def run(self):
@@ -128,6 +134,8 @@ class StreamQueue(object):
 
 
 class _SQWriter(object):
+    MIN_READ_TIME = 3
+
     def __init__(self, stream_queue, stream_name):
         self.queue = stream_queue.queue
         self.last_read_ts = stream_queue.last_read_ts
@@ -139,7 +147,9 @@ class _SQWriter(object):
                 msgtuple = (datetime.now().strftime('%H:%M:%S.%f')[:-3],
                             self.stream_name, msg)
                 self.queue.put(msgtuple)
-                if time.time() - self.last_read_ts.value > 10 and msg != '\n':
+
+                queue_age = time.time() - self.last_read_ts.value
+                if queue_age > self.MIN_READ_TIME and msg != '\n':
                     # long time since the queue was read? maybe nobody is
                     # watching it at all - send messages to the terminal too
                     # but they'll still be in the queue if someone DOES look.
