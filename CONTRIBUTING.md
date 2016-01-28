@@ -23,7 +23,7 @@ git clone https://github.com/qdev-dk/Qcodes.git
 ```
 nosetests --with-coverage --cover-package=qcodes
 ```
-Note: nose has a note on its homepage that it is no longer being actively
+Note: nose has a note on its homepage that it is no longer being actively maintained, so we may want to change this in the near future.
 
 ### New code and testing
 
