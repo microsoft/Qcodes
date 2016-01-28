@@ -1,5 +1,11 @@
 # Qcodes project plan
-------------
+
+The goal is a common framework for all of our experiments, so:
+- new students don't need to spend a long time learning software in order to participate in experiments
+- nobody has to write their own code except for pieces that are very specific to their own experiment - and even then we will try to merge a lot of this code back into the main project.
+- we streamline the process of moving between teams or labs, and of setting up a new experiment.
+- we can take advantage of modern software and best practices so the system is easy to maintain and extend as needs and technologies change
+
 We have agreed on python 3 as the foundation of the project - this along with the patchwork of previous efforts means that this will be a breaking change for everyone who migrates to this framework - ie although it will share a good deal of ideas with qtlab, even existing qtlab users will need to change their scripts and workflows to use the new framework.
 
 We expect the project to roll out in roughly four phases:
