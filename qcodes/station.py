@@ -13,7 +13,9 @@ class Station(Metadatable):
     '''
     default = None
 
-    def __init__(self, *instruments, monitor=None, default=True):
+    def __init__(self, *instruments, monitor=None, default=True, **kwargs):
+        super().__init__(**kwargs)
+
         # when a new station is defined, store it in a class variable
         # so it becomes the globally accessible default station.
         # You can still have multiple stations defined, but to use
@@ -28,6 +30,10 @@ class Station(Metadatable):
             self.add_instrument(instrument)
 
         self.monitor = monitor
+
+    def snapshot_base(self):
+        return {'instruments': {name: ins.snapshot()
+                                for name, ins in self.instruments.items()}}
 
     def add_instrument(self, instrument, name=None):
         '''
