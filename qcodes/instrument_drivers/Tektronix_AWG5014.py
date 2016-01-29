@@ -699,7 +699,7 @@ class Tektronix_AWG5014(VisaInstrument):
         generating sequence files, from existing settings in the awg.
         Querying the AWG for these settings takes ~0.7 seconds
         '''
-        print('Generating sequence_cfg')
+        logging.info('Generating sequence_cfg')
 
         AWG_sequence_cfg = {
             'SAMPLING_RATE': self.get('clock_freq'),

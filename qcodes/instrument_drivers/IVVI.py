@@ -2,11 +2,6 @@ import time
 import logging
 import numpy as np
 import visa  # used for the parity constant
-# load the qcodes path, until we have this installed as a package
-import sys
-qcpath = 'D:\GitHubRepos\Qcodes'
-if qcpath not in sys.path:
-    sys.path.append(qcpath)
 
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
@@ -17,8 +12,8 @@ class IVVI(VisaInstrument):
     Status: Alpha version, tested for basic get-set commands
         TODO:
             - Add individual parameters for channel polarities
-            - Add range protection per channel (adjustable for next version)
-            - Add ramping speed protection (mV/s parameter for each channel)
+            - Test polarities different from BIP
+            - Add adjustable range and rate protection per channel
             - Add error handling for the specific error messages in the protocol
             - Remove/fine-tune manual sleep statements
 
@@ -46,13 +41,16 @@ class IVVI(VisaInstrument):
         t0 = time.time()
         super().__init__(name, address)
         # Set parameters
+        self.Fullrange = 4000
+        self.Halfrange = self.Fullrange/2
+
         self._address = address
         if numdacs % 4 == 0 and numdacs > 0:
             self._numdacs = int(numdacs)
         self.pol_num = np.zeros(self._numdacs)  # corresponds to POS polarity
         self.set_pol_dacrack('BIP', range(numdacs))
 
-        # self.visa_handle= rm.open_resource('ASRL1')
+        # values based on descriptor
         self.visa_handle.baud_rate = 115200
         self.visa_handle.parity = visa.constants.Parity(1)  # odd parity
         # Add parameters
@@ -104,7 +102,7 @@ class IVVI(VisaInstrument):
         Output:
             (dataH, dataL) (int, int) : The high and low value byte equivalent
         '''
-        bytevalue = int(round(mvoltage/4000.0*65535))
+        bytevalue = int(round(mvoltage/self.Fullrange*65535))
         return bytevalue.to_bytes(length=2, byteorder='big')
 
     def _bytes_to_mvoltages(self, byte_mess):
@@ -117,7 +115,7 @@ class IVVI(VisaInstrument):
             # takes two bytes, converts it to a 16 bit int and then divides by
             # the range and adds the offset due to the polarity
             values[i] = ((byte_mess[2 + 2*i]*256 + byte_mess[3 + 2*i]) /
-                         65535.0*4000.0) + self.pol_num[i]
+                         65535.0*self.Fullrange) + self.pol_num[i]
         return values
 
     # Communication with device
@@ -147,7 +145,7 @@ class IVVI(VisaInstrument):
         '''
         cur_val = self.get('dac{}'.format(channel))
         # dac range in mV / 16 bits FIXME make range depend on polarity
-        byte_res = 4000/2**16
+        byte_res = self.Fullrange/2**16
         eps = 0.0001
         # eps is a magic number to correct for an offset in the values the IVVI
         # returns (i.e. setting 0 returns byte_res/2 = 0.030518 with rounding
@@ -178,40 +176,36 @@ class IVVI(VisaInstrument):
         get dacs command takes ~450ms according to ipython timeit
         '''
         if (time.time() - self._time_last_update) > self._update_time:
-
             message = bytes([self._numdacs*2+2, 2])
-            succes = False
-            i = 0
             # workaround for an error in the readout that occurs sometimes
-            while not succes and i < 10:
+            max_tries = 10
+            for i in range(max_tries):
                 try:
                     reply = self.ask(message)
                     self._mvoltages = self._bytes_to_mvoltages(reply)
                     self._time_last_update = time.time()
-                    succes = True
+                    break
                 except:
                     logging.warning('IVVI communication error trying again')
-                    i += 1
-
+            if i+1 == max_tries:
+                raise('IVVI Communication error')
         return self._mvoltages
 
-    def write(self, raw_message, raw=False):
+    def write(self, message, raw=False):
         '''
         Protocol specifies that a write consists of
         descriptor size, error_code, message
 
         returns message_len
         '''
-        message_len = len(raw_message)+2
-        error_code = bytes([0])
-        message = bytes([message_len]) + error_code + raw_message
-        if raw:
-             self.visa_handle.write_raw(raw_message)
-        else:
-            self.visa_handle.write_raw(message)
+        expected_answer_length = message[0]
+        if not raw:
+            message_len = len(message)+2
+            error_code = bytes([0])
+            message = bytes([message_len]) + error_code + message
+        self.visa_handle.write_raw(message)
 
-        answer_length = raw_message[0]
-        return answer_length
+        return expected_answer_length
 
     def ask(self, message, raw=False):
         '''
@@ -262,14 +256,14 @@ class IVVI(VisaInstrument):
         Output:
             None
         '''
-        flagmap = {'NEG': -4000, 'BIP': -2000, 'POS': 0}
+        flagmap = {'NEG': -self.Fullrange, 'BIP': -self.Halfrange, 'POS': 0}
         if flag.upper() not in flagmap:
             raise KeyError('Tried to set invalid dac polarity %s', flag)
 
         val = flagmap[flag.upper()]
         for ch in channels:
             self.pol_num[ch-1] = val
-            # self.set_parameter_bounds('dac%d' % (i+1), val, val + 4000.0)
+            # self.set_parameter_bounds('dac%d' % (i+1), val, val + self.Fullrange.0)
 
         if getall:
             self.get_all()
@@ -286,9 +280,9 @@ class IVVI(VisaInstrument):
         '''
         val = self.pol_num[channel-1]
 
-        if (val == -4000):
+        if (val == -self.Fullrange):
             return 'NEG'
-        elif (val == -2000):
+        elif (val == -self.Halfrange):
             return 'BIP'
         elif (val == 0):
             return 'POS'
@@ -304,34 +298,6 @@ class IVVI(VisaInstrument):
         def get_func():
             return fun(ch)
         return get_func
-
-    # def byte_limited_arange(self, start, stop, step=1, pol=None, dacnr=None):
-    #     '''
-    #     Creates array of mvoltages, in integer steps of the dac resolution. Either
-    #     the dac polarity, or the dacnr needs to be specified.
-    #     '''
-    #     if pol is not None and dacnr is not None:
-    #         logging.error('byte_limited_arange: speficy "pol" OR "dacnr", NOT both!')
-    #     elif pol is None and dacnr is None:
-    #         logging.error('byte_limited_arange: need to specify "pol" or "dacnr"')
-    #     elif dacnr is not None:
-    #         pol = self.get_pol_dac(dacnr)
-
-    #     if (pol.upper() == 'NEG'):
-    #         polnum = -4000
-    #     elif (pol.upper() == 'BIP'):
-    #         polnum = -2000
-    #     elif (pol.upper() == 'POS'):
-    #         polnum = 0
-    #     else:
-    #         logging.error('Try to set invalid dacpolarity')
-
-    #     start_byte = int(round((start-polnum)/4000.0*65535))
-    #     stop_byte = int(round((stop-polnum)/4000.0*65535))
-    #     byte_vec = np.arange(start_byte, stop_byte+1, step)
-    #     mvolt_vec = byte_vec/65535.0 * 4000.0 + polnum
-    #     return mvolt_vec
-
 
 
 '''
