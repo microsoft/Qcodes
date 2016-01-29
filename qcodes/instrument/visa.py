@@ -13,6 +13,17 @@ class VisaInstrument(Instrument):
         self.set_timeout(timeout)
         self.set_terminator(terminator)
 
+        # only set the io routines if a subclass doesn't override EITHER
+        # the sync or the async version, so we preserve the ability of
+        # the base Instrument class to convert between sync and async
+        if (self.write.__func__ is Instrument.write and
+                self.write_async.__func__ is Instrument.write_async):
+            self.write_async = self._default_write_async
+
+        if (self.ask.__func__ is Instrument.ask and
+                self.ask_async.__func__ is Instrument.ask_async):
+            self.ask_async = self._default_ask_async
+
     def set_address(self, address):
         resource_manager = visa.ResourceManager()
         self.visa_handle = resource_manager.open_resource(address)
@@ -46,13 +57,13 @@ class VisaInstrument(Instrument):
             raise visa.VisaIOError(ret_code)
 
     @asyncio.coroutine
-    def write_async(self, cmd):
+    def _default_write_async(self, cmd):
         # TODO: lock, async
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
         return
 
     @asyncio.coroutine
-    def ask_async(self, cmd):
+    def _default_ask_async(self, cmd):
         # TODO: lock, async
         return self.visa_handle.ask(cmd)
