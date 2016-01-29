@@ -2,12 +2,12 @@ import asyncio
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import wait_for_async
-from qcodes.utils.helpers import safe_getattr
+from qcodes.utils.helpers import DelegateAttributes
 from .parameter import InstrumentParameter
 from .function import Function
 
 
-class Instrument(Metadatable):
+class Instrument(Metadatable, DelegateAttributes):
     def __init__(self, name, **kwargs):
         super().__init__(**kwargs)
         self.functions = {}
@@ -143,11 +143,13 @@ class Instrument(Metadatable):
     #  etc...                                                                #
     ##########################################################################
 
-    def __getitem__(self, key):
-        return self.parameters[key]
+    delegate_attr_dicts = ['parameters', 'functions']
 
-    def __getattr__(self, key):
-        return safe_getattr(self, key, 'parameters')
+    def __getitem__(self, key):
+        try:
+            return self.parameters[key]
+        except KeyError:
+            return self.functions[key]
 
     def set(self, param_name, value):
         self.parameters[param_name].set(value)

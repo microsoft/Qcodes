@@ -1,8 +1,10 @@
 import numpy as np
 import collections
 
+from qcodes.utils.helpers import DelegateAttributes
 
-class DataArray(object):
+
+class DataArray(DelegateAttributes):
     '''
     A container for one parameter in a measurement loop
 
@@ -13,12 +15,15 @@ class DataArray(object):
     the same dimensionality as the measured parameter, but the outer
     loop setpoint(s) have lower dimensionality
 
-    when it's first created, a DataArray has no dimensionality, you must call
+    When it's first created, a DataArray has no dimensionality, you must call
     .nest for each dimension.
 
-    if preset_data is provided it is used to initialize the data, and the array
+    If preset_data is provided it is used to initialize the data, and the array
     can still be nested around it (making many copies of the data).
     Otherwise it is an error to nest an array that already has data.
+
+    Once the array is initialized, a DataArray acts a lot like a numpy array,
+    because we delegate attributes through to the numpy array
     '''
     def __init__(self, parameter=None, name=None, label=None, array_id=None,
                  set_arrays=(), size=None, action_indices=(),
@@ -159,26 +164,11 @@ class DataArray(object):
     def __getitem__(self, loop_indices):
         return self.data[loop_indices]
 
-    def __getattr__(self, key):
-        '''
-        pass all other attributes through to the numpy array
-
-        perhaps it would be cleaner to do this by making DataArray
-        actually a subclass of ndarray, but because things can happen
-        before init_data (before we know how big the array will be)
-        it seems better this way.
-        '''
-        # note that this is similar to safe_getattr, but we're passing
-        # through attributes of an attribute, not dict items, so it's
-        # simpler. But the same TODO applies, we need to augment __dir__
-        if key == 'data' or self.data is None:
-            raise AttributeError('no data array has been created')
-
-        return getattr(self.data, key)
+    delegate_attr_objects = ['data']
 
     def __len__(self):
         '''
-        must be explicitly delegated to, because len() will look for this
+        must be explicitly delegated, because len() will look for this
         attribute to already exist
         '''
         return len(self.data)

@@ -1,8 +1,8 @@
 from qcodes.utils.metadata import Metadatable
-from qcodes.utils.helpers import make_unique, safe_getattr
+from qcodes.utils.helpers import make_unique, DelegateAttributes
 
 
-class Station(Metadatable):
+class Station(Metadatable, DelegateAttributes):
     '''
     A representation of the entire physical setup.
 
@@ -87,5 +87,4 @@ class Station(Metadatable):
     def __getitem__(self, key):
         return self.instruments[key]
 
-    def __getattr__(self, key):
-        return safe_getattr(self, key, 'instruments')
+    delegate_attr_dicts = ['instruments']
