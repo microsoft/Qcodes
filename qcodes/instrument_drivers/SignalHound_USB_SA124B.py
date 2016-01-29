@@ -19,35 +19,35 @@ class SignalHound_USB_SA124B(Instrument):
     and is in need of a code cleanup.
     '''
     saStatus = {
-        "saUnknownErr"                  : -666,
-        "saFrequencyRangeErr"           : -99,
-        "saInvalidDetectorErr"          : -95,
-        "saInvalidScaleErr"             : -94,
-        "saBandwidthErr"                : -91,
-        "saExternalReferenceNotFound"   : -89,
+        "saUnknownErr": -666,
+        "saFrequencyRangeErr": -99,
+        "saInvalidDetectorErr": -95,
+        "saInvalidScaleErr": -94,
+        "saBandwidthErr": -91,
+        "saExternalReferenceNotFound": -89,
         # Device specific errors
-        "saOvenColdErr"                 : -20,
+        "saOvenColdErr": -20,
         # Data errors
-        "saInternetErr"                 : -12,
-        "saUSBCommErr"                  : -11,
+        "saInternetErr": -12,
+        "saUSBCommErr": -11,
         # General configuration errors
-        "saTrackingGeneratorNotFound"   : -10,
-        "saDeviceNotIdleErr"            : -9,
-        "saDeviceNotFoundErr"           : -8,
-        "saInvalidModeErr"              : -7,
-        "saNotConfiguredErr"            : -6,
-        "saDeviceNotConfiguredErr"      : -6, # Added because key error raised
-        "saTooManyDevicesErr"           : -5,
-        "saInvalidParameterErr"         : -4,
-        "saDeviceNotOpenErr"            : -3,
-        "saInvalidDeviceErr"            : -2,
-        "saNullPtrErr"                  : -1,
+        "saTrackingGeneratorNotFound": -10,
+        "saDeviceNotIdleErr": -9,
+        "saDeviceNotFoundErr": -8,
+        "saInvalidModeErr": -7,
+        "saNotConfiguredErr": -6,
+        "saDeviceNotConfiguredErr": -6,  # Added because key error raised
+        "saTooManyDevicesErr": -5,
+        "saInvalidParameterErr": -4,
+        "saDeviceNotOpenErr": -3,
+        "saInvalidDeviceErr": -2,
+        "saNullPtrErr": -1,
         # No error
-        "saNoError"                     : 0,
+        "saNoError": 0,
         # Warnings
-        "saNoCorrections"               : 1,
-        "saCompressionWarning"          : 2,
-        "saParameterClamped"            : 3,
+        "saNoCorrections": 1,
+        "saCompressionWarning": 2,
+        "saParameterClamped": 3,
         'saBandwidthClamped': 4
     }
     saStatus_inverted = {

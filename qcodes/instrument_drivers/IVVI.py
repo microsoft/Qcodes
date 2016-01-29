@@ -25,8 +25,9 @@ class IVVI(VisaInstrument):
     A copy of this file can be found at the bottom of this file.
     '''
 
-    def __init__(self, name, address, reset=False, numdacs=16,
-                 polarity=['BIP', 'BIP', 'BIP', 'BIP']):
+    def __init__(self, name, address, reset=False, numdacs=16):
+                 # polarity=['BIP', 'BIP', 'BIP', 'BIP']):
+                 # commented because still on the todo list
         '''
         Initialzes the IVVI, and communicates with the wrapper
         Input:
@@ -187,7 +188,7 @@ class IVVI(VisaInstrument):
                     break
                 except:
                     logging.warning('IVVI communication error trying again')
-            if i+1 == max_tries:
+            if i+1 == max_tries:  # +1 because range goes stops before end
                 raise('IVVI Communication error')
         return self._mvoltages
 
@@ -198,6 +199,7 @@ class IVVI(VisaInstrument):
 
         returns message_len
         '''
+        # This is used when write is used in the ask command
         expected_answer_length = message[0]
         if not raw:
             message_len = len(message)+2

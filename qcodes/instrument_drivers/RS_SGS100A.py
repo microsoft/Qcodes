@@ -1,13 +1,6 @@
-# load the qcodes path, until we have this installed as a package
-import sys
 import time
-qcpath = 'D:\GitHubRepos\Qcodes'
-if qcpath not in sys.path:
-    sys.path.append(qcpath)
-
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
-
 
 class RS_SGS100A(VisaInstrument):
     '''
@@ -85,23 +78,23 @@ class RS_SGS100A(VisaInstrument):
         if stat.upper() in ('ON', 'OFF'):
             self.visa_handle.write(':OUTP:STAT %s' % stat)
         else:
-            raise ValueError('Unable to set status to %s,\
-                             expected "ON" or "OFF"' % stat)
+            raise ValueError('Unable to set status to %s, ' % stat +
+                             'expected "ON" or "OFF"')
 
     def set_pulsemod_state(self, stat):
         if stat.upper() in ('ON', 'OFF'):
             self.visa_handle.write(':PULM:SOUR EXT')
             self.visa_handle.write(':SOUR:PULM:STAT %s' % stat)
         else:
-            raise ValueError('Unable to set status to %s,\
-                             expected "ON" or "OFF"' % stat)
+            raise ValueError('Unable to set status to %s,' % stat +
+                             'expected "ON" or "OFF"')
 
     def set_pulsemod_source(self, source):
         if source.upper() in ('INT', 'EXT'):
             self.visa_handle.write(':SOUR:PULM:SOUR %s' % source)
         else:
-            raise ValueError('Unable to set source to %s,\
-                             expected "INT" or "EXT"' % source)
+            raise ValueError('Unable to set source to %s,' % source +
+                             'expected "INT" or "EXT"')
 
     def on(self):
         self.set('status', 'on')
