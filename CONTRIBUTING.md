@@ -35,6 +35,24 @@ Note: nose has a note on its homepage that it is no longer being actively mainta
 
 - We have not yet settled on a framework for testing real hardware. Stay tuned, or post any ideas you have as issues!
 
+### Coding Style
+
+- Try to make your code self-documenting. Python is generally quite amenable to that, but some things that can help are:
+
+  - Use clearly-named variables
+  - Only use "one-liners" like list comprehensions if they really fit on one line.
+  - Comments should be for describing *why* you are doing something. If you feel you need a comment to explain *what* you are doing, the code could probably be rewritten more clearly.
+  - If you *do* need a multiline statement, use implicit continuation (inside parentheses or brackets) and implicit string literal concatenation rather than backslash continuation
+
+- Write docstrings for *at least* every public (no leading underscore) method or function. Because docstrings (and comments) *are not code*, pay special attention to them when modifying code: an incorrect comment or docstring is worse than none at all!
+
+- Use [PEP8](http://legacy.python.org/dev/peps/pep-0008/) style. Not only is this style good for readability in an absolute sense, but consistent styling helps us all read each other's code.
+  - There is a command-line tool (`pip install pep8`) you can run after writing code to validate its style.
+  - A lot of editors have plugins that will check this for you automatically as you type. Sublime Text for example has sublimelinter-pep8 and the even more powerful sublimelinter-flake8.
+  - BUT: do not change someone else's code to make it pep8-compliant unless that code is fully tested.
+
+- JavaScript: The [Airbnb style guide](https://github.com/airbnb/javascript) is quite good. If we start writing a lot more JavaScript we can go into more detail.
+
 ### Pull requests
 
 - Push your branch back to github and make a pull request (PR). If you visit the repo [home page](https://github.com/qdev-dk/Qcodes) soon after pushing to a branch, github will automatically ask you if you want to make a PR and help you with it.
