@@ -18,11 +18,11 @@ class VisaInstrument(Instrument):
         # the base Instrument class to convert between sync and async
         if (self.write.__func__ is Instrument.write and
                 self.write_async.__func__ is Instrument.write_async):
-            self.write_async = self._default_write_async
+            self.write = self._default_write
 
         if (self.ask.__func__ is Instrument.ask and
                 self.ask_async.__func__ is Instrument.ask_async):
-            self.ask_async = self._default_ask_async
+            self.ask = self._default_ask
 
     def set_address(self, address):
         resource_manager = visa.ResourceManager()
@@ -56,14 +56,12 @@ class VisaInstrument(Instrument):
         if ret_code != 0:
             raise visa.VisaIOError(ret_code)
 
-    @asyncio.coroutine
-    def _default_write_async(self, cmd):
+    def _default_write(self, cmd):
         # TODO: lock, async
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
         return
 
-    @asyncio.coroutine
-    def _default_ask_async(self, cmd):
+    def _default_ask(self, cmd):
         # TODO: lock, async
         return self.visa_handle.ask(cmd)
