@@ -75,6 +75,7 @@ class MockGates(MockInstrument):
         for i in range(3):
             cmdbase = 'c{}'.format(i)
             self.add_parameter('chan{}'.format(i),
+                               label='Gate Channel {} (mV)'.format(i),
                                get_cmd=cmdbase + '?',
                                set_cmd=cmdbase + ' {:.4f}',
                                parse_function=float,
@@ -89,6 +90,7 @@ class MockSource(MockInstrument):
 
         # this parameter uses built-in sweeping to change slowly
         self.add_parameter('amplitude',
+                           label='Source Amplitude (\u03bcV)',
                            get_cmd='ampl?',
                            set_cmd='ampl {:.4f}',
                            parse_function=float,
@@ -102,6 +104,7 @@ class MockMeter(MockInstrument):
         super().__init__(name, model=model)
 
         self.add_parameter('amplitude',
+                           label='Current (nA)',
                            get_cmd='ampl?',
                            parse_function=float)
 

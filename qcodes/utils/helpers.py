@@ -5,10 +5,17 @@ import imp
 from inspect import getargspec, ismethod
 import logging
 import math
-import multiprocessing as mp
 import sys
 import os
 from traceback import format_exc
+
+
+def in_notebook():
+    '''
+    is this code in a process directly connected to a jupyter notebook?
+    see: http://stackoverflow.com/questions/15411967
+    '''
+    return 'ipy' in repr(sys.stdout)
 
 
 def is_sequence(obj):
@@ -99,77 +106,74 @@ def make_unique(s, existing):
     return s_out
 
 
-def set_mp_method(method, force=False):
+class DelegateAttributes(object):
     '''
-    an idempotent wrapper for multiprocessing.set_start_method
-    args are the same:
+    Mixin class to create attributes of this object by
+    delegating them to one or more dicts and/or objects
 
-    method: one of:
-        'fork' (default on unix/mac)
-        'spawn' (default, and only option, on windows)
-        'forkserver'
-    force: allow changing context? default False
-        in the original function, even calling the function again
-        with the *same* method raises an error, but here we only
-        raise the error if you *don't* force *and* the context changes
+    Also fixes __dir__ so the delegated attributes will show up
+    in dir() and autocomplete
+
+    delegate_attr_dicts: a list of names (strings) of dictionaries which are
+        (or will be) attributes of self, whose keys should be treated as
+        attributes of self
+    delegate_attr_objects: a list of names (strings) of objects which are
+        (or will be) attributes of self, whose attributes should be passed
+        through to self
+
+    any `None` entry is ignored
+
+    attribute resolution order:
+        1. real attributes of this object
+        2. keys of each dict in delegate_attr_dicts (in order)
+        3. attributes of each object in delegate_attr_objects (in order)
     '''
-    try:
-        # force windows multiprocessing behavior on mac
-        mp.set_start_method(method)
-    except RuntimeError as err:
-        if err.args != ('context has already been set', ):
-            raise
+    delegate_attr_dicts = []
+    delegate_attr_objects = []
 
-    mp_method = mp.get_start_method()
-    if mp_method != method:
-        raise RuntimeError(
-            'unexpected multiprocessing method '
-            '\'{}\' when trying to set \'{}\''.format(mp_method, method))
+    def __getattr__(self, key):
+        for name in self.delegate_attr_dicts:
+            if key == name:
+                # needed to prevent infinite loops!
+                raise AttributeError(
+                    "dict '{}' has not been created in object '{}'".format(
+                        key, self.__class__.__name__))
+            try:
+                d = getattr(self, name)
+                if d is not None:
+                    return d[key]
+            except KeyError:
+                pass
 
+        for name in self.delegate_attr_objects:
+            if key == name:
+                raise AttributeError(
+                    "object '{}' has not been created in object '{}'".format(
+                        key, self.__class__.__name__))
+            try:
+                obj = getattr(self, name)
+                if obj is not None:
+                    return getattr(obj, key)
+            except AttributeError:
+                pass
 
-class PrintableProcess(mp.Process):
-    '''
-    controls repr printing of the process
-    subclasses should provide a `name` attribute to go in repr()
-    if subclass.name = 'DataServer',
-    repr results in eg '<DataServer-1, started daemon>'
-    otherwise would be '<DataServerProcess(DataServerProcess...)>'
-    '''
-    def __repr__(self):
-        cname = self.__class__.__name__
-        out = super().__repr__().replace(cname + '(' + cname, self.name)
-        return out.replace(')>', '>')
+        raise AttributeError(
+            "'{}' object and its delegates have no attribute '{}'".format(
+                self.__class__.__name__, key))
 
+    def __dir__(self):
+        names = super().__dir__()
+        for name in self.delegate_attr_dicts:
+            d = getattr(self, name, None)
+            if d is not None:
+                names += list(d.keys())
 
-def safe_getattr(obj, key, attr_dict):
-    '''
-    __getattr__ delegation to avoid infinite recursion
+        for name in self.delegate_attr_objects:
+            obj = getattr(self, name, None)
+            if obj is not None:
+                names += dir(obj)
 
-    obj: the instance being queried
-    key: the attribute name (string)
-    attr_dict: the name (string) of the dict within obj that
-        holds the attributes being delegated
-    '''
-    # TODO: is there a way to automatically combine this with __dir__?
-    # because we're always just saying:
-    #    def __getattr__(self, key):
-    #        return safe_getattr(self, key, 'some_dict')
-    # but then we should add self.some_dict's keys to dir() as well.
-    # or should we set all these attributes up front, instead of using
-    # __getattr__?
-    try:
-        if key == attr_dict:
-            # we got here looking for the dict itself, but it doesn't exist
-            msg = "'{}' object has no attribute '{}'".format(
-                obj.__class__.__name__, key)
-            raise AttributeError(msg)
-
-        return getattr(obj, attr_dict)[key]
-
-    except KeyError:
-        msg = "'{}' object has no attribute or {} item '{}'".format(
-            obj.__class__.__name__, attr_dict, key)
-        raise AttributeError(msg) from None
+        return sorted(set(names))
 
 
 # see http://stackoverflow.com/questions/22195382/

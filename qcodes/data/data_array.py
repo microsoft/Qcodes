@@ -1,10 +1,10 @@
 import numpy as np
 import collections
 
-import qcodes
+from qcodes.utils.helpers import DelegateAttributes
 
 
-class DataArray(object):
+class DataArray(DelegateAttributes):
     '''
     A container for one parameter in a measurement loop
 
@@ -15,12 +15,15 @@ class DataArray(object):
     the same dimensionality as the measured parameter, but the outer
     loop setpoint(s) have lower dimensionality
 
-    when it's first created, a DataArray has no dimensionality, you must call
+    When it's first created, a DataArray has no dimensionality, you must call
     .nest for each dimension.
 
-    if preset_data is provided it is used to initialize the data, and the array
+    If preset_data is provided it is used to initialize the data, and the array
     can still be nested around it (making many copies of the data).
     Otherwise it is an error to nest an array that already has data.
+
+    Once the array is initialized, a DataArray acts a lot like a numpy array,
+    because we delegate attributes through to the numpy array
     '''
     def __init__(self, parameter=None, name=None, label=None, array_id=None,
                  set_arrays=(), size=None, action_indices=(),
@@ -37,6 +40,10 @@ class DataArray(object):
         self.size = size
         self._preset = False
 
+        # store a reference up to the containing DataSet
+        # this also lets us make sure a DataArray is only in one DataSet
+        self._data_set = None
+
         self.data = None
         if preset_data is not None:
             self.init_data(preset_data)
@@ -46,6 +53,18 @@ class DataArray(object):
         self.action_indices = action_indices
         self.last_saved_index = None
         self.modified_range = None
+
+    @property
+    def data_set(self):
+        return self._data_set
+
+    @data_set.setter
+    def data_set(self, new_data_set):
+        if (self._data_set is not None and
+                new_data_set is not None and
+                self._data_set != new_data_set):
+            raise RuntimeError('A DataArray can only be part of one DataSet')
+        self._data_set = new_data_set
 
     def nest(self, size, action_index=None, set_array=None):
         '''
@@ -145,22 +164,14 @@ class DataArray(object):
     def __getitem__(self, loop_indices):
         return self.data[loop_indices]
 
-    def __getattr__(self, key):
-        '''
-        pass all other attributes through to the numpy array
+    delegate_attr_objects = ['data']
 
-        perhaps it would be cleaner to do this by making DataArray
-        actually a subclass of ndarray, but because things can happen
-        before init_data (before we know how big the array will be)
-        it seems better this way.
+    def __len__(self):
         '''
-        # note that this is similar to safe_getattr, but we're passing
-        # through attributes of an attribute, not dict items, so it's
-        # simpler. But the same TODO applies, we need to augment __dir__
-        if key == 'data' or self.data is None:
-            raise AttributeError('no data array has been created')
-
-        return getattr(self.data, key)
+        must be explicitly delegated, because len() will look for this
+        attribute to already exist
+        '''
+        return len(self.data)
 
     def _flat_index(self, indices, index_fill):
         indices = indices + index_fill[len(indices):]

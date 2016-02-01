@@ -283,7 +283,7 @@ class GNUPlotFormat(Formatter):
                 set_array = DataArray(label=labels[i], array_id=array_id,
                                       set_arrays=set_arrays, size=set_size)
                 set_array.init_data()
-                arrays[array_id] = set_array
+                data_set.add_array(set_array)
 
             set_arrays = set_arrays + (set_array, )
             ids_read.add(array_id)
@@ -300,7 +300,7 @@ class GNUPlotFormat(Formatter):
                 data_array = DataArray(label=labels[i], array_id=array_id,
                                        set_arrays=set_arrays, size=size)
                 data_array.init_data()
-                arrays[array_id] = data_array
+                data_set.add_array(data_array)
             data_arrays.append(data_array)
             ids_read.add(array_id)
 

@@ -1,5 +1,5 @@
 # chan1	amplitude_2	avg_amplitude
-# "chan1"	"amplitude"	"Average: amplitude"
+# "Gate Channel 1 (mV)"	"Current (nA)"	"Average: Current (nA)"
 # 30
 -15	0.006	1.63366
 -14	0.009	1.48254

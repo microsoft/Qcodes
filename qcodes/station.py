@@ -1,8 +1,8 @@
 from qcodes.utils.metadata import Metadatable
-from qcodes.utils.helpers import make_unique, safe_getattr
+from qcodes.utils.helpers import make_unique, DelegateAttributes
 
 
-class Station(Metadatable):
+class Station(Metadatable, DelegateAttributes):
     '''
     A representation of the entire physical setup.
 
@@ -13,7 +13,9 @@ class Station(Metadatable):
     '''
     default = None
 
-    def __init__(self, *instruments, monitor=None, default=True):
+    def __init__(self, *instruments, monitor=None, default=True, **kwargs):
+        super().__init__(**kwargs)
+
         # when a new station is defined, store it in a class variable
         # so it becomes the globally accessible default station.
         # You can still have multiple stations defined, but to use
@@ -28,6 +30,10 @@ class Station(Metadatable):
             self.add_instrument(instrument)
 
         self.monitor = monitor
+
+    def snapshot_base(self):
+        return {'instruments': {name: ins.snapshot()
+                                for name, ins in self.instruments.items()}}
 
     def add_instrument(self, instrument, name=None):
         '''
@@ -81,5 +87,4 @@ class Station(Metadatable):
     def __getitem__(self, key):
         return self.instruments[key]
 
-    def __getattr__(self, key):
-        return safe_getattr(self, key, 'instruments')
+    delegate_attr_dicts = ['instruments']
