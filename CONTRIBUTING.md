@@ -1,10 +1,18 @@
 # Contributing to Qcodes
 
-## Opening issues
+## I have an idea!
 
-Search for existing and closed issues. If your problem or idea is not yet addressed, [please open a new issue](https://github.com/qdev-dk/Qcodes/issues/new)
+Great! We all want to know about it. There are different places for different kinds of ideas.
+
+### Bugs reports and feature requests
+
+This is what github's [issues](https://github.com/qdev-dk/Qcodes/issues) are for. Search for existing and closed issues. If your problem or idea is not yet addressed, [please open a new issue](https://github.com/qdev-dk/Qcodes/issues/new)
 
 Bug reports must be accompanied by a reproducible example.
+
+### Clever usage
+
+Figured out a new way to use qcodes? Found a package that makes your life better and easier? Got realtime analysis working after struggling with it for days? Make a new example notebook or script in [docs/examples](https://github.com/qdev-dk/Qcodes/tree/master/docs/examples) and make a [pull request](#pull-requests)
 
 ## Development
 
