@@ -8,7 +8,11 @@ Great! We all want to know about it. There are different places for different ki
 
 This is what github's [issues](https://github.com/qdev-dk/Qcodes/issues) are for. Search for existing and closed issues. If your problem or idea is not yet addressed, [please open a new issue](https://github.com/qdev-dk/Qcodes/issues/new)
 
-Bug reports must be accompanied by a reproducible example.
+Choose a label for your issue - please try to use an existing one rather than making a new label. If it involves new functionality, it's an `enhancement`. If it should work but it doesn't, it's a `bug`. Bug reports must be accompanied by a reproducible example.
+
+### It's more than a feature...
+
+Have an idea about future directions to go with Qcodes? Visions of data-utopia that would take more than a few weeks to add or might change some core ideas in the package? We can use issues for this too. Pick the `long-term` or `discussion` labels.
 
 ### Clever usage
 
