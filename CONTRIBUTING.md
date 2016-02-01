@@ -31,7 +31,7 @@ git clone https://github.com/qdev-dk/Qcodes.git
 ```
 nosetests --with-coverage --cover-package=qcodes
 ```
-Note: nose has a note on its homepage that it is no longer being actively maintained, so we may want to change this in the near future.
+If the tests pass, you should be ready to start developing!
 
 ### New code and testing
 
@@ -39,7 +39,18 @@ Note: nose has a note on its homepage that it is no longer being actively mainta
 
 - Write your new feature or fix. Be sure it doesn't break any existing tests, and please write tests that cover your feature as well, or if you are fixing a bug, write a test that would have failed before your fix. Our goal is 100% test coverage, and although we are not there, we should always strive to increase our coverage with each new feature. Please be aware also that 100% test coverage does NOT necessarily mean 100% logic coverage. If (as is often the case in Python) a single line of code can behave differently for different inputs, coverage in itself will not ensure that this is tested.
 
-- Simple unit tests at a low level are more valuable than complex high-level tests, mainly because if complex tests fail it's difficult to tell why, but also when features change it is likely that more tests will need to change.
+- The test command is listed above under [setup](#setup). Note: nose has a [note on its homepage](https://nose.readthedocs.org/en/latest/) that it is no longer being actively maintained, so we may want to change this in the near future.
+
+- Tests live in [qcodes/tests](https://github.com/qdev-dk/Qcodes/tree/master/qcodes/tests) for now.
+
+- We should have a *few* high-level "integration" tests, but simple unit tests (that just depend on code in one module) are more valuable for several reasons:
+  - If complex tests fail it's more difficult to tell why
+  - When features change it is likely that more tests will need to change
+  - Unit tests can cover many scenarios much faster than integration tests.
+
+- If you're having difficulty making unit tests, first consider whether your code could be restructured to make it less dependent on other modules. Often, however, extra techniques are needed to break down a complex test into simpler ones. @alexcjohnson is happy to help with this. Two ideas that are useful here:
+  - Patching, one of the most useful parts of the [unittest.mock](https://docs.python.org/3/library/unittest.mock.html) library. This lets you specify exactly how other functions/objects should behave when they're called by the code you are testing. For a simple example, see [test_multiprocessing.py](https://github.com/qdev-dk/Qcodes/blob/58a8692bed55272f4c5865d6ec37f846154ead16/qcodes/tests/test_multiprocessing.py#L63-L65)
+  - Supporting files / data: Lets say you have a test of data acquisition and analysis. You can break that up into an acquisition test and an analysis by saving the intermediate state, namely the data file, in the test directory. Use it to compare to the output of the acquisition test, and as the input for the analysis test.
 
 - We have not yet settled on a framework for testing real hardware. Stay tuned, or post any ideas you have as issues!
 
