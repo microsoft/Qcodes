@@ -7,7 +7,7 @@ from sys import stderr
 from qcodes.utils.multiprocessing import QcodesProcess
 
 
-def get_data_manager():
+def get_data_manager(only_existing=False):
     '''
     create or retrieve the storage manager
     makes sure we don't accidentally create multiple DataManager processes
@@ -15,6 +15,8 @@ def get_data_manager():
     dm = DataManager.default
     if dm and dm._server.is_alive():
         return dm
+    elif only_existing:
+        return None
     return DataManager()
 
 
@@ -60,7 +62,8 @@ class DataManager(object):
         self._start_server()
 
     def _start_server(self):
-        self._server = QcodesProcess(target=self._run_server, name='DataServer')
+        self._server = QcodesProcess(target=self._run_server,
+                                     name='DataServer')
         self._server.start()
 
     def _run_server(self):
