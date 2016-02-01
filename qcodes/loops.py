@@ -380,23 +380,27 @@ class ActiveLoop(object):
             if signal == self.HALT:
                 raise KeyboardInterrupt('sweep was halted')
 
-    def run(self, location=None, formatter=None, io=None, data_manager=None,
-            background=True, use_async=False, enqueue=False, quiet=False):
+    def run(self, background=True, use_async=False, enqueue=False, quiet=False,
+            data_manager=None, **kwargs):
         '''
         execute this loop
 
-        location: the location of the DataSet, a string whose meaning
-            depends on formatter and io
-        formatter: knows how to read and write the file format
-        io: knows how to connect to the storage (disk vs cloud etc)
-        data_manager: a DataManager instance (omit to use default,
-            False to store locally and not write to disk)
         background: (default True) run this sweep in a separate process
             so we can have live plotting and other analysis in the main process
         use_async: (default True): execute the sweep asynchronously as much
             as possible
         enqueue: (default False): wait for a previous background sweep to
             finish? If false, will raise an error if another sweep is running
+        data_manager: a DataManager instance (omit to use default,
+            False to store locally and not write to disk)
+
+        kwargs are passed along to DataSet. The key ones are:
+        location: the location of the DataSet, a string whose meaning
+            depends on formatter and io
+        formatter: knows how to read and write the file format
+            default can be set in DataSet.default_formatter
+        io: knows how to connect to the storage (disk vs cloud etc)
+
 
         returns:
             a DataSet object that we can use to plot
@@ -415,8 +419,7 @@ class ActiveLoop(object):
             data_mode = DataMode.PUSH_TO_SERVER
 
         data_set = DataSet(arrays=self.containers(), mode=data_mode,
-                           data_manager=data_manager, location=location,
-                           formatter=formatter, io=io)
+                           data_manager=data_manager, **kwargs)
         signal_queue = mp.Queue()
         self.set_common_attrs(data_set=data_set, signal_queue=signal_queue)
 
