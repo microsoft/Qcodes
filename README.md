@@ -1,66 +1,54 @@
 # Qcodes
 
-Qcodes is a data acquisition framework being developed by the Copenhagen / Delft / Sydney / Microsoft quantum computing consortium. The goal is to create a common framework for all of our experiments, so:
-- new students don't need to spend a long time learning software in order to participate in experiments
-- nobody has to write their own code except for pieces that are very specific to their own experiment - and even then we will try to merge a lot of this code back into the main project.
-- we streamline the process of moving between teams or labs, and of setting up a new experiment.
-- we can take advantage of modern software and best practices so the system is easy to maintain and extend as needs and technologies change
+Qcodes is a Python-based data acquisition framework developed by the Copenhagen / Delft / Sydney / Microsoft quantum computing consortium. While it has been developed to serve the needs of nanoelectronic device experiments, it is not inherently limited to such experiments, and can be used anywhere a system with many degrees of freedom is controllable by computer.
 
-Project plan
-------------
-We have agreed on python 3 as the foundation of the project - this along with the patchwork of previous efforts means that this will be a breaking change for everyone who migrates to this framework - ie although it will share a good deal of ideas with qtlab, even existing qtlab users will need to change their scripts and workflows to use the new framework.
+Qcodes has taken inspiration from many similar frameworks that have come before it, including:
+- [QTLab](https://github.com/heeres/qtlab)
+- [Special Measure](https://github.com/yacobylab/special-measure)
+- "Alex Igor Procedures" see [thesis](http://qdev.nbi.ku.dk/student_theses/pdf_files/A_Johnson_thesis.pdf) appendix D and [successors](http://www.igorexchange.com/project/Expt_Procedures)
+- and countless smaller components created by students and postdocs throughout the quantum computing community
 
-We expect the project to roll out in roughly four phases:
+Qcodes is compatible with Python 3.3+. It is primarily intended for use from Jupyter notebooks, but can be used from traditional terminal-based shells and in stand-alone scripts as well.
 
-1. Initial release to tech-savvy experimenters (ie the people who were at the meeting in May) - aiming for 3-4 months in, this will probably involve Alex visiting each team that wants to install it, and working through any issues they have in person.
+## Installation
 
-2. Broader release to anyone within the consortium - 6-8 months
+We recommend [Anaconda](https://www.continuum.io/downloads) as an easy way to get most of the dependencies out-of-the-box.
 
-3. Additional features to help basic users and consolidate the workflow - 9-12 months
+### Requirements
 
-4. Possible public release as an open-source project - whether, when, and to what extent we do this is still up for debate, and will also depend on how the project itself proceeds.
+(Note: with the exception of Python itself, these are just the versions currently installed by the core developers. We haven't tested compatibility with lower versions of most packages, but if you know that an older version works fine, please let us know. If a lower OR higher version of any package breaks Qcodes please open an issue.)
 
-## Phases
+- Python 3.3+
+- numpy 1.10+
+- pyvisa 1.8+
+- IPython 4.0+
+- ipywidgets 4.1+
+- matplotlib 1.5+ (only for matplotlib plotting)
+- pyqtgraph 0.9.10+ (only for pyqtgraph plotting)
 
-### Phase 1
-- Python 3 framework
-- Optimized for iPython Notebook, but compatible with terminal shell or standalone scripts run from the command line
-- Developed in this github repository (qdev-dk/Qcodes) and all code changes are reviewed
-- Modular architecture:
-  - Instrument drivers can be easily plugged in
-  - Components can be used or not used per each user's preferences
-  - Other functions such as visualization packages, data storage back ends, and note-taking capabilities are also easy to swap in or out.
-  - Core package, configuration, and experiment scripts are all separate
-- Flexibility: arbitrary python code can be executed inside any sweep
-- Tests - all code in the repository has tests
-  - One test suite runs automatically when code is committed, and can also be run locally, using simulated instruments
-  - Another test suite runs on real instruments, and can be run automatically on the full set of instruments loaded for an experiment
-- Asynchronous / concurrent operations are natively supported
-- Instrument drivers: all drivers group members have used in their existing experiments are ported to the new framework
-- Scripting API: arbitrary sweeps and collections of sweeps can be executed programmatically
-- Standardized logging setup, including:
-  - raw data (as raw as feasible)
-  - analyzed data
-  - metadata, including both:
-    - experiment data: all electronic settings and any available manual settings, timestamp
-    - information on the code state: git commit id and/or version of this package, traceback at the point of execution, and potentially information about the other scripts involved in the sweep?
-  - automatic logging of monitor parameters (eg fridge and magnet information) as a function of time
+for testing:
 
-### Phase 2
-- pip installable, with simple instructions within a standard python installation (likely anaconda)
-- Realtime visualization
-- Tools to facilitate transfer from other setups people are using
-- Documentation: coordinate with Anton
-- Project name! **Qcodes** is the working name, courtesy of Guen and Charlie. Any objections? codes == COpenhagen, DElft, and Sydney. I notice that qcodes.com has an expired registration and could probably be picked up if we want it.
+- nose 1.3+
+- coverage 4.0+
 
-### Phase 3
-- GUI - with a simple control and monitoring panel
-- GUI -> CLI framework, ala Igor, so that each action in the GUI generates an equivalent command in the notebook for both record keeping and to help users learn the syntax
-- Lab notebook: Additional features as necessary to make the iPython Notebook work as the experiment's primary lab notebook.
-- Multiprocessing / distributed control architecture
+## Usage
 
-### Phase 4
-- Decide on the extent to which we will release the code publicly
-- Clear contributor guidelines - all contributed code must still be fully tested and reviewed by Alex or other core contributors
-- Clear license
-- Further polishing as necessary, for example for installation in other environments than Anaconda, or to make features more flexible to different fields
+See the [docs](docs) directory, particularly the notebooks in [docs/examples](docs/examples)
+
+Until we have this prepared as an installable package, you need to make sure Python can find qcodes by adding the repository root directory to `sys.path`:
+```
+import sys
+qcpath = 'your/Qcodes/repository/path'
+if qcpath not in sys.path:
+    sys.path.append(qcpath)
+```
+
+## Contributing
+
+See [Contributing](CONTRIBUTING.md) for information about bug/issue reports, contributing code, style, and testing
+
+See the [Roadmap](ROADMAP.md) an overview of where the project intends to go.
+
+## License
+
+Qcodes is currently a private development of Microsoft's Station Q collaboration, and IS NOT licensed for distribution outside the collaboration. We intend to release it as open source software once it is robust and reasonably stable, under the MIT license or similar. See [License](LICENSE.txt)

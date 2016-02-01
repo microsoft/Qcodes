@@ -12,8 +12,16 @@ from qcodes.utils.helpers import in_notebook, reload_code
 # in particular, importing matplotlib in the side processes takes a long
 # time and spins up other processes in order to try and get a front end
 if in_notebook():
-    from qcodes.plots.matplotlib import MatPlot
-    from qcodes.plots.pyqtgraph import QtPlot
+    try:
+        from qcodes.plots.matplotlib import MatPlot
+    except ImportError:
+        print('matplotlib plotting not supported')
+
+    try:
+        from qcodes.plots.pyqtgraph import QtPlot
+    except ImportError:
+        print('pyqtgraph plotting not supported')
+
     from qcodes.widgets.widgets import show_subprocess_widget
 
 from qcodes.station import Station
