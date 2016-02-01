@@ -3,7 +3,7 @@ from enum import Enum
 from .manager import get_data_manager
 from .format import GNUPlotFormat
 from .io import DiskIO
-from qcodes.utils.helpers import safe_getattr
+from qcodes.utils.helpers import DelegateAttributes
 
 
 class DataMode(Enum):
@@ -12,7 +12,7 @@ class DataMode(Enum):
     PULL_FROM_SERVER = 3
 
 
-class DataSet(object):
+class DataSet(DelegateAttributes):
     '''
     A container for one complete measurement loop
     May contain many individual arrays with potentially different
@@ -44,6 +44,9 @@ class DataSet(object):
 
     io: knows how to connect to the storage (disk vs cloud etc)
     '''
+
+    # ie data_array.arrays['vsd'] === data_array.vsd
+    delegate_attr_dicts = ['arrays']
 
     default_io = DiskIO('.')
     default_formatter = GNUPlotFormat()
@@ -308,13 +311,6 @@ class DataSet(object):
 
     def plot(self, cut=None):
         pass  # TODO
-
-    def __getattr__(self, key):
-        '''
-        alias arrays items as attributes
-        ie data_array.arrays['vsd'] === data_array.vsd
-        '''
-        return safe_getattr(self, key, 'arrays')
 
     def __repr__(self):
         out = '{}: {}, location=\'{}\''.format(self.__class__.__name__,

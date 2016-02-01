@@ -3,9 +3,11 @@ import time
 import re
 import sys
 import multiprocessing as mp
+from unittest.mock import patch
 
 from qcodes.utils.multiprocessing import (set_mp_method, QcodesProcess,
                                           get_stream_queue)
+from qcodes.utils.helpers import in_notebook
 
 
 # note sometimes separate processes do not seem to register in
@@ -25,7 +27,7 @@ def sqtest_f(name, period, cnt):
     for i in range(cnt):
         print('message from {}...'.format(name), end='', flush=True)
         if i % 5 == 1:
-            print('error from {}...'.format(name), end='',
+            print('mock error from {}...'.format(name), end='',
                   file=sys.stderr, flush=True)
             print('', end='')  # this one should do nothing
         time.sleep(period)
@@ -45,7 +47,23 @@ class TestMpMethod(TestCase):
 
 
 class TestQcodesProcess(TestCase):
-    def test_qcodes_process(self):
+    def test_not_in_notebook(self):
+        # below we'll patch this to True, but make sure that it's False
+        # in the normal test runner.
+        self.assertEqual(in_notebook(), False)
+
+        # and make sure that processes run this way do not use the queue
+        p = sqtest('p0', 0.01, 4)
+        self.assertIsNone(p.stream_queue)
+        time.sleep(0.1)
+
+        sq = get_stream_queue()
+        self.assertEqual(sq.get(), '')
+
+    @patch('qcodes.utils.multiprocessing.in_notebook')
+    def test_qcodes_process(self, in_nb_patch):
+        in_nb_patch.return_value = True
+
         # set up two processes that take 0.5 and 0.4 sec and produce
         # staggered results
         # p1 produces more output and sometimes makes two messages in a row
@@ -77,7 +95,7 @@ class TestQcodesProcess(TestCase):
         data2 = [line[14:] for line in queue_data2[1:-1]]
         p1msg = 'p1] message from P1...'
         p2msg = p1msg.replace('1', '2')
-        p1err = 'p1 ERR] error from P1...'
+        p1err = 'p1 ERR] mock error from P1...'
         p2err = p1err.replace('1', '2')
         expected_data1 = [
             p1msg,

@@ -106,35 +106,74 @@ def make_unique(s, existing):
     return s_out
 
 
-def safe_getattr(obj, key, attr_dict):
+class DelegateAttributes(object):
     '''
-    __getattr__ delegation to avoid infinite recursion
+    Mixin class to create attributes of this object by
+    delegating them to one or more dicts and/or objects
 
-    obj: the instance being queried
-    key: the attribute name (string)
-    attr_dict: the name (string) of the dict within obj that
-        holds the attributes being delegated
+    Also fixes __dir__ so the delegated attributes will show up
+    in dir() and autocomplete
+
+    delegate_attr_dicts: a list of names (strings) of dictionaries which are
+        (or will be) attributes of self, whose keys should be treated as
+        attributes of self
+    delegate_attr_objects: a list of names (strings) of objects which are
+        (or will be) attributes of self, whose attributes should be passed
+        through to self
+
+    any `None` entry is ignored
+
+    attribute resolution order:
+        1. real attributes of this object
+        2. keys of each dict in delegate_attr_dicts (in order)
+        3. attributes of each object in delegate_attr_objects (in order)
     '''
-    # TODO: is there a way to automatically combine this with __dir__?
-    # because we're always just saying:
-    #    def __getattr__(self, key):
-    #        return safe_getattr(self, key, 'some_dict')
-    # but then we should add self.some_dict's keys to dir() as well.
-    # or should we set all these attributes up front, instead of using
-    # __getattr__?
-    try:
-        if key == attr_dict:
-            # we got here looking for the dict itself, but it doesn't exist
-            msg = "'{}' object has no attribute '{}'".format(
-                obj.__class__.__name__, key)
-            raise AttributeError(msg)
+    delegate_attr_dicts = []
+    delegate_attr_objects = []
 
-        return getattr(obj, attr_dict)[key]
+    def __getattr__(self, key):
+        for name in self.delegate_attr_dicts:
+            if key == name:
+                # needed to prevent infinite loops!
+                raise AttributeError(
+                    "dict '{}' has not been created in object '{}'".format(
+                        key, self.__class__.__name__))
+            try:
+                d = getattr(self, name)
+                if d is not None:
+                    return d[key]
+            except KeyError:
+                pass
 
-    except KeyError:
-        msg = "'{}' object has no attribute or {} item '{}'".format(
-            obj.__class__.__name__, attr_dict, key)
-        raise AttributeError(msg) from None
+        for name in self.delegate_attr_objects:
+            if key == name:
+                raise AttributeError(
+                    "object '{}' has not been created in object '{}'".format(
+                        key, self.__class__.__name__))
+            try:
+                obj = getattr(self, name)
+                if obj is not None:
+                    return getattr(obj, key)
+            except AttributeError:
+                pass
+
+        raise AttributeError(
+            "'{}' object and its delegates have no attribute '{}'".format(
+                self.__class__.__name__, key))
+
+    def __dir__(self):
+        names = super().__dir__()
+        for name in self.delegate_attr_dicts:
+            d = getattr(self, name, None)
+            if d is not None:
+                names += list(d.keys())
+
+        for name in self.delegate_attr_objects:
+            obj = getattr(self, name, None)
+            if obj is not None:
+                names += dir(obj)
+
+        return sorted(set(names))
 
 
 # see http://stackoverflow.com/questions/22195382/
