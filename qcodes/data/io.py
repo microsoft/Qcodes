@@ -42,6 +42,7 @@ IO managers should also implement:
 
 from contextlib import contextmanager
 import os
+import re
 import shutil
 
 ALLOWED_OPEN_MODES = ('r', 'w', 'a')
@@ -49,14 +50,13 @@ ALLOWED_OPEN_MODES = ('r', 'w', 'a')
 
 class DiskIO(object):
     '''
-    simple IO object to wrap disk operations with a custom base location
-    Other IO managers (ie cloud) should replicate at least this behavior:
+    Simple IO object to wrap disk operations with a custom base location
 
-    with io_instance.open(filename, mode) as f:
-        s = f.read()  # allowed for mode 'r'
-        f.write(s)  # allowed for modes 'w' and 'a'
+    Also accepts both forward and backward slashes at any point, and
+    normalizes both to the OS we are currently on
     '''
     def __init__(self, base_location):
+        base_location = self._normalize_slashes(base_location)
         self.base_location = os.path.abspath(base_location)
 
     @contextmanager
@@ -83,7 +83,11 @@ class DiskIO(object):
         with open(filepath, mode) as f:
             yield f
 
+    def _normalize_slashes(self, location):
+        return os.path.join(*re.split('[\\\\/]', location))
+
     def _add_base(self, location):
+        location = self._normalize_slashes(location)
         return os.path.join(self.base_location, location)
 
     def _strip_base(self, path):
@@ -112,8 +116,12 @@ class DiskIO(object):
         or any files within an exactly matching directory name,
         nested as far as maxdepth (default 1) levels
         '''
+        location = self._normalize_slashes(location)
         base_location, pattern = os.path.split(location)
         path = self._add_base(base_location)
+
+        if not os.path.isdir(path):
+            return []
 
         matches = [fn for fn in os.listdir(path) if fn.startswith(pattern)]
         out = []
@@ -140,11 +148,17 @@ class DiskIO(object):
         return out
 
     def remove(self, filename):
+        '''
+        delete this file/folder and prune the directory tree
+        '''
         path = self._add_base(filename)
         if(os.path.isdir(path)):
             shutil.rmtree(path)
         else:
             os.remove(path)
+
+        filepath = os.path.split(path)[0]
+        os.removedirs(filepath)
 
 
 class FileWrapper(object):
