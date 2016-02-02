@@ -2,6 +2,7 @@ import multiprocessing as mp
 import sys
 from datetime import datetime
 import time
+from traceback import print_exc
 
 from .helpers import in_notebook
 
@@ -61,7 +62,14 @@ class QcodesProcess(mp.Process):
     def run(self):
         if self.stream_queue:
             self.stream_queue.connect(str(self.name))
-        super().run()
+        try:
+            super().run()
+        except:
+            # if we let the system print the exception by itself, sometimes
+            # it disconnects the stream partway through printing.
+            print_exc()
+        finally:
+            self.stream_queue.disconnect()
 
     def __repr__(self):
         cname = self.__class__.__name__
