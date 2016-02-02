@@ -50,7 +50,7 @@ from qcodes.utils.multiprocessing import QcodesProcess
 from qcodes.utils.sync_async import mock_sync
 
 
-MP_NAME = 'MeasurementProcess'
+MP_NAME = 'Measurement'
 
 
 def get_bg(return_first=False):
