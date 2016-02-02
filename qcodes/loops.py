@@ -43,7 +43,7 @@ import time
 import numpy as np
 
 from qcodes.station import Station
-from qcodes.data.data_set import DataSet, DataMode
+from qcodes.data.data_set import new_data, DataMode
 from qcodes.data.data_array import DataArray
 from qcodes.utils.helpers import wait_secs
 from qcodes.utils.multiprocessing import QcodesProcess
@@ -396,7 +396,7 @@ class ActiveLoop(object):
 
         kwargs are passed along to DataSet. The key ones are:
         location: the location of the DataSet, a string whose meaning
-            depends on formatter and io
+            depends on formatter and io, or False to only keep in memory
         formatter: knows how to read and write the file format
             default can be set in DataSet.default_formatter
         io: knows how to connect to the storage (disk vs cloud etc)
@@ -418,8 +418,8 @@ class ActiveLoop(object):
         else:
             data_mode = DataMode.PUSH_TO_SERVER
 
-        data_set = DataSet(arrays=self.containers(), mode=data_mode,
-                           data_manager=data_manager, **kwargs)
+        data_set = new_data(arrays=self.containers(), mode=data_mode,
+                            data_manager=data_manager, **kwargs)
         signal_queue = mp.Queue()
         self.set_common_attrs(data_set=data_set, signal_queue=signal_queue)
 
