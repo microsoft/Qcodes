@@ -174,8 +174,8 @@ class Tektronix_AWG5014(VisaInstrument):
                            label='Trigger impedance (Ohm)',
                            get_cmd='TRIG:IMP?',
                            set_cmd='TRIG:IMP '+'{}',
-                           vals=vals.Ints(),
-                           parse_function=float)  # options 50 and 1000 val not implemented
+                           vals=vals.Enum(50, 1000),
+                           parse_function=float)
         self.add_parameter('trigger_level',
                            label='Trigger level (V)',
                            get_cmd='TRIG:LEV?',
@@ -200,8 +200,8 @@ class Tektronix_AWG5014(VisaInstrument):
                            label='Event impedance (Ohm)',
                            get_cmd='EVEN:IMP?',
                            set_cmd='EVEN:IMP '+'{}',
-                           vals=vals.Ints(),
-                           parse_function=float)  # options 50 and 1000 val not implemented
+                           vals=vals.Enum(50, 1000),
+                           parse_function=float)
         self.add_parameter('event_level',
                            label='Event level (V)',
                            get_cmd='EVEN:LEV?',
