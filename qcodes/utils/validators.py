@@ -67,14 +67,11 @@ class Bool(Validator):
 class Strings(Validator):
     '''
     requires a string
-    optional parameters
-        min_length and max_length limit the allowed length
-            to min_length <= len(value) <= max_length
-        options: list of allowed strings returns True if value in options
-
+    optional parameters min_length and max_length limit the allowed length
+    to min_length <= len(value) <= max_length
     '''
 
-    def __init__(self, min_length=0, max_length=BIGSTRING, options=None):
+    def __init__(self, min_length=0, max_length=BIGSTRING):
         if isinstance(min_length, int) and min_length >= 0:
             self._min_length = min_length
         else:
@@ -84,16 +81,10 @@ class Strings(Validator):
         else:
             raise TypeError('max_length must be a positive integer '
                             'no smaller than min_length')
-        self.options = options
 
     def is_valid(self, value):
-        if self.options is not None:
-            return (isinstance(value, str) and
-                    (self._min_length <= len(value) <= self._max_length) and
-                    value in self.options)
-        else:
-            return (isinstance(value, str) and
-                    self._min_length <= len(value) <= self._max_length)
+        return (isinstance(value, str) and
+                self._min_length <= len(value) <= self._max_length)
 
     def __repr__(self):
         minv = self._min_length or None
