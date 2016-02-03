@@ -162,16 +162,14 @@ class Tektronix_AWG5014(VisaInstrument):
         self.add_parameter('run_mode',
                            get_cmd='AWGC:RMOD?',
                            set_cmd='AWGC:RMOD ' + '{}',
-                           vals=vals.Strings(
-                            options=['CONT', 'TRIG', 'SEQ', 'GAT']))
+                           vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'))
         # Trigger parameters #
         # ! Warning this is the same as run mode, do not use! exists
         # Solely for legacy purposes
         self.add_parameter('trigger_mode',
                            get_cmd='AWGC:RMOD?',
                            set_cmd='AWGC:RMOD ' + '{}',
-                           vals=vals.Strings(
-                                options=['CONT', 'TRIG', 'SEQ', 'GAT']))
+                           vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'))
         self.add_parameter('trigger_impedance',
                            label='Trigger impedance (Ohm)',
                            get_cmd='TRIG:IMP?',
@@ -187,17 +185,17 @@ class Tektronix_AWG5014(VisaInstrument):
         self.add_parameter('trigger_slope',
                            get_cmd='TRIG:SLOP?',
                            set_cmd='TRIG:SLOP '+'{}',
-                           vals=vals.Strings(options=['POS', 'NEG']))#,
+                           vals=vals.Enum('POS', 'NEG'))#,
                            # parse_function=self.parse_int_pos_neg)
         self.add_parameter('trigger_source',
                            get_cmd='TRIG:source?',
                            set_cmd='TRIG:source '+'{}',
-                           vals=vals.Strings(options=['INT', 'EXT']))
+                           vals=vals.Enum('INT', 'EXT'))
         # Event parameters #
         self.add_parameter('event_polarity',
                            get_cmd='EVEN:POL?',
                            set_cmd='EVEN:POL '+'{}',
-                           vals=vals.Strings(options=['POS', 'NEG']))
+                           vals=vals.Enum('POS', 'NEG'))
         self.add_parameter('event_impedance',
                            label='Event impedance (Ohm)',
                            get_cmd='EVEN:IMP?',
@@ -213,7 +211,7 @@ class Tektronix_AWG5014(VisaInstrument):
         self.add_parameter('event_jump_timing',
                            get_cmd='EVEN:JTIM?',
                            set_cmd='EVEN:JTIM {}',
-                           vals=vals.Strings(options=['SYNC', 'ASYNC']))
+                           vals=vals.Enum('SYNC', 'ASYNC'))
 
         self.add_parameter('clock_freq',
                            label='Clock frequency (Hz)',
