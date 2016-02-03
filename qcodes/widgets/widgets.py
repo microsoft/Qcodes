@@ -4,12 +4,12 @@ from multiprocessing import active_children
 from traitlets import Unicode, Float
 
 from qcodes.utils.multiprocessing import get_stream_queue
-from .display import display_relative
+from .display import display_auto
 from qcodes.loops import MP_NAME, halt_bg
 
 
-display_relative(__file__, 'widgets.js')
-display_relative(__file__, 'widgets.css')
+display_auto('widgets/widgets.js')
+display_auto('widgets/widgets.css')
 
 
 class UpdateWidget(widgets.DOMWidget):
