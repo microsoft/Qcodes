@@ -39,16 +39,17 @@ class Tektronix_AWG5014(VisaInstrument):
     This is the python driver for the Tektronix AWG5014
     Arbitrary Waveform Generator
 
-    Usage:
-    Initialize with
-    <name> = instruments.create('name', 'Tektronix_AWG5014', address='<GPIB address>',
-        reset=<bool>, numpoints=<int>)
-
     think about:    clock, waveform length
 
     TODO:
+    - Not all functionality is available in the driver
+    - There is some double functionality
+    - There are some inconsistensies between the name of a parameter and the
+      name of the same variable in the tektronix manual
+
     * Remove test_send??
-    * Sequence element (SQEL) parameter functions exist but no corresponding parameters
+    * Sequence element (SQEL) parameter functions exist but no corresponding
+      parameters
 
 
     CHANGES:

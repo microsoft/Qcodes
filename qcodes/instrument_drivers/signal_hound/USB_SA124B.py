@@ -3,20 +3,16 @@ import numpy as np
 import ctypes as ct
 import logging
 
-# load the qcodes path, until we have this installed as a package
-import sys
-qcpath = 'D:\GitHubRepos\Qcodes'
-if qcpath not in sys.path:
-    sys.path.append(qcpath)
-
 from qcodes.instrument.base import Instrument
 from qcodes.utils import validators as vals
+
 
 class SignalHound_USB_SA124B(Instrument):
     '''
     This is a direct port of the signal hound QTLab driver by Ramiro
-    Status: Alpha version. This driver is functional but has untested features
-    and is in need of a code cleanup.
+    Status: Alpha version.
+        This driver is functional but has untested features
+        and is in need of a code cleanup.
     '''
     saStatus = {
         "saUnknownErr": -666,

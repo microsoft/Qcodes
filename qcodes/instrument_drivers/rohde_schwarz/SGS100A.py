@@ -2,7 +2,8 @@ import time
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
 
-class RS_SGS100A(VisaInstrument):
+
+class RohdeSchwarz_SGS100A(VisaInstrument):
     '''
     This is the qcodes driver for the Rohde & Schwarz SGS100A signal generator
 
