@@ -42,6 +42,9 @@ class BasePlot(object):
         kwargs: after inserting info found in args and possibly in set_arrays
             into `x`, `y`, and optionally `z`, these are passed along to
             self.add_to_plot
+
+        Array shapes for 2D plots:
+            x:(1D-length m), y:(1D-length n), z: (2D- n*m array)
         '''
         self.expand_trace(args, kwargs)
         self.add_to_plot(**kwargs)
@@ -74,10 +77,13 @@ class BasePlot(object):
     def get_default_title(self):
         '''
         the default title for a plot is just a list of DataSet locations
+        a custom title can be passed using **kwargs.
         '''
         title_parts = []
         for trace in self.traces:
             config = trace['config']
+            if 'title' in config:  # can be passed using **kw
+                return config['title']
             for part in self.data_keys:
                 data_array = config.get(part, '')
                 if hasattr(data_array, 'data_set'):
