@@ -71,7 +71,6 @@ class QtPlot(BasePlot):
         self.traces = []
         self.subplots = []
 
-
     def add_subplot(self):
         subplot_object = self.win.addPlot()
 
