@@ -63,29 +63,29 @@ class TestParameters(TestCase):
             cmdbase = 'c{}'.format(i)
             self.gates.add_parameter('chan{}'.format(i), get_cmd=cmdbase + '?',
                                      set_cmd=cmdbase + ' {:.4f}',
-                                     parse_function=float,
+                                     get_parser=float,
                                      vals=Numbers(-10, 10))
             self.gates.add_parameter('chan{}step'.format(i),
                                      get_cmd=cmdbase + '?',
                                      set_cmd=cmdbase + ' {:.4f}',
-                                     parse_function=float,
+                                     get_parser=float,
                                      vals=Numbers(-10, 10),
                                      sweep_step=0.1, sweep_delay=0.005)
         self.gates.add_function('reset', call_cmd='rst')
 
         self.source = MockInstrument('source', model=self.model, delay=0.001)
         self.source.add_parameter('amplitude', get_cmd='ampl?',
-                                  set_cmd='ampl {:.4f}', parse_function=float,
+                                  set_cmd='ampl {:.4f}', get_parser=float,
                                   vals=Numbers(0, 1),
                                   sweep_step=0.2, sweep_delay=0.005)
 
         self.meter = MockInstrument('meter', model=self.model, delay=0.001,
                                     read_response=self.read_response)
         self.meter.add_parameter('amplitude', get_cmd='ampl?',
-                                 parse_function=float)
+                                 get_parser=float)
         self.meter.add_function('echo', call_cmd='echo {:.2f}?',
                                 parameters=[Numbers(0, 1000)],
-                                parse_function=float)
+                                return_parser=float)
 
         self.init_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -224,7 +224,7 @@ class TestParameters(TestCase):
         # but we should handle it
         source = self.source
         source.add_parameter('amplitude2', get_cmd='ampl?',
-                             set_cmd='ampl {}', parse_function=float,
+                             set_cmd='ampl {}', get_parser=float,
                              vals=MultiType(Numbers(0, 1), Strings()),
                              sweep_step=0.2, sweep_delay=0.005)
         self.assertEqual(len(source.history), 0)

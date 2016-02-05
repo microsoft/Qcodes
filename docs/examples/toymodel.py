@@ -78,7 +78,7 @@ class MockGates(MockInstrument):
                                label='Gate Channel {} (mV)'.format(i),
                                get_cmd=cmdbase + '?',
                                set_cmd=cmdbase + ' {:.4f}',
-                               parse_function=float,
+                               get_parser=float,
                                vals=Numbers(-100, 100))
 
         self.add_function('reset', call_cmd='rst')
@@ -93,7 +93,7 @@ class MockSource(MockInstrument):
                            label='Source Amplitude (\u03bcV)',
                            get_cmd='ampl?',
                            set_cmd='ampl {:.4f}',
-                           parse_function=float,
+                           get_parser=float,
                            vals=Numbers(0, 10),
                            sweep_step=0.1,
                            sweep_delay=0.05)
@@ -106,7 +106,7 @@ class MockMeter(MockInstrument):
         self.add_parameter('amplitude',
                            label='Current (nA)',
                            get_cmd='ampl?',
-                           parse_function=float)
+                           get_parser=float)
 
 
 class AverageGetter(Parameter):
