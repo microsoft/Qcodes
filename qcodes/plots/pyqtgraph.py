@@ -62,6 +62,16 @@ class QtPlot(BasePlot):
         self.__class__.proc = pgmp.QtProcess()  # pyqtgraph multiprocessing
         self.__class__.rpg = self.proc._import('pyqtgraph')
 
+    def clear(self):
+        '''
+        Clears the plot window and removes all subplots and traces
+        so that the window can be reused.
+        '''
+        self.win.clear()
+        self.traces = []
+        self.subplots = []
+
+
     def add_subplot(self):
         subplot_object = self.win.addPlot()
 
