@@ -127,7 +127,7 @@ class TestSyncableCommand(TestCase):
             syncable_command(cmd='')
 
         with self.assertRaises(TypeError):
-            syncable_command(0, '', parse_function=lambda: 1)
+            syncable_command(0, '', output_parser=lambda: 1)
 
         with self.assertRaises(TypeError):
             syncable_command(0, cmd='', exec_str='not a function')
@@ -182,7 +182,7 @@ class TestSyncableCommand(TestCase):
 
         # separate sync/async with parsing
         cmd, acmd = syncable_command(0, 'blue', exec_str=f_now,
-                                     aexec_str=adelay, parse_function=upper)
+                                     aexec_str=adelay, output_parser=upper)
         self.assertEqual(cmd(), 'BLUE NOW')
         self.assertEqual(wait_for_async(acmd), 'BLUE DELAYED')
 

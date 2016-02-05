@@ -73,7 +73,8 @@ class NoCommandError(Exception):
 
 
 def syncable_command(param_count, cmd=None, acmd=None,
-                     exec_str=None, aexec_str=None, parse_function=None,
+                     exec_str=None, aexec_str=None,
+                     input_parser=None, output_parser=None,
                      no_cmd_function=None):
     '''
     create synchronous and asynchronous versions of a command
@@ -89,7 +90,11 @@ def syncable_command(param_count, cmd=None, acmd=None,
         The next three inputs are only valid if cmd is a string:
         exec_str: a function of one parameter to execute the command string
         aexec_str: a coroutine of one parameter to execute the command string
-        parse_function: a function to transform the return value of the command
+        input_parser: a function to transform the input parameter(s) before
+            sending them to the command. If there are multiple arguments, this
+            function should accept all the arguments in order, and
+            return a tuple of values.
+        output_parser: a function to transform the return value of the command
 
         the last input is how to handle missing commands
         no_cmd_function: don't throw an error on definition if no command found
@@ -102,7 +107,7 @@ def syncable_command(param_count, cmd=None, acmd=None,
             acall is a coroutine
     '''
     return _SyncableCommand(param_count, cmd, acmd, exec_str, aexec_str,
-                            parse_function, no_cmd_function
+                            input_parser, output_parser, no_cmd_function
                             ).out()
 
 
@@ -115,13 +120,14 @@ class _SyncableCommand(object):
     multiprocessing.
     '''
     def __init__(self, param_count, cmd, acmd, exec_str, aexec_str,
-                 parse_function, no_cmd_function):
+                 input_parser, output_parser, no_cmd_function):
         self.param_count = param_count
         self.cmd = cmd
         self.acmd = acmd
         self.exec_str = exec_str
         self.aexec_str = aexec_str
-        self.parse_function = parse_function
+        self.input_parser = input_parser
+        self.output_parser = output_parser
         self.no_cmd_function = no_cmd_function
 
         self.exec_function = None
@@ -135,13 +141,49 @@ class _SyncableCommand(object):
     def acall_by_str(self, *args):
         return (yield from self.aexec_str(self.cmd.format(*args)))
 
-    def call_by_str_parsed(self, *args):
-        return self.parse_function(self.exec_str(self.cmd.format(*args)))
+    def call_by_str_parsed_out(self, *args):
+        return self.output_parser(self.exec_str(self.cmd.format(*args)))
 
     @asyncio.coroutine
-    def acall_by_str_parsed(self, *args):
+    def acall_by_str_parsed_out(self, *args):
         raw_value = yield from self.aexec_str(self.cmd.format(*args))
-        return self.parse_function(raw_value)
+        return self.output_parser(raw_value)
+
+    def call_by_str_parsed_in(self, arg):
+        return self.exec_str(self.cmd.format(self.input_parser(arg)))
+
+    @asyncio.coroutine
+    def acall_by_str_parsed_in(self, arg):
+        return (yield from self.aexec_str(
+            self.cmd.format(self.input_parser(arg))))
+
+    def call_by_str_parsed_in_out(self, arg):
+        return self.output_parser(self.exec_str(
+            self.cmd.format(self.input_parser(arg))))
+
+    @asyncio.coroutine
+    def acall_by_str_parsed_in_out(self, arg):
+        raw_value = yield from self.aexec_str(
+            self.cmd.format(self.input_parser(arg)))
+        return self.output_parser(raw_value)
+
+    def call_by_str_parsed_in2(self, *args):
+        return self.exec_str(self.cmd.format(*self.input_parser(*args)))
+
+    @asyncio.coroutine
+    def acall_by_str_parsed_in2(self, *args):
+        return (yield from self.aexec_str(
+            self.cmd.format(*self.input_parser(*args))))
+
+    def call_by_str_parsed_in2_out(self, *args):
+        return self.output_parser(self.exec_str(
+            self.cmd.format(*self.input_parser(*args))))
+
+    @asyncio.coroutine
+    def acall_by_str_parsed_in2_out(self, *args):
+        raw_value = yield from self.aexec_str(
+            self.cmd.format(*self.input_parser(*args)))
+        return self.output_parser(raw_value)
 
     def call_sync_by_afunction(self, *args):
         return wait_for_async(self.aexec_function, *args)
@@ -163,35 +205,61 @@ class _SyncableCommand(object):
 
     def out(self):
         if isinstance(self.cmd, str):
-            if self.parse_function is None:
-                parsed = False
-            elif is_function(self.parse_function, 1):
-                parsed = True
+            if self.input_parser is None:
+                parse_input = False
+            elif is_function(self.input_parser, self.param_count):
+                parse_input = True if self.param_count == 1 else 'multi'
             else:
                 raise TypeError(
-                    'parse_function must be a function with one arg,' +
-                    ' not {}'.format(repr(self.parse_function)))
+                    'input_parser must be a function with one arg per param,'
+                    ' not {}'.format(repr(self.input_parser)))
+
+            if self.output_parser is None:
+                parse_output = False
+            elif is_function(self.output_parser, 1):
+                parse_output = True
+            else:
+                raise TypeError(
+                    'output_parser must be a function with one arg,'
+                    ' not {}'.format(repr(self.output_parser)))
 
             if is_function(self.exec_str, 1):
-                self.exec_function = (self.call_by_str_parsed if parsed else
-                                      self.call_by_str)
+                self.exec_function = {  # (parse_input, parse_output)
+                    (False, False): self.call_by_str,
+                    (False, True): self.call_by_str_parsed_out,
+                    (True, False): self.call_by_str_parsed_in,
+                    (True, True): self.call_by_str_parsed_in_out,
+                    ('multi', False): self.call_by_str_parsed_in2,
+                    ('multi', True): self.call_by_str_parsed_in2_out
+                }[(parse_input, parse_output)]
+
             elif self.exec_str is not None:
                 raise TypeError('exec_str must be a function with one arg,' +
                                 ' not {}'.format(repr(self.exec_str)))
 
             if is_function(self.aexec_str, 1, coroutine=True):
-                self.aexec_function = (self.acall_by_str_parsed if parsed else
-                                       self.acall_by_str)
+                self.aexec_function = {
+                    (False, False): self.acall_by_str,
+                    (False, True): self.acall_by_str_parsed_out,
+                    (True, False): self.acall_by_str_parsed_in,
+                    (True, True): self.acall_by_str_parsed_in_out,
+                    ('multi', False): self.acall_by_str_parsed_in2,
+                    ('multi', True): self.acall_by_str_parsed_in2_out
+                }[(parse_input, parse_output)]
+
             elif self.aexec_str is not None:
                 raise TypeError('aexec_str must be a coroutine with one arg')
+
         elif is_function(self.cmd, self.param_count):
             self.exec_function = self.cmd
+
         elif self.cmd is not None:
             raise TypeError('cmd must be a string or function with ' +
                             '{} parameters'.format(self.param_count))
 
         if is_function(self.acmd, self.param_count, coroutine=True):
             self.aexec_function = self.acmd
+
         elif self.acmd is not None:
             raise TypeError('acmd must be a coroutine with ' +
                             '{} parameters'.format(self.param_count))
