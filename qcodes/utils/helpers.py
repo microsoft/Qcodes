@@ -45,7 +45,13 @@ def is_function(f, arg_count, coroutine=False):
         # otherwise the user should make an explicit function.
         return arg_count == 1
 
-    argspec = getargspec(f)
+    try:
+        argspec = getargspec(f)
+    except TypeError:
+        # some built-in functions/methods don't describe themselves to inspect
+        # we already know it's a callable and coroutine is correct.
+        return True
+
     if argspec.varargs:
         # we can't check the arg count if there's a *args parameter
         # so you're on your own at that point

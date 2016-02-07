@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
-from qcodes.utils.validators import Numbers, Ints, Strings, MultiType
+from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
 from qcodes.utils.sync_async import wait_for_async, NoCommandError
 
 
@@ -16,12 +16,16 @@ class AMockModel(object):
     def __init__(self):
         self._gates = [0.0, 0.0, 0.0]
         self._excitation = 0.1
+        self._memory = {}
 
     def write(self, instrument, parameter, value):
         if instrument == 'gates' and parameter[0] == 'c':
             self._gates[int(parameter[1:])] = float(value)
         elif instrument == 'gates' and parameter == 'rst':
             self._gates = [0.0, 0.0, 0.0]
+        elif instrument == 'gates' and parameter[:3] == 'mem':
+            slot = int(parameter[3:])
+            self._memory[slot] = value
         elif instrument == 'source' and parameter == 'ampl':
             try:
                 self._excitation = float(value)
@@ -37,6 +41,9 @@ class AMockModel(object):
 
         if instrument == 'gates' and parameter[0] == 'c':
             v = gates[int(parameter[1:])]
+        elif instrument == 'gates' and parameter[:3] == 'mem':
+            slot = int(parameter[3:])
+            return self._memory[slot]
         elif instrument == 'source' and parameter == 'ampl':
             v = self._excitation
         elif instrument == 'meter' and parameter == 'ampl':
@@ -289,6 +296,32 @@ class TestParameters(TestCase):
             gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
                                 sweep_step=0.1, sweep_delay=0.01,
                                 max_val_age=-1)
+
+    def test_val_mapping(self):
+        gates = self.gates
+        mem = self.model._memory
+
+        gates.add_parameter('memraw', set_cmd='mem0 {}', get_cmd='mem0?',
+                            vals=Enum('zero', 'one'))
+
+        gates.add_parameter('memcoded', set_cmd='mem0 {}', get_cmd='mem0?',
+                            val_mapping={0: 'zero', 1: 'one'})
+
+        gates.memcoded.set(0)
+        self.assertEqual(gates.memraw.get(), 'zero')
+        self.assertEqual(gates.memcoded.get(), 0)
+        self.assertEqual(mem[0], 'zero')
+
+        gates.memraw.set('one')
+        self.assertEqual(gates.memcoded.get(), 1)
+        self.assertEqual(gates.memraw.get(), 'one')
+        self.assertEqual(mem[0], 'one')
+
+        with self.assertRaises(ValueError):
+            gates.memraw.set(0)
+
+        with self.assertRaises(ValueError):
+            gates.memcoded.set('zero')
 
     def test_snapshot(self):
         self.assertEqual(self.meter.snapshot(), {
