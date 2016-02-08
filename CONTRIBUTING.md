@@ -22,16 +22,13 @@ Figured out a new way to use qcodes? Found a package that makes your life better
 
 ### Setup
 
-- Install git: the [command-line toolset](https://git-scm.com/) is the most powerful but the [desktop GUI from github](https://desktop.github.com/) is also quite powerful
-
-- Clone this repo:
-```
-git clone https://github.com/qdev-dk/Qcodes.git
-```
-
-- Install the dependencies, including for testing (see [README.md#Requirements])
+- Clone and register the package for development as described in [README.md#installation]
 
 - Run the tests. In the root directory of the repository:
+```
+python setup.py nosetests
+```
+or:
 ```
 nosetests --with-coverage --cover-package=qcodes
 ```
