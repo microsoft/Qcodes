@@ -26,6 +26,9 @@ def new_data(location=None, overwrite=False, io=None, data_manager=None,
     location: can be a location string, but can also be a callable (a function
         of one parameter, the io manager) to generate an automatic location,
         or False to denote an only-in-memory temporary DataSet.
+        Note that the full path to or physical location of the data is a
+        combination of io + location. the default DiskIO sets the base
+        directory, which this location sits inside.
         defaults to DataSet.location_provider
     '''
     if io is None:
@@ -58,6 +61,9 @@ def load_data(location=None, data_manager=None, formatter=None, io=None):
         if omitted (None) defaults to the current live DataSet.
         `mode` is determined automatically from location: PULL_FROM_SERVER if
         this is the live DataSet, otherwise LOCAL
+        Note that the full path to or physical location of the data is a
+        combination of io + location. the default DiskIO sets the base
+        directory, which this location sits inside.
 
     data_manager: usually omitted (default None) to get the default
         DataManager. load_data will not start a DataManager but may
@@ -131,10 +137,12 @@ class DataSet(DelegateAttributes):
     Normally a DataSet should not be instantiated directly, but through
     new_data or load_data
 
-    location: where this data set is stored, also its identifier.
-        what exactly this means depends on io and formatter
+    location: where this data set is stored, also the DataSet's identifier.
         location=False or None means this is a temporary DataSet and
         cannot be stored or read.
+        Note that the full path to or physical location of the data is a
+        combination of io + location. the default DiskIO sets the base
+        directory, which this location sits inside.
 
     arrays: a dict of array_id: DataArray's contained in this DataSet
 
@@ -154,6 +162,9 @@ class DataSet(DelegateAttributes):
     formatter: knows how to read and write the file format
 
     io: knows how to connect to the storage (disk vs cloud etc)
+        The default (stored in class attribute DataSet.default_io) is
+        DiskIO('.') which says the root data storage directory is the
+        current working directory, ie where you started the notebook or python.
     '''
 
     # ie data_array.arrays['vsd'] === data_array.vsd
