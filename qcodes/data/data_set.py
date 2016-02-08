@@ -16,26 +16,30 @@ class DataMode(Enum):
 SERVER_MODES = set((DataMode.PULL_FROM_SERVER, DataMode.PUSH_TO_SERVER))
 
 
-def new_data(location=None, overwrite=False, io=None, data_manager=None,
-             mode=DataMode.LOCAL, **kwargs):
+def new_data(location=None, name=None, overwrite=False, io=None,
+             data_manager=None, mode=DataMode.LOCAL, **kwargs):
     '''
     Create a new DataSet. Arguments are the same as DataSet constructor, plus:
 
     overwrite: Are we allowed to overwrite an existing location? default False
 
     location: can be a location string, but can also be a callable (a function
-        of one parameter, the io manager) to generate an automatic location,
-        or False to denote an only-in-memory temporary DataSet.
+        of one required parameter, the io manager, and an optional name) to
+        generate an automatic location, or False to denote an
+        only-in-memory temporary DataSet.
         Note that the full path to or physical location of the data is a
         combination of io + location. the default DiskIO sets the base
         directory, which this location sits inside.
         defaults to DataSet.location_provider
+
+    name: an optional string to be passed to location_provider to augment
+        the automatic location with something meaningful
     '''
     if io is None:
         io = DataSet.default_io
 
     if location is None:
-        location = DataSet.location_provider(io)
+        location = DataSet.location_provider(io, name)
     elif callable(location):
         location = location(io)
 
@@ -115,8 +119,11 @@ class TimestampLocation(object):
     def __init__(self, fmt='%Y-%m-%d/%H-%M-%S'):
         self.fmt = fmt
 
-    def __call__(self, io):
+    def __call__(self, io, name=None):
         location = base_location = datetime.now().strftime(self.fmt)
+
+        if name:
+            location += '_' + name
 
         for char in map(chr, range(ord('a'), ord('z') + 2)):
             if not io.list(location):

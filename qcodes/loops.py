@@ -394,9 +394,14 @@ class ActiveLoop(object):
         data_manager: a DataManager instance (omit to use default,
             False to store locally and not write to disk)
 
-        kwargs are passed along to DataSet. The key ones are:
+        kwargs are passed along to data_set.new_data. The key ones are:
         location: the location of the DataSet, a string whose meaning
-            depends on formatter and io, or False to only keep in memory
+            depends on formatter and io, or False to only keep in memory.
+            May be a callable to provide automatic locations. If omitted, will
+            use the default DataSet.location_provider
+        name: if location is default or another provider function, name is
+            a string to add to location to make it more readable/meaningful
+            to users
         formatter: knows how to read and write the file format
             default can be set in DataSet.default_formatter
         io: knows how to connect to the storage (disk vs cloud etc)
