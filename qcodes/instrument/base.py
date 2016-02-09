@@ -1,4 +1,4 @@
-import asyncio
+8import asyncio
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import wait_for_async
@@ -20,7 +20,8 @@ class Instrument(Metadatable, DelegateAttributes):
         # anyway threading.Lock is unpicklable on Windows
         # self.lock = threading.Lock()
 
-    def add_parameter(self, name, **kwargs):
+    def add_parameter(self, name, parameter_class=InstrumentParameter,
+                      **kwargs):
         '''
         binds one InstrumentParameter to this instrument.
 
@@ -35,11 +36,14 @@ class Instrument(Metadatable, DelegateAttributes):
         shortcut methods:
         instrument.set(param_name, value) etc.
 
-        see InstrumentParameter for the list of kwargs
+        `parameter_class` can be used to construct the parameter out of
+            something other than InstrumentParameter
+
+        kwargs: see InstrumentParameter (or `parameter_class`)
         '''
         if name in self.parameters:
             raise KeyError('Duplicate parameter name {}'.format(name))
-        self.parameters[name] = InstrumentParameter(self, name, **kwargs)
+        self.parameters[name] = parameter_class(self, name, **kwargs)
 
     def add_function(self, name, **kwargs):
         '''
