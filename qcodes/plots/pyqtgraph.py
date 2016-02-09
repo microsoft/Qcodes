@@ -111,8 +111,13 @@ class QtPlot(BasePlot):
                 color = cycle[len(self.traces) % len(cycle)]
             if width is None:
                 width = 2
-
             kwargs['pen'] = self.rpg.mkPen(color, width=width)
+        # If a marker symbol is desired use the same color as the line
+        if any([('symbol' in key) for key in kwargs]):
+            if 'symbolPen' not in kwargs:
+                kwargs['symbolPen'] = kwargs['pen']
+            if 'symbolBrush' not in kwargs:
+                kwargs['symbolBrush'] = color
 
         if antialias is None:
             # looks a lot better antialiased, but slows down with many points
