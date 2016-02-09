@@ -301,9 +301,13 @@ class TestParameters(TestCase):
         gates = self.gates
         mem = self.model._memory
 
+        # memraw has no mappings - it just sets and gets what the instrument
+        # uses to encode this parameter
         gates.add_parameter('memraw', set_cmd='mem0 {}', get_cmd='mem0?',
                             vals=Enum('zero', 'one'))
 
+        # memcoded maps the instrument codes ('zero' and 'one') into nicer
+        # user values 0 and 1
         gates.add_parameter('memcoded', set_cmd='mem0 {}', get_cmd='mem0?',
                             val_mapping={0: 'zero', 1: 'one'})
 

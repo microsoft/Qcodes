@@ -211,8 +211,10 @@ class InstrumentParameter(Parameter):
 
         val_mapping: a bidirectional map from data/readable values to
             instrument codes, expressed as a dict.
-            For example, if '0' means 1V and '1' means 10V,
-            set val_mapping={1: '0', 10: '1'}.
+            For example, if the instrument uses '0' to mean 1V and '1' to mean
+            10V, set val_mapping={1: '0', 10: '1'} and on the user side you
+            only see 1 and 10, never the coded '0' and '1'
+
             If vals is omitted, will also construct a matching Enum validator.
             NOTE: only applies to get if get_cmd is a string, and to set if
             set_cmd is a string.
