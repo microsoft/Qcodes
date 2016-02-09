@@ -210,7 +210,7 @@ class InstrumentParameter(Parameter):
         parse_function: DEPRECATED - use get_parser instead
 
         val_mapping: a bidirectional map from data/readable values to
-            instrument codes, expressed as a dict.
+            instrument codes, expressed as a dict {data_val: instrument_code}
             For example, if the instrument uses '0' to mean 1V and '1' to mean
             10V, set val_mapping={1: '0', 10: '1'} and on the user side you
             only see 1 and 10, never the coded '0' and '1'
