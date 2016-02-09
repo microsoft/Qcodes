@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
-from qcodes.utils.validators import Numbers, Ints, Strings, MultiType
+from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
 from qcodes.utils.sync_async import wait_for_async, NoCommandError
 
 
@@ -16,12 +16,16 @@ class AMockModel(object):
     def __init__(self):
         self._gates = [0.0, 0.0, 0.0]
         self._excitation = 0.1
+        self._memory = {}
 
     def write(self, instrument, parameter, value):
         if instrument == 'gates' and parameter[0] == 'c':
             self._gates[int(parameter[1:])] = float(value)
         elif instrument == 'gates' and parameter == 'rst':
             self._gates = [0.0, 0.0, 0.0]
+        elif instrument == 'gates' and parameter[:3] == 'mem':
+            slot = int(parameter[3:])
+            self._memory[slot] = value
         elif instrument == 'source' and parameter == 'ampl':
             try:
                 self._excitation = float(value)
@@ -37,6 +41,9 @@ class AMockModel(object):
 
         if instrument == 'gates' and parameter[0] == 'c':
             v = gates[int(parameter[1:])]
+        elif instrument == 'gates' and parameter[:3] == 'mem':
+            slot = int(parameter[3:])
+            return self._memory[slot]
         elif instrument == 'source' and parameter == 'ampl':
             v = self._excitation
         elif instrument == 'meter' and parameter == 'ampl':
@@ -63,29 +70,29 @@ class TestParameters(TestCase):
             cmdbase = 'c{}'.format(i)
             self.gates.add_parameter('chan{}'.format(i), get_cmd=cmdbase + '?',
                                      set_cmd=cmdbase + ' {:.4f}',
-                                     parse_function=float,
+                                     get_parser=float,
                                      vals=Numbers(-10, 10))
             self.gates.add_parameter('chan{}step'.format(i),
                                      get_cmd=cmdbase + '?',
                                      set_cmd=cmdbase + ' {:.4f}',
-                                     parse_function=float,
+                                     get_parser=float,
                                      vals=Numbers(-10, 10),
                                      sweep_step=0.1, sweep_delay=0.005)
         self.gates.add_function('reset', call_cmd='rst')
 
         self.source = MockInstrument('source', model=self.model, delay=0.001)
         self.source.add_parameter('amplitude', get_cmd='ampl?',
-                                  set_cmd='ampl {:.4f}', parse_function=float,
+                                  set_cmd='ampl {:.4f}', get_parser=float,
                                   vals=Numbers(0, 1),
                                   sweep_step=0.2, sweep_delay=0.005)
 
         self.meter = MockInstrument('meter', model=self.model, delay=0.001,
                                     read_response=self.read_response)
         self.meter.add_parameter('amplitude', get_cmd='ampl?',
-                                 parse_function=float)
+                                 get_parser=float)
         self.meter.add_function('echo', call_cmd='echo {:.2f}?',
                                 parameters=[Numbers(0, 1000)],
-                                parse_function=float)
+                                return_parser=float)
 
         self.init_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -224,7 +231,7 @@ class TestParameters(TestCase):
         # but we should handle it
         source = self.source
         source.add_parameter('amplitude2', get_cmd='ampl?',
-                             set_cmd='ampl {}', parse_function=float,
+                             set_cmd='ampl {}', get_parser=float,
                              vals=MultiType(Numbers(0, 1), Strings()),
                              sweep_step=0.2, sweep_delay=0.005)
         self.assertEqual(len(source.history), 0)
@@ -289,6 +296,36 @@ class TestParameters(TestCase):
             gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
                                 sweep_step=0.1, sweep_delay=0.01,
                                 max_val_age=-1)
+
+    def test_val_mapping(self):
+        gates = self.gates
+        mem = self.model._memory
+
+        # memraw has no mappings - it just sets and gets what the instrument
+        # uses to encode this parameter
+        gates.add_parameter('memraw', set_cmd='mem0 {}', get_cmd='mem0?',
+                            vals=Enum('zero', 'one'))
+
+        # memcoded maps the instrument codes ('zero' and 'one') into nicer
+        # user values 0 and 1
+        gates.add_parameter('memcoded', set_cmd='mem0 {}', get_cmd='mem0?',
+                            val_mapping={0: 'zero', 1: 'one'})
+
+        gates.memcoded.set(0)
+        self.assertEqual(gates.memraw.get(), 'zero')
+        self.assertEqual(gates.memcoded.get(), 0)
+        self.assertEqual(mem[0], 'zero')
+
+        gates.memraw.set('one')
+        self.assertEqual(gates.memcoded.get(), 1)
+        self.assertEqual(gates.memraw.get(), 'one')
+        self.assertEqual(mem[0], 'one')
+
+        with self.assertRaises(ValueError):
+            gates.memraw.set(0)
+
+        with self.assertRaises(ValueError):
+            gates.memcoded.set('zero')
 
     def test_snapshot(self):
         self.assertEqual(self.meter.snapshot(), {

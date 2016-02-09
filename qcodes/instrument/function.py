@@ -7,7 +7,8 @@ from qcodes.utils.validators import Validator
 
 class Function(Metadatable):
     def __init__(self, instrument, name, call_cmd=None, async_call_cmd=None,
-                 parameters=[], parse_function=None, **kwargs):
+                 parameters=[], parameter_parser=None, return_parser=None,
+                 parse_function=None, **kwargs):
         '''
         defines a function (with arbitrary parameters) that this instrument
         can execute.
@@ -17,24 +18,41 @@ class Function(Metadatable):
 
         instrument: an instrument that handles this function
         name: the local name of this parameter
+
         call_cmd: command to execute on instrument
             - a string (with positional fields to .format, "{}" or "{0}" etc)
             - a function (with parameter count matching parameters list)
         async_call_cmd: an async function to use for call_async, or for both
             sync and async if call_cmd is missing or None.
+
         parameters: list of Validator objects,
             one for each parameter to the Function
-        parse_function: function to parse the return value of cmd,
-            may be a type casting function like int or float.
-            If None, will not wait for or read any response
+
+        parameter_parser: function to transform the input parameter(s)
+            to encoded value(s) sent to the instrument.
+            If there are multiple arguments, this function should accept all
+            the arguments in order, and return a tuple of values.
+        return_parser: function to transform the response from the instrument
+            to the final output value.
+            may be a type casting function like `int` or `float`.
+            If None (default), will not wait for or read any response
+        NOTE: parsers only apply if call_cmd is a string. The function forms
+            of call_cmd and async_call_cmd should do their own parsing.
+
+        parse_function: DEPRECATED - use return_parser instead
         '''
         super().__init__(**kwargs)
 
         self._instrument = instrument
         self.name = name
 
+        # push deprecated parse_function argument to get_parser
+        if return_parser is None:
+            return_parser = parse_function
+
         self._set_params(parameters)
-        self._set_call(call_cmd, async_call_cmd, parse_function)
+        self._set_call(call_cmd, async_call_cmd,
+                       parameter_parser, return_parser)
 
     def _set_params(self, parameters):
         for param in parameters:
@@ -43,16 +61,19 @@ class Function(Metadatable):
         self._parameters = parameters
         self._param_count = len(parameters)
 
-    def _set_call(self, call_cmd, async_call_cmd, parse_function):
+    def _set_call(self, call_cmd, async_call_cmd,
+                  parameter_parser, return_parser):
         ask_or_write = self._instrument.write
         ask_or_write_async = self._instrument.write_async
-        if isinstance(call_cmd, str) and parse_function:
+        if isinstance(call_cmd, str) and return_parser:
             ask_or_write = self._instrument.ask
             ask_or_write_async = self._instrument.ask_async
 
         self._call, self._call_async = syncable_command(
-            self._param_count, call_cmd, async_call_cmd,
-            ask_or_write, ask_or_write_async, parse_function)
+            param_count=self._param_count,
+            cmd=call_cmd, acmd=async_call_cmd,
+            exec_str=ask_or_write, aexec_str=ask_or_write_async,
+            input_parser=parameter_parser, output_parser=return_parser)
 
     def validate(self, args):
         '''
