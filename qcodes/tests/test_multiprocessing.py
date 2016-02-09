@@ -6,7 +6,8 @@ import multiprocessing as mp
 from unittest.mock import patch
 
 from qcodes.utils.multiprocessing import (set_mp_method, QcodesProcess,
-                                          get_stream_queue)
+                                          get_stream_queue, _SQWriter)
+import qcodes.utils.multiprocessing as qcmp
 from qcodes.utils.helpers import in_notebook
 
 
@@ -40,10 +41,30 @@ def sqtest_f(name, period, cnt):
 
 
 class TestMpMethod(TestCase):
-    pass
-    # TODO - this is going to be a bit fragile and platform-dependent, I think.
-    # we will need to initialize the start method before *any* tests run,
-    # which looks like it will require using a plugin.
+    def test_set_mp_method(self):
+        start_method = mp.get_start_method()
+        self.assertIn(start_method, ('fork', 'spawn', 'forkserver'))
+
+        # multiprocessing's set_start_method is NOT idempotent
+        with self.assertRaises(RuntimeError):
+            mp.set_start_method(start_method)
+
+        # but ours is
+        set_mp_method(start_method)
+
+        # it will still error on gibberish, but different errors depending
+        # on whether you force or not
+        with self.assertRaises(RuntimeError):
+            set_mp_method('spoon')
+        with self.assertRaises(ValueError):
+            set_mp_method('spoon', force=True)
+
+        # change the error we look for to test strange error handling
+        mp_err_normal = qcmp.MP_ERR
+        qcmp.MP_ERR = 'who cares?'
+        with self.assertRaises(RuntimeError):
+            set_mp_method('start_method')
+        qcmp.MP_ERR = mp_err_normal
 
 
 class TestQcodesProcess(TestCase):
@@ -125,3 +146,84 @@ class TestQcodesProcess(TestCase):
         # last line of data2 is also special, it's a trailing blank
         # when p1 quits
         self.assertEqual(queue_data2[-1], '')
+
+
+class TestSQWriter(TestCase):
+    # this is basically tested in TestQcodesProcess, but the test happens
+    # in a subprocess so coverage doesn't know about it. Anyway, there are
+    # a few edge cases left that we have to test locally.
+    # @patch('qcodes.utils.multiprocessing.sys.__stdout__')
+    def test_sq_writer(self):  # , base_stdout_patch):
+        # import pdb; pdb.set_trace()
+        sq = get_stream_queue()
+        sq_clearer = _SQWriter(sq, 'Someone else')
+        sq_clearer.write('Boo!\n')
+
+        # apparently we need a little delay to make sure the queue
+        # properly appears populated.
+        time.sleep(0.01)
+
+        sq.get()
+        sq_name = 'Magritte'
+        sqw = _SQWriter(sq, sq_name)
+
+        # flush should exist, but does nothing
+        sqw.flush()
+
+        lines = [
+            'Knock knock.\nWho\'s there?\n',
+            'Interrupting cow.\n',
+            'Interr-',
+            'MOO!\n',
+            ''
+        ]
+
+        for line in lines:
+            sqw.write(line)
+
+        time.sleep(0.01)
+
+        # _SQWriter doesn't do any transformations to the messages, beyond
+        # adding a time string and the stream name
+        for line in lines:
+            if not line:
+                self.assertEqual(sq.queue.empty(), True)
+                continue
+
+            self.assertEqual(sq.queue.empty(), False)
+            timestr, stream_name, msg = sq.queue.get()
+            self.assertEqual(msg, line)
+            self.assertEqual(stream_name, sq_name)
+
+        # now test that even if the queue is unwatched the messages still
+        # go there. If we're feeling adventurous maybe we can test if
+        # something was actually printed.
+        sqw.MIN_READ_TIME = -1
+        new_message = 'Who?\n'
+        sqw.write(new_message)
+
+        time.sleep(0.01)
+
+        self.assertEqual(sq.queue.empty(), False)
+        self.assertEqual(sq.queue.get()[2], new_message)
+
+        # test that an error in writing resets stdout and stderr
+        # nose uses its own stdout and stderr... so keep them (as we're going
+        # to force stdout and stderr to several other things) so we can put
+        # them back at the end
+        nose_stdout = sys.stdout
+        nose_stderr = sys.stderr
+        sys.stdout = _SQWriter(sq, 'mock_stdout')
+        sys.stderr = _SQWriter(sq, 'mock_stderr')
+        self.assertNotIn(sys.stdout, (sys.__stdout__, nose_stdout))
+        self.assertNotIn(sys.stderr, (sys.__stderr__, nose_stderr))
+
+        sqw.MIN_READ_TIME = 'not a number'
+        with self.assertRaises(TypeError):
+            sqw.write('trigger an error')
+
+        self.assertEqual(sys.stdout, sys.__stdout__)
+        self.assertEqual(sys.stderr, sys.__stderr__)
+
+        sys.stdout = nose_stdout
+        sys.stderr = nose_stderr

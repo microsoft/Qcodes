@@ -5,10 +5,14 @@ import time
 
 from .helpers import in_notebook
 
+MP_ERR = 'context has already been set'
+
 
 def set_mp_method(method, force=False):
     '''
     an idempotent wrapper for multiprocessing.set_start_method
+    The most important use of this is to force Windows behavior
+    on a Mac or Linux: set_mp_method('spawn')
     args are the same:
 
     method: one of:
@@ -21,10 +25,9 @@ def set_mp_method(method, force=False):
         raise the error if you *don't* force *and* the context changes
     '''
     try:
-        # force windows multiprocessing behavior on mac
-        mp.set_start_method(method)
+        mp.set_start_method(method, force=force)
     except RuntimeError as err:
-        if err.args != ('context has already been set', ):
+        if err.args != (MP_ERR, ):
             raise
 
     mp_method = mp.get_start_method()
