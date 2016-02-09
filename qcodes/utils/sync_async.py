@@ -134,6 +134,11 @@ class _SyncableCommand(object):
         self.aexec_function = None
 
     # wrappers that may or may not be used below in constructing call / acall
+    # these functions are not very DRY at all - this could be condensed quite
+    # a bit by composing them from a smaller set. But this is our hot path
+    # during acquisition Loops, so for performance I wanted to minimize
+    # overhead from branching or extra function calls and stack frames.
+
     def call_by_str(self, *args):
         return self.exec_str(self.cmd.format(*args))
 
