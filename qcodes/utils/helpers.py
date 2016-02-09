@@ -139,7 +139,7 @@ class DelegateAttributes(object):
                     "dict '{}' has not been created in object '{}'".format(
                         key, self.__class__.__name__))
             try:
-                d = getattr(self, name)
+                d = getattr(self, name, None)
                 if d is not None:
                     return d[key]
             except KeyError:
@@ -151,7 +151,7 @@ class DelegateAttributes(object):
                     "object '{}' has not been created in object '{}'".format(
                         key, self.__class__.__name__))
             try:
-                obj = getattr(self, name)
+                obj = getattr(self, name, None)
                 if obj is not None:
                     return getattr(obj, key)
             except AttributeError:
