@@ -35,6 +35,8 @@ def sqtest_f(name, period, cnt):
     print('')  # this one should make a blank line at the very end
 
     # now test that disconnect works, and reverts to regular stdout and stderr
+    with open('C:\\Qcodes\\mp_test.txt', 'a') as f:
+        f.write(repr((name, period, cnt)))
     get_stream_queue().disconnect()
     print('stdout ', end='', flush=True)
     print('stderr ', file=sys.stderr, end='', flush=True)
@@ -111,7 +113,7 @@ class TestQcodesProcess(TestCase):
         time.sleep(0.25)
         queue_data1 = sq.get().split('\n')
 
-        time.sleep(0.25)
+        time.sleep(1.25)
 
         # both p1 and p2 should have finished by now, and ended.
         reprs = [repr(p) for p in mp.active_children()]
@@ -120,8 +122,9 @@ class TestQcodesProcess(TestCase):
 
         queue_data2 = sq.get().split('\n')
 
-        for line in queue_data1 + queue_data2[1:-1]:
-            self.assertIsNotNone(queue_format.match(line), line)
+        real_lines = queue_data1 + queue_data2[1:-1]
+        for line in real_lines:
+            self.assertIsNotNone(queue_format.match(line), real_lines)
         # we've tested the header, now strip it
         data1 = [line[14:] for line in queue_data1]
         data2 = [line[14:] for line in queue_data2[1:-1]]

@@ -162,7 +162,12 @@ class _SQWriter(object):
                     # caller already included a newline.
                     if termstr[-1] == '\n':
                         termstr = termstr[:-1]
-                    print(termstr, file=sys.__stdout__)
+                    try:
+                        print(termstr, file=sys.__stdout__)
+                    except ValueError:
+                        # ValueError: underlying buffer has been detached
+                        # this may just occur in testing on Windows, not sure.
+                        pass
         except:
             # don't want to get an infinite loop if there's something wrong
             # with the queue - put the regular streams back before handling
