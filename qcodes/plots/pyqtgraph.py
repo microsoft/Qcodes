@@ -112,17 +112,20 @@ class QtPlot(BasePlot):
             if width is None:
                 width = 2
             kwargs['pen'] = self.rpg.mkPen(color, width=width)
-        # If a marker symbol is desired use the same color as the line
-        if any([('symbol' in key) for key in kwargs]):
-            if 'symbolPen' not in kwargs:
-                kwargs['symbolPen'] = kwargs['pen']
-            if 'symbolBrush' not in kwargs:
-                kwargs['symbolBrush'] = color
 
         if antialias is None:
             # looks a lot better antialiased, but slows down with many points
             # TODO: dynamically update this based on total # of points
             antialias = (len(y) < 1000)
+
+        # If a marker symbol is desired use the same color as the line
+        if any([('symbol' in key) for key in kwargs]):
+            if 'symbolPen' not in kwargs:
+                symbol_pen_width = 0.5 if antialias else 1.0
+                kwargs['symbolPen'] = self.rpg.mkPen('444',
+                                                     width=symbol_pen_width)
+            if 'symbolBrush' not in kwargs:
+                kwargs['symbolBrush'] = color
 
         return subplot_object.plot(*self._line_data(x, y), antialias=antialias,
                                    **kwargs)
