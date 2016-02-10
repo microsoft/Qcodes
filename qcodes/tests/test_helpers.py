@@ -101,7 +101,7 @@ class TestIsSequence(TestCase):
         pass
 
     def test_yes(self):
-        f = open(os.listdir('.')[0], 'r')
+        f = open(__file__, 'r')
         yes_sequence = [
             [],
             [1, 2, 3],

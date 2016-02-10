@@ -97,16 +97,27 @@ class TestQcodesProcess(TestCase):
         time.sleep(0.025)
         sqtest('p2', 0.1, 4)
 
+        procNames = ['<{}, started daemon>'.format(name)
+                     for name in ('p1', 'p2')]
+
         reprs = [repr(p) for p in mp.active_children()]
-        for name in ('p1', 'p2'):
-            self.assertIn('<{}, started daemon>'.format(name), reprs)
-        self.assertEqual(len(reprs), 2, reprs)
+        for name in procNames:
+            self.assertIn(name, reprs)
+
+        # Some OS's start more processes just for fun... so don't test
+        # that p1 and p2 are the only ones.
+        # self.assertEqual(len(reprs), 2, reprs)
 
         time.sleep(0.25)
         queue_data1 = sq.get().split('\n')
 
         time.sleep(0.25)
-        self.assertEqual(mp.active_children(), [])
+
+        # both p1 and p2 should have finished by now, and ended.
+        reprs = [repr(p) for p in mp.active_children()]
+        for name in procNames:
+            self.assertNotIn(name, reprs)
+
         queue_data2 = sq.get().split('\n')
 
         for line in queue_data1 + queue_data2[1:-1]:
