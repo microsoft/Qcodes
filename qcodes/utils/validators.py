@@ -50,6 +50,20 @@ class Anything(Validator):
         return '<Anything>'
 
 
+class Bool(Validator):
+    '''
+    requires a boolean
+    '''
+    def __init__(self):
+        pass
+
+    def is_valid(self, value):
+        return (isinstance(value, bool))
+
+    def __repr_(self):
+        return '<Boolean>'
+
+
 class Strings(Validator):
     '''
     requires a string
@@ -62,7 +76,6 @@ class Strings(Validator):
             self._min_length = min_length
         else:
             raise TypeError('min_length must be a non-negative integer')
-
         if isinstance(max_length, int) and max_length >= max(min_length, 1):
             self._max_length = max_length
         else:
@@ -122,7 +135,9 @@ class Ints(Validator):
         else:
             raise TypeError('min_value must be an integer')
 
-        if isinstance(max_value, int) and max_value > min_value:
+        if not isinstance(max_value, int):
+            raise TypeError('max_value must be an integer')
+        if max_value > min_value:
             self._max_value = max_value
         else:
             raise TypeError(

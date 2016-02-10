@@ -127,7 +127,7 @@ class TestSyncableCommand(TestCase):
             syncable_command(cmd='')
 
         with self.assertRaises(TypeError):
-            syncable_command(0, '', parse_function=lambda: 1)
+            syncable_command(0, '', output_parser=lambda: 1)
 
         with self.assertRaises(TypeError):
             syncable_command(0, cmd='', exec_str='not a function')
@@ -155,7 +155,7 @@ class TestSyncableCommand(TestCase):
         @asyncio.coroutine
         def adelay(x):
             yield from asyncio.sleep(0.001)
-            return x + ' delayed'
+            return x + ' later'
 
         def upper(s):
             return s.upper()
@@ -167,24 +167,24 @@ class TestSyncableCommand(TestCase):
 
         # only async exec_str
         cmd, acmd = syncable_command(0, 'lemons', aexec_str=adelay)
-        self.assertEqual(cmd(), 'lemons delayed')
-        self.assertEqual(wait_for_async(acmd), 'lemons delayed')
+        self.assertEqual(cmd(), 'lemons later')
+        self.assertEqual(wait_for_async(acmd), 'lemons later')
 
         # separate sync and async exec_str
         cmd, acmd = syncable_command(0, 'herring', exec_str=f_now,
                                      aexec_str=adelay)
         self.assertEqual(cmd(), 'herring now')
-        self.assertEqual(wait_for_async(acmd), 'herring delayed')
+        self.assertEqual(wait_for_async(acmd), 'herring later')
         with self.assertRaises(TypeError):
             cmd(12)
         with self.assertRaises(TypeError):
             wait_for_async(acmd, 21)
 
-        # separate sync/async with parsing
+        # separate sync/async with output parsing
         cmd, acmd = syncable_command(0, 'blue', exec_str=f_now,
-                                     aexec_str=adelay, parse_function=upper)
+                                     aexec_str=adelay, output_parser=upper)
         self.assertEqual(cmd(), 'BLUE NOW')
-        self.assertEqual(wait_for_async(acmd), 'BLUE DELAYED')
+        self.assertEqual(wait_for_async(acmd), 'BLUE LATER')
 
         # parameter insertion
         cmd, acmd = syncable_command(3, '{} is {:.2f}% better than {}',
@@ -192,12 +192,20 @@ class TestSyncableCommand(TestCase):
         self.assertEqual(cmd('ice cream', 56.2, 'cake'),
                          'ice cream is 56.20% better than cake now')
         self.assertEqual(wait_for_async(acmd, 'cheese', 30, 'cheese'),
-                         'cheese is 30.00% better than cheese delayed')
+                         'cheese is 30.00% better than cheese later')
         with self.assertRaises(ValueError):
             cmd('cake', 'a whole lot', 'pie')
 
         with self.assertRaises(TypeError):
             cmd('donuts', 100, 'bagels', 'with cream cheese')
+
+        # input parsing
+        cmd, acmd = syncable_command(1, 'eat some {}',
+                                     exec_str=f_now, aexec_str=adelay,
+                                     input_parser=upper)
+        self.assertEqual(cmd('ice cream'), 'eat some ICE CREAM now')
+        self.assertEqual(wait_for_async(acmd, 'gruyere'),
+                         'eat some GRUYERE later')
 
     def test_cmd_function(self):
         def myexp(a, b):

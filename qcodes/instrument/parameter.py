@@ -41,7 +41,7 @@ import logging
 from qcodes.utils.helpers import permissive_range, wait_secs
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import syncable_command, NoCommandError
-from qcodes.utils.validators import Validator, Numbers, Ints
+from qcodes.utils.validators import Validator, Numbers, Ints, Enum
 from qcodes.instrument.sweep_values import SweepFixedValues
 
 
@@ -53,6 +53,7 @@ class Parameter(Metadatable):
     def __init__(self,
                  name=None, names=None,
                  label=None, labels=None,
+                 units=None,
                  size=None, sizes=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
                  vals=None, **kwargs):
@@ -88,6 +89,10 @@ class Parameter(Metadatable):
             defaults to name
         labels: (2,4,5) a tuple of labels
 
+        units: (1&3) string that indicates units of parameter for use in axis
+            label and snapshot
+               (2,4,5) a tuple of units
+
         size: (3&4) an integer or tuple of integers for the size of array
             returned by .get(). Can be an integer only if the array is 1D, but
             as a tuple it can describe any dimensionality (including 1D)
@@ -122,6 +127,7 @@ class Parameter(Metadatable):
         if name is not None:
             self.name = name
             self.label = name if label is None else label
+            self.units = units if units is not None else ''
 
             # vals / validate only applies to simple single-value parameters
             self._set_vals(vals)
@@ -129,6 +135,7 @@ class Parameter(Metadatable):
         elif names is not None:
             self.names = names
             self.labels = names if labels is None else names
+            self.units = units if units is not None else ['']*len(names)
 
         else:
             raise ValueError('either name or names is required')
@@ -169,35 +176,72 @@ class Parameter(Metadatable):
 
 class InstrumentParameter(Parameter):
     def __init__(self, instrument, name,
-                 get_cmd=None, async_get_cmd=None, parse_function=None,
-                 set_cmd=None, async_set_cmd=None,
+                 get_cmd=None, async_get_cmd=None, get_parser=None,
+                 parse_function=None, val_mapping=None,
+                 set_cmd=None, async_set_cmd=None, set_parser=None,
                  sweep_step=None, sweep_delay=None, max_val_age=3600,
-                 **kwargs):
+                 vals=None, **kwargs):
         '''
         defines one measurement parameter
 
         instrument: an instrument that handles this parameter
         name: the local name of this parameter
+
         get_cmd: a string or function to get this parameter
         async_get_cmd: a function to use for async get, or for both sync
             and async if get_cmd is missing or None
-        parse_function: function to transform the response from get
+        get_parser: function to transform the response from get
             to the final output value.
             NOTE: only applies if get_cmd is a string. The function forms
             of get_cmd and async_get_cmd should do their own parsing
+            See also val_mapping
+
         set_cmd: command to set this parameter, either:
             - a string (containing one field to .format, like "{}" etc)
             - a function (of one parameter)
         async_set_cmd: a function to use for async set, or for both sync
             and async if set_cmd is missing or None
+        set_parser: function to transform the input set value to an encoded
+            value sent to the instrument.
+            NOTE: only applies if set_cmd is a string. The function forms
+            of set_cmd and async_set_cmd should do their own parsing
+            See also val_mapping
+
+        parse_function: DEPRECATED - use get_parser instead
+
+        val_mapping: a bidirectional map from data/readable values to
+            instrument codes, expressed as a dict {data_val: instrument_code}
+            For example, if the instrument uses '0' to mean 1V and '1' to mean
+            10V, set val_mapping={1: '0', 10: '1'} and on the user side you
+            only see 1 and 10, never the coded '0' and '1'
+
+            If vals is omitted, will also construct a matching Enum validator.
+            NOTE: only applies to get if get_cmd is a string, and to set if
+            set_cmd is a string.
+
         vals: a Validator object for this parameter
+
         sweep_step: max increment of parameter value - larger changes
             are broken into steps this size
         sweep_delay: time (in seconds) to wait after each sweep step
         max_val_age: max time (in seconds) to trust a saved value from
             this parameter as the starting point of a sweep
         '''
-        super().__init__(name=name, **kwargs)
+        # handle val_mapping before super init because it impacts
+        # vals / validation in the base class
+        if val_mapping:
+            if vals is None:
+                vals = Enum(*val_mapping.keys())
+
+            if get_parser is None:
+                self._get_mapping = {v: k for k, v in val_mapping.items()}
+                get_parser = self._get_mapping.__getitem__
+
+            if set_parser is None:
+                self._set_mapping = val_mapping
+                set_parser = self._set_mapping.__getitem__
+
+        super().__init__(name=name, vals=vals, **kwargs)
 
         self._instrument = instrument
 
@@ -211,8 +255,12 @@ class InstrumentParameter(Parameter):
         self.has_get = False
         self.has_set = False
 
-        self._set_get(get_cmd, async_get_cmd, parse_function)
-        self._set_set(set_cmd, async_set_cmd)
+        # push deprecated parse_function argument to get_parser
+        if get_parser is None:
+            get_parser = parse_function
+
+        self._set_get(get_cmd, async_get_cmd, get_parser)
+        self._set_set(set_cmd, async_set_cmd, set_parser)
         self.set_sweep(sweep_step, sweep_delay, max_val_age)
 
         if not (self.has_get or self.has_set):
@@ -244,20 +292,24 @@ class InstrumentParameter(Parameter):
         self._save_val(value)
         return value
 
-    def _set_get(self, get_cmd, async_get_cmd, parse_function):
+    def _set_get(self, get_cmd, async_get_cmd, get_parser):
         self._get, self._get_async = syncable_command(
-            0, get_cmd, async_get_cmd, self._instrument.ask,
-            self._instrument.ask_async, parse_function, no_func)
+            param_count=0, cmd=get_cmd, acmd=async_get_cmd,
+            exec_str=self._instrument.ask,
+            aexec_str=self._instrument.ask_async,
+            output_parser=get_parser, no_cmd_function=no_func)
 
         if self._get is not no_func:
             self.has_get = True
 
-    def _set_set(self, set_cmd, async_set_cmd):
+    def _set_set(self, set_cmd, async_set_cmd, set_parser):
         # note: this does not set the final setter functions. that's handled
         # in self.set_sweep, when we choose a swept or non-swept setter.
         self._set, self._set_async = syncable_command(
-            1, set_cmd, async_set_cmd, self._instrument.write,
-            self._instrument.write_async, no_cmd_function=no_func)
+            param_count=1, cmd=set_cmd, acmd=async_set_cmd,
+            exec_str=self._instrument.write,
+            aexec_str=self._instrument.write_async,
+            input_parser=set_parser, no_cmd_function=no_func)
 
         if self._set is not no_func:
             self.has_set = True
