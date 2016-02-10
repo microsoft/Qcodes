@@ -17,7 +17,10 @@ TransformState = namedtuple('TransformState', 'translate scale revisit')
 class QtPlot(BasePlot):
     '''
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
-    in the constructor, other traces can be added with QtPlot.add()
+    in the constructor, other traces can be added with QtPlot.add().
+
+    For information on how x/y/z *ars are handled see add() in the base
+    plotting class.
 
     args: shortcut to provide the x/y/z data. See BasePlot.add
 
@@ -35,7 +38,7 @@ class QtPlot(BasePlot):
     rpg = None
 
     def __init__(self, *args, figsize=(1000, 600), interval=0.25,
-                 theme=((60, 60, 60), 'w'), **kwargs):
+                 windowTitle='', theme=((60, 60, 60), 'w'), **kwargs):
         super().__init__(interval)
 
         if not self.__class__.proc:
@@ -43,7 +46,7 @@ class QtPlot(BasePlot):
 
         self.theme = theme
 
-        self.win = self.rpg.GraphicsWindow()
+        self.win = self.rpg.GraphicsWindow(title=windowTitle)
         self.win.setBackground(theme[1])
         self.win.resize(*figsize)
         self.subplots = [self.add_subplot()]
@@ -58,6 +61,15 @@ class QtPlot(BasePlot):
         pg.mkQApp()
         self.__class__.proc = pgmp.QtProcess()  # pyqtgraph multiprocessing
         self.__class__.rpg = self.proc._import('pyqtgraph')
+
+    def clear(self):
+        '''
+        Clears the plot window and removes all subplots and traces
+        so that the window can be reused.
+        '''
+        self.win.clear()
+        self.traces = []
+        self.subplots = []
 
     def add_subplot(self):
         subplot_object = self.win.addPlot()
@@ -99,8 +111,13 @@ class QtPlot(BasePlot):
                 color = cycle[len(self.traces) % len(cycle)]
             if width is None:
                 width = 2
-
             kwargs['pen'] = self.rpg.mkPen(color, width=width)
+        # If a marker symbol is desired use the same color as the line
+        if any([('symbol' in key) for key in kwargs]):
+            if 'symbolPen' not in kwargs:
+                kwargs['symbolPen'] = kwargs['pen']
+            if 'symbolBrush' not in kwargs:
+                kwargs['symbolBrush'] = color
 
         if antialias is None:
             # looks a lot better antialiased, but slows down with many points
@@ -121,7 +138,10 @@ class QtPlot(BasePlot):
         hist = self.rpg.HistogramLUTItem()
         hist.setImageItem(img)
         hist.axis.setPen(self.theme[0])
-        hist.axis.setLabel(self.get_label(z))
+        if 'zlabel' in kwargs:  # used to specify a custom zlabel
+            hist.axis.setLabel(kwargs['zlabel'])
+        else:  # otherwise extracts the label from the dataarray
+            hist.axis.setLabel(self.get_label(z))
         # TODO - ensure this goes next to the correct subplot?
         self.win.addItem(hist)
 
@@ -300,12 +320,21 @@ class QtPlot(BasePlot):
         return TransformState(translate, scale, revisit)
 
     def _update_labels(self, subplot_object, config):
+        '''
+        Updates x and y labels, by default tries to extract label from
+        the DataArray objects located in the trace config. Custom labels
+        can be specified the **kwargs "xlabel" and "ylabel"
+        '''
         for axletter, side in (('x', 'bottom'), ('y', 'left')):
             ax = subplot_object.getAxis(side)
+            # pyqtgraph doesn't seem able to get labels, only set
+            # so we'll store it in the axis object and hope the user
+            # doesn't set it separately before adding all traces
+            if axletter+'label' in config and not ax._qcodes_label:
+                label = config[axletter+'label']
+                ax._qcodes_label = label
+                ax.setLabel(label)
             if axletter in config and not ax._qcodes_label:
-                # pyqtgraph doesn't seem able to get labels, only set
-                # so we'll store it in the axis object and hope the user
-                # doesn't set it separately before adding all traces
                 label = self.get_label(config[axletter])
                 if label:
                     ax._qcodes_label = label
