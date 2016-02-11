@@ -148,7 +148,7 @@ def timertest(total_time=1, timer=time.perf_counter, quiet=False):
         deviations.append(now - last)
 
     out = report(0, deviations, quiet=quiet)
-    if(out['median'] / out['min'] > 2):
+    if(out['median'] / out['min'] > 2):  # pragma: no cover
         raise RuntimeError('median is too high vs. minimum')
 
     return out['min']

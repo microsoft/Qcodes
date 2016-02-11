@@ -165,7 +165,7 @@ class _SQWriter(object):
                         termstr = termstr[:-1]
                     try:
                         print(termstr, file=sys.__stdout__)
-                    except ValueError:
+                    except ValueError:  # pragma: no cover
                         # ValueError: underlying buffer has been detached
                         # this may just occur in testing on Windows, not sure.
                         pass
