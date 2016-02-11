@@ -27,6 +27,7 @@ def calibrate(quiet=False):
             print('multiprocessing startup delay and regular sleep delays:')
         mp_res = mptest(quiet=quiet)
         _calibration['mp_start_delay'] = abs(mp_res['startup_time'])
+        _calibration['mp_finish_delay'] = abs(mp_res['finish_time'])
         _calibration['sleep_delay'] = abs(mp_res['median'])
 
     return _calibration
@@ -48,7 +49,8 @@ def report(startup_time, deviations, queue=None, quiet=False):
         'min': mindev,
         'max': maxdev,
         'avg': avgdev,
-        'median': meddev
+        'median': meddev,
+        'finish_time': time.time()
     }
     if queue:
         queue.put(out)
@@ -85,7 +87,9 @@ def mptest(n=100, d=0.001, timer=time.perf_counter, quiet=False):
     p = mp.Process(target=sleeper, args=(n, d, time.time(), timer, q, quiet))
     p.start()
     p.join()
-    return q.get()
+    out = q.get()
+    out['finish_time'] = time.time() - out['finish_time']
+    return out
 
 
 @asyncio.coroutine

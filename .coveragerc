@@ -1,0 +1,6 @@
+[run]
+omit =
+    qcodes/tests/*
+    qcodes/instrument_drivers/*
+    qcodes/instrument_drivers/*/*
+    qcodes/utils/reload_code.py

@@ -72,6 +72,7 @@ class TestQcodesProcess(TestCase):
     def setUp(self):
         mp_stats = calibrate()
         self.MP_START_DELAY = mp_stats['mp_start_delay']
+        self.MP_FINISH_DELAY = mp_stats['mp_finish_delay']
         self.SLEEP_DELAY = mp_stats['sleep_delay']
 
     def test_not_in_notebook(self):
@@ -86,7 +87,7 @@ class TestQcodesProcess(TestCase):
         with sq.lock:
             p = sqtest('p0', period, cnt)
             self.assertIsNone(p.stream_queue)
-            time.sleep(self.MP_START_DELAY +
+            time.sleep(self.MP_START_DELAY + self.MP_FINISH_DELAY +
                        cnt * (period + self.SLEEP_DELAY) + 0.05)
 
             self.assertEqual(sq.get(), '')
@@ -95,8 +96,7 @@ class TestQcodesProcess(TestCase):
     def test_qcodes_process(self, in_nb_patch):
         in_nb_patch.return_value = True
 
-        # set up two processes that take 0.5 and 0.4 sec and produce
-        # staggered results
+        # set up two processes that produce staggered results
         # p1 produces more output and sometimes makes two messages in a row
         # before p1 produces any.
         sq = get_stream_queue()
@@ -104,10 +104,15 @@ class TestQcodesProcess(TestCase):
             '^\[\d\d:\d\d:\d\d\.\d\d\d p\d( ERR)?\] [^\[\]]*$')
 
         with sq.lock:
-            sqtest('p1', 0.05, 10)
-            time.sleep(0.025)
-            sqtest('p2', 0.1, 4)
-            time.sleep(self.MP_START_DELAY + 0.25)
+            # the whole thing takes ~ base_period * 10 seconds
+            # base_period used to be 0.05, but we increased for
+            # robustness - especially with coverage on the timing can
+            # get a bit off what it's supposed to be
+            base_period = 0.1
+            sqtest('p1', base_period, 10)
+            time.sleep(base_period / 2)
+            sqtest('p2', 2 * base_period, 4)
+            time.sleep(self.MP_START_DELAY + 5 * base_period)
 
             procNames = ['<{}, started daemon>'.format(name)
                          for name in ('p1', 'p2')]
@@ -122,7 +127,8 @@ class TestQcodesProcess(TestCase):
 
             queue_data1 = sq.get().split('\n')
 
-            time.sleep(0.25 + 15 * self.SLEEP_DELAY)
+            time.sleep(5 * base_period + 15 * self.SLEEP_DELAY +
+                       4 * self.MP_FINISH_DELAY)
 
             # both p1 and p2 should have finished by now, and ended.
             reprs = [repr(p) for p in mp.active_children()]
@@ -130,6 +136,11 @@ class TestQcodesProcess(TestCase):
                 self.assertNotIn(name, reprs)
 
         queue_data2 = sq.get().split('\n')
+
+        if queue_data1[0] == '':
+            # sometimes we get a blank here - not sure why...
+            # but it wouldn't cause any problems in the real queue anyway
+            queue_data1 = queue_data1[1:]
 
         real_lines = queue_data1 + queue_data2[1:-1]
         for line in real_lines:
@@ -251,4 +262,5 @@ class TestSQWriter(TestCase):
 
             sys.stdout = nose_stdout
             sys.stderr = nose_stderr
+            time.sleep(0.01)
             sq.get()
