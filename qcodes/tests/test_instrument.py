@@ -157,6 +157,11 @@ class TestParameters(TestCase):
 
         # test functions
         self.assertEqual(meter.call('echo', 1.2345), 1.23)  # model returns .2f
+        # too many ways to do this...
+        self.assertEqual(meter.echo.call(1.2345), 1.23)
+        self.assertEqual(meter.echo(1.2345), 1.23)
+        self.assertEqual(meter['echo'].call(1.2345), 1.23)
+        self.assertEqual(meter['echo'](1.2345), 1.23)
         with self.assertRaises(TypeError):
             meter.call('echo', 1, 2)
         with self.assertRaises(ValueError):
@@ -296,8 +301,8 @@ class TestParameters(TestCase):
             'functions': {'echo': {}}
         })
 
+        ampsnap = self.meter.snapshot(update=True)['parameters']['amplitude']
         amp = self.meter.get('amplitude')
-        ampsnap = self.meter.snapshot()['parameters']['amplitude']
         self.assertEqual(ampsnap['value'], amp)
         amp_ts = datetime.strptime(ampsnap['ts'], '%Y-%m-%d %H:%M:%S')
         self.assertLessEqual(amp_ts, datetime.now())
