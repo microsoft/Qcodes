@@ -1,8 +1,8 @@
 from unittest import TestCase
 import math
 
-from qcodes.utils.validators import (Validator, Anything, Strings, Numbers,
-                                     Ints, Enum, MultiType)
+from qcodes.utils.validators import (Validator, Anything, Bool, Strings,
+                                     Numbers, Ints, Enum, MultiType)
 
 
 class AClass(object):
@@ -48,6 +48,26 @@ class TestAnything(TestCase):
 
         with self.assertRaises(TypeError):
             Anything(values=[1, 2, 3])
+
+
+class TestBool(TestCase):
+    bools = [True, False]
+    not_bools = [0, 1, 10, -1, 100, 1000000, int(-1e15), int(1e15),
+                 0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
+                 math.pi, math.e, '', None, float("nan"), float("inf"),
+                 -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',
+                 AClass, AClass(), a_func]
+
+    def test_bool(self):
+        b = Bool()
+
+        for v in self.bools:
+            self.assertTrue(b.is_valid(v))
+
+        for v in self.not_bools:
+            self.assertFalse(b.is_valid(v))
+
+        self.assertEqual(repr(b), '<Boolean>')
 
 
 class TestStrings(TestCase):
@@ -138,8 +158,8 @@ class TestNumbers(TestCase):
                True, False,
                # warning: +/- inf are allowed if max & min are not specified!
                -float("inf"), float("inf")]
-    not_numbers = ['', None, float("nan"), '1', [], {}, [1, 2], {1: 1}, b'good',
-                   AClass, AClass(), a_func]
+    not_numbers = ['', None, float("nan"), '1', [], {}, [1, 2], {1: 1},
+                   b'good', AClass, AClass(), a_func]
 
     def test_unlimited(self):
         n = Numbers()
@@ -200,8 +220,9 @@ class TestInts(TestCase):
             # isinstance(v, bool)
             True, False]
     not_ints = [0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
-                math.pi, math.e, '', None, float("nan"), float("inf"), -float("inf"), '1',
-                [], {}, [1, 2], {1: 1}, b'good', AClass, AClass(), a_func]
+                math.pi, math.e, '', None, float("nan"), float("inf"),
+                -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',
+                AClass, AClass(), a_func]
 
     def test_unlimited(self):
         n = Ints()
