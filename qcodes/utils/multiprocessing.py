@@ -107,6 +107,7 @@ class StreamQueue(object):
         self.last_read_ts = mp.Value('d', time.time())
         self._last_stream = None
         self._on_new_line = True
+        self.lock = mp.RLock()
 
     def connect(self, process_name):
         sys.stdout = _SQWriter(self, process_name)

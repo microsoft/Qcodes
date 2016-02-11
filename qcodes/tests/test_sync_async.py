@@ -5,6 +5,7 @@ import sys
 
 from qcodes.utils.sync_async import (wait_for_async, mock_async, mock_sync,
                                      syncable_command, NoCommandError)
+from qcodes.utils.timing import calibrate
 
 
 @asyncio.coroutine
@@ -34,32 +35,39 @@ except:
 
 
 class TestAsync(TestCase):
+    def setUp(self):
+        time_stats = calibrate()
+        self.TIME_PRECISION = time_stats['timing_resolution']
+        self.ASYNC_DELAY = time_stats['async_sleep_delay']
+
     def test_simple(self):
         self.assertEqual(wait_for_async(async1, 2), 4)
         if py35:
             self.assertEqual(wait_for_async(async1_new, 2), 4)
 
-    def check_time(self, f, a, b, out, tmin, tmax):
+    def check_time(self, f, v, n, out, t_expected):
         t1 = time()
-        self.assertEqual(wait_for_async(f, a, b), out)
+        self.assertEqual(wait_for_async(f, v, n), out)
         t2 = time()
+        tmin = t_expected - n * self.TIME_PRECISION
+        tmax = t_expected + 3 * n * (self.ASYNC_DELAY + self.TIME_PRECISION)
         self.assertGreaterEqual(t2 - t1, tmin)
         # measure of how good async timing is
         # answer: about a fraction of a millisecond, and always
         # longer than specified, never shorter
         # TODO: make some benchmarks so we can understand this on
         # different systems where it's deployed
-        self.assertLess(t2 - t1, tmax)
+        self.assertLess(t2 - t1, tmax, (tmax, self.ASYNC_DELAY, self.TIME_PRECISION))
 
     def test_await(self):
-        self.check_time(async2, 3, 100, 9, 0.1, 0.2)
+        self.check_time(async2, 3, 100, 9, 0.1)
         if py35:
-            self.check_time(async2_new, 3, 100, 9, 0.1, 0.2)
+            self.check_time(async2_new, 3, 100, 9, 0.1)
 
     def test_chain(self):
-        self.check_time(async3, 5, 100, 25, 0.1, 0.2)
+        self.check_time(async3, 5, 100, 25, 0.1)
         if py35:
-            self.check_time(async3_new, 5, 100, 25, 0.1, 0.2)
+            self.check_time(async3_new, 5, 100, 25, 0.1)
 
     def test_mock_async(self):
         def sync_no_args():

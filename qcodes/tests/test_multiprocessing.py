@@ -9,6 +9,7 @@ from qcodes.utils.multiprocessing import (set_mp_method, QcodesProcess,
                                           get_stream_queue, _SQWriter)
 import qcodes.utils.multiprocessing as qcmp
 from qcodes.utils.helpers import in_notebook
+from qcodes.utils.timing import calibrate
 
 
 # note sometimes separate processes do not seem to register in
@@ -35,8 +36,6 @@ def sqtest_f(name, period, cnt):
     print('')  # this one should make a blank line at the very end
 
     # now test that disconnect works, and reverts to regular stdout and stderr
-    with open('C:\\Qcodes\\mp_test.txt', 'a') as f:
-        f.write(repr((name, period, cnt)))
     get_stream_queue().disconnect()
     print('stdout ', end='', flush=True)
     print('stderr ', file=sys.stderr, end='', flush=True)
@@ -70,18 +69,27 @@ class TestMpMethod(TestCase):
 
 
 class TestQcodesProcess(TestCase):
+    def setUp(self):
+        mp_stats = calibrate()
+        self.MP_START_DELAY = mp_stats['mp_start_delay']
+        self.SLEEP_DELAY = mp_stats['sleep_delay']
+
     def test_not_in_notebook(self):
         # below we'll patch this to True, but make sure that it's False
         # in the normal test runner.
         self.assertEqual(in_notebook(), False)
 
         # and make sure that processes run this way do not use the queue
-        p = sqtest('p0', 0.01, 4)
-        self.assertIsNone(p.stream_queue)
-        time.sleep(0.1)
-
+        period = 0.01
+        cnt = 4
         sq = get_stream_queue()
-        self.assertEqual(sq.get(), '')
+        with sq.lock:
+            p = sqtest('p0', period, cnt)
+            self.assertIsNone(p.stream_queue)
+            time.sleep(self.MP_START_DELAY +
+                       cnt * (period + self.SLEEP_DELAY) + 0.05)
+
+            self.assertEqual(sq.get(), '')
 
     @patch('qcodes.utils.multiprocessing.in_notebook')
     def test_qcodes_process(self, in_nb_patch):
@@ -95,30 +103,31 @@ class TestQcodesProcess(TestCase):
         queue_format = re.compile(
             '^\[\d\d:\d\d:\d\d\.\d\d\d p\d( ERR)?\] [^\[\]]*$')
 
-        sqtest('p1', 0.05, 10)
-        time.sleep(0.025)
-        sqtest('p2', 0.1, 4)
+        with sq.lock:
+            sqtest('p1', 0.05, 10)
+            time.sleep(0.025)
+            sqtest('p2', 0.1, 4)
+            time.sleep(self.MP_START_DELAY + 0.25)
 
-        procNames = ['<{}, started daemon>'.format(name)
-                     for name in ('p1', 'p2')]
+            procNames = ['<{}, started daemon>'.format(name)
+                         for name in ('p1', 'p2')]
 
-        reprs = [repr(p) for p in mp.active_children()]
-        for name in procNames:
-            self.assertIn(name, reprs)
+            reprs = [repr(p) for p in mp.active_children()]
+            for name in procNames:
+                self.assertIn(name, reprs)
 
-        # Some OS's start more processes just for fun... so don't test
-        # that p1 and p2 are the only ones.
-        # self.assertEqual(len(reprs), 2, reprs)
+            # Some OS's start more processes just for fun... so don't test
+            # that p1 and p2 are the only ones.
+            # self.assertEqual(len(reprs), 2, reprs)
 
-        time.sleep(0.25)
-        queue_data1 = sq.get().split('\n')
+            queue_data1 = sq.get().split('\n')
 
-        time.sleep(1.25)
+            time.sleep(0.25 + 15 * self.SLEEP_DELAY)
 
-        # both p1 and p2 should have finished by now, and ended.
-        reprs = [repr(p) for p in mp.active_children()]
-        for name in procNames:
-            self.assertNotIn(name, reprs)
+            # both p1 and p2 should have finished by now, and ended.
+            reprs = [repr(p) for p in mp.active_children()]
+            for name in procNames:
+                self.assertNotIn(name, reprs)
 
         queue_data2 = sq.get().split('\n')
 
@@ -170,74 +179,76 @@ class TestSQWriter(TestCase):
     def test_sq_writer(self):  # , base_stdout_patch):
         # import pdb; pdb.set_trace()
         sq = get_stream_queue()
-        sq_clearer = _SQWriter(sq, 'Someone else')
-        sq_clearer.write('Boo!\n')
+        with sq.lock:
+            sq_clearer = _SQWriter(sq, 'Someone else')
+            sq_clearer.write('Boo!\n')
 
-        # apparently we need a little delay to make sure the queue
-        # properly appears populated.
-        time.sleep(0.01)
+            # apparently we need a little delay to make sure the queue
+            # properly appears populated.
+            time.sleep(0.01)
 
-        sq.get()
-        sq_name = 'Magritte'
-        sqw = _SQWriter(sq, sq_name)
+            sq.get()
+            sq_name = 'Magritte'
+            sqw = _SQWriter(sq, sq_name)
 
-        # flush should exist, but does nothing
-        sqw.flush()
+            # flush should exist, but does nothing
+            sqw.flush()
 
-        lines = [
-            'Knock knock.\nWho\'s there?\n',
-            'Interrupting cow.\n',
-            'Interr-',
-            'MOO!\n',
-            ''
-        ]
+            lines = [
+                'Knock knock.\nWho\'s there?\n',
+                'Interrupting cow.\n',
+                'Interr-',
+                'MOO!\n',
+                ''
+            ]
 
-        for line in lines:
-            sqw.write(line)
+            for line in lines:
+                sqw.write(line)
 
-        time.sleep(0.01)
+            time.sleep(0.01)
 
-        # _SQWriter doesn't do any transformations to the messages, beyond
-        # adding a time string and the stream name
-        for line in lines:
-            if not line:
-                self.assertEqual(sq.queue.empty(), True)
-                continue
+            # _SQWriter doesn't do any transformations to the messages, beyond
+            # adding a time string and the stream name
+            for line in lines:
+                if not line:
+                    self.assertEqual(sq.queue.empty(), True)
+                    continue
+
+                self.assertEqual(sq.queue.empty(), False)
+                timestr, stream_name, msg = sq.queue.get()
+                self.assertEqual(msg, line)
+                self.assertEqual(stream_name, sq_name)
+
+            # now test that even if the queue is unwatched the messages still
+            # go there. If we're feeling adventurous maybe we can test if
+            # something was actually printed.
+            sqw.MIN_READ_TIME = -1
+            new_message = 'Who?\n'
+            sqw.write(new_message)
+
+            time.sleep(0.01)
 
             self.assertEqual(sq.queue.empty(), False)
-            timestr, stream_name, msg = sq.queue.get()
-            self.assertEqual(msg, line)
-            self.assertEqual(stream_name, sq_name)
+            self.assertEqual(sq.queue.get()[2], new_message)
 
-        # now test that even if the queue is unwatched the messages still
-        # go there. If we're feeling adventurous maybe we can test if
-        # something was actually printed.
-        sqw.MIN_READ_TIME = -1
-        new_message = 'Who?\n'
-        sqw.write(new_message)
+            # test that an error in writing resets stdout and stderr
+            # nose uses its own stdout and stderr... so keep them (as we will
+            # force stdout and stderr to several other things) so we can put
+            # them back at the end
+            nose_stdout = sys.stdout
+            nose_stderr = sys.stderr
+            sys.stdout = _SQWriter(sq, 'mock_stdout')
+            sys.stderr = _SQWriter(sq, 'mock_stderr')
+            self.assertNotIn(sys.stdout, (sys.__stdout__, nose_stdout))
+            self.assertNotIn(sys.stderr, (sys.__stderr__, nose_stderr))
 
-        time.sleep(0.01)
+            sqw.MIN_READ_TIME = 'not a number'
+            with self.assertRaises(TypeError):
+                sqw.write('trigger an error')
 
-        self.assertEqual(sq.queue.empty(), False)
-        self.assertEqual(sq.queue.get()[2], new_message)
+            self.assertEqual(sys.stdout, sys.__stdout__)
+            self.assertEqual(sys.stderr, sys.__stderr__)
 
-        # test that an error in writing resets stdout and stderr
-        # nose uses its own stdout and stderr... so keep them (as we're going
-        # to force stdout and stderr to several other things) so we can put
-        # them back at the end
-        nose_stdout = sys.stdout
-        nose_stderr = sys.stderr
-        sys.stdout = _SQWriter(sq, 'mock_stdout')
-        sys.stderr = _SQWriter(sq, 'mock_stderr')
-        self.assertNotIn(sys.stdout, (sys.__stdout__, nose_stdout))
-        self.assertNotIn(sys.stderr, (sys.__stderr__, nose_stderr))
-
-        sqw.MIN_READ_TIME = 'not a number'
-        with self.assertRaises(TypeError):
-            sqw.write('trigger an error')
-
-        self.assertEqual(sys.stdout, sys.__stdout__)
-        self.assertEqual(sys.stderr, sys.__stderr__)
-
-        sys.stdout = nose_stdout
-        sys.stderr = nose_stderr
+            sys.stdout = nose_stdout
+            sys.stderr = nose_stderr
+            sq.get()
