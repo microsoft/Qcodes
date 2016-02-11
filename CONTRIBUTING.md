@@ -40,7 +40,23 @@ If the tests pass, you should be ready to start developing!
 
 - Write your new feature or fix. Be sure it doesn't break any existing tests, and please write tests that cover your feature as well, or if you are fixing a bug, write a test that would have failed before your fix. Our goal is 100% test coverage, and although we are not there, we should always strive to increase our coverage with each new feature. Please be aware also that 100% test coverage does NOT necessarily mean 100% logic coverage. If (as is often the case in Python) a single line of code can behave differently for different inputs, coverage in itself will not ensure that this is tested.
 
-- The test command is listed above under [setup](#setup). Note: nose has a [note on its homepage](https://nose.readthedocs.org/en/latest/) that it is no longer being actively maintained, so we may want to change this in the near future.
+- The test command is listed above under [setup](#setup). Note: nose has a [note on its homepage](https://nose.readthedocs.org/en/latest/) that it is no longer being actively maintained, so we may want to change this in the near future. Also, we've been having trouble with some of the tests under Windows. Some other test runners, that (after a bunch of tweaking for robustness, like slowing down the multiprocessing tests) all work on mac:
+```
+# both of these run unittest with coverage. Using "&&" ensures that you
+# only get a coverage report if tests pass:
+coverage run setup.py test && coverage report -m
+coverage run -m unittest discover && coverage report -m
+# same without coverage:
+python setup.py test
+python -m unittest discover
+
+# py.test needs the .coveragerc file to give it a reasonable scope
+py.test --cov-config .coveragerc --cov qcodes --cov-report term-missing
+
+# nose2: coverage is broken - it reports all the unindented lines (everything
+# that executes on import) as uncovered
+nose2 -C --coverage-report term-missing
+```
 
 - Tests live in [qcodes/tests](https://github.com/qdev-dk/Qcodes/tree/master/qcodes/tests) for now.
 
