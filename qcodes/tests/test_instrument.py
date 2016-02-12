@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
 from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.sweep_values import SweepValues
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType
 from qcodes.utils.sync_async import wait_for_async, NoCommandError
 
@@ -502,3 +503,8 @@ class TestParameters(TestCase):
         self.assertEqual(list(c0_sv6), [1, 3, 4])
         self.assertEqual(list(c0_sv7), [1, 3, 4])
         self.assertFalse(c0_sv6 is c0_sv7)
+
+    def test_sweep_values_base(self):
+        p = self.gates.chan0
+        with self.assertRaises(NotImplementedError):
+            iter(SweepValues(p))
