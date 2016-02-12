@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
+from qcodes.instrument.parameter import Parameter
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType
 from qcodes.utils.sync_async import wait_for_async, NoCommandError
 
@@ -49,6 +50,55 @@ class AMockModel(object):
                 instrument, parameter))
 
         return '{:.3f}'.format(v)
+
+
+class TestParamConstructor(TestCase):
+    def test_name_s(self):
+        p = Parameter('simple')
+        self.assertEqual(p.name, 'simple')
+
+        with self.assertRaises(ValueError):
+            # you need a name of some sort
+            Parameter()
+
+        # or names
+        names = ['H1', 'L1']
+        p = Parameter(names=names)
+        self.assertEqual(p.names, names)
+        self.assertFalse(hasattr(p, 'name'))
+
+        # or both, that's OK too.
+        names = ['Peter', 'Paul', 'Mary']
+        p = Parameter(name='complex', names=names)
+        self.assertEqual(p.names, names)
+        # TODO: below seems wrong actually - we should let a parameter have
+        # a simple name even if it has a names array. But then we need to
+        # check everywhere this is used, and make sure everyone who cares
+        # about it looks for names first.
+        self.assertFalse(hasattr(p, 'name'))
+
+        size = 10
+        setpoints = 'we dont check the form of this until later'
+        setpoint_names = 'we dont check this either'
+        setpoint_labels = 'nor this'
+        p = Parameter('makes_array', size=size, setpoints=setpoints,
+                      setpoint_names=setpoint_names,
+                      setpoint_labels=setpoint_labels)
+        self.assertEqual(p.size, size)
+        self.assertFalse(hasattr(p, 'sizes'))
+        self.assertEqual(p.setpoints, setpoints)
+        self.assertEqual(p.setpoint_names, setpoint_names)
+        self.assertEqual(p.setpoint_labels, setpoint_labels)
+
+        sizes = [2, 3]
+        p = Parameter('makes arrays', sizes=sizes, setpoints=setpoints,
+                      setpoint_names=setpoint_names,
+                      setpoint_labels=setpoint_labels)
+        self.assertEqual(p.sizes, sizes)
+        self.assertFalse(hasattr(p, 'size'))
+        self.assertEqual(p.setpoints, setpoints)
+        self.assertEqual(p.setpoint_names, setpoint_names)
+        self.assertEqual(p.setpoint_labels, setpoint_labels)
 
 
 class TestParameters(TestCase):
