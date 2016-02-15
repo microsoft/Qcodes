@@ -74,6 +74,7 @@ class TestQcodesProcess(TestCase):
         self.MP_START_DELAY = mp_stats['mp_start_delay']
         self.MP_FINISH_DELAY = mp_stats['mp_finish_delay']
         self.SLEEP_DELAY = mp_stats['sleep_delay']
+        self.BLOCKING_TIME = mp_stats['blocking_time']
 
     def test_not_in_notebook(self):
         # below we'll patch this to True, but make sure that it's False
@@ -110,9 +111,10 @@ class TestQcodesProcess(TestCase):
             # get a bit off what it's supposed to be
             base_period = 0.1
             sqtest('p1', base_period, 10)
-            time.sleep(base_period / 2)
+            time.sleep(base_period / 2 - self.BLOCKING_TIME)
             sqtest('p2', 2 * base_period, 4)
-            time.sleep(self.MP_START_DELAY + 5 * base_period)
+            time.sleep(self.MP_START_DELAY + 5 * base_period -
+                       self.BLOCKING_TIME)
 
             procNames = ['<{}, started daemon>'.format(name)
                          for name in ('p1', 'p2')]

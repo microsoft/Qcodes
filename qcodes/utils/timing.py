@@ -26,6 +26,7 @@ def calibrate(quiet=False):
         if not quiet:
             print('multiprocessing startup delay and regular sleep delays:')
         mp_res = mptest(quiet=quiet)
+        _calibration['blocking_time'] = abs(mp_res['blocking_time'])
         _calibration['mp_start_delay'] = abs(mp_res['startup_time'])
         _calibration['mp_finish_delay'] = abs(mp_res['finish_time'])
         _calibration['sleep_delay'] = abs(mp_res['median'])
@@ -84,11 +85,14 @@ def mptest(n=100, d=0.001, timer=time.perf_counter, quiet=False):
         default False
     '''
     q = mp.Queue()
-    p = mp.Process(target=sleeper, args=(n, d, time.time(), timer, q, quiet))
+    start_time = time.time()
+    p = mp.Process(target=sleeper, args=(n, d, start_time, timer, q, quiet))
     p.start()
+    blocking_time = time.time() - start_time
     p.join()
     out = q.get()
     out['finish_time'] = time.time() - out['finish_time']
+    out['blocking_time'] = blocking_time
     return out
 
 
