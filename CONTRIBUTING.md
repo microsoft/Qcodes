@@ -24,13 +24,13 @@ Figured out a new way to use qcodes? Found a package that makes your life better
 
 - Clone and register the package for development as described in [README.md#installation]
 
-- Run the tests. In the root directory of the repository:
+- Run the tests. In the root directory of the repository, on Windows:
+```
+coverage run setup.py test && coverage report -m
+```
+and on Mac/Linux this one is faster with nicer output (but doesn't run at the moment on Windows):
 ```
 python setup.py nosetests
-```
-or:
-```
-nosetests --with-coverage --cover-package=qcodes
 ```
 If the tests pass, you should be ready to start developing!
 
@@ -40,8 +40,10 @@ If the tests pass, you should be ready to start developing!
 
 - Write your new feature or fix. Be sure it doesn't break any existing tests, and please write tests that cover your feature as well, or if you are fixing a bug, write a test that would have failed before your fix. Our goal is 100% test coverage, and although we are not there, we should always strive to increase our coverage with each new feature. Please be aware also that 100% test coverage does NOT necessarily mean 100% logic coverage. If (as is often the case in Python) a single line of code can behave differently for different inputs, coverage in itself will not ensure that this is tested.
 
-- The test command is listed above under [setup](#setup). Note: nose has a [note on its homepage](https://nose.readthedocs.org/en/latest/) that it is no longer being actively maintained, so we may want to change this in the near future. Also, we've been having trouble with some of the tests under Windows. Some other test runners, that (after a bunch of tweaking for robustness, like slowing down the multiprocessing tests) all work on mac:
+- The standard test commands are listed above under [setup](#setup). Note: nose has a [note on its homepage](https://nose.readthedocs.org/en/latest/) that it is no longer being actively maintained, so we may want to change this in the near future. Also, we've been having trouble with some of the tests under Windows. Some notes on other test runners, that (after a bunch of tweaking for robustness, like slowing down the multiprocessing tests) all work on mac:
 ```
+# nosetests is nice but doesn't seem to work with multiprocessing on windows
+python setup.py nosetests
 # both of these run unittest with coverage. Using "&&" ensures that you
 # only get a coverage report if tests pass:
 coverage run setup.py test && coverage report -m
