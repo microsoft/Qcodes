@@ -58,7 +58,7 @@ def report(startup_time, deviations, queue=None, quiet=False):
     return out
 
 
-def sleeper(n, d, t0, timer, queue, quiet):
+def sleeper(n, d, t0, timer, queue, quiet):  # pragma: no cover
     times = []
     startup_time = time.time() - t0
     for i in range(n):
@@ -84,6 +84,9 @@ def mptest(n=100, d=0.001, timer=time.perf_counter, quiet=False):
     quiet: don't print anything
         default False
     '''
+    # call sleeper once locally, just for
+    # sleeper(1, 0, 0, timer, mp.Queue(), True)
+
     q = mp.Queue()
     start_time = time.time()
     p = mp.Process(target=sleeper, args=(n, d, start_time, timer, q, quiet))

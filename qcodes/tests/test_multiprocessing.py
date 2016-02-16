@@ -11,6 +11,8 @@ import qcodes.utils.multiprocessing as qcmp
 from qcodes.utils.helpers import in_notebook
 from qcodes.utils.timing import calibrate
 
+BREAK_SIGNAL = '~~BREAK~~'
+
 
 # note sometimes separate processes do not seem to register in
 # coverage tests, though it seems that when we actively return stdout and
@@ -18,27 +20,78 @@ from qcodes.utils.timing import calibrate
 # if that starts to fail, we can insert "pragma no cover" comments around
 # such code - but need to be extra careful then that we really do cover it!
 
-def sqtest(name, period, cnt):
-    p = QcodesProcess(target=sqtest_f, args=(name.upper(), period, cnt),
-                      name=name)
-    p.start()
-    return p
+# def sqtest(name, period, cnt):
+#     p = QcodesProcess(target=sqtest_f, args=(name.upper(), period, cnt),
+#                       name=name)
+#     p.start()
+#     return p
 
 
-def sqtest_f(name, period, cnt):
-    for i in range(cnt):
-        print('message from {}...'.format(name), end='', flush=True)
-        if i % 5 == 1:
-            print('mock error from {}...'.format(name), end='',
-                  file=sys.stderr, flush=True)
-            print('', end='')  # this one should do nothing
-        time.sleep(period)
-    print('')  # this one should make a blank line at the very end
+# def sqtest_f(name, period, cnt):
+#     for i in range(cnt):
+#         print('message from {}...'.format(name), end='', flush=True)
+#         if i % 5 == 1:
+#             print('mock error from {}...'.format(name), end='',
+#                   file=sys.stderr, flush=True)
+#             print('', end='')  # this one should do nothing
+#         time.sleep(period)
+#     print('')  # this one should make a blank line at the very end
 
-    # now test that disconnect works, and reverts to regular stdout and stderr
-    get_stream_queue().disconnect()
-    print('stdout ', end='', flush=True)
-    print('stderr ', file=sys.stderr, end='', flush=True)
+#     # now test that disconnect works, and reverts to regular stdout and stderr
+#     get_stream_queue().disconnect()
+#     print('stdout ', end='', flush=True)
+#     print('stderr ', file=sys.stderr, end='', flush=True)
+
+
+class sqtest_echo:
+    def __init__(self, name, delay=0.01):
+        self.q_out = mp.Queue()
+        self.q_err = mp.Queue()
+        p = QcodesProcess(target=sqtest_echo_f,
+                          args=(name, delay, self.q_out, self.q_err),
+                          name=name)
+        p.start()
+        self.p = p
+        self.delay = delay
+        self.resp_delay = delay * 2 + 0.03
+
+    def send_out(self, msg):
+        self.q_out.put(msg)
+        time.sleep(self.resp_delay)
+
+    def send_err(self, msg):
+        self.q_err.put(msg)
+        time.sleep(self.resp_delay)
+
+    def halt(self):
+        if not self.p.is_alive():
+            return
+        self.q_out.put(BREAK_SIGNAL)
+        self.p.join()
+
+    def __del__(self):
+        self.halt()
+
+
+def sqtest_echo_f(name, delay, q_out, q_err):
+    while True:
+        time.sleep(delay)
+
+        if not q_out.empty():
+            out = q_out.get()
+
+            if out == BREAK_SIGNAL:
+                # now test that disconnect works, and reverts to
+                # regular stdout and stderr
+                get_stream_queue().disconnect()
+                print('stdout ', end='', flush=True)
+                print('stderr ', file=sys.stderr, end='', flush=True)
+                break
+
+            print(out, end='', flush=True)
+
+        if not q_err.empty():
+            print(q_err.get(), file=sys.stderr, end='', flush=True)
 
 
 class TestMpMethod(TestCase):
@@ -75,6 +128,7 @@ class TestQcodesProcess(TestCase):
         self.MP_FINISH_DELAY = mp_stats['mp_finish_delay']
         self.SLEEP_DELAY = mp_stats['sleep_delay']
         self.BLOCKING_TIME = mp_stats['blocking_time']
+        self.sq = get_stream_queue()
 
     def test_not_in_notebook(self):
         # below we'll patch this to True, but make sure that it's False
@@ -82,39 +136,28 @@ class TestQcodesProcess(TestCase):
         self.assertEqual(in_notebook(), False)
 
         # and make sure that processes run this way do not use the queue
-        period = 0.01
-        cnt = 4
-        sq = get_stream_queue()
-        with sq.lock:
-            p = sqtest('p0', period, cnt)
-            self.assertIsNone(p.stream_queue)
-            time.sleep(self.MP_START_DELAY + self.MP_FINISH_DELAY +
-                       cnt * (period + self.SLEEP_DELAY) + 0.05)
+        with self.sq.lock:
+            p = sqtest_echo('hidden')
+            time.sleep(self.MP_START_DELAY)
+            p.send_out('WHEEE!!!')
+            p.send_err('KAPOW!!!')
+            p.halt()
 
-            self.assertEqual(sq.get(), '')
+            self.assertEqual(self.sq.get(), '')
 
     @patch('qcodes.utils.multiprocessing.in_notebook')
     def test_qcodes_process(self, in_nb_patch):
         in_nb_patch.return_value = True
 
-        # set up two processes that produce staggered results
-        # p1 produces more output and sometimes makes two messages in a row
-        # before p1 produces any.
-        sq = get_stream_queue()
         queue_format = re.compile(
             '^\[\d\d:\d\d:\d\d\.\d\d\d p\d( ERR)?\] [^\[\]]*$')
 
-        with sq.lock:
-            # the whole thing takes ~ base_period * 10 seconds
-            # base_period used to be 0.05, but we increased for
-            # robustness - especially with coverage on the timing can
-            # get a bit off what it's supposed to be
-            base_period = 0.1
-            sqtest('p1', base_period, 10)
-            time.sleep(base_period / 2 - self.BLOCKING_TIME)
-            sqtest('p2', 2 * base_period, 4)
-            time.sleep(self.MP_START_DELAY + 5 * base_period -
-                       self.BLOCKING_TIME)
+        with self.sq.lock:
+            p1 = sqtest_echo('p1')
+            p2 = sqtest_echo('p2')
+            time.sleep(self.MP_START_DELAY + p1.delay + p2.delay)
+
+            self.assertEqual(self.sq.get(), '')
 
             procNames = ['<{}, started daemon>'.format(name)
                          for name in ('p1', 'p2')]
@@ -123,65 +166,59 @@ class TestQcodesProcess(TestCase):
             for name in procNames:
                 self.assertIn(name, reprs)
 
-            # Some OS's start more processes just for fun... so don't test
-            # that p1 and p2 are the only ones.
-            # self.assertEqual(len(reprs), 2, reprs)
+            # test each individual stream to send several messages on same
+            # and different lines
 
-            queue_data1 = sq.get().split('\n')
+            for sender, label, term in ([[p1.send_out, 'p1] ', ''],
+                                         [p1.send_err, 'p1 ERR] ', '\n'],
+                                         [p2.send_out, 'p2] ', '\n'],
+                                         [p2.send_err, 'p2 ERR] ', '']]):
+                sender('row row ')
+                sender('row your boat\n')
+                sender('gently down ')
+                data = [line for line in self.sq.get().split('\n') if line]
+                expected = [
+                    label + 'row row row your boat',
+                    label + 'gently down '
+                ]
+                for line, expected_line in zip(data, expected):
+                    self.assertIsNotNone(queue_format.match(line), data)
+                    self.assertEqual(line[14:], expected_line, data)
 
-            time.sleep(5 * base_period + 15 * self.SLEEP_DELAY +
-                       4 * self.MP_FINISH_DELAY)
+                sender(' the stream' + term)
+                # no label/header as we're continuing  the previous line
+                self.assertEqual(self.sq.get(), ' the stream' + term)
 
-            # both p1 and p2 should have finished by now, and ended.
+            p1.send_out('marco')
+            p2.send_out('polo\n')  # we don't see these single terminators
+            p1.send_out('marco\n')  # when we change streams
+            p2.send_out('polo')
+
+            data = self.sq.get().split('\n')
+            for line in data:
+                if line:
+                    self.assertIsNotNone(queue_format.match(line))
+
+            data_msgs = [line[14:] for line in data]
+            expected = [
+                '',
+                'p1] marco',
+                'p2] polo',
+                'p1] marco',
+                'p2] polo'
+            ]
+            self.assertEqual(data_msgs, expected)
+
+            # # Some OS's start more processes just for fun... so don't test
+            # # that p1 and p2 are the only ones.
+            # # self.assertEqual(len(reprs), 2, reprs)
+
+            p1.halt()
+            p2.halt()
+            # both p1 and p2 should have finished now, and ended.
             reprs = [repr(p) for p in mp.active_children()]
             for name in procNames:
                 self.assertNotIn(name, reprs)
-
-        queue_data2 = sq.get().split('\n')
-
-        if queue_data1[0] == '':
-            # sometimes we get a blank here - not sure why...
-            # but it wouldn't cause any problems in the real queue anyway
-            queue_data1 = queue_data1[1:]
-
-        real_lines = queue_data1 + queue_data2[1:-1]
-        for line in real_lines:
-            self.assertIsNotNone(queue_format.match(line), real_lines)
-        # we've tested the header, now strip it
-        data1 = [line[14:] for line in queue_data1]
-        data2 = [line[14:] for line in queue_data2[1:-1]]
-        p1msg = 'p1] message from P1...'
-        p2msg = p1msg.replace('1', '2')
-        p1err = 'p1 ERR] mock error from P1...'
-        p2err = p1err.replace('1', '2')
-        expected_data1 = [
-            p1msg,
-            p2msg,
-            p1msg,
-            p1err,
-            p1msg,
-            p2msg,
-            p2err,
-            p1msg + p1msg[4:],
-            p2msg,
-            p1msg
-        ]
-        # first line of data2 is special, as it has no header
-        # because it's continuing a line from the same stream
-        expected_data2_first = p1msg[4:]
-        expected_data2 = [
-            p1err,
-            p2msg,
-            p1msg + p1msg[4:],
-            'p2] ',  # p2 is quitting - should send a blank line
-            p1msg
-        ]
-        self.assertEqual(data1, expected_data1)
-        self.assertEqual(queue_data2[0], expected_data2_first)
-        self.assertEqual(data2, expected_data2)
-        # last line of data2 is also special, it's a trailing blank
-        # when p1 quits
-        self.assertEqual(queue_data2[-1], '')
 
 
 class TestSQWriter(TestCase):
