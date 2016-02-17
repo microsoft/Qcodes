@@ -66,9 +66,7 @@ class Agilent_E8527D(VisaInstrument):
         some basic tests to verify that the instrument is working correctly
         '''
         import unittest
-        from importlib import reload
         from . import test_suite
-        reload(test_suite)
         test_suite.source = self
         suite = unittest.TestLoader().loadTestsFromTestCase(
             test_suite.mw_source)
