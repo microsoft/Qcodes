@@ -25,7 +25,7 @@ class Agilent_E8527D(VisaInstrument):
                            label='Frequency',
                            units='Hz',
                            get_cmd='FREQ:CW?',
-                           set_cmd='FREQ:CW' + ' {:.2f}',
+                           set_cmd='FREQ:CW' + ' {:.4f}',
                            get_parser=float,
                            set_parser=float,
                            vals=vals.Numbers(1e5, 20e9))
@@ -33,16 +33,16 @@ class Agilent_E8527D(VisaInstrument):
                            label='Phase',
                            units='deg',
                            get_cmd='PHASE?',
-                           set_cmd='PHASE' + ' {:.2f}',
-                           get_parser=self.deg_to_rad,
-                           set_parser=self.rad_to_deg,
-                           vals=vals.Numbers(0, 360))
+                           set_cmd='PHASE' + ' {:.8f}',
+                           get_parser=self.rad_to_deg,
+                           set_parser=self.deg_to_rad,
+                           vals=vals.Numbers(-180, 180))
         min_power = -135 if step_attenuator else -20
         self.add_parameter(name='power',
                            label='Power',
                            units='dBm',
                            get_cmd='POW:AMPL?',
-                           set_cmd='POW:AMPL' + ' {:.2f}',
+                           set_cmd='POW:AMPL' + ' {:.4f}',
                            get_parser=float,
                            set_parser=float,
                            vals=vals.Numbers(min_power, 16))
@@ -55,8 +55,6 @@ class Agilent_E8527D(VisaInstrument):
                            vals=vals.Enum('on', 'On', 'ON',
                                           'off', 'Off', 'OFF'))
 
-        # self.add_function('reset', call_cmd='*RST')
-        # self.add_function('run_self_tests', call_cmd='*TST?')
         t1 = time.time()
         print('Connected to: ',
               self.get('IDN').replace(',', ', ').replace('\n', ' '),
@@ -67,7 +65,6 @@ class Agilent_E8527D(VisaInstrument):
         Imports the modules needed for running the test suite and runs
         some basic tests to verify that the instrument is working correctly
         '''
-
         import unittest
         from importlib import reload
         from . import test_suite
@@ -77,15 +74,14 @@ class Agilent_E8527D(VisaInstrument):
             test_suite.mw_source)
         unittest.TextTestRunner(verbosity=2).run(suite)
 
-
     # Note it would be useful to have functions like this in some module instad
     # of repeated in every instrument driver
     def rad_to_deg(self, angle_rad):
-        angle_deg = angle_rad/(2*pi)*360
+        angle_deg = float(angle_rad)/(2*pi)*360
         return angle_deg
 
     def deg_to_rad(self, angle_deg):
-        angle_rad = angle_deg/360 * 2 * pi
+        angle_rad = float(angle_deg)/360 * 2 * pi
         return angle_rad
 
     def parse_on_off(self, stat):
