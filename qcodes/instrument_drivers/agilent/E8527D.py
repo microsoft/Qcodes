@@ -11,7 +11,7 @@ class Agilent_E8527D(VisaInstrument):
     Status: beta-version.
         TODO:
         - Add all parameters that are in the manual
-        - Add test suite
+
     This driver will most likely work for multiple Agilent sources.
 
     This driver does not contain all commands available for the E8527D but
