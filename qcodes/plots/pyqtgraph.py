@@ -325,8 +325,8 @@ class QtPlot(BasePlot):
         we can't send a DataArray to remote pyqtgraph for some reason,
         so send the plain numpy array
         '''
-        if hasattr(array, 'data') and isinstance(array.data, np.ndarray):
-            return array.data
+        if hasattr(array, 'ndarray') and isinstance(array.ndarray, np.ndarray):
+            return array.ndarray
         return array
 
     def _cmap(self, scale):

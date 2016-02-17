@@ -335,7 +335,7 @@ class ActiveLoop(object):
                 label = vals.label
 
             # extract a copy of the numpy array
-            vals = np.array(vals.data)
+            vals = np.array(vals.ndarray)
         else:
             # turn any sequence into a (new) numpy array
             vals = np.array(vals)
