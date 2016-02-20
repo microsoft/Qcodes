@@ -14,35 +14,6 @@ from qcodes.utils.timing import calibrate
 BREAK_SIGNAL = '~~BREAK~~'
 
 
-# note sometimes separate processes do not seem to register in
-# coverage tests, though it seems that when we actively return stdout and
-# stderr to the normal routes, coverage does get tested?
-# if that starts to fail, we can insert "pragma no cover" comments around
-# such code - but need to be extra careful then that we really do cover it!
-
-# def sqtest(name, period, cnt):
-#     p = QcodesProcess(target=sqtest_f, args=(name.upper(), period, cnt),
-#                       name=name)
-#     p.start()
-#     return p
-
-
-# def sqtest_f(name, period, cnt):
-#     for i in range(cnt):
-#         print('message from {}...'.format(name), end='', flush=True)
-#         if i % 5 == 1:
-#             print('mock error from {}...'.format(name), end='',
-#                   file=sys.stderr, flush=True)
-#             print('', end='')  # this one should do nothing
-#         time.sleep(period)
-#     print('')  # this one should make a blank line at the very end
-
-#     # now test that disconnect works, and reverts to regular stdout and stderr
-#     get_stream_queue().disconnect()
-#     print('stdout ', end='', flush=True)
-#     print('stderr ', file=sys.stderr, end='', flush=True)
-
-
 class sqtest_echo:
     def __init__(self, name, delay=0.01):
         self.q_out = mp.Queue()
@@ -209,9 +180,9 @@ class TestQcodesProcess(TestCase):
             ]
             self.assertEqual(data_msgs, expected)
 
-            # # Some OS's start more processes just for fun... so don't test
-            # # that p1 and p2 are the only ones.
-            # # self.assertEqual(len(reprs), 2, reprs)
+            # Some OS's start more processes just for fun... so don't test
+            # that p1 and p2 are the only ones.
+            # self.assertEqual(len(reprs), 2, reprs)
 
             p1.halt()
             p2.halt()
@@ -225,9 +196,7 @@ class TestSQWriter(TestCase):
     # this is basically tested in TestQcodesProcess, but the test happens
     # in a subprocess so coverage doesn't know about it. Anyway, there are
     # a few edge cases left that we have to test locally.
-    # @patch('qcodes.utils.multiprocessing.sys.__stdout__')
-    def test_sq_writer(self):  # , base_stdout_patch):
-        # import pdb; pdb.set_trace()
+    def test_sq_writer(self):
         sq = get_stream_queue()
         with sq.lock:
             sq_clearer = _SQWriter(sq, 'Someone else')
