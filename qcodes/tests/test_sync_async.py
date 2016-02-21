@@ -138,6 +138,9 @@ class TestSyncableCommand(TestCase):
             syncable_command(0, '', output_parser=lambda: 1)
 
         with self.assertRaises(TypeError):
+            syncable_command(1, '', input_parser=lambda: 1)
+
+        with self.assertRaises(TypeError):
             syncable_command(0, cmd='', exec_str='not a function')
 
         with self.assertRaises(TypeError):
