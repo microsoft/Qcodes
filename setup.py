@@ -10,7 +10,7 @@ def readme():
 extras = {
     'MatPlot': ('matplotlib', '1.5'),
     'QtPlot': ('pyqtgraph', '0.9.10'),
-	'coverage tests': ('coverage', '4.0')
+    'coverage tests': ('coverage', '4.0')
 }
 extras_require = {k: '>='.join(v) for k, v in extras.items()}
 
@@ -46,7 +46,7 @@ setup(name='qcodes',
           'ipywidgets>=4.1',
           # nose and coverage are only for tests, but we'd like to encourage
           # people to run tests!
-		  # coverage has a problem with setuptools on Windows, so moved to extras
+          # coverage has a problem with setuptools on Windows, moved to extras
           'nose>=1.3'
       ],
       extras_require=extras_require,
