@@ -117,14 +117,21 @@ class StreamQueue(object):
         self._last_stream = None
         self._on_new_line = True
         self.lock = mp.RLock()
+        self.initial_streams = None
 
     def connect(self, process_name):
+        if self.initial_streams is not None:
+            raise RuntimeError('StreamQueue is already connected')
+
+        self.initial_streams = (sys.stdout, sys.stderr)
+
         sys.stdout = _SQWriter(self, process_name)
         sys.stderr = _SQWriter(self, process_name + ' ERR')
 
     def disconnect(self):
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
+        if self.initial_streams is None:
+            raise RuntimeError('StreamQueue is not connected')
+        sys.stdout, sys.stderr = self.initial_streams
 
     def get(self):
         out = ''
