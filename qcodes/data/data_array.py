@@ -160,8 +160,12 @@ class DataArray(DelegateAttributes):
         Also updates the record of modifications to the array. If you don't
         want this overhead, you can access self.ndarray directly.
         '''
-        min_li = self._flat_index(loop_indices, self._min_indices)
-        max_li = self._flat_index(loop_indices, self._max_indices)
+        if isinstance(loop_indices, collections.Iterable):
+            loop_indices_tuple = loop_indices
+        else:
+            loop_indices_tuple = (loop_indices, )
+        min_li = self._flat_index(loop_indices_tuple, self._min_indices)
+        max_li = self._flat_index(loop_indices_tuple, self._max_indices)
         self._update_modified_range(min_li, max_li)
 
         self.ndarray[loop_indices] = value
