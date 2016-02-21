@@ -132,6 +132,7 @@ class StreamQueue(object):
         if self.initial_streams is None:
             raise RuntimeError('StreamQueue is not connected')
         sys.stdout, sys.stderr = self.initial_streams
+        self.initial_streams = None
 
     def get(self):
         out = ''
