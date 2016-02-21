@@ -15,11 +15,11 @@ BREAK_SIGNAL = '~~BREAK~~'
 
 
 class sqtest_echo:
-    def __init__(self, name, delay=0.01):
+    def __init__(self, name, delay=0.01, has_q=True):
         self.q_out = mp.Queue()
         self.q_err = mp.Queue()
         p = QcodesProcess(target=sqtest_echo_f,
-                          args=(name, delay, self.q_out, self.q_err),
+                          args=(name, delay, self.q_out, self.q_err, has_q),
                           name=name)
         p.start()
         self.p = p
@@ -44,7 +44,7 @@ class sqtest_echo:
         self.halt()
 
 
-def sqtest_echo_f(name, delay, q_out, q_err):
+def sqtest_echo_f(name, delay, q_out, q_err, has_q):
     while True:
         time.sleep(delay)
 
@@ -54,15 +54,20 @@ def sqtest_echo_f(name, delay, q_out, q_err):
             if out == BREAK_SIGNAL:
                 # now test that disconnect works, and reverts to
                 # regular stdout and stderr
-                get_stream_queue().disconnect()
-                print('stdout ', end='', flush=True)
-                print('stderr ', file=sys.stderr, end='', flush=True)
+                if has_q:
+                    get_stream_queue().disconnect()
+                    print('stdout ', end='', flush=True)
+                    print('stderr ', file=sys.stderr, end='', flush=True)
                 break
 
             print(out, end='', flush=True)
 
         if not q_err.empty():
             print(q_err.get(), file=sys.stderr, end='', flush=True)
+
+
+def sqtest_exception():
+    raise RuntimeError('Boo!')
 
 
 class TestMpMethod(TestCase):
@@ -108,13 +113,39 @@ class TestQcodesProcess(TestCase):
 
         # and make sure that processes run this way do not use the queue
         with self.sq.lock:
-            p = sqtest_echo('hidden')
+            p = sqtest_echo('hidden', has_q=False)
             time.sleep(self.MP_START_DELAY)
             p.send_out('WHEEE!!!')
             p.send_err('KAPOW!!!')
             p.halt()
 
             self.assertEqual(self.sq.get(), '')
+
+    @patch('qcodes.utils.multiprocessing.in_notebook')
+    def test_qcodes_process_exception(self, in_nb_patch):
+        in_nb_patch.return_value = True
+
+        with self.sq.lock:
+            name = 'Hamlet'
+            p = QcodesProcess(target=sqtest_exception, name=name)
+
+            initial_outs = (sys.stdout, sys.stderr)
+
+            # normally you call p.start(), but for this test we want
+            # the function to actually run in the main process
+            # it will run the actual target, but will print the exception
+            # (to the queue) rather than raising it.
+            p.run()
+
+            # output streams are back to how they started
+            self.assertEqual((sys.stdout, sys.stderr), initial_outs)
+            exc_text = self.sq.get()
+            # but we have the exception in the queue
+            self.maxDiff = None
+            self.assertGreaterEqual(exc_text.count(name + ' ERR'), 5)
+            self.assertEqual(exc_text.count('Traceback'), 1)
+            self.assertEqual(exc_text.count('RuntimeError'), 2)
+            self.assertEqual(exc_text.count('Boo!'), 2)
 
     @patch('qcodes.utils.multiprocessing.in_notebook')
     def test_qcodes_process(self, in_nb_patch):
