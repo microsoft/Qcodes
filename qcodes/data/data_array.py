@@ -145,6 +145,11 @@ class DataArray(DelegateAttributes):
         '''
         Fill the (already existing) data array with nan
         '''
+        # only floats can hold nan values. I guess we could
+        # also raise an error in this case? But generally float is
+        # what people want anyway.
+        if self.ndarray.dtype != float:
+            self.ndarray = self.ndarray.astype(float)
         self.ndarray.fill(float('nan'))
 
     def __setitem__(self, loop_indices, value):
