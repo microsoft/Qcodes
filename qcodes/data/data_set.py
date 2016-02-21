@@ -1,4 +1,5 @@
 from enum import Enum
+from datetime import datetime
 
 from .manager import get_data_manager
 from .format import GNUPlotFormat
@@ -12,18 +13,143 @@ class DataMode(Enum):
     PULL_FROM_SERVER = 3
 
 
+SERVER_MODES = set((DataMode.PULL_FROM_SERVER, DataMode.PUSH_TO_SERVER))
+
+
+def new_data(location=None, name=None, overwrite=False, io=None,
+             data_manager=None, mode=DataMode.LOCAL, **kwargs):
+    '''
+    Create a new DataSet. Arguments are the same as DataSet constructor, plus:
+
+    overwrite: Are we allowed to overwrite an existing location? default False
+
+    location: can be a location string, but can also be a callable (a function
+        of one required parameter, the io manager, and an optional name) to
+        generate an automatic location, or False to denote an
+        only-in-memory temporary DataSet.
+        Note that the full path to or physical location of the data is a
+        combination of io + location. the default DiskIO sets the base
+        directory, which this location sits inside.
+        defaults to DataSet.location_provider
+
+    name: an optional string to be passed to location_provider to augment
+        the automatic location with something meaningful
+    '''
+    if io is None:
+        io = DataSet.default_io
+
+    if location is None:
+        location = DataSet.location_provider(io, name)
+    elif callable(location):
+        location = location(io)
+
+    if location and (not overwrite) and io.list(location):
+        raise FileExistsError
+
+    if data_manager is False:
+        if mode != DataMode.LOCAL:
+            raise ValueError('DataSets without a data_manager must be local')
+    elif data_manager is None:
+        data_manager = get_data_manager()
+
+    return DataSet(location=location, io=io, data_manager=data_manager,
+                   mode=mode, **kwargs)
+
+
+def load_data(location=None, data_manager=None, formatter=None, io=None):
+    '''
+    Load an existing DataSet. Arguments are a subset of the DataSet
+    constructor:
+
+    location: a string for the location to load from
+        if omitted (None) defaults to the current live DataSet.
+        `mode` is determined automatically from location: PULL_FROM_SERVER if
+        this is the live DataSet, otherwise LOCAL
+        Note that the full path to or physical location of the data is a
+        combination of io + location. the default DiskIO sets the base
+        directory, which this location sits inside.
+
+    data_manager: usually omitted (default None) to get the default
+        DataManager. load_data will not start a DataManager but may
+        query an existing one to determine (and pull) the live data
+
+    formatter: as in DataSet
+    io: as in DataSet
+    '''
+    if data_manager is None:
+        data_manager = get_data_manager(only_existing=True)
+
+    if location is None:
+        if not data_manager:
+            raise RuntimeError('Live data requested but DataManager does '
+                               'not exist or was requested not to be used')
+
+        return _get_live_data(data_manager)
+
+    elif (data_manager and
+            location == data_manager.ask('get_data', 'location')):
+        return _get_live_data(data_manager)
+
+    else:
+        return DataSet(location=location, formatter=formatter, io=io,
+                       mode=DataMode.LOCAL)
+
+
+def _get_live_data(data_manager):
+    live_data = data_manager.ask('get_data')
+    if live_data is None:
+        raise RuntimeError('DataManager has no live data')
+
+    live_data.mode = DataMode.PULL_FROM_SERVER
+    return live_data
+
+
+class TimestampLocation(object):
+    '''
+    This is the default DataSet Location provider.
+    It provides a callable of one parameter (the io manager) that
+    returns a new location string, which is currently unused.
+    Uses `io.list(location)` to search for existing data at this location
+
+    Constructed with one parameter, a datetime.strftime format string,
+    which can include slashes (forward and backward are equivalent)
+    to create folder structure.
+    Default format string is '%Y-%m-%d/%H-%M-%S'
+    '''
+    def __init__(self, fmt='%Y-%m-%d/%H-%M-%S'):
+        self.fmt = fmt
+
+    def __call__(self, io, name=None):
+        location = base_location = datetime.now().strftime(self.fmt)
+
+        if name:
+            location += '_' + name
+
+        for char in map(chr, range(ord('a'), ord('z') + 2)):
+            if not io.list(location):
+                break
+            location = base_location + '_' + char
+        else:
+            raise FileExistsError('Too many files with this timestamp')
+
+        return location
+
+
 class DataSet(DelegateAttributes):
     '''
     A container for one complete measurement loop
     May contain many individual arrays with potentially different
     sizes and dimensionalities.
 
-    location: where this data set is stored, also its identifier.
-        what exactly this means depends on io and formatter
-        if you omit *everything*, will try to pull location (and mode)
-        from the live measurement
-        location=False means this is a temporary DataSet and
+    Normally a DataSet should not be instantiated directly, but through
+    new_data or load_data
+
+    location: where this data set is stored, also the DataSet's identifier.
+        location=False or None means this is a temporary DataSet and
         cannot be stored or read.
+        Note that the full path to or physical location of the data is a
+        combination of io + location. the default DiskIO sets the base
+        directory, which this location sits inside.
 
     arrays: a dict of array_id: DataArray's contained in this DataSet
 
@@ -43,6 +169,9 @@ class DataSet(DelegateAttributes):
     formatter: knows how to read and write the file format
 
     io: knows how to connect to the storage (disk vs cloud etc)
+        The default (stored in class attribute DataSet.default_io) is
+        DiskIO('.') which says the root data storage directory is the
+        current working directory, ie where you started the notebook or python.
     '''
 
     # ie data_array.arrays['vsd'] === data_array.vsd
@@ -50,29 +179,19 @@ class DataSet(DelegateAttributes):
 
     default_io = DiskIO('.')
     default_formatter = GNUPlotFormat()
-    SERVER_MODES = set((DataMode.PULL_FROM_SERVER, DataMode.PUSH_TO_SERVER))
+    location_provider = TimestampLocation()
 
     def __init__(self, location=None, mode=None, arrays=None,
                  data_manager=None, formatter=None, io=None):
-        self.location = location
+        if location is False or isinstance(location, str):
+            self.location = location
+        else:
+            raise ValueError('unrecognized location ' + repr(location))
+
         # TODO: when you change formatter or io (and there's data present)
         # make it all look unsaved
         self.formatter = formatter or self.default_formatter
         self.io = io or self.default_io
-
-        if data_manager is False:
-            # you cannot set any other mode without a DataManager
-            mode = DataMode.LOCAL
-        if mode is None:
-            if arrays:
-                # no mode but arrays provided - assume the user is doing
-                # local analysis and making a new local DataSet
-                mode = DataMode.LOCAL
-            else:
-                # check if this is the live measurement, make it sync if it is
-                mode = DataMode.PULL_FROM_SERVER
-
-        self.mode = mode
 
         self.arrays = {}
         if arrays:
@@ -102,6 +221,8 @@ class DataSet(DelegateAttributes):
             self.read()
 
     def _init_push_to_server(self, data_manager):
+        self.mode = DataMode.PUSH_TO_SERVER
+
         # If some code was not available when data_manager was started,
         # we can't unpickle it on the other end.
         # So we'll try, then restart if this error occurs, then try again.
@@ -118,8 +239,8 @@ class DataSet(DelegateAttributes):
             data_manager.restart()
             data_manager.ask('new_data', self)
 
-        # need to set data_manager *after* _init_new_data because
-        # we can't (and shouldn't) send data_manager through a queue
+        # need to set data_manager *after* sending to data_manager because
+        # we can't (and shouldn't) send data_manager itself through a queue
         self.data_manager = data_manager
 
     def init_on_server(self):
@@ -133,8 +254,9 @@ class DataSet(DelegateAttributes):
         self._init_local()
 
     def _init_live(self, data_manager):
+        self.mode = DataMode.PULL_FROM_SERVER
         self.data_manager = data_manager
-        with self.data_manager.query_lock:
+        with data_manager.query_lock:
             if self.is_on_server:
                 live_obj = data_manager.ask('get_data')
                 self.arrays = live_obj.arrays
@@ -147,7 +269,7 @@ class DataSet(DelegateAttributes):
         indicate whether this DataSet thinks it is live in the DataServer
         without actually talking to the DataServer or syncing with it
         '''
-        return self.mode in self.SERVER_MODES and self.data_manager and True
+        return self.mode in SERVER_MODES and self.data_manager and True
 
     @property
     def is_on_server(self):
@@ -155,16 +277,11 @@ class DataSet(DelegateAttributes):
         Check whether this DataSet is being mirrored in the DataServer
         If it thought it was but isn't, convert it to mode=LOCAL
         '''
-        if not self.is_live_mode:
+        if not self.is_live_mode or self.location is False:
             return False
 
         with self.data_manager.query_lock:
             live_location = self.data_manager.ask('get_data', 'location')
-
-            if self.location is None:
-                # no location given yet, pull it from the live data
-                self.location = live_location
-
             return self.location == live_location
 
     def sync(self):
@@ -295,8 +412,8 @@ class DataSet(DelegateAttributes):
         overwriting the existing storage if any.
         '''
         if self.mode != DataMode.LOCAL:
-            raise RuntimeError('This object is connected to a DataServer '
-                               'and should be saved from there.')
+            raise RuntimeError('This object is connected to a DataServer, '
+                               'which handles writing automatically.')
 
         if self.location is False:
             return
@@ -313,8 +430,8 @@ class DataSet(DelegateAttributes):
         pass  # TODO
 
     def __repr__(self):
-        out = '{}: {}, location=\'{}\''.format(self.__class__.__name__,
-                                               self.mode, self.location)
+        out = '{}: {}, location={}'.format(
+            self.__class__.__name__, self.mode, repr(self.location))
         for array_id, array in self.arrays.items():
             out += '\n   {}: {}'.format(array_id, array.name)
 
