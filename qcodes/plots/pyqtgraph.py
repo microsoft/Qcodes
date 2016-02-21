@@ -133,7 +133,7 @@ class QtPlot(BasePlot):
     def _line_data(self, x, y):
         return [self._clean_array(arg) for arg in [x, y] if arg is not None]
 
-    def _draw_image(self, subplot_object, z, x=None, y=None, cmap='Hot',
+    def _draw_image(self, subplot_object, z, x=None, y=None, cmap='hot',
                     **kwargs):
         img = self.rpg.ImageItem()
         subplot_object.addItem(img)
