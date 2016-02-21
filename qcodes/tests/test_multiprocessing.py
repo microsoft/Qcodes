@@ -139,6 +139,7 @@ class TestQcodesProcess(TestCase):
 
             # output streams are back to how they started
             self.assertEqual((sys.stdout, sys.stderr), initial_outs)
+            time.sleep(0.01)
             exc_text = self.sq.get()
             # but we have the exception in the queue
             self.maxDiff = None
