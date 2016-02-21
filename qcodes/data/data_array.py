@@ -214,6 +214,7 @@ class DataArray(DelegateAttributes):
         self.last_saved_index = None
 
     def __repr__(self):
-        return '{}[{}]: {}\n{}'.format(self.__class__.__name__,
-                                       ','.join(map(str, self.size)),
-                                       self.array_id, repr(self.ndarray))
+        array_id_or_none = ' {}'.format(self.array_id) if self.array_id else ''
+        return '{}[{}]:{}\n{}'.format(self.__class__.__name__,
+                                      ','.join(map(str, self.size)),
+                                      array_id_or_none, repr(self.ndarray))
