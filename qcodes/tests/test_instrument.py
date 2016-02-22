@@ -558,8 +558,6 @@ class TestParameters(TestCase):
         res.set(1e9)
         self.assertEqual(wait_for_async(res.get_async), 1e9)
         # default vals is all numbers
-        # TODO - maybe non-negative numbers would be a better
-        # default?
         wait_for_async(res.set_async, -1)
         self.assertEqual(res.get(), -1)
 
