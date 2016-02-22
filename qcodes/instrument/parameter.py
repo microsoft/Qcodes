@@ -50,6 +50,71 @@ def no_func(*args, **kwargs):
 
 
 class Parameter(Metadatable):
+    '''
+    defines one generic parameter, not necessarily part of
+    an instrument. can be settable and/or gettable.
+
+    A settable Parameter has a .set and/or a .set_async method,
+    and supports only a single value at a time (see below)
+
+    A gettable Parameter has a .get and/or a .get_async method,
+    which may return:
+    1.  a single value
+    2.  a sequence of values with different names (for example,
+        raw and interpreted, I and Q, several fit parameters...)
+    3.  an array of values all with the same name, but at different
+        setpoints (for example, a time trace or fourier transform that
+        was acquired in the hardware and all sent to the computer at once)
+    4.  2 & 3 together: a sequence of arrays. All arrays should be the same
+        size.
+    5.  a sequence of differently sized items
+
+    Because .set only supports a single value, if a Parameter is both
+    gettable AND settable, .get should return a single value too (case 1)
+
+    The constructor arguments change somewhat between these cases:
+
+    name: (1&3) the local name of this parameter, should be a valid
+        identifier, ie no spaces or special characters
+    names: (2,4,5) a tuple of names
+
+    label: (1&3) string to use as an axis label for this parameter
+        defaults to name
+    labels: (2,4,5) a tuple of labels
+
+    units: (1&3) string that indicates units of parameter for use in axis
+        label and snapshot
+           (2,4,5) a tuple of units
+
+    size: (3&4) an integer or tuple of integers for the size of array
+        returned by .get(). Can be an integer only if the array is 1D, but
+        as a tuple it can describe any dimensionality (including 1D)
+        If size is an integer then setpoints, setpoint_names,
+        and setpoint_labels should also not be wrapped in tuples.
+    sizes: (5) a tuple of integers or tuples, each one as in `size`.
+
+    setpoints: (3,4,5) the setpoints for the returned array of values.
+        3&4 - This should be an array if `size` is an integer, or a
+            tuple of arrays if `size` is a tuple
+            The first array should be 1D, the second 2D, etc.
+        5 - This should be a tuple of arrays or tuples, each item as above
+            Single values should be denoted by None or (), not 1 (because 1
+            would be a length-1 array)
+        Defaults to integers from zero in each respective direction
+        Each may be either a DataArray, a numpy array, or a sequence
+        (sequences will be converted to numpy arrays)
+        NOTE: if the setpoints will be different each measurement, leave
+        this out and return the setpoints (with extra names) in the get.
+    setpoint_names: (3,4,5) one identifier (like `name`) per setpoint
+        array.
+        Ignored if `setpoints` are DataArrays, which already have names.
+    setpoint_labels: (3&4) one label (like `label`) per setpoint array.
+        Overridden if `setpoints` are DataArrays and already have labels.
+
+    vals: allowed values for setting this parameter (only relevant
+        if it has a setter)
+        defaults to Numbers()
+    '''
     def __init__(self,
                  name=None, names=None,
                  label=None, labels=None,
@@ -57,71 +122,6 @@ class Parameter(Metadatable):
                  size=None, sizes=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
                  vals=None, **kwargs):
-        '''
-        defines one generic parameter, not necessarily part of
-        an instrument. can be settable and/or gettable.
-
-        A settable Parameter has a .set and/or a .set_async method,
-        and supports only a single value at a time (see below)
-
-        A gettable Parameter has a .get and/or a .get_async method,
-        which may return:
-        1.  a single value
-        2.  a sequence of values with different names (for example,
-            raw and interpreted, I and Q, several fit parameters...)
-        3.  an array of values all with the same name, but at different
-            setpoints (for example, a time trace or fourier transform that
-            was acquired in the hardware and all sent to the computer at once)
-        4.  2 & 3 together: a sequence of arrays. All arrays should be the same
-            size.
-        5.  a sequence of differently sized items
-
-        Because .set only supports a single value, if a Parameter is both
-        gettable AND settable, .get should return a single value too (case 1)
-
-        The constructor arguments change somewhat between these cases:
-
-        name: (1&3) the local name of this parameter, should be a valid
-            identifier, ie no spaces or special characters
-        names: (2,4,5) a tuple of names
-
-        label: (1&3) string to use as an axis label for this parameter
-            defaults to name
-        labels: (2,4,5) a tuple of labels
-
-        units: (1&3) string that indicates units of parameter for use in axis
-            label and snapshot
-               (2,4,5) a tuple of units
-
-        size: (3&4) an integer or tuple of integers for the size of array
-            returned by .get(). Can be an integer only if the array is 1D, but
-            as a tuple it can describe any dimensionality (including 1D)
-            If size is an integer then setpoints, setpoint_names,
-            and setpoint_labels should also not be wrapped in tuples.
-        sizes: (5) a tuple of integers or tuples, each one as in `size`.
-
-        setpoints: (3,4,5) the setpoints for the returned array of values.
-            3&4 - This should be an array if `size` is an integer, or a
-                tuple of arrays if `size` is a tuple
-                The first array should be 1D, the second 2D, etc.
-            5 - This should be a tuple of arrays or tuples, each item as above
-                Single values should be denoted by None or (), not 1 (because 1
-                would be a length-1 array)
-            Defaults to integers from zero in each respective direction
-            Each may be either a DataArray, a numpy array, or a sequence
-            (sequences will be converted to numpy arrays)
-            NOTE: if the setpoints will be different each measurement, leave
-            this out and return the setpoints (with extra names) in the get.
-        setpoint_names: (3,4,5) one identifier (like `name`) per setpoint
-            array.
-            Ignored if `setpoints` are DataArrays, which already have names.
-        setpoint_labels: (3&4) one label (like `label`) per setpoint array.
-            Overridden if `setpoints` are DataArrays and already have labels.
-
-        vals: allowed values for setting this parameter (only relevant
-            if it has a setter)
-            defaults to Numbers()
-        '''
         super().__init__(**kwargs)
 
         if name is not None:
@@ -175,58 +175,58 @@ class Parameter(Metadatable):
 
 
 class InstrumentParameter(Parameter):
+    '''
+    defines one measurement parameter
+
+    instrument: an instrument that handles this parameter
+    name: the local name of this parameter
+
+    get_cmd: a string or function to get this parameter
+    async_get_cmd: a function to use for async get, or for both sync
+        and async if get_cmd is missing or None
+    get_parser: function to transform the response from get
+        to the final output value.
+        NOTE: only applies if get_cmd is a string. The function forms
+        of get_cmd and async_get_cmd should do their own parsing
+        See also val_mapping
+
+    set_cmd: command to set this parameter, either:
+        - a string (containing one field to .format, like "{}" etc)
+        - a function (of one parameter)
+    async_set_cmd: a function to use for async set, or for both sync
+        and async if set_cmd is missing or None
+    set_parser: function to transform the input set value to an encoded
+        value sent to the instrument.
+        NOTE: only applies if set_cmd is a string. The function forms
+        of set_cmd and async_set_cmd should do their own parsing
+        See also val_mapping
+
+    parse_function: DEPRECATED - use get_parser instead
+
+    val_mapping: a bidirectional map from data/readable values to
+        instrument codes, expressed as a dict {data_val: instrument_code}
+        For example, if the instrument uses '0' to mean 1V and '1' to mean
+        10V, set val_mapping={1: '0', 10: '1'} and on the user side you
+        only see 1 and 10, never the coded '0' and '1'
+
+        If vals is omitted, will also construct a matching Enum validator.
+        NOTE: only applies to get if get_cmd is a string, and to set if
+        set_cmd is a string.
+
+    vals: a Validator object for this parameter
+
+    sweep_step: max increment of parameter value - larger changes
+        are broken into steps this size
+    sweep_delay: time (in seconds) to wait after each sweep step
+    max_val_age: max time (in seconds) to trust a saved value from
+        this parameter as the starting point of a sweep
+    '''
     def __init__(self, instrument, name,
                  get_cmd=None, async_get_cmd=None, get_parser=None,
                  parse_function=None, val_mapping=None,
                  set_cmd=None, async_set_cmd=None, set_parser=None,
                  sweep_step=None, sweep_delay=None, max_val_age=3600,
                  vals=None, **kwargs):
-        '''
-        defines one measurement parameter
-
-        instrument: an instrument that handles this parameter
-        name: the local name of this parameter
-
-        get_cmd: a string or function to get this parameter
-        async_get_cmd: a function to use for async get, or for both sync
-            and async if get_cmd is missing or None
-        get_parser: function to transform the response from get
-            to the final output value.
-            NOTE: only applies if get_cmd is a string. The function forms
-            of get_cmd and async_get_cmd should do their own parsing
-            See also val_mapping
-
-        set_cmd: command to set this parameter, either:
-            - a string (containing one field to .format, like "{}" etc)
-            - a function (of one parameter)
-        async_set_cmd: a function to use for async set, or for both sync
-            and async if set_cmd is missing or None
-        set_parser: function to transform the input set value to an encoded
-            value sent to the instrument.
-            NOTE: only applies if set_cmd is a string. The function forms
-            of set_cmd and async_set_cmd should do their own parsing
-            See also val_mapping
-
-        parse_function: DEPRECATED - use get_parser instead
-
-        val_mapping: a bidirectional map from data/readable values to
-            instrument codes, expressed as a dict {data_val: instrument_code}
-            For example, if the instrument uses '0' to mean 1V and '1' to mean
-            10V, set val_mapping={1: '0', 10: '1'} and on the user side you
-            only see 1 and 10, never the coded '0' and '1'
-
-            If vals is omitted, will also construct a matching Enum validator.
-            NOTE: only applies to get if get_cmd is a string, and to set if
-            set_cmd is a string.
-
-        vals: a Validator object for this parameter
-
-        sweep_step: max increment of parameter value - larger changes
-            are broken into steps this size
-        sweep_delay: time (in seconds) to wait after each sweep step
-        max_val_age: max time (in seconds) to trust a saved value from
-            this parameter as the starting point of a sweep
-        '''
         # handle val_mapping before super init because it impacts
         # vals / validation in the base class
         if val_mapping:
