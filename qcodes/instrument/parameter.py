@@ -418,3 +418,27 @@ class InstrumentParameter(Parameter):
             if max_val_age < 0:
                 raise ValueError('max_val_age must be non-negative')
             self._max_val_age = max_val_age
+
+
+class ManualParameter(Parameter):
+    def __init__(self, instrument, name, initial_value=None, **kwargs):
+        super().__init__(name=name, **kwargs)
+        if initial_value is not None:
+            self.validate(initial_value)
+
+        self._value = initial_value
+
+    def set(self, value):
+        self.validate(value)
+        self._value = value
+
+    @asyncio.coroutine
+    def set_async(self, value):
+        return self.set(value)
+
+    def get(self):
+        return self._value
+
+    @asyncio.coroutine
+    def get_async(self):
+        return self.get()
