@@ -1,7 +1,7 @@
 from asyncio import iscoroutinefunction
 from collections import Iterable
 from datetime import datetime
-from inspect import getargspec, ismethod
+from inspect import signature
 import logging
 import math
 import sys
@@ -26,8 +26,8 @@ def is_sequence(obj):
 
 def is_function(f, arg_count, coroutine=False):
     '''
-    require a function with the specified number of positional arguments
-    (and no kwargs) which either is or is not a coroutine
+    require a function that can accept the specified number of positional
+    arguments, which either is or is not a coroutine
     type casting "functions" are allowed, but only in the 1-argument form
     '''
     if not isinstance(arg_count, int) or arg_count < 0:
@@ -43,23 +43,18 @@ def is_function(f, arg_count, coroutine=False):
         return arg_count == 1
 
     try:
-        argspec = getargspec(f)
-    except TypeError:
+        sig = signature(f)
+    except ValueError:
         # some built-in functions/methods don't describe themselves to inspect
         # we already know it's a callable and coroutine is correct.
         return True
 
-    if argspec.varargs:
-        # we can't check the arg count if there's a *args parameter
-        # so you're on your own at that point
-        # unfortunately, the asyncio.coroutine decorator wraps with
-        # *args and **kw so we can't count arguments with the old async
-        # syntax, only the new syntax.
+    try:
+        inputs = [0] * arg_count
+        sig.bind(*inputs)
         return True
-
-    # getargspec includes 'self' in the arg count, even though
-    # it's not part of calling the function. So take it out.
-    return len(argspec.args) - ismethod(f) == arg_count
+    except TypeError:
+        return False
 
 
 # could use numpy.arange here, but
