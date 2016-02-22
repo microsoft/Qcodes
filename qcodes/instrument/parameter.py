@@ -174,8 +174,8 @@ class Parameter(Metadatable):
         return SweepFixedValues(self, keys)
 
 
-class InstrumentParameter(Parameter):
-    def __init__(self, instrument, name,
+class StandardParameter(Parameter):
+    def __init__(self, name,
                  get_cmd=None, async_get_cmd=None, get_parser=None,
                  parse_function=None, val_mapping=None,
                  set_cmd=None, async_set_cmd=None, set_parser=None,
@@ -243,8 +243,6 @@ class InstrumentParameter(Parameter):
 
         super().__init__(name=name, vals=vals, **kwargs)
 
-        self._instrument = instrument
-
         # stored value from last .set() or .get()
         # normally only used by set with a sweep, to avoid
         # having to call .get() for every .set()
@@ -295,8 +293,6 @@ class InstrumentParameter(Parameter):
     def _set_get(self, get_cmd, async_get_cmd, get_parser):
         self._get, self._get_async = syncable_command(
             param_count=0, cmd=get_cmd, acmd=async_get_cmd,
-            exec_str=self._instrument.ask,
-            aexec_str=self._instrument.ask_async,
             output_parser=get_parser, no_cmd_function=no_func)
 
         if self._get is not no_func:
@@ -307,8 +303,6 @@ class InstrumentParameter(Parameter):
         # in self.set_sweep, when we choose a swept or non-swept setter.
         self._set, self._set_async = syncable_command(
             param_count=1, cmd=set_cmd, acmd=async_set_cmd,
-            exec_str=self._instrument.write,
-            aexec_str=self._instrument.write_async,
             input_parser=set_parser, no_cmd_function=no_func)
 
         if self._set is not no_func:
@@ -418,3 +412,88 @@ class InstrumentParameter(Parameter):
             if max_val_age < 0:
                 raise ValueError('max_val_age must be non-negative')
             self._max_val_age = max_val_age
+
+
+class InstrumentParameter(StandardParameter):
+    def __init__(self, instrument, name,
+                 get_cmd=None, async_get_cmd=None, get_parser=None,
+                 parse_function=None, val_mapping=None,
+                 set_cmd=None, async_set_cmd=None, set_parser=None,
+                 sweep_step=None, sweep_delay=None, max_val_age=3600,
+                 vals=None, **kwargs):
+        '''
+        defines one measurement parameter
+
+        instrument: an instrument that handles this parameter
+        name: the local name of this parameter
+
+        get_cmd: a string or function to get this parameter
+        async_get_cmd: a function to use for async get, or for both sync
+            and async if get_cmd is missing or None
+        get_parser: function to transform the response from get
+            to the final output value.
+            NOTE: only applies if get_cmd is a string. The function forms
+            of get_cmd and async_get_cmd should do their own parsing
+            See also val_mapping
+
+        set_cmd: command to set this parameter, either:
+            - a string (containing one field to .format, like "{}" etc)
+            - a function (of one parameter)
+        async_set_cmd: a function to use for async set, or for both sync
+            and async if set_cmd is missing or None
+        set_parser: function to transform the input set value to an encoded
+            value sent to the instrument.
+            NOTE: only applies if set_cmd is a string. The function forms
+            of set_cmd and async_set_cmd should do their own parsing
+            See also val_mapping
+
+        parse_function: DEPRECATED - use get_parser instead
+
+        val_mapping: a bidirectional map from data/readable values to
+            instrument codes, expressed as a dict {data_val: instrument_code}
+            For example, if the instrument uses '0' to mean 1V and '1' to mean
+            10V, set val_mapping={1: '0', 10: '1'} and on the user side you
+            only see 1 and 10, never the coded '0' and '1'
+
+            If vals is omitted, will also construct a matching Enum validator.
+            NOTE: only applies to get if get_cmd is a string, and to set if
+            set_cmd is a string.
+
+        vals: a Validator object for this parameter
+
+        sweep_step: max increment of parameter value - larger changes
+            are broken into steps this size
+        sweep_delay: time (in seconds) to wait after each sweep step
+        max_val_age: max time (in seconds) to trust a saved value from
+            this parameter as the starting point of a sweep
+        '''
+        # handle val_mapping before super init because it impacts
+        # vals / validation in the base class
+
+        super().__init__(name=name, **kwargs)
+
+        self._instrument = instrument
+
+
+    def _set_get(self, get_cmd, async_get_cmd, get_parser):
+        self._get, self._get_async = syncable_command(
+            param_count=0, cmd=get_cmd, acmd=async_get_cmd,
+            exec_str=self._instrument.ask,
+            aexec_str=self._instrument.ask_async,
+            output_parser=get_parser, no_cmd_function=no_func)
+
+        if self._get is not no_func:
+            self.has_get = True
+
+    def _set_set(self, set_cmd, async_set_cmd, set_parser):
+        # note: this does not set the final setter functions. that's handled
+        # in self.set_sweep, when we choose a swept or non-swept setter.
+        self._set, self._set_async = syncable_command(
+            param_count=1, cmd=set_cmd, acmd=async_set_cmd,
+            exec_str=self._instrument.write,
+            aexec_str=self._instrument.write_async,
+            input_parser=set_parser, no_cmd_function=no_func)
+
+        if self._set is not no_func:
+            self.has_set = True
+
