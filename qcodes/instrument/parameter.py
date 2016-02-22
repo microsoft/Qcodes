@@ -183,6 +183,8 @@ class StandardParameter(Parameter):
         default None
 
     get_cmd: a string or function to get this parameter
+        you can only use a string if an instrument is provided,
+        this string will be passed to instrument.ask
     async_get_cmd: a function to use for async get, or for both sync
         and async if get_cmd is missing or None
     get_parser: function to transform the response from get
@@ -193,6 +195,8 @@ class StandardParameter(Parameter):
 
     set_cmd: command to set this parameter, either:
         - a string (containing one field to .format, like "{}" etc)
+          you can only use a string if an instrument is provided,
+          this string will be passed to instrument.write
         - a function (of one parameter)
     async_set_cmd: a function to use for async set, or for both sync
         and async if set_cmd is missing or None
