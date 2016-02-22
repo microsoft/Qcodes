@@ -421,6 +421,19 @@ class InstrumentParameter(Parameter):
 
 
 class ManualParameter(Parameter):
+    '''
+    defines one parameter that reflects a manual setting / configuration
+
+    instrument: the instrument this applies to. Not actually used for
+        anything, just required so this class can be used with
+        Instrument.add_parameter(name, parameter_class=ManualParameter)
+
+    name: the local name of this parameter
+
+    initial_value: optional starting value. Default is None, which is the
+        only invalid value allowed (and None is only allowed as an initial
+        value, it cannot be set later)
+    '''
     def __init__(self, instrument, name, initial_value=None, **kwargs):
         super().__init__(name=name, **kwargs)
         if initial_value is not None:
