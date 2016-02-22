@@ -174,14 +174,17 @@ class Parameter(Metadatable):
         return SweepFixedValues(self, keys)
 
 
-class InstrumentParameter(Parameter):
+class StandardParameter(Parameter):
     '''
     defines one measurement parameter
 
-    instrument: an instrument that handles this parameter
     name: the local name of this parameter
+    instrument: an instrument that handles this parameter
+        default None
 
     get_cmd: a string or function to get this parameter
+        you can only use a string if an instrument is provided,
+        this string will be passed to instrument.ask
     async_get_cmd: a function to use for async get, or for both sync
         and async if get_cmd is missing or None
     get_parser: function to transform the response from get
@@ -192,6 +195,8 @@ class InstrumentParameter(Parameter):
 
     set_cmd: command to set this parameter, either:
         - a string (containing one field to .format, like "{}" etc)
+          you can only use a string if an instrument is provided,
+          this string will be passed to instrument.write
         - a function (of one parameter)
     async_set_cmd: a function to use for async set, or for both sync
         and async if set_cmd is missing or None
@@ -221,7 +226,7 @@ class InstrumentParameter(Parameter):
     max_val_age: max time (in seconds) to trust a saved value from
         this parameter as the starting point of a sweep
     '''
-    def __init__(self, instrument, name,
+    def __init__(self, name, instrument=None,
                  get_cmd=None, async_get_cmd=None, get_parser=None,
                  parse_function=None, val_mapping=None,
                  set_cmd=None, async_set_cmd=None, set_parser=None,
@@ -295,8 +300,8 @@ class InstrumentParameter(Parameter):
     def _set_get(self, get_cmd, async_get_cmd, get_parser):
         self._get, self._get_async = syncable_command(
             param_count=0, cmd=get_cmd, acmd=async_get_cmd,
-            exec_str=self._instrument.ask,
-            aexec_str=self._instrument.ask_async,
+            exec_str=self._instrument.ask if self._instrument else None,
+            aexec_str=self._instrument.ask_async if self._instrument else None,
             output_parser=get_parser, no_cmd_function=no_func)
 
         if self._get is not no_func:
@@ -307,8 +312,9 @@ class InstrumentParameter(Parameter):
         # in self.set_sweep, when we choose a swept or non-swept setter.
         self._set, self._set_async = syncable_command(
             param_count=1, cmd=set_cmd, acmd=async_set_cmd,
-            exec_str=self._instrument.write,
-            aexec_str=self._instrument.write_async,
+            exec_str=self._instrument.write if self._instrument else None,
+            aexec_str=(self._instrument.write_async if self._instrument
+                       else None),
             input_parser=set_parser, no_cmd_function=no_func)
 
         if self._set is not no_func:
@@ -424,17 +430,17 @@ class ManualParameter(Parameter):
     '''
     defines one parameter that reflects a manual setting / configuration
 
+    name: the local name of this parameter
+
     instrument: the instrument this applies to. Not actually used for
         anything, just required so this class can be used with
         Instrument.add_parameter(name, parameter_class=ManualParameter)
-
-    name: the local name of this parameter
 
     initial_value: optional starting value. Default is None, which is the
         only invalid value allowed (and None is only allowed as an initial
         value, it cannot be set later)
     '''
-    def __init__(self, instrument, name, initial_value=None, **kwargs):
+    def __init__(self, name, instrument=None, initial_value=None, **kwargs):
         super().__init__(name=name, **kwargs)
         if initial_value is not None:
             self.validate(initial_value)
