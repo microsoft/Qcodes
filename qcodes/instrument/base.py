@@ -64,7 +64,7 @@ class Instrument(Metadatable, DelegateAttributes):
         '''
         if name in self.functions:
             raise KeyError('Duplicate function name {}'.format(name))
-        self.functions[name] = Function(self, name, **kwargs)
+        self.functions[name] = Function(name=name, instrument=self, **kwargs)
 
     def snapshot_base(self, update=False):
         if update:
