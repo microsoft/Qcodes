@@ -465,3 +465,6 @@ class ManualParameter(Parameter):
     @asyncio.coroutine
     def get_async(self):
         return self.get()
+
+    def snapshot_base(self):
+        return {'value': self._value}

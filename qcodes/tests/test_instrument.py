@@ -385,7 +385,7 @@ class TestParameters(TestCase):
         with self.assertRaises(ValueError):
             gates.memcoded.set('zero')
 
-    def test_snapshot(self):
+    def test_standard_snapshot(self):
         self.assertEqual(self.meter.snapshot(), {
             'parameters': {'amplitude': {}},
             'functions': {'echo': {}}
@@ -397,6 +397,17 @@ class TestParameters(TestCase):
         amp_ts = datetime.strptime(ampsnap['ts'], '%Y-%m-%d %H:%M:%S')
         self.assertLessEqual(amp_ts, datetime.now())
         self.assertGreater(amp_ts, datetime.now() - timedelta(seconds=1.1))
+
+    def test_manual_snapshot(self):
+        self.source.add_parameter('noise', parameter_class=ManualParameter)
+        noise = self.source.noise
+
+        self.assertEqual(self.source.snapshot()['parameters']['noise'],
+                         {'value': None})
+
+        noise.set(100)
+        self.assertEqual(self.source.snapshot()['parameters']['noise'],
+                         {'value': 100})
 
     def test_mock_read(self):
         gates, meter = self.gates, self.meter
