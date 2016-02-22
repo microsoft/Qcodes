@@ -72,7 +72,8 @@ class QcodesProcess(mp.Process):
             # it disconnects the stream partway through printing.
             print_exc()
         finally:
-            if self.stream_queue:
+            if (self.stream_queue and
+                    self.stream_queue.initial_streams is not None):
                 self.stream_queue.disconnect()
 
     def __repr__(self):
