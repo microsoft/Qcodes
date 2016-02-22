@@ -50,6 +50,7 @@ setup(name='qcodes',
           # coverage has a problem with setuptools on Windows, moved to extras
           'nose>=1.3'
       ],
+      test_suite='qcodes.tests',
       extras_require=extras_require,
       # I think the only part of qcodes that would care about zip_safe
       # is utils.helpers.reload_code; users of a zip-installed package
