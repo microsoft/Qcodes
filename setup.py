@@ -25,6 +25,7 @@ setup(name='qcodes',
                   'Copenhagen / Delft / Sydney / Microsoft quantum computing '
                   'consortium',
       long_description=readme(),
+      url='https://github.com/qdev-dk/Qcodes',
       classifiers=[
           'Development Status :: 3 - Alpha',
           'Intended Audience :: Science/Research',

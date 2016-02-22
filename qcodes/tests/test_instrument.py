@@ -6,6 +6,8 @@ from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.sweep_values import SweepValues
+from qcodes.instrument.parameter import ManualParameter
+
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
 from qcodes.utils.sync_async import wait_for_async, NoCommandError
 
@@ -545,3 +547,38 @@ class TestParameters(TestCase):
         p = self.gates.chan0
         with self.assertRaises(NotImplementedError):
             iter(SweepValues(p))
+
+    def test_manual_parameter(self):
+        self.source.add_parameter('bias_resistor',
+                                  parameter_class=ManualParameter,
+                                  initial_value=1000)
+        res = self.source.bias_resistor
+        self.assertEqual(res.get(), 1000)
+
+        res.set(1e9)
+        self.assertEqual(wait_for_async(res.get_async), 1e9)
+        # default vals is all numbers
+        # TODO - maybe non-negative numbers would be a better
+        # default?
+        wait_for_async(res.set_async, -1)
+        self.assertEqual(res.get(), -1)
+
+        self.source.add_parameter('alignment',
+                                  parameter_class=ManualParameter,
+                                  vals=Enum('lawful', 'neutral', 'chaotic'))
+        alignment = self.source.alignment
+
+        # a ManualParameter can have initial_value=None (default) even if
+        # that's not a valid value to set later
+        self.assertIsNone(alignment.get())
+        with self.assertRaises(ValueError):
+            alignment.set(None)
+
+        alignment.set('lawful')
+        self.assertEqual(alignment.get(), 'lawful')
+
+        # None is the only invalid initial_value you can use
+        with self.assertRaises(ValueError):
+            self.source.add_parameter('alignment2',
+                                      parameter_class=ManualParameter,
+                                      initial_value='nearsighted')

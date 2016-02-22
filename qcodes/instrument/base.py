@@ -3,7 +3,7 @@ import asyncio
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import wait_for_async
 from qcodes.utils.helpers import DelegateAttributes
-from .parameter import InstrumentParameter
+from .parameter import StandardParameter
 from .function import Function
 
 
@@ -20,10 +20,10 @@ class Instrument(Metadatable, DelegateAttributes):
         # anyway threading.Lock is unpicklable on Windows
         # self.lock = threading.Lock()
 
-    def add_parameter(self, name, parameter_class=InstrumentParameter,
+    def add_parameter(self, name, parameter_class=StandardParameter,
                       **kwargs):
         '''
-        binds one InstrumentParameter to this instrument.
+        binds one Parameter to this instrument.
 
         instrument subclasses can call this repeatedly in their __init__
         for every real parameter of the instrument.
@@ -31,19 +31,20 @@ class Instrument(Metadatable, DelegateAttributes):
         In this sense, parameters are the state variables of the instrument,
         anything the user can set and/or get
 
-        `name` is how the InstrumentParameter will be stored within
+        `name` is how the Parameter will be stored within
         instrument.parameters and also how you address it using the
         shortcut methods:
         instrument.set(param_name, value) etc.
 
         `parameter_class` can be used to construct the parameter out of
-            something other than InstrumentParameter
+            something other than StandardParameter
 
-        kwargs: see InstrumentParameter (or `parameter_class`)
+        kwargs: see StandardParameter (or `parameter_class`)
         '''
         if name in self.parameters:
             raise KeyError('Duplicate parameter name {}'.format(name))
-        self.parameters[name] = parameter_class(self, name, **kwargs)
+        self.parameters[name] = parameter_class(name=name, instrument=self,
+                                                **kwargs)
 
     def add_function(self, name, **kwargs):
         '''
@@ -63,7 +64,7 @@ class Instrument(Metadatable, DelegateAttributes):
         '''
         if name in self.functions:
             raise KeyError('Duplicate function name {}'.format(name))
-        self.functions[name] = Function(self, name, **kwargs)
+        self.functions[name] = Function(name=name, instrument=self, **kwargs)
 
     def snapshot_base(self, update=False):
         if update:

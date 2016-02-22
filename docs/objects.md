@@ -8,7 +8,7 @@ Normal text the container includes and uses this object
 
 - Station
   - Instrument: IPInstrument, VisaInstrument, MockInstrument
-    - **Parameter**: InstrumentParameter
+    - **Parameter**: StandardParameter
       - Validator: Anything, Strings, Numbers, Ints, Enum, MultiType
       - **SweepValues**: SweepFixedValues, AdaptiveSweep
     - Function
@@ -50,7 +50,7 @@ a serialized communication channel with an apparatus.
 A representation of one particular state variable.
 
 Most `Parameter`s are part of an `Instrument`, using the subclass
-`InstrumentParameter` which links it to specific commands sent to a specific
+`StandardParameter` which links it to specific commands sent to a specific
 instrument. But you can also create `Parameter`s that execute arbitrary functions,
 for example to combine several gate voltages in a diagonal sweep. Parameters can
 have setters and/or getters (they must define at least a setter OR a getter but
