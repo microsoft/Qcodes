@@ -3,7 +3,7 @@ import unittest
 instr = None
 
 
-class stepped_attenuator(unittest.TestCase):
+class TestWeinschel_8320(unittest.TestCase):
     '''
     This is a test suite for testing the weinschel/aeroflex stepped attenuator.
     It is designed to provide a test function for each function as well as for
@@ -27,3 +27,4 @@ class stepped_attenuator(unittest.TestCase):
         for v in [-2, 3, 61]:
             with self.assertRaises(ValueError):
                 self.instr.attenuation.set(v)
+        self.instr.attenuation.set(curr_val)
