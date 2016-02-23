@@ -5,10 +5,10 @@ import logging
 import numpy as np
 
 
-class Weinschel_Aeroflex_8320(VisaInstrument):
+class Weinschel_8320(VisaInstrument):
     '''
     QCodes driver for the stepped attenuator
-    Weinschel is also known as Aeroflex
+    Weinschel is formerly known as Aeroflex/Weinschel
     '''
 
     def __init__(self, name, address):
@@ -38,6 +38,6 @@ class Weinschel_Aeroflex_8320(VisaInstrument):
         reload(test_suite)
         test_suite.instr = self
         suite = unittest.TestLoader().loadTestsFromTestCase(
-            test_suite.stepped_attenuator)
+            test_suite.TestWeinschel_8320)
         unittest.TextTestRunner(verbosity=2).run(suite)
 
