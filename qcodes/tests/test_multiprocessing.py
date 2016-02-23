@@ -39,6 +39,7 @@ class sqtest_echo:
             return
         self.q_out.put(BREAK_SIGNAL)
         self.p.join()
+        time.sleep(self.resp_delay)
 
     def __del__(self):
         self.halt()
@@ -55,7 +56,10 @@ def sqtest_echo_f(name, delay, q_out, q_err, has_q):
                 # now test that disconnect works, and reverts to
                 # regular stdout and stderr
                 if has_q:
-                    get_stream_queue().disconnect()
+                    try:
+                        get_stream_queue().disconnect()
+                    except RuntimeError:
+                        pass
                     print('stdout ', end='', flush=True)
                     print('stderr ', file=sys.stderr, end='', flush=True)
                 break
@@ -144,7 +148,7 @@ class TestQcodesProcess(TestCase):
             # but we have the exception in the queue
             self.maxDiff = None
             self.assertGreaterEqual(exc_text.count(name + ' ERR'), 5)
-            self.assertEqual(exc_text.count('Traceback'), 1)
+            self.assertEqual(exc_text.count('Traceback'), 1, exc_text)
             self.assertEqual(exc_text.count('RuntimeError'), 2)
             self.assertEqual(exc_text.count('Boo!'), 2)
 

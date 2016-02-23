@@ -39,6 +39,7 @@ class TestAsync(TestCase):
         time_stats = calibrate()
         self.TIME_PRECISION = time_stats['timing_resolution']
         self.ASYNC_DELAY = time_stats['async_sleep_delay']
+        self.BUFFER_FACTOR = 1.05  # allow 5% longer than asked for
 
     def test_simple(self):
         self.assertEqual(wait_for_async(async1, 2), 4)
@@ -50,14 +51,16 @@ class TestAsync(TestCase):
         self.assertEqual(wait_for_async(f, v, n), out)
         t2 = time()
         tmin = t_expected - n * self.TIME_PRECISION
-        tmax = t_expected + 3 * n * (self.ASYNC_DELAY + self.TIME_PRECISION)
+        tmax = (t_expected * self.BUFFER_FACTOR +
+                3 * n * (self.ASYNC_DELAY + self.TIME_PRECISION))
         self.assertGreaterEqual(t2 - t1, tmin)
         # measure of how good async timing is
         # answer: about a fraction of a millisecond, and always
         # longer than specified, never shorter
         # TODO: make some benchmarks so we can understand this on
         # different systems where it's deployed
-        self.assertLess(t2 - t1, tmax, (tmax, self.ASYNC_DELAY, self.TIME_PRECISION))
+        self.assertLess(t2 - t1, tmax,
+                        (tmax, self.ASYNC_DELAY, self.TIME_PRECISION))
 
     def test_await(self):
         self.check_time(async2, 3, 100, 9, 0.1)
