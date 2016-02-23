@@ -124,18 +124,22 @@ class Parameter(Metadatable):
                  vals=None, **kwargs):
         super().__init__(**kwargs)
 
-        if name is not None:
+        if names is not None:
+            # check for names first - that way you can provide both name
+            # AND names for instrument parameters - name is how you get the
+            # object (from the parameters dict or the delegated attributes),
+            # and names are the items it returns
+            self.names = names
+            self.labels = names if labels is None else names
+            self.units = units if units is not None else ['']*len(names)
+
+        elif name is not None:
             self.name = name
             self.label = name if label is None else label
             self.units = units if units is not None else ''
 
             # vals / validate only applies to simple single-value parameters
             self._set_vals(vals)
-
-        elif names is not None:
-            self.names = names
-            self.labels = names if labels is None else names
-            self.units = units if units is not None else ['']*len(names)
 
         else:
             raise ValueError('either name or names is required')
@@ -461,3 +465,6 @@ class ManualParameter(Parameter):
     @asyncio.coroutine
     def get_async(self):
         return self.get()
+
+    def snapshot_base(self):
+        return {'value': self._value}

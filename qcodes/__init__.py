@@ -6,12 +6,12 @@
 from multiprocessing import active_children
 
 from qcodes.utils.multiprocessing import set_mp_method
-from qcodes.utils.helpers import in_notebook, reload_code
+from qcodes.utils.helpers import in_notebook
 
 # code that should only be imported into the main (notebook) thread
 # in particular, importing matplotlib in the side processes takes a long
 # time and spins up other processes in order to try and get a front end
-if in_notebook():
+if in_notebook():  # pragma: no cover
     try:
         from qcodes.plots.matplotlib import MatPlot
     except ImportError:

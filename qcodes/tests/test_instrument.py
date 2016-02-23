@@ -4,7 +4,10 @@ from datetime import datetime, timedelta
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
+from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.sweep_values import SweepValues
 from qcodes.instrument.parameter import ManualParameter
+
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
 from qcodes.utils.sync_async import wait_for_async, NoCommandError
 
@@ -57,6 +60,55 @@ class AMockModel(object):
                 instrument, parameter))
 
         return '{:.3f}'.format(v)
+
+
+class TestParamConstructor(TestCase):
+    def test_name_s(self):
+        p = Parameter('simple')
+        self.assertEqual(p.name, 'simple')
+
+        with self.assertRaises(ValueError):
+            # you need a name of some sort
+            Parameter()
+
+        # or names
+        names = ['H1', 'L1']
+        p = Parameter(names=names)
+        self.assertEqual(p.names, names)
+        self.assertFalse(hasattr(p, 'name'))
+
+        # or both, that's OK too.
+        names = ['Peter', 'Paul', 'Mary']
+        p = Parameter(name='complex', names=names)
+        self.assertEqual(p.names, names)
+        # TODO: below seems wrong actually - we should let a parameter have
+        # a simple name even if it has a names array. But then we need to
+        # check everywhere this is used, and make sure everyone who cares
+        # about it looks for names first.
+        self.assertFalse(hasattr(p, 'name'))
+
+        size = 10
+        setpoints = 'we dont check the form of this until later'
+        setpoint_names = 'we dont check this either'
+        setpoint_labels = 'nor this'
+        p = Parameter('makes_array', size=size, setpoints=setpoints,
+                      setpoint_names=setpoint_names,
+                      setpoint_labels=setpoint_labels)
+        self.assertEqual(p.size, size)
+        self.assertFalse(hasattr(p, 'sizes'))
+        self.assertEqual(p.setpoints, setpoints)
+        self.assertEqual(p.setpoint_names, setpoint_names)
+        self.assertEqual(p.setpoint_labels, setpoint_labels)
+
+        sizes = [2, 3]
+        p = Parameter('makes arrays', sizes=sizes, setpoints=setpoints,
+                      setpoint_names=setpoint_names,
+                      setpoint_labels=setpoint_labels)
+        self.assertEqual(p.sizes, sizes)
+        self.assertFalse(hasattr(p, 'size'))
+        self.assertEqual(p.setpoints, setpoints)
+        self.assertEqual(p.setpoint_names, setpoint_names)
+        self.assertEqual(p.setpoint_labels, setpoint_labels)
 
 
 class TestParameters(TestCase):
@@ -165,6 +217,11 @@ class TestParameters(TestCase):
 
         # test functions
         self.assertEqual(meter.call('echo', 1.2345), 1.23)  # model returns .2f
+        # too many ways to do this...
+        self.assertEqual(meter.echo.call(1.2345), 1.23)
+        self.assertEqual(meter.echo(1.2345), 1.23)
+        self.assertEqual(meter['echo'].call(1.2345), 1.23)
+        self.assertEqual(meter['echo'](1.2345), 1.23)
         with self.assertRaises(TypeError):
             meter.call('echo', 1, 2)
         with self.assertRaises(ValueError):
@@ -328,18 +385,29 @@ class TestParameters(TestCase):
         with self.assertRaises(ValueError):
             gates.memcoded.set('zero')
 
-    def test_snapshot(self):
+    def test_standard_snapshot(self):
         self.assertEqual(self.meter.snapshot(), {
             'parameters': {'amplitude': {}},
             'functions': {'echo': {}}
         })
 
+        ampsnap = self.meter.snapshot(update=True)['parameters']['amplitude']
         amp = self.meter.get('amplitude')
-        ampsnap = self.meter.snapshot()['parameters']['amplitude']
         self.assertEqual(ampsnap['value'], amp)
         amp_ts = datetime.strptime(ampsnap['ts'], '%Y-%m-%d %H:%M:%S')
         self.assertLessEqual(amp_ts, datetime.now())
         self.assertGreater(amp_ts, datetime.now() - timedelta(seconds=1.1))
+
+    def test_manual_snapshot(self):
+        self.source.add_parameter('noise', parameter_class=ManualParameter)
+        noise = self.source.noise
+
+        self.assertEqual(self.source.snapshot()['parameters']['noise'],
+                         {'value': None})
+
+        noise.set(100)
+        self.assertEqual(self.source.snapshot()['parameters']['noise'],
+                         {'value': 100})
 
     def test_mock_read(self):
         gates, meter = self.gates, self.meter
@@ -486,6 +554,11 @@ class TestParameters(TestCase):
         self.assertEqual(list(c0_sv7), [1, 3, 4])
         self.assertFalse(c0_sv6 is c0_sv7)
 
+    def test_sweep_values_base(self):
+        p = self.gates.chan0
+        with self.assertRaises(NotImplementedError):
+            iter(SweepValues(p))
+
     def test_manual_parameter(self):
         self.source.add_parameter('bias_resistor',
                                   parameter_class=ManualParameter,
@@ -496,8 +569,6 @@ class TestParameters(TestCase):
         res.set(1e9)
         self.assertEqual(wait_for_async(res.get_async), 1e9)
         # default vals is all numbers
-        # TODO - maybe non-negative numbers would be a better
-        # default?
         wait_for_async(res.set_async, -1)
         self.assertEqual(res.get(), -1)
 

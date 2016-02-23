@@ -60,7 +60,7 @@ class Bool(Validator):
     def is_valid(self, value):
         return (isinstance(value, bool))
 
-    def __repr_(self):
+    def __repr__(self):
         return '<Boolean>'
 
 
