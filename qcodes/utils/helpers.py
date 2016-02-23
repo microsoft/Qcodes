@@ -1,13 +1,10 @@
 from asyncio import iscoroutinefunction
 from collections import Iterable
 from datetime import datetime
-import imp
-from inspect import getargspec, ismethod
+from inspect import signature
 import logging
 import math
 import sys
-import os
-from traceback import format_exc
 
 
 def in_notebook():
@@ -29,8 +26,8 @@ def is_sequence(obj):
 
 def is_function(f, arg_count, coroutine=False):
     '''
-    require a function with the specified number of positional arguments
-    (and no kwargs) which either is or is not a coroutine
+    require a function that can accept the specified number of positional
+    arguments, which either is or is not a coroutine
     type casting "functions" are allowed, but only in the 1-argument form
     '''
     if not isinstance(arg_count, int) or arg_count < 0:
@@ -46,23 +43,18 @@ def is_function(f, arg_count, coroutine=False):
         return arg_count == 1
 
     try:
-        argspec = getargspec(f)
-    except TypeError:
+        sig = signature(f)
+    except ValueError:
         # some built-in functions/methods don't describe themselves to inspect
         # we already know it's a callable and coroutine is correct.
         return True
 
-    if argspec.varargs:
-        # we can't check the arg count if there's a *args parameter
-        # so you're on your own at that point
-        # unfortunately, the asyncio.coroutine decorator wraps with
-        # *args and **kw so we can't count arguments with the old async
-        # syntax, only the new syntax.
+    try:
+        inputs = [0] * arg_count
+        sig.bind(*inputs)
         return True
-
-    # getargspec includes 'self' in the arg count, even though
-    # it's not part of calling the function. So take it out.
-    return len(argspec.args) - ismethod(f) == arg_count
+    except TypeError:
+        return False
 
 
 # could use numpy.arange here, but
@@ -145,7 +137,7 @@ class DelegateAttributes(object):
                     "dict '{}' has not been created in object '{}'".format(
                         key, self.__class__.__name__))
             try:
-                d = getattr(self, name)
+                d = getattr(self, name, None)
                 if d is not None:
                     return d[key]
             except KeyError:
@@ -157,7 +149,7 @@ class DelegateAttributes(object):
                     "object '{}' has not been created in object '{}'".format(
                         key, self.__class__.__name__))
             try:
-                obj = getattr(self, name)
+                obj = getattr(self, name, None)
                 if obj is not None:
                     return getattr(obj, key)
             except AttributeError:
@@ -180,92 +172,3 @@ class DelegateAttributes(object):
                 names += dir(obj)
 
         return sorted(set(names))
-
-
-# see http://stackoverflow.com/questions/22195382/
-# how-to-check-if-a-module-library-package-is-part-of-the-python-standard-library
-syspaths = [os.path.abspath(p) for p in sys.path]
-stdlib = tuple(p for p in syspaths
-               if p.startswith((sys.prefix, sys.base_prefix))
-               and 'site-packages' not in p)
-# a few things in site-packages we will consider part of the standard lib
-# it causes problems if we reload some of these, others are just stable
-# dependencies - this is mainly for reloading our own code.
-# could even whitelist site-packages items to allow, rather than to ignore?
-otherlib = ('jupyter', 'ipy', 'IPy', 'matplotlib', 'numpy', 'scipy', 'pyvisa',
-            'traitlets', 'zmq', 'tornado', 'dateutil', 'six', 'pexpect')
-otherpattern = tuple('site-packages/' + n for n in otherlib)
-
-
-def reload_code(pattern=None, lib=False, site=False):
-    '''
-    reload all modules matching a given pattern
-    or all (non-built-in) modules if pattern is omitted
-    if lib is False (default), ignore the standard library and major packages
-    if site is False (default), ignore everything in site-packages, only reload
-    files in nonstandard paths
-    '''
-    reloaded_files = []
-
-    for i in range(2):
-        # sometimes we need to reload twice to propagate all links,
-        # even though we reload the deepest modules first. Not sure if
-        # twice is always sufficient, but we'll try it.
-        for module in sys.modules.values():
-            if (pattern is None or pattern in module.__name__):
-                reload_recurse(module, reloaded_files, lib, site)
-
-    return reloaded_files
-
-
-def is_good_module(module, lib=False, site=False):
-    '''
-    is an object (module) a module we can reload?
-    if lib is False (default), ignore the standard library and major packages
-    '''
-    # take out non-modules and underscore modules
-    name = getattr(module, '__name__', '_')
-    if name[0] == '_' or not isinstance(module, type(sys)):
-        return False
-
-    # take out modules we can't find and built-ins
-    if name in sys.builtin_module_names or not hasattr(module, '__file__'):
-        return False
-
-    path = os.path.abspath(module.__file__)
-
-    if 'site-packages' in path and not site:
-        return False
-
-    if not lib:
-        if path.startswith(stdlib) and 'site-packages' not in path:
-            return False
-
-        for pattern in otherpattern:
-            if pattern in path:
-                return False
-
-    return True
-
-
-def reload_recurse(module, reloaded_files, lib, site):
-    '''
-    recursively search module for its own dependencies to reload,
-    ignoring those already in reloaded_files
-    if lib is False (default), ignore the standard library and major packages
-    '''
-    if (not is_good_module(module, lib, site) or
-            module.__file__ in reloaded_files):
-        return
-
-    reloaded_files.append(module.__file__)
-
-    try:
-        for name in dir(module):
-            module2 = getattr(module, name)
-            reload_recurse(module2, reloaded_files, lib, site)
-        imp.reload(module)
-
-    except:
-        print('error reloading "{}"'.format(getattr(module, '__name__', '?')))
-        print(format_exc())

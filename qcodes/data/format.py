@@ -332,7 +332,7 @@ class GNUPlotFormat(Formatter):
                 resetting = 0
 
             for value, set_array in zip(values[:ndim], set_arrays):
-                nparray = set_array.data
+                nparray = set_array.ndarray
                 myindices = tuple(indices[:nparray.ndim])
                 stored_value = nparray[myindices]
                 if math.isnan(stored_value):
@@ -343,7 +343,7 @@ class GNUPlotFormat(Formatter):
                                      myindices, indices)
 
             for value, data_array in zip(values[ndim:], data_arrays):
-                data_array.data[tuple(indices)] = value
+                data_array.ndarray[tuple(indices)] = value
 
             indices[-1] += 1
             first_point = False
