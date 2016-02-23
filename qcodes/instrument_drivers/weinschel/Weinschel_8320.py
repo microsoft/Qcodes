@@ -38,6 +38,6 @@ class Weinschel_8320(VisaInstrument):
         reload(test_suite)
         test_suite.instr = self
         suite = unittest.TestLoader().loadTestsFromTestCase(
-            test_suite.stepped_attenuator)
+            test_suite.TestWeinschel_8320)
         unittest.TextTestRunner(verbosity=2).run(suite)
 
