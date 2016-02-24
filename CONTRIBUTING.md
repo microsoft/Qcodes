@@ -24,13 +24,11 @@ Figured out a new way to use qcodes? Found a package that makes your life better
 
 - Clone and register the package for development as described in [README.md#installation]
 
-- Run the tests. In the root directory of the repository, on Windows:
+- Run the tests. In the root directory of the repository:
 ```
-coverage run setup.py test && coverage report -m
-```
-and on Mac/Linux this one is faster with nicer output (but doesn't run at the moment on Windows):
-```
-python setup.py nosetests
+python test.py
+# optional extra verbosity
+python test.py -v
 ```
 If the tests pass, you should be ready to start developing!
 

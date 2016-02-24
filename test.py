@@ -4,7 +4,8 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Static test suite for Qcodes')
+        description=('Core test suite for Qcodes, '
+                     'covering everything except instrument drivers'))
 
     parser.add_argument('-v', '--verbose', nargs='?', dest='verbosity',
                         const=2, default=1, type=int,
