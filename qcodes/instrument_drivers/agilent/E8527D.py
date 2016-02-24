@@ -69,7 +69,7 @@ class Agilent_E8527D(VisaInstrument):
         from . import test_suite
         test_suite.source = self
         suite = unittest.TestLoader().loadTestsFromTestCase(
-            test_suite.mw_source)
+            test_suite.TestAgilent_E8527D)
         unittest.TextTestRunner(verbosity=2).run(suite)
 
     # Note it would be useful to have functions like this in some module instad

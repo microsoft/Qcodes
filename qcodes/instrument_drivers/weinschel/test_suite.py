@@ -11,6 +11,8 @@ class TestWeinschel_8320(unittest.TestCase):
     '''
     @classmethod
     def setUpClass(self):
+        if instr is None:
+            raise unittest.SkipTest('no instrument found')
         self.instr = instr
 
     def test_firmware_version(self):
