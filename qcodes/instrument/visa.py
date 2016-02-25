@@ -45,6 +45,7 @@ class VisaInstrument(Instrument):
         Close the visa handle upon deleting the object
         '''
         self.visa_handle.close()
+        super().__del__()
 
     def check_error(self, ret_code):
         '''
