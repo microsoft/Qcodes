@@ -24,13 +24,27 @@ Figured out a new way to use qcodes? Found a package that makes your life better
 
 - Clone and register the package for development as described in [README.md#installation]
 
-- Run the tests. In the root directory of the repository:
+### Running Tests
+
+The core test runner is in `qcodes/test.py:
 ```
-python test.py
+python qcodes/test.py
 # optional extra verbosity
-python test.py -v
+python qcodes/test.py -v
+```
+You can also run these tests from inside python (but you don't get coverage):
+```python
+import qcodes
+qcodes.test_core()  # optional verbosity = 1 (default) or 2
 ```
 If the tests pass, you should be ready to start developing!
+
+To tests actual instruments, first instantiate them in an interactive python session, then run `qcodes.test_instruments()`:
+```python
+import qcodes
+sig_gen = qcodes.instrument_drivers.agilent.E8527D.Agilent_E8527D('source', address='...')
+qcodes.test_instruments()  # optional verbosity = 1 (default) or 2
+```
 
 ### New code and testing
 
