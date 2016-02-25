@@ -153,6 +153,19 @@ class TestParameters(TestCase):
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         self.assertTrue(self.init_ts <= ts_str <= now)
 
+    def test_instances(self):
+        for instrument in [self.gates, self.source, self.meter]:
+            self.assertIn(instrument, self.gates.instances())
+
+        # somehow instances never go away... there are always 3
+        # extra references to every instrument object, so del doesn't
+        # work. I guess for this reason, instrument tests should take
+        # the *last* instance to test.
+        # instancelen = len(self.gates.instances())
+
+        # del self.source
+        # self.assertEqual(len(self.gates.instances()), instancelen - 1)
+
     def test_mock_instrument(self):
         gates, source, meter = self.gates, self.source, self.meter
 
