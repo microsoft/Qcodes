@@ -42,5 +42,5 @@ from qcodes.instrument.function import Function
 from qcodes.instrument.parameter import Parameter, StandardParameter
 from qcodes.instrument.sweep_values import SweepFixedValues, AdaptiveSweep
 
-from qcodes.instrument_drivers.test import test_instruments
+from qcodes.instrument_drivers.test import test_instruments, test_instrument
 from qcodes.test import test_core

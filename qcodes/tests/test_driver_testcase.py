@@ -48,5 +48,8 @@ class TestDriverTestCase(DriverTestCase):
             HasNoDriver.setUpClass()
 
     def test_no_instances(self):
+        baseMock = MockInstrument('not the same class', model=EmptyModel())
+        self.assertIn(baseMock, MockInstrument.instances())
+
         with self.assertRaises(ValueError):
             HasNoInstances.setUpClass()

@@ -15,8 +15,10 @@ def _test_core(verbosity):
     import unittest
 
     import qcodes.tests as qctest
+    import qcodes
 
-    suite = unittest.defaultTestLoader.discover(qctest.__path__[0])
+    suite = unittest.defaultTestLoader.discover(
+        qctest.__path__[0], top_level_dir=qcodes.__path__[0])
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
     return result.wasSuccessful()
 

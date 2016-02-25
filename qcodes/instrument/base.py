@@ -19,8 +19,8 @@ class Instrument(Metadatable, DelegateAttributes):
         # keep a (weak) record of all instances of this Instrument
         # instancetype is there to make sure we aren't using instances
         # from a superclass that has been instantiated previously
-        if getattr(type(self), '_instancetype', None) != type(self):
-            type(self)._instancetype = type(self)
+        if getattr(type(self), '_type', None) is not type(self):
+            type(self)._type = type(self)
             type(self)._instances = []
         self._instances.append(weakref.ref(self))
 
@@ -42,6 +42,10 @@ class Instrument(Metadatable, DelegateAttributes):
         you can use this to get the objects back if you lose track of them,
         and it's also used by the test system to find objects to test against.
         '''
+        if getattr(cls, '_type', None) is not cls:
+            # only instances of a superclass - we want instances of this
+            # exact class only
+            return []
         return [wr() for wr in getattr(cls, '_instances', []) if wr()]
 
     def add_parameter(self, name, parameter_class=StandardParameter,
