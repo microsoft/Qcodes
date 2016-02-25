@@ -52,9 +52,9 @@ qcodes.test_instruments()  # optional verbosity = 1 (default) or 2
 
 - Write your new feature or fix. Be sure it doesn't break any existing tests, and please write tests that cover your feature as well, or if you are fixing a bug, write a test that would have failed before your fix. Our goal is 100% test coverage, and although we are not there, we should always strive to increase our coverage with each new feature. Please be aware also that 100% test coverage does NOT necessarily mean 100% logic coverage. If (as is often the case in Python) a single line of code can behave differently for different inputs, coverage in itself will not ensure that this is tested.
 
-- The standard test commands are listed above under [setup](#setup). More notes on different test runners can be found in [TESTING.md].
+- The standard test commands are listed above under [Running Tests](#running_tests). More notes on different test runners can be found in [TESTING.md].
 
-- Tests live in [qcodes/tests](https://github.com/qdev-dk/Qcodes/tree/master/qcodes/tests) for now.
+- Core tests live in [qcodes/tests](https://github.com/qdev-dk/Qcodes/tree/master/qcodes/tests) and instrument tests live in the same directories as the instrument drivers.
 
 - We should have a *few* high-level "integration" tests, but simple unit tests (that just depend on code in one module) are more valuable for several reasons:
   - If complex tests fail it's more difficult to tell why
