@@ -1,10 +1,11 @@
-from unittest import TestCase
+from unittest import TestCase, skipIf
 import time
 import re
 import sys
 import multiprocessing as mp
 from unittest.mock import patch
 
+import qcodes
 from qcodes.utils.multiprocessing import (set_mp_method, QcodesProcess,
                                           get_stream_queue, _SQWriter)
 import qcodes.utils.multiprocessing as qcmp
@@ -110,6 +111,8 @@ class TestQcodesProcess(TestCase):
         self.BLOCKING_TIME = mp_stats['blocking_time']
         self.sq = get_stream_queue()
 
+    @skipIf(getattr(qcodes, '_IN_NOTEBOOK', False),
+            'called from notebook')
     def test_not_in_notebook(self):
         # below we'll patch this to True, but make sure that it's False
         # in the normal test runner.

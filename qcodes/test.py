@@ -4,6 +4,14 @@ def test_core(verbosity=1):
 
     Coverage testing is only available from the command line
     '''
+    import qcodes
+    if qcodes.in_notebook():
+        qcodes._IN_NOTEBOOK = True
+
+    _test_core(verbosity=verbosity)
+
+
+def _test_core(verbosity):
     import unittest
 
     import qcodes.tests as qctest
@@ -34,7 +42,7 @@ if __name__ == '__main__':
     cov = coverage.Coverage()
     cov.start()
 
-    success = test_core(verbosity=args.verbosity)
+    success = _test_core(verbosity=args.verbosity)
 
     cov.stop()
 
