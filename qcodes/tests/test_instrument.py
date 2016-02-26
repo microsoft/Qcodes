@@ -1,6 +1,8 @@
 import asyncio
 from unittest import TestCase
 from datetime import datetime, timedelta
+import time
+import sys
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
@@ -10,6 +12,7 @@ from qcodes.instrument.parameter import ManualParameter
 
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
 from qcodes.utils.sync_async import wait_for_async, NoCommandError
+from qcodes.utils.helpers import LogCapture
 
 
 class ModelError(Exception):
@@ -148,6 +151,39 @@ class TestParameters(TestCase):
                                 return_parser=float)
 
         self.init_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    def slow_neg_set(self, val):
+        if val < 0:
+            time.sleep(0.05)
+        self.gates.chan0.set(val)
+
+    def test_slow_set(self):
+        self.gates.add_parameter('chan0slow', get_cmd='c0?',
+                                 set_cmd=self.slow_neg_set, get_parser=float,
+                                 vals=Numbers(-10, 10), sweep_step=0.2,
+                                 sweep_delay=0.01)
+        self.gates.add_parameter('chan0slow2', get_cmd='c0?',
+                                 set_cmd=self.slow_neg_set, get_parser=float,
+                                 vals=Numbers(-10, 10), sweep_step=0.2,
+                                 sweep_delay=0.01, max_sweep_delay=0.02)
+        self.gates.add_parameter('chan0slow3', get_cmd='c0?',
+                                 set_cmd=self.slow_neg_set, get_parser=float,
+                                 vals=Numbers(-10, 10), sweep_step=0.2,
+                                 sweep_delay=0.01, max_sweep_delay=0.06)
+
+        for param, logcount in (('chan0slow', 2), ('chan0slow2', 2),
+                                ('chan0slow3', 0)):
+            self.gates.chan0.set(-0.5)
+
+            with LogCapture() as s:
+                self.gates.set(param, 0.5)
+
+            logs = s.getvalue().split('\n')[:-1]
+            s.close()
+
+            self.assertEqual(len(logs), logcount, logs)
+            for line in logs:
+                self.assertTrue(line.startswith('negative delay'), line)
 
     def check_ts(self, ts_str):
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
