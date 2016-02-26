@@ -1,9 +1,32 @@
 import unittest
 
+'''
+This module defines:
+
+- `DriverTestCase`: a `TestCase` subclass meant for testing instrument drivers
+
+- `test_instrument`: a function to test one instrument, given its test class
+
+- `test_instruments`: a function to test all instruments that have been defined
+                      in your python session
+
+
+Using `DriverTestCase` is pretty easy:
+
+- Inherit from this class instead of from the base `unittest.TestCase`
+
+- Provide a driver class variable that points to the Instrument class
+
+- In your tests, `self.instrument` is the latest instance of this class.
+
+- If your test case includes a `setUpClass` method, make sure to call
+  `super().setUpClass()`, because that's where we find the latest instance of
+  this `Instrument`, or skip the test case if no instances are found.
+'''
+
 
 class DriverTestCase(unittest.TestCase):
     driver = None  # override this in a subclass
-    noskip = False  # just to test this class, we need to disallow skipping
 
     @classmethod
     def setUpClass(cls):
@@ -18,7 +41,8 @@ class DriverTestCase(unittest.TestCase):
 
         if not instances:
             msg = 'no instances of {} found'.format(name)
-            if cls.noskip:
+            if getattr(cls, 'noskip', False):
+                # just to test this class, we need to disallow skipping
                 raise ValueError(msg)
             else:
                 raise unittest.SkipTest(msg)
