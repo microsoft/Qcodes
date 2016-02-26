@@ -2,7 +2,6 @@ import asyncio
 from unittest import TestCase
 from datetime import datetime, timedelta
 import time
-import sys
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument

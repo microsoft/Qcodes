@@ -4,7 +4,8 @@ from datetime import datetime
 import asyncio
 
 from qcodes.utils.helpers import (is_function, is_sequence, permissive_range,
-                                  wait_secs, make_unique, DelegateAttributes)
+                                  wait_secs, make_unique, DelegateAttributes,
+                                  LogCapture)
 
 
 class TestIsFunction(TestCase):
@@ -192,9 +193,13 @@ class TestWaitSecs(TestCase):
             self.assertLessEqual(secs_out, secs)
 
     def test_warning(self):
-        # TODO: how to test what logging is doing?
-        secs_out = wait_secs(time.perf_counter() - 1)
+        with LogCapture() as s:
+            secs_out = wait_secs(time.perf_counter() - 1)
         self.assertEqual(secs_out, 0)
+
+        logstr = s.getvalue()
+        s.close()
+        self.assertEqual(logstr.count('negative delay'), 1, logstr)
 
 
 class TestMakeUnique(TestCase):
