@@ -1,6 +1,6 @@
 from asyncio import iscoroutinefunction
 from collections import Iterable
-from datetime import datetime
+import time
 from inspect import signature
 import logging
 import math
@@ -76,14 +76,15 @@ def permissive_range(start, stop, step):
     return [start + i * signed_step for i in range(step_count)]
 
 
-def wait_secs(finish_datetime):
+def wait_secs(finish_clock):
     '''
-    calculate the number of seconds until a given datetime
+    calculate the number of seconds until a given clock time
+    The clock time should be the result of time.perf_counter()
     Does NOT wait for this time.
     '''
-    delay = (finish_datetime - datetime.now()).total_seconds()
+    delay = finish_clock - time.perf_counter()
     if delay < 0:
-        logging.warning('negative delay {} sec'.format(delay))
+        logging.warning('negative delay {:.6f} sec'.format(delay))
         return 0
     return delay
 
