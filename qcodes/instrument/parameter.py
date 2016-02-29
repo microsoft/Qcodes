@@ -46,8 +46,14 @@ from qcodes.utils.validators import Validator, Numbers, Ints, Enum
 from qcodes.instrument.sweep_values import SweepFixedValues
 
 
-def no_func(*args, **kwargs):
-    raise NotImplementedError('no function defined')
+def no_setter(*args, **kwargs):
+    raise NotImplementedError('This Parameter has no setter defined.')
+
+
+def no_getter(*args, **kwargs):
+    raise NotImplementedError(
+        'This Parameter has no getter, use .get_latest to get the most recent '
+        'set value.')
 
 
 class Parameter(Metadatable):
@@ -322,9 +328,9 @@ class StandardParameter(Parameter):
             param_count=0, cmd=get_cmd, acmd=async_get_cmd,
             exec_str=self._instrument.ask if self._instrument else None,
             aexec_str=self._instrument.ask_async if self._instrument else None,
-            output_parser=get_parser, no_cmd_function=no_func)
+            output_parser=get_parser, no_cmd_function=no_getter)
 
-        if self._get is not no_func:
+        if self._get is not no_getter:
             self.has_get = True
 
     def _set_set(self, set_cmd, async_set_cmd, set_parser):
@@ -335,9 +341,9 @@ class StandardParameter(Parameter):
             exec_str=self._instrument.write if self._instrument else None,
             aexec_str=(self._instrument.write_async if self._instrument
                        else None),
-            input_parser=set_parser, no_cmd_function=no_func)
+            input_parser=set_parser, no_cmd_function=no_setter)
 
-        if self._set is not no_func:
+        if self._set is not no_setter:
             self.has_set = True
 
     def _validate_and_set(self, value):
