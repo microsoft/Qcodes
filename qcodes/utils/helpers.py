@@ -118,6 +118,8 @@ class DelegateAttributes(object):
     delegate_attr_objects: a list of names (strings) of objects which are
         (or will be) attributes of self, whose attributes should be passed
         through to self
+    omit_delegate_attrs: a list of attribute names (strings) to *not* delegate
+        to any other dict or object
 
     any `None` entry is ignored
 
@@ -128,8 +130,13 @@ class DelegateAttributes(object):
     '''
     delegate_attr_dicts = []
     delegate_attr_objects = []
+    omit_delegate_attrs = []
 
     def __getattr__(self, key):
+        if key in self.omit_delegate_attrs:
+            raise AttributeError("'{}' does not delegate attribute {}".format(
+                self.__class__.__name__, key))
+
         for name in self.delegate_attr_dicts:
             if key == name:
                 # needed to prevent infinite loops!
@@ -164,11 +171,13 @@ class DelegateAttributes(object):
         for name in self.delegate_attr_dicts:
             d = getattr(self, name, None)
             if d is not None:
-                names += list(d.keys())
+                names += [k for k in d.keys()
+                          if k not in self.omit_delegate_attrs]
 
         for name in self.delegate_attr_objects:
             obj = getattr(self, name, None)
             if obj is not None:
-                names += dir(obj)
+                names += [k for k in dir(obj)
+                          if k not in self.omit_delegate_attrs]
 
         return sorted(set(names))

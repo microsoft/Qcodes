@@ -38,7 +38,8 @@ import time
 import asyncio
 import logging
 
-from qcodes.utils.helpers import permissive_range, wait_secs
+from qcodes.utils.helpers import (permissive_range, wait_secs,
+                                  DelegateAttributes)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import syncable_command, NoCommandError
 from qcodes.utils.validators import Validator, Numbers, Ints, Enum
@@ -71,6 +72,12 @@ class Parameter(Metadatable):
 
     Because .set only supports a single value, if a Parameter is both
     gettable AND settable, .get should return a single value too (case 1)
+
+    Parameters have a .get_latest method that simply returns the most recent
+    set or measured value. This can either be called ( param.get_latest() )
+    or used in a Loop as if it were a (gettable-only) parameter itself:
+        Loop(...).each(param.get_latest)
+
 
     The constructor arguments change somewhat between these cases:
 
@@ -159,6 +166,7 @@ class Parameter(Metadatable):
         # but they all use the same attributes so snapshot is consistent.
         self._last_value = None
         self._last_ts = None
+        self.get_latest = GetLatest(self)
 
     def snapshot_base(self):
         '''
@@ -471,4 +479,32 @@ class ManualParameter(Parameter):
 
     @asyncio.coroutine
     def get_async(self):
+        return self.get()
+
+
+class GetLatest(DelegateAttributes):
+    '''
+    wrapper for a Parameter that just returns the last set or measured value
+    stored in the Parameter itself.
+
+    Can be called:
+        param.get_latest()
+
+    Or used as if it were a gettable-only parameter itself:
+        Loop(...).each(param.get_latest)
+    '''
+    def __init__(self, parameter):
+        self.parameter = parameter
+
+    delegate_attr_objects = ['parameter']
+    omit_delegate_attrs = ['set', 'set_async']
+
+    def get(self):
+        return self.parameter._last_value
+
+    @asyncio.coroutine
+    def get_async(self):
+        return self.get()
+
+    def __call__(self):
         return self.get()
