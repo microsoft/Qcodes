@@ -154,6 +154,30 @@ class Parameter(Metadatable):
             self.setpoint_names = setpoint_names
             self.setpoint_labels = setpoint_labels
 
+        # record of latest value and when it was set or measured
+        # what exactly this means is different for different subclasses
+        # but they all use the same attributes so snapshot is consistent.
+        self._last_value = None
+        self._last_ts = None
+
+    def snapshot_base(self):
+        '''
+        json state of the Parameter
+        '''
+        if self._last_ts is None:
+            ts = None
+        else:
+            ts = self._last_ts.strftime('%Y-%m-%d %H:%M:%S')
+
+        return {
+            'value': self._last_value,
+            'ts': ts
+        }
+
+    def _save_val(self, value):
+        self._last_value = value
+        self._last_ts = datetime.now()
+
     def _set_vals(self, vals):
         if vals is None:
             self._vals = Numbers()
@@ -258,8 +282,6 @@ class StandardParameter(Parameter):
         # normally only used by set with a sweep, to avoid
         # having to call .get() for every .set()
         self._max_val_age = 0
-        self._last_value = None
-        self._last_ts = None
 
         self.has_get = False
         self.has_set = False
@@ -275,20 +297,6 @@ class StandardParameter(Parameter):
         if not (self.has_get or self.has_set):
             raise NoCommandError('neither set nor get cmd found in' +
                                  ' Parameter {}'.format(self.name))
-
-    def snapshot_base(self):
-        '''
-        json state of the Parameter
-        '''
-        snap = {}
-        if self._last_value is not None:
-            snap['value'] = self._last_value
-            snap['ts'] = self._last_ts.strftime('%Y-%m-%d %H:%M:%S')
-        return snap
-
-    def _save_val(self, value):
-        self._last_value = value
-        self._last_ts = datetime.now()
 
     def get(self):
         value = self._get()
@@ -448,23 +456,19 @@ class ManualParameter(Parameter):
         super().__init__(name=name, **kwargs)
         if initial_value is not None:
             self.validate(initial_value)
-
-        self._value = initial_value
+            self._save_val(initial_value)
 
     def set(self, value):
         self.validate(value)
-        self._value = value
+        self._save_val(value)
 
     @asyncio.coroutine
     def set_async(self, value):
         return self.set(value)
 
     def get(self):
-        return self._value
+        return self._last_value
 
     @asyncio.coroutine
     def get_async(self):
         return self.get()
-
-    def snapshot_base(self):
-        return {'value': self._value}

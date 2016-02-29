@@ -387,7 +387,7 @@ class TestParameters(TestCase):
 
     def test_standard_snapshot(self):
         self.assertEqual(self.meter.snapshot(), {
-            'parameters': {'amplitude': {}},
+            'parameters': {'amplitude': {'value': None, 'ts': None}},
             'functions': {'echo': {}}
         })
 
@@ -403,11 +403,15 @@ class TestParameters(TestCase):
         noise = self.source.noise
 
         self.assertEqual(self.source.snapshot()['parameters']['noise'],
-                         {'value': None})
+                         {'value': None, 'ts': None})
 
         noise.set(100)
-        self.assertEqual(self.source.snapshot()['parameters']['noise'],
-                         {'value': 100})
+        noisesnap = self.source.snapshot()['parameters']['noise']
+        self.assertEqual(noisesnap['value'], 100)
+
+        noise_ts = datetime.strptime(noisesnap['ts'], '%Y-%m-%d %H:%M:%S')
+        self.assertLessEqual(noise_ts, datetime.now())
+        self.assertGreater(noise_ts, datetime.now() - timedelta(seconds=1.1))
 
     def test_mock_read(self):
         gates, meter = self.gates, self.meter
