@@ -122,8 +122,8 @@ class TestQcodesProcess(TestCase):
         with self.sq.lock:
             p = sqtest_echo('hidden', has_q=False)
             time.sleep(self.MP_START_DELAY)
-            p.send_out('WHEEE!!!')
-            p.send_err('KAPOW!!!')
+            p.send_out('should go to stdout;')
+            p.send_err('should go to stderr;')
             p.halt()
 
             self.assertEqual(self.sq.get(), '')
