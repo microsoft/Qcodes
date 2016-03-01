@@ -38,15 +38,22 @@ import time
 import asyncio
 import logging
 
-from qcodes.utils.helpers import permissive_range, wait_secs
+from qcodes.utils.helpers import (permissive_range, wait_secs,
+                                  DelegateAttributes)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import syncable_command, NoCommandError
 from qcodes.utils.validators import Validator, Numbers, Ints, Enum
 from qcodes.instrument.sweep_values import SweepFixedValues
 
 
-def no_func(*args, **kwargs):
-    raise NotImplementedError('no function defined')
+def no_setter(*args, **kwargs):
+    raise NotImplementedError('This Parameter has no setter defined.')
+
+
+def no_getter(*args, **kwargs):
+    raise NotImplementedError(
+        'This Parameter has no getter, use .get_latest to get the most recent '
+        'set value.')
 
 
 class Parameter(Metadatable):
@@ -71,6 +78,12 @@ class Parameter(Metadatable):
 
     Because .set only supports a single value, if a Parameter is both
     gettable AND settable, .get should return a single value too (case 1)
+
+    Parameters have a .get_latest method that simply returns the most recent
+    set or measured value. This can either be called ( param.get_latest() )
+    or used in a Loop as if it were a (gettable-only) parameter itself:
+        Loop(...).each(param.get_latest)
+
 
     The constructor arguments change somewhat between these cases:
 
@@ -153,6 +166,31 @@ class Parameter(Metadatable):
             self.setpoints = setpoints
             self.setpoint_names = setpoint_names
             self.setpoint_labels = setpoint_labels
+
+        # record of latest value and when it was set or measured
+        # what exactly this means is different for different subclasses
+        # but they all use the same attributes so snapshot is consistent.
+        self._last_value = None
+        self._last_ts = None
+        self.get_latest = GetLatest(self)
+
+    def snapshot_base(self):
+        '''
+        json state of the Parameter
+        '''
+        if self._last_ts is None:
+            ts = None
+        else:
+            ts = self._last_ts.strftime('%Y-%m-%d %H:%M:%S')
+
+        return {
+            'value': self._last_value,
+            'ts': ts
+        }
+
+    def _save_val(self, value):
+        self._last_value = value
+        self._last_ts = datetime.now()
 
     def _set_vals(self, vals):
         if vals is None:
@@ -258,8 +296,6 @@ class StandardParameter(Parameter):
         # normally only used by set with a sweep, to avoid
         # having to call .get() for every .set()
         self._max_val_age = 0
-        self._last_value = None
-        self._last_ts = None
 
         self.has_get = False
         self.has_set = False
@@ -275,20 +311,6 @@ class StandardParameter(Parameter):
         if not (self.has_get or self.has_set):
             raise NoCommandError('neither set nor get cmd found in' +
                                  ' Parameter {}'.format(self.name))
-
-    def snapshot_base(self):
-        '''
-        json state of the Parameter
-        '''
-        snap = {}
-        if self._last_value is not None:
-            snap['value'] = self._last_value
-            snap['ts'] = self._last_ts.strftime('%Y-%m-%d %H:%M:%S')
-        return snap
-
-    def _save_val(self, value):
-        self._last_value = value
-        self._last_ts = datetime.now()
 
     def get(self):
         value = self._get()
@@ -306,9 +328,9 @@ class StandardParameter(Parameter):
             param_count=0, cmd=get_cmd, acmd=async_get_cmd,
             exec_str=self._instrument.ask if self._instrument else None,
             aexec_str=self._instrument.ask_async if self._instrument else None,
-            output_parser=get_parser, no_cmd_function=no_func)
+            output_parser=get_parser, no_cmd_function=no_getter)
 
-        if self._get is not no_func:
+        if self._get is not no_getter:
             self.has_get = True
 
     def _set_set(self, set_cmd, async_set_cmd, set_parser):
@@ -319,9 +341,9 @@ class StandardParameter(Parameter):
             exec_str=self._instrument.write if self._instrument else None,
             aexec_str=(self._instrument.write_async if self._instrument
                        else None),
-            input_parser=set_parser, no_cmd_function=no_func)
+            input_parser=set_parser, no_cmd_function=no_setter)
 
-        if self._set is not no_func:
+        if self._set is not no_setter:
             self.has_set = True
 
     def _validate_and_set(self, value):
@@ -448,23 +470,47 @@ class ManualParameter(Parameter):
         super().__init__(name=name, **kwargs)
         if initial_value is not None:
             self.validate(initial_value)
-
-        self._value = initial_value
+            self._save_val(initial_value)
 
     def set(self, value):
         self.validate(value)
-        self._value = value
+        self._save_val(value)
 
     @asyncio.coroutine
     def set_async(self, value):
         return self.set(value)
 
     def get(self):
-        return self._value
+        return self._last_value
 
     @asyncio.coroutine
     def get_async(self):
         return self.get()
 
-    def snapshot_base(self):
-        return {'value': self._value}
+
+class GetLatest(DelegateAttributes):
+    '''
+    wrapper for a Parameter that just returns the last set or measured value
+    stored in the Parameter itself.
+
+    Can be called:
+        param.get_latest()
+
+    Or used as if it were a gettable-only parameter itself:
+        Loop(...).each(param.get_latest)
+    '''
+    def __init__(self, parameter):
+        self.parameter = parameter
+
+    delegate_attr_objects = ['parameter']
+    omit_delegate_attrs = ['set', 'set_async']
+
+    def get(self):
+        return self.parameter._last_value
+
+    @asyncio.coroutine
+    def get_async(self):
+        return self.get()
+
+    def __call__(self):
+        return self.get()

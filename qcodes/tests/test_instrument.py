@@ -387,7 +387,7 @@ class TestParameters(TestCase):
 
     def test_standard_snapshot(self):
         self.assertEqual(self.meter.snapshot(), {
-            'parameters': {'amplitude': {}},
+            'parameters': {'amplitude': {'value': None, 'ts': None}},
             'functions': {'echo': {}}
         })
 
@@ -403,11 +403,42 @@ class TestParameters(TestCase):
         noise = self.source.noise
 
         self.assertEqual(self.source.snapshot()['parameters']['noise'],
-                         {'value': None})
+                         {'value': None, 'ts': None})
 
         noise.set(100)
-        self.assertEqual(self.source.snapshot()['parameters']['noise'],
-                         {'value': 100})
+        noisesnap = self.source.snapshot()['parameters']['noise']
+        self.assertEqual(noisesnap['value'], 100)
+
+        noise_ts = datetime.strptime(noisesnap['ts'], '%Y-%m-%d %H:%M:%S')
+        self.assertLessEqual(noise_ts, datetime.now())
+        self.assertGreater(noise_ts, datetime.now() - timedelta(seconds=1.1))
+
+    def tests_get_latest(self):
+        self.source.add_parameter('noise', parameter_class=ManualParameter)
+        noise = self.source.noise
+
+        self.assertIsNone(noise.get_latest())
+
+        noise.set(100)
+
+        mock_ts = datetime(2000, 3, 4)
+        ts_str = mock_ts.strftime('%Y-%m-%d %H:%M:%S')
+        noise._last_ts = mock_ts
+        self.assertEqual(noise.snapshot()['ts'], ts_str)
+
+        self.assertEqual(noise.get_latest(), 100)
+        self.assertEqual(noise.get_latest.get(), 100)
+        self.assertEqual(wait_for_async(noise.get_latest.get_async), 100)
+
+        # get_latest should not update ts
+        self.assertEqual(noise.snapshot()['ts'], ts_str)
+
+        # get_latest is not settable
+        with self.assertRaises(AttributeError):
+            noise.get_latest.set(50)
+
+        with self.assertRaises(AttributeError):
+            wait_for_async(noise.get_latest.set_async, 10)
 
     def test_mock_read(self):
         gates, meter = self.gates, self.meter
