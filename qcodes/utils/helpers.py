@@ -1,10 +1,11 @@
 from asyncio import iscoroutinefunction
 from collections import Iterable
-from datetime import datetime
+import time
 from inspect import signature
 import logging
 import math
 import sys
+import io
 
 
 def in_notebook():
@@ -76,16 +77,36 @@ def permissive_range(start, stop, step):
     return [start + i * signed_step for i in range(step_count)]
 
 
-def wait_secs(finish_datetime):
+def wait_secs(finish_clock):
     '''
-    calculate the number of seconds until a given datetime
+    calculate the number of seconds until a given clock time
+    The clock time should be the result of time.perf_counter()
     Does NOT wait for this time.
     '''
-    delay = (finish_datetime - datetime.now()).total_seconds()
+    delay = finish_clock - time.perf_counter()
     if delay < 0:
-        logging.warning('negative delay {} sec'.format(delay))
+        logging.warning('negative delay {:.6f} sec'.format(delay))
         return 0
     return delay
+
+
+class LogCapture():
+    '''
+    context manager to grab all log messages, optionally
+    from a specific logger
+    '''
+    def __init__(self, logger=logging.getLogger()):
+        self.logger = logger
+
+    def __enter__(self):
+        self.log_capture = io.StringIO()
+        self.string_handler = logging.StreamHandler(self.log_capture)
+        self.string_handler.setLevel(logging.DEBUG)
+        self.logger.addHandler(self.string_handler)
+        return self.log_capture
+
+    def __exit__(self, type, value, tb):
+        self.logger.removeHandler(self.string_handler)
 
 
 def make_unique(s, existing):
