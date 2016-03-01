@@ -93,7 +93,7 @@ Ran 91 tests in 4.177s
 FAILED (failures=1)
 ```
 
-The coverage report is only useful if you have been adding new code, to see whether your tests visit all of your code. Currently the core still has a good deal of untested code, which we are slowly working on testing.
+The coverage report is only useful if you have been adding new code, to see whether your tests visit all of your code. Look at the file(s) you have been working on, and ensure that the "missing" section does not contain the line numbers of any of the blocks you have touched. Currently the core still has a good deal of untested code - eventually we will have all of this tested, but for now you can ignore all the rest of the missing coverage.
 
 You can also run these tests from inside python. The output is similar except that a) you don't get coverage reporting, and b) one test has to be skipped because it does not apply within a notebook, so the output will end `OK (skipped=1)`:
 ```python
