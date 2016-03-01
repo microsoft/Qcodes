@@ -1,10 +1,11 @@
 from unittest import TestCase
-import os
-from datetime import datetime, timedelta
+import time
+from datetime import datetime
 import asyncio
 
 from qcodes.utils.helpers import (is_function, is_sequence, permissive_range,
-                                  wait_secs, make_unique, DelegateAttributes)
+                                  wait_secs, make_unique, DelegateAttributes,
+                                  LogCapture)
 
 
 class TestIsFunction(TestCase):
@@ -179,22 +180,26 @@ class TestPermissiveRange(TestCase):
 
 class TestWaitSecs(TestCase):
     def test_bad_calls(self):
-        bad_args = [None, 1, 1.0, True]
+        bad_args = [None, datetime.now()]
         for arg in bad_args:
             with self.assertRaises(TypeError):
                 wait_secs(arg)
 
     def test_good_calls(self):
         for secs in [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1]:
-            finish_datetime = datetime.now() + timedelta(seconds=secs)
-            secs_out = wait_secs(finish_datetime)
+            finish_clock = time.perf_counter() + secs
+            secs_out = wait_secs(finish_clock)
             self.assertGreater(secs_out, secs - 1e-4)
             self.assertLessEqual(secs_out, secs)
 
     def test_warning(self):
-        # TODO: how to test what logging is doing?
-        secs_out = wait_secs(datetime.now() - timedelta(seconds=1))
+        with LogCapture() as s:
+            secs_out = wait_secs(time.perf_counter() - 1)
         self.assertEqual(secs_out, 0)
+
+        logstr = s.getvalue()
+        s.close()
+        self.assertEqual(logstr.count('negative delay'), 1, logstr)
 
 
 class TestMakeUnique(TestCase):
