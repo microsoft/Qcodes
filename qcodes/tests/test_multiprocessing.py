@@ -1,10 +1,11 @@
-from unittest import TestCase
+from unittest import TestCase, skipIf
 import time
 import re
 import sys
 import multiprocessing as mp
 from unittest.mock import patch
 
+import qcodes
 from qcodes.utils.multiprocessing import (set_mp_method, QcodesProcess,
                                           get_stream_queue, _SQWriter)
 import qcodes.utils.multiprocessing as qcmp
@@ -39,6 +40,7 @@ class sqtest_echo:
             return
         self.q_out.put(BREAK_SIGNAL)
         self.p.join()
+        time.sleep(self.resp_delay)
 
     def __del__(self):
         self.halt()
@@ -55,7 +57,10 @@ def sqtest_echo_f(name, delay, q_out, q_err, has_q):
                 # now test that disconnect works, and reverts to
                 # regular stdout and stderr
                 if has_q:
-                    get_stream_queue().disconnect()
+                    try:
+                        get_stream_queue().disconnect()
+                    except RuntimeError:
+                        pass
                     print('stdout ', end='', flush=True)
                     print('stderr ', file=sys.stderr, end='', flush=True)
                 break
@@ -106,6 +111,8 @@ class TestQcodesProcess(TestCase):
         self.BLOCKING_TIME = mp_stats['blocking_time']
         self.sq = get_stream_queue()
 
+    @skipIf(getattr(qcodes, '_IN_NOTEBOOK', False),
+            'called from notebook')
     def test_not_in_notebook(self):
         # below we'll patch this to True, but make sure that it's False
         # in the normal test runner.
@@ -115,8 +122,8 @@ class TestQcodesProcess(TestCase):
         with self.sq.lock:
             p = sqtest_echo('hidden', has_q=False)
             time.sleep(self.MP_START_DELAY)
-            p.send_out('WHEEE!!!')
-            p.send_err('KAPOW!!!')
+            p.send_out('should go to stdout;')
+            p.send_err('should go to stderr;')
             p.halt()
 
             self.assertEqual(self.sq.get(), '')
@@ -144,7 +151,7 @@ class TestQcodesProcess(TestCase):
             # but we have the exception in the queue
             self.maxDiff = None
             self.assertGreaterEqual(exc_text.count(name + ' ERR'), 5)
-            self.assertEqual(exc_text.count('Traceback'), 1)
+            self.assertEqual(exc_text.count('Traceback'), 1, exc_text)
             self.assertEqual(exc_text.count('RuntimeError'), 2)
             self.assertEqual(exc_text.count('Boo!'), 2)
 
@@ -239,7 +246,7 @@ class TestSQWriter(TestCase):
             time.sleep(0.01)
 
             sq.get()
-            sq_name = 'Magritte'
+            sq_name = 'A Queue'
             sqw = _SQWriter(sq, sq_name)
 
             # flush should exist, but does nothing
@@ -274,7 +281,7 @@ class TestSQWriter(TestCase):
             # go there. If we're feeling adventurous maybe we can test if
             # something was actually printed.
             sqw.MIN_READ_TIME = -1
-            new_message = 'Who?\n'
+            new_message = 'should get printed\n'
             sqw.write(new_message)
 
             time.sleep(0.01)

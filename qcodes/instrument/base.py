@@ -1,4 +1,5 @@
 import asyncio
+import weakref
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import wait_for_async
@@ -14,11 +15,38 @@ class Instrument(Metadatable, DelegateAttributes):
         self.parameters = {}
 
         self.name = str(name)
+
+        # keep a (weak) record of all instances of this Instrument
+        # instancetype is there to make sure we aren't using instances
+        # from a superclass that has been instantiated previously
+        if getattr(type(self), '_type', None) is not type(self):
+            type(self)._type = type(self)
+            type(self)._instances = []
+        self._instances.append(weakref.ref(self))
+
         # TODO: need a sync/async, multiprocessing-friendly lock
         # should be based on multiprocessing.Lock (or RLock)
         # but with a non-blocking option for async use
         # anyway threading.Lock is unpicklable on Windows
         # self.lock = threading.Lock()
+
+    def __del__(self):
+        wr = weakref.ref(self)
+        if wr in self._instances:
+            self._instances.remove(wr)
+
+    @classmethod
+    def instances(cls):
+        '''
+        returns all currently defined instances of this instrument class
+        you can use this to get the objects back if you lose track of them,
+        and it's also used by the test system to find objects to test against.
+        '''
+        if getattr(cls, '_type', None) is not cls:
+            # only instances of a superclass - we want instances of this
+            # exact class only
+            return []
+        return [wr() for wr in getattr(cls, '_instances', []) if wr()]
 
     def add_parameter(self, name, parameter_class=StandardParameter,
                       **kwargs):

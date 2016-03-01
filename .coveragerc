@@ -1,8 +1,0 @@
-[run]
-omit =
-    qcodes/__init__.py
-    qcodes/tests/*
-    qcodes/instrument_drivers/*
-    qcodes/instrument_drivers/*/*
-    qcodes/utils/reload_code.py
-    setup.py

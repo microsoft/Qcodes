@@ -24,15 +24,97 @@ Figured out a new way to use qcodes? Found a package that makes your life better
 
 - Clone and register the package for development as described in [README.md#installation]
 
-- Run the tests. In the root directory of the repository, on Windows:
+### Running Tests
+
+The core test runner is in `qcodes/test.py:
 ```
-coverage run setup.py test && coverage report -m
+python qcodes/test.py
+# optional extra verbosity
+python qcodes/test.py -v
 ```
-and on Mac/Linux this one is faster with nicer output (but doesn't run at the moment on Windows):
+You should see output that looks something like this:
 ```
-python setup.py nosetests
+.........***** found one MockMock, testing *****
+............................................Timing resolution:
+startup time: 0.000e+00
+min/med/avg/max dev: 9.260e-07, 9.670e-07, 1.158e-06, 2.109e-03
+async sleep delays:
+startup time: 2.069e-04
+min/med/avg/max dev: 3.372e-04, 6.376e-04, 6.337e-04, 1.007e-03
+multiprocessing startup delay and regular sleep delays:
+startup time: 1.636e-02
+min/med/avg/max dev: 3.063e-05, 2.300e-04, 2.232e-04, 1.743e-03
+should go to stdout;should go to stderr;.stdout stderr stdout stderr ..[10:44:09.063 A Queue] should get printed
+...................................
+----------------------------------------------------------------------
+Ran 91 tests in 4.192s
+
+OK
+Name                         Stmts   Miss  Cover   Missing
+----------------------------------------------------------
+data/data_array.py             104      0   100%
+data/data_set.py               179    140    22%   38-55, 79-94, 99-104, 123-135, 186-212, 215-221, 224-244, 251-254, 257-264, 272, 280-285, 300-333, 347-353, 360-384, 395-399, 405-407, 414-420, 426-427, 430, 433-438
+data/format.py                 225    190    16%   44-55, 61-62, 70, 78-97, 100, 114-148, 157-188, 232, 238, 246, 258-349, 352, 355-358, 361-368, 375-424, 427-441, 444, 447-451
+data/io.py                      76     50    34%   71-84, 90-91, 94, 97, 103, 109-110, 119-148, 154-161, 166, 169, 172, 175-179, 182, 185-186
+data/manager.py                124     89    28%   15-20, 31, 34, 48-62, 65-67, 70, 76-77, 80-84, 90-102, 108-110, 117-121, 142-151, 154-182, 185, 188, 207-208, 215-221, 227-229, 237, 243, 249
+instrument/base.py              74      0   100%
+instrument/function.py          45      1    98%   77
+instrument/ip.py                20     12    40%   10-16, 19-20, 24-25, 29-38
+instrument/mock.py              63      0   100%
+instrument/parameter.py        200      2    99%   467, 470
+instrument/sweep_values.py     107     33    69%   196-207, 220-227, 238-252, 255-277
+instrument/visa.py              36     24    33%   10-25, 28-32, 35-36, 40-41, 47-48, 57-58, 62-64, 68
+loops.py                       285    239    16%   65-74, 81-91, 120-122, 133-141, 153-165, 172-173, 188-207, 216-240, 243-313, 316-321, 324-350, 354-362, 371-375, 378-381, 414-454, 457-474, 477-484, 487-491, 510-534, 537-543, 559-561, 564, 577, 580, 590-608, 611-618, 627-628, 631
+station.py                      35     24    31%   17-32, 35, 45-50, 60, 67-82, 88
+utils/helpers.py                95      0   100%
+utils/metadata.py               13      0   100%
+utils/multiprocessing.py        95      2    98%   125, 134
+utils/sync_async.py            114      8    93%   166, 171-173, 176, 180, 184, 189-191
+utils/timing.py                 72      0   100%
+utils/validators.py            110      0   100%
+----------------------------------------------------------
+TOTAL                         2072    814    61%
+```
+The key is `OK` in the middle (that means all the tests passed), and the presence of the coverage report after it. If any tests fail, we do not show a coverage report, and the end of the output will contain tracebacks and messages about what failed, for example:
+```
+======================================================================
+FAIL: test_sweep_steps_edge_case (tests.test_instrument.TestParameters)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/alex/qdev/Qcodes/qcodes/tests/test_instrument.py", line 360, in test_sweep_steps_edge_case
+    self.check_set_amplitude2('Off', log_count=1, history_count=2)
+  File "/Users/alex/qdev/Qcodes/qcodes/tests/test_instrument.py", line 345, in check_set_amplitude2
+    self.assertTrue(line.startswith('negative delay'), line)
+AssertionError: False is not true : cannot sweep amplitude2 from 0.1 to Off - jumping.
+
+----------------------------------------------------------------------
+Ran 91 tests in 4.177s
+
+FAILED (failures=1)
+```
+
+The coverage report is only useful if you have been adding new code, to see whether your tests visit all of your code. Look at the file(s) you have been working on, and ensure that the "missing" section does not contain the line numbers of any of the blocks you have touched. Currently the core still has a good deal of untested code - eventually we will have all of this tested, but for now you can ignore all the rest of the missing coverage.
+
+You can also run these tests from inside python. The output is similar except that a) you don't get coverage reporting, and b) one test has to be skipped because it does not apply within a notebook, so the output will end `OK (skipped=1)`:
+```python
+import qcodes
+qcodes.test_core()  # optional verbosity = 1 (default) or 2
 ```
 If the tests pass, you should be ready to start developing!
+
+To tests actual instruments, first instantiate them in an interactive python session, then run `qcodes.test_instruments()`:
+```python
+import qcodes
+sig_gen = qcodes.instrument_drivers.agilent.E8527D.Agilent_E8527D('source', address='...')
+qcodes.test_instruments()  # optional verbosity = 1 (default) or 2
+```
+The output of this command should include lines like:
+```
+***** found one Agilent_E8527D, testing *****
+```
+for each class of instrument you have defined. Note that if you instantiate several instruments of the same class, only the *last* one will be tested unless you write the test to explicitly test more than this.
+
+Coverage testing is generally meaningless for instrument drivers, as calls to `add_parameter` and `add_function` do not add any code other than the call itself, which is covered immediately on instantiation rather than on calling these parameters/functions. So it is up to the driver author to ensure that all functionality the instrument supports is covered by tests. Also, it's mentioned below but bears repeating: if you fix a bug, write a test that would have failed before your fix, so we can be sure the bug does not reappear later!
 
 ### New code and testing
 
@@ -40,27 +122,9 @@ If the tests pass, you should be ready to start developing!
 
 - Write your new feature or fix. Be sure it doesn't break any existing tests, and please write tests that cover your feature as well, or if you are fixing a bug, write a test that would have failed before your fix. Our goal is 100% test coverage, and although we are not there, we should always strive to increase our coverage with each new feature. Please be aware also that 100% test coverage does NOT necessarily mean 100% logic coverage. If (as is often the case in Python) a single line of code can behave differently for different inputs, coverage in itself will not ensure that this is tested.
 
-- The standard test commands are listed above under [setup](#setup). Note: nose has a [note on its homepage](https://nose.readthedocs.org/en/latest/) that it is no longer being actively maintained, so we may want to change this in the near future. Also, we've been having trouble with some of the tests under Windows. Some notes on other test runners, that (after a bunch of tweaking for robustness, like slowing down the multiprocessing tests) all work on mac:
-```
-# nosetests is nice but doesn't seem to work with multiprocessing on windows
-python setup.py nosetests
-# both of these run unittest with coverage. Using "&&" ensures that you
-# only get a coverage report if tests pass:
-coverage run setup.py test && coverage report -m
-coverage run -m unittest discover && coverage report -m
-# same without coverage:
-python setup.py test
-python -m unittest discover
+- The standard test commands are listed above under [Running Tests](#running_tests). More notes on different test runners can be found in [TESTING.md].
 
-# py.test needs the .coveragerc file to give it a reasonable scope
-py.test --cov-config .coveragerc --cov qcodes --cov-report term-missing
-
-# nose2: coverage is broken - it reports all the unindented lines (everything
-# that executes on import) as uncovered
-nose2 -C --coverage-report term-missing
-```
-
-- Tests live in [qcodes/tests](https://github.com/qdev-dk/Qcodes/tree/master/qcodes/tests) for now.
+- Core tests live in [qcodes/tests](https://github.com/qdev-dk/Qcodes/tree/master/qcodes/tests) and instrument tests live in the same directories as the instrument drivers.
 
 - We should have a *few* high-level "integration" tests, but simple unit tests (that just depend on code in one module) are more valuable for several reasons:
   - If complex tests fail it's more difficult to tell why

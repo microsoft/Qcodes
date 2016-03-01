@@ -3,6 +3,8 @@ import asyncio
 import multiprocessing as mp
 
 
+sleep_time = 0.001
+
 _calibration = {
     'sleep_delay': None,
     'async_sleep_delay': None,
@@ -111,7 +113,7 @@ def asleeper(n, d, t0, timer, queue, quiet):
     return report(startup_time, deviations, queue)
 
 
-def atest(n=100, d=0.01, timer=time.perf_counter, quiet=False):
+def atest(n=100, d=sleep_time, timer=time.perf_counter, quiet=False):
     '''
     test asyncio.sleep performance, and the time to start
     an async event loop. start time uses time.time() for
@@ -120,7 +122,7 @@ def atest(n=100, d=0.01, timer=time.perf_counter, quiet=False):
     n: how many asyncio.sleep calls to use
         default 100
     d: delay per sleep
-        default 0.01
+        default 0.001 (timing.sleep_time, so other routines can share it)
     timer: which system timer to use
         default time.perf_counter
     quiet: don't print anything

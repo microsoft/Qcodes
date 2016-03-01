@@ -1,94 +1,95 @@
-import unittest
+from qcodes.instrument_drivers.test import DriverTestCase
+from .E8527D import Agilent_E8527D
 
-source = None
 
-
-class mw_source(unittest.TestCase):
+class TestAgilent_E8527D(DriverTestCase):
     '''
     This is a test suite for testing the QuTech_ControlBox Instrument.
     It is designed to provide a test function for each function as well as for
     general things such as testing if the com s are working.
     '''
+    driver = Agilent_E8527D
+
     @classmethod
-    def setUpClass(self):
-        self.source = source
-        self.source.off()  # Not a test but a safety measure
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.instrument.off()  # Not a test but a safety measure
 
     def test_firmware_version(self):
-        v = self.source.IDN.get()
+        v = self.instrument.IDN.get()
         self.assertTrue(v.startswith('Agilent Technologies, E8257D,'))
 
     def test_on_off(self):
-        self.source.off()
-        self.assertEqual(self.source.status.get(), 'Off')
+        self.instrument.off()
+        self.assertEqual(self.instrument.status.get(), 'Off')
 
-        self.source.on()
-        self.assertEqual(self.source.status.get(), 'On')
+        self.instrument.on()
+        self.assertEqual(self.instrument.status.get(), 'On')
 
-        self.source.status.set('off')
-        self.assertEqual(self.source.status.get(), 'Off')
+        self.instrument.status.set('off')
+        self.assertEqual(self.instrument.status.get(), 'Off')
 
-        self.source.status.set('On')
-        self.assertEqual(self.source.status.get(), 'On')
+        self.instrument.status.set('On')
+        self.assertEqual(self.instrument.status.get(), 'On')
 
-        # Ensure test ends with source being off
-        self.source.off()
-        self.assertEqual(self.source.status.get(), 'Off')
+        # Ensure test ends with instrument being off
+        self.instrument.off()
+        self.assertEqual(self.instrument.status.get(), 'Off')
 
         # This should raise an error because it is not a valid input
         with self.assertRaises(ValueError):
-            self.source.status.set('on24')
+            self.instrument.status.set('on24')
 
     def test_frequency(self):
         with self.assertRaises(ValueError):
-            self.source.frequency.set(32e9)
+            self.instrument.frequency.set(32e9)
         with self.assertRaises(ValueError):
-            self.source.frequency.set(32)
+            self.instrument.frequency.set(32)
 
-        cur_f = self.source.frequency.get()
+        cur_f = self.instrument.frequency.get()
         test_f = 2e9
-        self.source.frequency.set(test_f)
-        self.assertEqual(self.source.frequency.get(), test_f)
+        self.instrument.frequency.set(test_f)
+        self.assertEqual(self.instrument.frequency.get(), test_f)
 
         test_f = 2.2435e9
-        self.source.frequency.set(test_f)
-        self.assertEqual(self.source.frequency.get(), test_f)
+        self.instrument.frequency.set(test_f)
+        self.assertEqual(self.instrument.frequency.get(), test_f)
 
         # leave the setup in the initial state
-        self.source.frequency.set(cur_f)
+        self.instrument.frequency.set(cur_f)
 
     def test_power(self):
         with self.assertRaises(ValueError):
-            self.source.power.set(-150)
+            self.instrument.power.set(-150)
         with self.assertRaises(ValueError):
-            self.source.power.set(32)
+            self.instrument.power.set(32)
 
-        cur_val = self.source.power.get()
+        cur_val = self.instrument.power.get()
         test_val = -18
-        self.source.power.set(test_val)
-        self.assertEqual(self.source.power.get(), test_val)
+        self.instrument.power.set(test_val)
+        self.assertEqual(self.instrument.power.get(), test_val)
 
         test_val = -5
-        self.source.power.set(test_val)
-        self.assertEqual(self.source.power.get(), test_val)
+        self.instrument.power.set(test_val)
+        self.assertEqual(self.instrument.power.get(), test_val)
 
         # leave the setup in the initial state
-        self.source.power.set(cur_val)
+        self.instrument.power.set(cur_val)
 
     def test_phase(self):
         with self.assertRaises(ValueError):
-            self.source.phase.set(-250)
+            self.instrument.phase.set(-250)
         with self.assertRaises(ValueError):
-            self.source.phase.set(181)
+            self.instrument.phase.set(181)
 
-        cur_val = self.source.phase.get()
+        cur_val = self.instrument.phase.get()
         test_val = 12
-        self.source.phase.set(test_val)
-        self.assertAlmostEqual(self.source.phase.get(), test_val, places=4)
+        self.instrument.phase.set(test_val)
+        self.assertAlmostEqual(self.instrument.phase.get(), test_val, places=4)
 
         test_val = -80
-        self.source.phase.set(test_val)
-        self.assertAlmostEqual(self.source.phase.get(), test_val, places=4)
+        self.instrument.phase.set(test_val)
+        self.assertAlmostEqual(self.instrument.phase.get(), test_val, places=4)
 
         # leave the setup in the initial state
-        self.source.phase.set(cur_val)
+        self.instrument.phase.set(cur_val)
