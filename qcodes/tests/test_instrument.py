@@ -332,6 +332,19 @@ class TestParameters(TestCase):
         with self.assertRaises(TypeError):
             gates.add_parameter('fugacity', set_cmd='f {:.4f}', vals=[1, 2, 3])
 
+    def check_set_amplitude2(self, val, log_count, history_count):
+        source = self.source
+        with LogCapture() as s:
+            source.amplitude2.set(val)
+
+        logs = s.getvalue().split('\n')[:-1]
+        s.close()
+
+        self.assertEqual(len(logs), log_count, logs)
+        for line in logs:
+            self.assertIn('cannot sweep', line.lower())
+        self.assertEqual(len(source.history), history_count)
+
     def test_sweep_steps_edge_case(self):
         # MultiType with sweeping is weird - not sure why one would do this,
         # but we should handle it
@@ -341,14 +354,20 @@ class TestParameters(TestCase):
                              vals=MultiType(Numbers(0, 1), Strings()),
                              sweep_step=0.2, sweep_delay=0.005)
         self.assertEqual(len(source.history), 0)
-        source.set('amplitude2', 'Off')
-        self.assertEqual(len(source.history), 2)  # get then set
-        source.set('amplitude2', 0.2)
-        self.assertEqual(len(source.history), 3)  # single set
-        source.set('amplitude2', 0.8)  # num -> num is the only real sweep
-        self.assertEqual(len(source.history), 6)  # 3-step sweep
-        source.set('amplitude2', 'Off')
-        self.assertEqual(len(source.history), 7)  # single set
+
+        # 2 history items - get then set, and one warning (cannot sweep
+        # number to string value)
+        self.check_set_amplitude2('Off', log_count=1, history_count=2)
+
+        # one more history item - single set, and one warning (cannot sweep
+        # string to number)
+        self.check_set_amplitude2(0.2, log_count=1, history_count=3)
+
+        # the only real sweep (0.2 to 0.8) adds 3 set's to history and no logs
+        self.check_set_amplitude2(0.8, log_count=0, history_count=6)
+
+        # single set added to history, and another sweep warning num->string
+        self.check_set_amplitude2('Off', log_count=1, history_count=7)
 
     def test_set_sweep_errors(self):
         gates = self.gates
