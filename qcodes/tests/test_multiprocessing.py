@@ -246,7 +246,7 @@ class TestSQWriter(TestCase):
             time.sleep(0.01)
 
             sq.get()
-            sq_name = 'Magritte'
+            sq_name = 'A Queue'
             sqw = _SQWriter(sq, sq_name)
 
             # flush should exist, but does nothing
@@ -281,7 +281,7 @@ class TestSQWriter(TestCase):
             # go there. If we're feeling adventurous maybe we can test if
             # something was actually printed.
             sqw.MIN_READ_TIME = -1
-            new_message = 'Who?\n'
+            new_message = 'should get printed\n'
             sqw.write(new_message)
 
             time.sleep(0.01)
