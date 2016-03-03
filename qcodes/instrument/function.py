@@ -38,21 +38,15 @@ class Function(Metadatable):
         If None (default), will not wait for or read any response
     NOTE: parsers only apply if call_cmd is a string. The function forms
         of call_cmd and async_call_cmd should do their own parsing.
-
-    parse_function: DEPRECATED - use return_parser instead
     '''
     def __init__(self, name, instrument=None,
                  call_cmd=None, async_call_cmd=None,
                  parameters=[], parameter_parser=None, return_parser=None,
-                 parse_function=None, **kwargs):
+                 **kwargs):
         super().__init__(**kwargs)
 
         self._instrument = instrument
         self.name = name
-
-        # push deprecated parse_function argument to get_parser
-        if return_parser is None:
-            return_parser = parse_function
 
         self._set_params(parameters)
         self._set_call(call_cmd, async_call_cmd,

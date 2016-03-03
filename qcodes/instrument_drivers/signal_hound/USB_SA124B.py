@@ -86,27 +86,27 @@ class SignalHound_USB_SA124B(Instrument):
                            units='GHz',
                            get_cmd=self._do_get_frequency,
                            set_cmd=self._do_set_frequency,
-                           parse_function=float)
+                           get_parser=float)
         self.add_parameter('span',
                            label='Span ',
                            units='GHz',
                            get_cmd=self._do_get_span,
                            set_cmd=self._do_set_span,
-                           parse_function=float)
+                           get_parser=float)
         self.add_parameter('power',
                            label='Power ',
                            units='dBm',
                            get_cmd=self._do_get_power,
                            set_cmd=self._do_set_power,
                            vals=vals.Numbers(max_value=20),
-                           parse_function=float)
+                           get_parser=float)
         self.add_parameter('ref_lvl',
                            label='Reference power ',
                            units='dBm',
                            get_cmd=self._do_get_ref_lvl,
                            set_cmd=self._do_set_ref_lvl,
                            vals=vals.Numbers(max_value=20),
-                           parse_function=float)
+                           get_parser=float)
         self.add_parameter('external_reference',
                            get_cmd=self._do_get_external_reference,
                            set_cmd=self._do_set_external_reference,
@@ -142,14 +142,14 @@ class SignalHound_USB_SA124B(Instrument):
                            units='Hz',
                            get_cmd=self._do_get_bandwidth,
                            set_cmd=self._do_set_bandwidth,
-                           parse_function=float)
+                           get_parser=float)
         # rbw Resolution bandwidth in Hz. RBW can be arbitrary.
         self.add_parameter('rbw',
                            label='Resolution Bandwidth',
                            units='Hz',
                            get_cmd=self._do_get_rbw,
                            set_cmd=self._do_set_rbw,
-                           parse_function=float)
+                           get_parser=float)
         # vbw Video bandwidth in Hz. VBW must be less than or equal to RBW.
         #  VBW can be arbitrary. For best performance use RBW as the VBW.
         self.add_parameter('vbw',
@@ -157,7 +157,7 @@ class SignalHound_USB_SA124B(Instrument):
                            units='Hz',
                            get_cmd=self._do_get_vbw,
                            set_cmd=self._do_set_vbw,
-                           parse_function=float)
+                           get_parser=float)
         self.set('frequency', 5)
         self.set('span', .25e-3)
         self.set('power', 0)
