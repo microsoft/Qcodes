@@ -219,9 +219,9 @@ class TestParameters(TestCase):
         # errors trying to set (or validate) invalid param values
         # put here so we ensure that these errors don't make it to
         # the history (ie they don't result in hardware commands)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             gates.set('chan1', '1')
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             gates.parameters['chan1'].validate('1')
 
         # change one param at a time
@@ -272,13 +272,13 @@ class TestParameters(TestCase):
         self.assertEqual(meter['echo'](1.2345), 1.23)
         with self.assertRaises(TypeError):
             meter.call('echo', 1, 2)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             meter.call('echo', '1')
 
         # validating before actually trying to call
         with self.assertRaises(TypeError):
             meter.functions['echo'].validate(1, 2)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             meter.functions['echo'].validate('1')
         gates.call('reset')
         self.assertEqual(gates.get('chan0'), 0)
@@ -685,7 +685,7 @@ class TestParameters(TestCase):
         self.assertEqual(alignment.get(), 'lawful')
 
         # None is the only invalid initial_value you can use
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             self.source.add_parameter('alignment2',
                                       parameter_class=ManualParameter,
                                       initial_value='nearsighted')

@@ -2,13 +2,21 @@ import asyncio
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import syncable_command
-from qcodes.utils.validators import Validator
+from qcodes.utils.validators import Validator, validate_all
 
 
 class Function(Metadatable):
     '''
     defines a function (with arbitrary args) that this instrument
     can execute.
+
+    This functionality is meant for simple cases, principally things that
+    map to simple commands like '*RST' (reset) or those with just a few
+    arguments. It requires a fixed argument count, and positional args
+    only. If your case is more complicated, you're probably better off
+    simply making a new method in your Instrument subclass definition.
+    The function validators.validate_all can help reduce boilerplate code
+    in this case.
 
     You execute this function object like a normal function, or use its
     .call method; or call it async with the .call_async method.
@@ -80,18 +88,18 @@ class Function(Metadatable):
         '''
         check that all arguments to this Function are allowed
         '''
+        if self._instrument:
+            func_name = (getattr(self._instrument, 'name', '') or
+                         str(self._instrument.__class__)) + '.' + self.name
+        else:
+            func_name = self.name
+
         if len(args) != self._arg_count:
             raise TypeError(
                 '{} called with {} args but requires {}'.format(
-                    self.name, len(args), self._arg_count))
+                    func_name, len(args), self._arg_count))
 
-        for i in range(self._arg_count):
-            value = args[i]
-            arg = self._args[i]
-            if not arg.is_valid(value):
-                raise ValueError(
-                    '{} is not a valid value for arg {} of {}'.format(
-                        value, i, self.name))
+        validate_all(*zip(self._args, args), context='Function: ' + func_name)
 
     def __call__(self, *args):
         self.validate(args)

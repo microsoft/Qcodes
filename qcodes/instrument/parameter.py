@@ -202,11 +202,15 @@ class Parameter(Metadatable):
 
     def validate(self, value):
         '''
-        raises a ValueError if this value is not allowed for this Parameter
+        raises an error if this value is not allowed for this Parameter
         '''
-        if not self._vals.is_valid(value):
-            raise ValueError(
-                '{} is not a valid value for {}'.format(value, self.name))
+        if hasattr(self, '_instrument'):
+            context = (getattr(self._instrument, 'name', '') or
+                       str(self._instrument.__class__)) + '.' + self.name
+        else:
+            context = self.name
+
+        self._vals.validate(value, 'Parameter: ' + context)
 
     def __getitem__(self, keys):
         '''
