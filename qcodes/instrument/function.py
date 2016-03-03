@@ -7,13 +7,13 @@ from qcodes.utils.validators import Validator
 
 class Function(Metadatable):
     '''
-    defines a function (with arbitrary parameters) that this instrument
+    defines a function (with arbitrary args) that this instrument
     can execute.
 
     You execute this function object like a normal function, or use its
     .call method; or call it async with the .call_async method.
 
-    name: the local name of this parameter
+    name: the local name of this function
     instrument: an instrument that handles this function
         default None
 
@@ -21,14 +21,14 @@ class Function(Metadatable):
         - a string (with positional fields to .format, "{}" or "{0}" etc)
           you can only use a string if an instrument is provided,
           this string will be passed to instrument.write
-        - a function (with parameter count matching parameters list)
+        - a function (with arg count matching args list)
     async_call_cmd: an async function to use for call_async, or for both
         sync and async if call_cmd is missing or None.
 
-    parameters: list of Validator objects,
-        one for each parameter to the Function
+    args: list of Validator objects,
+        one for each arg to the Function
 
-    parameter_parser: function to transform the input parameter(s)
+    arg_parser: function to transform the input arg(s)
         to encoded value(s) sent to the instrument.
         If there are multiple arguments, this function should accept all
         the arguments in order, and return a tuple of values.
@@ -41,26 +41,26 @@ class Function(Metadatable):
     '''
     def __init__(self, name, instrument=None,
                  call_cmd=None, async_call_cmd=None,
-                 parameters=[], parameter_parser=None, return_parser=None,
+                 args=[], arg_parser=None, return_parser=None,
                  **kwargs):
         super().__init__(**kwargs)
 
         self._instrument = instrument
         self.name = name
 
-        self._set_params(parameters)
+        self._set_args(args)
         self._set_call(call_cmd, async_call_cmd,
-                       parameter_parser, return_parser)
+                       arg_parser, return_parser)
 
-    def _set_params(self, parameters):
-        for param in parameters:
-            if not isinstance(param, Validator):
-                raise TypeError('all parameters must be Validator objects')
-        self._parameters = parameters
-        self._param_count = len(parameters)
+    def _set_args(self, args):
+        for arg in args:
+            if not isinstance(arg, Validator):
+                raise TypeError('all args must be Validator objects')
+        self._args = args
+        self._arg_count = len(args)
 
     def _set_call(self, call_cmd, async_call_cmd,
-                  parameter_parser, return_parser):
+                  arg_parser, return_parser):
         if self._instrument:
             ask_or_write = self._instrument.write
             ask_or_write_async = self._instrument.write_async
@@ -71,26 +71,26 @@ class Function(Metadatable):
             ask_or_write, ask_or_write_async = None, None
 
         self._call, self._call_async = syncable_command(
-            param_count=self._param_count,
+            param_count=self._arg_count,
             cmd=call_cmd, acmd=async_call_cmd,
             exec_str=ask_or_write, aexec_str=ask_or_write_async,
-            input_parser=parameter_parser, output_parser=return_parser)
+            input_parser=arg_parser, output_parser=return_parser)
 
     def validate(self, args):
         '''
         check that all arguments to this Function are allowed
         '''
-        if len(args) != self._param_count:
+        if len(args) != self._arg_count:
             raise TypeError(
-                '{} called with {} parameters but requires {}'.format(
-                    self.name, len(args), self._param_count))
+                '{} called with {} args but requires {}'.format(
+                    self.name, len(args), self._arg_count))
 
-        for i in range(self._param_count):
+        for i in range(self._arg_count):
             value = args[i]
-            param = self._parameters[i]
-            if not param.is_valid(value):
+            arg = self._args[i]
+            if not arg.is_valid(value):
                 raise ValueError(
-                    '{} is not a valid value for parameter {} of {}'.format(
+                    '{} is not a valid value for arg {} of {}'.format(
                         value, i, self.name))
 
     def __call__(self, *args):

@@ -146,7 +146,7 @@ class TestParameters(TestCase):
         self.meter.add_parameter('amplitude', get_cmd='ampl?',
                                  get_parser=float)
         self.meter.add_function('echo', call_cmd='echo {:.2f}?',
-                                parameters=[Numbers(0, 1000)],
+                                args=[Numbers(0, 1000)],
                                 return_parser=float)
 
         self.init_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -535,7 +535,7 @@ class TestParameters(TestCase):
 
         with self.assertRaises(TypeError):
             b.add_function('skip', call_cmd='skip {}',
-                           parameters=['not a validator'])
+                           args=['not a validator'])
         with self.assertRaises(NoCommandError):
             b.add_function('jump')
         with self.assertRaises(NoCommandError):
