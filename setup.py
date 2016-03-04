@@ -73,6 +73,15 @@ missing_template = '''
 *****
 '''
 
+valueerror_template = '''
+*****
+***** package {0} version not understood
+***** Please make sure the installed version ({1})
+***** is compatible with the minimum required version ({2})
+***** in order to use {3}
+*****
+'''
+
 # now test the versions of extras
 for extra, (module_name, min_version) in extras.items():
     try:
@@ -81,3 +90,5 @@ for extra, (module_name, min_version) in extras.items():
             print(version_template.format(module_name, min_version, extra))
     except ImportError:
         print(missing_template.format(module_name, extra))
+    except ValueError:
+        print(valueerror_template.format(module_name, module.__version__, min_version, extra))
