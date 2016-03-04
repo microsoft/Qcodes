@@ -37,7 +37,7 @@ Supported actions (args to .set_measurement or .each) are:
     Task: any callable that does not generate data
     Wait: a delay
 '''
-from datetime import datetime, timedelta
+from datetime import datetime
 import multiprocessing as mp
 import time
 import numpy as np
@@ -435,9 +435,6 @@ class ActiveLoop(object):
             loop_fn = self._run_wrapper
 
         if background:
-            # TODO: in notebooks, errors in a background sweep will just appear
-            # the next time a command is run. Do something better?
-            # (like log them somewhere, show in monitoring window)?
             p = QcodesProcess(target=loop_fn, name=MP_NAME)
             p.is_sweep = True
             p.signal_queue = self.signal_queue
