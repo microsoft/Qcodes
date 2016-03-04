@@ -115,5 +115,3 @@ procs started
 procs done working
   main:  32 MB phys, 3025 MB virt
   procs: 525 MB phys, 250142 MB virt
-
-
