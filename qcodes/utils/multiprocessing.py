@@ -3,6 +3,7 @@ import sys
 from datetime import datetime
 import time
 from traceback import print_exc
+from queue import Empty
 
 from .helpers import in_notebook
 
@@ -195,3 +196,83 @@ class _SQWriter(object):
 
     def flush(self):
         pass
+
+
+class ServerManager(object):
+    '''
+    creates and manages connections to a separate server process
+
+    name: the name of the server
+    query_timeout: the default time to wait for responses
+    '''
+    def __init__(self, name, server_class, query_timeout=2):
+        self.name = name
+        self._query_queue = mp.Queue()
+        self._response_queue = mp.Queue()
+        self._error_queue = mp.Queue()
+        self._server_class = server_class
+
+        # query_lock is only used with queries that get responses
+        # to make sure the process that asked the question is the one
+        # that gets the response.
+        # Any query that does NOT expect a response can just dump it in
+        # and more on.
+        self.query_lock = mp.RLock()
+
+        self.query_timeout = query_timeout
+        self._start_server(name)
+
+    def _start_server(self, name):
+        self._server = QcodesProcess(target=self._run_server, name=name)
+        self._server.start()
+
+    def _run_server(self):
+        self._server_class(self._query_queue, self._response_queue,
+                           self._error_queue)
+
+    def write(self, *query):
+        '''
+        Send a query to the server that does not expect a response.
+        '''
+        self._query_queue.put(query)
+        self._check_for_errors()
+
+    def _check_for_errors(self):
+        if not self._error_queue.empty():
+            errstr = self._error_queue.get()
+            errhead = '*** error on {} ***'.format(self.name)
+            print(errhead + '\n\n' + errstr, file=sys.stderr)
+            raise RuntimeError(errhead)
+
+    def ask(self, *query, timeout=None):
+        '''
+        Send a query to the server and wait for a response
+        '''
+        timeout = timeout or self.query_timeout
+
+        with self.query_lock:
+            self._query_queue.put(query)
+            try:
+                res = self._response_queue.get(timeout=timeout)
+            except Empty as e:
+                if self._error_queue.empty():
+                    # only raise if we're not about to find a deeper error
+                    raise e
+            self._check_for_errors()
+
+            return res
+
+    def halt(self):
+        '''
+        Halt the server and end its process
+        '''
+        if self._server.is_alive():
+            self.ask('halt')
+        self._server.join()
+
+    def restart(self):
+        '''
+        Restart the server
+        '''
+        self.halt()
+        self._start_server()
