@@ -57,7 +57,7 @@ class DataManager(ServerManager):
         super().restart()
 
 
-class DataServer(object):
+class DataServer:
     '''
     Running in its own process, receives, holds, and returns current `Loop` and
     monitor data, and writes it to disk (or other storage)
@@ -74,7 +74,7 @@ class DataServer(object):
     queries_per_store = 5
     default_monitor_period = 60  # seconds between monitoring storage calls
 
-    def __init__(self, query_queue, response_queue, error_queue):
+    def __init__(self, query_queue, response_queue, error_queue, extras):
         self._query_queue = query_queue
         self._response_queue = response_queue
         self._error_queue = error_queue

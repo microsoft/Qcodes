@@ -36,7 +36,7 @@ from qcodes.data.io import DiskIO
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.ip import IPInstrument
 from qcodes.instrument.visa import VisaInstrument
-from qcodes.instrument.mock import MockInstrument
+from qcodes.instrument.mock import MockInstrument, MockModel
 
 from qcodes.instrument.function import Function
 from qcodes.instrument.parameter import Parameter, StandardParameter

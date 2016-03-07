@@ -79,7 +79,9 @@ class QcodesProcess(mp.Process):
 
     def __repr__(self):
         cname = self.__class__.__name__
-        return super().__repr__().replace(cname + '(', '').replace(')>', '>')
+        r = super().__repr__()
+        r = r.replace(cname + '(', '').replace(')>', '>')
+        return r.replace(', started daemon', '')
 
 
 def get_stream_queue():
@@ -204,13 +206,15 @@ class ServerManager(object):
 
     name: the name of the server
     query_timeout: the default time to wait for responses
+    kwargs: passed along to the server constructor
     '''
-    def __init__(self, name, server_class, query_timeout=2):
+    def __init__(self, name, server_class, server_extras={}, query_timeout=2):
         self.name = name
         self._query_queue = mp.Queue()
         self._response_queue = mp.Queue()
         self._error_queue = mp.Queue()
         self._server_class = server_class
+        self._server_extras = server_extras
 
         # query_lock is only used with queries that get responses
         # to make sure the process that asked the question is the one
@@ -228,7 +232,7 @@ class ServerManager(object):
 
     def _run_server(self):
         self._server_class(self._query_queue, self._response_queue,
-                           self._error_queue)
+                           self._error_queue, self._server_extras)
 
     def write(self, *query):
         '''

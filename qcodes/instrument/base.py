@@ -6,10 +6,50 @@ from qcodes.utils.sync_async import wait_for_async
 from qcodes.utils.helpers import DelegateAttributes
 from .parameter import StandardParameter
 from .function import Function
+from .server import connect_instrument_server, ask_server, write_server
 
 
 class Instrument(Metadatable, DelegateAttributes):
-    def __init__(self, name, **kwargs):
+    '''
+    Base class for all QCodes instruments
+
+    server_name: if provided (and one generally should be) then this instrument
+        starts a separate server process (or connects to one, if one already
+        exists with the same name) and all hardware calls are made there.
+
+    server_extras: a dictionary of objects to be passed to the server, and
+        from there attached as attributes to each instrument that connects to
+        it. Intended for things like extra queues that can't be sent over a
+        queue themselves.
+
+    kwargs: metadata to store with this instrument
+
+    The object on the server is simply a copy of the Instrument itself. Any
+    methods that are decorated with either @ask_server or @write_server
+    (from qcodes.instrument.server) will execute on the server regardless of
+    which process calls them.
+
+    Subclasses, in their __init__, should first set up any methods/attributes
+    that need to exist in BOTH server and local copies of the instrument (such
+    as decorated methods), eg:
+        self.write = self._default_write
+    then call super init:
+        super().__init__(name, server_name, server_extras, **kwargs)
+    which loads this instrument into the server.
+    After that, __init__ should not set any attributes of self directly if the
+    hardware connection needs them, only through @ask_server or @write_server,
+    to prepare the connection and hardware.
+
+    Subclasses should override at least one each of write/write_async,
+    ask/ask_async, and potentially read/read_async, decorating each with
+    ask_server or write_server as appropriate (from qcodes.instrument.server).
+
+    Any other methods that interact with hardware must also be decorated.
+    It's OK if a decorated method calls another decorated method
+    '''
+    connection = None
+
+    def __init__(self, name, server_name=None, server_extras={}, **kwargs):
         super().__init__(**kwargs)
         self.functions = {}
         self.parameters = {}
@@ -24,11 +64,23 @@ class Instrument(Metadatable, DelegateAttributes):
             type(self)._instances = []
         self._instances.append(weakref.ref(self))
 
-        # TODO: need a sync/async, multiprocessing-friendly lock
-        # should be based on multiprocessing.Lock (or RLock)
-        # but with a non-blocking option for async use
-        # anyway threading.Lock is unpicklable on Windows
-        # self.lock = threading.Lock()
+        if server_name is not None:
+            self.connection = connect_instrument_server(server_name, self,
+                                                        server_extras)
+
+    @ask_server
+    def getattr_server(self, *args, **kwargs):
+        '''
+        get an attribute of the server copy of this Instrument
+        '''
+        return getattr(self, *args, **kwargs)
+
+    @write_server
+    def setattr_server(self, attr, value):
+        '''
+        set an attribute of the server copy of this Instrument
+        '''
+        setattr(self, attr, value)
 
     def __del__(self):
         wr = weakref.ref(self)

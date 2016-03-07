@@ -1,8 +1,12 @@
 import asyncio
 import time
 from datetime import datetime
+from queue import Empty
+from traceback import format_exc
 
 from .base import Instrument
+from .server import ask_server, write_server
+from qcodes.utils.multiprocessing import ServerManager
 
 
 class MockInstrument(Instrument):
@@ -19,12 +23,12 @@ class MockInstrument(Instrument):
 
     parameters to pass to model should be declared with:
         get_cmd = param_name + '?'
-        set_cmd = param_name + ' {:.3f}' (specify the format & precision)
+        set_cmd = param_name + ':{:.3f}' (specify the format & precision)
     alternatively independent functions may still be provided.
     '''
     def __init__(self, name, delay=0, model=None, keep_history=True,
-                 use_async=False, read_response=None, **kwargs):
-        super().__init__(name, **kwargs)
+                 use_async=False, read_response=None,
+                 server_name='MockServer', **kwargs):
 
         if not isinstance(delay, (int, float)) or delay < 0:
             raise TypeError('delay must be a non-negative number')
@@ -33,7 +37,11 @@ class MockInstrument(Instrument):
         # try to access write and ask so we know they exist
         model.write
         model.ask
-        self._model = model
+
+        # can't pass the model itself through the queue to the server,
+        # so send it to the server on creation and have the server
+        # attach it to each instrument.
+        server_extras = {'_model': model}
 
         # keep a record of every command sent to this instrument
         # for debugging purposes
@@ -54,9 +62,14 @@ class MockInstrument(Instrument):
         # just for test purposes
         self._read_response = read_response
 
+        super().__init__(name, server_name, server_extras, **kwargs)
+        # if not self.connection:
+        #     self._model = model
+
+    @write_server
     def _write_inner(self, cmd):
         try:
-            parameter, value = cmd.split(' ', 1)
+            parameter, value = cmd.split(':', 1)
         except ValueError:
             parameter, value = cmd, None  # for functions with no value
 
@@ -64,8 +77,7 @@ class MockInstrument(Instrument):
             self.history.append((datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                  'write', parameter, value))
 
-        self._model.write(instrument=self.name, parameter=parameter,
-                          value=value)
+        self._model.write(self.name + ':' + cmd)
 
     def _write(self, cmd):
         if self._delay:
@@ -80,6 +92,7 @@ class MockInstrument(Instrument):
 
         self._write_inner(cmd)
 
+    @ask_server
     def _ask_inner(self, cmd):
         parameter, blank = cmd.split('?')
         if blank:
@@ -89,7 +102,7 @@ class MockInstrument(Instrument):
             self.history.append((datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                  'ask', parameter))
 
-        return self._model.ask(instrument=self.name, parameter=parameter)
+        return self._model.ask(self.name + ':' + cmd)
 
     def _read(self):
         if self._delay:
@@ -116,3 +129,53 @@ class MockInstrument(Instrument):
             yield from asyncio.sleep(self._delay)
 
         return self._ask_inner(cmd)
+
+
+class MockModel(ServerManager):
+    '''
+    Base class for models to connect to various MockInstruments
+
+    Creates a separate process that holds the model state, so that
+    any process can interact with the model and get the same state.
+
+    write and ask support single string queries of the form:
+        <instrument>:<parameter>:<value> (for setting)
+        <instrument>:<parameter>? (for getting)
+
+    for every instrument the model understands, create two methods:
+        <instrument>_set(param, value)
+        <instrument>_get(param) -> returns the value
+    both param and the set/return values should be strings
+
+    If anything is not recognized, raise an error, and the query will be
+    added to it
+    '''
+    def __init__(self, name='Model'):
+        super().__init__(name, server_class=None)
+
+    def _run_server(self):
+        while True:
+            try:
+                # make sure no matter what there is a query for error handling
+                query = None
+                query = self._query_queue.get()
+                query = query[0].split(':')
+
+                instrument = query[0]
+                param = query[1]
+                if param[-1] == '?' and len(query) == 2:
+                    getter = getattr(self, instrument + '_get')
+                    self._response_queue.put(getter(param[:-1]))
+                elif len(query) <= 3:
+                    value = query[2] if len(query) == 3 else None
+                    setter = getattr(self, instrument + '_set')
+                    setter(param, value)
+                else:
+                    raise ValueError
+
+            except Empty:
+                pass
+
+            except Exception as e:
+                e.args = e.args + ('unrecognized query: ' + repr(query),)
+                self._error_queue.put(format_exc())
