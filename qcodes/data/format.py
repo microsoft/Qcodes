@@ -7,7 +7,7 @@ from traceback import format_exc
 from .data_array import DataArray
 
 
-class Formatter(object):
+class Formatter:
     '''
     Data file formatters
 

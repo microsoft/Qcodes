@@ -125,7 +125,7 @@ def make_unique(s, existing):
     return s_out
 
 
-class DelegateAttributes(object):
+class DelegateAttributes:
     '''
     Mixin class to create attributes of this object by
     delegating them to one or more dicts and/or objects

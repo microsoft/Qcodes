@@ -31,7 +31,7 @@ def wait_for_async(f, *args, **kwargs):
     return out
 
 
-class mock_sync(object):
+class mock_sync:
     '''
     make a coroutine into a synchronous function
     written as a callable object rather than a closure
@@ -44,7 +44,7 @@ class mock_sync(object):
         return wait_for_async(self._f, *args, **kwargs)
 
 
-class mock_async(object):
+class mock_async:
     '''
     make a synchronous function f awaitable
     written as a callable object rather than a closure
@@ -111,7 +111,7 @@ def syncable_command(param_count, cmd=None, acmd=None,
                             ).out()
 
 
-class _SyncableCommand(object):
+class _SyncableCommand:
     '''
     Creates sync and async versions of the same callable
 

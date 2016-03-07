@@ -104,7 +104,7 @@ def _get_live_data(data_manager):
     return live_data
 
 
-class TimestampLocation(object):
+class TimestampLocation:
     '''
     This is the default DataSet Location provider.
     It provides a callable of one parameter (the io manager) that

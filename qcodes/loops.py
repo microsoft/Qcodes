@@ -98,7 +98,7 @@ def halt_bg(timeout=5):
 #     pass
 
 
-class Loop(object):
+class Loop:
     '''
     The entry point for creating measurement loops
 
@@ -173,7 +173,7 @@ class Loop(object):
         return self.each(*default).run(*args, **kwargs)
 
 
-class ActiveLoop(object):
+class ActiveLoop:
     '''
     Created by attaching actions to a `Loop`, this is the object that actually
     runs a measurement loop. An `ActiveLoop` can no longer be nested, only run,
@@ -540,7 +540,7 @@ class ActiveLoop(object):
         time.sleep(wait_secs(finish_clock))
 
 
-class Task(object):
+class Task:
     '''
     A predefined task to be executed within a measurement Loop
     This form is for a simple task that does not measure any data,
@@ -561,7 +561,7 @@ class Task(object):
         self.func(*self.args, **self.kwargs)
 
 
-class Wait(object):
+class Wait:
     '''
     A simple class to tell a Loop to wait <delay> seconds
 
@@ -577,7 +577,7 @@ class Wait(object):
         time.sleep(self.delay)
 
 
-class _Measure(object):
+class _Measure:
     '''
     A callable collection of parameters to measure.
     This should not be constructed manually, only by an ActiveLoop.
@@ -615,7 +615,7 @@ class _Measure(object):
         self.store(loop_indices, self.dict)
 
 
-class _Nest(object):
+class _Nest:
     '''
     wrapper to make a callable nested ActiveLoop
     This should not be constructed manually, only by an ActiveLoop.

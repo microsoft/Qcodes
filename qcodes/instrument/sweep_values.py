@@ -2,7 +2,7 @@ from qcodes.utils.helpers import is_sequence, permissive_range
 from qcodes.utils.sync_async import mock_async, mock_sync
 
 
-class SweepValues(object):
+class SweepValues:
     '''
     base class for sweeping a parameter
     must be subclassed to provide the sweep values

@@ -16,7 +16,7 @@ class ModelError(Exception):
     pass
 
 
-class AModel(object):
+class AModel:
     def __init__(self):
         self._gates = [0.0, 0.0, 0.0]
         self._excitation = 0.1

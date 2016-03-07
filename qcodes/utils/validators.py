@@ -22,7 +22,7 @@ def range_str(min_val, max_val, name):
         return ''
 
 
-class Validator(object):
+class Validator:
     '''
     base class for all value validators
     each should have its own constructor, and override is_valid and is_numeric

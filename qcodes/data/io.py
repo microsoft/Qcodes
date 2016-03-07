@@ -48,7 +48,7 @@ import shutil
 ALLOWED_OPEN_MODES = ('r', 'w', 'a')
 
 
-class DiskIO(object):
+class DiskIO:
     '''
     Simple IO object to wrap disk operations with a custom base location
 
@@ -161,7 +161,7 @@ class DiskIO(object):
         os.removedirs(filepath)
 
 
-class FileWrapper(object):
+class FileWrapper:
     def read(self, size=None):
         raise NotImplementedError
 

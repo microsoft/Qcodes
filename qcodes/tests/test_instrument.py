@@ -18,7 +18,7 @@ class ModelError(Exception):
     pass
 
 
-class AMockModel(object):
+class AMockModel:
     def __init__(self):
         self._gates = [0.0, 0.0, 0.0]
         self._excitation = 0.1

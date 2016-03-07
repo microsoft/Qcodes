@@ -96,7 +96,7 @@ def get_stream_queue():
     return StreamQueue.instance
 
 
-class StreamQueue(object):
+class StreamQueue:
     '''
     Do not instantiate this directly: use get_stream_queue so we only make one.
 
@@ -158,7 +158,7 @@ class StreamQueue(object):
         return out
 
 
-class _SQWriter(object):
+class _SQWriter:
     MIN_READ_TIME = 3
 
     def __init__(self, stream_queue, stream_name):
@@ -200,7 +200,7 @@ class _SQWriter(object):
         pass
 
 
-class ServerManager(object):
+class ServerManager:
     '''
     creates and manages connections to a separate server process
 

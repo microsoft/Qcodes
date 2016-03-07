@@ -1,4 +1,4 @@
-class Metadatable(object):
+class Metadatable:
     def __init__(self, *args, **kwargs):
         self.metadata = {}
         self.load_metadata(kwargs)

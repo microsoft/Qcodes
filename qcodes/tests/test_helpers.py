@@ -38,7 +38,7 @@ class TestIsFunction(TestCase):
         with self.assertRaises(TypeError):
             is_function(f0, -1)
 
-    class AClass(object):
+    class AClass:
         def method_a(self):
             raise RuntimeError('function should not get called')
 

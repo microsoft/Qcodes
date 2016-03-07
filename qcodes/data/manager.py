@@ -18,7 +18,7 @@ def get_data_manager(only_existing=False):
     return DataManager()
 
 
-class NoData(object):
+class NoData:
     '''
     A placeholder object for DataServer to hold
     when there is no loop running.
