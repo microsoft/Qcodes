@@ -4,6 +4,21 @@ BIGSTRING = 1000000000
 BIGINT = int(1e18)
 
 
+def validate_all(*args, context=''):
+    '''
+    takes a list of (validator, value) couplets and tests whether they are
+    all valid, raising ValueError otherwise
+
+    context: keyword-only arg with a string to include in the error message
+        giving the user context for the error
+    '''
+    if context:
+        context = '; ' + context
+
+    for i, (validator, value) in enumerate(args):
+        validator.validate(value, 'argument ' + str(i) + context)
+
+
 def range_str(min_val, max_val, name):
     '''
     utility to represent ranges in Validator repr's
@@ -25,12 +40,20 @@ def range_str(min_val, max_val, name):
 class Validator:
     '''
     base class for all value validators
-    each should have its own constructor, and override is_valid and is_numeric
+    each should have its own constructor, and override:
+
+    validate: function of two args: value, context
+        value is what you're testing
+        context is a string identifying the caller better
+
+        raises an error (TypeError or ValueError) if the value fails
+
+    is_numeric: is this a numeric type (so it can be swept)?
     '''
     def __init__(self):
         raise NotImplementedError
 
-    def is_valid(self, value):
+    def validate(self, value, context=''):
         raise NotImplementedError
 
     is_numeric = False  # is this a numeric type (so it can be swept)?
@@ -41,8 +64,8 @@ class Anything(Validator):
     def __init__(self):
         pass
 
-    def is_valid(self, value):
-        return True
+    def validate(self, value, context=''):
+        pass
 
     is_numeric = True
 
@@ -57,8 +80,10 @@ class Bool(Validator):
     def __init__(self):
         pass
 
-    def is_valid(self, value):
-        return (isinstance(value, bool))
+    def validate(self, value, context=''):
+        if not isinstance(value, bool):
+            raise TypeError(
+                '{} is not Boolean; {}'.format(repr(value), context))
 
     def __repr__(self):
         return '<Boolean>'
@@ -82,9 +107,17 @@ class Strings(Validator):
             raise TypeError('max_length must be a positive integer '
                             'no smaller than min_length')
 
-    def is_valid(self, value):
-        return (isinstance(value, str) and
-                self._min_length <= len(value) <= self._max_length)
+    def validate(self, value, context=''):
+        if not isinstance(value, str):
+            raise TypeError(
+                '{} is not a string; {}'.format(repr(value), context))
+
+        vallen = len(value)
+        if vallen < self._min_length or vallen > self._max_length:
+            raise ValueError(
+                '{} is invalid: length must be between '
+                '{} and {} inclusive; {}'.format(
+                    repr(value), self._min_length, self._max_length, context))
 
     def __repr__(self):
         minv = self._min_length or None
@@ -110,9 +143,16 @@ class Numbers(Validator):
         else:
             raise TypeError('max_value must be a number bigger than min_value')
 
-    def is_valid(self, value):
-        return (isinstance(value, (float, int)) and
-                self._min_value <= value <= self._max_value)
+    def validate(self, value, context=''):
+        if not isinstance(value, (float, int)):
+            raise TypeError(
+                '{} is not an int or float; {}'.format(repr(value), context))
+
+        if not (self._min_value <= value <= self._max_value):
+            raise ValueError(
+                '{} is invalid: must be between '
+                '{} and {} inclusive; {}'.format(
+                    repr(value), self._min_value, self._max_value, context))
 
     is_numeric = True
 
@@ -143,9 +183,16 @@ class Ints(Validator):
             raise TypeError(
                 'max_value must be an integer bigger than min_value')
 
-    def is_valid(self, value):
-        return (isinstance(value, int) and
-                self._min_value <= value <= self._max_value)
+    def validate(self, value, context=''):
+        if not isinstance(value, int):
+            raise TypeError(
+                '{} is not an int; {}'.format(repr(value), context))
+
+        if not (self._min_value <= value <= self._max_value):
+            raise ValueError(
+                '{} is invalid: must be between '
+                '{} and {} inclusive; {}'.format(
+                    repr(value), self._min_value, self._max_value, context))
 
     is_numeric = True
 
@@ -167,11 +214,16 @@ class Enum(Validator):
 
         self._values = set(values)
 
-    def is_valid(self, value):
+    def validate(self, value, context=''):
         try:
-            return value in self._values
-        except TypeError:  # in case of unhashable (mutable) type
-            return False
+            if value not in self._values:
+                raise ValueError('{} is not in {}; {}'.format(
+                    repr(value), repr(self._values), context))
+
+        except TypeError as e:  # in case of unhashable (mutable) type
+            e.args = e.args + ('error looking for {} in {}; {}'.format(
+                repr(value), repr(self._values), context),)
+            raise
 
     def __repr__(self):
         return '<Enum: {}>'.format(repr(self._values))
@@ -202,12 +254,18 @@ class MultiType(Validator):
 
         self._validators = tuple(validators)
 
-    def is_valid(self, value):
+    def validate(self, value, context=''):
+        args = ()
         for v in self._validators:
-            if v.is_valid(value):
-                return True
+            try:
+                v.validate(value, context)
+                return
+            except Exception as e:
+                # collect the args from all validators so you can see why
+                # each one failed
+                args = args + e.args
 
-        return False
+        raise ValueError(*args)
 
     def __repr__(self):
         parts = (repr(v)[1:-1] for v in self._validators)

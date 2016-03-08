@@ -140,7 +140,7 @@ class Instrument(Metadatable, DelegateAttributes):
         and also how you  address it using the shortcut methods:
         instrument.call(func_name, *args) etc.
 
-        see Function for the list of kwargs
+        see Function for the list of kwargs and notes on its limitations.
         '''
         if name in self.functions:
             raise KeyError('Duplicate function name {}'.format(name))
