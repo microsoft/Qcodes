@@ -169,7 +169,7 @@ class TestQcodesProcess(TestCase):
 
             self.assertEqual(self.sq.get(), '')
 
-            procNames = ['<{}, started daemon>'.format(name)
+            procNames = ['<{}>'.format(name)
                          for name in ('p1', 'p2')]
 
             reprs = [repr(p) for p in mp.active_children()]
