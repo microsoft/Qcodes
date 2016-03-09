@@ -12,6 +12,9 @@ from qcodes.instrument.parameter import Parameter
 # TODO remove 8 bits per sample requirement
 # TODO some alazar cards have a different number of channels :(
 
+# TODO tests to do:
+# acquisition that would overflow the board if measurement is not stopped quicmly enough
+# can this be solved by not reposting the buffers?
 
 class AlazarTech_ATS(Instrument):
 
@@ -29,6 +32,7 @@ class AlazarTech_ATS(Instrument):
 
         # TODO is the succes code always 512 (for any board)?
         self._succes = 512
+        self.buffer_list = []
 
     def config(self, clock_source=None, sample_rate=None, clock_edge=None, decimation=None, coupling=None,
                channel_range=None, impedence=None, bwlimit=None, trigger_operation=None,
@@ -160,7 +164,8 @@ class AlazarTech_ATS(Instrument):
 
     def acquire(self, mode=None, samples_per_record=None, records_per_buffer=None, buffers_per_acquisition=None,
                 channel_selection=None, transfer_offset=None, external_startcapture=None, enable_record_headers=None,
-                alloc_buffers=None, fifo_only_streaming=None, interleave_samples=None, get_processed_data=None):
+                alloc_buffers=None, fifo_only_streaming=None, interleave_samples=None, get_processed_data=None,
+                allocated_buffers=None, buffer_timeout = None):
         # region set parameters from args
         if mode is not None:
             self.parameters['mode']._set(mode)
@@ -186,12 +191,19 @@ class AlazarTech_ATS(Instrument):
             self.parameters['interleave_samples']._set(interleave_samples)
         if get_processed_data is not None:
             self.parameters['get_processed_data']._set(get_processed_data)
+        if allocated_buffers is not None:
+            self.parameters['allocated_buffers']._set(allocated_buffers)
+        if buffer_timeout is not None:
+            self.parameters['buffer_timeout']._set(buffer_timeout)
 
         # endregion
 
         if not (self.parameters['mode'].get() == 'TS' or self.parameters['mode'].get() == 'NPT'):
             raise Exception("Only the 'TS' and 'NPT' modes are implemented at this point")
 
+        # -----set final configurations-----
+
+        # Abort any previous measurement
         return_code = self._ATS9870_dll.AlazarAbortAsyncRead(self._handle)
         self._result_handler(error_code=return_code, error_source="AlazarAbortAsyncRead")
 
@@ -205,12 +217,15 @@ class AlazarTech_ATS(Instrument):
         if not bps == 8:
             raise Exception("Only 8 bits per sample supported at this moment")
 
+        # Set record size for NPT mode
         if self.parameters['mode'].get() == 'NPT':
             pretriggersize = 0  # pretriggersize is 0 for NPT always
             post_trigger_size = self.parameters['samples_per_record']._get_byte()
             return_code = self._ATS9870_dll.AlazarSetRecordSize(self._handle, pretriggersize, post_trigger_size)
             self._result_handler(error_code=return_code, error_source="AlazarSetRecordSize")
 
+
+        # set acquisition parameters here for NPT, TS mode
         if self.parameters['channel_selection']._get_byte() == 3:
             number_of_channels = 2
         else:
@@ -267,22 +282,66 @@ class AlazarTech_ATS(Instrument):
         self.parameters['interleave_samples']._set_updated()
         self.parameters['get_processed_data']._set_updated()
 
-        for buf in self.buflist:
+        # create buffers for acquisition
+        self.clear_buffers()
+        for k in range(self.parameters['allocated_buffers']._get_byte()):
+            try:
+                self.buffer_list.append(Buffer(bps, samples_per_buffer, number_of_channels))
+            except:
+                self.clear_buffers()
+                raise
+
+        # post buffers to Alazar
+        for buf in self.buffer_list:
             return_code = self._ATS9870_dll.AlazarPostAsyncBuffer(self._handle, buf.addr, buf.size_bytes)
             self._result_handler(error_code=return_code, error_source="AlazarPostAsyncBuffer")
+        self.parameters['allocated_buffers']._set_updated()
 
+        # -----start capture here-----
+
+        # call the startcapture method
         return_code = self._ATS9870_dll.AlazarStartCapture(self._handle)
         self._result_handler(error_code=return_code, error_source="AlazarStartCapture")
 
-        while BuffersCompleted < BuffersPerAcquisition:
-            return_code = self._ATS9870_dll.AlazarWaitAsyncBufferComplete(self._handle, buf.addr, self.waittimeout)
+        # buffer handling from acquisition
+        buffers_completed = 0
+        buffer_timeout = self.parameters['buffer_timeout']._get_byte()
+        self.parameters['buffer_timeout']._set_updated()
+
+        buffer_recycling = False
+        if self.parameters['buffers_per_acquisition']._get_byte()> self.parameters['allocated_buffers']._get_byte():
+            buffer_recycling = True
+
+        while buffers_completed < self.parameters['buffers_per_acquisition']._get_byte():
+            buf = self.buflist[buffers_completed % self.parameters['allocated_buffers']._get_byte()]
+
+            return_code = self._ATS9870_dll.AlazarWaitAsyncBufferComplete(self._handle, buf.addr, buffer_timeout)
             self._result_handler(error_code=return_code, error_source="AlazarWaitAsyncBufferComplete")
 
-            return_code = self._ATS9870_dll.AlazarPostAsyncBuffer(self._handle, buf.addr, buf.size_bytes)
-            self._result_handler(error_code=return_code, error_source="AlazarPostAsyncBuffer")
+            # if buffers must be recycled, extract data and repost them
+            # otherwise continue to next buffer
+            if buffer_recycling:
+                # TODO handle data here
 
+                return_code = self._ATS9870_dll.AlazarPostAsyncBuffer(self._handle, buf.addr, buf.size_bytes)
+                self._result_handler(error_code=return_code, error_source="AlazarPostAsyncBuffer")
+            buffers_completed += 1
+
+        # stop measurement here
         return_code = self._ATS9870_dll.AlazarAbortAsyncRead(self._handle)
         self._result_handler(error_code=return_code, error_source="AlazarAbortAsyncRead")
+
+        # -----cleanup here-----
+        # extract data if not yet done
+        if not buffer_recycling:
+            # TODO handle data here
+            pass
+
+        # free up memory
+        self.clear_buffers()
+
+        #return result
+        return None
 
     def _result_handler(self, error_code=0, error_source=""):
         # region error codes
@@ -334,6 +393,11 @@ class AlazarTech_ATS(Instrument):
             if error_code not in error_codes:
                 raise KeyError(error_source+" raised unknown error "+str(error_code))
             raise Exception(error_source+" raised "+str(error_code)+": "+error_codes[error_code])
+
+    def clear_buffers(self):
+        for b in self.buffer_list:
+            b.free_mem()
+        self.buffer_list = []
 
 
 class AlazarParameter(Parameter):
