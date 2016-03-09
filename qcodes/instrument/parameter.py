@@ -38,15 +38,22 @@ import time
 import asyncio
 import logging
 
-from qcodes.utils.helpers import permissive_range, wait_secs
+from qcodes.utils.helpers import (permissive_range, wait_secs,
+                                  DelegateAttributes)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import syncable_command, NoCommandError
 from qcodes.utils.validators import Validator, Numbers, Ints, Enum
 from qcodes.instrument.sweep_values import SweepFixedValues
 
 
-def no_func(*args, **kwargs):
-    raise NotImplementedError('no function defined')
+def no_setter(*args, **kwargs):
+    raise NotImplementedError('This Parameter has no setter defined.')
+
+
+def no_getter(*args, **kwargs):
+    raise NotImplementedError(
+        'This Parameter has no getter, use .get_latest to get the most recent '
+        'set value.')
 
 
 class Parameter(Metadatable):
@@ -71,6 +78,12 @@ class Parameter(Metadatable):
 
     Because .set only supports a single value, if a Parameter is both
     gettable AND settable, .get should return a single value too (case 1)
+
+    Parameters have a .get_latest method that simply returns the most recent
+    set or measured value. This can either be called ( param.get_latest() )
+    or used in a Loop as if it were a (gettable-only) parameter itself:
+        Loop(...).each(param.get_latest)
+
 
     The constructor arguments change somewhat between these cases:
 
@@ -124,18 +137,22 @@ class Parameter(Metadatable):
                  vals=None, **kwargs):
         super().__init__(**kwargs)
 
-        if name is not None:
+        if names is not None:
+            # check for names first - that way you can provide both name
+            # AND names for instrument parameters - name is how you get the
+            # object (from the parameters dict or the delegated attributes),
+            # and names are the items it returns
+            self.names = names
+            self.labels = names if labels is None else names
+            self.units = units if units is not None else ['']*len(names)
+
+        elif name is not None:
             self.name = name
             self.label = name if label is None else label
             self.units = units if units is not None else ''
 
             # vals / validate only applies to simple single-value parameters
             self._set_vals(vals)
-
-        elif names is not None:
-            self.names = names
-            self.labels = names if labels is None else names
-            self.units = units if units is not None else ['']*len(names)
 
         else:
             raise ValueError('either name or names is required')
@@ -150,6 +167,31 @@ class Parameter(Metadatable):
             self.setpoint_names = setpoint_names
             self.setpoint_labels = setpoint_labels
 
+        # record of latest value and when it was set or measured
+        # what exactly this means is different for different subclasses
+        # but they all use the same attributes so snapshot is consistent.
+        self._last_value = None
+        self._last_ts = None
+        self.get_latest = GetLatest(self)
+
+    def snapshot_base(self):
+        '''
+        json state of the Parameter
+        '''
+        if self._last_ts is None:
+            ts = None
+        else:
+            ts = self._last_ts.strftime('%Y-%m-%d %H:%M:%S')
+
+        return {
+            'value': self._last_value,
+            'ts': ts
+        }
+
+    def _save_val(self, value):
+        self._last_value = value
+        self._last_ts = datetime.now()
+
     def _set_vals(self, vals):
         if vals is None:
             self._vals = Numbers()
@@ -160,11 +202,15 @@ class Parameter(Metadatable):
 
     def validate(self, value):
         '''
-        raises a ValueError if this value is not allowed for this Parameter
+        raises an error if this value is not allowed for this Parameter
         '''
-        if not self._vals.is_valid(value):
-            raise ValueError(
-                '{} is not a valid value for {}'.format(value, self.name))
+        if hasattr(self, '_instrument'):
+            context = (getattr(self._instrument, 'name', '') or
+                       str(self._instrument.__class__)) + '.' + self.name
+        else:
+            context = self.name
+
+        self._vals.validate(value, 'Parameter: ' + context)
 
     def __getitem__(self, keys):
         '''
@@ -206,8 +252,6 @@ class StandardParameter(Parameter):
         of set_cmd and async_set_cmd should do their own parsing
         See also val_mapping
 
-    parse_function: DEPRECATED - use get_parser instead
-
     val_mapping: a bidirectional map from data/readable values to
         instrument codes, expressed as a dict {data_val: instrument_code}
         For example, if the instrument uses '0' to mean 1V and '1' to mean
@@ -228,10 +272,9 @@ class StandardParameter(Parameter):
     '''
     def __init__(self, name, instrument=None,
                  get_cmd=None, async_get_cmd=None, get_parser=None,
-                 parse_function=None, val_mapping=None,
                  set_cmd=None, async_set_cmd=None, set_parser=None,
-                 sweep_step=None, sweep_delay=None, max_val_age=3600,
-                 vals=None, **kwargs):
+                 sweep_step=None, sweep_delay=None, max_sweep_delay=None,
+                 max_val_age=3600, vals=None, val_mapping=None, **kwargs):
         # handle val_mapping before super init because it impacts
         # vals / validation in the base class
         if val_mapping:
@@ -254,37 +297,19 @@ class StandardParameter(Parameter):
         # normally only used by set with a sweep, to avoid
         # having to call .get() for every .set()
         self._max_val_age = 0
-        self._last_value = None
-        self._last_ts = None
 
         self.has_get = False
         self.has_set = False
 
-        # push deprecated parse_function argument to get_parser
-        if get_parser is None:
-            get_parser = parse_function
-
         self._set_get(get_cmd, async_get_cmd, get_parser)
         self._set_set(set_cmd, async_set_cmd, set_parser)
-        self.set_sweep(sweep_step, sweep_delay, max_val_age)
+        self.set_sweep(sweep_step, sweep_delay,
+                       max_sweep_delay=max_sweep_delay,
+                       max_val_age=max_val_age)
 
         if not (self.has_get or self.has_set):
             raise NoCommandError('neither set nor get cmd found in' +
                                  ' Parameter {}'.format(self.name))
-
-    def snapshot_base(self):
-        '''
-        json state of the Parameter
-        '''
-        snap = {}
-        if self._last_value is not None:
-            snap['value'] = self._last_value
-            snap['ts'] = self._last_ts.strftime('%Y-%m-%d %H:%M:%S')
-        return snap
-
-    def _save_val(self, value):
-        self._last_value = value
-        self._last_ts = datetime.now()
 
     def get(self):
         value = self._get()
@@ -302,9 +327,9 @@ class StandardParameter(Parameter):
             param_count=0, cmd=get_cmd, acmd=async_get_cmd,
             exec_str=self._instrument.ask if self._instrument else None,
             aexec_str=self._instrument.ask_async if self._instrument else None,
-            output_parser=get_parser, no_cmd_function=no_func)
+            output_parser=get_parser, no_cmd_function=no_getter)
 
-        if self._get is not no_func:
+        if self._get is not no_getter:
             self.has_get = True
 
     def _set_set(self, set_cmd, async_set_cmd, set_parser):
@@ -315,9 +340,9 @@ class StandardParameter(Parameter):
             exec_str=self._instrument.write if self._instrument else None,
             aexec_str=(self._instrument.write_async if self._instrument
                        else None),
-            input_parser=set_parser, no_cmd_function=no_func)
+            input_parser=set_parser, no_cmd_function=no_setter)
 
-        if self._set is not no_func:
+        if self._set is not no_setter:
             self.has_set = True
 
     def _validate_and_set(self, value):
@@ -352,15 +377,29 @@ class StandardParameter(Parameter):
         # drop the initial value, we're already there
         return permissive_range(start_value, value, self._sweep_step)[1:]
 
+    def _update_sweep_ts(self, step_clock):
+        # calculate the delay time to the *max* delay,
+        # then take off up to the tolerance
+        tolerance = self._sweep_delay_tolerance
+        step_clock += self._sweep_delay
+        remainder = wait_secs(step_clock + tolerance)
+        if remainder <= tolerance:
+            # don't allow extra delays to compound
+            step_clock = time.perf_counter()
+            remainder = 0
+        else:
+            remainder -= tolerance
+        return step_clock, remainder
+
     def _validate_and_sweep(self, value):
         self.validate(value)
-        step_finish_ts = datetime.now()
+        step_clock = time.perf_counter()
 
         for step_val in self._sweep_steps(value):
             self._set(step_val)
             self._save_val(step_val)
-            step_finish_ts += timedelta(seconds=self._sweep_delay)
-            time.sleep(wait_secs(step_finish_ts))
+            step_clock, remainder = self._update_sweep_ts(step_clock)
+            time.sleep(remainder)
 
         self._set(value)
         self._save_val(value)
@@ -368,23 +407,33 @@ class StandardParameter(Parameter):
     @asyncio.coroutine
     def _validate_and_sweep_async(self, value):
         self.validate(value)
-        step_finish_ts = datetime.now()
+        step_clock = time.perf_counter()
 
         for step_val in self._sweep_steps(value):
             yield from self._set_async(step_val)
             self._save_val(step_val)
-            step_finish_ts += timedelta(seconds=self._sweep_delay)
-            yield from asyncio.sleep(wait_secs(step_finish_ts))
+            step_clock, remainder = self._update_sweep_ts(step_clock)
+            yield from asyncio.sleep(remainder)
 
         yield from self._set_async(value)
         self._save_val(value)
 
-    def set_sweep(self, sweep_step, sweep_delay, max_val_age=None):
+    def set_sweep(self, sweep_step, sweep_delay, max_sweep_delay=None,
+                  max_val_age=None):
         '''
         configure this Parameter to set using a stair-step sweep
 
         This means a single .set call will generate many instrument writes
         so that the value only changes at most sweep_step in a time sweep_delay
+
+        sweep_step: the biggest change in value allowed at once
+
+        sweep_delay: the target time between steps. The actual time will not be
+            shorter than this, but may be longer if the underlying set call
+            takes longer than this time.
+
+        max_sweep_delay: if given, the longest time allowed between steps (due
+            to a slow set call, presumably) before we emit a warning
 
         max_val_age: max time (in seconds) to trust a saved value. Important
         since we need to know what value we're starting from in this sweep.
@@ -409,6 +458,17 @@ class StandardParameter(Parameter):
 
             self._sweep_step = sweep_step
             self._sweep_delay = sweep_delay
+
+            if max_sweep_delay is not None:
+                if not isinstance(max_sweep_delay, (int, float)):
+                    raise TypeError(
+                        'max_sweep_delay must be a positive number')
+                if max_sweep_delay < sweep_delay:
+                    raise ValueError(
+                        'max_sweep_delay must not be shorter than sweep_delay')
+                self._sweep_delay_tolerance = max_sweep_delay - sweep_delay
+            else:
+                self._sweep_delay_tolerance = 0
 
             # assign the setters with a sweep
             self.set = self._validate_and_sweep
@@ -444,20 +504,47 @@ class ManualParameter(Parameter):
         super().__init__(name=name, **kwargs)
         if initial_value is not None:
             self.validate(initial_value)
-
-        self._value = initial_value
+            self._save_val(initial_value)
 
     def set(self, value):
         self.validate(value)
-        self._value = value
+        self._save_val(value)
 
     @asyncio.coroutine
     def set_async(self, value):
         return self.set(value)
 
     def get(self):
-        return self._value
+        return self._last_value
 
     @asyncio.coroutine
     def get_async(self):
+        return self.get()
+
+
+class GetLatest(DelegateAttributes):
+    '''
+    wrapper for a Parameter that just returns the last set or measured value
+    stored in the Parameter itself.
+
+    Can be called:
+        param.get_latest()
+
+    Or used as if it were a gettable-only parameter itself:
+        Loop(...).each(param.get_latest)
+    '''
+    def __init__(self, parameter):
+        self.parameter = parameter
+
+    delegate_attr_objects = ['parameter']
+    omit_delegate_attrs = ['set', 'set_async']
+
+    def get(self):
+        return self.parameter._last_value
+
+    @asyncio.coroutine
+    def get_async(self):
+        return self.get()
+
+    def __call__(self):
         return self.get()

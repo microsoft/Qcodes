@@ -6,10 +6,14 @@ from traceback import print_exc
 
 from .helpers import in_notebook
 
+MP_ERR = 'context has already been set'
+
 
 def set_mp_method(method, force=False):
     '''
     an idempotent wrapper for multiprocessing.set_start_method
+    The most important use of this is to force Windows behavior
+    on a Mac or Linux: set_mp_method('spawn')
     args are the same:
 
     method: one of:
@@ -22,10 +26,9 @@ def set_mp_method(method, force=False):
         raise the error if you *don't* force *and* the context changes
     '''
     try:
-        # force windows multiprocessing behavior on mac
-        mp.set_start_method(method)
+        mp.set_start_method(method, force=force)
     except RuntimeError as err:
-        if err.args != ('context has already been set', ):
+        if err.args != (MP_ERR, ):
             raise
 
     mp_method = mp.get_start_method()
@@ -69,7 +72,9 @@ class QcodesProcess(mp.Process):
             # it disconnects the stream partway through printing.
             print_exc()
         finally:
-            self.stream_queue.disconnect()
+            if (self.stream_queue and
+                    self.stream_queue.initial_streams is not None):
+                self.stream_queue.disconnect()
 
     def __repr__(self):
         cname = self.__class__.__name__
@@ -112,14 +117,23 @@ class StreamQueue(object):
         self.last_read_ts = mp.Value('d', time.time())
         self._last_stream = None
         self._on_new_line = True
+        self.lock = mp.RLock()
+        self.initial_streams = None
 
     def connect(self, process_name):
+        if self.initial_streams is not None:
+            raise RuntimeError('StreamQueue is already connected')
+
+        self.initial_streams = (sys.stdout, sys.stderr)
+
         sys.stdout = _SQWriter(self, process_name)
         sys.stderr = _SQWriter(self, process_name + ' ERR')
 
     def disconnect(self):
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
+        if self.initial_streams is None:
+            raise RuntimeError('StreamQueue is not connected')
+        sys.stdout, sys.stderr = self.initial_streams
+        self.initial_streams = None
 
     def get(self):
         out = ''
@@ -167,7 +181,12 @@ class _SQWriter(object):
                     # caller already included a newline.
                     if termstr[-1] == '\n':
                         termstr = termstr[:-1]
-                    print(termstr, file=sys.__stdout__)
+                    try:
+                        print(termstr, file=sys.__stdout__)
+                    except ValueError:  # pragma: no cover
+                        # ValueError: underlying buffer has been detached
+                        # this may just occur in testing on Windows, not sure.
+                        pass
         except:
             # don't want to get an infinite loop if there's something wrong
             # with the queue - put the regular streams back before handling

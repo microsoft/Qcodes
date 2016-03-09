@@ -315,7 +315,7 @@ class DataSet(DelegateAttributes):
                 # (at least first and last pt)
                 live_data = self.data_manager.ask('get_data').arrays
                 for array_id in self.arrays:
-                    self.arrays[array_id].data = live_data[array_id].data
+                    self.arrays[array_id].ndarray = live_data[array_id].ndarray
 
                 measuring = self.data_manager.ask('get_measuring')
                 if not measuring:

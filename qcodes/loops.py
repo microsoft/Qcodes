@@ -335,7 +335,7 @@ class ActiveLoop(object):
                 label = vals.label
 
             # extract a copy of the numpy array
-            vals = np.array(vals.data)
+            vals = np.array(vals.ndarray)
         else:
             # turn any sequence into a (new) numpy array
             vals = np.array(vals)
@@ -534,13 +534,13 @@ class ActiveLoop(object):
             delay = self.delay
 
     def _wait(self, delay):
-        finish_datetime = datetime.now() + timedelta(seconds=delay)
+        finish_clock = time.perf_counter() + delay
 
         if self._monitor:
-            self._monitor.call(finish_by=finish_datetime)
+            self._monitor.call(finish_by=finish_clock)
 
         self._check_signal()
-        time.sleep(wait_secs(finish_datetime))
+        time.sleep(wait_secs(finish_clock))
 
 
 class Task(object):

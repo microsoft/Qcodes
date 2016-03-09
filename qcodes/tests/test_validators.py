@@ -1,8 +1,8 @@
 from unittest import TestCase
 import math
 
-from qcodes.utils.validators import (Validator, Anything, Strings, Numbers,
-                                     Ints, Enum, MultiType)
+from qcodes.utils.validators import (Validator, Anything, Bool, Strings,
+                                     Numbers, Ints, Enum, MultiType)
 
 
 class AClass(object):
@@ -25,10 +25,10 @@ class TestBaseClass(TestCase):
             pass
 
     def test_broken(self):
-        # nor can you call is_valid without overriding it in a subclass
+        # nor can you call validate without overriding it in a subclass
         b = self.BrokenValidator()
         with self.assertRaises(NotImplementedError):
-            b.is_valid(0)
+            b.validate(0)
 
 
 class TestAnything(TestCase):
@@ -38,7 +38,7 @@ class TestAnything(TestCase):
                   {'a': 1, 'b': 2}, {}, set([1, 2, 3]), a, range(10),
                   True, False, float("nan"), float("inf"), b'good',
                   AClass, AClass(), a_func]:
-            self.assertTrue(a.is_valid(v))
+            a.validate(v)
 
         self.assertEqual(repr(a), '<Anything>')
 
@@ -48,6 +48,27 @@ class TestAnything(TestCase):
 
         with self.assertRaises(TypeError):
             Anything(values=[1, 2, 3])
+
+
+class TestBool(TestCase):
+    bools = [True, False]
+    not_bools = [0, 1, 10, -1, 100, 1000000, int(-1e15), int(1e15),
+                 0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
+                 math.pi, math.e, '', None, float("nan"), float("inf"),
+                 -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',
+                 AClass, AClass(), a_func]
+
+    def test_bool(self):
+        b = Bool()
+
+        for v in self.bools:
+            b.validate(v)
+
+        for v in self.not_bools:
+            with self.assertRaises(TypeError):
+                b.validate(v)
+
+        self.assertEqual(repr(b), '<Boolean>')
 
 
 class TestStrings(TestCase):
@@ -67,10 +88,11 @@ class TestStrings(TestCase):
         s = Strings()
 
         for v in self.strings:
-            self.assertTrue(s.is_valid(v))
+            s.validate(v)
 
         for v in self.not_strings:
-            self.assertFalse(s.is_valid(v))
+            with self.assertRaises(TypeError):
+                s.validate(v)
 
         self.assertEqual(repr(s), '<Strings>')
 
@@ -78,10 +100,15 @@ class TestStrings(TestCase):
         for min_len in [0, 1, 5, 10, 100]:
             s = Strings(min_length=min_len)
             for v in self.strings:
-                self.assertEqual(s.is_valid(v), len(v) >= min_len)
+                if len(v) >= min_len:
+                    s.validate(v)
+                else:
+                    with self.assertRaises(ValueError):
+                        s.validate(v)
 
         for v in self.not_strings:
-            self.assertFalse(s.is_valid(v))
+            with self.assertRaises(TypeError):
+                s.validate(v)
 
         self.assertEqual(repr(s), '<Strings len>=100>')
 
@@ -89,10 +116,15 @@ class TestStrings(TestCase):
         for max_len in [1, 5, 10, 100]:
             s = Strings(max_length=max_len)
             for v in self.strings:
-                self.assertEqual(s.is_valid(v), len(v) <= max_len)
+                if len(v) <= max_len:
+                    s.validate(v)
+                else:
+                    with self.assertRaises(ValueError):
+                        s.validate(v)
 
         for v in self.not_strings:
-            self.assertFalse(s.is_valid(v))
+            with self.assertRaises(TypeError):
+                s.validate(v)
 
         self.assertEqual(repr(s), '<Strings len<=100>')
 
@@ -100,10 +132,15 @@ class TestStrings(TestCase):
         s = Strings(1, 10)
 
         for v in self.strings:
-            self.assertEqual(s.is_valid(v), 1 <= len(v) <= 10)
+            if 1 <= len(v) <= 10:
+                    s.validate(v)
+            else:
+                with self.assertRaises(ValueError):
+                    s.validate(v)
 
         for v in self.not_strings:
-            self.assertFalse(s.is_valid(v))
+            with self.assertRaises(TypeError):
+                s.validate(v)
 
         self.assertEqual(repr(s), '<Strings 1<=len<=10>')
 
@@ -138,44 +175,73 @@ class TestNumbers(TestCase):
                True, False,
                # warning: +/- inf are allowed if max & min are not specified!
                -float("inf"), float("inf")]
-    not_numbers = ['', None, float("nan"), '1', [], {}, [1, 2], {1: 1}, b'good',
-                   AClass, AClass(), a_func]
+    not_numbers = ['', None, '1', [], {}, [1, 2], {1: 1},
+                   b'good', AClass, AClass(), a_func]
 
     def test_unlimited(self):
         n = Numbers()
 
         for v in self.numbers:
-            self.assertTrue(n.is_valid(v))
+            n.validate(v)
 
         for v in self.not_numbers:
-            self.assertFalse(n.is_valid(v))
+            with self.assertRaises(TypeError):
+                n.validate(v)
+
+        # special case - nan now raises a ValueError rather than a TypeError
+        with self.assertRaises(ValueError):
+            n.validate(float('nan'))
 
     def test_min(self):
         for min_val in [-1e20, -1, -0.1, 0, 0.1, 10]:
             n = Numbers(min_value=min_val)
             for v in self.numbers:
-                self.assertEqual(n.is_valid(v), v >= min_val)
+                if v >= min_val:
+                    n.validate(v)
+                else:
+                    with self.assertRaises(ValueError):
+                        n.validate(v)
 
         for v in self.not_numbers:
-            self.assertFalse(n.is_valid(v))
+            with self.assertRaises(TypeError):
+                n.validate(v)
+
+        with self.assertRaises(ValueError):
+            n.validate(float('nan'))
 
     def test_max(self):
         for max_val in [-1e20, -1, -0.1, 0, 0.1, 10]:
             n = Numbers(max_value=max_val)
             for v in self.numbers:
-                self.assertEqual(n.is_valid(v), v <= max_val)
+                if v <= max_val:
+                    n.validate(v)
+                else:
+                    with self.assertRaises(ValueError):
+                        n.validate(v)
 
         for v in self.not_numbers:
-            self.assertFalse(n.is_valid(v))
+            with self.assertRaises(TypeError):
+                n.validate(v)
+
+        with self.assertRaises(ValueError):
+            n.validate(float('nan'))
 
     def test_range(self):
         n = Numbers(0.1, 3.5)
 
         for v in self.numbers:
-            self.assertEqual(n.is_valid(v), 0.1 <= v <= 3.5)
+            if 0.1 <= v <= 3.5:
+                n.validate(v)
+            else:
+                with self.assertRaises(ValueError):
+                    n.validate(v)
 
         for v in self.not_numbers:
-            self.assertFalse(n.is_valid(v))
+            with self.assertRaises(TypeError):
+                n.validate(v)
+
+        with self.assertRaises(ValueError):
+            n.validate(float('nan'))
 
         self.assertEqual(repr(n), '<Numbers 0.1<=v<=3.5>')
 
@@ -200,44 +266,61 @@ class TestInts(TestCase):
             # isinstance(v, bool)
             True, False]
     not_ints = [0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
-                math.pi, math.e, '', None, float("nan"), float("inf"), -float("inf"), '1',
-                [], {}, [1, 2], {1: 1}, b'good', AClass, AClass(), a_func]
+                math.pi, math.e, '', None, float("nan"), float("inf"),
+                -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',
+                AClass, AClass(), a_func]
 
     def test_unlimited(self):
         n = Ints()
 
         for v in self.ints:
-            self.assertTrue(n.is_valid(v))
+            n.validate(v)
 
         for v in self.not_ints:
-            self.assertFalse(n.is_valid(v))
+            with self.assertRaises(TypeError):
+                n.validate(v)
 
     def test_min(self):
         for min_val in self.ints:
             n = Ints(min_value=min_val)
             for v in self.ints:
-                self.assertEqual(n.is_valid(v), v >= min_val)
+                if v >= min_val:
+                    n.validate(v)
+                else:
+                    with self.assertRaises(ValueError):
+                        n.validate(v)
 
         for v in self.not_ints:
-            self.assertFalse(n.is_valid(v))
+            with self.assertRaises(TypeError):
+                n.validate(v)
 
     def test_max(self):
         for max_val in self.ints:
             n = Ints(max_value=max_val)
             for v in self.ints:
-                self.assertEqual(n.is_valid(v), v <= max_val)
+                if v <= max_val:
+                    n.validate(v)
+                else:
+                    with self.assertRaises(ValueError):
+                        n.validate(v)
 
         for v in self.not_ints:
-            self.assertFalse(n.is_valid(v))
+            with self.assertRaises(TypeError):
+                n.validate(v)
 
     def test_range(self):
         n = Ints(0, 10)
 
         for v in self.ints:
-            self.assertEqual(n.is_valid(v), 0 <= v <= 10)
+            if 0 <= v <= 10:
+                    n.validate(v)
+            else:
+                with self.assertRaises(ValueError):
+                    n.validate(v)
 
         for v in self.not_ints:
-            self.assertFalse(n.is_valid(v))
+            with self.assertRaises(TypeError):
+                n.validate(v)
 
         self.assertEqual(repr(n), '<Ints 0<=v<=10>')
         self.assertTrue(n.is_numeric)
@@ -272,10 +355,11 @@ class TestEnum(TestCase):
             e = Enum(*enum)
 
             for v in enum:
-                self.assertTrue(e.is_valid(v))
+                e.validate(v)
 
             for v in [22, 'bad data', [44, 55]]:
-                self.assertFalse(e.is_valid(v))
+                with self.assertRaises((ValueError, TypeError)):
+                    e.validate(v)
 
             self.assertEqual(repr(e), '<Enum: {}>'.format(repr(set(enum))))
 
@@ -294,11 +378,12 @@ class TestMultiType(TestCase):
         m = MultiType(Strings(2, 4), Ints(10, 1000))
 
         for v in [10, 11, 123, 1000, 'aa', 'mop', 'FRED']:
-            self.assertTrue(m.is_valid(v))
+            m.validate(v)
 
         for v in [9, 1001, 'Q', 'Qcode', None, 100.0, b'nice', [], {},
                   a_func, AClass, AClass(), True, False]:
-            self.assertFalse(m.is_valid(v))
+            with self.assertRaises(ValueError):
+                m.validate(v)
 
         self.assertEqual(
             repr(m), '<MultiType: Strings 2<=len<=4, Ints 10<=v<=1000>')

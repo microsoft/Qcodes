@@ -1,12 +1,17 @@
 import asyncio
 from unittest import TestCase
 from datetime import datetime, timedelta
+import time
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
+from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.sweep_values import SweepValues
 from qcodes.instrument.parameter import ManualParameter
+
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
 from qcodes.utils.sync_async import wait_for_async, NoCommandError
+from qcodes.utils.helpers import LogCapture
 
 
 class ModelError(Exception):
@@ -59,6 +64,55 @@ class AMockModel(object):
         return '{:.3f}'.format(v)
 
 
+class TestParamConstructor(TestCase):
+    def test_name_s(self):
+        p = Parameter('simple')
+        self.assertEqual(p.name, 'simple')
+
+        with self.assertRaises(ValueError):
+            # you need a name of some sort
+            Parameter()
+
+        # or names
+        names = ['H1', 'L1']
+        p = Parameter(names=names)
+        self.assertEqual(p.names, names)
+        self.assertFalse(hasattr(p, 'name'))
+
+        # or both, that's OK too.
+        names = ['Peter', 'Paul', 'Mary']
+        p = Parameter(name='complex', names=names)
+        self.assertEqual(p.names, names)
+        # TODO: below seems wrong actually - we should let a parameter have
+        # a simple name even if it has a names array. But then we need to
+        # check everywhere this is used, and make sure everyone who cares
+        # about it looks for names first.
+        self.assertFalse(hasattr(p, 'name'))
+
+        size = 10
+        setpoints = 'we dont check the form of this until later'
+        setpoint_names = 'we dont check this either'
+        setpoint_labels = 'nor this'
+        p = Parameter('makes_array', size=size, setpoints=setpoints,
+                      setpoint_names=setpoint_names,
+                      setpoint_labels=setpoint_labels)
+        self.assertEqual(p.size, size)
+        self.assertFalse(hasattr(p, 'sizes'))
+        self.assertEqual(p.setpoints, setpoints)
+        self.assertEqual(p.setpoint_names, setpoint_names)
+        self.assertEqual(p.setpoint_labels, setpoint_labels)
+
+        sizes = [2, 3]
+        p = Parameter('makes arrays', sizes=sizes, setpoints=setpoints,
+                      setpoint_names=setpoint_names,
+                      setpoint_labels=setpoint_labels)
+        self.assertEqual(p.sizes, sizes)
+        self.assertFalse(hasattr(p, 'size'))
+        self.assertEqual(p.setpoints, setpoints)
+        self.assertEqual(p.setpoint_names, setpoint_names)
+        self.assertEqual(p.setpoint_labels, setpoint_labels)
+
+
 class TestParameters(TestCase):
     def setUp(self):
         self.model = AMockModel()
@@ -92,14 +146,60 @@ class TestParameters(TestCase):
         self.meter.add_parameter('amplitude', get_cmd='ampl?',
                                  get_parser=float)
         self.meter.add_function('echo', call_cmd='echo {:.2f}?',
-                                parameters=[Numbers(0, 1000)],
+                                args=[Numbers(0, 1000)],
                                 return_parser=float)
 
         self.init_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+    def slow_neg_set(self, val):
+        if val < 0:
+            time.sleep(0.05)
+        self.gates.chan0.set(val)
+
+    def test_slow_set(self):
+        self.gates.add_parameter('chan0slow', get_cmd='c0?',
+                                 set_cmd=self.slow_neg_set, get_parser=float,
+                                 vals=Numbers(-10, 10), sweep_step=0.2,
+                                 sweep_delay=0.01)
+        self.gates.add_parameter('chan0slow2', get_cmd='c0?',
+                                 set_cmd=self.slow_neg_set, get_parser=float,
+                                 vals=Numbers(-10, 10), sweep_step=0.2,
+                                 sweep_delay=0.01, max_sweep_delay=0.02)
+        self.gates.add_parameter('chan0slow3', get_cmd='c0?',
+                                 set_cmd=self.slow_neg_set, get_parser=float,
+                                 vals=Numbers(-10, 10), sweep_step=0.2,
+                                 sweep_delay=0.01, max_sweep_delay=0.06)
+
+        for param, logcount in (('chan0slow', 2), ('chan0slow2', 2),
+                                ('chan0slow3', 0)):
+            self.gates.chan0.set(-0.5)
+
+            with LogCapture() as s:
+                self.gates.set(param, 0.5)
+
+            logs = s.getvalue().split('\n')[:-1]
+            s.close()
+
+            self.assertEqual(len(logs), logcount, logs)
+            for line in logs:
+                self.assertTrue(line.startswith('negative delay'), line)
+
     def check_ts(self, ts_str):
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         self.assertTrue(self.init_ts <= ts_str <= now)
+
+    def test_instances(self):
+        for instrument in [self.gates, self.source, self.meter]:
+            self.assertIn(instrument, self.gates.instances())
+
+        # somehow instances never go away... there are always 3
+        # extra references to every instrument object, so del doesn't
+        # work. I guess for this reason, instrument tests should take
+        # the *last* instance to test.
+        # instancelen = len(self.gates.instances())
+
+        # del self.source
+        # self.assertEqual(len(self.gates.instances()), instancelen - 1)
 
     def test_mock_instrument(self):
         gates, source, meter = self.gates, self.source, self.meter
@@ -119,9 +219,9 @@ class TestParameters(TestCase):
         # errors trying to set (or validate) invalid param values
         # put here so we ensure that these errors don't make it to
         # the history (ie they don't result in hardware commands)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             gates.set('chan1', '1')
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             gates.parameters['chan1'].validate('1')
 
         # change one param at a time
@@ -165,15 +265,20 @@ class TestParameters(TestCase):
 
         # test functions
         self.assertEqual(meter.call('echo', 1.2345), 1.23)  # model returns .2f
+        # too many ways to do this...
+        self.assertEqual(meter.echo.call(1.2345), 1.23)
+        self.assertEqual(meter.echo(1.2345), 1.23)
+        self.assertEqual(meter['echo'].call(1.2345), 1.23)
+        self.assertEqual(meter['echo'](1.2345), 1.23)
         with self.assertRaises(TypeError):
             meter.call('echo', 1, 2)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             meter.call('echo', '1')
 
         # validating before actually trying to call
         with self.assertRaises(TypeError):
             meter.functions['echo'].validate(1, 2)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             meter.functions['echo'].validate('1')
         gates.call('reset')
         self.assertEqual(gates.get('chan0'), 0)
@@ -227,6 +332,19 @@ class TestParameters(TestCase):
         with self.assertRaises(TypeError):
             gates.add_parameter('fugacity', set_cmd='f {:.4f}', vals=[1, 2, 3])
 
+    def check_set_amplitude2(self, val, log_count, history_count):
+        source = self.source
+        with LogCapture() as s:
+            source.amplitude2.set(val)
+
+        logs = s.getvalue().split('\n')[:-1]
+        s.close()
+
+        self.assertEqual(len(logs), log_count, logs)
+        for line in logs:
+            self.assertIn('cannot sweep', line.lower())
+        self.assertEqual(len(source.history), history_count)
+
     def test_sweep_steps_edge_case(self):
         # MultiType with sweeping is weird - not sure why one would do this,
         # but we should handle it
@@ -236,14 +354,20 @@ class TestParameters(TestCase):
                              vals=MultiType(Numbers(0, 1), Strings()),
                              sweep_step=0.2, sweep_delay=0.005)
         self.assertEqual(len(source.history), 0)
-        source.set('amplitude2', 'Off')
-        self.assertEqual(len(source.history), 2)  # get then set
-        source.set('amplitude2', 0.2)
-        self.assertEqual(len(source.history), 3)  # single set
-        source.set('amplitude2', 0.8)  # num -> num is the only real sweep
-        self.assertEqual(len(source.history), 6)  # 3-step sweep
-        source.set('amplitude2', 'Off')
-        self.assertEqual(len(source.history), 7)  # single set
+
+        # 2 history items - get then set, and one warning (cannot sweep
+        # number to string value)
+        self.check_set_amplitude2('Off', log_count=1, history_count=2)
+
+        # one more history item - single set, and one warning (cannot sweep
+        # string to number)
+        self.check_set_amplitude2(0.2, log_count=1, history_count=3)
+
+        # the only real sweep (0.2 to 0.8) adds 3 set's to history and no logs
+        self.check_set_amplitude2(0.8, log_count=0, history_count=6)
+
+        # single set added to history, and another sweep warning num->string
+        self.check_set_amplitude2('Off', log_count=1, history_count=7)
 
     def test_set_sweep_errors(self):
         gates = self.gates
@@ -328,18 +452,60 @@ class TestParameters(TestCase):
         with self.assertRaises(ValueError):
             gates.memcoded.set('zero')
 
-    def test_snapshot(self):
+    def test_standard_snapshot(self):
         self.assertEqual(self.meter.snapshot(), {
-            'parameters': {'amplitude': {}},
+            'parameters': {'amplitude': {'value': None, 'ts': None}},
             'functions': {'echo': {}}
         })
 
+        ampsnap = self.meter.snapshot(update=True)['parameters']['amplitude']
         amp = self.meter.get('amplitude')
-        ampsnap = self.meter.snapshot()['parameters']['amplitude']
         self.assertEqual(ampsnap['value'], amp)
         amp_ts = datetime.strptime(ampsnap['ts'], '%Y-%m-%d %H:%M:%S')
         self.assertLessEqual(amp_ts, datetime.now())
         self.assertGreater(amp_ts, datetime.now() - timedelta(seconds=1.1))
+
+    def test_manual_snapshot(self):
+        self.source.add_parameter('noise', parameter_class=ManualParameter)
+        noise = self.source.noise
+
+        self.assertEqual(self.source.snapshot()['parameters']['noise'],
+                         {'value': None, 'ts': None})
+
+        noise.set(100)
+        noisesnap = self.source.snapshot()['parameters']['noise']
+        self.assertEqual(noisesnap['value'], 100)
+
+        noise_ts = datetime.strptime(noisesnap['ts'], '%Y-%m-%d %H:%M:%S')
+        self.assertLessEqual(noise_ts, datetime.now())
+        self.assertGreater(noise_ts, datetime.now() - timedelta(seconds=1.1))
+
+    def tests_get_latest(self):
+        self.source.add_parameter('noise', parameter_class=ManualParameter)
+        noise = self.source.noise
+
+        self.assertIsNone(noise.get_latest())
+
+        noise.set(100)
+
+        mock_ts = datetime(2000, 3, 4)
+        ts_str = mock_ts.strftime('%Y-%m-%d %H:%M:%S')
+        noise._last_ts = mock_ts
+        self.assertEqual(noise.snapshot()['ts'], ts_str)
+
+        self.assertEqual(noise.get_latest(), 100)
+        self.assertEqual(noise.get_latest.get(), 100)
+        self.assertEqual(wait_for_async(noise.get_latest.get_async), 100)
+
+        # get_latest should not update ts
+        self.assertEqual(noise.snapshot()['ts'], ts_str)
+
+        # get_latest is not settable
+        with self.assertRaises(AttributeError):
+            noise.get_latest.set(50)
+
+        with self.assertRaises(AttributeError):
+            wait_for_async(noise.get_latest.set_async, 10)
 
     def test_mock_read(self):
         gates, meter = self.gates, self.meter
@@ -369,7 +535,7 @@ class TestParameters(TestCase):
 
         with self.assertRaises(TypeError):
             b.add_function('skip', call_cmd='skip {}',
-                           parameters=['not a validator'])
+                           args=['not a validator'])
         with self.assertRaises(NoCommandError):
             b.add_function('jump')
         with self.assertRaises(NoCommandError):
@@ -486,6 +652,11 @@ class TestParameters(TestCase):
         self.assertEqual(list(c0_sv7), [1, 3, 4])
         self.assertFalse(c0_sv6 is c0_sv7)
 
+    def test_sweep_values_base(self):
+        p = self.gates.chan0
+        with self.assertRaises(NotImplementedError):
+            iter(SweepValues(p))
+
     def test_manual_parameter(self):
         self.source.add_parameter('bias_resistor',
                                   parameter_class=ManualParameter,
@@ -496,8 +667,6 @@ class TestParameters(TestCase):
         res.set(1e9)
         self.assertEqual(wait_for_async(res.get_async), 1e9)
         # default vals is all numbers
-        # TODO - maybe non-negative numbers would be a better
-        # default?
         wait_for_async(res.set_async, -1)
         self.assertEqual(res.get(), -1)
 
@@ -516,7 +685,7 @@ class TestParameters(TestCase):
         self.assertEqual(alignment.get(), 'lawful')
 
         # None is the only invalid initial_value you can use
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             self.source.add_parameter('alignment2',
                                       parameter_class=ManualParameter,
                                       initial_value='nearsighted')

@@ -9,7 +9,8 @@ def readme():
 
 extras = {
     'MatPlot': ('matplotlib', '1.5'),
-    'QtPlot': ('pyqtgraph', '0.9.10')
+    'QtPlot': ('pyqtgraph', '0.9.10'),
+    'coverage tests': ('coverage', '4.0')
 }
 extras_require = {k: '>='.join(v) for k, v in extras.items()}
 
@@ -46,9 +47,10 @@ setup(name='qcodes',
           'ipywidgets>=4.1',
           # nose and coverage are only for tests, but we'd like to encourage
           # people to run tests!
-          'nose>=1.3',
-          'coverage>=4.0'
+          # coverage has a problem with setuptools on Windows, moved to extras
+          'nose>=1.3'
       ],
+      test_suite='qcodes.tests',
       extras_require=extras_require,
       # I think the only part of qcodes that would care about zip_safe
       # is utils.helpers.reload_code; users of a zip-installed package
@@ -58,14 +60,25 @@ setup(name='qcodes',
 version_template = '''
 *****
 ***** package {0} must be at least version {1}.
-***** Please upgrade it (pip install -U {0}) in order to use {2}
+***** Please upgrade it (pip install -U {0} or conda install {0})
+***** in order to use {2}
 *****
 '''
 
 missing_template = '''
 *****
-***** package {} not found
-***** Please install it in order to use {}
+***** package {0} not found
+***** Please install it (pip install {0} or conda install {0})
+***** in order to use {1}
+*****
+'''
+
+valueerror_template = '''
+*****
+***** package {0} version not understood
+***** Please make sure the installed version ({1})
+***** is compatible with the minimum required version ({2})
+***** in order to use {3}
 *****
 '''
 
@@ -77,3 +90,5 @@ for extra, (module_name, min_version) in extras.items():
             print(version_template.format(module_name, min_version, extra))
     except ImportError:
         print(missing_template.format(module_name, extra))
+    except ValueError:
+        print(valueerror_template.format(module_name, module.__version__, min_version, extra))

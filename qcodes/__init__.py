@@ -6,12 +6,12 @@
 from multiprocessing import active_children
 
 from qcodes.utils.multiprocessing import set_mp_method
-from qcodes.utils.helpers import in_notebook, reload_code
+from qcodes.utils.helpers import in_notebook
 
 # code that should only be imported into the main (notebook) thread
 # in particular, importing matplotlib in the side processes takes a long
 # time and spins up other processes in order to try and get a front end
-if in_notebook():
+if in_notebook():  # pragma: no cover
     try:
         from qcodes.plots.matplotlib import MatPlot
     except ImportError:
@@ -41,3 +41,6 @@ from qcodes.instrument.mock import MockInstrument
 from qcodes.instrument.function import Function
 from qcodes.instrument.parameter import Parameter, StandardParameter
 from qcodes.instrument.sweep_values import SweepFixedValues, AdaptiveSweep
+
+from qcodes.instrument_drivers.test import test_instruments, test_instrument
+from qcodes.test import test_core
