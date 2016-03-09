@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import time
 
 from qcodes.instrument.base import Instrument
-from qcodes.instrument.mock import MockInstrument
+from qcodes.instrument.mock import MockInstrument, MockModel
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.sweep_values import SweepValues
 from qcodes.instrument.parameter import ManualParameter
@@ -14,54 +14,60 @@ from qcodes.utils.sync_async import wait_for_async, NoCommandError
 from qcodes.utils.helpers import LogCapture
 
 
-class ModelError(Exception):
-    pass
-
-
-class AMockModel:
+class AMockModel(MockModel):
     def __init__(self):
         self._gates = [0.0, 0.0, 0.0]
         self._excitation = 0.1
         self._memory = {}
+        super().__init__()
 
-    def write(self, instrument, parameter, value):
-        if instrument == 'gates' and parameter[0] == 'c':
+    def fmt(self, value):
+        return '{:.3f}'.format(value)
+
+    def gates_set(self, parameter, value):
+        if parameter[0] == 'c':
             self._gates[int(parameter[1:])] = float(value)
-        elif instrument == 'gates' and parameter == 'rst':
+        elif parameter == 'rst' and value is None:
             self._gates = [0.0, 0.0, 0.0]
-        elif instrument == 'gates' and parameter[:3] == 'mem':
+        elif parameter[:3] == 'mem':
             slot = int(parameter[3:])
             self._memory[slot] = value
-        elif instrument == 'source' and parameter == 'ampl':
+        else:
+            raise ValueError
+
+    def gates_get(self, parameter):
+        if parameter[0] == 'c':
+            return self.fmt(self._gates[int(parameter[1:])])
+        elif parameter[:3] == 'mem':
+            slot = int(parameter[3:])
+            return self._memory[slot]
+        else:
+            raise ValueError
+
+    def source_set(self, parameter, value):
+        if parameter == 'ampl':
             try:
                 self._excitation = float(value)
             except:
                 # "Off" as in the MultiType sweep step test
                 self._excitation = None
         else:
-            raise ModelError('unrecognized write {}, {}, {}'.format(
-                instrument, parameter, value))
+            raise ValueError
 
-    def ask(self, instrument, parameter):
-        gates = self._gates
-
-        if instrument == 'gates' and parameter[0] == 'c':
-            v = gates[int(parameter[1:])]
-        elif instrument == 'gates' and parameter[:3] == 'mem':
-            slot = int(parameter[3:])
-            return self._memory[slot]
-        elif instrument == 'source' and parameter == 'ampl':
-            v = self._excitation
-        elif instrument == 'meter' and parameter == 'ampl':
-            # here's my super complex model output!
-            v = self._excitation * (gates[0] + gates[1]**2 + gates[2]**3)
-        elif instrument == 'meter' and parameter[:5] == 'echo ':
-            v = float(parameter[5:])
+    def source_get(self, parameter):
+        if parameter == 'ampl':
+            return self.fmt(self._excitation)
         else:
-            raise ModelError('unrecognized ask {}, {}'.format(
-                instrument, parameter))
+            raise ValueError
 
-        return '{:.3f}'.format(v)
+    def meter_get(self, parameter):
+        if parameter == 'ampl':
+            gates = self._gates
+            # here's my super complex model output!
+            return self.fmt(self._excitation *
+                            (gates[0] + gates[1]**2 + gates[2]**3))
+        elif parameter[:5] == 'echo ':
+            return self.fmt(float(parameter[5:]))
 
 
 class TestParamConstructor(TestCase):
@@ -124,12 +130,12 @@ class TestParameters(TestCase):
         for i in range(3):
             cmdbase = 'c{}'.format(i)
             self.gates.add_parameter('chan{}'.format(i), get_cmd=cmdbase + '?',
-                                     set_cmd=cmdbase + ' {:.4f}',
+                                     set_cmd=cmdbase + ':{:.4f}',
                                      get_parser=float,
                                      vals=Numbers(-10, 10))
             self.gates.add_parameter('chan{}step'.format(i),
                                      get_cmd=cmdbase + '?',
-                                     set_cmd=cmdbase + ' {:.4f}',
+                                     set_cmd=cmdbase + ':{:.4f}',
                                      get_parser=float,
                                      vals=Numbers(-10, 10),
                                      sweep_step=0.1, sweep_delay=0.005)
@@ -137,7 +143,7 @@ class TestParameters(TestCase):
 
         self.source = MockInstrument('source', model=self.model, delay=0.001)
         self.source.add_parameter('amplitude', get_cmd='ampl?',
-                                  set_cmd='ampl {:.4f}', get_parser=float,
+                                  set_cmd='ampl:{:.4f}', get_parser=float,
                                   vals=Numbers(0, 1),
                                   sweep_step=0.2, sweep_delay=0.005)
 
@@ -150,6 +156,11 @@ class TestParameters(TestCase):
                                 return_parser=float)
 
         self.init_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    def tearDown(self):
+        self.model.halt()
+        for instrument in [self.gates, self.source, self.meter]:
+            instrument.close()
 
     def slow_neg_set(self, val):
         if val < 0:
@@ -212,9 +223,10 @@ class TestParameters(TestCase):
         # explicit long form of getter
         self.assertEqual(meter.parameters['amplitude'].get(), 0)
         # both should produce the same history entry
-        self.assertEqual(len(meter.history), 3)
-        self.assertEqual(meter.history[0][1:], ('ask', 'ampl'))
-        self.assertEqual(meter.history[0][1:], ('ask', 'ampl'))
+        hist = meter.getattr_server('history')
+        self.assertEqual(len(hist), 3)
+        self.assertEqual(hist[0][1:], ('ask', 'ampl'))
+        self.assertEqual(hist[0][1:], ('ask', 'ampl'))
 
         # errors trying to set (or validate) invalid param values
         # put here so we ensure that these errors don't make it to
@@ -241,20 +253,23 @@ class TestParameters(TestCase):
         self.assertEqual(source.get('amplitude'), 0.6)
         self.assertEqual(meter.get('amplitude'), -16.961)
 
+        gatehist = gates.getattr_server('history')
+        sourcehist = source.getattr_server('history')
+        meterhist = meter.getattr_server('history')
         # check just the size and timestamps of histories
-        for entry in gates.history + source.history + meter.history:
+        for entry in gatehist + sourcehist + meterhist:
             self.check_ts(entry[0])
-        self.assertEqual(len(gates.history), 6)
-        self.assertEqual(len(meter.history), 7)
-        self.assertEqual(len(source.history), 5)
+        self.assertEqual(len(gatehist), 6)
+        self.assertEqual(len(sourcehist), 5)
+        self.assertEqual(len(meterhist), 7)
 
         # plus enough setters to check the parameter sweep
         # first source has to get the starting value
-        self.assertEqual(source.history[0][1:], ('ask', 'ampl'))
+        self.assertEqual(sourcehist[0][1:], ('ask', 'ampl'))
         # then it writes each
-        self.assertEqual(source.history[1][1:], ('write', 'ampl', '0.3000'))
-        self.assertEqual(source.history[2][1:], ('write', 'ampl', '0.5000'))
-        self.assertEqual(source.history[3][1:], ('write', 'ampl', '0.6000'))
+        self.assertEqual(sourcehist[1][1:], ('write', 'ampl', '0.3000'))
+        self.assertEqual(sourcehist[2][1:], ('write', 'ampl', '0.5000'))
+        self.assertEqual(sourcehist[3][1:], ('write', 'ampl', '0.6000'))
 
         # test sync/async - so far all calls have been sync, even though gates
         # was defined as async. Mock some async calls to test other conversions
@@ -293,21 +308,23 @@ class TestParameters(TestCase):
     def test_mock_async_set_sweep(self):
         gates = self.gates
         wait_for_async(gates.set_async, 'chan0step', 0.5)
-        self.assertEqual(len(gates.history), 6)
+        gatehist = gates.getattr_server('history')
+        self.assertEqual(len(gatehist), 6)
         self.assertEqual(
-            [float(h[3]) for h in gates.history if h[1] == 'write'],
+            [float(h[3]) for h in gatehist if h[1] == 'write'],
             [0.1, 0.2, 0.3, 0.4, 0.5])
 
     def test_mock_instrument_errors(self):
         gates, meter = self.gates, self.meter
-        with self.assertRaises(ValueError):
+        with self.assertRaises(RuntimeError):
             gates.ask('no question')
-        with self.assertRaises(ValueError):
+        with self.assertRaises(RuntimeError):
             gates.ask('question?yes but more after')
 
-        with self.assertRaises(ModelError):
+        with self.assertRaises(RuntimeError):
             gates.write('ampl 1')
-        with self.assertRaises(ModelError):
+            gates.get('chan2')  # known good call, just to read the error
+        with self.assertRaises(RuntimeError):
             gates.ask('ampl?')
 
         with self.assertRaises(TypeError):

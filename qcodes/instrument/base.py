@@ -1,5 +1,6 @@
 import asyncio
 import weakref
+from uuid import uuid4
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import wait_for_async
@@ -54,6 +55,8 @@ class Instrument(Metadatable, DelegateAttributes):
         self.functions = {}
         self.parameters = {}
 
+        self.uuid = uuid4().hex
+
         self.name = str(name)
 
         # keep a (weak) record of all instances of this Instrument
@@ -86,6 +89,11 @@ class Instrument(Metadatable, DelegateAttributes):
         wr = weakref.ref(self)
         if wr in self._instances:
             self._instances.remove(wr)
+        self.close()
+
+    def close(self):
+        if self.connection:
+            self.connection.close()
 
     @classmethod
     def instances(cls):

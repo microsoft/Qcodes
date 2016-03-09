@@ -122,6 +122,7 @@ class DataServer:
 
     def _post_error(self, e):
         self._error_queue.put(format_exc())
+        self._response_queue.put('ERR')  # to short-circuit the timeout
 
     ######################################################################
     # query handlers                                                     #

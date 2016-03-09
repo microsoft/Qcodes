@@ -4,6 +4,7 @@ from datetime import datetime
 import time
 from traceback import print_exc
 from queue import Empty
+from uuid import uuid4
 
 from .helpers import in_notebook
 
@@ -157,6 +158,17 @@ class StreamQueue:
         self.last_read_ts.value = time.time()
         return out
 
+    def __del__(self):
+        try:
+            self.disconnect()
+        except:
+            pass
+
+        if hasattr(self, 'queue'):
+            kill_queue(self.queue)
+        if hasattr(self, 'lock'):
+            del self.lock
+
 
 class _SQWriter:
     MIN_READ_TIME = 3
@@ -204,12 +216,12 @@ class ServerManager:
     '''
     creates and manages connections to a separate server process
 
-    name: the name of the server
+    name: the name of the server. Can include .format specs to insert
+        all or part of the uuid
     query_timeout: the default time to wait for responses
     kwargs: passed along to the server constructor
     '''
     def __init__(self, name, server_class, server_extras={}, query_timeout=2):
-        self.name = name
         self._query_queue = mp.Queue()
         self._response_queue = mp.Queue()
         self._error_queue = mp.Queue()
@@ -220,11 +232,17 @@ class ServerManager:
         # to make sure the process that asked the question is the one
         # that gets the response.
         # Any query that does NOT expect a response can just dump it in
-        # and more on.
+        # and move on.
         self.query_lock = mp.RLock()
 
+        # uuid is used to pass references to this object around
+        # for example, to get it after someone else has sent it to a server
+        self.uuid = uuid4().hex
+
+        self.name = name.format(self.uuid)
+
         self.query_timeout = query_timeout
-        self._start_server(name)
+        self._start_server(self.name)
 
     def _start_server(self, name):
         self._server = QcodesProcess(target=self._run_server, name=name)
@@ -243,10 +261,14 @@ class ServerManager:
 
     def _check_for_errors(self):
         if not self._error_queue.empty():
+            # clear the response queue whenever there's an error
+            while not self._response_queue.empty():
+                self._response_queue.get()
+
+            # then get the error and raise a wrapping exception
             errstr = self._error_queue.get()
             errhead = '*** error on {} ***'.format(self.name)
-            print(errhead + '\n\n' + errstr, file=sys.stderr)
-            raise RuntimeError(errhead)
+            raise RuntimeError(errhead + '\n\n' + errstr)
 
     def ask(self, *query, timeout=None):
         '''
@@ -254,8 +276,9 @@ class ServerManager:
         '''
         timeout = timeout or self.query_timeout
 
-        with self.query_lock:
+        with mp.RLock():  # self.query_lock:
             self._query_queue.put(query)
+
             try:
                 res = self._response_queue.get(timeout=timeout)
             except Empty as e:
@@ -266,17 +289,39 @@ class ServerManager:
 
             return res
 
-    def halt(self):
+    def halt(self, timeout=2):
         '''
         Halt the server and end its process
         '''
         if self._server.is_alive():
-            self.ask('halt')
-        self._server.join()
+            self.write('halt')
+        self._server.join(timeout)
+
+        if self._server.is_alive():
+            self._server.terminate()
+            print('ServerManager did not respond to halt signal, terminated')
+
+        # if hasattr(self, 'query_lock'):
+        #     del self.query_lock
 
     def restart(self):
         '''
         Restart the server
         '''
         self.halt()
+        # self.query_lock = mp.RLock()
         self._start_server()
+
+    def close(self):
+        self.halt()
+        kill_queue(self._query_queue)
+        kill_queue(self._response_queue)
+        kill_queue(self._error_queue)
+
+
+def kill_queue(queue):
+    try:
+        queue.close()
+        queue.join_thread()
+    except:
+        pass

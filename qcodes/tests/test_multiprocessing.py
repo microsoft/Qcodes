@@ -19,11 +19,11 @@ class sqtest_echo:
     def __init__(self, name, delay=0.01, has_q=True):
         self.q_out = mp.Queue()
         self.q_err = mp.Queue()
-        p = QcodesProcess(target=sqtest_echo_f,
-                          args=(name, delay, self.q_out, self.q_err, has_q),
-                          name=name)
-        p.start()
-        self.p = p
+        self.p = QcodesProcess(target=sqtest_echo_f,
+                               args=(name, delay, self.q_out, self.q_err,
+                                     has_q),
+                               name=name)
+        self.p.start()
         self.delay = delay
         self.resp_delay = delay * 2 + 0.03
 
@@ -36,11 +36,14 @@ class sqtest_echo:
         time.sleep(self.resp_delay)
 
     def halt(self):
-        if not self.p.is_alive():
+        if not (hasattr(self, 'p') and self.p.is_alive()):
             return
         self.q_out.put(BREAK_SIGNAL)
         self.p.join()
         time.sleep(self.resp_delay)
+        for q in ['q_out', 'q_err']:
+            if hasattr(self, q):
+                qcmp.kill_queue(getattr(self, q))
 
     def __del__(self):
         self.halt()

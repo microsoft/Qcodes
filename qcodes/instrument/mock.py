@@ -28,7 +28,7 @@ class MockInstrument(Instrument):
     '''
     def __init__(self, name, delay=0, model=None, keep_history=True,
                  use_async=False, read_response=None,
-                 server_name='MockServer', **kwargs):
+                 server_name='', **kwargs):
 
         if not isinstance(delay, (int, float)) or delay < 0:
             raise TypeError('delay must be a non-negative number')
@@ -41,7 +41,7 @@ class MockInstrument(Instrument):
         # can't pass the model itself through the queue to the server,
         # so send it to the server on creation and have the server
         # attach it to each instrument.
-        server_extras = {'_model': model}
+        server_extras = {model.uuid: model}
 
         # keep a record of every command sent to this instrument
         # for debugging purposes
@@ -62,9 +62,22 @@ class MockInstrument(Instrument):
         # just for test purposes
         self._read_response = read_response
 
+        # to make sure we make one server per model,
+        # we give the server a (pretty much) unique name
+        if server_name == '':
+            server_name = model.name.replace('Model', 'MockServer')
         super().__init__(name, server_name, server_extras, **kwargs)
-        # if not self.connection:
-        #     self._model = model
+
+        self.link_model(model.uuid)
+
+    @ask_server
+    def link_model(self, model_uuid):
+        '''
+        to get around the fact that you can't send a model to an
+        already-existing server process, we send the model with
+        server creation, then find it on the other end by its uuid
+        '''
+        self._model = self.server_extras[model_uuid]
 
     @write_server
     def _write_inner(self, cmd):
@@ -150,7 +163,7 @@ class MockModel(ServerManager):
     If anything is not recognized, raise an error, and the query will be
     added to it
     '''
-    def __init__(self, name='Model'):
+    def __init__(self, name='Model{:.7s}'):
         super().__init__(name, server_class=None)
 
     def _run_server(self):
@@ -162,6 +175,11 @@ class MockModel(ServerManager):
                 query = query[0].split(':')
 
                 instrument = query[0]
+
+                if instrument == 'halt':
+                    self._response_queue.put(True)
+                    break
+
                 param = query[1]
                 if param[-1] == '?' and len(query) == 2:
                     getter = getattr(self, instrument + '_get')
@@ -173,9 +191,7 @@ class MockModel(ServerManager):
                 else:
                     raise ValueError
 
-            except Empty:
-                pass
-
             except Exception as e:
-                e.args = e.args + ('unrecognized query: ' + repr(query),)
+                e.args = e.args + ('error processing query ' + repr(query),)
                 self._error_queue.put(format_exc())
+                self._response_queue.put('ERR')  # to short-circuit timeout

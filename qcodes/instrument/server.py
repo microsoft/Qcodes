@@ -1,6 +1,8 @@
+import sys
 from queue import Empty
 from traceback import format_exc
 from functools import update_wrapper
+import weakref
 
 from qcodes.utils.multiprocessing import ServerManager
 
@@ -20,11 +22,13 @@ def connect_instrument_server(server_name, instrument, server_extras={}):
     extras: any extra arguments to the InstrumentManager, will be set
         as attributes of any instrument that connects to it
     '''
-    if server_name in InstrumentManager.instances:
+    instances = InstrumentManager.instances
+    if server_name in instances and instances[server_name]():
         # kwargs get ignored for existing servers - lets hope they're the same!
-        manager = InstrumentManager.instances[server_name]
+        manager = instances[server_name]()
     else:
         manager = InstrumentManager(server_name, server_extras)
+        instances[server_name] = weakref.ref(manager)
 
     return manager.connect(instrument)
 
@@ -43,9 +47,7 @@ class InstrumentManager(ServerManager):
 
     def __init__(self, name, server_extras={}):
         self.name = name
-        type(self).instances[name] = self
-
-        self.instruments = []
+        self.instruments = {}
 
         super().__init__(name=name, server_class=InstrumentServer,
                          server_extras=server_extras)
@@ -57,17 +59,26 @@ class InstrumentManager(ServerManager):
         '''
         super().restart()
 
-        for i, instrument in enumerate(self.instruments):
-            self.connect(instrument, instrument_id=i)
+        for instrument in enumerate(self.instruments.values()):
+            self.connect(instrument())
 
-    def connect(self, instrument, instrument_id=None):
-        if instrument_id is None:
-            instrument_id = len(self.instruments)
-
-        conn = InstrumentConnection(manager=self, instrument=instrument,
-                                    instrument_id=instrument_id)
-        self.instruments.append(instrument)
+    def connect(self, instrument):
+        conn = InstrumentConnection(manager=self, instrument=instrument)
+        self.instruments[instrument.uuid] = weakref.ref(instrument)
         return conn
+
+    def delete(self, instrument):
+        try:
+            self.write('delete', instrument.uuid)
+        except:
+            pass
+
+        if instrument.uuid in self.instruments:
+            del self.instruments[instrument.uuid]
+
+            if not self.instruments:
+                self.close()
+                del self.instances[self.name]
 
 
 class InstrumentConnection:
@@ -75,24 +86,24 @@ class InstrumentConnection:
     A connection between one particular instrument and its server process
 
     This should be instantiated by connect_instrument_server, not directly
-
-    instrument_id: a number that the manager and server use to identify
-    the instrument
     '''
-    def __init__(self, manager, instrument, instrument_id):
+    def __init__(self, manager, instrument):
         self.manager = manager
         self.instrument = instrument
-        self.instrument_id = instrument_id
 
-        self.manager.ask('new', instrument, instrument_id)
+        self.manager.ask('new', instrument)
 
     def ask(self, func_name, *args, **kwargs):
-        return self.manager.ask('ask', self.instrument_id,
+        return self.manager.ask('ask', self.instrument.uuid,
                                 func_name, args, kwargs)
 
     def write(self, func_name, *args, **kwargs):
-        self.manager.write('write', self.instrument_id,
+        self.manager.write('write', self.instrument.uuid,
                            func_name, args, kwargs)
+
+    def close(self):
+        if hasattr(self, 'manager'):
+            self.manager.delete(self.instrument)
 
 
 class ask_server:
@@ -179,39 +190,49 @@ class InstrumentServer:
         self.running = True
 
         while self.running:
-            self.process_query()
+            try:
+                query = None
+                query = self.query_queue.get()
+                self.process_query(query)
+            except Exception as e:
+                self.post_error(e, query)
 
-    def process_query(self):
-        try:
-            query = self.query_queue.get()
-            getattr(self, query[0])(*(query[1:]))
-        except Empty:
-            pass
-        except Exception as e:
-            self.post_error(e)
+    def process_query(self, query):
+        getattr(self, query[0])(*(query[1:]))
 
     def reply(self, response):
         self.response_queue.put(response)
 
-    def post_error(self, e):
+    def post_error(self, e, query=None):
+        # import time
+        # time.sleep(2)
+        if query:
+            e.args = e.args + ('error processing query ' + repr(query),)
         self.error_queue.put(format_exc())
+        self.response_queue.put('ERR')  # to short-circuit timeout
 
-    def halt(self):
+    def halt(self, *args, **kwargs):
         '''
         Quit this InstrumentServer
         '''
         self.running = False
+
+    def new(self, instrument):
+        self.instruments[instrument.uuid] = instrument
+        instrument.server_extras = self.extras
         self.reply(True)
 
-    def new(self, instrument, instrument_id):
-        self.instruments[instrument_id] = instrument
-        for key, value in self.extras.items():
-            setattr(instrument, key, value)
-        self.reply(True)
+    def delete(self, instrument_id):
+        if instrument_id in self.instruments:
+            del self.instruments[instrument_id]
+
+            if not self.instruments:
+                self.halt()
 
     def ask(self, instrument_id, func_name, args, kwargs):
         func = getattr(self.instruments[instrument_id], func_name)
-        self.reply(func(*args, **kwargs))
+        response = func(*args, **kwargs)
+        self.reply(response)
 
     def write(self, instrument_id, func_name, args, kwargs):
         func = getattr(self.instruments[instrument_id], func_name)
