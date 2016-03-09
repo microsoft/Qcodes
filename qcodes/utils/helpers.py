@@ -202,3 +202,18 @@ class DelegateAttributes:
                           if k not in self.omit_delegate_attrs]
 
         return sorted(set(names))
+
+
+def strip_attrs(obj):
+    '''
+    Irreversibly remove all direct instance attributes of obj, to help with
+    disposal, breaking circular references.
+    '''
+    try:
+        for key in list(obj.__dict__.keys()):
+            try:
+                del obj.__dict__[key]
+            except:
+                pass
+    except:
+        pass

@@ -291,7 +291,8 @@ class ServerManager:
 
     def halt(self, timeout=2):
         '''
-        Halt the server and end its process
+        Halt the server and end its process, but in a way that it can
+        be started again
         '''
         if self._server.is_alive():
             self.write('halt')
@@ -301,22 +302,25 @@ class ServerManager:
             self._server.terminate()
             print('ServerManager did not respond to halt signal, terminated')
 
-        # if hasattr(self, 'query_lock'):
-        #     del self.query_lock
-
     def restart(self):
         '''
         Restart the server
         '''
         self.halt()
-        # self.query_lock = mp.RLock()
         self._start_server()
 
     def close(self):
+        '''
+        Irreversibly stop the server and manager
+        '''
         self.halt()
-        kill_queue(self._query_queue)
-        kill_queue(self._response_queue)
-        kill_queue(self._error_queue)
+        for q in ['query', 'response', 'error']:
+            qname = '_{}_queue'.format(q)
+            if hasattr(self, qname):
+                kill_queue(getattr(self, qname))
+                del self.__dict__[qname]
+        if hasattr(self, 'query_lock'):
+            del self.query_lock
 
 
 def kill_queue(queue):

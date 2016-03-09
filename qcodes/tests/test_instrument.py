@@ -52,11 +52,16 @@ class AMockModel(MockModel):
                 # "Off" as in the MultiType sweep step test
                 self._excitation = None
         else:
-            raise ValueError
+            raise ValueError(parameter, value)
 
     def source_get(self, parameter):
         if parameter == 'ampl':
             return self.fmt(self._excitation)
+        # put mem here too, just so we can be 100% sure it's going through
+        # the model
+        elif parameter[:3] == 'mem':
+            slot = int(parameter[3:])
+            return self._memory[slot]
         else:
             raise ValueError
 
@@ -158,7 +163,7 @@ class TestParameters(TestCase):
         self.init_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     def tearDown(self):
-        self.model.halt()
+        self.model.close()
         for instrument in [self.gates, self.source, self.meter]:
             instrument.close()
 
@@ -179,7 +184,7 @@ class TestParameters(TestCase):
         self.gates.add_parameter('chan0slow3', get_cmd='c0?',
                                  set_cmd=self.slow_neg_set, get_parser=float,
                                  vals=Numbers(-10, 10), sweep_step=0.2,
-                                 sweep_delay=0.01, max_sweep_delay=0.06)
+                                 sweep_delay=0.01, max_sweep_delay=0.08)
 
         for param, logcount in (('chan0slow', 2), ('chan0slow2', 2),
                                 ('chan0slow3', 0)):
@@ -191,7 +196,7 @@ class TestParameters(TestCase):
             logs = s.getvalue().split('\n')[:-1]
             s.close()
 
-            self.assertEqual(len(logs), logcount, logs)
+            self.assertEqual(len(logs), logcount, (param, logs))
             for line in logs:
                 self.assertTrue(line.startswith('negative delay'), line)
 
@@ -209,7 +214,9 @@ class TestParameters(TestCase):
         # the *last* instance to test.
         # instancelen = len(self.gates.instances())
 
+        # self.source.close()
         # del self.source
+
         # self.assertEqual(len(self.gates.instances()), instancelen - 1)
 
     def test_mock_instrument(self):
@@ -360,14 +367,15 @@ class TestParameters(TestCase):
         self.assertEqual(len(logs), log_count, logs)
         for line in logs:
             self.assertIn('cannot sweep', line.lower())
-        self.assertEqual(len(source.history), history_count)
+        hist = source.getattr_server('history')
+        self.assertEqual(len(hist), history_count)
 
     def test_sweep_steps_edge_case(self):
         # MultiType with sweeping is weird - not sure why one would do this,
         # but we should handle it
         source = self.source
         source.add_parameter('amplitude2', get_cmd='ampl?',
-                             set_cmd='ampl {}', get_parser=float,
+                             set_cmd='ampl:{}', get_parser=float,
                              vals=MultiType(Numbers(0, 1), Strings()),
                              sweep_step=0.2, sweep_delay=0.005)
         self.assertEqual(len(source.history), 0)
@@ -439,29 +447,31 @@ class TestParameters(TestCase):
                                 sweep_step=0.1, sweep_delay=0.01,
                                 max_val_age=-1)
 
+    def getmem(self, key):
+        return self.source.ask('mem{}?'.format(key))
+
     def test_val_mapping(self):
         gates = self.gates
-        mem = self.model._memory
 
         # memraw has no mappings - it just sets and gets what the instrument
         # uses to encode this parameter
-        gates.add_parameter('memraw', set_cmd='mem0 {}', get_cmd='mem0?',
+        gates.add_parameter('memraw', set_cmd='mem0:{}', get_cmd='mem0?',
                             vals=Enum('zero', 'one'))
 
         # memcoded maps the instrument codes ('zero' and 'one') into nicer
         # user values 0 and 1
-        gates.add_parameter('memcoded', set_cmd='mem0 {}', get_cmd='mem0?',
+        gates.add_parameter('memcoded', set_cmd='mem0:{}', get_cmd='mem0?',
                             val_mapping={0: 'zero', 1: 'one'})
 
         gates.memcoded.set(0)
         self.assertEqual(gates.memraw.get(), 'zero')
         self.assertEqual(gates.memcoded.get(), 0)
-        self.assertEqual(mem[0], 'zero')
+        self.assertEqual(self.getmem(0), 'zero')
 
         gates.memraw.set('one')
         self.assertEqual(gates.memcoded.get(), 1)
         self.assertEqual(gates.memraw.get(), 'one')
-        self.assertEqual(mem[0], 'one')
+        self.assertEqual(self.getmem(0), 'one')
 
         with self.assertRaises(ValueError):
             gates.memraw.set(0)

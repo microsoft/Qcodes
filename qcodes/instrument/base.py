@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import wait_for_async
-from qcodes.utils.helpers import DelegateAttributes
+from qcodes.utils.helpers import DelegateAttributes, strip_attrs
 from .parameter import StandardParameter
 from .function import Function
 from .server import connect_instrument_server, ask_server, write_server
@@ -92,8 +92,13 @@ class Instrument(Metadatable, DelegateAttributes):
         self.close()
 
     def close(self):
+        '''
+        Irreversibly stop this instrument and free its resources
+        '''
         if self.connection:
             self.connection.close()
+
+        strip_attrs(self)
 
     @classmethod
     def instances(cls):

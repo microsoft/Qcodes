@@ -41,8 +41,8 @@ class TestDriverTestCase(DriverTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.an_empty_model.halt()
-        cls.an_instrument.connection.manager.halt()
+        cls.an_empty_model.close()
+        cls.an_instrument.connection.manager.close()
 
     def test_instance_found(self):
         self.assertEqual(self.instrument, self.an_instrument)

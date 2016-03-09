@@ -194,4 +194,6 @@ class MockModel(ServerManager):
             except Exception as e:
                 e.args = e.args + ('error processing query ' + repr(query),)
                 self._error_queue.put(format_exc())
+                # give the error queue has time to register not-empty
+                time.sleep(0.05)
                 self._response_queue.put('ERR')  # to short-circuit timeout

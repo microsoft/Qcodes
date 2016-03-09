@@ -7,7 +7,8 @@ from unittest.mock import patch
 
 import qcodes
 from qcodes.utils.multiprocessing import (set_mp_method, QcodesProcess,
-                                          get_stream_queue, _SQWriter)
+                                          get_stream_queue, _SQWriter,
+                                          kill_queue)
 import qcodes.utils.multiprocessing as qcmp
 from qcodes.utils.helpers import in_notebook
 from qcodes.utils.timing import calibrate
@@ -43,7 +44,7 @@ class sqtest_echo:
         time.sleep(self.resp_delay)
         for q in ['q_out', 'q_err']:
             if hasattr(self, q):
-                qcmp.kill_queue(getattr(self, q))
+                kill_queue(getattr(self, q))
 
     def __del__(self):
         self.halt()

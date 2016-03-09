@@ -1,5 +1,4 @@
-import sys
-from queue import Empty
+import time
 from traceback import format_exc
 from functools import update_wrapper
 import weakref
@@ -204,11 +203,10 @@ class InstrumentServer:
         self.response_queue.put(response)
 
     def post_error(self, e, query=None):
-        # import time
-        # time.sleep(2)
         if query:
             e.args = e.args + ('error processing query ' + repr(query),)
         self.error_queue.put(format_exc())
+        time.sleep(0.05)  # give the error queue has time to register not-empty
         self.response_queue.put('ERR')  # to short-circuit timeout
 
     def halt(self, *args, **kwargs):
