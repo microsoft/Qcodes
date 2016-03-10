@@ -10,6 +10,13 @@ from .function import Function
 from .server import connect_instrument_server, ask_server, write_server
 
 
+class NoDefault:
+    '''
+    empty class to provide a missing default to getattr
+    '''
+    pass
+
+
 class Instrument(Metadatable, DelegateAttributes):
     '''
     Base class for all QCodes instruments
@@ -72,18 +79,114 @@ class Instrument(Metadatable, DelegateAttributes):
                                                         server_extras)
 
     @ask_server
-    def getattr_server(self, *args, **kwargs):
+    def getattr(self, attr, default=NoDefault):
         '''
-        get an attribute of the server copy of this Instrument
+        Get an attribute of the server copy of this Instrument.
+        Exact proxy for getattr if attr is a string, but can also
+        get parts from nested items if attr is a sequence.
+
+        attr: a string or sequence
+            if a string, this behaves exactly as normal getattr
+            if a sequence, treats the parts as diving into a nested dictionary.
+                if a default is provided, it will be returned if
+                the lookup fails at any level of the nesting, otherwise
+                an AttributeError or KeyError will be raised
+                NOTE: even with a default, if an intermediate nesting
+                encounters a non-container, a TypeError will be raised.
+                for example if obj.d = {'a': 1} and we call
+                obj.getattr(('d','a','b'), None)
+
+        default: value to return if the lookup fails
         '''
-        return getattr(self, *args, **kwargs)
+        try:
+            if isinstance(attr, str):
+                # simply attribute lookup
+                return getattr(self, attr)
+
+            else:
+                # nested dictionary lookup
+                obj = getattr(self, attr[0])
+                for key in attr[1:]:
+                    obj = obj[key]
+                return obj
+
+        except (AttributeError, KeyError):
+            if default is NoDefault:
+                raise
+            else:
+                return default
 
     @write_server
-    def setattr_server(self, attr, value):
+    def setattr(self, attr, value):
         '''
-        set an attribute of the server copy of this Instrument
+        Set an attribute of the server copy of this Instrument
+        Exact proxy for setattr if attr is a string, but can also
+        set parts in nested items if attr is a sequence.
+
+        attr: a string or sequence
+            if a string, this behaves exactly as normal setattr
+            if a sequence, treats the parts as diving into a nested dictionary.
+                if any level is missing it will be created
+                NOTE: if an intermediate nesting encounters a non-container,
+                a TypeError will be raised.
+                for example if obj.d = {'a': 1} and we call
+                obj.setattr(('d','a','b'), 2)
+
+        value: the value to store
         '''
-        setattr(self, attr, value)
+        if isinstance(attr, str):
+            setattr(self, attr, value)
+        elif len(attr) == 1:
+            setattr(self, attr[0], value)
+        else:
+            if not hasattr(self, attr[0]):
+                setattr(self, attr[0], {})
+            obj = getattr(self, attr[0])
+
+            for key in attr[1: -1]:
+                if key not in obj:
+                    obj[key] = {}
+                obj = obj[key]
+
+            obj[attr[-1]] = value
+
+    @write_server
+    def delattr(self, attr, prune=True):
+        '''
+        Delete an attribute from the server copy of this Instrument
+        Exact proxy for __delattr__ if attr is a string, but can also
+        remove parts of nested items if attr is a sequence, in which case
+        it may prune empty containers of the final attribute
+
+        attr: a string or sequence
+            if a string, this behaves exactly as normal __delattr__
+            if a sequence, treats the parts as diving into a nested dictionary.
+        prune: if True (default) and attr is a sequence, will try to remove
+            any containing levels which have become empty
+        '''
+        if isinstance(attr, str):
+            self.__delattr__(attr)
+        elif len(attr) == 1:
+            self.__delattr__(attr[0])
+        else:
+            obj = getattr(self, attr[0])
+            # dive into the nesting, saving what we did
+            tree = []
+            for key in attr[1:-1]:
+                newobj = obj[key]
+                tree.append((newobj, obj, key))
+                obj = newobj
+            # delete the leaf
+            del obj[attr[-1]]
+            # work back out, deleting branches if we can
+            if prune:
+                for child, parent, key in reversed(tree):
+                    if not child:
+                        del parent[key]
+                    else:
+                        break
+                if not getattr(self, attr[0]):
+                    self.__delattr__(attr[0])
 
     def __del__(self):
         wr = weakref.ref(self)

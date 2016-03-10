@@ -230,7 +230,7 @@ class TestParameters(TestCase):
         # explicit long form of getter
         self.assertEqual(meter.parameters['amplitude'].get(), 0)
         # both should produce the same history entry
-        hist = meter.getattr_server('history')
+        hist = meter.getattr('history')
         self.assertEqual(len(hist), 3)
         self.assertEqual(hist[0][1:], ('ask', 'ampl'))
         self.assertEqual(hist[0][1:], ('ask', 'ampl'))
@@ -260,9 +260,9 @@ class TestParameters(TestCase):
         self.assertEqual(source.get('amplitude'), 0.6)
         self.assertEqual(meter.get('amplitude'), -16.961)
 
-        gatehist = gates.getattr_server('history')
-        sourcehist = source.getattr_server('history')
-        meterhist = meter.getattr_server('history')
+        gatehist = gates.getattr('history')
+        sourcehist = source.getattr('history')
+        meterhist = meter.getattr('history')
         # check just the size and timestamps of histories
         for entry in gatehist + sourcehist + meterhist:
             self.check_ts(entry[0])
@@ -315,7 +315,7 @@ class TestParameters(TestCase):
     def test_mock_async_set_sweep(self):
         gates = self.gates
         wait_for_async(gates.set_async, 'chan0step', 0.5)
-        gatehist = gates.getattr_server('history')
+        gatehist = gates.getattr('history')
         self.assertEqual(len(gatehist), 6)
         self.assertEqual(
             [float(h[3]) for h in gatehist if h[1] == 'write'],
@@ -330,9 +330,10 @@ class TestParameters(TestCase):
 
         with self.assertRaises(RuntimeError):
             gates.write('ampl 1')
-            gates.get('chan2')  # known good call, just to read the error
+            self.meter.echo(9.99)  # known good call, just to read the error
         with self.assertRaises(RuntimeError):
-            gates.ask('ampl?')
+            res = gates.ask('ampl?')
+            print('shouldve been an error', res)
 
         with self.assertRaises(TypeError):
             MockInstrument('', delay='forever')
@@ -367,7 +368,7 @@ class TestParameters(TestCase):
         self.assertEqual(len(logs), log_count, logs)
         for line in logs:
             self.assertIn('cannot sweep', line.lower())
-        hist = source.getattr_server('history')
+        hist = source.getattr('history')
         self.assertEqual(len(hist), history_count)
 
     def test_sweep_steps_edge_case(self):
@@ -716,3 +717,76 @@ class TestParameters(TestCase):
             self.source.add_parameter('alignment2',
                                       parameter_class=ManualParameter,
                                       initial_value='nearsighted')
+
+
+class TestAttrAccess(TestCase):
+    def test_simple_noserver(self):
+        instrument = Instrument(name='test_simple_local')
+
+        # before setting attr1
+        self.assertEqual(instrument.getattr('attr1', 99), 99)
+        with self.assertRaises(AttributeError):
+            instrument.getattr('attr1')
+
+        with self.assertRaises(TypeError):
+            instrument.setattr('attr1')
+
+        self.assertFalse(hasattr(instrument, 'attr1'))
+
+        # set it to a value
+        instrument.setattr('attr1', 98)
+        self.assertTrue(hasattr(instrument, 'attr1'))
+
+        self.assertEqual(instrument.getattr('attr1', 99), 98)
+        self.assertEqual(instrument.getattr('attr1'), 98)
+
+        # then delete it
+        instrument.delattr('attr1')
+
+        with self.assertRaises(AttributeError):
+            instrument.delattr('attr1')
+
+        with self.assertRaises(AttributeError):
+            instrument.getattr('attr1')
+
+    def test_nested_noserver(self):
+        instrument = Instrument(name='test_simple_local')
+
+        self.assertFalse(hasattr(instrument, 'd1'))
+
+        with self.assertRaises(TypeError):
+            instrument.setattr(('d1', 'a', 1))
+
+        # set one attribute that requires creating nested levels
+        instrument.setattr(('d1', 'a', 1), 2)
+
+        # can't nest inside a non-container
+        with self.assertRaises(TypeError):
+            instrument.setattr(('d1', 'a', 1, 'secret'), 42)
+
+        # get the whole dict with simple getattr style
+        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
+
+        # get the whole or parts with nested style
+        self.assertEqual(instrument.getattr(('d1',)), {'a': {1: 2}})
+        self.assertEqual(instrument.getattr(('d1',), 55), {'a': {1: 2}})
+        self.assertEqual(instrument.getattr(('d1', 'a')), {1: 2})
+        self.assertEqual(instrument.getattr(('d1', 'a', 1)), 2)
+        self.assertEqual(instrument.getattr(('d1', 'a', 1), 3), 2)
+
+        # add an attribute inside, then delete it again
+        instrument.setattr(('d1', 'a', 2), 23)
+        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2, 2: 23}})
+        instrument.delattr(('d1', 'a', 2))
+        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
+
+        # deleting it without pruning should leave empty containers
+        instrument.delattr(('d1', 'a', 1), prune=False)
+        self.assertEqual(instrument.getattr('d1'), {'a': {}})
+
+        with self.assertRaises(KeyError):
+            instrument.delattr(('d1', 'a', 1))
+
+        # now prune
+        instrument.delattr(('d1', 'a'))
+        self.assertIsNone(instrument.getattr('d1', None))
