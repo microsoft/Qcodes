@@ -1,7 +1,6 @@
 import asyncio
 import time
 from datetime import datetime
-from queue import Empty
 from traceback import format_exc
 
 from .base import Instrument

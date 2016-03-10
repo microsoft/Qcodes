@@ -190,9 +190,9 @@ class write_server(ask_server):
 
 class InstrumentServer:
     def __init__(self, query_queue, response_queue, error_queue, extras):
-        self.query_queue = query_queue
-        self.response_queue = response_queue
-        self.error_queue = error_queue
+        self._query_queue = query_queue
+        self._response_queue = response_queue
+        self._error_queue = error_queue
 
         self.extras = extras
 
@@ -202,7 +202,7 @@ class InstrumentServer:
         while self.running:
             try:
                 query = None
-                query = self.query_queue.get()
+                query = self._query_queue.get()
                 self.process_query(query)
             except Exception as e:
                 self.post_error(e, query)
@@ -211,14 +211,14 @@ class InstrumentServer:
         getattr(self, query[0])(*(query[1:]))
 
     def reply(self, response):
-        self.response_queue.put(response)
+        self._response_queue.put(response)
 
     def post_error(self, e, query=None):
         if query:
             e.args = e.args + ('error processing query ' + repr(query),)
-        self.error_queue.put(format_exc())
+        self._error_queue.put(format_exc())
         time.sleep(0.05)  # give the error queue has time to register not-empty
-        self.response_queue.put('ERR')  # to short-circuit timeout
+        self._response_queue.put('ERR')  # to short-circuit timeout
 
     def halt(self, *args, **kwargs):
         '''
