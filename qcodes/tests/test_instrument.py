@@ -323,17 +323,16 @@ class TestParameters(TestCase):
 
     def test_mock_instrument_errors(self):
         gates, meter = self.gates, self.meter
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             gates.ask('no question')
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             gates.ask('question?yes but more after')
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             gates.write('ampl 1')
             self.meter.echo(9.99)  # known good call, just to read the error
-        with self.assertRaises(RuntimeError):
-            res = gates.ask('ampl?')
-            print('shouldve been an error', res)
+        with self.assertRaises(ValueError):
+            gates.ask('ampl?')
 
         with self.assertRaises(TypeError):
             MockInstrument('', delay='forever')
@@ -720,8 +719,12 @@ class TestParameters(TestCase):
 
 
 class TestAttrAccess(TestCase):
+    def tearDown(self):
+        self.instrument.close()
+
     def test_simple_noserver(self):
         instrument = Instrument(name='test_simple_local')
+        self.instrument = instrument
 
         # before setting attr1
         self.assertEqual(instrument.getattr('attr1', 99), 99)
@@ -751,6 +754,7 @@ class TestAttrAccess(TestCase):
 
     def test_nested_noserver(self):
         instrument = Instrument(name='test_simple_local')
+        self.instrument = instrument
 
         self.assertFalse(hasattr(instrument, 'd1'))
 
@@ -786,6 +790,50 @@ class TestAttrAccess(TestCase):
 
         with self.assertRaises(KeyError):
             instrument.delattr(('d1', 'a', 1))
+
+        # now prune
+        instrument.delattr(('d1', 'a'))
+        self.assertIsNone(instrument.getattr('d1', None))
+
+    def test_server(self):
+        instrument = Instrument(name='test_server', server_name='attr_test')
+        self.instrument = instrument
+
+        with self.assertRaises(TypeError):
+            instrument.setattr(('d1', 'a', 1))
+            instrument.getattr('name')
+
+        # set one attribute that requires creating nested levels
+        instrument.setattr(('d1', 'a', 1), 2)
+
+        # can't nest inside a non-container
+        with self.assertRaises(TypeError):
+            instrument.setattr(('d1', 'a', 1, 'secret'), 42)
+            instrument.getattr('name')
+
+        # get the whole dict with simple getattr style
+        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
+
+        # get the whole or parts with nested style
+        self.assertEqual(instrument.getattr(('d1',)), {'a': {1: 2}})
+        self.assertEqual(instrument.getattr(('d1',), 55), {'a': {1: 2}})
+        self.assertEqual(instrument.getattr(('d1', 'a')), {1: 2})
+        self.assertEqual(instrument.getattr(('d1', 'a', 1)), 2)
+        self.assertEqual(instrument.getattr(('d1', 'a', 1), 3), 2)
+
+        # add an attribute inside, then delete it again
+        instrument.setattr(('d1', 'a', 2), 23)
+        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2, 2: 23}})
+        instrument.delattr(('d1', 'a', 2))
+        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
+
+        # deleting it without pruning should leave empty containers
+        instrument.delattr(('d1', 'a', 1), prune=False)
+        self.assertEqual(instrument.getattr('d1'), {'a': {}})
+
+        with self.assertRaises(KeyError):
+            instrument.delattr(('d1', 'a', 1))
+            instrument.getattr('name')
 
         # now prune
         instrument.delattr(('d1', 'a'))

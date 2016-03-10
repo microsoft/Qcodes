@@ -5,6 +5,7 @@ import time
 from traceback import print_exc
 from queue import Empty
 from uuid import uuid4
+import builtins
 
 from .helpers import in_notebook
 
@@ -269,7 +270,28 @@ class ServerManager:
             # then get the error and raise a wrapping exception
             errstr = self._error_queue.get(self.query_timeout)
             errhead = '*** error on {} ***'.format(self.name)
-            raise RuntimeError(errhead + '\n\n' + errstr)
+
+            # try to match the error type, if it's a built-in type
+            # or available in globals or locals. Only take types that
+            # end in 'Error', to be safe.
+            err_type = None
+            err_type_str = errstr.rstrip().rsplit('\n', 1)[-1].split(':')[0]
+            if err_type_str.endswith('Error'):
+                err_type = getattr(builtins, err_type_str, None)
+                if err_type is None and err_type in globals():
+                    err_type = globals()[err_type_str]
+                if err_type is None and err_type_str in locals():
+                    err_type = locals()[err_type_str]
+            if err_type is None:
+                err_type = RuntimeError
+
+            raise err_type(errhead + '\n\n' + errstr)
+
+    def _check_response(self, expect_error):
+        res = self._response_queue.get()
+        if res == SERVER_ERR:
+            expect_error = True
+        return res, expect_error
 
     def ask(self, *query, timeout=None):
         '''
@@ -279,17 +301,18 @@ class ServerManager:
         expect_error = False
 
         with self.query_lock:
+            # in case a previous query errored and left something on the
+            # response queue, clear it
+            while not self._response_queue.empty():
+                res, expect_error = self._check_response(expect_error)
+
             self._query_queue.put(query)
 
             try:
-                res = self._response_queue.get(timeout=timeout)
-                if res == SERVER_ERR:
-                    expect_error = True
+                res, expect_error = self._check_response(expect_error)
 
                 while not self._response_queue.empty():
-                    res = self._response_queue.get()
-                    if res == SERVER_ERR:
-                        expect_error = True
+                    res, expect_error = self._check_response(expect_error)
 
             except Empty as e:
                 if self._error_queue.empty():
