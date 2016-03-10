@@ -313,13 +313,17 @@ class AlazarTech_ATS(Instrument):
             buffer_recycling = True
 
         while buffers_completed < self.parameters['buffers_per_acquisition']._get_byte():
-            buf = self.buflist[buffers_completed % self.parameters['allocated_buffers']._get_byte()]
+            buf = self.buffer_list[buffers_completed % self.parameters['allocated_buffers']._get_byte()]
 
             return_code = self._ATS9870_dll.AlazarWaitAsyncBufferComplete(self._handle, buf.addr, buffer_timeout)
             self._result_handler(error_code=return_code, error_source="AlazarWaitAsyncBufferComplete")
 
+            # TODO last series of buffers must be handled exceptionally (and I want to test the difference)
+            # TODO by changing buffer recycling for the last series of buffers
+
             # if buffers must be recycled, extract data and repost them
             # otherwise continue to next buffer
+
             if buffer_recycling:
                 # TODO handle data here
 
