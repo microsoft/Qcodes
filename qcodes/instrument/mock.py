@@ -5,7 +5,7 @@ from traceback import format_exc
 
 from .base import Instrument
 from .server import ask_server, write_server
-from qcodes.utils.multiprocessing import ServerManager
+from qcodes.utils.multiprocessing import ServerManager, SERVER_ERR
 
 
 class MockInstrument(Instrument):
@@ -200,6 +200,4 @@ class MockModel(ServerManager):
             except Exception as e:
                 e.args = e.args + ('error processing query ' + repr(query),)
                 self._error_queue.put(format_exc())
-                # give the error queue has time to register not-empty
-                time.sleep(0.05)
-                self._response_queue.put('ERR')  # to short-circuit timeout
+                self._response_queue.put(SERVER_ERR)

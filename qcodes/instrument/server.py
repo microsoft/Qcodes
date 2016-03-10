@@ -1,9 +1,8 @@
-import time
 from traceback import format_exc
 from functools import update_wrapper
 import weakref
 
-from qcodes.utils.multiprocessing import ServerManager
+from qcodes.utils.multiprocessing import ServerManager, SERVER_ERR
 
 
 def connect_instrument_server(server_name, instrument, server_extras={}):
@@ -217,8 +216,7 @@ class InstrumentServer:
         if query:
             e.args = e.args + ('error processing query ' + repr(query),)
         self._error_queue.put(format_exc())
-        time.sleep(0.05)  # give the error queue has time to register not-empty
-        self._response_queue.put('ERR')  # to short-circuit timeout
+        self._response_queue.put(SERVER_ERR)  # to short-circuit timeout
 
     def halt(self, *args, **kwargs):
         '''

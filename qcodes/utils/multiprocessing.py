@@ -9,6 +9,7 @@ from uuid import uuid4
 from .helpers import in_notebook
 
 MP_ERR = 'context has already been set'
+SERVER_ERR = '~~ERR~~'
 
 
 def set_mp_method(method, force=False):
@@ -259,14 +260,14 @@ class ServerManager:
         self._query_queue.put(query)
         self._check_for_errors()
 
-    def _check_for_errors(self):
-        if not self._error_queue.empty():
+    def _check_for_errors(self, expect_error=False):
+        if expect_error or not self._error_queue.empty():
             # clear the response queue whenever there's an error
             while not self._response_queue.empty():
                 self._response_queue.get()
 
             # then get the error and raise a wrapping exception
-            errstr = self._error_queue.get()
+            errstr = self._error_queue.get(self.query_timeout)
             errhead = '*** error on {} ***'.format(self.name)
             raise RuntimeError(errhead + '\n\n' + errstr)
 
@@ -275,17 +276,26 @@ class ServerManager:
         Send a query to the server and wait for a response
         '''
         timeout = timeout or self.query_timeout
+        expect_error = False
 
-        with mp.RLock():  # self.query_lock:
+        with self.query_lock:
             self._query_queue.put(query)
 
             try:
                 res = self._response_queue.get(timeout=timeout)
+                if res == SERVER_ERR:
+                    expect_error = True
+
+                while not self._response_queue.empty():
+                    res = self._response_queue.get()
+                    if res == SERVER_ERR:
+                        expect_error = True
+
             except Empty as e:
                 if self._error_queue.empty():
                     # only raise if we're not about to find a deeper error
                     raise e
-            self._check_for_errors()
+            self._check_for_errors(expect_error)
 
             return res
 
