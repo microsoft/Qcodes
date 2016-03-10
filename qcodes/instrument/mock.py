@@ -163,6 +163,13 @@ class MockModel(ServerManager):
     added to it
     '''
     def __init__(self, name='Model{:.7s}'):
+        # Most of the other uses of ServerManager use a separate class
+        # for the server itself. But here I put the two together into
+        # a single class, just to make it easier to define models.
+        # The downside is you have a local object with methods you
+        # shouldn't call, the extras (<instrument>_(set|get)) should
+        # only be called on the server copy. But I think that's OK because
+        # this will primarily be called via the attached instruments.
         super().__init__(name, server_class=None)
 
     def _run_server(self):
