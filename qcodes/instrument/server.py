@@ -93,14 +93,25 @@ class InstrumentConnection:
         self.manager.ask('new', instrument)
 
     def ask(self, func_name, *args, **kwargs):
+        '''
+        Query the server copy of this instrument, expecting a response
+        '''
         return self.manager.ask('ask', self.instrument.uuid,
                                 func_name, args, kwargs)
 
     def write(self, func_name, *args, **kwargs):
+        '''
+        Send a command to the server copy of this instrument, without
+        waiting for a response
+        '''
         self.manager.write('write', self.instrument.uuid,
                            func_name, args, kwargs)
 
     def close(self):
+        '''
+        Take this instrument off the server and irreversibly stop
+        this connection
+        '''
         if hasattr(self, 'manager'):
             self.manager.delete(self.instrument)
 
