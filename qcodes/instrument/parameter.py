@@ -167,30 +167,51 @@ class Parameter(Metadatable):
             self.setpoint_names = setpoint_names
             self.setpoint_labels = setpoint_labels
 
-        # record of latest value and when it was set or measured
-        # what exactly this means is different for different subclasses
-        # but they all use the same attributes so snapshot is consistent.
-        self._last_value = None
-        self._last_ts = None
         self.get_latest = GetLatest(self)
 
-    def snapshot_base(self):
+    def has_instrument_storage(self):
+        return (getattr(self, 'instrument', None) and
+                hasattr(self.instrument, 'getattr') and
+                hasattr(self.instrument, 'setattr'))
+
+    def _latest(self):
+        if self.has_instrument_storage():
+            # Parameters attached to instruments store their state with the
+            # instrument, so it can be accessed consistently from any process
+            state = self.instrument.getattr(('param_state', self.name), None)
+            if state is None:
+                state = {'value': None, 'ts': None}
+        else:
+            state = {
+                'value': getattr(self, '_latest_value', None),
+                'ts': getattr(self, '_latest_ts', None)
+            }
+        return state
+
+    def snapshot_base(self, state=None):
         '''
         json state of the Parameter
-        '''
-        if self._last_ts is None:
-            ts = None
-        else:
-            ts = self._last_ts.strftime('%Y-%m-%d %H:%M:%S')
 
-        return {
-            'value': self._last_value,
-            'ts': ts
-        }
+        optionally pass in the state, so if this is an instrument parameter
+        we can collect all calls to the server into one
+        '''
+        if state is None:
+            state = self._latest()
+        if state['ts'] is not None:
+            state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
+
+        return state
 
     def _save_val(self, value):
-        self._last_value = value
-        self._last_ts = datetime.now()
+        ts = datetime.now()
+        if self.has_instrument_storage():
+            self.instrument.setattr(('param_state', self.name), {
+                'value': value,
+                'ts': ts
+            })
+        else:
+            self._latest_value = value
+            self._latest_ts = datetime.now()
 
     def _set_vals(self, vals):
         if vals is None:
@@ -358,9 +379,11 @@ class StandardParameter(Parameter):
 
     def _sweep_steps(self, value):
         oldest_ok_val = datetime.now() - timedelta(seconds=self._max_val_age)
-        if self._last_ts is None or self._last_ts < oldest_ok_val:
-            self.get()
-        start_value = self._last_value
+        state = self._latest()
+        if state['ts'] is None or state['ts'] < oldest_ok_val:
+            start_value = self.get()
+        else:
+            start_value = state['value']
 
         self.validate(start_value)
 
@@ -492,9 +515,7 @@ class ManualParameter(Parameter):
 
     name: the local name of this parameter
 
-    instrument: the instrument this applies to. Not actually used for
-        anything, just required so this class can be used with
-        Instrument.add_parameter(name, parameter_class=ManualParameter)
+    instrument: the instrument this applies to, if any.
 
     initial_value: optional starting value. Default is None, which is the
         only invalid value allowed (and None is only allowed as an initial
@@ -502,6 +523,7 @@ class ManualParameter(Parameter):
     '''
     def __init__(self, name, instrument=None, initial_value=None, **kwargs):
         super().__init__(name=name, **kwargs)
+        self.instrument = instrument
         if initial_value is not None:
             self.validate(initial_value)
             self._save_val(initial_value)
@@ -515,7 +537,7 @@ class ManualParameter(Parameter):
         return self.set(value)
 
     def get(self):
-        return self._last_value
+        return self._latest()['value']
 
     @asyncio.coroutine
     def get_async(self):
@@ -540,7 +562,7 @@ class GetLatest(DelegateAttributes):
     omit_delegate_attrs = ['set', 'set_async']
 
     def get(self):
-        return self.parameter._last_value
+        return self.parameter._latest()['value']
 
     @asyncio.coroutine
     def get_async(self):

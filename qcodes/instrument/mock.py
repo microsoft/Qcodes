@@ -23,6 +23,8 @@ class MockInstrument(Instrument):
     parameters to pass to model should be declared with:
         get_cmd = param_name + '?'
         set_cmd = param_name + ':{:.3f}' (specify the format & precision)
+    these will get self.name + ':' prepended to fit the syntax expected
+        by MockModel servers
     alternatively independent functions may still be provided.
     '''
     def __init__(self, name, delay=0, model=None, keep_history=True,

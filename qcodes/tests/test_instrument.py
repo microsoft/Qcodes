@@ -517,7 +517,7 @@ class TestParameters(TestCase):
 
         mock_ts = datetime(2000, 3, 4)
         ts_str = mock_ts.strftime('%Y-%m-%d %H:%M:%S')
-        noise._last_ts = mock_ts
+        self.source.setattr(('param_state', 'noise', 'ts'), mock_ts)
         self.assertEqual(noise.snapshot()['ts'], ts_str)
 
         self.assertEqual(noise.get_latest(), 100)
