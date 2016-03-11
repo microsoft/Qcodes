@@ -8,6 +8,7 @@ from qcodes.instrument.mock import MockInstrument, MockModel
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.sweep_values import SweepValues
 from qcodes.instrument.parameter import ManualParameter
+from qcodes.instrument.server import ask_server
 
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
 from qcodes.utils.sync_async import wait_for_async, NoCommandError
@@ -75,6 +76,36 @@ class AMockModel(MockModel):
             return self.fmt(float(parameter[5:]))
 
 
+class MockInstTester(MockInstrument):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.attach_adder()
+
+    @ask_server
+    def attach_adder(self):
+        '''
+        this function attaches a closure to the object, so can only be
+        executed after creating the server because a closure is not
+        picklable
+        '''
+        a = 5
+
+        def f(b):
+            '''
+            not the same function as the original method
+            '''
+            return a + b
+        self.add5 = f
+
+    @ask_server
+    def add5(self, b):
+        '''
+        the local copy of this should not get run, because it should
+        be overwritten on the server by the closure version
+        '''
+        raise RuntimeError('dont run this one!')
+
+
 class TestParamConstructor(TestCase):
     def test_name_s(self):
         p = Parameter('simple')
@@ -129,7 +160,7 @@ class TestParameters(TestCase):
         self.model = AMockModel()
         self.read_response = 'I am the walrus!'
 
-        self.gates = MockInstrument('gates', model=self.model, delay=0.001,
+        self.gates = MockInstTester('gates', model=self.model, delay=0.001,
                                     use_async=True,
                                     read_response=self.read_response)
         for i in range(3):
@@ -146,13 +177,13 @@ class TestParameters(TestCase):
                                      sweep_step=0.1, sweep_delay=0.005)
         self.gates.add_function('reset', call_cmd='rst')
 
-        self.source = MockInstrument('source', model=self.model, delay=0.001)
+        self.source = MockInstTester('source', model=self.model, delay=0.001)
         self.source.add_parameter('amplitude', get_cmd='ampl?',
                                   set_cmd='ampl:{:.4f}', get_parser=float,
                                   vals=Numbers(0, 1),
                                   sweep_step=0.2, sweep_delay=0.005)
 
-        self.meter = MockInstrument('meter', model=self.model, delay=0.001,
+        self.meter = MockInstTester('meter', model=self.model, delay=0.001,
                                     read_response=self.read_response)
         self.meter.add_parameter('amplitude', get_cmd='ampl?',
                                  get_parser=float)
@@ -171,6 +202,12 @@ class TestParameters(TestCase):
         if val < 0:
             time.sleep(0.05)
         self.gates.chan0.set(val)
+
+    def test_unpicklable(self):
+        self.assertEqual(self.gates.add5(6), 11)
+        # compare docstrings to make sure we're really calling add5
+        # on the server
+        self.assertIn(MockInstTester.add5.__doc__, self.gates.add5.__doc__)
 
     def test_slow_set(self):
         self.gates.add_parameter('chan0slow', get_cmd='c0?',
