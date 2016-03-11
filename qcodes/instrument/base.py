@@ -190,7 +190,7 @@ class Instrument(Metadatable, DelegateAttributes):
 
     def __del__(self):
         wr = weakref.ref(self)
-        if wr in self._instances:
+        if wr in getattr(self, '_instances', {}):
             self._instances.remove(wr)
         self.close()
 

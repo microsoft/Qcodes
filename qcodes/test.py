@@ -26,6 +26,8 @@ if __name__ == '__main__':
     import argparse
     import coverage
     import os
+    import multiprocessing as mp
+    mp.set_start_method('spawn')
 
     # make sure coverage looks for .coveragerc in the right place
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
