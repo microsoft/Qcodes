@@ -1,6 +1,5 @@
 from traceback import format_exc
 from functools import update_wrapper
-import weakref
 
 from qcodes.utils.multiprocessing import ServerManager, SERVER_ERR
 
@@ -21,12 +20,12 @@ def connect_instrument_server(server_name, instrument, server_extras={}):
         as attributes of any instrument that connects to it
     '''
     instances = InstrumentManager.instances
-    if server_name in instances and instances[server_name]():
+    if server_name in instances and instances[server_name]:
         # kwargs get ignored for existing servers - lets hope they're the same!
-        manager = instances[server_name]()
+        manager = instances[server_name]
     else:
         manager = InstrumentManager(server_name, server_extras)
-        instances[server_name] = weakref.ref(manager)
+        instances[server_name] = manager
 
     return manager.connect(instrument)
 
@@ -58,11 +57,11 @@ class InstrumentManager(ServerManager):
         super().restart()
 
         for instrument in enumerate(self.instruments.values()):
-            self.connect(instrument())
+            self.connect(instrument)
 
     def connect(self, instrument):
         conn = InstrumentConnection(manager=self, instrument=instrument)
-        self.instruments[instrument.uuid] = weakref.ref(instrument)
+        self.instruments[instrument.uuid] = instrument
         return conn
 
     def delete(self, instrument):
