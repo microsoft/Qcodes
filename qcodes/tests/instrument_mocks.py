@@ -1,5 +1,6 @@
 from qcodes.instrument.mock import MockInstrument, MockModel
 from qcodes.instrument.server import ask_server
+from qcodes.utils.validators import Numbers
 
 
 class AMockModel(MockModel):
@@ -87,7 +88,45 @@ class MockInstTester(MockInstrument):
     @ask_server
     def add5(self, b):
         '''
-        the local copy of this should not get run, because it should
-        be overwritten on the server by the closure version
+        The local copy of this should not get run, because it should
+        be overwritten on the server by the closure version.
+        This function itself should not be run, but we will see its docstring.
         '''
         raise RuntimeError('dont run this one!')
+
+
+class MockGates(MockInstTester):
+    def __init__(self, model, read_response):
+        super().__init__('gates', model=model, delay=0.001,
+                         use_async=True, read_response=read_response)
+        for i in range(3):
+            cmdbase = 'c{}'.format(i)
+            self.add_parameter('chan{}'.format(i), get_cmd=cmdbase + '?',
+                               set_cmd=cmdbase + ':{:.4f}',
+                               get_parser=float,
+                               vals=Numbers(-10, 10))
+            self.add_parameter('chan{}step'.format(i),
+                               get_cmd=cmdbase + '?',
+                               set_cmd=cmdbase + ':{:.4f}',
+                               get_parser=float,
+                               vals=Numbers(-10, 10),
+                               sweep_step=0.1, sweep_delay=0.005)
+        self.add_function('reset', call_cmd='rst')
+
+
+class MockSource(MockInstTester):
+    def __init__(self, model):
+        super().__init__('source', model=model, delay=0.001)
+        self.add_parameter('amplitude', get_cmd='ampl?',
+                           set_cmd='ampl:{:.4f}', get_parser=float,
+                           vals=Numbers(0, 1),
+                           sweep_step=0.2, sweep_delay=0.005)
+
+
+class MockMeter(MockInstTester):
+    def __init__(self, model, read_response):
+        super().__init__('meter', model=model, delay=0.001,
+                         read_response=read_response)
+        self.add_parameter('amplitude', get_cmd='ampl?', get_parser=float)
+        self.add_function('echo', call_cmd='echo {:.2f}?',
+                          args=[Numbers(0, 1000)], return_parser=float)

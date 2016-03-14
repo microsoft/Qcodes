@@ -13,7 +13,8 @@ from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
 from qcodes.utils.sync_async import wait_for_async, NoCommandError
 from qcodes.utils.helpers import LogCapture
 
-from .instrument_mocks import AMockModel, MockInstTester
+from .instrument_mocks import (AMockModel, MockInstTester,
+                               MockGates, MockSource, MockMeter)
 
 
 class TestParamConstructor(TestCase):
@@ -70,36 +71,9 @@ class TestParameters(TestCase):
         self.model = AMockModel()
         self.read_response = 'I am the walrus!'
 
-        self.gates = MockInstTester('gates', model=self.model, delay=0.001,
-                                    use_async=True,
-                                    read_response=self.read_response)
-        for i in range(3):
-            cmdbase = 'c{}'.format(i)
-            self.gates.add_parameter('chan{}'.format(i), get_cmd=cmdbase + '?',
-                                     set_cmd=cmdbase + ':{:.4f}',
-                                     get_parser=float,
-                                     vals=Numbers(-10, 10))
-            self.gates.add_parameter('chan{}step'.format(i),
-                                     get_cmd=cmdbase + '?',
-                                     set_cmd=cmdbase + ':{:.4f}',
-                                     get_parser=float,
-                                     vals=Numbers(-10, 10),
-                                     sweep_step=0.1, sweep_delay=0.005)
-        self.gates.add_function('reset', call_cmd='rst')
-
-        self.source = MockInstTester('source', model=self.model, delay=0.001)
-        self.source.add_parameter('amplitude', get_cmd='ampl?',
-                                  set_cmd='ampl:{:.4f}', get_parser=float,
-                                  vals=Numbers(0, 1),
-                                  sweep_step=0.2, sweep_delay=0.005)
-
-        self.meter = MockInstTester('meter', model=self.model, delay=0.001,
-                                    read_response=self.read_response)
-        self.meter.add_parameter('amplitude', get_cmd='ampl?',
-                                 get_parser=float)
-        self.meter.add_function('echo', call_cmd='echo {:.2f}?',
-                                args=[Numbers(0, 1000)],
-                                return_parser=float)
+        self.gates = MockGates(self.model, self.read_response)
+        self.source = MockSource(self.model)
+        self.meter = MockMeter(self.model, self.read_response)
 
         self.init_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -116,8 +90,11 @@ class TestParameters(TestCase):
     def test_unpicklable(self):
         self.assertEqual(self.gates.add5(6), 11)
         # compare docstrings to make sure we're really calling add5
-        # on the server
+        # on the server. The docstring should be from the local copy
         self.assertIn(MockInstTester.add5.__doc__, self.gates.add5.__doc__)
+        docpart = ('This function itself should not be run, '
+                   'but we will see its docstring.')
+        self.assertIn(docpart, MockInstTester.add5.__doc__)
 
     def test_slow_set(self):
         self.gates.add_parameter('chan0slow', get_cmd='c0?',
@@ -152,19 +129,21 @@ class TestParameters(TestCase):
         self.assertTrue(self.init_ts <= ts_str <= now)
 
     def test_instances(self):
-        for instrument in [self.gates, self.source, self.meter]:
-            self.assertIn(instrument, self.gates.instances())
+        instruments = [self.gates, self.source, self.meter]
+        for instrument in instruments:
+            for other_instrument in instruments:
+                instances = instrument.instances()
+                if other_instrument is instrument:
+                    self.assertIn(instrument, instances)
+                else:
+                    self.assertNotIn(other_instrument, instances)
 
         # somehow instances never go away... there are always 3
         # extra references to every instrument object, so del doesn't
-        # work. I guess for this reason, instrument tests should take
+        # work. For this reason, instrument tests should take
         # the *last* instance to test.
-        # instancelen = len(self.gates.instances())
-
-        # self.source.close()
-        # del self.source
-
-        # self.assertEqual(len(self.gates.instances()), instancelen - 1)
+        # so we can't test that the list of defined instruments is actually
+        # *only* what we want to see defined.
 
     def test_mock_instrument(self):
         gates, source, meter = self.gates, self.source, self.meter
