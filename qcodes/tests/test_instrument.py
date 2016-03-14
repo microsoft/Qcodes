@@ -738,6 +738,7 @@ class TestAttrAccess(TestCase):
             instrument.getattr('name')
 
         # get the whole dict with simple getattr style
+        # TODO: once I saw this fail, it returned "test_server"???
         self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
 
         # get the whole or parts with nested style

@@ -6,6 +6,7 @@ import numpy as np
 from qcodes.loops import Loop, MP_NAME, get_bg, halt_bg, Task, Wait
 from qcodes.station import Station
 from qcodes.data.io import DiskIO
+from qcodes.data.data_array import DataArray
 from qcodes.instrument.parameter import Parameter, ManualParameter
 from qcodes.utils.multiprocessing import QcodesProcess
 from qcodes.utils.validators import Numbers
@@ -106,7 +107,7 @@ class MultiGetter(Parameter):
             super().__init__(name=name)
             self.size = np.shape(self._return)
         else:
-            names = tuple(kwargs.keys())
+            names = tuple(sorted(kwargs.keys()))
             super().__init__(names=names)
             self._return = tuple(kwargs[k] for k in names)
             self.sizes = tuple(np.shape(v) for v in self._return)
@@ -144,7 +145,6 @@ class TestLoop(TestCase):
 
         data = Loop(self.p1[1:3:1], 0.001).run_temp()
 
-        # import pdb; pdb.set_trace()
         self.assertEqual(data.p1.tolist(), [1, 2])
         self.assertEqual(data.p2.tolist(), [4, 4])
         self.assertEqual(data.p3.tolist(), [5, 5])
@@ -181,18 +181,60 @@ class TestLoop(TestCase):
             self.assertLessEqual(delay, target)
             self.assertGreater(delay, target - 0.001)
 
-    def test_names_sizes(self):
+    def test_composite_params(self):
         # this one has names and sizes
         mg = MultiGetter(one=1, onetwo=(1, 2))
         self.assertTrue(hasattr(mg, 'names'))
         self.assertTrue(hasattr(mg, 'sizes'))
         self.assertFalse(hasattr(mg, 'name'))
         self.assertFalse(hasattr(mg, 'size'))
-        data = Loop(self.p1[1:3:1], 0.001).each(mg).run_temp()
+        loop = Loop(self.p1[1:3:1], 0.001).each(mg)
+        data = loop.run_temp()
 
         self.assertEqual(data.p1.tolist(), [1, 2])
         self.assertEqual(data.one.tolist(), [1, 1])
-        self.assertEqual(data.onetwo.tolist(), [[1, 2], [1, 2]])
+        self.assertEqual(data.onetwo.tolist(), [[1, 2]] * 2)
+        self.assertEqual(data.index0.tolist(), [[0, 1]] * 2)
+
+        # give it setpoints, names, and labels
+        mg.setpoints = (None, ((10, 11),))
+        sp_name = 'highest'
+        mg.setpoint_names = (None, (sp_name,))
+        sp_label = 'does it go to 11?'
+        mg.setpoint_labels = (None, (sp_label,))
+
+        data = loop.run_temp()
+
+        self.assertEqual(data.highest.tolist(), [[10, 11]] * 2)
+        self.assertEqual(data.highest.label, sp_label)
+
+        # setpoints as DataArray - name and label here override
+        # setpoint_names and setpoint_labels attributes
+        new_sp_name = 'bgn'
+        new_sp_label = 'boogie nights!'
+        sp_dataarray = DataArray(preset_data=[6, 7], name=new_sp_name,
+                                 label=new_sp_label)
+        # del mg.setpoint_names
+        # sp_dataarray.name = new_sp_name
+        # del mg.setpoint_labels
+        # sp_dataarray.label = new_sp_label
+        mg.setpoints = (None, (sp_dataarray,))
+
+        data = loop.run_temp()
+        self.assertEqual(data.bgn.tolist(), [[6, 7]] * 2)
+        self.assertEqual(data.bgn.label, new_sp_label)
+
+        # muck things up and test for errors
+        mg.setpoints = (None, ((1, 2), (3, 4)))
+        with self.assertRaises(ValueError):
+            loop.run_temp()
+        del mg.setpoints, mg.setpoint_names, mg.setpoint_labels
+        mg.names = mg.names + ('extra',)
+        with self.assertRaises(ValueError):
+            loop.run_temp()
+        del mg.names
+        with self.assertRaises(ValueError):
+            loop.run_temp()
 
         # this one has name and size
         mg = MultiGetter(arr=(4, 5, 6))
@@ -200,7 +242,17 @@ class TestLoop(TestCase):
         self.assertTrue(hasattr(mg, 'size'))
         self.assertFalse(hasattr(mg, 'names'))
         self.assertFalse(hasattr(mg, 'sizes'))
-        data = Loop(self.p1[1:3:1], 0.001).each(mg).run_temp()
+        loop = Loop(self.p1[1:3:1], 0.001).each(mg)
+        data = loop.run_temp()
 
         self.assertEqual(data.p1.tolist(), [1, 2])
-        self.assertEqual(data.arr.tolist(), [[4, 5, 6], [4, 5, 6]])
+        self.assertEqual(data.arr.tolist(), [[4, 5, 6]] * 2)
+        self.assertEqual(data.index0.tolist(), [[0, 1, 2]] * 2)
+
+        # alternate form for 1D size, just an integer
+        mg.size = mg.size[0]
+        loop = Loop(self.p1[1:3:1], 0.001).each(mg)
+        data = loop.run_temp()
+
+        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.arr.tolist(), [[4, 5, 6]] * 2)
