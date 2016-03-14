@@ -173,6 +173,14 @@ class Loop:
         default = Station.default.default_measurement
         return self.each(*default).run(*args, **kwargs)
 
+    def run_temp(self, *args, **kwargs):
+        '''
+        shortcut to run a loop in the foreground as a temporary dataset
+        using the default measurement set
+        '''
+        return self.run(*args, background=False, quiet=True,
+                        data_manager=False, location=False, **kwargs)
+
 
 class ActiveLoop:
     '''
@@ -380,6 +388,15 @@ class ActiveLoop:
             signal = self.signal_queue.get()
             if signal == self.HALT:
                 raise KeyboardInterrupt('sweep was halted')
+
+    def run_temp(self, **kwargs):
+        '''
+        wrapper to run this loop in the foreground as a temporary data set,
+        especially for use in composite parameters that need to run a Loop
+        as part of their get method
+        '''
+        return self.run(background=False, quiet=True,
+                        data_manager=False, location=False, **kwargs)
 
     def run(self, background=True, use_async=False, enqueue=False, quiet=False,
             data_manager=None, **kwargs):
