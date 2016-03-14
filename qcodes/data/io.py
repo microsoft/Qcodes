@@ -158,7 +158,19 @@ class DiskIO:
             os.remove(path)
 
         filepath = os.path.split(path)[0]
-        os.removedirs(filepath)
+        try:
+            os.removedirs(filepath)
+        except OSError:
+            # directory was not empty - good that we're not removing it!
+            pass
+
+    def remove_all(self, location):
+        '''
+        delete all files/directories in the dataset at this location,
+        and prune the directory tree
+        '''
+        for fn in self.list(location):
+            self.remove(fn)
 
 
 class FileWrapper:

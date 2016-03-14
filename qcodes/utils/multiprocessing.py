@@ -327,13 +327,19 @@ class ServerManager:
         Halt the server and end its process, but in a way that it can
         be started again
         '''
-        if self._server.is_alive():
-            self.write('halt')
-        self._server.join(timeout)
+        try:
+            if self._server.is_alive():
+                self.write('halt')
+            self._server.join(timeout)
 
-        if self._server.is_alive():
-            self._server.terminate()
-            print('ServerManager did not respond to halt signal, terminated')
+            if self._server.is_alive():
+                self._server.terminate()
+                print('ServerManager did not respond to halt signal, '
+                      'terminated')
+        except AssertionError:
+            # happens when we get here from other than the main process
+            # where we shouldn't be able to kill the server anyway
+            pass
 
     def restart(self):
         '''

@@ -96,7 +96,7 @@ class MockInstTester(MockInstrument):
 
 
 class MockGates(MockInstTester):
-    def __init__(self, model, read_response):
+    def __init__(self, model, read_response=None):
         super().__init__('gates', model=model, delay=0.001,
                          use_async=True, read_response=read_response)
         for i in range(3):
@@ -124,7 +124,7 @@ class MockSource(MockInstTester):
 
 
 class MockMeter(MockInstTester):
-    def __init__(self, model, read_response):
+    def __init__(self, model, read_response=None):
         super().__init__('meter', model=model, delay=0.001,
                          read_response=read_response)
         self.add_parameter('amplitude', get_cmd='ampl?', get_parser=float)

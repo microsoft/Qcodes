@@ -391,6 +391,7 @@ class ActiveLoop:
             as possible
         enqueue: (default False): wait for a previous background sweep to
             finish? If false, will raise an error if another sweep is running
+        quiet: (default False): set True to not print anything except errors
         data_manager: a DataManager instance (omit to use default,
             False to store locally and not write to disk)
 
@@ -439,6 +440,8 @@ class ActiveLoop:
             p.is_sweep = True
             p.signal_queue = self.signal_queue
             p.start()
+            self.process = p
+
             self.data_set.sync()
             self.data_set.mode = DataMode.PULL_FROM_SERVER
         else:

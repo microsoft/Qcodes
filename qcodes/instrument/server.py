@@ -1,5 +1,6 @@
 from traceback import format_exc
 from functools import update_wrapper
+import multiprocessing as mp
 
 from qcodes.utils.multiprocessing import ServerManager, SERVER_ERR
 
@@ -108,10 +109,13 @@ class InstrumentConnection:
     def close(self):
         '''
         Take this instrument off the server and irreversibly stop
-        this connection
+        this connection. You can only do this from the process that
+        started the manager (ie the main process) so that other processes
+        do not delete instruments when they finish
         '''
         if hasattr(self, 'manager'):
-            self.manager.delete(self.instrument)
+            if self.manager._server in mp.active_children():
+                self.manager.delete(self.instrument)
 
 
 class ask_server:
