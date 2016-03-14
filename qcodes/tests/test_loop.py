@@ -3,7 +3,7 @@ import time
 import multiprocessing as mp
 import numpy as np
 
-from qcodes.loops import Loop, MP_NAME, get_bg, halt_bg, Task, Wait
+from qcodes.loops import Loop, MP_NAME, get_bg, halt_bg, Task, Wait, ActiveLoop
 from qcodes.station import Station
 from qcodes.data.io import DiskIO
 from qcodes.data.data_array import DataArray
@@ -214,10 +214,6 @@ class TestLoop(TestCase):
         new_sp_label = 'boogie nights!'
         sp_dataarray = DataArray(preset_data=[6, 7], name=new_sp_name,
                                  label=new_sp_label)
-        # del mg.setpoint_names
-        # sp_dataarray.name = new_sp_name
-        # del mg.setpoint_labels
-        # sp_dataarray.label = new_sp_label
         mg.setpoints = (None, (sp_dataarray,))
 
         data = loop.run_temp()
@@ -225,13 +221,19 @@ class TestLoop(TestCase):
         self.assertEqual(data.bgn.label, new_sp_label)
 
         # muck things up and test for errors
+        mg.setpoints = (None, ((1, 2, 3)))
+        with self.assertRaises(ValueError):
+            loop.run_temp()
+
         mg.setpoints = (None, ((1, 2), (3, 4)))
         with self.assertRaises(ValueError):
             loop.run_temp()
+
         del mg.setpoints, mg.setpoint_names, mg.setpoint_labels
         mg.names = mg.names + ('extra',)
         with self.assertRaises(ValueError):
             loop.run_temp()
+
         del mg.names
         with self.assertRaises(ValueError):
             loop.run_temp()
@@ -256,3 +258,59 @@ class TestLoop(TestCase):
 
         self.assertEqual(data.p1.tolist(), [1, 2])
         self.assertEqual(data.arr.tolist(), [[4, 5, 6]] * 2)
+
+        # 2D size
+        mg = MultiGetter(arr2d=((21, 22), (23, 24)))
+        loop = Loop(self.p1[1:3:1], 0.001).each(mg)
+        data = loop.run_temp()
+
+        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.arr2d.tolist(), [[[21, 22], [23, 24]]] * 2)
+        self.assertEqual(data.index0.tolist(), [[0, 1]] * 2)
+        self.assertEqual(data.index1.tolist(), [[[0, 1]] * 2] * 2)
+
+
+class AbortingGetter(ManualParameter):
+    '''
+    A manual parameter that can only be measured a couple of times
+    before it aborts the loop that's measuring it.
+
+    You have to attach the queue after construction with set_queue
+    so you can grab it from the loop that uses the parameter.
+    '''
+    def __init__(self, *args, count=1, **kwargs):
+        self._count = self._initial_count = count
+        # also need a _signal_queue, but that has to be added later
+        super().__init__(*args, **kwargs)
+
+    def get(self):
+        self._count -= 1
+        if self._count <= 0:
+            self._signal_queue.put(ActiveLoop.HALT)
+        return super().get()
+
+    def set_queue(self, queue):
+        self._signal_queue = queue
+
+    def reset(self):
+        self._count = self._initial_count
+
+
+class TestSignal(TestCase):
+    def test_halt(self):
+        p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10))
+        loop = Loop(p1[1:6:1], 0.005).each(p1)
+        p1.set_queue(loop.signal_queue)
+
+        with self.assertRaises(KeyboardInterrupt):
+            loop.run_temp()
+
+        data = loop.data_set
+
+        nan = float('nan')
+        self.assertEqual(data.p1.tolist()[:2], [1, 2])
+        self.assertEqual(repr(data.p1.tolist()[-2:]), repr([nan, nan]))
+        # because of the way the waits work out, we get an extra
+        # point measured before the interrupt is registered. But the
+        # test would be valid either way.
+        self.assertIn(data.p1[2], (nan, 3))

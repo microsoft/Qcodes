@@ -213,6 +213,9 @@ class ActiveLoop:
         # set to its initial value
         self._nest_first = hasattr(actions[0], 'containers')
 
+        # for sending halt signals to the loop
+        self.signal_queue = mp.Queue()
+
         self._monitor = None  # TODO: how to specify this?
 
     def containers(self):
@@ -364,7 +367,7 @@ class ActiveLoop:
             return np.arange(0, size[0], 1)
 
         sp = np.ndarray(size)
-        sp_inner = self._default_setpoints(self, size[1:])
+        sp_inner = self._default_setpoints(size[1:])
         for i in range(len(sp)):
             sp[i] = sp_inner
 
@@ -444,8 +447,8 @@ class ActiveLoop:
 
         data_set = new_data(arrays=self.containers(), mode=data_mode,
                             data_manager=data_manager, **kwargs)
-        signal_queue = mp.Queue()
-        self.set_common_attrs(data_set=data_set, signal_queue=signal_queue)
+        self.set_common_attrs(data_set=data_set,
+                              signal_queue=self.signal_queue)
 
         if use_async:
             raise NotImplementedError  # TODO
