@@ -1,8 +1,11 @@
 from unittest import TestCase
+import time
+import multiprocessing as mp
 
-from qcodes.loops import Loop
+from qcodes.loops import Loop, MP_NAME, get_bg, halt_bg
 from qcodes.data.io import DiskIO
 from qcodes.instrument.parameter import ManualParameter
+from qcodes.utils.multiprocessing import QcodesProcess
 from qcodes.utils.validators import Numbers
 from .instrument_mocks import AMockModel, MockGates, MockSource, MockMeter
 
@@ -28,7 +31,7 @@ class TestMockInstLoop(TestCase):
 
         # TODO: if we don't save the dataset (location=False) then we can't
         # sync it when we're done. Should fix that - for now that just means
-        # you can only do foreground in-memory loops
+        # you can only do in-memory loops if you set data_manager=False
         data = loop.run(location=self.location, quiet=True)
 
         # wait for process to finish (ensures that this was run in the bg,
@@ -37,9 +40,70 @@ class TestMockInstLoop(TestCase):
 
         data.sync()
 
-        # TODO: data.chan1_ is a weird name. Weird use case (set and measure
-        # the same parameter), but lets get a better name
-        self.assertEqual(list(data.chan1_0), [1.0, 2.0, 3.0, 4.0])
-        self.assertEqual(list(data.chan1_), [1.0, 2.0, 3.0, 4.0])
+        self.assertEqual(data.chan1.tolist(), [1, 2, 3, 4])
+        self.assertEqual(data.chan1_set.tolist(), [1, 2, 3, 4])
 
         self.assertTrue(self.io.list(self.location))
+
+
+def sleeper(t):
+    time.sleep(t)
+
+
+class TestGetHaltBG(TestCase):
+    def test_get_halt(self):
+        self.assertIsNone(get_bg())
+
+        p1 = QcodesProcess(name=MP_NAME, target=sleeper, args=(10, ))
+        p1.start()
+        p2 = QcodesProcess(name=MP_NAME, target=sleeper, args=(10, ))
+        p2.start()
+        p1.signal_queue = p2.signal_queue = mp.Queue()
+        self.assertEqual(len(mp.active_children()), 2)
+
+        with self.assertRaises(RuntimeError):
+            get_bg()
+        bg1 = get_bg(return_first=True)
+        self.assertIn(bg1, [p1, p2])
+
+        halt_bg(timeout=0.01)
+        bg2 = get_bg()
+        self.assertIn(bg2, [p1, p2])
+        # is this robust? requires that active_children always returns the same
+        # order, even if it's not the order you started processes in
+        self.assertNotEqual(bg1, bg2)
+
+        self.assertEqual(len(mp.active_children()), 1)
+
+        halt_bg(timeout=0.01)
+        self.assertIsNone(get_bg())
+
+        self.assertEqual(len(mp.active_children()), 0)
+
+        # TODO - test that we print "no loops running"?
+        # at least this shows that it won't raise an error
+        halt_bg()
+
+
+class TestLoop(TestCase):
+    def setUp(self):
+        self.p1 = ManualParameter('p1', vals=Numbers(-10, 10))
+        self.p2 = ManualParameter('p2', vals=Numbers(-10, 10))
+        self.p3 = ManualParameter('p3', vals=Numbers(-10, 10))
+
+    def test_nesting(self):
+        loop = Loop(self.p1[1:3:1], 0.001).loop(
+            self.p2[3:5:1], 0.001).loop(
+            self.p3[5:7:1], 0.001)
+        active_loop = loop.each(self.p1, self.p2, self.p3)
+        data = active_loop.run(location=False, background=False, quiet=True,
+                               data_manager=False)
+
+        # import pdb; pdb.set_trace()
+        self.assertEqual(data.p1_set.tolist(), [1, 2])
+        self.assertEqual(data.p2_set.tolist(), [[3, 4]] * 2)
+        self.assertEqual(data.p3_set.tolist(), [[[5, 6]] * 2] * 2)
+
+        self.assertEqual(data.p1.tolist(), [[[1, 1]] * 2, [[2, 2]] * 2])
+        self.assertEqual(data.p2.tolist(), [[[3, 3], [4, 4]]] * 2)
+        self.assertEqual(data.p3.tolist(), [[[5, 6]] * 2] * 2)

@@ -88,6 +88,7 @@ def halt_bg(timeout=5):
 
     if loop.is_alive():
         loop.terminate()
+        loop.join(timeout/2)
         print('Background loop did not respond to halt signal, terminated')
 
 
