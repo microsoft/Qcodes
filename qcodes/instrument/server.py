@@ -67,10 +67,7 @@ class InstrumentManager(ServerManager):
         return conn
 
     def delete(self, instrument):
-        try:
-            self.write('delete', instrument.uuid)
-        except:
-            pass
+        self.write('delete', instrument.uuid)
 
         if instrument.uuid in self.instruments:
             del self.instruments[instrument.uuid]
@@ -214,7 +211,7 @@ class InstrumentServer:
                 self.post_error(e, query)
 
     def process_query(self, query):
-        getattr(self, query[0])(*(query[1:]))
+        getattr(self, 'handle_' + query[0])(*(query[1:]))
 
     def reply(self, response):
         self._response_queue.put(response)
@@ -225,29 +222,46 @@ class InstrumentServer:
         self._error_queue.put(format_exc())
         self._response_queue.put(SERVER_ERR)  # to short-circuit timeout
 
-    def halt(self, *args, **kwargs):
+    def handle_halt(self, *args, **kwargs):
         '''
         Quit this InstrumentServer
         '''
         self.running = False
 
-    def new(self, instrument):
+    def handle_new(self, instrument):
+        '''
+        Add a new instrument to the server
+        after the initial load, the instrument is referred to by its UUID
+        '''
         self.instruments[instrument.uuid] = instrument
         instrument.server_extras = self.extras
         self.reply(True)
 
-    def delete(self, instrument_id):
+    def handle_delete(self, instrument_id):
+        '''
+        Delete an instrument from the server, and stop the server if their
+        are no more instruments left after this.
+        '''
         if instrument_id in self.instruments:
             del self.instruments[instrument_id]
 
             if not self.instruments:
-                self.halt()
+                self.handle_halt()
 
-    def ask(self, instrument_id, func_name, args, kwargs):
+    def handle_ask(self, instrument_id, func_name, args, kwargs):
+        '''
+        Run some method of an instrument, and post the return to the
+        response queue
+        '''
         func = getattr(self.instruments[instrument_id], func_name)
         response = func(*args, **kwargs)
         self.reply(response)
 
-    def write(self, instrument_id, func_name, args, kwargs):
+    def handle_write(self, instrument_id, func_name, args, kwargs):
+        '''
+        Run some method of an instrument but ignore any response it may give
+        (errors will still go to the error queue, but will be picked up by
+        some later query)
+        '''
         func = getattr(self.instruments[instrument_id], func_name)
         func(*args, **kwargs)
