@@ -709,7 +709,7 @@ class TestAttrAccess(TestCase):
             instrument.getattr('attr1')
 
     def test_nested_noserver(self):
-        instrument = Instrument(name='test_simple_local')
+        instrument = Instrument(name='test_nested_local')
         self.instrument = instrument
 
         self.assertFalse(hasattr(instrument, 'd1'))
@@ -735,9 +735,9 @@ class TestAttrAccess(TestCase):
         self.assertEqual(instrument.getattr(('d1', 'a', 1), 3), 2)
 
         # add an attribute inside, then delete it again
-        instrument.setattr(('d1', 'a', 2), 23)
-        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2, 2: 23}})
-        instrument.delattr(('d1', 'a', 2))
+        instrument.setattr(('d1', 'a', 2, 3), 4)
+        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2, 2: {3: 4}}})
+        instrument.delattr(('d1', 'a', 2, 3))
         self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
 
         # deleting it without pruning should leave empty containers
@@ -750,6 +750,12 @@ class TestAttrAccess(TestCase):
         # now prune
         instrument.delattr(('d1', 'a'))
         self.assertIsNone(instrument.getattr('d1', None))
+
+        # a little more with top-level attrs as tuples
+        instrument.setattr(('d2',), 'potato')
+        self.assertEqual(instrument.getattr('d2'), 'potato')
+        instrument.delattr(('d2',))
+        self.assertIsNone(instrument.getattr('d2', None))
 
     def test_server(self):
         instrument = Instrument(name='test_server', server_name='attr_test')
