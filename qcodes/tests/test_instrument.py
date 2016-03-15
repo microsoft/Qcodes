@@ -5,9 +5,9 @@ import time
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
-from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.parameter import Parameter, ManualParameter
 from qcodes.instrument.sweep_values import SweepValues
-from qcodes.instrument.parameter import ManualParameter
+from qcodes.instrument.function import Function
 
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
 from qcodes.utils.sync_async import wait_for_async, NoCommandError
@@ -123,6 +123,22 @@ class TestParameters(TestCase):
             self.assertEqual(len(logs), logcount, (param, logs))
             for line in logs:
                 self.assertTrue(line.startswith('negative delay'), line)
+
+    def test_max_sweep_delay_errors(self):
+        with self.assertRaises(TypeError):
+            self.gates.add_parameter('chan0slow2', get_cmd='c0?',
+                                     set_cmd=self.slow_neg_set,
+                                     get_parser=float,
+                                     vals=Numbers(-10, 10), sweep_step=0.2,
+                                     sweep_delay=0.01,
+                                     max_sweep_delay='forever')
+        with self.assertRaises(ValueError):
+            self.gates.add_parameter('chan0slow2', get_cmd='c0?',
+                                     set_cmd=self.slow_neg_set,
+                                     get_parser=float,
+                                     vals=Numbers(-10, 10), sweep_step=0.2,
+                                     sweep_delay=0.05,
+                                     max_sweep_delay=0.03)
 
     def check_ts(self, ts_str):
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -404,6 +420,20 @@ class TestParameters(TestCase):
 
         with self.assertRaises(ValueError):
             gates.memcoded.set('zero')
+
+    def test_bare_function(self):
+        # not a use case we want to promote, but it's there...
+        p = ManualParameter('test')
+
+        def doubler(x):
+            p.set(x * 2)
+
+        f = Function('f', call_cmd=doubler, args=[Numbers(-10, 10)])
+
+        f(4)
+        self.assertEqual(p.get(), 8)
+        with self.assertRaises(ValueError):
+            f(20)
 
     def test_standard_snapshot(self):
         self.assertEqual(self.meter.snapshot(), {
