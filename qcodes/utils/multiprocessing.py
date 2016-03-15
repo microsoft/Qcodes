@@ -244,10 +244,10 @@ class ServerManager:
         self.name = name.format(self.uuid)
 
         self.query_timeout = query_timeout
-        self._start_server(self.name)
+        self._start_server()
 
-    def _start_server(self, name):
-        self._server = QcodesProcess(target=self._run_server, name=name)
+    def _start_server(self):
+        self._server = QcodesProcess(target=self._run_server, name=self.name)
         self._server.start()
 
     def _run_server(self):

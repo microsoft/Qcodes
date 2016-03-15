@@ -7,6 +7,7 @@ from qcodes.loops import Loop, MP_NAME, get_bg, halt_bg, Task, Wait, ActiveLoop
 from qcodes.station import Station
 from qcodes.data.io import DiskIO
 from qcodes.data.data_array import DataArray
+from qcodes.data.manager import get_data_manager
 from qcodes.instrument.parameter import Parameter, ManualParameter
 from qcodes.utils.multiprocessing import QcodesProcess
 from qcodes.utils.validators import Numbers
@@ -15,16 +16,23 @@ from .instrument_mocks import AMockModel, MockGates, MockSource, MockMeter
 
 class TestMockInstLoop(TestCase):
     def setUp(self):
+        # TODO: figure out what's leaving DataManager in a weird state
+        # and fix it
+        get_data_manager().restart(force=True)
+        time.sleep(0.1)
+
         self.model = AMockModel()
 
         self.gates = MockGates(self.model)
         self.source = MockSource(self.model)
         self.meter = MockMeter(self.model)
         self.location = '_loop_test_'
+        self.location2 = '_loop_test2_'
         self.io = DiskIO('.')
 
     def tearDown(self):
         self.io.remove_all(self.location)
+        self.io.remove_all(self.location2)
 
     def test_instruments_in_loop(self):
         # make sure that an unpicklable instrument can indeed run in a loop
@@ -35,7 +43,9 @@ class TestMockInstLoop(TestCase):
         # TODO: if we don't save the dataset (location=False) then we can't
         # sync it when we're done. Should fix that - for now that just means
         # you can only do in-memory loops if you set data_manager=False
-        data = loop.run(location=self.location, quiet=True)
+        # TODO: this is the one place we don't do quiet=True - test that we
+        # really print stuff?
+        data = loop.run(location=self.location)
 
         # wait for process to finish (ensures that this was run in the bg,
         # because otherwise there *is* no loop.process)
@@ -48,12 +58,28 @@ class TestMockInstLoop(TestCase):
 
         self.assertTrue(self.io.list(self.location))
 
+    def test_enqueue(self):
+        c1 = self.gates.chan1
+        loop = Loop(c1[1:5:1], 0.01).each(c1)
+        loop.run(location=self.location, quiet=True)
+
+        with self.assertRaises(RuntimeError):
+            loop.run(location=self.location2, quiet=True)
+        loop.run(location=self.location2, quiet=True, enqueue=True)
+        loop.process.join()
+
+    def test_async_fail(self):
+        c1 = self.gates.chan1
+        loop = Loop(c1[1:5:1], 0.01).each(c1)
+        with self.assertRaises(NotImplementedError):
+            loop.run(location=self.location, quiet=True, use_async=True)
+
 
 def sleeper(t):
     time.sleep(t)
 
 
-class TestGetHaltBG(TestCase):
+class TestBG(TestCase):
     def test_get_halt(self):
         self.assertIsNone(get_bg())
 
@@ -181,6 +207,14 @@ class TestLoop(TestCase):
             self.assertLessEqual(delay, target)
             self.assertGreater(delay, target - 0.001)
 
+    def test_bare_wait(self):
+        # Wait gets transformed to a Task, but is also callable on its own
+        t0 = time.perf_counter()
+        Wait(0.05)()
+        delay = time.perf_counter() - t0
+        self.assertGreaterEqual(delay, 0.05)
+        self.assertLessEqual(delay, 0.06)
+
     def test_composite_params(self):
         # this one has names and sizes
         mg = MultiGetter(one=1, onetwo=(1, 2))
@@ -221,7 +255,7 @@ class TestLoop(TestCase):
         self.assertEqual(data.bgn.label, new_sp_label)
 
         # muck things up and test for errors
-        mg.setpoints = (None, ((1, 2, 3)))
+        mg.setpoints = (None, ((1, 2, 3),))
         with self.assertRaises(ValueError):
             loop.run_temp()
 
@@ -268,6 +302,17 @@ class TestLoop(TestCase):
         self.assertEqual(data.arr2d.tolist(), [[[21, 22], [23, 24]]] * 2)
         self.assertEqual(data.index0.tolist(), [[0, 1]] * 2)
         self.assertEqual(data.index1.tolist(), [[[0, 1]] * 2] * 2)
+
+    def test_bad_actors(self):
+        # would be nice to find errors at .each, but for now we find them
+        # at .run
+        loop = Loop(self.p1[1:3:1], 0.001).each(self.p1, 42)
+        with self.assertRaises(TypeError):
+            loop.run_temp()
+
+        # at least invalid sweep values we find at .each
+        with self.assertRaises(ValueError):
+            Loop(self.p1[-20:20:1], 0.001).each(self.p1)
 
 
 class AbortingGetter(ManualParameter):

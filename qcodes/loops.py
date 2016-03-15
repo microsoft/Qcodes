@@ -242,7 +242,10 @@ class ActiveLoop:
                 action_arrays = self._parameter_arrays(action)
 
             else:
-                continue
+                # this *is* covered but the report misses it because Python
+                # optimizes it away. See:
+                # https://bitbucket.org/ned/coveragepy/issues/198
+                continue  # pragma: no cover
 
             for array in action_arrays:
                 array.nest(size=loop_size, action_index=i,
@@ -452,7 +455,7 @@ class ActiveLoop:
 
         if use_async:
             raise NotImplementedError  # TODO
-            loop_fn = mock_sync(self._async_loop)
+            # loop_fn = mock_sync(self._async_loop)
         else:
             loop_fn = self._run_wrapper
 
