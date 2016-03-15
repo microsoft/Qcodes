@@ -38,6 +38,7 @@ class MockInstrument(Instrument):
         # try to access write and ask so we know they exist
         model.write
         model.ask
+        self.model_id = model.uuid
 
         # can't pass the model itself through the queue to the server,
         # so send it to the server on creation and have the server
@@ -69,16 +70,14 @@ class MockInstrument(Instrument):
             server_name = model.name.replace('Model', 'MockServer')
         super().__init__(name, server_name, server_extras, **kwargs)
 
-        self.link_model(model.uuid)
-
     @ask_server
-    def link_model(self, model_uuid):
+    def on_connect(self):
         '''
         to get around the fact that you can't send a model to an
         already-existing server process, we send the model with
         server creation, then find it on the other end by its uuid
         '''
-        self._model = self.server_extras[model_uuid]
+        self._model = self.server_extras[self.model_id]
 
     @write_server
     def _write_inner(self, cmd):

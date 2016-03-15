@@ -57,7 +57,8 @@ class InstrumentManager(ServerManager):
         '''
         super().restart()
 
-        for instrument in enumerate(self.instruments.values()):
+        for instrument in self.instruments.values():
+            instrument.connection = None
             self.connect(instrument)
 
     def connect(self, instrument):
@@ -90,6 +91,9 @@ class InstrumentConnection:
         self.instrument = instrument
 
         self.manager.ask('new', instrument)
+        instrument.connection = self
+        if hasattr(instrument, 'on_connect'):
+            instrument.on_connect()
 
     def ask(self, func_name, *args, **kwargs):
         '''

@@ -44,9 +44,13 @@ class Instrument(Metadatable, DelegateAttributes):
     then call super init:
         super().__init__(name, server_name, server_extras, **kwargs)
     which loads this instrument into the server.
-    After that, __init__ should not set any attributes of self directly if the
-    hardware connection needs them, only through @ask_server or @write_server,
-    to prepare the connection and hardware.
+
+    After that, anything that needs to happen locally should go in __init__
+    (such as add_parameter and add_function calls), and anything that should
+    happen on the server (setting up the hardware connection) should go in
+    on_connect, which should only call server-decorated methods to set up the
+    hardware connection, not set any attributes of self directly because it may
+    get called again if the server needs to be restarted.
 
     Subclasses should override at least one each of write/write_async,
     ask/ask_async, and potentially read/read_async, decorating each with
@@ -75,8 +79,20 @@ class Instrument(Metadatable, DelegateAttributes):
         self._instances.append(weakref.ref(self))
 
         if server_name is not None:
-            self.connection = connect_instrument_server(server_name, self,
-                                                        server_extras)
+            connect_instrument_server(server_name, self, server_extras)
+        else:
+            self.on_connect()
+
+    def on_connect(self):
+        '''
+        This method gets called after connecting the Instrument to an
+        InstrumentServer, which happens on init as well as if the
+        server gets restarted. It's called locally but should either
+        be decorated itself or only call decorated methods, to prepare
+        anything that should happen after connection to the server,
+        primarily setting up the hardware connection.
+        '''
+        pass
 
     @ask_server
     def getattr(self, attr, default=NoDefault):

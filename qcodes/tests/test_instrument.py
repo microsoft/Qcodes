@@ -677,6 +677,8 @@ class TestParameters(TestCase):
 class TestAttrAccess(TestCase):
     def tearDown(self):
         self.instrument.close()
+        # do it twice - should not error, though the second is irrelevant
+        self.instrument.close()
 
     def test_simple_noserver(self):
         instrument = Instrument(name='test_simple_local')
@@ -801,3 +803,9 @@ class TestAttrAccess(TestCase):
         # now prune
         instrument.delattr(('d1', 'a'))
         self.assertIsNone(instrument.getattr('d1', None))
+
+        # test restarting the InstrumentServer - this clears these attrs
+        instrument.setattr('answer', 42)
+        self.assertEqual(instrument.getattr('answer', None), 42)
+        instrument.connection.manager.restart()
+        self.assertIsNone(instrument.getattr('answer', None))

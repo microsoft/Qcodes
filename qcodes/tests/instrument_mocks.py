@@ -67,6 +67,9 @@ class AMockModel(MockModel):
 class MockInstTester(MockInstrument):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    def on_connect(self):
+        super().on_connect()
         self.attach_adder()
 
     @ask_server
