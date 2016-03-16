@@ -264,6 +264,8 @@ class ServerManager:
     def _check_for_errors(self, expect_error=False):
         if expect_error or not self._error_queue.empty():
             # clear the response queue whenever there's an error
+            # and give it a little time to flush first
+            time.sleep(0.05)
             while not self._response_queue.empty():
                 self._response_queue.get()
 

@@ -776,7 +776,13 @@ class TestAttrAccess(TestCase):
             instrument.getattr('name')
 
         # get the whole dict with simple getattr style
-        # TODO: once I saw this fail, it returned "test_server"???
+        # TODO: twice (out of maybe 50 runs) I saw the below fail,
+        # it returned "test_server" which should have been the response
+        # above if it didn't raise an error.
+        # I guess this is catching the error before receiving the
+        # next response somehow. I've added a bit of a wait in there
+        # that may have fixed this but lets leave the comment for a
+        # while to see if it recurs.
         self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
 
         # get the whole or parts with nested style
