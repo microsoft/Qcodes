@@ -163,7 +163,7 @@ class MockModel(ServerManager):
     If anything is not recognized, raise an error, and the query will be
     added to it
     '''
-    def __init__(self, name='Model{:.7s}'):
+    def __init__(self, name='Model-{:.7s}'):
         # Most of the other uses of ServerManager use a separate class
         # for the server itself. But here I put the two together into
         # a single class, just to make it easier to define models.

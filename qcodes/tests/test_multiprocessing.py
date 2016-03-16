@@ -3,12 +3,14 @@ import time
 import re
 import sys
 import multiprocessing as mp
+from queue import Empty
 from unittest.mock import patch
 
 import qcodes
 from qcodes.utils.multiprocessing import (set_mp_method, QcodesProcess,
                                           get_stream_queue, _SQWriter,
-                                          kill_queue)
+                                          kill_queue, ServerManager,
+                                          SERVER_ERR)
 import qcodes.utils.multiprocessing as qcmp
 from qcodes.utils.helpers import in_notebook
 from qcodes.utils.timing import calibrate
@@ -44,7 +46,9 @@ class sqtest_echo:
         time.sleep(self.resp_delay)
         for q in ['q_out', 'q_err']:
             if hasattr(self, q):
-                kill_queue(getattr(self, q))
+                queue = getattr(self, q)
+                kill_queue(queue)
+                kill_queue(queue)  # repeat just to make sure it doesn't error
 
     def __del__(self):
         self.halt()
@@ -340,3 +344,104 @@ class TestStreamQueue(TestCase):
             sys.stderr = nose_stderr
             time.sleep(0.01)
             sq.get()
+
+
+class ServerManagerTest(ServerManager):
+    def _start_server(self):
+        # don't really start the server - we'll test its pieces separately,
+        # in the main process
+        pass
+
+
+class EmptyServer:
+    def __init__(self, query_queue, response_queue, error_queue, extras):
+        query_queue.put('why?')
+        response_queue.put(extras)
+        error_queue.put('No!')
+
+
+class CustomError(Exception):
+    pass
+
+
+class TestServerManager(TestCase):
+    def check_error(self, manager, error_str, error_class):
+        manager._error_queue.put(error_str)
+        manager._response_queue.put(SERVER_ERR)
+        time.sleep(0.005)
+        with self.assertRaises(error_class):
+            manager.ask('which way does the wind blow?')
+
+    def test_mechanics(self):
+        extras = 'super secret don\'t tell anyone'
+
+        sm = ServerManagerTest(name='test', server_class=EmptyServer,
+                               server_extras=extras)
+        sm._run_server()
+
+        self.assertEqual(sm._query_queue.get(timeout=1), 'why?')
+        self.assertEqual(sm._response_queue.get(timeout=1), extras)
+        self.assertEqual(sm._error_queue.get(timeout=1), 'No!')
+
+        # builtin errors we propagate to the server
+        builtin_error_str = ('traceback\n  lines\n and then\n'
+                             '  OSError: your hard disk went floppy.')
+        sm._error_queue.put(builtin_error_str)
+        sm._response_queue.put(SERVER_ERR)
+        time.sleep(0.005)
+        with self.assertRaises(OSError):
+            sm.ask('which way does the wind blow?')
+
+        # non-built-in errors we fall back on RuntimeError
+        custom_error_str = ('traceback\nlines\nand then\n'
+                            'CustomError: the Balrog is loose!')
+        sm._response_queue.put('should get tossed by the error checker')
+        sm._response_queue.put('so should this.')
+        sm._error_queue.put(custom_error_str)
+        sm._response_queue.put(SERVER_ERR)
+        time.sleep(0.005)
+        with self.assertRaises(RuntimeError):
+            sm.write('something benign')
+        self.assertTrue(sm._response_queue.empty())
+
+        # extra responses to a query, only the last should be taken
+        sm._response_queue.put('boo!')
+        sm._response_queue.put(42)
+        self.assertEqual(sm.ask('what is the answer'), 42)
+
+        # no response to a query
+        with self.assertRaises(Empty):
+            sm.ask('A sphincter says what?', timeout=0.01)
+
+        # test halting an unresponsive server
+        sm._server = mp.Process(target=time.sleep, args=(1000,))
+        sm._server.start()
+
+        self.assertIn(sm._server, mp.active_children())
+
+        sm.halt(0.01)
+
+        # TODO: test our print ('ServerManager did not respond...')
+        self.assertNotIn(sm._server, mp.active_children())
+
+    def test_pathological_edge_cases(self):
+        # kill_queue should never fail
+        kill_queue(None)
+
+        # and halt should ignore AssertionErrors, which arise in
+        # subprocesses when trying to kill a different subprocess
+        sm = ServerManagerTest(name='test', server_class=None)
+
+        class HorribleProcess:
+            def is_alive(self):
+                raise AssertionError
+
+            def write(self):
+                raise AssertionError
+
+            def join(self):
+                raise AssertionError
+
+        sm._server = HorribleProcess()
+
+        sm.halt()

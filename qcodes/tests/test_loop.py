@@ -81,6 +81,14 @@ def sleeper(t):
 
 class TestBG(TestCase):
     def test_get_halt(self):
+        # an intermittent error here, some other process still running?
+        # just kill everything that's running.
+        # TODO - do tests ever run in parallel?
+        # for process in mp.active_children():
+        #     try:
+        #         process.terminate()
+        #     except:
+        #         pass
         self.assertIsNone(get_bg())
 
         p1 = QcodesProcess(name=MP_NAME, target=sleeper, args=(10, ))
@@ -88,7 +96,9 @@ class TestBG(TestCase):
         p2 = QcodesProcess(name=MP_NAME, target=sleeper, args=(10, ))
         p2.start()
         p1.signal_queue = p2.signal_queue = mp.Queue()
-        self.assertEqual(len(mp.active_children()), 2)
+        qcodes_processes = [p for p in mp.active_children()
+                            if isinstance(p, QcodesProcess)]
+        self.assertEqual(len(qcodes_processes), 2, mp.active_children())
 
         with self.assertRaises(RuntimeError):
             get_bg()

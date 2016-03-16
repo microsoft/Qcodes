@@ -275,57 +275,52 @@ class ServerManager:
                 self._response_queue.get()
 
             # then get the error and raise a wrapping exception
-            errstr = self._error_queue.get(self.query_timeout)
+            errstr = self._error_queue.get(timeout=self.query_timeout)
             errhead = '*** error on {} ***'.format(self.name)
 
             # try to match the error type, if it's a built-in type
-            # or available in globals or locals. Only take types that
-            # end in 'Error', to be safe.
             err_type = None
-            err_type_str = errstr.rstrip().rsplit('\n', 1)[-1].split(':')[0]
-            if err_type_str.endswith('Error'):
-                err_type = getattr(builtins, err_type_str, None)
-                if err_type is None and err_type in globals():
-                    err_type = globals()[err_type_str]
-                if err_type is None and err_type_str in locals():
-                    err_type = locals()[err_type_str]
-            if err_type is None:
+            err_type_line = errstr.rstrip().rsplit('\n', 1)[-1]
+            err_type_str = err_type_line.split(':')[0].strip()
+
+            err_type = getattr(builtins, err_type_str, None)
+            if err_type is None or not issubclass(err_type, Exception):
                 err_type = RuntimeError
 
             raise err_type(errhead + '\n\n' + errstr)
 
-    def _check_response(self, expect_error):
-        res = self._response_queue.get()
+    def _check_response(self, timeout):
+        res = self._response_queue.get(timeout=timeout)
         if res == SERVER_ERR:
-            expect_error = True
-        return res, expect_error
+            self._expect_error = True
+        return res
 
     def ask(self, *query, timeout=None):
         '''
         Send a query to the server and wait for a response
         '''
         timeout = timeout or self.query_timeout
-        expect_error = False
+        self._expect_error = False
 
         with self.query_lock:
             # in case a previous query errored and left something on the
             # response queue, clear it
             while not self._response_queue.empty():
-                res, expect_error = self._check_response(expect_error)
+                res = self._check_response(timeout)
 
             self._query_queue.put(query)
 
             try:
-                res, expect_error = self._check_response(expect_error)
+                res = self._check_response(timeout)
 
                 while not self._response_queue.empty():
-                    res, expect_error = self._check_response(expect_error)
+                    res = self._check_response(timeout)
 
             except Empty as e:
                 if self._error_queue.empty():
                     # only raise if we're not about to find a deeper error
                     raise e
-            self._check_for_errors(expect_error)
+            self._check_for_errors(self._expect_error)
 
             return res
 
@@ -343,6 +338,7 @@ class ServerManager:
                 self._server.terminate()
                 print('ServerManager did not respond to halt signal, '
                       'terminated')
+                self._server.join(timeout)
         except AssertionError:
             # happens when we get here from other than the main process
             # where we shouldn't be able to kill the server anyway

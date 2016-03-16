@@ -120,6 +120,7 @@ class TestParameters(TestCase):
             logs = s.getvalue().split('\n')[:-1]
             s.close()
 
+            # TODO: occasional extra negative delays here
             self.assertEqual(len(logs), logcount, (param, logs))
             for line in logs:
                 self.assertTrue(line.startswith('negative delay'), line)
