@@ -11,14 +11,22 @@ from qcodes.utils.multiprocessing import ServerManager, SERVER_ERR
 class MockInstrument(Instrument):
     '''
     Creates a software instrument, for modeling or testing
-    inputs:
-        name: (string) the name of this instrument
-        delay: the time (in seconds) to wait after any operation
-            to simulate communication delay
-        model: an object with write and ask methods, taking 2 or 3 args:
-            instrument: the name of the instrument
-            parameter: the name of the parameter
-            value (write only): the value to write, as a string
+
+    name: (string) the name of this instrument
+    delay: the time (in seconds) to wait after any operation
+        to simulate communication delay
+    model: an object with write and ask methods, taking 2 or 3 args:
+        instrument: the name of the instrument
+        parameter: the name of the parameter
+        value (write only): the value to write, as a string
+    keep_history: record (in self.history) every command sent to this
+        instrument (default True)
+    use_async: use the async form of ask and write (default False)
+    read_response: simple constant response to send to self.read(),
+        just for testing
+    server_name: leave default ('') to make a MockServer-#######
+        with the number matching the model server id, or set None
+        to not use a server.
 
     parameters to pass to model should be declared with:
         get_cmd = param_name + '?'
@@ -144,7 +152,9 @@ class MockInstrument(Instrument):
         return self._ask_inner(cmd)
 
 
-class MockModel(ServerManager):
+class MockModel(ServerManager):  # pragma: no cover
+    # this is purely in service of mock instruments which *are* tested
+    # so coverage testing this (by running it locally) would be a waste.
     '''
     Base class for models to connect to various MockInstruments
 

@@ -71,9 +71,9 @@ class TestParameters(TestCase):
         self.model = AMockModel()
         self.read_response = 'I am the walrus!'
 
-        self.gates = MockGates(self.model, self.read_response)
+        self.gates = MockGates(self.model, read_response=self.read_response)
         self.source = MockSource(self.model)
-        self.meter = MockMeter(self.model, self.read_response)
+        self.meter = MockMeter(self.model, read_response=self.read_response)
 
         self.init_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -501,7 +501,7 @@ class TestParameters(TestCase):
                          self.read_response)
 
     def test_base_instrument_errors(self):
-        b = Instrument('silent')
+        b = Instrument('silent', server_name=None)
 
         with self.assertRaises(NotImplementedError):
             b.read()
@@ -682,7 +682,7 @@ class TestAttrAccess(TestCase):
         self.instrument.close()
 
     def test_simple_noserver(self):
-        instrument = Instrument(name='test_simple_local')
+        instrument = Instrument(name='test_simple_local', server_name=None)
         self.instrument = instrument
 
         # before setting attr1
@@ -712,7 +712,7 @@ class TestAttrAccess(TestCase):
             instrument.getattr('attr1')
 
     def test_nested_noserver(self):
-        instrument = Instrument(name='test_nested_local')
+        instrument = Instrument(name='test_nested_local', server_name=None)
         self.instrument = instrument
 
         self.assertFalse(hasattr(instrument, 'd1'))
@@ -816,3 +816,27 @@ class TestAttrAccess(TestCase):
         self.assertEqual(instrument.getattr('answer', None), 42)
         instrument.connection.manager.restart()
         self.assertIsNone(instrument.getattr('answer', None))
+
+
+class TestLocalMock(TestCase):
+    def setUp(self):
+        self.model = AMockModel()
+
+        self.gates = MockGates(self.model, server_name=None)
+        self.source = MockSource(self.model, server_name=None)
+        self.meter = MockMeter(self.model, server_name=None)
+
+    def tearDown(self):
+        self.model.close()
+        for instrument in [self.gates, self.source, self.meter]:
+            instrument.close()
+
+    def test_local(self):
+        self.gates.chan1.set(3.33)
+        self.assertEqual(self.gates.chan1.get(), 3.33)
+
+        self.gates.reset()
+        self.assertEqual(self.gates.chan1.get(), 0)
+
+        with self.assertRaises(ValueError):
+            self.gates.ask('knock knock? Oh never mind.')

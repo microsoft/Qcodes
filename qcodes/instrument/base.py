@@ -21,14 +21,18 @@ class Instrument(Metadatable, DelegateAttributes):
     '''
     Base class for all QCodes instruments
 
-    server_name: if provided (and one generally should be) then this instrument
-        starts a separate server process (or connects to one, if one already
-        exists with the same name) and all hardware calls are made there.
+    server_name: this instrument starts a separate server process (or connects
+        to one, if one already exists with the same name) and all hardware
+        calls are made there. default is 'Instruments', and if all instruments
+        omit server_name they will all run on this process.
+        Use server_name=None to not create a server - but then this Instrument
+        will not work with qcodes Loops or other multiprocess procedures.
 
     server_extras: a dictionary of objects to be passed to the server, and
         from there attached as attributes to each instrument that connects to
         it. Intended for things like extra queues that can't be sent over a
-        queue themselves.
+        queue themselves. Note that the Instrument to *start* the server must
+        provide the extras for *all* instruments that use the server.
 
     kwargs: metadata to store with this instrument
 
@@ -61,7 +65,8 @@ class Instrument(Metadatable, DelegateAttributes):
     '''
     connection = None
 
-    def __init__(self, name, server_name=None, server_extras={}, **kwargs):
+    def __init__(self, name, server_name='Instruments', server_extras={},
+                 **kwargs):
         super().__init__(**kwargs)
         self.functions = {}
         self.parameters = {}
@@ -81,6 +86,7 @@ class Instrument(Metadatable, DelegateAttributes):
         if server_name is not None:
             connect_instrument_server(server_name, self, server_extras)
         else:
+            self.server_extras = server_extras
             self.on_connect()
 
     def on_connect(self):

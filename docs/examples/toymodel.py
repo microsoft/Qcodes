@@ -65,7 +65,7 @@ class AModel(MockModel):
 
 # make our mock instruments
 # real instruments would subclass IPInstrument or VisaInstrument
-# instead of MockInstrument,
+# or just the base Instrument instead of MockInstrument,
 # and be instantiated with an address rather than a model
 class MockGates(MockInstrument):
     def __init__(self, name, model):
