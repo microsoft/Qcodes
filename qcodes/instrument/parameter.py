@@ -345,7 +345,7 @@ class StandardParameter(Parameter):
 
     def _set_get(self, get_cmd, async_get_cmd, get_parser):
         self._get, self._get_async = syncable_command(
-            param_count=0, cmd=get_cmd, acmd=async_get_cmd,
+            arg_count=0, cmd=get_cmd, acmd=async_get_cmd,
             exec_str=self._instrument.ask if self._instrument else None,
             aexec_str=self._instrument.ask_async if self._instrument else None,
             output_parser=get_parser, no_cmd_function=no_getter)
@@ -357,7 +357,7 @@ class StandardParameter(Parameter):
         # note: this does not set the final setter functions. that's handled
         # in self.set_sweep, when we choose a swept or non-swept setter.
         self._set, self._set_async = syncable_command(
-            param_count=1, cmd=set_cmd, acmd=async_set_cmd,
+            arg_count=1, cmd=set_cmd, acmd=async_set_cmd,
             exec_str=self._instrument.write if self._instrument else None,
             aexec_str=(self._instrument.write_async if self._instrument
                        else None),

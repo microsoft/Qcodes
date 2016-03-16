@@ -79,7 +79,7 @@ class Function(Metadatable):
             ask_or_write, ask_or_write_async = None, None
 
         self._call, self._call_async = syncable_command(
-            param_count=self._arg_count,
+            arg_count=self._arg_count,
             cmd=call_cmd, acmd=async_call_cmd,
             exec_str=ask_or_write, aexec_str=ask_or_write_async,
             input_parser=arg_parser, output_parser=return_parser)
