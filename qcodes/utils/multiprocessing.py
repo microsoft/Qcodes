@@ -166,8 +166,13 @@ class StreamQueue:
         except:
             pass
 
+        if hasattr(type(self), 'instance'):
+            # so nobody else tries to use this dismantled stream queue later
+            type(self).instance = None
+
         if hasattr(self, 'queue'):
             kill_queue(self.queue)
+            del self.queue
         if hasattr(self, 'lock'):
             del self.lock
 

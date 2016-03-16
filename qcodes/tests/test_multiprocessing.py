@@ -235,7 +235,32 @@ class TestQcodesProcess(TestCase):
                 self.assertNotIn(name, reprs)
 
 
-class TestSQWriter(TestCase):
+class TestStreamQueue(TestCase):
+    def test_connection(self):
+        sq = get_stream_queue()
+        sq.connect('')
+        # TODO: do we really want double-connect to raise? or maybe
+        # only raise if the process name changes?
+        with self.assertRaises(RuntimeError):
+            sq.connect('')
+        sq.disconnect()
+        with self.assertRaises(RuntimeError):
+            sq.disconnect()
+
+    def test_del(self):
+        sq = get_stream_queue()
+        self.assertTrue(hasattr(sq, 'queue'))
+        self.assertTrue(hasattr(sq, 'lock'))
+        self.assertIsNotNone(sq.instance)
+
+        sq.__del__()
+
+        self.assertFalse(hasattr(sq, 'queue'))
+        self.assertFalse(hasattr(sq, 'lock'))
+        self.assertIsNone(sq.instance)
+
+        sq.__del__()  # just to make sure it doesn't error
+
     # this is basically tested in TestQcodesProcess, but the test happens
     # in a subprocess so coverage doesn't know about it. Anyway, there are
     # a few edge cases left that we have to test locally.
