@@ -1,9 +1,10 @@
 import asyncio
+import functools
 import weakref
 from uuid import uuid4
 
 from qcodes.utils.metadata import Metadatable
-from qcodes.utils.sync_async import wait_for_async
+from qcodes.utils.sync_async import wait_for_async, mock_async
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs
 from .parameter import StandardParameter
 from .function import Function
@@ -21,67 +22,107 @@ class Instrument(Metadatable, DelegateAttributes):
     '''
     Base class for all QCodes instruments
 
+    name: an identifier for this instrument, particularly for attaching it to
+        a Station.
+
     server_name: this instrument starts a separate server process (or connects
         to one, if one already exists with the same name) and all hardware
-        calls are made there. default is 'Instruments', and if all instruments
-        omit server_name they will all run on this process.
-        Use server_name=None to not create a server - but then this Instrument
+        calls are made there. default 'Instruments'.
+        Use None operate without a server - but then this Instrument
         will not work with qcodes Loops or other multiprocess procedures.
 
     server_extras: a dictionary of objects to be passed to the server, and
-        from there attached as attributes to each instrument that connects to
-        it. Intended for things like extra queues that can't be sent over a
-        queue themselves. Note that the Instrument to *start* the server must
-        provide the extras for *all* instruments that use the server.
+        from there attached as self.server_extras to each instrument that
+        connects to it. Intended for unpicklable things like extra queues.
+        Note that the Instrument to *start* the server must provide the extras
+        for *all* instruments that will use the server.
 
     kwargs: metadata to store with this instrument
 
-    The object on the server is simply a copy of the Instrument itself. Any
-    methods that are decorated with either @ask_server or @write_server
-    (from qcodes.instrument.server) will execute on the server regardless of
-    which process calls them.
 
-    Subclasses, in their __init__, should first set up any methods/attributes
-    that need to exist in BOTH server and local copies of the instrument (such
-    as decorated methods), eg:
-        self.write = self._default_write
-    then call super init:
-        super().__init__(name, server_name, server_extras, **kwargs)
-    which loads this instrument into the server.
+    When you use a server, the object on the server is simply a copy of
+    this one, but they execute different initialization code. Any method
+    decorated with either @qcodes.ask_server or @qcodes.write_server
+    will execute on the server regardless of which process calls them. This
+    should include any method that interacts directly with hardware.
+    In particular, subclasses should override at least one each of:
+    - write or write_async
+    - ask or ask_async
+    - optionally read or read_async
+    decorating each with @ask_server or @write_server as appropriate.
 
-    After that, anything that needs to happen locally should go in __init__
-    (such as add_parameter and add_function calls), and anything that should
-    happen on the server (setting up the hardware connection) should go in
-    on_connect, which should only call server-decorated methods to set up the
-    hardware connection, not set any attributes of self directly because it may
-    get called again if the server needs to be restarted.
+    There are three places you can put initialization code in subclasses,
+    and they all have different purposes:
 
-    Subclasses should override at least one each of write/write_async,
-    ask/ask_async, and potentially read/read_async, decorating each with
-    ask_server or write_server as appropriate (from qcodes.instrument.server).
+    - In self.__init__ BEFORE super().__init__(...):
+        Attributes set here will exist in both the local and server copies.
+        Such attributes MUST be picklable - NO hardware connections.
+        add_parameter and add_function may be called here, if you would like
+        the server copy to be able to use them in custom methods.
 
-    Any other methods that interact with hardware must also be decorated.
-    It's OK if a decorated method calls another decorated method
+    - In self.on_connect:
+        Attributes set here will exist ONLY in the server copy.
+        This is where you should make the actual hardware connections.
+        on_connect is called from the local copy, so should either be decorated
+        with write_server (or ask_server to ensure that it finishes before you
+        do anything else locally) or call decorated methods. Do not add
+        parameters or functions here, as they will not be accessible outside
+        the server process.
+
+    - In self.__init__ AFTER super().__init__(...):
+        Attributes set here will exist ONLY in the local copy, but it is still
+        recommended not to make unpicklable attributes here, as this will
+        interfere with restarting the instrument server if necessary.
+        add_parameter and add_function can go here if you're sure the server
+        will not need these for any custom methods you define.
+
+    More notes about dealing with instrument servers:
+
+    - If you don't use a server, all three parts of initialization code will
+        execute locally, in the order presented above.
+
+    - Once a server is started, attributes will not sync between the local
+        and server copies automatically. But you can use the getattr and
+        setattr METHODS (not the getattr and setattr functions) to access
+        attributes of the server copy from any process. These methods can
+        also access pieces of nested dictionaries as well.
+
+    - It's OK for decorated methods to call other decorated methods.
     '''
     connection = None
 
     def __init__(self, name, server_name='Instruments', server_extras={},
                  **kwargs):
         super().__init__(**kwargs)
-        self.functions = {}
-        self.parameters = {}
+
+        # you can call add_parameter and add_function *before* calling
+        # super().__init__(...) from a subclass, since they contain this
+        # hasattr check as well. We just put it here too so we're sure these
+        # dicts get created even if they are empty.
+        if not hasattr(self, 'parameters'):
+            self.parameters = {}
+        if not hasattr(self, 'functions'):
+            self.functions = {}
 
         self.uuid = uuid4().hex
 
         self.name = str(name)
 
         # keep a (weak) record of all instances of this Instrument
-        # instancetype is there to make sure we aren't using instances
+        # cls._type is there to make sure we aren't using instances
         # from a superclass that has been instantiated previously
-        if getattr(type(self), '_type', None) is not type(self):
-            type(self)._type = type(self)
-            type(self)._instances = []
-        self._instances.append(weakref.ref(self))
+        cls = type(self)
+        if getattr(cls, '_type', None) is not cls:
+            cls._type = cls
+            cls._instances = []
+        cls._instances.append(weakref.ref(self))
+
+        # check if read/write/ask have been implemented by a subclass
+        # for each set, there are now 4 possible methods that could be
+        # overridden, any of which would be sufficient
+        for action in ('write', 'read', 'ask'):
+            if not self._has_action(action):
+                self._set_not_implemented(action)
 
         if server_name is not None:
             connect_instrument_server(server_name, self, server_extras)
@@ -97,6 +138,12 @@ class Instrument(Metadatable, DelegateAttributes):
         be decorated itself or only call decorated methods, to prepare
         anything that should happen after connection to the server,
         primarily setting up the hardware connection.
+
+        It is recommended to decorate this with @ask_server so it waits
+        for a response and thus can catch errors, but you can also
+        decorate it with @write_server and it will execute asynchronously,
+        in the server process, not blocking the main process to wait
+        for a response.
         '''
         pass
 
@@ -259,6 +306,9 @@ class Instrument(Metadatable, DelegateAttributes):
 
         kwargs: see StandardParameter (or `parameter_class`)
         '''
+        if not hasattr(self, 'parameters'):
+            self.parameters = {}
+
         if name in self.parameters:
             raise KeyError('Duplicate parameter name {}'.format(name))
         self.parameters[name] = parameter_class(name=name, instrument=self,
@@ -280,14 +330,17 @@ class Instrument(Metadatable, DelegateAttributes):
 
         see Function for the list of kwargs and notes on its limitations.
         '''
+        if not hasattr(self, 'functions'):
+            self.functions = {}
+
         if name in self.functions:
             raise KeyError('Duplicate function name {}'.format(name))
         self.functions[name] = Function(name=name, instrument=self, **kwargs)
 
     def snapshot_base(self, update=False):
         if update:
-            for par in self.parameters:
-                self[par].get()
+            for par in self.parameters.values():
+                par.get()
         state = self.getattr('param_state', {})
         return {
             'parameters': dict((name, param.snapshot(state=state.get(name)))
@@ -302,30 +355,48 @@ class Instrument(Metadatable, DelegateAttributes):
     # at least one (sync or async) of each pair should be overridden by a    #
     # subclass. These defaults simply convert between sync and async if only #
     # one is defined, but raise an error if neither is.                      #
+    #                                                                        #
+    # Note: no subclasses should set (write|read|ask)[_async] to an instance #
+    # variable, as these will not be available to parameters defined before  #
+    # super().__init__().                                                    #
+    # Intermediate subclasses (such as VisaInstrument, which will be         #
+    # subclassed again by an actual instrument) MAY set _write_fn etc to an  #
+    # instance variable if they wish to supply write/ask only if neither     #
+    # the sync or async forms are overridden by a final subclass             #
+    # this way the base methods are all defined at the class level, so are   #
+    # available before __init__, but they can still be modified.             #
     ##########################################################################
 
     def write(self, cmd):
+        return self._write_fn(cmd)
+
+    @asyncio.coroutine
+    def write_async(self, cmd):
+        return (yield from self._write_async_fn(cmd))
+
+    def _write_fn(self, cmd):
         '''
         The Instrument base class has no hardware connection. This .write
         converts to the async version if the subclass supplies one.
         '''
-        wait_for_async(self.write_async, cmd)
+        return wait_for_async(self.write_async, cmd)
 
     @asyncio.coroutine
-    def write_async(self, cmd):
+    def _write_async_fn(self, cmd):
         '''
         The Instrument base class has no hardware connection. This .write_async
         converts to the sync version if the subclass supplies one.
         '''
-        # check if the paired function is still from the base class (so we'd
-        # have a recursion loop) notice that we only have to do this in one
-        # of the pair, because the other will call this one.
-        if self.write.__func__ is Instrument.write:
-            raise NotImplementedError(
-                'instrument {} has no write method defined'.format(self.name))
-        self.write(cmd)
+        return self.write(cmd)
 
     def read(self):
+        return self._read_fn()
+
+    @asyncio.coroutine
+    def read_async(self):
+        return (yield from self._read_async_fn())
+
+    def _read_fn(self):
         '''
         The Instrument base class has no hardware connection. This .read
         converts to the async version if the subclass supplies one.
@@ -333,17 +404,21 @@ class Instrument(Metadatable, DelegateAttributes):
         return wait_for_async(self.read_async)
 
     @asyncio.coroutine
-    def read_async(self):
+    def _read_async_fn(self):
         '''
         The Instrument base class has no hardware connection. This .read_async
         converts to the sync version if the subclass supplies one.
         '''
-        if self.read.__func__ is Instrument.read:
-            raise NotImplementedError(
-                'instrument {} has no read method defined'.format(self.name))
         return self.read()
 
     def ask(self, cmd):
+        return self._ask_fn(cmd)
+
+    @asyncio.coroutine
+    def ask_async(self, cmd):
+        return (yield from self._ask_async_fn(cmd))
+
+    def _ask_fn(self, cmd):
         '''
         The Instrument base class has no hardware connection. This .ask
         converts to the async version if the subclass supplies one.
@@ -351,15 +426,42 @@ class Instrument(Metadatable, DelegateAttributes):
         return wait_for_async(self.ask_async, cmd)
 
     @asyncio.coroutine
-    def ask_async(self, cmd):
+    def _ask_async_fn(self, cmd):
         '''
         The Instrument base class has no hardware connection. This .ask_async
         converts to the sync version if the subclass supplies one.
         '''
-        if self.ask.__func__ is Instrument.ask:
-            raise NotImplementedError(
-                'instrument {} has no ask method defined'.format(self.name))
         return self.ask(cmd)
+
+    def _raise_not_implemented(self, method, *args):
+        '''
+        intended to replace _(write|read|ask)[_async]_fn when no
+        subclasses have overridden any of the appropriate methods.
+        This way we don't need to check for recursion loops in every call.
+
+        usage examples:
+        self._write_fn = functools.partial(
+            self._raise_not_implemented, 'write')
+        self._write_async_fn = mock_async(
+            functools.partial(self._raise_not_implemented, 'write'))
+        '''
+        msg = 'instrument {0} has no {1} or {1}_async method defined'
+        raise NotImplementedError(msg.format(self.name, method))
+
+    def _has_action(self, action):
+        for method_form in ('{}', '{}_async', '_{}_fn', '_{}_async_fn'):
+            method = method_form.format(action)
+            this_func = getattr(self, method).__func__
+            base_func = getattr(Instrument, method)
+            if (this_func is not base_func):
+                return True
+        return False
+
+    def _set_not_implemented(self, action):
+        setattr(self, '_{}_fn'.format(action),
+                functools.partial(self._raise_not_implemented, action))
+        setattr(self, '_{}_async_fn'.format(action), mock_async(
+                functools.partial(self._raise_not_implemented, action)))
 
     ##########################################################################
     # shortcuts to parameters & setters & getters                            #

@@ -27,13 +27,11 @@ class VisaInstrument(Instrument):
         # only set the io routines if a subclass doesn't override EITHER
         # the sync or the async version, so we preserve the ability of
         # the base Instrument class to convert between sync and async
-        if (self.write.__func__ is Instrument.write and
-                self.write_async.__func__ is Instrument.write_async):
-            self.write = self._default_write
+        if not self._has_action('write'):
+            self._write_fn = self._default_write
 
-        if (self.ask.__func__ is Instrument.ask and
-                self.ask_async.__func__ is Instrument.ask_async):
-            self.ask = self._default_ask
+        if not self._has_action('ask'):
+            self._ask_fn = self._default_ask
 
         self._address = address
         self._timeout = timeout
