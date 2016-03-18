@@ -21,6 +21,9 @@ class VisaInstrument(Instrument):
         (can be changed later with set_timeout)
     terminator: the read termination character(s) to expect
         (can be changed later with set_terminator)
+
+    See help for qcodes.Instrument for information on writing
+    instrument subclasses
     '''
     def __init__(self, name, address=None, server_name='',
                  timeout=5, terminator='', **kwargs):

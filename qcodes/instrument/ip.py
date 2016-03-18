@@ -19,6 +19,9 @@ class IPInstrument(Instrument):
     persistent: do we leave the socket open between calls? (default True)
     write_confirmation: does the instrument acknowledge writes with some
         response we can read? (default True)
+
+    See help for qcodes.Instrument for information on writing
+    instrument subclasses
     '''
     def __init__(self, name, address=None, port=None, timeout=5,
                  terminator='\n', persistent=True, write_confirmation=True,

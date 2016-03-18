@@ -51,6 +51,8 @@ class Instrument(Metadatable, DelegateAttributes):
     - optionally read or read_async
     decorating each with @ask_server or @write_server as appropriate.
 
+    Unlike most subclass initializations, the normal pattern with Instrument
+    subclasses is to call super().__init__(...) at the END of __init__.
     There are three places you can put initialization code in subclasses,
     and they all have different purposes:
 
@@ -70,11 +72,13 @@ class Instrument(Metadatable, DelegateAttributes):
         the server process.
 
     - In self.__init__ AFTER super().__init__(...):
+        Not normally used at all.
         Attributes set here will exist ONLY in the local copy, but it is still
         recommended not to make unpicklable attributes here, as this will
-        interfere with restarting the instrument server if necessary.
-        add_parameter and add_function can go here if you're sure the server
-        will not need these for any custom methods you define.
+        interfere with restarting the instrument server if that becomes
+        necessary.
+        add_parameter and add_function calls can go here if you're sure the
+        server will not need these objects for any custom methods you define.
 
     More notes about dealing with instrument servers:
 
