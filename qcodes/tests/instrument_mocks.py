@@ -100,8 +100,6 @@ class MockInstTester(MockInstrument):
 
 class MockGates(MockInstTester):
     def __init__(self, model, **kwargs):
-        super().__init__('gates', model=model, delay=0.001,
-                         use_async=True, **kwargs)
         for i in range(3):
             cmdbase = 'c{}'.format(i)
             self.add_parameter('chan{}'.format(i), get_cmd=cmdbase + '?',
@@ -116,19 +114,24 @@ class MockGates(MockInstTester):
                                sweep_step=0.1, sweep_delay=0.005)
         self.add_function('reset', call_cmd='rst')
 
+        super().__init__('gates', model=model, delay=0.001,
+                         use_async=True, **kwargs)
+
 
 class MockSource(MockInstTester):
     def __init__(self, model, **kwargs):
-        super().__init__('source', model=model, delay=0.001, **kwargs)
         self.add_parameter('amplitude', get_cmd='ampl?',
                            set_cmd='ampl:{:.4f}', get_parser=float,
                            vals=Numbers(0, 1),
                            sweep_step=0.2, sweep_delay=0.005)
 
+        super().__init__('source', model=model, delay=0.001, **kwargs)
+
 
 class MockMeter(MockInstTester):
     def __init__(self, model, **kwargs):
-        super().__init__('meter', model=model, delay=0.001, **kwargs)
         self.add_parameter('amplitude', get_cmd='ampl?', get_parser=float)
         self.add_function('echo', call_cmd='echo {:.2f}?',
                           args=[Numbers(0, 1000)], return_parser=float)
+
+        super().__init__('meter', model=model, delay=0.001, **kwargs)
