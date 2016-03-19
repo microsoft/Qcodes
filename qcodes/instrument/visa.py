@@ -45,7 +45,13 @@ class VisaInstrument(Instrument):
         super().__init__(name, server_name=server_name, **kwargs)
 
     def _default_server_name(self):
-        # TODO - figure out if we want multiple servers by default
+        upper_address = self._address.upper()
+        if 'GPIB' in upper_address:
+            return 'GPIBServer'
+        elif 'ASRL' in upper_address:
+            return 'SerialServer'
+
+        # TODO - any others to break out by default?
         return 'VisaServer'
 
     @ask_server
