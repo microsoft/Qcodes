@@ -2,9 +2,9 @@ import time
 import logging
 import numpy as np
 import visa  # used for the parity constant
+from functools import partial
 
-from qcodes.instrument.visa import VisaInstrument
-from qcodes.utils import validators as vals
+from qcodes import VisaInstrument, validators as vals, ask_server, write_server
 
 
 class IVVI(VisaInstrument):
@@ -24,6 +24,8 @@ class IVVI(VisaInstrument):
     http://qtwork.tudelft.nl/~schouten/ivvi/doc-d5/rs232linkformat.txt
     A copy of this file can be found at the bottom of this file.
     '''
+    Fullrange = 4000
+    Halfrange = Fullrange / 2
 
     def __init__(self, name, address, reset=False, numdacs=16):
                  # polarity=['BIP', 'BIP', 'BIP', 'BIP']):
@@ -40,53 +42,59 @@ class IVVI(VisaInstrument):
                                    default=['BIP', 'BIP', 'BIP', 'BIP']
         '''
         t0 = time.time()
-        super().__init__(name, address)
-        # Set parameters
-        self.Fullrange = 4000
-        self.Halfrange = self.Fullrange/2
 
-        self._address = address
         if numdacs % 4 == 0 and numdacs > 0:
             self._numdacs = int(numdacs)
-        self.pol_num = np.zeros(self._numdacs)  # corresponds to POS polarity
-        self.set_pol_dacrack('BIP', range(numdacs))
+        else:
+            raise ValueError('numdacs must be a positive multiple of 4, '
+                             'not {}'.format(numdacs))
 
-        # values based on descriptor
-        self.visa_handle.baud_rate = 115200
-        self.visa_handle.parity = visa.constants.Parity(1)  # odd parity
-        # Add parameters
         self.add_parameter('version',
                            get_cmd=self._get_version)
         self.add_parameter('dac voltages',
                            label='Dac voltages',
                            get_cmd=self._get_dacs)
 
-        for i in range(numdacs):
-            self.add_parameter('dac{}'.format(i+1),
-                               label='Dac {} (mV)'.format(i+1),
+        for i in range(1, numdacs + 1):
+            self.add_parameter('dac{}'.format(i),
+                               label='Dac {} (mV)'.format(i),
                                units='mV',
-                               get_cmd=self._gen_ch_get_func(self._get_dac, i+1),
-                               set_cmd=self._gen_ch_set_func(self._set_dac, i+1),
+                               get_cmd=self._gen_ch_get_func(self._get_dac, i),
+                               set_cmd=self._gen_ch_set_func(self._set_dac, i),
                                vals=vals.Numbers(-2000, 2000),
                                sweep_step=10,
                                sweep_delay=.1,
                                max_val_age=10)
 
-        self._update_time = 5  # 5 seconds
-        self._time_last_update = 0  # ensures first call will always update
+        super().__init__(name, address)
+
         t1 = time.time()
         print('Initialized IVVI-rack in %.2fs' % (t1-t0))
 
+    @ask_server
+    def on_connect(self):
+        super().on_connect()
+
+        self._update_time = 5  # seconds
+        self._time_last_update = 0  # ensures first call will always update
+
+        self.pol_num = np.zeros(self._numdacs)  # corresponds to POS polarity
+        self.set_pol_dacrack('BIP', range(self._numdacs))
+
+        # values based on descriptor
+        self.visa_handle.baud_rate = 115200
+        self.visa_handle.parity = visa.constants.Parity(1)  # odd parity
+
+    @ask_server
     def _get_version(self):
         mes = self.ask(bytes([3, 4]))
         v = mes[2]
         return v
 
     def get_all(self):
-        for par in self.parameters:
-            self[par].get()
-        return self.snapshot()
+        return self.snapshot(update=True)
 
+    @ask_server
     def set_dacs_zero(self):
         for i in range(self._numdacs):
             self._set_dac(i+1, 0)
@@ -120,6 +128,7 @@ class IVVI(VisaInstrument):
         return values
 
     # Communication with device
+    @ask_server
     def _get_dac(self, channel):
         '''
         Returns dac channel in mV
@@ -130,6 +139,7 @@ class IVVI(VisaInstrument):
         '''
         return self._get_dacs()[channel-1]
 
+    @ask_server
     def _set_dac(self, channel, mvoltage):
         '''
         Sets the specified dac to the specified voltage.
@@ -164,6 +174,7 @@ class IVVI(VisaInstrument):
             return reply
         return
 
+    @ask_server
     def _get_dacs(self):
         '''
         Reads from device and returns all dacvoltages in a list
@@ -192,6 +203,7 @@ class IVVI(VisaInstrument):
                 raise('IVVI Communication error')
         return self._mvoltages
 
+    @ask_server
     def write(self, message, raw=False):
         '''
         Protocol specifies that a write consists of
@@ -209,6 +221,7 @@ class IVVI(VisaInstrument):
 
         return expected_answer_length
 
+    @ask_server
     def ask(self, message, raw=False):
         '''
         Send <message> to the device and read answer.
@@ -219,6 +232,7 @@ class IVVI(VisaInstrument):
         message_len = self.write(message, raw=raw)
         return self.read(message_len=message_len)
 
+    @ask_server
     def read(self, message_len=None):
         # because protocol has no termination chars the read reads the number
         # of bytes in the buffer
@@ -246,6 +260,7 @@ class IVVI(VisaInstrument):
         #     raise Exception('IVVI rack exception "%s"' % mes[1])
         return mes
 
+    @write_server
     def set_pol_dacrack(self, flag, channels, getall=True):
         '''
         Changes the polarity of the specified set of dacs
@@ -270,6 +285,7 @@ class IVVI(VisaInstrument):
         if getall:
             self.get_all()
 
+    @ask_server
     def get_pol_dac(self, channel):
         '''
         Returns the polarity of the dac channel specified

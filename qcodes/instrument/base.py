@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import weakref
+import time
 from uuid import uuid4
 
 from qcodes.utils.metadata import Metadatable
@@ -28,7 +29,7 @@ class Instrument(Metadatable, DelegateAttributes):
     server_name: this instrument starts a separate server process (or connects
         to one, if one already exists with the same name) and all hardware
         calls are made there. default 'Instruments'.
-        Use None operate without a server - but then this Instrument
+        Use None to operate without a server - but then this Instrument
         will not work with qcodes Loops or other multiprocess procedures.
 
     server_extras: a dictionary of objects to be passed to the server, and
@@ -40,58 +41,69 @@ class Instrument(Metadatable, DelegateAttributes):
     kwargs: metadata to store with this instrument
 
 
-    When you use a server, the object on the server is simply a copy of
-    this one, but they execute different initialization code. Any method
-    decorated with either @qcodes.ask_server or @qcodes.write_server
-    will execute on the server regardless of which process calls them. This
+    The Instrument object on the server is a copy of the one you make in the
+    main process, so they have all the same methods. But only the server copy
+    makes a connection to the instrument. Methods that talk to the hardware,
+    OR read or set software state variables, should be decorated with either
+    @qcodes.ask_server or @qcodes.write_server. These decorators ensure the
+    code will execute on the server regardless of which process calls it, and
+    proxy return values and exceptions back to the calling process. This
     should include any method that interacts directly with hardware.
+
     In particular, subclasses should override at least one each of:
     - write or write_async
     - ask or ask_async
     - optionally read or read_async
     decorating each with @ask_server or @write_server as appropriate.
 
-    Unlike most subclass initializations, the normal pattern with Instrument
-    subclasses is to call super().__init__(...) at the END of __init__.
-    There are three places you can put initialization code in subclasses,
-    and they all have different purposes:
+    Unlike most subclass initializations, for Instrument subclasses you should
+    call super().__init__(...) at the END of __init__. There are three places
+    to put subclass initialization code, and they all have different purposes:
 
     - In self.__init__ BEFORE super().__init__(...):
-        Attributes set here will exist in both the local and server copies.
+        Attributes set here will exist in BOTH the local and server copies.
         Such attributes MUST be picklable - NO hardware connections.
-        add_parameter and add_function may be called here, if you would like
-        the server copy to be able to use them in custom methods.
+        `add_parameter` and `add_function` normally go here.
 
     - In self.on_connect:
         Attributes set here will exist ONLY in the server copy.
         This is where you should make the actual hardware connections.
         on_connect is called from the local copy, so should either be decorated
-        with write_server (or ask_server to ensure that it finishes before you
-        do anything else locally) or call decorated methods. Do not add
-        parameters or functions here, as they will not be accessible outside
-        the server process.
+        or call decorated methods. Do not add parameters or functions here.
 
     - In self.__init__ AFTER super().__init__(...):
-        Not normally used at all.
-        Attributes set here will exist ONLY in the local copy, but it is still
-        recommended not to make unpicklable attributes here, as this will
-        interfere with restarting the instrument server if that becomes
-        necessary.
-        add_parameter and add_function calls can go here if you're sure the
-        server will not need these objects for any custom methods you define.
+        Not normally used at all, except for things like `connect_message`.
+        Attributes set here will exist ONLY in the local copy, but they still
+        must be picklable so you can use Loops.
 
-    More notes about dealing with instrument servers:
+    More notes about working with instrument servers:
+
+    - @ask_server waits for (and returns) a response, and can therefore raise
+        errors immediately. For complex, error-prone code, code you want to be
+        sure has finished before you continue (such as initialization), or if
+        you need the return value, use @ask_server.
+    - @write_server does not wait for a response, so it's faster -
+        asynchronous, in fact: calls to the SAME InstrumentServer are
+        guaranteed to execute in the order they are sent, but DIFFERENT
+        InstrumentServers may introduce different lag times. Also any errors
+        raised during a @write_server call will not show up until the *next*
+        call to the server (via @write_server or @ask_server).
 
     - If you don't use a server, all three parts of initialization code will
-        execute locally, in the order presented above.
+        execute locally, in the order presented above. But again, you are then
+        limited to using this Instrument in only the process that started it.
 
     - Once a server is started, attributes will not sync between the local
         and server copies automatically. But you can use the getattr and
         setattr METHODS (not the getattr and setattr functions) to access
-        attributes of the server copy from any process. These methods can
-        also access pieces of nested dictionaries as well.
+        attributes of the server copy from any process. These methods work
+        just like the matching functions, but can also access pieces of nested
+        dictionaries, using a sequence rather than a string as the attribute
+        name.
 
-    - It's OK for decorated methods to call other decorated methods.
+    - It's OK for decorated methods to call other decorated methods. Since
+        the outer call is already executing on the server, the inner call
+        will execute directly.
     '''
     connection = None
 
@@ -133,6 +145,18 @@ class Instrument(Metadatable, DelegateAttributes):
         else:
             self.server_extras = server_extras
             self.on_connect()
+
+    def connect_message(self, param_name, begin_time):
+        '''
+        standard message on initial connection to an instrument
+
+        put `t0 = time.time()` at the start of your subclass __init__,
+        and eg `self.connect_message('IDN', t0)` at the end (if you've
+        defined a parameter 'IDN' that gives the instrument ID)
+        '''
+        idn = self.get(param_name).replace(',', ', ').replace('\n', ' ')
+        t1 = time.time()
+        print('Connected to: ', idn, 'in %.2fs' % (t1 - begin_time))
 
     def on_connect(self):
         '''
