@@ -1,5 +1,4 @@
 import asyncio
-import functools
 import weakref
 import time
 from uuid import uuid4
@@ -133,12 +132,7 @@ class Instrument(Metadatable, DelegateAttributes):
             cls._instances = []
         cls._instances.append(weakref.ref(self))
 
-        # check if read/write/ask have been implemented by a subclass
-        # for each set, there are now 4 possible methods that could be
-        # overridden, any of which would be sufficient
-        for action in ('write', 'read', 'ask'):
-            if not self._has_action(action):
-                self._set_not_implemented(action)
+        self._assign_actions()
 
         if server_name is not None:
             connect_instrument_server(server_name, self, server_extras)
@@ -174,6 +168,15 @@ class Instrument(Metadatable, DelegateAttributes):
         for a response.
         '''
         pass
+
+    def on_disconnect(self):
+        '''
+        This method gets called on disconnecting the instrument from an
+        InstrumentServer, to remove any unpicklable attributes so that it
+        may be reconnected later. It should NOT be decorated, as its job is to
+        prepare the local copy for reconnecting.
+        '''
+        self.connection = None
 
     @ask_server
     def getattr(self, attr, default=NoDefault):
@@ -388,11 +391,14 @@ class Instrument(Metadatable, DelegateAttributes):
     # variable, as these will not be available to parameters defined before  #
     # super().__init__().                                                    #
     # Intermediate subclasses (such as VisaInstrument, which will be         #
-    # subclassed again by an actual instrument) MAY set _write_fn etc to an  #
-    # instance variable if they wish to supply write/ask only if neither     #
-    # the sync or async forms are overridden by a final subclass             #
-    # this way the base methods are all defined at the class level, so are   #
+    # subclassed again by an actual instrument) MAY supply _default_write    #
+    # and/or _default_write_async etc, which will overwrite write only if    #
+    # neither the sync or async forms are overridden by a final subclass.    #
+    # This way the base methods are all defined at the class level, so are   #
     # available before __init__, but they can still be modified.             #
+    # note that we *still* cannot set any of these methods at the instance   #
+    # level, as they become unpicklable - we do the overriding at the class  #
+    # level.                                                                 #
     ##########################################################################
 
     def write(self, cmd):
@@ -461,35 +467,52 @@ class Instrument(Metadatable, DelegateAttributes):
         '''
         return self.ask(cmd)
 
-    def _raise_not_implemented(self, method, *args):
+    def _raise_not_implemented(self, *args):
         '''
         intended to replace _(write|read|ask)[_async]_fn when no
         subclasses have overridden any of the appropriate methods.
         This way we don't need to check for recursion loops in every call.
-
-        usage examples:
-        self._write_fn = functools.partial(
-            self._raise_not_implemented, 'write')
-        self._write_async_fn = mock_async(
-            functools.partial(self._raise_not_implemented, 'write'))
         '''
-        msg = 'instrument {0} has no {1} or {1}_async method defined'
-        raise NotImplementedError(msg.format(self.name, method))
+        msg = ('instrument {} has no sync OR async methods defined for '
+               'actions {}')
+        raise NotImplementedError(
+            msg.format(self.name, self._not_implemented_actions))
+
+    def _assign_actions(self):
+        self._not_implemented_actions = []
+        for action in ('write', 'read', 'ask'):
+            if not self._has_action(action):
+                self._bind_default_action(action)
 
     def _has_action(self, action):
         for method_form in ('{}', '{}_async', '_{}_fn', '_{}_async_fn'):
             method = method_form.format(action)
-            this_func = getattr(self, method).__func__
+            this_method = getattr(self, method)
+            # if no __func__, this method is decorated so MUST be overridden
+            this_func = getattr(this_method, '__func__', None)
             base_func = getattr(Instrument, method)
             if (this_func is not base_func):
                 return True
         return False
 
-    def _set_not_implemented(self, action):
-        setattr(self, '_{}_fn'.format(action),
-                functools.partial(self._raise_not_implemented, action))
-        setattr(self, '_{}_async_fn'.format(action), mock_async(
-                functools.partial(self._raise_not_implemented, action)))
+    def _bind_default_action(self, action):
+        # only set the io routines if a subclass doesn't override EITHER
+        # the sync or the async version, so we preserve the ability of
+        # the base Instrument class to convert between sync and async
+        has_default = False
+        for subaction in (action, action + '_async'):
+            default_method = '_default_{}'.format(subaction)
+            final_method = '_{}_fn'.format(subaction)
+            if hasattr(self, default_method):
+                setattr(self, final_method,
+                        getattr(self, default_method))
+                has_default = True
+
+        if not has_default:
+            self._not_implemented_actions.append(action)
+            setattr(self, '_{}_fn'.format(action), self._raise_not_implemented)
+            setattr(self, '_{}_async_fn'.format(action),
+                    mock_async(self._raise_not_implemented))
 
     ##########################################################################
     # shortcuts to parameters & setters & getters                            #

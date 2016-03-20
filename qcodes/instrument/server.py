@@ -58,7 +58,7 @@ class InstrumentManager(ServerManager):
         super().restart()
 
         for instrument in self.instruments.values():
-            instrument.connection = None
+            instrument.on_disconnect()
             self.connect(instrument)
 
     def connect(self, instrument):
@@ -70,6 +70,7 @@ class InstrumentManager(ServerManager):
         self.write('delete', instrument.uuid)
 
         if instrument.uuid in self.instruments:
+            self.instruments[instrument.uuid].on_disconnect()
             del self.instruments[instrument.uuid]
 
             if not self.instruments:
@@ -135,7 +136,7 @@ class ask_server:
                   '** This variant (ask_server) will wait for a response.')
 
     def __init__(self, func):
-        self.__func__ = func
+        self.func = func
         self.name = func.__name__
 
         doc = self.doc_prefix.format(func.__qualname__)
@@ -166,7 +167,7 @@ class ask_server:
         if self.instrument.connection:
             return self.instrument.connection.ask(self.name, *args, **kwargs)
         else:
-            return self.__func__(self.instrument, *args, **kwargs)
+            return self.func(self.instrument, *args, **kwargs)
 
 
 class write_server(ask_server):
@@ -188,7 +189,7 @@ class write_server(ask_server):
         if self.instrument.connection:
             self.instrument.connection.write(self.name, *args, **kwargs)
         else:
-            self.__func__(self.instrument, *args, **kwargs)
+            self.func(self.instrument, *args, **kwargs)
 
 
 class InstrumentServer:

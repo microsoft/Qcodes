@@ -26,15 +26,6 @@ class IPInstrument(Instrument):
     def __init__(self, name, address=None, port=None, timeout=5,
                  terminator='\n', persistent=True, write_confirmation=True,
                  **kwargs):
-        # only set the io routines if a subclass doesn't override EITHER
-        # the sync or the async version, so we preserve the ability of
-        # the base Instrument class to convert between sync and async
-        if not self._has_action('write'):
-            self._write_fn = self._default_write
-
-        if not self._has_action('ask'):
-            self._ask_fn = self._default_ask
-
         self._address = address
         self._port = port
         self._timeout = timeout

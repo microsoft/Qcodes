@@ -27,15 +27,6 @@ class VisaInstrument(Instrument):
     '''
     def __init__(self, name, address=None, server_name='',
                  timeout=5, terminator='', **kwargs):
-        # only set the io routines if a subclass doesn't override EITHER
-        # the sync or the async version, so we preserve the ability of
-        # the base Instrument class to convert between sync and async
-        if not self._has_action('write'):
-            self._write_fn = self._default_write
-
-        if not self._has_action('ask'):
-            self._ask_fn = self._default_ask
-
         self._address = address
         self._timeout = timeout
         self._terminator = terminator
@@ -55,7 +46,7 @@ class VisaInstrument(Instrument):
         return 'VisaServer'
 
     @ask_server
-    def on_connect(self, address, timeout, terminator):
+    def on_connect(self):
         self.set_address(self._address)
         self.set_timeout(self._timeout)
         self.set_terminator(self._terminator)
@@ -98,12 +89,12 @@ class VisaInstrument(Instrument):
             raise visa.VisaIOError(ret_code)
 
     @write_server
-    def _default_write(self, cmd):
+    def write(self, cmd):
         # TODO: lock, async
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
 
     @ask_server
-    def _default_ask(self, cmd):
+    def ask(self, cmd):
         # TODO: lock, async
         return self.visa_handle.ask(cmd)

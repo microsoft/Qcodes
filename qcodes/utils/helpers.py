@@ -31,6 +31,10 @@ def is_function(f, arg_count, coroutine=False):
     arguments, which either is or is not a coroutine
     type casting "functions" are allowed, but only in the 1-argument form
     '''
+    # nested import to avoid circular deps. (another reason to fix the hack
+    # below)
+    from qcodes import ask_server, write_server
+
     if not isinstance(arg_count, int) or arg_count < 0:
         raise TypeError('arg_count must be a non-negative integer')
 
@@ -52,6 +56,10 @@ def is_function(f, arg_count, coroutine=False):
 
     try:
         inputs = [0] * arg_count
+        if isinstance(f, (ask_server, write_server)):
+            # our decorators show up to signature without the object bound
+            # TODO: fix that instead of hacking it here?
+            inputs.append(0)
         sig.bind(*inputs)
         return True
     except TypeError:
