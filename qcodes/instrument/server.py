@@ -135,7 +135,7 @@ class ask_server:
                   '** This variant (ask_server) will wait for a response.')
 
     def __init__(self, func):
-        self.func = func
+        self.__func__ = func
         self.name = func.__name__
 
         doc = self.doc_prefix.format(func.__qualname__)
@@ -166,7 +166,7 @@ class ask_server:
         if self.instrument.connection:
             return self.instrument.connection.ask(self.name, *args, **kwargs)
         else:
-            return self.func(self.instrument, *args, **kwargs)
+            return self.__func__(self.instrument, *args, **kwargs)
 
 
 class write_server(ask_server):
@@ -188,7 +188,7 @@ class write_server(ask_server):
         if self.instrument.connection:
             self.instrument.connection.write(self.name, *args, **kwargs)
         else:
-            self.func(self.instrument, *args, **kwargs)
+            self.__func__(self.instrument, *args, **kwargs)
 
 
 class InstrumentServer:

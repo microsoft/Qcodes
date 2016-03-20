@@ -100,7 +100,7 @@ class TestParameters(TestCase):
         self.gates.add_parameter('chan0slow', get_cmd='c0?',
                                  set_cmd=self.slow_neg_set, get_parser=float,
                                  vals=Numbers(-10, 10), sweep_step=0.2,
-                                 sweep_delay=0.01)
+                                 sweep_delay=0.02)
         self.gates.add_parameter('chan0slow2', get_cmd='c0?',
                                  set_cmd=self.slow_neg_set, get_parser=float,
                                  vals=Numbers(-10, 10), sweep_step=0.2,
@@ -320,7 +320,7 @@ class TestParameters(TestCase):
         source.add_parameter('amplitude2', get_cmd='ampl?',
                              set_cmd='ampl:{}', get_parser=float,
                              vals=MultiType(Numbers(0, 1), Strings()),
-                             sweep_step=0.2, sweep_delay=0.005)
+                             sweep_step=0.2, sweep_delay=0.02)
         self.assertEqual(len(source.history), 0)
 
         # 2 history items - get then set, and one warning (cannot sweep

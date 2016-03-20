@@ -364,6 +364,11 @@ class CustomError(Exception):
     pass
 
 
+def delayed_put(queue, val, delay):
+    time.sleep(delay)
+    queue.put(val)
+
+
 class TestServerManager(TestCase):
     def check_error(self, manager, error_str, error_class):
         manager._error_queue.put(error_str)
@@ -406,12 +411,14 @@ class TestServerManager(TestCase):
 
         # extra responses to a query, only the last should be taken
         sm._response_queue.put('boo!')
-        sm._response_queue.put(42)
+        sm._response_queue.put('a barrel of monkeys!')
+        p = mp.Process(target=delayed_put, args=(sm._response_queue, 42, 0.05))
+        p.start()
         self.assertEqual(sm.ask('what is the answer'), 42)
 
         # no response to a query
         with self.assertRaises(Empty):
-            sm.ask('A sphincter says what?', timeout=0.01)
+            sm.ask('A sphincter says what?', timeout=0.05)
 
         # test halting an unresponsive server
         sm._server = mp.Process(target=time.sleep, args=(1000,))

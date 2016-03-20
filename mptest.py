@@ -17,6 +17,10 @@ import qcodes as qc
 timer = time.perf_counter
 
 
+def print_perf():
+    print(time.perf_counter())
+
+
 def mp_test(name, qin, qout, qglobal):
     '''
     simple test that keeps a process running until asked to stop,
