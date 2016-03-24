@@ -6,13 +6,13 @@ import os
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
 
-# TODO logging
+# TODO (C) logging
 
 # these items are important for generalizing this code to multiple alazar cards
-# TODO remove 8 bits per sample requirement
-# TODO some alazar cards have a different number of channels :(
+# TODO (W) remove 8 bits per sample requirement
+# TODO (W) some alazar cards have a different number of channels :(
 
-# TODO tests to do:
+# TODO (S) tests to do:
 # acquisition that would overflow the board if measurement is not stopped quicmly enough
 # can this be solved by not reposting the buffers?
 
@@ -23,14 +23,14 @@ class AlazarTech_ATS(Instrument):
         # Make sure the dll is located at "C:\\WINDOWS\\System32\\ATSApi"
         self._ATS9870_dll = ctypes.cdll.LoadLibrary('C:\\WINDOWS\\System32\\ATSApi')
 
-        # TODO make the board id more general such that more than one card per system configurations are supported
+        # TODO (W) make the board id more general such that more than one card per system configurations are supported
         self._handle = self._ATS9870_dll.AlazarGetBoardBySystemID(1, 1)
         if not self._handle:
             raise Exception("AlazarTech_ATS not found")
 
-        # TODO do something with board kind here
+        # TODO (M) do something with board kind here
 
-        # TODO is the succes code always 512 (for any board)?
+        # TODO (S) is the succes code always 512 (for any board)?
         self._succes = 512
         self.buffer_list = []
 
@@ -160,12 +160,12 @@ class AlazarTech_ATS(Instrument):
         self._result_handler(error_code=return_code, error_source="AlazarSetTriggerTimeOut")
         self.parameters['timeout_ticks']._set_updated()
 
-        # TODO config AUXIO
+        # TODO (W) config AUXIO
 
     def acquire(self, mode=None, samples_per_record=None, records_per_buffer=None, buffers_per_acquisition=None,
                 channel_selection=None, transfer_offset=None, external_startcapture=None, enable_record_headers=None,
                 alloc_buffers=None, fifo_only_streaming=None, interleave_samples=None, get_processed_data=None,
-                allocated_buffers=None, buffer_timeout = None):
+                allocated_buffers=None, buffer_timeout=None, acquisition_controller=None):
         # region set parameters from args
         if mode is not None:
             self.parameters['mode']._set(mode)
@@ -298,18 +298,19 @@ class AlazarTech_ATS(Instrument):
         self.parameters['allocated_buffers']._set_updated()
 
         # -----start capture here-----
-
+        acquisition_controller.pre_start_capture(self)
         # call the startcapture method
         return_code = self._ATS9870_dll.AlazarStartCapture(self._handle)
         self._result_handler(error_code=return_code, error_source="AlazarStartCapture")
 
+        acquisition_controller.pre_acquire(self)
         # buffer handling from acquisition
         buffers_completed = 0
         buffer_timeout = self.parameters['buffer_timeout']._get_byte()
         self.parameters['buffer_timeout']._set_updated()
 
         buffer_recycling = False
-        if self.parameters['buffers_per_acquisition']._get_byte()> self.parameters['allocated_buffers']._get_byte():
+        if self.parameters['buffers_per_acquisition']._get_byte() > self.parameters['allocated_buffers']._get_byte():
             buffer_recycling = True
 
         while buffers_completed < self.parameters['buffers_per_acquisition']._get_byte():
@@ -318,15 +319,14 @@ class AlazarTech_ATS(Instrument):
             return_code = self._ATS9870_dll.AlazarWaitAsyncBufferComplete(self._handle, buf.addr, buffer_timeout)
             self._result_handler(error_code=return_code, error_source="AlazarWaitAsyncBufferComplete")
 
-            # TODO last series of buffers must be handled exceptionally (and I want to test the difference)
-            # TODO by changing buffer recycling for the last series of buffers
+            # TODO (C) last series of buffers must be handled exceptionally (and I want to test the difference)
+            # TODO (C) by changing buffer recycling for the last series of buffers
 
             # if buffers must be recycled, extract data and repost them
             # otherwise continue to next buffer
 
             if buffer_recycling:
-                # TODO handle data here
-
+                acquisition_controller.handle_buffer(self, buf.buffer)
                 return_code = self._ATS9870_dll.AlazarPostAsyncBuffer(self._handle, buf.addr, buf.size_bytes)
                 self._result_handler(error_code=return_code, error_source="AlazarPostAsyncBuffer")
             buffers_completed += 1
@@ -338,14 +338,14 @@ class AlazarTech_ATS(Instrument):
         # -----cleanup here-----
         # extract data if not yet done
         if not buffer_recycling:
-            # TODO handle data here
-            pass
+            for buf in self.buffer_list:
+                acquisition_controller.handle_buffer(self, buf.buffer)
 
         # free up memory
         self.clear_buffers()
 
-        #return result
-        return None
+        # return result
+        return acquisition_controller.post_acquire(self)
 
     def _result_handler(self, error_code=0, error_source=""):
         # region error codes
@@ -392,7 +392,7 @@ class AlazarTech_ATS(Instrument):
         if error_code == self._succes:
             return None
         else:
-            # TODO log error
+            # TODO (C) log error
 
             if error_code not in error_codes:
                 raise KeyError(error_source+" raised unknown error "+str(error_code))
@@ -406,13 +406,13 @@ class AlazarTech_ATS(Instrument):
 
 class AlazarParameter(Parameter):
     def __init__(self, name=None, label=None, unit=None, value=None, byte_to_value_dict=None):
-        # TODO implement trivial dictionary
-        # TODO implement restrictions for trivial dictionary case
+        # TODO (M) implement trivial dictionary
+        # TODO (M) implement restrictions for trivial dictionary case
         super().__init__(name=name, label=label, unit=unit)
         self._byte = None
         self._uptodate_flag = True
         self._byte_to_value_dict = byte_to_value_dict
-        # TODO check this line
+        # TODO (M) check this line
         self._value_to_byte_dict = {v: k for k, v in self._byte_to_value_dict}
 
         self._set(value)
@@ -422,9 +422,10 @@ class AlazarParameter(Parameter):
         This method returns the name of the value set for this parameter
         :return: value
         """
-        # TODO test this exception
+        # TODO (S) test this exception
         if self._uptodate_flag is False:
-            raise Exception('The value of this parameter is not up to date with the actual value in the instrument.'
+            raise Exception('The value of this parameter (' + str(self.name) + ') is not up to date with the actual '
+                            'value in the instrument.'
                             '\n Most probable cause is illegal usage of ._set() method of this parameter.'
                             '\n Don\'t use private methods if you do not know what you are doing!')
         return self._byte_to_value_dict[self._byte]
@@ -444,7 +445,7 @@ class AlazarParameter(Parameter):
         :return: None
         """
 
-        # TODO test this exception handling
+        # TODO (S) test this exception handling
         if value not in self._value_to_byte_dict:
             raise KeyError('Value "'+str(value)+'" unknown setting in parameter "'+str(self.name)+'"')
         self._byte = self._value_to_byte_dict[value]
@@ -496,3 +497,42 @@ class Buffer:
             self.free_mem()
             logging.warning("Buffer prevented memory leak; Memory released to Windows.\n"
                             "Memory should have been released before buffer was deleted.")
+
+
+class AcquisitionController:
+    def __init__(self):
+        """
+        :return: nothing
+        """
+        pass
+
+    def pre_start_capture(self, alazar):
+        """
+
+        :param alazar:
+        :return:
+        """
+        raise NotImplementedError("This method should be implemented in the implementation")
+
+    def pre_acquire(self, alazar):
+        """
+        Use this method to prepare yourself for the data acquisition
+        :param alazar: a reference to the alazar driver
+        :return: nothing
+        """
+        raise NotImplementedError("This method should be implemented in the implementation")
+
+    def handle_buffer(self, alazar, buffer):
+        """
+        :param buffer: np.array with the data from the alazar card
+        :return: something, it is ignored in any case
+        """
+        raise NotImplementedError(
+            "This method should be implemented in the implementation of the AcquisitionController class")
+
+    def post_acquire(self, alazar):
+        """
+        :param alazar: a reference to the alazar driver
+        :return: this function should return all relevant data that you want to get form the acquisition
+        """
+        raise NotImplementedError("This method should be implemented somewhere")
