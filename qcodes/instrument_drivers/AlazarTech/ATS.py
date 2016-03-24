@@ -420,15 +420,16 @@ class AlazarTech_ATS(Instrument):
 
 
 class AlazarParameter(Parameter):
-    def __init__(self, name=None, label=None, unit=None, value=None, byte_to_value_dict=None):
+    def __init__(self, name=None, label=None, unit=None, instrument=None, value=None, byte_to_value_dict=None):
         # TODO (M) implement trivial dictionary
         # TODO (M) implement restrictions for trivial dictionary case
         super().__init__(name=name, label=label, unit=unit)
+        self.intstrument = instrument
         self._byte = None
         self._uptodate_flag = True
         self._byte_to_value_dict = byte_to_value_dict
         # TODO (M) check this line
-        self._value_to_byte_dict = {v: k for k, v in self._byte_to_value_dict}
+        self._value_to_byte_dict = {v: k for k, v in self._byte_to_value_dict.items()}
 
         self._set(value)
 
