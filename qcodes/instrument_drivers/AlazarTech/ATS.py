@@ -16,6 +16,7 @@ from qcodes.instrument.parameter import Parameter
 # acquisition that would overflow the board if measurement is not stopped quicmly enough
 # can this be solved by not reposting the buffers?
 
+
 class AlazarTech_ATS(Instrument):
 
     def __init__(self, name):
@@ -35,7 +36,7 @@ class AlazarTech_ATS(Instrument):
         self.buffer_list = []
 
     def config(self, clock_source=None, sample_rate=None, clock_edge=None, decimation=None, coupling=None,
-               channel_range=None, impedence=None, bwlimit=None, trigger_operation=None,
+               channel_range=None, impedance=None, bwlimit=None, trigger_operation=None,
                trigger_engine1=None, trigger_source1=None, trigger_slope1=None, trigger_level1=None,
                trigger_engine2=None, trigger_source2=None, trigger_slope2=None, trigger_level2=None,
                external_trigger_coupling=None, trigger_range=None, trigger_delay=None, timeout_ticks=None):
@@ -57,9 +58,9 @@ class AlazarTech_ATS(Instrument):
         if channel_range is not None:
             for i, v in enumerate(channel_range):
                 self.parameters['range'+str(i)]._set(v)
-        if impedence is not None:
-            for i, v in enumerate(impedence):
-                self.parameters['impedence'+str(i)]._set(v)
+        if impedance is not None:
+            for i, v in enumerate(impedance):
+                self.parameters['impedance'+str(i)]._set(v)
         if bwlimit is not None:
             for i, v in enumerate(bwlimit):
                 self.parameters['bwlimit'+str(i)]._set(v)
@@ -110,11 +111,11 @@ class AlazarTech_ATS(Instrument):
                                                                i,
                                                                self.parameters['coupling'+str(i)]._get_byte(),
                                                                self.parameters['range'+str(i)]._get_byte(),
-                                                               self.parameters['impedence'+str(i)]._get_byte())
+                                                               self.parameters['impedance'+str(i)]._get_byte())
             self._result_handler(error_code=return_code, error_source="AlazarInputControl " + str(i))
             self.parameters['coupling'+str(i)]._set_updated()
             self.parameters['range'+str(i)]._set_updated()
-            self.parameters['impedence'+str(i)]._set_updated()
+            self.parameters['impedance'+str(i)]._set_updated()
 
             return_code = self._ATS9870_dll.AlazarSetBWLimit(self._handle,
                                                              i,
@@ -344,6 +345,10 @@ class AlazarTech_ATS(Instrument):
         # free up memory
         self.clear_buffers()
 
+        # check if all parameters are up to date
+        for p in self.parameters:
+            p.get()
+
         # return result
         return acquisition_controller.post_acquire(self)
 
@@ -402,6 +407,16 @@ class AlazarTech_ATS(Instrument):
         for b in self.buffer_list:
             b.free_mem()
         self.buffer_list = []
+
+    def signal_to_volt(self, channel, signal):
+        # TODO (S) check this
+        return ((signal - 127.5) / 127.5) * (self.parameters["range" + str(channel)])
+
+    def get_sample_speed(self):
+        if self.parameters["decimation"] > 0:
+            return self.parameters["sample_rate"] / self.parameters["decimation"]
+        else:
+            return self.parameters["sample_rate"]
 
 
 class AlazarParameter(Parameter):
