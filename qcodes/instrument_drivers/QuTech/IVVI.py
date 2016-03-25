@@ -62,15 +62,17 @@ class IVVI(VisaInstrument):
                            get_cmd=self._get_dacs)
 
         for i in range(numdacs):
-            self.add_parameter('dac{}'.format(i+1),
-                               label='Dac {} (mV)'.format(i+1),
-                               units='mV',
-                               get_cmd=self._gen_ch_get_func(self._get_dac, i+1),
-                               set_cmd=self._gen_ch_set_func(self._set_dac, i+1),
-                               vals=vals.Numbers(-2000, 2000),
-                               sweep_step=10,
-                               sweep_delay=.1,
-                               max_val_age=10)
+            self.add_parameter(
+                'dac{}'.format(i+1),
+                label='Dac {} (mV)'.format(i+1),
+                units='mV',
+                get_cmd=self._gen_ch_get_func(self._get_dac, i+1),
+                set_cmd=self._gen_ch_set_func(self._set_dac, i+1),
+                vals=vals.Numbers(-2000, 2000),
+                sweep_step=10,
+                sweep_delay=.1,
+                max_sweep_delay=.2,
+                max_val_age=10)
 
         self._update_time = 5  # 5 seconds
         self._time_last_update = 0  # ensures first call will always update
