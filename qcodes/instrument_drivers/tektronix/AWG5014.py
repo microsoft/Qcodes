@@ -175,18 +175,18 @@ class Tektronix_AWG5014(VisaInstrument):
                            get_cmd='TRIG:IMP?',
                            set_cmd='TRIG:IMP '+'{}',
                            vals=vals.Enum(50, 1000),
-                           parse_function=float)
+                           get_parser=float)
         self.add_parameter('trigger_level',
                            label='Trigger level (V)',
                            get_cmd='TRIG:LEV?',
                            set_cmd='TRIG:LEV '+'{:.3f}',
                            vals=vals.Numbers(-5, 5),
-                           parse_function=float)
+                           get_parser=float)
         self.add_parameter('trigger_slope',
                            get_cmd='TRIG:SLOP?',
                            set_cmd='TRIG:SLOP '+'{}',
                            vals=vals.Enum('POS', 'NEG'))#,
-                           # parse_function=self.parse_int_pos_neg)
+                           # get_parser=self.parse_int_pos_neg)
         self.add_parameter('trigger_source',
                            get_cmd='TRIG:source?',
                            set_cmd='TRIG:source '+'{}',
@@ -201,13 +201,13 @@ class Tektronix_AWG5014(VisaInstrument):
                            get_cmd='EVEN:IMP?',
                            set_cmd='EVEN:IMP '+'{}',
                            vals=vals.Enum(50, 1000),
-                           parse_function=float)
+                           get_parser=float)
         self.add_parameter('event_level',
                            label='Event level (V)',
                            get_cmd='EVEN:LEV?',
                            set_cmd='EVEN:LEV '+'{:.3f}',
                            vals=vals.Numbers(-5, 5),
-                           parse_function=float)
+                           get_parser=float)
         self.add_parameter('event_jump_timing',
                            get_cmd='EVEN:JTIM?',
                            set_cmd='EVEN:JTIM {}',
@@ -218,7 +218,7 @@ class Tektronix_AWG5014(VisaInstrument):
                            get_cmd='SOUR:FREQ?',
                            set_cmd='SOUR:FREQ '+'{}',
                            vals=vals.Numbers(1e6, 1.2e9),
-                           parse_function=float)
+                           get_parser=float)
 
         self.add_parameter('numpoints',
                            label='Number of datapoints per wave',
@@ -249,13 +249,13 @@ class Tektronix_AWG5014(VisaInstrument):
                                get_cmd=amp_cmd + '?',
                                set_cmd=amp_cmd + ' {:.6f}',
                                vals=vals.Numbers(0.02, 1.5),
-                               parse_function=float)
+                               get_parser=float)
             self.add_parameter('ch{}_offset'.format(i),
                                label='Offset channel {} (V)'.format(i),
                                get_cmd=offset_cmd + '?',
                                set_cmd=offset_cmd + ' {:.3f}',
                                vals=vals.Numbers(-.1, .1),
-                               parse_function=float)
+                               get_parser=float)
             # Marker channels
             for j in range(2):
                 j += 1  # to convert from pythonic counting to AWG counting
@@ -269,21 +269,21 @@ class Tektronix_AWG5014(VisaInstrument):
                     get_cmd=m_del_cmd + '?',
                     set_cmd=m_del_cmd + '{:.3f}e-9',
                     vals=vals.Numbers(0, 1),
-                    parse_function=float)
+                    get_parser=float)
                 self.add_parameter(
                     'ch{}_m{}_high'.format(i, j),
                     label='Channel {} Marker {} high level (V)'.format(i, j),
                     get_cmd=m_high_cmd + '?',
                     set_cmd=m_high_cmd + '{:.3f}',
                     vals=vals.Numbers(-2.7, 2.7),
-                    parse_function=float)
+                    get_parser=float)
                 self.add_parameter(
                     'ch{}_m{}_low'.format(i, j),
                     label='Channel {} Marker {} low level (V)'.format(i, j),
                     get_cmd=m_low_cmd + '?',
                     set_cmd=m_low_cmd + '{:.3f}',
                     vals=vals.Numbers(-2.7, 2.7),
-                    parse_function=float)
+                    get_parser=float)
 
         # # Add functions
 

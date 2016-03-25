@@ -146,7 +146,7 @@ class TestParameters(TestCase):
         self.meter.add_parameter('amplitude', get_cmd='ampl?',
                                  get_parser=float)
         self.meter.add_function('echo', call_cmd='echo {:.2f}?',
-                                parameters=[Numbers(0, 1000)],
+                                args=[Numbers(0, 1000)],
                                 return_parser=float)
 
         self.init_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -188,6 +188,19 @@ class TestParameters(TestCase):
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         self.assertTrue(self.init_ts <= ts_str <= now)
 
+    def test_instances(self):
+        for instrument in [self.gates, self.source, self.meter]:
+            self.assertIn(instrument, self.gates.instances())
+
+        # somehow instances never go away... there are always 3
+        # extra references to every instrument object, so del doesn't
+        # work. I guess for this reason, instrument tests should take
+        # the *last* instance to test.
+        # instancelen = len(self.gates.instances())
+
+        # del self.source
+        # self.assertEqual(len(self.gates.instances()), instancelen - 1)
+
     def test_mock_instrument(self):
         gates, source, meter = self.gates, self.source, self.meter
 
@@ -206,9 +219,9 @@ class TestParameters(TestCase):
         # errors trying to set (or validate) invalid param values
         # put here so we ensure that these errors don't make it to
         # the history (ie they don't result in hardware commands)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             gates.set('chan1', '1')
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             gates.parameters['chan1'].validate('1')
 
         # change one param at a time
@@ -259,13 +272,13 @@ class TestParameters(TestCase):
         self.assertEqual(meter['echo'](1.2345), 1.23)
         with self.assertRaises(TypeError):
             meter.call('echo', 1, 2)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             meter.call('echo', '1')
 
         # validating before actually trying to call
         with self.assertRaises(TypeError):
             meter.functions['echo'].validate(1, 2)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             meter.functions['echo'].validate('1')
         gates.call('reset')
         self.assertEqual(gates.get('chan0'), 0)
@@ -319,6 +332,19 @@ class TestParameters(TestCase):
         with self.assertRaises(TypeError):
             gates.add_parameter('fugacity', set_cmd='f {:.4f}', vals=[1, 2, 3])
 
+    def check_set_amplitude2(self, val, log_count, history_count):
+        source = self.source
+        with LogCapture() as s:
+            source.amplitude2.set(val)
+
+        logs = s.getvalue().split('\n')[:-1]
+        s.close()
+
+        self.assertEqual(len(logs), log_count, logs)
+        for line in logs:
+            self.assertIn('cannot sweep', line.lower())
+        self.assertEqual(len(source.history), history_count)
+
     def test_sweep_steps_edge_case(self):
         # MultiType with sweeping is weird - not sure why one would do this,
         # but we should handle it
@@ -328,14 +354,20 @@ class TestParameters(TestCase):
                              vals=MultiType(Numbers(0, 1), Strings()),
                              sweep_step=0.2, sweep_delay=0.005)
         self.assertEqual(len(source.history), 0)
-        source.set('amplitude2', 'Off')
-        self.assertEqual(len(source.history), 2)  # get then set
-        source.set('amplitude2', 0.2)
-        self.assertEqual(len(source.history), 3)  # single set
-        source.set('amplitude2', 0.8)  # num -> num is the only real sweep
-        self.assertEqual(len(source.history), 6)  # 3-step sweep
-        source.set('amplitude2', 'Off')
-        self.assertEqual(len(source.history), 7)  # single set
+
+        # 2 history items - get then set, and one warning (cannot sweep
+        # number to string value)
+        self.check_set_amplitude2('Off', log_count=1, history_count=2)
+
+        # one more history item - single set, and one warning (cannot sweep
+        # string to number)
+        self.check_set_amplitude2(0.2, log_count=1, history_count=3)
+
+        # the only real sweep (0.2 to 0.8) adds 3 set's to history and no logs
+        self.check_set_amplitude2(0.8, log_count=0, history_count=6)
+
+        # single set added to history, and another sweep warning num->string
+        self.check_set_amplitude2('Off', log_count=1, history_count=7)
 
     def test_set_sweep_errors(self):
         gates = self.gates
@@ -503,7 +535,7 @@ class TestParameters(TestCase):
 
         with self.assertRaises(TypeError):
             b.add_function('skip', call_cmd='skip {}',
-                           parameters=['not a validator'])
+                           args=['not a validator'])
         with self.assertRaises(NoCommandError):
             b.add_function('jump')
         with self.assertRaises(NoCommandError):
@@ -653,7 +685,7 @@ class TestParameters(TestCase):
         self.assertEqual(alignment.get(), 'lawful')
 
         # None is the only invalid initial_value you can use
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             self.source.add_parameter('alignment2',
                                       parameter_class=ManualParameter,
                                       initial_value='nearsighted')

@@ -60,18 +60,6 @@ class Agilent_E8527D(VisaInstrument):
               self.get('IDN').replace(',', ', ').replace('\n', ' '),
               'in %.2fs' % (t1-t0))
 
-    def run_tests(self):
-        '''
-        Imports the modules needed for running the test suite and runs
-        some basic tests to verify that the instrument is working correctly
-        '''
-        import unittest
-        from . import test_suite
-        test_suite.source = self
-        suite = unittest.TestLoader().loadTestsFromTestCase(
-            test_suite.mw_source)
-        unittest.TextTestRunner(verbosity=2).run(suite)
-
     # Note it would be useful to have functions like this in some module instad
     # of repeated in every instrument driver
     def rad_to_deg(self, angle_rad):

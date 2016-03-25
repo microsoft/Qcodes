@@ -202,11 +202,15 @@ class Parameter(Metadatable):
 
     def validate(self, value):
         '''
-        raises a ValueError if this value is not allowed for this Parameter
+        raises an error if this value is not allowed for this Parameter
         '''
-        if not self._vals.is_valid(value):
-            raise ValueError(
-                '{} is not a valid value for {}'.format(value, self.name))
+        if hasattr(self, '_instrument'):
+            context = (getattr(self._instrument, 'name', '') or
+                       str(self._instrument.__class__)) + '.' + self.name
+        else:
+            context = self.name
+
+        self._vals.validate(value, 'Parameter: ' + context)
 
     def __getitem__(self, keys):
         '''
@@ -248,8 +252,6 @@ class StandardParameter(Parameter):
         of set_cmd and async_set_cmd should do their own parsing
         See also val_mapping
 
-    parse_function: DEPRECATED - use get_parser instead
-
     val_mapping: a bidirectional map from data/readable values to
         instrument codes, expressed as a dict {data_val: instrument_code}
         For example, if the instrument uses '0' to mean 1V and '1' to mean
@@ -270,10 +272,9 @@ class StandardParameter(Parameter):
     '''
     def __init__(self, name, instrument=None,
                  get_cmd=None, async_get_cmd=None, get_parser=None,
-                 parse_function=None, val_mapping=None,
                  set_cmd=None, async_set_cmd=None, set_parser=None,
                  sweep_step=None, sweep_delay=None, max_sweep_delay=None,
-                 max_val_age=3600, vals=None, **kwargs):
+                 max_val_age=3600, vals=None, val_mapping=None, **kwargs):
         # handle val_mapping before super init because it impacts
         # vals / validation in the base class
         if val_mapping:
@@ -299,10 +300,6 @@ class StandardParameter(Parameter):
 
         self.has_get = False
         self.has_set = False
-
-        # push deprecated parse_function argument to get_parser
-        if get_parser is None:
-            get_parser = parse_function
 
         self._set_get(get_cmd, async_get_cmd, get_parser)
         self._set_set(set_cmd, async_set_cmd, set_parser)
