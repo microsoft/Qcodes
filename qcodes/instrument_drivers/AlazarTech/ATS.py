@@ -5,6 +5,7 @@ import os
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
+from qcodes.utils import validators
 
 # TODO (C) logging
 
@@ -410,26 +411,46 @@ class AlazarTech_ATS(Instrument):
 
     def signal_to_volt(self, channel, signal):
         # TODO (S) check this
+        # TODO (M) use byte value if range{channel}
         return ((signal - 127.5) / 127.5) * (self.parameters["range" + str(channel)])
 
     def get_sample_speed(self):
-        if self.parameters["decimation"] > 0:
-            return self.parameters["sample_rate"] / self.parameters["decimation"]
+        if self.parameters['sample_rate'] == 'EXTERNAL_CLOCK':
+            raise Exception('External clock is used, alazar driver could not determine sample speed.')
+
+        rate = 0
+        if self.parameters['sample_rate'] == '1GHz_REFERENCE_CLOCK':
+            rate = 1e9
         else:
-            return self.parameters["sample_rate"]
+            rate = self.parameters['sample_rate']
+
+        if self.parameters["decimation"] > 0:
+            return rate / self.parameters["decimation"]
+        else:
+            return rate
 
 
 class AlazarParameter(Parameter):
-    def __init__(self, name=None, label=None, unit=None, instrument=None, value=None, byte_to_value_dict=None):
-        # TODO (M) implement trivial dictionary
-        # TODO (M) implement restrictions for trivial dictionary case
-        super().__init__(name=name, label=label, unit=unit)
-        self.intstrument = instrument
+    def __init__(self, name=None, label=None, unit=None, instrument=None, value=None, byte_to_value_dict=None, vals=None):
+        if vals is None:
+            if byte_to_value_dict is None:
+                vals = validators.Anything()
+            else:
+                # TODO (S) test this validator
+                vals = validators.Enum(byte_to_value_dict.values())
+
+        super().__init__(name=name, label=label, unit=unit, vals=vals)
+        self.instrument = instrument
         self._byte = None
         self._uptodate_flag = True
-        self._byte_to_value_dict = byte_to_value_dict
-        # TODO (M) check this line
-        self._value_to_byte_dict = {v: k for k, v in self._byte_to_value_dict.items()}
+
+        # TODO (M) check this block
+        if byte_to_value_dict is None:
+            self._byte_to_value_dict = TrivialDictionary()
+            self._value_to_byte_dict = TrivialDictionary()
+        else:
+            self._byte_to_value_dict = byte_to_value_dict
+            self._value_to_byte_dict = {v: k for k, v in self._byte_to_value_dict.items()}
 
         self._set(value)
 
@@ -461,9 +482,8 @@ class AlazarParameter(Parameter):
         :return: None
         """
 
-        # TODO (S) test this exception handling
-        if value not in self._value_to_byte_dict:
-            raise KeyError('Value "'+str(value)+'" unknown setting in parameter "'+str(self.name)+'"')
+        # TODO (S) test this validation
+        self.validate(value)
         self._byte = self._value_to_byte_dict[value]
         self._uptodate_flag = False
         return None
@@ -552,3 +572,15 @@ class AcquisitionController:
         :return: this function should return all relevant data that you want to get form the acquisition
         """
         raise NotImplementedError("This method should be implemented somewhere")
+
+
+class TrivialDictionary:
+    def __init__(self):
+        pass
+
+    def __getitem__(self, item):
+        return item
+
+    def __contains__(self, item):
+        # this makes sure that this dictionary contains everything
+        return True
