@@ -12,6 +12,7 @@ from qcodes.utils import validators
 # these items are important for generalizing this code to multiple alazar cards
 # TODO (W) remove 8 bits per sample requirement
 # TODO (W) some alazar cards have a different number of channels :(
+# this ddrive ronly works with 2-channel cards
 
 # TODO (S) tests to do:
 # acquisition that would overflow the board if measurement is not stopped quicmly enough
@@ -40,7 +41,7 @@ class AlazarTech_ATS(Instrument):
                channel_range=None, impedance=None, bwlimit=None, trigger_operation=None,
                trigger_engine1=None, trigger_source1=None, trigger_slope1=None, trigger_level1=None,
                trigger_engine2=None, trigger_source2=None, trigger_slope2=None, trigger_level2=None,
-               external_trigger_coupling=None, trigger_range=None, trigger_delay=None, timeout_ticks=None):
+               external_trigger_coupling=None, external_trigger_range=None, trigger_delay=None, timeout_ticks=None):
 
         # region set parameters from args
 
@@ -88,8 +89,8 @@ class AlazarTech_ATS(Instrument):
 
         if external_trigger_coupling is not None:
             self.parameters['external_trigger_coupling']._set(external_trigger_coupling)
-        if trigger_range is not None:
-            self.parameters['trigger_range']._set(trigger_range)
+        if external_trigger_range is not None:
+            self.parameters['external_trigger_range']._set(external_trigger_range)
         if trigger_delay is not None:
             self.parameters['trigger_delay']._set(trigger_delay)
         if timeout_ticks is not None:
@@ -147,10 +148,10 @@ class AlazarTech_ATS(Instrument):
 
         return_code = self._ATS9870_dll.AlazarSetExternalTrigger(self._handle,
                                                                  self.parameters['external_trigger_coupling']._get_byte(),
-                                                                 self.parameters['trigger_range']._get_byte())
+                                                                 self.parameters['external_trigger_range']._get_byte())
         self._result_handler(error_code=return_code, error_source="AlazarSetExternalTrigger")
         self.parameters['external_trigger_coupling']._set_updated()
-        self.parameters['trigger_range']._set_updated()
+        self.parameters['external_trigger_range']._set_updated()
 
         return_code = self._ATS9870_dll.AlazarSetTriggerDelay(self._handle,
                                                               self.parameters['trigger_delay']._get_byte())
@@ -437,7 +438,7 @@ class AlazarParameter(Parameter):
                 vals = validators.Anything()
             else:
                 # TODO (S) test this validator
-                vals = validators.Enum(byte_to_value_dict.values())
+                vals = validators.Enum(*byte_to_value_dict.values())
 
         super().__init__(name=name, label=label, unit=unit, vals=vals)
         self.instrument = instrument
