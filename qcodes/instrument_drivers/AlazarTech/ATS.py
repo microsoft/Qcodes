@@ -56,16 +56,16 @@ class AlazarTech_ATS(Instrument):
 
         if coupling is not None:
             for i, v in enumerate(coupling):
-                self.parameters['coupling'+str(i)]._set(v)
+                self.parameters['coupling'+str(i+1)]._set(v)
         if channel_range is not None:
             for i, v in enumerate(channel_range):
-                self.parameters['range'+str(i)]._set(v)
+                self.parameters['channel_range'+str(i+1)]._set(v)
         if impedance is not None:
             for i, v in enumerate(impedance):
-                self.parameters['impedance'+str(i)]._set(v)
+                self.parameters['impedance'+str(i+1)]._set(v)
         if bwlimit is not None:
             for i, v in enumerate(bwlimit):
-                self.parameters['bwlimit'+str(i)]._set(v)
+                self.parameters['bwlimit'+str(i+1)]._set(v)
 
         if trigger_operation is not None:
             self.parameters['trigger_operation']._set(trigger_operation)
@@ -112,11 +112,11 @@ class AlazarTech_ATS(Instrument):
             return_code = self._ATS9870_dll.AlazarInputControl(self._handle,
                                                                i,
                                                                self.parameters['coupling'+str(i)]._get_byte(),
-                                                               self.parameters['range'+str(i)]._get_byte(),
+                                                               self.parameters['channel_range'+str(i)]._get_byte(),
                                                                self.parameters['impedance'+str(i)]._get_byte())
             self._result_handler(error_code=return_code, error_source="AlazarInputControl " + str(i))
             self.parameters['coupling'+str(i)]._set_updated()
-            self.parameters['range'+str(i)]._set_updated()
+            self.parameters['channel_range'+str(i)]._set_updated()
             self.parameters['impedance'+str(i)]._set_updated()
 
             return_code = self._ATS9870_dll.AlazarSetBWLimit(self._handle,
@@ -200,7 +200,7 @@ class AlazarTech_ATS(Instrument):
             self.parameters['buffer_timeout']._set(buffer_timeout)
 
         # endregion
-
+        self.parameters['mode']._set_updated()
         if not (self.parameters['mode'].get() == 'TS' or self.parameters['mode'].get() == 'NPT'):
             raise Exception("Only the 'TS' and 'NPT' modes are implemented at this point")
 
@@ -277,8 +277,7 @@ class AlazarTech_ATS(Instrument):
         self.parameters['buffers_per_acquisition']._set_updated()
         self.parameters['channel_selection']._set_updated()
         self.parameters['transfer_offset']._set_updated()
-        self.parameters['mode']._set_updated()
-        self.parameters['external_starcapture']._set_updated()
+        self.parameters['external_startcapture']._set_updated()
         self.parameters['enable_record_headers']._set_updated()
         self.parameters['alloc_buffers']._set_updated()
         self.parameters['fifo_only_streaming']._set_updated()
@@ -348,7 +347,7 @@ class AlazarTech_ATS(Instrument):
         self.clear_buffers()
 
         # check if all parameters are up to date
-        for p in self.parameters:
+        for p in self.parameters.values():
             p.get()
 
         # return result
@@ -413,20 +412,20 @@ class AlazarTech_ATS(Instrument):
     def signal_to_volt(self, channel, signal):
         # TODO (S) check this
         # TODO (M) use byte value if range{channel}
-        return ((signal - 127.5) / 127.5) * (self.parameters["range" + str(channel)])
+        return ((signal - 127.5) / 127.5) * (self.parameters["channel_range" + str(channel)].get())
 
     def get_sample_speed(self):
-        if self.parameters['sample_rate'] == 'EXTERNAL_CLOCK':
+        if self.parameters['sample_rate'].get() == 'EXTERNAL_CLOCK':
             raise Exception('External clock is used, alazar driver could not determine sample speed.')
 
         rate = 0
-        if self.parameters['sample_rate'] == '1GHz_REFERENCE_CLOCK':
+        if self.parameters['sample_rate'].get() == '1GHz_REFERENCE_CLOCK':
             rate = 1e9
         else:
-            rate = self.parameters['sample_rate']
+            rate = self.parameters['sample_rate'].get()
 
-        if self.parameters["decimation"] > 0:
-            return rate / self.parameters["decimation"]
+        if self.parameters["decimation"].get() > 0:
+            return rate / self.parameters["decimation"].get()
         else:
             return rate
 
@@ -505,18 +504,18 @@ class Buffer:
         mem_commit = 0x1000
         page_readwrite = 0x4
 
-        size_bytes = samples_per_buffer * number_of_channels
+        self.size_bytes = samples_per_buffer * number_of_channels
 
         # please see https://msdn.microsoft.com/en-us/library/windows/desktop/aa366887(v=vs.85).aspx for documentation
         ctypes.windll.kernel32.VirtualAlloc.argtypes = [ctypes.c_void_p, ctypes.c_long, ctypes.c_long, ctypes.c_long]
         ctypes.windll.kernel32.VirtualAlloc.restype = ctypes.c_void_p
-        self.addr = ctypes.windll.kernel32.VirtualAlloc(0, ctypes.c_long(size_bytes), mem_commit, page_readwrite)
+        self.addr = ctypes.windll.kernel32.VirtualAlloc(0, ctypes.c_long(self.size_bytes), mem_commit, page_readwrite)
         if self.addr is None:
             self._allocated = False
             e = ctypes.windll.kernel32.GetLastError()
             raise Exception("Memory allocation error: " + str(e))
 
-        ctypes_array = (ctypes.c_uint8 * size_bytes).from_address(self.addr)
+        ctypes_array = (ctypes.c_uint8 * self.size_bytes).from_address(self.addr)
         self.buffer = np.frombuffer(ctypes_array, dtype=np.uint8)
         pointer, read_only_flag = self.buffer.__array_interface__['data']
 

@@ -33,16 +33,16 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            value=0, vals=validators.Ints(0, 100000))
 
         self.add_parameter(name='coupling1', parameter_class=AlazarParameter, label='Coupling channel 1', unit=None,
-                           value='AC_COUPLING',
-                           byte_to_value_dict={1: 'AC_COUPLING', 2: 'DC_COUPLING'})
+                           value='AC',
+                           byte_to_value_dict={1: 'AC', 2: 'DC'})
         self.add_parameter(name='coupling2', parameter_class=AlazarParameter, label='Coupling channel 2', unit=None,
-                           value='AC_COUPLING',
-                           byte_to_value_dict={1: 'AC_COUPLING', 2: 'DC_COUPLING'})
+                           value='AC',
+                           byte_to_value_dict={1: 'AC', 2: 'DC'})
 
-        self.add_parameter(name='range1', parameter_class=AlazarParameter, label='Range channel 1', unit='V',
+        self.add_parameter(name='channel_range1', parameter_class=AlazarParameter, label='Range channel 1', unit='V',
                            value=4,
                            byte_to_value_dict={2: 0.04, 5: 0.1, 6: 0.2, 7: 0.4, 10: 1., 11: 2., 12: 4.})
-        self.add_parameter(name='range2', parameter_class=AlazarParameter, label='Range channel 2', unit='V',
+        self.add_parameter(name='channel_range2', parameter_class=AlazarParameter, label='Range channel 2', unit='V',
                            value=4,
                            byte_to_value_dict={2: 0.04, 5: 0.1, 6: 0.2, 7: 0.4, 10: 1., 11: 2., 12: 4.})
 
@@ -76,17 +76,17 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            value='TRIG_ENGINE_K',
                            byte_to_value_dict={0: 'TRIG_ENGINE_J', 1: 'TRIG_ENGINE_K'})
         self.add_parameter(name='trigger_source1', parameter_class=AlazarParameter, label='Trigger Source 1', unit=None,
-                           value='TRIG_EXTERNAL',
-                           byte_to_value_dict={0: 'TRIG_CHAN_A',
-                                               1: 'TRIG_CHAN_B',
-                                               2: 'TRIG_EXTERNAL',
-                                               3: 'TRIG_DISABLE'})
+                           value='EXTERNAL',
+                           byte_to_value_dict={0: 'CHANNEL_A',
+                                               1: 'CHANNEL_B',
+                                               2: 'EXTERNAL',
+                                               3: 'DISABLE'})
         self.add_parameter(name='trigger_source2', parameter_class=AlazarParameter, label='Trigger Source 2', unit=None,
-                           value='TRIG_DISABLE',
-                           byte_to_value_dict={0: 'TRIG_CHAN_A',
-                                               1: 'TRIG_CHAN_B',
-                                               2: 'TRIG_EXTERNAL',
-                                               3: 'TRIG_DISABLE'})
+                           value='DISABLE',
+                           byte_to_value_dict={0: 'CHANNEL_A',
+                                               1: 'CHANNEL_B',
+                                               2: 'EXTERNAL',
+                                               3: 'DISABLE'})
         self.add_parameter(name='trigger_slope1', parameter_class=AlazarParameter, label='Trigger Slope 1', unit=None,
                            value='TRIG_SLOPE_POSITIVE',
                            byte_to_value_dict={1: 'TRIG_SLOPE_POSITIVE', 2: 'TRIG_SLOPE_NEGATIVE'})
@@ -100,8 +100,8 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
 
         self.add_parameter(name='external_trigger_coupling', parameter_class=AlazarParameter,
                            label='External Trigger Coupling', unit=None,
-                           value='AC_COUPLING',
-                           byte_to_value_dict={1: 'AC_COUPLING', 2: 'DC_COUPLING'})
+                           value='AC',
+                           byte_to_value_dict={1: 'AC', 2: 'DC'})
         self.add_parameter(name='external_trigger_range', parameter_class=AlazarParameter,
                            label='External Trigger Range', unit=None,
                            value='ETR_5V',

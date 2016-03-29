@@ -50,7 +50,7 @@ class DFT_AcquisitionController(AcquisitionController):
             # fit channel A and channel B
             res1 = self.fit(recordA)
             res2 = self.fit(recordB)
-            return [alazar.signal_to_volt(0, res1[0] + 127.5), alazar.signal_to_volt(1, res2[0] + 127.5), res1[1], res2[1],
+            return [alazar.signal_to_volt(1, res1[0] + 127.5), alazar.signal_to_volt(2, res2[0] + 127.5), res1[1], res2[1],
                     (res1[1] - res2[1]) % 360]
         else:
             raise Exception("Could not find CHANNEL_B during data extraction")
