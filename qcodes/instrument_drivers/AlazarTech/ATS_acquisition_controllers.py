@@ -5,11 +5,11 @@ import numpy as np
 
 # DFT AcquisitionController
 class DFT_AcquisitionController(AcquisitionController):
-    def __init__(self, demodulation_frequency, samples_per_record, records_per_buffer, buffers_per_acquisition):
+    def __init__(self, demodulation_frequency):
         self.demodulation_frequency = demodulation_frequency
-        self.samples_per_record = samples_per_record
-        self.records_per_buffer = records_per_buffer
-        self.buffers_per_acquisition = buffers_per_acquisition
+        self.samples_per_record = None
+        self.records_per_buffer = None
+        self.buffers_per_acquisition = None
         # TODO (S) this is not very general:
         self.number_of_channels = 2
         self.cos_list = None
@@ -17,6 +17,9 @@ class DFT_AcquisitionController(AcquisitionController):
         self.buffer = None
 
     def pre_start_capture(self, alazar):
+        self.samples_per_record = alazar.parameters['samples_per_record'].get()
+        self.records_per_buffer = alazar.parameters['records_per_buffer'].get()
+        self.buffers_per_acquisition = alazar.parameters['buffers_per_acquisition'].get()
         sample_speed = alazar.get_sample_speed()
         integer_list = np.arange(self.samples_per_record)
 
