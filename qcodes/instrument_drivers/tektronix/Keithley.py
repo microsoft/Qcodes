@@ -1,0 +1,338 @@
+# Keithley_2700.py driver for Keithley 2700 DMM
+#
+# Pieter Eendebak <pieter.eendebak@gmail.com>, 2016 (adapt to Qcodes framework)
+# Pieter de Groot <pieterdegroot@gmail.com>, 2008
+# Martijn Schaafsma <qtlab@mcschaafsma.nl>, 2008
+# Reinier Heeres <reinier@heeres.eu>, 2008
+#
+# Update december 2009:
+# Michiel Jol <jelle@michieljol.nl>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+import time
+from numpy import pi
+from qcodes.instrument.visa import VisaInstrument
+#from qcodes.utils import validators
+from qcodes.utils.validators import Strings as StringValidator
+from qcodes.utils.validators import Ints as IntsValidator
+from qcodes.utils.validators import Numbers as NumbersValidator
+
+import logging
+
+#%% Helper functions
+
+def bool_to_str(val):
+    '''
+    Function to convert boolean to 'ON' or 'OFF'
+    '''
+    if val == True:
+        return "ON"
+    else:
+        return "OFF"
+
+
+
+#%% Driver for Keithley_2700       
+
+        
+class Keithley_2700(VisaInstrument):
+    '''
+    This is the qcodes driver for the Keithley_2700 Multimeter
+
+    Usage: Initialize with
+    <name> =  = Keithley_2700(<name>, address='<GPIB address>', reset=<bool>,
+            change_display=<bool>, change_autozero=<bool>)
+
+    Status: beta-version.
+    
+    This driver will most likely work for multiple Keithley SourceMeters.
+
+    This driver does not contain all commands available, but only the ones most commonly used.
+    '''
+    def __init__(self, name, address, reset=False):
+        t0 = time.time()
+        super().__init__(name, address)
+
+        self._modes = ['']
+        self.add_parameter('IDN', get_cmd='*IDN?')
+        
+        self._modes = ['VOLT:AC', 'VOLT:DC', 'CURR:AC', 'CURR:DC', 'RES',
+            'FRES', 'TEMP', 'FREQ']
+        #self._change_display = change_display
+        #self._change_autozero = change_autozero
+        self._averaging_types = ['MOV','REP']
+        self._trigger_sent = False
+        
+        # Add parameters to wrapper
+        self.add_parameter('mode', get_cmd=':CONF?', get_parser=lambda x: x.strip().strip('"'), set_cmd=':CONF:{}', vals=StringValidator() )
+
+        self.add_parameter('trigger_count', get_cmd=self._mode_par('INIT', 'CONT'), get_parser=int, set_cmd=self._mode_par_value('INIT','CONT','{}'), vals=IntsValidator(), units='#' )
+        self.add_parameter('trigger_delay', get_cmd=self._mode_par('TRIG', 'DEL'), get_parser=float, set_cmd=self._mode_par_value('TRIG', 'DEL', '{}'), vals=NumbersValidator(min_value=0, max_value=999999.999), units='s')
+
+        self.add_parameter('trigger_continuous', get_cmd=self._mode_par('INIT', 'CONT'), get_parser=bool, set_cmd=self._mode_par_value('INIT', 'CONT', '{}'), set_parser=bool_to_str )
+        
+        self.add_parameter('averaging', get_cmd=lambda: self._current_mode_get( 'AVER:STAT'), get_parser=bool, set_cmd=lambda val: self._current_mode_set('AVER:STAT', val), set_parser=bool_to_str )
+
+        self.add_parameter('digits', get_cmd=lambda: self._current_mode_get('DIG'), get_parser=int, set_cmd=lambda val: self._current_mode_set('DIG', val)  )
+        
+        self.add_parameter('nplc', get_cmd=lambda: self._current_mode_get('NPLC'), get_parser=int, set_cmd=lambda val: self._current_mode_set('NPLC', val), units='APER'  )
+        self.add_parameter('range', get_cmd=lambda: self._current_mode_get('RANG'), get_parser=int, set_cmd=lambda val: self._current_mode_set('RANG', val), units='RANG'  )
+
+        
+        '''
+        self.add_parameter('range',
+            flags=Instrument.FLAG_GETSET,
+            units='', minval=0.1, maxval=1000, type=float)
+        self.add_parameter('trigger_source',
+            flags=Instrument.FLAG_GETSET,
+            units='')
+        self.add_parameter('trigger_timer',
+            flags=Instrument.FLAG_GETSET,
+            units='s', minval=0.001, maxval=99999.999, type=float)
+        self.add_parameter('digits',
+            flags=Instrument.FLAG_GETSET,
+            units='#', minval=4, maxval=7, type=int)
+        self.add_parameter('readval', flags=Instrument.FLAG_GET,
+            units='AU',
+            type=float,
+            tags=['measure'])
+        self.add_parameter('readlastval', flags=Instrument.FLAG_GET,
+            units='AU',
+            type=float,
+            tags=['measure'])
+        self.add_parameter('readnextval', flags=Instrument.FLAG_GET,
+            units='AU',
+            type=float,
+            tags=['measure'])
+        self.add_parameter('integrationtime',
+            flags=Instrument.FLAG_GETSET,
+            units='s', type=float, minval=2e-4, maxval=1)
+        self.add_parameter('nplc',
+            flags=Instrument.FLAG_GETSET,
+            units='#', type=float, minval=0.01, maxval=50)
+        self.add_parameter('display', flags=Instrument.FLAG_GETSET,
+            type=bool)
+        self.add_parameter('autozero', flags=Instrument.FLAG_GETSET,
+            type=bool)
+        self.add_parameter('averaging_window',
+            flags=Instrument.FLAG_GETSET,
+            units='%', type=float, minval=0, maxval=10)
+        self.add_parameter('averaging_count',
+            flags=Instrument.FLAG_GETSET,
+            units='#', type=int, minval=1, maxval=100)
+        self.add_parameter('averaging_type',
+            flags=Instrument.FLAG_GETSET,
+            type=bytes, units='')
+        self.add_parameter('autorange',
+            flags=Instrument.FLAG_GETSET,
+            units='',
+            type=bool)
+'''
+            
+
+        # add functions
+        self.add_function('readnext', units='AU', call_cmd=':DATA:FRESH?', return_parser=float)
+
+        if reset:
+            self.reset()
+        else:
+            self.get_all()
+            self.set_defaults()
+
+        t1 = time.time()
+        print('Connected to: ',
+              self.get('IDN').replace(',', ', ').replace('\n', ' '),
+              'in %.2fs' % (t1-t0))
+
+
+    def get_all(self):
+        '''
+        Reads all relevant parameters from instrument
+
+        Input:
+            None
+
+        Output:
+            None
+        '''
+        logging.info('Get all relevant data from device')
+        
+        for p in ['mode', 'trigger_count', 'trigger_continuous', 'averaging', 'digits', 'nplc']:
+            logging.debug('get %s' % p)
+            par=getattr(self,p)
+            par.get()
+            
+#        self.get_range()
+ #       self.get_trigger_delay()
+  #      self.get_trigger_source()
+   #     self.get_trigger_timer()
+    #    self.get_integrationtime()
+      #  self.get_display()
+       # self.get_autozero()
+        #self.get_averaging_window()
+        #self.get_averaging_count()
+        #self.get_averaging_type()
+        #self.get_autorange()
+                
+    def _current_mode_get(self, par, mode=None):
+        cmd=self._mode_par(mode, par)
+        return self.ask(cmd)
+
+    def _current_mode_set(self, par, val, mode=None):
+        cmd=self._mode_par_value(mode, par, val)
+        return self.write(cmd)
+
+
+# --------------------------------------
+#           functions
+# --------------------------------------
+
+    def set_mode_volt_dc(self):
+        '''
+        Set mode to DC Voltage
+
+        Input:
+            None
+
+        Output:
+            None
+        '''
+        logging.debug('Set mode to DC Voltage')
+        self.mode.set('VOLT:DC')
+        
+    def set_defaults(self):
+        '''
+        Set to driver defaults:
+        Output=data only
+        Mode=Volt:DC
+        Digits=7
+        Trigger=Continous
+        Range=10 V
+        NPLC=1
+        Averaging=off
+        '''
+
+        self.write('SYST:PRES')
+        self.write(':FORM:ELEM READ')
+            # Sets the format to only the read out, all options are:
+            # READing = DMM reading, UNITs = Units,
+            # TSTamp = Timestamp, RNUMber = Reading number,
+            # CHANnel = Channel number, LIMits = Limits reading
+
+        self.set_mode_volt_dc()
+        self.digits.set(7)
+        self.trigger_continuous.set(True)
+        self.range.set(10)
+        self.nplc.set(1)
+        self.averaging.set(False)
+        return
+        
+    def _determine_mode(self, mode):
+        '''
+        Return the mode string to use.
+        If mode is None it will return the currently selected mode.
+        '''
+        logging.debug('Determine mode with mode=%s' % mode)
+        if mode is None:
+            mode = self.mode.get_latest() # _mode(query=False)
+        if mode not in self._modes and mode not in ('INIT', 'TRIG', 'SYST', 'DISP'):
+            logging.warning('Invalid mode %s, assuming current' % mode)
+            mode = self.mode.get_latest()
+        return mode
+        
+    def set_mode(self, mode):
+        '''
+        Set the mode to the specified value
+
+        Input:
+            mode (string) : mode to be set. Choose from self._modes
+
+        Output:
+            None
+        '''
+
+        logging.debug('Set mode to %s', mode)
+        if mode in self._modes:
+            string = ':CONF:%s' % mode
+            self._visainstrument.write(string)
+
+            if mode.startswith('VOLT'):
+                self._change_units('V')
+            elif mode.startswith('CURR'):
+                self._change_units('A')
+            elif mode.startswith('RES'):
+                self._change_units('Ohm')
+            elif mode.startswith('FREQ'):
+                self._change_units('Hz')
+
+        else:
+            logging.error('invalid mode %s' % mode)
+
+        self.get_all()
+            # Get all values again because some parameters depend on mode
+
+    def _mode_par_value(self, mode, par, val):
+        '''
+        For internal use only!!
+        Create command string based on current mode
+        
+        Input:
+            mode (string) : The mode to use
+            par (string)  : Parameter
+            val (depends) : Value
+
+        Output:
+            None
+        '''
+        mode = self._determine_mode(mode)
+        string = ':%s:%s %s' % (mode, par, val)
+        return string
+    def _mode_par(self, mode, par):
+        '''
+        For internal use only!!
+        Create command string based on current mode
+        
+        Input:
+            mode (string) : The mode to use
+            par (string)  : Parameter
+            val (depends) : Value
+
+        Output:
+            None
+        '''
+        mode = self._determine_mode(mode)
+        string = ':%s:%s?' % (mode, par, )
+        return string
+        
+    def reset(self):
+        '''
+        Resets instrument to default values
+
+        Input:
+            None
+
+        Output:
+            None
+        '''
+        logging.debug('Resetting instrument')
+        self._visainstrument.write('*RST')
+        self.get_all()
+
+    # def on(self):
+    #     self.set('status', 'on')
+
+    # def off(self):
+    #     self.set('status', 'off')
