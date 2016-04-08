@@ -47,7 +47,21 @@ def bool_to_str(val):
 
 #%% Driver for Keithley_2700       
 
+from functools import partial
         
+def parseint(v):
+    logging.debug('parseint: %s -> %d' % (v, int(v)))
+    return int(v)
+
+def parsebool(v):
+    r=bool(int(v))
+    logging.debug('parsetobool: %s -> %d' % (v, r))
+    return r
+
+def parsestr(v):
+    return v.strip().strip('"')
+            
+            
 class Keithley_2700(VisaInstrument):
     '''
     This is the qcodes driver for the Keithley_2700 Multimeter
@@ -77,22 +91,38 @@ class Keithley_2700(VisaInstrument):
         self._trigger_sent = False
         
         # Add parameters to wrapper
-        self.add_parameter('mode', get_cmd=':CONF?', get_parser=lambda x: x.strip().strip('"'), set_cmd=':CONF:{}', vals=StringValidator() )
+        self.add_parameter('mode', get_cmd=':CONF?', get_parser=parsestr, set_cmd=':CONF:{}', vals=StringValidator() )
 
-        self.add_parameter('trigger_count', get_cmd=self._mode_par('INIT', 'CONT'), get_parser=int, set_cmd=self._mode_par_value('INIT','CONT','{}'), vals=IntsValidator(), units='#' )
-        self.add_parameter('trigger_delay', get_cmd=self._mode_par('TRIG', 'DEL'), get_parser=float, set_cmd=self._mode_par_value('TRIG', 'DEL', '{}'), vals=NumbersValidator(min_value=0, max_value=999999.999), units='s')
+        self.add_parameter('trigger_count', get_cmd=self._mode_par('INIT', 'CONT'),
+                           get_parser=int, set_cmd=self._mode_par_value('INIT','CONT','{}'),
+                                vals=IntsValidator(), units='#' )
+        self.add_parameter('trigger_delay', get_cmd=self._mode_par('TRIG', 'DEL'),
+                   get_parser=float, set_cmd=self._mode_par_value('TRIG', 'DEL', '{}'),
+                      vals=NumbersValidator(min_value=0, max_value=999999.999), units='s')
 
-        self.add_parameter('trigger_continuous', get_cmd=self._mode_par('INIT', 'CONT'), get_parser=bool, set_cmd=self._mode_par_value('INIT', 'CONT', '{}'), set_parser=bool_to_str )
+        self.add_parameter('trigger_continuous', get_cmd=self._mode_par('INIT', 'CONT'),
+                   get_parser=parsebool, set_cmd=self._mode_par_value('INIT', 'CONT', '{}'), set_parser=bool_to_str )
         
-        self.add_parameter('averaging', get_cmd=lambda: self._current_mode_get( 'AVER:STAT'), get_parser=bool, set_cmd=lambda val: self._current_mode_set('AVER:STAT', val), set_parser=bool_to_str )
+        self.add_parameter('averaging', get_cmd=partial(self._current_mode_get, 'AVER:STAT', parser=parsebool),
+                   set_cmd=partial(self._current_mode_set, par='AVER:STAT'),
+                   set_parser=bool_to_str )
 
-        self.add_parameter('digits', get_cmd=lambda: self._current_mode_get('DIG'), get_parser=int, set_cmd=lambda val: self._current_mode_set('DIG', val)  )
+        self.add_parameter('digits', get_cmd=partial(self._current_mode_get, 'DIG', parser=int),
+                   set_cmd=partial(self._current_mode_set, par='DIG')  )
         
-        self.add_parameter('nplc', get_cmd=lambda: self._current_mode_get('NPLC'), get_parser=int, set_cmd=lambda val: self._current_mode_set('NPLC', val), units='APER', docstring='Get integration time in Number of PowerLine Cycles. \
+        self.add_parameter('nplc', get_cmd=partial( self._current_mode_get, 'NPLC', parser=float),
+                       set_cmd=partial(self._current_mode_set, par='NPLC', mode=None), units='APER',
+                     docstring='Get integration time in Number of PowerLine Cycles. \
             To get the integrationtime in seconds, use get_integrationtime().'  )
-        self.add_parameter('range', get_cmd=lambda: self._current_mode_get('RANG'), get_parser=int, set_cmd=lambda val: self._current_mode_set('RANG', val), units='RANG'  )
 
-        
+        self.add_parameter('range', get_cmd=partial(self._current_mode_get, 'RANG',parser=float),
+                   set_cmd=partial(self._current_mode_set, par='RANG'), units='RANG'  )
+
+        self.add_parameter('integrationtime', get_cmd=partial(self._current_mode_get, 'APER', parser=float),
+                set_cmd=partial(self._current_mode_set, par='APER', mode=None), units='s',
+                vals=NumbersValidator(min_value=2e-4, max_value=1.),
+                docstring='Get integration time in seconds. To get the integrationtime as a Number of PowerLine Cycles, use get_nplc().' )
+ 
         '''
         self.add_parameter('range',
             flags=Instrument.FLAG_GETSET,
@@ -103,9 +133,6 @@ class Keithley_2700(VisaInstrument):
         self.add_parameter('trigger_timer',
             flags=Instrument.FLAG_GETSET,
             units='s', minval=0.001, maxval=99999.999, type=float)
-        self.add_parameter('digits',
-            flags=Instrument.FLAG_GETSET,
-            units='#', minval=4, maxval=7, type=int)
         self.add_parameter('readval', flags=Instrument.FLAG_GET,
             units='AU',
             type=float,
@@ -118,9 +145,6 @@ class Keithley_2700(VisaInstrument):
             units='AU',
             type=float,
             tags=['measure'])
-        self.add_parameter('integrationtime',
-            flags=Instrument.FLAG_GETSET,
-            units='s', type=float, minval=2e-4, maxval=1)
         self.add_parameter('nplc',
             flags=Instrument.FLAG_GETSET,
             units='#', type=float, minval=0.01, maxval=50)
@@ -141,7 +165,7 @@ class Keithley_2700(VisaInstrument):
             flags=Instrument.FLAG_GETSET,
             units='',
             type=bool)
-'''
+        '''
             
 
         # add functions
@@ -171,7 +195,7 @@ class Keithley_2700(VisaInstrument):
         '''
         logging.info('Get all relevant data from device')
         
-        for p in ['mode', 'trigger_count', 'trigger_continuous', 'averaging', 'digits', 'nplc']:
+        for p in ['mode', 'trigger_count', 'trigger_continuous', 'averaging', 'digits', 'nplc', 'integrationtime']:
             logging.debug('get %s' % p)
             par=getattr(self,p)
             par.get()
@@ -180,7 +204,6 @@ class Keithley_2700(VisaInstrument):
  #       self.get_trigger_delay()
   #      self.get_trigger_source()
    #     self.get_trigger_timer()
-    #    self.get_integrationtime()
       #  self.get_display()
        # self.get_autozero()
         #self.get_averaging_window()
@@ -188,12 +211,15 @@ class Keithley_2700(VisaInstrument):
         #self.get_averaging_type()
         #self.get_autorange()
                 
-    def _current_mode_get(self, par, mode=None):
+    def _current_mode_get(self, par, mode=None, parser=None):
         cmd=self._mode_par(mode, par)
-        return self.ask(cmd)
+        r=self.ask(cmd)        
+        if parser is not None:
+            r=parser(r)
+        return r
 
-    def _current_mode_set(self, par, val, mode=None):
-        cmd=self._mode_par_value(mode, par, val)
+    def _current_mode_set(self, value, par, mode=None):
+        cmd=self._mode_par_value(mode, par, value)
         return self.write(cmd)
 
 
@@ -236,7 +262,7 @@ class Keithley_2700(VisaInstrument):
         self.set_mode_volt_dc()
         self.digits.set(7)
         self.trigger_continuous.set(True)
-        self.range.set(10)
+        self.range.set(10) 
         self.nplc.set(1)
         self.averaging.set(False)
         return
@@ -252,6 +278,7 @@ class Keithley_2700(VisaInstrument):
         if mode not in self._modes and mode not in ('INIT', 'TRIG', 'SYST', 'DISP'):
             logging.warning('Invalid mode %s, assuming current' % mode)
             mode = self.mode.get_latest()
+        logging.debug('Determine mode: mode=%s' % mode)
         return mode
         
     def set_mode(self, mode):

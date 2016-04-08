@@ -46,6 +46,8 @@ class Function(Metadatable):
         If None (default), will not wait for or read any response
     NOTE: parsers only apply if call_cmd is a string. The function forms
         of call_cmd and async_call_cmd should do their own parsing.
+    docstring: documentation string for the __doc__ field of the object
+        The __doc__ field of the instance is used by some help systems, but not all 
     '''
     def __init__(self, name, instrument=None,
                  call_cmd=None, async_call_cmd=None,

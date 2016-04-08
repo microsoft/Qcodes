@@ -273,6 +273,8 @@ class StandardParameter(Parameter):
     sweep_delay: time (in seconds) to wait after each sweep step
     max_val_age: max time (in seconds) to trust a saved value from
         this parameter as the starting point of a sweep
+    docstring: documentation string for the __doc__ field of the object
+        The __doc__ field of the instance is used by some help systems, but not all 
     '''
     def __init__(self, name, instrument=None,
                  get_cmd=None, async_get_cmd=None, get_parser=None,
@@ -293,6 +295,8 @@ class StandardParameter(Parameter):
                 self._set_mapping = val_mapping
                 set_parser = self._set_mapping.__getitem__
 
+        if get_parser is not None and not isinstance(get_cmd, str):
+            logging.warning('get_parser is set, but will not be used')
         super().__init__(name=name, vals=vals, **kwargs)
 
         self._instrument = instrument
