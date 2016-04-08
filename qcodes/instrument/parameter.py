@@ -134,7 +134,7 @@ class Parameter(Metadatable):
                  units=None,
                  size=None, sizes=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
-                 vals=None, **kwargs):
+                 vals=None, docstring=None, **kwargs):
         super().__init__(**kwargs)
 
         if names is not None:
@@ -167,6 +167,10 @@ class Parameter(Metadatable):
             self.setpoint_names = setpoint_names
             self.setpoint_labels = setpoint_labels
 
+        if docstring is not None:
+            #logging.debug('add docstring to Parameter!')
+            self.__doc__ = docstring
+            
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
         # but they all use the same attributes so snapshot is consistent.

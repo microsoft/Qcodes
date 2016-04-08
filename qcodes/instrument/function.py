@@ -50,12 +50,15 @@ class Function(Metadatable):
     def __init__(self, name, instrument=None,
                  call_cmd=None, async_call_cmd=None,
                  args=[], arg_parser=None, return_parser=None,
-                 **kwargs):
+                 docstring=None, **kwargs):
         super().__init__(**kwargs)
 
         self._instrument = instrument
         self.name = name
 
+        if docstring is not None:
+            self.__doc__=docstring
+            
         self._set_args(args)
         self._set_call(call_cmd, async_call_cmd,
                        arg_parser, return_parser)

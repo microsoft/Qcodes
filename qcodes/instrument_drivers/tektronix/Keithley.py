@@ -88,7 +88,8 @@ class Keithley_2700(VisaInstrument):
 
         self.add_parameter('digits', get_cmd=lambda: self._current_mode_get('DIG'), get_parser=int, set_cmd=lambda val: self._current_mode_set('DIG', val)  )
         
-        self.add_parameter('nplc', get_cmd=lambda: self._current_mode_get('NPLC'), get_parser=int, set_cmd=lambda val: self._current_mode_set('NPLC', val), units='APER'  )
+        self.add_parameter('nplc', get_cmd=lambda: self._current_mode_get('NPLC'), get_parser=int, set_cmd=lambda val: self._current_mode_set('NPLC', val), units='APER', docstring='Get integration time in Number of PowerLine Cycles. \
+            To get the integrationtime in seconds, use get_integrationtime().'  )
         self.add_parameter('range', get_cmd=lambda: self._current_mode_get('RANG'), get_parser=int, set_cmd=lambda val: self._current_mode_set('RANG', val), units='RANG'  )
 
         
