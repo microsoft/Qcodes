@@ -35,8 +35,13 @@ def get_results(response_queue, error_queue):
 
 
 class Holder:
-    def __init__(self, uuid):
-        self.uuid = uuid
+    shared_kwargs = ['where']
+    name = 'J Edgar'
+    parameters = {}
+    functions = {}
+
+    def __init__(self, server_name=None, **kwargs):
+        self.kwargs = kwargs
         self.d = {}
 
     def get(self, key):
@@ -46,7 +51,17 @@ class Holder:
         self.d[key] = val
 
     def get_extras(self):
-        return self.server_extras
+        return self.kwargs
+
+    def _get_method_attrs(self):
+        return {}
+
+    def close(self):
+        pass
+
+
+class TimedInstrumentServer(InstrumentServer):
+    timeout = 2
 
 
 class TestInstrumentServer(TestCase):
@@ -66,41 +81,42 @@ class TestInstrumentServer(TestCase):
         # we really only need to test local here - as a server it's already
         # used in other tests, but only implicitly (and not covered as it's
         # in a subprocess)
-        holder = Holder('Gr33n 3665 & H4m')
-
         queries = (
             # add an "instrument" to the server
-            (0.5, ('new', holder)),
+            (0.5, ('new_id',)),
+            (0.01, ('new', Holder, 0, (), {})),
 
             # some sets and gets that work
-            (0.01, ('write', holder.uuid, 'set',
-                    ('happiness', 'a warm gun'), {})),
-            (0.01, ('write', holder.uuid, 'set',
-                    (), {'val': 42, 'key': 'the answer'})),
-            (0.01, ('ask', holder.uuid, 'get', (), {'key': 'happiness'})),
-            (0.01, ('ask', holder.uuid, 'get', ('the answer',), {})),
+            (0.01, ('write', 0, 'set', ('happiness', 'a warm gun'), {})),
+            (0.01, ('write', 0, 'set', (), {'val': 42, 'key': 'the answer'})),
+            (0.01, ('ask', 0, 'get', (), {'key': 'happiness'})),
+            (0.01, ('ask', 0, 'get', ('the answer',), {})),
 
             # then some that make errors
             # KeyError
-            (0.01, ('ask', holder.uuid, 'get', ('Carmen Sandiego',), {})),
+            (0.01, ('ask', 0, 'get', ('Carmen Sandiego',), {})),
             # TypeError (too many args)
-            (0.01, ('write', holder.uuid, 'set', (1, 2, 3), {})),
+            (0.01, ('write', 0, 'set', (1, 2, 3), {})),
             # TypeError (unexpected kwarg)
-            (0.01, ('write', holder.uuid, 'set', (), {'c': 'middle'})),
+            (0.01, ('write', 0, 'set', (), {'c': 'middle'})),
 
             # and another good one, just so we know it still works
-            (0.01, ('ask', holder.uuid, 'get_extras', (), {})),
+            (0.01, ('ask', 0, 'get_extras', (), {})),
 
             # delete the instrument and stop the server
             # (no need to explicitly halt)
-            (0.01, ('delete', holder.uuid))
+            (0.01, ('delete', 0))
         )
-        extras = 'infinity and beyond'
+        extras = {'where': 'infinity and beyond'}
 
         run_schedule(queries, self.query_queue)
 
-        InstrumentServer(self.query_queue, self.response_queue,
-                         self.error_queue, extras)
+        try:
+            TimedInstrumentServer(self.query_queue, self.response_queue,
+                                  self.error_queue, extras)
+        except:
+            from traceback import format_exc
+            print(format_exc())
 
         responses, errors = get_results(self.response_queue, self.error_queue)
 
@@ -115,7 +131,14 @@ class TestInstrumentServer(TestCase):
                 self.assertIn(item, error)
 
         expected_responses = [
-            True,
+            0,
+            {
+                'functions': {},
+                'id': 0,
+                'instrument_name': 'J Edgar',
+                'methods': {},
+                'parameters': {}
+            },
             'a warm gun',
             42,
             SERVER_ERR, SERVER_ERR, SERVER_ERR,

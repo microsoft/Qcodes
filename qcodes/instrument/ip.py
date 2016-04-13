@@ -1,7 +1,6 @@
 import socket
 
 from .base import Instrument
-from .server import ask_server, write_server
 
 
 class IPInstrument(Instrument):
@@ -19,30 +18,28 @@ class IPInstrument(Instrument):
     persistent: do we leave the socket open between calls? (default True)
     write_confirmation: does the instrument acknowledge writes with some
         response we can read? (default True)
-
-    See help for qcodes.Instrument for information on writing
-    instrument subclasses
     '''
     def __init__(self, name, address=None, port=None, timeout=5,
                  terminator='\n', persistent=True, write_confirmation=True,
                  **kwargs):
+        super().__init__(name, **kwargs)
+
         self._address = address
         self._port = port
         self._timeout = timeout
         self._terminator = terminator
-        self._persistent = persistent
         self._confirmation = write_confirmation
+
+        self._ensure_connection = EnsureConnection(self)
 
         self._socket = None
 
-        super().__init__(name, **kwargs)
+        self.set_persistent(persistent)
 
-    @ask_server
-    def on_connect(self):
-        if self._persistent:
-            self._connect()
+    @classmethod
+    def default_server_name(cls, **kwargs):
+        return 'IPInstruments'
 
-    @ask_server
     def set_address(self, address=None, port=None):
         if address is not None:
             self._address = address
@@ -55,10 +52,16 @@ class IPInstrument(Instrument):
             raise TypeError('This instrument doesn\'t have a port yet, '
                             'you must provide one.')
 
-        if self._persistent:
-            self._connect()
+        self._disconnect()
+        self.set_persistent(self._persistent)
 
-    @ask_server
+    def set_persistent(self, persistent):
+        self._persistent = persistent
+        if persistent:
+            self._connect()
+        else:
+            self._disconnect()
+
     def _connect(self):
         if self._socket is not None:
             self._disconnect()
@@ -67,7 +70,6 @@ class IPInstrument(Instrument):
         self._socket.connect((self._address, self._port))
         self.set_timeout(self._timeout)
 
-    @ask_server
     def _disconnect(self):
         if getattr(self, '_socket', None) is None:
             return
@@ -76,7 +78,6 @@ class IPInstrument(Instrument):
         self._socket.close()
         self._socket = None
 
-    @write_server
     def set_timeout(self, timeout=None):
         if timeout is not None:
             self._timeout = timeout
@@ -84,32 +85,28 @@ class IPInstrument(Instrument):
         if self._socket is not None:
             self.socket.settimeout(float(self.timeout))
 
-    @write_server
     def set_terminator(self, terminator):
         self._terminator = terminator
 
-    @write_server
     def _send(self, cmd):
         data = cmd + self._terminator
         self._socket.send(data.encode())
 
-    @ask_server
     def _recv(self):
         return self._socket.recv(512).decode()
 
-    def __del__(self):
+    def close(self):
         self._disconnect()
+        super().close()
 
-    @write_server
-    def _default_write(self, cmd):
-        with EnsureConnection(self):
+    def write(self, cmd):
+        with self._ensure_connection:
             self._send(cmd)
             if self._confirmation:
                 self._recv()
 
-    @ask_server
-    def _default_ask(self, cmd):
-        with EnsureConnection(self):
+    def ask(self, cmd):
+        with self._ensure_connection:
             self._send(cmd)
             return self._recv()
 

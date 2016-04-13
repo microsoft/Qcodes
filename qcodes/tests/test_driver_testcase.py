@@ -9,8 +9,7 @@ class EmptyModel(MockModel):
 
 
 class MockMock(MockInstrument):
-    def __init__(self, name, model):
-        super().__init__(name, model=model)
+    pass
 
 
 @unittest.skip('just need this definition')
@@ -19,8 +18,7 @@ class HasNoDriver(DriverTestCase):
 
 
 class MockMock2(MockInstrument):
-    def __init__(self, name, model):
-        super().__init__(name, model=model)
+    pass
 
 
 @unittest.skip('just need this definition')
@@ -36,7 +34,7 @@ class TestDriverTestCase(DriverTestCase):
     @classmethod
     def setUpClass(cls):
         cls.an_empty_model = EmptyModel()
-        cls.an_instrument = MockMock('a', cls.an_empty_model)
+        cls.an_instrument = MockMock('a', model=cls.an_empty_model)
         super().setUpClass()
 
     @classmethod

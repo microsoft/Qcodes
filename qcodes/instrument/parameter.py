@@ -170,9 +170,14 @@ class Parameter(Metadatable):
         self.get_latest = GetLatest(self)
 
     def has_instrument_storage(self):
-        return (getattr(self, 'instrument', None) and
-                hasattr(self.instrument, 'getattr') and
-                hasattr(self.instrument, 'setattr'))
+        return False
+        # TODO - rip out completely, parameters for server instruments
+        # are now also stored on the same server and proxied, so no reason
+        # to involve the instrument explicitly in storing their state.
+
+        # return (getattr(self, 'instrument', None) and
+        #         hasattr(self.instrument, 'getattr') and
+        #         hasattr(self.instrument, 'setattr'))
 
     def _latest(self):
         if self.has_instrument_storage():
@@ -187,6 +192,26 @@ class Parameter(Metadatable):
                 'ts': getattr(self, '_latest_ts', None)
             }
         return state
+
+    # get_attrs ignores leading underscores, unless they're in this list
+    _keep_attrs = ['__doc__', '_vals']
+
+    def get_attrs(self):
+        '''
+        grab all attributes that the RemoteParameter needs
+        to function like the main one (in loops etc), and return them
+        as a dictionary
+        '''
+        out = {}
+
+        for attr in dir(self):
+            value = getattr(self, attr)
+            if ((attr[0] == '_' and attr not in self._keep_attrs) or
+                    callable(value)):
+                continue
+            out[attr] = value
+
+        return out
 
     def snapshot_base(self, state=None):
         '''
@@ -347,7 +372,6 @@ class StandardParameter(Parameter):
         self._get, self._get_async = syncable_command(
             arg_count=0, cmd=get_cmd, acmd=async_get_cmd,
             exec_str=self._instrument.ask if self._instrument else None,
-            aexec_str=self._instrument.ask_async if self._instrument else None,
             output_parser=get_parser, no_cmd_function=no_getter)
 
         if self._get is not no_getter:
@@ -359,8 +383,6 @@ class StandardParameter(Parameter):
         self._set, self._set_async = syncable_command(
             arg_count=1, cmd=set_cmd, acmd=async_set_cmd,
             exec_str=self._instrument.write if self._instrument else None,
-            aexec_str=(self._instrument.write_async if self._instrument
-                       else None),
             input_parser=set_parser, no_cmd_function=no_setter)
 
         if self._set is not no_setter:
@@ -523,7 +545,7 @@ class ManualParameter(Parameter):
     '''
     def __init__(self, name, instrument=None, initial_value=None, **kwargs):
         super().__init__(name=name, **kwargs)
-        self.instrument = instrument
+        self._instrument = instrument
         if initial_value is not None:
             self.validate(initial_value)
             self._save_val(initial_value)

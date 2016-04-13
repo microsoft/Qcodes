@@ -1,5 +1,6 @@
+import time
+
 from qcodes.instrument.mock import MockInstrument, MockModel
-from qcodes.instrument.server import ask_server
 from qcodes.utils.validators import Numbers
 
 
@@ -67,12 +68,8 @@ class AMockModel(MockModel):
 class MockInstTester(MockInstrument):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-    def on_connect(self):
-        super().on_connect()
         self.attach_adder()
 
-    @ask_server
     def attach_adder(self):
         '''
         this function attaches a closure to the object, so can only be
@@ -88,18 +85,16 @@ class MockInstTester(MockInstrument):
             return a + b
         self.add5 = f
 
-    @ask_server
     def add5(self, b):
         '''
-        The local copy of this should not get run, because it should
+        The class copy of this should not get run, because it should
         be overwritten on the server by the closure version.
-        This function itself should not be run, but we will see its docstring.
         '''
         raise RuntimeError('dont run this one!')
 
 
 class MockGates(MockInstTester):
-    def __init__(self, model, **kwargs):
+    def __init__(self, model=None, **kwargs):
         for i in range(3):
             cmdbase = 'c{}'.format(i)
             self.add_parameter('chan{}'.format(i), get_cmd=cmdbase + '?',
@@ -112,14 +107,32 @@ class MockGates(MockInstTester):
                                get_parser=float,
                                vals=Numbers(-10, 10),
                                sweep_step=0.1, sweep_delay=0.005)
+
+        self.add_parameter('chan0slow', get_cmd='c0?',
+                           set_cmd=self.slow_neg_set, get_parser=float,
+                           vals=Numbers(-10, 10), sweep_step=0.2,
+                           sweep_delay=0.02)
+        self.add_parameter('chan0slow2', get_cmd='c0?',
+                           set_cmd=self.slow_neg_set, get_parser=float,
+                           vals=Numbers(-10, 10), sweep_step=0.2,
+                           sweep_delay=0.01, max_sweep_delay=0.02)
+        self.add_parameter('chan0slow3', get_cmd='c0?',
+                           set_cmd=self.slow_neg_set, get_parser=float,
+                           vals=Numbers(-10, 10), sweep_step=0.2,
+                           sweep_delay=0.01, max_sweep_delay=0.08)
+
         self.add_function('reset', call_cmd='rst')
 
-        super().__init__('gates', model=model, delay=0.001,
-                         use_async=True, **kwargs)
+        super().__init__('gates', model=model, delay=0.001, **kwargs)
+
+    def slow_neg_set(self, val):
+        if val < 0:
+            time.sleep(0.05)
+        self.chan0.set(val)
 
 
 class MockSource(MockInstTester):
-    def __init__(self, model, **kwargs):
+    def __init__(self, model=None, **kwargs):
         self.add_parameter('amplitude', get_cmd='ampl?',
                            set_cmd='ampl:{:.4f}', get_parser=float,
                            vals=Numbers(0, 1),
@@ -129,7 +142,7 @@ class MockSource(MockInstTester):
 
 
 class MockMeter(MockInstTester):
-    def __init__(self, model, **kwargs):
+    def __init__(self, model=None, **kwargs):
         self.add_parameter('amplitude', get_cmd='ampl?', get_parser=float)
         self.add_function('echo', call_cmd='echo {:.2f}?',
                           args=[Numbers(0, 1000)], return_parser=float)

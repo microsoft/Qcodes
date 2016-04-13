@@ -1,4 +1,3 @@
-import asyncio
 from unittest import TestCase
 from datetime import datetime, timedelta
 import time
@@ -8,10 +7,11 @@ from qcodes.instrument.mock import MockInstrument
 from qcodes.instrument.parameter import Parameter, ManualParameter
 from qcodes.instrument.sweep_values import SweepValues
 from qcodes.instrument.function import Function
+from qcodes.instrument.server import get_instrument_server
 
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
-from qcodes.utils.sync_async import wait_for_async, NoCommandError
-from qcodes.utils.helpers import LogCapture
+from qcodes.utils.sync_async import NoCommandError
+from qcodes.utils.helpers import LogCapture, killprocesses
 
 from .instrument_mocks import (AMockModel, MockInstTester,
                                MockGates, MockSource, MockMeter)
@@ -66,56 +66,67 @@ class TestParamConstructor(TestCase):
         self.assertEqual(p.setpoint_labels, setpoint_labels)
 
 
+class GatesBadDelayType(MockGates):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.add_parameter('chan0bad', get_cmd='c0?',
+                           set_cmd=self.slow_neg_set,
+                           get_parser=float,
+                           vals=Numbers(-10, 10), sweep_step=0.2,
+                           sweep_delay=0.01,
+                           max_sweep_delay='forever')
+
+
+class GatesBadDelayValue(MockGates):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.add_parameter('chan0bad', get_cmd='c0?',
+                           set_cmd=self.slow_neg_set,
+                           get_parser=float,
+                           vals=Numbers(-10, 10), sweep_step=0.2,
+                           sweep_delay=0.05,
+                           max_sweep_delay=0.03)
+
+
 class TestParameters(TestCase):
     def setUp(self):
         self.model = AMockModel()
         self.read_response = 'I am the walrus!'
 
-        self.gates = MockGates(self.model, read_response=self.read_response)
-        self.source = MockSource(self.model)
-        self.meter = MockMeter(self.model, read_response=self.read_response)
+        self.gates = MockGates(model=self.model,
+                               read_response=self.read_response)
+        self.source = MockSource(model=self.model)
+        self.meter = MockMeter(model=self.model,
+                               read_response=self.read_response)
 
         self.init_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     def tearDown(self):
-        self.model.close()
-        for instrument in [self.gates, self.source, self.meter]:
-            instrument.close()
-
-    def slow_neg_set(self, val):
-        if val < 0:
-            time.sleep(0.05)
-        self.gates.chan0.set(val)
+        try:
+            self.model.close()
+            for instrument in [self.gates, self.source, self.meter]:
+                instrument.close()
+        except:
+            pass
 
     def test_unpicklable(self):
         self.assertEqual(self.gates.add5(6), 11)
         # compare docstrings to make sure we're really calling add5
-        # on the server. The docstring should be from the local copy
-        self.assertIn(MockInstTester.add5.__doc__, self.gates.add5.__doc__)
-        docpart = ('This function itself should not be run, '
-                   'but we will see its docstring.')
-        self.assertIn(docpart, MockInstTester.add5.__doc__)
+        # on the server, and seeing its docstring
+        self.assertIn('The class copy of this should not get run',
+                      MockInstTester.add5.__doc__)
+        self.assertIn('not the same function as the original method',
+                      self.gates.add5.__doc__)
 
     def test_slow_set(self):
-        self.gates.add_parameter('chan0slow', get_cmd='c0?',
-                                 set_cmd=self.slow_neg_set, get_parser=float,
-                                 vals=Numbers(-10, 10), sweep_step=0.2,
-                                 sweep_delay=0.02)
-        self.gates.add_parameter('chan0slow2', get_cmd='c0?',
-                                 set_cmd=self.slow_neg_set, get_parser=float,
-                                 vals=Numbers(-10, 10), sweep_step=0.2,
-                                 sweep_delay=0.01, max_sweep_delay=0.02)
-        self.gates.add_parameter('chan0slow3', get_cmd='c0?',
-                                 set_cmd=self.slow_neg_set, get_parser=float,
-                                 vals=Numbers(-10, 10), sweep_step=0.2,
-                                 sweep_delay=0.01, max_sweep_delay=0.08)
-
+        # at least for now, need a local instrument to test logging
+        gatesLocal = MockGates(model=self.model, server_name=None)
         for param, logcount in (('chan0slow', 2), ('chan0slow2', 2),
                                 ('chan0slow3', 0)):
-            self.gates.chan0.set(-0.5)
+            gatesLocal.chan0.set(-0.5)
 
             with LogCapture() as s:
-                self.gates.set(param, 0.5)
+                gatesLocal.set(param, 0.5)
 
             logs = s.getvalue().split('\n')[:-1]
             s.close()
@@ -127,19 +138,15 @@ class TestParameters(TestCase):
 
     def test_max_sweep_delay_errors(self):
         with self.assertRaises(TypeError):
-            self.gates.add_parameter('chan0slow2', get_cmd='c0?',
-                                     set_cmd=self.slow_neg_set,
-                                     get_parser=float,
-                                     vals=Numbers(-10, 10), sweep_step=0.2,
-                                     sweep_delay=0.01,
-                                     max_sweep_delay='forever')
+            # add_parameter works remotely with string commands, but
+            # function commands are not going to be picklable, since they
+            # need to talk to the hardware, so these need to be included
+            # from the beginning when the instrument is created on the
+            # server.
+            GatesBadDelayType(model=self.model)
+
         with self.assertRaises(ValueError):
-            self.gates.add_parameter('chan0slow2', get_cmd='c0?',
-                                     set_cmd=self.slow_neg_set,
-                                     get_parser=float,
-                                     vals=Numbers(-10, 10), sweep_step=0.2,
-                                     sweep_delay=0.05,
-                                     max_sweep_delay=0.03)
+            GatesBadDelayValue(model=self.model)
 
     def check_ts(self, ts_str):
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -221,12 +228,10 @@ class TestParameters(TestCase):
         self.assertEqual(sourcehist[2][1:], ('write', 'ampl', '0.5000'))
         self.assertEqual(sourcehist[3][1:], ('write', 'ampl', '0.6000'))
 
-        # test sync/async - so far all calls have been sync, even though gates
-        # was defined as async. Mock some async calls to test other conversions
-        wait_for_async(source.set_async, 'amplitude', 0.8)
-        self.assertEqual(wait_for_async(source.get_async, 'amplitude'), 0.8)
-        wait_for_async(gates.set_async, 'chan1', -2)
-        self.assertEqual(wait_for_async(gates.get_async, 'chan1'), -2)
+        source.set('amplitude', 0.8)
+        self.assertEqual(source.get('amplitude'), 0.8)
+        gates.set('chan1', -2)
+        self.assertEqual(gates.get('chan1'), -2)
 
         # test functions
         self.assertEqual(meter.call('echo', 1.2345), 1.23)  # model returns .2f
@@ -248,16 +253,15 @@ class TestParameters(TestCase):
         gates.call('reset')
         self.assertEqual(gates.get('chan0'), 0)
 
-        # and async functions
-        self.assertEqual(wait_for_async(meter.call_async, 'echo', 4.567), 4.57)
+        self.assertEqual(meter.call('echo', 4.567), 4.57)
         gates.set('chan0', 1)
         self.assertEqual(gates.get('chan0'), 1)
-        wait_for_async(gates.call_async, 'reset')
+        gates.call('reset')
         self.assertEqual(gates.get('chan0'), 0)
 
-    def test_mock_async_set_sweep(self):
+    def test_mock_set_sweep(self):
         gates = self.gates
-        wait_for_async(gates.set_async, 'chan0step', 0.5)
+        gates.set('chan0step', 0.5)
         gatehist = gates.getattr('history')
         self.assertEqual(len(gatehist), 6)
         self.assertEqual(
@@ -282,6 +286,13 @@ class TestParameters(TestCase):
         with self.assertRaises(TypeError):
             MockInstrument('', delay=-1)
 
+        # TODO: when an error occurs during constructing an instrument,
+        # we don't have the instrument but its server doesn't know to stop.
+        # should figure out a way to remove it. (I thought I had but it
+        # doesn't seem to have worked...)
+        get_instrument_server('MockInstruments').close()
+        time.sleep(0.5)
+
         with self.assertRaises(AttributeError):
             MockInstrument('', model=None)
 
@@ -299,8 +310,14 @@ class TestParameters(TestCase):
         with self.assertRaises(TypeError):
             gates.add_parameter('fugacity', set_cmd='f {:.4f}', vals=[1, 2, 3])
 
+        # TODO: when an error occurs during constructing an instrument,
+        # we don't have the instrument but its server doesn't know to stop.
+        # should figure out a way to remove it. (I thought I had but it
+        # doesn't seem to have worked...)
+        killprocesses()
+
     def check_set_amplitude2(self, val, log_count, history_count):
-        source = self.source
+        source = self.sourceLocal
         with LogCapture() as s:
             source.amplitude2.set(val)
 
@@ -316,12 +333,14 @@ class TestParameters(TestCase):
     def test_sweep_steps_edge_case(self):
         # MultiType with sweeping is weird - not sure why one would do this,
         # but we should handle it
-        source = self.source
+        # at least for now, need a local instrument to check logging
+        source = self.sourceLocal = MockSource(model=self.model,
+                                               server_name=None)
         source.add_parameter('amplitude2', get_cmd='ampl?',
                              set_cmd='ampl:{}', get_parser=float,
                              vals=MultiType(Numbers(0, 1), Strings()),
                              sweep_step=0.2, sweep_delay=0.02)
-        self.assertEqual(len(source.history), 0)
+        self.assertEqual(len(source.getattr('history')), 0)
 
         # 2 history items - get then set, and one warning (cannot sweep
         # number to string value)
@@ -474,12 +493,11 @@ class TestParameters(TestCase):
 
         mock_ts = datetime(2000, 3, 4)
         ts_str = mock_ts.strftime('%Y-%m-%d %H:%M:%S')
-        self.source.setattr(('param_state', 'noise', 'ts'), mock_ts)
+        noise.setattr('_latest_ts', mock_ts)
         self.assertEqual(noise.snapshot()['ts'], ts_str)
 
         self.assertEqual(noise.get_latest(), 100)
         self.assertEqual(noise.get_latest.get(), 100)
-        self.assertEqual(wait_for_async(noise.get_latest.get_async), 100)
 
         # get_latest should not update ts
         self.assertEqual(noise.snapshot()['ts'], ts_str)
@@ -488,17 +506,10 @@ class TestParameters(TestCase):
         with self.assertRaises(AttributeError):
             noise.get_latest.set(50)
 
-        with self.assertRaises(AttributeError):
-            wait_for_async(noise.get_latest.set_async, 10)
-
     def test_mock_read(self):
         gates, meter = self.gates, self.meter
         self.assertEqual(meter.read(), self.read_response)
-        self.assertEqual(wait_for_async(meter.read_async),
-                         self.read_response)
         self.assertEqual(gates.read(), self.read_response)
-        self.assertEqual(wait_for_async(gates.read_async),
-                         self.read_response)
 
     def test_base_instrument_errors(self):
         b = Instrument('silent', server_name=None)
@@ -509,13 +520,6 @@ class TestParameters(TestCase):
             b.write('hello!')
         with self.assertRaises(NotImplementedError):
             b.ask('how are you?')
-
-        with self.assertRaises(NotImplementedError):
-            wait_for_async(b.read_async)
-        with self.assertRaises(NotImplementedError):
-            wait_for_async(b.write_async, 'goodbye')
-        with self.assertRaises(NotImplementedError):
-            wait_for_async(b.ask_async, 'are we having fun yet?')
 
         with self.assertRaises(TypeError):
             b.add_function('skip', call_cmd='skip {}',
@@ -568,31 +572,14 @@ class TestParameters(TestCase):
         # SweepValue object has no getter, even if the parameter does
         with self.assertRaises(AttributeError):
             c0[0.1].get
-        with self.assertRaises(AttributeError):
-            c0[0.1].get_async
 
     def test_sweep_values_valid(self):
         gates = self.gates
         c0 = gates.parameters['chan0']
-        c1_noasync = gates.parameters['chan1']
-        del c1_noasync.set_async
-        with self.assertRaises(AttributeError):
-            c1_noasync.set_async
-        c2_nosync = gates.parameters['chan2']
-        del c2_nosync.set
-        with self.assertRaises(AttributeError):
-            c2_nosync.set
 
         c0_sv = c0[1]
-        c1_sv = c1_noasync[1]
-        c2_sv = c2_nosync[1]
-        # setters get mapped
+        # setter gets mapped
         self.assertEqual(c0_sv.set, c0.set)
-        self.assertEqual(c0_sv.set_async, c0.set_async)
-        self.assertEqual(c1_sv.set, c1_noasync.set)
-        self.assertTrue(asyncio.iscoroutinefunction(c1_sv.set_async))
-        self.assertEqual(c2_sv.set_async, c2_nosync.set_async)
-        self.assertTrue(callable(c2_sv.set))
         # normal sequence operations access values
         self.assertEqual(list(c0_sv), [1])
         self.assertEqual(c0_sv[0], 1)
@@ -649,9 +636,9 @@ class TestParameters(TestCase):
         self.assertEqual(res.get(), 1000)
 
         res.set(1e9)
-        self.assertEqual(wait_for_async(res.get_async), 1e9)
+        self.assertEqual(res.get(), 1e9)
         # default vals is all numbers
-        wait_for_async(res.set_async, -1)
+        res.set(-1)
         self.assertEqual(res.get(), -1)
 
         self.source.add_parameter('alignment',

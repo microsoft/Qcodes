@@ -228,12 +228,12 @@ class ServerManager:
     query_timeout: the default time to wait for responses
     kwargs: passed along to the server constructor
     '''
-    def __init__(self, name, server_class, server_extras={}, query_timeout=2):
+    def __init__(self, name, server_class, shared_attrs=None, query_timeout=2):
         self._query_queue = mp.Queue()
         self._response_queue = mp.Queue()
         self._error_queue = mp.Queue()
         self._server_class = server_class
-        self._server_extras = server_extras
+        self._shared_attrs = shared_attrs
 
         # query_lock is only used with queries that get responses
         # to make sure the process that asked the question is the one
@@ -257,12 +257,22 @@ class ServerManager:
 
     def _run_server(self):
         self._server_class(self._query_queue, self._response_queue,
-                           self._error_queue, self._server_extras)
+                           self._error_queue, self._shared_attrs)
+
+    def _check_alive(self):
+        try:
+            if not self._server.is_alive():
+                print('warning: restarted {}'.format(self._server))
+                self.restart()
+        except:
+            # can't test is_alive from outside the main process
+            pass
 
     def write(self, *query):
         '''
         Send a query to the server that does not expect a response.
         '''
+        self._check_alive()
         self._query_queue.put(query)
         self._check_for_errors()
 
@@ -299,6 +309,8 @@ class ServerManager:
         '''
         Send a query to the server and wait for a response
         '''
+        self._check_alive()
+
         timeout = timeout or self.query_timeout
         self._expect_error = False
 

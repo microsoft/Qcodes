@@ -1,34 +1,45 @@
 from traceback import format_exc
-from functools import update_wrapper
 import multiprocessing as mp
+from queue import Empty
 
 from qcodes.utils.multiprocessing import ServerManager, SERVER_ERR
 
 
-def connect_instrument_server(server_name, instrument, server_extras={}):
+def get_instrument_server(server_name, shared_kwargs={}):
     '''
     Find or make an instrument server process with the given name
-    and add this instrument to it. An InstrumentServer can hold the
-    connections to one or more instruments.
+    and shared attributes. An InstrumentServer can hold the connections
+    to one or more instruments, but any unpicklable attributes need to be
+    provided when the server is started and shared between all such
+    instruments.
 
     server_name: which server to put the instrument on. If a server with
         this name exists, the instrument will be added to it. If not, a
-        new server is created with this name
+        new server is created with this name. Default 'Instruments'
 
-    instrument: the instrument object to attach to the server
-
-    extras: any extra arguments to the InstrumentManager, will be set
-        as attributes of any instrument that connects to it
+    shared_kwargs: unpicklable items needed by the instruments on the
+        server, will get sent with the manager when it's started up
+        and included in the kwargs to construct each new instrument
     '''
-    instances = InstrumentManager.instances
-    if server_name in instances and instances[server_name]:
-        # kwargs get ignored for existing servers - lets hope they're the same!
-        manager = instances[server_name]
-    else:
-        manager = InstrumentManager(server_name, server_extras)
-        instances[server_name] = manager
 
-    return manager.connect(instrument)
+    if not server_name:
+        server_name = 'Instruments'
+
+    instances = InstrumentManager.instances
+    manager = instances.get(server_name, None)
+
+    if manager and manager._server in mp.active_children():
+        if shared_kwargs and manager.shared_kwargs != shared_kwargs:
+            # it's OK to add another instrument that has  *no* shared_kwargs
+            # but if there are some and they're different from what's
+            # already associated with this server, that's an error.
+            raise ValueError(('An InstrumentServer with name "{}" already '
+                              'exists but with different shared_attrs'
+                              ).format(server_name))
+    else:
+        manager = InstrumentManager(server_name, shared_kwargs)
+
+    return manager
 
 
 class InstrumentManager(ServerManager):
@@ -43,12 +54,15 @@ class InstrumentManager(ServerManager):
     '''
     instances = {}
 
-    def __init__(self, name, server_extras={}):
+    def __init__(self, name, shared_kwargs=None):
         self.name = name
+        self.shared_kwargs = shared_kwargs
+        self.instances[name] = self
+
         self.instruments = {}
 
         super().__init__(name=name, server_class=InstrumentServer,
-                         server_extras=server_extras)
+                         shared_attrs=shared_kwargs)
 
     def restart(self):
         '''
@@ -57,56 +71,72 @@ class InstrumentManager(ServerManager):
         '''
         super().restart()
 
-        for instrument in self.instruments.values():
-            instrument.on_disconnect()
-            self.connect(instrument)
+        instruments = self.instruments
+        self.instruments = {}
+        for connection_info in instruments.values():
+            self.connect(**connection_info)
 
-    def connect(self, instrument):
-        conn = InstrumentConnection(manager=self, instrument=instrument)
-        self.instruments[instrument.uuid] = instrument
-        return conn
+    def connect(self, remote_instrument, instrument_class, args, kwargs):
+        new_id = self.ask('new_id')
+        try:
+            conn = InstrumentConnection(
+                manager=self, instrument_class=instrument_class,
+                new_id=new_id, args=args, kwargs=kwargs)
 
-    def delete(self, instrument):
-        self.write('delete', instrument.uuid)
+            # save the information to recreate this instrument on the server
+            # in case of a restart
+            self.instruments[conn.id] = dict(
+                remote_instrument=remote_instrument,
+                instrument_class=instrument_class,
+                args=args,
+                kwargs=kwargs)
 
-        if instrument.uuid in self.instruments:
-            self.instruments[instrument.uuid].on_disconnect()
-            del self.instruments[instrument.uuid]
+            # attach the connection to the remote instrument here.
+            # this is placed *here* rather than in the RemoteInstrument also to
+            # facilitate restarting, so the RemoteInstrument itself doesn't
+            # need to do anything on a restart
+            remote_instrument.connection = conn
+        except:
+            # if anything went wrong adding a new instrument, delete it
+            # in case it still exists there half-formed.
+            self.delete(new_id)
+            raise
+
+    def delete(self, instrument_id):
+        self.write('delete', instrument_id)
+
+        if self.instruments.get(instrument_id, None):
+            del self.instruments[instrument_id]
 
             if not self.instruments:
                 self.close()
-                del self.instances[self.name]
+                self.instances.pop(self.name, None)
 
 
 class InstrumentConnection:
     '''
     A connection between one particular instrument and its server process
 
-    This should be instantiated by connect_instrument_server, not directly
+    This should be instantiated by InstrumentManager.connect, not directly
     '''
-    def __init__(self, manager, instrument):
+    def __init__(self, manager, instrument_class, new_id, args, kwargs):
         self.manager = manager
-        self.instrument = instrument
-
-        self.manager.ask('new', instrument)
-        instrument.connection = self
-        if hasattr(instrument, 'on_connect'):
-            instrument.on_connect()
+        info = manager.ask('new', instrument_class, new_id, args, kwargs)
+        for k, v in info.items():
+            setattr(self, k, v)
 
     def ask(self, func_name, *args, **kwargs):
         '''
         Query the server copy of this instrument, expecting a response
         '''
-        return self.manager.ask('ask', self.instrument.uuid,
-                                func_name, args, kwargs)
+        return self.manager.ask('ask', self.id, func_name, args, kwargs)
 
     def write(self, func_name, *args, **kwargs):
         '''
         Send a command to the server copy of this instrument, without
         waiting for a response
         '''
-        self.manager.write('write', self.instrument.uuid,
-                           func_name, args, kwargs)
+        self.manager.write('write', self.id, func_name, args, kwargs)
 
     def close(self):
         '''
@@ -117,97 +147,32 @@ class InstrumentConnection:
         '''
         if hasattr(self, 'manager'):
             if self.manager._server in mp.active_children():
-                self.manager.delete(self.instrument)
-
-
-class ask_server:
-    '''
-    decorator for methods of an Instrument that should be executed
-    on the relevant InstrumentServer process if one exists, that should
-    wait for a response
-
-    (if no response is needed, use write_server)
-    '''
-
-    doc_prefix = ('** Method <{}> decorated with @ask_server'
-                  '** This method is decorated so that it will execute\n'
-                  '** on the InstrumentServer process even if you call\n'
-                  '** it from a different process.\n'
-                  '** This variant (ask_server) will wait for a response.')
-
-    def __init__(self, func):
-        self.func = func
-        self.name = func.__name__
-
-        doc = self.doc_prefix.format(func.__qualname__)
-        if func.__doc__:
-            doc = doc + '\n\n' + func.__doc__
-
-        # make the docs and signature of the decorated method point back
-        # to the original method
-        update_wrapper(self, func)
-        self.__doc__ = doc
-
-    def __get__(self, obj, objtype=None):
-        '''
-        When we wrap a method this way, it stops being bound and
-        is just a function. This is the only place we see which object
-        it should be bound to, so we grab and store it. Note this is not
-        the way I've seen this done online, see eg:
-        http://blog.dscpl.com.au/2014/01/how-you-implemented-your-python.html,
-        uses functools.partial to actually change what you return from __get__,
-        but functools.partial is not compatible with functools.update_wrapper
-        so you can't get the docs right. This way self is a regular callable
-        so update_wrapper works on it.
-        '''
-        self.instrument = obj
-        return self
-
-    def __call__(self, *args, **kwargs):
-        if self.instrument.connection:
-            return self.instrument.connection.ask(self.name, *args, **kwargs)
-        else:
-            return self.func(self.instrument, *args, **kwargs)
-
-
-class write_server(ask_server):
-    '''
-    decorator for methods of an Instrument that should be executed
-    on the relevant InstrumentServer process if one exists, that DO NOT
-    get a response
-
-    (if a response is needed, use ask_server)
-    '''
-
-    doc_prefix = ('** This method is decorated so that it will execute\n'
-                  '** on the InstrumentServer process even if you call\n'
-                  '** it from a different process.\n'
-                  '** This variant (write_server) DOES NOT WAIT FOR OR \n'
-                  '** ALLOW A RESPONSE FROM THE INSTRUMENT\n')
-
-    def __call__(self, *args, **kwargs):
-        if self.instrument.connection:
-            self.instrument.connection.write(self.name, *args, **kwargs)
-        else:
-            self.func(self.instrument, *args, **kwargs)
+                self.manager.delete(self.id)
 
 
 class InstrumentServer:
-    def __init__(self, query_queue, response_queue, error_queue, extras):
+    # just for testing - how long to allow it to wait on a queue.get
+    timeout = None
+
+    def __init__(self, query_queue, response_queue, error_queue,
+                 shared_kwargs):
         self._query_queue = query_queue
         self._response_queue = response_queue
         self._error_queue = error_queue
 
-        self.extras = extras
+        self.shared_kwargs = shared_kwargs
 
         self.instruments = {}
+        self.next_id = 0
         self.running = True
 
         while self.running:
             try:
                 query = None
-                query = self._query_queue.get()
+                query = self._query_queue.get(timeout=self.timeout)
                 self.process_query(query)
+            except Empty:
+                raise
             except Exception as e:
                 self.post_error(e, query)
 
@@ -229,14 +194,44 @@ class InstrumentServer:
         '''
         self.running = False
 
-    def handle_new(self, instrument):
+    def handle_new_id(self):
+        '''
+        split out id generation from adding an instrument
+        so that we can delete it if something goes wrong!
+        '''
+        new_id = self.next_id
+        self.next_id += 1
+        self.reply(new_id)
+
+    def handle_new(self, instrument_class, new_id, args, kwargs):
         '''
         Add a new instrument to the server
-        after the initial load, the instrument is referred to by its UUID
+        after the initial load, the instrument is referred to by its ID
         '''
-        self.instruments[instrument.uuid] = instrument
-        instrument.server_extras = self.extras
-        self.reply(True)
+
+        # merge shared_kwargs into kwargs for the constructor,
+        # but only if this instrument_class is expecting them.
+        # The *first* instrument put on a given server must have
+        # all the shared_kwargs sent with it, but others may skip
+        # (for now others must have *none* but later maybe they could
+        # just skip some of them)
+        for key, value in self.shared_kwargs.items():
+            if key in instrument_class.shared_kwargs:
+                kwargs[key] = value
+        ins = instrument_class(*args, server_name=None, **kwargs)
+
+        self.instruments[new_id] = ins
+
+        # info to reconstruct the instrument API in the RemoteInstrument
+        self.reply({
+            'instrument_name': ins.name,
+            'id': new_id,
+            'parameters': {name: p.get_attrs()
+                           for name, p in ins.parameters.items()},
+            'functions': {name: f.get_attrs()
+                          for name, f in ins.functions.items()},
+            'methods': ins._get_method_attrs()
+        })
 
     def handle_delete(self, instrument_id):
         '''
@@ -244,9 +239,11 @@ class InstrumentServer:
         are no more instruments left after this.
         '''
         if instrument_id in self.instruments:
+            self.instruments[instrument_id].close()
+
             del self.instruments[instrument_id]
 
-            if not self.instruments:
+            if not any(self.instruments):
                 self.handle_halt()
 
     def handle_ask(self, instrument_id, func_name, args, kwargs):

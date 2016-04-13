@@ -1,10 +1,8 @@
-import asyncio
 import time
 from datetime import datetime
 from traceback import format_exc
 
 from .base import Instrument
-from .server import ask_server, write_server
 from qcodes.utils.multiprocessing import ServerManager, SERVER_ERR
 
 
@@ -15,10 +13,10 @@ class MockInstrument(Instrument):
     name: (string) the name of this instrument
     delay: the time (in seconds) to wait after any operation
         to simulate communication delay
-    model: an object with write and ask methods, taking 2 or 3 args:
-        instrument: the name of the instrument
-        parameter: the name of the parameter
-        value (write only): the value to write, as a string
+    model: a MockModel object to connect this MockInstrument to.
+        should have one or two methods related directly to this instrument:
+        <name>_set(param, value) -> set a parameter on the model
+        <name>_get(param) -> returns the value
     keep_history: record (in self.history) every command sent to this
         instrument (default True)
     use_async: use the async form of ask and write (default False)
@@ -35,9 +33,12 @@ class MockInstrument(Instrument):
         by MockModel servers
     alternatively independent functions may still be provided.
     '''
+    shared_kwargs = ['model']
+
     def __init__(self, name, delay=0, model=None, keep_history=True,
-                 use_async=False, read_response=None,
-                 server_name='', **kwargs):
+                 read_response=None, **kwargs):
+
+        super().__init__(name, **kwargs)
 
         if not isinstance(delay, (int, float)) or delay < 0:
             raise TypeError('delay must be a non-negative number')
@@ -46,12 +47,7 @@ class MockInstrument(Instrument):
         # try to access write and ask so we know they exist
         model.write
         model.ask
-        self.model_id = model.uuid
-
-        # can't pass the model itself through the queue to the server,
-        # so send it to the server on creation and have the server
-        # attach it to each instrument.
-        server_extras = {model.uuid: model}
+        self._model = model
 
         # keep a record of every command sent to this instrument
         # for debugging purposes
@@ -59,36 +55,20 @@ class MockInstrument(Instrument):
             self.keep_history = True
             self.history = []
 
-        # do we want a sync or async model?
-        if use_async:
-            self.write_async = self._write_async
-            self.read_async = self._read_async
-            self.ask_async = self._ask_async
-        else:
-            self.write = self._write
-            self.read = self._read
-            self.ask = self._ask
-
         # just for test purposes
         self._read_response = read_response
 
-        # to make sure we make one server per model,
-        # we give the server a (pretty much) unique name
-        if server_name == '':
-            server_name = model.name.replace('Model', 'MockServer')
-        super().__init__(name, server_name, server_extras, **kwargs)
+    @classmethod
+    def default_server_name(cls, **kwargs):
+        model = kwargs.get('model', None)
+        if model:
+            return model.name.replace('Model', 'MockInsts')
+        return 'MockInstruments'
 
-    @ask_server
-    def on_connect(self):
-        '''
-        to get around the fact that you can't send a model to an
-        already-existing server process, we send the model with
-        server creation, then find it on the other end by its uuid
-        '''
-        self._model = self.server_extras[self.model_id]
+    def write(self, cmd):
+        if self._delay:
+            time.sleep(self._delay)
 
-    @write_server
-    def _write_inner(self, cmd):
         try:
             parameter, value = cmd.split(':', 1)
         except ValueError:
@@ -100,21 +80,10 @@ class MockInstrument(Instrument):
 
         self._model.write(self.name + ':' + cmd)
 
-    def _write(self, cmd):
+    def ask(self, cmd):
         if self._delay:
             time.sleep(self._delay)
 
-        self._write_inner(cmd)
-
-    @asyncio.coroutine
-    def _write_async(self, cmd):
-        if self._delay:
-            yield from asyncio.sleep(self._delay)
-
-        self._write_inner(cmd)
-
-    @ask_server
-    def _ask_inner(self, cmd):
         parameter, blank = cmd.split('?')
         if blank:
             raise ValueError('text found after end of query')
@@ -125,31 +94,11 @@ class MockInstrument(Instrument):
 
         return self._model.ask(self.name + ':' + cmd)
 
-    def _read(self):
+    def read(self):
         if self._delay:
             time.sleep(self._delay)
 
         return self._read_response
-
-    @asyncio.coroutine
-    def _read_async(self):
-        if self._delay:
-            yield from asyncio.sleep(self._delay)
-
-        return self._read_response
-
-    def _ask(self, cmd):
-        if self._delay:
-            time.sleep(self._delay)
-
-        return self._ask_inner(cmd)
-
-    @asyncio.coroutine
-    def _ask_async(self, cmd):
-        if self._delay:
-            yield from asyncio.sleep(self._delay)
-
-        return self._ask_inner(cmd)
 
 
 class MockModel(ServerManager):  # pragma: no cover

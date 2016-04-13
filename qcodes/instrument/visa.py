@@ -1,7 +1,6 @@
 import visa
 
 from .base import Instrument
-from .server import ask_server, write_server
 
 
 class VisaInstrument(Instrument):
@@ -25,58 +24,59 @@ class VisaInstrument(Instrument):
     See help for qcodes.Instrument for information on writing
     instrument subclasses
     '''
-    def __init__(self, name, address=None, server_name='',
-                 timeout=5, terminator='', **kwargs):
+    def __init__(self, name, address=None, timeout=5, terminator='', **kwargs):
+        super().__init__(name, **kwargs)
+
         self._address = address
         self._timeout = timeout
         self._terminator = terminator
 
-        if server_name == '':
-            server_name = self._default_server_name()
-        super().__init__(name, server_name=server_name, **kwargs)
+        self.set_address(self._address)
+        self.set_timeout(self._timeout)
+        self.set_terminator(self._terminator)
 
-    def _default_server_name(self):
-        upper_address = self._address.upper()
+    @classmethod
+    def default_server_name(cls, **kwargs):
+        upper_address = kwargs.get('address', '').upper()
         if 'GPIB' in upper_address:
             return 'GPIBServer'
         elif 'ASRL' in upper_address:
             return 'SerialServer'
 
         # TODO - any others to break out by default?
+        # break out separate GPIB or serial connections?
         return 'VisaServer'
 
-    @ask_server
-    def on_connect(self):
-        self.set_address(self._address)
-        self.set_timeout(self._timeout)
-        self.set_terminator(self._terminator)
-
-    @write_server
     def set_address(self, address):
+        '''
+        change the address (visa resource name) for this instrument
+        see eg: http://pyvisa.readthedocs.org/en/stable/names.html
+        '''
         resource_manager = visa.ResourceManager()
         self.visa_handle = resource_manager.open_resource(address)
 
         self.visa_handle.clear()
         self._address = address
 
-    @write_server
     def set_terminator(self, terminator):
+        '''
+        change the read terminator (string, eg '\r\n')
+        '''
         self.visa_handle.read_termination = terminator
         self._terminator = terminator
 
-    @write_server
     def set_timeout(self, timeout):
-        # we specify timeout always in seconds, but visa requires milliseconds
+        '''
+        change the read timeout (seconds)
+        '''
+        # visa requires milliseconds
         self.visa_handle.timeout = 1000.0 * timeout
         self._timeout = timeout
 
-    def __del__(self):
-        '''
-        Close the visa handle upon deleting the object
-        '''
+    def close(self):
         if getattr(self, 'visa_handle', None):
             self.visa_handle.close()
-        super().__del__()
+        super().close()
 
     def check_error(self, ret_code):
         '''
@@ -88,13 +88,9 @@ class VisaInstrument(Instrument):
         if ret_code != 0:
             raise visa.VisaIOError(ret_code)
 
-    @write_server
     def write(self, cmd):
-        # TODO: lock, async
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
 
-    @ask_server
     def ask(self, cmd):
-        # TODO: lock, async
         return self.visa_handle.ask(cmd)

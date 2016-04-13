@@ -47,7 +47,7 @@ from qcodes.data.data_set import new_data, DataMode
 from qcodes.data.data_array import DataArray
 from qcodes.utils.helpers import wait_secs
 from qcodes.utils.multiprocessing import QcodesProcess
-from qcodes.utils.sync_async import mock_sync
+from qcodes.utils.threading import thread_map
 
 
 MP_NAME = 'Measurement'
@@ -376,7 +376,7 @@ class ActiveLoop:
 
         return sp
 
-    def set_common_attrs(self, data_set, signal_queue):
+    def set_common_attrs(self, data_set, use_threads, signal_queue):
         '''
         set a couple of common attributes that the main and nested loops
         all need to have:
@@ -385,9 +385,10 @@ class ActiveLoop:
         '''
         self.data_set = data_set
         self.signal_queue = signal_queue
+        self.use_threads = use_threads
         for action in self.actions:
             if hasattr(action, 'set_common_attrs'):
-                action.set_common_attrs(data_set, signal_queue)
+                action.set_common_attrs(data_set, use_threads, signal_queue)
 
     def _check_signal(self):
         while not self.signal_queue.empty():
@@ -404,15 +405,16 @@ class ActiveLoop:
         return self.run(background=False, quiet=True,
                         data_manager=False, location=False, **kwargs)
 
-    def run(self, background=True, use_async=False, enqueue=False, quiet=False,
-            data_manager=None, **kwargs):
+    def run(self, background=True, use_threads=True, enqueue=False,
+            quiet=False, data_manager=None, **kwargs):
         '''
         execute this loop
 
         background: (default True) run this sweep in a separate process
             so we can have live plotting and other analysis in the main process
-        use_async: (default True): execute the sweep asynchronously as much
-            as possible
+        use_threads: (default True): whenever there are multiple `get` calls
+            back-to-back, execute them in separate threads so they run in
+            parallel (as long as they don't block each other)
         enqueue: (default False): wait for a previous background sweep to
             finish? If false, will raise an error if another sweep is running
         quiet: (default False): set True to not print anything except errors
@@ -450,17 +452,11 @@ class ActiveLoop:
 
         data_set = new_data(arrays=self.containers(), mode=data_mode,
                             data_manager=data_manager, **kwargs)
-        self.set_common_attrs(data_set=data_set,
+        self.set_common_attrs(data_set=data_set, use_threads=use_threads,
                               signal_queue=self.signal_queue)
 
-        if use_async:
-            raise NotImplementedError  # TODO
-            # loop_fn = mock_sync(self._async_loop)
-        else:
-            loop_fn = self._run_wrapper
-
         if background:
-            p = QcodesProcess(target=loop_fn, name=MP_NAME)
+            p = QcodesProcess(target=self._run_wrapper, name=MP_NAME)
             p.is_sweep = True
             p.signal_queue = self.signal_queue
             p.start()
@@ -469,7 +465,7 @@ class ActiveLoop:
             self.data_set.sync()
             self.data_set.mode = DataMode.PULL_FROM_SERVER
         else:
-            loop_fn()
+            self._run_wrapper()
             self.data_set.read()
 
         if not quiet:
@@ -486,13 +482,15 @@ class ActiveLoop:
                 measurement_group.append((action, new_action_indices))
                 continue
             elif measurement_group:
-                callables.append(_Measure(measurement_group, self.data_set))
+                callables.append(_Measure(measurement_group, self.data_set,
+                                          self.use_threads))
                 measurement_group[:] = []
 
             callables.append(self._compile_one(action, new_action_indices))
 
         if measurement_group:
-            callables.append(_Measure(measurement_group, self.data_set))
+            callables.append(_Measure(measurement_group, self.data_set,
+                                      self.use_threads))
             measurement_group[:] = []
 
         return callables
@@ -609,7 +607,8 @@ class _Measure:
     A callable collection of parameters to measure.
     This should not be constructed manually, only by an ActiveLoop.
     '''
-    def __init__(self, params_indices, data_set):
+    def __init__(self, params_indices, data_set, use_threads):
+        self.use_threads = use_threads
         # the applicable DataSet.store function
         self.store = data_set.store
 
@@ -617,27 +616,39 @@ class _Measure:
         # multiple arrays, pre-create the dict to pass these to store fn
         # and pre-calculate the name mappings
         self.dict = {}
-        self.params_ids = []
+        self.getters = []
+        self.param_ids = []
+        self.composite = []
         for param, action_indices in params_indices:
+            self.getters.append(param.get)
+
             if hasattr(param, 'names'):
                 part_ids = []
                 for i in range(len(param.names)):
                     param_id = data_set.action_id_map[action_indices + (i,)]
                     part_ids.append(param_id)
                     self.dict[param_id] = None
-                self.params_ids.append((param, None, part_ids))
+                self.param_ids.append(None)
+                self.composite.append(part_ids)
             else:
                 param_id = data_set.action_id_map[action_indices]
-                self.params_ids.append((param, param_id, False))
                 self.dict[param_id] = None
+                self.param_ids.append(param_id)
+                self.composite.append(False)
 
     def __call__(self, loop_indices, **ignore_kwargs):
-        for param, param_id, composite in self.params_ids:
+        if self.use_threads:
+            out = thread_map(self.getters)
+        else:
+            out = [g() for g in self.getters]
+
+        for param_out, param_id, composite in zip(out, self.param_ids,
+                                                  self.composite):
             if composite:
-                for val, part_id in zip(param.get(), composite):
+                for val, part_id in zip(param_out, composite):
                     self.dict[part_id] = val
             else:
-                self.dict[param_id] = param.get()
+                self.dict[param_id] = param_out
 
         self.store(loop_indices, self.dict)
 

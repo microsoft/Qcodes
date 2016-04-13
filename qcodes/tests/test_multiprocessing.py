@@ -381,7 +381,7 @@ class TestServerManager(TestCase):
         extras = 'super secret don\'t tell anyone'
 
         sm = ServerManagerTest(name='test', server_class=EmptyServer,
-                               server_extras=extras)
+                               shared_attrs=extras)
         sm._run_server()
 
         self.assertEqual(sm._query_queue.get(timeout=1), 'why?')

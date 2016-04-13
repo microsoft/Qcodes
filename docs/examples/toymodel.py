@@ -68,8 +68,8 @@ class AModel(MockModel):
 # or just the base Instrument instead of MockInstrument,
 # and be instantiated with an address rather than a model
 class MockGates(MockInstrument):
-    def __init__(self, name, model):
-        super().__init__(name, model=model)
+    def __init__(self, name, model=None, **kwargs):
+        super().__init__(name, model=model, **kwargs)
 
         for i in range(3):
             cmdbase = 'c{}'.format(i)
@@ -84,8 +84,8 @@ class MockGates(MockInstrument):
 
 
 class MockSource(MockInstrument):
-    def __init__(self, name, model):
-        super().__init__(name, model=model)
+    def __init__(self, name, model=None, **kwargs):
+        super().__init__(name, model=model, **kwargs)
 
         # this parameter uses built-in sweeping to change slowly
         self.add_parameter('amplitude',
@@ -99,8 +99,8 @@ class MockSource(MockInstrument):
 
 
 class MockMeter(MockInstrument):
-    def __init__(self, name, model):
-        super().__init__(name, model=model)
+    def __init__(self, name, model=None, **kwargs):
+        super().__init__(name, model=model, **kwargs)
 
         self.add_parameter('amplitude',
                            label='Current (nA)',

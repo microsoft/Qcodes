@@ -11,11 +11,14 @@ from qcodes.data.manager import get_data_manager
 from qcodes.instrument.parameter import Parameter, ManualParameter
 from qcodes.utils.multiprocessing import QcodesProcess
 from qcodes.utils.validators import Numbers
+from qcodes.utils.helpers import killprocesses
 from .instrument_mocks import AMockModel, MockGates, MockSource, MockMeter
 
 
 class TestMockInstLoop(TestCase):
     def setUp(self):
+        get_data_manager().restart(force=True)
+        killprocesses()
         # TODO: figure out what's leaving DataManager in a weird state
         # and fix it
         get_data_manager().restart(force=True)
@@ -23,14 +26,17 @@ class TestMockInstLoop(TestCase):
 
         self.model = AMockModel()
 
-        self.gates = MockGates(self.model)
-        self.source = MockSource(self.model)
-        self.meter = MockMeter(self.model)
+        self.gates = MockGates(model=self.model)
+        self.source = MockSource(model=self.model)
+        self.meter = MockMeter(model=self.model)
         self.location = '_loop_test_'
         self.location2 = '_loop_test2_'
         self.io = DiskIO('.')
 
     def tearDown(self):
+        for instrument in [self.gates, self.source, self.meter]:
+            instrument.close()
+
         self.io.remove_all(self.location)
         self.io.remove_all(self.location2)
 
@@ -68,12 +74,6 @@ class TestMockInstLoop(TestCase):
         loop.run(location=self.location2, quiet=True, enqueue=True)
         loop.process.join()
 
-    def test_async_fail(self):
-        c1 = self.gates.chan1
-        loop = Loop(c1[1:5:1], 0.01).each(c1)
-        with self.assertRaises(NotImplementedError):
-            loop.run(location=self.location, quiet=True, use_async=True)
-
 
 def sleeper(t):
     time.sleep(t)
@@ -81,14 +81,7 @@ def sleeper(t):
 
 class TestBG(TestCase):
     def test_get_halt(self):
-        # an intermittent error here, some other process still running?
-        # just kill everything that's running.
-        # TODO - do tests ever run in parallel?
-        # for process in mp.active_children():
-        #     try:
-        #         process.terminate()
-        #     except:
-        #         pass
+        killprocesses()
         self.assertIsNone(get_bg())
 
         p1 = QcodesProcess(name=MP_NAME, target=sleeper, args=(10, ))
@@ -154,6 +147,7 @@ class MultiGetter(Parameter):
 
 class TestLoop(TestCase):
     def setUp(self):
+        killprocesses()
         self.p1 = ManualParameter('p1', vals=Numbers(-10, 10))
         self.p2 = ManualParameter('p2', vals=Numbers(-10, 10))
         self.p3 = ManualParameter('p3', vals=Numbers(-10, 10))
@@ -371,4 +365,4 @@ class TestSignal(TestCase):
         # because of the way the waits work out, we can get an extra
         # point measured before the interrupt is registered. But the
         # test would be valid either way.
-        self.assertIn(repr(data.p1[2]), (repr(nan), repr(3)))
+        self.assertIn(repr(data.p1[2]), (repr(nan), repr(3), repr(3.0)))
