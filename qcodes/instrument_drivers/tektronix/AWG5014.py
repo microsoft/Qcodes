@@ -24,7 +24,7 @@ from io import BytesIO
 import os
 import logging
 
-from qcodes import VisaInstrument, validators as vals, ask_server, write_server
+from qcodes import VisaInstrument, validators as vals
 
 
 class Tektronix_AWG5014(VisaInstrument):
@@ -136,6 +136,8 @@ class Tektronix_AWG5014(VisaInstrument):
         Output:
             None
         '''
+        super().__init__(name, address, **kwargs)
+
         t0 = time()
 
         self._address = address
@@ -294,11 +296,8 @@ class Tektronix_AWG5014(VisaInstrument):
         # NOTE! this directory has to exist on the AWG!!
         self._setup_folder = setup_folder
 
-        super().__init__(name, address, **kwargs)
-
         self.connect_message('IDN', t0)
 
-    @ask_server
     def on_connect(self):
         super().on_connect()
 
@@ -331,7 +330,6 @@ class Tektronix_AWG5014(VisaInstrument):
         '''
         return self.run()
 
-    @ask_server
     def run(self):
         self.write('AWGC:RUN')
         return self.get_state()
@@ -339,7 +337,6 @@ class Tektronix_AWG5014(VisaInstrument):
     def stop(self):
         self.write('AWGC:STOP')
 
-    @ask_server
     def get_folder_contents(self, print_contents=True):
         if print_contents:
             print('Current folder:', self.get_current_folder_name())
@@ -360,7 +357,6 @@ class Tektronix_AWG5014(VisaInstrument):
     def goto_root(self):
         return self.write('mmem:cdir "c:\\.."')
 
-    @ask_server
     def create_and_goto_dir(self, dir):
         '''
         Creates (if not yet present) and sets the current directory to <dir>
@@ -381,17 +377,14 @@ class Tektronix_AWG5014(VisaInstrument):
             self.write('mmem:cdir "\%s"' % dir)
             return self.get_folder_contents()
 
-    @write_server
     def all_channels_on(self):
         for i in range(1, 5):
             self.set('ch{}_state'.format(i), 1)
 
-    @write_server
     def all_channels_off(self):
         for i in range(1, 5):
             self.set('ch{}_state'.format(i), 0)
 
-    @write_server
     def clear_waveforms(self):
         '''
         Clears the waveform on all channels.
@@ -437,7 +430,6 @@ class Tektronix_AWG5014(VisaInstrument):
     # Parameters #
     ##############
 
-    @ask_server
     def _do_get_numpoints(self):
         '''
         Returns the number of datapoints in each wave
@@ -450,7 +442,6 @@ class Tektronix_AWG5014(VisaInstrument):
         '''
         return self._numpoints
 
-    @write_server
     def _do_set_numpoints(self, numpts):
         '''
         Sets the number of datapoints in each wave.
@@ -513,7 +504,6 @@ class Tektronix_AWG5014(VisaInstrument):
     def get_sqel_waveform(self, channel, element_no=1):
         return self.ask('SEQ:ELEM%s:WAV%s?' % (element_no, channel))
 
-    @ask_server
     def set_sqel_trigger_wait(self, element_no, state=1):
         self.write('SEQ:ELEM%s:TWA %s' % (element_no, state))
         return self.get_sqel_trigger_wait(element_no)
@@ -561,7 +551,6 @@ class Tektronix_AWG5014(VisaInstrument):
         '''
         self._load_new_style(wfname_l, nrep_l, wait_l, goto_l, logic_jump_l)
 
-    @write_server
     def _load_new_style(self, wfname_l, nrep_l, wait_l, goto_l, logic_jump_l):
         '''
         load sequence not using sequence file
@@ -609,7 +598,6 @@ class Tektronix_AWG5014(VisaInstrument):
 
     ##################################################################
 
-    @ask_server
     def import_waveform_file(self, waveform_listname, waveform_filename,
                              type='wfm'):
         return self.write('mmem:imp "%s","%s",%s' % (
@@ -624,7 +612,6 @@ class Tektronix_AWG5014(VisaInstrument):
                                                        waveform_filename,
                                                        type=type)
 
-    @ask_server
     def _import_and_load_waveform_file_to_channel(self, channel_no,
                                                   waveform_listname,
                                                   waveform_filename,
@@ -675,7 +662,6 @@ class Tektronix_AWG5014(VisaInstrument):
 
         return packed_record
 
-    @ask_server
     def generate_sequence_cfg(self):
         '''
         This function is used to generate a config file, that is used when
@@ -816,7 +802,6 @@ class Tektronix_AWG5014(VisaInstrument):
             wf_record_str.getvalue() + seq_record_str.getvalue()
         return awg_file
 
-    @ask_server
     def send_awg_file(self, filename, awg_file):
         print('Writing to:', self.ask('MMEMory:CDIRectory?'),
               filename)
@@ -855,7 +840,6 @@ class Tektronix_AWG5014(VisaInstrument):
     # Waveform file functions #
     ###########################
 
-    @ask_server
     def send_waveform(self, w, m1, m2, filename, clock=None):
         '''
         Sends a complete waveform. All parameters need to be specified.
@@ -911,7 +895,6 @@ class Tektronix_AWG5014(VisaInstrument):
             'numpoints': len(w)
         }
 
-    @ask_server
     def resend_waveform(self, channel, w=[], m1=[], m2=[], clock=[]):
         '''
         Resends the last sent waveform for the designated channel
@@ -949,7 +932,6 @@ class Tektronix_AWG5014(VisaInstrument):
         self.send_waveform(w, m1, m2, filename, clock)
         self.set_filename(filename, channel)
 
-    @ask_server
     def set_filename(self, name, channel):
         '''
         Specifies which file has to be set on which channel
@@ -1049,7 +1031,6 @@ class Tektronix_AWG5014(VisaInstrument):
     def get_DC_out(self, DC_channel_number):
         return self.ask('AWGControl:DC%s:VOLTage:OFFSet?' % DC_channel_number)
 
-    @ask_server
     def send_DC_pulse(self, DC_channel_number, Amplitude, length):
         '''
         sends a (slow) pulse on the DC channel specified
@@ -1069,7 +1050,6 @@ class Tektronix_AWG5014(VisaInstrument):
 
     # Send waveform to the device (from transmon driver)
 
-    @ask_server
     def upload_awg_file(self, fname, fcontents):
         t0 = time()
         self._rem_file_path
@@ -1082,7 +1062,6 @@ class Tektronix_AWG5014(VisaInstrument):
         self.get_state()
         print('setting time: ',time()-t1-t0)
 
-    @ask_server
     def _set_setup_filename(self, fname):
         folder_name = 'C:/' + self._setup_folder + '/' + fname
         self.set_current_folder_name(folder_name)
@@ -1092,7 +1071,6 @@ class Tektronix_AWG5014(VisaInstrument):
         print('Current AWG file set to: ', self.get_current_folder_name())
         self.write('AWGC:SRES "%s.awg"' % fname)
 
-    @ask_server
     def set_setup_filename(self, fname, force_load=False):
         '''
         sets the .awg file to a .awg file that already exists in the memory of
@@ -1133,7 +1111,6 @@ class Tektronix_AWG5014(VisaInstrument):
                     self.ask('*OPC?')
         self.get('setup_filename')  # ensures the setup filename gets updated
 
-    @ask_server
     def is_awg_ready(self):
         try:
             self.ask('*OPC?')
@@ -1141,7 +1118,6 @@ class Tektronix_AWG5014(VisaInstrument):
             self.visa_handle.read()
         return True
 
-    @write_server
     def initialize_dc_waveforms(self):
         self.set_runmode('CONT')
         self.write('SOUR1:WAV "*DC"')

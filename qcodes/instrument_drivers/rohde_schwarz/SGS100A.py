@@ -21,7 +21,9 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
     This driver does not contain all commands available for the RS_SGS100A but
     only the ones most commonly used.
     '''
-    def __init__(self, name, address):
+    def __init__(self, name, address, **kwargs):
+        super().__init__(name, address, **kwargs)
+
         t0 = time.time()
         self.add_parameter('IDN', get_cmd='*IDN?')
         self.add_parameter(name='frequency',
@@ -61,8 +63,6 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
                            vals=vals.Strings())
         self.add_function('reset', call_cmd='*RST')
         self.add_function('run_self_tests', call_cmd='*TST?')
-
-        super().__init__(name, address)
 
         self.connect_message('IDN', t0)
 

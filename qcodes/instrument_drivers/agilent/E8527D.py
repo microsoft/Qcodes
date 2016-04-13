@@ -17,7 +17,9 @@ class Agilent_E8527D(VisaInstrument):
     This driver does not contain all commands available for the E8527D but
     only the ones most commonly used.
     '''
-    def __init__(self, name, address, step_attenuator=False):
+    def __init__(self, name, address, step_attenuator=False, **kwargs):
+        super().__init__(name, address, **kwargs)
+
         t0 = time.time()
         self.add_parameter('IDN', get_cmd='*IDN?')
         self.add_parameter(name='frequency',
@@ -53,8 +55,6 @@ class Agilent_E8527D(VisaInstrument):
                            # .upper val for Enum or string
                            vals=vals.Enum('on', 'On', 'ON',
                                           'off', 'Off', 'OFF'))
-
-        super().__init__(name, address)
 
         self.connect_message('IDN', t0)
 

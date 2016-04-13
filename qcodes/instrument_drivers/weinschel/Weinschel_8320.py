@@ -10,7 +10,9 @@ class Weinschel_8320(VisaInstrument):
     Weinschel is formerly known as Aeroflex/Weinschel
     '''
 
-    def __init__(self, name, address):
+    def __init__(self, name, address, **kwargs):
+        super().__init__(name, address, terminator='\r', **kwargs)
+
         t0 = time.time()
         self.add_parameter('IDN',
                            get_cmd='*IDN?')
@@ -19,7 +21,5 @@ class Weinschel_8320(VisaInstrument):
                            get_cmd='ATTN? 1',
                            vals=vals.Enum(*np.arange(0, 60.1, 2).tolist()),
                            get_parser=float)
-
-        super().__init__(name, address, terminator='\r')
 
         self.connect_message('IDN', t0)

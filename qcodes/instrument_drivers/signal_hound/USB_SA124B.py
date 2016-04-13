@@ -3,7 +3,7 @@ import numpy as np
 import ctypes as ct
 import logging
 
-from qcodes import Instrument, validators as vals, ask_server, write_server
+from qcodes import Instrument, validators as vals
 
 
 class SignalHound_USB_SA124B(Instrument):
@@ -47,7 +47,10 @@ class SignalHound_USB_SA124B(Instrument):
     }
     saStatus_inverted = dict((v, k) for k, v in saStatus.items())
 
-    def __init__(self, name):
+    def __init__(self, name, server_name='USB', **kwargs):
+        super().__init__(self, name, tags=['physical'],
+                         server_name=server_name, **kwargs)
+
         t0 = time()
         self.hf = constants
         self.add_parameter('frequency',
@@ -128,12 +131,9 @@ class SignalHound_USB_SA124B(Instrument):
                            set_cmd=self._do_set_vbw,
                            get_parser=float)
 
-        super().__init__(self, name, tags=['physical'], server_name='USB')
-
         t1 = time()
         print('Initialized SignalHound in %.2fs' % (t1-t0))
 
-    @ask_server
     def on_connect(self):
         self.log = logging.getLogger("Main.DeviceInt")
         logging.info(__name__ + ' : Initializing instrument SignalHound USB 124A')
@@ -155,7 +155,6 @@ class SignalHound_USB_SA124B(Instrument):
         self.set('vbw', 1e3)
         self.openDevice()
 
-    @write_server
     def openDevice(self):
         self.log.info("Opening Device")
         self.deviceHandle = ct.c_int(0)
@@ -172,7 +171,6 @@ class SignalHound_USB_SA124B(Instrument):
         self.devOpen = True
         self._devType = self.get('device_type')
 
-    @ask_server
     def closeDevice(self):
         self.log.info("Closing Device with handle num: ", self.deviceHandle.value)
 
@@ -189,7 +187,6 @@ class SignalHound_USB_SA124B(Instrument):
         self.devOpen = False
         self._running = False
 
-    @ask_server
     def abort(self):
         self.log.info("Stopping acquisition")
 
@@ -204,7 +201,6 @@ class SignalHound_USB_SA124B(Instrument):
         else:
             raise IOError("Unknown error setting abort! Error = %s" % err)
 
-    @ask_server
     def preset(self):
         self.log.warning("Performing hardware-reset of device!")
         self.log.warning("Please ensure you close the device handle within two seconds of this call!")
@@ -219,58 +215,44 @@ class SignalHound_USB_SA124B(Instrument):
 
     # TODO (AJ note): all these boilerplate _do_(get|set) should just turn
     # into ManualParameters, but someone who actually *has* this instrument
-    # should do that. All I changed was adding the ask/write_server
-    # decorators so this would be compatible with InstrumentServers
+    # should do that.
 
-    @ask_server
     def _do_get_frequency(self):
         return self._frequency
 
-    @write_server
     def _do_set_frequency(self,freq):
         self._frequency = freq
 
-    @ask_server
     def _do_get_span(self):
         return self._span
 
-    @write_server
     def _do_set_span(self,span):
         self._span = span
 
-    @ask_server
     def _do_get_power(self):
         return self._power
 
-    @write_server
     def _do_set_power(self,power):
         self._power = power
 
-    @ask_server
     def _do_get_ref_lvl(self):
         return self._ref_lvl
 
-    @write_server
     def _do_set_ref_lvl(self,ref_lvl):
         self._ref_lvl = ref_lvl
 
-    @ask_server
     def _do_get_external_reference(self):
         return self._external_reference
 
-    @write_server
     def _do_set_external_reference(self, external_reference):
         self._external_reference = external_reference
 
-    @ask_server
     def _do_get_running(self):
         return self._running
 
-    @write_server
     def _do_set_running(self, running):
         self._running = running
 
-    @ask_server
     def _do_get_device_type(self):
         self.log.info("Querying device for model information")
 
@@ -301,71 +283,55 @@ class SignalHound_USB_SA124B(Instrument):
             raise ValueError("Unknown device type!")
         return dev
 
-    @write_server
     def _do_set_device_type(self, device_type):
         self._device_type = device_type
 
-    @ask_server
     def _do_get_device_mode(self):
         return self._device_mode
 
-    @write_server
     def _do_set_device_mode(self,device_mode):
         self._device_mode = device_mode
         return
 
-    @ask_server
     def _do_get_acquisition_mode(self):
         return self._acquisition_mode
 
-    @write_server
     def _do_set_acquisition_mode(self,acquisition_mode):
         self._acquisition_mode = acquisition_mode
         return
 
-    @ask_server
     def _do_get_scale(self):
         return self._scale
 
-    @write_server
     def _do_set_scale(self,scale):
         self._scale = scale
 
-    @ask_server
     def _do_get_decimation(self):
         return self.decimation
 
-    @write_server
     def _do_set_decimation(self,decimation):
         self.decimation = decimation
 
-    @ask_server
     def _do_get_bandwidth(self):
         return self._bandwidth
 
-    @write_server
     def _do_set_bandwidth(self, bandwidth):
         self._bandwidth = bandwidth
 
-    @ask_server
     def _do_get_rbw(self):
         return self._rbw
 
-    @write_server
     def _do_set_rbw(self, rbw):
         self._rbw = rbw
 
-    @ask_server
     def _do_get_vbw(self):
         return self._vbw
 
-    @write_server
     def _do_set_vbw(self, vbw):
         self._vbw = vbw
 
     ########################################################################
 
-    @ask_server
     def initialisation(self, flag=0):
         mode = self.get('device_mode')
         modeOpts = {
@@ -421,7 +387,6 @@ class SignalHound_USB_SA124B(Instrument):
 
         return
 
-    @ask_server
     def QuerySweep(self):
         sweep_len = ct.c_int(0)
         start_freq = ct.c_double(0)
@@ -441,7 +406,6 @@ class SignalHound_USB_SA124B(Instrument):
         info = np.array([sweep_len.value, start_freq.value, stepsize.value])
         return info
 
-    @ask_server
     def configure(self, rejection=True):
         # CenterSpan Configuration
         frequency = self.get('frequency') * 1e9
@@ -504,7 +468,6 @@ class SignalHound_USB_SA124B(Instrument):
             self.check_for_error(err)
         return
 
-    @ask_server
     def sweep(self):
         # this needs an initialized device. Originally used by read_power()
         sweep_len = ct.c_int(0)
@@ -569,7 +532,6 @@ class SignalHound_USB_SA124B(Instrument):
         return np.array([freq_points[0:sweep_len.value-1],
                         datamin, datamax, info])
 
-    @ask_server
     def get_power_at_freq(self, Navg=1):
         '''
         Returns the maximum power in a window of 250kHz
@@ -584,7 +546,6 @@ class SignalHound_USB_SA124B(Instrument):
         self._power = poweratfreq / Navg
         return self._power
 
-    @ask_server
     def get_spectrum(self, Navg=1):
         sweep_params = self.QuerySweep()
         data_spec = np.zeros(sweep_params[0])
@@ -595,14 +556,12 @@ class SignalHound_USB_SA124B(Instrument):
         sweep_points = data[0][:]
         return np.array([data_spec, sweep_points])
 
-    @ask_server
     def prepare_for_measurement(self):
         self.set('device_mode', 'sweeping')
         self.configure()
         self.initialisation()
         return
 
-    @ask_server
     def safe_reload(self):
         self.closeDevice()
         self.reload()
