@@ -121,7 +121,11 @@ class InstrumentConnection:
     '''
     def __init__(self, manager, instrument_class, new_id, args, kwargs):
         self.manager = manager
-        info = manager.ask('new', instrument_class, new_id, args, kwargs)
+
+        # long timeout on the initial call, to allow slow errors
+        # (like visa timeout) to get back to us
+        info = manager.ask('new', instrument_class, new_id, args, kwargs,
+                           timeout=20)
         for k, v in info.items():
             setattr(self, k, v)
 
