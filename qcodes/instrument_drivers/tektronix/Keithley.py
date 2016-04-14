@@ -80,7 +80,6 @@ class Keithley_2700(VisaInstrument):
         t0 = time.time()
         super().__init__(name, address)
 
-        self._modes = ['']
         self.add_parameter('IDN', get_cmd='*IDN?')
         
         self._modes = ['VOLT:AC', 'VOLT:DC', 'CURR:AC', 'CURR:DC', 'RES',
@@ -89,6 +88,7 @@ class Keithley_2700(VisaInstrument):
         #self._change_autozero = change_autozero
         self._averaging_types = ['MOV','REP']
         self._trigger_sent = False
+        
         
         # Add parameters to wrapper
         self.add_parameter('mode', get_cmd=':CONF?', get_parser=parsestr, set_cmd=':CONF:{}', vals=StringValidator() )
@@ -112,11 +112,11 @@ class Keithley_2700(VisaInstrument):
         
         self.add_parameter('nplc', get_cmd=partial( self._current_mode_get, 'NPLC', parser=float),
                        set_cmd=partial(self._current_mode_set, par='NPLC', mode=None), units='APER',
-                     docstring='Get integration time in Number of PowerLine Cycles. \
-            To get the integrationtime in seconds, use get_integrationtime().'  )
+                     docstring='Get integration time in Number of PowerLine Cycles.' +
+            '\nTo get the integrationtime in seconds, use get_integrationtime().'  )
 
         self.add_parameter('range', get_cmd=partial(self._current_mode_get, 'RANG',parser=float),
-                   set_cmd=partial(self._current_mode_set, par='RANG'), units='RANG'  )
+                   set_cmd=partial(self._current_mode_set, par='RANG'), units='RANG', docstring='Sets the measurement range. Note that not only a discrete set of ranges can be set (see the manual for details).'  )
 
         self.add_parameter('integrationtime', get_cmd=partial(self._current_mode_get, 'APER', parser=float),
                 set_cmd=partial(self._current_mode_set, par='APER', mode=None), units='s',
@@ -134,15 +134,15 @@ class Keithley_2700(VisaInstrument):
             flags=Instrument.FLAG_GETSET,
             units='s', minval=0.001, maxval=99999.999, type=float)
         self.add_parameter('readval', flags=Instrument.FLAG_GET,
-            units='AU',
+            units='arb.unit',
             type=float,
             tags=['measure'])
         self.add_parameter('readlastval', flags=Instrument.FLAG_GET,
-            units='AU',
+            units='arb.unit',
             type=float,
             tags=['measure'])
         self.add_parameter('readnextval', flags=Instrument.FLAG_GET,
-            units='AU',
+            units='arb.unit',
             type=float,
             tags=['measure'])
         self.add_parameter('nplc',
@@ -169,7 +169,7 @@ class Keithley_2700(VisaInstrument):
             
 
         # add functions
-        self.add_function('readnext', units='AU', call_cmd=':DATA:FRESH?', return_parser=float)
+        self.add_function('readnext', units='arb.unit', call_cmd=':DATA:FRESH?', return_parser=float)
 
         if reset:
             self.reset()

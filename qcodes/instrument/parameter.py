@@ -37,6 +37,7 @@ from datetime import datetime, timedelta
 import time
 import asyncio
 import logging
+import os
 
 from qcodes.utils.helpers import (permissive_range, wait_secs,
                                   DelegateAttributes)
@@ -167,9 +168,19 @@ class Parameter(Metadatable):
             self.setpoint_names = setpoint_names
             self.setpoint_labels = setpoint_labels
 
+
+        # generate default docstring
+        self.__doc__ = 'Parameter class:\n* `name` %s' % self.name + os.linesep
+        self.__doc__ += '* `label` %s' % self.label + os.linesep
+        self.__doc__ += '* `units` %s' % self.units + os.linesep
+        #parameter label (if not None)
+        #units
+        #validator type
+        #validator min and max (if applicable)
+
         if docstring is not None:
             #logging.debug('add docstring to Parameter!')
-            self.__doc__ = docstring
+            self.__doc__ = docstring + os.linesep + self.__doc__
             
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
