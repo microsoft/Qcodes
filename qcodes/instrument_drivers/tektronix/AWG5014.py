@@ -802,9 +802,11 @@ class Tektronix_AWG5014(VisaInstrument):
             wf_record_str.getvalue() + seq_record_str.getvalue()
         return awg_file
 
-    def send_awg_file(self, filename, awg_file):
-        print('Writing to:', self.ask('MMEMory:CDIRectory?'),
-              filename)
+    def send_awg_file(self, filename, awg_file, verbose=False):
+        if verbose:
+            print('Writing to:',
+                  self.ask('MMEMory:CDIRectory?').replace('\n', '\ '),
+                  filename)
         # Header indicating the name and size of the file being send
         name_str = ('MMEM:DATA "%s",' % filename).encode('ASCII')
         size_str = ('#' + str(len(str(len(awg_file)))) +

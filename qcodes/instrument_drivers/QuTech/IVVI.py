@@ -58,15 +58,17 @@ class IVVI(VisaInstrument):
                            get_cmd=self._get_dacs)
 
         for i in range(1, numdacs + 1):
-            self.add_parameter('dac{}'.format(i),
-                               label='Dac {} (mV)'.format(i),
-                               units='mV',
-                               get_cmd=self._gen_ch_get_func(self._get_dac, i),
-                               set_cmd=self._gen_ch_set_func(self._set_dac, i),
-                               vals=vals.Numbers(-2000, 2000),
-                               sweep_step=10,
-                               sweep_delay=.1,
-                               max_val_age=10)
+            self.add_parameter(
+                'dac{}'.format(i),
+                label='Dac {} (mV)'.format(i),
+                units='mV',
+                get_cmd=self._gen_ch_get_func(self._get_dac, i),
+                set_cmd=self._gen_ch_set_func(self._set_dac, i),
+                vals=vals.Numbers(-2000, 2000),
+                sweep_step=10,
+                sweep_delay=.1,
+                max_sweep_delay=.2,
+                max_val_age=10)
 
         t1 = time.time()
         print('Initialized IVVI-rack in %.2fs' % (t1-t0))
