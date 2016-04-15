@@ -466,7 +466,8 @@ class ActiveLoop:
             self.data_set.mode = DataMode.PULL_FROM_SERVER
         else:
             self._run_wrapper()
-            self.data_set.read()
+            # This line breaks loops run with background=False
+            # self.data_set.read()
 
         if not quiet:
             print(repr(self.data_set))

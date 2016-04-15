@@ -31,6 +31,7 @@ class IPInstrument(Instrument):
         self._confirmation = write_confirmation
 
         self._ensure_connection = EnsureConnection(self)
+        self._buffer = 1024
 
         self._socket = None
 
@@ -83,7 +84,7 @@ class IPInstrument(Instrument):
             self._timeout = timeout
 
         if self._socket is not None:
-            self.socket.settimeout(float(self.timeout))
+            self._socket.settimeout(float(self._timeout))
 
     def set_terminator(self, terminator):
         self._terminator = terminator
@@ -93,7 +94,7 @@ class IPInstrument(Instrument):
         self._socket.send(data.encode())
 
     def _recv(self):
-        return self._socket.recv(512).decode()
+        return self._socket.recv(self._buffer).decode()
 
     def close(self):
         self._disconnect()
@@ -113,12 +114,12 @@ class IPInstrument(Instrument):
 
 class EnsureConnection:
     def __init__(self, instrument):
-        self._instrument = instrument
+        self.instrument = instrument
 
     def __enter__(self):
         if not self.instrument._persistent or self.instrument._socket is None:
             self.instrument._connect()
 
-    def __exit__(self):
+    def __exit__(self, type, value, tb):
         if not self.instrument._persistent:
             self.instrument._disconnect()
