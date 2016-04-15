@@ -145,7 +145,13 @@ class Parameter(Metadatable):
             # and names are the items it returns
             self.names = names
             self.labels = names if labels is None else names
-            self.units = units if units is not None else ['']*len(names)
+            self.units = units if units is not None else [''] * len(names)
+
+            self.__doc__ = os.linesep.join((
+                'Parameter class:',
+                '* `names` %s' % ', '.join(self.names),
+                '* `labels` %s' % ', '.join(self.labels),
+                '* `units` %s' % ', '.join(self.units)))
 
         elif name is not None:
             self.name = name
@@ -154,6 +160,14 @@ class Parameter(Metadatable):
 
             # vals / validate only applies to simple single-value parameters
             self._set_vals(vals)
+
+            # generate default docstring
+            self.__doc__ = os.linesep.join((
+                'Parameter class:',
+                '* `name` %s' % self.name,
+                '* `label` %s' % self.label,
+                '* `units` %s' % self.units,
+                '* `vals` %s' % repr(self._vals)))
 
         else:
             raise ValueError('either name or names is required')
@@ -168,20 +182,9 @@ class Parameter(Metadatable):
             self.setpoint_names = setpoint_names
             self.setpoint_labels = setpoint_labels
 
-
-        # generate default docstring
-        self.__doc__ = 'Parameter class:\n* `name` %s' % self.name + os.linesep
-        self.__doc__ += '* `label` %s' % self.label + os.linesep
-        self.__doc__ += '* `units` %s' % self.units + os.linesep
-        #parameter label (if not None)
-        #units
-        #validator type
-        #validator min and max (if applicable)
-
         if docstring is not None:
-            #logging.debug('add docstring to Parameter!')
             self.__doc__ = docstring + os.linesep + self.__doc__
-            
+
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
         # but they all use the same attributes so snapshot is consistent.
@@ -285,7 +288,7 @@ class StandardParameter(Parameter):
     max_val_age: max time (in seconds) to trust a saved value from
         this parameter as the starting point of a sweep
     docstring: documentation string for the __doc__ field of the object
-        The __doc__ field of the instance is used by some help systems, but not all 
+        The __doc__ field of the instance is used by some help systems, but not all
     '''
     def __init__(self, name, instrument=None,
                  get_cmd=None, async_get_cmd=None, get_parser=None,
