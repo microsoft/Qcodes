@@ -10,8 +10,8 @@
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 #
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -23,6 +23,7 @@
 
 import re
 from qcodes import VisaInstrument
+
 
 class Keithley_2600(VisaInstrument):
     '''
@@ -46,27 +47,29 @@ class Keithley_2600(VisaInstrument):
         vendor, model, serial, software = map(str.strip, self.IDN.split(','))
         self.model = model[6:]
 
-        self.info = {'vendor':vendor, 'model':self.model,
-                     'serial_number':serial, 'software_revision':software}
+        self.info = {'vendor': vendor, 'model': self.model,
+                     'serial_number': serial, 'software_revision': software}
 
         self.add_parameter('volt', get_cmd='measure.v()',
                            get_parser=float, set_cmd='source.levelv={:.8f}',
+                           label='Voltage',
                            units='V')
         self.add_parameter('curr', get_cmd='measure.i()',
                            get_parser=float, set_cmd='source.leveli={:.8f}',
+                           label='Current',
                            units='A')
         self.add_parameter('mode',
                            get_cmd='source.func',
                            get_parser=self._mode_parser,
                            set_cmd='source.func={:d}',
-                           val_mapping={'current':0, 'curr':0, 'AMPS':0,
-                                        'voltage':1, 'volt':1, 'VOLT':1})
+                           val_mapping={'current': 0, 'curr': 0, 'AMPS': 0,
+                                        'voltage': 1, 'volt': 1, 'VOLT': 1})
         self.add_parameter('output',
                            get_cmd='source.output',
                            get_parser=self._output_parser,
                            set_cmd='source.output={:d}',
-                           val_mapping={'on': 1, 'ON': 1,
-                                        'off':0, 'OFF':0})
+                           val_mapping={'on':  1, 'ON':  1,
+                                        'off': 0, 'OFF': 0})
         # Source range
         self.add_parameter('rangev',
                            get_cmd='source.rangev',
@@ -98,6 +101,7 @@ class Keithley_2600(VisaInstrument):
         elif msg[0] == '1':
             return 'voltage'
         return None
+
     def _output_parser(self, msg):
         if msg[0] == '0':
             return 'OFF'
@@ -118,7 +122,7 @@ class Keithley_2600(VisaInstrument):
         return self.visa_handle.ask(cmd)
 
     def ask(self, cmd):
-        return self.visa_handle.ask('print(smu{:s}.{:s})'.format(self._channel,cmd))
+        return self.visa_handle.ask('print(smu{:s}.{:s})'.format(self._channel, cmd))
 
     def write(self, cmd):
         super().write('smu{:s}.{:s}'.format(self._channel, cmd))

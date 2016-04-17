@@ -10,8 +10,8 @@
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
 #
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -31,12 +31,17 @@ class Triton(IPInstrument):
     TODO: fetch registry directly from fridge-computer
 
     Comment from Merlin:
-        I had to change the IP instrument, somehow the port does not get transferred to the socket connection
-        And I had other problesm with the _connect method, check those changes :)
+        I had to change the IP instrument, somehow the port does not get
+        transferred to the socket connection
+        And I had other problems with the _connect method,
+          check those changes :)
         Further there was a problem with the EnsureConnection class
     '''
-    def __init__(self, name, address=None, port=None, terminator='\r\n', tmpfile = None, **kwargs):
-        super().__init__(name, address=address, port=port, terminator=terminator, **kwargs)
+
+    def __init__(self, name, address=None, port=None, terminator='\r\n',
+                 tmpfile=None, **kwargs):
+        super().__init__(name, address=address, port=port,
+                         terminator=terminator, **kwargs)
 
         self.add_parameter(name='time',
                            label='System Time',
@@ -48,7 +53,7 @@ class Triton(IPInstrument):
                            label='Current action',
                            units='',
                            get_cmd='READ:SYS:DR:ACTN',
-                           get_parser=self._parse_action )
+                           get_parser=self._parse_action)
 
         self.add_parameter(name='status',
                            label='Status',
@@ -58,36 +63,32 @@ class Triton(IPInstrument):
 
         self.chan_alias = {}
         self.chan_temps = {}
-        if tmpfile != None:
+        if tmpfile is not None:
             self._get_temp_channels(tmpfile)
         self.get_pressure_channels()
         self._get_named_channels()
-
 
     def _get_named_channels(self):
         allchans = self.ask('READ:SYS:DR:CHAN')
         allchans = allchans.replace('STAT:SYS:DR:CHAN:', '', 1).split(':')
         for ch in allchans:
-            msg = 'READ:SYS:DR:CHAN:%s'%ch
+            msg = 'READ:SYS:DR:CHAN:%s' % ch
             rep = self.ask(msg)
-            if not 'INVALID' in rep:
-                alias, channel = rep.split(':')[-2:]
-                self.chan_alias[alias] = channel
+            if 'INVALID' not in rep:
+                alias, chan = rep.split(':')[-2:]
+                self.chan_alias[alias] = chan
                 self.add_parameter(name=alias,
                                    units='K',
-                                   get_cmd='READ:DEV:%s:TEMP:SIG:TEMP'%channel,
+                                   get_cmd='READ:DEV:%s:TEMP:SIG:TEMP' % chan,
                                    get_parser=self._parse_temp)
 
-
-
     def get_pressure_channels(self):
-        for i in range(1,7):
-            chan = 'P%d'%i
+        for i in range(1, 7):
+            chan = 'P%d' % i
             self.add_parameter(name=chan,
                                units='bar',
-                               get_cmd='READ:DEV:%s:PRES:SIG:PRES'%chan,
+                               get_cmd='READ:DEV:%s:PRES:SIG:PRES' % chan,
                                get_parser=self._parse_pres)
-
 
     def _get_temp_channels(self, file):
         config = configparser.ConfigParser()
@@ -101,10 +102,10 @@ class Triton(IPInstrument):
             if namestr in options:
                 chan = 'T'+section.split('\\')[-1].split('[')[-1]
                 name = config.get(section, '"m_lpszname"').strip("\"")
-                self.chan_temps[chan] = {'name':name, 'value':None}
+                self.chan_temps[chan] = {'name': name, 'value': None}
                 self.add_parameter(name=chan,
                                    units='K',
-                                   get_cmd='READ:DEV:%s:TEMP:SIG:TEMP'%chan,
+                                   get_cmd='READ:DEV:%s:TEMP:SIG:TEMP' % chan,
                                    get_parser=self._parse_temp)
 
     def _parse_action(self, msg):
@@ -136,6 +137,7 @@ class Triton(IPInstrument):
         if 'NOT_FOUND' in msg:
             return None
         return float(msg.split('SIG:TEMP:')[-1].strip('K'))
+
     def _parse_pres(self, msg):
         if 'NOT_FOUND' in msg:
             return None
