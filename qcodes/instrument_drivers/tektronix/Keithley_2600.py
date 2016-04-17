@@ -112,12 +112,6 @@ class Keithley_2600(VisaInstrument):
     def reset(self):
         self.write('reset()')
 
-    def get_curr(self, msg):
-        return float(msg.rstrip().split(',')[1])
-
-    def get_volt(self, msg):
-        return float(msg.rstrip().split(',')[0])
-
     def ask_direct(self, cmd):
         return self.visa_handle.ask(cmd)
 
