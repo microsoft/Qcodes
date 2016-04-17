@@ -412,8 +412,6 @@ class Instrument(Metadatable, DelegateAttributes):
     # info about what's in this instrument, to help construct the remote     #
     ##########################################################################
 
-    _keep_attrs = []
-
     def _get_method_attrs(self):
         '''
         grab all methods of the instrument, and return them
@@ -422,8 +420,6 @@ class Instrument(Metadatable, DelegateAttributes):
         out = {}
 
         for attr in dir(self):
-            if (attr[0] == '_' and attr not in self._keep_attrs):
-                continue
             value = getattr(self, attr)
             if (not callable(value)) or isinstance(value, Function):
                 # Functions are callable, and they show up in dir(),
