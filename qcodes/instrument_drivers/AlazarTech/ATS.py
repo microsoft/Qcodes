@@ -24,10 +24,10 @@ class AlazarTech_ATS(Instrument):
     def __init__(self, name):
         super().__init__(name)
         # Make sure the dll is located at "C:\\WINDOWS\\System32\\ATSApi"
-        self._ATS9870_dll = ctypes.cdll.LoadLibrary('C:\\WINDOWS\\System32\\ATSApi')
+        self._ATS_dll = ctypes.cdll.LoadLibrary('C:\\WINDOWS\\System32\\ATSApi')
 
         # TODO (W) make the board id more general such that more than one card per system configurations are supported
-        self._handle = self._ATS9870_dll.AlazarGetBoardBySystemID(1, 1)
+        self._handle = self._ATS_dll.AlazarGetBoardBySystemID(1, 1)
         if not self._handle:
             raise Exception("AlazarTech_ATS not found")
 
@@ -121,11 +121,11 @@ class AlazarTech_ATS(Instrument):
             self.parameters['timeout_ticks']._set(timeout_ticks)
         # endregion
 
-        return_code = self._ATS9870_dll.AlazarSetCaptureClock(self._handle,
-                                                              self.parameters['clock_source']._get_byte(),
-                                                              self.parameters['sample_rate']._get_byte(),
-                                                              self.parameters['clock_edge']._get_byte(),
-                                                              self.parameters['decimation']._get_byte())
+        return_code = self._ATS_dll.AlazarSetCaptureClock(self._handle,
+                                                          self.parameters['clock_source']._get_byte(),
+                                                          self.parameters['sample_rate']._get_byte(),
+                                                          self.parameters['clock_edge']._get_byte(),
+                                                          self.parameters['decimation']._get_byte())
         self._result_handler(error_code=return_code, error_source="AlazarSetCaptureClock")
         self.parameters['clock_source']._set_updated()
         self.parameters['sample_rate']._set_updated()
@@ -133,32 +133,32 @@ class AlazarTech_ATS(Instrument):
         self.parameters['decimation']._set_updated()
 
         for i in [1, 2]:
-            return_code = self._ATS9870_dll.AlazarInputControl(self._handle,
-                                                               i,
-                                                               self.parameters['coupling'+str(i)]._get_byte(),
-                                                               self.parameters['channel_range'+str(i)]._get_byte(),
-                                                               self.parameters['impedance'+str(i)]._get_byte())
+            return_code = self._ATS_dll.AlazarInputControl(self._handle,
+                                                           i,
+                                                           self.parameters['coupling'+str(i)]._get_byte(),
+                                                           self.parameters['channel_range'+str(i)]._get_byte(),
+                                                           self.parameters['impedance'+str(i)]._get_byte())
             self._result_handler(error_code=return_code, error_source="AlazarInputControl " + str(i))
             self.parameters['coupling'+str(i)]._set_updated()
             self.parameters['channel_range'+str(i)]._set_updated()
             self.parameters['impedance'+str(i)]._set_updated()
 
-            return_code = self._ATS9870_dll.AlazarSetBWLimit(self._handle,
-                                                             i,
-                                                             self.parameters['bwlimit'+str(i)]._get_byte())
+            return_code = self._ATS_dll.AlazarSetBWLimit(self._handle,
+                                                         i,
+                                                         self.parameters['bwlimit'+str(i)]._get_byte())
             self._result_handler(error_code=return_code, error_source="AlazarSetBWLimit " + str(i))
             self.parameters['bwlimit'+str(i)]._set_updated()
 
-        return_code = self._ATS9870_dll.AlazarSetTriggerOperation(self._handle,
-                                                                  self.parameters['trigger_operation']._get_byte(),
-                                                                  self.parameters['trigger_engine1']._get_byte(),
-                                                                  self.parameters['trigger_source1']._get_byte(),
-                                                                  self.parameters['trigger_slope1']._get_byte(),
-                                                                  self.parameters['trigger_level1']._get_byte(),
-                                                                  self.parameters['trigger_engine2']._get_byte(),
-                                                                  self.parameters['trigger_source2']._get_byte(),
-                                                                  self.parameters['trigger_slope2']._get_byte(),
-                                                                  self.parameters['trigger_level2']._get_byte())
+        return_code = self._ATS_dll.AlazarSetTriggerOperation(self._handle,
+                                                              self.parameters['trigger_operation']._get_byte(),
+                                                              self.parameters['trigger_engine1']._get_byte(),
+                                                              self.parameters['trigger_source1']._get_byte(),
+                                                              self.parameters['trigger_slope1']._get_byte(),
+                                                              self.parameters['trigger_level1']._get_byte(),
+                                                              self.parameters['trigger_engine2']._get_byte(),
+                                                              self.parameters['trigger_source2']._get_byte(),
+                                                              self.parameters['trigger_slope2']._get_byte(),
+                                                              self.parameters['trigger_level2']._get_byte())
         self._result_handler(error_code=return_code, error_source="AlazarSetTriggerOperation")
         self.parameters['trigger_operation']._set_updated()
         self.parameters['trigger_engine1']._set_updated()
@@ -170,20 +170,20 @@ class AlazarTech_ATS(Instrument):
         self.parameters['trigger_slope2']._set_updated()
         self.parameters['trigger_level2']._set_updated()
 
-        return_code = self._ATS9870_dll.AlazarSetExternalTrigger(self._handle,
-                                                                 self.parameters['external_trigger_coupling']._get_byte(),
-                                                                 self.parameters['external_trigger_range']._get_byte())
+        return_code = self._ATS_dll.AlazarSetExternalTrigger(self._handle,
+                                                             self.parameters['external_trigger_coupling']._get_byte(),
+                                                             self.parameters['external_trigger_range']._get_byte())
         self._result_handler(error_code=return_code, error_source="AlazarSetExternalTrigger")
         self.parameters['external_trigger_coupling']._set_updated()
         self.parameters['external_trigger_range']._set_updated()
 
-        return_code = self._ATS9870_dll.AlazarSetTriggerDelay(self._handle,
-                                                              self.parameters['trigger_delay']._get_byte())
+        return_code = self._ATS_dll.AlazarSetTriggerDelay(self._handle,
+                                                          self.parameters['trigger_delay']._get_byte())
         self._result_handler(error_code=return_code, error_source="AlazarSetTriggerDelay")
         self.parameters['trigger_delay']._set_updated()
 
-        return_code = self._ATS9870_dll.AlazarSetTriggerTimeOut(self._handle,
-                                                                self.parameters['timeout_ticks']._get_byte())
+        return_code = self._ATS_dll.AlazarSetTriggerTimeOut(self._handle,
+                                                            self.parameters['timeout_ticks']._get_byte())
         self._result_handler(error_code=return_code, error_source="AlazarSetTriggerTimeOut")
         self.parameters['timeout_ticks']._set_updated()
 
@@ -250,13 +250,13 @@ class AlazarTech_ATS(Instrument):
         # -----set final configurations-----
 
         # Abort any previous measurement
-        return_code = self._ATS9870_dll.AlazarAbortAsyncRead(self._handle)
+        return_code = self._ATS_dll.AlazarAbortAsyncRead(self._handle)
         self._result_handler(error_code=return_code, error_source="AlazarAbortAsyncRead")
 
         # get channel info
         bps = np.array([0], dtype=np.uint8)  # bps bits per sample
         max_s = np.array([0], dtype=np.uint32)  # max_s memory size in samples
-        return_code = self._ATS9870_dll.AlazarGetChannelInfo(self._handle, max_s.ctypes.data, bps.ctypes.data)
+        return_code = self._ATS_dll.AlazarGetChannelInfo(self._handle, max_s.ctypes.data, bps.ctypes.data)
         self._result_handler(error_code=return_code, error_source="AlazarGetChannelInfo")
         bps = bps[0]
         max_s = max_s[0]
@@ -267,7 +267,7 @@ class AlazarTech_ATS(Instrument):
         if self.parameters['mode'].get() == 'NPT':
             pretriggersize = 0  # pretriggersize is 0 for NPT always
             post_trigger_size = self.parameters['samples_per_record']._get_byte()
-            return_code = self._ATS9870_dll.AlazarSetRecordSize(self._handle, pretriggersize, post_trigger_size)
+            return_code = self._ATS_dll.AlazarSetRecordSize(self._handle, pretriggersize, post_trigger_size)
             self._result_handler(error_code=return_code, error_source="AlazarSetRecordSize")
 
 
@@ -289,13 +289,13 @@ class AlazarTech_ATS(Instrument):
             records_per_buffer = self.parameters['records_per_buffer']._get_byte()
             records_per_acquisition = records_per_buffer * self.parameters['buffers_per_acquisition']._get_byte()
             samples_per_buffer = samples_per_record * records_per_buffer
-            return_code = self._ATS9870_dll.AlazarBeforeAsyncRead(self._handle,
-                                                                  self.parameters['channel_selection']._get_byte(),
-                                                                  self.parameters['transfer_offset']._get_byte(),
-                                                                  samples_per_record,
-                                                                  records_per_buffer,
-                                                                  records_per_acquisition,
-                                                                  acquire_flags)
+            return_code = self._ATS_dll.AlazarBeforeAsyncRead(self._handle,
+                                                              self.parameters['channel_selection']._get_byte(),
+                                                              self.parameters['transfer_offset']._get_byte(),
+                                                              samples_per_record,
+                                                              records_per_buffer,
+                                                              records_per_acquisition,
+                                                              acquire_flags)
             self._result_handler(error_code=return_code, error_source="AlazarBeforeAsyncRead")
         elif self.parameters['mode'].get() == 'TS':
             if not self.parameters['samples_per_record']._get_byte() % self.parameters['buffers_per_acquisition'] == 0:
@@ -307,13 +307,13 @@ class AlazarTech_ATS(Instrument):
                 logging.warning('records_per_buffer should be 1 in TS mode, defauling to 1')
                 self.parameters['records_per_buffer']._set(1)
             records_per_buffer = self.parameters['records_per_buffer']._get_byte()
-            return_code = self._ATS9870_dll.AlazarBeforeAsyncRead(self._handle,
-                                                                  self.parameters['channel_selection']._get_byte(),
-                                                                  self.parameters['transfer_offset']._get_byte(),
-                                                                  samples_per_buffer,
-                                                                  records_per_buffer,
-                                                                  buffers_per_acquisition,
-                                                                  acquire_flags)
+            return_code = self._ATS_dll.AlazarBeforeAsyncRead(self._handle,
+                                                              self.parameters['channel_selection']._get_byte(),
+                                                              self.parameters['transfer_offset']._get_byte(),
+                                                              samples_per_buffer,
+                                                              records_per_buffer,
+                                                              buffers_per_acquisition,
+                                                              acquire_flags)
             self._result_handler(error_code=return_code, error_source="AlazarBeforeAsyncRead")
         self.parameters['samples_per_record']._set_updated()
         self.parameters['records_per_buffer']._set_updated()
@@ -338,14 +338,14 @@ class AlazarTech_ATS(Instrument):
 
         # post buffers to Alazar
         for buf in self.buffer_list:
-            return_code = self._ATS9870_dll.AlazarPostAsyncBuffer(self._handle, buf.addr, buf.size_bytes)
+            return_code = self._ATS_dll.AlazarPostAsyncBuffer(self._handle, buf.addr, buf.size_bytes)
             self._result_handler(error_code=return_code, error_source="AlazarPostAsyncBuffer")
         self.parameters['allocated_buffers']._set_updated()
 
         # -----start capture here-----
         acquisition_controller.pre_start_capture(self)
         # call the startcapture method
-        return_code = self._ATS9870_dll.AlazarStartCapture(self._handle)
+        return_code = self._ATS_dll.AlazarStartCapture(self._handle)
         self._result_handler(error_code=return_code, error_source="AlazarStartCapture")
 
         acquisition_controller.pre_acquire(self)
@@ -361,7 +361,7 @@ class AlazarTech_ATS(Instrument):
         while buffers_completed < self.parameters['buffers_per_acquisition']._get_byte():
             buf = self.buffer_list[buffers_completed % self.parameters['allocated_buffers']._get_byte()]
 
-            return_code = self._ATS9870_dll.AlazarWaitAsyncBufferComplete(self._handle, buf.addr, buffer_timeout)
+            return_code = self._ATS_dll.AlazarWaitAsyncBufferComplete(self._handle, buf.addr, buffer_timeout)
             self._result_handler(error_code=return_code, error_source="AlazarWaitAsyncBufferComplete")
 
             # TODO (C) last series of buffers must be handled exceptionally (and I want to test the difference)
@@ -372,12 +372,12 @@ class AlazarTech_ATS(Instrument):
 
             if buffer_recycling:
                 acquisition_controller.handle_buffer(self, buf.buffer)
-                return_code = self._ATS9870_dll.AlazarPostAsyncBuffer(self._handle, buf.addr, buf.size_bytes)
+                return_code = self._ATS_dll.AlazarPostAsyncBuffer(self._handle, buf.addr, buf.size_bytes)
                 self._result_handler(error_code=return_code, error_source="AlazarPostAsyncBuffer")
             buffers_completed += 1
 
         # stop measurement here
-        return_code = self._ATS9870_dll.AlazarAbortAsyncRead(self._handle)
+        return_code = self._ATS_dll.AlazarAbortAsyncRead(self._handle)
         self._result_handler(error_code=return_code, error_source="AlazarAbortAsyncRead")
 
         # -----cleanup here-----
