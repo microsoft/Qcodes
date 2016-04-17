@@ -42,7 +42,31 @@ class AlazarTech_ATS(Instrument):
                trigger_engine1=None, trigger_source1=None, trigger_slope1=None, trigger_level1=None,
                trigger_engine2=None, trigger_source2=None, trigger_slope2=None, trigger_level2=None,
                external_trigger_coupling=None, external_trigger_range=None, trigger_delay=None, timeout_ticks=None):
+        """
 
+        :param clock_source:
+        :param sample_rate:
+        :param clock_edge:
+        :param decimation:
+        :param coupling:
+        :param channel_range:
+        :param impedance:
+        :param bwlimit:
+        :param trigger_operation:
+        :param trigger_engine1:
+        :param trigger_source1:
+        :param trigger_slope1:
+        :param trigger_level1:
+        :param trigger_engine2:
+        :param trigger_source2:
+        :param trigger_slope2:
+        :param trigger_level2:
+        :param external_trigger_coupling:
+        :param external_trigger_range:
+        :param trigger_delay:
+        :param timeout_ticks:
+        :return:
+        """
         # region set parameters from args
 
         if clock_source is not None:
@@ -169,6 +193,25 @@ class AlazarTech_ATS(Instrument):
                 channel_selection=None, transfer_offset=None, external_startcapture=None, enable_record_headers=None,
                 alloc_buffers=None, fifo_only_streaming=None, interleave_samples=None, get_processed_data=None,
                 allocated_buffers=None, buffer_timeout=None, acquisition_controller=None):
+        """
+
+        :param mode:
+        :param samples_per_record:
+        :param records_per_buffer:
+        :param buffers_per_acquisition:
+        :param channel_selection:
+        :param transfer_offset:
+        :param external_startcapture:
+        :param enable_record_headers:
+        :param alloc_buffers:
+        :param fifo_only_streaming:
+        :param interleave_samples:
+        :param get_processed_data:
+        :param allocated_buffers:
+        :param buffer_timeout:
+        :param acquisition_controller:
+        :return:
+        """
         # region set parameters from args
         if mode is not None:
             self.parameters['mode']._set(mode)
