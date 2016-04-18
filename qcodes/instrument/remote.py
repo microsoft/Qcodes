@@ -115,7 +115,7 @@ class RemoteParameter(RemoteComponent):
 
     def __call__(self, *args):
         if len(args) == 0:
-            self.get()
+            return self.get()
         else:
             self.set(*args)
 
