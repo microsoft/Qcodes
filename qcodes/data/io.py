@@ -84,7 +84,10 @@ class DiskIO:
             yield f
 
     def _normalize_slashes(self, location):
-        return os.path.join(*re.split('[\\\\/]', location))
+        # note that this is NOT os.path.join - the difference is os.path.join
+        # discards empty strings, so if you use it on a re.split absolute
+        # path you will get a relative path!
+        return os.sep.join(re.split('[\\\\/]', location))
 
     def _add_base(self, location):
         location = self._normalize_slashes(location)
