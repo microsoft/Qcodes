@@ -175,6 +175,12 @@ class TestSyncableCommand(TestCase):
         def upper(s):
             return s.upper()
 
+        def reversestr(s):
+            return s[::-1]
+
+        def swap(a, b):
+            return b, a
+
         # only sync exec_str
         cmd, acmd = syncable_command(0, 'pickles', exec_str=f_now)
         self.assertEqual(cmd(), 'pickles now')
@@ -221,6 +227,32 @@ class TestSyncableCommand(TestCase):
         self.assertEqual(cmd('ice cream'), 'eat some ICE CREAM now')
         self.assertEqual(wait_for_async(acmd, 'gruyere'),
                          'eat some GRUYERE later')
+
+        # input *and* output parsing
+        cmd, acmd = syncable_command(1, 'eat some {}',
+                                     exec_str=f_now, aexec_str=adelay,
+                                     input_parser=upper,
+                                     output_parser=reversestr)
+        self.assertEqual(cmd('ice cream'), 'won MAERC ECI emos tae')
+        self.assertEqual(wait_for_async(acmd, 'gruyere'),
+                         'retal EREYURG emos tae')
+
+        # multi-input parsing, no output parsing
+        cmd, acmd = syncable_command(2, '{} and {}',
+                                     exec_str=f_now, aexec_str=adelay,
+                                     input_parser=swap)
+        self.assertEqual(cmd('I', 'you'), 'you and I now')
+        self.assertEqual(wait_for_async(acmd, 'garfunkel', 'simon'),
+                         'simon and garfunkel later')
+
+        # multi-input parsing *and* output parsing
+        cmd, acmd = syncable_command(2, '{} and {}',
+                                     exec_str=f_now, aexec_str=adelay,
+                                     input_parser=swap,
+                                     output_parser=upper)
+        self.assertEqual(cmd('I', 'you'), 'YOU AND I NOW')
+        self.assertEqual(wait_for_async(acmd, 'garfunkel', 'simon'),
+                         'SIMON AND GARFUNKEL LATER')
 
     def test_cmd_function(self):
         def myexp(a, b):

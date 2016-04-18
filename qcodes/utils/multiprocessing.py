@@ -3,10 +3,14 @@ import sys
 from datetime import datetime
 import time
 from traceback import print_exc
+from queue import Empty
+from uuid import uuid4
+import builtins
 
 from .helpers import in_notebook
 
 MP_ERR = 'context has already been set'
+SERVER_ERR = '~~ERR~~'
 
 
 def set_mp_method(method, force=False):
@@ -78,7 +82,9 @@ class QcodesProcess(mp.Process):
 
     def __repr__(self):
         cname = self.__class__.__name__
-        return super().__repr__().replace(cname + '(', '').replace(')>', '>')
+        r = super().__repr__()
+        r = r.replace(cname + '(', '').replace(')>', '>')
+        return r.replace(', started daemon', '')
 
 
 def get_stream_queue():
@@ -93,7 +99,7 @@ def get_stream_queue():
     return StreamQueue.instance
 
 
-class StreamQueue(object):
+class StreamQueue:
     '''
     Do not instantiate this directly: use get_stream_queue so we only make one.
 
@@ -154,8 +160,24 @@ class StreamQueue(object):
         self.last_read_ts.value = time.time()
         return out
 
+    def __del__(self):
+        try:
+            self.disconnect()
+        except:
+            pass
 
-class _SQWriter(object):
+        if hasattr(type(self), 'instance'):
+            # so nobody else tries to use this dismantled stream queue later
+            type(self).instance = None
+
+        if hasattr(self, 'queue'):
+            kill_queue(self.queue)
+            del self.queue
+        if hasattr(self, 'lock'):
+            del self.lock
+
+
+class _SQWriter:
     MIN_READ_TIME = 3
 
     def __init__(self, stream_queue, stream_name):
@@ -194,4 +216,170 @@ class _SQWriter(object):
             raise
 
     def flush(self):
+        pass
+
+
+class ServerManager:
+    '''
+    creates and manages connections to a separate server process
+
+    name: the name of the server. Can include .format specs to insert
+        all or part of the uuid
+    query_timeout: the default time to wait for responses
+    kwargs: passed along to the server constructor
+    '''
+    def __init__(self, name, server_class, shared_attrs=None, query_timeout=2):
+        self._query_queue = mp.Queue()
+        self._response_queue = mp.Queue()
+        self._error_queue = mp.Queue()
+        self._server_class = server_class
+        self._shared_attrs = shared_attrs
+
+        # query_lock is only used with queries that get responses
+        # to make sure the process that asked the question is the one
+        # that gets the response.
+        # Any query that does NOT expect a response can just dump it in
+        # and move on.
+        self.query_lock = mp.RLock()
+
+        # uuid is used to pass references to this object around
+        # for example, to get it after someone else has sent it to a server
+        self.uuid = uuid4().hex
+
+        self.name = name.format(self.uuid)
+
+        self.query_timeout = query_timeout
+        self._start_server()
+
+    def _start_server(self):
+        self._server = QcodesProcess(target=self._run_server, name=self.name)
+        self._server.start()
+
+    def _run_server(self):
+        self._server_class(self._query_queue, self._response_queue,
+                           self._error_queue, self._shared_attrs)
+
+    def _check_alive(self):
+        try:
+            if not self._server.is_alive():
+                print('warning: restarted {}'.format(self._server))
+                self.restart()
+        except:
+            # can't test is_alive from outside the main process
+            pass
+
+    def write(self, *query):
+        '''
+        Send a query to the server that does not expect a response.
+        '''
+        self._check_alive()
+        self._query_queue.put(query)
+        self._check_for_errors()
+
+    def _check_for_errors(self, expect_error=False):
+        if expect_error or not self._error_queue.empty():
+            # clear the response queue whenever there's an error
+            # and give it a little time to flush first
+            time.sleep(0.05)
+            while not self._response_queue.empty():
+                self._response_queue.get()
+
+            # then get the error and raise a wrapping exception
+            errstr = self._error_queue.get(timeout=self.query_timeout)
+            errhead = '*** error on {} ***'.format(self.name)
+
+            # try to match the error type, if it's a built-in type
+            err_type = None
+            err_type_line = errstr.rstrip().rsplit('\n', 1)[-1]
+            err_type_str = err_type_line.split(':')[0].strip()
+
+            err_type = getattr(builtins, err_type_str, None)
+            if err_type is None or not issubclass(err_type, Exception):
+                err_type = RuntimeError
+
+            raise err_type(errhead + '\n\n' + errstr)
+
+    def _check_response(self, timeout):
+        res = self._response_queue.get(timeout=timeout)
+        if res == SERVER_ERR:
+            self._expect_error = True
+        return res
+
+    def ask(self, *query, timeout=None):
+        '''
+        Send a query to the server and wait for a response
+        '''
+        self._check_alive()
+
+        timeout = timeout or self.query_timeout
+        self._expect_error = False
+
+        with self.query_lock:
+            # in case a previous query errored and left something on the
+            # response queue, clear it
+            while not self._response_queue.empty():
+                res = self._check_response(timeout)
+
+            self._query_queue.put(query)
+
+            try:
+                res = self._check_response(timeout)
+
+                while not self._response_queue.empty():
+                    res = self._check_response(timeout)
+
+            except Empty as e:
+                if self._error_queue.empty():
+                    # only raise if we're not about to find a deeper error
+                    raise e
+            self._check_for_errors(self._expect_error)
+
+            return res
+
+    def halt(self, timeout=2):
+        '''
+        Halt the server and end its process, but in a way that it can
+        be started again
+        '''
+        try:
+            if self._server.is_alive():
+                self.write('halt')
+            self._server.join(timeout)
+
+            if self._server.is_alive():
+                self._server.terminate()
+                print('ServerManager did not respond to halt signal, '
+                      'terminated')
+                self._server.join(timeout)
+        except AssertionError:
+            # happens when we get here from other than the main process
+            # where we shouldn't be able to kill the server anyway
+            pass
+
+    def restart(self):
+        '''
+        Restart the server
+        '''
+        self.halt()
+        self._start_server()
+
+    def close(self):
+        '''
+        Irreversibly stop the server and manager
+        '''
+        self.halt()
+        for q in ['query', 'response', 'error']:
+            qname = '_{}_queue'.format(q)
+            if hasattr(self, qname):
+                kill_queue(getattr(self, qname))
+                del self.__dict__[qname]
+        if hasattr(self, 'query_lock'):
+            del self.query_lock
+
+
+def kill_queue(queue):
+    try:
+        queue.close()
+        queue.join_thread()
+    except:
         pass

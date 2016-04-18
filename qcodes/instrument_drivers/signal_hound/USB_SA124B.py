@@ -3,8 +3,7 @@ import numpy as np
 import ctypes as ct
 import logging
 
-from qcodes.instrument.base import Instrument
-from qcodes.utils import validators as vals
+from qcodes import Instrument, validators as vals
 
 
 class SignalHound_USB_SA124B(Instrument):
@@ -46,41 +45,18 @@ class SignalHound_USB_SA124B(Instrument):
         "saParameterClamped": 3,
         'saBandwidthClamped': 4
     }
-    saStatus_inverted = {
-        '-666': "saUnknownErr",
-        '-99': "saFrequencyRangeErr",
-        '-95': "saInvalidDetectorErr",
-        '-94': "saInvalidScaleErr",
-        '-91': "saBandwidthErr",
-        '-89': "saExternalReferenceNotFound",
-        '-20': "saOvenColdErr",
-        '-12': "saInternetErr",
-        '-11': "saUSBCommErr",
-        '-10': "saTrackingGeneratorNotFound",
-        '-9': "saDeviceNotIdleErr",
-        '-8': "saDeviceNotFoundErr",
-        '-7': "saInvalidModeErr",
-        '-6': "saNotConfiguredErr",
-        '-6': "saDeviceNotConfiguredErr",
-        '-5': "saTooManyDevicesErr",
-        '-4': "saInvalidParameterErr",
-        '-3': "saDeviceNotOpenErr",
-        '-2': "saInvalidDeviceErr",
-        '-1': "saNullPtrErr",
-        '0': "saNoError",
-        '1': "saNoCorrections",
-        '2': "saCompressionWarning",
-        '3': "saParameterClamped",
-        '4': 'saBandwidthClamped'
-    }
+    saStatus_inverted = dict((v, k) for k, v in saStatus.items())
 
-    def __init__(self, name):
+    def __init__(self, name, **kwargs):
         t0 = time()
+        super().__init__(self, name, tags=['physical'], **kwargs)
+
         self.log = logging.getLogger("Main.DeviceInt")
-        logging.info(__name__ + ' : Initializing instrument SignalHound USB 124A')
-        Instrument.__init__(self, name, tags=['physical'])
+        logging.info(__name__ +
+                     ' : Initializing instrument SignalHound USB 124A')
         self.dll = ct.CDLL("C:\Windows\System32\sa_api.dll")
-        self.hf = constants()
+        self.hf = constants
+
         self.add_parameter('frequency',
                            label='Frequency ',
                            units='GHz',
@@ -158,6 +134,7 @@ class SignalHound_USB_SA124B(Instrument):
                            get_cmd=self._do_get_vbw,
                            set_cmd=self._do_set_vbw,
                            get_parser=float)
+
         self.set('frequency', 5)
         self.set('span', .25e-3)
         self.set('power', 0)
@@ -173,8 +150,13 @@ class SignalHound_USB_SA124B(Instrument):
         self.set('rbw', 1e3)
         self.set('vbw', 1e3)
         self.openDevice()
+
         t1 = time()
         print('Initialized SignalHound in %.2fs' % (t1-t0))
+
+    @classmethod
+    def default_server_name(cls, **kwargs):
+        return 'USB'
 
     def openDevice(self):
         self.log.info("Opening Device")
@@ -234,7 +216,9 @@ class SignalHound_USB_SA124B(Instrument):
         else:
             raise IOError("Unknown error calling preset! Error = %s" % err)
 
-
+    # TODO (AJ note): all these boilerplate _do_(get|set) should just turn
+    # into ManualParameters, but someone who actually *has* this instrument
+    # should do that.
 
     def _do_get_frequency(self):
         return self._frequency
@@ -244,11 +228,13 @@ class SignalHound_USB_SA124B(Instrument):
 
     def _do_get_span(self):
         return self._span
+
     def _do_set_span(self,span):
         self._span = span
 
     def _do_get_power(self):
         return self._power
+
     def _do_set_power(self,power):
         self._power = power
 
@@ -266,6 +252,7 @@ class SignalHound_USB_SA124B(Instrument):
 
     def _do_get_running(self):
         return self._running
+
     def _do_set_running(self, running):
         self._running = running
 
@@ -304,23 +291,27 @@ class SignalHound_USB_SA124B(Instrument):
 
     def _do_get_device_mode(self):
         return self._device_mode
+
     def _do_set_device_mode(self,device_mode):
         self._device_mode = device_mode
         return
 
     def _do_get_acquisition_mode(self):
         return self._acquisition_mode
+
     def _do_set_acquisition_mode(self,acquisition_mode):
         self._acquisition_mode = acquisition_mode
         return
 
     def _do_get_scale(self):
         return self._scale
+
     def _do_set_scale(self,scale):
         self._scale = scale
 
     def _do_get_decimation(self):
         return self.decimation
+
     def _do_set_decimation(self,decimation):
         self.decimation = decimation
 
@@ -342,8 +333,7 @@ class SignalHound_USB_SA124B(Instrument):
     def _do_set_vbw(self, vbw):
         self._vbw = vbw
 
-
-############################################################################
+    ########################################################################
 
     def initialisation(self, flag=0):
         mode = self.get('device_mode')
@@ -581,98 +571,98 @@ class SignalHound_USB_SA124B(Instrument):
 
     def check_for_error(self, err):
         if err != self.saStatus['saNoError']:
-            err_msg = self.saStatus_inverted[str(err)]
+            err_msg = self.saStatus_inverted[err]
             if err > 0:
                 print('Warning:', err_msg)
             else:
                 raise IOError(err_msg)
 
-class constants():
-    def __init__(self):
-        self.SA_MAX_DEVICES = 8
 
-        self.saDeviceTypeNone = 0
-        self.saDeviceTypeSA44 = 1
-        self.saDeviceTypeSA44B = 2
-        self.saDeviceTypeSA124A = 3
-        self.saDeviceTypeSA124B = 4
+class constants:
+    SA_MAX_DEVICES = 8
 
-        self.sa44_MIN_FREQ = 1.0
-        self.sa124_MIN_FREQ = 100.0e3
-        self.sa44_MAX_FREQ = 4.4e9
-        self.sa124_MAX_FREQ = 13.0e9
-        self.sa_MIN_SPAN = 1.0
-        self.sa_MAX_REF = 20
-        self.sa_MAX_ATTEN = 3
-        self.sa_MAX_GAIN = 2
-        self.sa_MIN_RBW = 0.1
-        self.sa_MAX_RBW = 6.0e6
-        self.sa_MIN_RT_RBW = 100.0
-        self.sa_MAX_RT_RBW = 10000.0
-        self.sa_MIN_IQ_BANDWIDTH = 100.0
-        self.sa_MAX_IQ_DECIMATION = 128
+    saDeviceTypeNone = 0
+    saDeviceTypeSA44 = 1
+    saDeviceTypeSA44B = 2
+    saDeviceTypeSA124A = 3
+    saDeviceTypeSA124B = 4
 
-        self.sa_IQ_SAMPLE_RATE = 486111.111
+    sa44_MIN_FREQ = 1.0
+    sa124_MIN_FREQ = 100.0e3
+    sa44_MAX_FREQ = 4.4e9
+    sa124_MAX_FREQ = 13.0e9
+    sa_MIN_SPAN = 1.0
+    sa_MAX_REF = 20
+    sa_MAX_ATTEN = 3
+    sa_MAX_GAIN = 2
+    sa_MIN_RBW = 0.1
+    sa_MAX_RBW = 6.0e6
+    sa_MIN_RT_RBW = 100.0
+    sa_MAX_RT_RBW = 10000.0
+    sa_MIN_IQ_BANDWIDTH = 100.0
+    sa_MAX_IQ_DECIMATION = 128
 
-        self.sa_IDLE      = -1
-        self.sa_SWEEPING  = 0x0
-        self.sa_REAL_TIME = 0x1
-        self.sa_IQ        = 0x2
-        self.sa_AUDIO     = 0x3
-        self.sa_TG_SWEEP  = 0x4
+    sa_IQ_SAMPLE_RATE = 486111.111
 
-        self.sa_MIN_MAX = 0x0
-        self.sa_AVERAGE = 0x1
+    sa_IDLE = -1
+    sa_SWEEPING = 0x0
+    sa_REAL_TIME = 0x1
+    sa_IQ = 0x2
+    sa_AUDIO = 0x3
+    sa_TG_SWEEP = 0x4
 
-        self.sa_LOG_SCALE      = 0x0
-        self.sa_LIN_SCALE      = 0x1
-        self.sa_LOG_FULL_SCALE = 0x2
-        self.sa_LIN_FULL_SCALE = 0x3
+    sa_MIN_MAX = 0x0
+    sa_AVERAGE = 0x1
 
-        self.sa_AUTO_ATTEN = -1
-        self.sa_AUTO_GAIN  = -1
+    sa_LOG_SCALE = 0x0
+    sa_LIN_SCALE = 0x1
+    sa_LOG_FULL_SCALE = 0x2
+    sa_LIN_FULL_SCALE = 0x3
 
-        self.sa_LOG_UNITS   = 0x0
-        self.sa_VOLT_UNITS  = 0x1
-        self.sa_POWER_UNITS = 0x2
-        self.sa_BYPASS      = 0x3
+    sa_AUTO_ATTEN = -1
+    sa_AUTO_GAIN = -1
 
-        self.sa_AUDIO_AM  = 0x0
-        self.sa_AUDIO_FM  = 0x1
-        self.sa_AUDIO_USB = 0x2
-        self.sa_AUDIO_LSB = 0x3
-        self.sa_AUDIO_CW  = 0x4
+    sa_LOG_UNITS = 0x0
+    sa_VOLT_UNITS = 0x1
+    sa_POWER_UNITS = 0x2
+    sa_BYPASS = 0x3
 
-        self.TG_THRU_0DB  = 0x1
-        self.TG_THRU_20DB  = 0x2
+    sa_AUDIO_AM = 0x0
+    sa_AUDIO_FM = 0x1
+    sa_AUDIO_USB = 0x2
+    sa_AUDIO_LSB = 0x3
+    sa_AUDIO_CW = 0x4
 
-        self.saUnknownErr = -666
+    TG_THRU_0DB = 0x1
+    TG_THRU_20DB = 0x2
 
-        self.saFrequencyRangeErr = -99
-        self.saInvalidDetectorErr = -95
-        self.saInvalidScaleErr = -94
-        self.saBandwidthErr = -91
-        self.saExternalReferenceNotFound = -89
+    saUnknownErr = -666
 
-        self.saOvenColdErr = -20
+    saFrequencyRangeErr = -99
+    saInvalidDetectorErr = -95
+    saInvalidScaleErr = -94
+    saBandwidthErr = -91
+    saExternalReferenceNotFound = -89
 
-        self.saInternetErr = -12
-        self.saUSBCommErr = -11
+    saOvenColdErr = -20
 
-        self.saTrackingGeneratorNotFound = -10
-        self.saDeviceNotIdleErr = -9
-        self.saDeviceNotFoundErr = -8
-        self.saInvalidModeErr = -7
-        self.saNotConfiguredErr = -6
-        self.saTooManyDevicesErr = -5
-        self.saInvalidParameterErr = -4
-        self.saDeviceNotOpenErr = -3
-        self.saInvalidDeviceErr = -2
-        self.saNullPtrErr = -1
+    saInternetErr = -12
+    saUSBCommErr = -11
 
-        self.saNoError = 0
+    saTrackingGeneratorNotFound = -10
+    saDeviceNotIdleErr = -9
+    saDeviceNotFoundErr = -8
+    saInvalidModeErr = -7
+    saNotConfiguredErr = -6
+    saTooManyDevicesErr = -5
+    saInvalidParameterErr = -4
+    saDeviceNotOpenErr = -3
+    saInvalidDeviceErr = -2
+    saNullPtrErr = -1
 
-        self.saNoCorrections = 1
-        self.saCompressionWarning = 2
-        self.saParameterClamped = 3
-        self.saBandwidthClamped = 4
+    saNoError = 0
+
+    saNoCorrections = 1
+    saCompressionWarning = 2
+    saParameterClamped = 3
+    saBandwidthClamped = 4

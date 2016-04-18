@@ -1,10 +1,8 @@
 from datetime import datetime, timedelta
-import multiprocessing as mp
 from queue import Empty
 from traceback import format_exc
-from sys import stderr
 
-from qcodes.utils.multiprocessing import QcodesProcess
+from qcodes.utils.multiprocessing import ServerManager
 
 
 def get_data_manager(only_existing=False):
@@ -20,7 +18,7 @@ def get_data_manager(only_existing=False):
     return DataManager()
 
 
-class NoData(object):
+class NoData:
     '''
     A placeholder object for DataServer to hold
     when there is no loop running.
@@ -34,7 +32,7 @@ class NoData(object):
         pass
 
 
-class DataManager(object):
+class DataManager(ServerManager):
     default = None
     '''
     creates a separate process (DataServer) that holds running measurement
@@ -45,69 +43,8 @@ class DataManager(object):
     extensible to other messaging systems
     '''
     def __init__(self, query_timeout=2):
-        DataManager.default = self
-
-        self._query_queue = mp.Queue()
-        self._response_queue = mp.Queue()
-        self._error_queue = mp.Queue()
-
-        # query_lock is only used with queries that get responses
-        # to make sure the process that asked the question is the one
-        # that gets the response.
-        # Any query that does NOT expect a response can just dump it in
-        # and more on.
-        self.query_lock = mp.RLock()
-
-        self.query_timeout = query_timeout
-        self._start_server()
-
-    def _start_server(self):
-        self._server = QcodesProcess(target=self._run_server,
-                                     name='DataServer')
-        self._server.start()
-
-    def _run_server(self):
-        DataServer(self._query_queue, self._response_queue, self._error_queue)
-
-    def write(self, *query):
-        '''
-        Send a query to the DataServer that does not expect a response.
-        '''
-        self._query_queue.put(query)
-        self._check_for_errors()
-
-    def _check_for_errors(self):
-        if not self._error_queue.empty():
-            errstr = self._error_queue.get()
-            errhead = '*** error on DataServer ***'
-            print(errhead + '\n\n' + errstr, file=stderr)
-            raise RuntimeError(errhead)
-
-    def ask(self, *query, timeout=None):
-        '''
-        Send a query to the DataServer and wait for a response
-        '''
-        timeout = timeout or self.query_timeout
-
-        with self.query_lock:
-            self._query_queue.put(query)
-            try:
-                res = self._response_queue.get(timeout=timeout)
-            except Empty as e:
-                if self._error_queue.empty():
-                    # only raise if we're not about to find a deeper error
-                    raise e
-            self._check_for_errors()
-
-            return res
-
-    def halt(self):
-        '''
-        Halt the DataServer and end its process
-        '''
-        if self._server.is_alive():
-            self.ask('halt')
-        self._server.join()
+        type(self).default = self
+        super().__init__(name='DataServer', server_class=DataServer)
 
     def restart(self, force=False):
         '''
@@ -117,11 +54,10 @@ class DataManager(object):
         if (not force) and self.ask('get_data', 'location'):
             raise RuntimeError('A measurement is running. Use '
                                'restart(force=True) to override.')
-        self.halt()
-        self._start_server()
+        super().restart()
 
 
-class DataServer(object):
+class DataServer:
     '''
     Running in its own process, receives, holds, and returns current `Loop` and
     monitor data, and writes it to disk (or other storage)
@@ -138,7 +74,7 @@ class DataServer(object):
     queries_per_store = 5
     default_monitor_period = 60  # seconds between monitoring storage calls
 
-    def __init__(self, query_queue, response_queue, error_queue):
+    def __init__(self, query_queue, response_queue, error_queue, extras):
         self._query_queue = query_queue
         self._response_queue = response_queue
         self._error_queue = error_queue
@@ -186,6 +122,7 @@ class DataServer(object):
 
     def _post_error(self, e):
         self._error_queue.put(format_exc())
+        self._response_queue.put('ERR')  # to short-circuit the timeout
 
     ######################################################################
     # query handlers                                                     #

@@ -6,7 +6,7 @@ from IPython.display import display
 from qcodes.widgets.widgets import HiddenUpdateWidget
 
 
-class BasePlot(object):
+class BasePlot:
     '''
     create an auto-updating plot connected to a Jupyter notebook
 

@@ -5,7 +5,7 @@ from qcodes.utils.validators import (Validator, Anything, Bool, Strings,
                                      Numbers, Ints, Enum, MultiType)
 
 
-class AClass(object):
+class AClass:
     def method_a(self):
         raise RuntimeError('function should not get called')
 

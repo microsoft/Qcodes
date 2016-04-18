@@ -3,8 +3,7 @@ import logging
 import numpy as np
 import visa  # used for the parity constant
 
-from qcodes.instrument.visa import VisaInstrument
-from qcodes.utils import validators as vals
+from qcodes import VisaInstrument, validators as vals
 
 
 class IVVI(VisaInstrument):
@@ -24,8 +23,10 @@ class IVVI(VisaInstrument):
     http://qtwork.tudelft.nl/~schouten/ivvi/doc-d5/rs232linkformat.txt
     A copy of this file can be found at the bottom of this file.
     '''
+    Fullrange = 4000
+    Halfrange = Fullrange / 2
 
-    def __init__(self, name, address, reset=False, numdacs=16):
+    def __init__(self, name, address, reset=False, numdacs=16, **kwargs):
                  # polarity=['BIP', 'BIP', 'BIP', 'BIP']):
                  # commented because still on the todo list
         '''
@@ -40,41 +41,41 @@ class IVVI(VisaInstrument):
                                    default=['BIP', 'BIP', 'BIP', 'BIP']
         '''
         t0 = time.time()
-        super().__init__(name, address)
-        # Set parameters
-        self.Fullrange = 4000
-        self.Halfrange = self.Fullrange/2
+        super().__init__(name, address, **kwargs)
 
-        self._address = address
         if numdacs % 4 == 0 and numdacs > 0:
             self._numdacs = int(numdacs)
+        else:
+            raise ValueError('numdacs must be a positive multiple of 4, '
+                             'not {}'.format(numdacs))
+
         self.pol_num = np.zeros(self._numdacs)  # corresponds to POS polarity
-        self.set_pol_dacrack('BIP', range(numdacs))
+        self.set_pol_dacrack('BIP', range(self._numdacs))
 
         # values based on descriptor
         self.visa_handle.baud_rate = 115200
         self.visa_handle.parity = visa.constants.Parity(1)  # odd parity
-        # Add parameters
+
         self.add_parameter('version',
                            get_cmd=self._get_version)
         self.add_parameter('dac voltages',
                            label='Dac voltages',
                            get_cmd=self._get_dacs)
 
-        for i in range(numdacs):
+        for i in range(1, numdacs + 1):
             self.add_parameter(
-                'dac{}'.format(i+1),
-                label='Dac {} (mV)'.format(i+1),
+                'dac{}'.format(i),
+                label='Dac {} (mV)'.format(i),
                 units='mV',
-                get_cmd=self._gen_ch_get_func(self._get_dac, i+1),
-                set_cmd=self._gen_ch_set_func(self._set_dac, i+1),
+                get_cmd=self._gen_ch_get_func(self._get_dac, i),
+                set_cmd=self._gen_ch_set_func(self._set_dac, i),
                 vals=vals.Numbers(-2000, 2000),
                 sweep_step=10,
                 sweep_delay=.1,
                 max_sweep_delay=.2,
                 max_val_age=10)
 
-        self._update_time = 5  # 5 seconds
+        self._update_time = 5  # seconds
         self._time_last_update = 0  # ensures first call will always update
         t1 = time.time()
         print('Initialized IVVI-rack in %.2fs' % (t1-t0))
@@ -85,9 +86,7 @@ class IVVI(VisaInstrument):
         return v
 
     def get_all(self):
-        for par in self.parameters:
-            self[par].get()
-        return self.snapshot()
+        return self.snapshot(update=True)
 
     def set_dacs_zero(self):
         for i in range(self._numdacs):

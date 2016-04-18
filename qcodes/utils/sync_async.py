@@ -31,7 +31,7 @@ def wait_for_async(f, *args, **kwargs):
     return out
 
 
-class mock_sync(object):
+class mock_sync:
     '''
     make a coroutine into a synchronous function
     written as a callable object rather than a closure
@@ -44,7 +44,7 @@ class mock_sync(object):
         return wait_for_async(self._f, *args, **kwargs)
 
 
-class mock_async(object):
+class mock_async:
     '''
     make a synchronous function f awaitable
     written as a callable object rather than a closure
@@ -72,25 +72,25 @@ class NoCommandError(Exception):
     pass
 
 
-def syncable_command(param_count, cmd=None, acmd=None,
+def syncable_command(arg_count, cmd=None, acmd=None,
                      exec_str=None, aexec_str=None,
                      input_parser=None, output_parser=None,
                      no_cmd_function=None):
     '''
     create synchronous and asynchronous versions of a command
     inputs:
-        param_count: the number of parameters to the command
+        arg_count: the number of args to the command
         cmd: the command to execute. May be:
             - a string (with positional fields to .format, "{}" or "{0}" etc)
-            - a function (with positional parameter count matching param_count)
+            - a function (with positional arg count matching arg_count)
             - None, if only an acmd is provided
         acmd: an async function (coroutine) to execute
-            Must have positional parameter count matching param_count
+            Must have positional arg count matching arg_count
 
         The next three inputs are only valid if cmd is a string:
-        exec_str: a function of one parameter to execute the command string
-        aexec_str: a coroutine of one parameter to execute the command string
-        input_parser: a function to transform the input parameter(s) before
+        exec_str: a function of one arg to execute the command string
+        aexec_str: a coroutine of one arg to execute the command string
+        input_parser: a function to transform the input arg(s) before
             sending them to the command. If there are multiple arguments, this
             function should accept all the arguments in order, and
             return a tuple of values.
@@ -103,15 +103,15 @@ def syncable_command(param_count, cmd=None, acmd=None,
 
     return:
         2-tuple (call, acall)
-            call is a function (that takes param_count arguments)
+            call is a function (that takes arg_count arguments)
             acall is a coroutine
     '''
-    return _SyncableCommand(param_count, cmd, acmd, exec_str, aexec_str,
+    return _SyncableCommand(arg_count, cmd, acmd, exec_str, aexec_str,
                             input_parser, output_parser, no_cmd_function
                             ).out()
 
 
-class _SyncableCommand(object):
+class _SyncableCommand:
     '''
     Creates sync and async versions of the same callable
 
@@ -119,9 +119,9 @@ class _SyncableCommand(object):
     Structured as a class because we can't use closures with spawn
     multiprocessing.
     '''
-    def __init__(self, param_count, cmd, acmd, exec_str, aexec_str,
+    def __init__(self, arg_count, cmd, acmd, exec_str, aexec_str,
                  input_parser, output_parser, no_cmd_function):
-        self.param_count = param_count
+        self.arg_count = arg_count
         self.cmd = cmd
         self.acmd = acmd
         self.exec_str = exec_str
@@ -193,27 +193,27 @@ class _SyncableCommand(object):
     def call_sync_by_afunction(self, *args):
         return wait_for_async(self.aexec_function, *args)
 
-    # another layer to wrap the exec functions with parameter validation
-    def validate_param_count(self, args):
-        if len(args) != self.param_count:
+    # another layer to wrap the exec functions with arg validation
+    def validate_arg_count(self, args):
+        if len(args) != self.arg_count:
             raise TypeError(
-                'command takes exactly {} parameters'.format(self.param_count))
+                'command takes exactly {} args'.format(self.arg_count))
 
     def call(self, *args):
-        self.validate_param_count(args)
+        self.validate_arg_count(args)
         return self.exec_function(*args)
 
     @asyncio.coroutine
     def acall(self, *args):
-        self.validate_param_count(args)
+        self.validate_arg_count(args)
         return (yield from self.aexec_function(*args))
 
     def out(self):
         if isinstance(self.cmd, str):
             if self.input_parser is None:
                 parse_input = False
-            elif is_function(self.input_parser, self.param_count):
-                parse_input = True if self.param_count == 1 else 'multi'
+            elif is_function(self.input_parser, self.arg_count):
+                parse_input = True if self.arg_count == 1 else 'multi'
             else:
                 raise TypeError(
                     'input_parser must be a function with one arg per param,'
@@ -255,19 +255,19 @@ class _SyncableCommand(object):
             elif self.aexec_str is not None:
                 raise TypeError('aexec_str must be a coroutine with one arg')
 
-        elif is_function(self.cmd, self.param_count):
+        elif is_function(self.cmd, self.arg_count):
             self.exec_function = self.cmd
 
         elif self.cmd is not None:
             raise TypeError('cmd must be a string or function with ' +
-                            '{} parameters'.format(self.param_count))
+                            '{} args'.format(self.arg_count))
 
-        if is_function(self.acmd, self.param_count, coroutine=True):
+        if is_function(self.acmd, self.arg_count, coroutine=True):
             self.aexec_function = self.acmd
 
         elif self.acmd is not None:
             raise TypeError('acmd must be a coroutine with ' +
-                            '{} parameters'.format(self.param_count))
+                            '{} args'.format(self.arg_count))
 
         # do we need to create the sync or async version from the other?
         if self.exec_function is None:

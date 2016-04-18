@@ -1,7 +1,6 @@
-import time
 from numpy import pi
-from qcodes.instrument.visa import VisaInstrument
-from qcodes.utils import validators as vals
+
+from qcodes import VisaInstrument, validators as vals
 
 
 class Agilent_E8527D(VisaInstrument):
@@ -17,9 +16,9 @@ class Agilent_E8527D(VisaInstrument):
     This driver does not contain all commands available for the E8527D but
     only the ones most commonly used.
     '''
-    def __init__(self, name, address, step_attenuator=False):
-        t0 = time.time()
-        super().__init__(name, address)
+    def __init__(self, name, address, step_attenuator=False, **kwargs):
+        super().__init__(name, address, **kwargs)
+
         self.add_parameter('IDN', get_cmd='*IDN?')
         self.add_parameter(name='frequency',
                            label='Frequency',
@@ -55,10 +54,7 @@ class Agilent_E8527D(VisaInstrument):
                            vals=vals.Enum('on', 'On', 'ON',
                                           'off', 'Off', 'OFF'))
 
-        t1 = time.time()
-        print('Connected to: ',
-              self.get('IDN').replace(',', ', ').replace('\n', ' '),
-              'in %.2fs' % (t1-t0))
+        self.connect_message('IDN')
 
     # Note it would be useful to have functions like this in some module instad
     # of repeated in every instrument driver

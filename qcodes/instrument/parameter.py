@@ -182,33 +182,60 @@ class Parameter(Metadatable):
             self.setpoint_names = setpoint_names
             self.setpoint_labels = setpoint_labels
 
-        if docstring is not None:
-            self.__doc__ = docstring + os.linesep + self.__doc__
-
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
         # but they all use the same attributes so snapshot is consistent.
-        self._last_value = None
-        self._last_ts = None
+        self._latest_value = None
+        self._latest_ts = None
+
+        if docstring is not None:
+            self.__doc__ = docstring + os.linesep + self.__doc__
+
         self.get_latest = GetLatest(self)
+
+    def _latest(self):
+        return {
+            'value': self._latest_value,
+            'ts': self._latest_ts
+        }
+
+    # get_attrs ignores leading underscores, unless they're in this list
+    _keep_attrs = ['__doc__', '_vals']
+
+    def get_attrs(self):
+        '''
+        grab all attributes that the RemoteParameter needs
+        to function like the main one (in loops etc), and return them
+        as a dictionary
+        '''
+        out = {}
+
+        for attr in dir(self):
+            value = getattr(self, attr)
+            if ((attr[0] == '_' and attr not in self._keep_attrs) or
+                    callable(value)):
+                continue
+            out[attr] = value
+
+        return out
 
     def snapshot_base(self):
         '''
         json state of the Parameter
-        '''
-        if self._last_ts is None:
-            ts = None
-        else:
-            ts = self._last_ts.strftime('%Y-%m-%d %H:%M:%S')
 
-        return {
-            'value': self._last_value,
-            'ts': ts
-        }
+        optionally pass in the state, so if this is an instrument parameter
+        we can collect all calls to the server into one
+        '''
+        state = self._latest()
+
+        if state['ts'] is not None:
+            state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
+
+        return state
 
     def _save_val(self, value):
-        self._last_value = value
-        self._last_ts = datetime.now()
+        self._latest_value = value
+        self._latest_ts = datetime.now()
 
     def _set_vals(self, vals):
         if vals is None:
@@ -346,9 +373,8 @@ class StandardParameter(Parameter):
 
     def _set_get(self, get_cmd, async_get_cmd, get_parser):
         self._get, self._get_async = syncable_command(
-            param_count=0, cmd=get_cmd, acmd=async_get_cmd,
+            arg_count=0, cmd=get_cmd, acmd=async_get_cmd,
             exec_str=self._instrument.ask if self._instrument else None,
-            aexec_str=self._instrument.ask_async if self._instrument else None,
             output_parser=get_parser, no_cmd_function=no_getter)
 
         if self._get is not no_getter:
@@ -358,10 +384,8 @@ class StandardParameter(Parameter):
         # note: this does not set the final setter functions. that's handled
         # in self.set_sweep, when we choose a swept or non-swept setter.
         self._set, self._set_async = syncable_command(
-            param_count=1, cmd=set_cmd, acmd=async_set_cmd,
+            arg_count=1, cmd=set_cmd, acmd=async_set_cmd,
             exec_str=self._instrument.write if self._instrument else None,
-            aexec_str=(self._instrument.write_async if self._instrument
-                       else None),
             input_parser=set_parser, no_cmd_function=no_setter)
 
         if self._set is not no_setter:
@@ -380,9 +404,11 @@ class StandardParameter(Parameter):
 
     def _sweep_steps(self, value):
         oldest_ok_val = datetime.now() - timedelta(seconds=self._max_val_age)
-        if self._last_ts is None or self._last_ts < oldest_ok_val:
-            self.get()
-        start_value = self._last_value
+        state = self._latest()
+        if state['ts'] is None or state['ts'] < oldest_ok_val:
+            start_value = self.get()
+        else:
+            start_value = state['value']
 
         self.validate(start_value)
 
@@ -514,9 +540,7 @@ class ManualParameter(Parameter):
 
     name: the local name of this parameter
 
-    instrument: the instrument this applies to. Not actually used for
-        anything, just required so this class can be used with
-        Instrument.add_parameter(name, parameter_class=ManualParameter)
+    instrument: the instrument this applies to, if any.
 
     initial_value: optional starting value. Default is None, which is the
         only invalid value allowed (and None is only allowed as an initial
@@ -524,6 +548,7 @@ class ManualParameter(Parameter):
     '''
     def __init__(self, name, instrument=None, initial_value=None, **kwargs):
         super().__init__(name=name, **kwargs)
+        self._instrument = instrument
         if initial_value is not None:
             self.validate(initial_value)
             self._save_val(initial_value)
@@ -537,7 +562,7 @@ class ManualParameter(Parameter):
         return self.set(value)
 
     def get(self):
-        return self._last_value
+        return self._latest()['value']
 
     @asyncio.coroutine
     def get_async(self):
@@ -562,7 +587,7 @@ class GetLatest(DelegateAttributes):
     omit_delegate_attrs = ['set', 'set_async']
 
     def get(self):
-        return self.parameter._last_value
+        return self.parameter._latest()['value']
 
     @asyncio.coroutine
     def get_async(self):

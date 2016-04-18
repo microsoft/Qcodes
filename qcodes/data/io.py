@@ -48,7 +48,7 @@ import shutil
 ALLOWED_OPEN_MODES = ('r', 'w', 'a')
 
 
-class DiskIO(object):
+class DiskIO:
     '''
     Simple IO object to wrap disk operations with a custom base location
 
@@ -158,10 +158,22 @@ class DiskIO(object):
             os.remove(path)
 
         filepath = os.path.split(path)[0]
-        os.removedirs(filepath)
+        try:
+            os.removedirs(filepath)
+        except OSError:
+            # directory was not empty - good that we're not removing it!
+            pass
+
+    def remove_all(self, location):
+        '''
+        delete all files/directories in the dataset at this location,
+        and prune the directory tree
+        '''
+        for fn in self.list(location):
+            self.remove(fn)
 
 
-class FileWrapper(object):
+class FileWrapper:
     def read(self, size=None):
         raise NotImplementedError
 

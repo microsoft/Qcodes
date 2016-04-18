@@ -24,14 +24,7 @@ from io import BytesIO
 import os
 import logging
 
-# load the qcodes path, until we have this installed as a package
-import sys
-qcpath = 'D:\GitHubRepos\Qcodes'
-if qcpath not in sys.path:
-    sys.path.append(qcpath)
-
-from qcodes.instrument.visa import VisaInstrument
-from qcodes.utils import validators as vals
+from qcodes import VisaInstrument, validators as vals
 
 
 class Tektronix_AWG5014(VisaInstrument):
@@ -69,7 +62,7 @@ class Tektronix_AWG5014(VisaInstrument):
         'CLOCK_SOURCE': 'h',    # Internal | External
         'REFERENCE_SOURCE': 'h',    # Internal | External
         'EXTERNAL_REFERENCE_TYPE': 'h',    # Fixed | Variable
-        'REFERENCE_CLOCK_FREQUENCY_SELECTION':'h',
+        'REFERENCE_CLOCK_FREQUENCY_SELECTION': 'h',
         'REFERENCE_MULTIPLIER_RATE': 'h',    #
         'DIVIDER_RATE': 'h',   # 1 | 2 | 4 | 8 | 16 | 32 | 64 | 128 | 256
         'TRIGGER_SOURCE': 'h',    # Internal | External
@@ -143,11 +136,9 @@ class Tektronix_AWG5014(VisaInstrument):
         Output:
             None
         '''
-        t0 = time()
         super().__init__(name, address, **kwargs)
 
         self._address = address
-
 
         self._values = {}
         self._values['files'] = {}
@@ -233,8 +224,7 @@ class Tektronix_AWG5014(VisaInstrument):
                            # does not work with QCodes
 
         # Channel parameters #
-        for i in range(4):
-            i += 1  # to convert from pythonic counting to AWG counting
+        for i in range(1, 5):
             amp_cmd = 'SOUR{}:VOLT:LEV:IMM:AMPL'.format(i)
             offset_cmd = 'SOUR{}:VOLT:LEV:IMM:OFFS'.format(i)
             state_cmd = 'OUTPUT{}:STATE'.format(i)
@@ -257,8 +247,7 @@ class Tektronix_AWG5014(VisaInstrument):
                                vals=vals.Numbers(-.1, .1),
                                get_parser=float)
             # Marker channels
-            for j in range(2):
-                j += 1  # to convert from pythonic counting to AWG counting
+            for j in range(1, 3):
                 m_del_cmd = 'SOUR{}:MARK{}:DEL'.format(i, j)
                 m_high_cmd = 'SOUR{}:MARK{}:VOLT:LEV:IMM:HIGH'.format(i, j)
                 m_low_cmd = 'SOUR{}:MARK{}:VOLT:LEV:IMM:LOW'.format(i, j)
@@ -287,7 +276,6 @@ class Tektronix_AWG5014(VisaInstrument):
 
         # # Add functions
 
-
         # self.add_function('get_state')
         # self.add_function('set_event_jump_timing')
         # self.add_function('get_event_jump_timing')
@@ -305,27 +293,22 @@ class Tektronix_AWG5014(VisaInstrument):
 
         # NOTE! this directory has to exist on the AWG!!
         self._setup_folder = setup_folder
+
         self.goto_root()
         self.change_folder(self.waveform_folder)
 
         self.set('trigger_impedance', 50)
         if self.get('clock_freq') != 1e9:
             logging.warning('AWG clock freq not set to 1GHz')
-        t1 = time()
-        print('Connected to: ',
-              self.get('IDN').replace(',', ', ').replace('\n', ' '),
-              'in %.2fs' % (t1-t0))
+
+        self.connect_message('IDN')
 
     # Functions
     def get_all(self, update=True):
-        # Ensures updating
-        if update:
-            for par in self.parameters:
-                self.get(par)
-        return self.snapshot()
+        return self.snapshot(update=update)
 
     def get_state(self):
-        state = self.visa_handle.ask('AWGC:RSTATE?')
+        state = self.ask('AWGC:RSTATE?')
         if state.startswith('0'):
             return 'Idle'
         elif state.startswith('1'):
@@ -343,31 +326,31 @@ class Tektronix_AWG5014(VisaInstrument):
         return self.run()
 
     def run(self):
-        self.visa_handle.write('AWGC:RUN')
+        self.write('AWGC:RUN')
         return self.get_state()
 
     def stop(self):
-        self.visa_handle.write('AWGC:STOP')
+        self.write('AWGC:STOP')
 
     def get_folder_contents(self, print_contents=True):
         if print_contents:
             print('Current folder:', self.get_current_folder_name())
-            print(self.visa_handle.ask('MMEM:CAT?')
+            print(self.ask('MMEM:CAT?')
                   .replace(',"$', '\n$').replace('","', '\n')
                   .replace(',', '\t'))
-        return self.visa_handle.ask('mmem:cat?')
+        return self.ask('mmem:cat?')
 
     def get_current_folder_name(self):
-        return self.visa_handle.ask('mmem:cdir?')
+        return self.ask('mmem:cdir?')
 
     def set_current_folder_name(self, file_path):
-        return self.visa_handle.write('mmem:cdir "%s"' % file_path)
+        return self.write('mmem:cdir "%s"' % file_path)
 
     def change_folder(self, dir):
-        return self.visa_handle.write('mmem:cdir "\%s"' %dir)
+        return self.write('mmem:cdir "\%s"' % dir)
 
     def goto_root(self):
-        return self.visa_handle.write('mmem:cdir "c:\\.."')
+        return self.write('mmem:cdir "c:\\.."')
 
     def create_and_goto_dir(self, dir):
         '''
@@ -381,13 +364,12 @@ class Tektronix_AWG5014(VisaInstrument):
             self.change_folder(dir)
             logging.debug(__name__ + ' :Directory already exists')
             print('Directory already exists, changed path to %s' % dir)
-            print('Contents of folder is %s' % self.visa_handle.ask(
-                'mmem:cat?'))
+            print('Contents of folder is %s' % self.ask('mmem:cat?'))
         elif self.get_current_folder_name() == '"\\%s"' % dir:
             print('Directory already set to %s' % dir)
         else:
-            self.visa_handle.write('mmem:mdir "\%s"' % dir)
-            self.visa_handle.write('mmem:cdir "\%s"' % dir)
+            self.write('mmem:mdir "\%s"' % dir)
+            self.write('mmem:cdir "\%s"' % dir)
             return self.get_folder_contents()
 
     def all_channels_on(self):
@@ -398,7 +380,6 @@ class Tektronix_AWG5014(VisaInstrument):
         for i in range(1, 5):
             self.set('ch{}_state'.format(i), 0)
 
-
     def clear_waveforms(self):
         '''
         Clears the waveform on all channels.
@@ -408,13 +389,13 @@ class Tektronix_AWG5014(VisaInstrument):
         Output:
             None
         '''
-        self.visa_handle.write('SOUR1:FUNC:USER ""')
-        self.visa_handle.write('SOUR2:FUNC:USER ""')
-        self.visa_handle.write('SOUR3:FUNC:USER ""')
-        self.visa_handle.write('SOUR4:FUNC:USER ""')
+        self.write('SOUR1:FUNC:USER ""')
+        self.write('SOUR2:FUNC:USER ""')
+        self.write('SOUR3:FUNC:USER ""')
+        self.write('SOUR4:FUNC:USER ""')
 
     def get_sequence_length(self):
-        return float(self.visa_handle.ask('SEQuence:LENGth?'))
+        return float(self.ask('SEQuence:LENGth?'))
 
     def get_refclock(self):
         '''
@@ -426,28 +407,24 @@ class Tektronix_AWG5014(VisaInstrument):
         Output:
             'INT' or 'EXT'
         '''
-        self.visa_handle.ask('AWGC:CLOC:SOUR?')
+        return self.ask('AWGC:CLOC:SOUR?')
 
     def set_refclock_ext(self):
         '''
         Sets the reference clock to internal or external.
         '''
-        self.visa_handle.write('AWGC:CLOC:SOUR EXT')
+        self.write('AWGC:CLOC:SOUR EXT')
 
     def set_refclock_int(self):
         '''
         Sets the reference clock to internal or external
         '''
-        self.visa_handle.write('AWGC:CLOC:SOUR INT')
-
-
+        self.write('AWGC:CLOC:SOUR INT')
 
     ##############
     # Parameters #
     ##############
 
-
-    #
     def _do_get_numpoints(self):
         '''
         Returns the number of datapoints in each wave
@@ -488,79 +465,67 @@ class Tektronix_AWG5014(VisaInstrument):
 
     # Sequences section
     def force_trigger_event(self):
-        self.visa_handle.write('TRIG:IMM')
+        self.write('TRIG:IMM')
 
     def force_event(self):
-        self.visa_handle.write('EVEN:IMM')
+        self.write('EVEN:IMM')
 
     def set_sqel_event_target_index_next(self, element_no):
-        self.visa_handle.write('SEQ:ELEM%s:JTARGET:TYPE NEXT' % element_no)
+        self.write('SEQ:ELEM%s:JTARGET:TYPE NEXT' % element_no)
 
     def set_sqel_event_target_index(self, element_no, index):
-        self.visa_handle.write('SEQ:ELEM%s:JTARGET:INDEX %s' % (
-                                   element_no, index))
+        self.write('SEQ:ELEM%s:JTARGET:INDEX %s' % (element_no, index))
 
     def set_sqel_goto_target_index(self, element_no, goto_to_index_no):
-        self.visa_handle.write('SEQ:ELEM%s:GOTO:IND  %s' % (
-                                   element_no, goto_to_index_no))
+        self.write('SEQ:ELEM%s:GOTO:IND  %s' % (element_no, goto_to_index_no))
 
     def set_sqel_goto_state(self, element_no, goto_state):
-        self.visa_handle.write('SEQuence:ELEMent%s:GOTO:STATe %s' % (
-                                   element_no, int(goto_state)))
+        self.write('SEQuence:ELEMent%s:GOTO:STATe %s' % (
+            element_no, int(goto_state)))
 
     def set_sqel_loopcnt_to_inf(self, element_no, state=True):
-        self.visa_handle.write('seq:elem%s:loop:inf %s' % (
-                                   element_no, int(state)))
+        self.write('seq:elem%s:loop:inf %s' % (element_no, int(state)))
 
     def get_sqel_loopcnt(self, element_no=1):
-        return self.visa_handle.ask('SEQ:ELEM%s:LOOP:COUN?' % (
-                                        element_no))
+        return self.ask('SEQ:ELEM%s:LOOP:COUN?' % element_no)
 
     def set_sqel_loopcnt(self, loopcount, element_no=1):
-        self.visa_handle.write('SEQ:ELEM%s:LOOP:COUN %s' % (
-                                   element_no, loopcount))
+        self.write('SEQ:ELEM%s:LOOP:COUN %s' % (element_no, loopcount))
 
     def set_sqel_waveform(self, waveform_name, channel, element_no=1):
-        self.visa_handle.write('SEQ:ELEM%s:WAV%s "%s"' % (
-                               element_no, channel, waveform_name))
+        self.write('SEQ:ELEM%s:WAV%s "%s"' % (
+            element_no, channel, waveform_name))
 
     def get_sqel_waveform(self, channel, element_no=1):
-        return self.visa_handle.ask('SEQ:ELEM%s:WAV%s?' % (
-                                    element_no, channel))
+        return self.ask('SEQ:ELEM%s:WAV%s?' % (element_no, channel))
 
     def set_sqel_trigger_wait(self, element_no, state=1):
-        self.visa_handle.write('SEQ:ELEM%s:TWA %s' % (
-                               element_no, state))
+        self.write('SEQ:ELEM%s:TWA %s' % (element_no, state))
         return self.get_sqel_trigger_wait(element_no)
 
     def get_sqel_trigger_wait(self, element_no):
-        return self.visa_handle.ask('SEQ:ELEM%s:TWA?' % (
-                                    element_no))
+        return self.ask('SEQ:ELEM%s:TWA?' % element_no)
 
     def get_sq_length(self):
-        return self.visa_handle.ask('SEQ:LENG?')
+        return self.ask('SEQ:LENG?')
 
     def set_sq_length(self, seq_length):
-        self.visa_handle.write('SEQ:LENG %s' % seq_length)
+        self.write('SEQ:LENG %s' % seq_length)
 
     def set_sqel_event_jump_target_index(self, element_no, jtar_index_no):
-        self.visa_handle.write('SEQ:ELEM%s:JTAR:INDex %s' % (
-                               element_no, jtar_index_no))
+        self.write('SEQ:ELEM%s:JTAR:INDex %s' % (element_no, jtar_index_no))
 
     def set_sqel_event_jump_type(self, element_no,jtar_state):
-        self.visa_handle.write('SEQuence:ELEMent%s:JTAR:TYPE %s' % (
-                               element_no, jtar_state))
+        self.write('SEQuence:ELEMent%s:JTAR:TYPE %s' % (element_no, jtar_state))
 
     def get_sq_mode(self):
-        return self.visa_handle.ask('AWGC:SEQ:TYPE?')
+        return self.ask('AWGC:SEQ:TYPE?')
 
     def get_sq_position(self):
-        return self.visa_handle.ask('AWGC:SEQ:POS?')
+        return self.ask('AWGC:SEQ:POS?')
 
     def sq_forced_jump(self, jump_index_no):
-        self.visa_handle.write('SEQ:JUMP:IMM %s' % jump_index_no)
-
-
+        self.write('SEQ:JUMP:IMM %s' % jump_index_no)
 
     #################################
     # Transmon version file loading #
@@ -630,8 +595,8 @@ class Tektronix_AWG5014(VisaInstrument):
 
     def import_waveform_file(self, waveform_listname, waveform_filename,
                              type='wfm'):
-        return self.visa_handle.write('mmem:imp "%s","%s",%s' % (waveform_listname,
-                               waveform_filename, type))
+        return self.write('mmem:imp "%s","%s",%s' % (
+            waveform_listname, waveform_filename, type))
 
     def import_and_load_waveform_file_to_channel(self, channel_no,
                                                  waveform_listname,
@@ -639,16 +604,16 @@ class Tektronix_AWG5014(VisaInstrument):
                                                  type='wfm'):
         self._import_and_load_waveform_file_to_channel(channel_no,
                                                        waveform_listname,
-                                                       waveform_filename)
+                                                       waveform_filename,
+                                                       type=type)
 
     def _import_and_load_waveform_file_to_channel(self, channel_no,
                                                   waveform_listname,
                                                   waveform_filename,
                                                   type='wfm'):
-        self.visa_handle.write('mmem:imp "%s","%s",%s' % (
-                               waveform_listname, waveform_filename, type))
-        self.visa_handle.write('sour%s:wav "%s"' % (
-                               channel_no, waveform_listname))
+        self.write('mmem:imp "%s","%s",%s' % (
+            waveform_listname, waveform_filename, type))
+        self.write('sour%s:wav "%s"' % (channel_no, waveform_listname))
         i = 0
         while not (self.visa_handle.ask("sour%s:wav?" % channel_no)
                    == '"%s"' % waveform_listname):
@@ -702,7 +667,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
         AWG_sequence_cfg = {
             'SAMPLING_RATE': self.get('clock_freq'),
-            'CLOCK_SOURCE': (1 if self.query_visa('AWGC:CLOCK:SOUR?').startswith('INT')
+            'CLOCK_SOURCE': (1 if self.ask('AWGC:CLOCK:SOUR?').startswith('INT')
                              else 2),  # Internal | External
             'REFERENCE_SOURCE':   2,  # Internal | External
             'EXTERNAL_REFERENCE_TYPE':   1,  # Fixed | Variable
@@ -715,7 +680,7 @@ class Tektronix_AWG5014(VisaInstrument):
                                         50. else 2),  # 50 ohm | 1 kohm
             'TRIGGER_INPUT_SLOPE': (1 if self.get('trigger_slope') ==
                                     'POS' else 2),  # Positive | Negative
-            'TRIGGER_INPUT_POLARITY': (1 if self.query_visa('TRIG:POL?') ==
+            'TRIGGER_INPUT_POLARITY': (1 if self.ask('TRIG:POL?') ==
                                        'POS' else 2),  # Positive | Negative
             'TRIGGER_INPUT_THRESHOLD':  self.get('trigger_level'),  # V
             'EVENT_INPUT_IMPEDANCE':   (1 if self.get('event_impedance') ==
@@ -729,7 +694,7 @@ class Tektronix_AWG5014(VisaInstrument):
                               else 2),  # Sync | Async
             'RUN_MODE':   4,  # Continuous | Triggered | Gated | Sequence
             'RUN_STATE':  0,  # On | Off
-            }
+        }
         return AWG_sequence_cfg
 
     def generate_awg_file(self,
@@ -835,7 +800,7 @@ class Tektronix_AWG5014(VisaInstrument):
     def send_awg_file(self, filename, awg_file, verbose=False):
         if verbose:
             print('Writing to:',
-                  self.visa_handle.ask('MMEMory:CDIRectory?').replace('\n', '\ '),
+                  self.ask('MMEMory:CDIRectory?').replace('\n', '\ '),
                   filename)
         # Header indicating the name and size of the file being send
         name_str = ('MMEM:DATA "%s",' % filename).encode('ASCII')
@@ -851,7 +816,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
     def get_error(self):
         # print self.visa_handle.ask('AWGControl:SNAMe?')
-        print(self.visa_handle.ask('SYSTEM:ERROR:NEXT?'))
+        print(self.ask('SYSTEM:ERROR:NEXT?'))
         # self.visa_handle.write('*CLS')
 
     def pack_waveform(self, wf, m1, m2):
@@ -861,8 +826,8 @@ class Tektronix_AWG5014(VisaInstrument):
         '''
         wflen = len(wf)
         packed_wf = np.zeros(wflen, dtype=np.uint16)
-        packed_wf += np.uint16(np.round(wf*8191)+8191+np.round(16384*m1) + \
-            np.round(32768*m2))
+        packed_wf += np.uint16(np.round(wf*8191)+8191+np.round(16384*m1) +
+                               np.round(32768*m2))
         if len(np.where(packed_wf == -1)[0]) > 0:
             print(np.where(packed_wf == -1))
         return packed_wf
@@ -872,7 +837,6 @@ class Tektronix_AWG5014(VisaInstrument):
     # Waveform file functions #
     ###########################
 
-        # Send waveform to the device
     def send_waveform(self, w, m1, m2, filename, clock=None):
         '''
         Sends a complete waveform. All parameters need to be specified.
@@ -891,17 +855,11 @@ class Tektronix_AWG5014(VisaInstrument):
         # logging.debug(__name__ + ' : Sending waveform %s to instrument' %
         #               filename)
         # Check for errors
-        dim = len(w)
 
         if (not((len(w) == len(m1)) and ((len(m1) == len(m2))))):
             return 'error'
 
-        self._values['files'][filename] = {}
-        self._values['files'][filename]['w'] = w
-        self._values['files'][filename]['m1'] = m1
-        self._values['files'][filename]['m2'] = m2
-        self._values['files'][filename]['clock_freq'] = clock
-        self._values['files'][filename]['numpoints'] = len(w)
+        self._values['files'][filename] = self._file_dict(w, m1, m2, clock)
 
         m = m1 + np.multiply(m2, 2)
         ws = ''
@@ -923,7 +881,16 @@ class Tektronix_AWG5014(VisaInstrument):
 
         mes = s1 + s2 + s3 + s4 + s5 + s6
 
-        self.visa_handle.write(mes)
+        self.write(mes)
+
+    def _file_dict(self, w, m1, m2, clock):
+        return {
+            'w': w,
+            'm1': m1,
+            'm2': m2,
+            'clock_freq': clock,
+            'numpoints': len(w)
+        }
 
     def resend_waveform(self, channel, w=[], m1=[], m2=[], clock=[]):
         '''
@@ -1030,12 +997,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
             clock = float(data[i+1+len3+len4+5:len(data)])
 
-            self._values['files'][name]={}
-            self._values['files'][name]['w']=w
-            self._values['files'][name]['m1']=m1
-            self._values['files'][name]['m2']=m2
-            self._values['files'][name]['clock_freq']=clock
-            self._values['files'][name]['numpoints']=len(w)
+            self._values['files'][name] = self._file_dict(w, m1, m2, clock)
 
             self._values['recent_channel_%s' % channel] = \
                 self._values['files'][name]
@@ -1045,28 +1007,26 @@ class Tektronix_AWG5014(VisaInstrument):
 
         if (self._numpoints==self._values['files'][name]['numpoints']):
             # logging.warning(__name__  + ' : Set file %s on channel %s' % (name, channel))
-            self.visa_handle.write('SOUR%s:WAV "%s"' % (channel, name))
+            self.write('SOUR%s:WAV "%s"' % (channel, name))
         else:
             pass
             # logging.warning(__name__  + ' : Verkeerde lengte %s ipv %s'
             #     %(self._values['files'][name]['numpoints'], self._numpoints))
 
     def delete_all_waveforms_from_list(self):
-        self.visa_handle.write('WLISt:WAVeform:DELete ALL')
+        self.write('WLISt:WAVeform:DELete ALL')
 
-
-    #  Ask for string with filenames
+    # Ask for string with filenames
     def get_filenames(self):
         # logging.debug(__name__ + ' : Read filenames from instrument')
-        return self.visa_handle.ask('MMEM:CAT?')
+        return self.ask('MMEM:CAT?')
 
     def set_DC_out(self, DC_channel_number, Voltage):
-        self.visa_handle.write('AWGControl:DC%s:VOLTage:OFFSet %sV' %
-                                   (DC_channel_number, Voltage))
+        self.write('AWGControl:DC%s:VOLTage:OFFSet %sV' %
+                   (DC_channel_number, Voltage))
 
     def get_DC_out(self, DC_channel_number):
-        return self.visa_handle.ask('AWGControl:DC%s:VOLTage:OFFSet?' %
-                                        (DC_channel_number))
+        return self.ask('AWGControl:DC%s:VOLTage:OFFSet?' % DC_channel_number)
 
     def send_DC_pulse(self, DC_channel_number, Amplitude, length):
         '''
@@ -1074,13 +1034,17 @@ class Tektronix_AWG5014(VisaInstrument):
         Ampliude: voltage level
         length: seconds
         '''
-        restore=self.get_DC_out(DC_channel_number)
+        restore = self.get_DC_out(DC_channel_number)
         self.set_DC_out(DC_channel_number, Amplitude)
         sleep(length)
         self.set_DC_out(DC_channel_number, restore)
 
     def set_DC_state(self, state=False):
-        self.visa_handle.write('AWGControl:DC:state %s' % (int(state)))
+        self.write('AWGControl:DC:state %s' % (int(state)))
+
+    def get_DC_state(self):
+        return self.ask('AWGControl:DC:state?')
+
     # Send waveform to the device (from transmon driver)
 
     def upload_awg_file(self, fname, fcontents):
@@ -1102,8 +1066,7 @@ class Tektronix_AWG5014(VisaInstrument):
         if not os.path.split(folder_name)[1] == os.path.split(set_folder_name)[1][:-1]:
             print('Warning, unsuccesfully set AWG file', folder_name)
         print('Current AWG file set to: ', self.get_current_folder_name())
-        self.visa_handle.write('AWGC:SRES "%s.awg"' % fname)
-
+        self.write('AWGC:SRES "%s.awg"' % fname)
 
     def set_setup_filename(self, fname, force_load=False):
         '''
@@ -1142,153 +1105,26 @@ class Tektronix_AWG5014(VisaInstrument):
 
                 # Sped up by factor 10, VISA protocol should take care of wait
                 if comm:
-                    self.visa_handle.ask('*OPC?')
-        self.get('setup_filename') # ensures the setup filename gets updated
+                    self.ask('*OPC?')
+        self.get('setup_filename')  # ensures the setup filename gets updated
 
     def is_awg_ready(self):
         try:
-            self.visa_handle.ask('*OPC?')
-        except: # makes the awg read again if there is a timeout
+            self.ask('*OPC?')
+        except:  # makes the awg read again if there is a timeout
             self.visa_handle.read()
         return True
 
-    def send_waveform(self, w, m1, m2, filename, clock=1e9):
-        '''
-        Sends a complete waveform. All parameters need to be specified.
-        See also: resend_waveform()
-
-        Input:
-            w (float[numpoints]) : waveform
-            m1 (int[numpoints])  : marker1
-            m2 (int[numpoints])  : marker2
-            filename (string)    : filename
-            clock (int)          : frequency (Hz)
-
-        Output:
-            None
-        '''
-        # logging.debug(__name__ + ' : Sending waveform %s to instrument' % filename)
-        # Check for errors
-        dim = len(w)
-
-        if (not((len(w)==len(m1)) and ((len(m1)==len(m2))))):
-            return 'error'
-
-        self._values['files'][filename]={}
-        self._values['files'][filename]['w']=w
-        self._values['files'][filename]['m1']=m1
-        self._values['files'][filename]['m2']=m2
-        self._values['files'][filename]['clock_freq']=clock
-        self._values['files'][filename]['numpoints']=len(w)
-
-        m = m1 + np.multiply(m2,2)
-        ws = ''
-        for i in range(0,len(w)):
-            ws = ws + struct.pack('<fB', w[i],int(np.round(m[i],0)))
-
-        s1 = 'MMEM:DATA "%s",' % filename
-        s3 = 'MAGIC 1000\n'
-        s5 = ws
-        s6 = 'CLOCK %.10e\n' % clock
-
-        s4 = '#' + str(len(str(len(s5)))) + str(len(s5))
-        lenlen=str(len(str(len(s6) + len(s5) + len(s4) + len(s3))))
-        s2 = '#' + lenlen + str(len(s6) + len(s5) + len(s4) + len(s3))
-
-        mes = s1 + s2 + s3 + s4 + s5 + s6
-        #print 's1: ',s1
-        print('record size s2: ',s2)
-        print('s3: ',s3)
-        print('s4: ',s4)
-        print('waveform_data')
-        print('s6: ',s6)
-        return mes
-        self.visa_handle.write(mes)
-
-    def send_visa_command(self, command):
-        self.visa_handle.write(command)
-    def query_visa(self, query):
-        return self.visa_handle.ask(query)
-
-
-    def resend_waveform(self, channel, w=[], m1=[], m2=[], clock=[]):
-        '''
-        Resends the last sent waveform for the designated channel
-        Overwrites only the parameters specified
-
-        Input: (mandatory)
-            channel (int) : 1 to 4, the number of the designated channel
-
-        Input: (optional)
-            w (float[numpoints]) : waveform
-            m1 (int[numpoints])  : marker1
-            m2 (int[numpoints])  : marker2
-            clock (int) : frequency
-
-        Output:
-            None
-        '''
-        filename = self._values['recent_channel_%s' %channel]['filename']
-        logging.debug(__name__ + ' : Resending %s to channel %s' % (filename, channel))
-
-
-        if (w==[]):
-            w = self._values['recent_channel_%s' %channel]['w']
-        if (m1==[]):
-            m1 = self._values['recent_channel_%s' %channel]['m1']
-        if (m2==[]):
-            m2 = self._values['recent_channel_%s' %channel]['m2']
-        if (clock==[]):
-            clock = self._values['recent_channel_%s' %channel]['clock_freq']
-
-        if not ( (len(w) == self._numpoints) and (len(m1) == self._numpoints) and (len(m2) == self._numpoints)):
-            logging.error(__name__ + ' : one (or more) lengths of waveforms do not match with numpoints')
-
-        self.send_waveform(w,m1,m2,filename,clock)
-        self.set_filename(filename, channel)
-
-    def set_DC_out(self, DC_channel_number, Voltage):
-        self.visa_handle.write('AWGControl:DC%s:VOLTage:OFFSet %sV'%(DC_channel_number, Voltage))
-        self.get_DC_out(DC_channel_number)
-
-    def get_DC_out(self, DC_channel_number):
-        return self.visa_handle.ask('AWGControl:DC%s:VOLTage:OFFSet?'%(DC_channel_number))
-
-    def send_DC_pulse(self, DC_channel_number, amplitude, length):
-        '''
-        sends a (slow) pulse on the DC channel specified
-        Ampliude: voltage level
-        length: seconds
-        '''
-        restore=self.get_DC_out(DC_channel_number)
-        self.set_DC_out(DC_channel_number, amplitude)
-       ## self.set_DC_state(True)
-        sleep(length)
-       ## self.set_DC_state(False)
-        self.set_DC_out(DC_channel_number, restore)
-       ## self.get_DC_out(DC_channel_number)
-
-    def set_DC_state(self, state=False):
-        self.visa_handle.write('AWGControl:DC:state %s' %(int(state)))
-        self.get_DC_state()
-
-    def get_DC_state(self):
-        return self.visa_handle.ask('AWGControl:DC:state?')
-
-
     def initialize_dc_waveforms(self):
         self.set_runmode('CONT')
-        self.visa_handle.write('SOUR1:WAV "*DC"')
-        self.visa_handle.write('SOUR2:WAV "*DC"')
-        self.visa_handle.write('SOUR3:WAV "*DC"')
-        self.visa_handle.write('SOUR4:WAV "*DC"')
+        self.write('SOUR1:WAV "*DC"')
+        self.write('SOUR2:WAV "*DC"')
+        self.write('SOUR3:WAV "*DC"')
+        self.write('SOUR4:WAV "*DC"')
         self.set_ch1_status('on')
         self.set_ch2_status('on')
         self.set_ch3_status('on')
         self.set_ch4_status('on')
-
-
-
 
     # QCodes specific parse_functions
     def parse_int_pos_neg(self, val):

@@ -77,20 +77,18 @@ class Function(Metadatable):
                   arg_parser, return_parser):
         if self._instrument:
             ask_or_write = self._instrument.write
-            ask_or_write_async = self._instrument.write_async
             if isinstance(call_cmd, str) and return_parser:
                 ask_or_write = self._instrument.ask
-                ask_or_write_async = self._instrument.ask_async
         else:
-            ask_or_write, ask_or_write_async = None, None
+            ask_or_write = None
 
         self._call, self._call_async = syncable_command(
-            param_count=self._arg_count,
+            arg_count=self._arg_count,
             cmd=call_cmd, acmd=async_call_cmd,
-            exec_str=ask_or_write, aexec_str=ask_or_write_async,
+            exec_str=ask_or_write,
             input_parser=arg_parser, output_parser=return_parser)
 
-    def validate(self, args):
+    def validate(self, *args):
         '''
         check that all arguments to this Function are allowed
         '''
@@ -108,14 +106,24 @@ class Function(Metadatable):
         validate_all(*zip(self._args, args), context='Function: ' + func_name)
 
     def __call__(self, *args):
-        self.validate(args)
+        self.validate(*args)
         return self._call(*args)
 
     def call(self, *args):
-        self.validate(args)
+        self.validate(*args)
         return self._call(*args)
 
     @asyncio.coroutine
     def call_async(self, *args):
-        self.validate(args)
+        self.validate(*args)
         return (yield from self._call_async(*args))
+
+    def get_attrs(self):
+        '''
+        attributes used in the RemoteFunction proxy
+        '''
+        return {
+            '__doc__': self.__doc__,
+            '_args': self._args,
+            '_arg_count': self._arg_count
+        }

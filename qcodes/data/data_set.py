@@ -104,7 +104,7 @@ def _get_live_data(data_manager):
     return live_data
 
 
-class TimestampLocation(object):
+class TimestampLocation:
     '''
     This is the default DataSet Location provider.
     It provides a callable of one parameter (the io manager) that
@@ -367,21 +367,36 @@ class DataSet(DelegateAttributes):
                 param_arrays[0].array_id = name
                 continue
 
-            # otherwise, strip off as many leading equal indices as possible
-            # and append the rest to the back of the name with underscores
-            param_action_indices = [list(array.action_indices)
-                                    for array in param_arrays]
-            while all(len(ai) for ai in param_action_indices):
-                if len(set(ai[0] for ai in param_action_indices)) == 1:
-                    for ai in param_action_indices:
-                        ai[:1] = []
-                else:
-                    break
-            for array, ai in zip(param_arrays, param_action_indices):
-                array.array_id = name + '_' + '_'.join(str(i) for i in ai)
+            # partition into set and measured arrays (weird use case, but
+            # it'll happen, if perhaps only in testing)
+            set_param_arrays = [pa for pa in param_arrays
+                                if pa.set_arrays[-1] == pa]
+            meas_param_arrays = [pa for pa in param_arrays
+                                 if pa.set_arrays[-1] != pa]
+            if len(set_param_arrays) and len(meas_param_arrays):
+                # if the same param is in both set and measured,
+                # suffix the set with '_set'
+                self._clean_param_ids(set_param_arrays, name + '_set')
+                self._clean_param_ids(meas_param_arrays, name)
+            else:
+                # if either only set or only measured, no suffix
+                self._clean_param_ids(param_arrays, name)
 
         array_ids = [array.array_id for array in arrays]
         return dict(zip(action_indices, array_ids))
+
+    def _clean_param_ids(self, arrays, name):
+        # strip off as many leading equal indices as possible
+        # and append the rest to the back of the name with underscores
+        param_action_indices = [list(array.action_indices) for array in arrays]
+        while all(len(ai) for ai in param_action_indices):
+            if len(set(ai[0] for ai in param_action_indices)) == 1:
+                for ai in param_action_indices:
+                    ai[:1] = []
+            else:
+                break
+        for array, ai in zip(arrays, param_action_indices):
+            array.array_id = name + ''.join('_' + str(i) for i in ai)
 
     def store(self, loop_indices, ids_values):
         '''
