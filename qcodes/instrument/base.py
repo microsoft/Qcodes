@@ -327,9 +327,8 @@ class Instrument(Metadatable, DelegateAttributes):
         if update:
             for par in self.parameters.values():
                 par.get()
-        state = self.getattr('param_state', {})
         return {
-            'parameters': dict((name, param.snapshot(state=state.get(name)))
+            'parameters': dict((name, param.snapshot())
                                for name, param in self.parameters.items()),
             'functions': dict((name, func.snapshot())
                               for name, func in self.functions.items())

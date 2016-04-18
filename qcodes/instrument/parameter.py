@@ -169,29 +169,11 @@ class Parameter(Metadatable):
 
         self.get_latest = GetLatest(self)
 
-    def has_instrument_storage(self):
-        return False
-        # TODO - rip out completely, parameters for server instruments
-        # are now also stored on the same server and proxied, so no reason
-        # to involve the instrument explicitly in storing their state.
-
-        # return (getattr(self, 'instrument', None) and
-        #         hasattr(self.instrument, 'getattr') and
-        #         hasattr(self.instrument, 'setattr'))
-
     def _latest(self):
-        if self.has_instrument_storage():
-            # Parameters attached to instruments store their state with the
-            # instrument, so it can be accessed consistently from any process
-            state = self.instrument.getattr(('param_state', self.name), None)
-            if state is None:
-                state = {'value': None, 'ts': None}
-        else:
-            state = {
-                'value': getattr(self, '_latest_value', None),
-                'ts': getattr(self, '_latest_ts', None)
-            }
-        return state
+        return {
+            'value': getattr(self, '_latest_value', None),
+            'ts': getattr(self, '_latest_ts', None)
+        }
 
     # get_attrs ignores leading underscores, unless they're in this list
     _keep_attrs = ['__doc__', '_vals']
@@ -213,30 +195,23 @@ class Parameter(Metadatable):
 
         return out
 
-    def snapshot_base(self, state=None):
+    def snapshot_base(self):
         '''
         json state of the Parameter
 
         optionally pass in the state, so if this is an instrument parameter
         we can collect all calls to the server into one
         '''
-        if state is None:
-            state = self._latest()
+        state = self._latest()
+
         if state['ts'] is not None:
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
 
         return state
 
     def _save_val(self, value):
-        ts = datetime.now()
-        if self.has_instrument_storage():
-            self.instrument.setattr(('param_state', self.name), {
-                'value': value,
-                'ts': ts
-            })
-        else:
-            self._latest_value = value
-            self._latest_ts = datetime.now()
+        self._latest_value = value
+        self._latest_ts = datetime.now()
 
     def _set_vals(self, vals):
         if vals is None:
