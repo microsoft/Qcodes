@@ -137,6 +137,9 @@ class Parameter(Metadatable):
                  vals=None, **kwargs):
         super().__init__(**kwargs)
 
+        self.has_get = False
+        self.has_set = False
+
         if names is not None:
             # check for names first - that way you can provide both name
             # AND names for instrument parameters - name is how you get the
@@ -169,6 +172,19 @@ class Parameter(Metadatable):
 
         self.get_latest = GetLatest(self)
 
+    def __call__(self, *args):
+        if len(args) == 0:
+            if self.has_get:
+                return self.get()
+            else:
+                raise NoCommandError('no get cmd found in' +
+                                     ' Parameter {}'.format(self.name))
+        else:
+            if self.has_set:
+                self.set(*args)
+            else:
+                raise NoCommandError('no set cmd found in' +
+                                     ' Parameter {}'.format(self.name))
     def has_instrument_storage(self):
         return False
         # TODO - rip out completely, parameters for server instruments
@@ -344,8 +360,6 @@ class StandardParameter(Parameter):
         # having to call .get() for every .set()
         self._max_val_age = 0
 
-        self.has_get = False
-        self.has_set = False
 
         self._set_get(get_cmd, async_get_cmd, get_parser)
         self._set_set(set_cmd, async_set_cmd, set_parser)
@@ -549,6 +563,9 @@ class ManualParameter(Parameter):
         if initial_value is not None:
             self.validate(initial_value)
             self._save_val(initial_value)
+
+        self.has_get = True
+        self.has_set = True
 
     def set(self, value):
         self.validate(value)
