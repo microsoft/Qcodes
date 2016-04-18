@@ -28,8 +28,6 @@ from qcodes import VisaInstrument
 
 class Agilent_34400A(VisaInstrument):
     '''
-    channel: use channel 'a' or 'b'
-
     This is the qcodes driver for the Agilent_34400A DMM Series,
     tested with Agilent_34401A
 
@@ -55,6 +53,10 @@ class Agilent_34400A(VisaInstrument):
 
         self.add_parameter('volt',
                            get_cmd='READ?',
+                           label='Voltage',
+                           get_parser=float)
+        self.add_parameter('volt_fetch',
+                           get_cmd='FETCH?',
                            label='Voltage',
                            get_parser=float)
         self.add_parameter('NPLC',
@@ -120,6 +122,9 @@ class Agilent_34400A(VisaInstrument):
                                get_cmd='DISP:WIND2:TEXT?',
                                set_cmd='DISP:WIND2:TEXT "{}"',
                                vals=Strings())
+
+    def init_measurement(self):
+        self.write('INIT')
 
     def display_clear(self):
         if self.model in ['34401A']:
