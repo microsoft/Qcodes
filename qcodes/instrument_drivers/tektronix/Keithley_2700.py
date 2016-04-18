@@ -39,7 +39,7 @@ def bool_to_str(val):
     '''
     Function to convert boolean to 'ON' or 'OFF'
     '''
-    if val is True:
+    if val:
         return "ON"
     else:
         return "OFF"
@@ -116,6 +116,11 @@ class Keithley_2700(VisaInstrument):
                            get_parser=parsebool,
                            set_cmd=self._mode_par_value('INIT', 'CONT', '{}'),
                            set_parser=bool_to_str)
+        self.add_parameter('display',
+                           get_cmd=self._mode_par('DISP', 'ENAB'),
+                           get_parser=parsebool,
+                           set_cmd=self._mode_par_value('DISP', 'ENAB', '{}'),
+                           set_parser=bool_to_str)
 
         self.add_parameter('averaging',
                            get_cmd=partial(self._current_mode_get, 'AVER:STAT',
@@ -162,9 +167,6 @@ class Keithley_2700(VisaInstrument):
                                       'of PowerLine Cycles, use get_nplc().'))
 
         '''
-        self.add_parameter('range',
-            flags=Instrument.FLAG_GETSET,
-            units='', minval=0.1, maxval=1000, type=float)
         self.add_parameter('trigger_source',
             flags=Instrument.FLAG_GETSET,
             units='')
@@ -183,11 +185,6 @@ class Keithley_2700(VisaInstrument):
             units='arb.unit',
             type=float,
             tags=['measure'])
-        self.add_parameter('nplc',
-            flags=Instrument.FLAG_GETSET,
-            units='#', type=float, minval=0.01, maxval=50)
-        self.add_parameter('display', flags=Instrument.FLAG_GETSET,
-            type=bool)
         self.add_parameter('autozero', flags=Instrument.FLAG_GETSET,
             type=bool)
         self.add_parameter('averaging_window',
@@ -235,16 +232,14 @@ class Keithley_2700(VisaInstrument):
         logging.info('Get all relevant data from device')
 
         for p in ['mode', 'trigger_count', 'trigger_continuous', 'averaging',
-                  'digits', 'nplc', 'integrationtime']:
+                  'digits', 'nplc', 'integrationtime', 'range', 'display']:
             logging.debug('get %s' % p)
             par = getattr(self, p)
             par.get()
 
-        # self.get_range()
         # self.get_trigger_delay()
         # self.get_trigger_source()
         # self.get_trigger_timer()
-        # self.get_display()
         # self.get_autozero()
         # self.get_averaging_window()
         # self.get_averaging_count()
@@ -400,8 +395,4 @@ class Keithley_2700(VisaInstrument):
         self._visainstrument.write('*RST')
         self.get_all()
 
-    # def on(self):
-    #     self.set('status', 'on')
-
-    # def off(self):
-    #     self.set('status', 'off')
+    
