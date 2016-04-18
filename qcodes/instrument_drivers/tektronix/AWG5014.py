@@ -138,8 +138,6 @@ class Tektronix_AWG5014(VisaInstrument):
         '''
         super().__init__(name, address, **kwargs)
 
-        t0 = time()
-
         self._address = address
 
         self._values = {}
@@ -296,7 +294,7 @@ class Tektronix_AWG5014(VisaInstrument):
         # NOTE! this directory has to exist on the AWG!!
         self._setup_folder = setup_folder
 
-        self.connect_message('IDN', t0)
+        self.connect_message('IDN')
 
     def on_connect(self):
         super().on_connect()

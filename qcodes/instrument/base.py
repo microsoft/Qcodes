@@ -63,6 +63,7 @@ class Instrument(Metadatable, DelegateAttributes):
                                     server_name=server_name, **kwargs)
 
     def __init__(self, name, server_name=None, **kwargs):
+        self._t0 = time.time()
         super().__init__(**kwargs)
         self.parameters = {}
         self.functions = {}
@@ -75,17 +76,19 @@ class Instrument(Metadatable, DelegateAttributes):
     def default_server_name(cls, **kwargs):
         return 'Instruments'
 
-    def connect_message(self, param_name, begin_time):
+    def connect_message(self, param_name, begin_time=None):
         '''
         standard message on initial connection to an instrument
 
-        put `t0 = time.time()` at the start of your subclass __init__,
-        and eg `self.connect_message('IDN', t0)` at the end (if you've
-        defined a parameter 'IDN' that gives the instrument ID)
+        param_name: parameter that returns ID information
+
+        begin_time: optional: time.time() when init started, if you
+            don't want to use the time Instrument.__init__ started.
         '''
         idn = self.get(param_name).replace(',', ', ').replace('\n', ' ')
-        t1 = time.time()
-        return 'Connected to: ', idn, 'in %.2fs' % (t1 - begin_time)
+
+        return 'Connected to: {} in {:.2f}s'.format(
+            idn.strip(), time.time() - (begin_time or self._t0))
 
     def getattr(self, attr, default=NoDefault):
         '''
