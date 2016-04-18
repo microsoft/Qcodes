@@ -71,17 +71,15 @@ class Function(Metadatable):
                   arg_parser, return_parser):
         if self._instrument:
             ask_or_write = self._instrument.write
-            # ask_or_write_async = self._instrument.write_async
             if isinstance(call_cmd, str) and return_parser:
                 ask_or_write = self._instrument.ask
-                # ask_or_write_async = self._instrument.ask_async
         else:
-            ask_or_write = None  # , ask_or_write_async = None, None
+            ask_or_write = None
 
         self._call, self._call_async = syncable_command(
             arg_count=self._arg_count,
             cmd=call_cmd, acmd=async_call_cmd,
-            exec_str=ask_or_write,  # aexec_str=ask_or_write_async,
+            exec_str=ask_or_write,
             input_parser=arg_parser, output_parser=return_parser)
 
     def validate(self, *args):

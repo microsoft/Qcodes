@@ -382,19 +382,6 @@ class DataSet(DelegateAttributes):
                 # if either only set or only measured, no suffix
                 self._clean_param_ids(param_arrays, name)
 
-            # # otherwise, strip off as many leading equal indices as possible
-            # # and append the rest to the back of the name with underscores
-            # param_action_indices = [list(array.action_indices)
-            #                         for array in param_arrays]
-            # while all(len(ai) for ai in param_action_indices):
-            #     if len(set(ai[0] for ai in param_action_indices)) == 1:
-            #         for ai in param_action_indices:
-            #             ai[:1] = []
-            #     else:
-            #         break
-            # for array, ai in zip(param_arrays, param_action_indices):
-            #     array.array_id = name + ''.join('_' + str(i) for i in ai)
-
         array_ids = [array.array_id for array in arrays]
         return dict(zip(action_indices, array_ids))
 
