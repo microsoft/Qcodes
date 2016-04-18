@@ -64,15 +64,8 @@ class Instrument(Metadatable, DelegateAttributes):
 
     def __init__(self, name, server_name=None, **kwargs):
         super().__init__(**kwargs)
-
-        # you can call add_parameter and add_function *before* calling
-        # super().__init__(...) from a subclass, since they contain this
-        # hasattr check as well. We just put it here too so we're sure these
-        # dicts get created even if they are empty.
-        if not hasattr(self, 'parameters'):
-            self.parameters = {}
-        if not hasattr(self, 'functions'):
-            self.functions = {}
+        self.parameters = {}
+        self.functions = {}
 
         self.name = str(name)
 
@@ -296,9 +289,6 @@ class Instrument(Metadatable, DelegateAttributes):
 
         kwargs: see StandardParameter (or `parameter_class`)
         '''
-        if not hasattr(self, 'parameters'):
-            self.parameters = {}
-
         if name in self.parameters:
             raise KeyError('Duplicate parameter name {}'.format(name))
         param = parameter_class(name=name, instrument=self, **kwargs)
@@ -324,9 +314,6 @@ class Instrument(Metadatable, DelegateAttributes):
 
         see Function for the list of kwargs and notes on its limitations.
         '''
-        if not hasattr(self, 'functions'):
-            self.functions = {}
-
         if name in self.functions:
             raise KeyError('Duplicate function name {}'.format(name))
         func = Function(name=name, instrument=self, **kwargs)
