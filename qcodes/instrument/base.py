@@ -421,10 +421,9 @@ class Instrument(Metadatable, DelegateAttributes):
 
         for attr in dir(self):
             value = getattr(self, attr)
-            if (not callable(value)) or isinstance(value, (Function,
-                                                           Parameter,
-                                                           StandardParameter,
-                                                           RemoteParameter)):
+            if ((not callable(value)) or
+                    value is self.parameters.get(attr) or
+                    value is self.functions.get(attr)):
                 # Functions are callable, and they show up in dir(),
                 # but we don't want them included in methods, they have
                 # their own listing. But we don't want to just exclude
