@@ -31,8 +31,8 @@ class Station(Metadatable, DelegateAttributes):
 
         self.monitor = monitor
 
-    def snapshot_base(self):
-        return {'instruments': {name: ins.snapshot()
+    def snapshot_base(self, *args, **kwargs):
+        return {'instruments': {name: ins.snapshot(*args, **kwargs)
                                 for name, ins in self.instruments.items()}}
 
     def add_instrument(self, instrument, name=None):
