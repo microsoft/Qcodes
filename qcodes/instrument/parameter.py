@@ -37,6 +37,7 @@ from datetime import datetime, timedelta
 import time
 import asyncio
 import logging
+import os
 
 from qcodes.utils.helpers import (permissive_range, wait_secs,
                                   DelegateAttributes)
@@ -134,7 +135,7 @@ class Parameter(Metadatable):
                  units=None,
                  size=None, sizes=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
-                 vals=None, **kwargs):
+                 vals=None, docstring=None, **kwargs):
         super().__init__(**kwargs)
 
         if names is not None:
@@ -144,7 +145,13 @@ class Parameter(Metadatable):
             # and names are the items it returns
             self.names = names
             self.labels = names if labels is None else names
-            self.units = units if units is not None else ['']*len(names)
+            self.units = units if units is not None else [''] * len(names)
+
+            self.__doc__ = os.linesep.join((
+                'Parameter class:',
+                '* `names` %s' % ', '.join(self.names),
+                '* `labels` %s' % ', '.join(self.labels),
+                '* `units` %s' % ', '.join(self.units)))
 
         elif name is not None:
             self.name = name
@@ -153,6 +160,14 @@ class Parameter(Metadatable):
 
             # vals / validate only applies to simple single-value parameters
             self._set_vals(vals)
+
+            # generate default docstring
+            self.__doc__ = os.linesep.join((
+                'Parameter class:',
+                '* `name` %s' % self.name,
+                '* `label` %s' % self.label,
+                '* `units` %s' % self.units,
+                '* `vals` %s' % repr(self._vals)))
 
         else:
             raise ValueError('either name or names is required')
@@ -167,31 +182,22 @@ class Parameter(Metadatable):
             self.setpoint_names = setpoint_names
             self.setpoint_labels = setpoint_labels
 
+        # record of latest value and when it was set or measured
+        # what exactly this means is different for different subclasses
+        # but they all use the same attributes so snapshot is consistent.
+        self._latest_value = None
+        self._latest_ts = None
+
+        if docstring is not None:
+            self.__doc__ = docstring + os.linesep + self.__doc__
+
         self.get_latest = GetLatest(self)
 
-    def has_instrument_storage(self):
-        return False
-        # TODO - rip out completely, parameters for server instruments
-        # are now also stored on the same server and proxied, so no reason
-        # to involve the instrument explicitly in storing their state.
-
-        # return (getattr(self, 'instrument', None) and
-        #         hasattr(self.instrument, 'getattr') and
-        #         hasattr(self.instrument, 'setattr'))
-
     def _latest(self):
-        if self.has_instrument_storage():
-            # Parameters attached to instruments store their state with the
-            # instrument, so it can be accessed consistently from any process
-            state = self.instrument.getattr(('param_state', self.name), None)
-            if state is None:
-                state = {'value': None, 'ts': None}
-        else:
-            state = {
-                'value': getattr(self, '_latest_value', None),
-                'ts': getattr(self, '_latest_ts', None)
-            }
-        return state
+        return {
+            'value': self._latest_value,
+            'ts': self._latest_ts
+        }
 
     # get_attrs ignores leading underscores, unless they're in this list
     _keep_attrs = ['__doc__', '_vals']
@@ -213,30 +219,23 @@ class Parameter(Metadatable):
 
         return out
 
-    def snapshot_base(self, state=None):
+    def snapshot_base(self):
         '''
         json state of the Parameter
 
         optionally pass in the state, so if this is an instrument parameter
         we can collect all calls to the server into one
         '''
-        if state is None:
-            state = self._latest()
+        state = self._latest()
+
         if state['ts'] is not None:
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
 
         return state
 
     def _save_val(self, value):
-        ts = datetime.now()
-        if self.has_instrument_storage():
-            self.instrument.setattr(('param_state', self.name), {
-                'value': value,
-                'ts': ts
-            })
-        else:
-            self._latest_value = value
-            self._latest_ts = datetime.now()
+        self._latest_value = value
+        self._latest_ts = datetime.now()
 
     def _set_vals(self, vals):
         if vals is None:
@@ -315,6 +314,8 @@ class StandardParameter(Parameter):
     sweep_delay: time (in seconds) to wait after each sweep step
     max_val_age: max time (in seconds) to trust a saved value from
         this parameter as the starting point of a sweep
+    docstring: documentation string for the __doc__ field of the object
+        The __doc__ field of the instance is used by some help systems, but not all
     '''
     def __init__(self, name, instrument=None,
                  get_cmd=None, async_get_cmd=None, get_parser=None,
@@ -335,6 +336,8 @@ class StandardParameter(Parameter):
                 self._set_mapping = val_mapping
                 set_parser = self._set_mapping.__getitem__
 
+        if get_parser is not None and not isinstance(get_cmd, str):
+            logging.warning('get_parser is set, but will not be used (name %s)' % name)
         super().__init__(name=name, vals=vals, **kwargs)
 
         self._instrument = instrument

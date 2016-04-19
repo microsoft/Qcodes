@@ -1,4 +1,3 @@
-import time
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
 import numpy as np
@@ -13,7 +12,6 @@ class Weinschel_8320(VisaInstrument):
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, terminator='\r', **kwargs)
 
-        t0 = time.time()
         self.add_parameter('IDN',
                            get_cmd='*IDN?')
         self.add_parameter('attenuation', units='dB',
@@ -22,4 +20,4 @@ class Weinschel_8320(VisaInstrument):
                            vals=vals.Enum(*np.arange(0, 60.1, 2).tolist()),
                            get_parser=float)
 
-        self.connect_message('IDN', t0)
+        self.connect_message('IDN')

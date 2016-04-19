@@ -46,15 +46,21 @@ class Function(Metadatable):
         If None (default), will not wait for or read any response
     NOTE: parsers only apply if call_cmd is a string. The function forms
         of call_cmd and async_call_cmd should do their own parsing.
+    docstring: documentation string for the __doc__ field of the object
+        The __doc__ field of the instance is used by some help systems,
+        but not all (particularly not builtin `help(...)`)
     '''
     def __init__(self, name, instrument=None,
                  call_cmd=None, async_call_cmd=None,
                  args=[], arg_parser=None, return_parser=None,
-                 **kwargs):
+                 docstring=None, **kwargs):
         super().__init__(**kwargs)
 
         self._instrument = instrument
         self.name = name
+
+        if docstring is not None:
+            self.__doc__ = docstring
 
         self._set_args(args)
         self._set_call(call_cmd, async_call_cmd,
@@ -71,17 +77,15 @@ class Function(Metadatable):
                   arg_parser, return_parser):
         if self._instrument:
             ask_or_write = self._instrument.write
-            # ask_or_write_async = self._instrument.write_async
             if isinstance(call_cmd, str) and return_parser:
                 ask_or_write = self._instrument.ask
-                # ask_or_write_async = self._instrument.ask_async
         else:
-            ask_or_write = None  # , ask_or_write_async = None, None
+            ask_or_write = None
 
         self._call, self._call_async = syncable_command(
             arg_count=self._arg_count,
             cmd=call_cmd, acmd=async_call_cmd,
-            exec_str=ask_or_write,  # aexec_str=ask_or_write_async,
+            exec_str=ask_or_write,
             input_parser=arg_parser, output_parser=return_parser)
 
     def validate(self, *args):
