@@ -138,8 +138,6 @@ class Tektronix_AWG5014(VisaInstrument):
         '''
         super().__init__(name, address, **kwargs)
 
-        t0 = time()
-
         self._address = address
 
         self._values = {}
@@ -296,17 +294,14 @@ class Tektronix_AWG5014(VisaInstrument):
         # NOTE! this directory has to exist on the AWG!!
         self._setup_folder = setup_folder
 
-        self.connect_message('IDN', t0)
-
-    def on_connect(self):
-        super().on_connect()
-
         self.goto_root()
         self.change_folder(self.waveform_folder)
 
         self.set('trigger_impedance', 50)
         if self.get('clock_freq') != 1e9:
             logging.warning('AWG clock freq not set to 1GHz')
+
+        self.connect_message('IDN')
 
     # Functions
     def get_all(self, update=True):

@@ -47,12 +47,16 @@ class SignalHound_USB_SA124B(Instrument):
     }
     saStatus_inverted = dict((v, k) for k, v in saStatus.items())
 
-    def __init__(self, name, server_name='USB', **kwargs):
-        super().__init__(self, name, tags=['physical'],
-                         server_name=server_name, **kwargs)
-
+    def __init__(self, name, **kwargs):
         t0 = time()
+        super().__init__(self, name, tags=['physical'], **kwargs)
+
+        self.log = logging.getLogger("Main.DeviceInt")
+        logging.info(__name__ +
+                     ' : Initializing instrument SignalHound USB 124A')
+        self.dll = ct.CDLL("C:\Windows\System32\sa_api.dll")
         self.hf = constants
+
         self.add_parameter('frequency',
                            label='Frequency ',
                            units='GHz',
@@ -131,14 +135,6 @@ class SignalHound_USB_SA124B(Instrument):
                            set_cmd=self._do_set_vbw,
                            get_parser=float)
 
-        t1 = time()
-        print('Initialized SignalHound in %.2fs' % (t1-t0))
-
-    def on_connect(self):
-        self.log = logging.getLogger("Main.DeviceInt")
-        logging.info(__name__ + ' : Initializing instrument SignalHound USB 124A')
-        self.dll = ct.CDLL("C:\Windows\System32\sa_api.dll")
-
         self.set('frequency', 5)
         self.set('span', .25e-3)
         self.set('power', 0)
@@ -154,6 +150,13 @@ class SignalHound_USB_SA124B(Instrument):
         self.set('rbw', 1e3)
         self.set('vbw', 1e3)
         self.openDevice()
+
+        t1 = time()
+        print('Initialized SignalHound in %.2fs' % (t1-t0))
+
+    @classmethod
+    def default_server_name(cls, **kwargs):
+        return 'USB'
 
     def openDevice(self):
         self.log.info("Opening Device")

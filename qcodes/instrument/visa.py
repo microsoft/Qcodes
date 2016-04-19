@@ -27,13 +27,9 @@ class VisaInstrument(Instrument):
     def __init__(self, name, address=None, timeout=5, terminator='', **kwargs):
         super().__init__(name, **kwargs)
 
-        self._address = address
-        self._timeout = timeout
-        self._terminator = terminator
-
-        self.set_address(self._address)
-        self.set_timeout(self._timeout)
-        self.set_terminator(self._terminator)
+        self.set_address(address)
+        self.set_timeout(timeout)
+        self.set_terminator(terminator)
 
     @classmethod
     def default_server_name(cls, **kwargs):
@@ -52,6 +48,12 @@ class VisaInstrument(Instrument):
         change the address (visa resource name) for this instrument
         see eg: http://pyvisa.readthedocs.org/en/stable/names.html
         '''
+        # in case we're changing the address - close the old handle first
+        # but not by calling self.close() because that tears down the whole
+        # instrument!
+        if getattr(self, 'visa_handle', None):
+            self.visa_handle.close()
+
         resource_manager = visa.ResourceManager()
         self.visa_handle = resource_manager.open_resource(address)
 

@@ -63,16 +63,10 @@ class Instrument(Metadatable, DelegateAttributes):
                                     server_name=server_name, **kwargs)
 
     def __init__(self, name, server_name=None, **kwargs):
+        self._t0 = time.time()
         super().__init__(**kwargs)
-
-        # you can call add_parameter and add_function *before* calling
-        # super().__init__(...) from a subclass, since they contain this
-        # hasattr check as well. We just put it here too so we're sure these
-        # dicts get created even if they are empty.
-        if not hasattr(self, 'parameters'):
-            self.parameters = {}
-        if not hasattr(self, 'functions'):
-            self.functions = {}
+        self.parameters = {}
+        self.functions = {}
 
         self.name = str(name)
 
@@ -82,17 +76,19 @@ class Instrument(Metadatable, DelegateAttributes):
     def default_server_name(cls, **kwargs):
         return 'Instruments'
 
-    def connect_message(self, param_name, begin_time):
+    def connect_message(self, param_name, begin_time=None):
         '''
         standard message on initial connection to an instrument
 
-        put `t0 = time.time()` at the start of your subclass __init__,
-        and eg `self.connect_message('IDN', t0)` at the end (if you've
-        defined a parameter 'IDN' that gives the instrument ID)
+        param_name: parameter that returns ID information
+
+        begin_time: optional: time.time() when init started, if you
+            don't want to use the time Instrument.__init__ started.
         '''
         idn = self.get(param_name).replace(',', ', ').replace('\n', ' ')
-        t1 = time.time()
-        return 'Connected to: ', idn, 'in %.2fs' % (t1 - begin_time)
+
+        return 'Connected to: {} in {:.2f}s'.format(
+            idn.strip(), time.time() - (begin_time or self._t0))
 
     def getattr(self, attr, default=NoDefault):
         '''
@@ -296,9 +292,6 @@ class Instrument(Metadatable, DelegateAttributes):
 
         kwargs: see StandardParameter (or `parameter_class`)
         '''
-        if not hasattr(self, 'parameters'):
-            self.parameters = {}
-
         if name in self.parameters:
             raise KeyError('Duplicate parameter name {}'.format(name))
         param = parameter_class(name=name, instrument=self, **kwargs)
@@ -324,9 +317,6 @@ class Instrument(Metadatable, DelegateAttributes):
 
         see Function for the list of kwargs and notes on its limitations.
         '''
-        if not hasattr(self, 'functions'):
-            self.functions = {}
-
         if name in self.functions:
             raise KeyError('Duplicate function name {}'.format(name))
         func = Function(name=name, instrument=self, **kwargs)
@@ -340,9 +330,8 @@ class Instrument(Metadatable, DelegateAttributes):
         if update:
             for par in self.parameters.values():
                 par.get()
-        state = self.getattr('param_state', {})
         return {
-            'parameters': dict((name, param.snapshot(state=state.get(name)))
+            'parameters': dict((name, param.snapshot())
                                for name, param in self.parameters.items()),
             'functions': dict((name, func.snapshot())
                               for name, func in self.functions.items())
@@ -412,8 +401,6 @@ class Instrument(Metadatable, DelegateAttributes):
     # info about what's in this instrument, to help construct the remote     #
     ##########################################################################
 
-    _keep_attrs = []
-
     def _get_method_attrs(self):
         '''
         grab all methods of the instrument, and return them
@@ -422,8 +409,6 @@ class Instrument(Metadatable, DelegateAttributes):
         out = {}
 
         for attr in dir(self):
-            if (attr[0] == '_' and attr not in self._keep_attrs):
-                continue
             value = getattr(self, attr)
             if (not callable(value)) or isinstance(value, Function):
                 # Functions are callable, and they show up in dir(),
