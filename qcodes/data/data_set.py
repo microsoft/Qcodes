@@ -181,7 +181,7 @@ class DataSet(DelegateAttributes):
     default_formatter = GNUPlotFormat()
     location_provider = TimestampLocation()
 
-    def __init__(self, location=None, mode=None, arrays=None,
+    def __init__(self, location=None, mode=DataMode.LOCAL, arrays=None,
                  data_manager=None, formatter=None, io=None):
         if location is False or isinstance(location, str):
             self.location = location
