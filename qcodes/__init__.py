@@ -5,6 +5,7 @@
 # separately import multiprocessing
 from multiprocessing import active_children
 
+from qcodes.version import __version__
 from qcodes.utils.multiprocessing import set_mp_method
 from qcodes.utils.helpers import in_notebook
 

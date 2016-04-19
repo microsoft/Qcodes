@@ -337,7 +337,7 @@ class StandardParameter(Parameter):
                 set_parser = self._set_mapping.__getitem__
 
         if get_parser is not None and not isinstance(get_cmd, str):
-            logging.warning('get_parser is set, but will not be used')
+            logging.warning('get_parser is set, but will not be used (name %s)' % name)
         super().__init__(name=name, vals=vals, **kwargs)
 
         self._instrument = instrument
