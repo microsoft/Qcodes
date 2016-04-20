@@ -63,4 +63,4 @@ See the [Roadmap](ROADMAP.md) an overview of where the project intends to go.
 
 ## License
 
-Qcodes is currently a private development of Microsoft's Station Q collaboration, and IS NOT licensed for distribution outside the collaboration. We intend to release it as open source software once it is robust and reasonably stable, under the MIT license or similar. See [License](LICENSE.txt)
+Qcodes is currently a private development of Microsoft's Station Q collaboration, and IS NOT licensed for distribution outside the collaboration except by arrangement. We intend to release it as open source software once it is robust and reasonably stable, under the MIT license. See [License](LICENSE.md).
