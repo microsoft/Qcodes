@@ -2,6 +2,10 @@ from unittest import TestCase
 import numpy as np
 
 from qcodes.data.data_array import DataArray
+from qcodes.data.manager import get_data_manager
+from qcodes.data.data_set import load_data
+from qcodes.utils.helpers import killprocesses
+from qcodes import active_children
 
 
 class TestDataArray(TestCase):
@@ -198,3 +202,29 @@ class TestDataArray(TestCase):
         self.assertIsNone(data.data_set)
         data.data_set = mock_data_set2
         self.assertEqual(data.data_set, mock_data_set2)
+
+
+class TestLoadData(TestCase):
+    def setUp(self):
+        killprocesses()
+
+    def test_no_live_data(self):
+        # live data with no DataManager at all
+        with self.assertRaises(RuntimeError):
+            load_data()
+        self.assertEqual(len(active_children()), 0)
+
+        # now make a DataManager and try again
+        get_data_manager()
+        self.assertEqual(len(active_children()), 1)
+        # same result but different code path
+        with self.assertRaises(RuntimeError):
+            load_data()
+
+    def test_no_saved_data(self):
+        with self.assertRaises(IOError):
+            load_data('_no/such/file_')
+
+    def test_load_false(self):
+        with self.assertRaises(ValueError):
+            load_data(False)
