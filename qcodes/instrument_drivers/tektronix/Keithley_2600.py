@@ -50,6 +50,8 @@ class Keithley_2600(VisaInstrument):
         self.info = {'vendor': vendor, 'model': self.model,
                      'serial_number': serial, 'software_revision': software}
 
+        self.metadata['info'] = self.info
+
         self.add_parameter('volt', get_cmd='measure.v()',
                            get_parser=float, set_cmd='source.levelv={:.8f}',
                            label='Voltage',
