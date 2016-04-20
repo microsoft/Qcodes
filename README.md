@@ -53,6 +53,8 @@ if qcpath not in sys.path:
     sys.path.append(qcpath)
 ```
 
+For frequently asked questions see the [Qcodes FAQ](docs/FAQ.md).
+
 ## Contributing
 
 See [Contributing](CONTRIBUTING.md) for information about bug/issue reports, contributing code, style, and testing
