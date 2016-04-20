@@ -40,7 +40,7 @@ class AModel(MockModel):
 
     def gates_get(self, parameter):
         if parameter[0] == 'c':
-            return self.fmt(self.gates[int(parameter[1:])])
+            return self.fmt(self._gates[int(parameter[1:])])
         else:
             raise ValueError
 
