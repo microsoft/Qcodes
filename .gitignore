@@ -63,3 +63,4 @@ target/
 *.csv
 *.data
 *.hdf5
+docs/examples/data/*
