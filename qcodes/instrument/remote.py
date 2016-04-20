@@ -113,6 +113,12 @@ class RemoteParameter(RemoteComponent):
         super().__init__(*args, **kwargs)
         self.get_latest = GetLatest(self)
 
+    def __call__(self, *args):
+        if len(args) == 0:
+            return self.get()
+        else:
+            self.set(*args)
+
     def get(self):
         return self._instrument.connection.ask('get', self.name)
 
