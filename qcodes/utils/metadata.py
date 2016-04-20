@@ -20,7 +20,7 @@ class Metadatable:
 
         return snap
 
-    def snapshot_base(self):
+    def snapshot_base(self, *ignore_args, **ignore_kwargs):
         '''
         override this with the primary information for a subclass
         '''
