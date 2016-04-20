@@ -86,6 +86,10 @@ def load_data(location=None, data_manager=None, formatter=None, io=None):
 
         return _get_live_data(data_manager)
 
+    elif location is False:
+        raise ValueError('location=False means a temporary DataSet, '
+                         'which is incompatible with load_data')
+
     elif (data_manager and
             location == data_manager.ask('get_data', 'location')):
         return _get_live_data(data_manager)
