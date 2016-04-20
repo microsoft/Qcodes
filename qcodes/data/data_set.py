@@ -1,7 +1,7 @@
 from enum import Enum
 from datetime import datetime
 
-from .manager import get_data_manager
+from .manager import get_data_manager, NoData
 from .format import GNUPlotFormat
 from .io import DiskIO
 from qcodes.utils.helpers import DelegateAttributes
@@ -97,7 +97,7 @@ def load_data(location=None, data_manager=None, formatter=None, io=None):
 
 def _get_live_data(data_manager):
     live_data = data_manager.ask('get_data')
-    if live_data is None:
+    if live_data is None or isinstance(live_data, NoData):
         raise RuntimeError('DataManager has no live data')
 
     live_data.mode = DataMode.PULL_FROM_SERVER
@@ -199,7 +199,7 @@ class DataSet(DelegateAttributes):
             for array in arrays:
                 self.add_array(array)
 
-        if data_manager is None:
+        if data_manager is None and mode in SERVER_MODES:
             data_manager = get_data_manager()
 
         if mode == DataMode.LOCAL:
