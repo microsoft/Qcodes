@@ -221,10 +221,13 @@ class Instrument(Metadatable, DelegateAttributes):
                     delattr(self, attr[0])
 
     def __del__(self):
-        wr = weakref.ref(self)
-        if wr in getattr(self, '_instances', {}):
-            self._instances.remove(wr)
-        self.close()
+        try:
+            wr = weakref.ref(self)
+            if wr in getattr(self, '_instances', {}):
+                self._instances.remove(wr)
+            self.close()
+        except:
+            pass
 
     def close(self):
         '''
