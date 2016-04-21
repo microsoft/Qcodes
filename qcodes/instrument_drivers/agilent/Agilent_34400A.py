@@ -59,7 +59,7 @@ class Agilent_34400A(VisaInstrument):
         self.add_parameter('volt_fetch',
                            get_cmd='FETCH?',
                            label='Voltage',
-                           get_parser=float
+                           get_parser=float,
                            units='V')
         self.add_parameter('NPLC',
                            get_cmd='VOLT:NPLC?',
@@ -81,7 +81,7 @@ class Agilent_34400A(VisaInstrument):
                            get_parser=float,
                            set_cmd='VOLT:DC:RES {:.7f}',
                            vals=Enum(3e-07, 1e-06, 3e-06, 1e-05, 1e-04),
-                           unit='V')
+                           units='V')
         # Integration Time    Resolutionc
         self.add_parameter('integration_time',
                            get_cmd='VOLT:DC:RES?',
