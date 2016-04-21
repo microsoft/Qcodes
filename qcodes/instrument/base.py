@@ -5,7 +5,7 @@ from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs
 from .parameter import Parameter, StandardParameter
 from .function import Function
-from .remote import RemoteInstrument
+from .remote import RemoteInstrument, RemoteParameter
 
 
 class NoDefault:
@@ -413,7 +413,9 @@ class Instrument(Metadatable, DelegateAttributes):
 
         for attr in dir(self):
             value = getattr(self, attr)
-            if (not callable(value)) or isinstance(value, Function):
+            if ((not callable(value)) or
+                    value is self.parameters.get(attr) or
+                    value is self.functions.get(attr)):
                 # Functions are callable, and they show up in dir(),
                 # but we don't want them included in methods, they have
                 # their own listing. But we don't want to just exclude

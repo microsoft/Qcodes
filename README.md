@@ -53,6 +53,8 @@ if qcpath not in sys.path:
     sys.path.append(qcpath)
 ```
 
+For frequently asked questions see the [Qcodes FAQ](docs/FAQ.md).
+
 ## Contributing
 
 See [Contributing](CONTRIBUTING.md) for information about bug/issue reports, contributing code, style, and testing
@@ -61,4 +63,4 @@ See the [Roadmap](ROADMAP.md) an overview of where the project intends to go.
 
 ## License
 
-Qcodes is currently a private development of Microsoft's Station Q collaboration, and IS NOT licensed for distribution outside the collaboration. We intend to release it as open source software once it is robust and reasonably stable, under the MIT license or similar. See [License](LICENSE.txt)
+Qcodes is currently a private development of Microsoft's Station Q collaboration, and IS NOT licensed for distribution outside the collaboration except by arrangement. We intend to release it as open source software once it is robust and reasonably stable, under the MIT license. See [License](LICENSE.md).
