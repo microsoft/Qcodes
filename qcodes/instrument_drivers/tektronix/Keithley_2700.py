@@ -77,9 +77,9 @@ class Keithley_2700(VisaInstrument):
     This driver does not contain all commands available, but only the ones
     most commonly used.
     '''
-    def __init__(self, name, address, reset=False):
+    def __init__(self, name, address, reset=False, **kwargs):
         t0 = time.time()
-        super().__init__(name, address)
+        super().__init__(name, address, **kwargs)
 
         self.add_parameter('IDN', get_cmd='*IDN?')
 
