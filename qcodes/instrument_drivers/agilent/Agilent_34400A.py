@@ -54,11 +54,13 @@ class Agilent_34400A(VisaInstrument):
         self.add_parameter('volt',
                            get_cmd='READ?',
                            label='Voltage',
-                           get_parser=float)
+                           get_parser=float,
+                           units='V')
         self.add_parameter('volt_fetch',
                            get_cmd='FETCH?',
                            label='Voltage',
-                           get_parser=float)
+                           get_parser=float
+                           units='V')
         self.add_parameter('NPLC',
                            get_cmd='VOLT:NPLC?',
                            get_parser=float,
