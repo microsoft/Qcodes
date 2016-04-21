@@ -9,13 +9,10 @@ class TimeStampInstrument(Instrument):
     '''
     Instrument that generates a timestamp
     '''
-    def __init__(self, name):
-        super().__init__(name)
-
+    def __init__(self, name, **kwargs):
+        super().__init__(name, **kwargs)
         # we need this to be a parameter (a function does not work with measure)
-        self.add_parameter('timestamp', units='s', get_cmd=time.time)
-        #self.add_function('timestamp', units='s', call_cmd=time.time, return_parser=float)
-
+        self.add_parameter('timestamp', units='s', get_cmd=time.time, docstring='Timestamp based on number of seconds since epoch.')
         _ = self.timestamp.get()
         
     
