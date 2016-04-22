@@ -62,5 +62,6 @@ target/
 # Generated data
 *.csv
 *.data
+*.dat
 *.hdf5
 docs/examples/data/*
