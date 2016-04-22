@@ -23,8 +23,12 @@ from time import sleep, time, localtime
 from io import BytesIO
 import os
 import logging
+import array as arr
 
 from qcodes import VisaInstrument, validators as vals
+
+def parsestr(v):
+    return v.strip().strip('"')
 
 
 class Tektronix_AWG5014(VisaInstrument):
@@ -228,6 +232,7 @@ class Tektronix_AWG5014(VisaInstrument):
             amp_cmd = 'SOUR{}:VOLT:LEV:IMM:AMPL'.format(i)
             offset_cmd = 'SOUR{}:VOLT:LEV:IMM:OFFS'.format(i)
             state_cmd = 'OUTPUT{}:STATE'.format(i)
+            waveform_cmd = 'SOUR{}:WAV'.format(i)
             # Set channel first to ensure sensible sorting of pars
             self.add_parameter('ch{}_state'.format(i),
                                label='Status channel {}'.format(i),
@@ -246,6 +251,12 @@ class Tektronix_AWG5014(VisaInstrument):
                                set_cmd=offset_cmd + ' {:.3f}',
                                vals=vals.Numbers(-.1, .1),
                                get_parser=float)
+            self.add_parameter('ch{}_waveform'.format(i),
+                               label='Waveform channel {}'.format(i),
+                               get_cmd=waveform_cmd+'?',
+                               set_cmd=waveform_cmd+' "{}"',
+                               vals=vals.Strings(),
+                               get_parser=parsestr)
             # Marker channels
             for j in range(1, 3):
                 m_del_cmd = 'SOUR{}:MARK{}:DEL'.format(i, j)
@@ -862,26 +873,27 @@ class Tektronix_AWG5014(VisaInstrument):
         self._values['files'][filename] = self._file_dict(w, m1, m2, clock)
 
         m = m1 + np.multiply(m2, 2)
-        ws = ''
+        ws = b''
         # this is probalbly verry slow and memmory consuming!
         for i in range(0, len(w)):
             ws = ws + struct.pack('<fB', w[i], int(np.round(m[i], 0)))
 
-        s1 = 'MMEM:DATA "%s",' % filename
-        s3 = 'MAGIC 1000\n'
+        s1 = b'MMEM:DATA "%s",' % filename
+        s3 = b'MAGIC 1000\n'
         s5 = ws
         if clock is not None:
-            s6 = 'CLOCK %.10e\n' % clock
+            s6 = b'CLOCK %.10e\n' % clock
         else:
-            s6 = ''
+            s6 = b''
 
         s4 = '#' + str(len(str(len(s5)))) + str(len(s5))
+        s4 = s4.encode('UTF-8')
         lenlen = str(len(str(len(s6) + len(s5) + len(s4) + len(s3))))
         s2 = '#' + lenlen + str(len(s6) + len(s5) + len(s4) + len(s3))
-
+        s2 = s2.encode('UTF-8')
         mes = s1 + s2 + s3 + s4 + s5 + s6
-
-        self.write(mes)
+        
+        self.visa_handle.write_raw(mes)
 
     def _file_dict(self, w, m1, m2, clock):
         return {
@@ -1132,3 +1144,57 @@ class Tektronix_AWG5014(VisaInstrument):
 
     def parse_int_int_ext(self, val):
         return ['INT', 'EXT'][val]
+        
+    def send_waveform_to_list(self,w,m1,m2,wfmname):
+        '''
+        Sends a complete waveform directly to the "User defined" waveform list. All parameters need to be specified.
+        See also: resend_waveform()
+    
+        Input:
+            w (float[numpoints]) : waveform (must be a numpy array)
+            m1 (int[numpoints])  : marker1  (must be a numpy array)
+            m2 (int[numpoints])  : marker2  (must be a numpy array)
+            wfmname (string)    : waveform name
+            format (string):    'int' or 'real' (int has same awg output precision but much faster to transfer) 
+        Output:
+            None
+        '''
+        logging.debug(__name__ + ' : Sending waveform %s to instrument' % wfmname)
+        # Check for errors
+        dim = len(w)
+    
+        if (not((len(w)==len(m1)) and ((len(m1)==len(m2))))):
+            return 'error: sizes of the waveforms do not match'
+    
+        self._values['files'][wfmname]={}
+        self._values['files'][wfmname]['w']=w
+        self._values['files'][wfmname]['m1']=m1
+        self._values['files'][wfmname]['m2']=m2
+        self._values['files'][wfmname]['numpoints']=len(w)
+    
+        #if we create a waveform with the same name but different size, it will not get over written
+        #Delete the possibly existing file (will do nothing if the file doesn't exist
+        s = 'WLIS:WAV:DEL "%s"' %wfmname
+        self.write(s)
+        
+        print("Sending the waveform %s" %wfmname)
+        
+        # create the waveform
+        s = 'WLIS:WAV:NEW "%s",%i,INTEGER' %(wfmname,dim)
+        self.write(s)
+        #Prepare the data block
+        
+        number = (2**13 + 2**13*w + 2**14*np.array(m1) + 2**15*np.array(m2))
+        number = number.astype('int')
+        ws = arr.array('H',number)    
+
+        ws = ws.tostring()
+        s1 = 'WLIS:WAV:DATA "%s",' % wfmname
+        s1 = s1.encode('UTF-8')
+        s3 = ws
+        s2 = '#' + str(len(str(len(s3)))) + str(len(s3))
+        s2 = s2.encode('UTF-8')
+
+
+        mes = s1 + s2 + s3 
+        self.visa_handle.write_raw(mes)
