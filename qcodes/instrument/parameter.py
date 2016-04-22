@@ -171,6 +171,7 @@ class Parameter(Metadatable):
                 'Parameter class:',
                 '* `name` %s' % self.name,
                 '* `label` %s' % self.label,
+                # is this unit s a typo? shouldnt that be unit?
                 '* `units` %s' % self.units,
                 '* `vals` %s' % repr(self._vals)))
             self._meta_attrs.extend(['name','label', 'units', 'vals'])
@@ -252,8 +253,10 @@ class Parameter(Metadatable):
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
 
         for attr in set(self._meta_attrs):
-            print(attr)
-            if hasattr(self, attr):
+            if attr == 'instrument':
+                state['instrument'] = str(self._instrument.__class__.__name__)
+
+            elif hasattr(self, attr):
                 state[attr] = getattr(self, attr)
 
         return state
@@ -366,6 +369,7 @@ class StandardParameter(Parameter):
         super().__init__(name=name, vals=vals, **kwargs)
 
         self._instrument = instrument
+
         self._meta_attrs.extend(['instrument', 'sweep_step', 'sweep_delay',
                                 'max_sweep_delay'])
 

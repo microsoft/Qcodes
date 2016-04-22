@@ -70,6 +70,9 @@ class Instrument(Metadatable, DelegateAttributes):
 
         self.name = str(name)
 
+        self.IDN = {'vendor': None, 'model': None,
+                    'serial': None, 'firmware': None}
+
         self.record_instance(self)
 
     @classmethod
@@ -334,10 +337,13 @@ class Instrument(Metadatable, DelegateAttributes):
             for par in self.parameters.values():
                 par.get()
         return {
+            'IDN': self.IDN,
             'parameters': dict((name, param.snapshot())
                                for name, param in self.parameters.items()),
             'functions': dict((name, func.snapshot())
                               for name, func in self.functions.items())
+            # ,
+            # '__class__':self.__class__
         }
 
     ##########################################################################
