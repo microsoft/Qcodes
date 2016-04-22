@@ -103,7 +103,7 @@ class DiskIO:
         '''
         the context-dependent version of os.path.join for this io manager
         '''
-        return os.path.join(*args)
+        return os.path.join(*list(map(self._normalize_slashes, args)))
 
     def isfile(self, location):
         '''
