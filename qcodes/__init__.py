@@ -15,13 +15,17 @@ from qcodes.utils.helpers import in_notebook
 if in_notebook():  # pragma: no cover
     try:
         from qcodes.plots.matplotlib import MatPlot
-    except ImportError:
-        print('matplotlib plotting not supported')
+    except Exception:
+        print('matplotlib plotting not supported, '
+              'try "from qcodes.plots.matplotlib import MatPlot" '
+              'to see the full error')
 
     try:
         from qcodes.plots.pyqtgraph import QtPlot
-    except ImportError:
-        print('pyqtgraph plotting not supported')
+    except Exception:
+        print('pyqtgraph plotting not supported, '
+              'try "from qcodes.plots.pyqtgraph import QtPlot" '
+              'to see the full error')
 
     from qcodes.widgets.widgets import show_subprocess_widget
 
