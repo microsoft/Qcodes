@@ -141,9 +141,9 @@ class RemoteParameter(RemoteComponent):
         return self._instrument.connection.ask('param_call', self.name,
                                                '_latest')
 
-    def snapshot(self):
+    def snapshot(self, *args, **kwargs):
         return self._instrument.connection.ask('param_call', self.name,
-                                               'snapshot')
+                                               'snapshot',*args, **kwargs)
 
     def setattr(self, attr, value):
         self._instrument.connection.ask('param_setattr', self.name,
