@@ -140,6 +140,7 @@ class Parameter(Metadatable):
 
         self.has_get = False
         self.has_set = False
+        self._meta_attrs = ['setpoint_names', 'setpoint_labels']
 
         if names is not None:
             # check for names first - that way you can provide both name
@@ -155,6 +156,7 @@ class Parameter(Metadatable):
                 '* `names` %s' % ', '.join(self.names),
                 '* `labels` %s' % ', '.join(self.labels),
                 '* `units` %s' % ', '.join(self.units)))
+            self._meta_attrs.extend(['names', 'labels', 'units'])
 
         elif name is not None:
             self.name = name
@@ -171,6 +173,7 @@ class Parameter(Metadatable):
                 '* `label` %s' % self.label,
                 '* `units` %s' % self.units,
                 '* `vals` %s' % repr(self._vals)))
+            self._meta_attrs.extend(['name','label', 'units', 'vals'])
 
         else:
             raise ValueError('either name or names is required')
@@ -247,6 +250,11 @@ class Parameter(Metadatable):
 
         if state['ts'] is not None:
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
+
+        for attr in set(self._meta_attrs):
+            print(attr)
+            if hasattr(self, attr):
+                state[attr] = getattr(self, attr)
 
         return state
 
@@ -358,6 +366,8 @@ class StandardParameter(Parameter):
         super().__init__(name=name, vals=vals, **kwargs)
 
         self._instrument = instrument
+        self._meta_attrs.extend(['instrument', 'sweep_step', 'sweep_delay',
+                                'max_sweep_delay'])
 
         # stored value from last .set() or .get()
         # normally only used by set with a sweep, to avoid
@@ -563,6 +573,8 @@ class ManualParameter(Parameter):
     def __init__(self, name, instrument=None, initial_value=None, **kwargs):
         super().__init__(name=name, **kwargs)
         self._instrument = instrument
+        self._meta_attrs.extend(['instrument', 'initial_value'])
+
         if initial_value is not None:
             self.validate(initial_value)
             self._save_val(initial_value)
