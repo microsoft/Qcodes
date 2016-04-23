@@ -7,6 +7,7 @@ import math
 import sys
 import io
 import multiprocessing as mp
+import numpy as np
 
 
 def in_notebook():
@@ -76,6 +77,49 @@ def permissive_range(start, stop, step):
     # take off a tiny bit for rounding errors
     step_count = math.ceil((stop - start) / signed_step - 1e-10)
     return [start + i * signed_step for i in range(step_count)]
+
+
+# This is very much related to the permissive_range but more
+# strict on the input, start and endpoints are always included,
+# and a sweep is only created if the step matches an integer
+# number of points.
+# numpy is a dependency anyways.
+# Furthermore the sweep allows to take a number of points and generates
+# an array with endpoints included, which is more intuitive to use in a sweep.
+def make_sweep(start, stop, step=None, num=None, reverse=False):
+    '''
+    Requires `start` and `stop` and (`step` or `num`)
+    The sign of `step` is not relevant.
+
+    returns: a numpy.linespace(start, stop, num) and reverse it if requested
+
+    Examples:
+        make_sweep(0, 10, num=5)
+        > [0.0, 2.5, 5.0, 7.5, 10.0]
+        make_sweep(5, 10, step=1)
+        > [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        make_sweep(15, 10.5, step=1.5)
+        >[15.0, 13.5, 12.0, 10.5]
+    '''
+    if step and num:
+        raise AttributeError('Don\'t use `step` and `num` at the same time.')
+    if (step is None) and (num is None):
+        raise ValueError('If you really want to go from `start` to '
+                         '`stop` in one step, specify `num = 1`.')
+    if step is not None:
+        num_lo = np.floor((stop-start)/step)
+        num_hi = np.ceil((stop-start)/step)
+
+        if num_lo != num_hi:
+            raise ValueError('Could not find an integer number of steps for '
+                             'the the given `start`, `stop`, and `step` '
+                             'values. \nNumber of steps is {:d} or {:d}.'
+                             .format(abs(int(num_lo))+1, abs(int(num_hi))+1))
+        num = abs(num_lo)+1
+    values = np.linspace(start, stop, num=num)
+    if reverse:
+        return values[::-1]
+    return values
 
 
 def wait_secs(finish_clock):

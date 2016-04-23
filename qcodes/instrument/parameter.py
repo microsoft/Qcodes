@@ -45,6 +45,7 @@ from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import syncable_command, NoCommandError
 from qcodes.utils.validators import Validator, Numbers, Ints, Enum
 from qcodes.instrument.sweep_values import SweepFixedValues
+from qcodes.utils.helpers import make_sweep
 
 
 def no_setter(*args, **kwargs):
@@ -289,6 +290,26 @@ class Parameter(Metadatable):
             context = self.name
 
         self._vals.validate(value, 'Parameter: ' + context)
+
+    def sweep(self, start, stop, step=None, num=None, reverse=False,
+              *args, **kwargs):
+        '''
+        Requires `start` and `stop` and (`step` or `num`)
+        The sign of `step` is not relevant.
+
+        returns: a numpy.linespace(start, stop, num) and reverse it if requested
+
+        Examples:
+            sweep(0, 10, num=5)
+            > [0.0, 2.5, 5.0, 7.5, 10.0]
+            sweep(5, 10, step=1)
+            > [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+            sweep(15, 10.5, step=1.5)
+            >[15.0, 13.5, 12.0, 10.5]
+        '''
+        keys = make_sweep(start=start, stop=stop, step=step, num=num,
+                          reverse=reverse)
+        return SweepFixedValues(self, keys)
 
     def __getitem__(self, keys):
         '''

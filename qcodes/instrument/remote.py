@@ -137,6 +137,9 @@ class RemoteParameter(RemoteComponent):
     def __getitem__(self, keys):
         return Parameter.__getitem__(self, keys)
 
+    def sweep(self, *args, **kwargs):
+        return Parameter.sweep(self, *args, **kwargs)
+
     def _latest(self):
         return self._instrument.connection.ask('param_call', self.name,
                                                '_latest')
