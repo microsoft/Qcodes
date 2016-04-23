@@ -20,7 +20,8 @@ class Station(Metadatable, DelegateAttributes):
     '''
     default = None
 
-    def __init__(self, *components, monitor=None, default=True, **kwargs):
+    def __init__(self, *components, monitor=None, default=True,
+                 update_snapshot=True, **kwargs):
         super().__init__(**kwargs)
 
         # when a new station is defined, store it in a class variable
@@ -34,7 +35,7 @@ class Station(Metadatable, DelegateAttributes):
 
         self.components = {}
         for item in components:
-            self.add_component(item)
+            self.add_component(item, update_snapshot=update_snapshot)
 
         self.monitor = monitor
 
@@ -60,7 +61,7 @@ class Station(Metadatable, DelegateAttributes):
 
         return snap
 
-    def add_component(self, component, name=None):
+    def add_component(self, component, name=None, update_snapshot=True):
         '''
         Record one component as part of this Station
 
@@ -68,7 +69,7 @@ class Station(Metadatable, DelegateAttributes):
         been changed to make it unique among previously added components.
         '''
         try:
-            component.snapshot(update=True)
+            component.snapshot(update=update_snapshot)
         except:
             pass
         if name is None:
