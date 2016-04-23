@@ -62,6 +62,10 @@ class Station(Metadatable, DelegateAttributes):
         Returns the name assigned this item, which may have
         been changed to make it unique among previously added components.
         '''
+        try:
+            item.snapshot(update=True)
+        except:
+            pass
         if name is None:
             name = getattr(item, 'name',
                            'item{}'.format(len(self.components)))
