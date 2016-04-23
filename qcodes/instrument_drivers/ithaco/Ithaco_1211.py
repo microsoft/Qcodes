@@ -38,7 +38,7 @@ class CurrentParameter(Parameter):
         _p_unit = None
 
         self.measured_param = measured_param
-        self.camp = camp_ins
+        self._instrument = camp_ins
 
         if hasattr(measured_param, 'label'):
             _p_label = measured_param.label
@@ -50,10 +50,10 @@ class CurrentParameter(Parameter):
 
     def get(self):
         volt = self.measured_param.get()
-        current = (self.camp.sens.get() *
-                   self.camp.sens_x.get()) * volt
+        current = (self._instrument.sens.get() *
+                   self._instrument.sens_sens_factor.get()) * volt
 
-        if self.camp.invert.get():
+        if self._instrument.invert.get():
             current *= -1
         return (volt, current)
 
