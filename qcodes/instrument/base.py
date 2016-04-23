@@ -339,7 +339,8 @@ class Instrument(Metadatable, DelegateAttributes):
                                    for name, param in self.parameters.items()),
                 'functions': dict((name, func.snapshot(update=update))
                                   for name, func in self.functions.items()),
-                '__class__':str(self.__class__)
+                '__class__': str(self.__class__.__name__ +
+                                 '.' + self.__class__.__module__),
                 }
         for attr in set(self._meta_attrs):
             if hasattr(self, attr):
