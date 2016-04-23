@@ -112,7 +112,7 @@ class IPInstrument(Instrument):
 
     def snapshot_base(self, update=False):
         snap = super().snapshot_base(update=update)
-        # _address
+
         snap['port'] = self._port
         snap['confirmation'] = self._confirmation
         snap['address'] = self._address

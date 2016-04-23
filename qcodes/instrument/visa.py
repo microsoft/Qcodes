@@ -99,6 +99,7 @@ class VisaInstrument(Instrument):
 
     def snapshot_base(self, update=False):
         snap = super().snapshot_base(update=update)
+
         snap['address'] = self._address
         snap['terminator'] = self._terminator
         snap['timeout'] = self._timeout

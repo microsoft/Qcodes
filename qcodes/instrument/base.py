@@ -335,10 +335,6 @@ class Instrument(Metadatable, DelegateAttributes):
         return func.get_attrs()
 
     def snapshot_base(self, update=False):
-        # This will happen in the individual parameter
-        # if update:
-        #     for par in self.parameters.values():
-        #         par.get()
         snap = {'parameters': dict((name, param.snapshot(update=update))
                                    for name, param in self.parameters.items()),
                 'functions': dict((name, func.snapshot(update=update))

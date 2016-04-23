@@ -13,7 +13,7 @@ class Station(Metadatable, DelegateAttributes):
     '''
     A representation of the entire physical setup.
 
-    Lists all the connected `Item`s and the current default
+    Lists all the connected `Components`s and the current default
     measurement (a list of actions). Contains a convenience method
     `.measure()` to measure these defaults right now, but this is separate
     from the code used by `Loop`.
@@ -34,7 +34,7 @@ class Station(Metadatable, DelegateAttributes):
 
         self.components = {}
         for item in components:
-            self.add_item(item)
+            self.add_component(item)
 
         self.monitor = monitor
 
@@ -60,22 +60,22 @@ class Station(Metadatable, DelegateAttributes):
 
         return snap
 
-    def add_item(self, item, name=None):
+    def add_component(self, component, name=None):
         '''
-        Record one item as part of this Station
+        Record one component as part of this Station
 
-        Returns the name assigned this item, which may have
+        Returns the name assigned this component, which may have
         been changed to make it unique among previously added components.
         '''
         try:
-            item.snapshot(update=True)
+            component.snapshot(update=True)
         except:
             pass
         if name is None:
-            name = getattr(item, 'name',
-                           'item{}'.format(len(self.components)))
+            name = getattr(component, 'name',
+                           'component{}'.format(len(self.components)))
         name = make_unique(str(name), self.components)
-        self.components[name] = item
+        self.components[name] = component
         return name
 
     def set_measurement(self, *actions):
