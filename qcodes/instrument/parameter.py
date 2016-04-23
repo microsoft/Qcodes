@@ -240,13 +240,17 @@ class Parameter(Metadatable):
 
         return out
 
-    def snapshot_base(self):
+    def snapshot_base(self, update=False):
         '''
         json state of the Parameter
 
         optionally pass in the state, so if this is an instrument parameter
         we can collect all calls to the server into one
         '''
+
+        if self.has_get and update:
+            self.get()
+
         state = self._latest()
 
         if state['ts'] is not None:

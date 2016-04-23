@@ -141,9 +141,10 @@ class RemoteParameter(RemoteComponent):
         return self._instrument.connection.ask('param_call', self.name,
                                                '_latest')
 
-    def snapshot(self):
+    def snapshot(self, update=False):
+        # how to propagate the update?, just like this? Seems to work...
         return self._instrument.connection.ask('param_call', self.name,
-                                               'snapshot')
+                                               'snapshot', update)
 
     def setattr(self, attr, value):
         self._instrument.connection.ask('param_setattr', self.name,

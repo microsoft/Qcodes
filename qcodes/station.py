@@ -17,7 +17,7 @@ class Station(Metadatable, DelegateAttributes):
     '''
     default = None
 
-    def __init__(self, *items, monitor=None, default=True, **kwargs):
+    def __init__(self, *components, monitor=None, default=True, **kwargs):
         super().__init__(**kwargs)
 
         # when a new station is defined, store it in a class variable
@@ -29,29 +29,29 @@ class Station(Metadatable, DelegateAttributes):
         if default:
             Station.default = self
 
-        self.items = {}
-        for item in items:
+        self.components = {}
+        for item in components:
             self.add_item(item)
 
         self.monitor = monitor
 
-    def snapshot_base(self, *args, **kwargs):
+    def snapshot_base(self, update=False):
         snap = {'instruments': {},
                 'parameters': {},
-                'items': {},
+                'components': {},
                 'station': {}}
 
         snap['station'] = {}
 
-        for name, ins in self.items.items():
-            if isinstance(ins, (RemoteInstrument,
+        for name, itm in self.components.items():
+            if isinstance(itm, (RemoteInstrument,
                                 Instrument)):
-                snap['instruments'][name] = ins.snapshot(*args, **kwargs)
-            elif isinstance(ins, (StandardParameter,
+                snap['instruments'][name] = itm.snapshot(update=update)
+            elif isinstance(itm, (StandardParameter,
                                   RemoteParameter)):
-                snap['parameters'][name] = ins.snapshot(*args, **kwargs)
+                snap['parameters'][name] = itm.snapshot(update=update)
             else:
-                snap['items'][name] = ins.snapshot(*args, **kwargs)
+                snap['components'][name] = itm.snapshot(update=update)
 
         return snap
 
@@ -60,13 +60,13 @@ class Station(Metadatable, DelegateAttributes):
         Record one item as part of this Station
 
         Returns the name assigned this item, which may have
-        been changed to make it unique among previously added items.
+        been changed to make it unique among previously added components.
         '''
         if name is None:
             name = getattr(item, 'name',
-                           'item{}'.format(len(self.items)))
-        name = make_unique(str(name), self.items)
-        self.items[name] = item
+                           'item{}'.format(len(self.components)))
+        name = make_unique(str(name), self.components)
+        self.components[name] = item
         return name
 
     def set_measurement(self, *actions):
@@ -102,9 +102,9 @@ class Station(Metadatable, DelegateAttributes):
         return out
 
     # station['someitem'] and station.someitem are both
-    # shortcuts to station.items['someitem']
+    # shortcuts to station.components['someitem']
     # (assuming 'someitem' doesn't have another meaning in Station)
     def __getitem__(self, key):
-        return self.items[key]
+        return self.components[key]
 
-    delegate_attr_dicts = ['items']
+    delegate_attr_dicts = ['components']

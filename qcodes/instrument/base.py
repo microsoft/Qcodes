@@ -73,6 +73,8 @@ class Instrument(Metadatable, DelegateAttributes):
         self.IDN = {'vendor': None, 'model': None,
                     'serial': None, 'firmware': None}
 
+        self._meta_attrs = ['name', 'IDN']
+
         self.record_instance(self)
 
     @classmethod
@@ -333,18 +335,20 @@ class Instrument(Metadatable, DelegateAttributes):
         return func.get_attrs()
 
     def snapshot_base(self, update=False):
-        if update:
-            for par in self.parameters.values():
-                par.get()
-        return {
-            'IDN': self.IDN,
-            'parameters': dict((name, param.snapshot())
-                               for name, param in self.parameters.items()),
-            'functions': dict((name, func.snapshot())
-                              for name, func in self.functions.items())
-            # ,
-            # '__class__':self.__class__
-        }
+        # This will happen in the individual parameter
+        # if update:
+        #     for par in self.parameters.values():
+        #         par.get()
+        snap = {'parameters': dict((name, param.snapshot(update=update))
+                                   for name, param in self.parameters.items()),
+                'functions': dict((name, func.snapshot(update=update))
+                                  for name, func in self.functions.items())
+                # '__class__':self.__class__
+                }
+        for attr in set(self._meta_attrs):
+            if hasattr(self, attr):
+                snap[attr] = getattr(self, attr)
+        return snap
 
     ##########################################################################
     # `write`, `read`, and `ask` are the interface to hardware               #
