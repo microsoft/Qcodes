@@ -43,14 +43,12 @@ class Keithley_2600(VisaInstrument):
         super().__init__(name, address, terminator='\n', **kwargs)
         self._channel = channel
 
-        self.IDN = self.visa_handle.ask('*IDN?')
-        vendor, model, serial, software = map(str.strip, self.IDN.split(','))
-        self.model = model[6:]
+        IDN = self.visa_handle.ask('*IDN?')
+        vendor, model, serial, firmware = map(str.strip, IDN.split(','))
+        model = model[6:]
 
-        self.info = {'vendor': vendor, 'model': self.model,
-                     'serial_number': serial, 'software_revision': software}
-
-        self.metadata['info'] = self.info
+        self.IDN = {'vendor': vendor, 'model': model,
+                    'serial': serial, 'firmware': firmware}
 
         self.add_parameter('volt', get_cmd='measure.v()',
                            get_parser=float, set_cmd='source.levelv={:.8f}',

@@ -43,6 +43,11 @@ class Triton(IPInstrument):
         super().__init__(name, address=address, port=port,
                          terminator=terminator, **kwargs)
 
+        IDN = self.ask('*IDN?')
+        vendor, model, serial, firmware = map(str.strip, IDN.split(':')[1:])
+        self.IDN = {'vendor': vendor, 'model': model,
+                    'serial': serial, 'firmware': firmware}
+
         self.add_parameter(name='time',
                            label='System Time',
                            units='',

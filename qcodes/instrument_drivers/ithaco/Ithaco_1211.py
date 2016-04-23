@@ -29,9 +29,11 @@ from qcodes.instrument.parameter import Parameter
 
 
 class CurrentParameter(Parameter):
-    def __init__(self, measured_param, camp_ins):
+    def __init__(self, measured_param, camp_ins, name='curr'):
         p_name = measured_param.name
+        self.name = name
         super().__init__(names=(p_name, 'current'))
+
         _p_label = None
         _p_unit = None
 
@@ -70,12 +72,10 @@ class Ithaco_1211(Instrument):
         vendor = 'Ithaco (DL Instruments)'
         model = '1211'
         serial = None
-        software = None
+        firmware = None
 
-        self.info = {'vendor': vendor, 'model': model,
-                     'serial_number': serial, 'software_revision': software}
-
-        self.metadata['info'] = self.info
+        self.IDN = {'vendor': vendor, 'model': model,
+                    'serial': serial, 'firmware': firmware}
 
         self.add_parameter('sens',
                            parameter_class=ManualParameter,
@@ -91,10 +91,10 @@ class Ithaco_1211(Instrument):
                            label='Iverted output',
                            vals=Bool())
 
-        self.add_parameter('sens_x',
+        self.add_parameter('sens_factor',
                            parameter_class=ManualParameter,
                            initial_value=1,
-                           label='sensitivity x',
+                           label='sensitivity factor',
                            units=None,
                            vals=Enum(0.1, 1, 10))
 

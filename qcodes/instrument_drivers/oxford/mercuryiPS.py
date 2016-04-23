@@ -53,11 +53,11 @@ class MercuryiPS(VisaInstrument):
         self._latest_response = ''
         # for some reason the first call is always invalid?! need some kind of init?
         self.ask('*IDN?')
-        self.IDN = self.ask('*IDN?')[4:]
-        vendor, model, serial, software = map(str.strip, self.IDN.split(':'))
-        self.model = model
-        self.info = {'vendor': vendor, 'model': self.model,
-                     'serial_number': serial, 'software_revision': software}
+        IDN = self.ask('*IDN?')[4:]
+        vendor, model, serial, firmware = map(str.strip, IDN.split(':'))
+
+        self.IDN = {'vendor': vendor, 'model': model,
+                    'serial': serial, 'firmware': firmware}
 
         if axes is None:
             self._determine_magnet_axes()

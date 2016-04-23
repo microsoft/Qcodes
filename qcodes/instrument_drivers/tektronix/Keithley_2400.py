@@ -34,7 +34,13 @@ class Keithley_2400(VisaInstrument):
         super().__init__(name, address, terminator='\n', **kwargs)
 
         self._modes = ['']
-        self.add_parameter('IDN', get_cmd='*IDN?')
+
+        IDN = self.ask('*IDN?')
+        # Dont have a 2400 here right now
+        # vendor, model, serial, firmware = map(str.strip, IDN.split(','))
+        # self.model = model
+        # self.IDN = {'vendor': vendor, 'model': model,
+        #             'serial': serial, 'firmware': firmware}
 
         # Add parameters to wrapper
         self.add_parameter('volt', get_cmd=':READ?',

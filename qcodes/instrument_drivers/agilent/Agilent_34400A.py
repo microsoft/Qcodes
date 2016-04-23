@@ -42,12 +42,11 @@ class Agilent_34400A(VisaInstrument):
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, terminator='\n', **kwargs)
 
-        self.IDN = self.visa_handle.ask('*IDN?')
-
-        vendor, model, serial, software = map(str.strip, self.IDN.split(','))
+        IDN = self.ask('*IDN?')
+        vendor, model, serial, firmware = map(str.strip, IDN.split(','))
         self.model = model
-        self.info = {'vendor': vendor, 'model': model,
-                     'serial_number': serial, 'software_revision': software}
+        self.IDN = {'vendor': vendor, 'model': model,
+                    'serial': serial, 'firmware': firmware}
 
         # Async has to send 'INIT' and later ask for 'FETCH?'
 
@@ -56,11 +55,17 @@ class Agilent_34400A(VisaInstrument):
                            label='Voltage',
                            get_parser=float,
                            units='V')
-        self.add_parameter('volt_fetch',
+        self.add_parameter('fetch',
                            get_cmd='FETCH?',
                            label='Voltage',
                            get_parser=float,
-                           units='V')
+                           units='V',
+                           snapshot_get=False,
+                           docstring=('Reads the data you asked for, i.e.'
+                                      'after an `init_measurement()` you can '
+                                      'read the data with fetch.\n'
+                                      'Do not call this when you didn\'t ask '
+                                      'for data in the first place!'))
         self.add_parameter('NPLC',
                            get_cmd='VOLT:NPLC?',
                            get_parser=float,
@@ -124,6 +129,13 @@ class Agilent_34400A(VisaInstrument):
                                get_cmd='DISP:WIND2:TEXT?',
                                set_cmd='DISP:WIND2:TEXT "{}"',
                                vals=Strings())
+
+    def clear_errors(self):
+        while True:
+            err = self.ask('SYST:ERR?')
+            if 'No error' in err:
+                return
+            print(err)
 
     def init_measurement(self):
         self.write('INIT')
