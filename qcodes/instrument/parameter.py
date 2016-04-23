@@ -135,8 +135,9 @@ class Parameter(Metadatable):
                  units=None,
                  size=None, sizes=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
-                 vals=None, docstring=None, **kwargs):
+                 vals=None, docstring=None, snapshot_get=True, **kwargs):
         super().__init__(**kwargs)
+        self._snapshot_get = snapshot_get
 
         self.has_get = False
         self.has_set = False
@@ -248,7 +249,7 @@ class Parameter(Metadatable):
         we can collect all calls to the server into one
         '''
 
-        if self.has_get and update:
+        if self.has_get and self._snapshot_get and update:
             self.get()
 
         state = self._latest()
