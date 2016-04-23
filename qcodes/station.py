@@ -1,19 +1,23 @@
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import make_unique, DelegateAttributes
 
+from qcodes.instrument.remote import RemoteInstrument
+from qcodes.instrument.remote import RemoteParameter
+from qcodes.instrument.base import Instrument
+from qcodes.instrument.parameter import StandardParameter
 
 class Station(Metadatable, DelegateAttributes):
     '''
     A representation of the entire physical setup.
 
-    Lists all the connected `Instrument`s and the current default
+    Lists all the connected `Item`s and the current default
     measurement (a list of actions). Contains a convenience method
     `.measure()` to measure these defaults right now, but this is separate
     from the code used by `Loop`.
     '''
     default = None
 
-    def __init__(self, *instruments, monitor=None, default=True, **kwargs):
+    def __init__(self, *items, monitor=None, default=True, **kwargs):
         super().__init__(**kwargs)
 
         # when a new station is defined, store it in a class variable
@@ -25,28 +29,44 @@ class Station(Metadatable, DelegateAttributes):
         if default:
             Station.default = self
 
-        self.instruments = {}
-        for instrument in instruments:
-            self.add_instrument(instrument)
+        self.items = {}
+        for item in items:
+            self.add_item(item)
 
         self.monitor = monitor
 
     def snapshot_base(self, *args, **kwargs):
-        return {'instruments': {name: ins.snapshot(*args, **kwargs)
-                                for name, ins in self.instruments.items()}}
+        snap = {'instruments': {},
+                'parameters': {},
+                'items': {},
+                'station': {}}
 
-    def add_instrument(self, instrument, name=None):
+        snap['station'] = {}
+
+        for name, ins in self.items.items():
+            if isinstance(ins, (RemoteInstrument,
+                                Instrument)):
+                snap['instruments'][name] = ins.snapshot(*args, **kwargs)
+            elif isinstance(ins, (StandardParameter,
+                                  RemoteParameter)):
+                snap['parameters'][name] = ins.snapshot(*args, **kwargs)
+            else:
+                snap['items'][name] = ins.snapshot(*args, **kwargs)
+
+        return snap
+
+    def add_item(self, item, name=None):
         '''
-        Record one instrument as part of this Station
+        Record one item as part of this Station
 
-        Returns the name assigned this instrument, which may have
-        been changed to make it unique among previously added instruments.
+        Returns the name assigned this item, which may have
+        been changed to make it unique among previously added items.
         '''
         if name is None:
-            name = getattr(instrument, 'name',
-                           'instrument{}'.format(len(self.instruments)))
-        name = make_unique(str(name), self.instruments)
-        self.instruments[name] = instrument
+            name = getattr(item, 'name',
+                           'item{}'.format(len(self.items)))
+        name = make_unique(str(name), self.items)
+        self.items[name] = item
         return name
 
     def set_measurement(self, *actions):
@@ -81,10 +101,10 @@ class Station(Metadatable, DelegateAttributes):
 
         return out
 
-    # station['someinstrument'] and station.someinstrument are both
-    # shortcuts to station.instruments['someinstrument']
-    # (assuming 'someinstrument' doesn't have another meaning in Station)
+    # station['someitem'] and station.someitem are both
+    # shortcuts to station.items['someitem']
+    # (assuming 'someitem' doesn't have another meaning in Station)
     def __getitem__(self, key):
-        return self.instruments[key]
+        return self.items[key]
 
-    delegate_attr_dicts = ['instruments']
+    delegate_attr_dicts = ['items']
