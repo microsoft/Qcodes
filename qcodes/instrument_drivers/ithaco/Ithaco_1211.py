@@ -51,7 +51,7 @@ class CurrentParameter(Parameter):
     def get(self):
         volt = self.measured_param.get()
         current = (self._instrument.sens.get() *
-                   self._instrument.sens_sens_factor.get()) * volt
+                   self._instrument.sens_factor.get()) * volt
 
         if self._instrument.invert.get():
             current *= -1
