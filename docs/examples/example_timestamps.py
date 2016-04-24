@@ -6,24 +6,22 @@ import numpy as np
 import logging
 
 import qcodes as qc
-import qcodes.instrument_drivers.TimeStamp
-#os.chdir('/home/eendebakpt/develop/Qcodes/docs/examples')
+import qcodes.instrument_drivers.QuTech.TimeStamp
 
-#%% Create dummy instruments
+#%% Create dummy instruments and model
 
 from toymodel import AModel, MockGates, MockSource, MockMeter
 
 # now create this "experiment"
 model = AModel()
-gates = MockGates('gates', model)
-source = MockSource('source', model)
-meter = MockMeter('meter', model)
+gates = MockGates('gates', model=model)
+meter = MockMeter('meter', model=model)
 
-station = qc.Station(gates, source, meter)
+station = qc.Station(gates, meter)
 
-c0, c1, c2, vsd = gates.chan0, gates.chan1, gates.chan2, source.amplitude
+c0, c1, c2 = gates.chan0, gates.chan1, gates.chan2
 
-ts = qcodes.instrument_drivers.TimeStamp.TimeStampInstrument(name='TimeStamp')
+ts = qcodes.instrument_drivers.QuTech.TimeStamp.TimeStampInstrument(name='TimeStamp')
 
 # could measure any number of things by adding arguments to this
 station.set_measurement(ts.timestamp, meter.amplitude)
@@ -41,6 +39,8 @@ def progress(data):
     tt=data.arrays['timestamp']
     vv=~np.isnan(tt)        
     ttx=tt[vv]
+    if ttx.size==0:
+        return 0, np.Inf
     t0=ttx[0]
     t1=ttx[-1]
     
