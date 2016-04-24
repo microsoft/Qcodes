@@ -1,8 +1,9 @@
-from qcodes.utils.helpers import is_sequence, permissive_range
+from qcodes.utils.helpers import is_sequence, permissive_range, make_sweep
 from qcodes.utils.sync_async import mock_async, mock_sync
+from qcodes.utils.metadata import Metadatable
 
 
-class SweepValues:
+class SweepValues(Metadatable):
     '''
     base class for sweeping a parameter
     must be subclassed to provide the sweep values
@@ -35,7 +36,8 @@ class SweepValues:
     where you don't know ahead of time what the values will be or even
     how many there are.
     '''
-    def __init__(self, parameter):
+    def __init__(self, parameter, **kwargs):
+        super().__init__(**kwargs)
         self.parameter = parameter
         self.name = parameter.name
         self._values = []
@@ -103,9 +105,31 @@ class SweepFixedValues(SweepValues):
     where you don't know ahead of time what the values will be or even
     how many there are.
     '''
-    def __init__(self, parameter, keys):
+    def __init__(self, parameter, keys=None, start=None, stop=None,
+                 step=None, num=None):
         super().__init__(parameter)
-        keyset = keys if is_sequence(keys) else (keys,)
+        self._snapshot = []
+        if keys is None:
+            keyset = make_sweep(start=start, stop=stop,
+                                step=step, num=num)
+            self._snapshot.append({'start': start, 'stop': stop, 'step': step,
+                                   'num': num, 'type': 'sweep',
+                                   'reverse': False})
+
+        elif is_sequence(keys):
+            keyset = keys
+            # we dont want the snapshot to go crazy on big data
+            if len(keys) > 0:
+                self._snapshot.append({'min': min(keys), 'max': max(keys),
+                                       'len': len(keys), 'type': 'sequence',
+                                       'reverse': False})
+        elif isinstance(keys, slice):
+            keyset = (keys,)
+            self._snapshot.append({'start': keys.start, 'stop': keys.stop,
+                                   'step': keys.step, 'type': 'slice',
+                                   'reverse': False})
+        else:
+            raise TypeError('Invalid sweep input.')
 
         for key in keyset:
             if is_sequence(key):
@@ -133,21 +157,35 @@ class SweepFixedValues(SweepValues):
                     'can only extend SweepFixedValues of the same parameters')
             # these values are already validated
             self._values.extend(new_values._values)
+            self._snapshot.extend(new_values._snapshot)
         elif is_sequence(new_values):
             self.validate(new_values)
             self._values.extend(new_values)
+            self._snapshot.append({'min': min(new_values), 'max': max(new_values),
+                                  'len': len(new_values), 'type': 'sequence'})
         else:
             raise TypeError(
                 'cannot extend SweepFixedValues with {}'.format(new_values))
 
     def copy(self):
         new_sv = SweepFixedValues(self.parameter, [])
-        # skip validation by adding values separately instead of on init
+        # skip validation by adding values and snapshot separately
+        # instead of on init
         new_sv._values = self._values[:]
+        new_sv._snapshot = self._snapshot
         return new_sv
 
     def reverse(self):
         self._values.reverse()
+        self._snapshot.reverse()
+        for snap in self._snapshot:
+            snap['reverse'] = not snap['reverse']
+
+    def snapshot_base(self, update=False):
+        '''
+        json state of the Sweep
+        '''
+        return self._snapshot
 
     def __iter__(self):
         return iter(self._values)

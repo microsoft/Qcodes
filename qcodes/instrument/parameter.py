@@ -291,13 +291,12 @@ class Parameter(Metadatable):
 
         self._vals.validate(value, 'Parameter: ' + context)
 
-    def sweep(self, start, stop, step=None, num=None, reverse=False,
-              *args, **kwargs):
+    def sweep(self, start, stop, step=None, num=None):
         '''
         Requires `start` and `stop` and (`step` or `num`)
         The sign of `step` is not relevant.
 
-        returns: a numpy.linespace(start, stop, num) and reverse it if requested
+        returns: a numpy.linespace(start, stop, num)
 
         Examples:
             sweep(0, 10, num=5)
@@ -307,9 +306,8 @@ class Parameter(Metadatable):
             sweep(15, 10.5, step=1.5)
             >[15.0, 13.5, 12.0, 10.5]
         '''
-        keys = make_sweep(start=start, stop=stop, step=step, num=num,
-                          reverse=reverse)
-        return SweepFixedValues(self, keys)
+        return SweepFixedValues(self, start=start, stop=stop,
+                                step=step, num=num)
 
     def __getitem__(self, keys):
         '''

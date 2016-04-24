@@ -86,12 +86,12 @@ def permissive_range(start, stop, step):
 # numpy is a dependency anyways.
 # Furthermore the sweep allows to take a number of points and generates
 # an array with endpoints included, which is more intuitive to use in a sweep.
-def make_sweep(start, stop, step=None, num=None, reverse=False):
+def make_sweep(start, stop, step=None, num=None):
     '''
     Requires `start` and `stop` and (`step` or `num`)
     The sign of `step` is not relevant.
 
-    returns: a numpy.linespace(start, stop, num) and reverse it if requested
+    returns: a numpy.linespace(start, stop, num)
 
     Examples:
         make_sweep(0, 10, num=5)
@@ -116,10 +116,8 @@ def make_sweep(start, stop, step=None, num=None, reverse=False):
                              'values. \nNumber of steps is {:d} or {:d}.'
                              .format(abs(int(num_lo))+1, abs(int(num_hi))+1))
         num = abs(num_lo)+1
-    values = np.linspace(start, stop, num=num)
-    if reverse:
-        return values[::-1]
-    return values
+
+    return np.linspace(start, stop, num=num)
 
 
 def wait_secs(finish_clock):
