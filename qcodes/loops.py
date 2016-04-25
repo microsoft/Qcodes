@@ -106,7 +106,9 @@ class Loop:
     sweep_values - a SweepValues or compatible object describing what
         parameter to set in the loop and over what values
     delay - a number of seconds to wait after setting a value before
-        continuing.
+        continuing. 0 (default) means no waiting and no warnings. > 0
+        means to wait, potentially filling the delay time with monitoring,
+        and give an error if you wait longer than expected.
 
     After creating a Loop, you attach `action`s to it, making an `ActiveLoop`
     that you can `.run()`, or you can `.run()` a `Loop` directly, in which
@@ -117,12 +119,14 @@ class Loop:
     data), `Wait` times, or other `ActiveLoop`s or `Loop`s to nest inside
     this one.
     '''
-    def __init__(self, sweep_values, delay):
+    def __init__(self, sweep_values, delay=0):
+        if not delay >= 0:
+            raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
         self.sweep_values = sweep_values
         self.delay = delay
         self.nested_loop = None
 
-    def loop(self, sweep_values, delay):
+    def loop(self, sweep_values, delay=0):
         '''
         Nest another loop inside this one
 
@@ -556,13 +560,16 @@ class ActiveLoop:
             delay = self.delay
 
     def _wait(self, delay):
-        finish_clock = time.perf_counter() + delay
+        if delay:
+            finish_clock = time.perf_counter() + delay
 
-        if self._monitor:
-            self._monitor.call(finish_by=finish_clock)
+            if self._monitor:
+                self._monitor.call(finish_by=finish_clock)
 
-        self._check_signal()
-        time.sleep(wait_secs(finish_clock))
+            self._check_signal()
+            time.sleep(wait_secs(finish_clock))
+        else:
+            self._check_signal()
 
 
 class Task:
@@ -596,10 +603,13 @@ class Wait:
     But for use outside of a Loop, it is also callable (then it just sleeps)
     '''
     def __init__(self, delay):
+        if not delay >= 0:
+            raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
         self.delay = delay
 
     def __call__(self):
-        time.sleep(self.delay)
+        if self.delay:
+            time.sleep(self.delay)
 
 
 class _Measure:

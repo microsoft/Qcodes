@@ -1,4 +1,5 @@
 from unittest import TestCase
+from unittest.mock import patch
 import time
 import multiprocessing as mp
 import numpy as np
@@ -210,6 +211,29 @@ class TestLoop(TestCase):
             target = delay1 if i % 2 else delay0
             self.assertLessEqual(delay, target)
             self.assertGreater(delay, target - 0.001)
+
+    @patch('time.sleep')
+    def test_delay0(self, sleep_mock):
+        self.p2.set(3)
+
+        loop = Loop(self.p1[1:3:1]).each(self.p2)
+
+        self.assertEqual(loop.delay, 0)
+
+        data = loop.run_temp()
+        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.p2.tolist(), [3, 3])
+
+        self.assertEqual(sleep_mock.call_count, 0)
+
+    def test_bad_delay(self):
+        for val, err in [(-1, ValueError), (-0.1, ValueError),
+                         (None, TypeError), ('forever', TypeError)]:
+            with self.assertRaises(err):
+                Loop(self.p1[1:3:1], val)
+
+            with self.assertRaises(err):
+                Wait(val)
 
     def test_bare_wait(self):
         # Wait gets transformed to a Task, but is also callable on its own
