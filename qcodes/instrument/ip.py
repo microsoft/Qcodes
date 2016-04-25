@@ -31,7 +31,7 @@ class IPInstrument(Instrument):
         self._confirmation = write_confirmation
 
         self._ensure_connection = EnsureConnection(self)
-        self._buffer_size = 1024
+        self._buffer_size = 1400
 
         self._socket = None
 
