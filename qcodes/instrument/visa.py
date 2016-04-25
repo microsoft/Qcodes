@@ -91,8 +91,16 @@ class VisaInstrument(Instrument):
             raise visa.VisaIOError(ret_code)
 
     def write(self, cmd):
-        nr_bytes_written, ret_code = self.visa_handle.write(cmd)
-        self.check_error(ret_code)
+        try:
+            nr_bytes_written, ret_code = self.visa_handle.write(cmd)
+            self.check_error(ret_code)
+        except Exception as e:
+            e.args = e.args + ('writing ' + repr(cmd) + ' to ' + repr(self),)
+            raise e
 
     def ask(self, cmd):
-        return self.visa_handle.ask(cmd)
+        try:
+            return self.visa_handle.ask(cmd)
+        except Exception as e:
+            e.args = e.args + ('asking ' + repr(cmd) + ' to ' + repr(self),)
+            raise e
