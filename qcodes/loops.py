@@ -618,7 +618,7 @@ class _Measure:
     This should not be constructed manually, only by an ActiveLoop.
     '''
     def __init__(self, params_indices, data_set, use_threads):
-        self.use_threads = use_threads
+        self.use_threads = use_threads and len(params_indices) > 1
         # the applicable DataSet.store function
         self.store = data_set.store
 
