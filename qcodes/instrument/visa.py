@@ -30,6 +30,8 @@ class VisaInstrument(Instrument):
         self.set_address(address)
         self.set_timeout(timeout)
         self.set_terminator(terminator)
+        self.add_parameter('IDN', get_cmd='*IDN?',
+                           get_parser=self.get_idn_dict)
 
     @classmethod
     def default_server_name(cls, **kwargs):
@@ -105,3 +107,7 @@ class VisaInstrument(Instrument):
         snap['timeout'] = self._timeout
 
         return snap
+
+    def get_idn_dict(self, IDN):
+        vendor, model, serial, firmware = map(str.strip, IDN.split(','))
+        return {'vendor': vendor, 'model': model, 'serial': serial, 'firmware': firmware}
