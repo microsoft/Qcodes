@@ -22,15 +22,15 @@ Figured out a new way to use qcodes? Found a package that makes your life better
 
 ### Setup
 
-- Clone and register the package for development as described in [README.md#installation]
+- Clone and register the package for development as described in the [README](README.md#installation)
 
 ### Running Tests
 
-The core test runner is in `qcodes/test.py:
+The core test runner is in `qcodes/test.py`:
 ```
 python qcodes/test.py
-# optional extra verbosity
-python qcodes/test.py -v
+# optional extra verbosity and fail fast
+python qcodes/test.py -v -f
 ```
 You should see output that looks something like this:
 ```
