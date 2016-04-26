@@ -3,9 +3,9 @@ import time
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs
-from .parameter import Parameter, StandardParameter
+from .parameter import StandardParameter
 from .function import Function
-from .remote import RemoteInstrument, RemoteParameter
+from .remote import RemoteInstrument
 
 
 class NoDefault:
@@ -89,6 +89,9 @@ class Instrument(Metadatable, DelegateAttributes):
 
         return 'Connected to: {} in {:.2f}s'.format(
             idn.strip(), time.time() - (begin_time or self._t0))
+
+    def __repr__(self):
+        return '<{}: {}>'.format(type(self).__name__, self.name)
 
     def getattr(self, attr, default=NoDefault):
         '''

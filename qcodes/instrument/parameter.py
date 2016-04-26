@@ -375,9 +375,14 @@ class StandardParameter(Parameter):
                                  ' Parameter {}'.format(self.name))
 
     def get(self):
-        value = self._get()
-        self._save_val(value)
-        return value
+        try:
+            value = self._get()
+            self._save_val(value)
+            return value
+        except Exception as e:
+            e.args = e.args + (
+                'getting {}:{}'.format(self._instrument.name, self.name),)
+            raise e
 
     @asyncio.coroutine
     def get_async(self):
@@ -406,9 +411,15 @@ class StandardParameter(Parameter):
             self.has_set = True
 
     def _validate_and_set(self, value):
-        self.validate(value)
-        self._set(value)
-        self._save_val(value)
+        try:
+            self.validate(value)
+            self._set(value)
+            self._save_val(value)
+        except Exception as e:
+            e.args = e.args + (
+                'setting {}:{} to {}'.format(self._instrument.name,
+                                             self.name, repr(value)),)
+            raise e
 
     @asyncio.coroutine
     def _validate_and_set_async(self, value):
@@ -454,17 +465,23 @@ class StandardParameter(Parameter):
         return step_clock, remainder
 
     def _validate_and_sweep(self, value):
-        self.validate(value)
-        step_clock = time.perf_counter()
+        try:
+            self.validate(value)
+            step_clock = time.perf_counter()
 
-        for step_val in self._sweep_steps(value):
-            self._set(step_val)
-            self._save_val(step_val)
-            step_clock, remainder = self._update_sweep_ts(step_clock)
-            time.sleep(remainder)
+            for step_val in self._sweep_steps(value):
+                self._set(step_val)
+                self._save_val(step_val)
+                step_clock, remainder = self._update_sweep_ts(step_clock)
+                time.sleep(remainder)
 
-        self._set(value)
-        self._save_val(value)
+            self._set(value)
+            self._save_val(value)
+        except Exception as e:
+            e.args = e.args + (
+                'setting {}:{} to {}'.format(self._instrument.name,
+                                             self.name, repr(value)),)
+            raise e
 
     @asyncio.coroutine
     def _validate_and_sweep_async(self, value):
