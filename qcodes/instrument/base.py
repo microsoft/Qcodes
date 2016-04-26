@@ -28,6 +28,8 @@ class Instrument(Metadatable, DelegateAttributes):
         `default_server_name`, passing in all the constructor kwargs, to
         determine the name. If not overridden, this is just 'Instruments'.
 
+        ** see notes below about `server_name` in SUBCLASS CONSTRUCTORS **
+
         Use None to operate without a server - but then this Instrument
         will not work with qcodes Loops or other multiprocess procedures.
 
@@ -46,12 +48,16 @@ class Instrument(Metadatable, DelegateAttributes):
     `shared_kwargs` class attribute to a list of kwarg names that should
     be treated this way.
 
-    shared_kwargs must be provided ONLY as kwargs when constructing
-    instruments that need them, you CANNOT provide them as positional args.
+    It is an error to initialize two instruments on the same server with
+    different keys or values for `shared_kwargs`, unless the later
+    instruments have NO shared_kwargs at all.
 
-    It is an error to initialize two instruments on
-    the same server with different keys or values for these kwargs, unless
-    the later instruments have NO shared_kwargs at all.
+    SUBCLASS CONSTRUCTORS: `server_name` and any `shared_kwargs` must be
+    available as kwargs and kwargs ONLY (not positional) in all subclasses,
+    and not modified in the inheritance chain. This is because we need to
+    create the server before instantiating the actual instrument. The easiest
+    way to manage this is to accept **kwargs in your subclass and pass them
+    on to super().__init()
     '''
     shared_kwargs = []
 

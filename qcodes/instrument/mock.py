@@ -14,7 +14,10 @@ class MockInstrument(Instrument):
     delay: the time (in seconds) to wait after any operation
         to simulate communication delay
     model: a MockModel object to connect this MockInstrument to.
-        should have one or two methods related directly to this instrument:
+        Subclasses MUST accept `model` as a constructor kwarg ONLY, even
+        though it is required. See notes in `Instrument` docstring.
+        A model should have one or two methods related directly to this
+        instrument:
         <name>_set(param, value) -> set a parameter on the model
         <name>_get(param) -> returns the value
     keep_history: record (in self.history) every command sent to this
