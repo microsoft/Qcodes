@@ -14,7 +14,6 @@ class NoDefault:
     '''
     pass
 
-
 class Instrument(Metadatable, DelegateAttributes):
     '''
     Base class for all QCodes instruments
@@ -67,6 +66,7 @@ class Instrument(Metadatable, DelegateAttributes):
         super().__init__(**kwargs)
         self.parameters = {}
         self.functions = {}
+        self.channels = {}
 
         self.name = str(name)
 
@@ -295,10 +295,13 @@ class Instrument(Metadatable, DelegateAttributes):
 
         kwargs: see StandardParameter (or `parameter_class`)
         '''
-        if name in self.parameters:
-            raise KeyError('Duplicate parameter name {}'.format(name))
-        param = parameter_class(name=name, instrument=self, **kwargs)
-        self.parameters[name] = param
+        if not self.channels:
+            self.channels = {None: self}
+        for instrument in self.channels.values():
+            if name in instrument.parameters:
+                raise KeyError('Duplicate parameter name {}'.format(name))
+            param = parameter_class(name=name, instrument=instrument, **kwargs)
+            instrument.parameters[name] = param
 
         # for use in RemoteInstruments to add parameters to the server
         # we return the info they need to construct their proxy
@@ -369,13 +372,16 @@ class Instrument(Metadatable, DelegateAttributes):
     #  etc...                                                                #
     ##########################################################################
 
-    delegate_attr_dicts = ['parameters', 'functions']
+    delegate_attr_dicts = ['parameters', 'functions', 'channels']
 
     def __getitem__(self, key):
         try:
             return self.parameters[key]
         except KeyError:
-            return self.functions[key]
+            try:
+                return self.functions[key]
+            except KeyError:
+                return self.channels[key]
 
     def set(self, param_name, value):
         self.parameters[param_name].set(value)
@@ -430,3 +436,17 @@ class Instrument(Metadatable, DelegateAttributes):
                 attrs['__doc__'] = value.__doc__
 
         return out
+
+class InstrumentChannel(Instrument):
+    def __init__(self, name, channel_id, instrument):
+        self._t0 = time.time()
+        self.name = str(name)
+        self._channel_id = channel_id
+        self._instrument = instrument
+        self.parameters = {}
+
+    def ask(self, cmd, *args, **kwargs):
+        return self._instrument.ask(cmd, self._channel_id, *args, **kwargs)
+
+    def write(self, cmd, *args, **kwargs):
+        return self._instrument.write(cmd, self._channel_id, *args, **kwargs)
