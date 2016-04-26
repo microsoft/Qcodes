@@ -623,9 +623,7 @@ class _Measure:
         self.store = data_set.store
 
         # for performance, pre-calculate which params return data for
-        # multiple arrays, pre-create the dict to pass these to store fn
-        # and pre-calculate the name mappings
-        self.dict = {}
+        # multiple arrays, and the name mappings
         self.getters = []
         self.param_ids = []
         self.composite = []
@@ -637,16 +635,15 @@ class _Measure:
                 for i in range(len(param.names)):
                     param_id = data_set.action_id_map[action_indices + (i,)]
                     part_ids.append(param_id)
-                    self.dict[param_id] = None
                 self.param_ids.append(None)
                 self.composite.append(part_ids)
             else:
                 param_id = data_set.action_id_map[action_indices]
-                self.dict[param_id] = None
                 self.param_ids.append(param_id)
                 self.composite.append(False)
 
     def __call__(self, loop_indices, **ignore_kwargs):
+        out_dict = {}
         if self.use_threads:
             out = thread_map(self.getters)
         else:
@@ -656,11 +653,11 @@ class _Measure:
                                                   self.composite):
             if composite:
                 for val, part_id in zip(param_out, composite):
-                    self.dict[part_id] = val
+                    out_dict[part_id] = val
             else:
-                self.dict[param_id] = param_out
+                out_dict[param_id] = param_out
 
-        self.store(loop_indices, self.dict)
+        self.store(loop_indices, out_dict)
 
 
 class _Nest:
