@@ -49,7 +49,7 @@ class QtPlot(BasePlot):
         else:            
             # overrule the remote pyqtgraph class
             self.rpg = pg 
-        self.win = pg.GraphicsWindow(title=windowTitle)
+        self.win = self.rpg.GraphicsWindow(title=windowTitle)
         self.win.setBackground(theme[1])
         self.win.resize(*figsize)
         self.subplots = [self.add_subplot()]
