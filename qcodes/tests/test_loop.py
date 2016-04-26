@@ -1,4 +1,5 @@
 from unittest import TestCase
+from unittest.mock import patch
 import time
 import multiprocessing as mp
 import numpy as np
@@ -11,7 +12,7 @@ from qcodes.data.manager import get_data_manager
 from qcodes.instrument.parameter import Parameter, ManualParameter
 from qcodes.utils.multiprocessing import QcodesProcess
 from qcodes.utils.validators import Numbers
-from qcodes.utils.helpers import killprocesses
+from qcodes.utils.helpers import killprocesses, LogCapture
 from .instrument_mocks import AMockModel, MockGates, MockSource, MockMeter
 
 
@@ -211,6 +212,29 @@ class TestLoop(TestCase):
             self.assertLessEqual(delay, target)
             self.assertGreater(delay, target - 0.001)
 
+    @patch('time.sleep')
+    def test_delay0(self, sleep_mock):
+        self.p2.set(3)
+
+        loop = Loop(self.p1[1:3:1]).each(self.p2)
+
+        self.assertEqual(loop.delay, 0)
+
+        data = loop.run_temp()
+        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.p2.tolist(), [3, 3])
+
+        self.assertEqual(sleep_mock.call_count, 0)
+
+    def test_bad_delay(self):
+        for val, err in [(-1, ValueError), (-0.1, ValueError),
+                         (None, TypeError), ('forever', TypeError)]:
+            with self.assertRaises(err):
+                Loop(self.p1[1:3:1], val)
+
+            with self.assertRaises(err):
+                Wait(val)
+
     def test_bare_wait(self):
         # Wait gets transformed to a Task, but is also callable on its own
         t0 = time.perf_counter()
@@ -319,6 +343,22 @@ class TestLoop(TestCase):
         # at least invalid sweep values we find at .each
         with self.assertRaises(ValueError):
             Loop(self.p1[-20:20:1], 0.001).each(self.p1)
+
+    def test_very_short_delay(self):
+        with LogCapture() as s:
+            Loop(self.p1[1:3:1], 1e-9).each(self.p1).run_temp()
+
+        logstr = s.getvalue()
+        s.close()
+        self.assertEqual(logstr.count('negative delay'), 2, logstr)
+
+    def test_zero_delay(self):
+        with LogCapture() as s:
+            Loop(self.p1[1:3:1]).each(self.p1).run_temp()
+
+        logstr = s.getvalue()
+        s.close()
+        self.assertEqual(logstr.count('negative delay'), 0, logstr)
 
 
 class AbortingGetter(ManualParameter):
