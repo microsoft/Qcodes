@@ -1,19 +1,32 @@
 from unittest import TestCase
-import time
-import multiprocessing as mp
 import numpy as np
 
-import qcodes as qc
+import qcodes 
+import matplotlib
+import matplotlib.pyplot as plt
 
 class TestQtPlot(TestCase):
+
     def setUp(self):
-	pass
+        pass
 
     def tearDown(self):
-	pass
-
+        pass
 
     def test_creation(self):
         ''' Simple test function which created a QtPlot window '''
-        plotQ = qc.QtPlot(remote=False, show=False)
+        plotQ = qcodes.QtPlot(remote=False, show=False)
 
+
+class TestMatPlot(TestCase):
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_creation(self):
+        ''' Simple test function which created a QtPlot window '''
+        plotM = qcodes.MatPlot()
+        plt.close(plotM.fig)
