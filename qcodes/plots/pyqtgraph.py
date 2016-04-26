@@ -38,15 +38,18 @@ class QtPlot(BasePlot):
     rpg = None
 
     def __init__(self, *args, figsize=(1000, 600), interval=0.25,
-                 windowTitle='', theme=((60, 60, 60), 'w'), **kwargs):
+                 windowTitle='', theme=((60, 60, 60), 'w'), remote=True, **kwargs):
         super().__init__(interval)
-
-        if not self.__class__.proc:
-            self._init_qt()
 
         self.theme = theme
 
-        self.win = self.rpg.GraphicsWindow(title=windowTitle)
+        if remote:
+            if not self.__class__.proc:
+                self._init_qt()
+        else:            
+            # overrule the remote pyqtgraph class
+            self.rpg = pg 
+        self.win = pg.GraphicsWindow(title=windowTitle)
         self.win.setBackground(theme[1])
         self.win.resize(*figsize)
         self.subplots = [self.add_subplot()]
