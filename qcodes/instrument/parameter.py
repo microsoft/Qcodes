@@ -337,10 +337,6 @@ class StandardParameter(Parameter):
     max_val_age: max time (in seconds) to trust a saved value from
         this parameter as the starting point of a sweep
 
-    sweep_step: DEPRECATED - use step instead
-    sweep_delay: DEPRECATED - use delay instead
-    max_sweep_delay: DEPRECATED - use max_delay instead
-
     docstring: documentation string for the __doc__ field of the object
         The __doc__ field of the instance is used by some help systems,
         but not all
@@ -349,18 +345,7 @@ class StandardParameter(Parameter):
                  get_cmd=None, async_get_cmd=None, get_parser=None,
                  set_cmd=None, async_set_cmd=None, set_parser=None,
                  delay=None, max_delay=None, step=None, max_val_age=3600,
-                 sweep_step=None, sweep_delay=None, max_sweep_delay=None,
                  vals=None, val_mapping=None, **kwargs):
-        # deprecated args - this block to be removed by june 1 2016 or before,
-        # as soon as people have had a chance to convert their WIP branches
-        # to the new arguments.
-        if step is None:
-            step = sweep_step
-        if delay is None:
-            delay = sweep_delay
-        if max_delay is None:
-            max_delay = max_sweep_delay
-
         # handle val_mapping before super init because it impacts
         # vals / validation in the base class
         if val_mapping:
