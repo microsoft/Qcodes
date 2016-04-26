@@ -72,9 +72,9 @@ class GatesBadDelayType(MockGates):
         self.add_parameter('chan0bad', get_cmd='c0?',
                            set_cmd=self.slow_neg_set,
                            get_parser=float,
-                           vals=Numbers(-10, 10), sweep_step=0.2,
-                           sweep_delay=0.01,
-                           max_sweep_delay='forever')
+                           vals=Numbers(-10, 10), step=0.2,
+                           delay=0.01,
+                           max_delay='forever')
 
 
 class GatesBadDelayValue(MockGates):
@@ -83,9 +83,9 @@ class GatesBadDelayValue(MockGates):
         self.add_parameter('chan0bad', get_cmd='c0?',
                            set_cmd=self.slow_neg_set,
                            get_parser=float,
-                           vals=Numbers(-10, 10), sweep_step=0.2,
-                           sweep_delay=0.05,
-                           max_sweep_delay=0.03)
+                           vals=Numbers(-10, 10), step=0.2,
+                           delay=0.05,
+                           max_delay=0.03)
 
 
 class TestParameters(TestCase):
@@ -144,7 +144,7 @@ class TestParameters(TestCase):
             for line in logs:
                 self.assertTrue(line.startswith('negative delay'), line)
 
-    def test_max_sweep_delay_errors(self):
+    def test_max_delay_errors(self):
         with self.assertRaises(TypeError):
             # add_parameter works remotely with string commands, but
             # function commands are not going to be picklable, since they
@@ -347,7 +347,7 @@ class TestParameters(TestCase):
         source.add_parameter('amplitude2', get_cmd='ampl?',
                              set_cmd='ampl:{}', get_parser=float,
                              vals=MultiType(Numbers(0, 1), Strings()),
-                             sweep_step=0.2, sweep_delay=0.02)
+                             step=0.2, delay=0.02)
         self.assertEqual(len(source.getattr('history')), 0)
 
         # 2 history items - get then set, and one warning (cannot sweep
@@ -369,44 +369,44 @@ class TestParameters(TestCase):
 
         # for reference, some add_parameter's that should work
         gates.add_parameter('t0', set_cmd='{}', vals=Numbers(),
-                            sweep_step=0.1, sweep_delay=0.01)
+                            step=0.1, delay=0.01)
         gates.add_parameter('t2', set_cmd='{}', vals=Ints(),
-                            sweep_step=1, sweep_delay=0.01,
+                            step=1, delay=0.01,
                             max_val_age=0)
 
         with self.assertRaises(TypeError):
             # can't sweep non-numerics
             gates.add_parameter('t1', set_cmd='{}', vals=Strings(),
-                                sweep_step=1, sweep_delay=0.01)
+                                step=1, delay=0.01)
         with self.assertRaises(TypeError):
             # need a numeric step too
             gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
-                                sweep_step='a skosh', sweep_delay=0.01)
+                                step='a skosh', delay=0.01)
         with self.assertRaises(TypeError):
             # Ints requires and int step
             gates.add_parameter('t1', set_cmd='{}', vals=Ints(),
-                                sweep_step=0.1, sweep_delay=0.01)
+                                step=0.1, delay=0.01)
         with self.assertRaises(ValueError):
             # need a non-negative step
             gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
-                                sweep_step=-0.1, sweep_delay=0.01)
+                                step=-0.1, delay=0.01)
         with self.assertRaises(TypeError):
             # need a numeric delay
             gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
-                                sweep_step=0.1, sweep_delay='a tad')
+                                step=0.1, delay='a tad')
         with self.assertRaises(ValueError):
             # need a non-negative delay
             gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
-                                sweep_step=0.1, sweep_delay=-0.01)
+                                step=0.1, delay=-0.01)
         with self.assertRaises(TypeError):
             # need a numeric max_val_age
             gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
-                                sweep_step=0.1, sweep_delay=0.01,
+                                step=0.1, delay=0.01,
                                 max_val_age='an hour')
         with self.assertRaises(ValueError):
             # need a non-negative max_val_age
             gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
-                                sweep_step=0.1, sweep_delay=0.01,
+                                step=0.1, delay=0.01,
                                 max_val_age=-1)
 
     def getmem(self, key):
