@@ -65,6 +65,26 @@ class TestVisaInstrument(TestCase):
         self.assertEqual(dsn(address='Gpib::10'), 'GPIBServer')
         self.assertEqual(dsn(address='aSRL4'), 'SerialServer')
 
+    # error args for set(-10)
+    args1 = [
+        'be more positive!',
+        "writing 'STAT:-10.000' to <MockVisa: Joe>",
+        'setting Joe:state to -10'
+    ]
+
+    # error args for set(0)
+    args2 = [
+        "writing 'STAT:0.000' to <MockVisa: Joe>",
+        'setting Joe:state to 0'
+    ]
+
+    # error args for get -> 15
+    args3 = [
+        "I'm out of fingers",
+        "asking 'STAT?' to <MockVisa: Joe>",
+        'getting Joe:state'
+    ]
+
     def test_ask_write_local(self):
         mv = MockVisa('Joe', server_name=None)
 
@@ -75,17 +95,23 @@ class TestVisaInstrument(TestCase):
         self.assertEqual(mv.state.get(), 3.457)  # driver rounds to 3 digits
 
         # test ask and write errors
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError) as e:
             mv.state.set(-10)
+        for arg in self.args1:
+            self.assertIn(arg, e.exception.args)
         self.assertEqual(mv.state.get(), -10)  # set still happened
 
-        with self.assertRaises(visa.VisaIOError):
+        with self.assertRaises(visa.VisaIOError) as e:
             mv.state.set(0)
+        for arg in self.args2:
+            self.assertIn(arg, e.exception.args)
         self.assertEqual(mv.state.get(), 0)
 
         mv.state.set(15)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError) as e:
             mv.state.get()
+        for arg in self.args3:
+            self.assertIn(arg, e.exception.args)
 
     def test_ask_write_server(self):
         # same thing as above but Joe is on a server now...
@@ -98,17 +124,26 @@ class TestVisaInstrument(TestCase):
         self.assertEqual(mv.state.get(), 3.457)  # driver rounds to 3 digits
 
         # test ask and write errors
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError) as e:
             mv.state.set(-10)
+        for arg in self.args1:
+            self.assertIn(repr(arg), e.exception.args[0])
         self.assertEqual(mv.state.get(), -10)  # set still happened
 
         # only built-in errors get propagated to the main process as the
         # same type. Perhaps we could include some more common ones like
         # this (visa.VisaIOError) in the future...
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(RuntimeError) as e:
             mv.state.set(0)
+        for arg in self.args2:
+            self.assertIn(repr(arg), e.exception.args[0])
+        # the error type isn't VisaIOError, but it should be in the message
+        self.assertIn('VisaIOError', e.exception.args[0])
+        self.assertIn('VI_ERROR_TMO', e.exception.args[0])
         self.assertEqual(mv.state.get(), 0)
 
         mv.state.set(15)
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError) as e:
             mv.state.get()
+        for arg in self.args3:
+            self.assertIn(repr(arg), e.exception.args[0])
