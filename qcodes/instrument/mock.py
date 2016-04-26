@@ -2,7 +2,7 @@ import time
 from datetime import datetime
 from traceback import format_exc
 
-from .base import Instrument, InstrumentChannel
+from .base import Instrument
 from qcodes.utils.multiprocessing import ServerManager, SERVER_ERR
 
 
@@ -99,17 +99,6 @@ class MockInstrument(Instrument):
             time.sleep(self._delay)
 
         return self._read_response
-
-    def add_channels(self, channels, channel_class=InstrumentChannel, **kwargs):
-        '''
-        creates a Channel for this instrument
-        each Channel has its own set of parameters as defined by add_parameter
-        '''
-        for name in channels:
-            if name in self.channels:
-                raise KeyError('Duplicate channel name {}'.format(name))
-            channel = channel_class(name, channels[name], instrument=self, **kwargs)
-            self.channels[name] = channel
 
 
 class MockModel(ServerManager):  # pragma: no cover

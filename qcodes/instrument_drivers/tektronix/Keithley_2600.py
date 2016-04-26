@@ -22,14 +22,8 @@
 # THE SOFTWARE.
 
 import re
-from qcodes import VisaInstrument, InstrumentChannel
+from qcodes import VisaInstrument
 
-class KeithleyChannel(InstrumentChannel):
-    def ask(self, cmd, channel):
-        return self.visa_handle.ask('print(smu{:s}.{:s})'.format(channel, cmd))
-
-    def write(self, cmd, channel):
-        super().write('smu{:s}.{:s}'.format(channel, cmd))
 
 class Keithley_2600(VisaInstrument):
     '''
@@ -45,10 +39,17 @@ class Keithley_2600(VisaInstrument):
         - add ramping and such stuff
 
     '''
-    def __init__(self, name, address, channels, **kwargs):
+    def __init__(self, name, address, channel, **kwargs):
         super().__init__(name, address, terminator='\n', **kwargs)
-        
-        self.add_channels(channels, channel_class = KeithleyChannel)
+        self._channel = channel
+
+        IDN = self.visa_handle.ask('*IDN?')
+        vendor, model, serial, firmware = map(str.strip, IDN.split(','))
+        model = model[6:]
+
+        self.IDN = {'vendor': vendor, 'model': model,
+                    'serial': serial, 'firmware': firmware}
+
         self.add_parameter('volt', get_cmd='measure.v()',
                            get_parser=float, set_cmd='source.levelv={:.8f}',
                            label='Voltage',
@@ -113,3 +114,9 @@ class Keithley_2600(VisaInstrument):
 
     def ask_direct(self, cmd):
         return self.visa_handle.ask(cmd)
+
+    def ask(self, cmd):
+        return self.visa_handle.ask('print(smu{:s}.{:s})'.format(self._channel, cmd))
+
+    def write(self, cmd):
+        super().write('smu{:s}.{:s}'.format(self._channel, cmd))
