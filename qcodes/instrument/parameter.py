@@ -337,6 +337,10 @@ class StandardParameter(Parameter):
     max_val_age: max time (in seconds) to trust a saved value from
         this parameter as the starting point of a sweep
 
+    sweep_step: DEPRECATED - use step instead
+    sweep_delay: DEPRECATED - use delay instead
+    max_sweep_delay: DEPRECATED - use max_delay instead
+
     docstring: documentation string for the __doc__ field of the object
         The __doc__ field of the instance is used by some help systems,
         but not all
@@ -344,8 +348,19 @@ class StandardParameter(Parameter):
     def __init__(self, name, instrument=None,
                  get_cmd=None, async_get_cmd=None, get_parser=None,
                  set_cmd=None, async_set_cmd=None, set_parser=None,
-                 delay=None, max_delay=None, step=0, max_val_age=3600,
+                 delay=None, max_delay=None, step=None, max_val_age=3600,
+                 sweep_step=None, sweep_delay=None, max_sweep_delay=None,
                  vals=None, val_mapping=None, **kwargs):
+        # deprecated args - this block to be removed by june 1 2016 or before,
+        # as soon as people have had a chance to convert their WIP branches
+        # to the new arguments.
+        if step is None:
+            step = sweep_step
+        if delay is None:
+            delay = sweep_delay
+        if max_delay is None:
+            max_delay = max_sweep_delay
+
         # handle val_mapping before super init because it impacts
         # vals / validation in the base class
         if val_mapping:
@@ -547,9 +562,11 @@ class StandardParameter(Parameter):
         max_delay: if given, the longest time allowed for the underlying set
             call before we emit a warning.
 
-        If delay is 0 and max_delay is None or 0, we never emit warnings
+        If delay and max_delay are both None or 0, we never emit warnings
         no matter how long the set takes.
         '''
+        if delay is None:
+            delay = 0
         if not isinstance(delay, (int, float)):
             raise TypeError('delay must be a non-negative number')
         if delay < 0:
@@ -557,9 +574,11 @@ class StandardParameter(Parameter):
         self._delay = delay
 
         if max_delay is not None:
-            if not isinstance(max_delay, (int, float)) or max_delay < delay:
+            if not isinstance(max_delay, (int, float)):
                 raise TypeError(
                     'max_delay must be a number no shorter than delay')
+            if max_delay < delay:
+                raise ValueError('max_delay must be no shorter than delay')
             self._delay_tolerance = max_delay - delay
         else:
             self._delay_tolerance = 0

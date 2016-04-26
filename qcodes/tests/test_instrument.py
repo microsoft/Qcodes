@@ -379,11 +379,7 @@ class TestParameters(TestCase):
             gates.add_parameter('t1', set_cmd='{}', vals=Ints(),
                                 sweep_step=0.1, sweep_delay=0.01)
         with self.assertRaises(ValueError):
-            # need a positive step
-            gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
-                                sweep_step=0, sweep_delay=0.01)
-        with self.assertRaises(ValueError):
-            # need a positive step
+            # need a non-negative step
             gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
                                 sweep_step=-0.1, sweep_delay=0.01)
         with self.assertRaises(TypeError):
@@ -391,13 +387,9 @@ class TestParameters(TestCase):
             gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
                                 sweep_step=0.1, sweep_delay='a tad')
         with self.assertRaises(ValueError):
-            # need a positive delay
+            # need a non-negative delay
             gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
                                 sweep_step=0.1, sweep_delay=-0.01)
-        with self.assertRaises(ValueError):
-            # need a positive delay
-            gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
-                                sweep_step=0.1, sweep_delay=0)
         with self.assertRaises(TypeError):
             # need a numeric max_val_age
             gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
