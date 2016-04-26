@@ -45,14 +45,6 @@ If you registered Qcodes with Python via `setup.py develop`, all you need to do 
 
 See the [docs](docs) directory, particularly the notebooks in [docs/examples](docs/examples)
 
-Until we have this prepared as an installable package, you need to make sure Python can find qcodes by adding the repository root directory to `sys.path`:
-```
-import sys
-qcpath = 'your/Qcodes/repository/path'
-if qcpath not in sys.path:
-    sys.path.append(qcpath)
-```
-
 For frequently asked questions see the [Qcodes FAQ](docs/FAQ.md).
 
 ## Contributing
