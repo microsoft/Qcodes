@@ -12,7 +12,7 @@ from qcodes.data.manager import get_data_manager
 from qcodes.instrument.parameter import Parameter, ManualParameter
 from qcodes.utils.multiprocessing import QcodesProcess
 from qcodes.utils.validators import Numbers
-from qcodes.utils.helpers import killprocesses
+from qcodes.utils.helpers import killprocesses, LogCapture
 from .instrument_mocks import AMockModel, MockGates, MockSource, MockMeter
 
 
@@ -343,6 +343,22 @@ class TestLoop(TestCase):
         # at least invalid sweep values we find at .each
         with self.assertRaises(ValueError):
             Loop(self.p1[-20:20:1], 0.001).each(self.p1)
+
+    def test_very_short_delay(self):
+        with LogCapture() as s:
+            Loop(self.p1[1:3:1], 1e-9).each(self.p1).run_temp()
+
+        logstr = s.getvalue()
+        s.close()
+        self.assertEqual(logstr.count('negative delay'), 2, logstr)
+
+    def test_zero_delay(self):
+        with LogCapture() as s:
+            Loop(self.p1[1:3:1]).each(self.p1).run_temp()
+
+        logstr = s.getvalue()
+        s.close()
+        self.assertEqual(logstr.count('negative delay'), 0, logstr)
 
 
 class AbortingGetter(ManualParameter):
