@@ -428,15 +428,23 @@ class StandardParameter(Parameter):
             self.has_set = True
 
     def _validate_and_set(self, value):
+        clock = time.perf_counter()
         self.validate(value)
         self._set(value)
         self._save_val(value)
+        if self._delay is not None:
+            clock, remainder = self._update_set_ts(clock)
+            time.sleep(remainder)
 
     @asyncio.coroutine
     def _validate_and_set_async(self, value):
+        clock = time.perf_counter()
         self.validate(value)
         yield from self._set_async(value)
         self._save_val(value)
+        if self._delay is not None:
+            clock, remainder = self._update_set_ts(clock)
+            yield from asyncio.sleep(remainder)
 
     def _sweep_steps(self, value):
         oldest_ok_val = datetime.now() - timedelta(seconds=self._max_val_age)
@@ -461,7 +469,7 @@ class StandardParameter(Parameter):
         # drop the initial value, we're already there
         return permissive_range(start_value, value, self._step)[1:]
 
-    def _update_sweep_ts(self, step_clock):
+    def _update_set_ts(self, step_clock):
         # calculate the delay time to the *max* delay,
         # then take off up to the tolerance
         tolerance = self._delay_tolerance
@@ -482,8 +490,9 @@ class StandardParameter(Parameter):
         for step_val in self._sweep_steps(value):
             self._set(step_val)
             self._save_val(step_val)
-            step_clock, remainder = self._update_sweep_ts(step_clock)
-            time.sleep(remainder)
+            if self._delay is not None:
+                step_clock, remainder = self._update_set_ts(step_clock)
+                time.sleep(remainder)
 
         self._set(value)
         self._save_val(value)
@@ -496,8 +505,9 @@ class StandardParameter(Parameter):
         for step_val in self._sweep_steps(value):
             yield from self._set_async(step_val)
             self._save_val(step_val)
-            step_clock, remainder = self._update_sweep_ts(step_clock)
-            yield from asyncio.sleep(remainder)
+            if self._delay is not None:
+                step_clock, remainder = self._update_set_ts(step_clock)
+                yield from asyncio.sleep(remainder)
 
         yield from self._set_async(value)
         self._save_val(value)
@@ -584,7 +594,8 @@ class StandardParameter(Parameter):
             self._delay_tolerance = 0
 
         if not (self._delay or self._delay_tolerance):
-            # denotes that we shouldn't emit any warnings
+            # denotes that we shouldn't follow the wait code or
+            # emit any warnings
             self._delay = None
 
 

@@ -122,6 +122,14 @@ class MockGates(MockInstTester):
                            set_cmd=self.slow_neg_set, get_parser=float,
                            vals=Numbers(-10, 10), sweep_step=0.2,
                            sweep_delay=0.01, max_sweep_delay=0.08)
+        self.add_parameter('chan0slow4', get_cmd='c0?',
+                           set_cmd=self.slow_neg_set, get_parser=float,
+                           vals=Numbers(-10, 10),
+                           sweep_delay=0.01, max_sweep_delay=0.02)
+        self.add_parameter('chan0slow5', get_cmd='c0?',
+                           set_cmd=self.slow_neg_set, get_parser=float,
+                           vals=Numbers(-10, 10),
+                           sweep_delay=0.01, max_sweep_delay=0.08)
 
         self.add_function('reset', call_cmd='rst')
 

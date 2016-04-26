@@ -122,11 +122,19 @@ class TestParameters(TestCase):
         # at least for now, need a local instrument to test logging
         gatesLocal = MockGates(model=self.model, server_name=None)
         for param, logcount in (('chan0slow', 2), ('chan0slow2', 2),
-                                ('chan0slow3', 0)):
+                                ('chan0slow3', 0), ('chan0slow4', 1),
+                                ('chan0slow5', 0)):
             gatesLocal.chan0.set(-0.5)
 
             with LogCapture() as s:
-                gatesLocal.set(param, 0.5)
+                if param in ('chan0slow', 'chan0slow2', 'chan0slow3'):
+                    # these are the stepped parameters
+                    gatesLocal.set(param, 0.5)
+                else:
+                    # these are the non-stepped parameters that
+                    # still have delays
+                    gatesLocal.set(param, -1)
+                    gatesLocal.set(param, 1)
 
             logs = s.getvalue().split('\n')[:-1]
             s.close()
