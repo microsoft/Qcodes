@@ -423,7 +423,7 @@ class ActiveLoop:
             finish? If false, will raise an error if another sweep is running
         quiet: (default False): set True to not print anything except errors
         data_manager: a DataManager instance (omit to use default,
-            False to store locally and not write to disk)
+            False to store locally)
 
         kwargs are passed along to data_set.new_data. The key ones are:
         location: the location of the DataSet, a string whose meaning
