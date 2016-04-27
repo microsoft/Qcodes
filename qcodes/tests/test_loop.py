@@ -50,6 +50,11 @@ class TestMockInstLoop(TestCase):
         self.io.remove_all(self.location)
         self.io.remove_all(self.location2)
 
+    def check_empty_data(self, data):
+        expected = repr([float('nan')] * 4)
+        self.assertEqual(repr(data.chan1.tolist()), expected)
+        self.assertEqual(repr(data.chan1_set.tolist()), expected)
+
     def check_loop_data(self, data):
         self.assertEqual(data.chan1.tolist(), [1, 2, 3, 4])
         self.assertEqual(data.chan1_set.tolist(), [1, 2, 3, 4])
@@ -65,6 +70,7 @@ class TestMockInstLoop(TestCase):
         # TODO: this is the one place we don't do quiet=True - test that we
         # really print stuff?
         data = self.loop.run(location=self.location)
+        self.check_empty_data(data)
 
         # wait for process to finish (ensures that this was run in the bg,
         # because otherwise there *is* no loop.process)
@@ -76,6 +82,8 @@ class TestMockInstLoop(TestCase):
     def test_background_no_datamanager(self):
         data = self.loop.run(location=self.location, data_manager=False,
                              quiet=True)
+        self.check_empty_data(data)
+
         self.loop.process.join()
 
         data.sync()
