@@ -17,20 +17,24 @@ class DFT_AcquisitionController(AcquisitionController):
         self.buffer = None
 
     def pre_start_capture(self, alazar):
-        self.samples_per_record = alazar.parameters['samples_per_record'].get()
-        self.records_per_buffer = alazar.parameters['records_per_buffer'].get()
-        self.buffers_per_acquisition = alazar.parameters['buffers_per_acquisition'].get()
+        self.samples_per_record = alazar.samples_per_record.get()
+        self.records_per_buffer = alazar.records_per_buffer.get()
+        self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
         sample_speed = alazar.get_sample_speed()
         integer_list = np.arange(self.samples_per_record)
+        angle_list = (2 * np.pi * self.demodulation_frequency / sample_speed *
+                      integer_list)
 
-        self.cos_list = np.cos(2 * np.pi * self.demodulation_frequency / sample_speed * integer_list)
-        self.sin_list = np.sin(2 * np.pi * self.demodulation_frequency / sample_speed * integer_list)
-        self.buffer = np.zeros(self.samples_per_record * self.records_per_buffer * self.number_of_channels)
+        self.cos_list = np.cos(angle_list)
+        self.sin_list = np.sin(angle_list)
+        self.buffer = np.zeros(self.samples_per_record *
+                               self.records_per_buffer *
+                               self.number_of_channels)
 
     def pre_acquire(self, alazar):
         # this could be used to start an Arbitrary Waveform Generator, etc...
-        # using this method ensures that the contents are executed AFTER the Alazar card starts listening for a
-        # trigger pulse
+        # using this method ensures that the contents are executed AFTER the
+        # Alazar card starts listening for a trigger pulse
         pass
 
     def handle_buffer(self, alazar, data):
@@ -38,22 +42,27 @@ class DFT_AcquisitionController(AcquisitionController):
 
     def post_acquire(self, alazar):
         # average all records in a buffer
+        records_per_acquisition = (1. * self.buffers_per_acquisition *
+                                   self.records_per_buffer)
         recordA = np.zeros(self.samples_per_record)
         for i in range(self.records_per_buffer):
-            recordA += self.buffer[i * self.samples_per_record: (i + 1) * self.samples_per_record] / (
-                1. * self.buffers_per_acquisition * self.records_per_buffer)
+            i0 = i * self.samples_per_record
+            i1 = i0 + self.samples_per_record
+            recordA += self.buffer[i0:i1] / records_per_acquisition
 
         recordB = np.zeros(self.samples_per_record)
         for i in range(self.records_per_buffer):
-            recordB += self.buffer[
-                       i * self.samples_per_record + len(self.buffer) / 2: (i + 1) * self.samples_per_record + len(
-                           self.buffer) / 2] / (1. * self.buffers_per_acquisition * self.records_per_buffer)
+            i0 = i * self.samples_per_record + len(self.buffer) / 2
+            i1 = i0 + self.samples_per_record
+            recordB += self.buffer[i0:i1] / records_per_acquisition
 
         if self.number_of_channels == 2:
             # fit channel A and channel B
             res1 = self.fit(recordA)
             res2 = self.fit(recordB)
-            return [alazar.signal_to_volt(1, res1[0] + 127.5), alazar.signal_to_volt(2, res2[0] + 127.5), res1[1], res2[1],
+            return [alazar.signal_to_volt(1, res1[0] + 127.5),
+                    alazar.signal_to_volt(2, res2[0] + 127.5),
+                    res1[1], res2[1],
                     (res1[1] - res2[1]) % 360]
         else:
             raise Exception("Could not find CHANNEL_B during data extraction")
@@ -61,10 +70,11 @@ class DFT_AcquisitionController(AcquisitionController):
 
     def fit(self, buf):
         # Discrete Fourier Transform
-        RePart = np.dot(buf - 127.5, self.cos_list) / float(self.samples_per_record)
-        ImPart = np.dot(buf - 127.5, self.sin_list) / float(self.samples_per_record)
+        RePart = np.dot(buf - 127.5, self.cos_list) / self.samples_per_record
+        ImPart = np.dot(buf - 127.5, self.sin_list) / self.samples_per_record
 
-        # the factor of 2 in the amplitude is due to the fact that there is a negative frequency as well
+        # the factor of 2 in the amplitude is due to the fact that there is
+        # a negative frequency as well
         ampl = 2 * np.sqrt(RePart ** 2 + ImPart ** 2)
 
         # see manual page 52!!! (using unsigned data)
