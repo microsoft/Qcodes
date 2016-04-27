@@ -436,6 +436,8 @@ class ActiveLoop:
         formatter: knows how to read and write the file format
             default can be set in DataSet.default_formatter
         io: knows how to connect to the storage (disk vs cloud etc)
+        write_period: how often to save to storage during the loop.
+            default 5 sec, use None to write only at the end
 
 
         returns:
@@ -466,11 +468,17 @@ class ActiveLoop:
             p.start()
             self.process = p
 
+            # now that the data_set we created has been put in the loop
+            # process, this copy turns into a reader
+            # if you're not using a DataManager, it just stays local
+            # and sync() reads from disk
+            if self.data_set.mode == DataMode.PUSH_TO_SERVER:
+                self.data_set.mode = DataMode.PULL_FROM_SERVER
             self.data_set.sync()
-            self.data_set.mode = DataMode.PULL_FROM_SERVER
         else:
             self._run_wrapper()
-            self.data_set.read()
+            if self.data_set.mode != DataMode.LOCAL:
+                self.data_set.sync()
 
         if not quiet:
             print(repr(self.data_set))
@@ -513,8 +521,8 @@ class ActiveLoop:
         try:
             self._run_loop(*args, **kwargs)
         finally:
-            if(hasattr(self, 'data_set') and hasattr(self.data_set, 'close')):
-                self.data_set.close()
+            if hasattr(self, 'data_set'):
+                self.data_set.finalize()
 
     def _run_loop(self, first_delay=0, action_indices=(),
                   loop_indices=(), current_values=(),

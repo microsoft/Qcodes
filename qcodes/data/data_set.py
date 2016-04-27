@@ -1,5 +1,6 @@
 from enum import Enum
 from datetime import datetime
+import time
 
 from .manager import get_data_manager, NoData
 from .format import GNUPlotFormat
@@ -44,7 +45,7 @@ def new_data(location=None, name=None, overwrite=False, io=None,
         location = location(io)
 
     if location and (not overwrite) and io.list(location):
-        raise FileExistsError
+        raise FileExistsError('"' + location + '" already has data')
 
     if data_manager is False:
         if mode != DataMode.LOCAL:
@@ -176,6 +177,11 @@ class DataSet(DelegateAttributes):
         The default (stored in class attribute DataSet.default_io) is
         DiskIO('.') which says the root data storage directory is the
         current working directory, ie where you started the notebook or python.
+
+    write_period: seconds (default 5) between saves to disk. This only applies
+        if mode=LOCAL, otherwise the DataManager handles this (and generally
+        writes more often because it's not tying up the main process to do so).
+        use None to disable writing from calls to self.store
     '''
 
     # ie data_array.arrays['vsd'] === data_array.vsd
@@ -186,7 +192,7 @@ class DataSet(DelegateAttributes):
     location_provider = TimestampLocation()
 
     def __init__(self, location=None, mode=DataMode.LOCAL, arrays=None,
-                 data_manager=None, formatter=None, io=None):
+                 data_manager=None, formatter=None, io=None, write_period=5):
         if location is False or isinstance(location, str):
             self.location = location
         else:
@@ -196,6 +202,9 @@ class DataSet(DelegateAttributes):
         # make it all look unsaved
         self.formatter = formatter or self.default_formatter
         self.io = io or self.default_io
+
+        self.write_period = write_period
+        self.last_write = 0
 
         self.arrays = {}
         if arrays:
@@ -304,7 +313,11 @@ class DataSet(DelegateAttributes):
         if not self.is_live_mode:
             # LOCAL DataSet - just read it in
             # TODO: compare timestamps to know if we need to read?
-            self.read()
+            try:
+                self.read()
+            except IOError:
+                # if no files exist, they probably haven't been created yet.
+                pass
             return False
             # TODO - for remote live plotting, maybe set some timestamp
             # threshold and call it static after it's been dormant a long time?
@@ -416,6 +429,10 @@ class DataSet(DelegateAttributes):
         else:
             for array_id, value in ids_values.items():
                 self.arrays[array_id][loop_indices] = value
+            if (self.write_period is not None and
+                    time.time() > self.last_write + self.write_period):
+                self.write()
+                self.last_write = time.time()
 
     def read(self):
         '''
@@ -438,12 +455,17 @@ class DataSet(DelegateAttributes):
             return
         self.formatter.write(self)
 
-    def close(self):
+    def finalize(self):
         '''
-        Tell the DataServer that the measurement is done
+        Mark the DataSet as complete
         '''
         if self.mode == DataMode.PUSH_TO_SERVER:
             self.data_manager.ask('end_data')
+        elif self.mode == DataMode.LOCAL:
+            self.write()
+        else:
+            raise RuntimeError('This mode does not allow finalizing',
+                               self.mode)
 
     def plot(self, cut=None):
         pass  # TODO
