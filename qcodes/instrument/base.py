@@ -96,6 +96,7 @@ class Instrument(Metadatable, DelegateAttributes):
 
         con_msg = 'Connected to: {} in {:.2f}s'.format(
             idn.strip(), time.time() - (begin_time or self._t0))
+        print(con_msg)
         return con_msg
 
     def __repr__(self):
