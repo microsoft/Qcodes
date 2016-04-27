@@ -6,6 +6,7 @@ from qcodes.utils.helpers import DelegateAttributes, strip_attrs
 from .parameter import StandardParameter
 from .function import Function
 from .remote import RemoteInstrument
+import logging
 
 
 class NoDefault:
@@ -93,8 +94,9 @@ class Instrument(Metadatable, DelegateAttributes):
         '''
         idn = self.get(param_name).replace(',', ', ').replace('\n', ' ')
 
-        return 'Connected to: {} in {:.2f}s'.format(
+        con_msg = 'Connected to: {} in {:.2f}s'.format(
             idn.strip(), time.time() - (begin_time or self._t0))
+        return con_msg
 
     def __repr__(self):
         return '<{}: {}>'.format(type(self).__name__, self.name)
