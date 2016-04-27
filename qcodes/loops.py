@@ -476,6 +476,10 @@ class ActiveLoop:
                 self.data_set.mode = DataMode.PULL_FROM_SERVER
             self.data_set.sync()
         else:
+            if hasattr(self, 'process'):
+                # in case this ActiveLoop was run before in the background
+                del self.process
+
             self._run_wrapper()
             if self.data_set.mode != DataMode.LOCAL:
                 self.data_set.sync()

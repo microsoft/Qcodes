@@ -34,36 +34,66 @@ class TestMockInstLoop(TestCase):
         self.location2 = '_loop_test2_'
         self.io = DiskIO('.')
 
+        c1 = self.gates.chan1
+        self.loop = Loop(c1[1:5:1], 0.001).each(c1)
+
+        self.assertFalse(self.io.list(self.location))
+        self.assertFalse(self.io.list(self.location2))
+
     def tearDown(self):
         for instrument in [self.gates, self.source, self.meter]:
             instrument.close()
 
+        get_data_manager().close()
+        self.model.close()
+
         self.io.remove_all(self.location)
         self.io.remove_all(self.location2)
 
-    def test_instruments_in_loop(self):
+    def check_loop_data(self, data):
+        self.assertEqual(data.chan1.tolist(), [1, 2, 3, 4])
+        self.assertEqual(data.chan1_set.tolist(), [1, 2, 3, 4])
+
+        self.assertTrue(self.io.list(self.location))
+
+    def test_background_and_datamanager(self):
         # make sure that an unpicklable instrument can indeed run in a loop
-        self.assertFalse(self.io.list(self.location))
-        c1 = self.gates.chan1
-        loop = Loop(c1[1:5:1], 0.001).each(c1)
 
         # TODO: if we don't save the dataset (location=False) then we can't
         # sync it when we're done. Should fix that - for now that just means
         # you can only do in-memory loops if you set data_manager=False
         # TODO: this is the one place we don't do quiet=True - test that we
         # really print stuff?
-        data = loop.run(location=self.location)
+        data = self.loop.run(location=self.location)
 
         # wait for process to finish (ensures that this was run in the bg,
         # because otherwise there *is* no loop.process)
-        loop.process.join()
+        self.loop.process.join()
 
         data.sync()
+        self.check_loop_data(data)
 
-        self.assertEqual(data.chan1.tolist(), [1, 2, 3, 4])
-        self.assertEqual(data.chan1_set.tolist(), [1, 2, 3, 4])
+    def test_background_no_datamanager(self):
+        data = self.loop.run(location=self.location, data_manager=False,
+                             quiet=True)
+        self.loop.process.join()
 
-        self.assertTrue(self.io.list(self.location))
+        data.sync()
+        self.check_loop_data(data)
+
+    def test_foreground_and_datamanager(self):
+        data = self.loop.run(location=self.location, background=False,
+                             quiet=True)
+        self.assertFalse(hasattr(self.loop, 'process'))
+
+        self.check_loop_data(data)
+
+    def test_foreground_no_datamanager(self):
+        data = self.loop.run(location=self.location, background=False,
+                             data_manager=False, quiet=True)
+        self.assertFalse(hasattr(self.loop, 'process'))
+
+        self.check_loop_data(data)
 
     def test_enqueue(self):
         c1 = self.gates.chan1
