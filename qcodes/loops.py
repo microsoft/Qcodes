@@ -41,6 +41,7 @@ from datetime import datetime
 import multiprocessing as mp
 import time
 import numpy as np
+from pprint import pprint
 
 from qcodes.station import Station
 from qcodes.data.data_set import new_data, DataMode
@@ -48,6 +49,7 @@ from qcodes.data.data_array import DataArray
 from qcodes.utils.helpers import wait_secs
 from qcodes.utils.multiprocessing import QcodesProcess
 from qcodes.utils.threading import thread_map
+from qcodes.utils.metadata import Metadatable
 
 
 MP_NAME = 'Measurement'
@@ -99,7 +101,7 @@ def halt_bg(timeout=5):
 #     pass
 
 
-class Loop:
+class Loop(Metadatable):
     '''
     The entry point for creating measurement loops
 
@@ -118,6 +120,7 @@ class Loop:
     this one.
     '''
     def __init__(self, sweep_values, delay):
+        super().__init__()
         self.sweep_values = sweep_values
         self.delay = delay
         self.nested_loop = None
@@ -181,8 +184,17 @@ class Loop:
         return self.run(*args, background=False, quiet=True,
                         data_manager=False, location=False, **kwargs)
 
+    def snapshot_base(self, update=False):
+        snap = {}
 
-class ActiveLoop:
+        snap['loop'] = {}
+        snap['loop']['values'] = self.sweep_values.snapshot(update=update)
+        snap['loop']['delay'] = self.delay
+
+        return(snap)
+
+
+class ActiveLoop(Metadatable):
     '''
     Created by attaching actions to a `Loop`, this is the object that actually
     runs a measurement loop. An `ActiveLoop` can no longer be nested, only run,
@@ -194,9 +206,11 @@ class ActiveLoop:
     HALT = 'HALT LOOP'
 
     def __init__(self, sweep_values, delay, *actions):
+        super().__init__()
         self.sweep_values = sweep_values
         self.delay = delay
         self.actions = actions
+        self._data_snap = None
 
         # compile now, but don't save the results
         # just used for preemptive error checking
@@ -217,6 +231,27 @@ class ActiveLoop:
         self.signal_queue = mp.Queue()
 
         self._monitor = None  # TODO: how to specify this?
+
+    # def snapshot(self, update=False):
+    #     return self._snapshot_base
+
+    def snapshot_base(self, update=False):
+        snap = {}
+
+        snap['active-loop'] = {}
+        snap['active-loop']['sweep_values'] = self.sweep_values.snapshot(update=update)
+        snap['active-loop']['delay'] = self.delay
+
+        snap['active-loop']['actions'] = []
+        for actn in self.actions:
+            if hasattr(actn, 'snapshot'):
+                snap['active-loop']['actions'].append(actn.snapshot(update=update))
+            else:
+                snap['active-loop']['actions'].append({'type': None,
+                                        'description': 'Action without snapshot'})
+        snap['data'] = self._data_snap
+        return(snap)
+
 
     def containers(self):
         '''
@@ -455,6 +490,12 @@ class ActiveLoop:
         self.set_common_attrs(data_set=data_set, use_threads=use_threads,
                               signal_queue=self.signal_queue)
 
+
+        self._data_snap = data_set.snapshot()
+        # snap = self.snapshot_base()
+
+        # pprint(snap)
+
         if background:
             p = QcodesProcess(target=self._run_wrapper, name=MP_NAME)
             p.is_sweep = True
@@ -585,6 +626,10 @@ class Task:
     def __call__(self, **ignore_kwargs):
         self.func(*self.args, **self.kwargs)
 
+    def snapshot(self, update=False):
+        return {'type': 'Task', 'func': self.func.__repr__}
+
+
 
 class Wait:
     '''
@@ -600,6 +645,9 @@ class Wait:
 
     def __call__(self):
         time.sleep(self.delay)
+
+    def snapshot(self, update=False):
+        return {'type': 'Wait', 'delay': self.delay}
 
 
 class _Measure:

@@ -448,6 +448,22 @@ class DataSet(DelegateAttributes):
     def plot(self, cut=None):
         pass  # TODO
 
+    def snapshot(self, update=False):
+        arrs = []
+        for array_id, array in self.arrays.items():
+            arrs.append({'array_id': array_id, 'array.name': array.name})
+
+        snap = {'__class__': self.__class__.__module__ +
+                             '.' + self.__class__.__name__,
+                'mode': repr(self.mode),
+                'location': self.location,
+                'arrays': arrs,
+                'formatter': self.formatter.__class__.__module__ +
+                             '.' + self.formatter.__class__.__name__,
+                'io': repr(self.io),
+                'base_location': self.io.base_location}
+        return snap
+
     def __repr__(self):
         out = '{}: {}, location={}'.format(
             self.__class__.__name__, self.mode, repr(self.location))

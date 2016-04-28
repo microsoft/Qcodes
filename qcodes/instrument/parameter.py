@@ -254,6 +254,8 @@ class Parameter(Metadatable):
             self.get()
 
         state = self._latest()
+        state['__class__'] = str(self.__class__.__module__ +
+                                 '.' + self.__class__.__name__)
 
         if state['ts'] is not None:
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
