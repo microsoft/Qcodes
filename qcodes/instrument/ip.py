@@ -100,15 +100,23 @@ class IPInstrument(Instrument):
         super().close()
 
     def write(self, cmd):
-        with self._ensure_connection:
-            self._send(cmd)
-            if self._confirmation:
-                self._recv()
+        try:
+            with self._ensure_connection:
+                self._send(cmd)
+                if self._confirmation:
+                    self._recv()
+        except Exception as e:
+            e.args = e.args + ('writing ' + repr(cmd) + ' to ' + repr(self),)
+            raise e
 
     def ask(self, cmd):
-        with self._ensure_connection:
-            self._send(cmd)
-            return self._recv()
+        try:
+            with self._ensure_connection:
+                self._send(cmd)
+                return self._recv()
+        except Exception as e:
+            e.args = e.args + ('asking ' + repr(cmd) + ' to ' + repr(self),)
+            raise e
 
     def snapshot_base(self, update=False):
         snap = super().snapshot_base(update=update)

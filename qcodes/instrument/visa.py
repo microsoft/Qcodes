@@ -30,8 +30,6 @@ class VisaInstrument(Instrument):
         self.set_address(address)
         self.set_timeout(timeout)
         self.set_terminator(terminator)
-        self.add_parameter('IDN', get_cmd='*IDN?',
-                           get_parser=self.get_idn_dict)
 
     @classmethod
     def default_server_name(cls, **kwargs):
@@ -93,11 +91,19 @@ class VisaInstrument(Instrument):
             raise visa.VisaIOError(ret_code)
 
     def write(self, cmd):
-        nr_bytes_written, ret_code = self.visa_handle.write(cmd)
-        self.check_error(ret_code)
+        try:
+            nr_bytes_written, ret_code = self.visa_handle.write(cmd)
+            self.check_error(ret_code)
+        except Exception as e:
+            e.args = e.args + ('writing ' + repr(cmd) + ' to ' + repr(self),)
+            raise e
 
     def ask(self, cmd):
-        return self.visa_handle.ask(cmd)
+        try:
+            return self.visa_handle.ask(cmd)
+        except Exception as e:
+            e.args = e.args + ('asking ' + repr(cmd) + ' to ' + repr(self),)
+            raise e
 
     def snapshot_base(self, update=False):
         snap = super().snapshot_base(update=update)
@@ -107,7 +113,3 @@ class VisaInstrument(Instrument):
         snap['timeout'] = self._timeout
 
         return snap
-
-    def get_idn_dict(self, IDN):
-        vendor, model, serial, firmware = map(str.strip, IDN.split(','))
-        return {'vendor': vendor, 'model': model, 'serial': serial, 'firmware': firmware}

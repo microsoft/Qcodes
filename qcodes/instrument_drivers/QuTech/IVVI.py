@@ -70,9 +70,9 @@ class IVVI(VisaInstrument):
                 get_cmd=self._gen_ch_get_func(self._get_dac, i),
                 set_cmd=self._gen_ch_set_func(self._set_dac, i),
                 vals=vals.Numbers(-2000, 2000),
-                sweep_step=10,
-                sweep_delay=.1,
-                max_sweep_delay=.2,
+                step=10,
+                delay=.1,
+                max_delay=.2,
                 max_val_age=10)
 
         self._update_time = 5  # seconds
