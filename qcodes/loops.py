@@ -244,16 +244,16 @@ class ActiveLoop(Metadatable):
     def snapshot_base(self, update=False):
         snap = {}
 
-        snap['active-loop'] = {}
-        snap['active-loop']['sweep_values'] = self.sweep_values.snapshot(update=update)
-        snap['active-loop']['delay'] = self.delay
+        snap['loop'] = {}
+        snap['loop']['sweep_values'] = self.sweep_values.snapshot(update=update)
+        snap['loop']['delay'] = self.delay
 
-        snap['active-loop']['actions'] = []
+        snap['loop']['actions'] = []
         for actn in self.actions:
             if hasattr(actn, 'snapshot'):
-                snap['active-loop']['actions'].append(actn.snapshot(update=update))
+                snap['loop']['actions'].append(actn.snapshot(update=update))
             else:
-                snap['active-loop']['actions'].append({'type': None,
+                snap['loop']['actions'].append({'type': None,
                                         'description': 'Action without snapshot'})
         snap['data'] = self._data_snap
         return(snap)
