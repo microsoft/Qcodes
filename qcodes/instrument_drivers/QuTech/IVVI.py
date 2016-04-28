@@ -78,6 +78,13 @@ class IVVI(VisaInstrument):
         self._update_time = 5  # seconds
         self._time_last_update = 0  # ensures first call will always update
         t1 = time.time()
+        
+        # basic test to confirm we are properly connected
+        try:
+            self.get_all()
+        except Exception as ex:
+            print('IVVI: get_all() failed, maybe connected to wrong port?')
+            
         print('Initialized IVVI-rack in %.2fs' % (t1-t0))
 
     def _get_version(self):
@@ -187,7 +194,7 @@ class IVVI(VisaInstrument):
                     self._mvoltages = self._bytes_to_mvoltages(reply)
                     self._time_last_update = time.time()
                     break
-                except:
+                except Exception as ex:
                     logging.warning('IVVI communication error trying again')
             if i+1 == max_tries:  # +1 because range goes stops before end
                 raise('IVVI Communication error')
