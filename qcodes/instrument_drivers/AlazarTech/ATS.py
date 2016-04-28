@@ -197,29 +197,35 @@ class AlazarTech_ATS(Instrument):
         # endregion
 
         self._call_dll('AlazarSetCaptureClock',
-                       args=['clock_source', 'sample_rate',
-                             'clock_edge', 'decimation'])
+                       self._handle, self.clock_source, self.sample_rate,
+                       self.clock_edge, self.decimation)
 
         for i in [1, 2]:
-            self._call_dll('AlazarInputControl', i=i,
-                           args=['coupling{}', 'channel_range{}',
-                                 'impedance{}'])
-            self._call_dll('AlazarSetBWLimit', i=i, args=['bwlimit{}'])
+            self._call_dll('AlazarInputControl',
+                           self._handle, i,
+                           self.parameters['coupling' + str(i)],
+                           self.parameters['channel_range' + str(i)],
+                           self.parameters['impedance' + str(i)])
+            self._call_dll('AlazarSetBWLimit',
+                           self._handle, i,
+                           self.parameters['bwlimit' + str(i)])
 
         self._call_dll('AlazarSetTriggerOperation',
-                       args=['trigger_operation',
-                             'trigger_engine1', 'trigger_source1',
-                             'trigger_slope1', 'trigger_level1',
-                             'trigger_engine2', 'trigger_source2',
-                             'trigger_slope2', 'trigger_level2'])
+                       self._handle, self.trigger_operation,
+                       self.trigger_engine1, self.trigger_source1,
+                       self.trigger_slope1, self.trigger_level1,
+                       self.trigger_engine2, self.trigger_source2,
+                       self.trigger_slope2, self.trigger_level2)
 
         self._call_dll('AlazarSetExternalTrigger',
-                       args=['external_trigger_coupling',
-                             'external_trigger_range'])
+                       self._handle, self.external_trigger_coupling,
+                       self.external_trigger_range)
 
-        self._call_dll('AlazarSetTriggerDelay', args=['trigger_delay'])
+        self._call_dll('AlazarSetTriggerDelay',
+                       self._handle, self.trigger_delay)
 
-        self._call_dll('AlazarSetTriggerTimeOut', args=['timeout_ticks'])
+        self._call_dll('AlazarSetTriggerTimeOut',
+                       self._handle, self.timeout_ticks)
 
         # TODO (W) config AUXIO
 
@@ -276,13 +282,13 @@ class AlazarTech_ATS(Instrument):
         # -----set final configurations-----
 
         # Abort any previous measurement
-        self._call_dll('AlazarAbortAsyncRead')
+        self._call_dll('AlazarAbortAsyncRead', self._handle)
 
         # get channel info
         bps = np.array([0], dtype=np.uint8)  # bps bits per sample
         max_s = np.array([0], dtype=np.uint32)  # max_s memory size in samples
         self._call_dll('AlazarGetChannelInfo',
-                       args=[max_s.ctypes.data, bps.ctypes.data])
+                       self._handle, max_s.ctypes.data, bps.ctypes.data)
         bps = bps[0]
         max_s = max_s[0]
         if bps != 8:
@@ -293,7 +299,7 @@ class AlazarTech_ATS(Instrument):
             pretriggersize = 0  # pretriggersize is 0 for NPT always
             post_trigger_size = self.samples_per_record._get_byte()
             self._call_dll('AlazarSetRecordSize',
-                           args=[pretriggersize, post_trigger_size])
+                           self._handle, pretriggersize, post_trigger_size)
 
         # set acquisition parameters here for NPT, TS mode
         if self.channel_selection._get_byte() == 3:
@@ -318,9 +324,10 @@ class AlazarTech_ATS(Instrument):
             samples_per_buffer = samples_per_record * records_per_buffer
 
             self._call_dll('AlazarBeforeAsyncRead',
-                           args=['channel_selection', 'transfer_offset',
-                                 samples_per_record, records_per_buffer,
-                                 records_per_acquisition, acquire_flags])
+                           self._handle, self.channel_selection,
+                           self.transfer_offset, samples_per_record,
+                           records_per_buffer, records_per_acquisition,
+                           acquire_flags)
 
         elif self.parameters['mode'].get() == 'TS':
             if (samples_per_record % buffers_per_acquisition != 0):
@@ -337,9 +344,10 @@ class AlazarTech_ATS(Instrument):
             records_per_buffer = self.records_per_buffer._get_byte()
 
             self._call_dll('AlazarBeforeAsyncRead',
-                           args=['channel_selection', 'transfer_offset',
-                                 samples_per_buffer, 'records_per_buffer',
-                                 buffers_per_acquisition, acquire_flags])
+                           self._handle, self.channel_selection,
+                           self.transfer_offset, samples_per_buffer,
+                           self.records_per_buffer, buffers_per_acquisition,
+                           acquire_flags)
 
         self.samples_per_record._set_updated()
         self.records_per_buffer._set_updated()
@@ -367,13 +375,13 @@ class AlazarTech_ATS(Instrument):
         # post buffers to Alazar
         for buf in self.buffer_list:
             self._call_dll('AlazarPostAsyncBuffer',
-                           args=[buf.addr, buf.size_bytes])
+                           self._handle, buf.addr, buf.size_bytes)
         self.allocated_buffers._set_updated()
 
         # -----start capture here-----
         acquisition_controller.pre_start_capture(self)
         # call the startcapture method
-        self._call_dll('AlazarStartCapture')
+        self._call_dll('AlazarStartCapture', self._handle)
 
         acquisition_controller.pre_acquire(self)
         # buffer handling from acquisition
@@ -388,7 +396,7 @@ class AlazarTech_ATS(Instrument):
             buf = self.buffer_list[buffers_completed % allocated_buffers]
 
             self._call_dll('AlazarWaitAsyncBufferComplete',
-                           args=[buf.addr, buffer_timeout])
+                           self._handle, buf.addr, buffer_timeout)
 
             # TODO (C) last series of buffers must be handled exceptionally
             # (and I want to test the difference) by changing buffer
@@ -400,11 +408,11 @@ class AlazarTech_ATS(Instrument):
             if buffer_recycling:
                 acquisition_controller.handle_buffer(self, buf.buffer)
                 self._call_dll('AlazarPostAsyncBuffer',
-                               args=[buf.addr, buf.size_bytes])
+                               self._handle, buf.addr, buf.size_bytes)
             buffers_completed += 1
 
         # stop measurement here
-        self._call_dll('AlazarAbortAsyncRead')
+        self._call_dll('AlazarAbortAsyncRead', self._handle)
 
         # -----cleanup here-----
         # extract data if not yet done
@@ -431,34 +439,31 @@ class AlazarTech_ATS(Instrument):
             for i, v in enumerate(value):
                 self.parameters[param_base + str(i + 1)]._set(v)
 
-    def _call_dll(self, func_name, args=[], i=None):
+    def _call_dll(self, func_name, *args):
         """
-        execute a dll function `func_name`, passing it:
-        - self._handle
-        - an optional index `i`
-        - a sequence of parameter names and arguments from `args`
-          - if an arg is a string, it's assumed to be a parameter name
-            and the parameter value (._get_bytes()) is used. if `i` is
-            provided, it will be inserted in each parameter name
-            using .format(i) (eg if i=2, 'coupling{}' becomes 'coupling2')
-            After the call succeeds, these parameters will be marked as
-            updated
-          - if an arg is NOT a string, it is inserted directly
+        Execute a dll function `func_name`, passing it the given arguments
+
+        For each argument in the list
+        - If an arg is a parameter of this instrument, the parameter
+          value from `._get_bytes()` is used. If the call succeeds, these
+          parameters will be marked as updated using their `._set_updated()`
+          method
+        - Otherwise the arg is used directly
         """
         # create the argument list
-        args_out = [] if i is None else [i]
-        params = []
+        args_out = []
+        all_params = self.parameters.values()
+        update_params = []
         for arg in args:
-            if isinstance(arg, str):
-                param = self.parameters[arg.format(i)]
-                args_out.append(param._get_byte())
-                params.append(param)
+            if arg in all_params:
+                args_out.append(arg._get_byte())
+                update_params.append(arg)
             else:
                 args_out.append(arg)
 
         # run the function
         func = getattr(self._ATS_dll, func_name)
-        return_code = func(self._handle, *args_out)
+        return_code = func(*args_out)
 
         # check for errors
         if return_code != self._success:
@@ -477,8 +482,8 @@ class AlazarTech_ATS(Instrument):
                     return_code, self._error_codes[return_code], func_name,
                     argrepr))
 
-        # mark parameters updated
-        for param in params:
+        # mark parameters updated (only after we've checked for errors)
+        for param in update_params:
             param._set_updated()
 
     def clear_buffers(self):
