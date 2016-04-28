@@ -201,7 +201,7 @@ class Tektronix_AWG5014(VisaInstrument):
                            get_cmd='TRIG:SLOP?',
                            set_cmd='TRIG:SLOP ' + '{}',
                            vals=vals.Enum('POS', 'NEG'))  # ,
-        # get_parser=self.parse_int_pos_neg)
+                           # get_parser=self.parse_int_pos_neg)
         self.add_parameter('trigger_source',
                            get_cmd='TRIG:source?',
                            set_cmd='TRIG:source ' + '{}',
@@ -242,10 +242,10 @@ class Tektronix_AWG5014(VisaInstrument):
                            vals=vals.Ints(100, int(1e9)))
         self.add_parameter('setup_filename',
                            get_cmd='AWGC:SNAM?')
-        # set_cmd=self.do_set_setup_filename,
-        # vals=vals.Strings())
-        # set function has optional args and therefore
-        # does not work with QCodes
+                           # set_cmd=self.do_set_setup_filename,
+                           # vals=vals.Strings())
+                           # set function has optional args and therefore
+                           # does not work with QCodes
 
         # Channel parameters #
         for i in range(1, 5):
