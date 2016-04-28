@@ -20,7 +20,13 @@ from qcodes.utils import validators
 
 
 class AlazarTech_ATS(Instrument):
-    # TODO (S) is the success code always 512 (for any board)?
+    # override dll_path in your init script or in the board constructor
+    # if you have it somewhere else
+    dll_path = 'C:\\WINDOWS\\System32\\ATSApi'
+
+    # override channels in a subclass if needed
+    channels = 2
+
     _success = 512
 
     _error_codes = {
@@ -117,15 +123,80 @@ class AlazarTech_ATS(Instrument):
               'single channel mode.')
     }
 
-    def __init__(self, name, dll_path='C:\\WINDOWS\\System32\\ATSApi'):
-        super().__init__(name)
-        self._ATS_dll = ctypes.cdll.LoadLibrary(dll_path)
+    _board_names = {
+        1: 'ATS850',
+        2: 'ATS310',
+        3: 'ATS330',
+        4: 'ATS855',
+        5: 'ATS315',
+        6: 'ATS335',
+        7: 'ATS460',
+        8: 'ATS860',
+        9: 'ATS660',
+        10: 'ATS665',
+        11: 'ATS9462',
+        12: 'ATS9434',
+        13: 'ATS9870',
+        14: 'ATS9350',
+        15: 'ATS9325',
+        16: 'ATS9440',
+        17: 'ATS9410',
+        18: 'ATS9351',
+        19: 'ATS9310',
+        20: 'ATS9461',
+        21: 'ATS9850',
+        22: 'ATS9625',
+        23: 'ATG6500',
+        24: 'ATS9626',
+        25: 'ATS9360',
+        26: 'AXI9870',
+        27: 'ATS9370',
+        28: 'ATU7825',
+        29: 'ATS9373',
+        30: 'ATS9416'
+    }
+
+    @classmethod
+    def find_boards(cls, dll_path=None):
+        dll = ctypes.cdll.LoadLibrary(dll_path or cls.dll_path)
+
+        system_count = dll.AlazarNumOfSystems()
+        boards = []
+        for system_id in range(1, system_count + 1):
+            board_count = dll.AlazarBoardsInSystemBySystemID(system_id)
+            for board_id in range(1, board_count + 1):
+                boards.append(cls.get_board_info(dll, system_id, board_id))
+        return boards
+
+    @classmethod
+    def get_board_info(cls, dll, system_id, board_id):
+        # make a temporary instrument for this board, to make it easier
+        # to get its info
+        board = cls('temp', system_id=system_id, board_id=board_id,
+                    server_name=None)
+        handle = board._handle
+        board_kind = cls._board_names[dll.AlazarGetBoardKind(handle)]
+
+        max_s, bps = board._get_channel_info(handle)
+        return {
+            'system_id': system_id,
+            'board_id': board_id,
+            'board_kind': board_kind,
+            'max_samples': max_s,
+            'bits_per_sample': bps
+        }
+
+    def __init__(self, name, system_id=1, board_id=1, dll_path=None, **kwargs):
+        super().__init__(name, **kwargs)
+        self._ATS_dll = ctypes.cdll.LoadLibrary(dll_path or self.dll_path)
 
         # TODO (W) make the board id more general such that more than one card
         # per system configurations are supported
-        self._handle = self._ATS_dll.AlazarGetBoardBySystemID(1, 1)
+        self._handle = self._ATS_dll.AlazarGetBoardBySystemID(system_id,
+                                                              board_id)
         if not self._handle:
-            raise Exception("AlazarTech_ATS not found")
+            raise Exception('AlazarTech_ATS not found at '
+                            'system {}, board {}'.format(system_id, board_id))
 
         # TODO (M) do something with board kind here
 
@@ -200,7 +271,7 @@ class AlazarTech_ATS(Instrument):
                        self._handle, self.clock_source, self.sample_rate,
                        self.clock_edge, self.decimation)
 
-        for i in [1, 2]:
+        for i in range(1, self.channels + 1):
             self._call_dll('AlazarInputControl',
                            self._handle, i,
                            self.parameters['coupling' + str(i)],
@@ -228,6 +299,13 @@ class AlazarTech_ATS(Instrument):
                        self._handle, self.timeout_ticks)
 
         # TODO (W) config AUXIO
+
+    def _get_channel_info(self, handle):
+        bps = np.array([0], dtype=np.uint8)  # bps bits per sample
+        max_s = np.array([0], dtype=np.uint32)  # max_s memory size in samples
+        self._call_dll('AlazarGetChannelInfo',
+                       handle, max_s.ctypes.data, bps.ctypes.data)
+        return max_s[0], bps[0]
 
     def acquire(self, mode=None, samples_per_record=None,
                 records_per_buffer=None, buffers_per_acquisition=None,
@@ -286,14 +364,9 @@ class AlazarTech_ATS(Instrument):
         self._call_dll('AlazarAbortAsyncRead', self._handle)
 
         # get channel info
-        bps = np.array([0], dtype=np.uint8)  # bps bits per sample
-        max_s = np.array([0], dtype=np.uint32)  # max_s memory size in samples
-        self._call_dll('AlazarGetChannelInfo',
-                       self._handle, max_s.ctypes.data, bps.ctypes.data)
-        bps = bps[0]
-        max_s = max_s[0]
+        max_s, bps = self._get_channel_info(self._handle)
         if bps != 8:
-            raise Exception("Only 8 bits per sample supported at this moment")
+            raise Exception('Only 8 bits per sample supported at this moment')
 
         # Set record size for NPT mode
         if mode == 'NPT':
