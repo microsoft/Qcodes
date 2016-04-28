@@ -1189,13 +1189,9 @@ class Tektronix_AWG5014(VisaInstrument):
         dim = len(w)
 
         if (not((len(w) == len(m1)) and ((len(m1) == len(m2))))):
-            return 'error: sizes of the waveforms do not match'
-
-        self._values['files'][wfmname] = {}
-        self._values['files'][wfmname]['w'] = w
-        self._values['files'][wfmname]['m1'] = m1
-        self._values['files'][wfmname]['m2'] = m2
-        self._values['files'][wfmname]['numpoints'] = len(w)
+            raise 'error: sizes of the waveforms do not match'
+            
+        self._values['files'][wfmname] = self._file_dict(w, m1, m2, None)
 
         # if we create a waveform with the same name but different size, it will not get over written
         # Delete the possibly existing file (will do nothing if the file
