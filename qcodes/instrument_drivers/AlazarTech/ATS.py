@@ -275,7 +275,8 @@ class AlazarTech_ATS(Instrument):
 
         # endregion
         self.mode._set_updated()
-        if self.mode.get() not in ('TS', 'NPT'):
+        mode = self.mode.get()
+        if mode not in ('TS', 'NPT'):
             raise Exception("Only the 'TS' and 'NPT' modes are implemented "
                             "at this point")
 
@@ -295,11 +296,11 @@ class AlazarTech_ATS(Instrument):
             raise Exception("Only 8 bits per sample supported at this moment")
 
         # Set record size for NPT mode
-        if self.mode.get() == 'NPT':
+        if mode == 'NPT':
             pretriggersize = 0  # pretriggersize is 0 for NPT always
-            post_trigger_size = self.samples_per_record._get_byte()
             self._call_dll('AlazarSetRecordSize',
-                           self._handle, pretriggersize, post_trigger_size)
+                           self._handle, pretriggersize,
+                           self.samples_per_record)
 
         # set acquisition parameters here for NPT, TS mode
         if self.channel_selection._get_byte() == 3:
@@ -317,7 +318,7 @@ class AlazarTech_ATS(Instrument):
                          self.interleave_samples._get_byte() |
                          self.get_processed_data._get_byte())
 
-        if self.parameters['mode'].get() == 'NPT':
+        if mode == 'NPT':
             records_per_buffer = self.records_per_buffer._get_byte()
             records_per_acquisition = (
                 records_per_buffer * buffers_per_acquisition)
@@ -329,7 +330,7 @@ class AlazarTech_ATS(Instrument):
                            records_per_buffer, records_per_acquisition,
                            acquire_flags)
 
-        elif self.parameters['mode'].get() == 'TS':
+        elif mode == 'TS':
             if (samples_per_record % buffers_per_acquisition != 0):
                 logging.warning('buffers_per_acquisition is not a divisor of '
                                 'samples per record which it should be in '
@@ -359,7 +360,7 @@ class AlazarTech_ATS(Instrument):
         self.alloc_buffers._set_updated()
         self.fifo_only_streaming._set_updated()
         self.interleave_samples._set_updated()
-        self.parameters['get_processed_data']._set_updated()
+        self.get_processed_data._set_updated()
 
         # create buffers for acquisition
         self.clear_buffers()
