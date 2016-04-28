@@ -113,21 +113,18 @@ class SweepFixedValues(SweepValues):
             keyset = make_sweep(start=start, stop=stop,
                                 step=step, num=num)
             self._snapshot.append({'start': start, 'stop': stop, 'step': step,
-                                   'num': num, 'type': 'sweep',
-                                   'reverse': False})
+                                   'num': num, 'type': 'sweep'})
 
         elif is_sequence(keys):
             keyset = keys
             # we dont want the snapshot to go crazy on big data
             if len(keys) > 0:
                 self._snapshot.append({'min': min(keys), 'max': max(keys),
-                                       'len': len(keys), 'type': 'sequence',
-                                       'reverse': False})
+                                       'len': len(keys), 'type': 'sequence'})
         elif isinstance(keys, slice):
             keyset = (keys,)
             self._snapshot.append({'start': keys.start, 'stop': keys.stop,
-                                   'step': keys.step, 'type': 'slice',
-                                   'reverse': False})
+                                   'step': keys.step, 'type': 'slice'})
         else:
             raise TypeError('Invalid sweep input.')
 
@@ -179,7 +176,7 @@ class SweepFixedValues(SweepValues):
         self._values.reverse()
         self._snapshot.reverse()
         for snap in self._snapshot:
-            snap['reverse'] = not snap['reverse']
+            snap['stop'], snap['start'] = snap['start'], snap['stop']
 
     def snapshot_base(self, update=False):
         '''
