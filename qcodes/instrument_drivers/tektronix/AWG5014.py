@@ -129,7 +129,7 @@ class Tektronix_AWG5014(VisaInstrument):
             name (string)           : name of the instrument
             setup_folder (string)   : folder where externally generate seqs
                                         are stored
-            address (string)        : GPIB address
+            address (string)        : GPIB or ethernet address
             reset (bool)            : resets to default values, default=false
             numpoints (int)         : sets the number of datapoints
 
@@ -260,21 +260,21 @@ class Tektronix_AWG5014(VisaInstrument):
                     'ch{}_m{}_del'.format(i, j),
                     label='Channel {} Marker {} delay (ns)'.format(i, j),
                     get_cmd=m_del_cmd + '?',
-                    set_cmd=m_del_cmd + '{:.3f}e-9',
+                    set_cmd=m_del_cmd + ' {:.3f}e-9',
                     vals=vals.Numbers(0, 1),
                     get_parser=float)
                 self.add_parameter(
                     'ch{}_m{}_high'.format(i, j),
                     label='Channel {} Marker {} high level (V)'.format(i, j),
                     get_cmd=m_high_cmd + '?',
-                    set_cmd=m_high_cmd + '{:.3f}',
+                    set_cmd=m_high_cmd + ' {:.3f}',
                     vals=vals.Numbers(-2.7, 2.7),
                     get_parser=float)
                 self.add_parameter(
                     'ch{}_m{}_low'.format(i, j),
                     label='Channel {} Marker {} low level (V)'.format(i, j),
                     get_cmd=m_low_cmd + '?',
-                    set_cmd=m_low_cmd + '{:.3f}',
+                    set_cmd=m_low_cmd + ' {:.3f}',
                     vals=vals.Numbers(-2.7, 2.7),
                     get_parser=float)
 

@@ -47,7 +47,8 @@ class Tektronix_AWG520(VisaInstrument):
 
         Input:
             name (string)    : name of the instrument
-            address (string) : GPIB address
+            address (string) : GPIB address (Note: 520 cannot be controlled
+                               via ethernet)
             reset (bool)     : resets to default values, default=false
             numpoints (int)  : sets the number of datapoints
 
@@ -57,7 +58,6 @@ class Tektronix_AWG520(VisaInstrument):
         super().__init__(name, address, **kw)
 
         self._address = address
-        # self.visa_handle = visa.instrument(self._address)
         self._values = {}
         self._values['files'] = {}
         self._clock = clock
@@ -66,13 +66,14 @@ class Tektronix_AWG520(VisaInstrument):
 
         self.add_parameter('IDN', get_cmd='*IDN?')
         self.add_function('reset', call_cmd='*RST')
+        self.add_parameter('state',
+                           get_cmd=self.get_state)
 
         # Add parameters
         self.add_parameter('trigger_mode',
                            get_cmd='AWGC:RMOD?',
                            set_cmd='AWGC:RMOD ' + '{}',
                            vals=vals.Enum('CONT', 'TRIG', 'ENH', 'GAT'))
-                           # TODO: check if 520 supports SEQ
         self.add_parameter('trigger_impedance',
                            units='Ohm',
                            label='Trigger impedance (Ohm)',
@@ -106,7 +107,7 @@ class Tektronix_AWG520(VisaInstrument):
             offset_cmd = 'SOUR{}:VOLT:LEV:IMM:OFFS'.format(ch)
 
             self.add_parameter(
-                'ch{}_filename', set_cmd=self._gen_ch_set_func(
+                'ch{}_filename'.format(ch), set_cmd=self._gen_ch_set_func(
                     self._do_set_filename, ch), vals=vals.Anything())
             self.add_parameter('ch{}_amp'.format(ch),
                                label='Amplitude channel {} (V)'.format(ch),
@@ -139,26 +140,24 @@ class Tektronix_AWG520(VisaInstrument):
                     'ch{}_m{}_high'.format(ch, j),
                     label='Channel {} Marker {} high level (V)'.format(ch, j),
                     get_cmd=m_high_cmd + '?',
-                    set_cmd=m_high_cmd + '{:.3f}',
+                    set_cmd=m_high_cmd + ' {:.3f}',
                     vals=vals.Numbers(-2., 2.),
                     get_parser=float)
                 self.add_parameter(
                     'ch{}_m{}_low'.format(ch, j),
                     label='Channel {} Marker {} low level (V)'.format(ch, j),
                     get_cmd=m_low_cmd + '?',
-                    set_cmd=m_low_cmd + '{:.3f}',
+                    set_cmd=m_low_cmd + ' {:.3f}',
                     vals=vals.Numbers(-2., 2.),
                     get_parser=float)
 
         # Add functions
-        self.add_function('reset')
-        self.add_function('get_all')
-        self.add_function('clear_waveforms')
-
         if reset:
             self.reset()
         else:
             self.get_all()
+        self.connect_message('IDN')
+
 
     # Functions
     def _gen_ch_set_func(self, fun, ch):
@@ -171,28 +170,25 @@ class Tektronix_AWG520(VisaInstrument):
             return fun(ch)
         return get_func
 
-
     # get state AWG
     def get_state(self):
         state = self.visa_handle.ask('AWGC:RSTATE?')
-        if state == '0':
+        if state.startswith('0'):
             return 'Idle'
-        elif state == '1':
+        elif state.startswith('1'):
             return 'Waiting for trigger'
-        elif state == '2':
+        elif state.startswith('2'):
             return 'Running'
         else:
-            logging.error(__name__  + ' : AWG in undefined state')
+            logging.error(__name__ + ' : AWG in undefined state')
             return 'error'
 
     def start(self):
         self.visa_handle.write('AWGC:RUN')
-        return self.get_state()
+        return
 
     def stop(self):
         self.visa_handle.write('AWGC:STOP')
-
-
 
     def get_folder_contents(self):
         return self.visa_handle.ask('mmem:cat?')
@@ -200,11 +196,11 @@ class Tektronix_AWG520(VisaInstrument):
     def get_current_folder_name(self):
         return self.visa_handle.ask('mmem:cdir?')
 
-    def set_current_folder_name(self,file_path):
-        self.visa_handle.write('mmem:cdir "%s"'%file_path)
+    def set_current_folder_name(self, file_path):
+        self.visa_handle.write('mmem:cdir "%s"' % file_path)
 
-    def change_folder(self,dir):
-        self.visa_handle.write('mmem:cdir "%s"' %dir)
+    def change_folder(self, dir):
+        self.visa_handle.write('mmem:cdir "%s"' % dir)
 
     def goto_root(self):
         self.visa_handle.write('mmem:cdir')
@@ -221,7 +217,10 @@ class Tektronix_AWG520(VisaInstrument):
             self.visa_handle.write('MMEMory:MDIRectory "{}"'.format(dir))
 
     def get_all(self, update=True):
-        return self.snapshot(update=update)
+        # TODO: fix bug in snapshot where it tries to get setable only param
+        # return self.snapshot(update=update)
+
+        return self.snapshot(update=False)
 
     def clear_waveforms(self):
         '''
@@ -236,9 +235,6 @@ class Tektronix_AWG520(VisaInstrument):
         logging.debug(__name__ + ' : Clear waveforms from channels')
         self.visa_handle.write('SOUR1:FUNC:USER ""')
         self.visa_handle.write('SOUR2:FUNC:USER ""')
-
-
-    # Parameters
 
     def force_trigger(self):
         '''
@@ -259,8 +255,7 @@ class Tektronix_AWG520(VisaInstrument):
         '''
         return self.visa_handle.write('AWGC:EVEN:SEQ:IMM')
 
-
-    def set_jumpmode(self,mode):
+    def set_jumpmode(self, mode):
         '''
         sets the jump mode for jump logic events, possibilities:
         LOGic,TABle,SOFTware
@@ -270,16 +265,15 @@ class Tektronix_AWG520(VisaInstrument):
 
         Ron
         '''
-        return self.visa_handle.write('AWGC:ENH:SEQ:JMOD %s' %mode)
+        return self.visa_handle.write('AWGC:ENH:SEQ:JMOD %s' % mode)
 
-    def get_jumpmode(self,mode):
+    def get_jumpmode(self, mode):
         '''
         get the jump mode for jump logic events
 
         Ron
         '''
         return self.visa_handle.ask('AWGC:ENH:SEQ:JMOD?')
-
 
     def _do_get_numpoints(self):
         '''
@@ -304,13 +298,13 @@ class Tektronix_AWG520(VisaInstrument):
         Output:
             None
         '''
-        logging.debug(__name__ + ' : Trying to set numpoints to %s' %numpts)
+        logging.debug(__name__ + ' : Trying to set numpoints to %s' % numpts)
         if numpts != self._numpoints:
             logging.warning(__name__ + ' : changing numpoints. This will clear all waveforms!')
 
         response = 'yes'  # raw_input('type "yes" to continue')
         if response is 'yes':
-            logging.debug(__name__ + ' : Setting numpoints to %s' %numpts)
+            logging.debug(__name__ + ' : Setting numpoints to %s' % numpts)
             self._numpoints = numpts
             self.clear_waveforms()
         else:
@@ -320,7 +314,7 @@ class Tektronix_AWG520(VisaInstrument):
 
     def set_setup_filename(self, fname, force_reload=False):
         if self._fname == fname and not force_reload:
-            print('File %s already loaded in AWG520' %fname)
+            print('File %s already loaded in AWG520' % fname)
             return
         else:
             self._fname = fname
@@ -340,7 +334,6 @@ class Tektronix_AWG520(VisaInstrument):
             self.get_state()
             print('Loading file took %.2fs' % (time.time()-t0))
             return
-
 
     def _do_set_filename(self, name, channel):
         '''
