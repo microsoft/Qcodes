@@ -1,8 +1,10 @@
 import time
 
 from qcodes.instrument.mock import MockInstrument, MockModel
+from qcodes.instrument.base import Instrument
 from qcodes.utils.validators import Numbers
-
+from qcodes.instrument.parameter import ManualParameter
+import numpy as np
 
 class AMockModel(MockModel):
     def __init__(self):
@@ -156,3 +158,49 @@ class MockMeter(MockInstTester):
         self.add_parameter('amplitude', get_cmd='ampl?', get_parser=float)
         self.add_function('echo', call_cmd='echo {:.2f}?',
                           args=[Numbers(0, 1000)], return_parser=float)
+
+class MockParabola(Instrument):
+    '''
+    Holds dummy parameters which are get and set able as well as provides
+    some basic functions that depends on these parameters for testing
+    purposes.
+
+    This instrument is intended to be simpler than the mock model in that it
+    does not emulate communications.
+
+    It has 3 main parameters (x, y, z) in order to allow for testing of 3D
+    sweeps. The function (parabola with optional noise) is chosen to allow
+    testing of numerical optimizations.
+    '''
+
+    def __init__(self, name, **kw):
+        super().__init__(name, **kw)
+
+        # Instrument parameters
+        for parname in ['x', 'y', 'z']:
+            self.add_parameter(parname, units='a.u.',
+                               parameter_class=ManualParameter,
+                               vals=Numbers(), initial_value=0)
+
+        self.add_parameter('noise', units='a.u.',
+                           label='white noise amplitude',
+                           parameter_class=ManualParameter,
+                           vals=Numbers(), initial_value=0)
+
+        self.add_parameter('parabola', units='a.u.',
+                           get_cmd=self._measure_parabola)
+        self.add_parameter('skewed_parabola', units='a.u.',
+                           get_cmd=self._measure_skewwed_parabola)
+
+    def _measure_parabola(self):
+        return (self.x.get()**2 + self.y.get()**2 + self.z.get()**2 +
+                self.noise.get()*np.random.rand(1))
+
+    def _measure_skewwed_parabola(self):
+        '''
+        Adds an -x term to add a corelation between the parameters.
+        '''
+        return ((self.x.get()**2 + self.y.get()**2 +
+                self.z.get()**2)*(1 + abs(self.y.get()-self.x.get())) +
+                self.noise.get()*np.random.rand(1))
+
