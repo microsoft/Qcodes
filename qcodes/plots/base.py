@@ -6,7 +6,7 @@ from IPython.display import display
 from qcodes.widgets.widgets import HiddenUpdateWidget
 
 
-class BasePlot(object):
+class BasePlot:
     '''
     create an auto-updating plot connected to a Jupyter notebook
 
@@ -88,7 +88,7 @@ class BasePlot(object):
                 data_array = config.get(part, '')
                 if hasattr(data_array, 'data_set'):
                     location = data_array.data_set.location
-                    if location not in title_parts:
+                    if location and location not in title_parts:
                         title_parts.append(location)
         return ', '.join(title_parts)
 

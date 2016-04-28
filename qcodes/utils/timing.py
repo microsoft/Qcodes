@@ -96,6 +96,8 @@ def mptest(n=100, d=0.001, timer=time.perf_counter, quiet=False):
     blocking_time = time.time() - start_time
     p.join()
     out = q.get()
+    # q.close()
+    # q.join_thread()
     out['finish_time'] = time.time() - out['finish_time']
     out['blocking_time'] = blocking_time
     return out

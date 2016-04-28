@@ -5,7 +5,7 @@ import asyncio
 
 from qcodes.utils.helpers import (is_function, is_sequence, permissive_range,
                                   wait_secs, make_unique, DelegateAttributes,
-                                  LogCapture)
+                                  LogCapture, strip_attrs)
 
 
 class TestIsFunction(TestCase):
@@ -38,7 +38,7 @@ class TestIsFunction(TestCase):
         with self.assertRaises(TypeError):
             is_function(f0, -1)
 
-    class AClass(object):
+    class AClass:
         def method_a(self):
             raise RuntimeError('function should not get called')
 
@@ -384,3 +384,58 @@ class TestDelegateAttributes(TestCase):
         # all appropriate items are in dir() exactly once
         for attr in ['rock', 'paper', 'scissors', 'year', 'water']:
             self.assertEqual(dir(tb).count(attr), 1)
+
+
+class A:
+    x = 5
+    y = 6
+
+
+class BadKeysDict(dict):
+    def keys(self):
+        raise RuntimeError('you can\'t have the keys!')
+
+
+class NoDelDict(dict):
+    def __delitem__(self, item):
+        raise KeyError('get your hands off me!')
+
+
+class TestStripAttrs(TestCase):
+    def test_normal(self):
+        a = A()
+        a.x = 15
+        a.z = 25
+
+        strip_attrs(a)
+
+        self.assertEqual(a.x, 5)
+        self.assertFalse(hasattr(a, 'z'))
+        self.assertEqual(a.y, 6)
+
+    def test_pathological(self):
+        # just make sure this never errors, since it's meant to be used
+        # during deletion
+        a = A()
+        a.__dict__ = BadKeysDict()
+
+        a.fruit = 'mango'
+        with self.assertRaises(RuntimeError):
+            a.__dict__.keys()
+
+        strip_attrs(a)
+        # no error, but the attribute is still there
+        self.assertEqual(a.fruit, 'mango')
+
+        a = A()
+        a.__dict__ = NoDelDict()
+        s = 'can\'t touch this!'
+        a.x = s
+
+        self.assertEqual(a.x, s)
+        # not sure how this doesn't raise, but it doesn't.
+        # with self.assertRaises(KeyError):
+        #     del a.x
+
+        strip_attrs(a)
+        self.assertEqual(a.x, s)

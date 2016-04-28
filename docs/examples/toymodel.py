@@ -2,24 +2,15 @@
 
 import math
 
-from qcodes import MockInstrument, Parameter, Loop, DataArray
+from qcodes import MockInstrument, MockModel, Parameter, Loop, DataArray
 from qcodes.utils.validators import Numbers
 
 
-# here's a toy model - models mimic a communication channel,
-# accepting and returning string data, so that they can
-# mimic real instruments as closely as possible
-#
-# This could certainly be built in for simple subclassing
-# if we use it a lot
-class ModelError(Exception):
-    pass
-
-
-class AModel(object):
+class AModel(MockModel):
     def __init__(self):
         self._gates = [0.0, 0.0, 0.0]
         self._excitation = 0.1
+        super().__init__()
 
     def _output(self):
         # my super exciting model!
@@ -36,48 +27,56 @@ class AModel(object):
                             0.1 * (math.atan(-dij) + math.pi / 2))
         return g
 
-    def write(self, instrument, parameter, value):
-        if instrument == 'gates' and parameter[0] == 'c':
+    def fmt(self, value):
+        return '{:.3f}'.format(value)
+
+    def gates_set(self, parameter, value):
+        if parameter[0] == 'c':
             self._gates[int(parameter[1:])] = float(value)
-        elif instrument == 'gates' and parameter == 'rst':
+        elif parameter == 'rst' and value is None:
             self._gates = [0.0, 0.0, 0.0]
-        elif instrument == 'source' and parameter == 'ampl':
+        else:
+            raise ValueError
+
+    def gates_get(self, parameter):
+        if parameter[0] == 'c':
+            return self.fmt(self._gates[int(parameter[1:])])
+        else:
+            raise ValueError
+
+    def source_set(self, parameter, value):
+        if parameter == 'ampl':
             self._excitation = float(value)
         else:
-            raise ModelError('unrecognized write {}, {}, {}'.format(
-                instrument, parameter, value))
+            raise ValueError
 
-    def ask(self, instrument, parameter):
-        gates = self._gates
-
-        if instrument == 'gates' and parameter[0] == 'c':
-            v = gates[int(parameter[1:])]
-        elif instrument == 'source' and parameter == 'ampl':
-            v = self._excitation
-        elif instrument == 'meter' and parameter == 'ampl':
-            # here's my super complex model output!
-            v = self._output() * self._excitation
+    def source_get(self, parameter):
+        if parameter == 'ampl':
+            return self.fmt(self._excitation)
         else:
-            raise ModelError('unrecognized ask {}, {}'.format(
-                instrument, parameter))
+            raise ValueError
 
-        return '{:.3f}'.format(v)
+    def meter_get(self, parameter):
+        if parameter == 'ampl':
+            return self.fmt(self._output() * self._excitation)
+        else:
+            raise ValueError
 
 
 # make our mock instruments
 # real instruments would subclass IPInstrument or VisaInstrument
-# instead of MockInstrument,
+# or just the base Instrument instead of MockInstrument,
 # and be instantiated with an address rather than a model
 class MockGates(MockInstrument):
-    def __init__(self, name, model):
-        super().__init__(name, model=model)
+    def __init__(self, name, model=None, **kwargs):
+        super().__init__(name, model=model, **kwargs)
 
         for i in range(3):
             cmdbase = 'c{}'.format(i)
             self.add_parameter('chan{}'.format(i),
                                label='Gate Channel {} (mV)'.format(i),
                                get_cmd=cmdbase + '?',
-                               set_cmd=cmdbase + ' {:.4f}',
+                               set_cmd=cmdbase + ':{:.4f}',
                                get_parser=float,
                                vals=Numbers(-100, 100))
 
@@ -85,23 +84,23 @@ class MockGates(MockInstrument):
 
 
 class MockSource(MockInstrument):
-    def __init__(self, name, model):
-        super().__init__(name, model=model)
+    def __init__(self, name, model=None, **kwargs):
+        super().__init__(name, model=model, **kwargs)
 
         # this parameter uses built-in sweeping to change slowly
         self.add_parameter('amplitude',
                            label='Source Amplitude (\u03bcV)',
                            get_cmd='ampl?',
-                           set_cmd='ampl {:.4f}',
+                           set_cmd='ampl:{:.4f}',
                            get_parser=float,
                            vals=Numbers(0, 10),
-                           sweep_step=0.1,
-                           sweep_delay=0.05)
+                           step=0.1,
+                           delay=0.05)
 
 
 class MockMeter(MockInstrument):
-    def __init__(self, name, model):
-        super().__init__(name, model=model)
+    def __init__(self, name, model=None, **kwargs):
+        super().__init__(name, model=model, **kwargs)
 
         self.add_parameter('amplitude',
                            label='Current (nA)',
@@ -120,8 +119,7 @@ class AverageGetter(Parameter):
 
     def get(self):
         loop = Loop(self.sweep_values, self.delay).each(self.measured_param)
-        data = loop.run(background=False, data_manager=False, location=False,
-                        quiet=True)
+        data = loop.run_temp()
         return data.arrays[self.measured_param.name].mean()
 
 
@@ -142,7 +140,6 @@ class AverageAndRaw(Parameter):
 
     def get(self):
         loop = Loop(self.sweep_values, self.delay).each(self.measured_param)
-        data = loop.run(background=False, data_manager=False, location=False,
-                        quiet=True)
+        data = loop.run_temp()
         array = data.arrays[self.measured_param.name]
         return (array, array.mean())

@@ -7,7 +7,7 @@ from traceback import format_exc
 from .data_array import DataArray
 
 
-class Formatter(object):
+class Formatter:
     '''
     Data file formatters
 
@@ -382,7 +382,7 @@ class GNUPlotFormat(Formatter):
 
         for group in groups:
             if len(groups) == 1:
-                fn = location + self.extension
+                fn = io_manager.join(location + self.extension)
             else:
                 fn = io_manager.join(location, group.name + self.extension)
 

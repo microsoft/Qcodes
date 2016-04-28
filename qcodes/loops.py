@@ -37,7 +37,7 @@ Supported actions (args to .set_measurement or .each) are:
     Task: any callable that does not generate data
     Wait: a delay
 '''
-from datetime import datetime, timedelta
+from datetime import datetime
 import multiprocessing as mp
 import time
 import numpy as np
@@ -47,7 +47,7 @@ from qcodes.data.data_set import new_data, DataMode
 from qcodes.data.data_array import DataArray
 from qcodes.utils.helpers import wait_secs
 from qcodes.utils.multiprocessing import QcodesProcess
-from qcodes.utils.sync_async import mock_sync
+from qcodes.utils.threading import thread_map
 
 
 MP_NAME = 'Measurement'
@@ -88,6 +88,7 @@ def halt_bg(timeout=5):
 
     if loop.is_alive():
         loop.terminate()
+        loop.join(timeout/2)
         print('Background loop did not respond to halt signal, terminated')
 
 
@@ -98,14 +99,16 @@ def halt_bg(timeout=5):
 #     pass
 
 
-class Loop(object):
+class Loop:
     '''
     The entry point for creating measurement loops
 
     sweep_values - a SweepValues or compatible object describing what
         parameter to set in the loop and over what values
     delay - a number of seconds to wait after setting a value before
-        continuing.
+        continuing. 0 (default) means no waiting and no warnings. > 0
+        means to wait, potentially filling the delay time with monitoring,
+        and give an error if you wait longer than expected.
 
     After creating a Loop, you attach `action`s to it, making an `ActiveLoop`
     that you can `.run()`, or you can `.run()` a `Loop` directly, in which
@@ -116,12 +119,14 @@ class Loop(object):
     data), `Wait` times, or other `ActiveLoop`s or `Loop`s to nest inside
     this one.
     '''
-    def __init__(self, sweep_values, delay):
+    def __init__(self, sweep_values, delay=0):
+        if not delay >= 0:
+            raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
         self.sweep_values = sweep_values
         self.delay = delay
         self.nested_loop = None
 
-    def loop(self, sweep_values, delay):
+    def loop(self, sweep_values, delay=0):
         '''
         Nest another loop inside this one
 
@@ -172,8 +177,16 @@ class Loop(object):
         default = Station.default.default_measurement
         return self.each(*default).run(*args, **kwargs)
 
+    def run_temp(self, *args, **kwargs):
+        '''
+        shortcut to run a loop in the foreground as a temporary dataset
+        using the default measurement set
+        '''
+        return self.run(*args, background=False, quiet=True,
+                        data_manager=False, location=False, **kwargs)
 
-class ActiveLoop(object):
+
+class ActiveLoop:
     '''
     Created by attaching actions to a `Loop`, this is the object that actually
     runs a measurement loop. An `ActiveLoop` can no longer be nested, only run,
@@ -204,6 +217,9 @@ class ActiveLoop(object):
         # set to its initial value
         self._nest_first = hasattr(actions[0], 'containers')
 
+        # for sending halt signals to the loop
+        self.signal_queue = mp.Queue()
+
         self._monitor = None  # TODO: how to specify this?
 
     def containers(self):
@@ -230,7 +246,10 @@ class ActiveLoop(object):
                 action_arrays = self._parameter_arrays(action)
 
             else:
-                continue
+                # this *is* covered but the report misses it because Python
+                # optimizes it away. See:
+                # https://bitbucket.org/ned/coveragepy/issues/198
+                continue  # pragma: no cover
 
             for array in action_arrays:
                 array.nest(size=loop_size, action_index=i,
@@ -355,13 +374,13 @@ class ActiveLoop(object):
             return np.arange(0, size[0], 1)
 
         sp = np.ndarray(size)
-        sp_inner = self._default_setpoints(self, size[1:])
+        sp_inner = self._default_setpoints(size[1:])
         for i in range(len(sp)):
             sp[i] = sp_inner
 
         return sp
 
-    def set_common_attrs(self, data_set, signal_queue):
+    def set_common_attrs(self, data_set, use_threads, signal_queue):
         '''
         set a couple of common attributes that the main and nested loops
         all need to have:
@@ -370,9 +389,10 @@ class ActiveLoop(object):
         '''
         self.data_set = data_set
         self.signal_queue = signal_queue
+        self.use_threads = use_threads
         for action in self.actions:
             if hasattr(action, 'set_common_attrs'):
-                action.set_common_attrs(data_set, signal_queue)
+                action.set_common_attrs(data_set, use_threads, signal_queue)
 
     def _check_signal(self):
         while not self.signal_queue.empty():
@@ -380,17 +400,28 @@ class ActiveLoop(object):
             if signal == self.HALT:
                 raise KeyboardInterrupt('sweep was halted')
 
-    def run(self, background=True, use_async=False, enqueue=False, quiet=False,
-            data_manager=None, **kwargs):
+    def run_temp(self, **kwargs):
+        '''
+        wrapper to run this loop in the foreground as a temporary data set,
+        especially for use in composite parameters that need to run a Loop
+        as part of their get method
+        '''
+        return self.run(background=False, quiet=True,
+                        data_manager=False, location=False, **kwargs)
+
+    def run(self, background=True, use_threads=True, enqueue=False,
+            quiet=False, data_manager=None, **kwargs):
         '''
         execute this loop
 
         background: (default True) run this sweep in a separate process
             so we can have live plotting and other analysis in the main process
-        use_async: (default True): execute the sweep asynchronously as much
-            as possible
+        use_threads: (default True): whenever there are multiple `get` calls
+            back-to-back, execute them in separate threads so they run in
+            parallel (as long as they don't block each other)
         enqueue: (default False): wait for a previous background sweep to
             finish? If false, will raise an error if another sweep is running
+        quiet: (default False): set True to not print anything except errors
         data_manager: a DataManager instance (omit to use default,
             False to store locally and not write to disk)
 
@@ -425,27 +456,20 @@ class ActiveLoop(object):
 
         data_set = new_data(arrays=self.containers(), mode=data_mode,
                             data_manager=data_manager, **kwargs)
-        signal_queue = mp.Queue()
-        self.set_common_attrs(data_set=data_set, signal_queue=signal_queue)
-
-        if use_async:
-            raise NotImplementedError  # TODO
-            loop_fn = mock_sync(self._async_loop)
-        else:
-            loop_fn = self._run_wrapper
+        self.set_common_attrs(data_set=data_set, use_threads=use_threads,
+                              signal_queue=self.signal_queue)
 
         if background:
-            # TODO: in notebooks, errors in a background sweep will just appear
-            # the next time a command is run. Do something better?
-            # (like log them somewhere, show in monitoring window)?
-            p = QcodesProcess(target=loop_fn, name=MP_NAME)
+            p = QcodesProcess(target=self._run_wrapper, name=MP_NAME)
             p.is_sweep = True
             p.signal_queue = self.signal_queue
             p.start()
+            self.process = p
+
             self.data_set.sync()
             self.data_set.mode = DataMode.PULL_FROM_SERVER
         else:
-            loop_fn()
+            self._run_wrapper()
             self.data_set.read()
 
         if not quiet:
@@ -462,13 +486,15 @@ class ActiveLoop(object):
                 measurement_group.append((action, new_action_indices))
                 continue
             elif measurement_group:
-                callables.append(_Measure(measurement_group, self.data_set))
+                callables.append(_Measure(measurement_group, self.data_set,
+                                          self.use_threads))
                 measurement_group[:] = []
 
             callables.append(self._compile_one(action, new_action_indices))
 
         if measurement_group:
-            callables.append(_Measure(measurement_group, self.data_set))
+            callables.append(_Measure(measurement_group, self.data_set,
+                                      self.use_threads))
             measurement_group[:] = []
 
         return callables
@@ -534,16 +560,19 @@ class ActiveLoop(object):
             delay = self.delay
 
     def _wait(self, delay):
-        finish_clock = time.perf_counter() + delay
+        if delay:
+            finish_clock = time.perf_counter() + delay
 
-        if self._monitor:
-            self._monitor.call(finish_by=finish_clock)
+            if self._monitor:
+                self._monitor.call(finish_by=finish_clock)
 
-        self._check_signal()
-        time.sleep(wait_secs(finish_clock))
+            self._check_signal()
+            time.sleep(wait_secs(finish_clock))
+        else:
+            self._check_signal()
 
 
-class Task(object):
+class Task:
     '''
     A predefined task to be executed within a measurement Loop
     This form is for a simple task that does not measure any data,
@@ -564,7 +593,7 @@ class Task(object):
         self.func(*self.args, **self.kwargs)
 
 
-class Wait(object):
+class Wait:
     '''
     A simple class to tell a Loop to wait <delay> seconds
 
@@ -574,51 +603,64 @@ class Wait(object):
     But for use outside of a Loop, it is also callable (then it just sleeps)
     '''
     def __init__(self, delay):
+        if not delay >= 0:
+            raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
         self.delay = delay
 
     def __call__(self):
-        time.sleep(self.delay)
+        if self.delay:
+            time.sleep(self.delay)
 
 
-class _Measure(object):
+class _Measure:
     '''
     A callable collection of parameters to measure.
     This should not be constructed manually, only by an ActiveLoop.
     '''
-    def __init__(self, params_indices, data_set):
+    def __init__(self, params_indices, data_set, use_threads):
+        self.use_threads = use_threads and len(params_indices) > 1
         # the applicable DataSet.store function
         self.store = data_set.store
 
         # for performance, pre-calculate which params return data for
-        # multiple arrays, pre-create the dict to pass these to store fn
-        # and pre-calculate the name mappings
-        self.dict = {}
-        self.params_ids = []
+        # multiple arrays, and the name mappings
+        self.getters = []
+        self.param_ids = []
+        self.composite = []
         for param, action_indices in params_indices:
+            self.getters.append(param.get)
+
             if hasattr(param, 'names'):
                 part_ids = []
                 for i in range(len(param.names)):
                     param_id = data_set.action_id_map[action_indices + (i,)]
                     part_ids.append(param_id)
-                    self.dict[param_id] = None
-                self.params_ids.append((param, None, part_ids))
+                self.param_ids.append(None)
+                self.composite.append(part_ids)
             else:
                 param_id = data_set.action_id_map[action_indices]
-                self.params_ids.append((param, param_id, False))
-                self.dict[param_id] = None
+                self.param_ids.append(param_id)
+                self.composite.append(False)
 
     def __call__(self, loop_indices, **ignore_kwargs):
-        for param, param_id, composite in self.params_ids:
+        out_dict = {}
+        if self.use_threads:
+            out = thread_map(self.getters)
+        else:
+            out = [g() for g in self.getters]
+
+        for param_out, param_id, composite in zip(out, self.param_ids,
+                                                  self.composite):
             if composite:
-                for val, part_id in zip(param.get(), composite):
-                    self.dict[part_id] = val
+                for val, part_id in zip(param_out, composite):
+                    out_dict[part_id] = val
             else:
-                self.dict[param_id] = param.get()
+                out_dict[param_id] = param_out
 
-        self.store(loop_indices, self.dict)
+        self.store(loop_indices, out_dict)
 
 
-class _Nest(object):
+class _Nest:
     '''
     wrapper to make a callable nested ActiveLoop
     This should not be constructed manually, only by an ActiveLoop.

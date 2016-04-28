@@ -1,6 +1,4 @@
-import time
-from qcodes.instrument.visa import VisaInstrument
-from qcodes.utils import validators as vals
+from qcodes import VisaInstrument, validators as vals
 
 
 class RohdeSchwarz_SGS100A(VisaInstrument):
@@ -22,9 +20,9 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
     This driver does not contain all commands available for the RS_SGS100A but
     only the ones most commonly used.
     '''
-    def __init__(self, name, address):
-        t0 = time.time()
-        super().__init__(name, address)
+    def __init__(self, name, address, **kwargs):
+        super().__init__(name, address, **kwargs)
+
         self.add_parameter('IDN', get_cmd='*IDN?')
         self.add_parameter(name='frequency',
                            label='Frequency',
@@ -63,10 +61,8 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
                            vals=vals.Strings())
         self.add_function('reset', call_cmd='*RST')
         self.add_function('run_self_tests', call_cmd='*TST?')
-        t1 = time.time()
-        print('Connected to: ',
-              self.get('IDN').replace(',', ', ').replace('\n', ' '),
-              'in %.2fs' % (t1-t0))
+
+        self.connect_message('IDN')
 
     def parse_on_off(self, stat):
         if stat.startswith('0'):
@@ -77,22 +73,22 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
 
     def set_status(self, stat):
         if stat.upper() in ('ON', 'OFF'):
-            self.visa_handle.write(':OUTP:STAT %s' % stat)
+            self.write(':OUTP:STAT %s' % stat)
         else:
             raise ValueError('Unable to set status to %s, ' % stat +
                              'expected "ON" or "OFF"')
 
     def set_pulsemod_state(self, stat):
         if stat.upper() in ('ON', 'OFF'):
-            self.visa_handle.write(':PULM:SOUR EXT')
-            self.visa_handle.write(':SOUR:PULM:STAT %s' % stat)
+            self.write(':PULM:SOUR EXT')
+            self.write(':SOUR:PULM:STAT %s' % stat)
         else:
             raise ValueError('Unable to set status to %s,' % stat +
                              'expected "ON" or "OFF"')
 
     def set_pulsemod_source(self, source):
         if source.upper() in ('INT', 'EXT'):
-            self.visa_handle.write(':SOUR:PULM:SOUR %s' % source)
+            self.write(':SOUR:PULM:SOUR %s' % source)
         else:
             raise ValueError('Unable to set source to %s,' % source +
                              'expected "INT" or "EXT"')

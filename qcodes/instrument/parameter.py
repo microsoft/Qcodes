@@ -37,6 +37,7 @@ from datetime import datetime, timedelta
 import time
 import asyncio
 import logging
+import os
 
 from qcodes.utils.helpers import (permissive_range, wait_secs,
                                   DelegateAttributes)
@@ -134,8 +135,11 @@ class Parameter(Metadatable):
                  units=None,
                  size=None, sizes=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
-                 vals=None, **kwargs):
+                 vals=None, docstring=None, **kwargs):
         super().__init__(**kwargs)
+
+        self.has_get = False
+        self.has_set = False
 
         if names is not None:
             # check for names first - that way you can provide both name
@@ -144,7 +148,13 @@ class Parameter(Metadatable):
             # and names are the items it returns
             self.names = names
             self.labels = names if labels is None else names
-            self.units = units if units is not None else ['']*len(names)
+            self.units = units if units is not None else [''] * len(names)
+
+            self.__doc__ = os.linesep.join((
+                'Parameter class:',
+                '* `names` %s' % ', '.join(self.names),
+                '* `labels` %s' % ', '.join(self.labels),
+                '* `units` %s' % ', '.join(self.units)))
 
         elif name is not None:
             self.name = name
@@ -153,6 +163,14 @@ class Parameter(Metadatable):
 
             # vals / validate only applies to simple single-value parameters
             self._set_vals(vals)
+
+            # generate default docstring
+            self.__doc__ = os.linesep.join((
+                'Parameter class:',
+                '* `name` %s' % self.name,
+                '* `label` %s' % self.label,
+                '* `units` %s' % self.units,
+                '* `vals` %s' % repr(self._vals)))
 
         else:
             raise ValueError('either name or names is required')
@@ -170,27 +188,71 @@ class Parameter(Metadatable):
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
         # but they all use the same attributes so snapshot is consistent.
-        self._last_value = None
-        self._last_ts = None
+        self._latest_value = None
+        self._latest_ts = None
+
+        if docstring is not None:
+            self.__doc__ = docstring + os.linesep + self.__doc__
+
         self.get_latest = GetLatest(self)
+
+    def __call__(self, *args):
+        if len(args) == 0:
+            if self.has_get:
+                return self.get()
+            else:
+                raise NoCommandError('no get cmd found in' +
+                                     ' Parameter {}'.format(self.name))
+        else:
+            if self.has_set:
+                self.set(*args)
+            else:
+                raise NoCommandError('no set cmd found in' +
+                                     ' Parameter {}'.format(self.name))
+
+    def _latest(self):
+        return {
+            'value': self._latest_value,
+            'ts': self._latest_ts
+        }
+
+    # get_attrs ignores leading underscores, unless they're in this list
+    _keep_attrs = ['__doc__', '_vals']
+
+    def get_attrs(self):
+        '''
+        grab all attributes that the RemoteParameter needs
+        to function like the main one (in loops etc), and return them
+        as a dictionary
+        '''
+        out = {}
+
+        for attr in dir(self):
+            value = getattr(self, attr)
+            if ((attr[0] == '_' and attr not in self._keep_attrs) or
+                    callable(value)):
+                continue
+            out[attr] = value
+
+        return out
 
     def snapshot_base(self):
         '''
         json state of the Parameter
-        '''
-        if self._last_ts is None:
-            ts = None
-        else:
-            ts = self._last_ts.strftime('%Y-%m-%d %H:%M:%S')
 
-        return {
-            'value': self._last_value,
-            'ts': ts
-        }
+        optionally pass in the state, so if this is an instrument parameter
+        we can collect all calls to the server into one
+        '''
+        state = self._latest()
+
+        if state['ts'] is not None:
+            state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
+
+        return state
 
     def _save_val(self, value):
-        self._last_value = value
-        self._last_ts = datetime.now()
+        self._latest_value = value
+        self._latest_ts = datetime.now()
 
     def _set_vals(self, vals):
         if vals is None:
@@ -264,17 +326,26 @@ class StandardParameter(Parameter):
 
     vals: a Validator object for this parameter
 
-    sweep_step: max increment of parameter value - larger changes
+    delay: time (in seconds) to wait after the *start* of each set,
+        whether part of a sweep or not. Can be set 0 to go maximum speed with
+        no errors.
+    max_delay: If > delay, we don't emit a warning unless the time
+        taken during a single set is greater than this, even though we aim for
+        delay. If delay
+    step: max increment of parameter value - larger changes
         are broken into steps this size
-    sweep_delay: time (in seconds) to wait after each sweep step
     max_val_age: max time (in seconds) to trust a saved value from
         this parameter as the starting point of a sweep
+
+    docstring: documentation string for the __doc__ field of the object
+        The __doc__ field of the instance is used by some help systems,
+        but not all
     '''
     def __init__(self, name, instrument=None,
                  get_cmd=None, async_get_cmd=None, get_parser=None,
                  set_cmd=None, async_set_cmd=None, set_parser=None,
-                 sweep_step=None, sweep_delay=None, max_sweep_delay=None,
-                 max_val_age=3600, vals=None, val_mapping=None, **kwargs):
+                 delay=None, max_delay=None, step=None, max_val_age=3600,
+                 vals=None, val_mapping=None, **kwargs):
         # handle val_mapping before super init because it impacts
         # vals / validation in the base class
         if val_mapping:
@@ -289,6 +360,9 @@ class StandardParameter(Parameter):
                 self._set_mapping = val_mapping
                 set_parser = self._set_mapping.__getitem__
 
+        if get_parser is not None and not isinstance(get_cmd, str):
+            logging.warning('get_parser is set, but will not be used ' +
+                            '(name %s)' % name)
         super().__init__(name=name, vals=vals, **kwargs)
 
         self._instrument = instrument
@@ -298,23 +372,24 @@ class StandardParameter(Parameter):
         # having to call .get() for every .set()
         self._max_val_age = 0
 
-        self.has_get = False
-        self.has_set = False
-
         self._set_get(get_cmd, async_get_cmd, get_parser)
         self._set_set(set_cmd, async_set_cmd, set_parser)
-        self.set_sweep(sweep_step, sweep_delay,
-                       max_sweep_delay=max_sweep_delay,
-                       max_val_age=max_val_age)
+        self.set_delay(delay, max_delay)
+        self.set_step(step, max_val_age)
 
         if not (self.has_get or self.has_set):
             raise NoCommandError('neither set nor get cmd found in' +
                                  ' Parameter {}'.format(self.name))
 
     def get(self):
-        value = self._get()
-        self._save_val(value)
-        return value
+        try:
+            value = self._get()
+            self._save_val(value)
+            return value
+        except Exception as e:
+            e.args = e.args + (
+                'getting {}:{}'.format(self._instrument.name, self.name),)
+            raise e
 
     @asyncio.coroutine
     def get_async(self):
@@ -324,9 +399,8 @@ class StandardParameter(Parameter):
 
     def _set_get(self, get_cmd, async_get_cmd, get_parser):
         self._get, self._get_async = syncable_command(
-            param_count=0, cmd=get_cmd, acmd=async_get_cmd,
+            arg_count=0, cmd=get_cmd, acmd=async_get_cmd,
             exec_str=self._instrument.ask if self._instrument else None,
-            aexec_str=self._instrument.ask_async if self._instrument else None,
             output_parser=get_parser, no_cmd_function=no_getter)
 
         if self._get is not no_getter:
@@ -336,31 +410,45 @@ class StandardParameter(Parameter):
         # note: this does not set the final setter functions. that's handled
         # in self.set_sweep, when we choose a swept or non-swept setter.
         self._set, self._set_async = syncable_command(
-            param_count=1, cmd=set_cmd, acmd=async_set_cmd,
+            arg_count=1, cmd=set_cmd, acmd=async_set_cmd,
             exec_str=self._instrument.write if self._instrument else None,
-            aexec_str=(self._instrument.write_async if self._instrument
-                       else None),
             input_parser=set_parser, no_cmd_function=no_setter)
 
         if self._set is not no_setter:
             self.has_set = True
 
     def _validate_and_set(self, value):
-        self.validate(value)
-        self._set(value)
-        self._save_val(value)
+        try:
+            clock = time.perf_counter()
+            self.validate(value)
+            self._set(value)
+            self._save_val(value)
+            if self._delay is not None:
+                clock, remainder = self._update_set_ts(clock)
+                time.sleep(remainder)
+        except Exception as e:
+            e.args = e.args + (
+                'setting {}:{} to {}'.format(self._instrument.name,
+                                             self.name, repr(value)),)
+            raise e
 
     @asyncio.coroutine
     def _validate_and_set_async(self, value):
+        clock = time.perf_counter()
         self.validate(value)
         yield from self._set_async(value)
         self._save_val(value)
+        if self._delay is not None:
+            clock, remainder = self._update_set_ts(clock)
+            yield from asyncio.sleep(remainder)
 
     def _sweep_steps(self, value):
         oldest_ok_val = datetime.now() - timedelta(seconds=self._max_val_age)
-        if self._last_ts is None or self._last_ts < oldest_ok_val:
-            self.get()
-        start_value = self._last_value
+        state = self._latest()
+        if state['ts'] is None or state['ts'] < oldest_ok_val:
+            start_value = self.get()
+        else:
+            start_value = state['value']
 
         self.validate(start_value)
 
@@ -375,13 +463,13 @@ class StandardParameter(Parameter):
             return []
 
         # drop the initial value, we're already there
-        return permissive_range(start_value, value, self._sweep_step)[1:]
+        return permissive_range(start_value, value, self._step)[1:]
 
-    def _update_sweep_ts(self, step_clock):
+    def _update_set_ts(self, step_clock):
         # calculate the delay time to the *max* delay,
         # then take off up to the tolerance
-        tolerance = self._sweep_delay_tolerance
-        step_clock += self._sweep_delay
+        tolerance = self._delay_tolerance
+        step_clock += self._delay
         remainder = wait_secs(step_clock + tolerance)
         if remainder <= tolerance:
             # don't allow extra delays to compound
@@ -392,17 +480,28 @@ class StandardParameter(Parameter):
         return step_clock, remainder
 
     def _validate_and_sweep(self, value):
-        self.validate(value)
-        step_clock = time.perf_counter()
+        try:
+            self.validate(value)
+            step_clock = time.perf_counter()
 
-        for step_val in self._sweep_steps(value):
-            self._set(step_val)
-            self._save_val(step_val)
-            step_clock, remainder = self._update_sweep_ts(step_clock)
-            time.sleep(remainder)
+            for step_val in self._sweep_steps(value):
+                self._set(step_val)
+                self._save_val(step_val)
+                if self._delay is not None:
+                    step_clock, remainder = self._update_set_ts(step_clock)
+                    time.sleep(remainder)
 
-        self._set(value)
-        self._save_val(value)
+            self._set(value)
+            self._save_val(value)
+
+            if self._delay is not None:
+                step_clock, remainder = self._update_set_ts(step_clock)
+                time.sleep(remainder)
+        except Exception as e:
+            e.args = e.args + (
+                'setting {}:{} to {}'.format(self._instrument.name,
+                                             self.name, repr(value)),)
+            raise e
 
     @asyncio.coroutine
     def _validate_and_sweep_async(self, value):
@@ -412,78 +511,98 @@ class StandardParameter(Parameter):
         for step_val in self._sweep_steps(value):
             yield from self._set_async(step_val)
             self._save_val(step_val)
-            step_clock, remainder = self._update_sweep_ts(step_clock)
-            yield from asyncio.sleep(remainder)
+            if self._delay is not None:
+                step_clock, remainder = self._update_set_ts(step_clock)
+                yield from asyncio.sleep(remainder)
 
         yield from self._set_async(value)
         self._save_val(value)
 
-    def set_sweep(self, sweep_step, sweep_delay, max_sweep_delay=None,
-                  max_val_age=None):
+    def set_step(self, step, max_val_age=None):
         '''
-        configure this Parameter to set using a stair-step sweep
+        Configure whether this Parameter uses steps during set operations.
+        If step is a positive number, this is the maximum value change
+        allowed in one hardware call, so a single set can result in many
+        calls to the hardware if the starting value is far from the target.
 
-        This means a single .set call will generate many instrument writes
-        so that the value only changes at most sweep_step in a time sweep_delay
+        step: a positive number, the largest change allowed in one call
+            all but the final change will attempt to change by +/- step
+            exactly
 
-        sweep_step: the biggest change in value allowed at once
-
-        sweep_delay: the target time between steps. The actual time will not be
-            shorter than this, but may be longer if the underlying set call
-            takes longer than this time.
-
-        max_sweep_delay: if given, the longest time allowed between steps (due
-            to a slow set call, presumably) before we emit a warning
-
-        max_val_age: max time (in seconds) to trust a saved value. Important
-        since we need to know what value we're starting from in this sweep.
+        max_val_age: Only used with stepping, the max time (in seconds) to
+            trust a saved value. If this parameter has not been set or measured
+            more recently than this, it will be measured before starting to
+            step, so we're confident in the value we're starting from.
         '''
-        if sweep_step is not None or sweep_delay is not None:
-            if not self._vals.is_numeric:
-                raise TypeError('you can only sweep numeric parameters')
-
-            if (isinstance(self._vals, Ints) and
-                    not isinstance(sweep_step, int)):
-                raise TypeError(
-                    'sweep_step must be a positive int for an Ints parameter')
-            elif not isinstance(sweep_step, (int, float)):
-                raise TypeError('sweep_step must be a positive number')
-            if sweep_step <= 0:
-                raise ValueError('sweep_step must be positive')
-
-            if not isinstance(sweep_delay, (int, float)):
-                raise TypeError('sweep_delay must be a positive number')
-            if sweep_delay <= 0:
-                raise ValueError('sweep_delay must be positive')
-
-            self._sweep_step = sweep_step
-            self._sweep_delay = sweep_delay
-
-            if max_sweep_delay is not None:
-                if not isinstance(max_sweep_delay, (int, float)):
-                    raise TypeError(
-                        'max_sweep_delay must be a positive number')
-                if max_sweep_delay < sweep_delay:
-                    raise ValueError(
-                        'max_sweep_delay must not be shorter than sweep_delay')
-                self._sweep_delay_tolerance = max_sweep_delay - sweep_delay
-            else:
-                self._sweep_delay_tolerance = 0
-
-            # assign the setters with a sweep
-            self.set = self._validate_and_sweep
-            self.set_async = self._validate_and_sweep_async
-        else:
-            # assign the setters as immediate jumps
+        if not step:
+            # single-command setting
             self.set = self._validate_and_set
             self.set_async = self._validate_and_set_async
 
-        if max_val_age is not None:
-            if not isinstance(max_val_age, (int, float)):
-                raise TypeError('max_val_age must be a non-negative number')
-            if max_val_age < 0:
-                raise ValueError('max_val_age must be non-negative')
-            self._max_val_age = max_val_age
+        elif not self._vals.is_numeric:
+            raise TypeError('you can only step numeric parameters')
+        elif step <= 0:
+            raise ValueError('step must be positive')
+        elif (isinstance(self._vals, Ints) and
+                not isinstance(step, int)):
+            raise TypeError(
+                'step must be a positive int for an Ints parameter')
+        elif not isinstance(step, (int, float)):
+            raise TypeError('step must be a positive number')
+
+        else:
+            # stepped setting
+            if max_val_age is not None:
+                if not isinstance(max_val_age, (int, float)):
+                    raise TypeError(
+                        'max_val_age must be a non-negative number')
+                if max_val_age < 0:
+                    raise ValueError('max_val_age must be non-negative')
+                self._max_val_age = max_val_age
+
+            self._step = step
+            self.set = self._validate_and_sweep
+            self.set_async = self._validate_and_sweep_async
+
+    def set_delay(self, delay, max_delay=None):
+        '''
+        Configure this parameter with a delay between set operations.
+        Typically used in conjunction with set_step to create an effective
+        ramp rate, but can also be used without a step to enforce a delay
+        after every set.
+
+        delay: the target time between set calls. The actual time will not be
+            shorter than this, but may be longer if the underlying set call
+            takes longer.
+
+        max_delay: if given, the longest time allowed for the underlying set
+            call before we emit a warning.
+
+        If delay and max_delay are both None or 0, we never emit warnings
+        no matter how long the set takes.
+        '''
+        if delay is None:
+            delay = 0
+        if not isinstance(delay, (int, float)):
+            raise TypeError('delay must be a non-negative number')
+        if delay < 0:
+            raise ValueError('delay must not be negative')
+        self._delay = delay
+
+        if max_delay is not None:
+            if not isinstance(max_delay, (int, float)):
+                raise TypeError(
+                    'max_delay must be a number no shorter than delay')
+            if max_delay < delay:
+                raise ValueError('max_delay must be no shorter than delay')
+            self._delay_tolerance = max_delay - delay
+        else:
+            self._delay_tolerance = 0
+
+        if not (self._delay or self._delay_tolerance):
+            # denotes that we shouldn't follow the wait code or
+            # emit any warnings
+            self._delay = None
 
 
 class ManualParameter(Parameter):
@@ -492,9 +611,7 @@ class ManualParameter(Parameter):
 
     name: the local name of this parameter
 
-    instrument: the instrument this applies to. Not actually used for
-        anything, just required so this class can be used with
-        Instrument.add_parameter(name, parameter_class=ManualParameter)
+    instrument: the instrument this applies to, if any.
 
     initial_value: optional starting value. Default is None, which is the
         only invalid value allowed (and None is only allowed as an initial
@@ -502,9 +619,13 @@ class ManualParameter(Parameter):
     '''
     def __init__(self, name, instrument=None, initial_value=None, **kwargs):
         super().__init__(name=name, **kwargs)
+        self._instrument = instrument
         if initial_value is not None:
             self.validate(initial_value)
             self._save_val(initial_value)
+
+        self.has_get = True
+        self.has_set = True
 
     def set(self, value):
         self.validate(value)
@@ -515,7 +636,7 @@ class ManualParameter(Parameter):
         return self.set(value)
 
     def get(self):
-        return self._last_value
+        return self._latest()['value']
 
     @asyncio.coroutine
     def get_async(self):
@@ -540,7 +661,7 @@ class GetLatest(DelegateAttributes):
     omit_delegate_attrs = ['set', 'set_async']
 
     def get(self):
-        return self.parameter._last_value
+        return self.parameter._latest()['value']
 
     @asyncio.coroutine
     def get_async(self):

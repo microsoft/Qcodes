@@ -1,67 +1,20 @@
-import asyncio
 from unittest import TestCase
 from datetime import datetime, timedelta
 import time
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
-from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.parameter import Parameter, ManualParameter
 from qcodes.instrument.sweep_values import SweepValues
-from qcodes.instrument.parameter import ManualParameter
+from qcodes.instrument.function import Function
+from qcodes.instrument.server import get_instrument_server
 
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
-from qcodes.utils.sync_async import wait_for_async, NoCommandError
-from qcodes.utils.helpers import LogCapture
+from qcodes.utils.sync_async import NoCommandError
+from qcodes.utils.helpers import LogCapture, killprocesses
 
-
-class ModelError(Exception):
-    pass
-
-
-class AMockModel(object):
-    def __init__(self):
-        self._gates = [0.0, 0.0, 0.0]
-        self._excitation = 0.1
-        self._memory = {}
-
-    def write(self, instrument, parameter, value):
-        if instrument == 'gates' and parameter[0] == 'c':
-            self._gates[int(parameter[1:])] = float(value)
-        elif instrument == 'gates' and parameter == 'rst':
-            self._gates = [0.0, 0.0, 0.0]
-        elif instrument == 'gates' and parameter[:3] == 'mem':
-            slot = int(parameter[3:])
-            self._memory[slot] = value
-        elif instrument == 'source' and parameter == 'ampl':
-            try:
-                self._excitation = float(value)
-            except:
-                # "Off" as in the MultiType sweep step test
-                self._excitation = None
-        else:
-            raise ModelError('unrecognized write {}, {}, {}'.format(
-                instrument, parameter, value))
-
-    def ask(self, instrument, parameter):
-        gates = self._gates
-
-        if instrument == 'gates' and parameter[0] == 'c':
-            v = gates[int(parameter[1:])]
-        elif instrument == 'gates' and parameter[:3] == 'mem':
-            slot = int(parameter[3:])
-            return self._memory[slot]
-        elif instrument == 'source' and parameter == 'ampl':
-            v = self._excitation
-        elif instrument == 'meter' and parameter == 'ampl':
-            # here's my super complex model output!
-            v = self._excitation * (gates[0] + gates[1]**2 + gates[2]**3)
-        elif instrument == 'meter' and parameter[:5] == 'echo ':
-            v = float(parameter[5:])
-        else:
-            raise ModelError('unrecognized ask {}, {}'.format(
-                instrument, parameter))
-
-        return '{:.3f}'.format(v)
+from .instrument_mocks import (AMockModel, MockInstTester,
+                               MockGates, MockSource, MockMeter)
 
 
 class TestParamConstructor(TestCase):
@@ -113,93 +66,116 @@ class TestParamConstructor(TestCase):
         self.assertEqual(p.setpoint_labels, setpoint_labels)
 
 
+class GatesBadDelayType(MockGates):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.add_parameter('chan0bad', get_cmd='c0?',
+                           set_cmd=self.slow_neg_set,
+                           get_parser=float,
+                           vals=Numbers(-10, 10), step=0.2,
+                           delay=0.01,
+                           max_delay='forever')
+
+
+class GatesBadDelayValue(MockGates):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.add_parameter('chan0bad', get_cmd='c0?',
+                           set_cmd=self.slow_neg_set,
+                           get_parser=float,
+                           vals=Numbers(-10, 10), step=0.2,
+                           delay=0.05,
+                           max_delay=0.03)
+
+
 class TestParameters(TestCase):
     def setUp(self):
         self.model = AMockModel()
         self.read_response = 'I am the walrus!'
 
-        self.gates = MockInstrument('gates', model=self.model, delay=0.001,
-                                    use_async=True,
-                                    read_response=self.read_response)
-        for i in range(3):
-            cmdbase = 'c{}'.format(i)
-            self.gates.add_parameter('chan{}'.format(i), get_cmd=cmdbase + '?',
-                                     set_cmd=cmdbase + ' {:.4f}',
-                                     get_parser=float,
-                                     vals=Numbers(-10, 10))
-            self.gates.add_parameter('chan{}step'.format(i),
-                                     get_cmd=cmdbase + '?',
-                                     set_cmd=cmdbase + ' {:.4f}',
-                                     get_parser=float,
-                                     vals=Numbers(-10, 10),
-                                     sweep_step=0.1, sweep_delay=0.005)
-        self.gates.add_function('reset', call_cmd='rst')
-
-        self.source = MockInstrument('source', model=self.model, delay=0.001)
-        self.source.add_parameter('amplitude', get_cmd='ampl?',
-                                  set_cmd='ampl {:.4f}', get_parser=float,
-                                  vals=Numbers(0, 1),
-                                  sweep_step=0.2, sweep_delay=0.005)
-
-        self.meter = MockInstrument('meter', model=self.model, delay=0.001,
-                                    read_response=self.read_response)
-        self.meter.add_parameter('amplitude', get_cmd='ampl?',
-                                 get_parser=float)
-        self.meter.add_function('echo', call_cmd='echo {:.2f}?',
-                                args=[Numbers(0, 1000)],
-                                return_parser=float)
+        self.gates = MockGates(model=self.model,
+                               read_response=self.read_response)
+        self.source = MockSource(model=self.model)
+        self.meter = MockMeter(model=self.model,
+                               read_response=self.read_response)
 
         self.init_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    def slow_neg_set(self, val):
-        if val < 0:
-            time.sleep(0.05)
-        self.gates.chan0.set(val)
+    def tearDown(self):
+        try:
+            self.model.close()
+            for instrument in [self.gates, self.source, self.meter]:
+                instrument.close()
+        except:
+            pass
+
+    def test_unpicklable(self):
+        self.assertEqual(self.gates.add5(6), 11)
+        # compare docstrings to make sure we're really calling add5
+        # on the server, and seeing its docstring
+        self.assertIn('The class copy of this should not get run',
+                      MockInstTester.add5.__doc__)
+        self.assertIn('not the same function as the original method',
+                      self.gates.add5.__doc__)
 
     def test_slow_set(self):
-        self.gates.add_parameter('chan0slow', get_cmd='c0?',
-                                 set_cmd=self.slow_neg_set, get_parser=float,
-                                 vals=Numbers(-10, 10), sweep_step=0.2,
-                                 sweep_delay=0.01)
-        self.gates.add_parameter('chan0slow2', get_cmd='c0?',
-                                 set_cmd=self.slow_neg_set, get_parser=float,
-                                 vals=Numbers(-10, 10), sweep_step=0.2,
-                                 sweep_delay=0.01, max_sweep_delay=0.02)
-        self.gates.add_parameter('chan0slow3', get_cmd='c0?',
-                                 set_cmd=self.slow_neg_set, get_parser=float,
-                                 vals=Numbers(-10, 10), sweep_step=0.2,
-                                 sweep_delay=0.01, max_sweep_delay=0.06)
-
+        # at least for now, need a local instrument to test logging
+        gatesLocal = MockGates(model=self.model, server_name=None)
         for param, logcount in (('chan0slow', 2), ('chan0slow2', 2),
-                                ('chan0slow3', 0)):
-            self.gates.chan0.set(-0.5)
+                                ('chan0slow3', 0), ('chan0slow4', 1),
+                                ('chan0slow5', 0)):
+            gatesLocal.chan0.set(-0.5)
 
             with LogCapture() as s:
-                self.gates.set(param, 0.5)
+                if param in ('chan0slow', 'chan0slow2', 'chan0slow3'):
+                    # these are the stepped parameters
+                    gatesLocal.set(param, 0.5)
+                else:
+                    # these are the non-stepped parameters that
+                    # still have delays
+                    gatesLocal.set(param, -1)
+                    gatesLocal.set(param, 1)
 
             logs = s.getvalue().split('\n')[:-1]
             s.close()
 
-            self.assertEqual(len(logs), logcount, logs)
+            # TODO: occasional extra negative delays here
+            self.assertEqual(len(logs), logcount, (param, logs))
             for line in logs:
                 self.assertTrue(line.startswith('negative delay'), line)
+
+    def test_max_delay_errors(self):
+        with self.assertRaises(TypeError):
+            # add_parameter works remotely with string commands, but
+            # function commands are not going to be picklable, since they
+            # need to talk to the hardware, so these need to be included
+            # from the beginning when the instrument is created on the
+            # server.
+            GatesBadDelayType(model=self.model)
+
+        with self.assertRaises(ValueError):
+            GatesBadDelayValue(model=self.model)
 
     def check_ts(self, ts_str):
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         self.assertTrue(self.init_ts <= ts_str <= now)
 
     def test_instances(self):
-        for instrument in [self.gates, self.source, self.meter]:
-            self.assertIn(instrument, self.gates.instances())
+        instruments = [self.gates, self.source, self.meter]
+        for instrument in instruments:
+            for other_instrument in instruments:
+                instances = instrument.instances()
+                if other_instrument is instrument:
+                    self.assertIn(instrument, instances)
+                else:
+                    self.assertNotIn(other_instrument, instances)
 
         # somehow instances never go away... there are always 3
         # extra references to every instrument object, so del doesn't
-        # work. I guess for this reason, instrument tests should take
+        # work. For this reason, instrument tests should take
         # the *last* instance to test.
-        # instancelen = len(self.gates.instances())
-
-        # del self.source
-        # self.assertEqual(len(self.gates.instances()), instancelen - 1)
+        # so we can't test that the list of defined instruments is actually
+        # *only* what we want to see defined.
 
     def test_mock_instrument(self):
         gates, source, meter = self.gates, self.source, self.meter
@@ -212,9 +188,10 @@ class TestParameters(TestCase):
         # explicit long form of getter
         self.assertEqual(meter.parameters['amplitude'].get(), 0)
         # both should produce the same history entry
-        self.assertEqual(len(meter.history), 3)
-        self.assertEqual(meter.history[0][1:], ('ask', 'ampl'))
-        self.assertEqual(meter.history[0][1:], ('ask', 'ampl'))
+        hist = meter.getattr('history')
+        self.assertEqual(len(hist), 3)
+        self.assertEqual(hist[0][1:], ('ask', 'ampl'))
+        self.assertEqual(hist[0][1:], ('ask', 'ampl'))
 
         # errors trying to set (or validate) invalid param values
         # put here so we ensure that these errors don't make it to
@@ -241,27 +218,28 @@ class TestParameters(TestCase):
         self.assertEqual(source.get('amplitude'), 0.6)
         self.assertEqual(meter.get('amplitude'), -16.961)
 
+        gatehist = gates.getattr('history')
+        sourcehist = source.getattr('history')
+        meterhist = meter.getattr('history')
         # check just the size and timestamps of histories
-        for entry in gates.history + source.history + meter.history:
+        for entry in gatehist + sourcehist + meterhist:
             self.check_ts(entry[0])
-        self.assertEqual(len(gates.history), 6)
-        self.assertEqual(len(meter.history), 7)
-        self.assertEqual(len(source.history), 5)
+        self.assertEqual(len(gatehist), 6)
+        self.assertEqual(len(sourcehist), 5)
+        self.assertEqual(len(meterhist), 7)
 
         # plus enough setters to check the parameter sweep
         # first source has to get the starting value
-        self.assertEqual(source.history[0][1:], ('ask', 'ampl'))
+        self.assertEqual(sourcehist[0][1:], ('ask', 'ampl'))
         # then it writes each
-        self.assertEqual(source.history[1][1:], ('write', 'ampl', '0.3000'))
-        self.assertEqual(source.history[2][1:], ('write', 'ampl', '0.5000'))
-        self.assertEqual(source.history[3][1:], ('write', 'ampl', '0.6000'))
+        self.assertEqual(sourcehist[1][1:], ('write', 'ampl', '0.3000'))
+        self.assertEqual(sourcehist[2][1:], ('write', 'ampl', '0.5000'))
+        self.assertEqual(sourcehist[3][1:], ('write', 'ampl', '0.6000'))
 
-        # test sync/async - so far all calls have been sync, even though gates
-        # was defined as async. Mock some async calls to test other conversions
-        wait_for_async(source.set_async, 'amplitude', 0.8)
-        self.assertEqual(wait_for_async(source.get_async, 'amplitude'), 0.8)
-        wait_for_async(gates.set_async, 'chan1', -2)
-        self.assertEqual(wait_for_async(gates.get_async, 'chan1'), -2)
+        source.set('amplitude', 0.8)
+        self.assertEqual(source.get('amplitude'), 0.8)
+        gates.set('chan1', -2)
+        self.assertEqual(gates.get('chan1'), -2)
 
         # test functions
         self.assertEqual(meter.call('echo', 1.2345), 1.23)  # model returns .2f
@@ -283,19 +261,19 @@ class TestParameters(TestCase):
         gates.call('reset')
         self.assertEqual(gates.get('chan0'), 0)
 
-        # and async functions
-        self.assertEqual(wait_for_async(meter.call_async, 'echo', 4.567), 4.57)
+        self.assertEqual(meter.call('echo', 4.567), 4.57)
         gates.set('chan0', 1)
         self.assertEqual(gates.get('chan0'), 1)
-        wait_for_async(gates.call_async, 'reset')
+        gates.call('reset')
         self.assertEqual(gates.get('chan0'), 0)
 
-    def test_mock_async_set_sweep(self):
+    def test_mock_set_sweep(self):
         gates = self.gates
-        wait_for_async(gates.set_async, 'chan0step', 0.5)
-        self.assertEqual(len(gates.history), 6)
+        gates.set('chan0step', 0.5)
+        gatehist = gates.getattr('history')
+        self.assertEqual(len(gatehist), 6)
         self.assertEqual(
-            [float(h[3]) for h in gates.history if h[1] == 'write'],
+            [float(h[3]) for h in gatehist if h[1] == 'write'],
             [0.1, 0.2, 0.3, 0.4, 0.5])
 
     def test_mock_instrument_errors(self):
@@ -305,15 +283,23 @@ class TestParameters(TestCase):
         with self.assertRaises(ValueError):
             gates.ask('question?yes but more after')
 
-        with self.assertRaises(ModelError):
+        with self.assertRaises(ValueError):
             gates.write('ampl 1')
-        with self.assertRaises(ModelError):
+            self.meter.echo(9.99)  # known good call, just to read the error
+        with self.assertRaises(ValueError):
             gates.ask('ampl?')
 
         with self.assertRaises(TypeError):
             MockInstrument('', delay='forever')
         with self.assertRaises(TypeError):
             MockInstrument('', delay=-1)
+
+        # TODO: when an error occurs during constructing an instrument,
+        # we don't have the instrument but its server doesn't know to stop.
+        # should figure out a way to remove it. (I thought I had but it
+        # doesn't seem to have worked...)
+        get_instrument_server('MockInstruments').close()
+        time.sleep(0.5)
 
         with self.assertRaises(AttributeError):
             MockInstrument('', model=None)
@@ -332,8 +318,14 @@ class TestParameters(TestCase):
         with self.assertRaises(TypeError):
             gates.add_parameter('fugacity', set_cmd='f {:.4f}', vals=[1, 2, 3])
 
+        # TODO: when an error occurs during constructing an instrument,
+        # we don't have the instrument but its server doesn't know to stop.
+        # should figure out a way to remove it. (I thought I had but it
+        # doesn't seem to have worked...)
+        killprocesses()
+
     def check_set_amplitude2(self, val, log_count, history_count):
-        source = self.source
+        source = self.sourceLocal
         with LogCapture() as s:
             source.amplitude2.set(val)
 
@@ -343,17 +335,20 @@ class TestParameters(TestCase):
         self.assertEqual(len(logs), log_count, logs)
         for line in logs:
             self.assertIn('cannot sweep', line.lower())
-        self.assertEqual(len(source.history), history_count)
+        hist = source.getattr('history')
+        self.assertEqual(len(hist), history_count)
 
     def test_sweep_steps_edge_case(self):
         # MultiType with sweeping is weird - not sure why one would do this,
         # but we should handle it
-        source = self.source
+        # at least for now, need a local instrument to check logging
+        source = self.sourceLocal = MockSource(model=self.model,
+                                               server_name=None)
         source.add_parameter('amplitude2', get_cmd='ampl?',
-                             set_cmd='ampl {}', get_parser=float,
+                             set_cmd='ampl:{}', get_parser=float,
                              vals=MultiType(Numbers(0, 1), Strings()),
-                             sweep_step=0.2, sweep_delay=0.005)
-        self.assertEqual(len(source.history), 0)
+                             step=0.2, delay=0.02)
+        self.assertEqual(len(source.getattr('history')), 0)
 
         # 2 history items - get then set, and one warning (cannot sweep
         # number to string value)
@@ -374,83 +369,91 @@ class TestParameters(TestCase):
 
         # for reference, some add_parameter's that should work
         gates.add_parameter('t0', set_cmd='{}', vals=Numbers(),
-                            sweep_step=0.1, sweep_delay=0.01)
+                            step=0.1, delay=0.01)
         gates.add_parameter('t2', set_cmd='{}', vals=Ints(),
-                            sweep_step=1, sweep_delay=0.01,
+                            step=1, delay=0.01,
                             max_val_age=0)
 
         with self.assertRaises(TypeError):
             # can't sweep non-numerics
             gates.add_parameter('t1', set_cmd='{}', vals=Strings(),
-                                sweep_step=1, sweep_delay=0.01)
+                                step=1, delay=0.01)
         with self.assertRaises(TypeError):
             # need a numeric step too
             gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
-                                sweep_step='a skosh', sweep_delay=0.01)
+                                step='a skosh', delay=0.01)
         with self.assertRaises(TypeError):
             # Ints requires and int step
             gates.add_parameter('t1', set_cmd='{}', vals=Ints(),
-                                sweep_step=0.1, sweep_delay=0.01)
+                                step=0.1, delay=0.01)
         with self.assertRaises(ValueError):
-            # need a positive step
+            # need a non-negative step
             gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
-                                sweep_step=0, sweep_delay=0.01)
-        with self.assertRaises(ValueError):
-            # need a positive step
-            gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
-                                sweep_step=-0.1, sweep_delay=0.01)
+                                step=-0.1, delay=0.01)
         with self.assertRaises(TypeError):
             # need a numeric delay
             gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
-                                sweep_step=0.1, sweep_delay='a tad')
+                                step=0.1, delay='a tad')
         with self.assertRaises(ValueError):
-            # need a positive delay
+            # need a non-negative delay
             gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
-                                sweep_step=0.1, sweep_delay=-0.01)
-        with self.assertRaises(ValueError):
-            # need a positive delay
-            gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
-                                sweep_step=0.1, sweep_delay=0)
+                                step=0.1, delay=-0.01)
         with self.assertRaises(TypeError):
             # need a numeric max_val_age
             gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
-                                sweep_step=0.1, sweep_delay=0.01,
+                                step=0.1, delay=0.01,
                                 max_val_age='an hour')
         with self.assertRaises(ValueError):
             # need a non-negative max_val_age
             gates.add_parameter('t1', set_cmd='{}', vals=Numbers(),
-                                sweep_step=0.1, sweep_delay=0.01,
+                                step=0.1, delay=0.01,
                                 max_val_age=-1)
+
+    def getmem(self, key):
+        return self.source.ask('mem{}?'.format(key))
 
     def test_val_mapping(self):
         gates = self.gates
-        mem = self.model._memory
 
         # memraw has no mappings - it just sets and gets what the instrument
         # uses to encode this parameter
-        gates.add_parameter('memraw', set_cmd='mem0 {}', get_cmd='mem0?',
+        gates.add_parameter('memraw', set_cmd='mem0:{}', get_cmd='mem0?',
                             vals=Enum('zero', 'one'))
 
         # memcoded maps the instrument codes ('zero' and 'one') into nicer
         # user values 0 and 1
-        gates.add_parameter('memcoded', set_cmd='mem0 {}', get_cmd='mem0?',
+        gates.add_parameter('memcoded', set_cmd='mem0:{}', get_cmd='mem0?',
                             val_mapping={0: 'zero', 1: 'one'})
 
         gates.memcoded.set(0)
         self.assertEqual(gates.memraw.get(), 'zero')
         self.assertEqual(gates.memcoded.get(), 0)
-        self.assertEqual(mem[0], 'zero')
+        self.assertEqual(self.getmem(0), 'zero')
 
         gates.memraw.set('one')
         self.assertEqual(gates.memcoded.get(), 1)
         self.assertEqual(gates.memraw.get(), 'one')
-        self.assertEqual(mem[0], 'one')
+        self.assertEqual(self.getmem(0), 'one')
 
         with self.assertRaises(ValueError):
             gates.memraw.set(0)
 
         with self.assertRaises(ValueError):
             gates.memcoded.set('zero')
+
+    def test_bare_function(self):
+        # not a use case we want to promote, but it's there...
+        p = ManualParameter('test')
+
+        def doubler(x):
+            p.set(x * 2)
+
+        f = Function('f', call_cmd=doubler, args=[Numbers(-10, 10)])
+
+        f(4)
+        self.assertEqual(p.get(), 8)
+        with self.assertRaises(ValueError):
+            f(20)
 
     def test_standard_snapshot(self):
         self.assertEqual(self.meter.snapshot(), {
@@ -490,12 +493,11 @@ class TestParameters(TestCase):
 
         mock_ts = datetime(2000, 3, 4)
         ts_str = mock_ts.strftime('%Y-%m-%d %H:%M:%S')
-        noise._last_ts = mock_ts
+        noise.setattr('_latest_ts', mock_ts)
         self.assertEqual(noise.snapshot()['ts'], ts_str)
 
         self.assertEqual(noise.get_latest(), 100)
         self.assertEqual(noise.get_latest.get(), 100)
-        self.assertEqual(wait_for_async(noise.get_latest.get_async), 100)
 
         # get_latest should not update ts
         self.assertEqual(noise.snapshot()['ts'], ts_str)
@@ -504,20 +506,13 @@ class TestParameters(TestCase):
         with self.assertRaises(AttributeError):
             noise.get_latest.set(50)
 
-        with self.assertRaises(AttributeError):
-            wait_for_async(noise.get_latest.set_async, 10)
-
     def test_mock_read(self):
         gates, meter = self.gates, self.meter
         self.assertEqual(meter.read(), self.read_response)
-        self.assertEqual(wait_for_async(meter.read_async),
-                         self.read_response)
         self.assertEqual(gates.read(), self.read_response)
-        self.assertEqual(wait_for_async(gates.read_async),
-                         self.read_response)
 
     def test_base_instrument_errors(self):
-        b = Instrument('silent')
+        b = Instrument('silent', server_name=None)
 
         with self.assertRaises(NotImplementedError):
             b.read()
@@ -525,13 +520,6 @@ class TestParameters(TestCase):
             b.write('hello!')
         with self.assertRaises(NotImplementedError):
             b.ask('how are you?')
-
-        with self.assertRaises(NotImplementedError):
-            wait_for_async(b.read_async)
-        with self.assertRaises(NotImplementedError):
-            wait_for_async(b.write_async, 'goodbye')
-        with self.assertRaises(NotImplementedError):
-            wait_for_async(b.ask_async, 'are we having fun yet?')
 
         with self.assertRaises(TypeError):
             b.add_function('skip', call_cmd='skip {}',
@@ -584,31 +572,14 @@ class TestParameters(TestCase):
         # SweepValue object has no getter, even if the parameter does
         with self.assertRaises(AttributeError):
             c0[0.1].get
-        with self.assertRaises(AttributeError):
-            c0[0.1].get_async
 
     def test_sweep_values_valid(self):
         gates = self.gates
         c0 = gates.parameters['chan0']
-        c1_noasync = gates.parameters['chan1']
-        del c1_noasync.set_async
-        with self.assertRaises(AttributeError):
-            c1_noasync.set_async
-        c2_nosync = gates.parameters['chan2']
-        del c2_nosync.set
-        with self.assertRaises(AttributeError):
-            c2_nosync.set
 
         c0_sv = c0[1]
-        c1_sv = c1_noasync[1]
-        c2_sv = c2_nosync[1]
-        # setters get mapped
+        # setter gets mapped
         self.assertEqual(c0_sv.set, c0.set)
-        self.assertEqual(c0_sv.set_async, c0.set_async)
-        self.assertEqual(c1_sv.set, c1_noasync.set)
-        self.assertTrue(asyncio.iscoroutinefunction(c1_sv.set_async))
-        self.assertEqual(c2_sv.set_async, c2_nosync.set_async)
-        self.assertTrue(callable(c2_sv.set))
         # normal sequence operations access values
         self.assertEqual(list(c0_sv), [1])
         self.assertEqual(c0_sv[0], 1)
@@ -665,9 +636,9 @@ class TestParameters(TestCase):
         self.assertEqual(res.get(), 1000)
 
         res.set(1e9)
-        self.assertEqual(wait_for_async(res.get_async), 1e9)
+        self.assertEqual(res.get(), 1e9)
         # default vals is all numbers
-        wait_for_async(res.set_async, -1)
+        res.set(-1)
         self.assertEqual(res.get(), -1)
 
         self.source.add_parameter('alignment',
@@ -689,3 +660,170 @@ class TestParameters(TestCase):
             self.source.add_parameter('alignment2',
                                       parameter_class=ManualParameter,
                                       initial_value='nearsighted')
+
+
+class TestAttrAccess(TestCase):
+    def tearDown(self):
+        self.instrument.close()
+        # do it twice - should not error, though the second is irrelevant
+        self.instrument.close()
+
+    def test_simple_noserver(self):
+        instrument = Instrument(name='test_simple_local', server_name=None)
+        self.instrument = instrument
+
+        # before setting attr1
+        self.assertEqual(instrument.getattr('attr1', 99), 99)
+        with self.assertRaises(AttributeError):
+            instrument.getattr('attr1')
+
+        with self.assertRaises(TypeError):
+            instrument.setattr('attr1')
+
+        self.assertFalse(hasattr(instrument, 'attr1'))
+
+        # set it to a value
+        instrument.setattr('attr1', 98)
+        self.assertTrue(hasattr(instrument, 'attr1'))
+
+        self.assertEqual(instrument.getattr('attr1', 99), 98)
+        self.assertEqual(instrument.getattr('attr1'), 98)
+
+        # then delete it
+        instrument.delattr('attr1')
+
+        with self.assertRaises(AttributeError):
+            instrument.delattr('attr1')
+
+        with self.assertRaises(AttributeError):
+            instrument.getattr('attr1')
+
+    def test_nested_noserver(self):
+        instrument = Instrument(name='test_nested_local', server_name=None)
+        self.instrument = instrument
+
+        self.assertFalse(hasattr(instrument, 'd1'))
+
+        with self.assertRaises(TypeError):
+            instrument.setattr(('d1', 'a', 1))
+
+        # set one attribute that requires creating nested levels
+        instrument.setattr(('d1', 'a', 1), 2)
+
+        # can't nest inside a non-container
+        with self.assertRaises(TypeError):
+            instrument.setattr(('d1', 'a', 1, 'secret'), 42)
+
+        # get the whole dict with simple getattr style
+        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
+
+        # get the whole or parts with nested style
+        self.assertEqual(instrument.getattr(('d1',)), {'a': {1: 2}})
+        self.assertEqual(instrument.getattr(('d1',), 55), {'a': {1: 2}})
+        self.assertEqual(instrument.getattr(('d1', 'a')), {1: 2})
+        self.assertEqual(instrument.getattr(('d1', 'a', 1)), 2)
+        self.assertEqual(instrument.getattr(('d1', 'a', 1), 3), 2)
+
+        # add an attribute inside, then delete it again
+        instrument.setattr(('d1', 'a', 2, 3), 4)
+        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2, 2: {3: 4}}})
+        instrument.delattr(('d1', 'a', 2, 3))
+        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
+
+        # deleting it without pruning should leave empty containers
+        instrument.delattr(('d1', 'a', 1), prune=False)
+        self.assertEqual(instrument.getattr('d1'), {'a': {}})
+
+        with self.assertRaises(KeyError):
+            instrument.delattr(('d1', 'a', 1))
+
+        # now prune
+        instrument.delattr(('d1', 'a'))
+        self.assertIsNone(instrument.getattr('d1', None))
+
+        # a little more with top-level attrs as tuples
+        instrument.setattr(('d2',), 'potato')
+        self.assertEqual(instrument.getattr('d2'), 'potato')
+        instrument.delattr(('d2',))
+        self.assertIsNone(instrument.getattr('d2', None))
+
+    def test_server(self):
+        instrument = Instrument(name='test_server', server_name='attr_test')
+        self.instrument = instrument
+
+        with self.assertRaises(TypeError):
+            instrument.setattr(('d1', 'a', 1))
+            instrument.getattr('name')
+
+        # set one attribute that requires creating nested levels
+        instrument.setattr(('d1', 'a', 1), 2)
+
+        # can't nest inside a non-container
+        with self.assertRaises(TypeError):
+            instrument.setattr(('d1', 'a', 1, 'secret'), 42)
+            instrument.getattr('name')
+
+        # get the whole dict with simple getattr style
+        # TODO: twice (out of maybe 50 runs) I saw the below fail,
+        # it returned "test_server" which should have been the response
+        # above if it didn't raise an error.
+        # I guess this is catching the error before receiving the
+        # next response somehow. I've added a bit of a wait in there
+        # that may have fixed this but lets leave the comment for a
+        # while to see if it recurs.
+        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
+
+        # get the whole or parts with nested style
+        self.assertEqual(instrument.getattr(('d1',)), {'a': {1: 2}})
+        self.assertEqual(instrument.getattr(('d1',), 55), {'a': {1: 2}})
+        self.assertEqual(instrument.getattr(('d1', 'a')), {1: 2})
+        self.assertEqual(instrument.getattr(('d1', 'a', 1)), 2)
+        self.assertEqual(instrument.getattr(('d1', 'a', 1), 3), 2)
+
+        # add an attribute inside, then delete it again
+        instrument.setattr(('d1', 'a', 2), 23)
+        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2, 2: 23}})
+        instrument.delattr(('d1', 'a', 2))
+        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
+
+        # deleting it without pruning should leave empty containers
+        instrument.delattr(('d1', 'a', 1), prune=False)
+        self.assertEqual(instrument.getattr('d1'), {'a': {}})
+
+        with self.assertRaises(KeyError):
+            instrument.delattr(('d1', 'a', 1))
+            instrument.getattr('name')
+
+        # now prune
+        instrument.delattr(('d1', 'a'))
+        self.assertIsNone(instrument.getattr('d1', None))
+
+        # test restarting the InstrumentServer - this clears these attrs
+        instrument.setattr('answer', 42)
+        self.assertEqual(instrument.getattr('answer', None), 42)
+        instrument.connection.manager.restart()
+        self.assertIsNone(instrument.getattr('answer', None))
+
+
+class TestLocalMock(TestCase):
+    def setUp(self):
+        self.model = AMockModel()
+
+        self.gates = MockGates(self.model, server_name=None)
+        self.source = MockSource(self.model, server_name=None)
+        self.meter = MockMeter(self.model, server_name=None)
+
+    def tearDown(self):
+        self.model.close()
+        for instrument in [self.gates, self.source, self.meter]:
+            instrument.close()
+
+    def test_local(self):
+        self.gates.chan1.set(3.33)
+        self.assertEqual(self.gates.chan1.get(), 3.33)
+
+        self.gates.reset()
+        self.assertEqual(self.gates.chan1.get(), 0)
+
+        with self.assertRaises(ValueError):
+            self.gates.ask('knock knock? Oh never mind.')

@@ -1,4 +1,4 @@
-def test_core(verbosity=1):
+def test_core(verbosity=1, failfast=False):
     '''
     Run the qcodes core tests.
 
@@ -8,10 +8,10 @@ def test_core(verbosity=1):
     if qcodes.in_notebook():
         qcodes._IN_NOTEBOOK = True
 
-    _test_core(verbosity=verbosity)
+    _test_core(verbosity=verbosity, failfast=failfast)
 
 
-def _test_core(verbosity):
+def _test_core(**kwargs):
     import unittest
 
     import qcodes.tests as qctest
@@ -19,13 +19,15 @@ def _test_core(verbosity):
 
     suite = unittest.defaultTestLoader.discover(
         qctest.__path__[0], top_level_dir=qcodes.__path__[0])
-    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
+    result = unittest.TextTestRunner(**kwargs).run(suite)
     return result.wasSuccessful()
 
 if __name__ == '__main__':
     import argparse
     import coverage
     import os
+    import multiprocessing as mp
+    mp.set_start_method('spawn')
 
     # make sure coverage looks for .coveragerc in the right place
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -39,12 +41,18 @@ if __name__ == '__main__':
                         help=('increase verbosity. default 1, '
                               '-v is the same as -v 2'))
 
+    parser.add_argument('-f', '--failfast', nargs='?', dest='failfast',
+                        const=1, default=0, type=int,
+                        help=('halt on first error/failure? default 0 '
+                              '(false), -f is the same as -f 1 (true)'))
+
     args = parser.parse_args()
 
     cov = coverage.Coverage()
     cov.start()
 
-    success = _test_core(verbosity=args.verbosity)
+    success = _test_core(verbosity=args.verbosity,
+                         failfast=bool(args.failfast))
 
     cov.stop()
 

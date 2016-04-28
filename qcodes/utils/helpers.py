@@ -6,6 +6,7 @@ import logging
 import math
 import sys
 import io
+import multiprocessing as mp
 
 
 def in_notebook():
@@ -125,7 +126,7 @@ def make_unique(s, existing):
     return s_out
 
 
-class DelegateAttributes(object):
+class DelegateAttributes:
     '''
     Mixin class to create attributes of this object by
     delegating them to one or more dicts and/or objects
@@ -202,3 +203,30 @@ class DelegateAttributes(object):
                           if k not in self.omit_delegate_attrs]
 
         return sorted(set(names))
+
+
+def strip_attrs(obj):
+    '''
+    Irreversibly remove all direct instance attributes of obj, to help with
+    disposal, breaking circular references.
+    '''
+    try:
+        for key in list(obj.__dict__.keys()):
+            try:
+                del obj.__dict__[key]
+            except:
+                pass
+    except:
+        pass
+
+
+def killprocesses():
+    # TODO: Instrument processes don't appropriately stop in all tests...
+    # this just kills everything that's running.
+    for process in mp.active_children():
+        try:
+            process.terminate()
+        except:
+            pass
+
+    time.sleep(0.5)
