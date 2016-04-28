@@ -190,17 +190,51 @@ class MockParabola(Instrument):
         self.add_parameter('parabola', units='a.u.',
                            get_cmd=self._measure_parabola)
         self.add_parameter('skewed_parabola', units='a.u.',
-                           get_cmd=self._measure_skewwed_parabola)
+                           get_cmd=self._measure_skewed_parabola)
 
     def _measure_parabola(self):
         return (self.x.get()**2 + self.y.get()**2 + self.z.get()**2 +
                 self.noise.get()*np.random.rand(1))
 
-    def _measure_skewwed_parabola(self):
+    def _measure_skewed_parabola(self):
         '''
         Adds an -x term to add a corelation between the parameters.
         '''
         return ((self.x.get()**2 + self.y.get()**2 +
                 self.z.get()**2)*(1 + abs(self.y.get()-self.x.get())) +
                 self.noise.get()*np.random.rand(1))
+
+
+class MockMetaParabola(Instrument):
+    '''
+    Test for a meta instrument
+    '''
+    shared_kwargs = ['mock_parabola_inst']
+
+    def __init__(self, name, mock_parabola_inst, **kw):
+        super().__init__(name, **kw)
+        self.mock_parabola_inst = mock_parabola_inst
+
+        # Instrument parameters
+        for parname in ['x', 'y', 'z']:
+            self.add_parameter(parname, units='a.u.',
+                               parameter_class=ManualParameter,
+                               vals=Numbers(), initial_value=0)
+        self.add_parameter('gain', parameter_class=ManualParameter,
+                           initial_value=1)
+
+        self.add_parameter('parabola', units='a.u.',
+                           get_cmd=self._get_parabola)
+        self.add_parameter('skewed_parabola', units='a.u.',
+                           get_cmd=self._get_skew_parabola)
+
+    def _get_parabola(self):
+        val = self.mock_parabola_inst.parabola.get()
+        return val*self.gain.get()
+
+    def _get_skew_parabola(self):
+        val = self.mock_parabola_inst.skewed_parabola.get()
+        return val*self.gain.get()
+
+
 
