@@ -1189,7 +1189,7 @@ class Tektronix_AWG5014(VisaInstrument):
         dim = len(w)
 
         if (not((len(w) == len(m1)) and ((len(m1) == len(m2))))):
-            raise 'error: sizes of the waveforms do not match'
+            raise Exception('error: sizes of the waveforms do not match')
             
         self._values['files'][wfmname] = self._file_dict(w, m1, m2, None)
 
