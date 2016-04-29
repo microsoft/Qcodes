@@ -52,7 +52,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
     CHANGES:
     26-11-2008 by Gijs: Copied this plugin from the 520 and added support for
-        2 more channels, added setget marker delay functions and increased max
+        2 more channels, added set get marker delay functions and increased max
         sampling freq to 1.2 	GS/s
     28-11-2008 ''  '' : Added some functionality to manipulate and manoeuvre
         through the folders on the AWG
@@ -153,7 +153,7 @@ class Tektronix_AWG5014(VisaInstrument):
             name (string)           : name of the instrument
             setup_folder (string)   : folder where externally generate seqs
                                         are stored
-            address (string)        : GPIB address
+            address (string)        : GPIB or ethernet address
             reset (bool)            : resets to default values, default=false
             numpoints (int)         : sets the number of datapoints
 
@@ -187,11 +187,13 @@ class Tektronix_AWG5014(VisaInstrument):
                            vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'))
         self.add_parameter('trigger_impedance',
                            label='Trigger impedance (Ohm)',
+                           units='Ohm',
                            get_cmd='TRIG:IMP?',
                            set_cmd='TRIG:IMP ' + '{}',
                            vals=vals.Enum(50, 1000),
                            get_parser=float)
         self.add_parameter('trigger_level',
+                           units='V',
                            label='Trigger level (V)',
                            get_cmd='TRIG:LEV?',
                            set_cmd='TRIG:LEV ' + '{:.3f}',
@@ -261,12 +263,14 @@ class Tektronix_AWG5014(VisaInstrument):
                                vals=vals.Ints(0, 1))
             self.add_parameter('ch{}_amp'.format(i),
                                label='Amplitude channel {} (V)'.format(i),
+                               units='V',
                                get_cmd=amp_cmd + '?',
                                set_cmd=amp_cmd + ' {:.6f}',
                                vals=vals.Numbers(0.02, 1.5),
                                get_parser=float)
             self.add_parameter('ch{}_offset'.format(i),
                                label='Offset channel {} (V)'.format(i),
+                               units='V',
                                get_cmd=offset_cmd + '?',
                                set_cmd=offset_cmd + ' {:.3f}',
                                vals=vals.Numbers(-.1, .1),
@@ -287,21 +291,21 @@ class Tektronix_AWG5014(VisaInstrument):
                     'ch{}_m{}_del'.format(i, j),
                     label='Channel {} Marker {} delay (ns)'.format(i, j),
                     get_cmd=m_del_cmd + '?',
-                    set_cmd=m_del_cmd + '{:.3f}e-9',
+                    set_cmd=m_del_cmd + ' {:.3f}e-9',
                     vals=vals.Numbers(0, 1),
                     get_parser=float)
                 self.add_parameter(
                     'ch{}_m{}_high'.format(i, j),
                     label='Channel {} Marker {} high level (V)'.format(i, j),
                     get_cmd=m_high_cmd + '?',
-                    set_cmd=m_high_cmd + '{:.3f}',
+                    set_cmd=m_high_cmd + ' {:.3f}',
                     vals=vals.Numbers(-2.7, 2.7),
                     get_parser=float)
                 self.add_parameter(
                     'ch{}_m{}_low'.format(i, j),
                     label='Channel {} Marker {} low level (V)'.format(i, j),
                     get_cmd=m_low_cmd + '?',
-                    set_cmd=m_low_cmd + '{:.3f}',
+                    set_cmd=m_low_cmd + ' {:.3f}',
                     vals=vals.Numbers(-2.7, 2.7),
                     get_parser=float)
 
