@@ -8,7 +8,7 @@ from .data_array import DataArray
 
 
 class Formatter:
-    '''
+    """
     Data file formatters
 
     Formatters translate between DataSets and data files.
@@ -32,15 +32,15 @@ class Formatter:
             - write will write ALL DataArrays in the DataSet, using
               last_saved_index and modified_range, as well as whether or not
               it found the specified file, to determine how much to write.
-    '''
+    """
     ArrayGroup = namedtuple('ArrayGroup', 'size set_arrays data name')
 
     def find_changes(self, arrays):
-        '''
+        """
         Collect changes made to any of these arrays and determine whether
         the WHOLE group is elligible for appending or not.
         Subclasses may choose to use or ignore this information.
-        '''
+        """
         new_data = {}
         can_append = True
 
@@ -55,26 +55,26 @@ class Formatter:
         return new_data, can_append
 
     def mark_saved(self, arrays):
-        '''
+        """
         Mark all DataArrays in this group as saved
-        '''
+        """
         for array in arrays.values():
             array.mark_saved()
 
     def write(self, data_set):
-        '''
+        """
         Write the DataSet to storage. It is up to the Formatter to decide
         when to overwrite completely, and when to just append or otherwise
         update the file(s).
-        '''
+        """
         raise NotImplementedError
 
     def read(self, data_set):
-        '''
+        """
         Read the entire DataSet by finding all files matching its location
         (using io_manager.list) and calling read_one_file from the Formatter
         subclass. Subclasses may alternatively override this entire method.
-        '''
+        """
         io_manager = data_set.io
         location = data_set.location
 
@@ -100,7 +100,7 @@ class Formatter:
         raise NotImplementedError
 
     def match_save_range(self, group, file_exists):
-        '''
+        """
         Find the save range that will capture all changes in an array group.
         matches all full-sized arrays: the data arrays plus the inner loop
         setpoint array
@@ -110,7 +110,7 @@ class Formatter:
 
         use the inner setpoint as a base and look for differences
         in last_saved_index and modified_range in the data arrays
-        '''
+        """
         inner_setpoint = group.set_arrays[-1]
         last_saved_index = (inner_setpoint.last_saved_index if file_exists
                             else None)
@@ -148,11 +148,11 @@ class Formatter:
         return last_saved_index, modified_range
 
     def group_arrays(self, arrays):
-        '''
+        """
         find the sets of arrays which share all the same setpoint arrays
         so each set can be grouped together into one file
         returns ArrayGroup namedtuples
-        '''
+        """
 
         set_array_sets = tuple(set(array.set_arrays
                                    for array in arrays.values()))
@@ -189,7 +189,7 @@ class Formatter:
 
 
 class GNUPlotFormat(Formatter):
-    '''
+    """
     Saves data in one or more gnuplot-format files. We make one file for
     each set of matching dependent variables in the loop.
 
@@ -221,7 +221,7 @@ class GNUPlotFormat(Formatter):
     one blank line for each loop level that resets. (gnuplot *does* seem to
     use 2 blank lines sometimes, to denote a whole new dataset, which sort
     of corresponds to our situation.)
-    '''
+    """
     def __init__(self, extension='dat', terminator='\n', separator='\t',
                  comment='# ', number_format='g'):
         # file extension: accept either with or without leading dot
@@ -250,11 +250,11 @@ class GNUPlotFormat(Formatter):
         self.number_format = '{:' + number_format + '}'
 
     def read_one_file(self, data_set, f, ids_read):
-        '''
+        """
         Called by Formatter.read to bring one data file into
         a DataSet. Setpoint data may be duplicated across multiple files,
         but each measured DataArray must only map to one file.
-        '''
+        """
         arrays = data_set.arrays
         ids = self._read_comment_line(f).split()
         labels = self._get_labels(self._read_comment_line(f))
@@ -368,10 +368,10 @@ class GNUPlotFormat(Formatter):
             return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
 
     def write(self, data_set):
-        '''
+        """
         Write updates in this DataSet to storage. Will choose append if
         possible, overwrite if not.
-        '''
+        """
         io_manager = data_set.io
         location = data_set.location
         arrays = data_set.arrays
