@@ -26,7 +26,7 @@ class IVVI(VisaInstrument):
     Fullrange = 4000
     Halfrange = Fullrange / 2
 
-    def __init__(self, name, address, reset=False, numdacs=16, **kwargs):
+    def __init__(self, name, address, reset=False, numdacs=16, dac_step=10, dac_delay = .1, dac_max_delay = 0.2, **kwargs):
                  # polarity=['BIP', 'BIP', 'BIP', 'BIP']):
                  # commented because still on the todo list
         '''
@@ -39,6 +39,9 @@ class IVVI(VisaInstrument):
             polarity (string[4]) : list of polarities of each set of 4 dacs
                                    choose from 'BIP', 'POS', 'NEG',
                                    default=['BIP', 'BIP', 'BIP', 'BIP']
+            dac_step (float)         : max step size for dac parameter
+            dac_delay (float)        : delay (in seconds) for dac
+            dac_max_delay (float)    : maximum delay before emitting a warning
         '''
         t0 = time.time()
         super().__init__(name, address, **kwargs)
@@ -70,9 +73,9 @@ class IVVI(VisaInstrument):
                 get_cmd=self._gen_ch_get_func(self._get_dac, i),
                 set_cmd=self._gen_ch_set_func(self._set_dac, i),
                 vals=vals.Numbers(-2000, 2000),
-                step=10,
-                delay=.1,
-                max_delay=.2,
+                step=dac_step,
+                delay=dac_delay,
+                max_delay=dac_max_delay,
                 max_val_age=10)
 
         self._update_time = 5  # seconds
@@ -84,6 +87,7 @@ class IVVI(VisaInstrument):
             self.get_all()
         except Exception as ex:
             print('IVVI: get_all() failed, maybe connected to wrong port?')
+            print(ex)
             
         print('Initialized IVVI-rack in %.2fs' % (t1-t0))
 
