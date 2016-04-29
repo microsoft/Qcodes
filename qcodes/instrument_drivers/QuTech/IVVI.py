@@ -13,7 +13,8 @@ class IVVI(VisaInstrument):
             - Add individual parameters for channel polarities
             - Test polarities different from BIP
             - Add adjustable range and rate protection per channel
-            - Add error handling for the specific error messages in the protocol
+            - Add error handling for the specific error messages in the
+              protocol
             - Remove/fine-tune manual sleep statements
 
     This is the python driver for the D5 module of the IVVI-rack
@@ -26,7 +27,8 @@ class IVVI(VisaInstrument):
     Fullrange = 4000
     Halfrange = Fullrange / 2
 
-    def __init__(self, name, address, reset=False, numdacs=16, dac_step=10, dac_delay = .1, dac_max_delay = 0.2, **kwargs):
+    def __init__(self, name, address, reset=False, numdacs=16, dac_step=10,
+                 dac_delay=.1, dac_max_delay=0.2, **kwargs):
                  # polarity=['BIP', 'BIP', 'BIP', 'BIP']):
                  # commented because still on the todo list
         '''
@@ -81,14 +83,14 @@ class IVVI(VisaInstrument):
         self._update_time = 5  # seconds
         self._time_last_update = 0  # ensures first call will always update
         t1 = time.time()
-        
+
         # basic test to confirm we are properly connected
         try:
             self.get_all()
         except Exception as ex:
             print('IVVI: get_all() failed, maybe connected to wrong port?')
             print(ex)
-            
+
         print('Initialized IVVI-rack in %.2fs' % (t1-t0))
 
     def _get_version(self):
@@ -106,7 +108,9 @@ class IVVI(VisaInstrument):
     # Conversion of data
     def _mvoltage_to_bytes(self, mvoltage):
         '''
-        Converts a mvoltage on a 0mV-4000mV scale to a 16-bit integer equivalent
+        Converts a mvoltage on a 0mV-4000mV scale to a 16-bit integer
+        equivalent
+
         output is a list of two bytes
 
         Input:
