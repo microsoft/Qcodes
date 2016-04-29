@@ -77,12 +77,16 @@ class Instrument(Metadatable, DelegateAttributes):
 
         self.name = str(name)
 
-        self.IDN = {'vendor': None, 'model': None,
-                    'serial': None, 'firmware': None}
+        self.add_parameter('IDN', get_cmd='*IDN?',
+                           get_parser=self.get_idn_dict)
 
-        self._meta_attrs = ['name', 'IDN']
+        self._meta_attrs = ['name']
 
         self.record_instance(self)
+
+    def get_idn_dict(self, *args, **kwargs):
+        return {'vendor': None, 'model': None,
+                'serial': None, 'firmware': None}
 
     @classmethod
     def default_server_name(cls, **kwargs):
