@@ -106,7 +106,9 @@ class Loop:
     sweep_values - a SweepValues or compatible object describing what
         parameter to set in the loop and over what values
     delay - a number of seconds to wait after setting a value before
-        continuing.
+        continuing. 0 (default) means no waiting and no warnings. > 0
+        means to wait, potentially filling the delay time with monitoring,
+        and give an error if you wait longer than expected.
 
     After creating a Loop, you attach `action`s to it, making an `ActiveLoop`
     that you can `.run()`, or you can `.run()` a `Loop` directly, in which
@@ -117,12 +119,14 @@ class Loop:
     data), `Wait` times, or other `ActiveLoop`s or `Loop`s to nest inside
     this one.
     '''
-    def __init__(self, sweep_values, delay):
+    def __init__(self, sweep_values, delay=0):
+        if not delay >= 0:
+            raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
         self.sweep_values = sweep_values
         self.delay = delay
         self.nested_loop = None
 
-    def loop(self, sweep_values, delay):
+    def loop(self, sweep_values, delay=0):
         '''
         Nest another loop inside this one
 
@@ -557,13 +561,16 @@ class ActiveLoop:
             delay = self.delay
 
     def _wait(self, delay):
-        finish_clock = time.perf_counter() + delay
+        if delay:
+            finish_clock = time.perf_counter() + delay
 
-        if self._monitor:
-            self._monitor.call(finish_by=finish_clock)
+            if self._monitor:
+                self._monitor.call(finish_by=finish_clock)
 
-        self._check_signal()
-        time.sleep(wait_secs(finish_clock))
+            self._check_signal()
+            time.sleep(wait_secs(finish_clock))
+        else:
+            self._check_signal()
 
 
 class Task:
@@ -597,10 +604,13 @@ class Wait:
     But for use outside of a Loop, it is also callable (then it just sleeps)
     '''
     def __init__(self, delay):
+        if not delay >= 0:
+            raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
         self.delay = delay
 
     def __call__(self):
-        time.sleep(self.delay)
+        if self.delay:
+            time.sleep(self.delay)
 
 
 class _Measure:
@@ -609,14 +619,12 @@ class _Measure:
     This should not be constructed manually, only by an ActiveLoop.
     '''
     def __init__(self, params_indices, data_set, use_threads):
-        self.use_threads = use_threads
+        self.use_threads = use_threads and len(params_indices) > 1
         # the applicable DataSet.store function
         self.store = data_set.store
 
         # for performance, pre-calculate which params return data for
-        # multiple arrays, pre-create the dict to pass these to store fn
-        # and pre-calculate the name mappings
-        self.dict = {}
+        # multiple arrays, and the name mappings
         self.getters = []
         self.param_ids = []
         self.composite = []
@@ -628,16 +636,15 @@ class _Measure:
                 for i in range(len(param.names)):
                     param_id = data_set.action_id_map[action_indices + (i,)]
                     part_ids.append(param_id)
-                    self.dict[param_id] = None
                 self.param_ids.append(None)
                 self.composite.append(part_ids)
             else:
                 param_id = data_set.action_id_map[action_indices]
-                self.dict[param_id] = None
                 self.param_ids.append(param_id)
                 self.composite.append(False)
 
     def __call__(self, loop_indices, **ignore_kwargs):
+        out_dict = {}
         if self.use_threads:
             out = thread_map(self.getters)
         else:
@@ -647,11 +654,11 @@ class _Measure:
                                                   self.composite):
             if composite:
                 for val, part_id in zip(param_out, composite):
-                    self.dict[part_id] = val
+                    out_dict[part_id] = val
             else:
-                self.dict[param_id] = param_out
+                out_dict[param_id] = param_out
 
-        self.store(loop_indices, self.dict)
+        self.store(loop_indices, out_dict)
 
 
 class _Nest:
