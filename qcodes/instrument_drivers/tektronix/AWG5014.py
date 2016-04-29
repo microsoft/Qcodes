@@ -682,16 +682,16 @@ class Tektronix_AWG5014(VisaInstrument):
             # External | Internal
             'TRIGGER_INPUT_IMPEDANCE': (1 if self.get('trigger_impedance') ==
                                         50. else 2),  # 50 ohm | 1 kohm
-            'TRIGGER_INPUT_SLOPE': (1 if self.get('trigger_slope') ==
-                                    'POS' else 2),  # Positive | Negative
-            'TRIGGER_INPUT_POLARITY': (1 if self.ask('TRIG:POL?') ==
-                                       'POS' else 2),  # Positive | Negative
+            'TRIGGER_INPUT_SLOPE': (1 if self.get('trigger_slope').startswith(
+                                    'POS') else 2),  # Positive | Negative
+            'TRIGGER_INPUT_POLARITY': (1 if self.ask('TRIG:POL?').startswith(
+                                       'POS') else 2),  # Positive | Negative
             'TRIGGER_INPUT_THRESHOLD':  self.get('trigger_level'),  # V
             'EVENT_INPUT_IMPEDANCE':   (1 if self.get('event_impedance') ==
                                         50. else 2),  # 50 ohm | 1 kohm
             'EVENT_INPUT_POLARITY':  (1 if
-                                      self.get('event_polarity').startswith('POS')
-                                      else 2),  # Positive | Negative
+                                      self.get('event_polarity').startswith(
+                                      'POS') else 2),  # Positive | Negative
             'EVENT_INPUT_THRESHOLD':   self.get('event_level'),  # V
             'JUMP_TIMING':   (1 if
                               self.get('event_jump_timing').startswith('SYNC')
