@@ -193,6 +193,26 @@ class GNUPlotFormat(Formatter):
     Saves data in one or more gnuplot-format files. We make one file for
     each set of matching dependent variables in the loop.
 
+    options:
+
+    extension (default 'dat'): file extension for data files
+
+    terminator (default '\\n'): newline character(s) to use on write
+        not used for reading, we will read any combination of \\r and \\n
+
+    separator (default '\\t'): field (column) separator, must be whitespace.
+        Only used for writing, we will read with any whitespace separation.
+
+    comment (default '# '): lines starting with this are not data
+        Comments are written with this full string, and identified on read
+        by just the string after stripping whitespace.
+
+    number_format (default 'g'): from the format mini-language, how to
+        format numeric data into a string
+
+    always_nest (default True): whether to always make a folder for files
+        or just make a single data file if all data has the same setpoints
+
     These files are basically tab-separated values, but any quantity of
     any whitespace characters is accepted.
 
@@ -223,7 +243,7 @@ class GNUPlotFormat(Formatter):
     of corresponds to our situation.)
     """
     def __init__(self, extension='dat', terminator='\n', separator='\t',
-                 comment='# ', number_format='g'):
+                 comment='# ', number_format='g', always_nest=True):
         # file extension: accept either with or without leading dot
         self.extension = '.' + extension.lstrip('.')
 
@@ -248,6 +268,8 @@ class GNUPlotFormat(Formatter):
 
         # number format (only used for writing; will read any number)
         self.number_format = '{:' + number_format + '}'
+
+        self.always_nest = always_nest
 
     def read_one_file(self, data_set, f, ids_read):
         """
@@ -381,7 +403,7 @@ class GNUPlotFormat(Formatter):
         written_files = set()
 
         for group in groups:
-            if len(groups) == 1:
+            if len(groups) == 1 and not self.always_nest:
                 fn = io_manager.join(location + self.extension)
             else:
                 fn = io_manager.join(location, group.name + self.extension)
