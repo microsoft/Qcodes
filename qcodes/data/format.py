@@ -417,11 +417,7 @@ class GNUPlotFormat(Formatter):
                     one_point = self._data_point(group, indices)
                     f.write(self.separator.join(one_point) + self.terminator)
 
-        extra_files = existing_files - written_files
-        if extra_files:
-            print('removing obsolete files: ' + ','.join(extra_files))
-            for fn in extra_files:
-                io_manager.remove(fn)
+        # tell gnuplot-loader only to use written_files
 
     def _make_header(self, group):
         ids, labels = [], []
