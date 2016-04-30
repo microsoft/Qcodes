@@ -46,9 +46,9 @@ class QtPlot(BasePlot):
         if remote:
             if not self.__class__.proc:
                 self._init_qt()
-        else:            
+        else:
             # overrule the remote pyqtgraph class
-            self.rpg = pg 
+            self.rpg = pg
         self.win = self.rpg.GraphicsWindow(title=windowTitle)
         self.win.setBackground(theme[1])
         self.win.resize(*figsize)
@@ -163,6 +163,7 @@ class QtPlot(BasePlot):
         }
 
         self._update_image(plot_object, {'x': x, 'y': y, 'z': z})
+        self._update_cmap(plot_object)
 
         return plot_object
 
@@ -187,8 +188,6 @@ class QtPlot(BasePlot):
                 # nothing to plot, so give up.
                 return
         z[np.where(np.isnan(z))] = z_range[0]
-
-        self._update_cmap(plot_object)
 
         hist_range = hist.getLevels()
         if hist_range == plot_object['histlevels']:
