@@ -255,6 +255,9 @@ class GNUPlotFormat(Formatter):
         a DataSet. Setpoint data may be duplicated across multiple files,
         but each measured DataArray must only map to one file.
         '''
+        if not f.name.endswith(self.extension):
+            return
+
         arrays = data_set.arrays
         ids = self._read_comment_line(f).split()
         labels = self._get_labels(self._read_comment_line(f))
