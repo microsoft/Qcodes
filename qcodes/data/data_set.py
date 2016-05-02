@@ -467,9 +467,6 @@ class DataSet(DelegateAttributes):
             raise RuntimeError('This mode does not allow finalizing',
                                self.mode)
 
-    def plot(self, cut=None):
-        pass  # TODO
-
     def __repr__(self):
         out = '{}: {}, location={}'.format(
             self.__class__.__name__, self.mode, repr(self.location))
