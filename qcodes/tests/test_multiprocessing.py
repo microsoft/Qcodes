@@ -200,6 +200,7 @@ class TestQcodesProcess(TestCase):
                     label + 'row row row your boat',
                     label + 'gently down '
                 ]
+                # TODO - intermittent error here
                 self.assertEqual(len(data), len(expected), data)
                 for line, expected_line in zip(data, expected):
                     self.assertIsNotNone(queue_format.match(line), data)

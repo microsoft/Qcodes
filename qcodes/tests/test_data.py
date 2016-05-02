@@ -2,6 +2,7 @@ from unittest import TestCase
 from unittest.mock import patch
 import numpy as np
 from datetime import datetime
+import multiprocessing as mp
 
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager, NoData
@@ -215,13 +216,34 @@ class TestDataArray(TestCase):
 
 
 class MockDataManager:
+    query_lock = mp.RLock()
+
+    def __init__(self):
+        self.needs_restart = False
+
     def ask(self, *args, timeout=None):
         if args == ('get_data', 'location'):
             return self.location
         elif args == ('get_data',):
             return self.live_data
+        elif args[0] == 'new_data' and len(args) == 2:
+            if self.needs_restart:
+                raise AttributeError('data_manager needs a restart')
+            else:
+                self.data_set = args[1]
         else:
             raise Exception('unexpected query to MockDataManager')
+
+    def restart(self):
+        self.needs_restart = False
+
+
+class MockFormatter:
+    def read(self, data_set):
+        data_set.has_read_data = True
+
+    def write(self, data_set):
+        data_set.has_written_data = True
 
 
 class TestLoadData(TestCase):
@@ -275,11 +297,7 @@ class TestLoadData(TestCase):
         dm = MockDataManager()
         dm.location = 'somewhere else'
 
-        class MyFormatter:
-            def read(self, data_set):
-                data_set.has_read_data = True
-
-        data = load_data(formatter=MyFormatter(), data_manager=dm,
+        data = load_data(formatter=MockFormatter(), data_manager=dm,
                          location='here!')
         self.assertEqual(data.has_read_data, True)
 
@@ -369,3 +387,107 @@ class TestTimestampLocation(TestCase):
 
     def test_fmt(self):
         self.check_cases(TimestampLocation(self.custom_fmt), self.custom_fmt)
+
+
+class MockLive:
+    arrays = 'whole lotta data'
+
+
+class TestDataSet(TestCase):
+    def tearDown(self):
+        killprocesses()
+
+    def test_constructor_errors(self):
+        # no location - only allowed with load_data
+        with self.assertRaises(ValueError):
+            DataSet()
+        # wrong type
+        with self.assertRaises(ValueError):
+            DataSet(location=42)
+
+        # OK to have location=False, but wrong mode
+        with self.assertRaises(ValueError):
+            DataSet(location=False, mode='happy')
+
+    @patch('qcodes.data.data_set.get_data_manager')
+    def test_from_server(self, gdm_mock):
+        mock_dm = MockDataManager()
+        gdm_mock.return_value = mock_dm
+        mock_dm.location = 'Mars'
+        mock_dm.live_data = MockLive()
+
+        # wrong location or False location - converts to local
+        data = DataSet(location='Jupiter', mode=DataMode.PULL_FROM_SERVER)
+        self.assertEqual(data.mode, DataMode.LOCAL)
+
+        data = DataSet(location=False, mode=DataMode.PULL_FROM_SERVER)
+        self.assertEqual(data.mode, DataMode.LOCAL)
+
+        # location matching server - stays in server mode
+        data = DataSet(location='Mars', mode=DataMode.PULL_FROM_SERVER,
+                       formatter=MockFormatter())
+        self.assertEqual(data.mode, DataMode.PULL_FROM_SERVER)
+        self.assertEqual(data.arrays, MockLive.arrays)
+
+        # cannot write except in LOCAL mode
+        with self.assertRaises(RuntimeError):
+            data.write()
+
+        # cannot finalize in PULL_FROM_SERVER mode
+        with self.assertRaises(RuntimeError):
+            data.finalize()
+
+        # now test when the server says it's not there anymore
+        mock_dm.location = 'Saturn'
+        data.sync()
+        self.assertEqual(data.mode, DataMode.LOCAL)
+        self.assertEqual(data.has_read_data, True)
+
+        # now it's LOCAL so we *can* write.
+        data.write()
+        self.assertEqual(data.has_written_data, True)
+
+        # location=False: write, read and sync are noops.
+        data.has_read_data = False
+        data.has_written_data = False
+        data.location = False
+        data.write()
+        data.read()
+        data.sync()
+        self.assertEqual(data.has_read_data, False)
+        self.assertEqual(data.has_written_data, False)
+
+    @patch('qcodes.data.data_set.get_data_manager')
+    def test_to_server(self, gdm_mock):
+        mock_dm = MockDataManager()
+        mock_dm.needs_restart = True
+        gdm_mock.return_value = mock_dm
+
+        data = DataSet(location='Venus', mode=DataMode.PUSH_TO_SERVER)
+        self.assertEqual(mock_dm.needs_restart, False, data)
+        self.assertEqual(mock_dm.data_set, data)
+        self.assertEqual(data.data_manager, mock_dm)
+        self.assertEqual(data.mode, DataMode.PUSH_TO_SERVER)
+
+        # cannot write except in LOCAL mode
+        with self.assertRaises(RuntimeError):
+            data.write()
+
+        # now do what the DataServer does with this DataSet: init_on_server
+        # fails until there is an array
+        with self.assertRaises(RuntimeError):
+            data.init_on_server()
+
+        class MockArray:
+            array_id = 'noise'
+
+            def init_data(self):
+                self.ready = True
+
+        data.add_array(MockArray())
+        data.init_on_server()
+        self.assertEqual(data.noise.ready, True)
+
+        # we can only add a given array_id once
+        with self.assertRaises(ValueError):
+            data.add_array(MockArray())
