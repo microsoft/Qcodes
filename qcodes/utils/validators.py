@@ -228,6 +228,20 @@ class Enum(Validator):
     def __repr__(self):
         return '<Enum: {}>'.format(repr(self._values))
 
+class OnOff(Validator):
+    '''
+    validates on off type values
+    valid responses are: (0, 1), (off, on)
+    '''
+
+    def __init__(self):
+        self._validator = MultiType(Enum(0, 1), Enum("off", "on"), Enum("true", "false"))
+
+    def validate(self, value, context=''):
+        if isinstance(value, str):
+            value = value.lower()
+        return self._validator.validate(value, context)
+
 
 class MultiType(Validator):
     '''
