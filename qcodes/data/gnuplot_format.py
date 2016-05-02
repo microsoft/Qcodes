@@ -1,0 +1,302 @@
+import numpy as np
+import re
+import math
+
+from .data_array import DataArray
+from .format import Formatter
+
+
+class GNUPlotFormat(Formatter):
+    """
+    Saves data in one or more gnuplot-format files. We make one file for
+    each set of matching dependent variables in the loop.
+
+    options:
+
+    extension (default 'dat'): file extension for data files
+
+    terminator (default '\\n'): newline character(s) to use on write
+        not used for reading, we will read any combination of \\r and \\n
+
+    separator (default '\\t'): field (column) separator, must be whitespace.
+        Only used for writing, we will read with any whitespace separation.
+
+    comment (default '# '): lines starting with this are not data
+        Comments are written with this full string, and identified on read
+        by just the string after stripping whitespace.
+
+    number_format (default 'g'): from the format mini-language, how to
+        format numeric data into a string
+
+    always_nest (default True): whether to always make a folder for files
+        or just make a single data file if all data has the same setpoints
+
+    These files are basically tab-separated values, but any quantity of
+    any whitespace characters is accepted.
+
+    Each row represents one setting of the setpoint variable(s)
+    the setpoint variable(s) are in the first column(s)
+    measured variable(s) come after.
+
+    The data is preceded by comment lines (starting with #).
+    We use three:
+    - one for the variable name
+    - the (longer) axis label, in quotes so a label can contain whitespace.
+    - for each dependent var, the (max) number of points in that dimension
+        (this also tells us how many dependent vars we have in this file)
+
+    # id1\tid2\t\id3...
+    # "label1"\t"label2"\t"label3"...
+    # 100\t250
+    1\t2\t3...
+    2\t3\t4...
+
+    For data of 2 dependent variables, gnuplot puts each inner loop into one
+    block, then increments the outer loop in the next block, separated by a
+    blank line.
+
+    We extend this to an arbitrary quantity of dependent variables by using
+    one blank line for each loop level that resets. (gnuplot *does* seem to
+    use 2 blank lines sometimes, to denote a whole new dataset, which sort
+    of corresponds to our situation.)
+    """
+    def __init__(self, extension='dat', terminator='\n', separator='\t',
+                 comment='# ', number_format='g', always_nest=True):
+        # file extension: accept either with or without leading dot
+        self.extension = '.' + extension.lstrip('.')
+
+        # line terminator (only used for writing; will read any \r\n combo)
+        if terminator not in ('\r', '\n', '\r\n'):
+            raise ValueError(
+                r'GNUPlotFormat terminator must be \r, \n, or \r\n')
+        self.terminator = terminator
+
+        # field separator (only used for writing; will read any whitespace)
+        if not re.fullmatch(r'\s+', separator):
+            raise ValueError('GNUPlotFormat separator must be whitespace')
+        self.separator = separator
+
+        # beginning of a comment line. (when reading, just checks the
+        # non-whitespace character(s) of comment
+        self.comment = comment
+        self.comment_chars = comment.rstrip()
+        if not self.comment_chars:
+            raise ValueError('comment must have some non-whitespace')
+        self.comment_len = len(self.comment_chars)
+
+        # number format (only used for writing; will read any number)
+        self.number_format = '{:' + number_format + '}'
+
+        self.always_nest = always_nest
+
+    def read_one_file(self, data_set, f, ids_read):
+        """
+        Called by Formatter.read to bring one data file into
+        a DataSet. Setpoint data may be duplicated across multiple files,
+        but each measured DataArray must only map to one file.
+        """
+        arrays = data_set.arrays
+        ids = self._read_comment_line(f).split()
+        labels = self._get_labels(self._read_comment_line(f))
+        size = tuple(map(int, self._read_comment_line(f).split()))
+        ndim = len(size)
+
+        set_arrays = ()
+        data_arrays = []
+        indexed_ids = list(enumerate(ids))
+
+        for i, array_id in indexed_ids[:ndim]:
+            # setpoint arrays
+            set_size = size[: i + 1]
+            if array_id in arrays:
+                set_array = arrays[array_id]
+                if set_array.size != set_size:
+                    raise ValueError(
+                        'sizes do not match for set array: ' + array_id)
+                if array_id not in ids_read:
+                    # it's OK for setpoints to be duplicated across
+                    # multiple files, but we should only empty the
+                    # array out the first time we see it, so subsequent
+                    # reads can check for consistency
+                    set_array.clear()
+            else:
+                set_array = DataArray(label=labels[i], array_id=array_id,
+                                      set_arrays=set_arrays, size=set_size)
+                set_array.init_data()
+                data_set.add_array(set_array)
+
+            set_arrays = set_arrays + (set_array, )
+            ids_read.add(array_id)
+
+        for i, array_id in indexed_ids[ndim:]:
+            # data arrays
+            if array_id in ids_read:
+                raise ValueError('duplicate data id found: ' + array_id)
+
+            if array_id in arrays:
+                data_array = arrays[array_id]
+                data_array.clear()
+            else:
+                data_array = DataArray(label=labels[i], array_id=array_id,
+                                       set_arrays=set_arrays, size=size)
+                data_array.init_data()
+                data_set.add_array(data_array)
+            data_arrays.append(data_array)
+            ids_read.add(array_id)
+
+        indices = [0] * ndim
+        first_point = True
+        resetting = 0
+        for line in f:
+            if self._is_comment(line):
+                continue
+
+            # ignore leading or trailing whitespace (including in blank lines)
+            line = line.strip()
+
+            if not line:
+                # each consecutive blank line implies one more loop to reset
+                # when we read the next data point. Don't depend on the number
+                # of setpoints that change, as there could be weird cases, like
+                # bidirectional sweeps, or highly diagonal sweeps, where this
+                # is incorrect. Anyway this really only matters for >2D sweeps.
+                if not first_point:
+                    resetting += 1
+                continue
+
+            values = tuple(map(float, line.split()))
+
+            if resetting:
+                indices[-resetting - 1] += 1
+                indices[-resetting:] = [0] * resetting
+                resetting = 0
+
+            for value, set_array in zip(values[:ndim], set_arrays):
+                nparray = set_array.ndarray
+                myindices = tuple(indices[:nparray.ndim])
+                stored_value = nparray[myindices]
+                if math.isnan(stored_value):
+                    nparray[myindices] = value
+                elif stored_value != value:
+                    raise ValueError('inconsistent setpoint values',
+                                     stored_value, value, set_array.name,
+                                     myindices, indices)
+
+            for value, data_array in zip(values[ndim:], data_arrays):
+                data_array.ndarray[tuple(indices)] = value
+
+            indices[-1] += 1
+            first_point = False
+
+    def _is_comment(self, line):
+        return line[:self.comment_len] == self.comment_chars
+
+    def _read_comment_line(self, f):
+        s = f.readline()
+        if not self._is_comment(s):
+            raise ValueError('expected a comment line, found:\n' + s)
+        return s[self.comment_len:]
+
+    def _get_labels(self, labelstr):
+        labelstr = labelstr.strip()
+        if labelstr[0] != '"' or labelstr[-1] != '"':
+            # fields are *not* quoted
+            return labelstr.split()
+        else:
+            # fields *are* quoted (and escaped)
+            parts = re.split('"\s+"', labelstr[1:-1])
+            return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
+
+    def write(self, data_set):
+        """
+        Write updates in this DataSet to storage. Will choose append if
+        possible, overwrite if not.
+        """
+        io_manager = data_set.io
+        location = data_set.location
+        arrays = data_set.arrays
+
+        groups = self.group_arrays(arrays)
+        existing_files = set(io_manager.list(location))
+        written_files = set()
+
+        for group in groups:
+            if len(groups) == 1 and not self.always_nest:
+                fn = io_manager.join(location + self.extension)
+            else:
+                fn = io_manager.join(location, group.name + self.extension)
+
+            written_files.add(fn)
+
+            file_exists = fn in existing_files
+            save_range = self.match_save_range(group, file_exists)
+
+            if save_range is None:
+                continue
+
+            overwrite = save_range[0] == 0
+            open_mode = 'w' if overwrite else 'a'
+            shape = group.set_arrays[-1].shape
+
+            with io_manager.open(fn, open_mode) as f:
+                if overwrite:
+                    f.write(self._make_header(group))
+
+                for i in range(save_range[0], save_range[1] + 1):
+                    indices = np.unravel_index(i, shape)
+
+                    # insert a blank line for each loop that reset (to index 0)
+                    # note that if *all* indices are zero (the first point)
+                    # we won't put any blanks
+                    for j, index in enumerate(reversed(indices)):
+                        if index != 0:
+                            if j:
+                                f.write(self.terminator * j)
+                            break
+
+                    one_point = self._data_point(group, indices)
+                    f.write(self.separator.join(one_point) + self.terminator)
+
+            # now that we've saved the data, mark it as such in the data.
+            # we mark the data arrays and the inner setpoint array. Outer
+            # setpoint arrays have different dimension (so would need a
+            # different unraveled index) but more importantly could have
+            # a different saved range anyway depending on whether there
+            # is outer data taken before or after the inner loop. Anyway we
+            # never look at the outer setpoint last_saved_index or
+            # modified_range, we just assume it's got the values we need.
+            for array in group.data + (group.set_arrays[-1],):
+                array.mark_saved(save_range[1])
+
+        extra_files = existing_files - written_files
+        if extra_files:
+            print('removing obsolete files: ' + ','.join(extra_files))
+            for fn in extra_files:
+                io_manager.remove(fn)
+
+    def _make_header(self, group):
+        ids, labels = [], []
+        for array in group.set_arrays + group.data:
+            ids.append(array.array_id)
+            label = getattr(array, 'label', array.array_id)
+            label = label.replace('\\', '\\\\').replace('"', '\\"')
+            labels.append('"' + label + '"')
+
+        sizes = [str(size) for size in group.set_arrays[-1].shape]
+        if len(sizes) != len(group.set_arrays):
+            raise ValueError('array dimensionality does not match setpoints')
+
+        out = (self._comment_line(ids) + self._comment_line(labels) +
+               self._comment_line(sizes))
+
+        return out
+
+    def _comment_line(self, items):
+        return self.comment + self.separator.join(items) + self.terminator
+
+    def _data_point(self, group, indices):
+        for array in group.set_arrays:
+            yield self.number_format.format(array[indices[:array.ndim]])
+
+        for array in group.data:
+            yield self.number_format.format(array[indices])

@@ -3,7 +3,7 @@ from datetime import datetime
 import time
 
 from .manager import get_data_manager, NoData
-from .format import GNUPlotFormat
+from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
 from qcodes.utils.helpers import DelegateAttributes
 
