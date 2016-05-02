@@ -203,6 +203,6 @@ class Formatter:
             group_name = '_'.join(sai.array_id for sai in set_arrays)
             out.append(self.ArrayGroup(size=set_arrays[-1].size,
                                        set_arrays=set_arrays,
-                                       data=tuple(data),
+                                       data=tuple(sorted(data)),
                                        name=group_name))
         return out
