@@ -648,7 +648,7 @@ class Task:
         self.func(*self.args, **self.kwargs)
 
     def snapshot(self, update=False):
-        return {'type': 'Task', 'func': self.func.__repr__}
+        return {'type': 'Task', 'func': self.func.__repr__()}
 
 
 
