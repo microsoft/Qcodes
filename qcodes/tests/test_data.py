@@ -127,6 +127,13 @@ class TestDataArray(TestCase):
 
         self.assertEqual(data.modified_range, (0, 2))
 
+        # as if we saved the first two points... the third should still
+        # show as modified
+        data.mark_saved(1)
+        self.assertEqual(data.last_saved_index, 1)
+        self.assertEqual(data.modified_range, (2, 2))
+
+        # now we save the third point... no modifications left.
         data.mark_saved(2)
         self.assertEqual(data.last_saved_index, 2)
         self.assertEqual(data.modified_range, None)
