@@ -96,8 +96,10 @@ def load_data(location=None, data_manager=None, formatter=None, io=None):
         return _get_live_data(data_manager)
 
     else:
-        return DataSet(location=location, formatter=formatter, io=io,
+        data = DataSet(location=location, formatter=formatter, io=io,
                        mode=DataMode.LOCAL)
+        data.read()
+        return data
 
 
 def _get_live_data(data_manager):
@@ -129,11 +131,12 @@ class TimestampLocation:
         self.fmt = fmt
 
     def __call__(self, io, name=None):
-        location = base_location = datetime.now().strftime(self.fmt)
+        location = datetime.now().strftime(self.fmt)
 
         if name:
             location += '_' + name
 
+        base_location = location
         for char in map(chr, range(ord('a'), ord('z') + 2)):
             if not io.list(location):
                 break
@@ -234,8 +237,6 @@ class DataSet(DelegateAttributes):
         if self.arrays:
             for array in self.arrays.values():
                 array.init_data()
-        else:
-            self.read()
 
     def _init_push_to_server(self, data_manager):
         self.mode = DataMode.PUSH_TO_SERVER

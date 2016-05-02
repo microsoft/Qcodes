@@ -1,9 +1,12 @@
 from unittest import TestCase
+from unittest.mock import patch
 import numpy as np
+from datetime import datetime
 
 from qcodes.data.data_array import DataArray
-from qcodes.data.manager import get_data_manager
-from qcodes.data.data_set import load_data
+from qcodes.data.manager import get_data_manager, NoData
+from qcodes.data.data_set import (load_data, new_data, DataMode, DataSet,
+                                  TimestampLocation)
 from qcodes.utils.helpers import killprocesses
 from qcodes import active_children
 
@@ -211,6 +214,16 @@ class TestDataArray(TestCase):
         self.assertEqual(data.data_set, mock_data_set2)
 
 
+class MockDataManager:
+    def ask(self, *args, timeout=None):
+        if args == ('get_data', 'location'):
+            return self.location
+        elif args == ('get_data',):
+            return self.live_data
+        else:
+            raise Exception('unexpected query to MockDataManager')
+
+
 class TestLoadData(TestCase):
     def setUp(self):
         killprocesses()
@@ -235,3 +248,124 @@ class TestLoadData(TestCase):
     def test_load_false(self):
         with self.assertRaises(ValueError):
             load_data(False)
+
+    def test_get_live(self):
+        loc = 'live from New York!'
+
+        class MockLive:
+            pass
+
+        live_data = MockLive()
+
+        dm = MockDataManager()
+        dm.location = loc
+        dm.live_data = live_data
+
+        data = load_data(data_manager=dm, location=loc)
+        self.assertEqual(data, live_data)
+
+        for nd in (None, NoData()):
+            dm.live_data = nd
+            with self.assertRaises(RuntimeError):
+                load_data(data_manager=dm, location=loc)
+            with self.assertRaises(RuntimeError):
+                load_data(data_manager=dm)
+
+    def test_get_read(self):
+        dm = MockDataManager()
+        dm.location = 'somewhere else'
+
+        class MyFormatter:
+            def read(self, data_set):
+                data_set.has_read_data = True
+
+        data = load_data(formatter=MyFormatter(), data_manager=dm,
+                         location='here!')
+        self.assertEqual(data.has_read_data, True)
+
+
+class FullIO:
+    def list(self, location):
+        return [location + '.whatever']
+
+
+class EmptyIO:
+    def list(self, location):
+        return []
+
+
+class MissingM:
+    def list(self, location):
+        if 'm' not in location:
+            return [location + '.whatever']
+        else:
+            return []
+
+
+class TestNewData(TestCase):
+    def setUp(self):
+        killprocesses()
+        self.original_lp = DataSet.location_provider
+
+    def tearDown(self):
+        DataSet.location_provider = self.original_lp
+
+    def test_overwrite(self):
+        io = FullIO()
+
+        with self.assertRaises(FileExistsError):
+            new_data(location='somewhere', io=io, data_manager=False)
+
+        data = new_data(location='somewhere', io=io, overwrite=True,
+                        data_manager=False)
+        self.assertEqual(data.location, 'somewhere')
+
+    def test_mode_error(self):
+        with self.assertRaises(ValueError):
+            new_data(mode=DataMode.PUSH_TO_SERVER, data_manager=False)
+
+    def test_location_functions(self):
+        def my_location(io, name):
+            return 'data/{}'.format(name or 'LOOP!')
+
+        def my_location2(io, name):
+            return 'data/{}/folder'.format(name or 'loop?')
+
+        DataSet.location_provider = my_location
+
+        self.assertEqual(new_data(data_manager=False).location, 'data/LOOP!')
+        self.assertEqual(new_data(data_manager=False, name='cheese').location,
+                         'data/cheese')
+
+        data = new_data(data_manager=False, location=my_location2)
+        self.assertEqual(data.location, 'data/loop?/folder')
+        data = new_data(data_manager=False, location=my_location2,
+                        name='iceCream')
+        self.assertEqual(data.location, 'data/iceCream/folder')
+
+
+class TestTimestampLocation(TestCase):
+    default_fmt = TimestampLocation().fmt
+    custom_fmt = 'DATA%Y/%B/%d/%I%p'
+
+    def check_cases(self, tsl, fmt):
+        self.assertEqual(tsl(EmptyIO()),
+                         datetime.now().strftime(fmt))
+        self.assertEqual(tsl(EmptyIO(), 'who?'),
+                         datetime.now().strftime(fmt) + '_who?')
+
+        self.assertEqual(tsl(MissingM()),
+                         datetime.now().strftime(fmt) + '_m')
+        self.assertEqual(tsl(MissingM(), 'you!'),
+                         datetime.now().strftime(fmt) + '_you!_m')
+
+        with self.assertRaises(FileExistsError):
+            tsl(FullIO())
+        with self.assertRaises(FileExistsError):
+            tsl(FullIO(), 'some_name')
+
+    def test_default(self):
+        self.check_cases(TimestampLocation(), self.default_fmt)
+
+    def test_fmt(self):
+        self.check_cases(TimestampLocation(self.custom_fmt), self.custom_fmt)
