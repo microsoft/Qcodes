@@ -42,7 +42,7 @@ def new_data(location=None, name=None, overwrite=False, io=None,
     if location is None:
         location = DataSet.location_provider(io, name)
     elif callable(location):
-        location = location(io)
+        location = location(io, name)
 
     if location and (not overwrite) and io.list(location):
         raise FileExistsError('"' + location + '" already has data')
@@ -111,14 +111,18 @@ def _get_live_data(data_manager):
 
 class TimestampLocation:
     '''
-    This is the default DataSet Location provider.
-    It provides a callable of one parameter (the io manager) that
-    returns a new location string, which is currently unused.
-    Uses `io.list(location)` to search for existing data at this location
+    This is the default `DataSet.location_provider`.
+    A `location_provider` object should be a callable taking two parameters:
+    - an io manager `io` used to search for existing data using
+      `io.list(location)` so that the location returned is confirmed
+      to be unoccupied
+    - `name` - a string that should be incorporated somewhere into the
+      returned location.
+    returns a new, unoccupied location string
 
-    Constructed with one parameter, a datetime.strftime format string,
-    which can include slashes (forward and backward are equivalent)
-    to create folder structure.
+    TimestampLocation is constructed with one parameter, a datetime.strftime
+    format string, which can include slashes (forward and backward are
+    equivalent) to create folder structure.
     Default format string is '%Y-%m-%d/%H-%M-%S'
     '''
     def __init__(self, fmt='%Y-%m-%d/%H-%M-%S'):
