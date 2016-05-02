@@ -1,5 +1,4 @@
 from unittest import TestCase, skipIf
-import matplotlib.pyplot as plt
 
 try:
     from qcodes.plots.pyqtgraph import QtPlot
@@ -9,6 +8,7 @@ except Exception:
 
 try:
     from qcodes.plots.matplotlib import MatPlot
+    import matplotlib.pyplot as plt
     noMatPlot = False
 except Exception:
     noMatPlot = True
