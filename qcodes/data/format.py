@@ -1,6 +1,7 @@
 from collections import namedtuple
 import numpy as np
 from traceback import format_exc
+from operator import attrgetter
 
 
 class Formatter:
@@ -189,6 +190,7 @@ class Formatter:
                 grouped_data[i].append(array)
 
         out = []
+        id_getter = attrgetter('array_id')
         for set_arrays, data in zip(set_array_sets, grouped_data):
             leni = len(set_arrays)
             if not data and any(1 for other_set_arrays in set_array_sets if
@@ -203,6 +205,9 @@ class Formatter:
             group_name = '_'.join(sai.array_id for sai in set_arrays)
             out.append(self.ArrayGroup(size=set_arrays[-1].size,
                                        set_arrays=set_arrays,
-                                       data=tuple(sorted(data)),
+                                       data=tuple(sorted(data, key=id_getter)),
                                        name=group_name))
         return out
+
+    def array_sort_key(array):
+        array.array_id
