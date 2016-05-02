@@ -127,7 +127,7 @@ class TestDataArray(TestCase):
 
         self.assertEqual(data.modified_range, (0, 2))
 
-        data.mark_saved()
+        data.mark_saved(2)
         self.assertEqual(data.last_saved_index, 2)
         self.assertEqual(data.modified_range, None)
 

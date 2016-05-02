@@ -193,15 +193,19 @@ class DataArray(DelegateAttributes):
         else:
             self.modified_range = (low, high)
 
-    def mark_saved(self):
+    def mark_saved(self, last_saved_index):
         '''
-        after saving data, mark any outstanding modifications as saved
+        after saving data, mark outstanding modifications up to
+        last_saved_index as saved
         '''
         if self.modified_range:
-            self.last_saved_index = max(self.last_saved_index or 0,
-                                        self.modified_range[1])
-
-        self.modified_range = None
+            if last_saved_index >= self.modified_range[1]:
+                self.modified_range = None
+            else:
+                self.modified_range = (max(self.modified_range[0],
+                                           last_saved_index + 1),
+                                       self.modified_range[1])
+        self.last_saved_index = last_saved_index
 
     def clear_save(self):
         '''

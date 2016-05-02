@@ -54,13 +54,6 @@ class Formatter:
 
         return new_data, can_append
 
-    def mark_saved(self, arrays):
-        """
-        Mark all DataArrays in this group as saved
-        """
-        for array in arrays.values():
-            array.mark_saved()
-
     def write(self, data_set):
         """
         Write the DataSet to storage. It is up to the Formatter to decide
@@ -99,7 +92,7 @@ class Formatter:
     def read_one_file(self, data_set, f, ids_read):
         raise NotImplementedError
 
-    def match_save_range(self, group, file_exists):
+    def match_save_range(self, group, file_exists, only_complete=True):
         """
         Find the save range that will capture all changes in an array group.
         matches all full-sized arrays: the data arrays plus the inner loop
@@ -110,6 +103,9 @@ class Formatter:
 
         use the inner setpoint as a base and look for differences
         in last_saved_index and modified_range in the data arrays
+
+        if `only_complete` is True (default), will not mark any range to be
+        saved unless it contains no NaN values
         """
         inner_setpoint = group.set_arrays[-1]
         last_saved_index = (inner_setpoint.last_saved_index if file_exists
@@ -129,10 +125,17 @@ class Formatter:
                 else:
                     modified_range = amr
 
+        if only_complete and modified_range:
+            modified_range = self._get_completed_range(modified_range,
+                                                       inner_setpoint.shape,
+                                                       group.data)
+            if not modified_range:
+                return None
+
         # update all sources with the new matching values
-        for array in group.data + (inner_setpoint, ):
-            array.modified_range = modified_range
-            array.last_saved_index = last_saved_index
+        # for array in group.data + (inner_setpoint, ):
+        #     array.modified_range = modified_range
+        #     array.last_saved_index = last_saved_index
 
         # calculate the range to save
         if not modified_range:
@@ -146,6 +149,27 @@ class Formatter:
             return (last_saved_index + 1, modified_range[1])
 
         return last_saved_index, modified_range
+
+    def _get_completed_range(self, modified_range, shape, arrays):
+        """
+        check the last data point to see if it's complete.
+
+        If it's not complete, back up one point so that we don't need
+        to rewrite this point later on when it *is* complete
+
+        This should work for regular `Loop` data that comes in sequentially.
+        But if you have non-sequential data, such as a parallel simulation,
+        then you would want to look farther back.
+        """
+        last_pt = modified_range[1]
+        indices = np.unravel_index(last_pt, shape)
+        for array in arrays:
+            if np.isnan(array[indices]):
+                if last_pt == modified_range[0]:
+                    return None
+                else:
+                    return (modified_range[0], last_pt - 1)
+        return modified_range
 
     def group_arrays(self, arrays):
         """
@@ -438,6 +462,17 @@ class GNUPlotFormat(Formatter):
 
                     one_point = self._data_point(group, indices)
                     f.write(self.separator.join(one_point) + self.terminator)
+
+            # now that we've saved the data, mark it as such in the data.
+            # we mark the data arrays and the inner setpoint array. Outer
+            # setpoint arrays have different dimension (so would need a
+            # different unraveled index) but more importantly could have
+            # a different saved range anyway depending on whether there
+            # is outer data taken before or after the inner loop. Anyway we
+            # never look at the outer setpoint last_saved_index or
+            # modified_range, we just assume it's got the values we need.
+            for array in group.data + (group.set_arrays[-1],):
+                array.mark_saved(save_range[1])
 
         extra_files = existing_files - written_files
         if extra_files:
