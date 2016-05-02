@@ -1,4 +1,5 @@
 from unittest import TestCase
+from unittest.mock import patch
 import time
 import multiprocessing as mp
 import numpy as np
@@ -11,7 +12,7 @@ from qcodes.data.manager import get_data_manager
 from qcodes.instrument.parameter import Parameter, ManualParameter
 from qcodes.utils.multiprocessing import QcodesProcess
 from qcodes.utils.validators import Numbers
-from qcodes.utils.helpers import killprocesses
+from qcodes.utils.helpers import killprocesses, LogCapture
 from .instrument_mocks import AMockModel, MockGates, MockSource, MockMeter
 
 
@@ -33,36 +34,74 @@ class TestMockInstLoop(TestCase):
         self.location2 = '_loop_test2_'
         self.io = DiskIO('.')
 
+        c1 = self.gates.chan1
+        self.loop = Loop(c1[1:5:1], 0.001).each(c1)
+
+        self.assertFalse(self.io.list(self.location))
+        self.assertFalse(self.io.list(self.location2))
+
     def tearDown(self):
         for instrument in [self.gates, self.source, self.meter]:
             instrument.close()
 
+        get_data_manager().close()
+        self.model.close()
+
         self.io.remove_all(self.location)
         self.io.remove_all(self.location2)
 
-    def test_instruments_in_loop(self):
+    def check_empty_data(self, data):
+        expected = repr([float('nan')] * 4)
+        self.assertEqual(repr(data.chan1.tolist()), expected)
+        self.assertEqual(repr(data.chan1_set.tolist()), expected)
+
+    def check_loop_data(self, data):
+        self.assertEqual(data.chan1.tolist(), [1, 2, 3, 4])
+        self.assertEqual(data.chan1_set.tolist(), [1, 2, 3, 4])
+
+        self.assertTrue(self.io.list(self.location))
+
+    def test_background_and_datamanager(self):
         # make sure that an unpicklable instrument can indeed run in a loop
-        self.assertFalse(self.io.list(self.location))
-        c1 = self.gates.chan1
-        loop = Loop(c1[1:5:1], 0.001).each(c1)
 
         # TODO: if we don't save the dataset (location=False) then we can't
         # sync it when we're done. Should fix that - for now that just means
         # you can only do in-memory loops if you set data_manager=False
         # TODO: this is the one place we don't do quiet=True - test that we
         # really print stuff?
-        data = loop.run(location=self.location)
+        data = self.loop.run(location=self.location)
+        self.check_empty_data(data)
 
         # wait for process to finish (ensures that this was run in the bg,
         # because otherwise there *is* no loop.process)
-        loop.process.join()
+        self.loop.process.join()
 
         data.sync()
+        self.check_loop_data(data)
 
-        self.assertEqual(data.chan1.tolist(), [1, 2, 3, 4])
-        self.assertEqual(data.chan1_set.tolist(), [1, 2, 3, 4])
+    def test_background_no_datamanager(self):
+        data = self.loop.run(location=self.location, data_manager=False,
+                             quiet=True)
+        self.check_empty_data(data)
 
-        self.assertTrue(self.io.list(self.location))
+        self.loop.process.join()
+
+        data.sync()
+        self.check_loop_data(data)
+
+    def test_foreground_and_datamanager(self):
+        data = self.loop.run(location=self.location, background=False,
+                             quiet=True)
+        self.assertFalse(hasattr(self.loop, 'process'))
+
+        self.check_loop_data(data)
+
+    def test_foreground_no_datamanager(self):
+        data = self.loop.run(location=self.location, background=False,
+                             data_manager=False, quiet=True)
+        self.assertFalse(hasattr(self.loop, 'process'))
+
+        self.check_loop_data(data)
 
     def test_enqueue(self):
         c1 = self.gates.chan1
@@ -211,6 +250,29 @@ class TestLoop(TestCase):
             self.assertLessEqual(delay, target)
             self.assertGreater(delay, target - 0.001)
 
+    @patch('time.sleep')
+    def test_delay0(self, sleep_mock):
+        self.p2.set(3)
+
+        loop = Loop(self.p1[1:3:1]).each(self.p2)
+
+        self.assertEqual(loop.delay, 0)
+
+        data = loop.run_temp()
+        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.p2.tolist(), [3, 3])
+
+        self.assertEqual(sleep_mock.call_count, 0)
+
+    def test_bad_delay(self):
+        for val, err in [(-1, ValueError), (-0.1, ValueError),
+                         (None, TypeError), ('forever', TypeError)]:
+            with self.assertRaises(err):
+                Loop(self.p1[1:3:1], val)
+
+            with self.assertRaises(err):
+                Wait(val)
+
     def test_bare_wait(self):
         # Wait gets transformed to a Task, but is also callable on its own
         t0 = time.perf_counter()
@@ -319,6 +381,22 @@ class TestLoop(TestCase):
         # at least invalid sweep values we find at .each
         with self.assertRaises(ValueError):
             Loop(self.p1[-20:20:1], 0.001).each(self.p1)
+
+    def test_very_short_delay(self):
+        with LogCapture() as s:
+            Loop(self.p1[1:3:1], 1e-9).each(self.p1).run_temp()
+
+        logstr = s.getvalue()
+        s.close()
+        self.assertEqual(logstr.count('negative delay'), 2, logstr)
+
+    def test_zero_delay(self):
+        with LogCapture() as s:
+            Loop(self.p1[1:3:1]).each(self.p1).run_temp()
+
+        logstr = s.getvalue()
+        s.close()
+        self.assertEqual(logstr.count('negative delay'), 0, logstr)
 
 
 class AbortingGetter(ManualParameter):

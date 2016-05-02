@@ -94,8 +94,8 @@ class MockSource(MockInstrument):
                            set_cmd='ampl:{:.4f}',
                            get_parser=float,
                            vals=Numbers(0, 10),
-                           sweep_step=0.1,
-                           sweep_delay=0.05)
+                           step=0.1,
+                           delay=0.05)
 
 
 class MockMeter(MockInstrument):

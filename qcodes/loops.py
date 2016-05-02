@@ -106,7 +106,9 @@ class Loop:
     sweep_values - a SweepValues or compatible object describing what
         parameter to set in the loop and over what values
     delay - a number of seconds to wait after setting a value before
-        continuing.
+        continuing. 0 (default) means no waiting and no warnings. > 0
+        means to wait, potentially filling the delay time with monitoring,
+        and give an error if you wait longer than expected.
 
     After creating a Loop, you attach `action`s to it, making an `ActiveLoop`
     that you can `.run()`, or you can `.run()` a `Loop` directly, in which
@@ -117,12 +119,14 @@ class Loop:
     data), `Wait` times, or other `ActiveLoop`s or `Loop`s to nest inside
     this one.
     '''
-    def __init__(self, sweep_values, delay):
+    def __init__(self, sweep_values, delay=0):
+        if not delay >= 0:
+            raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
         self.sweep_values = sweep_values
         self.delay = delay
         self.nested_loop = None
 
-    def loop(self, sweep_values, delay):
+    def loop(self, sweep_values, delay=0):
         '''
         Nest another loop inside this one
 
@@ -419,7 +423,7 @@ class ActiveLoop:
             finish? If false, will raise an error if another sweep is running
         quiet: (default False): set True to not print anything except errors
         data_manager: a DataManager instance (omit to use default,
-            False to store locally and not write to disk)
+            False to store locally)
 
         kwargs are passed along to data_set.new_data. The key ones are:
         location: the location of the DataSet, a string whose meaning
@@ -432,6 +436,8 @@ class ActiveLoop:
         formatter: knows how to read and write the file format
             default can be set in DataSet.default_formatter
         io: knows how to connect to the storage (disk vs cloud etc)
+        write_period: how often to save to storage during the loop.
+            default 5 sec, use None to write only at the end
 
 
         returns:
@@ -462,11 +468,21 @@ class ActiveLoop:
             p.start()
             self.process = p
 
+            # now that the data_set we created has been put in the loop
+            # process, this copy turns into a reader
+            # if you're not using a DataManager, it just stays local
+            # and sync() reads from disk
+            if self.data_set.mode == DataMode.PUSH_TO_SERVER:
+                self.data_set.mode = DataMode.PULL_FROM_SERVER
             self.data_set.sync()
-            self.data_set.mode = DataMode.PULL_FROM_SERVER
         else:
+            if hasattr(self, 'process'):
+                # in case this ActiveLoop was run before in the background
+                del self.process
+
             self._run_wrapper()
-            self.data_set.read()
+            if self.data_set.mode != DataMode.LOCAL:
+                self.data_set.sync()
 
         if not quiet:
             print(repr(self.data_set))
@@ -509,8 +525,8 @@ class ActiveLoop:
         try:
             self._run_loop(*args, **kwargs)
         finally:
-            if(hasattr(self, 'data_set') and hasattr(self.data_set, 'close')):
-                self.data_set.close()
+            if hasattr(self, 'data_set'):
+                self.data_set.finalize()
 
     def _run_loop(self, first_delay=0, action_indices=(),
                   loop_indices=(), current_values=(),
@@ -556,13 +572,16 @@ class ActiveLoop:
             delay = self.delay
 
     def _wait(self, delay):
-        finish_clock = time.perf_counter() + delay
+        if delay:
+            finish_clock = time.perf_counter() + delay
 
-        if self._monitor:
-            self._monitor.call(finish_by=finish_clock)
+            if self._monitor:
+                self._monitor.call(finish_by=finish_clock)
 
-        self._check_signal()
-        time.sleep(wait_secs(finish_clock))
+            self._check_signal()
+            time.sleep(wait_secs(finish_clock))
+        else:
+            self._check_signal()
 
 
 class Task:
@@ -596,10 +615,13 @@ class Wait:
     But for use outside of a Loop, it is also callable (then it just sleeps)
     '''
     def __init__(self, delay):
+        if not delay >= 0:
+            raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
         self.delay = delay
 
     def __call__(self):
-        time.sleep(self.delay)
+        if self.delay:
+            time.sleep(self.delay)
 
 
 class _Measure:
@@ -608,7 +630,7 @@ class _Measure:
     This should not be constructed manually, only by an ActiveLoop.
     '''
     def __init__(self, params_indices, data_set, use_threads):
-        self.use_threads = use_threads
+        self.use_threads = use_threads and len(params_indices) > 1
         # the applicable DataSet.store function
         self.store = data_set.store
 
