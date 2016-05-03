@@ -25,10 +25,11 @@ class TestQtPlot(TestCase):
 
     def test_creation(self):
         ''' Simple test function which created a QtPlot window '''
-        plotQ = QtPlot(remote=False, interval=0)
+        plotQ = QtPlot(remote=False, show_window=False, interval=0)
+        _ = plotQ.add_subplot()
 
 
-@skipIf(noQtPlot, '***matplotlib plotting cannot be tested***')
+@skipIf(noMatPlot, '***matplotlib plotting cannot be tested***')
 class TestMatPlot(TestCase):
 
     def setUp(self):
