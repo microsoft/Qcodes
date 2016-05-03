@@ -109,8 +109,8 @@ class SRS_SR830(VisaInstrument):
                            get_cmd="SYNC?",
                            set_cmd="SYNC {:d}",
                            get_parser=self.get_on_off,
-                           set_parser=self.set_on_off,
-                           vals=vals.OnOff())
+                           set_parser=int,
+                           vals=vals.Bool())
 
         # TODO: Add auxilliary output channels
         # TODO: Add auxilliary input channels
@@ -134,30 +134,16 @@ class SRS_SR830(VisaInstrument):
                            get_cmd='OUTP ? 4',
                            get_parser=float)
 
-        print(self.connect_message('IDN'))
+        self.connect_message('IDN')
 
-    def get_on_off(self, state):
+    def get_bool(self, state):
         '''
         Map instrument returned state to On/Off
         '''
         if state.startswith('0'):
-            state = 'Off'
+            state = True
         elif state.startswith('1'):
-            state = 'On'
-        return state
-
-    def set_on_off(self, state):
-        '''
-        Set boolean values. All true-like mapped to 1, all false-like mapped to 0
-        '''
-        if isinstance(state, str):
-            state = state.lower()
-        if state in [0, "off", "false"]:
-            state = 0
-        elif state in [1, "on", "true"]:
-            state = 1
-        else:
-            raise ValueError("Invalid state")
+            state = False
         return state
 
     # TODO: Write sensitivity getters and setters and validators
@@ -185,7 +171,7 @@ class SRS_SR830(VisaInstrument):
 
     def set_tc(self, val):
         return 0
-    
+
     class ValTC(vals.Validator):
         '''
         validates on off type values
