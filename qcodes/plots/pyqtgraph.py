@@ -38,7 +38,7 @@ class QtPlot(BasePlot):
     rpg = None
 
     def __init__(self, *args, figsize=(1000, 600), interval=0.25,
-                 windowTitle='', theme=((60, 60, 60), 'w'), remote=True, **kwargs):
+                 windowTitle='', theme=((60, 60, 60), 'w'), show_window=True, remote=True, **kwargs):
         super().__init__(interval)
 
         self.theme = theme
@@ -57,6 +57,9 @@ class QtPlot(BasePlot):
         if args or kwargs:
             self.add(*args, **kwargs)
 
+        if not show_window:
+            self.win.hide()
+            
     def _init_qt(self):
         # starting the process for the pyqtgraph plotting
         # You do not want a new process to be created every time you start a
