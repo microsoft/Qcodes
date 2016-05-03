@@ -2,7 +2,6 @@ from unittest import TestCase
 from unittest.mock import patch
 import numpy as np
 from datetime import datetime
-import multiprocessing as mp
 
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager, NoData
@@ -10,6 +9,9 @@ from qcodes.data.data_set import (load_data, new_data, DataMode, DataSet,
                                   TimestampLocation)
 from qcodes.utils.helpers import killprocesses
 from qcodes import active_children
+
+from .data_mocks import (MockDataManager, MockFormatter, FullIO, EmptyIO,
+                         MissingMIO, MockLive, MockArray)
 
 
 class TestDataArray(TestCase):
@@ -215,37 +217,6 @@ class TestDataArray(TestCase):
         self.assertEqual(data.data_set, mock_data_set2)
 
 
-class MockDataManager:
-    query_lock = mp.RLock()
-
-    def __init__(self):
-        self.needs_restart = False
-
-    def ask(self, *args, timeout=None):
-        if args == ('get_data', 'location'):
-            return self.location
-        elif args == ('get_data',):
-            return self.live_data
-        elif args[0] == 'new_data' and len(args) == 2:
-            if self.needs_restart:
-                raise AttributeError('data_manager needs a restart')
-            else:
-                self.data_set = args[1]
-        else:
-            raise Exception('unexpected query to MockDataManager')
-
-    def restart(self):
-        self.needs_restart = False
-
-
-class MockFormatter:
-    def read(self, data_set):
-        data_set.has_read_data = True
-
-    def write(self, data_set):
-        data_set.has_written_data = True
-
-
 class TestLoadData(TestCase):
     def setUp(self):
         killprocesses()
@@ -302,24 +273,6 @@ class TestLoadData(TestCase):
         self.assertEqual(data.has_read_data, True)
 
 
-class FullIO:
-    def list(self, location):
-        return [location + '.whatever']
-
-
-class EmptyIO:
-    def list(self, location):
-        return []
-
-
-class MissingM:
-    def list(self, location):
-        if 'm' not in location:
-            return [location + '.whatever']
-        else:
-            return []
-
-
 class TestNewData(TestCase):
     def setUp(self):
         killprocesses()
@@ -372,9 +325,9 @@ class TestTimestampLocation(TestCase):
         self.assertEqual(tsl(EmptyIO(), 'who?'),
                          datetime.now().strftime(fmt) + '_who?')
 
-        self.assertEqual(tsl(MissingM()),
+        self.assertEqual(tsl(MissingMIO()),
                          datetime.now().strftime(fmt) + '_m')
-        self.assertEqual(tsl(MissingM(), 'you!'),
+        self.assertEqual(tsl(MissingMIO(), 'you!'),
                          datetime.now().strftime(fmt) + '_you!_m')
 
         with self.assertRaises(FileExistsError):
@@ -387,10 +340,6 @@ class TestTimestampLocation(TestCase):
 
     def test_fmt(self):
         self.check_cases(TimestampLocation(self.custom_fmt), self.custom_fmt)
-
-
-class MockLive:
-    arrays = 'whole lotta data'
 
 
 class TestDataSet(TestCase):
@@ -477,12 +426,6 @@ class TestDataSet(TestCase):
         # fails until there is an array
         with self.assertRaises(RuntimeError):
             data.init_on_server()
-
-        class MockArray:
-            array_id = 'noise'
-
-            def init_data(self):
-                self.ready = True
 
         data.add_array(MockArray())
         data.init_on_server()

@@ -2,6 +2,7 @@ from collections import namedtuple
 import numpy as np
 from traceback import format_exc
 from operator import attrgetter
+import logging
 
 
 class Formatter:
@@ -55,7 +56,7 @@ class Formatter:
 
         # in case the DataArrays exist but haven't been initialized
         for array in data_set.arrays.values():
-            if array.data is None:
+            if array.ndarray is None:
                 array.init_data()
 
         ids_read = set()
@@ -64,10 +65,21 @@ class Formatter:
                 try:
                     self.read_one_file(data_set, f, ids_read)
                 except ValueError:
-                    print(format_exc())
-                    print('error reading file ' + fn)
+                    logging.warning('error reading file ' + fn)
+                    logging.warning(format_exc())
 
     def read_one_file(self, data_set, f, ids_read):
+        """
+        Formatter subclasses that handle multiple data files may choose to
+        override this method, which handles one file at a time.
+
+        data_set: the DataSet we are reading into
+        f: a file-like object to read from
+        ids_read: a `set` of array_ids that we have already read.
+            when you read an array, check that it's not in this set (except
+            setpoints, which can be in several files with different inner loop)
+            then add it to the set so other files know not to read it again
+        """
         raise NotImplementedError
 
     def match_save_range(self, group, file_exists, only_complete=True):
@@ -110,11 +122,6 @@ class Formatter:
             if not modified_range:
                 return None
 
-        # update all sources with the new matching values
-        # for array in group.data + (inner_setpoint, ):
-        #     array.modified_range = modified_range
-        #     array.last_saved_index = last_saved_index
-
         # calculate the range to save
         if not modified_range:
             # nothing to save
@@ -125,8 +132,6 @@ class Formatter:
         else:
             # we can append! save only from last save to end of mods
             return (last_saved_index + 1, modified_range[1])
-
-        return last_saved_index, modified_range
 
     def _get_completed_range(self, modified_range, shape, arrays):
         """
