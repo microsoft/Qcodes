@@ -108,23 +108,30 @@ class SweepFixedValues(SweepValues):
     def __init__(self, parameter, keys=None, start=None, stop=None,
                  step=None, num=None):
         super().__init__(parameter)
-        self._snapshot = []
+        self._snapshot = {}
+        self._value_snapshot = []
+
         if keys is None:
             keyset = make_sweep(start=start, stop=stop,
                                 step=step, num=num)
-            self._snapshot.append({'start': start, 'stop': stop, 'step': step,
-                                   'num': num, 'type': 'sweep'})
+            self._value_snapshot.append({'start': start, 'stop': stop,
+                                         'step': step, 'num': num,
+                                         'type': 'sweep'})
 
         elif is_sequence(keys):
             keyset = keys
             # we dont want the snapshot to go crazy on big data
             if len(keys) > 0:
-                self._snapshot.append({'min': min(keys), 'max': max(keys),
-                                       'len': len(keys), 'type': 'sequence'})
+                self._value_snapshot.append({'min': min(keys),
+                                             'max': max(keys),
+                                             'len': len(keys),
+                                             'type': 'sequence'})
         elif isinstance(keys, slice):
             keyset = (keys,)
-            self._snapshot.append({'start': keys.start, 'stop': keys.stop,
-                                   'step': keys.step, 'type': 'slice'})
+            self._value_snapshot.append({'start': keys.start,
+                                         'stop': keys.stop,
+                                         'step': keys.step,
+                                         'type': 'slice'})
         else:
             raise TypeError('Invalid sweep input.')
 
@@ -154,12 +161,14 @@ class SweepFixedValues(SweepValues):
                     'can only extend SweepFixedValues of the same parameters')
             # these values are already validated
             self._values.extend(new_values._values)
-            self._snapshot.extend(new_values._snapshot)
+            self._value_snapshot.extend(new_values._value_snapshot)
         elif is_sequence(new_values):
             self.validate(new_values)
             self._values.extend(new_values)
-            self._snapshot.append({'min': min(new_values), 'max': max(new_values),
-                                  'len': len(new_values), 'type': 'sequence'})
+            self._value_snapshot.append({'min': min(new_values),
+                                         'max': max(new_values),
+                                         'len': len(new_values),
+                                         'type': 'sequence'})
         else:
             raise TypeError(
                 'cannot extend SweepFixedValues with {}'.format(new_values))
@@ -169,19 +178,21 @@ class SweepFixedValues(SweepValues):
         # skip validation by adding values and snapshot separately
         # instead of on init
         new_sv._values = self._values[:]
-        new_sv._snapshot = self._snapshot
+        new_sv._value_snapshot = self._value_snapshot
         return new_sv
 
     def reverse(self):
         self._values.reverse()
-        self._snapshot.reverse()
-        for snap in self._snapshot:
+        self._value_snapshot.reverse()
+        for snap in self._value_snapshot:
             snap['stop'], snap['start'] = snap['start'], snap['stop']
 
     def snapshot_base(self, update=False):
         '''
         json state of the Sweep
         '''
+        self._snapshot['parameter'] = self.parameter.snapshot()
+        self._snapshot['values'] = self._value_snapshot
         return self._snapshot
 
     def __iter__(self):
