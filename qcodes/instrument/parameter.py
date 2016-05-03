@@ -604,6 +604,10 @@ class StandardParameter(Parameter):
             self.set = self._validate_and_sweep
             self.set_async = self._validate_and_sweep_async
 
+    def get_delay(self):
+        ''' Return the delay time of this parameter. Also see `set_delay` '''
+        return self._delay
+
     def set_delay(self, delay, max_delay=None):
         '''
         Configure this parameter with a delay between set operations.

@@ -255,6 +255,9 @@ class GNUPlotFormat(Formatter):
         a DataSet. Setpoint data may be duplicated across multiple files,
         but each measured DataArray must only map to one file.
         '''
+        if not f.name.endswith(self.extension):
+            return
+
         arrays = data_set.arrays
         ids = self._read_comment_line(f).split()
         labels = self._get_labels(self._read_comment_line(f))
@@ -417,11 +420,7 @@ class GNUPlotFormat(Formatter):
                     one_point = self._data_point(group, indices)
                     f.write(self.separator.join(one_point) + self.terminator)
 
-        extra_files = existing_files - written_files
-        if extra_files:
-            print('removing obsolete files: ' + ','.join(extra_files))
-            for fn in extra_files:
-                io_manager.remove(fn)
+        # tell gnuplot-loader only to use written_files
 
     def _make_header(self, group):
         ids, labels = [], []
