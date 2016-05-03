@@ -108,7 +108,7 @@ class SRS_SR830(VisaInstrument):
                            label="Sync Filter",
                            get_cmd="SYNC?",
                            set_cmd="SYNC {:d}",
-                           get_parser=self.get_on_off,
+                           get_parser=self.get_bool,
                            set_parser=int,
                            vals=vals.Bool())
 
