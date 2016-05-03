@@ -32,25 +32,6 @@ class Formatter:
     """
     ArrayGroup = namedtuple('ArrayGroup', 'size set_arrays data name')
 
-    def find_changes(self, arrays):
-        """
-        Collect changes made to any of these arrays and determine whether
-        the WHOLE group is elligible for appending or not.
-        Subclasses may choose to use or ignore this information.
-        """
-        new_data = {}
-        can_append = True
-
-        for array in arrays.values():
-            if array.modified_range:
-                if array.modified_range[0] <= array.last_saved_index:
-                    can_append = False
-                    new_data[array.array_id] = 'overwrite'
-                else:
-                    new_data[array.array_id] = 'append'
-
-        return new_data, can_append
-
     def write(self, data_set):
         """
         Write the DataSet to storage. It is up to the Formatter to decide
@@ -208,6 +189,3 @@ class Formatter:
                                        data=tuple(sorted(data, key=id_getter)),
                                        name=group_name))
         return out
-
-    def array_sort_key(array):
-        array.array_id
