@@ -384,10 +384,7 @@ class GNUPlotFormat(Formatter):
         written_files = set()
 
         for group in groups:
-            if len(groups) == 1:
-                fn = io_manager.join(location + self.extension)
-            else:
-                fn = io_manager.join(location, group.name + self.extension)
+            fn = io_manager.join(location, group.name + self.extension)
 
             written_files.add(fn)
 
