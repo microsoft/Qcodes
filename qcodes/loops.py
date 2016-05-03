@@ -41,7 +41,8 @@ from datetime import datetime
 import multiprocessing as mp
 import time
 import numpy as np
-from pprint import pprint
+import json
+import os
 
 from qcodes.station import Station
 from qcodes.data.data_set import new_data, DataMode
@@ -217,6 +218,7 @@ class ActiveLoop(Metadatable):
         self.delay = delay
         self.actions = actions
         self._data_snap = None
+        self._station_snap = None
 
         # compile now, but don't save the results
         # just used for preemptive error checking
@@ -256,8 +258,8 @@ class ActiveLoop(Metadatable):
                 snap['loop']['actions'].append({'type': None,
                                         'description': 'Action without snapshot'})
         snap['data'] = self._data_snap
+        snap['station'] = self._station_snap
         return(snap)
-
 
     def containers(self):
         '''
@@ -447,7 +449,7 @@ class ActiveLoop(Metadatable):
                         data_manager=False, location=False, **kwargs)
 
     def run(self, background=True, use_threads=True, enqueue=False,
-            quiet=False, data_manager=None, **kwargs):
+            quiet=False, data_manager=None, station_snap=None, *args, **kwargs):
         '''
         execute this loop
 
@@ -494,15 +496,20 @@ class ActiveLoop(Metadatable):
             data_mode = DataMode.PUSH_TO_SERVER
 
         data_set = new_data(arrays=self.containers(), mode=data_mode,
-                            data_manager=data_manager, **kwargs)
+                            data_manager=data_manager, *args, **kwargs)
         self.set_common_attrs(data_set=data_set, use_threads=use_threads,
                               signal_queue=self.signal_queue)
 
-
+        # How to do this? We need the station.snapshot, which is not available
+        # here without explicitly passing it to run
+        if station_snap is not None:
+            self._station_snap = station_snap
         self._data_snap = data_set.snapshot()
-        # snap = self.snapshot_base()
 
-        # pprint(snap)
+        fn = data_set.io.join(data_set.location, 'snapshot.json')
+        with data_set.io.open(fn, 'w', encoding='utf8') as snap_file:
+            json.dump(self.snapshot_base(), snap_file, sort_keys=True,
+                      indent=4, ensure_ascii=False)
 
         if background:
             p = QcodesProcess(target=self._run_wrapper, name=MP_NAME)
