@@ -41,6 +41,11 @@ if __name__ == '__main__':
                         help=('increase verbosity. default 1, '
                               '-v is the same as -v 2'))
 
+    parser.add_argument('-c', '--coverage', nargs='?', dest='show_coverage',
+                        const=1, default=1, type=int,
+                        help=('show coverage. default is True '
+                              '-c is the same as -c 1'))
+
     parser.add_argument('-f', '--failfast', nargs='?', dest='failfast',
                         const=1, default=0, type=int,
                         help=('halt on first error/failure? default 0 '
@@ -56,5 +61,5 @@ if __name__ == '__main__':
 
     cov.stop()
 
-    if success:
+    if success and args.show_coverage:
         cov.report()
