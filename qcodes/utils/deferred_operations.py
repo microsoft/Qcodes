@@ -48,7 +48,8 @@ class DeferredOperations:
         # with it.
         if not (isinstance(func, DeferredOperations) or
                 is_function(func, arg_count)):
-            raise TypeError('function must be a callable taking no arguments')
+            raise TypeError('function must be a callable taking '
+                            '{} arguments'.format(arg_count))
 
     def _call_unary(self, op):
         return op(self())
@@ -111,13 +112,13 @@ class DeferredOperations:
     def __floordiv__(self, other):
         return self._binary(operator.floordiv, other)
 
-    def __mod___(self, other):
+    def __mod__(self, other):
         return self._binary(operator.mod, other)
 
     def __mul__(self, other):
         return self._binary(operator.mul, other)
 
-    def __neg__(self, other):
+    def __neg__(self):
         return self._unary(operator.neg)
 
     def __or__(self, other):
@@ -160,16 +161,10 @@ class DeferredOperations:
         return self._binary(_rpow, other)
 
     def __rand__(self, other):
-        return self._binary(_and, other)
+        return self._binary(_rand, other)
 
     def __ror__(self, other):
-        return self._binary(_or, other)
-
-    def __int__(self):
-        return self._unary(int)
-
-    def __float__(self):
-        return self._unary(float)
+        return self._binary(_ror, other)
 
     def __round__(self, other=None):
         if other is None:
@@ -185,8 +180,16 @@ def _and(a, b):
     return a and b
 
 
+def _rand(a, b):
+    return b and a
+
+
 def _or(a, b):
     return a or b
+
+
+def _ror(a, b):
+    return b or a
 
 
 def _rsub(a, b):
