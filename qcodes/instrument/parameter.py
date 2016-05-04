@@ -354,7 +354,7 @@ class StandardParameter(Parameter):
 
             if get_parser is None:
                 self._get_mapping = {v: k for k, v in val_mapping.items()}
-                get_parser = self._get_mapping.__getitem__
+                get_parser = self._valmapping_get_parser
 
             if set_parser is None:
                 self._set_mapping = val_mapping
@@ -390,6 +390,29 @@ class StandardParameter(Parameter):
             e.args = e.args + (
                 'getting {}:{}'.format(self._instrument.name, self.name),)
             raise e
+
+    def _valmapping_get_parser(self, val):
+        """
+        Get parser to be used in the case that a val_mapping is defined
+        and a separate get_parser is not defined.
+
+        Tries to match against defined strings in the mapping dictionary. If
+        there are no matches, we try to convert the val into an integer.
+        """
+
+        # Try and match the raw value from the instrument directly
+        try:
+            return self._get_mapping[val]
+        except KeyError:
+            pass
+
+        # If there is no match, we can try to convert the parameter into a numeric
+        # value
+        try:
+            val = int(val)
+            return self._get_mapping[val]
+        except (ValueError, KeyError):
+            raise KeyError("Unmapped value from instrument: {:r}".format(val))
 
     @asyncio.coroutine
     def get_async(self):
