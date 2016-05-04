@@ -38,7 +38,7 @@ class QtPlot(BasePlot):
     rpg = None
 
     def __init__(self, *args, figsize=(1000, 600), interval=0.25,
-                 windowTitle='', theme=((60, 60, 60), 'w'), remote=True, **kwargs):
+                 windowTitle='', theme=((60, 60, 60), 'w'), show_window=True, remote=True, **kwargs):
         super().__init__(interval)
 
         self.theme = theme
@@ -46,9 +46,9 @@ class QtPlot(BasePlot):
         if remote:
             if not self.__class__.proc:
                 self._init_qt()
-        else:            
+        else:
             # overrule the remote pyqtgraph class
-            self.rpg = pg 
+            self.rpg = pg
         self.win = self.rpg.GraphicsWindow(title=windowTitle)
         self.win.setBackground(theme[1])
         self.win.resize(*figsize)
@@ -57,6 +57,9 @@ class QtPlot(BasePlot):
         if args or kwargs:
             self.add(*args, **kwargs)
 
+        if not show_window:
+            self.win.hide()
+            
     def _init_qt(self):
         # starting the process for the pyqtgraph plotting
         # You do not want a new process to be created every time you start a
@@ -163,6 +166,7 @@ class QtPlot(BasePlot):
         }
 
         self._update_image(plot_object, {'x': x, 'y': y, 'z': z})
+        self._update_cmap(plot_object)
 
         return plot_object
 
@@ -187,8 +191,6 @@ class QtPlot(BasePlot):
                 # nothing to plot, so give up.
                 return
         z[np.where(np.isnan(z))] = z_range[0]
-
-        self._update_cmap(plot_object)
 
         hist_range = hist.getLevels()
         if hist_range == plot_object['histlevels']:

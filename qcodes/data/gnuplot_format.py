@@ -102,6 +102,9 @@ class GNUPlotFormat(Formatter):
             setpoints, which can be in several files with different inner loop)
             then add it to the set so other files know not to read it again
         """
+        if not f.name.endswith(self.extension):
+            return
+
         arrays = data_set.arrays
         ids = self._read_comment_line(f).split()
         labels = self._get_labels(self._read_comment_line(f))
@@ -274,12 +277,6 @@ class GNUPlotFormat(Formatter):
             # modified_range, we just assume it's got the values we need.
             for array in group.data + (group.set_arrays[-1],):
                 array.mark_saved(save_range[1])
-
-        extra_files = existing_files - written_files
-        if extra_files:
-            print('removing obsolete files: ' + ','.join(extra_files))
-            for fn in extra_files:
-                io_manager.remove(fn)
 
     def _make_header(self, group):
         ids, labels = [], []

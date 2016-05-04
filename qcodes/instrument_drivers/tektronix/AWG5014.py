@@ -714,17 +714,15 @@ class Tektronix_AWG5014(VisaInstrument):
             # External | Internal
             'TRIGGER_INPUT_IMPEDANCE': (1 if self.get('trigger_impedance') ==
                                         50. else 2),  # 50 ohm | 1 kohm
-            'TRIGGER_INPUT_SLOPE': (1 if self.get('trigger_slope') ==
-                                    'POS' else 2),  # Positive | Negative
-            'TRIGGER_INPUT_POLARITY': (1 if self.ask('TRIG:POL?') ==
-                                       'POS' else 2),  # Positive | Negative
+            'TRIGGER_INPUT_SLOPE': (1 if self.get('trigger_slope').startswith(
+                                    'POS') else 2),  # Positive | Negative
+            'TRIGGER_INPUT_POLARITY': (1 if self.ask('TRIG:POL?').startswith(
+                                       'POS') else 2),  # Positive | Negative
             'TRIGGER_INPUT_THRESHOLD':  self.get('trigger_level'),  # V
             'EVENT_INPUT_IMPEDANCE':   (1 if self.get('event_impedance') ==
                                         50. else 2),  # 50 ohm | 1 kohm
-            'EVENT_INPUT_POLARITY':  (1 if
-                                      self.get('event_polarity').startswith(
-                                          'POS')
-                                      else 2),  # Positive | Negative
+            'EVENT_INPUT_POLARITY':  (1 if self.get('event_polarity').startswith(
+                                      'POS') else 2),  # Positive | Negative
             'EVENT_INPUT_THRESHOLD':   self.get('event_level'),  # V
             'JUMP_TIMING':   (1 if
                               self.get('event_jump_timing').startswith('SYNC')
@@ -1184,7 +1182,7 @@ class Tektronix_AWG5014(VisaInstrument):
             m1 (int[numpoints])  : marker1  (must be a numpy array)
             m2 (int[numpoints])  : marker2  (must be a numpy array)
             wfmname (string)    : waveform name
-            format (string):    'int' or 'real' (int has same awg output precision but much faster to transfer) 
+            format (string):    'int' or 'real' (int has same awg output precision but much faster to transfer)
         Output:
             None
         '''
@@ -1195,7 +1193,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
         if (not((len(w) == len(m1)) and ((len(m1) == len(m2))))):
             raise Exception('error: sizes of the waveforms do not match')
-            
+
         self._values['files'][wfmname] = self._file_dict(w, m1, m2, None)
 
         # if we create a waveform with the same name but different size, it will not get over written
