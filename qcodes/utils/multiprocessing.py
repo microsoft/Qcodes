@@ -277,7 +277,7 @@ class ServerManager:
         self._query_queue.put(query)
         self._check_for_errors()
 
-    def _check_for_errors(self, expect_error=False):
+    def _check_for_errors(self, expect_error=False, query=None):
         if expect_error or not self._error_queue.empty():
             # clear the response queue whenever there's an error
             # and give it a little time to flush first
@@ -298,12 +298,18 @@ class ServerManager:
             if err_type is None or not issubclass(err_type, Exception):
                 err_type = RuntimeError
 
+            if query:
+                errhead += '\nwhile executing query: ' + repr(query)
+
             raise err_type(errhead + '\n\n' + errstr)
 
-    def _check_response(self, timeout):
+    def _check_response(self, timeout, query=None):
         res = self._response_queue.get(timeout=timeout)
         if res == SERVER_ERR:
-            self._expect_error = True
+            # TODO: I think the way we're doing this now, I could get rid of
+            # _error_queue completely and just have errors and regular
+            # responses labeled differently in _response_queue
+            self._check_for_errors(expect_error=True, query=query)
         return res
 
     def ask(self, *query, timeout=None):
@@ -324,16 +330,16 @@ class ServerManager:
             self._query_queue.put(query)
 
             try:
-                res = self._check_response(timeout)
+                res = self._check_response(timeout, query)
 
                 while not self._response_queue.empty():
-                    res = self._check_response(timeout)
+                    res = self._check_response(timeout, query)
 
             except Empty as e:
                 if self._error_queue.empty():
                     # only raise if we're not about to find a deeper error
                     raise e
-            self._check_for_errors(self._expect_error)
+            self._check_for_errors(query=query)
 
             return res
 
