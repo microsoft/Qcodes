@@ -67,43 +67,43 @@ class SRS_SR830(VisaInstrument):
                            val_mapping=IGND)
         ICPL = {'AC': 0, 'DC': 1}
         self.add_parameter(name='input_couple',
-                   label='Input Couple',
-                   get_cmd='ICPL?',
-                   set_cmd='ICPL {:d}',
-                   val_mapping=ICPL)
+                           label='Input Couple',
+                           get_cmd='ICPL?',
+                           set_cmd='ICPL {:d}',
+                           val_mapping=ICPL)
         ILIN = {'Off': 0, 'Line': 1, '2xLine': 2, 'Both': 3}
         self.add_parameter(name='input_filter',
-                   label='Input Filter',
-                   get_cmd='ILIN?',
-                   set_cmd='ILIN {:d}',
-                   val_mapping=ILIN)
+                           label='Input Filter',
+                           get_cmd='ILIN?',
+                           set_cmd='ILIN {:d}',
+                           val_mapping=ILIN)
 
         self.add_parameter(name='sensitivity',
-                   label='Sensitivity',
-                   get_cmd='SENS?',
-                   set_cmd='SENS {:d}',
-                   get_parser=self.get_sensitivity,
-                   set_parser=self.set_sensitivity,
-                   vals=self.ValSensitivity())
+                           label='Sensitivity',
+                           get_cmd='SENS?',
+                           set_cmd='SENS {:d}',
+                           get_parser=self.get_sensitivity,
+                           set_parser=self.set_sensitivity,
+                           vals=self.ValSensitivity())
         RMOD = {'High_Reserve': 0, 'Normal': 1, 'Low_Noise': 2}
         self.add_parameter(name='Reserve',
-                   label='Reserve',
-                   get_cmd='RMOD?',
-                   set_cmd='RMOD {:d}',
-                   val_mapping=RMOD)
+                           label='Reserve',
+                           get_cmd='RMOD?',
+                           set_cmd='RMOD {:d}',
+                           val_mapping=RMOD)
         self.add_parameter(name='time_constant',
-                   label='Time Constant',
-                   get_cmd='OFLT?',
-                   set_cmd='OFLT {:d}',
-                   get_parser=self.get_tc,
-                   set_parser=self.set_tc,
-                   vals=self.ValTC())
+                           label='Time Constant',
+                           get_cmd='OFLT?',
+                           set_cmd='OFLT {:d}',
+                           get_parser=self.get_tc,
+                           set_parser=self.set_tc,
+                           vals=self.ValTC())
         OFSL = {6: 0, 12: 1, 18: 2, 24: 3}
         self.add_parameter(name='filter_slope',
-                   label='Filter Slope',
-                   get_cmd='OFSL?',
-                   set_cmd='OFSL {:d}',
-                   val_mapping=OFSL)
+                           label='Filter Slope',
+                           get_cmd='OFSL?',
+                           set_cmd='OFSL {:d}',
+                           val_mapping=OFSL)
         self.add_parameter(name="sync_filter",
                            label="Sync Filter",
                            get_cmd="SYNC?",
@@ -155,8 +155,8 @@ class SRS_SR830(VisaInstrument):
 
     class ValSensitivity(vals.Validator):
         '''
-        validates on off type values
-        valid responses are: (0, 1), (off, on)
+        validates sensitivity, taking into account the input type
+        Sensitivity can be given as a float, or as a string with units
         '''
 
         def __init__(self):
@@ -174,8 +174,8 @@ class SRS_SR830(VisaInstrument):
 
     class ValTC(vals.Validator):
         '''
-        validates on off type values
-        valid responses are: (0, 1), (off, on)
+        validate time constant
+        Time constant can be given as a float, or as a string with units
         '''
 
         def __init__(self):
@@ -184,19 +184,22 @@ class SRS_SR830(VisaInstrument):
         def validate(self, value, context=''):
             return True
 
-    '''
-    Perform an auto-gain operation"
-    '''
+
     def auto_gain(self):
+        '''
+        Perform an auto-gain operation"
+        '''
         self.write("AGAN")
-    '''
-    Perform an auto-reserve operation
-    '''
+
     def auto_reserve(self):
+        '''
+        Perform an auto-reserve operation
+        '''
         self.write("ARSV")
-    '''
-    Perform an auto-phase operation
-    '''
+
     def auto_phase(self):
+        '''
+        Perform an auto-phase operation
+        '''
         self.write("APHS")
     # TODO: Figure out syntax for auto-offset command
