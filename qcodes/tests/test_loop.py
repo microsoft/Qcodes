@@ -4,7 +4,8 @@ import time
 import multiprocessing as mp
 import numpy as np
 
-from qcodes.loops import Loop, MP_NAME, get_bg, halt_bg, Task, Wait, ActiveLoop
+from qcodes.loops import (Loop, MP_NAME, get_bg, halt_bg, Task, Wait,
+                          ActiveLoop, BreakIf)
 from qcodes.station import Station
 from qcodes.data.io import DiskIO
 from qcodes.data.data_array import DataArray
@@ -238,7 +239,13 @@ class TestLoop(TestCase):
         delay_array = []
         loop._monitor = FakeMonitor(delay_array)
 
+        # give it a "process" as if it was run in the bg before,
+        # check that this gets cleared
+        loop.process = 'TDD'
+
         data = loop.run_temp()
+
+        self.assertFalse(hasattr(loop, 'process'))
 
         self.assertEqual(data.p1.tolist(), [1, 2])
         self.assertEqual(data.p2_2.tolist(), [-1, -1])
@@ -397,6 +404,25 @@ class TestLoop(TestCase):
         logstr = s.getvalue()
         s.close()
         self.assertEqual(logstr.count('negative delay'), 0, logstr)
+
+    def test_breakif(self):
+        def p1_ge_3():
+            return self.p1.get_latest() >= 3
+
+        nan = float('nan')
+        loop = Loop(self.p1[1:6:1])
+        data = loop.each(self.p1, BreakIf(p1_ge_3)).run_temp()
+        self.assertEqual(repr(data.p1.tolist()),
+                         repr([1., 2., 3., nan, nan]))
+
+        data = loop.each(BreakIf(p1_ge_3), self.p1).run_temp()
+        self.assertEqual(repr(data.p1.tolist()),
+                         repr([1., 2., nan, nan, nan]))
+
+        with self.assertRaises(TypeError):
+            BreakIf(True)
+        with self.assertRaises(TypeError):
+            BreakIf(self.p1.set)
 
 
 class AbortingGetter(ManualParameter):

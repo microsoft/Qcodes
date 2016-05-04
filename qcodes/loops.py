@@ -45,7 +45,7 @@ import numpy as np
 from qcodes.station import Station
 from qcodes.data.data_set import new_data, DataMode
 from qcodes.data.data_array import DataArray
-from qcodes.utils.helpers import wait_secs
+from qcodes.utils.helpers import wait_secs, is_function
 from qcodes.utils.multiprocessing import QcodesProcess
 from qcodes.utils.threading import thread_map
 
@@ -560,13 +560,16 @@ class ActiveLoop:
                 # only wait the delay time if an inner loop will not inherit it
                 self._wait(delay)
 
-            for f in callables:
-                f(first_delay=delay,
-                  loop_indices=new_indices,
-                  current_values=new_values)
+            try:
+                for f in callables:
+                    f(first_delay=delay,
+                      loop_indices=new_indices,
+                      current_values=new_values)
 
-                # after the first action, no delay is inherited
-                delay = 0
+                    # after the first action, no delay is inherited
+                    delay = 0
+            except _QcodesBreak:
+                break
 
             # after the first setpoint, delay reverts to the loop delay
             delay = self.delay
@@ -683,3 +686,19 @@ class _Nest:
 
     def __call__(self, **kwargs):
         self.inner_loop._run_loop(action_indices=self.action_indices, **kwargs)
+
+
+class BreakIf:
+    def __init__(self, condition):
+        if not is_function(condition, 0):
+            raise TypeError('BreakIf condition must be a callable with '
+                            'no arguments')
+        self.condition = condition
+
+    def __call__(self, **ignore_kwargs):
+        if self.condition():
+            raise _QcodesBreak
+
+
+class _QcodesBreak(Exception):
+    pass
