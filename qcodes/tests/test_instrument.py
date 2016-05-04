@@ -276,6 +276,26 @@ class TestParameters(TestCase):
             [float(h[3]) for h in gatehist if h[1] == 'write'],
             [0.1, 0.2, 0.3, 0.4, 0.5])
 
+    def test_raw_access(self):
+        gates, meter, source = self.gates, self.meter, self.source
+        meter_val = meter.amplitude()
+        # Check that the formatted output looks correct
+        self.assertEqual(meter.form_amp(), "Amplitude is: {:.3f}".format(meter_val))
+        # Check that the raw value is a string from the instrument
+        self.assertEqual(meter.form_amp.get_raw(), "{:.3f}".format(meter_val))
+
+        source_val = source.amplitude()
+        # Check that we can bypass a formatter
+        source.form_amp(0.1)
+        self.assertEqual(source.amplitude(), 0.2)
+        source.form_amp.set_raw(0.1)
+        self.assertEqual(source.amplitude(), 0.1)
+
+        # Check that we can set the source without triggering the validator
+        source.amplitude.set_raw(2.0)
+        self.assertEqual(source.amplitude(), 2.0)
+        source.amplitude.set_raw(source_val)
+
     def test_mock_instrument_errors(self):
         gates, meter = self.gates, self.meter
         with self.assertRaises(ValueError):
@@ -457,7 +477,8 @@ class TestParameters(TestCase):
 
     def test_standard_snapshot(self):
         self.assertEqual(self.meter.snapshot(), {
-            'parameters': {'amplitude': {'value': None, 'ts': None}},
+            'parameters': {'amplitude': {'value': None, 'ts': None},
+            'form_amp': {'ts': None, 'value': None}},
             'functions': {'echo': {}}
         })
 

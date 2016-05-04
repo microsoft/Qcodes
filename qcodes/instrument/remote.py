@@ -122,12 +122,24 @@ class RemoteParameter(RemoteComponent):
     def get(self):
         return self._instrument.connection.ask('get', self.name)
 
+    def get_raw(self):
+        """
+        Retrieve the raw response from an instrument, without passing it through the parser function
+        """
+        return self._instrument.connection.ask('param_call', self.name, "_get_raw")
+
     def set(self, value):
         # TODO: sometimes we want set to block (as here) and sometimes
         # we want it async... which would just be changing the 'ask'
         # to 'write' below. how do we decide, and how do we let the user
         # do it?
         self._instrument.connection.ask('set', self.name, value)
+
+    def set_raw(self, value):
+        """
+        Set the raw parameter, without passing it through the parser function
+        """
+        return self._instrument.connection.ask('param_call', self.name, "_set_raw", value)
 
     # manually copy over validate and __getitem__ so they execute locally
     # no reason to send these to the server, unless the validators change...
