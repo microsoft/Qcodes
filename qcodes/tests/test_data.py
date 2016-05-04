@@ -148,6 +148,23 @@ class TestDataArray(TestCase):
         self.assertEqual(data.last_saved_index, None)
         self.assertEqual(data.modified_range, (0, 2))
 
+    def test_edit_and_mark_slice(self):
+        data = DataArray(preset_data=[[1] * 5] * 6)
+
+        self.assertEqual(data.size, (6, 5))
+        self.assertEqual(data.modified_range, None)
+
+        data[:4:2, 2:] = 2
+        self.assertEqual(data.tolist(), [
+            [1, 1, 2, 2, 2],
+            [1, 1, 1, 1, 1],
+            [1, 1, 2, 2, 2],
+            [1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1]
+        ])
+        self.assertEqual(data.modified_range, (2, 14))
+
     def test_repr(self):
         array2d = [[1, 2], [3, 4]]
         arrayrepr = repr(np.array(array2d))
