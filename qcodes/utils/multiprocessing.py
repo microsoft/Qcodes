@@ -225,10 +225,11 @@ class ServerManager:
 
     name: the name of the server. Can include .format specs to insert
         all or part of the uuid
-    query_timeout: the default time to wait for responses
+    query_timeout: (default None) the default time to wait for responses
     kwargs: passed along to the server constructor
     '''
-    def __init__(self, name, server_class, shared_attrs=None, query_timeout=2):
+    def __init__(self, name, server_class, shared_attrs=None,
+                 query_timeout=None):
         self._query_queue = mp.Queue()
         self._response_queue = mp.Queue()
         self._error_queue = mp.Queue()
