@@ -45,7 +45,8 @@ import numpy as np
 from qcodes.station import Station
 from qcodes.data.data_set import new_data, DataMode
 from qcodes.data.data_array import DataArray
-from qcodes.utils.helpers import wait_secs, is_function
+from qcodes.utils.deferred_operations import is_function
+from qcodes.utils.helpers import wait_secs
 from qcodes.utils.multiprocessing import QcodesProcess
 from qcodes.utils.threading import thread_map
 

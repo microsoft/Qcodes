@@ -406,16 +406,13 @@ class TestLoop(TestCase):
         self.assertEqual(logstr.count('negative delay'), 0, logstr)
 
     def test_breakif(self):
-        def p1_ge_3():
-            return self.p1.get_latest() >= 3
-
         nan = float('nan')
         loop = Loop(self.p1[1:6:1])
-        data = loop.each(self.p1, BreakIf(p1_ge_3)).run_temp()
+        data = loop.each(self.p1, BreakIf(self.p1 >= 3)).run_temp()
         self.assertEqual(repr(data.p1.tolist()),
                          repr([1., 2., 3., nan, nan]))
 
-        data = loop.each(BreakIf(p1_ge_3), self.p1).run_temp()
+        data = loop.each(BreakIf(self.p1.get_latest >= 3), self.p1).run_temp()
         self.assertEqual(repr(data.p1.tolist()),
                          repr([1., 2., nan, nan, nan]))
 

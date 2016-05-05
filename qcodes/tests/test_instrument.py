@@ -661,6 +661,21 @@ class TestParameters(TestCase):
                                       parameter_class=ManualParameter,
                                       initial_value='nearsighted')
 
+    def test_deferred_ops(self):
+        gates = self.gates
+        c0, c1, c2 = gates.chan0, gates.chan1, gates.chan2
+
+        c0.set(0)
+        c1.set(1)
+        c2.set(2)
+
+        self.assertEqual((c0 + c1 + c2)(), 3)
+        self.assertEqual((10 + (c0**2) + (c1**2) + (c2**2)), 15)
+
+        d = c1.get_latest / c0.get_latest
+        with self.assertRaises(ZeroDivisionError):
+            d()
+
 
 class TestAttrAccess(TestCase):
     def tearDown(self):

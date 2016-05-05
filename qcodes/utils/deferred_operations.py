@@ -1,6 +1,45 @@
 import operator
+from asyncio import iscoroutinefunction
+from inspect import signature
 
-from .helpers import is_function
+
+def is_function(f, arg_count, coroutine=False):
+    '''
+    require a function that can accept the specified number of positional
+    arguments, which either is or is not a coroutine
+    type casting "functions" are allowed, but only in the 1-argument form
+    '''
+    if not isinstance(arg_count, int) or arg_count < 0:
+        raise TypeError('arg_count must be a non-negative integer')
+
+    if not (callable(f) and bool(coroutine) is iscoroutinefunction(f)):
+        return False
+
+    # shouldn't need to do this, but is_function fails for a
+    # DeferredOperations object, as signature implicitly does ==
+    # with it.
+    if isinstance(f, DeferredOperations):
+        return arg_count == 0
+
+    if isinstance(f, type):
+        # for type casting functions, eg int, str, float
+        # only support the one-parameter form of these,
+        # otherwise the user should make an explicit function.
+        return arg_count == 1
+
+    try:
+        sig = signature(f)
+    except ValueError:
+        # some built-in functions/methods don't describe themselves to inspect
+        # we already know it's a callable and coroutine is correct.
+        return True
+
+    try:
+        inputs = [0] * arg_count
+        sig.bind(*inputs)
+        return True
+    except TypeError:
+        return False
 
 
 class DeferredOperations:
@@ -43,19 +82,16 @@ class DeferredOperations:
         return self.call_func(*self.args)
 
     def _validate_callable(self, func, arg_count=0):
-        # shouldn't need to do this, but is_function fails for a
-        # DeferredOperations object, as signature implicitly does ==
-        # with it.
-        if not (isinstance(func, DeferredOperations) or
-                is_function(func, arg_count)):
-            raise TypeError('function must be a callable taking '
-                            '{} arguments'.format(arg_count))
+        if not is_function(func, arg_count):
+            raise TypeError(
+                'function must be a callable taking '
+                '{} arguments, not {}'.format(arg_count, repr(func)))
 
     def _call_unary(self, op):
         return op(self())
 
     def _unary(self, op):
-        if not getattr(self, 'call_parts'):
+        if not getattr(self, 'call_parts', None):
             self.call_parts = (self,)
 
         return DeferredOperations(self._call_unary, (op,), self.call_parts)
@@ -67,7 +103,7 @@ class DeferredOperations:
         return op(self(), other)
 
     def _binary(self, op, other):
-        if not getattr(self, 'call_parts'):
+        if not getattr(self, 'call_parts', None):
             self.call_parts = (self,)
 
         if callable(other):
@@ -75,9 +111,15 @@ class DeferredOperations:
             other_parts = getattr(other, 'call_parts', (other,))
             return DeferredOperations(self._call_binary_callable, (op, other),
                                       self.call_parts + other_parts)
-        else:
+
+        # TODO: any other types we should support?
+        elif isinstance(other, (int, float, str, type(None))):
             return DeferredOperations(self._call_binary_constant, (op, other),
                                       self.call_parts)
+        else:
+            raise TypeError(
+                'DeferredOperations are not compatible with '
+                '{}, type {}'.format(repr(other), repr(type(other))))
 
     def __eq__(self, other):
         return self._binary(operator.eq, other)
