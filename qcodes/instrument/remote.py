@@ -1,3 +1,4 @@
+from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import DelegateAttributes
 from .parameter import Parameter, GetLatest
 from .function import Function
@@ -108,7 +109,7 @@ class RemoteMethod(RemoteComponent):
         return self._instrument.connection.ask(self.name, *args, **kwargs)
 
 
-class RemoteParameter(RemoteComponent):
+class RemoteParameter(RemoteComponent, DeferredOperations):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.get_latest = GetLatest(self)
