@@ -412,7 +412,7 @@ class StandardParameter(Parameter):
             val = int(val)
             return self._get_mapping[val]
         except (ValueError, KeyError):
-            raise KeyError("Unmapped value from instrument: {:r}".format(val))
+            raise KeyError("Unmapped value from instrument: {!r}".format(val))
 
     @asyncio.coroutine
     def get_async(self):
