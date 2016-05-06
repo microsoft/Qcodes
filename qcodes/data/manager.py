@@ -6,10 +6,10 @@ from qcodes.utils.multiprocessing import ServerManager
 
 
 def get_data_manager(only_existing=False):
-    '''
+    """
     create or retrieve the storage manager
     makes sure we don't accidentally create multiple DataManager processes
-    '''
+    """
     dm = DataManager.default
     if dm and dm._server.is_alive():
         return dm
@@ -19,10 +19,10 @@ def get_data_manager(only_existing=False):
 
 
 class NoData:
-    '''
+    """
     A placeholder object for DataServer to hold
     when there is no loop running.
-    '''
+    """
     location = None
 
     def store(self, *args, **kwargs):
@@ -34,23 +34,23 @@ class NoData:
 
 class DataManager(ServerManager):
     default = None
-    '''
+    """
     creates a separate process (DataServer) that holds running measurement
     and monitor data, and manages writing these to disk or other storage
 
     DataServer communicates with other processes through messages
     Written using multiprocessing Queue's, but should be easily
     extensible to other messaging systems
-    '''
+    """
     def __init__(self, query_timeout=2):
         type(self).default = self
         super().__init__(name='DataServer', server_class=DataServer)
 
     def restart(self, force=False):
-        '''
+        """
         Restart the DataServer
         Use force=True to abort a running measurement.
-        '''
+        """
         if (not force) and self.ask('get_data', 'location'):
             raise RuntimeError('A measurement is running. Use '
                                'restart(force=True) to override.')
@@ -58,7 +58,7 @@ class DataManager(ServerManager):
 
 
 class DataServer:
-    '''
+    """
     Running in its own process, receives, holds, and returns current `Loop` and
     monitor data, and writes it to disk (or other storage)
 
@@ -69,7 +69,7 @@ class DataServer:
     they are nearly identical objects, but are configured differently so that
     the loop `DataSet` doesn't hold any data itself, it only passes that data
     on to the `DataServer`
-    '''
+    """
     default_storage_period = 1  # seconds between data storage calls
     queries_per_store = 5
     default_monitor_period = 60  # seconds between monitoring storage calls
@@ -138,17 +138,17 @@ class DataServer:
     ######################################################################
 
     def handle_halt(self):
-        '''
+        """
         Quit this DataServer
-        '''
+        """
         self._running = False
         self._reply(True)
 
     def handle_new_data(self, data_set):
-        '''
+        """
         Load a new (normally empty) DataSet into the DataServer, and
         prepare it to start receiving and storing data
-        '''
+        """
         if self._measuring:
             raise RuntimeError('Already executing a measurement')
 
@@ -158,29 +158,35 @@ class DataServer:
         self._reply(True)
 
     def handle_end_data(self):
-        '''
+        """
         Mark this DataSet as complete and write its final changes to storage
-        '''
+        """
         self._data.write()
         self._measuring = False
         self._reply(True)
 
     def handle_store_data(self, *args):
-        '''
+        """
         Put some data into the DataSet
         This is the only query that does not return a value, so the measurement
         loop does not need to wait for a reply.
-        '''
+        """
         self._data.store(*args)
 
     def handle_get_measuring(self):
-        '''
+        """
         Is a measurement loop presently running?
-        '''
+        """
         self._reply(self._measuring)
 
     def handle_get_data(self, attr=None):
-        '''
+        """
         Return the active DataSet or some attribute of it
-        '''
+        """
         self._reply(getattr(self._data, attr) if attr else self._data)
+
+    def handle_get_changes(self, synced_indices):
+        """
+        Return all new data after the last sync
+        """
+        self._reply(self._data.get_changes(synced_indices))
