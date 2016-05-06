@@ -4,7 +4,7 @@ from qcodes import VisaInstrument, validators as vals
 
 
 class SRS_SR830(VisaInstrument):
-    '''
+    """
     This is the qcodes driver for the Stanford Research Systems SR830
     Lock-in Amplifier
 
@@ -12,7 +12,7 @@ class SRS_SR830(VisaInstrument):
         TODO: Add all parameters that are in the manual
         TODO: Complete getters, setters and validators for ranges and time constants
         TODO: Complete auto-offset operation
-    '''
+"""
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, **kwargs)
 
@@ -186,20 +186,20 @@ class SRS_SR830(VisaInstrument):
 
 
     def auto_gain(self):
-        '''
+        """
         Perform an auto-gain operation"
-        '''
+        """
         self.write("AGAN")
 
     def auto_reserve(self):
-        '''
+        """
         Perform an auto-reserve operation
-        '''
+        """
         self.write("ARSV")
 
     def auto_phase(self):
-        '''
+        """
         Perform an auto-phase operation
-        '''
+        """
         self.write("APHS")
     # TODO: Figure out syntax for auto-offset command
