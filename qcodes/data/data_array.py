@@ -138,8 +138,8 @@ class DataArray(DelegateAttributes):
         self._set_index_bounds()
 
     def _set_index_bounds(self):
-        self._min_indices = tuple(0 for d in self.size)
-        self._max_indices = tuple(d - 1 for d in self.size)
+        self._min_indices = [0 for d in self.size]
+        self._max_indices = [d - 1 for d in self.size]
 
     def clear(self):
         '''
@@ -161,14 +161,24 @@ class DataArray(DelegateAttributes):
         want this overhead, you can access self.ndarray directly.
         '''
         if isinstance(loop_indices, collections.Iterable):
-            loop_indices_tuple = loop_indices
+            min_indices = list(loop_indices)
+            max_indices = list(loop_indices)
         else:
-            loop_indices_tuple = (loop_indices, )
-        min_li = self._flat_index(loop_indices_tuple, self._min_indices)
-        max_li = self._flat_index(loop_indices_tuple, self._max_indices)
+            min_indices = [loop_indices]
+            max_indices = [loop_indices]
+
+        for i, index in enumerate(min_indices):
+            if isinstance(index, slice):
+                start, stop, step = index.indices(self.size[i])
+                min_indices[i] = start
+                max_indices[i] = start + (
+                    ((stop - start - 1)//step) * step)
+
+        min_li = self._flat_index(min_indices, self._min_indices)
+        max_li = self._flat_index(max_indices, self._max_indices)
         self._update_modified_range(min_li, max_li)
 
-        self.ndarray[loop_indices] = value
+        self.ndarray.__setitem__(loop_indices, value)
 
     def __getitem__(self, loop_indices):
         return self.ndarray[loop_indices]
@@ -193,15 +203,19 @@ class DataArray(DelegateAttributes):
         else:
             self.modified_range = (low, high)
 
-    def mark_saved(self):
+    def mark_saved(self, last_saved_index):
         '''
-        after saving data, mark any outstanding modifications as saved
+        after saving data, mark outstanding modifications up to
+        last_saved_index as saved
         '''
         if self.modified_range:
-            self.last_saved_index = max(self.last_saved_index or 0,
-                                        self.modified_range[1])
-
-        self.modified_range = None
+            if last_saved_index >= self.modified_range[1]:
+                self.modified_range = None
+            else:
+                self.modified_range = (max(self.modified_range[0],
+                                           last_saved_index + 1),
+                                       self.modified_range[1])
+        self.last_saved_index = last_saved_index
 
     def clear_save(self):
         '''
