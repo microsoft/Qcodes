@@ -246,9 +246,6 @@ class DataArray(DelegateAttributes):
             for i in range(synced_index + 1, latest_index + 1)
         ]
 
-        if self.array_id == 'avg_amplitude':
-            print(self.last_saved_index, self.modified_range, vals, self)
-
         if vals:
             return {
                 'start': synced_index + 1,
