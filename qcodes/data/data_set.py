@@ -3,7 +3,7 @@ from datetime import datetime
 import time
 
 from .manager import get_data_manager, NoData
-from .format import GNUPlotFormat
+from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
 from qcodes.utils.helpers import DelegateAttributes
 
@@ -42,7 +42,7 @@ def new_data(location=None, name=None, overwrite=False, io=None,
     if location is None:
         location = DataSet.location_provider(io, name)
     elif callable(location):
-        location = location(io)
+        location = location(io, name)
 
     if location and (not overwrite) and io.list(location):
         raise FileExistsError('"' + location + '" already has data')
@@ -96,8 +96,10 @@ def load_data(location=None, data_manager=None, formatter=None, io=None):
         return _get_live_data(data_manager)
 
     else:
-        return DataSet(location=location, formatter=formatter, io=io,
+        data = DataSet(location=location, formatter=formatter, io=io,
                        mode=DataMode.LOCAL)
+        data.read()
+        return data
 
 
 def _get_live_data(data_manager):
@@ -111,25 +113,30 @@ def _get_live_data(data_manager):
 
 class TimestampLocation:
     """
-    This is the default DataSet Location provider.
-    It provides a callable of one parameter (the io manager) that
-    returns a new location string, which is currently unused.
-    Uses `io.list(location)` to search for existing data at this location
+    This is the default `DataSet.location_provider`.
+    A `location_provider` object should be a callable taking two parameters:
+    - an io manager `io` used to search for existing data using
+      `io.list(location)` so that the location returned is confirmed
+      to be unoccupied
+    - `name` - a string that should be incorporated somewhere into the
+      returned location.
+    returns a new, unoccupied location string
 
-    Constructed with one parameter, a datetime.strftime format string,
-    which can include slashes (forward and backward are equivalent)
-    to create folder structure.
+    TimestampLocation is constructed with one parameter, a datetime.strftime
+    format string, which can include slashes (forward and backward are
+    equivalent) to create folder structure.
     Default format string is '%Y-%m-%d/%H-%M-%S'
     """
     def __init__(self, fmt='%Y-%m-%d/%H-%M-%S'):
         self.fmt = fmt
 
     def __call__(self, io, name=None):
-        location = base_location = datetime.now().strftime(self.fmt)
+        location = datetime.now().strftime(self.fmt)
 
         if name:
             location += '_' + name
 
+        base_location = location
         for char in map(chr, range(ord('a'), ord('z') + 2)):
             if not io.list(location):
                 break
@@ -230,8 +237,6 @@ class DataSet(DelegateAttributes):
         if self.arrays:
             for array in self.arrays.values():
                 array.init_data()
-        else:
-            self.read()
 
     def _init_push_to_server(self, data_manager):
         self.mode = DataMode.PUSH_TO_SERVER
@@ -477,9 +482,6 @@ class DataSet(DelegateAttributes):
         else:
             raise RuntimeError('This mode does not allow finalizing',
                                self.mode)
-
-    def plot(self, cut=None):
-        pass  # TODO
 
     def __repr__(self):
         out = '{}: {}, location={}'.format(
