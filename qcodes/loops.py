@@ -409,7 +409,7 @@ class ActiveLoop:
         return self.run(background=False, quiet=True,
                         data_manager=False, location=False, **kwargs)
 
-    def run(self, background=True, use_threads=True, enqueue=False,
+    def run(self, background=True, use_threads=True,
             quiet=False, data_manager=None, **kwargs):
         '''
         execute this loop
@@ -419,8 +419,6 @@ class ActiveLoop:
         use_threads: (default True): whenever there are multiple `get` calls
             back-to-back, execute them in separate threads so they run in
             parallel (as long as they don't block each other)
-        enqueue: (default False): wait for a previous background sweep to
-            finish? If false, will raise an error if another sweep is running
         quiet: (default False): set True to not print anything except errors
         data_manager: a DataManager instance (omit to use default,
             False to store locally)
@@ -446,11 +444,9 @@ class ActiveLoop:
 
         prev_loop = get_bg()
         if prev_loop:
-            if enqueue:
-                prev_loop.join()  # wait until previous loop finishes
-            else:
-                raise RuntimeError(
-                    'a loop is already running in the background')
+            print('Waiting for the previous background Loop to finish...')
+            prev_loop.join()
+
         if data_manager is False:
             data_mode = DataMode.LOCAL
         else:
@@ -460,6 +456,9 @@ class ActiveLoop:
                             data_manager=data_manager, **kwargs)
         self.set_common_attrs(data_set=data_set, use_threads=use_threads,
                               signal_queue=self.signal_queue)
+
+        if prev_loop:
+            print('...done. Starting ' + (data_set.location or 'new loop'))
 
         if background:
             p = QcodesProcess(target=self._run_wrapper, name=MP_NAME)
