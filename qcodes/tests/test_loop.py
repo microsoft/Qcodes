@@ -375,15 +375,35 @@ class TestLoop(TestCase):
         def f():
             return 42
 
-        for bad_action in (f, 42):
+        class NoName:
+            def get(self):
+                return 42
+
+        class HasName:
+            def get(self):
+                return 42
+
+            name = 'IHazName!'
+
+        class HasNames:
+            def get(self):
+                return 42
+
+            names = 'Namezz'
+
+        # first two minimal working gettables
+        Loop(self.p1[1:3:1]).each(HasName())
+        Loop(self.p1[1:3:1]).each(HasNames())
+
+        for bad_action in (f, 42, NoName()):
             with self.assertRaises(TypeError):
                 # include a good action too, just to make sure we look
                 # at the whole list
-                Loop(self.p1[1:3:1], 0.001).each(self.p1, bad_action)
+                Loop(self.p1[1:3:1]).each(self.p1, bad_action)
 
         with self.assertRaises(ValueError):
             # invalid sweep values
-            Loop(self.p1[-20:20:1], 0.001).each(self.p1)
+            Loop(self.p1[-20:20:1]).each(self.p1)
 
     def test_very_short_delay(self):
         with LogCapture() as s:
