@@ -180,7 +180,8 @@ class Loop:
         for action in actions:
             if isinstance(action, (Task, Wait, ActiveLoop)):
                 continue
-            if hasattr(action, 'get'):
+            if hasattr(action, 'get') and (hasattr(action, 'name') or
+                                           hasattr(action, 'names')):
                 continue
             raise TypeError('Unrecognized action:', action,
                             'Allowed actions are: objects (parameters) with '
