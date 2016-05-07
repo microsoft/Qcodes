@@ -184,9 +184,10 @@ class Loop:
                 continue
             raise TypeError('Unrecognized action:', action,
                             'Allowed actions are: objects (parameters) with '
-                            'a `get` method, and `Task`, `Wait`, and '
-                            '`ActiveLoop` objects. `Loop` objects are OK too, '
-                            'except in Station default measurements.')
+                            'a `get` method and `name` or `names` attribute, '
+                            'and `Task`, `Wait`, and `ActiveLoop` objects. '
+                            '`Loop` objects are OK too, except in Station '
+                            'default measurements.')
 
     def run(self, *args, **kwargs):
         '''
