@@ -444,7 +444,8 @@ class ActiveLoop:
 
         prev_loop = get_bg()
         if prev_loop:
-            print('Waiting for the previous background Loop to finish...')
+            print('Waiting for the previous background Loop to finish...',
+                  flush=True)
             prev_loop.join()
 
         if data_manager is False:
@@ -458,7 +459,8 @@ class ActiveLoop:
                               signal_queue=self.signal_queue)
 
         if prev_loop:
-            print('...done. Starting ' + (data_set.location or 'new loop'))
+            print('...done. Starting ' + (data_set.location or 'new loop'),
+                  flush=True)
 
         if background:
             p = QcodesProcess(target=self._run_wrapper, name=MP_NAME)
