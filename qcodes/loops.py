@@ -444,8 +444,9 @@ class ActiveLoop:
 
         prev_loop = get_bg()
         if prev_loop:
-            print('Waiting for the previous background Loop to finish...',
-                  flush=True)
+            if not quiet:
+                print('Waiting for the previous background Loop to finish...',
+                      flush=True)
             prev_loop.join()
 
         if data_manager is False:
@@ -458,7 +459,7 @@ class ActiveLoop:
         self.set_common_attrs(data_set=data_set, use_threads=use_threads,
                               signal_queue=self.signal_queue)
 
-        if prev_loop:
+        if prev_loop and not quiet:
             print('...done. Starting ' + (data_set.location or 'new loop'),
                   flush=True)
 
