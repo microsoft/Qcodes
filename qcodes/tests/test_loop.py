@@ -372,15 +372,38 @@ class TestLoop(TestCase):
         self.assertEqual(data.index1.tolist(), [[[0, 1]] * 2] * 2)
 
     def test_bad_actors(self):
-        # would be nice to find errors at .each, but for now we find them
-        # at .run
-        loop = Loop(self.p1[1:3:1], 0.001).each(self.p1, 42)
-        with self.assertRaises(TypeError):
-            loop.run_temp()
+        def f():
+            return 42
 
-        # at least invalid sweep values we find at .each
+        class NoName:
+            def get(self):
+                return 42
+
+        class HasName:
+            def get(self):
+                return 42
+
+            name = 'IHazName!'
+
+        class HasNames:
+            def get(self):
+                return 42
+
+            names = 'Namezz'
+
+        # first two minimal working gettables
+        Loop(self.p1[1:3:1]).each(HasName())
+        Loop(self.p1[1:3:1]).each(HasNames())
+
+        for bad_action in (f, 42, NoName()):
+            with self.assertRaises(TypeError):
+                # include a good action too, just to make sure we look
+                # at the whole list
+                Loop(self.p1[1:3:1]).each(self.p1, bad_action)
+
         with self.assertRaises(ValueError):
-            Loop(self.p1[-20:20:1], 0.001).each(self.p1)
+            # invalid sweep values
+            Loop(self.p1[-20:20:1]).each(self.p1)
 
     def test_very_short_delay(self):
         with LogCapture() as s:
