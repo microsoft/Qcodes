@@ -164,11 +164,32 @@ class Loop:
                 default = Station.default.default_measurement
                 actions[i] = action.each(*default)
 
+        self.validate_actions(*actions)
+
         if self.nested_loop:
             # recurse into the innermost loop and apply these actions there
             actions = [self.nested_loop.each(*actions)]
 
         return ActiveLoop(self.sweep_values, self.delay, *actions)
+
+    @staticmethod
+    def validate_actions(*actions):
+        """
+        Whitelist acceptable actions, so we can give nice error messages
+        if an action is not recognized
+        """
+        for action in actions:
+            if isinstance(action, (Task, Wait, ActiveLoop)):
+                continue
+            if hasattr(action, 'get') and (hasattr(action, 'name') or
+                                           hasattr(action, 'names')):
+                continue
+            raise TypeError('Unrecognized action:', action,
+                            'Allowed actions are: objects (parameters) with '
+                            'a `get` method and `name` or `names` attribute, '
+                            'and `Task`, `Wait`, and `ActiveLoop` objects. '
+                            '`Loop` objects are OK too, except in Station '
+                            'default measurements.')
 
     def run(self, *args, **kwargs):
         '''
@@ -517,10 +538,8 @@ class ActiveLoop:
             return Task(self._wait, action.delay)
         elif isinstance(action, ActiveLoop):
             return _Nest(action, new_action_indices)
-        elif callable(action):
-            return action
         else:
-            raise TypeError('unrecognized action', action)
+            return action
 
     def _run_wrapper(self, *args, **kwargs):
         try:
