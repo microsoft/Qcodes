@@ -179,7 +179,7 @@ class Loop:
         if an action is not recognized
         """
         for action in actions:
-            if isinstance(action, (Task, Wait, ActiveLoop)):
+            if isinstance(action, (Task, Wait, BreakIf, ActiveLoop)):
                 continue
             if hasattr(action, 'get') and (hasattr(action, 'name') or
                                            hasattr(action, 'names')):
@@ -187,9 +187,9 @@ class Loop:
             raise TypeError('Unrecognized action:', action,
                             'Allowed actions are: objects (parameters) with '
                             'a `get` method and `name` or `names` attribute, '
-                            'and `Task`, `Wait`, and `ActiveLoop` objects. '
-                            '`Loop` objects are OK too, except in Station '
-                            'default measurements.')
+                            'and `Task`, `Wait`, `BreakIf`, and `ActiveLoop` '
+                            'objects. `Loop` objects are OK too, except in '
+                            'Station default measurements.')
 
     def run(self, *args, **kwargs):
         '''
