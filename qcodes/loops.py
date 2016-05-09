@@ -163,11 +163,32 @@ class Loop:
                 default = Station.default.default_measurement
                 actions[i] = action.each(*default)
 
+        self.validate_actions(*actions)
+
         if self.nested_loop:
             # recurse into the innermost loop and apply these actions there
             actions = [self.nested_loop.each(*actions)]
 
         return ActiveLoop(self.sweep_values, self.delay, *actions)
+
+    @staticmethod
+    def validate_actions(*actions):
+        """
+        Whitelist acceptable actions, so we can give nice error messages
+        if an action is not recognized
+        """
+        for action in actions:
+            if isinstance(action, (Task, Wait, ActiveLoop)):
+                continue
+            if hasattr(action, 'get') and (hasattr(action, 'name') or
+                                           hasattr(action, 'names')):
+                continue
+            raise TypeError('Unrecognized action:', action,
+                            'Allowed actions are: objects (parameters) with '
+                            'a `get` method and `name` or `names` attribute, '
+                            'and `Task`, `Wait`, and `ActiveLoop` objects. '
+                            '`Loop` objects are OK too, except in Station '
+                            'default measurements.')
 
     def run(self, *args, **kwargs):
         '''
@@ -423,7 +444,7 @@ class ActiveLoop:
             finish? If false, will raise an error if another sweep is running
         quiet: (default False): set True to not print anything except errors
         data_manager: a DataManager instance (omit to use default,
-            False to store locally and not write to disk)
+            False to store locally)
 
         kwargs are passed along to data_set.new_data. The key ones are:
         location: the location of the DataSet, a string whose meaning
@@ -436,6 +457,8 @@ class ActiveLoop:
         formatter: knows how to read and write the file format
             default can be set in DataSet.default_formatter
         io: knows how to connect to the storage (disk vs cloud etc)
+        write_period: how often to save to storage during the loop.
+            default 5 sec, use None to write only at the end
 
 
         returns:
@@ -466,11 +489,21 @@ class ActiveLoop:
             p.start()
             self.process = p
 
+            # now that the data_set we created has been put in the loop
+            # process, this copy turns into a reader
+            # if you're not using a DataManager, it just stays local
+            # and sync() reads from disk
+            if self.data_set.mode == DataMode.PUSH_TO_SERVER:
+                self.data_set.mode = DataMode.PULL_FROM_SERVER
             self.data_set.sync()
-            self.data_set.mode = DataMode.PULL_FROM_SERVER
         else:
+            if hasattr(self, 'process'):
+                # in case this ActiveLoop was run before in the background
+                del self.process
+
             self._run_wrapper()
-            self.data_set.read()
+            if self.data_set.mode != DataMode.LOCAL:
+                self.data_set.sync()
 
         if not quiet:
             print(repr(self.data_set))
@@ -504,17 +537,15 @@ class ActiveLoop:
             return Task(self._wait, action.delay)
         elif isinstance(action, ActiveLoop):
             return _Nest(action, new_action_indices)
-        elif callable(action):
-            return action
         else:
-            raise TypeError('unrecognized action', action)
+            return action
 
     def _run_wrapper(self, *args, **kwargs):
         try:
             self._run_loop(*args, **kwargs)
         finally:
-            if(hasattr(self, 'data_set') and hasattr(self.data_set, 'close')):
-                self.data_set.close()
+            if hasattr(self, 'data_set'):
+                self.data_set.finalize()
 
     def _run_loop(self, first_delay=0, action_indices=(),
                   loop_indices=(), current_values=(),

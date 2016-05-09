@@ -34,36 +34,74 @@ class TestMockInstLoop(TestCase):
         self.location2 = '_loop_test2_'
         self.io = DiskIO('.')
 
+        c1 = self.gates.chan1
+        self.loop = Loop(c1[1:5:1], 0.001).each(c1)
+
+        self.assertFalse(self.io.list(self.location))
+        self.assertFalse(self.io.list(self.location2))
+
     def tearDown(self):
         for instrument in [self.gates, self.source, self.meter]:
             instrument.close()
 
+        get_data_manager().close()
+        self.model.close()
+
         self.io.remove_all(self.location)
         self.io.remove_all(self.location2)
 
-    def test_instruments_in_loop(self):
+    def check_empty_data(self, data):
+        expected = repr([float('nan')] * 4)
+        self.assertEqual(repr(data.chan1.tolist()), expected)
+        self.assertEqual(repr(data.chan1_set.tolist()), expected)
+
+    def check_loop_data(self, data):
+        self.assertEqual(data.chan1.tolist(), [1, 2, 3, 4])
+        self.assertEqual(data.chan1_set.tolist(), [1, 2, 3, 4])
+
+        self.assertTrue(self.io.list(self.location))
+
+    def test_background_and_datamanager(self):
         # make sure that an unpicklable instrument can indeed run in a loop
-        self.assertFalse(self.io.list(self.location))
-        c1 = self.gates.chan1
-        loop = Loop(c1[1:5:1], 0.001).each(c1)
 
         # TODO: if we don't save the dataset (location=False) then we can't
         # sync it when we're done. Should fix that - for now that just means
         # you can only do in-memory loops if you set data_manager=False
         # TODO: this is the one place we don't do quiet=True - test that we
         # really print stuff?
-        data = loop.run(location=self.location)
+        data = self.loop.run(location=self.location)
+        self.check_empty_data(data)
 
         # wait for process to finish (ensures that this was run in the bg,
         # because otherwise there *is* no loop.process)
-        loop.process.join()
+        self.loop.process.join()
 
         data.sync()
+        self.check_loop_data(data)
 
-        self.assertEqual(data.chan1.tolist(), [1, 2, 3, 4])
-        self.assertEqual(data.chan1_set.tolist(), [1, 2, 3, 4])
+    def test_background_no_datamanager(self):
+        data = self.loop.run(location=self.location, data_manager=False,
+                             quiet=True)
+        self.check_empty_data(data)
 
-        self.assertTrue(self.io.list(self.location))
+        self.loop.process.join()
+
+        data.sync()
+        self.check_loop_data(data)
+
+    def test_foreground_and_datamanager(self):
+        data = self.loop.run(location=self.location, background=False,
+                             quiet=True)
+        self.assertFalse(hasattr(self.loop, 'process'))
+
+        self.check_loop_data(data)
+
+    def test_foreground_no_datamanager(self):
+        data = self.loop.run(location=self.location, background=False,
+                             data_manager=False, quiet=True)
+        self.assertFalse(hasattr(self.loop, 'process'))
+
+        self.check_loop_data(data)
 
     def test_enqueue(self):
         c1 = self.gates.chan1
@@ -334,15 +372,38 @@ class TestLoop(TestCase):
         self.assertEqual(data.index1.tolist(), [[[0, 1]] * 2] * 2)
 
     def test_bad_actors(self):
-        # would be nice to find errors at .each, but for now we find them
-        # at .run
-        loop = Loop(self.p1[1:3:1], 0.001).each(self.p1, 42)
-        with self.assertRaises(TypeError):
-            loop.run_temp()
+        def f():
+            return 42
 
-        # at least invalid sweep values we find at .each
+        class NoName:
+            def get(self):
+                return 42
+
+        class HasName:
+            def get(self):
+                return 42
+
+            name = 'IHazName!'
+
+        class HasNames:
+            def get(self):
+                return 42
+
+            names = 'Namezz'
+
+        # first two minimal working gettables
+        Loop(self.p1[1:3:1]).each(HasName())
+        Loop(self.p1[1:3:1]).each(HasNames())
+
+        for bad_action in (f, 42, NoName()):
+            with self.assertRaises(TypeError):
+                # include a good action too, just to make sure we look
+                # at the whole list
+                Loop(self.p1[1:3:1]).each(self.p1, bad_action)
+
         with self.assertRaises(ValueError):
-            Loop(self.p1[-20:20:1], 0.001).each(self.p1)
+            # invalid sweep values
+            Loop(self.p1[-20:20:1]).each(self.p1)
 
     def test_very_short_delay(self):
         with LogCapture() as s:
