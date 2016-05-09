@@ -136,9 +136,10 @@ class TestParameters(TestCase):
                     gatesLocal.set(param, -1)
                     gatesLocal.set(param, 1)
 
+            loglines = logs.value.split('\n')[:-1]
             # TODO: occasional extra negative delays here
-            self.assertEqual(len(logs.value), logcount, (param, logs.value))
-            for line in logs.value:
+            self.assertEqual(len(loglines), logcount, (param, logs.value))
+            for line in loglines:
                 self.assertTrue(line.startswith('negative delay'), line)
 
     def test_max_delay_errors(self):
@@ -281,9 +282,6 @@ class TestParameters(TestCase):
             gates.ask('question?yes but more after')
 
         with self.assertRaises(ValueError):
-            gates.write('ampl 1')
-            self.meter.echo(9.99)  # known good call, just to read the error
-        with self.assertRaises(ValueError):
             gates.ask('ampl?')
 
         with self.assertRaises(TypeError):
@@ -326,8 +324,10 @@ class TestParameters(TestCase):
         with LogCapture() as logs:
             source.amplitude2.set(val)
 
-        self.assertEqual(len(logs.value), log_count, logs.value)
-        for line in logs.value:
+        loglines = logs.value.split('\n')[:-1]
+
+        self.assertEqual(len(loglines), log_count, logs.value)
+        for line in loglines:
             self.assertIn('cannot sweep', line.lower())
         hist = source.getattr('history')
         self.assertEqual(len(hist), history_count)
@@ -747,7 +747,6 @@ class TestAttrAccess(TestCase):
 
         with self.assertRaises(TypeError):
             instrument.setattr(('d1', 'a', 1))
-            instrument.getattr('name')
 
         # set one attribute that requires creating nested levels
         instrument.setattr(('d1', 'a', 1), 2)
@@ -755,7 +754,6 @@ class TestAttrAccess(TestCase):
         # can't nest inside a non-container
         with self.assertRaises(TypeError):
             instrument.setattr(('d1', 'a', 1, 'secret'), 42)
-            instrument.getattr('name')
 
         # get the whole dict with simple getattr style
         # TODO: twice (out of maybe 50 runs) I saw the below fail,

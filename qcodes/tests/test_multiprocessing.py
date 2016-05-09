@@ -10,7 +10,8 @@ import qcodes
 from qcodes.utils.multiprocessing import (set_mp_method, QcodesProcess,
                                           get_stream_queue, _SQWriter,
                                           kill_queue, ServerManager,
-                                          SERVER_ERR)
+                                          QUERY_WRITE, QUERY_ASK,
+                                          RESPONSE_OK, RESPONSE_ERROR)
 import qcodes.utils.multiprocessing as qcmp
 from qcodes.utils.helpers import in_notebook
 from qcodes.utils.timing import calibrate
@@ -358,10 +359,9 @@ class ServerManagerTest(ServerManager):
 
 
 class EmptyServer:
-    def __init__(self, query_queue, response_queue, error_queue, extras):
+    def __init__(self, query_queue, response_queue, extras):
         query_queue.put('why?')
         response_queue.put(extras)
-        error_queue.put('No!')
 
 
 class CustomError(Exception):
@@ -375,9 +375,7 @@ def delayed_put(queue, val, delay):
 
 class TestServerManager(TestCase):
     def check_error(self, manager, error_str, error_class):
-        manager._error_queue.put(error_str)
-        manager._response_queue.put(SERVER_ERR)
-        time.sleep(0.005)
+        manager._response_queue.put(RESPONSE_ERROR, error_str)
         with self.assertRaises(error_class):
             manager.ask('which way does the wind blow?')
 
@@ -390,34 +388,30 @@ class TestServerManager(TestCase):
 
         self.assertEqual(sm._query_queue.get(timeout=1), 'why?')
         self.assertEqual(sm._response_queue.get(timeout=1), extras)
-        self.assertEqual(sm._error_queue.get(timeout=1), 'No!')
 
         # builtin errors we propagate to the server
         builtin_error_str = ('traceback\n  lines\n and then\n'
                              '  OSError: your hard disk went floppy.')
-        sm._error_queue.put(builtin_error_str)
-        sm._response_queue.put(SERVER_ERR)
-        while sm._error_queue.empty() or sm._response_queue.empty():
-            time.sleep(0.005)
+        sm._response_queue.put((RESPONSE_ERROR, builtin_error_str))
         with self.assertRaises(OSError):
             sm.ask('which way does the wind blow?')
 
         # non-built-in errors we fall back on RuntimeError
         custom_error_str = ('traceback\nlines\nand then\n'
                             'CustomError: the Balrog is loose!')
-        sm._response_queue.put('should get tossed by the error checker')
-        sm._response_queue.put('so should this.')
-        sm._error_queue.put(custom_error_str)
-        sm._response_queue.put(SERVER_ERR)
-        time.sleep(0.005)
+        sm._response_queue.put((RESPONSE_OK,
+                                'should get tossed by the error checker'))
+        sm._response_queue.put((RESPONSE_OK, 'so should this.'))
+        sm._response_queue.put((RESPONSE_ERROR, custom_error_str))
         with self.assertRaises(RuntimeError):
-            sm.write('something benign')
+            sm.ask('something benign')
         self.assertTrue(sm._response_queue.empty())
 
         # extra responses to a query, only the last should be taken
-        sm._response_queue.put('boo!')
-        sm._response_queue.put('a barrel of monkeys!')
-        p = mp.Process(target=delayed_put, args=(sm._response_queue, 42, 0.05))
+        sm._response_queue.put((RESPONSE_OK, 'boo!'))
+        sm._response_queue.put((RESPONSE_OK, 'a barrel of monkeys!'))
+        p = mp.Process(target=delayed_put,
+                       args=(sm._response_queue, (RESPONSE_OK, 42), 0.05))
         p.start()
         self.assertEqual(sm.ask('what is the answer'), 42)
 

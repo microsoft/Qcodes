@@ -311,7 +311,7 @@ class ServerManager:
 
             while not self._response_queue.empty():
                 logging .warning(
-                    'unexpected multiple responses in queue during ask'
+                    'unexpected multiple responses in queue during ask, '
                     'using the last one. earlier item(s):\n' +
                     repr(res))
                 res = self._response_queue.get(timeout=timeout)
@@ -456,8 +456,7 @@ class BaseServer:
             'Expected query to be a tuple (code, func_name[, args][, kwargs]) '
             'where code is QUERY_ASK or QUERY_WRITE, func_name points to a '
             'method `handle_<func_name>`, and optionally args is a tuple and '
-            'kwargs is a dict\n' +
-            format_exc() + 'query: ' + repr(query))
+            'kwargs is a dict\nquery: ' + repr(query) + '\n' + format_exc())
 
         if code == QUERY_WRITE:
             logging.error(error_str)
@@ -475,13 +474,15 @@ class BaseServer:
             response = func(*args, **kwargs)
             self._response_queue.put((RESPONSE_OK, response))
         except:
-            self._response_queue.put((RESPONSE_ERROR, format_exc()))
+            self._response_queue.put(
+                (RESPONSE_ERROR, repr((func, args, kwargs)) + '\n' +
+                    format_exc()))
 
     def _process_write(self, func, args, kwargs):
         try:
             func(*args, **kwargs)
         except:
-            logging.error(format_exc())
+            logging.error(repr((func, args, kwargs)) + '\n' + format_exc())
 
     def handle_halt(self):
         """

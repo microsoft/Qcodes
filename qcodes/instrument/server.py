@@ -122,7 +122,7 @@ class InstrumentConnection:
     def __init__(self, manager, instrument_class, new_id, args, kwargs):
         self.manager = manager
 
-        info = manager.ask('new', instrument_class, new_id, args, kwargs)
+        info = manager.ask('new', instrument_class, new_id, *args, **kwargs)
         for k, v in info.items():
             setattr(self, k, v)
 
@@ -130,14 +130,14 @@ class InstrumentConnection:
         '''
         Query the server copy of this instrument, expecting a response
         '''
-        return self.manager.ask('cmd', self.id, func_name, args, kwargs)
+        return self.manager.ask('cmd', self.id, func_name, *args, **kwargs)
 
     def write(self, func_name, *args, **kwargs):
         '''
         Send a command to the server copy of this instrument, without
         waiting for a response
         '''
-        self.manager.write('cmd', self.id, func_name, args, kwargs)
+        self.manager.write('cmd', self.id, func_name, *args, **kwargs)
 
     def close(self):
         '''
@@ -172,7 +172,7 @@ class InstrumentServer(BaseServer):
         self.next_id += 1
         return new_id
 
-    def handle_new(self, instrument_class, new_id, args, kwargs):
+    def handle_new(self, instrument_class, new_id, *args, **kwargs):
         '''
         Add a new instrument to the server
         after the initial load, the instrument is referred to by its ID
@@ -215,7 +215,7 @@ class InstrumentServer(BaseServer):
             if not any(self.instruments):
                 self.handle_halt()
 
-    def handle_cmd(self, instrument_id, func_name, args, kwargs):
+    def handle_cmd(self, instrument_id, func_name, *args, **kwargs):
         '''
         Run some method of an instrument
         '''
