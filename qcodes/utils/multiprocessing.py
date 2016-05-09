@@ -14,7 +14,7 @@ SERVER_ERR = '~~ERR~~'
 
 
 def set_mp_method(method, force=False):
-    '''
+    """
     an idempotent wrapper for multiprocessing.set_start_method
     The most important use of this is to force Windows behavior
     on a Mac or Linux: set_mp_method('spawn')
@@ -28,7 +28,7 @@ def set_mp_method(method, force=False):
         in the original function, even calling the function again
         with the *same* method raises an error, but here we only
         raise the error if you *don't* force *and* the context changes
-    '''
+    """
     try:
         mp.set_start_method(method, force=force)
     except RuntimeError as err:
@@ -43,7 +43,7 @@ def set_mp_method(method, force=False):
 
 
 class QcodesProcess(mp.Process):
-    '''
+    """
     modified multiprocessing.Process for nicer printing and automatic
     streaming of stdout and stderr to our StreamQueue singleton
 
@@ -55,7 +55,7 @@ class QcodesProcess(mp.Process):
         with the parent.
         default True, overriding the base inheritance
     any other args and kwargs are passed to multiprocessing.Process
-    '''
+    """
     def __init__(self, *args, name='QcodesProcess', queue_streams=True,
                  daemon=True, **kwargs):
         # make sure the singleton StreamQueue exists
@@ -88,19 +88,19 @@ class QcodesProcess(mp.Process):
 
 
 def get_stream_queue():
-    '''
+    """
     convenience function to get a singleton StreamQueue
     note that this must be called from the main process before starting any
     subprocesses that will use it, otherwise the subprocess will create its
     own StreamQueue that no other processes know about
-    '''
+    """
     if StreamQueue.instance is None:
         StreamQueue.instance = StreamQueue()
     return StreamQueue.instance
 
 
 class StreamQueue:
-    '''
+    """
     Do not instantiate this directly: use get_stream_queue so we only make one.
 
     Redirect child process stdout and stderr to a queue
@@ -115,7 +115,7 @@ class StreamQueue:
     messages
 
     inspired by http://stackoverflow.com/questions/23947281/
-    '''
+    """
     instance = None
 
     def __init__(self, *args, **kwargs):
@@ -220,14 +220,14 @@ class _SQWriter:
 
 
 class ServerManager:
-    '''
+    """
     creates and manages connections to a separate server process
 
     name: the name of the server. Can include .format specs to insert
         all or part of the uuid
     query_timeout: (default None) the default time to wait for responses
     kwargs: passed along to the server constructor
-    '''
+    """
     def __init__(self, name, server_class, shared_attrs=None,
                  query_timeout=None):
         self._query_queue = mp.Queue()
@@ -270,9 +270,9 @@ class ServerManager:
             pass
 
     def write(self, *query):
-        '''
+        """
         Send a query to the server that does not expect a response.
-        '''
+        """
         self._check_alive()
         self._query_queue.put(query)
         self._check_for_errors()
@@ -313,9 +313,9 @@ class ServerManager:
         return res
 
     def ask(self, *query, timeout=None):
-        '''
+        """
         Send a query to the server and wait for a response
-        '''
+        """
         self._check_alive()
 
         timeout = timeout or self.query_timeout
@@ -344,10 +344,10 @@ class ServerManager:
             return res
 
     def halt(self, timeout=2):
-        '''
+        """
         Halt the server and end its process, but in a way that it can
         be started again
-        '''
+        """
         try:
             if self._server.is_alive():
                 self.write('halt')
@@ -364,16 +364,16 @@ class ServerManager:
             pass
 
     def restart(self):
-        '''
+        """
         Restart the server
-        '''
+        """
         self.halt()
         self._start_server()
 
     def close(self):
-        '''
+        """
         Irreversibly stop the server and manager
-        '''
+        """
         self.halt()
         for q in ['query', 'response', 'error']:
             qname = '_{}_queue'.format(q)
