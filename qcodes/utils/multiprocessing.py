@@ -2,15 +2,19 @@ import multiprocessing as mp
 import sys
 from datetime import datetime
 import time
-from traceback import print_exc
-from queue import Empty
+from traceback import print_exc, format_exc
 from uuid import uuid4
 import builtins
+import logging
 
 from .helpers import in_notebook
 
 MP_ERR = 'context has already been set'
-SERVER_ERR = '~~ERR~~'
+
+QUERY_WRITE = 'WRITE'
+QUERY_ASK = 'ASK'
+RESPONSE_OK = 'OK'
+RESPONSE_ERROR = 'ERROR'
 
 
 def set_mp_method(method, force=False):
@@ -225,14 +229,20 @@ class ServerManager:
 
     name: the name of the server. Can include .format specs to insert
         all or part of the uuid
+    server_class: the class to create within the new process.
+        the constructor will be passed arguments:
+            query_queue, response_queue, shared_attrs
+        and should start an infinite loop watching query_queue and posting
+        responses to response_queue.
+    shared_attrs: any objects that need to be passed to the server on startup,
+        generally objects like Queues that are picklable only for inheritance
+        by a new process.
     query_timeout: (default None) the default time to wait for responses
-    kwargs: passed along to the server constructor
     """
     def __init__(self, name, server_class, shared_attrs=None,
                  query_timeout=None):
         self._query_queue = mp.Queue()
         self._response_queue = mp.Queue()
-        self._error_queue = mp.Queue()
         self._server_class = server_class
         self._shared_attrs = shared_attrs
 
@@ -258,61 +268,25 @@ class ServerManager:
 
     def _run_server(self):
         self._server_class(self._query_queue, self._response_queue,
-                           self._error_queue, self._shared_attrs)
+                           self._shared_attrs)
 
     def _check_alive(self):
         try:
             if not self._server.is_alive():
-                print('warning: restarted {}'.format(self._server))
+                logging.warning('restarted {}'.format(self._server))
                 self.restart()
         except:
             # can't test is_alive from outside the main process
             pass
 
-    def write(self, *query):
+    def write(self, func_name, *args, **kwargs):
         """
         Send a query to the server that does not expect a response.
         """
         self._check_alive()
-        self._query_queue.put(query)
-        self._check_for_errors()
+        self._query_queue.put((QUERY_WRITE, func_name, args, kwargs))
 
-    def _check_for_errors(self, expect_error=False, query=None):
-        if expect_error or not self._error_queue.empty():
-            # clear the response queue whenever there's an error
-            # and give it a little time to flush first
-            time.sleep(0.05)
-            while not self._response_queue.empty():
-                self._response_queue.get()
-
-            # then get the error and raise a wrapping exception
-            errstr = self._error_queue.get(timeout=self.query_timeout)
-            errhead = '*** error on {} ***'.format(self.name)
-
-            # try to match the error type, if it's a built-in type
-            err_type = None
-            err_type_line = errstr.rstrip().rsplit('\n', 1)[-1]
-            err_type_str = err_type_line.split(':')[0].strip()
-
-            err_type = getattr(builtins, err_type_str, None)
-            if err_type is None or not issubclass(err_type, Exception):
-                err_type = RuntimeError
-
-            if query:
-                errhead += '\nwhile executing query: ' + repr(query)
-
-            raise err_type(errhead + '\n\n' + errstr)
-
-    def _check_response(self, timeout, query=None):
-        res = self._response_queue.get(timeout=timeout)
-        if res == SERVER_ERR:
-            # TODO: I think the way we're doing this now, I could get rid of
-            # _error_queue completely and just have errors and regular
-            # responses labeled differently in _response_queue
-            self._check_for_errors(expect_error=True, query=query)
-        return res
-
-    def ask(self, *query, timeout=None):
+    def ask(self, func_name, *args, timeout=None, **kwargs):
         """
         Send a query to the server and wait for a response
         """
@@ -321,27 +295,55 @@ class ServerManager:
         timeout = timeout or self.query_timeout
         self._expect_error = False
 
+        query = (QUERY_ASK, func_name, args, kwargs)
+
         with self.query_lock:
             # in case a previous query errored and left something on the
             # response queue, clear it
             while not self._response_queue.empty():
-                res = self._check_response(timeout)
+                logging.warning(
+                    'unexpected data in response queue before ask:\n' +
+                    repr(self._response_queue.get()))
 
             self._query_queue.put(query)
 
+            res = self._response_queue.get(timeout=timeout)
+
+            while not self._response_queue.empty():
+                logging .warning(
+                    'unexpected multiple responses in queue during ask'
+                    'using the last one. earlier item(s):\n' +
+                    repr(res))
+                res = self._response_queue.get(timeout=timeout)
+
             try:
-                res = self._check_response(timeout, query)
+                code, value = res
+            except (TypeError, ValueError):
+                code, value = '<MALFORMED>', res
 
-                while not self._response_queue.empty():
-                    res = self._check_response(timeout, query)
+            if code == RESPONSE_OK:
+                return value
 
-            except Empty as e:
-                if self._error_queue.empty():
-                    # only raise if we're not about to find a deeper error
-                    raise e
-            self._check_for_errors(query=query)
+            self._handle_error(code, value, query)
 
-            return res
+    def _handle_error(self, code, error_str, query=None):
+        error_head = '*** error on {} ***'.format(self.name)
+
+        if query:
+            error_head += '\nwhile executing query: {}'.format(repr(query))
+
+        if code != RESPONSE_ERROR:
+            error_head += '\nunrecognized response code: {}'.format(code)
+
+        # try to match the error type, if it's a built-in type
+        error_type_line = error_str.rstrip().rsplit('\n', 1)[-1]
+        error_type_str = error_type_line.split(':')[0].strip()
+
+        err_type = getattr(builtins, error_type_str, None)
+        if err_type is None or not issubclass(err_type, Exception):
+            err_type = RuntimeError
+
+        raise err_type(error_head + '\n\n' + error_str)
 
     def halt(self, timeout=2):
         """
@@ -355,8 +357,8 @@ class ServerManager:
 
             if self._server.is_alive():
                 self._server.terminate()
-                print('ServerManager did not respond to halt signal, '
-                      'terminated')
+                logging.warning('ServerManager did not respond to halt '
+                                'signal, terminated')
                 self._server.join(timeout)
         except AssertionError:
             # happens when we get here from other than the main process
@@ -382,6 +384,121 @@ class ServerManager:
                 del self.__dict__[qname]
         if hasattr(self, 'query_lock'):
             del self.query_lock
+
+
+class BaseServer:
+    """
+    Base class to run in server processes, to unify the query handling
+    protocol.
+
+    This base class doesn't start the event loop, a subclass should
+    either use the `run_event_loop` method below at the end of its
+    `__init__` or provide its own event loop. If making your own event loop,
+    be sure to call `process_query` to ensure robust error handling between
+    the ask and write cases.
+
+    Subclasses should define handlers `handle_<func_name>`, such that
+    `process_query` can take queries of the form:
+        (code, func_name[, args][, kwargs])
+    and turns them into method calls:
+        response = self.handle_<func_name>(*args, **kwargs)
+    If code is QUERY_ASK, the response or an error is put on the response queue
+    If code is QUERY_WRITE, the response is discarded, and errors are handled
+        by logging.error (so the calling process never sees them directly)
+
+    two handlers are predefined:
+    `handle_halt` (but override it if your event loop does not use
+        self.running=False to stop)
+    `handle_get_handlers` (lists all available handler methods)
+    """
+    # just for testing - how long to allow it to wait on a queue.get
+    timeout = None
+
+    def __init__(self, query_queue, response_queue, shared_attrs=None):
+        self._query_queue = query_queue
+        self._response_queue = response_queue
+        self._shared_attrs = shared_attrs
+
+    def run_event_loop(self):
+        self.running = True
+        while self.running:
+            query = self._query_queue.get(timeout=self.timeout)
+            self.process_query(query)
+
+    def process_query(self, query):
+        try:
+            code = None
+            code, func_name = query[:2]
+
+            func = getattr(self, 'handle_' + func_name)
+
+            args = None
+            kwargs = None
+            for part in query[2:]:
+                if isinstance(part, tuple) and args is None:
+                    args = part
+                elif isinstance(part, dict) and kwargs is None:
+                    kwargs = part
+                else:
+                    raise ValueError(part)
+
+            if code == QUERY_ASK:
+                self._process_ask(func, args or (), kwargs or {})
+            elif code == QUERY_WRITE:
+                self._process_write(func, args or (), kwargs or {})
+            else:
+                raise ValueError(code)
+        except:
+            self._report_error(query, code)
+
+    def _report_error(self, query, code):
+        error_str = (
+            'Expected query to be a tuple (code, func_name[, args][, kwargs]) '
+            'where code is QUERY_ASK or QUERY_WRITE, func_name points to a '
+            'method `handle_<func_name>`, and optionally args is a tuple and '
+            'kwargs is a dict\n' +
+            format_exc() + 'query: ' + repr(query))
+
+        if code == QUERY_WRITE:
+            logging.error(error_str)
+        else:
+            try:
+                # the only way you'll get a response without asking for one
+                # is if we don't understand the query type code
+                self._response_queue.put((RESPONSE_ERROR, error_str))
+            except:
+                logging.error('Could not put error on response queue\n' +
+                              error_str)
+
+    def _process_ask(self, func, args, kwargs):
+        try:
+            response = func(*args, **kwargs)
+            self._response_queue.put((RESPONSE_OK, response))
+        except:
+            self._response_queue.put((RESPONSE_ERROR, format_exc()))
+
+    def _process_write(self, func, args, kwargs):
+        try:
+            func(*args, **kwargs)
+        except:
+            logging.error(format_exc())
+
+    def handle_halt(self):
+        """
+        Quit this server, by setting self.running=False to break the
+        event loop
+        """
+        self.running = False
+
+    def handle_get_handlers(self):
+        """
+        List all available query handlers
+        """
+        handlers = []
+        for name in dir(self):
+            if name.startswith('handle_') and callable(getattr(self, name)):
+                handlers.append(name[len('handle_'):])
+        return handlers
 
 
 def kill_queue(queue):

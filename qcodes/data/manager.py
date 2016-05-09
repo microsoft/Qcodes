@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
 from queue import Empty
 from traceback import format_exc
+import logging
 
-from qcodes.utils.multiprocessing import ServerManager, SERVER_ERR
+from qcodes.utils.multiprocessing import ServerManager, BaseServer
 
 
 def get_data_manager(only_existing=False):
@@ -57,7 +58,7 @@ class DataManager(ServerManager):
         super().restart()
 
 
-class DataServer:
+class DataServer(BaseServer):
     '''
     Running in its own process, receives, holds, and returns current `Loop` and
     monitor data, and writes it to disk (or other storage)
@@ -74,32 +75,29 @@ class DataServer:
     queries_per_store = 5
     default_monitor_period = 60  # seconds between monitoring storage calls
 
-    def __init__(self, query_queue, response_queue, error_queue, extras):
-        self._query_queue = query_queue
-        self._response_queue = response_queue
-        self._error_queue = error_queue
+    def __init__(self, query_queue, response_queue, extras=None):
+        super().__init__(query_queue, response_queue, extras)
+
         self._storage_period = self.default_storage_period
         self._monitor_period = self.default_monitor_period
 
         self._data = NoData()
         self._measuring = False
 
-        self._run()
+        self.run_event_loop()
 
-    def _run(self):
-        self._running = True
+    def run_event_loop(self):
+        self.running = True
         next_store_ts = datetime.now()
         next_monitor_ts = datetime.now()
 
-        while self._running:
+        while self.running:
             read_timeout = self._storage_period / self.queries_per_store
             try:
                 query = self._query_queue.get(timeout=read_timeout)
-                getattr(self, 'handle_' + query[0])(*(query[1:]))
+                self.process_query(query)
             except Empty:
                 pass
-            except Exception as e:
-                self._post_error(e)
 
             try:
                 now = datetime.now()
@@ -114,37 +112,12 @@ class DataServer:
                     next_monitor_ts = now + td
                     # TODO: update the monitor data storage
 
-            except Exception as e:
-                self._post_error(e)
-
-    def _reply(self, response):
-        self._response_queue.put(response)
-
-    def _post_error(self, e):
-        self._error_queue.put(format_exc())
-        # the caller is waiting on _response_queue, so put a signal there
-        # to say there's an error coming
-        self._response_queue.put(SERVER_ERR)
+            except:
+                logging.error(format_exc())
 
     ######################################################################
     # query handlers                                                     #
-    #                                                                    #
-    # method: handle_<type>(self, arg1, arg2, ...)                       #
-    # will capture queries ('<type>', arg1, arg2, ...)                   #
-    #                                                                    #
-    # All except store_data return something, so should be used with ask #
-    # rather than write. That way they wait for the queue to flush and   #
-    # will receive errors right anyway                                   #
-    #                                                                    #
-    # TODO: make a command that lists all available query handlers       #
     ######################################################################
-
-    def handle_halt(self):
-        '''
-        Quit this DataServer
-        '''
-        self._running = False
-        self._reply(True)
 
     def handle_new_data(self, data_set):
         '''
@@ -157,7 +130,6 @@ class DataServer:
         self._data = data_set
         self._data.init_on_server()
         self._measuring = True
-        self._reply(True)
 
     def handle_end_data(self):
         '''
@@ -165,13 +137,10 @@ class DataServer:
         '''
         self._data.write()
         self._measuring = False
-        self._reply(True)
 
     def handle_store_data(self, *args):
         '''
         Put some data into the DataSet
-        This is the only query that does not return a value, so the measurement
-        loop does not need to wait for a reply.
         '''
         self._data.store(*args)
 
@@ -179,10 +148,10 @@ class DataServer:
         '''
         Is a measurement loop presently running?
         '''
-        self._reply(self._measuring)
+        return self._measuring
 
     def handle_get_data(self, attr=None):
         '''
         Return the active DataSet or some attribute of it
         '''
-        self._reply(getattr(self._data, attr) if attr else self._data)
+        return getattr(self._data, attr) if attr else self._data

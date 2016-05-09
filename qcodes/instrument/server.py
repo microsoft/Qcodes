@@ -2,7 +2,7 @@ from traceback import format_exc
 import multiprocessing as mp
 from queue import Empty
 
-from qcodes.utils.multiprocessing import ServerManager, SERVER_ERR
+from qcodes.utils.multiprocessing import ServerManager, BaseServer
 
 
 def get_instrument_server(server_name, shared_kwargs={}):
@@ -130,14 +130,14 @@ class InstrumentConnection:
         '''
         Query the server copy of this instrument, expecting a response
         '''
-        return self.manager.ask('ask', self.id, func_name, args, kwargs)
+        return self.manager.ask('cmd', self.id, func_name, args, kwargs)
 
     def write(self, func_name, *args, **kwargs):
         '''
         Send a command to the server copy of this instrument, without
         waiting for a response
         '''
-        self.manager.write('write', self.id, func_name, args, kwargs)
+        self.manager.write('cmd', self.id, func_name, args, kwargs)
 
     def close(self):
         '''
@@ -151,51 +151,17 @@ class InstrumentConnection:
                 self.manager.delete(self.id)
 
 
-class InstrumentServer:
+class InstrumentServer(BaseServer):
     # just for testing - how long to allow it to wait on a queue.get
     timeout = None
 
-    def __init__(self, query_queue, response_queue, error_queue,
-                 shared_kwargs):
-        self._query_queue = query_queue
-        self._response_queue = response_queue
-        self._error_queue = error_queue
-
-        self.shared_kwargs = shared_kwargs
+    def __init__(self, query_queue, response_queue, shared_kwargs):
+        super().__init__(query_queue, response_queue, shared_kwargs)
 
         self.instruments = {}
         self.next_id = 0
-        self.running = True
 
-        while self.running:
-            try:
-                query = None
-                query = self._query_queue.get(timeout=self.timeout)
-                self.process_query(query)
-            except Empty:
-                raise
-            except Exception as e:
-                self.post_error(e, query)
-
-    def process_query(self, query):
-        getattr(self, 'handle_' + query[0])(*(query[1:]))
-
-    def reply(self, response):
-        self._response_queue.put(response)
-
-    def post_error(self, e, query=None):
-        if query:
-            e.args = e.args + ('error processing query ' + repr(query),)
-        self._error_queue.put(format_exc())
-        # the caller is waiting on _response_queue, so put a signal there
-        # to say there's an error coming
-        self._response_queue.put(SERVER_ERR)
-
-    def handle_halt(self, *args, **kwargs):
-        '''
-        Quit this InstrumentServer
-        '''
-        self.running = False
+        self.run_event_loop()
 
     def handle_new_id(self):
         '''
@@ -204,7 +170,7 @@ class InstrumentServer:
         '''
         new_id = self.next_id
         self.next_id += 1
-        self.reply(new_id)
+        return new_id
 
     def handle_new(self, instrument_class, new_id, args, kwargs):
         '''
@@ -218,7 +184,7 @@ class InstrumentServer:
         # all the shared_kwargs sent with it, but others may skip
         # (for now others must have *none* but later maybe they could
         # just skip some of them)
-        for key, value in self.shared_kwargs.items():
+        for key, value in self._shared_attrs.items():
             if key in instrument_class.shared_kwargs:
                 kwargs[key] = value
         ins = instrument_class(*args, server_name=None, **kwargs)
@@ -226,7 +192,7 @@ class InstrumentServer:
         self.instruments[new_id] = ins
 
         # info to reconstruct the instrument API in the RemoteInstrument
-        self.reply({
+        return {
             'instrument_name': ins.name,
             'id': new_id,
             'parameters': {name: p.get_attrs()
@@ -234,7 +200,7 @@ class InstrumentServer:
             'functions': {name: f.get_attrs()
                           for name, f in ins.functions.items()},
             'methods': ins._get_method_attrs()
-        })
+        }
 
     def handle_delete(self, instrument_id):
         '''
@@ -249,20 +215,9 @@ class InstrumentServer:
             if not any(self.instruments):
                 self.handle_halt()
 
-    def handle_ask(self, instrument_id, func_name, args, kwargs):
+    def handle_cmd(self, instrument_id, func_name, args, kwargs):
         '''
-        Run some method of an instrument, and post the return to the
-        response queue
-        '''
-        func = getattr(self.instruments[instrument_id], func_name)
-        response = func(*args, **kwargs)
-        self.reply(response)
-
-    def handle_write(self, instrument_id, func_name, args, kwargs):
-        '''
-        Run some method of an instrument but ignore any response it may give
-        (errors will still go to the error queue, but will be picked up by
-        some later query)
+        Run some method of an instrument
         '''
         func = getattr(self.instruments[instrument_id], func_name)
-        func(*args, **kwargs)
+        return func(*args, **kwargs)
