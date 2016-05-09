@@ -95,6 +95,12 @@ class LogCapture():
     '''
     context manager to grab all log messages, optionally
     from a specific logger
+
+    usage:
+
+    with LogCapture() as logs:
+        code_that_makes_logs(...)
+    log_str = logs.value
     '''
     def __init__(self, logger=logging.getLogger()):
         self.logger = logger
@@ -104,10 +110,12 @@ class LogCapture():
         self.string_handler = logging.StreamHandler(self.log_capture)
         self.string_handler.setLevel(logging.DEBUG)
         self.logger.addHandler(self.string_handler)
-        return self.log_capture
+        return self
 
     def __exit__(self, type, value, tb):
         self.logger.removeHandler(self.string_handler)
+        self.value = self.log_capture.getvalue()
+        self.log_capture.close()
 
 
 def make_unique(s, existing):

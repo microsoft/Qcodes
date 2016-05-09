@@ -406,20 +406,16 @@ class TestLoop(TestCase):
             Loop(self.p1[-20:20:1]).each(self.p1)
 
     def test_very_short_delay(self):
-        with LogCapture() as s:
+        with LogCapture() as logs:
             Loop(self.p1[1:3:1], 1e-9).each(self.p1).run_temp()
 
-        logstr = s.getvalue()
-        s.close()
-        self.assertEqual(logstr.count('negative delay'), 2, logstr)
+        self.assertEqual(logs.value.count('negative delay'), 2, logs.value)
 
     def test_zero_delay(self):
-        with LogCapture() as s:
+        with LogCapture() as logs:
             Loop(self.p1[1:3:1]).each(self.p1).run_temp()
 
-        logstr = s.getvalue()
-        s.close()
-        self.assertEqual(logstr.count('negative delay'), 0, logstr)
+        self.assertEqual(logs.value.count('negative delay'), 0, logs.value)
 
 
 class AbortingGetter(ManualParameter):

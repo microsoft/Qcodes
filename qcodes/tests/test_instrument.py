@@ -126,7 +126,7 @@ class TestParameters(TestCase):
                                 ('chan0slow5', 0)):
             gatesLocal.chan0.set(-0.5)
 
-            with LogCapture() as s:
+            with LogCapture() as logs:
                 if param in ('chan0slow', 'chan0slow2', 'chan0slow3'):
                     # these are the stepped parameters
                     gatesLocal.set(param, 0.5)
@@ -136,12 +136,9 @@ class TestParameters(TestCase):
                     gatesLocal.set(param, -1)
                     gatesLocal.set(param, 1)
 
-            logs = s.getvalue().split('\n')[:-1]
-            s.close()
-
             # TODO: occasional extra negative delays here
-            self.assertEqual(len(logs), logcount, (param, logs))
-            for line in logs:
+            self.assertEqual(len(logs.value), logcount, (param, logs.value))
+            for line in logs.value:
                 self.assertTrue(line.startswith('negative delay'), line)
 
     def test_max_delay_errors(self):
@@ -326,14 +323,11 @@ class TestParameters(TestCase):
 
     def check_set_amplitude2(self, val, log_count, history_count):
         source = self.sourceLocal
-        with LogCapture() as s:
+        with LogCapture() as logs:
             source.amplitude2.set(val)
 
-        logs = s.getvalue().split('\n')[:-1]
-        s.close()
-
-        self.assertEqual(len(logs), log_count, logs)
-        for line in logs:
+        self.assertEqual(len(logs.value), log_count, logs.value)
+        for line in logs.value:
             self.assertIn('cannot sweep', line.lower())
         hist = source.getattr('history')
         self.assertEqual(len(hist), history_count)
