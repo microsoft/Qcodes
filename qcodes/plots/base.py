@@ -5,6 +5,36 @@ from IPython.display import display
 
 from qcodes.widgets.widgets import HiddenUpdateWidget
 
+import threading
+
+
+def in_ipynb():
+    try:
+        cfg = get_ipython().config 
+        if cfg['IPKernelApp']['parent_appname'] == 'ipython-notebook':
+            return True
+        else:
+            return False
+    except NameError:
+        return False
+
+import time
+import logging
+class QCodesTimer(threading.Thread):
+
+    def __init__(self, fn, interval=1, **kwargs):
+        super().__init__(**kwargs)
+        self.fn = fn
+        self.interval = interval
+
+    def run(self):
+        while 1:
+            logging.debug('QCodesTimer: start sleep')
+            time.sleep(self.interval)
+            # do something
+            logging.debug('QCodesTimer: run!')
+            self.fn()
+
 
 class BasePlot:
     '''
@@ -25,8 +55,13 @@ class BasePlot:
 
         if interval:
             self.interval = interval
-            self.update_widget = HiddenUpdateWidget(self.update, interval)
-            display(self.update_widget)
+            if in_ipynb():
+                self.update_widget = HiddenUpdateWidget(self.update, interval)
+                display(self.update_widget)
+            else:
+                logging.info('create QCodesTimer: interval %.1f ' % interval)
+                self.update_widget = QCodesTimer(self.update, interval)
+                self.update_widget.start()
 
     def add(self, *args, updater=None, **kwargs):
         '''
