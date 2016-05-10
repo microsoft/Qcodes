@@ -126,6 +126,7 @@ class Loop:
         self.sweep_values = sweep_values
         self.delay = delay
         self.nested_loop = None
+        self.then_actions = ()
 
     def loop(self, sweep_values, delay=0):
         '''
@@ -136,14 +137,20 @@ class Loop:
 
         returns a new Loop object - the original is untouched
         '''
-        out = Loop(self.sweep_values, self.delay)
+        out = self._copy()
 
-        if self.nested_loop:
+        if out.nested_loop:
             # nest this new loop inside the deepest level
-            out.nested_loop = self.nested_loop.loop(sweep_values, delay)
+            out.nested_loop = out.nested_loop.loop(sweep_values, delay)
         else:
             out.nested_loop = Loop(sweep_values, delay)
 
+        return out
+
+    def _copy(self):
+        out = Loop(self.sweep_values, self.delay)
+        out.nested_loop = self.nested_loop
+        out.then_actions = self.then_actions
         return out
 
     def each(self, *actions):
@@ -170,7 +177,8 @@ class Loop:
             # recurse into the innermost loop and apply these actions there
             actions = [self.nested_loop.each(*actions)]
 
-        return ActiveLoop(self.sweep_values, self.delay, *actions)
+        return ActiveLoop(self.sweep_values, self.delay, *actions,
+                          then_actions=self.then_actions)
 
     @staticmethod
     def validate_actions(*actions):
@@ -207,6 +215,45 @@ class Loop:
         return self.run(*args, background=False, quiet=True,
                         data_manager=False, location=False, **kwargs)
 
+    def then(self, *actions, overwrite=False):
+        """
+        Attach actions to be performed after the loop completes.
+        These can only be `Task` and `Wait` actions, as they may not generate
+        any data.
+
+        returns a new Loop object - the original is untouched
+
+        This is more naturally done to an ActiveLoop (ie after .each())
+        and can also be done there, but it's allowed at this stage too so that
+        you can define final actions and share them among several `Loop`s that
+        have different loop actions.
+
+        *actions: `Task` and `Wait` objects to execute in order
+
+        overwrite: (default False) whether subsequent .then() calls (including
+            calls in an ActiveLoop after .then() has already been called on
+            the Loop) will add to each other or overwrite the earlier ones.
+        """
+        return _attach_then_actions(self._copy(), actions, overwrite)
+
+
+def _attach_then_actions(loop, actions, overwrite):
+    """
+    inner code for both Loop.then and ActiveLoop.then
+    """
+    for action in actions:
+        if not isinstance(action, (Task, Wait)):
+            raise TypeError('Unrecognized action:', action,
+                            '.then() allows only `Task` and `Wait` '
+                            'actions.')
+
+    if overwrite:
+        loop.then_actions = actions
+    else:
+        loop.then_actions = loop.then_actions + actions
+
+    return loop
+
 
 class ActiveLoop:
     '''
@@ -219,10 +266,11 @@ class ActiveLoop:
     '''
     HALT = 'HALT LOOP'
 
-    def __init__(self, sweep_values, delay, *actions):
+    def __init__(self, sweep_values, delay, *actions, then_actions=()):
         self.sweep_values = sweep_values
         self.delay = delay
         self.actions = actions
+        self.then_actions = then_actions
 
         # compile now, but don't save the results
         # just used for preemptive error checking
@@ -243,6 +291,24 @@ class ActiveLoop:
         self.signal_queue = mp.Queue()
 
         self._monitor = None  # TODO: how to specify this?
+
+    def then(self, *actions, overwrite=False):
+        """
+        Attach actions to be performed after the loop completes.
+        These can only be `Task` and `Wait` actions, as they may not generate
+        any data.
+
+        returns a new ActiveLoop object - the original is untouched
+
+        *actions: `Task` and `Wait` objects to execute in order
+
+        overwrite: (default False) whether subsequent .then() calls (including
+            calls in an ActiveLoop after .then() has already been called on
+            the Loop) will add to each other or overwrite the earlier ones.
+        """
+        loop = ActiveLoop(self.sweep_values, self.delay, *self.actions,
+                          then_actions=self.then_actions)
+        return _attach_then_actions(loop, actions, overwrite)
 
     def containers(self):
         '''
@@ -544,6 +610,9 @@ class ActiveLoop:
     def _run_wrapper(self, *args, **kwargs):
         try:
             self._run_loop(*args, **kwargs)
+
+            for f in self._compile_actions(self.then_actions, ()):
+                f()
         finally:
             if hasattr(self, 'data_set'):
                 self.data_set.finalize()

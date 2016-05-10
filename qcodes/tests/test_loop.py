@@ -444,6 +444,61 @@ class TestLoop(TestCase):
         with self.assertRaises(TypeError):
             BreakIf(self.p1.set)
 
+    def test_then_construction(self):
+        loop = Loop(self.p1[1:6:1])
+        task1 = Task(self.p1.set, 2)
+        task2 = Wait(0.02)
+        loop2 = loop.then(task1)
+        loop3 = loop2.then(task2, task1)
+        loop4 = loop3.then(task2, overwrite=True)
+        loop5 = loop4.each(self.p1, BreakIf(self.p1 >= 3))
+        loop6 = loop5.then(task1)
+        loop7 = loop6.then(task1, overwrite=True)
+
+        # original loop is untouched, same as .each and .loop
+        self.assertEqual(loop.then_actions, ())
+
+        # but loop2 has the task we asked for
+        self.assertEqual(loop2.then_actions, (task1,))
+
+        # loop3 gets the other tasks appended
+        self.assertEqual(loop3.then_actions, (task1, task2, task1))
+
+        # loop4 gets only the new one
+        self.assertEqual(loop4.then_actions, (task2,))
+
+        # tasks survive .each
+        self.assertEqual(loop5.then_actions, (task2,))
+
+        # and ActiveLoop.then works the same way as Loop.then
+        self.assertEqual(loop6.then_actions, (task2, task1))
+        self.assertEqual(loop7.then_actions, (task1,))
+
+        # .then rejects Loops and others that are valid loop actions
+        for action in (loop2, loop7, BreakIf(self.p1 >= 3), self.p1,
+                       True, 42):
+            with self.assertRaises(TypeError):
+                loop.then(action)
+
+    def test_then_action(self):
+        nan = float('nan')
+        self.p1.set(5)
+        f_calls = []
+
+        def f():
+            f_calls.append(1)
+
+        data = Loop(self.p1[1:6:1]).each(
+            self.p1, BreakIf(self.p1 >= 3)
+        ).then(
+            Task(self.p1.set, 2), Wait(0.01), Task(f)
+        ).run_temp()
+
+        self.assertEqual(repr(data.p1.tolist()),
+                         repr([1., 2., 3., nan, nan]))
+        self.assertEqual(self.p1.get(), 2)
+        self.assertEqual(len(f_calls), 1)
+
 
 class AbortingGetter(ManualParameter):
     '''
