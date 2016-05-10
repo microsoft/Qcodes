@@ -21,6 +21,13 @@ class TestDeferredOperations(TestCase):
         with self.assertRaises(ZeroDivisionError):
             d()
 
+        # you shouldn't evaluate the truthiness of the DeferredOperations
+        # object itself, only after it's called
+        d = DeferredOperations(lambda: 5)
+        with self.assertRaises(TypeError):
+            if d:
+                pass
+
     def test_unary(self):
         d = DeferredOperations(lambda: -3)
         f = DeferredOperations(lambda: 4.221)

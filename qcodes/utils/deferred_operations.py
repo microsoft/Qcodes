@@ -81,6 +81,11 @@ class DeferredOperations:
     def get(self):
         return self.call_func(*self.args)
 
+    def __bool__(self):
+        raise TypeError('This is a DeferredOperations object, you must '
+                        'call or .get() it before testing its truthiness',
+                        self)
+
     def _validate_callable(self, func, arg_count=0):
         if not is_function(func, arg_count):
             raise TypeError(
