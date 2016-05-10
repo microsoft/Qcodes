@@ -622,9 +622,6 @@ class ActiveLoop:
     def _run_wrapper(self, *args, **kwargs):
         try:
             self._run_loop(*args, **kwargs)
-
-            for f in self._compile_actions(self.then_actions, ()):
-                f()
         finally:
             if hasattr(self, 'data_set'):
                 self.data_set.finalize()
@@ -674,6 +671,10 @@ class ActiveLoop:
 
             # after the first setpoint, delay reverts to the loop delay
             delay = self.delay
+
+        # the loop is finished - run the .then actions
+        for f in self._compile_actions(self.then_actions, ()):
+            f()
 
     def _wait(self, delay):
         if delay:

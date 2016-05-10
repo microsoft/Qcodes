@@ -483,10 +483,13 @@ class TestLoop(TestCase):
     def test_then_action(self):
         nan = float('nan')
         self.p1.set(5)
-        f_calls = []
+        f_calls, g_calls = [], []
 
         def f():
             f_calls.append(1)
+
+        def g():
+            g_calls.append(1)
 
         data = Loop(self.p1[1:6:1]).each(
             self.p1, BreakIf(self.p1 >= 3)
@@ -497,6 +500,36 @@ class TestLoop(TestCase):
         self.assertEqual(repr(data.p1.tolist()),
                          repr([1., 2., 3., nan, nan]))
         self.assertEqual(self.p1.get(), 2)
+        self.assertEqual(len(f_calls), 1)
+
+        # now test a nested loop with .then inside and outside
+        f_calls[:] = []
+
+        Loop(self.p1[1:3:1]).each(
+            Loop(self.p2[1:3:1]).each(self.p2).then(Task(g))
+        ).then(Task(f)).run_temp()
+
+        self.assertEqual(len(f_calls), 1)
+        self.assertEqual(len(g_calls), 2)
+
+        # Loop.loop nesting always just makes the .then actions run after
+        # the outer loop
+        f_calls[:] = []
+        Loop(self.p1[1:3:1]).then(Task(f)).loop(self.p2[1:3:1]).each(
+            self.p1
+        ).run_temp()
+        self.assertEqual(len(f_calls), 1)
+
+        f_calls[:] = []
+        Loop(self.p1[1:3:1]).loop(self.p2[1:3:1]).then(Task(f)).each(
+            self.p1
+        ).run_temp()
+        self.assertEqual(len(f_calls), 1)
+
+        f_calls[:] = []
+        Loop(self.p1[1:3:1]).loop(self.p2[1:3:1]).each(
+            self.p1
+        ).then(Task(f)).run_temp()
         self.assertEqual(len(f_calls), 1)
 
 

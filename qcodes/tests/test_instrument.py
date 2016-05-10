@@ -670,7 +670,7 @@ class TestParameters(TestCase):
         c2.set(2)
 
         self.assertEqual((c0 + c1 + c2)(), 3)
-        self.assertEqual((10 + (c0**2) + (c1**2) + (c2**2)), 15)
+        self.assertEqual((10 + (c0**2) + (c1**2) + (c2**2))(), 15)
 
         d = c1.get_latest / c0.get_latest
         with self.assertRaises(ZeroDivisionError):
