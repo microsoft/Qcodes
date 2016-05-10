@@ -196,7 +196,7 @@ class FormatLocation:
             head, tail = base_location.split('{counter}', 1)
 
             subdir, counter_prefix = os.path.split(head)
-            file_list = os.listdir(subdir)
+            file_list = io.list(subdir)
 
             existing_counters = [0]
             for f in file_list:
