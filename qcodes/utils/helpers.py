@@ -11,7 +11,8 @@ import multiprocessing as mp
 
 def in_notebook():
     '''
-    is this code in a process directly connected to a jupyter notebook?
+    Returns True if the code is running with a ipython or jypyter
+    This could mean we are connected to a notebook, but this is not guaranteed.
     see: http://stackoverflow.com/questions/15411967
     '''
     return 'ipy' in repr(sys.stdout)
