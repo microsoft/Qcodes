@@ -9,6 +9,14 @@ import io
 import multiprocessing as mp
 
 
+def is_spyder():
+    ''' Return True if we are running in the Spyder environment '''
+    return bool(any('SPYDER' in name for name in os.environ))
+
+def is_interactive():
+    import __main__ as main
+    return not hasattr(main, '__file__')
+
 def in_notebook():
     '''
     is this code in a process directly connected to a jupyter notebook?
