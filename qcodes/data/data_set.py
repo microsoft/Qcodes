@@ -1,9 +1,11 @@
 from enum import Enum
 from datetime import datetime
 import time
+import os
+import re
 
 from .manager import get_data_manager, NoData
-from .format import GNUPlotFormat
+from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
 from qcodes.utils.helpers import DelegateAttributes
 
@@ -17,34 +19,40 @@ class DataMode(Enum):
 SERVER_MODES = set((DataMode.PULL_FROM_SERVER, DataMode.PUSH_TO_SERVER))
 
 
-def new_data(location=None, loc_fmt=None, name=None,
-             overwrite=False, io=None, data_manager=None,
-             mode=DataMode.LOCAL, loc_record={}, **kwargs):
-    '''
+def new_data(location=None, name=None, overwrite=False, io=None,
+             data_manager=None, mode=DataMode.LOCAL, loc_record=None, **kwargs):
+    """
     Create a new DataSet. Arguments are the same as DataSet constructor, plus:
 
     overwrite: Are we allowed to overwrite an existing location? default False
 
-    location: can be a location string, but can also be a callable (a function
-        of one required parameter, the io manager, and an optional name) to
-        generate an automatic location, or False to denote an
-        only-in-memory temporary DataSet.
+    location: can be a location string, if it includes `{` and `}` the string
+        is used to format the location.
+        location can also be a callable (a function of one required parameter,
+        the io manager, and an optional name) to generate an automatic
+        location, or False to denote an only-in-memory temporary DataSet.
         Note that the full path to or physical location of the data is a
         combination of io + location. the default DiskIO sets the base
         directory, which this location sits inside.
         defaults to DataSet.location_provider
 
     name: an optional string to be passed to location_provider to augment
-        the automatic location with something meaningful
-    '''
+        the automatic location with something meaningful.
+        If provided, name overwrites the `name` key in the `loc_record`.
+    """
     if io is None:
         io = DataSet.default_io
 
+    if name is not None:
+        if not loc_record:
+            loc_record = {}
+        loc_record['name'] = name
+
     if location is None:
-        location = DataSet.location_provider(io, name, loc_fmt=loc_fmt,
-                                             loc_record=loc_record)
-    elif callable(location):
-        location = location(io)
+        location = DataSet.location_provider
+
+    if callable(location):
+        location = location(io, loc_record=loc_record)
 
     if location and (not overwrite) and io.list(location):
         raise FileExistsError('"' + location + '" already has data')
@@ -60,7 +68,7 @@ def new_data(location=None, loc_fmt=None, name=None,
 
 
 def load_data(location=None, data_manager=None, formatter=None, io=None):
-    '''
+    """
     Load an existing DataSet. Arguments are a subset of the DataSet
     constructor:
 
@@ -78,7 +86,7 @@ def load_data(location=None, data_manager=None, formatter=None, io=None):
 
     formatter: as in DataSet
     io: as in DataSet
-    '''
+    """
     if data_manager is None:
         data_manager = get_data_manager(only_existing=True)
 
@@ -98,8 +106,10 @@ def load_data(location=None, data_manager=None, formatter=None, io=None):
         return _get_live_data(data_manager)
 
     else:
-        return DataSet(location=location, formatter=formatter, io=io,
+        data = DataSet(location=location, formatter=formatter, io=io,
                        mode=DataMode.LOCAL)
+        data.read()
+        return data
 
 
 def _get_live_data(data_manager):
@@ -111,38 +121,11 @@ def _get_live_data(data_manager):
     return live_data
 
 
-class TimestampLocation:
-    '''
-    This is NOT the default DataSet Location provider.
-    It provides a callable of one parameter (the io manager) that
-    returns a new location string, which is currently unused.
-    Uses `io.list(location)` to search for existing data at this location
-
-    Constructed with one parameter, a datetime.strftime format string,
-    which can include slashes (forward and backward are equivalent)
-    to create folder structure.
-    Default format string is '%Y-%m-%d/%H-%M-%S'
-    '''
-    def __init__(self, fmt='%Y-%m-%d/%H-%M-%S'):
-        self.fmt = fmt
-
-    def __call__(self, io, name=None, *args, **kwargs):
-        location = base_location = datetime.now().strftime(self.fmt)
-
-        if name:
-            location += '_' + name
-
-        for char in map(chr, range(ord('a'), ord('z') + 2)):
-            if not io.list(location):
-                break
-            location = base_location + '_' + char
-        else:
-            raise FileExistsError('Too many files with this timestamp')
-
-        return location
-
-
 class SafeDict(dict):
+    """
+    Allows dict with missing keys.
+    If a key is missing, a string with the key name will be inserted.
+    """
     def __missing__(self, key):
             return '{' + key + '}'
 
@@ -153,7 +136,7 @@ class FormatLocation:
     It provides a callable that returns a new location string, which is
     currently unused.
     The location string is formatted with the `fmt` string provided in
-    `__init__` or `__call__`. And a dict probided through the record arguments.
+    `__init__` or `__call__`. And a dict provided through the record arguments.
 
     Default record items are `{date}`, `{time}`, and `{counter}`
     Record item priority from lowest to highest (double items will be
@@ -161,9 +144,8 @@ class FormatLocation:
     - `{counter}`, `{date}`, `{time}`
     - records dict from `__init__`
     - records dict from `__call__`
-    - name argument from `__init__`
     Thus if any record dict contains a `date` keyword, it will no longer be
-    autogenerated.
+    auto-generated.
     If keywords are not provided, they stay in the location string without any
     change, i.e. '2016-04-30/13-28-15_#001_{name}_test'
 
@@ -171,69 +153,89 @@ class FormatLocation:
 
     Usage:
     ```
-        loc_provider = FormatLocation(fmt='{date}/{time}_#{counter}_{name}_{label}')
+        loc_provider = FormatLocation(fmt='{date}/#{counter}_{time}_{name}_{label}')
         loc = loc_provider(DiskIO('.'), record={'name': 'Rainbow', 'label': 'test'})
         loc
-        > '2016-04-30/13-28-15_#001_Rainbow_test'
+        > '2016-04-30/#001_13-28-15_Rainbow_test'
     ```
-    Default format string is '{date}/{time}'
+    Default format string is '{date}/{time}', and if `name` exists in record,
+    it is '{date}/{time}_{name}'
     with `fmt_date='%Y-%m-%d'` and `fmt_time='%H-%M-%S'`
     '''
-    def __init__(self, fmt='{date}/{time}', fmt_date='%Y-%m-%d',
-                 fmt_time='%H-%M-%S', fmt_counter='{:03}', record={}):
-        self.fmt = fmt
-        self.fmt_date = fmt_date
-        self.fmt_time = fmt_time
-        self.fmt_counter = fmt_counter
+    def __init__(self, fmt=None, fmt_date=None,
+                 fmt_time=None, fmt_counter=None, record=None):
 
+        self.default_fmt = '{date}/{time}'
+        self.fmt = fmt or self.default_fmt
+        self.fmt_date = fmt_date or '%Y-%m-%d'
+        self.fmt_time = fmt_time or '%H-%M-%S'
+        self.fmt_counter = fmt_counter or '{:03}'
         self.base_record = record
 
-    def __call__(self, io, name=None, loc_fmt=None, loc_record={}):
-        if loc_fmt is None:
-            loc_fmt = self.fmt
-            # This is handy, but dicts are unordered, right?
-            for key in loc_record.keys():
-                print(key)
-                key_string = '{'+key+'}'
-                if key_string not in loc_fmt:
-                    loc_fmt += '_'+key_string
+    def __call__(self, io, loc_fmt=None, loc_record=None):
+        loc_fmt = loc_fmt or self.fmt
 
         time_now = datetime.now()
         date = time_now.strftime(self.fmt_date)
         time = time_now.strftime(self.fmt_time)
         time_record = {'date': date, 'time': time}
 
-        # Merge all available records, the first element has the lowes power,
-        # i.e. if there is a 'date' in base_record or record it will be
-        # overridden in the format_record
-        format_record = SafeDict({**time_record,
-                                  **self.base_record,
-                                  **loc_record,
-                                  **{'name': name}})
+        format_record = SafeDict(time_record)
+        if self.base_record:
+            format_record.update(self.base_record)
+        if loc_record:
+            format_record.update(loc_record)
+
+        if loc_fmt == self.default_fmt:
+            if 'name' in format_record:
+                loc_fmt += '_{name}'
 
         location = base_location = loc_fmt.format(**format_record)
 
         if '{counter}' in base_location:
-            start = base_location.split('{counter}', 1)
-            for cnt in range(1, 999999999):
-                count = self.fmt_counter.format(cnt)
-                location = location.format(**SafeDict({'counter': count}))
-                if not io.list(location):
-                    break
+            head, tail = base_location.split('{counter}', 1)
+
+            subdir, counter_prefix = os.path.split(head)
+            file_list = os.listdir(subdir)
+
+            existing_counters = [0]
+            for f in file_list:
+                # can we have a regex that matches the pattern including
+                # {date} and {time}?
+                # then we could:
+                # - remove prefix
+                # - remove tail including different date/time
+                # - see if the remaining is just a counter
+                # That would allow to chave a counter reset depending on i.e.
+                # the name
+                if f.startswith(counter_prefix):
+                    try:
+                        cnt = int(re.findall(r'\d+', f[len(counter_prefix):])[0])
+                        existing_counters.append(cnt)
+                    except:
+                        pass
+            cnt = max(existing_counters)+1
+
+            print(location, cnt)
+            count = self.fmt_counter.format(cnt)
+            location = location.format(**SafeDict({'counter': count}))
             print(location)
 
-        for char in map(chr, range(ord('a'), ord('z') + 2)):
-            if not io.list(location):
-                break
-            location = base_location + '_' + char
+            if os.path.isdir(location):
+                raise FileExistsError('Too many files with this counter')
         else:
-            raise FileExistsError('Too many files with this timestamp')
+            for char in map(chr, range(ord('a'), ord('z') + 2)):
+                if not io.list(location):
+                    break
+                location = base_location + '_' + char
+            else:
+                raise FileExistsError('Too many files with this timestamp')
 
         return location
 
 
 class DataSet(DelegateAttributes):
-    '''
+    """
     A container for one complete measurement loop
     May contain many individual arrays with potentially different
     sizes and dimensionalities.
@@ -274,7 +276,7 @@ class DataSet(DelegateAttributes):
         if mode=LOCAL, otherwise the DataManager handles this (and generally
         writes more often because it's not tying up the main process to do so).
         use None to disable writing from calls to self.store
-    '''
+    """
 
     # ie data_array.arrays['vsd'] === data_array.vsd
     delegate_attr_dicts = ['arrays']
@@ -322,8 +324,6 @@ class DataSet(DelegateAttributes):
         if self.arrays:
             for array in self.arrays.values():
                 array.init_data()
-        else:
-            self.read()
 
     def _init_push_to_server(self, data_manager):
         self.mode = DataMode.PUSH_TO_SERVER
@@ -349,10 +349,10 @@ class DataSet(DelegateAttributes):
         self.data_manager = data_manager
 
     def init_on_server(self):
-        '''
+        """
         Configure this DataSet as the DataServer copy
         Should be run only by the DataServer itself.
-        '''
+        """
         if not self.arrays:
             raise RuntimeError('A server-side DataSet needs DataArrays.')
 
@@ -370,18 +370,18 @@ class DataSet(DelegateAttributes):
 
     @property
     def is_live_mode(self):
-        '''
+        """
         indicate whether this DataSet thinks it is live in the DataServer
         without actually talking to the DataServer or syncing with it
-        '''
+        """
         return self.mode in SERVER_MODES and self.data_manager and True
 
     @property
     def is_on_server(self):
-        '''
+        """
         Check whether this DataSet is being mirrored in the DataServer
         If it thought it was but isn't, convert it to mode=LOCAL
-        '''
+        """
         if not self.is_live_mode or self.location is False:
             return False
 
@@ -390,15 +390,15 @@ class DataSet(DelegateAttributes):
             return self.location == live_location
 
     def sync(self):
-        '''
+        """
         synchronize this data set with a possibly newer version either
         in storage or on the DataServer, depending on its mode
 
         returns: boolean, is this DataSet live on the server
-        '''
+        """
         # TODO: sync implies bidirectional... and it could be!
         # we should keep track of last sync timestamp and last modification
-        # so we can tell whether this one, the other one, or both copies have
+        # so we can tell    whether this one, the other one, or both copies have
         # changed (and I guess throw an error if both did? Would be cool if we
         # could find a robust and intuitive way to make modifications to the
         # version on the DataServer from the main copy)
@@ -417,14 +417,15 @@ class DataSet(DelegateAttributes):
 
         with self.data_manager.query_lock:
             if self.is_on_server:
-                # TODO: can we reduce the amount of data to send?
-                # seems like in the most general case this would need to
-                # remember each client DataSet on the server, and what has
-                # changed since that particular client last synced
-                # (at least first and last pt)
-                live_data = self.data_manager.ask('get_data').arrays
-                for array_id in self.arrays:
-                    self.arrays[array_id].ndarray = live_data[array_id].ndarray
+                synced_indices = {
+                    array_id: array.get_synced_index()
+                    for array_id, array in self.arrays.items()
+                }
+
+                changes = self.data_manager.ask('get_changes', synced_indices)
+
+                for array_id, array_changes in changes.items():
+                    self.arrays[array_id].apply_changes(**array_changes)
 
                 measuring = self.data_manager.ask('get_measuring')
                 if not measuring:
@@ -441,8 +442,18 @@ class DataSet(DelegateAttributes):
                 self.read()
                 return False
 
+    def get_changes(self, synced_index):
+        changes = {}
+
+        for array_id, synced_index in synced_index.items():
+            array_changes = self.arrays[array_id].get_changes(synced_index)
+            if array_changes:
+                changes[array_id] = array_changes
+
+        return changes
+
     def add_array(self, data_array):
-        '''
+        """
         add one DataArray to this DataSet
 
         note: DO NOT just set data_set.arrays[id] = data_array
@@ -450,7 +461,7 @@ class DataSet(DelegateAttributes):
         reference back to this DataSet. It would also allow you to
         load the array in with different id than it holds itself.
 
-        '''
+        """
         # TODO: mask self.arrays so you *can't* set it directly
 
         if data_array.array_id in self.arrays:
@@ -462,10 +473,10 @@ class DataSet(DelegateAttributes):
         data_array.data_set = self
 
     def _clean_array_ids(self, arrays):
-        '''
+        """
         replace action_indices tuple with compact string array_ids
         stripping off as much extraneous info as possible
-        '''
+        """
         action_indices = [array.action_indices for array in arrays]
         array_names = set(array.name for array in arrays)
         for name in array_names:
@@ -508,14 +519,14 @@ class DataSet(DelegateAttributes):
             array.array_id = name + ''.join('_' + str(i) for i in ai)
 
     def store(self, loop_indices, ids_values):
-        '''
+        """
         Set some collection of data points
 
         loop_indices: the indices within whatever loops we are inside
         values: a dict of action_index:value or array_id:value
             where value may be an arbitrarily nested list, to record
             many values at once into one array
-        '''
+        """
         if self.mode == DataMode.PUSH_TO_SERVER:
             self.data_manager.write('store_data', loop_indices, ids_values)
         else:
@@ -527,18 +538,18 @@ class DataSet(DelegateAttributes):
                 self.last_write = time.time()
 
     def read(self):
-        '''
+        """
         Read the whole DataSet from storage, overwriting the local data
-        '''
+        """
         if self.location is False:
             return
         self.formatter.read(self)
 
     def write(self):
-        '''
+        """
         Write the whole (or only changed parts) DataSet to storage,
         overwriting the existing storage if any.
-        '''
+        """
         if self.mode != DataMode.LOCAL:
             raise RuntimeError('This object is connected to a DataServer, '
                                'which handles writing automatically.')
@@ -548,9 +559,9 @@ class DataSet(DelegateAttributes):
         self.formatter.write(self)
 
     def finalize(self):
-        '''
+        """
         Mark the DataSet as complete
-        '''
+        """
         if self.mode == DataMode.PUSH_TO_SERVER:
             self.data_manager.ask('end_data')
         elif self.mode == DataMode.LOCAL:
@@ -558,9 +569,6 @@ class DataSet(DelegateAttributes):
         else:
             raise RuntimeError('This mode does not allow finalizing',
                                self.mode)
-
-    def plot(self, cut=None):
-        pass  # TODO
 
     def __repr__(self):
         out = '{}: {}, location={}'.format(
