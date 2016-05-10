@@ -206,7 +206,7 @@ class FormatLocation:
                 # - remove prefix
                 # - remove tail including different date/time
                 # - see if the remaining is just a counter
-                # That would allow to chave a counter reset depending on i.e.
+                # That would allow to have a counter reset depending on i.e.
                 # the name
                 if f.startswith(counter_prefix):
                     try:
@@ -216,10 +216,8 @@ class FormatLocation:
                         pass
             cnt = max(existing_counters)+1
 
-            print(location, cnt)
             count = self.fmt_counter.format(cnt)
             location = location.format(**SafeDict({'counter': count}))
-            print(location)
 
             if os.path.isdir(location):
                 raise FileExistsError('Too many files with this counter')
@@ -398,7 +396,7 @@ class DataSet(DelegateAttributes):
         """
         # TODO: sync implies bidirectional... and it could be!
         # we should keep track of last sync timestamp and last modification
-        # so we can tell    whether this one, the other one, or both copies have
+        # so we can tell whether this one, the other one, or both copies have
         # changed (and I guess throw an error if both did? Would be cool if we
         # could find a robust and intuitive way to make modifications to the
         # version on the DataServer from the main copy)
