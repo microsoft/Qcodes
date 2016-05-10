@@ -790,6 +790,15 @@ class _Nest:
 
 
 class BreakIf:
+    """
+    Loop action that breaks out of the loop if a condition is truthy
+
+    condition: a callable taking no arguments.
+        Can be a simple function that returns truthy when it's time to quit
+        May also be constructed by deferred operations on `Parameter`s, eg:
+            BreakIf(gates.chan1 >= 3)
+            BreakIf(abs(source.I * source.V) >= source.power_limit.get_latest)
+    """
     def __init__(self, condition):
         if not is_function(condition, 0):
             raise TypeError('BreakIf condition must be a callable with '
