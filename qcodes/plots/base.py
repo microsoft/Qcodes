@@ -4,19 +4,12 @@ Live plotting in Jupyter notebooks
 from IPython.display import display
 
 from qcodes.widgets.widgets import HiddenUpdateWidget
+from qcodes.utils import in_notebook, in_ipynb, in_spyder
 
 import threading
 
 
-def in_ipynb():
-    try:
-        cfg = get_ipython().config 
-        if cfg['IPKernelApp']['parent_appname'] == 'ipython-notebook':
-            return True
-        else:
-            return False
-    except NameError:
-        return False
+
 
 import time
 import logging
