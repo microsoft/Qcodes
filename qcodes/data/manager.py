@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from queue import Empty
 from traceback import format_exc
 
-from qcodes.utils.multiprocessing import ServerManager
+from qcodes.utils.multiprocessing import ServerManager, SERVER_ERR
 
 
 def get_data_manager(only_existing=False):
@@ -42,7 +42,7 @@ class DataManager(ServerManager):
     Written using multiprocessing Queue's, but should be easily
     extensible to other messaging systems
     """
-    def __init__(self, query_timeout=2):
+    def __init__(self):
         type(self).default = self
         super().__init__(name='DataServer', server_class=DataServer)
 
@@ -122,7 +122,9 @@ class DataServer:
 
     def _post_error(self, e):
         self._error_queue.put(format_exc())
-        self._response_queue.put('ERR')  # to short-circuit the timeout
+        # the caller is waiting on _response_queue, so put a signal there
+        # to say there's an error coming
+        self._response_queue.put(SERVER_ERR)
 
     ######################################################################
     # query handlers                                                     #

@@ -45,6 +45,7 @@ import numpy as np
 from qcodes.station import Station
 from qcodes.data.data_set import new_data, DataMode
 from qcodes.data.data_array import DataArray
+from qcodes.data.manager import get_data_manager
 from qcodes.utils.helpers import wait_secs
 from qcodes.utils.multiprocessing import QcodesProcess
 from qcodes.utils.threading import thread_map
@@ -71,6 +72,9 @@ def get_bg(return_first=False):
     if loops:
         return loops[0]
 
+    # if we got here, there shouldn't be a loop running. Make sure the
+    # data manager, if there is one, agrees!
+    _clear_data_manager()
     return None
 
 
@@ -90,6 +94,14 @@ def halt_bg(timeout=5):
         loop.terminate()
         loop.join(timeout/2)
         print('Background loop did not respond to halt signal, terminated')
+
+    _clear_data_manager()
+
+
+def _clear_data_manager():
+    dm = get_data_manager(only_existing=True)
+    if dm and dm.ask('get_measuring'):
+        dm.ask('end_data')
 
 
 # def measure(*actions):
@@ -163,11 +175,32 @@ class Loop:
                 default = Station.default.default_measurement
                 actions[i] = action.each(*default)
 
+        self.validate_actions(*actions)
+
         if self.nested_loop:
             # recurse into the innermost loop and apply these actions there
             actions = [self.nested_loop.each(*actions)]
 
         return ActiveLoop(self.sweep_values, self.delay, *actions)
+
+    @staticmethod
+    def validate_actions(*actions):
+        """
+        Whitelist acceptable actions, so we can give nice error messages
+        if an action is not recognized
+        """
+        for action in actions:
+            if isinstance(action, (Task, Wait, ActiveLoop)):
+                continue
+            if hasattr(action, 'get') and (hasattr(action, 'name') or
+                                           hasattr(action, 'names')):
+                continue
+            raise TypeError('Unrecognized action:', action,
+                            'Allowed actions are: objects (parameters) with '
+                            'a `get` method and `name` or `names` attribute, '
+                            'and `Task`, `Wait`, and `ActiveLoop` objects. '
+                            '`Loop` objects are OK too, except in Station '
+                            'default measurements.')
 
     def run(self, *args, **kwargs):
         '''
@@ -516,10 +549,8 @@ class ActiveLoop:
             return Task(self._wait, action.delay)
         elif isinstance(action, ActiveLoop):
             return _Nest(action, new_action_indices)
-        elif callable(action):
-            return action
         else:
-            raise TypeError('unrecognized action', action)
+            return action
 
     def _run_wrapper(self, *args, **kwargs):
         try:
