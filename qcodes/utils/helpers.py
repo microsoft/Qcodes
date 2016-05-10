@@ -9,10 +9,6 @@ import io
 import multiprocessing as mp
 
 
-def is_interactive():
-    import __main__ as main
-    return not hasattr(main, '__file__')
-
 def in_notebook():
     '''
     Returns True if the code is running with a ipython or jypyter
