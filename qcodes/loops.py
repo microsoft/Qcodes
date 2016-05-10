@@ -46,6 +46,7 @@ from qcodes.station import Station
 from qcodes.data.data_set import new_data, DataMode
 from qcodes.data.data_array import DataArray
 from qcodes.utils.deferred_operations import is_function
+from qcodes.data.manager import get_data_manager
 from qcodes.utils.helpers import wait_secs
 from qcodes.utils.multiprocessing import QcodesProcess
 from qcodes.utils.threading import thread_map
@@ -72,6 +73,9 @@ def get_bg(return_first=False):
     if loops:
         return loops[0]
 
+    # if we got here, there shouldn't be a loop running. Make sure the
+    # data manager, if there is one, agrees!
+    _clear_data_manager()
     return None
 
 
@@ -91,6 +95,14 @@ def halt_bg(timeout=5):
         loop.terminate()
         loop.join(timeout/2)
         print('Background loop did not respond to halt signal, terminated')
+
+    _clear_data_manager()
+
+
+def _clear_data_manager():
+    dm = get_data_manager(only_existing=True)
+    if dm and dm.ask('get_measuring'):
+        dm.ask('end_data')
 
 
 # def measure(*actions):
