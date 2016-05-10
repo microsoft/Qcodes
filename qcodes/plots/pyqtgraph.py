@@ -133,9 +133,14 @@ class QtPlot(BasePlot):
             if 'symbolBrush' not in kwargs:
                 kwargs['symbolBrush'] = color
 
-        return subplot_object.plot(*self._line_data(x, y), antialias=antialias,
+        # suppress warnings when there are only NaN to plot
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", 'All-NaN axis encountered')
+            warnings.filterwarnings("ignore", 'All-NaN slice encountered')
+            pl = subplot_object.plot(*self._line_data(x, y), antialias=antialias,
                                    **kwargs)
-
+        return pl
+       
     def _line_data(self, x, y):
         return [self._clean_array(arg) for arg in [x, y] if arg is not None]
 
