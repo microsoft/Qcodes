@@ -133,7 +133,7 @@ class Numbers(Validator):
     min_value <= value <= max_value
     '''
 
-    validtypes = (float, int, numpy.int64, numpy.float32)
+    validtypes = (float, int, numpy.integer, numpy.floating)
 
     def __init__(self, min_value=-float("inf"), max_value=float("inf")):
         if isinstance(min_value, self.validtypes):
@@ -172,22 +172,24 @@ class Ints(Validator):
     min_value <= value <= max_value
     '''
 
+    validtypes = (int, numpy.integer)
+
     def __init__(self, min_value=-BIGINT, max_value=BIGINT):
-        if isinstance(min_value, int):
-            self._min_value = min_value
+        if isinstance(min_value, self.validtypes):
+            self._min_value = int(min_value)
         else:
             raise TypeError('min_value must be an integer')
 
-        if not isinstance(max_value, int):
+        if not isinstance(max_value, self.validtypes):
             raise TypeError('max_value must be an integer')
         if max_value > min_value:
-            self._max_value = max_value
+            self._max_value = int(max_value)
         else:
             raise TypeError(
                 'max_value must be an integer bigger than min_value')
 
     def validate(self, value, context=''):
-        if not isinstance(value, int):
+        if not isinstance(value, self.validtypes):
             raise TypeError(
                 '{} is not an int; {}'.format(repr(value), context))
 
