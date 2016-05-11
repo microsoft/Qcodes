@@ -1,4 +1,5 @@
 import math
+import numpy
 
 BIGSTRING = 1000000000
 BIGINT = int(1e18)
@@ -132,19 +133,21 @@ class Numbers(Validator):
     min_value <= value <= max_value
     '''
 
+    validtypes = (float, int, numpy.int64, numpy.float32)
+
     def __init__(self, min_value=-float("inf"), max_value=float("inf")):
-        if isinstance(min_value, (float, int)):
+        if isinstance(min_value, self.validtypes):
             self._min_value = min_value
         else:
             raise TypeError('min_value must be a number')
 
-        if isinstance(max_value, (float, int)) and max_value > min_value:
+        if isinstance(max_value, self.validtypes) and max_value > min_value:
             self._max_value = max_value
         else:
             raise TypeError('max_value must be a number bigger than min_value')
 
     def validate(self, value, context=''):
-        if not isinstance(value, (float, int)):
+        if not isinstance(value, self.validtypes):
             raise TypeError(
                 '{} is not an int or float; {}'.format(repr(value), context))
 
