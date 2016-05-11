@@ -44,6 +44,7 @@ from contextlib import contextmanager
 import os
 import re
 import shutil
+from fnmatch import fnmatch
 
 ALLOWED_OPEN_MODES = ('r', 'w', 'a')
 
@@ -112,12 +113,19 @@ class DiskIO:
         path = self._add_base(location)
         return os.path.isfile(path)
 
-    def list(self, location, maxdepth=1):
+    def list(self, location, maxdepth=1, include_dirs=False):
         """
         return all files that match location, either files
         whose names match up to an arbitrary extension
-        or any files within an exactly matching directory name,
-        nested as far as maxdepth (default 1) levels
+        or any files within an exactly matching directory name
+
+        location: the location to match, may contain wildcards * and ?
+
+        maxdepth: (default 1) maximum levels of directory nesting to
+            recurse into looking for files
+
+        include_dirs: (default False) whether to allow directories in
+            the results or just files
         """
         location = self._normalize_slashes(location)
         base_location, pattern = os.path.split(location)
@@ -126,24 +134,29 @@ class DiskIO:
         if not os.path.isdir(path):
             return []
 
-        matches = [fn for fn in os.listdir(path) if fn.startswith(pattern)]
+        matches = [fn for fn in os.listdir(path) if fnmatch(fn, pattern + '*')]
         out = []
 
         for match in matches:
             matchpath = self.join(path, match)
-            if os.path.isdir(matchpath) and match == pattern and maxdepth > 0:
-                # exact directory match - walk down to maxdepth
-                for root, dirs, files in os.walk(matchpath, topdown=True):
-                    depth = root[len(path):].count(os.path.sep)
-                    if depth == maxdepth:
-                        dirs[:] = []  # don't recurse any further
-                    for fn in files:
-                        out.append(self._strip_base(self.join(root, fn)))
+            if os.path.isdir(matchpath) and fnmatch(match, pattern):
+                if maxdepth > 0:
+                    # exact directory match - walk down to maxdepth
+                    for root, dirs, files in os.walk(matchpath, topdown=True):
+                        depth = root[len(path):].count(os.path.sep)
+                        if depth == maxdepth:
+                            dirs[:] = []  # don't recurse any further
+
+                        for fn in files + (dirs if include_dirs else []):
+                            out.append(self._strip_base(self.join(root, fn)))
+                elif include_dirs:
+                    out.append(match)
 
             elif (os.path.isfile(matchpath) and
-                  (match == pattern or os.path.splitext(match)[0] == pattern)):
+                  (fnmatch(match, pattern) or
+                   fnmatch(os.path.splitext(match)[0], pattern))):
                 # exact filename match, or match up to an extension
-                # note that we need match == pattern in addition to the
+                # note that we need fnmatch(match, pattern) in addition to the
                 # splitext test to cover the case of the base filename itself
                 # containing a dot.
                 out.append(self.join(base_location, match))
