@@ -1,4 +1,4 @@
-'''
+"""
 IO managers for QCodes
 
 IO managers wrap whatever physical storage layer the user wants to use
@@ -38,7 +38,7 @@ IO managers should also implement:
 - a remove method, ala os.remove(path) except that it will remove directories
     as well as files, since we're allowing "locations" to be directories
     or files.
-'''
+"""
 
 from contextlib import contextmanager
 import os
@@ -49,25 +49,25 @@ ALLOWED_OPEN_MODES = ('r', 'w', 'a')
 
 
 class DiskIO:
-    '''
+    """
     Simple IO object to wrap disk operations with a custom base location
 
     Also accepts both forward and backward slashes at any point, and
     normalizes both to the OS we are currently on
-    '''
+    """
     def __init__(self, base_location):
         base_location = self._normalize_slashes(base_location)
         self.base_location = os.path.abspath(base_location)
 
     @contextmanager
     def open(self, filename, mode):
-        '''
+        """
         mimics the interface of the built in open context manager
         filename: string, relative to base_location
         mode: 'r' (read), 'w' (write), or 'a' (append)
             other open modes are not supported because we don't want
             to force all IO managers to support others.
-        '''
+        """
         if mode not in ALLOWED_OPEN_MODES:
             raise ValueError('mode {} not allowed in IO managers'.format(mode))
 
@@ -100,25 +100,25 @@ class DiskIO:
         return '<DiskIO, base_location={}>'.format(self.base_location)
 
     def join(self, *args):
-        '''
+        """
         the context-dependent version of os.path.join for this io manager
-        '''
+        """
         return os.path.join(*list(map(self._normalize_slashes, args)))
 
     def isfile(self, location):
-        '''
+        """
         does `location` match a file?
-        '''
+        """
         path = self._add_base(location)
         return os.path.isfile(path)
 
     def list(self, location, maxdepth=1):
-        '''
+        """
         return all files that match location, either files
         whose names match up to an arbitrary extension
         or any files within an exactly matching directory name,
         nested as far as maxdepth (default 1) levels
-        '''
+        """
         location = self._normalize_slashes(location)
         base_location, pattern = os.path.split(location)
         path = self._add_base(base_location)
@@ -151,9 +151,9 @@ class DiskIO:
         return out
 
     def remove(self, filename):
-        '''
+        """
         delete this file/folder and prune the directory tree
-        '''
+        """
         path = self._add_base(filename)
         if(os.path.isdir(path)):
             shutil.rmtree(path)
@@ -168,10 +168,10 @@ class DiskIO:
             pass
 
     def remove_all(self, location):
-        '''
+        """
         delete all files/directories in the dataset at this location,
         and prune the directory tree
-        '''
+        """
         for fn in self.list(location):
             self.remove(fn)
 
