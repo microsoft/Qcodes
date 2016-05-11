@@ -1,7 +1,6 @@
 from enum import Enum
 from datetime import datetime
 import time
-import os
 import re
 
 from .manager import get_data_manager, NoData
@@ -19,26 +18,30 @@ class DataMode(Enum):
 SERVER_MODES = set((DataMode.PULL_FROM_SERVER, DataMode.PUSH_TO_SERVER))
 
 
-def new_data(location=None, name=None, overwrite=False, io=None,
-             data_manager=None, mode=DataMode.LOCAL, loc_record=None, **kwargs):
+def new_data(location=None, loc_record=None, name=None, overwrite=False,
+             io=None, data_manager=None, mode=DataMode.LOCAL, **kwargs):
     """
     Create a new DataSet. Arguments are the same as DataSet constructor, plus:
 
     overwrite: Are we allowed to overwrite an existing location? default False
 
-    location: can be a location string, if it includes `{` and `}` the string
-        is used to format the location.
-        location can also be a callable (a function of one required parameter,
-        the io manager, and an optional name) to generate an automatic
-        location, or False to denote an only-in-memory temporary DataSet.
+    location: (default `DataSet.location_provider`) can be:
+        - a location string
+        - a callable with one required parameter, the io manager, and an
+          optional `record` dict), to generate an automatic location
+        - False - denotes an only-in-memory temporary DataSet.
         Note that the full path to or physical location of the data is a
         combination of io + location. the default DiskIO sets the base
-        directory, which this location sits inside.
-        defaults to DataSet.location_provider
+        directory, which this location is a relative path inside.
+
+    loc_record: an optional dict to use in formatting the location. If
+        location is a callable, this will be passed to it as `record`
 
     name: an optional string to be passed to location_provider to augment
         the automatic location with something meaningful.
-        If provided, name overwrites the `name` key in the `loc_record`.
+        If provided, name overrides the `name` key in the `loc_record`.
+
+    overwrite: (default False) overwrite any data already at this location
     """
     if io is None:
         io = DataSet.default_io
@@ -52,7 +55,7 @@ def new_data(location=None, name=None, overwrite=False, io=None,
         location = DataSet.location_provider
 
     if callable(location):
-        location = location(io, loc_record=loc_record)
+        location = location(io, record=loc_record)
 
     if location and (not overwrite) and io.list(location):
         raise FileExistsError('"' + location + '" already has data')
@@ -121,20 +124,12 @@ def _get_live_data(data_manager):
     return live_data
 
 
-class SafeDict(dict):
-    """
-    Allows dict with missing keys.
-    If a key is missing, a string with the key name will be inserted.
-    """
-    def __missing__(self, key):
-            return '{' + key + '}'
-
-
 class FormatLocation:
-    '''
-    This is the default DataSet Location provider.
-    It provides a callable that returns a new location string, which is
-    currently unused.
+    """
+    This is the default DataSet Location provider. It provides a callable that
+    returns a new (not used by another DataSet) location string, based on a
+    format string `fmt` and a
+
     The location string is formatted with the `fmt` string provided in
     `__init__` or `__call__`. And a dict provided through the record arguments.
 
@@ -146,91 +141,105 @@ class FormatLocation:
     - records dict from `__call__`
     Thus if any record dict contains a `date` keyword, it will no longer be
     auto-generated.
-    If keywords are not provided, they stay in the location string without any
-    change, i.e. '2016-04-30/13-28-15_#001_{name}_test'
 
-    Uses `io.list(location)` to search for existing data at this location
+    Uses `io.list` to search for existing data at a matching location.
+
+    `{counter}` is special and must NOT be provided in the record.
+    If the format string contains `{counter}`, we look for existing files
+    matching everything before the counter, then find the highest counter
+    (integer) among those files and use the next value. That means the counter
+    only increments as long as fields before it do not change, and files with
+    incrementing counters will always group together and sort correctly in
+    directory listings
+
+    If the format string does not contain `{counter}` but the location we would
+    return is occupied, we will add '_{counter}' to the end and do the same.
 
     Usage:
     ```
-        loc_provider = FormatLocation(fmt='{date}/#{counter}_{time}_{name}_{label}')
-        loc = loc_provider(DiskIO('.'), record={'name': 'Rainbow', 'label': 'test'})
+        loc_provider = FormatLocation(
+            fmt='{date}/#{counter}_{time}_{name}_{label}')
+        loc = loc_provider(DiskIO('.'),
+                           record={'name': 'Rainbow', 'label': 'test'})
         loc
         > '2016-04-30/#001_13-28-15_Rainbow_test'
     ```
     Default format string is '{date}/{time}', and if `name` exists in record,
     it is '{date}/{time}_{name}'
     with `fmt_date='%Y-%m-%d'` and `fmt_time='%H-%M-%S'`
-    '''
-    def __init__(self, fmt=None, fmt_date=None,
-                 fmt_time=None, fmt_counter=None, record=None):
+    """
+    default_fmt = '{date}/{time}'
 
-        self.default_fmt = '{date}/{time}'
+    def __init__(self, fmt=None, fmt_date=None, fmt_time=None,
+                 fmt_counter=None, record=None):
+
         self.fmt = fmt or self.default_fmt
         self.fmt_date = fmt_date or '%Y-%m-%d'
         self.fmt_time = fmt_time or '%H-%M-%S'
         self.fmt_counter = fmt_counter or '{:03}'
         self.base_record = record
 
-    def __call__(self, io, loc_fmt=None, loc_record=None):
-        loc_fmt = loc_fmt or self.fmt
+        for testval in (1, 23, 456, 7890):
+            if self._findint(self.fmt_counter.format(testval)) != testval:
+                raise ValueError('fmt_counter must produce a correct integer '
+                                 'representation of its argument (eg "{:03}")',
+                                 fmt_counter)
+
+    def _findint(self, s):
+        try:
+            return int(re.findall(r'\d+', s)[0])
+        except:
+            return 0
+
+    def __call__(self, io, record=None):
+        loc_fmt = self.fmt
 
         time_now = datetime.now()
         date = time_now.strftime(self.fmt_date)
         time = time_now.strftime(self.fmt_time)
-        time_record = {'date': date, 'time': time}
+        format_record = {'date': date, 'time': time}
 
-        format_record = SafeDict(time_record)
         if self.base_record:
             format_record.update(self.base_record)
-        if loc_record:
-            format_record.update(loc_record)
+        if record:
+            format_record.update(record)
+
+        if 'counter' in format_record:
+            raise KeyError('you must not provide a counter in your record.',
+                           format_record)
 
         if loc_fmt == self.default_fmt:
             if 'name' in format_record:
                 loc_fmt += '_{name}'
 
-        location = base_location = loc_fmt.format(**format_record)
-
-        if '{counter}' in base_location:
-            head, tail = base_location.split('{counter}', 1)
-
-            subdir, counter_prefix = os.path.split(head)
-            if os.path.isdir(subdir):
-                file_list = os.listdir(subdir)
+        if '{counter}' not in loc_fmt:
+            location = loc_fmt.format(**format_record)
+            if io.list(location):
+                loc_fmt += '_{counter}'
+                # redirect to the counter block below, but starting from 2
+                # because the already existing file counts like 1
+                existing_count = 1
             else:
-                file_list = []
-
-            existing_counters = [0]
-            for f in file_list:
-                # can we have a regex that matches the pattern including
-                # {date} and {time}?
-                # then we could:
-                # - remove prefix
-                # - remove tail including different date/time
-                # - see if the remaining is just a counter
-                # That would allow to have a counter reset depending on i.e.
-                # the name
-                if f.startswith(counter_prefix):
-                    try:
-                        cnt = int(re.findall(r'\d+', f[len(counter_prefix):])[0])
-                        existing_counters.append(cnt)
-                    except:
-                        pass
-            cnt = max(existing_counters)+1
-
-            count = self.fmt_counter.format(cnt)
-            location = location.format(**SafeDict({'counter': count}))
-
-            if os.path.isdir(location):
-                raise FileExistsError('Too many files with this counter')
+                return location
         else:
-            for char in map(chr, range(ord('a'), ord('z') + 2)):
-                if not io.list(location):
-                    break
-                location = base_location + '_' + char
-            else:
-                raise FileExistsError('Too many files with this timestamp')
+            # if counter is already in loc_fmt, start from 1
+            existing_count = 0
+
+        # now search existing files for the next allowed counter
+
+        head_fmt = loc_fmt.split('{counter}', 1)[0]
+        # io.join will normalize slashes in head to match the locations
+        # returned by io.list
+        head = io.join(head_fmt.format(**format_record))
+
+        file_list = io.list(head + '*', maxdepth=0, include_dirs=True)
+
+        for f in file_list:
+            cnt = self._findint(f[len(head):])
+            existing_count = max(existing_count, cnt)
+
+        format_record['counter'] = self.fmt_counter.format(existing_count + 1)
+        location = loc_fmt.format(**format_record)
 
         return location
 

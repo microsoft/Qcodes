@@ -1,17 +1,15 @@
 from unittest import TestCase
 from unittest.mock import patch
 import numpy as np
-from datetime import datetime
 
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager, NoData
-from qcodes.data.data_set import (load_data, new_data, DataMode, DataSet,
-                                  TimestampLocation)
+from qcodes.data.data_set import load_data, new_data, DataMode, DataSet
 from qcodes.utils.helpers import killprocesses
 from qcodes import active_children
 
-from .data_mocks import (MockDataManager, MockFormatter, FullIO, EmptyIO,
-                         MissingMIO, MockLive, MockArray)
+from .data_mocks import (MockDataManager, MockFormatter, MatchIO,
+                         MockLive, MockArray)
 
 
 class TestDataArray(TestCase):
@@ -299,7 +297,7 @@ class TestNewData(TestCase):
         DataSet.location_provider = self.original_lp
 
     def test_overwrite(self):
-        io = FullIO()
+        io = MatchIO([1])
 
         with self.assertRaises(FileExistsError):
             new_data(location='somewhere', io=io, data_manager=False)
@@ -313,11 +311,12 @@ class TestNewData(TestCase):
             new_data(mode=DataMode.PUSH_TO_SERVER, data_manager=False)
 
     def test_location_functions(self):
-        def my_location(io, name):
-            return 'data/{}'.format(name or 'LOOP!')
+        def my_location(io, record):
+            return 'data/{}'.format((record or {}).get('name') or 'LOOP!')
 
-        def my_location2(io, name):
-            return 'data/{}/folder'.format(name or 'loop?')
+        def my_location2(io, record):
+            name = (record or {}).get('name') or 'loop?'
+            return 'data/{}/folder'.format(name)
 
         DataSet.location_provider = my_location
 
@@ -330,33 +329,6 @@ class TestNewData(TestCase):
         data = new_data(data_manager=False, location=my_location2,
                         name='iceCream')
         self.assertEqual(data.location, 'data/iceCream/folder')
-
-
-class TestTimestampLocation(TestCase):
-    default_fmt = TimestampLocation().fmt
-    custom_fmt = 'DATA%Y/%B/%d/%I%p'
-
-    def check_cases(self, tsl, fmt):
-        self.assertEqual(tsl(EmptyIO()),
-                         datetime.now().strftime(fmt))
-        self.assertEqual(tsl(EmptyIO(), 'who?'),
-                         datetime.now().strftime(fmt) + '_who?')
-
-        self.assertEqual(tsl(MissingMIO()),
-                         datetime.now().strftime(fmt) + '_m')
-        self.assertEqual(tsl(MissingMIO(), 'you!'),
-                         datetime.now().strftime(fmt) + '_you!_m')
-
-        with self.assertRaises(FileExistsError):
-            tsl(FullIO())
-        with self.assertRaises(FileExistsError):
-            tsl(FullIO(), 'some_name')
-
-    def test_default(self):
-        self.check_cases(TimestampLocation(), self.default_fmt)
-
-    def test_fmt(self):
-        self.check_cases(TimestampLocation(self.custom_fmt), self.custom_fmt)
 
 
 class TestDataSet(TestCase):
