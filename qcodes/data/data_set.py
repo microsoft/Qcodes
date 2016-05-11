@@ -1,6 +1,7 @@
 from enum import Enum
 from datetime import datetime
 import time
+import logging
 
 from .manager import get_data_manager, NoData
 from .gnuplot_format import GNUPlotFormat
@@ -355,6 +356,20 @@ class DataSet(DelegateAttributes):
                 self.read()
                 return False
 
+    def complete(self, delay=0.2):
+        logging.info('waiting for data to complete')
+        try:
+            nloops=0
+            while True:
+                logging.info('waiting for data to complete (loop %d)' % nloops)
+                if self.sync()==False:
+                    break
+                time.sleep(delay)
+                nloops=nloops+1
+        except Exception as ex:
+            return False
+        return True
+        
     def get_changes(self, synced_index):
         changes = {}
 
