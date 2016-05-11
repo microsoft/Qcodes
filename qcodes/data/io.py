@@ -149,8 +149,9 @@ class DiskIO:
 
                         for fn in files + (dirs if include_dirs else []):
                             out.append(self._strip_base(self.join(root, fn)))
+
                 elif include_dirs:
-                    out.append(match)
+                    out.append(self.join(base_location, match))
 
             elif (os.path.isfile(matchpath) and
                   (fnmatch(match, pattern) or
