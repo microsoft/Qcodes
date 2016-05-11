@@ -2,6 +2,7 @@ from enum import Enum
 from datetime import datetime
 import time
 import logging
+import pyqtgraph
 
 from .manager import get_data_manager, NoData
 from .gnuplot_format import GNUPlotFormat
@@ -366,6 +367,7 @@ class DataSet(DelegateAttributes):
                     break
                 time.sleep(delay)
                 nloops=nloops+1
+                pyqtgraph.QtGui.QApplication.instance().processEvents()
         except Exception as ex:
             return False
         return True
