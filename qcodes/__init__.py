@@ -33,7 +33,8 @@ from qcodes.station import Station
 from qcodes.loops import get_bg, halt_bg, Loop, Task, Wait
 
 from qcodes.data.manager import get_data_manager
-from qcodes.data.data_set import DataMode, DataSet, new_data, load_data
+from qcodes.data.data_set import (DataMode, DataSet, new_data, load_data,
+                                  FormatLocation)
 from qcodes.data.data_array import DataArray
 from qcodes.data.format import Formatter
 from qcodes.data.gnuplot_format import GNUPlotFormat
