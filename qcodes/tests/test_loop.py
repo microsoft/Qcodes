@@ -107,12 +107,28 @@ class TestMockInstLoop(TestCase):
     def test_enqueue(self):
         c1 = self.gates.chan1
         loop = Loop(c1[1:5:1], 0.01).each(c1)
-        loop.run(location=self.location, quiet=True)
+        data1 = loop.run(location=self.location, quiet=True)
 
-        with self.assertRaises(RuntimeError):
-            loop.run(location=self.location2, quiet=True)
-        loop.run(location=self.location2, quiet=True, enqueue=True)
+        # second running of the loop should be enqueued, blocks until
+        # the first one finishes.
+        # TODO: check what it prints?
+        data2 = loop.run(location=self.location2, quiet=True)
+
+        data1.sync()
+        data2.sync()
+        self.assertEqual(data1.chan1.tolist(), [1, 2, 3, 4])
+        for v in data2.chan1:
+            self.assertTrue(np.isnan(v))
+
         loop.process.join()
+        data2.sync()
+        self.assertEqual(data2.chan1.tolist(), [1, 2, 3, 4])
+
+        # and while we're here, check that running a loop in the
+        # foreground *after* the background clears its .process
+        self.assertTrue(hasattr(loop, 'process'))
+        loop.run_temp()
+        self.assertFalse(hasattr(loop, 'process'))
 
 
 def sleeper(t):
