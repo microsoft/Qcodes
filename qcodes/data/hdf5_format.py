@@ -28,21 +28,31 @@ class HDF5Format(Formatter):
         self.data_object = h5py.File(filepath, 'a')
 
 
-    def write(self, data_set):
+    def read(self, data_set):
+        """
+        Tested that it correctly opens a file, needs a better way to
+        find the actual file. This is not part of the formatter at this point
+        """
+        io_manager = data_set.io
+        location = data_set.location
+        filepath = location
+        self.data_object = h5py.File(filepath, 'r+')
+
+    def write(self, data_set, force_write=False):
         """
         """
 
-        if self.data_object == None:
+        if self.data_object == None or force_write:
             # Create the file
             io_manager = data_set.io
             location = data_set.location
             filepath = io_manager.join(
                 io_manager.base_location,
-                data_set.location_provider(io_manager, location)+'.hdf5')
+                data_set.location_provider(io_manager)+'/'+location+'.hdf5')
             self._create_file(filepath)
 
         arrays = data_set.arrays
-        if not hasattr(self, 'data_arrays_grp'):
+        if not hasattr(self, 'data_arrays_grp') or force_write:
             self._create_data_arrays_grp(data_set.arrays)
 
         # Resize the dataset and then append the arrays that need to be written
@@ -76,14 +86,14 @@ class HDF5Format(Formatter):
         self.data_arrays_grp.attrs['datasaving_format'] = _encode_to_utf8(
             'QCodes hdf5 v0.1')
 
-        # I would like to add parameter units, labels and names aswell
+        # I would like to add parameter units, labels and names as well
         # data_group.attrs['names'] = _encode_to_utf8('')
         # data_group.attrs['units'] = _encode_to_utf8('')
         # data_group.attrs['labels'] = _encode_to_utf8('')
 
 
 
-    def save_instrument_snapshot(self, data_object=None, *args):
+    def save_instrument_snapshot(self, snapshot, *args):
         '''
         uses QCodes station snapshot to save the last known value of any
         parameter. Only saves the value and not the update time (which is
@@ -91,6 +101,9 @@ class HDF5Format(Formatter):
 
         META DATA GROUP
         '''
+
+        # TODO:  should be pretty easy to add this but am waiting
+        # for the metadata of @Merlinsmiles
         set_grp = data_object.create_group('Meta-data')
         inslist = dict_to_ordered_tuples(self.station.instruments)
         for (iname, ins) in inslist:

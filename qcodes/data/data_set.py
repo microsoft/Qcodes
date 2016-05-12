@@ -462,7 +462,7 @@ class DataSet(DelegateAttributes):
             return
         self.formatter.read(self)
 
-    def write(self):
+    def write(self, force_write=False):
         """
         Write the whole (or only changed parts) DataSet to storage,
         overwriting the existing storage if any.
@@ -473,7 +473,7 @@ class DataSet(DelegateAttributes):
 
         if self.location is False:
             return
-        self.formatter.write(self)
+        self.formatter.write(self, force_write=force_write)
 
     def finalize(self):
         """
@@ -488,9 +488,11 @@ class DataSet(DelegateAttributes):
                                self.mode)
 
     def __repr__(self):
-        out = '{}: {}, location={}'.format(
+        out = '{}: {}, location={},'.format(
             self.__class__.__name__, self.mode, repr(self.location))
         for array_id, array in self.arrays.items():
             out += '\n   {}: {}'.format(array_id, array.name)
+        out+='\nio: {}'.format(repr(self.io))
+        out+= '\ndatamode: {}'.format(self.mode)
 
         return out

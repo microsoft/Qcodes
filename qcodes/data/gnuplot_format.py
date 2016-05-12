@@ -217,7 +217,7 @@ class GNUPlotFormat(Formatter):
             parts = re.split('"\s+"', labelstr[1:-1])
             return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
 
-    def write(self, data_set):
+    def write(self, data_set, force_write):
         """
         Write updates in this DataSet to storage. Will choose append if
         possible, overwrite if not.
@@ -246,7 +246,7 @@ class GNUPlotFormat(Formatter):
             if save_range is None:
                 continue
 
-            overwrite = save_range[0] == 0
+            overwrite = save_range[0] == 0 or force_write
             open_mode = 'w' if overwrite else 'a'
             shape = group.set_arrays[-1].shape
 
