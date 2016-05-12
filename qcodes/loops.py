@@ -162,7 +162,7 @@ class Loop:
         return out
 
     def _copy(self):
-        out = Loop(self.sweep_values, self.delay)
+        out = Loop(self.sweep_values, self.delay, showprogress=self.showprogress)
         out.nested_loop = self.nested_loop
         out.then_actions = self.then_actions
         return out
@@ -655,7 +655,7 @@ class ActiveLoop:
         t0=time.time()
         for i, value in enumerate(self.sweep_values):
             if self.showprogress:
-                tprint('loop: %d/%d (%.1f [s])' % (i, len(self.sweep_values), time.time()-t0), dt=1, tag='outerloop')
+                tprint('loop %s: %d/%d (%.1f [s])' % (self.sweep_values.name, i, len(self.sweep_values), time.time()-t0), dt=1, tag='outerloop')
             self.sweep_values.set(value)
             new_indices = loop_indices + (i,)
             new_values = current_values + (value,)
