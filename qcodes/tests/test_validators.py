@@ -1,5 +1,6 @@
 from unittest import TestCase
 import math
+import numpy 
 
 from qcodes.utils.validators import (Validator, Anything, Bool, Strings,
                                      Numbers, Ints, Enum, MultiType)
@@ -174,7 +175,10 @@ class TestNumbers(TestCase):
                # warning: True==1 and False==0
                True, False,
                # warning: +/- inf are allowed if max & min are not specified!
-               -float("inf"), float("inf")]
+               -float("inf"), float("inf"),
+                # numpy scalars
+               numpy.int64(36), numpy.float32(-1.123)
+                ]
     not_numbers = ['', None, '1', [], {}, [1, 2], {1: 1},
                    b'good', AClass, AClass(), a_func]
 
@@ -264,7 +268,9 @@ class TestInts(TestCase):
     ints = [0, 1, 10, -1, 100, 1000000, int(-1e15), int(1e15),
             # warning: True==1 and False==0 - we *could* prohibit these, using
             # isinstance(v, bool)
-            True, False]
+            True, False,
+            # numpy scalars
+            numpy.int64(3)]
     not_ints = [0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
                 math.pi, math.e, '', None, float("nan"), float("inf"),
                 -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',

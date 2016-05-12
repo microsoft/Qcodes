@@ -205,6 +205,7 @@ class Keithley_2700(VisaInstrument):
         # add functions
         self.add_function('readnext',
                           units='arb.unit',
+                          label=name,
                           call_cmd=':DATA:FRESH?',
                           return_parser=float)
 
