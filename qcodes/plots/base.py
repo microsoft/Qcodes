@@ -23,9 +23,10 @@ class BasePlot:
         self.traces = []
         self.data_updaters = set()
 
-        self.interval = interval
-        self.update_widget = HiddenUpdateWidget(self.update, interval)
-        display(self.update_widget)
+        if interval:
+            self.interval = interval
+            self.update_widget = HiddenUpdateWidget(self.update, interval)
+            display(self.update_widget)
 
     def add(self, *args, updater=None, **kwargs):
         '''
@@ -69,7 +70,8 @@ class BasePlot:
             for key in self.data_keys:
                 data_array = plot_config.get(key, '')
                 if hasattr(data_array, 'data_set'):
-                    self.data_updaters.add(data_array.data_set.sync)
+                    if data_array.data_set is not None:
+                        self.data_updaters.add(data_array.data_set.sync)
 
         if self.data_updaters:
             self.update_widget.interval = self.interval
@@ -87,9 +89,10 @@ class BasePlot:
             for part in self.data_keys:
                 data_array = config.get(part, '')
                 if hasattr(data_array, 'data_set'):
-                    location = data_array.data_set.location
-                    if location and location not in title_parts:
-                        title_parts.append(location)
+                    if data_array.data_set is not None:
+                        location = data_array.data_set.location
+                        if location and location not in title_parts:
+                            title_parts.append(location)
         return ', '.join(title_parts)
 
     def get_label(self, data_array):

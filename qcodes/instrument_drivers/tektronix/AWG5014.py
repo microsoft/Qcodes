@@ -52,7 +52,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
     CHANGES:
     26-11-2008 by Gijs: Copied this plugin from the 520 and added support for
-        2 more channels, added setget marker delay functions and increased max
+        2 more channels, added set get marker delay functions and increased max
         sampling freq to 1.2 	GS/s
     28-11-2008 ''  '' : Added some functionality to manipulate and manoeuvre
         through the folders on the AWG
@@ -153,7 +153,7 @@ class Tektronix_AWG5014(VisaInstrument):
             name (string)           : name of the instrument
             setup_folder (string)   : folder where externally generate seqs
                                         are stored
-            address (string)        : GPIB address
+            address (string)        : GPIB or ethernet address
             reset (bool)            : resets to default values, default=false
             numpoints (int)         : sets the number of datapoints
 
@@ -187,11 +187,13 @@ class Tektronix_AWG5014(VisaInstrument):
                            vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'))
         self.add_parameter('trigger_impedance',
                            label='Trigger impedance (Ohm)',
+                           units='Ohm',
                            get_cmd='TRIG:IMP?',
                            set_cmd='TRIG:IMP ' + '{}',
                            vals=vals.Enum(50, 1000),
                            get_parser=float)
         self.add_parameter('trigger_level',
+                           units='V',
                            label='Trigger level (V)',
                            get_cmd='TRIG:LEV?',
                            set_cmd='TRIG:LEV ' + '{:.3f}',
@@ -261,12 +263,14 @@ class Tektronix_AWG5014(VisaInstrument):
                                vals=vals.Ints(0, 1))
             self.add_parameter('ch{}_amp'.format(i),
                                label='Amplitude channel {} (V)'.format(i),
+                               units='V',
                                get_cmd=amp_cmd + '?',
                                set_cmd=amp_cmd + ' {:.6f}',
                                vals=vals.Numbers(0.02, 1.5),
                                get_parser=float)
             self.add_parameter('ch{}_offset'.format(i),
                                label='Offset channel {} (V)'.format(i),
+                               units='V',
                                get_cmd=offset_cmd + '?',
                                set_cmd=offset_cmd + ' {:.3f}',
                                vals=vals.Numbers(-.1, .1),
@@ -287,21 +291,21 @@ class Tektronix_AWG5014(VisaInstrument):
                     'ch{}_m{}_del'.format(i, j),
                     label='Channel {} Marker {} delay (ns)'.format(i, j),
                     get_cmd=m_del_cmd + '?',
-                    set_cmd=m_del_cmd + '{:.3f}e-9',
+                    set_cmd=m_del_cmd + ' {:.3f}e-9',
                     vals=vals.Numbers(0, 1),
                     get_parser=float)
                 self.add_parameter(
                     'ch{}_m{}_high'.format(i, j),
                     label='Channel {} Marker {} high level (V)'.format(i, j),
                     get_cmd=m_high_cmd + '?',
-                    set_cmd=m_high_cmd + '{:.3f}',
+                    set_cmd=m_high_cmd + ' {:.3f}',
                     vals=vals.Numbers(-2.7, 2.7),
                     get_parser=float)
                 self.add_parameter(
                     'ch{}_m{}_low'.format(i, j),
                     label='Channel {} Marker {} low level (V)'.format(i, j),
                     get_cmd=m_low_cmd + '?',
-                    set_cmd=m_low_cmd + '{:.3f}',
+                    set_cmd=m_low_cmd + ' {:.3f}',
                     vals=vals.Numbers(-2.7, 2.7),
                     get_parser=float)
 
@@ -710,17 +714,15 @@ class Tektronix_AWG5014(VisaInstrument):
             # External | Internal
             'TRIGGER_INPUT_IMPEDANCE': (1 if self.get('trigger_impedance') ==
                                         50. else 2),  # 50 ohm | 1 kohm
-            'TRIGGER_INPUT_SLOPE': (1 if self.get('trigger_slope') ==
-                                    'POS' else 2),  # Positive | Negative
-            'TRIGGER_INPUT_POLARITY': (1 if self.ask('TRIG:POL?') ==
-                                       'POS' else 2),  # Positive | Negative
+            'TRIGGER_INPUT_SLOPE': (1 if self.get('trigger_slope').startswith(
+                                    'POS') else 2),  # Positive | Negative
+            'TRIGGER_INPUT_POLARITY': (1 if self.ask('TRIG:POL?').startswith(
+                                       'POS') else 2),  # Positive | Negative
             'TRIGGER_INPUT_THRESHOLD':  self.get('trigger_level'),  # V
             'EVENT_INPUT_IMPEDANCE':   (1 if self.get('event_impedance') ==
                                         50. else 2),  # 50 ohm | 1 kohm
-            'EVENT_INPUT_POLARITY':  (1 if
-                                      self.get('event_polarity').startswith(
-                                          'POS')
-                                      else 2),  # Positive | Negative
+            'EVENT_INPUT_POLARITY':  (1 if self.get('event_polarity').startswith(
+                                      'POS') else 2),  # Positive | Negative
             'EVENT_INPUT_THRESHOLD':   self.get('event_level'),  # V
             'JUMP_TIMING':   (1 if
                               self.get('event_jump_timing').startswith('SYNC')
@@ -1148,6 +1150,7 @@ class Tektronix_AWG5014(VisaInstrument):
         try:
             self.ask('*OPC?')
         except:  # makes the awg read again if there is a timeout
+            logging.warning('AWG is not ready')
             self.visa_handle.read()
         return True
 
@@ -1179,7 +1182,7 @@ class Tektronix_AWG5014(VisaInstrument):
             m1 (int[numpoints])  : marker1  (must be a numpy array)
             m2 (int[numpoints])  : marker2  (must be a numpy array)
             wfmname (string)    : waveform name
-            format (string):    'int' or 'real' (int has same awg output precision but much faster to transfer) 
+            format (string):    'int' or 'real' (int has same awg output precision but much faster to transfer)
         Output:
             None
         '''
@@ -1190,7 +1193,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
         if (not((len(w) == len(m1)) and ((len(m1) == len(m2))))):
             raise Exception('error: sizes of the waveforms do not match')
-            
+
         self._values['files'][wfmname] = self._file_dict(w, m1, m2, None)
 
         # if we create a waveform with the same name but different size, it will not get over written

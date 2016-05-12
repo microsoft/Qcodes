@@ -1,6 +1,6 @@
 import asyncio
 
-from .helpers import is_function
+from .deferred_operations import is_function
 
 
 def wait_for_async(f, *args, **kwargs):

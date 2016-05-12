@@ -4,7 +4,8 @@ import time
 import multiprocessing as mp
 import numpy as np
 
-from qcodes.loops import Loop, MP_NAME, get_bg, halt_bg, Task, Wait, ActiveLoop
+from qcodes.loops import (Loop, MP_NAME, get_bg, halt_bg, Task, Wait,
+                          ActiveLoop, BreakIf)
 from qcodes.station import Station
 from qcodes.data.io import DiskIO
 from qcodes.data.data_array import DataArray
@@ -34,46 +35,100 @@ class TestMockInstLoop(TestCase):
         self.location2 = '_loop_test2_'
         self.io = DiskIO('.')
 
+        c1 = self.gates.chan1
+        self.loop = Loop(c1[1:5:1], 0.001).each(c1)
+
+        self.assertFalse(self.io.list(self.location))
+        self.assertFalse(self.io.list(self.location2))
+
     def tearDown(self):
         for instrument in [self.gates, self.source, self.meter]:
             instrument.close()
 
+        get_data_manager().close()
+        self.model.close()
+
         self.io.remove_all(self.location)
         self.io.remove_all(self.location2)
 
-    def test_instruments_in_loop(self):
+    def check_empty_data(self, data):
+        expected = repr([float('nan')] * 4)
+        self.assertEqual(repr(data.chan1.tolist()), expected)
+        self.assertEqual(repr(data.chan1_set.tolist()), expected)
+
+    def check_loop_data(self, data):
+        self.assertEqual(data.chan1.tolist(), [1, 2, 3, 4])
+        self.assertEqual(data.chan1_set.tolist(), [1, 2, 3, 4])
+
+        self.assertTrue(self.io.list(self.location))
+
+    def test_background_and_datamanager(self):
         # make sure that an unpicklable instrument can indeed run in a loop
-        self.assertFalse(self.io.list(self.location))
-        c1 = self.gates.chan1
-        loop = Loop(c1[1:5:1], 0.001).each(c1)
 
         # TODO: if we don't save the dataset (location=False) then we can't
         # sync it when we're done. Should fix that - for now that just means
         # you can only do in-memory loops if you set data_manager=False
         # TODO: this is the one place we don't do quiet=True - test that we
         # really print stuff?
-        data = loop.run(location=self.location)
+        data = self.loop.run(location=self.location)
+        self.check_empty_data(data)
 
         # wait for process to finish (ensures that this was run in the bg,
         # because otherwise there *is* no loop.process)
-        loop.process.join()
+        self.loop.process.join()
 
         data.sync()
+        self.check_loop_data(data)
 
-        self.assertEqual(data.chan1.tolist(), [1, 2, 3, 4])
-        self.assertEqual(data.chan1_set.tolist(), [1, 2, 3, 4])
+    def test_background_no_datamanager(self):
+        data = self.loop.run(location=self.location, data_manager=False,
+                             quiet=True)
+        self.check_empty_data(data)
 
-        self.assertTrue(self.io.list(self.location))
+        self.loop.process.join()
+
+        data.sync()
+        self.check_loop_data(data)
+
+    def test_foreground_and_datamanager(self):
+        data = self.loop.run(location=self.location, background=False,
+                             quiet=True)
+        self.assertFalse(hasattr(self.loop, 'process'))
+
+        self.check_loop_data(data)
+
+    def test_foreground_no_datamanager(self):
+        data = self.loop.run(location=self.location, background=False,
+                             data_manager=False, quiet=True)
+        self.assertFalse(hasattr(self.loop, 'process'))
+
+        self.check_loop_data(data)
 
     def test_enqueue(self):
         c1 = self.gates.chan1
         loop = Loop(c1[1:5:1], 0.01).each(c1)
-        loop.run(location=self.location, quiet=True)
+        data1 = loop.run(location=self.location, quiet=True)
 
-        with self.assertRaises(RuntimeError):
-            loop.run(location=self.location2, quiet=True)
-        loop.run(location=self.location2, quiet=True, enqueue=True)
+        # second running of the loop should be enqueued, blocks until
+        # the first one finishes.
+        # TODO: check what it prints?
+        data2 = loop.run(location=self.location2, quiet=True)
+
+        data1.sync()
+        data2.sync()
+        self.assertEqual(data1.chan1.tolist(), [1, 2, 3, 4])
+        for v in data2.chan1:
+            self.assertTrue(np.isnan(v))
+
         loop.process.join()
+        data2.sync()
+        self.assertEqual(data2.chan1.tolist(), [1, 2, 3, 4])
+
+        # and while we're here, check that running a loop in the
+        # foreground *after* the background clears its .process
+        self.assertTrue(hasattr(loop, 'process'))
+        loop.run_temp()
+        self.assertFalse(hasattr(loop, 'process'))
 
 
 def sleeper(t):
@@ -200,7 +255,13 @@ class TestLoop(TestCase):
         delay_array = []
         loop._monitor = FakeMonitor(delay_array)
 
+        # give it a "process" as if it was run in the bg before,
+        # check that this gets cleared
+        loop.process = 'TDD'
+
         data = loop.run_temp()
+
+        self.assertFalse(hasattr(loop, 'process'))
 
         self.assertEqual(data.p1.tolist(), [1, 2])
         self.assertEqual(data.p2_2.tolist(), [-1, -1])
@@ -334,15 +395,38 @@ class TestLoop(TestCase):
         self.assertEqual(data.index1.tolist(), [[[0, 1]] * 2] * 2)
 
     def test_bad_actors(self):
-        # would be nice to find errors at .each, but for now we find them
-        # at .run
-        loop = Loop(self.p1[1:3:1], 0.001).each(self.p1, 42)
-        with self.assertRaises(TypeError):
-            loop.run_temp()
+        def f():
+            return 42
 
-        # at least invalid sweep values we find at .each
+        class NoName:
+            def get(self):
+                return 42
+
+        class HasName:
+            def get(self):
+                return 42
+
+            name = 'IHazName!'
+
+        class HasNames:
+            def get(self):
+                return 42
+
+            names = 'Namezz'
+
+        # first two minimal working gettables
+        Loop(self.p1[1:3:1]).each(HasName())
+        Loop(self.p1[1:3:1]).each(HasNames())
+
+        for bad_action in (f, 42, NoName()):
+            with self.assertRaises(TypeError):
+                # include a good action too, just to make sure we look
+                # at the whole list
+                Loop(self.p1[1:3:1]).each(self.p1, bad_action)
+
         with self.assertRaises(ValueError):
-            Loop(self.p1[-20:20:1], 0.001).each(self.p1)
+            # invalid sweep values
+            Loop(self.p1[-20:20:1]).each(self.p1)
 
     def test_very_short_delay(self):
         with LogCapture() as s:
@@ -359,6 +443,110 @@ class TestLoop(TestCase):
         logstr = s.getvalue()
         s.close()
         self.assertEqual(logstr.count('negative delay'), 0, logstr)
+
+    def test_breakif(self):
+        nan = float('nan')
+        loop = Loop(self.p1[1:6:1])
+        data = loop.each(self.p1, BreakIf(self.p1 >= 3)).run_temp()
+        self.assertEqual(repr(data.p1.tolist()),
+                         repr([1., 2., 3., nan, nan]))
+
+        data = loop.each(BreakIf(self.p1.get_latest >= 3), self.p1).run_temp()
+        self.assertEqual(repr(data.p1.tolist()),
+                         repr([1., 2., nan, nan, nan]))
+
+        with self.assertRaises(TypeError):
+            BreakIf(True)
+        with self.assertRaises(TypeError):
+            BreakIf(self.p1.set)
+
+    def test_then_construction(self):
+        loop = Loop(self.p1[1:6:1])
+        task1 = Task(self.p1.set, 2)
+        task2 = Wait(0.02)
+        loop2 = loop.then(task1)
+        loop3 = loop2.then(task2, task1)
+        loop4 = loop3.then(task2, overwrite=True)
+        loop5 = loop4.each(self.p1, BreakIf(self.p1 >= 3))
+        loop6 = loop5.then(task1)
+        loop7 = loop6.then(task1, overwrite=True)
+
+        # original loop is untouched, same as .each and .loop
+        self.assertEqual(loop.then_actions, ())
+
+        # but loop2 has the task we asked for
+        self.assertEqual(loop2.then_actions, (task1,))
+
+        # loop3 gets the other tasks appended
+        self.assertEqual(loop3.then_actions, (task1, task2, task1))
+
+        # loop4 gets only the new one
+        self.assertEqual(loop4.then_actions, (task2,))
+
+        # tasks survive .each
+        self.assertEqual(loop5.then_actions, (task2,))
+
+        # and ActiveLoop.then works the same way as Loop.then
+        self.assertEqual(loop6.then_actions, (task2, task1))
+        self.assertEqual(loop7.then_actions, (task1,))
+
+        # .then rejects Loops and others that are valid loop actions
+        for action in (loop2, loop7, BreakIf(self.p1 >= 3), self.p1,
+                       True, 42):
+            with self.assertRaises(TypeError):
+                loop.then(action)
+
+    def test_then_action(self):
+        nan = float('nan')
+        self.p1.set(5)
+        f_calls, g_calls = [], []
+
+        def f():
+            f_calls.append(1)
+
+        def g():
+            g_calls.append(1)
+
+        data = Loop(self.p1[1:6:1]).each(
+            self.p1, BreakIf(self.p1 >= 3)
+        ).then(
+            Task(self.p1.set, 2), Wait(0.01), Task(f)
+        ).run_temp()
+
+        self.assertEqual(repr(data.p1.tolist()),
+                         repr([1., 2., 3., nan, nan]))
+        self.assertEqual(self.p1.get(), 2)
+        self.assertEqual(len(f_calls), 1)
+
+        # now test a nested loop with .then inside and outside
+        f_calls[:] = []
+
+        Loop(self.p1[1:3:1]).each(
+            Loop(self.p2[1:3:1]).each(self.p2).then(Task(g))
+        ).then(Task(f)).run_temp()
+
+        self.assertEqual(len(f_calls), 1)
+        self.assertEqual(len(g_calls), 2)
+
+        # Loop.loop nesting always just makes the .then actions run after
+        # the outer loop
+        f_calls[:] = []
+        Loop(self.p1[1:3:1]).then(Task(f)).loop(self.p2[1:3:1]).each(
+            self.p1
+        ).run_temp()
+        self.assertEqual(len(f_calls), 1)
+
+        f_calls[:] = []
+        Loop(self.p1[1:3:1]).loop(self.p2[1:3:1]).then(Task(f)).each(
+            self.p1
+        ).run_temp()
+        self.assertEqual(len(f_calls), 1)
+
+        f_calls[:] = []
+        Loop(self.p1[1:3:1]).loop(self.p2[1:3:1]).each(
+            self.p1
+        ).then(Task(f)).run_temp()
+        self.assertEqual(len(f_calls), 1)
 
 
 class AbortingGetter(ManualParameter):
