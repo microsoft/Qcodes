@@ -28,6 +28,7 @@ class HDF5Format(Formatter):
         self.data_object = h5py.File(filepath, 'a')
 
 
+
     def read(self, data_set):
         """
         Tested that it correctly opens a file, needs a better way to
@@ -46,10 +47,10 @@ class HDF5Format(Formatter):
             # Create the file
             io_manager = data_set.io
             location = data_set.location
-            filepath = io_manager.join(
+            self.filepath = io_manager.join(
                 io_manager.base_location,
                 data_set.location_provider(io_manager)+'/'+location+'.hdf5')
-            self._create_file(filepath)
+            self._create_file(self.filepath)
 
         arrays = data_set.arrays
         if not hasattr(self, 'data_arrays_grp') or force_write:
@@ -63,6 +64,9 @@ class HDF5Format(Formatter):
         # Implicit assumption that data arrays have the same length
         old_datasetlen = datasetshape[0]
         new_datasetshape = (old_datasetlen+len(data_set.arrays[key0])+1,
+                            # This +1 causes an extra zero to be appended
+                            # at the end of the dataset but if I remove it
+                            # it all crashes...
                             datasetshape[1])
         self.dset.resize(new_datasetshape)
         for i, key in enumerate(data_set.arrays.keys()):

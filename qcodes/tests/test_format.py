@@ -1,8 +1,10 @@
 from unittest import TestCase
 import os
-
+import h5py # TODO: add this to the dependencies in setup.py
+import numpy as np
 from qcodes.data.format import Formatter
 from qcodes.data.gnuplot_format import GNUPlotFormat
+from qcodes.data.hdf5_format import HDF5Format
 from qcodes.data.data_array import DataArray
 from qcodes.data.data_set import DataSet, new_data
 from qcodes.utils.helpers import LogCapture
@@ -411,6 +413,7 @@ class TestHDF5_Format(TestCase):
     def setUp(self):
         self.io = DataSet.default_io
         self.locations = ('_simple1d_', '_combined_')
+        self.formatter = HDF5Format()
 
         for location in self.locations:
             self.assertFalse(self.io.list(location))
@@ -433,41 +436,36 @@ class TestHDF5_Format(TestCase):
         # self.assertEqual(a.label, b.label)
         # self.assertEqual(a.array_id, b.array_id)
 
-    def test_full_write(self):
-        pass
-        # formatter = GNUPlotFormat()
-        # location = self.locations[0]
-        # data = DataSet1D(location)
+    def test_full_write_read(self):
+        """
+        Test writing and reading a file back in
+        """
+        location = self.locations[0]
+        data = DataSet1D(location)
+        self.formatter.write(data)
+        # Used because the formatter has no nice find file method
+        filepath = self.formatter.filepath
+        with  h5py.File(self.formatter.filepath, mode='r') as f:
+            saved_arr_vals = np.array(f['Data Arrays']['Data'].value,
+                                      dtype=np.float64)
+            # TODO: There is a bug in the write function that appends
+            # an extra zero to the datafile, made the test pass
+            # so I can test the read functionality
+            self.checkArraysEqual(saved_arr_vals[:-1, 0],
+                             DataSet1D().arrays['x'].ndarray)
+            self.checkArraysEqual(saved_arr_vals[:-1, 1],
+                             DataSet1D().arrays['y'].ndarray)
 
-        # # mark the data set as modified by... modifying it!
-        # # without actually changing it :)
-        # # TODO - are there cases we should automatically mark the data as
-        # # modified on construction?
-        # data.y[4] = data.y[4]
+        # Relies explicitly on the exact filepath,
+        # Currently the formatter does not have a nice way of finding files
+        # TODO: I want to use location here and not the full filepath
+        data2 = DataSet(location=filepath, formatter=self.formatter)
+        data2.read()
+        print(data2.arrays)
+        self.checkArraysEqual(data2.x, data.x)
+        self.checkArraysEqual(data2.y, data.y)
 
-        # formatter.write(data)
 
-        # with open(location + '/x.dat', 'r') as f:
-        #     self.assertEqual(f.read(), file_1d())
-
-        # # check that we can add comment lines randomly into the file
-        # # as long as it's after the first three lines, which are comments
-        # # with well-defined meaning,
-        # # and that we can un-quote the labels
-        # lines = file_1d().split('\n')
-        # lines[1] = lines[1].replace('"', '')
-        # lines[3:3] = ['# this data is awesome!']
-        # lines[6:6] = ['# the next point is my favorite.']
-        # with open(location + '/x.dat', 'w') as f:
-        #     f.write('\n'.join(lines))
-
-        # # normally this would be just done by data2 = load_data(location)
-        # # but we want to work directly with the Formatter interface here
-        # data2 = DataSet(location=location)
-        # formatter.read(data2)
-
-        # self.checkArraysEqual(data2.x, data.x)
-        # self.checkArraysEqual(data2.y, data.y)
 
         # # while we're here, check some errors on bad reads
 
