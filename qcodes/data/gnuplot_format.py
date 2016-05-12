@@ -226,10 +226,12 @@ class GNUPlotFormat(Formatter):
         location = data_set.location
         arrays = data_set.arrays
 
+        # puts everything with same dimensions together
         groups = self.group_arrays(arrays)
         existing_files = set(io_manager.list(location))
         written_files = set()
 
+        # Every group gets it's own datafile
         for group in groups:
             if len(groups) == 1 and not self.always_nest:
                 fn = io_manager.join(location + self.extension)

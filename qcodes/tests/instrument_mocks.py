@@ -207,7 +207,7 @@ class MockParabola(Instrument):
 
 class MockMetaParabola(Instrument):
     '''
-    Test for a meta instrument
+    Test for a meta instrument, has a tunable gain knob
     '''
     shared_kwargs = ['mock_parabola_inst']
 

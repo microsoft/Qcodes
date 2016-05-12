@@ -441,8 +441,12 @@ class DataSet(DelegateAttributes):
             many values at once into one array
         """
         if self.mode == DataMode.PUSH_TO_SERVER:
+            # Defers to the copy on the dataserver to call this identical
+            # function
             self.data_manager.write('store_data', loop_indices, ids_values)
         else:
+            # You will always end up in this block, either in the copy
+            # on the server (if you hit the if statement above or else here)
             for array_id, value in ids_values.items():
                 self.arrays[array_id][loop_indices] = value
             if (self.write_period is not None and
