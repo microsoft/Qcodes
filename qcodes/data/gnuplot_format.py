@@ -1,6 +1,7 @@
 import numpy as np
 import re
 import math
+import logging
 
 from .data_array import DataArray
 from .format import Formatter
@@ -217,20 +218,28 @@ class GNUPlotFormat(Formatter):
             parts = re.split('"\s+"', labelstr[1:-1])
             return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
 
-    def write(self, data_set):
+    def write(self, data_set, custom_location = None):
         """
         Write updates in this DataSet to storage. Will choose append if
         possible, overwrite if not.
         """
         io_manager = data_set.io
-        location = data_set.location
+        if custom_location is None:
+            location = data_set.location
+        else:
+            location = custom_location
+            print('using location %s'  % location)
         arrays = data_set.arrays
 
         groups = self.group_arrays(arrays)
         existing_files = set(io_manager.list(location))
         written_files = set()
 
+        print(existing_files)
+        print('ngroups %d'  % len(groups))
+        
         for group in groups:
+            logging.info('group %s'  % str( group) )
             if len(groups) == 1 and not self.always_nest:
                 fn = io_manager.join(location + self.extension)
             else:
@@ -242,6 +251,7 @@ class GNUPlotFormat(Formatter):
             save_range = self.match_save_range(group, file_exists)
 
             if save_range is None:
+                print('save_range is None' )
                 continue
 
             overwrite = save_range[0] == 0
@@ -249,6 +259,7 @@ class GNUPlotFormat(Formatter):
             shape = group.set_arrays[-1].shape
 
             with io_manager.open(fn, open_mode) as f:
+                logging.info('opened %s' % f.name)
                 if overwrite:
                     f.write(self._make_header(group))
 

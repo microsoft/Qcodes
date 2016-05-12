@@ -281,6 +281,10 @@ class Parameter(Metadatable):
         '''
         return SweepFixedValues(self, keys)
 
+    def __repr__(self):
+        s='<' + '.'.join([self.__module__ , self.__class__.__name__]) +': ' + self.name + ' at ' + str(id(self)) +'>'
+
+        return s
 
 class StandardParameter(Parameter):
     '''

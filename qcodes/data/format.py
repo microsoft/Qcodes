@@ -33,7 +33,7 @@ class Formatter:
     """
     ArrayGroup = namedtuple('ArrayGroup', 'size set_arrays data name')
 
-    def write(self, data_set):
+    def write(self, data_set, custom_location=None):
         """
         Write the DataSet to storage. It is up to the Formatter to decide
         when to overwrite completely, and when to just append or otherwise
@@ -66,6 +66,7 @@ class Formatter:
                     self.read_one_file(data_set, f, ids_read)
                 except ValueError:
                     logging.warning('error reading file ' + fn)
+                    logging.warning('io_manager: %s' % io_manager)
                     logging.warning(format_exc())
 
     def read_one_file(self, data_set, f, ids_read):
