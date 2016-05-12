@@ -3,9 +3,10 @@ import time
 from datetime import datetime
 import asyncio
 
-from qcodes.utils.helpers import (is_function, is_sequence, permissive_range,
-                                  wait_secs, make_unique, DelegateAttributes,
+from qcodes.utils.helpers import (is_sequence, permissive_range, wait_secs,
+                                  make_unique, DelegateAttributes,
                                   LogCapture, strip_attrs)
+from qcodes.utils.deferred_operations import is_function
 
 
 class TestIsFunction(TestCase):
