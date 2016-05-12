@@ -8,7 +8,22 @@ import sys
 import io
 import multiprocessing as mp
 
+def static_vars(**kwargs):
+    ''' Add static variable to a function '''
+    def decorate(func):
+        for k in kwargs:
+            setattr(func, k, kwargs[k])
+        return func
+    return decorate
 
+@static_vars(times=dict())
+def tprint(string, dt=1, tag='default'):
+    """ Print progress of a loop every dt seconds """
+    ptime = tprint.times.get(tag, 0)
+    if (time.time() - ptime) > dt:
+        print(string)
+        tprint.times[tag] = time.time()
+            
 def in_notebook():
     '''
     Returns True if the code is running with a ipython or jypyter

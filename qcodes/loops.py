@@ -49,6 +49,7 @@ from qcodes.data.manager import get_data_manager
 from qcodes.utils.helpers import wait_secs
 from qcodes.utils.multiprocessing import QcodesProcess
 from qcodes.utils.threading import thread_map
+from qcodes.utils.helpers import tprint
 
 
 MP_NAME = 'Measurement'
@@ -131,12 +132,13 @@ class Loop:
     data), `Wait` times, or other `ActiveLoop`s or `Loop`s to nest inside
     this one.
     '''
-    def __init__(self, sweep_values, delay=0):
+    def __init__(self, sweep_values, delay=0, showprogress=False):
         if not delay >= 0:
             raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
         self.sweep_values = sweep_values
         self.delay = delay
         self.nested_loop = None
+        self.showprogress = showprogress
 
     def loop(self, sweep_values, delay=0):
         '''
@@ -181,7 +183,7 @@ class Loop:
             # recurse into the innermost loop and apply these actions there
             actions = [self.nested_loop.each(*actions)]
 
-        return ActiveLoop(self.sweep_values, self.delay, *actions)
+        return ActiveLoop(self.sweep_values, self.delay, *actions, showprogress=self.showprogress)
 
     @staticmethod
     def validate_actions(*actions):
@@ -230,11 +232,12 @@ class ActiveLoop:
     '''
     HALT = 'HALT LOOP'
 
-    def __init__(self, sweep_values, delay, *actions):
+    def __init__(self, sweep_values, delay, *actions, showprogress=False):
         self.sweep_values = sweep_values
         self.delay = delay
         self.actions = actions
-
+        self.showprogress=showprogress
+        
         # compile now, but don't save the results
         # just used for preemptive error checking
         # if we saved the results, we wouldn't capture nesting
@@ -580,7 +583,10 @@ class ActiveLoop:
 
         callables = self._compile_actions(self.actions, action_indices)
 
+        t0=time.time()
         for i, value in enumerate(self.sweep_values):
+            if self.showprogress:
+                tprint('loop: %d/%d (%.1f [s])' % (i, len(self.sweep_values), time.time()-t0), dt=1, tag='outerloop')
             self.sweep_values.set(value)
             new_indices = loop_indices + (i,)
             new_values = current_values + (value,)
@@ -601,6 +607,8 @@ class ActiveLoop:
 
             # after the first setpoint, delay reverts to the loop delay
             delay = self.delay
+        if self.showprogress:
+            tprint('loop: %d/%d (%.1f [s]' % (i, len(self.sweep_values), time.time()-t0), dt=1, tag='outerloop')
 
     def _wait(self, delay):
         if delay:
