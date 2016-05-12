@@ -458,6 +458,15 @@ class DataSet(DelegateAttributes):
             return
         self.formatter.read(self)
 
+    def write_to_disk(self, location):
+        """
+        Write the whole (or only changed parts) DataSet to storage, with specified location
+        """
+        if self.mode != DataMode.LOCAL:
+            # maybe emit a warning?
+            pass
+        self.formatter.write(self, custom_location=location)
+        
     def write(self):
         """
         Write the whole (or only changed parts) DataSet to storage,
