@@ -45,7 +45,6 @@ from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import syncable_command, NoCommandError
 from qcodes.utils.validators import Validator, Numbers, Ints, Enum
 from qcodes.instrument.sweep_values import SweepFixedValues
-from qcodes.utils.helpers import make_sweep
 
 
 def no_setter(*args, **kwargs):
