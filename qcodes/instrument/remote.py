@@ -154,6 +154,14 @@ class RemoteParameter(RemoteComponent, DeferredOperations):
         return self._instrument.connection.ask('param_getattr', self.name,
                                                attr)
 
+    def __repr__(self):
+        s = '<{}.{}: {} at {}>'.format(
+            self.__module__,
+            self.__class__.__name__,
+            self.name,
+            id(self))
+        return s
+
     # TODO: need set_sweep if it exists, and any methods a subclass defines.
 
 
@@ -166,3 +174,11 @@ class RemoteFunction(RemoteComponent):
 
     def validate(self, *args):
         return Function.validate(self, *args)
+
+    def __repr__(self):
+        s = '<{}.{}: {} at {}>'.format(
+            self.__module__,
+            self.__class__.__name__,
+            self.name,
+            id(self))
+        return s
