@@ -28,6 +28,20 @@ class BasePlot:
             self.update_widget = HiddenUpdateWidget(self.update, interval)
             display(self.update_widget)
 
+    def clear(self):
+        '''
+        Clears the plot window and removes all subplots and traces
+        so that the window can be reused.
+        '''
+        self.traces = []
+        self.subplots = []
+        # any derived class should implement this
+        raise NotImplementedError
+
+    def replace(self, *args, updater=None, **kwargs):
+        self.clear()
+        self.add(*args, updater=updater, **kwargs)
+
     def add(self, *args, updater=None, **kwargs):
         '''
         add one trace to this plot

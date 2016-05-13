@@ -33,17 +33,29 @@ class MatPlot(BasePlot):
 
         super().__init__(interval)
 
+        self._init_plot(subplots, figsize)
+
+        if args or kwargs:
+            self.add(*args, **kwargs)
+
+    def _init_plot(self, subplots=(1, 1), figsize=(8, 5), num=None, **kwargs):
         if isinstance(subplots, Mapping):
-            self.fig, self.subplots = plt.subplots(figsize=figsize, **subplots)
+            self.fig, self.subplots = plt.subplots(figsize=figsize, num=num, **subplots)
         else:
-            self.fig, self.subplots = plt.subplots(*subplots, figsize=figsize)
+            self.fig, self.subplots = plt.subplots(*subplots, num=num, figsize=figsize)
         if not hasattr(self.subplots, '__len__'):
             self.subplots = (self.subplots,)
 
         self.title = self.fig.suptitle('')
 
-        if args or kwargs:
-            self.add(*args, **kwargs)
+    def clear(self, subplots=(1, 1), figsize=(8, 5)):
+        '''
+        Clears the plot window and removes all subplots and traces
+        so that the window can be reused.
+        '''
+        self.traces = []
+        self.fig.clf()
+        self._init_plot( subplots, figsize, num=self.fig.number)
 
     def add_to_plot(self, **kwargs):
         '''
