@@ -129,6 +129,8 @@ class SafeFormatter(string.Formatter):
     def get_value(self, key, args, kwargs):
         '''Overrides string.Formatter.get_value'''
         if isinstance(key, (int)):
+            if (len(args) == 0) or len(args)<=key:
+                return '{}'
             return args[key]
         else:
             return kwargs.get(key, '{{{0}}}'.format(key))
