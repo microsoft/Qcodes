@@ -3,6 +3,7 @@ import time
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs
+from qcodes.utils.validators import Anything
 from .parameter import StandardParameter
 from .function import Function
 from .remote import RemoteInstrument
@@ -77,14 +78,14 @@ class Instrument(Metadatable, DelegateAttributes):
 
         self.name = str(name)
 
-        self.add_parameter('IDN', get_cmd='*IDN?',
-                           get_parser=self.get_idn_dict)
+        self.add_parameter('IDN', get_cmd=self._get_idn,
+                           vals=Anything())
 
         self._meta_attrs = ['name']
 
         self.record_instance(self)
 
-    def get_idn_dict(self, *args, **kwargs):
+    def _get_idn(self, *args, **kwargs):
         return {'vendor': None, 'model': None,
                 'serial': None, 'firmware': None}
 
