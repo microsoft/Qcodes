@@ -2,7 +2,7 @@ from enum import Enum
 from datetime import datetime
 import time
 import logging
-import pyqtgraph
+import traceback
 
 from .manager import get_data_manager, NoData
 from .gnuplot_format import GNUPlotFormat
@@ -199,6 +199,9 @@ class DataSet(DelegateAttributes):
     default_io = DiskIO('.')
     default_formatter = GNUPlotFormat()
     location_provider = TimestampLocation()
+    
+    # functions to be called when operating in background mode
+    background_functions=dict()
 
     def __init__(self, location=None, mode=DataMode.LOCAL, arrays=None,
                  data_manager=None, formatter=None, io=None, write_period=5):
@@ -367,8 +370,12 @@ class DataSet(DelegateAttributes):
                     break
                 time.sleep(delay)
                 nloops=nloops+1
-                pyqtgraph.QtGui.QApplication.instance().processEvents()
+                
+                for key, fn in self.background_functions.items():
+                    logging.debug('calling %s: %s' % (key, fn))
+                    fn()
         except Exception as ex:
+            print(traceback.format_exc(ex))
             return False
         return True
         
