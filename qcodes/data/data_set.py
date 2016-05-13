@@ -219,12 +219,11 @@ class FormatLocation:
             raise KeyError('you must not provide a counter in your record.',
                            format_record)
 
-        if loc_fmt == self.default_fmt:
-            if 'name' in format_record:
-                loc_fmt += '_{name}'
+        if ('name' in format_record) and ('{name}' not in loc_fmt):
+            loc_fmt += '_{name}'
 
         if '{counter}' not in loc_fmt:
-            location = self.formatter.format(loc_fmt.format, **format_record)
+            location = self.formatter.format(loc_fmt, **format_record)
             if io.list(location):
                 loc_fmt += '_{counter}'
                 # redirect to the counter block below, but starting from 2
