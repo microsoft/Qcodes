@@ -65,6 +65,14 @@ class TestParamConstructor(TestCase):
         self.assertEqual(p.setpoint_names, setpoint_names)
         self.assertEqual(p.setpoint_labels, setpoint_labels)
 
+    def test_repr(self):
+      for i in [0, "foo", "", "fåil"]:
+          with self.subTest(i=i):
+             param = Parameter(name=i)
+             s = param.__repr__()
+             st='<{}.{}: {} at {}>'.format(param.__module__,
+                   param.__class__.__name__, param.name, id(param))
+             self.assertEqual(s , st )
 
 class GatesBadDelayType(MockGates):
     def __init__(self, *args, **kwargs):
