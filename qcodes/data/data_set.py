@@ -2,6 +2,7 @@ from enum import Enum
 from datetime import datetime
 import time
 import re
+import string
 
 from .manager import get_data_manager, NoData
 from .gnuplot_format import GNUPlotFormat
@@ -124,6 +125,15 @@ def _get_live_data(data_manager):
     return live_data
 
 
+class SafeFormatter(string.Formatter):
+    def get_value(self, key, args, kwargs):
+        '''Overrides string.Formatter.get_value'''
+        if isinstance(key, (int)):
+            return args[key]
+        else:
+            return kwargs.get(key, '{{{0}}}'.format(key))
+
+
 class FormatLocation:
     """
     This is the default DataSet Location provider. It provides a callable that
@@ -178,6 +188,7 @@ class FormatLocation:
         self.fmt_time = fmt_time or '%H-%M-%S'
         self.fmt_counter = fmt_counter or '{:03}'
         self.base_record = record
+        self.formatter = SafeFormatter()
 
         for testval in (1, 23, 456, 7890):
             if self._findint(self.fmt_counter.format(testval)) != testval:
@@ -213,7 +224,7 @@ class FormatLocation:
                 loc_fmt += '_{name}'
 
         if '{counter}' not in loc_fmt:
-            location = loc_fmt.format(**format_record)
+            location = self.formatter.format(loc_fmt.format, **format_record)
             if io.list(location):
                 loc_fmt += '_{counter}'
                 # redirect to the counter block below, but starting from 2
@@ -230,7 +241,7 @@ class FormatLocation:
         head_fmt = loc_fmt.split('{counter}', 1)[0]
         # io.join will normalize slashes in head to match the locations
         # returned by io.list
-        head = io.join(head_fmt.format(**format_record))
+        head = io.join(self.formatter.format(head_fmt, **format_record))
 
         file_list = io.list(head + '*', maxdepth=0, include_dirs=True)
 
@@ -239,7 +250,7 @@ class FormatLocation:
             existing_count = max(existing_count, cnt)
 
         format_record['counter'] = self.fmt_counter.format(existing_count + 1)
-        location = loc_fmt.format(**format_record)
+        location = self.formatter.format(loc_fmt, **format_record)
 
         return location
 
