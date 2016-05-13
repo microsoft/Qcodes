@@ -86,7 +86,7 @@ class RemoteInstrument(DelegateAttributes):
         s = '<{}.{}: {} at {}>'.format(
             self.__module__,
             self.__class__.__name__,
-            self.name,
+            str(self.name),
             id(self))
         return s
 
@@ -165,7 +165,7 @@ class RemoteParameter(RemoteComponent, DeferredOperations):
         s = '<{}.{}: {} at {}>'.format(
             self.__module__,
             self.__class__.__name__,
-            self.name,
+            str(self.name),
             id(self))
         return s
 
@@ -186,6 +186,6 @@ class RemoteFunction(RemoteComponent):
         s = '<{}.{}: {} at {}>'.format(
             self.__module__,
             self.__class__.__name__,
-            self.name,
+            str(self.name),
             id(self))
         return s

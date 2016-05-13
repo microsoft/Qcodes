@@ -201,7 +201,7 @@ class Parameter(Metadatable, DeferredOperations):
         s = '<{}.{}: {} at {}>'.format(
             self.__module__,
             self.__class__.__name__,
-            self.name,
+            str(self.name),
             id(self))
         return s
 
