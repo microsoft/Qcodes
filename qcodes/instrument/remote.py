@@ -82,6 +82,13 @@ class RemoteInstrument(DelegateAttributes):
         except KeyError:
             return self.functions[key]
 
+    def __repr__(self):
+        s = '<{}.{}: {} at {}>'.format(
+            self.__module__,
+            self.__class__.__name__,
+            self.name,
+            id(self))
+        return s
 
 class RemoteComponent:
     '''
