@@ -4,7 +4,7 @@ Hi, thanks for your interest in the project! We welcome pull requests from devel
 
 Alex Johnson (alexcjohnson) & and an undercover ninja  are the creators and current maintainers of Qcodes, along with a group of talented and smart volunteers. Please don't hesitate to reach out if you have any questions, or just need a little help getting started.
 
-Join us on TBD, where informal discussion is more than welcome.
+Join us on slack, where informal discussion is more than welcome. (For now ask us to be invited) 
 
 ### Bugs reports and feature requests
 
@@ -14,7 +14,7 @@ Choose a label for your issue - please try to use an existing one rather than ma
 
 The github GUI will show you a template both for bugs and features. Delete the wrong part and try to follow the template. Writing a good issue helps you in the first place.
 
-Have an idea about future directions to go with Qcodes? Visions of data-utopia that would take more than a few weeks to add or might change some core ideas in the package? We can use issues for this too. Pick the `long-term` or `discussion` labels, but maybe ping on TBD before doing so!
+Have an idea about future directions to go with Qcodes? Visions of data-utopia that would take more than a few weeks to add or might change some core ideas in the package? We can use issues for this too. Pick the `long-term` or `discussion` labels, but maybe ping on slack before doing so!
 
 ### Clever usage
 
@@ -130,7 +130,7 @@ Coverage testing is generally meaningless for instrument drivers, as calls to `a
         - foo/bar      (if you foo the bar)
     - never use your username
   If you can't figure out a name for your branch, re-think about what you would be doing. It's always a good exercise to model the problem before you try to solve it.
-  Also, ping on TBD we <3 you in the first place.
+  Also, ping on slack we <3 you in the first place.
   
 #### Commit Message Format
 A useful git repo starts with great commits. This is not optional, and it may seem daunting at first but you'll soon get the hang of it
