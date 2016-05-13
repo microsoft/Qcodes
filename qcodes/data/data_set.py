@@ -43,9 +43,6 @@ def new_data(location=None, name=None, overwrite=False, io=None,
         location = DataSet.location_provider(io, name)
     elif callable(location):
         location = location(io)
-    elif isinstance(location, str):
-        if not location.endswith('/'):
-            location += '/'
 
     if location and (not overwrite) and io.list(location):
         raise FileExistsError('"' + location + '" already has data')
