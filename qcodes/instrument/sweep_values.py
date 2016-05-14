@@ -114,36 +114,35 @@ class SweepFixedValues(SweepValues):
         if keys is None:
             keyset = make_sweep(start=start, stop=stop,
                                 step=step, num=num)
-            self._value_snapshot.append({'start': start, 'stop': stop,
-                                         'step': step, 'num': num,
-                                         'type': 'sweep'})
+            self._value_snapshot.append({'first': keyset[0],
+                                         'last': keyset[-1],
+                                         'num': len(keyset)})
 
         elif is_sequence(keys):
             keyset = keys
-            # we dont want the snapshot to go crazy on big data
-            if len(keys) > 0:
-                self._value_snapshot.append({'min': min(keys),
-                                             'max': max(keys),
-                                             'len': len(keys),
-                                             'type': 'sequence'})
         elif isinstance(keys, slice):
             keyset = (keys,)
-            self._value_snapshot.append({'start': keys.start,
-                                         'stop': keys.stop,
-                                         'step': keys.step,
-                                         'type': 'slice'})
         else:
             raise TypeError('Invalid sweep input.')
 
         for key in keyset:
             if is_sequence(key):
                 self._values.extend(key)
+                # we dont want the snapshot to go crazy on big data
+                if len(keys) > 0:
+                    self._value_snapshot.append({'min': min(keys),
+                                                 'max': max(keys),
+                                                 'len': len(keys)})
             elif isinstance(key, slice):
                 if key.start is None or key.stop is None or key.step is None:
                     raise TypeError('all 3 slice parameters are required, ' +
                                     '{} is missing some'.format(key))
-                self._values.extend(permissive_range(key.start, key.stop,
-                                                     key.step))
+
+                p_range = permissive_range(key.start, key.stop, key.step)
+                self._values.extend(p_range)
+                self._value_snapshot.append({'first': p_range[0],
+                                             'last': p_range[-1],
+                                             'num': len(p_range)})
             else:
                 # assume a single value
                 self._values.append(key)
