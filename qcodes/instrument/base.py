@@ -85,7 +85,7 @@ class Instrument(Metadatable, DelegateAttributes):
 
         self.record_instance(self)
 
-    def _get_idn(self, *args, **kwargs):
+    def get_idn(self, *args, **kwargs):
         return {'vendor': None, 'model': None,
                 'serial': None, 'firmware': None}
 
