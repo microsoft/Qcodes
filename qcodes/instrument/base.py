@@ -78,7 +78,7 @@ class Instrument(Metadatable, DelegateAttributes):
 
         self.name = str(name)
 
-        self.add_parameter('IDN', get_cmd=self._get_idn,
+        self.add_parameter('IDN', get_cmd=self.get_idn,
                            vals=Anything())
 
         self._meta_attrs = ['name']
