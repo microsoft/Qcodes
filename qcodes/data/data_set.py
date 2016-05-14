@@ -473,7 +473,7 @@ class DataSet(DelegateAttributes):
     def snapshot(self, update=False):
         arrs = []
         for array_id, array in self.arrays.items():
-            arrs.append({'array_id': array_id, 'array.name': array.name})
+            arrs.append({'array_id': array_id, 'array_name': array.name})
 
         snap = {'__class__': self.__class__.__module__ +
                              '.' + self.__class__.__name__,
