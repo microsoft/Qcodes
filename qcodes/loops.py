@@ -367,8 +367,8 @@ class ActiveLoop(Metadatable):
 
             # finally, make the output data array with these setpoints
             out.append(DataArray(name=name, label=label, size=size,
-                       action_indices=i, set_arrays=setpoints,
-                       parameter=action))
+                                 action_indices=i, set_arrays=setpoints,
+                                 parameter=action))
 
         return out
 
