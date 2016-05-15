@@ -1,6 +1,7 @@
 import numpy as np
 import re
 import math
+import json
 
 from .data_array import DataArray
 from .format import Formatter
@@ -61,7 +62,9 @@ class GNUPlotFormat(Formatter):
     of corresponds to our situation.)
     """
     def __init__(self, extension='dat', terminator='\n', separator='\t',
-                 comment='# ', number_format='g', always_nest=True):
+                 comment='# ', number_format='g', always_nest=True,
+                 metadata_file=None):
+        self.metadata_file = metadata_file or 'snapshot.json'
         # file extension: accept either with or without leading dot
         self.extension = '.' + extension.lstrip('.')
 
@@ -116,6 +119,11 @@ class GNUPlotFormat(Formatter):
         indexed_ids = list(enumerate(ids))
 
         for i, array_id in indexed_ids[:ndim]:
+            try:
+                snap = data_set.metadata['data']['arrays'][array_id]
+            except:
+                snap = None
+
             # setpoint arrays
             set_size = size[: i + 1]
             if array_id in arrays:
@@ -132,7 +140,7 @@ class GNUPlotFormat(Formatter):
             else:
                 set_array = DataArray(label=labels[i], array_id=array_id,
                                       set_arrays=set_arrays, size=set_size,
-                                      is_setpoint=True)
+                                      is_setpoint=True, parameter=snap)
                 set_array.init_data()
                 data_set.add_array(set_array)
 
@@ -149,7 +157,8 @@ class GNUPlotFormat(Formatter):
                 data_array.clear()
             else:
                 data_array = DataArray(label=labels[i], array_id=array_id,
-                                       set_arrays=set_arrays, size=size)
+                                       set_arrays=set_arrays, size=size,
+                                       parameter=snap)
                 data_array.init_data()
                 data_set.add_array(data_array)
             data_arrays.append(data_array)
@@ -275,6 +284,29 @@ class GNUPlotFormat(Formatter):
             # modified_range, we just assume it's got the values we need.
             for array in group.data + (group.set_arrays[-1],):
                 array.mark_saved(save_range[1])
+
+    # No idea on how to put this in the base formatter...
+    def write_metadata(self, data_set, metadata, key=None):
+        read_metadata = self.read_metadata(data_set)
+        if key:
+            metadata = {key: metadata}
+        read_metadata.update(metadata)
+        io_manager = data_set.io
+        location = data_set.location
+        fn = io_manager.join(location, self.metadata_file)
+        with io_manager.open(fn, 'w', encoding='utf8') as snap_file:
+            json.dump(metadata, snap_file, sort_keys=True,
+                      indent=4, ensure_ascii=False)
+
+    def read_metadata(self, data_set):
+        io_manager = data_set.io
+        location = data_set.location
+        fn = io_manager.join(location, self.metadata_file)
+        if io_manager.list(fn):
+            with io_manager.open(fn, 'r') as snap_file:
+                metadata = json.load(snap_file, encoding='utf8')
+            return metadata
+        return {}
 
     def _make_header(self, group):
         ids, labels = [], []

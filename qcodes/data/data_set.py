@@ -98,6 +98,7 @@ def load_data(location=None, data_manager=None, formatter=None, io=None):
     else:
         data = DataSet(location=location, formatter=formatter, io=io,
                        mode=DataMode.LOCAL)
+        data.read_metadata()
         data.read()
         return data
 
@@ -212,6 +213,8 @@ class DataSet(DelegateAttributes):
 
         self.write_period = write_period
         self.last_write = 0
+
+        self.metadata = {}
 
         self.arrays = {}
         if arrays:
@@ -458,6 +461,15 @@ class DataSet(DelegateAttributes):
             return
         self.formatter.read(self)
 
+    def read_metadata(self):
+        """
+        Read the metadata from storage, overwriting the local data
+        """
+        if self.location is False:
+            return
+        metadata = self.formatter.read_metadata(self)
+        self.metadata.update(metadata)
+
     def write(self):
         """
         Write the whole (or only changed parts) DataSet to storage,
@@ -470,6 +482,33 @@ class DataSet(DelegateAttributes):
         if self.location is False:
             return
         self.formatter.write(self)
+
+    def add_metadata(self, key, metadata):
+        """
+        Add update the DataSet.metadata[key] with metadata.
+        """
+        try:
+            self.metadata[key].update(metadata)
+        except:
+            self.metadata[key] = metadata
+
+    def write_metadata(self, key=None, metadata=None):
+        """
+        Write the metadata to storage,
+        overwriting the existing keys.
+        """
+
+        # Matadata on server?
+        # if self.mode != DataMode.LOCAL:
+        #     raise RuntimeError('This object is connected to a DataServer, '
+        #                        'which handles writing automatically.')
+
+        if key and metadata:
+            self.add_metadata(key, metadata)
+        if self.location is False:
+            return
+        self.snapshot()
+        self.formatter.write_metadata(self, self.metadata)
 
     def finalize(self):
         """
@@ -497,6 +536,7 @@ class DataSet(DelegateAttributes):
                              '.' + self.formatter.__class__.__name__,
                 'io': repr(self.io),
                 'base_location': self.io.base_location}
+        self.metadata['data'] = snap
         return snap
 
     def __repr__(self):
@@ -515,3 +555,4 @@ class DataSet(DelegateAttributes):
                 out_get += '\n   {:9} {}:\t{}'.format(arrtype, array_id, array.name)
 
         return out + out_set + out_get
+

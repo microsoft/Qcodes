@@ -42,12 +42,15 @@ class DataArray(DelegateAttributes):
         self.is_setpoint = is_setpoint
         self.action_indices = action_indices or ()
 
+        self.name = name
+        self.label = label or name
         if parameter is not None:
-            self.name = parameter.name
-            self.label = label or self.name
-
-            if hasattr(parameter, 'snapshot'):
+            snap = None
+            if isinstance(parameter, dict):
+                snap = parameter
+            elif hasattr(parameter, 'snapshot'):
                 snap = parameter.snapshot()
+            if snap:
                 for key, value in snap.items():
                     # Do we prefer to actively add the attributes we want?
                     # The way it is now, it will include more data from the
@@ -57,9 +60,6 @@ class DataArray(DelegateAttributes):
                         continue
                     setattr(self, key, value)
                     self._snapattrs.append(key)
-        else:
-            self.name = name
-            self.label = label or name
 
         self.set_arrays = set_arrays or ()
         self._preset = False

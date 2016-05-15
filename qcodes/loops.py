@@ -234,12 +234,10 @@ class Loop(Metadatable):
 
     def snapshot_base(self, update=False):
         snap = {}
+        snap['values'] = self.sweep_values.snapshot(update=update)
+        snap['delay'] = self.delay
 
-        snap['loop'] = {}
-        snap['loop']['values'] = self.sweep_values.snapshot(update=update)
-        snap['loop']['delay'] = self.delay
-
-        return(snap)
+        return snap
 
 def _attach_then_actions(loop, actions, overwrite):
     """
@@ -275,8 +273,6 @@ class ActiveLoop(Metadatable):
         self.delay = delay
         self.actions = actions
         self.then_actions = then_actions
-        self._data_snap = None
-        self._station_snap = None
 
         # compile now, but don't save the results
         # just used for preemptive error checking
@@ -318,21 +314,17 @@ class ActiveLoop(Metadatable):
 
     def snapshot_base(self, update=False):
         snap = {}
+        snap['sweep_values'] = self.sweep_values.snapshot(update=update)
+        snap['delay'] = self.delay
 
-        snap['loop'] = {}
-        snap['loop']['sweep_values'] = self.sweep_values.snapshot(update=update)
-        snap['loop']['delay'] = self.delay
-
-        snap['loop']['actions'] = []
+        snap['actions'] = []
         for actn in self.actions:
             if hasattr(actn, 'snapshot'):
-                snap['loop']['actions'].append(actn.snapshot(update=update))
+                snap['actions'].append(actn.snapshot(update=update))
             else:
-                snap['loop']['actions'].append({'type': None,
+                snap['actions'].append({'type': None,
                                         'description': 'Action without snapshot'})
-        snap['data'] = self._data_snap
-        snap['station'] = self._station_snap
-        return(snap)
+        return snap
 
 
     def containers(self):
@@ -524,7 +516,6 @@ class ActiveLoop(Metadatable):
         return self.run(background=False, quiet=True,
                         data_manager=False, location=False, **kwargs)
 
-<<<<<<< HEAD
     def run(self, background=True, use_threads=True, quiet=False,
             data_manager=None, station_snap=None, *args, **kwargs):
         """
@@ -577,14 +568,9 @@ class ActiveLoop(Metadatable):
 
         # How to do this? We need the station.snapshot, which is not available
         # here without explicitly passing it to run
-        if station_snap is not None:
-            self._station_snap = station_snap
-        self._data_snap = data_set.snapshot()
-
-        fn = data_set.io.join(data_set.location, 'snapshot.json')
-        with data_set.io.open(fn, 'w', encoding='utf8') as snap_file:
-            json.dump(self.snapshot_base(), snap_file, sort_keys=True,
-                      indent=4, ensure_ascii=False)
+        if station_snap:
+            data_set.add_metadata('station', station_snap)
+        data_set.write_metadata()
 
         if prev_loop and not quiet:
             print('...done. Starting ' + (data_set.location or 'new loop'),
