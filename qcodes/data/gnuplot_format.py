@@ -131,7 +131,8 @@ class GNUPlotFormat(Formatter):
                     set_array.clear()
             else:
                 set_array = DataArray(label=labels[i], array_id=array_id,
-                                      set_arrays=set_arrays, size=set_size)
+                                      set_arrays=set_arrays, size=set_size,
+                                      is_setpoint=True)
                 set_array.init_data()
                 data_set.add_array(set_array)
 
@@ -231,10 +232,7 @@ class GNUPlotFormat(Formatter):
         written_files = set()
 
         for group in groups:
-            if len(groups) == 1 and not self.always_nest:
-                fn = io_manager.join(location + self.extension)
-            else:
-                fn = io_manager.join(location, group.name + self.extension)
+            fn = io_manager.join(location, group.name + self.extension)
 
             written_files.add(fn)
 
