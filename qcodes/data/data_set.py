@@ -471,9 +471,9 @@ class DataSet(DelegateAttributes):
         pass  # TODO
 
     def snapshot(self, update=False):
-        arrs = []
+        arrs = {}
         for array_id, array in self.arrays.items():
-            arrs.append({'array_id': array_id, 'array_name': array.name})
+            arrs[array_id] = array.snapshot(update=update)
 
         snap = {'__class__': self.__class__.__module__ +
                              '.' + self.__class__.__name__,
