@@ -269,7 +269,8 @@ class ActiveLoop(Metadatable):
         Recursively calls `.containers` on any enclosed actions.
         '''
         loop_size = len(self.sweep_values)
-        loop_array = DataArray(parameter=self.sweep_values.parameter, is_setpoint=True)
+        loop_array = DataArray(parameter=self.sweep_values.parameter,
+                               is_setpoint=True)
         loop_array.nest(size=loop_size)
 
         data_arrays = [loop_array]
