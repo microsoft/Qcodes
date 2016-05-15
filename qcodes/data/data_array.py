@@ -26,19 +26,42 @@ class DataArray(DelegateAttributes):
     because we delegate attributes through to the numpy array
     '''
     def __init__(self, parameter=None, name=None, label=None, array_id=None,
-                 set_arrays=(), size=None, action_indices=(), unit=None,
+                 set_arrays=None, size=None, action_indices=None, unit=None,
                  is_setpoint=False, preset_data=None):
+
+        self.size = size
+        self.unit = unit
+        self.array_id = array_id
+        self._snapattrs = ['array_id',
+                           'name',
+                           'size',
+                           'unit',
+                           'label',
+                           'action_indices',
+                           'is_setpoint']
+        self.is_setpoint = is_setpoint
+        self.action_indices = action_indices or ()
+
         if parameter is not None:
             self.name = parameter.name
-            self.label = getattr(parameter, 'label', self.name)
+            self.label = label or self.name
+
+            if hasattr(parameter, 'snapshot'):
+                snap = parameter.snapshot()
+                for key, value in snap.items():
+                    # Do we prefer to actively add the attributes we want?
+                    # The way it is now, it will include more data from the
+                    # parameter snapshot if it is added in the future
+                    if key in ['ts', 'value', '__class__', 'set_arrays', 'size',
+                               'array_id', 'action_indices']:
+                        continue
+                    setattr(self, key, value)
+                    self._snapattrs.append(key)
         else:
             self.name = name
-            self.label = name if label is None else label
+            self.label = label or name
 
-        self.is_setpoint = is_setpoint
-        self.array_id = array_id
-        self.set_arrays = set_arrays
-        self.size = size
+        self.set_arrays = set_arrays or ()
         self._preset = False
 
         # store a reference up to the containing DataSet
@@ -51,7 +74,6 @@ class DataArray(DelegateAttributes):
         elif size is None:
             self.size = ()
 
-        self.action_indices = action_indices
         self.last_saved_index = None
         self.modified_range = None
 
@@ -219,3 +241,13 @@ class DataArray(DelegateAttributes):
         return '{}[{}]:{}\n{}'.format(self.__class__.__name__,
                                       ','.join(map(str, self.size)),
                                       array_id_or_none, repr(self.ndarray))
+
+    def snapshot(self, update=False):
+
+        snap = {'__class__': self.__class__.__module__ +
+                             '.' + self.__class__.__name__,}
+
+        for at in self._snapattrs:
+            snap.update({at:getattr(self, at)})
+
+        return snap
