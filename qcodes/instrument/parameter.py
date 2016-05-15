@@ -404,6 +404,12 @@ class StandardParameter(Parameter):
             exec_str=self._instrument.ask if self._instrument else None,
             output_parser=get_parser, no_cmd_function=no_getter)
 
+        # Set access functions that bypass the parser
+        self._get_raw, self._get_async_raw = syncable_command(
+            arg_count=0, cmd=get_cmd, acmd=async_get_cmd,
+            exec_str=self._instrument.ask if self._instrument else None,
+            output_parser=None, no_cmd_function=no_getter)
+
         if self._get is not no_getter:
             self.has_get = True
 
@@ -414,6 +420,12 @@ class StandardParameter(Parameter):
             arg_count=1, cmd=set_cmd, acmd=async_set_cmd,
             exec_str=self._instrument.write if self._instrument else None,
             input_parser=set_parser, no_cmd_function=no_setter)
+
+        # Set access functions that bypass the input parser
+        self._set_raw, self._set_async_raw = syncable_command(
+            arg_count=1, cmd=set_cmd, acmd=async_set_cmd,
+            exec_str=self._instrument.write if self._instrument else None,
+            input_parser=None, no_cmd_function=no_setter)
 
         if self._set is not no_setter:
             self.has_set = True

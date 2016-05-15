@@ -147,6 +147,12 @@ class MockSource(MockInstTester):
                            set_cmd='ampl:{:.4f}', get_parser=float,
                            vals=Numbers(0, 1),
                            step=0.2, delay=0.005)
+        self.add_parameter('form_amp', get_cmd='ampl?', set_cmd='ampl:{:.4f}',
+                           get_parser=float, set_parser=self.ampl_form_set,
+                           vals=Numbers(0, 1), step=0.2, delay=0.005)
+
+    def ampl_form_set(self, val):
+        return 2*val
 
 
 class MockMeter(MockInstTester):
@@ -156,3 +162,7 @@ class MockMeter(MockInstTester):
         self.add_parameter('amplitude', get_cmd='ampl?', get_parser=float)
         self.add_function('echo', call_cmd='echo {:.2f}?',
                           args=[Numbers(0, 1000)], return_parser=float)
+        self.add_parameter('form_amp', get_cmd='ampl?', get_parser=self.ampl_form)
+
+    def ampl_form(self, val):
+        return "Amplitude is: {:s}".format(val)
