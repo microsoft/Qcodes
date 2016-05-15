@@ -26,8 +26,8 @@ class DataArray(DelegateAttributes):
     because we delegate attributes through to the numpy array
     '''
     def __init__(self, parameter=None, name=None, label=None, array_id=None,
-                 set_arrays=(), size=None, action_indices=(),
-                 preset_data=None):
+                 set_arrays=(), size=None, action_indices=(), unit=None,
+                 is_setpoint=False, preset_data=None):
         if parameter is not None:
             self.name = parameter.name
             self.label = getattr(parameter, 'label', self.name)
@@ -35,6 +35,7 @@ class DataArray(DelegateAttributes):
             self.name = name
             self.label = name if label is None else label
 
+        self.is_setpoint = is_setpoint
         self.array_id = array_id
         self.set_arrays = set_arrays
         self.size = size

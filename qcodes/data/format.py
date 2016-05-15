@@ -284,7 +284,8 @@ class GNUPlotFormat(Formatter):
                     set_array.clear()
             else:
                 set_array = DataArray(label=labels[i], array_id=array_id,
-                                      set_arrays=set_arrays, size=set_size)
+                                      set_arrays=set_arrays, size=set_size,
+                                      is_setpoint=True)
                 set_array.init_data()
                 data_set.add_array(set_array)
 
