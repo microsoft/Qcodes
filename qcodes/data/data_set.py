@@ -489,7 +489,16 @@ class DataSet(DelegateAttributes):
     def __repr__(self):
         out = '{}: {}, location={}'.format(
             self.__class__.__name__, self.mode, repr(self.location))
-        for array_id, array in self.arrays.items():
-            out += '\n   {}: {}'.format(array_id, array.name)
+        out_set = ''
+        out_get = ''
 
-        return out
+        # Any way to sort the items in a smart way?
+        for array_id, array in self.arrays.items():
+            if array.is_setpoint:
+                arrtype = 'Setpoint:'
+                out_set += '\n   {:9} {}:\t{}'.format(arrtype, array_id, array.name)
+            else:
+                arrtype = 'Measure:'
+                out_get += '\n   {:9} {}:\t{}'.format(arrtype, array_id, array.name)
+
+        return out + out_set + out_get
