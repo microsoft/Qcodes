@@ -200,6 +200,7 @@ class TestQcodesProcess(TestCase):
                     label + 'row row row your boat',
                     label + 'gently down '
                 ]
+                # TODO - intermittent error here
                 self.assertEqual(len(data), len(expected), data)
                 for line, expected_line in zip(data, expected):
                     self.assertIsNotNone(queue_format.match(line), data)
@@ -396,7 +397,8 @@ class TestServerManager(TestCase):
                              '  OSError: your hard disk went floppy.')
         sm._error_queue.put(builtin_error_str)
         sm._response_queue.put(SERVER_ERR)
-        time.sleep(0.005)
+        while sm._error_queue.empty() or sm._response_queue.empty():
+            time.sleep(0.005)
         with self.assertRaises(OSError):
             sm.ask('which way does the wind blow?')
 

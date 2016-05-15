@@ -39,6 +39,7 @@ import asyncio
 import logging
 import os
 
+from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import (permissive_range, wait_secs,
                                   DelegateAttributes)
 from qcodes.utils.metadata import Metadatable
@@ -57,7 +58,7 @@ def no_getter(*args, **kwargs):
         'set value.')
 
 
-class Parameter(Metadatable):
+class Parameter(Metadatable, DeferredOperations):
     '''
     defines one generic parameter, not necessarily part of
     an instrument. can be settable and/or gettable.
@@ -688,7 +689,7 @@ class ManualParameter(Parameter):
         return self.get()
 
 
-class GetLatest(DelegateAttributes):
+class GetLatest(DelegateAttributes, DeferredOperations):
     '''
     wrapper for a Parameter that just returns the last set or measured value
     stored in the Parameter itself.

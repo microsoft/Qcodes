@@ -5,7 +5,7 @@ from qcodes.utils.helpers import DelegateAttributes
 
 
 class DataArray(DelegateAttributes):
-    '''
+    """
     A container for one parameter in a measurement loop
 
     If this is a measured parameter, This object doesn't contain
@@ -24,7 +24,7 @@ class DataArray(DelegateAttributes):
 
     Once the array is initialized, a DataArray acts a lot like a numpy array,
     because we delegate attributes through to the numpy array
-    '''
+    """
     def __init__(self, parameter=None, name=None, label=None, array_id=None,
                  set_arrays=None, size=None, action_indices=None, unit=None,
                  is_setpoint=False, preset_data=None):
@@ -90,7 +90,7 @@ class DataArray(DelegateAttributes):
         self._data_set = new_data_set
 
     def nest(self, size, action_index=None, set_array=None):
-        '''
+        """
         nest this array inside a new outer loop
 
         size: length of the new loop
@@ -99,7 +99,7 @@ class DataArray(DelegateAttributes):
             if this DataArray *is* a setpoint array, you should omit both
             action_index and set_array, and it will reference itself as the
             set_array
-        '''
+        """
         if self.ndarray is not None and not self._preset:
             raise RuntimeError('Only preset arrays can be nested after data '
                                'is initialized! {}'.format(self))
@@ -128,11 +128,11 @@ class DataArray(DelegateAttributes):
         return self
 
     def init_data(self, data=None):
-        '''
+        """
         create a data array (if one doesn't exist)
         if data is provided, this array is marked as a preset
         meaning it can still be nested around this data.
-        '''
+        """
         if data is not None:
             if not isinstance(data, np.ndarray):
                 if isinstance(data, collections.Iterator):
@@ -161,13 +161,13 @@ class DataArray(DelegateAttributes):
         self._set_index_bounds()
 
     def _set_index_bounds(self):
-        self._min_indices = tuple(0 for d in self.size)
-        self._max_indices = tuple(d - 1 for d in self.size)
+        self._min_indices = [0 for d in self.size]
+        self._max_indices = [d - 1 for d in self.size]
 
     def clear(self):
-        '''
+        """
         Fill the (already existing) data array with nan
-        '''
+        """
         # only floats can hold nan values. I guess we could
         # also raise an error in this case? But generally float is
         # what people want anyway.
@@ -176,22 +176,32 @@ class DataArray(DelegateAttributes):
         self.ndarray.fill(float('nan'))
 
     def __setitem__(self, loop_indices, value):
-        '''
+        """
         set data values. Follows numpy syntax, allowing indices of lower
         dimensionality than the array, if value makes up the extra dimension(s)
 
         Also updates the record of modifications to the array. If you don't
         want this overhead, you can access self.ndarray directly.
-        '''
+        """
         if isinstance(loop_indices, collections.Iterable):
-            loop_indices_tuple = loop_indices
+            min_indices = list(loop_indices)
+            max_indices = list(loop_indices)
         else:
-            loop_indices_tuple = (loop_indices, )
-        min_li = self._flat_index(loop_indices_tuple, self._min_indices)
-        max_li = self._flat_index(loop_indices_tuple, self._max_indices)
+            min_indices = [loop_indices]
+            max_indices = [loop_indices]
+
+        for i, index in enumerate(min_indices):
+            if isinstance(index, slice):
+                start, stop, step = index.indices(self.size[i])
+                min_indices[i] = start
+                max_indices[i] = start + (
+                    ((stop - start - 1)//step) * step)
+
+        min_li = self._flat_index(min_indices, self._min_indices)
+        max_li = self._flat_index(max_indices, self._max_indices)
         self._update_modified_range(min_li, max_li)
 
-        self.ndarray[loop_indices] = value
+        self.ndarray.__setitem__(loop_indices, value)
 
     def __getitem__(self, loop_indices):
         return self.ndarray[loop_indices]
@@ -199,10 +209,10 @@ class DataArray(DelegateAttributes):
     delegate_attr_objects = ['ndarray']
 
     def __len__(self):
-        '''
+        """
         must be explicitly delegated, because len() will look for this
         attribute to already exist
-        '''
+        """
         return len(self.ndarray)
 
     def _flat_index(self, indices, index_fill):
@@ -216,25 +226,61 @@ class DataArray(DelegateAttributes):
         else:
             self.modified_range = (low, high)
 
-    def mark_saved(self):
-        '''
-        after saving data, mark any outstanding modifications as saved
-        '''
+    def mark_saved(self, last_saved_index):
+        """
+        after saving data, mark outstanding modifications up to
+        last_saved_index as saved
+        """
         if self.modified_range:
-            self.last_saved_index = max(self.last_saved_index or 0,
-                                        self.modified_range[1])
-
-        self.modified_range = None
+            if last_saved_index >= self.modified_range[1]:
+                self.modified_range = None
+            else:
+                self.modified_range = (max(self.modified_range[0],
+                                           last_saved_index + 1),
+                                       self.modified_range[1])
+        self.last_saved_index = last_saved_index
 
     def clear_save(self):
-        '''
+        """
         make this array look unsaved, so we can force overwrite
         or rewrite, like if we're moving or copying the DataSet
-        '''
+        """
         if self.last_saved_index is not None:
             self._update_modified_range(0, self.last_saved_index)
 
         self.last_saved_index = None
+
+    def get_synced_index(self):
+        if not hasattr(self, 'synced_index'):
+            self.init_data()
+            self.synced_index = -1
+
+        return self.synced_index
+
+    def get_changes(self, synced_index):
+        latest_index = self.last_saved_index
+        if latest_index is None:
+            latest_index = -1
+        if self.modified_range:
+            latest_index = max(latest_index, self.modified_range[1])
+
+        vals = [
+            self.ndarray[np.unravel_index(i, self.ndarray.shape)]
+            for i in range(synced_index + 1, latest_index + 1)
+        ]
+
+        if vals:
+            return {
+                'start': synced_index + 1,
+                'stop': latest_index,
+                'vals': vals
+            }
+
+    def apply_changes(self, start, stop, vals):
+        for i, val in enumerate(vals):
+            index = np.unravel_index(i + start, self.ndarray.shape)
+            self.ndarray[index] = val
+        self.synced_index = stop
 
     def __repr__(self):
         array_id_or_none = ' {}'.format(self.array_id) if self.array_id else ''
