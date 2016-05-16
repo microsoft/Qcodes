@@ -542,7 +542,7 @@ class DataSet(DelegateAttributes):
         return snap
 
     def __repr__(self):
-        out = self.__class__.__name__
+        out = self.__class__.__name__ + ':'
 
         attrs = [['mode', self.mode],
                  ['location', repr(self.location)]]
