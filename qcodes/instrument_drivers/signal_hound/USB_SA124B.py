@@ -49,7 +49,7 @@ class SignalHound_USB_SA124B(Instrument):
 
     def __init__(self, name, **kwargs):
         t0 = time()
-        super().__init__(self, name, tags=['physical'], **kwargs)
+        super().__init__(name, tags=['physical'], **kwargs)
 
         self.log = logging.getLogger("Main.DeviceInt")
         logging.info(__name__ +
@@ -223,25 +223,25 @@ class SignalHound_USB_SA124B(Instrument):
     def _do_get_frequency(self):
         return self._frequency
 
-    def _do_set_frequency(self,freq):
+    def _do_set_frequency(self, freq):
         self._frequency = freq
 
     def _do_get_span(self):
         return self._span
 
-    def _do_set_span(self,span):
+    def _do_set_span(self, span):
         self._span = span
 
     def _do_get_power(self):
         return self._power
 
-    def _do_set_power(self,power):
+    def _do_set_power(self, power):
         self._power = power
 
     def _do_get_ref_lvl(self):
         return self._ref_lvl
 
-    def _do_set_ref_lvl(self,ref_lvl):
+    def _do_set_ref_lvl(self, ref_lvl):
         self._ref_lvl = ref_lvl
 
     def _do_get_external_reference(self):

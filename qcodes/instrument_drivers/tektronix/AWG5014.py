@@ -249,6 +249,14 @@ class Tektronix_AWG5014(VisaInstrument):
                            # set function has optional args and therefore
                            # does not work with QCodes
 
+        # this parameter is added to prevent timeouts when loading very long
+        # AWG sequences
+        self.add_parameter('timeout',
+                           get_cmd=self._get_visa_timeout,
+                           set_cms=self._set_visa_timeout,
+                           units='s')
+
+
         # Channel parameters #
         for i in range(1, 5):
             amp_cmd = 'SOUR{}:VOLT:LEV:IMM:AMPL'.format(i)
@@ -359,6 +367,12 @@ class Tektronix_AWG5014(VisaInstrument):
         Convenience function, identical to run()
         '''
         return self.run()
+
+    def _set_visa_timeout(self, timeout):
+        self.visa_handle.timeout = timeout
+
+    def _get_visa_timeout(self):
+        return self.visa_handle.timeout
 
     def run(self):
         self.write('AWGC:RUN')
