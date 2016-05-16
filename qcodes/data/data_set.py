@@ -563,12 +563,13 @@ class DataSet(DelegateAttributes):
         maxlen_type = max([len(x[0]) for x in arr_info])
         maxlen_id = max([len(x[1]) for x in arr_info])
         maxlen_name = max([len(x[2]) for x in arr_info])
-        maxlen_shape = max([len(x[3]) for x in arr_info])
+        # We dont use maxlen_shape here to avoid trailing spaces.
+        # Add it again when extending the template
+        # maxlen_shape = max([len(x[3]) for x in arr_info])
 
-        out_template = '\n   {:%d} | {:%d} | {:%d} | {:%d}'%(maxlen_type,
+        out_template = '\n   {:%d} | {:%d} | {:%d} | {:}'%(maxlen_type,
                                                              maxlen_id,
-                                                             maxlen_name,
-                                                             maxlen_shape)
+                                                             maxlen_name)
 
         out_set = ''
         out_get = ''
