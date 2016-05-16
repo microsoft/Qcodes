@@ -2,9 +2,20 @@ from unittest import TestCase
 from datetime import datetime
 
 from qcodes.data.data_set import FormatLocation
+from qcodes.data.data_set import SafeFormatter
 
 from .data_mocks import MatchIO
 
+class TestSafeFormatter(TestCase):
+    def test_normal_formatting(self):
+        formatter = SafeFormatter()
+        self.assertEqual(formatter.format('{}{{{}}}', 1,2), '1{2}')
+        self.assertEqual(formatter.format('{apples}{{{oranges}}}', apples='red', oranges='unicorn'), 'red{unicorn}')
+
+    def test_missing(self):
+        formatter = SafeFormatter()
+        self.assertEqual(formatter.format('{}'), '{0}')
+        self.assertEqual(formatter.format('{cheese}', fruit='pears'), '{cheese}')
 
 class TestFormatLocation(TestCase):
     def test_default(self):
@@ -18,7 +29,7 @@ class TestFormatLocation(TestCase):
 
         # counter starts at 2 if we added it for disambiguation
         self.assertEqual(lp(MatchIO([''])),
-                         datetime.now().strftime(fmt) + '_002')
+                         datetime.now().strftime(fmt) + '_02')
         self.assertEqual(lp(MatchIO(['', '005'])),
                          datetime.now().strftime(fmt) + '_006')
         self.assertEqual(lp(MatchIO(['', '888888']), {'name': 'you!'}),
@@ -53,8 +64,9 @@ class TestFormatLocation(TestCase):
         self.assertEqual(lp(MatchIO(['999']), {'name': 'Ga', 'label': 'As'}),
                          expected)
 
-        with self.assertRaises(KeyError):
-            lp(MatchIO([]), {'name': 'Fred'})  # missing 'label'
+        # missing label
+        expected = datetime.now().strftime('%Y-%m-%d/#001_%H-%M-%S_Fred_{label}')
+        self.assertEqual(lp(MatchIO([]), {'name': 'Fred'}), expected)
 
     def test_record_override(self):
         # this one needs 'c' filled in at call time
@@ -66,10 +78,8 @@ class TestFormatLocation(TestCase):
         # extra keys just get discarded
         self.assertEqual(lp(io, {'c': 'K', 'd': 'D'}), 'A_B_K')
 
-        with self.assertRaises(KeyError):
-            lp(MatchIO([]))
-        with self.assertRaises(KeyError):
-            lp(MatchIO([]), {'a': 'AA'})
+        self.assertEqual(lp(MatchIO([])), 'A_B_{c}')
+        self.assertEqual(lp(MatchIO([]), {'a': 'AA'}), 'AA_B_{c}')
 
         # this one has defaults for everything, so nothing is needed at
         # call time, but things can still be overridden
