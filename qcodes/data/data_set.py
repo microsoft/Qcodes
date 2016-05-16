@@ -542,19 +542,43 @@ class DataSet(DelegateAttributes):
         return snap
 
     def __repr__(self):
-        out = '{}: {}, location={}'.format(
-            self.__class__.__name__, self.mode, repr(self.location))
+        out = self.__class__.__name__
+
+        attrs = [['mode', self.mode],
+                 ['location', repr(self.location)]]
+        attr_template = '\n   {:8} = {}'
+        for var, val in attrs:
+            out += attr_template.format(var, val)
+
+        arr_info =[]
+        arr_info.insert(0, ['<Type>', '<array_id>', '<array.name>', '<array.shape>'])
+
+        for array_id, array in self.arrays.items():
+            setp = 'Setpoint' if array.is_setpoint else 'Measured'
+            arr_info.extend([[setp,
+                              array_id,
+                              array.name,
+                              repr(array.shape)]])
+
+        maxlen_type = max([len(x[0]) for x in arr_info])
+        maxlen_id = max([len(x[1]) for x in arr_info])
+        maxlen_name = max([len(x[2]) for x in arr_info])
+        maxlen_shape = max([len(x[3]) for x in arr_info])
+
+        out_template = '\n   {:%d} | {:%d} | {:%d} | {:%d}'%(maxlen_type,
+                                                             maxlen_id,
+                                                             maxlen_name,
+                                                             maxlen_shape)
+
         out_set = ''
         out_get = ''
-
-        # Any way to sort the items in a smart way?
-        for array_id, array in self.arrays.items():
-            if array.is_setpoint:
-                arrtype = 'Setpoint:'
-                out_set += '\n   {:9} {}:\t{}'.format(arrtype, array_id, array.name)
+        for array_type, array_id, array_name, array_shape in arr_info:
+            line = out_template.format(array_type, array_id, array_name, array_shape)
+            if array_type == '<Type>':
+                out_set += line
+            elif array_type == 'Setpoint':
+                out_set += line
             else:
-                arrtype = 'Measure:'
-                out_get += '\n   {:9} {}:\t{}'.format(arrtype, array_id, array.name)
+                out_get += line
 
         return out + out_set + out_get
-
