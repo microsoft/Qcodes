@@ -38,7 +38,7 @@ class QtPlot(BasePlot):
     rpg = None
 
     def __init__(self, *args, figsize=(1000, 600), interval=0.25,
-                 windowTitle='', theme=((60, 60, 60), 'w'), remote=True, **kwargs):
+                 windowTitle='', theme=((60, 60, 60), 'w'), show_window=True, remote=True, **kwargs):
         super().__init__(interval)
 
         self.theme = theme
@@ -56,6 +56,9 @@ class QtPlot(BasePlot):
 
         if args or kwargs:
             self.add(*args, **kwargs)
+
+        if not show_window:
+            self.win.hide()
 
     def _init_qt(self):
         # starting the process for the pyqtgraph plotting
@@ -130,8 +133,13 @@ class QtPlot(BasePlot):
             if 'symbolBrush' not in kwargs:
                 kwargs['symbolBrush'] = color
 
-        return subplot_object.plot(*self._line_data(x, y), antialias=antialias,
-                                   **kwargs)
+        # suppress warnings when there are only NaN to plot
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', 'All-NaN axis encountered')
+            warnings.filterwarnings('ignore', 'All-NaN slice encountered')
+            pl = subplot_object.plot(*self._line_data(x, y),
+                                     antialias=antialias, **kwargs)
+        return pl
 
     def _line_data(self, x, y):
         return [self._clean_array(arg) for arg in [x, y] if arg is not None]

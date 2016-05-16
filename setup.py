@@ -3,7 +3,7 @@ from distutils.version import StrictVersion
 from importlib import import_module
 import re
 
-def get_version(verbose=0):
+def get_version(verbose=1):
     """ Extract version information from source code """
 
     try:
@@ -11,7 +11,7 @@ def get_version(verbose=0):
             ln = f.readline()
             # print(ln)
             m = re.search('.* ''(.*)''', ln)
-            version = (m.group(1))
+            version = (m.group(1)).strip('\'')
     except Exception as E:
         print(E)
         version = 'none'
