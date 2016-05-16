@@ -28,7 +28,7 @@ class MatPlot(BasePlot):
 
     kwargs: passed along to MatPlot.add() to add the first data trace
     '''
-    def __init__(self, *args, figsize=(8, 5), interval=1, subplots=(1, 1),
+    def __init__(self, *args, figsize=None, interval=1, subplots=None,
                  **kwargs):
 
         super().__init__(interval)
@@ -38,7 +38,13 @@ class MatPlot(BasePlot):
         if args or kwargs:
             self.add(*args, **kwargs)
 
-    def _init_plot(self, subplots=(1, 1), figsize=(8, 5), num=None, **kwargs):
+    def _init_plot(self, subplots=None, figsize=None, num=None):
+        if figsize is None:
+            figsize = (8, 5)
+
+        if subplots is None:
+            subplots = (1, 1)
+
         if isinstance(subplots, Mapping):
             self.fig, self.subplots = plt.subplots(figsize=figsize, num=num,
                                                    **subplots)
@@ -50,7 +56,7 @@ class MatPlot(BasePlot):
 
         self.title = self.fig.suptitle('')
 
-    def clear(self, subplots=(1, 1), figsize=(8, 5)):
+    def clear(self, subplots=None, figsize=None):
         '''
         Clears the plot window and removes all subplots and traces
         so that the window can be reused.
