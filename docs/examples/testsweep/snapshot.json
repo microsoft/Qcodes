@@ -37,16 +37,52 @@
         "formatter": "qcodes.data.gnuplot_format.GNUPlotFormat",
         "io": "<DiskIO, base_location=/Users/Merlin/Google Drive/git/Qcodes/docs/examples>",
         "location": "testsweep",
+        "loop": {
+            "__class__": "qcodes.loops.ActiveLoop",
+            "actions": [
+                {
+                    "__class__": "qcodes.instrument.parameter.StandardParameter",
+                    "instrument": "MockMeter",
+                    "label": "Current (nA)",
+                    "name": "amplitude",
+                    "ts": "2016-05-17 00:27:37",
+                    "units": "",
+                    "value": 0.117
+                }
+            ],
+            "delay": 0.03,
+            "sweep_values": {
+                "parameter": {
+                    "__class__": "qcodes.instrument.parameter.StandardParameter",
+                    "instrument": "MockGates",
+                    "label": "Gate Channel 0 (mV)",
+                    "name": "chan0",
+                    "ts": "2016-05-17 00:27:36",
+                    "units": "",
+                    "value": 0.0
+                },
+                "values": [
+                    {
+                        "first": -20.0,
+                        "last": 20.0,
+                        "num": 401
+                    }
+                ]
+            },
+            "ts_end": "2016-05-17 00:27:53",
+            "ts_start": "2016-05-17 00:27:38"
+        },
         "mode": "<DataMode.PUSH_TO_SERVER: 2>"
     },
     "loop": {
+        "__class__": "qcodes.loops.ActiveLoop",
         "actions": [
             {
                 "__class__": "qcodes.instrument.parameter.StandardParameter",
                 "instrument": "MockMeter",
                 "label": "Current (nA)",
                 "name": "amplitude",
-                "ts": "2016-05-16 22:04:16",
+                "ts": "2016-05-17 00:27:37",
                 "units": "",
                 "value": 0.117
             }
@@ -58,9 +94,9 @@
                 "instrument": "MockGates",
                 "label": "Gate Channel 0 (mV)",
                 "name": "chan0",
-                "ts": "2016-05-16 22:04:16",
+                "ts": "2016-05-17 00:27:36",
                 "units": "",
-                "value": 20.0
+                "value": 0.0
             },
             "values": [
                 {
@@ -70,7 +106,7 @@
                 }
             ]
         },
-        "ts_end": "2016-05-16 22:05:09",
-        "ts_start": "2016-05-16 22:04:54"
+        "ts_end": "2016-05-17 00:27:53",
+        "ts_start": "2016-05-17 00:27:38"
     }
 }
