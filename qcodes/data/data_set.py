@@ -550,8 +550,7 @@ class DataSet(DelegateAttributes):
         for var, val in attrs:
             out += attr_template.format(var, val)
 
-        arr_info =[]
-        arr_info.insert(0, ['<Type>', '<array_id>', '<array.name>', '<array.shape>'])
+        arr_info =[['<Type>', '<array_id>', '<array.name>', '<array.shape>']]
 
         for array_id, array in self.arrays.items():
             setp = 'Setpoint' if array.is_setpoint else 'Measured'
