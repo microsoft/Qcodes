@@ -253,7 +253,7 @@ class Tektronix_AWG5014(VisaInstrument):
         # AWG sequences
         self.add_parameter('timeout',
                            get_cmd=self._get_visa_timeout,
-                           set_cms=self._set_visa_timeout,
+                           set_cmd=self._set_visa_timeout,
                            units='s')
 
 
