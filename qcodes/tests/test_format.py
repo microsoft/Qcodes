@@ -445,16 +445,18 @@ class TestHDF5_Format(TestCase):
         # Used because the formatter has no nice find file method
         filepath = self.formatter.filepath
         with  h5py.File(self.formatter.filepath, mode='r') as f:
+            # Read the raw-HDF5 file
             saved_arr_vals = np.array(f['Data Arrays']['Data'].value,
                                       dtype=np.float64)
             # TODO: There is a bug in the write function that appends
             # an extra zero to the datafile, made the test pass
             # so I can test the read functionality
-            self.checkArraysEqual(saved_arr_vals[:-1, 0],
-                             DataSet1D().arrays['x'].ndarray)
-            self.checkArraysEqual(saved_arr_vals[:-1, 1],
-                             DataSet1D().arrays['y'].ndarray)
+            self.assertTrue((saved_arr_vals[:-1, 0] ==
+                             DataSet1D().arrays['x'].ndarray).all())
+            self.assertTrue((saved_arr_vals[:-1, 1] ==
+                             DataSet1D().arrays['y'].ndarray).all())
 
+        # Test reading the same file through the DataSet.read
         # Relies explicitly on the filepath,
         # Currently the formatter does not have a nice way of finding files
         # TODO: I want to use location here and not the full filepath

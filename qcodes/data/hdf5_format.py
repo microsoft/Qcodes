@@ -7,17 +7,26 @@ import os
 from .data_array import DataArray
 from .format import Formatter
 
+"""
+list for things that are still missing
+* Data formatter and dataset has no way to tell what parameter was set and
+   which one was measured/get (setpoint in the datset does something
+   like that)
+   but I feel the concept is unclear and can be worked out better.
+   I would really like an ordered dict for the dataset
+* dataset has no way of including units
 
+"""
 
 class HDF5Format(Formatter):
     """
-
+    HDF5 formatter for saving qcodes datasets
     """
     def __init__(self):
-        '''
+        """
         Instantiates the datafile using the location provided by the io_manager
         see h5py detailed info
-        '''
+        """
         self.data_object = None
 
 
@@ -42,10 +51,13 @@ class HDF5Format(Formatter):
         arrays = data_set.arrays
         for i, col_name in enumerate(
                 self.data_object['Data Arrays']['Data'].attrs['column names']):
-            # Decoding is needed because of h5py/issues/379
+            # Decoding string is needed because of h5py/issues/379
             col_name = col_name.decode()
+            label = self.data_object['Data Arrays']['Data'].attrs['labels'][i]
+            name = self.data_object['Data Arrays']['Data'].attrs['names'][i]
+            unit = self.data_object['Data Arrays']['Data'].attrs['units'][i]
             d_array = DataArray(
-                name=col_name, array_id=col_name, label=None, parameter=None,
+                name=name, array_id=col_name, label=label, parameter=None,
                 preset_data=self.data_object['Data Arrays']['Data'].value[:, i])
             data_set.add_array(d_array)
 
@@ -120,13 +132,13 @@ class HDF5Format(Formatter):
             'QCodes hdf5 v0.1')
 
     def save_instrument_snapshot(self, snapshot, *args):
-        '''
+        """
         uses QCodes station snapshot to save the last known value of any
         parameter. Only saves the value and not the update time (which is
         known in the snapshot)
 
         META DATA GROUP
-        '''
+        """
 
         # TODO:  should be pretty easy to add this but am waiting
         # for the metadata of @Merlinsmiles
@@ -145,9 +157,9 @@ class HDF5Format(Formatter):
 
 
 def _encode_to_utf8(s):
-    '''
+    """
     Required because h5py does not support python3 strings
-    '''
+    """
     # converts byte type to string because of h5py datasaving
     if type(s) == str:
         s = s.encode('utf-8')
