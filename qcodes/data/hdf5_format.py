@@ -15,6 +15,10 @@ list for things that are still missing
    but I feel the concept is unclear and can be worked out better.
    I would really like an ordered dict for the dataset
 * dataset has no way of including units
+* there is an assumption that data arrays are preallocated in the dataset.
+  this breaks down when measurements are interupted before they terminate
+  and/or when doing adaptive measurements where you do not know beforehand
+  how many datapoints you will get.
 
 """
 
@@ -67,30 +71,33 @@ class HDF5Format(Formatter):
         """
 
         if self.data_object == None or force_write:
-            # Create the file
+            # Create the file if it is not there yet
             io_manager = data_set.io
             location = data_set.location
             self.filepath = io_manager.join(
                 io_manager.base_location,
                 data_set.location_provider(io_manager)+'/'+location+'.hdf5')
             self._create_file(self.filepath)
-
         arrays = data_set.arrays
         if not hasattr(self, 'data_arrays_grp') or force_write:
             self._create_data_arrays_grp(data_set.arrays)
+
 
         # Resize the dataset and then append the arrays that need to be written
         datasetshape = self.dset.shape
         key0 = list(data_set.arrays.keys())[0] # Dirty way to get a random key
         # Assumes data arrays have the same length
         old_datasetlen = datasetshape[0]
-        new_datasetshape = (old_datasetlen+len(data_set.arrays[key0]),
+        x = data_set.arrays[key0]
+        new_data_length = len(x[~np.isnan(x)])
+        new_datasetshape = (new_data_length,
                             datasetshape[1])
         self.dset.resize(new_datasetshape)
         for i, key in enumerate(data_set.arrays.keys()):
             # Would prefer to write all at once but for loop seems easiest
             # to extract the values from the arrays dict
-            self.dset[old_datasetlen:, i] = data_set.arrays[key]
+            self.dset[old_datasetlen:new_data_length, i] = \
+                data_set.arrays[key][old_datasetlen:new_data_length]
 
     def _create_data_arrays_grp(self, arrays):
         self.data_arrays_grp = self.data_object.create_group('Data Arrays')

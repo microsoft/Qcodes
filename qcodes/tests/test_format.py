@@ -483,91 +483,36 @@ class TestHDF5_Format(TestCase):
         # with open(location + '.dat', 'r') as f:
         #     self.assertEqual(f.read(), file_1d())
 
-    def test_format_options(self):
-        pass
-        # formatter = GNUPlotFormat(extension='.splat', terminator='\r',
-        #                           separator='  ', comment='?:',
-        #                           number_format='5.2f')
-        # location = self.locations[0]
-        # data = DataSet1D(location)
-
-        # # mark the data set as modified by... modifying it!
-        # # without actually changing it :)
-        # # TODO - are there cases we should automatically mark the data as
-        # # modified on construction?
-        # data.y[4] = data.y[4]
-
-        # formatter.write(data)
-
-        # # TODO - Python3 uses universal newlines for read and write...
-        # # which means '\n' gets converted on write to the OS standard
-        # # (os.linesep) and all of the options we support get converted
-        # # back to '\n' on read. So I'm tempted to just take out terminator
-        # # as an option rather than turn this feature off.
-        # odd_format = '\n'.join([
-        #     '?:x  y',
-        #     '?:"X"  "Y"',
-        #     '?:5',
-        #     ' 1.00   3.00',
-        #     ' 2.00   4.00',
-        #     ' 3.00   5.00',
-        #     ' 4.00   6.00',
-        #     ' 5.00   7.00', ''])
-
-        # with open(location + '/x.splat', 'r') as f:
-        #     self.assertEqual(f.read(), odd_format)
-
-    def add_star(self, path):
-        pass
-        # try:
-        #     with open(path, 'a') as f:
-        #         f.write('*')
-        # except FileNotFoundError:
-        #     self.stars_before_write += 1
-
     def test_incremental_write(self):
-        pass
-        # formatter = GNUPlotFormat()
-        # location = self.locations[0]
-        # data = DataSet1D(location)
-        # path = location + '/x.dat'
-
-        # data_copy = DataSet1D(False)
+        location = self.locations[0]
+        data = DataSet1D(location)
+        data_copy = DataSet1D(False)
 
         # # empty the data and mark it as unmodified
-        # data.x[:] = float('nan')
-        # data.y[:] = float('nan')
-        # data.x.modified_range = None
-        # data.y.modified_range = None
+        data.x[:] = float('nan')
+        data.y[:] = float('nan')
+        data.x.modified_range = None
+        data.y.modified_range = None
 
-        # # simulate writing after every value comes in, even within
-        # # one row (x comes first, it's the setpoint)
-        # # we'll add a '*' after each write and check that they're
-        # # in the right places afterward, ie we don't write any given
-        # # row until it's done and we never totally rewrite the file
-        # self.stars_before_write = 0
-        # for i, (x, y) in enumerate(zip(data_copy.x, data_copy.y)):
-        #     data.x[i] = x
-        #     formatter.write(data)
-        #     self.add_star(path)
+        # Comment copied form GNUPlotFormat tests
+        # simulate writing after every value comes in, even within
+        # one row (x comes first, it's the setpoint)
+        for i, (x, y) in enumerate(zip(data_copy.x, data_copy.y)):
+            data.x[i] = x
+            self.formatter.write(data)
+            # should not update here as not a full row has come in
+            # TODO: implement this in the data formatter
+            data.y[i] = y
+            self.formatter.write(data)
 
-        #     data.y[i] = y
-        #     formatter.write(data)
-        #     self.add_star(path)
+        filepath = self.formatter.filepath
+        data2 = DataSet(location=filepath, formatter=self.formatter)
+        data2.read()
+        self.checkArraysEqual(data2.x, data_copy.x)
+        self.checkArraysEqual(data2.y, data_copy.y)
 
-        # starred_file = '\n'.join([
-        #     '# x\ty',
-        #     '# "X"\t"Y"',
-        #     '# 5',
-        #     '1\t3',
-        #     '**2\t4',
-        #     '**3\t5',
-        #     '**4\t6',
-        #     '**5\t7', '*'])
 
-        # with open(path, 'r') as f:
-        #     self.assertEqual(f.read(), starred_file)
-        # self.assertEqual(self.stars_before_write, 1)
+
 
     def test_constructor_errors(self):
         pass
