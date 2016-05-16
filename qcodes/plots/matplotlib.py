@@ -40,9 +40,11 @@ class MatPlot(BasePlot):
 
     def _init_plot(self, subplots=(1, 1), figsize=(8, 5), num=None, **kwargs):
         if isinstance(subplots, Mapping):
-            self.fig, self.subplots = plt.subplots(figsize=figsize, num=num, **subplots)
+            self.fig, self.subplots = plt.subplots(figsize=figsize, num=num,
+                                                   **subplots)
         else:
-            self.fig, self.subplots = plt.subplots(*subplots, num=num, figsize=figsize)
+            self.fig, self.subplots = plt.subplots(*subplots, num=num,
+                                                   figsize=figsize)
         if not hasattr(self.subplots, '__len__'):
             self.subplots = (self.subplots,)
 
@@ -55,7 +57,7 @@ class MatPlot(BasePlot):
         '''
         self.traces = []
         self.fig.clf()
-        self._init_plot( subplots, figsize, num=self.fig.number)
+        self._init_plot(subplots, figsize, num=self.fig.number)
 
     def add_to_plot(self, **kwargs):
         '''
