@@ -29,7 +29,7 @@ class TestFormatLocation(TestCase):
 
         # counter starts at 2 if we added it for disambiguation
         self.assertEqual(lp(MatchIO([''])),
-                         datetime.now().strftime(fmt) + '_02')
+                         datetime.now().strftime(fmt) + '_002')
         self.assertEqual(lp(MatchIO(['', '005'])),
                          datetime.now().strftime(fmt) + '_006')
         self.assertEqual(lp(MatchIO(['', '888888']), {'name': 'you!'}),
