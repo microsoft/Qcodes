@@ -269,6 +269,7 @@ class ActiveLoop(Metadatable):
     HALT = 'HALT LOOP'
 
     def __init__(self, sweep_values, delay, *actions, then_actions=()):
+        super().__init__()
         self.sweep_values = sweep_values
         self.delay = delay
         self.actions = actions
@@ -570,6 +571,8 @@ class ActiveLoop(Metadatable):
         # here without explicitly passing it to run
         if station_snap:
             data_set.add_metadata('station', station_snap)
+
+        data_set.add_metadata('loop', self.snapshot())
         data_set.write_metadata()
 
         if prev_loop and not quiet:
