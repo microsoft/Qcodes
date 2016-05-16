@@ -573,7 +573,9 @@ class ActiveLoop(Metadatable):
             data_set.add_metadata('station', station_snap)
 
         data_set.add_metadata('loop', self.snapshot())
-        data_set.write_metadata()
+        data_set.add_metadata('loop', {'ts_start':datetime.now().strftime('%Y-%m-%d %H:%M:%S')})
+
+        data_set.save_metadata()
 
         if prev_loop and not quiet:
             print('...done. Starting ' + (data_set.location or 'new loop'),
@@ -642,6 +644,10 @@ class ActiveLoop(Metadatable):
             self._run_loop(*args, **kwargs)
         finally:
             if hasattr(self, 'data_set'):
+                # somehow this does not show up in the data_set returned by
+                # run(), but it is saved to the metadata
+                ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                self.data_set.add_metadata('loop', {'ts_end':ts}, save=True)
                 self.data_set.finalize()
 
     def _run_loop(self, first_delay=0, action_indices=(),

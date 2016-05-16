@@ -483,32 +483,34 @@ class DataSet(DelegateAttributes):
             return
         self.formatter.write(self)
 
-    def add_metadata(self, key, metadata):
+    def add_metadata(self, key=None, metadata=None, save=False):
         """
-        Add update the DataSet.metadata[key] with metadata.
+        Update the DataSet.metadata[key] with metadata.
+        if save==True the metadata will be saved by the formatter
         """
-        try:
-            self.metadata[key].update(metadata)
-        except:
-            self.metadata[key] = metadata
-
-    def write_metadata(self, key=None, metadata=None):
-        """
-        Write the metadata to storage,
-        overwriting the existing keys.
-        """
-
-        # Matadata on server?
-        # if self.mode != DataMode.LOCAL:
-        #     raise RuntimeError('This object is connected to a DataServer, '
-        #                        'which handles writing automatically.')
 
         if key and metadata:
-            self.add_metadata(key, metadata)
-        if self.location is False:
-            return
-        self.snapshot()
-        self.formatter.write_metadata(self, self.metadata)
+            try:
+                self.metadata[key].update(metadata)
+            except:
+                self.metadata[key] = metadata
+        if save:
+
+            # Matadata on server?
+            # if self.mode != DataMode.LOCAL:
+            #     raise RuntimeError('This object is connected to a DataServer, '
+            #                        'which handles writing automatically.')
+
+            if self.location is False:
+                return
+            self.snapshot()
+            self.formatter.write_metadata(self, self.metadata)
+
+    def save_metadata(self):
+        """
+        Shortcut to add_metadata(save=True)
+        """
+        self.add_metadata(save=True)
 
     def finalize(self):
         """
