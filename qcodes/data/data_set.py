@@ -127,13 +127,14 @@ def _get_live_data(data_manager):
 
 class SafeFormatter(string.Formatter):
     def get_value(self, key, args, kwargs):
-        '''Overrides string.Formatter.get_value'''
-        if isinstance(key, (int)):
-            if (len(args) == 0) or len(args)<=key:
-                return '{}'
-            return args[key]
-        else:
-            return kwargs.get(key, '{{{0}}}'.format(key))
+        """
+        Overrides string.Formatter.get_value so a missing key wont raise an
+        error.
+        """
+        try:
+            return super().get_value(key, args, kwargs)
+        except:
+            return '{{{}}}'.format(key)
 
 
 class FormatLocation:
