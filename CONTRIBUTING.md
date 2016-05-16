@@ -32,7 +32,14 @@ python qcodes/test.py
 # optional extra verbosity and fail fast
 python qcodes/test.py -v -f
 ```
-You should see output that looks something like this:
+
+You can also run single tests with:
+```
+# python -m unittest module.class.function
+python -m unittest qcodes.tests.test_metadata
+```
+
+If you run the core test runner, you should see output that looks something like this:
 ```
 .........***** found one MockMock, testing *****
 ............................................Timing resolution:
