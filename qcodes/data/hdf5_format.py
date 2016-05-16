@@ -53,9 +53,10 @@ class HDF5Format(Formatter):
                 self.data_object['Data Arrays']['Data'].attrs['column names']):
             # Decoding string is needed because of h5py/issues/379
             col_name = col_name.decode()
-            label = self.data_object['Data Arrays']['Data'].attrs['labels'][i]
-            name = self.data_object['Data Arrays']['Data'].attrs['names'][i]
-            unit = self.data_object['Data Arrays']['Data'].attrs['units'][i]
+            dat_arr = self.data_object['Data Arrays']['Data']
+            label = dat_arr.attrs['labels'][i].decode()
+            name = dat_arr.attrs['names'][i].decode()
+            unit = dat_arr.attrs['units'][i].decode()
             d_array = DataArray(
                 name=name, array_id=col_name, label=label, parameter=None,
                 preset_data=self.data_object['Data Arrays']['Data'].value[:, i])
@@ -80,21 +81,16 @@ class HDF5Format(Formatter):
 
         # Resize the dataset and then append the arrays that need to be written
         datasetshape = self.dset.shape
-
         key0 = list(data_set.arrays.keys())[0] # Dirty way to get a random key
-
-        # Implicit assumption that data arrays have the same length
+        # Assumes data arrays have the same length
         old_datasetlen = datasetshape[0]
-        new_datasetshape = (old_datasetlen+len(data_set.arrays[key0])+1,
-                            # This +1 causes an extra zero to be appended
-                            # at the end of the dataset but if I remove it
-                            # it all crashes...
+        new_datasetshape = (old_datasetlen+len(data_set.arrays[key0]),
                             datasetshape[1])
         self.dset.resize(new_datasetshape)
         for i, key in enumerate(data_set.arrays.keys()):
             # Would prefer to write all at once but for loop seems easiest
             # to extract the values from the arrays dict
-            self.dset[old_datasetlen:-1, i] = data_set.arrays[key]
+            self.dset[old_datasetlen:, i] = data_set.arrays[key]
 
     def _create_data_arrays_grp(self, arrays):
         self.data_arrays_grp = self.data_object.create_group('Data Arrays')
@@ -120,10 +116,6 @@ class HDF5Format(Formatter):
                 units += [arr.units]
             else:
                 units += ['']
-
-        print(labels, '\n',
-              names, '\n', units)
-
         self.dset.attrs['labels'] = _encode_to_utf8(labels)
         self.dset.attrs['names'] = _encode_to_utf8(names)
         self.dset.attrs['units'] = _encode_to_utf8(units)

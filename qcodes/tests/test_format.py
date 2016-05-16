@@ -425,7 +425,7 @@ class TestHDF5_Format(TestCase):
     def checkArraysEqual(self, a, b):
         # Copied from GNUplot formatter tests inheritance would be nicer
         self.checkArrayAttrs(a, b)
-
+        self.assertTrue((a.ndarray==b.ndarray).all())
         self.assertEqual(len(a.set_arrays), len(b.set_arrays))
         for sa, sb in zip(a.set_arrays, b.set_arrays):
             self.checkArrayAttrs(sa, sb)
@@ -451,9 +451,9 @@ class TestHDF5_Format(TestCase):
             # TODO: There is a bug in the write function that appends
             # an extra zero to the datafile, made the test pass
             # so I can test the read functionality
-            self.assertTrue((saved_arr_vals[:-1, 0] ==
+            self.assertTrue((saved_arr_vals[:, 0] ==
                              DataSet1D().arrays['x'].ndarray).all())
-            self.assertTrue((saved_arr_vals[:-1, 1] ==
+            self.assertTrue((saved_arr_vals[:, 1] ==
                              DataSet1D().arrays['y'].ndarray).all())
 
         # Test reading the same file through the DataSet.read
@@ -462,35 +462,9 @@ class TestHDF5_Format(TestCase):
         # TODO: I want to use location here and not the full filepath
         data2 = DataSet(location=filepath, formatter=self.formatter)
         data2.read()
+        print('Full read/write works except for the set array')
         self.checkArraysEqual(data2.x, data.x)
         self.checkArraysEqual(data2.y, data.y)
-
-
-
-        # # while we're here, check some errors on bad reads
-
-        # # first: trying to read into a dataset that already has the
-        # # wrong size
-        # x = DataArray(name='x', label='X', preset_data=(1., 2.))
-        # y = DataArray(name='y', label='Y', preset_data=(3., 4.),
-        #               set_arrays=(x,))
-        # data3 = new_data(arrays=(x, y), location=location + 'XX')
-        # # initially give it a different location so we can make it without
-        # # error, then change back to the location we want.
-        # data3.location = location
-        # with LogCapture() as s:
-        #     formatter.read(data3)
-        # logstr = s.getvalue()
-        # s.close()
-        # self.assertTrue('ValueError' in logstr, logstr)
-
-        # # no problem reading again if only data has changed, it gets
-        # # overwritten with the disk copy
-        # data2.x[2] = 42
-        # data2.y[2] = 99
-        # formatter.read(data2)
-        # self.assertEqual(data2.x[2], 3)
-        # self.assertEqual(data2.y[2], 5)
 
     def test_no_nest(self):
         pass
