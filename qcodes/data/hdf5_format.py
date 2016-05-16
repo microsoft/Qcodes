@@ -13,12 +13,14 @@ list for things that are still missing
    which one was measured/get (setpoint in the datset does something
    like that)
    but I feel the concept is unclear and can be worked out better.
-   I would really like an ordered dict for the dataset
+   I am thinking ordered dict for the dataset
 * dataset has no way of including units
 * there is an assumption that data arrays are preallocated in the dataset.
   this breaks down when measurements are interupted before they terminate
   and/or when doing adaptive measurements where you do not know beforehand
   how many datapoints you will get.
+* Add more robust way of incremental write (check if all arrays are ready
+  to increment)
 
 """
 

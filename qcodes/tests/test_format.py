@@ -8,8 +8,11 @@ from qcodes.data.hdf5_format import HDF5Format
 from qcodes.data.data_array import DataArray
 from qcodes.data.data_set import DataSet, new_data
 from qcodes.utils.helpers import LogCapture
-
+from qcodes.station import Station
+from qcodes import Loop
 from .data_mocks import DataSet1D, file_1d, DataSetCombined, files_combined
+
+from qcodes.tests.instrument_mocks import MockParabola
 
 
 class TestBaseFormatter(TestCase):
@@ -512,54 +515,26 @@ class TestHDF5_Format(TestCase):
         self.checkArraysEqual(data2.y, data_copy.y)
 
 
+    def test_loop_writing(self):
+        station = Station()
+        MockPar = MockParabola(name='MockParabola')
+        station.add_instrument(MockPar)
+        # added to station to test snapshot at a later stage
+        loop = Loop(MockPar.x[-100:100:20]).each( MockPar.skewed_parabola)
+        dset = loop.run(name='MockParabola_run', formatter=self.formatter)
 
+        dset.write()
+        skew_para = array([ 1010000., 518400., 219600., 65600.,
+                             8400., 0., 8400., 65600., 219600., 518400.])
+        x = np.arange(-100, 100, 20)
+        print(dset.sync())
+        print(dset.arrays)
+        fp = data_l.formatter.filepath
+        loaded_data = load_data(fp, formatter=self.formatter)
+        arrs = load_data.arrays
+        self.assertTrue((arrs['x'].ndarray == x).all())
+        self.assertTrue((arrs['skewed_parabola'].ndarray == skew_para).all())
 
-    def test_constructor_errors(self):
-        pass
-        # with self.assertRaises(AttributeError):
-        #     # extension must be a string
-        #     GNUPlotFormat(extension=5)
-
-        # with self.assertRaises(ValueError):
-        #     # terminator must be \r, \n, or \r\n
-        #     GNUPlotFormat(terminator='\n\r')
-
-        # with self.assertRaises(ValueError):
-        #     # this is not CSV - separator must be whitespace
-        #     GNUPlotFormat(separator=',')
-
-        # with self.assertRaises(ValueError):
-        #     GNUPlotFormat(comment='  \r\n\t  ')
-
-    def test_read_errors(self):
-        pass
-        # formatter = GNUPlotFormat()
-
-        # # non-comment line at the beginning
-        # location = self.locations[0]
-        # data = DataSet(location=location)
-        # os.makedirs(location, exist_ok=True)
-        # with open(location + '/x.dat', 'w') as f:
-        #     f.write('1\t2\n' + file_1d())
-        # with LogCapture() as s:
-        #     formatter.read(data)
-        # logstr = s.getvalue()
-        # s.close()
-        # self.assertTrue('ValueError' in logstr, logstr)
-
-        # # same data array in 2 files
-        # location = self.locations[1]
-        # data = DataSet(location=location)
-        # os.makedirs(location, exist_ok=True)
-        # with open(location + '/x.dat', 'w') as f:
-        #     f.write('\n'.join(['# x\ty', '# "X"\t"Y"', '# 2', '1\t2', '3\t4']))
-        # with open(location + '/q.dat', 'w') as f:
-        #     f.write('\n'.join(['# q\ty', '# "Q"\t"Y"', '# 2', '1\t2', '3\t4']))
-        # with LogCapture() as s:
-        #     formatter.read(data)
-        # logstr = s.getvalue()
-        # s.close()
-        # self.assertTrue('ValueError' in logstr, logstr)
 
     def test_multifile(self):
         pass
