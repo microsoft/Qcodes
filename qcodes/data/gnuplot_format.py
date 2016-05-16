@@ -148,6 +148,11 @@ class GNUPlotFormat(Formatter):
             ids_read.add(array_id)
 
         for i, array_id in indexed_ids[ndim:]:
+            try:
+                snap = data_set.metadata['data']['arrays'][array_id]
+            except:
+                snap = None
+
             # data arrays
             if array_id in ids_read:
                 raise ValueError('duplicate data id found: ' + array_id)
