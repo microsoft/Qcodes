@@ -423,18 +423,17 @@ class TestHDF5_Format(TestCase):
             self.io.remove_all(location)
 
     def checkArraysEqual(self, a, b):
-        pass
-        # self.checkArrayAttrs(a, b)
+        # Copied from GNUplot formatter tests inheritance would be nicer
+        self.checkArrayAttrs(a, b)
 
-        # self.assertEqual(len(a.set_arrays), len(b.set_arrays))
-        # for sa, sb in zip(a.set_arrays, b.set_arrays):
-        #     self.checkArrayAttrs(sa, sb)
+        self.assertEqual(len(a.set_arrays), len(b.set_arrays))
+        for sa, sb in zip(a.set_arrays, b.set_arrays):
+            self.checkArrayAttrs(sa, sb)
 
     def checkArrayAttrs(self, a, b):
-        pass
-        # self.assertEqual(a.tolist(), b.tolist())
-        # self.assertEqual(a.label, b.label)
-        # self.assertEqual(a.array_id, b.array_id)
+        self.assertEqual(a.tolist(), b.tolist())
+        self.assertEqual(a.label, b.label)
+        self.assertEqual(a.array_id, b.array_id)
 
     def test_full_write_read(self):
         """
@@ -456,12 +455,11 @@ class TestHDF5_Format(TestCase):
             self.checkArraysEqual(saved_arr_vals[:-1, 1],
                              DataSet1D().arrays['y'].ndarray)
 
-        # Relies explicitly on the exact filepath,
+        # Relies explicitly on the filepath,
         # Currently the formatter does not have a nice way of finding files
         # TODO: I want to use location here and not the full filepath
         data2 = DataSet(location=filepath, formatter=self.formatter)
         data2.read()
-        print(data2.arrays)
         self.checkArraysEqual(data2.x, data.x)
         self.checkArraysEqual(data2.y, data.y)
 

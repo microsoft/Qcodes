@@ -39,6 +39,16 @@ class HDF5Format(Formatter):
         filepath = location
         self.data_object = h5py.File(filepath, 'r+')
 
+        arrays = data_set.arrays
+        for i, col_name in enumerate(
+                self.data_object['Data Arrays']['Data'].attrs['column names']):
+            # Decoding is needed because of h5py/issues/379
+            col_name = col_name.decode()
+            d_array = DataArray(
+                name=col_name, array_id=col_name, label=None, parameter=None,
+                preset_data=self.data_object['Data Arrays']['Data'].value[:, i])
+            data_set.add_array(d_array)
+
     def write(self, data_set, force_write=False):
         """
         """
@@ -74,11 +84,6 @@ class HDF5Format(Formatter):
             # to extract the values from the arrays dict
             self.dset[old_datasetlen:-1, i] = data_set.arrays[key]
 
-
-
-
-
-
     def _create_data_arrays_grp(self, arrays):
         self.data_arrays_grp = self.data_object.create_group('Data Arrays')
         # Allows reshaping but does not allow adding extra parameters
@@ -86,16 +91,33 @@ class HDF5Format(Formatter):
             'Data', (0, len(arrays.keys())),
             maxshape=(None, len(arrays.keys())))
         self.dset.attrs['column names'] = _encode_to_utf8(arrays.keys())
+        labels= []
+        names = []
+        units = []
+        for key in arrays.keys():
+            arr = arrays[key]
+            if hasattr(arr, 'label'):
+                labels += [arr.label]
+            else:
+                labels += [key]
+            if hasattr(arr, 'name'):
+                names += [arr.name]
+            else:
+                labels += [key]
+            if hasattr(arr, 'units'):
+                units += [arr.units]
+            else:
+                units += ['']
+
+        print(labels, '\n',
+              names, '\n', units)
+
+        self.dset.attrs['labels'] = _encode_to_utf8(labels)
+        self.dset.attrs['names'] = _encode_to_utf8(names)
+        self.dset.attrs['units'] = _encode_to_utf8(units)
         # Added to tell analysis how to extract the data
         self.data_arrays_grp.attrs['datasaving_format'] = _encode_to_utf8(
             'QCodes hdf5 v0.1')
-
-        # I would like to add parameter units, labels and names as well
-        # data_group.attrs['names'] = _encode_to_utf8('')
-        # data_group.attrs['units'] = _encode_to_utf8('')
-        # data_group.attrs['labels'] = _encode_to_utf8('')
-
-
 
     def save_instrument_snapshot(self, snapshot, *args):
         '''
@@ -120,7 +142,6 @@ class HDF5Format(Formatter):
                 except KeyError:
                     val = ''
                 instrument_grp.attrs[p_name] = str(val)
-
 
 
 def _encode_to_utf8(s):
