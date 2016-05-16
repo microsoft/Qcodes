@@ -143,6 +143,7 @@ class Loop(Metadatable):
         self.sweep_values = sweep_values
         self.delay = delay
         self.nested_loop = None
+        self.actions = None
         self.then_actions = ()
 
     def loop(self, sweep_values, delay=0):
@@ -180,21 +181,21 @@ class Loop(Metadatable):
         - a Wait
         - another Loop or ActiveLoop
         """
-        actions = list(actions)
+        self.actions = list(actions)
 
         # check for nested Loops, and activate them with default measurement
-        for i, action in enumerate(actions):
+        for i, action in enumerate(self.actions):
             if isinstance(action, Loop):
                 default = Station.default.default_measurement
-                actions[i] = action.each(*default)
+                self.actions[i] = action.each(*default)
 
-        self.validate_actions(*actions)
+        self.validate_actions(*self.actions)
 
         if self.nested_loop:
             # recurse into the innermost loop and apply these actions there
-            actions = [self.nested_loop.each(*actions)]
+            self.actions = [self.nested_loop.each(*self.actions)]
 
-        return ActiveLoop(self.sweep_values, self.delay, *actions,
+        return ActiveLoop(self.sweep_values, self.delay, *self.actions,
                           then_actions=self.then_actions)
 
     @staticmethod
@@ -234,8 +235,18 @@ class Loop(Metadatable):
 
     def snapshot_base(self, update=False):
         snap = {}
-        snap['values'] = self.sweep_values.snapshot(update=update)
+        snap['__class__'] = str(self.__class__.__module__ +
+                                '.' + self.__class__.__name__)
+        snap['sweep_values'] = self.sweep_values.snapshot(update=update)
         snap['delay'] = self.delay
+        if self.actions:
+            snap['actions'] = []
+            for actn in self.actions:
+                if hasattr(actn, 'snapshot'):
+                    snap['actions'].append(actn.snapshot(update=update))
+                else:
+                    snap['actions'].append({'type': None,
+                                            'description': 'Action without snapshot'})
 
         return snap
 
@@ -315,6 +326,8 @@ class ActiveLoop(Metadatable):
 
     def snapshot_base(self, update=False):
         snap = {}
+        snap['__class__'] = str(self.__class__.__module__ +
+                                '.' + self.__class__.__name__)
         snap['sweep_values'] = self.sweep_values.snapshot(update=update)
         snap['delay'] = self.delay
 

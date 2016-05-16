@@ -488,7 +488,6 @@ class DataSet(DelegateAttributes):
         Update the DataSet.metadata[key] with metadata.
         if save==True the metadata will be saved by the formatter
         """
-
         if key and metadata:
             try:
                 self.metadata[key].update(metadata)
@@ -539,6 +538,10 @@ class DataSet(DelegateAttributes):
                 'io': repr(self.io),
                 'base_location': self.io.base_location}
         self.metadata['data'] = snap
+        if 'station' in self.metadata:
+            snap['station'] = self.metadata['station']
+        if 'loop' in self.metadata:
+            snap['loop'] = self.metadata['loop']
         return snap
 
     def __repr__(self):
