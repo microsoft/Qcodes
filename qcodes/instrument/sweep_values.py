@@ -66,6 +66,14 @@ class SweepValues:
         '''
         raise NotImplementedError
 
+    def __repr__(self):
+        s = '<{}.{}: {} at {}>'.format(
+            self.__module__,
+            self.__class__.__name__,
+            str(self.name),
+            id(self))
+        return s
+
 
 class SweepFixedValues(SweepValues):
     '''
