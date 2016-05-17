@@ -7,6 +7,7 @@ from qcodes.widgets.widgets import HiddenUpdateWidget
 
 
 class BasePlot:
+
     '''
     create an auto-updating plot connected to a Jupyter notebook
 
@@ -18,6 +19,7 @@ class BasePlot:
         default 'xyz' (treated as a sequence) but add more if
         for example marker size or color can contain data
     '''
+
     def __init__(self, interval=1, data_keys='xyz'):
         self.data_keys = data_keys
         self.traces = []
@@ -35,7 +37,7 @@ class BasePlot:
         '''
         # any derived class should implement this
         raise NotImplementedError
-        # typically traces and subplots should be cleared as well as the 
+        # typically traces and subplots should be cleared as well as the
         # figure window for the particular backend
         self.traces = []
         self.subplots = []
