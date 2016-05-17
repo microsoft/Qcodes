@@ -6,6 +6,7 @@ from traceback import print_exc, format_exc
 from uuid import uuid4
 import builtins
 import logging
+import signal
 
 from .helpers import in_notebook
 
@@ -71,6 +72,12 @@ class QcodesProcess(mp.Process):
         super().__init__(*args, name=name, daemon=daemon, **kwargs)
 
     def run(self):
+        # ignore interrupt signals, as they come from `KeyboardInterrupt`
+        # which we want only to apply to the main process and not the
+        # server and background processes (which can be halted in different
+        # ways)
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
         if self.stream_queue:
             self.stream_queue.connect(str(self.name))
         try:
