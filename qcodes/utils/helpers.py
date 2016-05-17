@@ -14,13 +14,13 @@ def static_vars(**kwargs):
         return func
     return decorate
 
-@static_vars(times=dict())
+_tprint_times = {}
 def tprint(string, dt=1, tag='default'):
     """ Print progress of a loop every dt seconds """
-    ptime = tprint.times.get(tag, 0)
+    ptime = _tprint_times.get(tag, 0)
     if (time.time() - ptime) > dt:
         print(string)
-        tprint.times[tag] = time.time()
+        _tprint_times[tag] = time.time()
             
 def in_notebook():
     '''

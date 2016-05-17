@@ -124,6 +124,8 @@ class Loop:
         continuing. 0 (default) means no waiting and no warnings. > 0
         means to wait, potentially filling the delay time with monitoring,
         and give an error if you wait longer than expected.
+    progress_interval - should progrss of the loop every x seconds. Default
+        is None (no output)
 
     After creating a Loop, you attach `action`s to it, making an `ActiveLoop`
     that you can `.run()`, or you can `.run()` a `Loop` directly, in which
@@ -135,13 +137,13 @@ class Loop:
     this one.
     """
 
-    def __init__(self, sweep_values, delay=0, show_progress=False):
+    def __init__(self, sweep_values, delay=0, progress_interval=None):
         if not delay >= 0:
             raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
         self.sweep_values = sweep_values
         self.delay = delay
         self.nested_loop = None
-        self.show_progress = show_progress
+        self.progress_interval = progress_interval
         self.then_actions = ()
 
     def loop(self, sweep_values, delay=0):
@@ -165,7 +167,7 @@ class Loop:
 
     def _copy(self):
         out = Loop(self.sweep_values, self.delay,
-                   show_progress=self.show_progress)
+                   progress_interval=self.progress_interval)
         out.nested_loop = self.nested_loop
         out.then_actions = self.then_actions
         return out
@@ -195,7 +197,7 @@ class Loop:
             actions = [self.nested_loop.each(*actions)]
 
         return ActiveLoop(self.sweep_values, self.delay, *actions,
-                          then_actions=self.then_actions, show_progress=self.show_progress)
+                          then_actions=self.then_actions, progress_interval=self.progress_interval)
 
     @staticmethod
     def validate_actions(*actions):
@@ -284,11 +286,11 @@ class ActiveLoop:
     """
     HALT = 'HALT LOOP'
 
-    def __init__(self, sweep_values, delay, *actions, then_actions=(), show_progress=False):
+    def __init__(self, sweep_values, delay, *actions, then_actions=(), progress_interval=None):
         self.sweep_values = sweep_values
         self.delay = delay
         self.actions = actions
-        self.show_progress = show_progress
+        self.progress_interval = progress_interval
         self.then_actions = then_actions
 
         # compile now, but don't save the results
@@ -658,9 +660,10 @@ class ActiveLoop:
 
         t0 = time.time()
         for i, value in enumerate(self.sweep_values):
-            if self.show_progress:
-                tprint('loop %s: %d/%d (%.1f [s])' % (self.sweep_values.name, i, len(
-                    self.sweep_values), time.time() - t0), dt=1, tag='outerloop')
+            if self.progress_interval is not None:
+                tprint('loop %s: %d/%d (%.1f [s])' % (self.sweep_values.name,
+                    i, len(self.sweep_values), time.time() - t0),
+                    dt=self.progress_interval, tag='outerloop')
             self.sweep_values.set(value)
             new_indices = loop_indices + (i,)
             new_values = current_values + (value,)
@@ -684,9 +687,10 @@ class ActiveLoop:
 
             # after the first setpoint, delay reverts to the loop delay
             delay = self.delay
-        if self.show_progress:
+        if self.progress_interval is not None:
             tprint(
-                'loop: %d/%d (%.1f [s]' % (i, len(self.sweep_values), time.time() - t0), dt=1, tag='outerloop')
+                'loop: %d/%d (%.1f [s]' % (i, len(self.sweep_values),
+                 time.time() - t0), dt=self.progress_interval, tag='outerloop')
 
         # the loop is finished - run the .then actions
         for f in self._compile_actions(self.then_actions, ()):
