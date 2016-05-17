@@ -94,7 +94,7 @@ def halt_bg(timeout=5):
 
     if loop.is_alive():
         loop.terminate()
-        loop.join(timeout/2)
+        loop.join(timeout / 2)
         print('Background loop did not respond to halt signal, terminated')
 
     _clear_data_manager()
@@ -107,13 +107,14 @@ def _clear_data_manager():
 
 
 # def measure(*actions):
-#     # measure has been moved into Station
-#     # TODO - for all-at-once parameters we want to be able to
-#     # store the output into a DataSet without making a Loop.
+# measure has been moved into Station
+# TODO - for all-at-once parameters we want to be able to
+# store the output into a DataSet without making a Loop.
 #     pass
 
 
 class Loop:
+
     """
     The entry point for creating measurement loops
 
@@ -133,13 +134,14 @@ class Loop:
     data), `Wait` times, or other `ActiveLoop`s or `Loop`s to nest inside
     this one.
     """
-    def __init__(self, sweep_values, delay=0, showprogress=False):
+
+    def __init__(self, sweep_values, delay=0, show_progress=False):
         if not delay >= 0:
             raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
         self.sweep_values = sweep_values
         self.delay = delay
         self.nested_loop = None
-        self.showprogress = showprogress
+        self.show_progress = show_progress
         self.then_actions = ()
 
     def loop(self, sweep_values, delay=0):
@@ -162,7 +164,8 @@ class Loop:
         return out
 
     def _copy(self):
-        out = Loop(self.sweep_values, self.delay, showprogress=self.showprogress)
+        out = Loop(self.sweep_values, self.delay,
+                   show_progress=self.show_progress)
         out.nested_loop = self.nested_loop
         out.then_actions = self.then_actions
         return out
@@ -192,7 +195,7 @@ class Loop:
             actions = [self.nested_loop.each(*actions)]
 
         return ActiveLoop(self.sweep_values, self.delay, *actions,
-                          then_actions=self.then_actions, showprogress=self.showprogress)
+                          then_actions=self.then_actions, show_progress=self.show_progress)
 
     @staticmethod
     def validate_actions(*actions):
@@ -270,6 +273,7 @@ def _attach_then_actions(loop, actions, overwrite):
 
 
 class ActiveLoop:
+
     """
     Created by attaching actions to a `Loop`, this is the object that actually
     runs a measurement loop. An `ActiveLoop` can no longer be nested, only run,
@@ -280,11 +284,11 @@ class ActiveLoop:
     """
     HALT = 'HALT LOOP'
 
-    def __init__(self, sweep_values, delay, *actions, then_actions=(), showprogress=False):
+    def __init__(self, sweep_values, delay, *actions, then_actions=(), show_progress=False):
         self.sweep_values = sweep_values
         self.delay = delay
         self.actions = actions
-        self.showprogress=showprogress
+        self.show_progress = show_progress
         self.then_actions = then_actions
 
         # compile now, but don't save the results
@@ -652,10 +656,11 @@ class ActiveLoop:
 
         callables = self._compile_actions(self.actions, action_indices)
 
-        t0=time.time()
+        t0 = time.time()
         for i, value in enumerate(self.sweep_values):
-            if self.showprogress:
-                tprint('loop %s: %d/%d (%.1f [s])' % (self.sweep_values.name, i, len(self.sweep_values), time.time()-t0), dt=1, tag='outerloop')
+            if self.show_progress:
+                tprint('loop %s: %d/%d (%.1f [s])' % (self.sweep_values.name, i, len(
+                    self.sweep_values), time.time() - t0), dt=1, tag='outerloop')
             self.sweep_values.set(value)
             new_indices = loop_indices + (i,)
             new_values = current_values + (value,)
@@ -679,8 +684,9 @@ class ActiveLoop:
 
             # after the first setpoint, delay reverts to the loop delay
             delay = self.delay
-        if self.showprogress:
-            tprint('loop: %d/%d (%.1f [s]' % (i, len(self.sweep_values), time.time()-t0), dt=1, tag='outerloop')
+        if self.show_progress:
+            tprint(
+                'loop: %d/%d (%.1f [s]' % (i, len(self.sweep_values), time.time() - t0), dt=1, tag='outerloop')
 
         # the loop is finished - run the .then actions
         for f in self._compile_actions(self.then_actions, ()):
@@ -700,6 +706,7 @@ class ActiveLoop:
 
 
 class Task:
+
     """
     A predefined task to be executed within a measurement Loop
     This form is for a simple task that does not measure any data,
@@ -711,6 +718,7 @@ class Task:
     kwargs passed when the Task is called are ignored,
     but are accepted for compatibility with other things happening in a Loop.
     """
+
     def __init__(self, func, *args, **kwargs):
         self.func = func
         self.args = args
@@ -721,6 +729,7 @@ class Task:
 
 
 class Wait:
+
     """
     A simple class to tell a Loop to wait <delay> seconds
 
@@ -729,6 +738,7 @@ class Wait:
 
     But for use outside of a Loop, it is also callable (then it just sleeps)
     """
+
     def __init__(self, delay):
         if not delay >= 0:
             raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
@@ -740,10 +750,12 @@ class Wait:
 
 
 class _Measure:
+
     """
     A callable collection of parameters to measure.
     This should not be constructed manually, only by an ActiveLoop.
     """
+
     def __init__(self, params_indices, data_set, use_threads):
         self.use_threads = use_threads and len(params_indices) > 1
         # the applicable DataSet.store function
@@ -788,10 +800,12 @@ class _Measure:
 
 
 class _Nest:
+
     """
     wrapper to make a callable nested ActiveLoop
     This should not be constructed manually, only by an ActiveLoop.
     """
+
     def __init__(self, inner_loop, action_indices):
         self.inner_loop = inner_loop
         self.action_indices = action_indices
@@ -801,6 +815,7 @@ class _Nest:
 
 
 class BreakIf:
+
     """
     Loop action that breaks out of the loop if a condition is truthy
 
@@ -810,6 +825,7 @@ class BreakIf:
             BreakIf(gates.chan1 >= 3)
             BreakIf(abs(source.I * source.V) >= source.power_limit.get_latest)
     """
+
     def __init__(self, condition):
         if not is_function(condition, 0):
             raise TypeError('BreakIf condition must be a callable with '
