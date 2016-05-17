@@ -1,3 +1,5 @@
+#%% Load packages
+
 import sys,os
 import re
 import logging
@@ -7,7 +9,6 @@ import qcodes as qc
 import qtpy.QtCore as QtCore
 import qtpy.QtGui as QtGui
 import pyqtgraph as pg
-#import pmatlab
 
 def findfilesR(p, patt):
     """ Get a list of files (recursive)
@@ -25,11 +26,23 @@ def findfilesR(p, patt):
         lst += [os.path.join(root, f) for f in files if re.match(rr, f)]
     return lst
 
-class LogViewer(QtGui.QWidget):
+#%% Main class
+class DataViewer(QtGui.QWidget):
 
-    def __init__(self, window_title='Log Viewer', debugdict=dict()):
-        super(LogViewer, self).__init__()
+    ''' Simple viewer for Qcodes data
+    
+    Arugments
+    ---------
+    
+        default_parameter : string
+            name of default parameter to plot
+    '''
+    def __init__(self, window_title='Log Viewer', default_parameter='amlitude', debugdict=dict()):
+        super(DataViewer, self).__init__()
 
+        self.default_parameter = default_parameter
+        
+        # setup GUI
         self.text= QtGui.QLabel()
         self.text.setText('Log files at %s' %  qcodes.DataSet.default_io.base_location)
         self.logtree= QtGui.QTreeView() # QTreeWidget
@@ -54,10 +67,11 @@ class LogViewer(QtGui.QWidget):
 
         # disable edit
         self.logtree.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
-
         self.logtree.doubleClicked.connect(self.logCallback)
-             
+
+        # get logs from disk             
         self.updateLogs()
+        
     def updateLogs(self):
         pass
 
@@ -84,6 +98,20 @@ class LogViewer(QtGui.QWidget):
             # span container columns
             self.logtree.setFirstColumnSpanned(i, self.logtree.rootIndex(), True)
 
+    ''' Return parameter to be plotted '''
+    def plot_parameter(self, data):
+        
+        if self.default_parameter in data.arrays.keys():
+            return self.default_parameter
+        if 'amplitude' in data.arrays.keys():
+            return 'amplitude'
+
+        try:
+            key= (iter (data.arrays.values()))
+            return key
+        except:
+            return None
+            
     def logCallback(self, index):
         print('logCallback!')
         logging.debug('index %s'% str(index))
@@ -102,8 +130,14 @@ class LogViewer(QtGui.QWidget):
                 data=qc.load_data(tag)
         
                 self.qplot.clear(); 
-                self.qplot.add(data.amplitude); 
-        
+ 
+                param_name=self.plot_parameter(data)
+                
+                if param_name is not None:                    
+                    logging.info('using parameter %s for plotting' % param_name)
+                    self.qplot.add( getattr(data, param_name) ); 
+                else:
+                    logging.info('could not find parameter for DataSet')
             except Exception as e:
                 print('logCallback! error ...' )
                 logging.debug(e)
@@ -111,3 +145,11 @@ class LogViewer(QtGui.QWidget):
         pass
 
 
+#%% Testing
+
+if __name__=='__main__':
+    logviewer = DataViewer()
+    logviewer.setGeometry(1920+1280,60, 700,800)
+    logviewer.qplot.win.setMaximumHeight(400)
+    logviewer.show()
+    self=logviewer
