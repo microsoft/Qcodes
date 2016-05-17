@@ -33,10 +33,12 @@ class BasePlot:
         Clears the plot window and removes all subplots and traces
         so that the window can be reused.
         '''
-        self.traces = []
-        self.subplots = []
         # any derived class should implement this
         raise NotImplementedError
+        # typically traces and subplots should be cleared as well as the 
+        # figure window for the particular backend
+        self.traces = []
+        self.subplots = []
 
     def replace(self, *args, updater=None, **kwargs):
         self.clear()
