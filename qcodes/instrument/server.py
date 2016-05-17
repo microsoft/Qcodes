@@ -25,7 +25,7 @@ def get_instrument_server(server_name, shared_kwargs={}):
     if not server_name:
         server_name = 'Instruments'
 
-    instances = InstrumentManager.instances
+    instances = InstrumentServerManager.instances
     manager = instances.get(server_name, None)
 
     if manager and manager._server in mp.active_children():
@@ -37,12 +37,12 @@ def get_instrument_server(server_name, shared_kwargs={}):
                               'exists but with different shared_attrs'
                               ).format(server_name))
     else:
-        manager = InstrumentManager(server_name, shared_kwargs)
+        manager = InstrumentServerManager(server_name, shared_kwargs)
 
     return manager
 
 
-class InstrumentManager(ServerManager):
+class InstrumentServerManager(ServerManager):
     '''
     Creates and manages connections to an InstrumentServer
 
@@ -117,7 +117,7 @@ class InstrumentConnection:
     '''
     A connection between one particular instrument and its server process
 
-    This should be instantiated by InstrumentManager.connect, not directly
+    This should be instantiated by InstrumentServerManager.connect, not directly
     '''
     def __init__(self, manager, instrument_class, new_id, args, kwargs):
         self.manager = manager
