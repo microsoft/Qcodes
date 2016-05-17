@@ -818,7 +818,7 @@ class TestAttrAccess(TestCase):
         # test restarting the InstrumentServer - this clears these attrs
         instrument.setattr('answer', 42)
         self.assertEqual(instrument.getattr('answer', None), 42)
-        instrument.connection.manager.restart()
+        instrument._manager.restart()
         self.assertIsNone(instrument.getattr('answer', None))
 
 

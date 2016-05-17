@@ -5,7 +5,7 @@ import multiprocessing as mp
 import numpy as np
 
 from qcodes.loops import (Loop, MP_NAME, get_bg, halt_bg, Task, Wait,
-                          ActiveLoop, BreakIf)
+                          ActiveLoop, BreakIf, _DebugInterrupt)
 from qcodes.station import Station
 from qcodes.data.io import DiskIO
 from qcodes.data.data_array import DataArray
@@ -553,15 +553,16 @@ class AbortingGetter(ManualParameter):
     You have to attach the queue after construction with set_queue
     so you can grab it from the loop that uses the parameter.
     '''
-    def __init__(self, *args, count=1, **kwargs):
+    def __init__(self, *args, count=1, msg=None, **kwargs):
         self._count = self._initial_count = count
+        self.msg = msg
         # also need a _signal_queue, but that has to be added later
         super().__init__(*args, **kwargs)
 
     def get(self):
         self._count -= 1
         if self._count <= 0:
-            self._signal_queue.put(ActiveLoop.HALT)
+            self._signal_queue.put(self.msg)
         return super().get()
 
     def set_queue(self, queue):
@@ -573,15 +574,29 @@ class AbortingGetter(ManualParameter):
 
 class TestSignal(TestCase):
     def test_halt(self):
-        p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10))
+        p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10),
+                            msg=ActiveLoop.HALT_DEBUG)
         loop = Loop(p1[1:6:1], 0.005).each(p1)
         p1.set_queue(loop.signal_queue)
 
-        with self.assertRaises(KeyboardInterrupt):
+        with self.assertRaises(_DebugInterrupt):
             loop.run_temp()
 
         data = loop.data_set
+        self.check_data(data)
 
+    def test_halt_quiet(self):
+        p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10),
+                            msg=ActiveLoop.HALT)
+        loop = Loop(p1[1:6:1], 0.005).each(p1)
+        p1.set_queue(loop.signal_queue)
+
+        # does not raise, just quits, but the data set looks the same
+        # as in test_halt
+        data = loop.run_temp()
+        self.check_data(data)
+
+    def check_data(self, data):
         nan = float('nan')
         self.assertEqual(data.p1.tolist()[:2], [1, 2])
         # when NaN is involved, I'll just compare reprs, because NaN!=NaN

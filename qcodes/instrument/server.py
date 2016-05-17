@@ -69,36 +69,24 @@ class InstrumentServerManager(ServerManager):
         """
         super().restart()
 
-        instruments = self.instruments
+        instruments = self.instruments.values()
         self.instruments = {}
-        for connection_info in instruments.values():
-            self.connect(**connection_info)
+        for instrument in instruments:
+            instrument.connect()
 
     def connect(self, remote_instrument, instrument_class, args, kwargs):
         new_id = self.ask('new_id')
         try:
-            conn = InstrumentConnection(
-                manager=self, instrument_class=instrument_class,
-                new_id=new_id, args=args, kwargs=kwargs)
+            info = self.ask('new', instrument_class, new_id, *args, **kwargs)
+            self.instruments[new_id] = remote_instrument
 
-            # save the information to recreate this instrument on the server
-            # in case of a restart
-            self.instruments[conn.id] = dict(
-                remote_instrument=remote_instrument,
-                instrument_class=instrument_class,
-                args=args,
-                kwargs=kwargs)
-
-            # attach the connection to the remote instrument here.
-            # this is placed *here* rather than in the RemoteInstrument also to
-            # facilitate restarting, so the RemoteInstrument itself doesn't
-            # need to do anything on a restart
-            remote_instrument.connection = conn
         except:
             # if anything went wrong adding a new instrument, delete it
             # in case it still exists there half-formed.
             self.delete(new_id)
             raise
+
+        return info
 
     def delete(self, instrument_id):
         self.write('delete', instrument_id)
@@ -109,45 +97,6 @@ class InstrumentServerManager(ServerManager):
             if not self.instruments:
                 self.close()
                 self.instances.pop(self.name, None)
-
-
-class InstrumentConnection:
-    """
-    A connection between one particular instrument and its server process
-
-    This should be instantiated by InstrumentServerManager.connect,
-    not directly
-    """
-    def __init__(self, manager, instrument_class, new_id, args, kwargs):
-        self.manager = manager
-
-        info = manager.ask('new', instrument_class, new_id, *args, **kwargs)
-        for k, v in info.items():
-            setattr(self, k, v)
-
-    def ask(self, func_name, *args, **kwargs):
-        """
-        Query the server copy of this instrument, expecting a response
-        """
-        return self.manager.ask('cmd', self.id, func_name, *args, **kwargs)
-
-    def write(self, func_name, *args, **kwargs):
-        """
-        Send a command to the server copy of this instrument, without
-        waiting for a response
-        """
-        self.manager.write('cmd', self.id, func_name, *args, **kwargs)
-
-    def close(self):
-        """
-        Take this instrument off the server and irreversibly stop
-        this connection. You can only do this from the process that
-        started the manager (ie the main process) so that other processes
-        do not delete instruments when they finish
-        """
-        if hasattr(self, 'manager'):
-            if self.manager._server in mp.active_children():
-                self.manager.delete(self.id)
 
 
 class InstrumentServer(BaseServer):
@@ -192,7 +141,7 @@ class InstrumentServer(BaseServer):
 
         # info to reconstruct the instrument API in the RemoteInstrument
         return {
-            'instrument_name': ins.name,
+            'name': ins.name,
             'id': new_id,
             'parameters': {name: p.get_attrs()
                            for name, p in ins.parameters.items()},

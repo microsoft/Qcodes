@@ -132,7 +132,7 @@ class TestInstrumentServer(TestCase):
             (RESPONSE_OK, {
                 'functions': {},
                 'id': 0,
-                'instrument_name': 'J Edgar',
+                'name': 'J Edgar',
                 'methods': {},
                 'parameters': {}
             }),
