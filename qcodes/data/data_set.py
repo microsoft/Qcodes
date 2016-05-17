@@ -1,6 +1,7 @@
 from enum import Enum
 from datetime import datetime
 import time
+import numpy
 import logging
 import traceback
 
@@ -360,12 +361,23 @@ class DataSet(DelegateAttributes):
                 self.read()
                 return False
 
-    def complete(self, delay=0.2):
-        logging.info('waiting for data to complete')
+    def fraction_complete(self):
+        try:
+            first_param = next(iter(self.arrays.keys()))
+            A=getattr(self, first_param)
+            sz=numpy.prod(A.size)
+            fraction = (sz-numpy.isnan(A).sum())/sz 
+        except Exception as ex:
+            logging.debug(traceback.format_exc(ex))
+            fraction = numpy.NaN
+        return fraction 
+    def complete(self, delay=1.5):
+        logging.info('waiting for DataSet to complete')
+
         try:
             nloops=0
             while True:
-                logging.info('waiting for data to complete (loop %d)' % nloops)
+                logging.info('waiting for DataSet to complete (fraction %.2f)' % (self.fraction_complete(),) )
                 if self.sync()==False:
                     break
                 time.sleep(delay)
