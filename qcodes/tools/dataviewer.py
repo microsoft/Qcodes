@@ -82,11 +82,13 @@ class DataViewer(QtGui.QWidget):
         logs=dict()        
         for i, d in enumerate(dd):
             tag= os.path.basename(d)
-            datetag, logtag=d.split('/')[-2:]
+            datetag, logtag=d.split('/')[-3:-1]
             if not datetag in logs:
                 logs[datetag]=dict()
             logs[datetag][logtag]=d
 
+        self.logs = logs
+        
         for i, datetag in enumerate(sorted(logs.keys())[::-1]):             
             parent1 = QtGui.QStandardItem(datetag)
             for j, logtag in enumerate(logs[datetag]):
@@ -107,7 +109,7 @@ class DataViewer(QtGui.QWidget):
             return 'amplitude'
 
         try:
-            key= (iter (data.arrays.values()))
+            key= next(iter (data.arrays.keys()))
             return key
         except:
             return None
