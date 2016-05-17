@@ -6,14 +6,6 @@ import sys
 import io
 import multiprocessing as mp
 
-def static_vars(**kwargs):
-    ''' Add static variable to a function '''
-    def decorate(func):
-        for k in kwargs:
-            setattr(func, k, kwargs[k])
-        return func
-    return decorate
-
 _tprint_times = {}
 def tprint(string, dt=1, tag='default'):
     """ Print progress of a loop every dt seconds """
