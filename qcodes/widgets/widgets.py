@@ -93,6 +93,9 @@ class SubprocessWidget(UpdateWidget):
 
     instance = None
 
+    # max seconds to wait for a measurement to abort
+    abort_timeout = 30
+
     def __init__(self, interval=0.5):
         if self.instance is not None:
             raise RuntimeError(
@@ -120,4 +123,4 @@ class SubprocessWidget(UpdateWidget):
         self._processes = ', '.join(others + loops)
 
         if content.get('abort'):
-            halt_bg()
+            halt_bg(timeout=self.abort_timeout, traceback=False)
