@@ -1,12 +1,10 @@
-from traceback import format_exc
 import multiprocessing as mp
-from queue import Empty
 
 from qcodes.utils.multiprocessing import ServerManager, BaseServer
 
 
 def get_instrument_server(server_name, shared_kwargs={}):
-    '''
+    """
     Find or make an instrument server process with the given name
     and shared attributes. An InstrumentServer can hold the connections
     to one or more instruments, but any unpicklable attributes need to be
@@ -20,7 +18,7 @@ def get_instrument_server(server_name, shared_kwargs={}):
     shared_kwargs: unpicklable items needed by the instruments on the
         server, will get sent with the manager when it's started up
         and included in the kwargs to construct each new instrument
-    '''
+    """
 
     if not server_name:
         server_name = 'Instruments'
@@ -43,7 +41,7 @@ def get_instrument_server(server_name, shared_kwargs={}):
 
 
 class InstrumentServerManager(ServerManager):
-    '''
+    """
     Creates and manages connections to an InstrumentServer
 
     name: the name of the server to create
@@ -51,7 +49,7 @@ class InstrumentServerManager(ServerManager):
         additional queues, that can only be shared on creation)
         These items will be set as attributes of any instrument that
         connects to the server
-    '''
+    """
     instances = {}
 
     def __init__(self, name, shared_kwargs=None):
@@ -65,10 +63,10 @@ class InstrumentServerManager(ServerManager):
                          shared_attrs=shared_kwargs)
 
     def restart(self):
-        '''
+        """
         Restart the InstrumentServer and reconnect the instruments that
         had been connected previously
-        '''
+        """
         super().restart()
 
         instruments = self.instruments
@@ -114,11 +112,12 @@ class InstrumentServerManager(ServerManager):
 
 
 class InstrumentConnection:
-    '''
+    """
     A connection between one particular instrument and its server process
 
-    This should be instantiated by InstrumentServerManager.connect, not directly
-    '''
+    This should be instantiated by InstrumentServerManager.connect,
+    not directly
+    """
     def __init__(self, manager, instrument_class, new_id, args, kwargs):
         self.manager = manager
 
@@ -127,25 +126,25 @@ class InstrumentConnection:
             setattr(self, k, v)
 
     def ask(self, func_name, *args, **kwargs):
-        '''
+        """
         Query the server copy of this instrument, expecting a response
-        '''
+        """
         return self.manager.ask('cmd', self.id, func_name, *args, **kwargs)
 
     def write(self, func_name, *args, **kwargs):
-        '''
+        """
         Send a command to the server copy of this instrument, without
         waiting for a response
-        '''
+        """
         self.manager.write('cmd', self.id, func_name, *args, **kwargs)
 
     def close(self):
-        '''
+        """
         Take this instrument off the server and irreversibly stop
         this connection. You can only do this from the process that
         started the manager (ie the main process) so that other processes
         do not delete instruments when they finish
-        '''
+        """
         if hasattr(self, 'manager'):
             if self.manager._server in mp.active_children():
                 self.manager.delete(self.id)
@@ -164,19 +163,19 @@ class InstrumentServer(BaseServer):
         self.run_event_loop()
 
     def handle_new_id(self):
-        '''
+        """
         split out id generation from adding an instrument
         so that we can delete it if something goes wrong!
-        '''
+        """
         new_id = self.next_id
         self.next_id += 1
         return new_id
 
     def handle_new(self, instrument_class, new_id, *args, **kwargs):
-        '''
+        """
         Add a new instrument to the server
         after the initial load, the instrument is referred to by its ID
-        '''
+        """
 
         # merge shared_kwargs into kwargs for the constructor,
         # but only if this instrument_class is expecting them.
@@ -203,10 +202,10 @@ class InstrumentServer(BaseServer):
         }
 
     def handle_delete(self, instrument_id):
-        '''
+        """
         Delete an instrument from the server, and stop the server if their
         are no more instruments left after this.
-        '''
+        """
         if instrument_id in self.instruments:
             self.instruments[instrument_id].close()
 
@@ -216,8 +215,8 @@ class InstrumentServer(BaseServer):
                 self.handle_halt()
 
     def handle_cmd(self, instrument_id, func_name, *args, **kwargs):
-        '''
+        """
         Run some method of an instrument
-        '''
+        """
         func = getattr(self.instruments[instrument_id], func_name)
         return func(*args, **kwargs)
