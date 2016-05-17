@@ -203,11 +203,16 @@ class Keithley_2700(VisaInstrument):
         '''
 
         # add functions
-        self.add_function('readnext',
+        self.add_parameter('amplitude',
                           units='arb.unit',
                           label=name,
-                          call_cmd=':DATA:FRESH?',
-                          return_parser=float)
+                          get_cmd=':DATA:FRESH?',
+                          get_parser=float)
+        self.add_parameter('readnext',
+                          units='arb.unit',
+                          label=name,
+                          get_cmd=':DATA:FRESH?',
+                          get_parser=float)
 
         if reset:
             self.reset()

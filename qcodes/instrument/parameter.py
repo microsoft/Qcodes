@@ -197,6 +197,14 @@ class Parameter(Metadatable, DeferredOperations):
 
         self.get_latest = GetLatest(self)
 
+    def __repr__(self):
+        s = '<{}.{}: {} at {}>'.format(
+            self.__module__,
+            self.__class__.__name__,
+            str(self.name),
+            id(self))
+        return s
+
     def __call__(self, *args):
         if len(args) == 0:
             if self.has_get:
