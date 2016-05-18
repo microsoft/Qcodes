@@ -65,6 +65,16 @@ class TestParamConstructor(TestCase):
         self.assertEqual(p.setpoint_names, setpoint_names)
         self.assertEqual(p.setpoint_labels, setpoint_labels)
 
+    def test_repr(self):
+        for i in [0, "foo", "", "fåil"]:
+            with self.subTest(i=i):
+                param = Parameter(name=i)
+                s = param.__repr__()
+                st = '<{}.{}: {} at {}>'.format(
+                    param.__module__, param.__class__.__name__,
+                    param.name, id(param))
+                self.assertEqual(s, st)
+
 
 class GatesBadDelayType(MockGates):
     def __init__(self, *args, **kwargs):
@@ -660,6 +670,21 @@ class TestParameters(TestCase):
             self.source.add_parameter('alignment2',
                                       parameter_class=ManualParameter,
                                       initial_value='nearsighted')
+
+    def test_deferred_ops(self):
+        gates = self.gates
+        c0, c1, c2 = gates.chan0, gates.chan1, gates.chan2
+
+        c0.set(0)
+        c1.set(1)
+        c2.set(2)
+
+        self.assertEqual((c0 + c1 + c2)(), 3)
+        self.assertEqual((10 + (c0**2) + (c1**2) + (c2**2))(), 15)
+
+        d = c1.get_latest / c0.get_latest
+        with self.assertRaises(ZeroDivisionError):
+            d()
 
 
 class TestAttrAccess(TestCase):

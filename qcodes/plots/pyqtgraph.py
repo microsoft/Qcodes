@@ -59,7 +59,7 @@ class QtPlot(BasePlot):
 
         if not show_window:
             self.win.hide()
-            
+
     def _init_qt(self):
         # starting the process for the pyqtgraph plotting
         # You do not want a new process to be created every time you start a
@@ -133,8 +133,13 @@ class QtPlot(BasePlot):
             if 'symbolBrush' not in kwargs:
                 kwargs['symbolBrush'] = color
 
-        return subplot_object.plot(*self._line_data(x, y), antialias=antialias,
-                                   **kwargs)
+        # suppress warnings when there are only NaN to plot
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', 'All-NaN axis encountered')
+            warnings.filterwarnings('ignore', 'All-NaN slice encountered')
+            pl = subplot_object.plot(*self._line_data(x, y),
+                                     antialias=antialias, **kwargs)
+        return pl
 
     def _line_data(self, x, y):
         return [self._clean_array(arg) for arg in [x, y] if arg is not None]
