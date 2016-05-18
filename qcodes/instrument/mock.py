@@ -135,6 +135,10 @@ class MockModel(ServerManager):  # pragma: no cover
         # this will primarily be called via the attached instruments.
         super().__init__(name, server_class=None)
 
+    def get_attribute(self, name):
+        ''' Get an attribute from the model (server side) '''        
+        return self.ask('_magicget:%s' % (name, ))        
+        
     def _run_server(self):
         while True:
             try:
@@ -145,6 +149,12 @@ class MockModel(ServerManager):  # pragma: no cover
 
                 instrument = query[0]
 
+                if instrument == '_magicget':
+                    name = query[1]
+                    value = getattr(self, name)
+                    self._response_queue.put(value)
+                    continue
+                
                 if instrument == 'halt':
                     self._response_queue.put(True)
                     break
