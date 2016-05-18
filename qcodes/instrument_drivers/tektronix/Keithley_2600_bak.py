@@ -23,7 +23,6 @@
 
 import re
 from qcodes import VisaInstrument
-from qcodes.utils.validators import Anything
 
 
 class Keithley_2600(VisaInstrument):
@@ -44,8 +43,8 @@ class Keithley_2600(VisaInstrument):
         super().__init__(name, address, terminator='\n', **kwargs)
         self._channel = channel
 
-        self.add_parameter('IDN', get_cmd=self._get_IDN,
-                           vals=Anything())
+        self.add_parameter('IDN', get_cmd='*IDN?',
+                           get_parser=self._get_idn_dict)
 
         self.add_parameter('volt', get_cmd='measure.v()',
                            get_parser=float, set_cmd='source.levelv={:.8f}',
@@ -68,14 +67,12 @@ class Keithley_2600(VisaInstrument):
                            val_mapping={'on':  1, 'ON':  1,
                                         'off': 0, 'OFF': 0})
         # Source range
-        # needs get after set
         self.add_parameter('rangev',
                            get_cmd='source.rangev',
                            get_parser=float,
                            set_cmd='source.rangev={:.4f}',
                            units='V')
         # Measure range
-        # needs get after set
         self.add_parameter('rangei',
                            get_cmd='source.rangei',
                            get_parser=float,
@@ -94,14 +91,14 @@ class Keithley_2600(VisaInstrument):
                            set_cmd='source.limiti={:.4f}',
                            units='A')
 
-    def _get_IDN(self):
-        IDN = self.visa_handle.ask('*IDN?')
+    def _get_idn_dict(self, msg):
+
+        IDN = self.ask_direct('print(*IDN?)')
         vendor, model, serial, firmware = map(str.strip, IDN.split(','))
         model = model[6:]
 
-        self._IDN = {'vendor': vendor, 'model': model,
-                     'serial': serial, 'firmware': firmware}
-        return self._IDN
+        return {'vendor': vendor, 'model': model,
+                'serial': serial, 'firmware': firmware}
 
     def _mode_parser(self, msg):
         if msg[0] == '0':

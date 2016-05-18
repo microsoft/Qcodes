@@ -67,24 +67,23 @@ class MercuryiPS(IPInstrument):
         self._determine_current_to_field()
 
         self.add_parameter('setpoint',
-                           names=['setpoint_B'+ax.lower() for ax in self.axes],
+                           names=['B'+ax.lower()+'_setpoint' for ax in self.axes],
                            get_cmd=partial(self._get_fld, self.axes, 'FSET'),
                            set_cmd=partial(self._ramp_to_setpoint, self.axes, 'FSET'),
-                           labels=['B'+ax.lower() for ax in self.axes],
                            units=['T'for ax in self.axes],
                            vals=Anything())
+
         self.add_parameter('rate',
                            names=['rate_B'+ax.lower() for ax in self.axes],
                            get_cmd=partial(self._get_fld, self.axes, 'RFST'),
                            set_cmd=partial(self._ramp_to_setpoint, self.axes, 'RFST'),
-                           labels=['rate_'+ax.lower() for ax in self.axes],
                            units=['T/m'for ax in self.axes],
                            vals=Anything())
+
         self.add_parameter('fld',
                            names=['B'+ax.lower() for ax in self.axes],
                            get_cmd=partial(self._get_fld, self.axes, 'FLD'),
                            set_cmd=partial(self._ramp_to_setpoint, self.axes, 'FSET'),
-                           labels=['B'+ax.lower() for ax in self.axes],
                            units=['T'for ax in self.axes],
                            vals=Anything())
 
@@ -93,7 +92,6 @@ class MercuryiPS(IPInstrument):
                            get_cmd=partial(self._get_fld,
                                            self.axes, 'CURR'),
                            set_cmd=partial(self._ramp_to_setpoint, self.axes, 'CSET'),
-                           labels=['B'+ax.lower() for ax in self.axes],
                            units=['T'for ax in self.axes],
                            vals=Anything())
 
@@ -102,7 +100,6 @@ class MercuryiPS(IPInstrument):
                            get_cmd=partial(self._get_rtp,
                                            self.axes, 'FLD'),
                            set_cmd=partial(self._set_rtp, self.axes, 'FSET'),
-                           labels=['radius', 'theta', 'phi'],
                            units=['|B|', 'rad', 'rad'],
                            vals=Anything())
 
@@ -111,7 +108,6 @@ class MercuryiPS(IPInstrument):
                            get_cmd=partial(self._get_rtp,
                                            self.axes, 'CURR'),
                            set_cmd=partial(self._set_rtp, self.axes, 'CSET'),
-                           labels=['radius', 'theta', 'phi'],
                            units=['|B|', 'rad', 'rad'],
                            vals=Anything())
 
@@ -121,18 +117,15 @@ class MercuryiPS(IPInstrument):
         self.add_parameter('radius',
                            get_cmd=self._get_r,
                            set_cmd=self._set_r,
-                           label='radius',
-                           unit='|B|')
+                           units='|B|')
         self.add_parameter('theta',
                            get_cmd=self._get_theta,
                            set_cmd=self._set_theta,
-                           label='theta',
-                           unit='rad')
+                           units='rad')
         self.add_parameter('phi',
                            get_cmd=self._get_phi,
                            set_cmd=self._set_phi,
-                           label='phi',
-                           unit='rad')
+                           units='rad')
 
         # self.add_parameter('ACTN',
         #                    get_cmd=self._ACTN,
@@ -240,8 +233,16 @@ class MercuryiPS(IPInstrument):
             setpoint = [setpoint]
         if cmd in ['CSET', 'RCST', 'CURR', 'PCUR', 'RCUR']:
             setpoint = np.array(self._ATOB) * np.array(setpoint)
+            # print('a', setpoint)
 
+        if len(ax) == 1:
+            # print('b', self.axes.index(ax))
+            setpoint = setpoint[self.axes.index(ax)]
+            # print('c', setpoint)
+
+        # print('d', ax, cmd, setpoint)
         msg = 'SET:DEV:GRP{}:PSU:SIG:{}:{:6f}'
+        # print('e', msg)
         self._write_cmd(cmd, ax, setpoint, msg)
 
     def _get_fld(self, ax, cmd):
@@ -249,12 +250,14 @@ class MercuryiPS(IPInstrument):
         #          FLD for field
         #          RFLD for rate
         #          PFLD persistent field reading
-        fld = self._read_cmd(cmd, ax, float)
-        if len(fld) == 1:
-            return fld[0]
+        fld = list(self._read_cmd(cmd, ax, float))
 
         if cmd in ['CSET', 'RCST', 'CURR', 'PCUR', 'RCUR']:
             fld = np.array(fld) / np.array(self._ATOB)
+
+        # print(ax, cmd, fld)
+        if len(ax) == 1:
+            return fld[self.axes.index(ax)]
         return list(fld)
 
     def _get_rtp(self, ax, cmd):
@@ -329,6 +332,8 @@ class MercuryiPS(IPInstrument):
         fmt = fmt or 'SET:DEV:GRP{}:PSU:SIG:{}:{:4f}'
         msg = ''
         msglist = []
+        if len(axes) == 1:
+            setpoint = [setpoint]
         for ix, axis in enumerate(axes):
             msglist.append(fmt.format(axis, cmd, setpoint[ix]))
         msg = '\n'.join(msglist)
@@ -349,7 +354,7 @@ class MercuryiPS(IPInstrument):
                     if not (None in data):
                         return data
             rep = self._recv()
-        print(data)
+        # print(data)
 
     def _get_cmd(self, question, parser=None):
         # print(question)

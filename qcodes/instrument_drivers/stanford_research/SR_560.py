@@ -1,4 +1,4 @@
-# Ithaco_1211.py driver for Ithaco 1211 Current-preamplifier
+# sr_560.py driver for SR 560 Voltage-preamplifier
 #
 # The MIT License (MIT)
 # Copyright (c) 2016 Merlin von Soosten <merlin.von.soosten@gmail.com>
@@ -22,55 +22,54 @@
 # THE SOFTWARE.
 
 from qcodes import Instrument
-from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.parameter import ManualParameter
-from qcodes.utils.validators import Enum, Bool, Anything
+from qcodes.utils.validators import Enum, Bool, Anything, Numbers
+
+from qcodes.instrument.parameter import Parameter
 
 
-
-class CurrentParameter(Parameter):
-    def __init__(self, measured_param, camp_ins, name='curr'):
+class VoltageParameter(Parameter):
+    def __init__(self, measured_param, vamp_ins, name='volt'):
         p_name = measured_param.name
         self.name = name
-        super().__init__(names=('camp_raw_'+p_name, name))
+        super().__init__(names=('vamp_raw_'+p_name, name))
 
         _p_label = None
         _p_unit = None
 
         self.measured_param = measured_param
-        self._instrument = camp_ins
+        self._instrument = vamp_ins
 
         if hasattr(measured_param, 'label'):
             _p_label = measured_param.label
         if hasattr(measured_param, 'units'):
             _p_unit = measured_param.units
 
-        self.labels = (_p_label, 'Current')
-        self.units = (_p_unit, 'A')
+        self.labels = (_p_label, 'Voltage')
+        self.units = (_p_unit, 'V')
 
     def get(self):
         volt = self.measured_param.get()
-        current = (self._instrument.sens.get() *
-                   self._instrument.sens_factor.get()) * volt
+        volt_amp = (volt / self._instrument.gain.get())
 
         if self._instrument.invert.get():
-            current *= -1
-        return (volt, current)
+            volt_amp *= -1
+        return (volt, volt_amp)
 
 
-class Ithaco_1211(Instrument):
+class SR_560(Instrument):
     '''
     dmm_parameter: The parameter used to measure the voltage output
 
-    This is the qcodes driver for the Ithaco 1211 Current-preamplifier,
+    This is the qcodes driver for the SR 560 Voltage-preamplifier,
     This is a virtual driver only and will not talk to your instrument.
     '''
     def __init__(self, name, dmm_parameter=None, **kwargs):
         super().__init__(name, **kwargs)
         self.dmm_parameter = dmm_parameter
 
-        vendor = 'Ithaco (DL Instruments)'
-        model = '1211'
+        vendor = 'Stanford Research Systems'
+        model = 'SR560'
         serial = None
         firmware = None
 
@@ -80,13 +79,19 @@ class Ithaco_1211(Instrument):
                                           'serial': serial, 'firmware': firmware},
                            vals=Anything())
 
-        self.add_parameter('sens',
+        self.add_parameter('cutoff_lo',
                            parameter_class=ManualParameter,
-                           initial_value=1e-8,
-                           label='Sensitivity',
-                           units='A/V',
-                           vals=Enum(1e-11, 1e-10, 1e-09, 1e-08, 1e-07,
-                                     1e-06, 1e-05, 1e-4, 1e-3))
+                           initial_value='DC',
+                           label='High pass',
+                           units='Hz',
+                           vals=Anything())
+
+        self.add_parameter('cutoff_hi',
+                           parameter_class=ManualParameter,
+                           initial_value='1e6',
+                           label='Low pass',
+                           units='Hz',
+                           vals=Anything())
 
         self.add_parameter('invert',
                            parameter_class=ManualParameter,
@@ -94,25 +99,9 @@ class Ithaco_1211(Instrument):
                            label='Iverted output',
                            vals=Bool())
 
-        self.add_parameter('sens_factor',
+        self.add_parameter('gain',
                            parameter_class=ManualParameter,
-                           initial_value=1,
-                           label='sensitivity factor',
+                           initial_value=10,
+                           label='gain',
                            units=None,
-                           vals=Enum(0.1, 1, 10))
-
-        self.add_parameter('suppression',
-                           parameter_class=ManualParameter,
-                           initial_value=1e-7,
-                           label='Suppression',
-                           units='A',
-                           vals=Enum(1e-10, 1e-09, 1e-08, 1e-07, 1e-06,
-                                     1e-05, 1e-4, 1e-3))
-
-        self.add_parameter('risetime',
-                           parameter_class=ManualParameter,
-                           initial_value=0.3,
-                           label='Rise Time',
-                           units='msec',
-                           vals=Enum(0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30,
-                                     100, 300, 1000))
+                           vals=Numbers())

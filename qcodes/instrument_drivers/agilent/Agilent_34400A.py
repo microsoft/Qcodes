@@ -22,7 +22,7 @@
 # THE SOFTWARE.
 
 
-from qcodes.utils.validators import Enum, Strings
+from qcodes.utils.validators import Enum, Strings, Anything
 from qcodes import VisaInstrument
 
 
@@ -42,11 +42,10 @@ class Agilent_34400A(VisaInstrument):
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, terminator='\n', **kwargs)
 
-        IDN = self.ask('*IDN?')
-        vendor, model, serial, firmware = map(str.strip, IDN.split(','))
-        self.model = model
-        self.IDN = {'vendor': vendor, 'model': model,
-                    'serial': serial, 'firmware': firmware}
+        self.add_parameter('IDN', get_cmd='*IDN?',
+                           get_parser=self._parse_idn,
+                           vals=Anything())
+        self.IDN.get()
 
         # Async has to send 'INIT' and later ask for 'FETCH?'
 
@@ -129,6 +128,14 @@ class Agilent_34400A(VisaInstrument):
                                get_cmd='DISP:WIND2:TEXT?',
                                set_cmd='DISP:WIND2:TEXT "{}"',
                                vals=Strings())
+
+    def _parse_idn(self, msg):
+        vendor, model, serial, firmware = map(str.strip, msg.split(','))
+        self.model = model
+
+        IDN = {'vendor': vendor, 'model': model,
+               'serial': serial, 'firmware': firmware}
+        return IDN
 
     def clear_errors(self):
         while True:

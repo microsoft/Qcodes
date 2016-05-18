@@ -119,6 +119,9 @@ class IPInstrument(Instrument):
             e.args = e.args + ('asking ' + repr(cmd) + ' to ' + repr(self),)
             raise e
 
+    def __del__(self):
+        self.close()
+
 
 class EnsureConnection:
     def __init__(self, instrument):
