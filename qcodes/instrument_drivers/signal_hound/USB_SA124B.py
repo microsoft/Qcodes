@@ -16,35 +16,35 @@ class SignalHound_USB_SA124B(Instrument):
     dll_path = 'C:\Windows\System32\sa_api.dll'
 
     saStatus = {
-        "saUnknownErr": -666,
-        "saFrequencyRangeErr": -99,
-        "saInvalidDetectorErr": -95,
-        "saInvalidScaleErr": -94,
-        "saBandwidthErr": -91,
-        "saExternalReferenceNotFound": -89,
+        'saUnknownErr': -666,
+        'saFrequencyRangeErr': -99,
+        'saInvalidDetectorErr': -95,
+        'saInvalidScaleErr': -94,
+        'saBandwidthErr': -91,
+        'saExternalReferenceNotFound': -89,
         # Device specific errors
-        "saOvenColdErr": -20,
+        'saOvenColdErr': -20,
         # Data errors
-        "saInternetErr": -12,
-        "saUSBCommErr": -11,
+        'saInternetErr': -12,
+        'saUSBCommErr': -11,
         # General configuration errors
-        "saTrackingGeneratorNotFound": -10,
-        "saDeviceNotIdleErr": -9,
-        "saDeviceNotFoundErr": -8,
-        "saInvalidModeErr": -7,
-        "saNotConfiguredErr": -6,
-        "saDeviceNotConfiguredErr": -6,  # Added because key error raised
-        "saTooManyDevicesErr": -5,
-        "saInvalidParameterErr": -4,
-        "saDeviceNotOpenErr": -3,
-        "saInvalidDeviceErr": -2,
-        "saNullPtrErr": -1,
+        'saTrackingGeneratorNotFound': -10,
+        'saDeviceNotIdleErr': -9,
+        'saDeviceNotFoundErr': -8,
+        'saInvalidModeErr': -7,
+        'saNotConfiguredErr': -6,
+        'saDeviceNotConfiguredErr': -6,  # Added because key error raised
+        'saTooManyDevicesErr': -5,
+        'saInvalidParameterErr': -4,
+        'saDeviceNotOpenErr': -3,
+        'saInvalidDeviceErr': -2,
+        'saNullPtrErr': -1,
         # No error
-        "saNoError": 0,
+        'saNoError': 0,
         # Warnings
-        "saNoCorrections": 1,
-        "saCompressionWarning": 2,
-        "saParameterClamped": 3,
+        'saNoCorrections': 1,
+        'saCompressionWarning': 2,
+        'saParameterClamped': 3,
         'saBandwidthClamped': 4
     }
     saStatus_inverted = dict((v, k) for k, v in saStatus.items())
@@ -53,7 +53,7 @@ class SignalHound_USB_SA124B(Instrument):
         t0 = time()
         super().__init__(name, tags=['physical'], **kwargs)
 
-        self.log = logging.getLogger("Main.DeviceInt")
+        self.log = logging.getLogger('Main.DeviceInt')
         logging.info(__name__ +
                      ' : Initializing instrument SignalHound USB 124A')
         self.dll = ct.CDLL(dll_path or self.dll_path)
@@ -161,62 +161,67 @@ class SignalHound_USB_SA124B(Instrument):
         return 'USB'
 
     def openDevice(self):
-        self.log.info("Opening Device")
+        self.log.info('Opening Device')
         self.deviceHandle = ct.c_int(0)
         deviceHandlePnt = ct.pointer(self.deviceHandle)
         ret = self.dll.saOpenDevice(deviceHandlePnt)
         if ret != self.hf.saNoError:
             if ret == self.hf.saNullPtrErr:
-                raise ValueError("Could not open device due to null-pointer error!")
+                raise ValueError('Could not open device due to '
+                                 'null-pointer error!')
             elif ret == self.hf.saDeviceNotOpenErr:
-                raise ValueError("Could not open device!")
+                raise ValueError('Could not open device!')
             else:
-                raise ValueError("Could not open device due to unknown reason! Error = %d" % ret)
+                raise ValueError('Could not open device due to unknown '
+                                 'reason! Error = %d' % ret)
 
         self.devOpen = True
         self._devType = self.get('device_type')
 
     def closeDevice(self):
-        self.log.info("Closing Device with handle num: ", self.deviceHandle.value)
+        self.log.info('Closing Device with handle num: ',
+                      self.deviceHandle.value)
 
         try:
             self.dll.saAbort(self.deviceHandle)
-            self.log.info("Running acquistion aborted.")
+            self.log.info('Running acquistion aborted.')
         except Exception as e:
-            self.log.info("Could not abort acquisition: %s", e)
+            self.log.info('Could not abort acquisition: %s', e)
 
         ret = self.dll.saCloseDevice(self.deviceHandle)
         if ret != self.hf.saNoError:
-            raise ValueError("Error closing device!")
-        print("Closed Device with handle num: ", self.deviceHandle.value)
+            raise ValueError('Error closing device!')
+        print('Closed Device with handle num: ', self.deviceHandle.value)
         self.devOpen = False
         self._running = False
 
     def abort(self):
-        self.log.info("Stopping acquisition")
+        self.log.info('Stopping acquisition')
 
         err = self.dll.saAbort(self.deviceHandle)
-        if err == self.saStatus["saNoError"]:
-            self.log.info("Call to abort succeeded.")
+        if err == self.saStatus['saNoError']:
+            self.log.info('Call to abort succeeded.')
             self._running = False
-        elif err == self.saStatus["saDeviceNotOpenErr"]:
-            raise IOError("Device not open!")
-        elif err == self.saStatus["saDeviceNotConfiguredErr"]:
-            raise IOError("Device was already idle! Did you call abort without ever calling initiate()?")
+        elif err == self.saStatus['saDeviceNotOpenErr']:
+            raise IOError('Device not open!')
+        elif err == self.saStatus['saDeviceNotConfiguredErr']:
+            raise IOError('Device was already idle! Did you call abort '
+                          'without ever calling initiate()?')
         else:
-            raise IOError("Unknown error setting abort! Error = %s" % err)
+            raise IOError('Unknown error setting abort! Error = %s' % err)
 
     def preset(self):
-        self.log.warning("Performing hardware-reset of device!")
-        self.log.warning("Please ensure you close the device handle within two seconds of this call!")
+        self.log.warning('Performing hardware-reset of device!')
+        self.log.warning('Please ensure you close the device handle within '
+                         'two seconds of this call!')
 
         err = self.dll.saPreset(self.deviceHandle)
-        if err == self.saStatus["saNoError"]:
-            self.log.info("Call to preset succeeded.")
-        elif err == self.saStatus["saDeviceNotOpenErr"]:
-            raise IOError("Device not open!")
+        if err == self.saStatus['saNoError']:
+            self.log.info('Call to preset succeeded.')
+        elif err == self.saStatus['saDeviceNotOpenErr']:
+            raise IOError('Device not open!')
         else:
-            raise IOError("Unknown error calling preset! Error = %s" % err)
+            raise IOError('Unknown error calling preset! Error = %s' % err)
 
     # TODO (AJ note): all these boilerplate _do_(get|set) should just turn
     # into ManualParameters, but someone who actually *has* this instrument
@@ -259,33 +264,34 @@ class SignalHound_USB_SA124B(Instrument):
         self._running = running
 
     def _do_get_device_type(self):
-        self.log.info("Querying device for model information")
+        self.log.info('Querying device for model information')
 
         devType = ct.c_uint(0)
         devTypePnt = ct.pointer(devType)
 
         err = self.dll.saGetDeviceType(self.deviceHandle, devTypePnt)
-        if err == self.saStatus["saNoError"]:
+        if err == self.saStatus['saNoError']:
             pass
-        elif err == self.saStatus["saDeviceNotOpenErr"]:
-            raise IOError("Device not open!")
-        elif err == self.saStatus["saNullPtrErr"]:
-            raise IOError("Null pointer error!")
+        elif err == self.saStatus['saDeviceNotOpenErr']:
+            raise IOError('Device not open!')
+        elif err == self.saStatus['saNullPtrErr']:
+            raise IOError('Null pointer error!')
         else:
-            raise IOError("Unknown error setting getDeviceType! Error = %s" % err)
+            raise IOError('Unknown error setting getDeviceType! '
+                          'Error = %s' % err)
 
         if devType.value == self.hf.saDeviceTypeNone:
-            dev = "No device"
+            dev = 'No device'
         elif devType.value == self.hf.saDeviceTypeSA44:
-            dev = "sa44"
+            dev = 'sa44'
         elif devType.value == self.hf.saDeviceTypeSA44B:
-            dev = "sa44B"
+            dev = 'sa44B'
         elif devType.value == self.hf.saDeviceTypeSA124A:
-            dev = "sa124A"
+            dev = 'sa124A'
         elif devType.value == self.hf.saDeviceTypeSA124B:
             dev = 'sa124B'
         else:
-            raise ValueError("Unknown device type!")
+            raise ValueError('Unknown device type!')
         return dev
 
     def _do_set_device_type(self, device_type):
@@ -294,27 +300,27 @@ class SignalHound_USB_SA124B(Instrument):
     def _do_get_device_mode(self):
         return self._device_mode
 
-    def _do_set_device_mode(self,device_mode):
+    def _do_set_device_mode(self, device_mode):
         self._device_mode = device_mode
         return
 
     def _do_get_acquisition_mode(self):
         return self._acquisition_mode
 
-    def _do_set_acquisition_mode(self,acquisition_mode):
+    def _do_set_acquisition_mode(self, acquisition_mode):
         self._acquisition_mode = acquisition_mode
         return
 
     def _do_get_scale(self):
         return self._scale
 
-    def _do_set_scale(self,scale):
+    def _do_set_scale(self, scale):
         self._scale = scale
 
     def _do_get_decimation(self):
         return self.decimation
 
-    def _do_set_decimation(self,decimation):
+    def _do_set_decimation(self, decimation):
         self.decimation = decimation
 
     def _do_get_bandwidth(self):
@@ -340,27 +346,28 @@ class SignalHound_USB_SA124B(Instrument):
     def initialisation(self, flag=0):
         mode = self.get('device_mode')
         modeOpts = {
-            "sweeping": self.hf.sa_SWEEPING,
-            "real_time": self.hf.sa_REAL_TIME,
-            "IQ": self.hf.sa_IQ,  # not implemented
-            "idle": self.hf.sa_IDLE  # not implemented
+            'sweeping': self.hf.sa_SWEEPING,
+            'real_time': self.hf.sa_REAL_TIME,
+            'IQ': self.hf.sa_IQ,  # not implemented
+            'idle': self.hf.sa_IDLE  # not implemented
         }
         if mode in modeOpts:
             mode = modeOpts[mode]
         else:
-            raise ValueError("Mode must be one of %s. Passed value was %s." % (modeOpts, mode))
+            raise ValueError('Mode must be one of %s. Passed value was %s.' %
+                             (modeOpts, mode))
         err = self.dll.saInitiate(self.deviceHandle, mode, flag)
 
         ###################################
         # Below here only error handling
         ###################################
-        if err == self.saStatus["saNoError"]:
+        if err == self.saStatus['saNoError']:
             self._running = True
-            self.log.info("Call to initiate succeeded.")
-        elif err == self.saStatus["saDeviceNotOpenErr"]:
-            raise IOError("Device not open!")
-        elif err == self.saStatus["saInvalidParameterErr"]:
-            print("saInvalidParameterErr!")
+            self.log.info('Call to initiate succeeded.')
+        elif err == self.saStatus['saDeviceNotOpenErr']:
+            raise IOError('Device not open!')
+        elif err == self.saStatus['saInvalidParameterErr']:
+            print('saInvalidParameterErr!')
             print('In real-time mode, this value may be returned if the span',
                   'limits defined in the API header are broken. Also in',
                   'real-time mode, this error will be returned if the',
@@ -372,9 +379,9 @@ class SignalHound_USB_SA124B(Instrument):
                   ' bandwidth provided require more samples for processing',
                   ' than is allowed in the gate length. To fix this, ',
                   'increase rbw/vbw.')
-            raise IOError("The value for mode did not match any known value.")
-        # This error code does not exists!??
-        # elif err == self.saStatus["saAllocationLimitError"]:
+            raise IOError('The value for mode did not match any known value.')
+        # This error code does not exist!??
+        # elif err == self.saStatus['saAllocationLimitError']:
         #     print('This value is returned in extreme circumstances. The API',
         #           ' currently limits the amount of RAM usage to 1GB. When',
         #           ' exceptional parameters are provided, such as very low ',
@@ -383,12 +390,12 @@ class SignalHound_USB_SA124B(Instrument):
         #           ' the device. The processing algorithms are optimized for',
         #           ' speed at the expense of space, which is the reason',
         #           ' this can occur.''')
-        #     raise IOError("Could not allocate sufficent RAM!")
-        elif err == self.saStatus["saBandwidthErr"]:
-            raise IOError("RBW is larger than your span. (Sweep Mode)!")
+        #     raise IOError('Could not allocate sufficent RAM!')
+        elif err == self.saStatus['saBandwidthErr']:
+            raise IOError('RBW is larger than your span. (Sweep Mode)!')
         self.check_for_error(err)
         # else:
-        #     raise IOError("Unknown error setting initiate! Error = %s" % err)
+        #     raise IOError('Unknown error setting initiate! Error = %s' % err)
 
         return
 
@@ -397,16 +404,16 @@ class SignalHound_USB_SA124B(Instrument):
         start_freq = ct.c_double(0)
         stepsize = ct.c_double(0)
         err = self.dll.saQuerySweepInfo(self.deviceHandle, ct.pointer(sweep_len), ct.pointer(start_freq), ct.pointer(stepsize))
-        if err == self.saStatus["saNoError"]:
+        if err == self.saStatus['saNoError']:
             pass
-        elif err == self.saStatus["saDeviceNotOpenErr"]:
-            raise IOError("Device not open!")
-        elif err == self.saStatus["saDeviceNotConfiguredErr"]:
-            raise IOError("The device specified is not currently streaming!")
-        elif err == self.saStatus["saNullPtrErr"]:
-            raise IOError("Null pointer error!")
+        elif err == self.saStatus['saDeviceNotOpenErr']:
+            raise IOError('Device not open!')
+        elif err == self.saStatus['saDeviceNotConfiguredErr']:
+            raise IOError('The device specified is not currently streaming!')
+        elif err == self.saStatus['saNullPtrErr']:
+            raise IOError('Null pointer error!')
         else:
-            raise IOError("Unknown error!")
+            raise IOError('Unknown error!')
 
         info = np.array([sweep_len.value, start_freq.value, stepsize.value])
         return info
@@ -417,51 +424,51 @@ class SignalHound_USB_SA124B(Instrument):
         span = self.get('span') * 1e9
         center = ct.c_double(frequency)
         span = ct.c_double(span)
-        self.log.info("Setting device CenterSpan configuration.")
+        self.log.info('Setting device CenterSpan configuration.')
 
         err = self.dll.saConfigCenterSpan(self.deviceHandle, center, span)
         self.check_for_error(err)
 
         # Acquisition configuration
         detectorVals = {
-            "min-max": ct.c_uint(self.hf.sa_MIN_MAX),
-            "average": ct.c_uint(self.hf.sa_AVERAGE)
+            'min-max': ct.c_uint(self.hf.sa_MIN_MAX),
+            'average': ct.c_uint(self.hf.sa_AVERAGE)
         }
         scaleVals = {
-            "log-scale": ct.c_uint(self.hf.sa_LOG_SCALE),
-            "lin-scale": ct.c_uint(self.hf.sa_LIN_SCALE),
-            "log-full-scale": ct.c_uint(self.hf.sa_LOG_FULL_SCALE),
-            "lin-full-scale": ct.c_uint(self.hf.sa_LIN_FULL_SCALE)
+            'log-scale': ct.c_uint(self.hf.sa_LOG_SCALE),
+            'lin-scale': ct.c_uint(self.hf.sa_LIN_SCALE),
+            'log-full-scale': ct.c_uint(self.hf.sa_LOG_FULL_SCALE),
+            'lin-full-scale': ct.c_uint(self.hf.sa_LIN_FULL_SCALE)
         }
         if self._acquisition_mode in detectorVals:
             detector = detectorVals[self._acquisition_mode]
         else:
-            raise ValueError("Invalid Detector mode! Detector  must be one of %s. Specified detector = %s" % (list(detectorVals.keys()), detector))
+            raise ValueError('Invalid Detector mode! Detector  must be one of %s. Specified detector = %s' % (list(detectorVals.keys()), detector))
         if self._scale in scaleVals:
             scale = scaleVals[self._scale]
         else:
-            raise ValueError("Invalid Scaling mode! Scaling mode must be one of %s. Specified scale = %s" % (list(scaleVals.keys()), scale))
+            raise ValueError('Invalid Scaling mode! Scaling mode must be one of %s. Specified scale = %s' % (list(scaleVals.keys()), scale))
         err = self.dll.saConfigAcquisition(self.deviceHandle, detector, scale)
         self.check_for_error(err)
 
         # Reference Level configuration
         ref = ct.c_double(self.get('ref_lvl'))
         # atten = ct.c_double(atten)
-        self.log.info("Setting device reference level configuration.")
+        self.log.info('Setting device reference level configuration.')
         err = self.dll.saConfigLevel(
             self.deviceHandle, ct.c_double(self.get('ref_lvl')))
         self.check_for_error(err)
 
         # External Reference configuration
         if self._external_reference:
-            self.log.info("Setting reference frequency from external source.")
+            self.log.info('Setting reference frequency from external source.')
             err = self.dll.saEnableExternalReference(self.deviceHandle)
             self.check_for_error(err)
 
         if self._device_mode == 'sweeping':
             # Sweeping Configuration
             reject_var = ct.c_bool(rejection)
-            self.log.info("Setting device Sweeping configuration.")
+            self.log.info('Setting device Sweeping configuration.')
             err = self.dll.saConfigSweepCoupling(
                 self.deviceHandle, ct.c_double(self.get('rbw')),
                 ct.c_double(self.get('vbw')), reject_var)
@@ -484,7 +491,7 @@ class SignalHound_USB_SA124B(Instrument):
                                         ct.pointer(stepsize))
         if not err == self.saStatus['saNoError']:
             # if an error occurs tries preparing the device and then asks again
-            print('Error raised in Sweep Info Query, preparing for measurement')
+            print('Error raised in QuerySweepInfo, preparing for measurement')
             sleep(.1)
             self.prepare_for_measurement()
             sleep(.1)
@@ -504,7 +511,7 @@ class SignalHound_USB_SA124B(Instrument):
         sleep(.1)  # Added extra sleep
         if not err == self.saStatus['saNoError']:
             # if an error occurs tries preparing the device and then asks again
-            print('Error raised in Sweep Info Query, preparing for measurement')
+            print('Error raised in QuerySweepInfo, preparing for measurement')
             sleep(.1)
             self.prepare_for_measurement()
             sleep(.1)
@@ -512,22 +519,22 @@ class SignalHound_USB_SA124B(Instrument):
             maxarr = (ct.c_float * sweep_len.value)()
             err = self.dll.saGetSweep_32f(self.deviceHandle, minarr, maxarr)
 
-        if err == self.saStatus["saNoError"]:
+        if err == self.saStatus['saNoError']:
             pass
-        elif err == self.saStatus["saDeviceNotOpenErr"]:
-            raise IOError("Device not open!")
-        elif err == self.saStatus["saDeviceNotConfiguredErr"]:
-            raise IOError("The device specified is not currently streaming!")
-        elif err == self.saStatus["saNullPtrErr"]:
-            raise IOError("Null pointer error!")
-        elif err == self.saStatus["saInvalidModeErr"]:
-            raise IOError("Invalid mode error!")
-        elif err == self.saStatus["saCompressionWarning"]:
-            raise IOError("Input voltage overload!")
-        elif err == self.saStatus["sCUSBCommErr"]:
-            raise IOError("Error ocurred in the USB connection!")
+        elif err == self.saStatus['saDeviceNotOpenErr']:
+            raise IOError('Device not open!')
+        elif err == self.saStatus['saDeviceNotConfiguredErr']:
+            raise IOError('The device specified is not currently streaming!')
+        elif err == self.saStatus['saNullPtrErr']:
+            raise IOError('Null pointer error!')
+        elif err == self.saStatus['saInvalidModeErr']:
+            raise IOError('Invalid mode error!')
+        elif err == self.saStatus['saCompressionWarning']:
+            raise IOError('Input voltage overload!')
+        elif err == self.saStatus['sCUSBCommErr']:
+            raise IOError('Error ocurred in the USB connection!')
         else:
-            raise IOError("Unknown error!")
+            raise IOError('Unknown error!')
 
         datamin = np.array([minarr[elem] for elem in range(sweep_len.value)])
         datamax = np.array([minarr[elem] for elem in range(sweep_len.value)])
