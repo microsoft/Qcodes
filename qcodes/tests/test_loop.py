@@ -11,16 +11,18 @@ from qcodes.data.io import DiskIO
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager
 from qcodes.instrument.parameter import Parameter, ManualParameter
-from qcodes.utils.multiprocessing import QcodesProcess
+from qcodes.process.helpers import kill_processes
+from qcodes.process.qcodes_process import QcodesProcess
 from qcodes.utils.validators import Numbers
-from qcodes.utils.helpers import killprocesses, LogCapture
+from qcodes.utils.helpers import LogCapture
+
 from .instrument_mocks import AMockModel, MockGates, MockSource, MockMeter
 
 
 class TestMockInstLoop(TestCase):
     def setUp(self):
         get_data_manager().restart(force=True)
-        killprocesses()
+        kill_processes()
         # TODO: figure out what's leaving DataManager in a weird state
         # and fix it
         get_data_manager().restart(force=True)
@@ -137,7 +139,7 @@ def sleeper(t):
 
 class TestBG(TestCase):
     def test_get_halt(self):
-        killprocesses()
+        kill_processes()
         self.assertIsNone(get_bg())
 
         p1 = QcodesProcess(name=MP_NAME, target=sleeper, args=(10, ))
@@ -203,7 +205,7 @@ class MultiGetter(Parameter):
 
 class TestLoop(TestCase):
     def setUp(self):
-        killprocesses()
+        kill_processes()
         self.p1 = ManualParameter('p1', vals=Numbers(-10, 10))
         self.p2 = ManualParameter('p2', vals=Numbers(-10, 10))
         self.p3 = ManualParameter('p3', vals=Numbers(-10, 10))

@@ -1,6 +1,6 @@
 import multiprocessing as mp
 
-from qcodes.utils.multiprocessing import ServerManager, BaseServer
+from qcodes.process.server import ServerManager, BaseServer
 
 
 def get_instrument_server_manager(server_name, shared_kwargs={}):

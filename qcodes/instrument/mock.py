@@ -2,7 +2,7 @@ import time
 from datetime import datetime
 
 from .base import Instrument
-from qcodes.utils.multiprocessing import ServerManager, BaseServer
+from qcodes.process.server import ServerManager, BaseServer
 
 
 class MockInstrument(Instrument):

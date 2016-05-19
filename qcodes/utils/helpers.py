@@ -4,7 +4,6 @@ import logging
 import math
 import sys
 import io
-import multiprocessing as mp
 
 
 def in_notebook():
@@ -192,15 +191,3 @@ def strip_attrs(obj):
                 pass
     except:
         pass
-
-
-def killprocesses():
-    # TODO: Instrument processes don't appropriately stop in all tests...
-    # this just kills everything that's running.
-    for process in mp.active_children():
-        try:
-            process.terminate()
-        except:
-            pass
-
-    time.sleep(0.5)

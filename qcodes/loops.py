@@ -1,5 +1,5 @@
 """
-Data acquisition loops
+Data acquisition loops.
 
 The general scheme is:
 
@@ -37,6 +37,7 @@ Supported actions (args to .set_measurement or .each) are:
     Task: any callable that does not generate data
     Wait: a delay
 """
+
 from datetime import datetime
 import multiprocessing as mp
 import time
@@ -48,7 +49,7 @@ from qcodes.data.data_array import DataArray
 from qcodes.utils.deferred_operations import is_function
 from qcodes.data.manager import get_data_manager
 from qcodes.utils.helpers import wait_secs
-from qcodes.utils.multiprocessing import QcodesProcess
+from qcodes.process.qcodes_process import QcodesProcess
 from qcodes.utils.threading import thread_map
 
 

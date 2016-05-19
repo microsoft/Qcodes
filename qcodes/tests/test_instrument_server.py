@@ -3,8 +3,8 @@ import time
 import multiprocessing as mp
 
 from qcodes.instrument.server import InstrumentServer
-from qcodes.utils.multiprocessing import (QUERY_WRITE, QUERY_ASK, RESPONSE_OK,
-                                          RESPONSE_ERROR)
+from qcodes.process.server import (QUERY_WRITE, QUERY_ASK, RESPONSE_OK,
+                                   RESPONSE_ERROR)
 from qcodes.utils.helpers import LogCapture
 
 

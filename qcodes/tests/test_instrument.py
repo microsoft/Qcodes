@@ -11,7 +11,8 @@ from qcodes.instrument.server import get_instrument_server_manager
 
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
 from qcodes.utils.sync_async import NoCommandError
-from qcodes.utils.helpers import LogCapture, killprocesses
+from qcodes.utils.helpers import LogCapture
+from qcodes.process.helpers import kill_processes
 
 from .instrument_mocks import (AMockModel, MockInstTester,
                                MockGates, MockSource, MockMeter)
@@ -327,7 +328,7 @@ class TestParameters(TestCase):
         # we don't have the instrument but its server doesn't know to stop.
         # should figure out a way to remove it. (I thought I had but it
         # doesn't seem to have worked...)
-        killprocesses()
+        kill_processes()
 
     def check_set_amplitude2(self, val, log_count, history_count):
         source = self.sourceLocal

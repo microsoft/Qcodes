@@ -7,12 +7,11 @@ from queue import Empty
 from unittest.mock import patch
 
 import qcodes
-from qcodes.utils.multiprocessing import (set_mp_method, QcodesProcess,
-                                          get_stream_queue, _SQWriter,
-                                          kill_queue, ServerManager,
-                                          QUERY_WRITE, QUERY_ASK,
-                                          RESPONSE_OK, RESPONSE_ERROR)
-import qcodes.utils.multiprocessing as qcmp
+from qcodes.process.helpers import set_mp_method, kill_queue
+from qcodes.process.qcodes_process import QcodesProcess
+from qcodes.process.stream_queue import get_stream_queue, _SQWriter
+from qcodes.process.server import ServerManager, RESPONSE_OK, RESPONSE_ERROR
+import qcodes.process.helpers as qcmp
 from qcodes.utils.helpers import in_notebook
 from qcodes.utils.timing import calibrate
 
@@ -137,7 +136,7 @@ class TestQcodesProcess(TestCase):
 
             self.assertEqual(self.sq.get(), '')
 
-    @patch('qcodes.utils.multiprocessing.in_notebook')
+    @patch('qcodes.process.qcodes_process.in_notebook')
     def test_qcodes_process_exception(self, in_nb_patch):
         in_nb_patch.return_value = True
 
@@ -164,7 +163,7 @@ class TestQcodesProcess(TestCase):
             self.assertEqual(exc_text.count('RuntimeError'), 2)
             self.assertEqual(exc_text.count('Boo!'), 2)
 
-    @patch('qcodes.utils.multiprocessing.in_notebook')
+    @patch('qcodes.process.qcodes_process.in_notebook')
     def test_qcodes_process(self, in_nb_patch):
         in_nb_patch.return_value = True
 

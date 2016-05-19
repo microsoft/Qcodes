@@ -3,7 +3,7 @@ from queue import Empty
 from traceback import format_exc
 import logging
 
-from qcodes.utils.multiprocessing import ServerManager, BaseServer
+from qcodes.process.server import ServerManager, BaseServer
 
 
 def get_data_manager(only_existing=False):

@@ -3,7 +3,7 @@ from ipywidgets import widgets
 from multiprocessing import active_children
 from traitlets import Unicode, Float
 
-from qcodes.utils.multiprocessing import get_stream_queue
+from qcodes.process.stream_queue import get_stream_queue
 from .display import display_auto
 from qcodes.loops import MP_NAME, halt_bg
 

@@ -1,4 +1,5 @@
-# set up the qcodes namespace
+"""Set up the main qcodes namespace."""
+
 # flake8: noqa (we don't need the "<...> imported but unused" error)
 
 # just for convenience in debugging, so we don't have to
@@ -6,7 +7,7 @@
 from multiprocessing import active_children
 
 from qcodes.version import __version__
-from qcodes.utils.multiprocessing import set_mp_method
+from qcodes.process.helpers import set_mp_method
 from qcodes.utils.helpers import in_notebook
 
 # code that should only be imported into the main (notebook) thread
