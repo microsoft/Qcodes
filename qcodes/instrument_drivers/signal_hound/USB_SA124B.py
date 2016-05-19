@@ -403,7 +403,10 @@ class SignalHound_USB_SA124B(Instrument):
         sweep_len = ct.c_int(0)
         start_freq = ct.c_double(0)
         stepsize = ct.c_double(0)
-        err = self.dll.saQuerySweepInfo(self.deviceHandle, ct.pointer(sweep_len), ct.pointer(start_freq), ct.pointer(stepsize))
+        err = self.dll.saQuerySweepInfo(self.deviceHandle,
+                                        ct.pointer(sweep_len),
+                                        ct.pointer(start_freq),
+                                        ct.pointer(stepsize))
         if err == self.saStatus['saNoError']:
             pass
         elif err == self.saStatus['saDeviceNotOpenErr']:
@@ -443,17 +446,19 @@ class SignalHound_USB_SA124B(Instrument):
         if self._acquisition_mode in detectorVals:
             detector = detectorVals[self._acquisition_mode]
         else:
-            raise ValueError('Invalid Detector mode! Detector  must be one of %s. Specified detector = %s' % (list(detectorVals.keys()), detector))
+            raise ValueError('Invalid Detector mode! Detector  must be one of '
+                             '%s. Specified detector = %s' %
+                             (list(detectorVals.keys()), detector))
         if self._scale in scaleVals:
             scale = scaleVals[self._scale]
         else:
-            raise ValueError('Invalid Scaling mode! Scaling mode must be one of %s. Specified scale = %s' % (list(scaleVals.keys()), scale))
+            raise ValueError('Invalid Scaling mode! Scaling mode must be one '
+                             'of %s. Specified scale = %s' %
+                             (list(scaleVals.keys()), scale))
         err = self.dll.saConfigAcquisition(self.deviceHandle, detector, scale)
         self.check_for_error(err)
 
         # Reference Level configuration
-        ref = ct.c_double(self.get('ref_lvl'))
-        # atten = ct.c_double(atten)
         self.log.info('Setting device reference level configuration.')
         err = self.dll.saConfigLevel(
             self.deviceHandle, ct.c_double(self.get('ref_lvl')))
