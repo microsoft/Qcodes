@@ -20,7 +20,8 @@ RESPONSE_ERROR = 'ERROR'
 
 def set_mp_method(method, force=False):
     """
-    an idempotent wrapper for multiprocessing.set_start_method
+    An idempotent wrapper for multiprocessing.set_start_method.
+
     The most important use of this is to force Windows behavior
     on a Mac or Linux: set_mp_method('spawn')
     args are the same:
@@ -48,21 +49,31 @@ def set_mp_method(method, force=False):
 
 
 class QcodesProcess(mp.Process):
-    """
-    modified multiprocessing.Process for nicer printing and automatic
-    streaming of stdout and stderr to our StreamQueue singleton
 
-    name: string to include in repr, and in the StreamQueue
-        default 'QcodesProcess'
-    queue_streams: should we connect stdout and stderr to the StreamQueue?
-        default True
-    daemon: should this process be treated as daemonic, so it gets terminated
-        with the parent.
-        default True, overriding the base inheritance
-    any other args and kwargs are passed to multiprocessing.Process
     """
+    Modified multiprocessing.Process specialized to Qcodes needs.
+
+    - Nicer repr
+    - Automatic streaming of stdout and stderr to our StreamQueue singleton
+      for reporting back to the main process
+    - Ignore interrupt signals so that commands in the main process can be
+      canceled without affecting server and background processes.
+    """
+
     def __init__(self, *args, name='QcodesProcess', queue_streams=True,
                  daemon=True, **kwargs):
+        """
+        Construct the QcodesProcess but like Process, does not start it.
+
+        name: string to include in repr, and in the StreamQueue
+            default 'QcodesProcess'
+        queue_streams: should we connect stdout and stderr to the StreamQueue?
+            default True
+        daemon: should this process be treated as daemonic, so it gets
+            terminated with the parent.
+            default True, overriding the base inheritance
+        any other args and kwargs are passed to multiprocessing.Process
+        """
         # make sure the singleton StreamQueue exists
         # prior to launching a new process
         if queue_streams and in_notebook():
@@ -72,6 +83,7 @@ class QcodesProcess(mp.Process):
         super().__init__(*args, name=name, daemon=daemon, **kwargs)
 
     def run(self):
+        """Executed in the new process, and calls the target function."""
         # ignore interrupt signals, as they come from `KeyboardInterrupt`
         # which we want only to apply to the main process and not the
         # server and background processes (which can be halted in different
@@ -92,6 +104,7 @@ class QcodesProcess(mp.Process):
                 self.stream_queue.disconnect()
 
     def __repr__(self):
+        """Shorter and more helpful repr of our processes."""
         cname = self.__class__.__name__
         r = super().__repr__()
         r = r.replace(cname + '(', '').replace(')>', '>')
@@ -100,7 +113,8 @@ class QcodesProcess(mp.Process):
 
 def get_stream_queue():
     """
-    convenience function to get a singleton StreamQueue
+    Convenience function to get a singleton StreamQueue.
+
     note that this must be called from the main process before starting any
     subprocesses that will use it, otherwise the subprocess will create its
     own StreamQueue that no other processes know about
@@ -111,25 +125,23 @@ def get_stream_queue():
 
 
 class StreamQueue:
+
     """
+    Manages redirection of child process output for the main process to view.
+
     Do not instantiate this directly: use get_stream_queue so we only make one.
-
-    Redirect child process stdout and stderr to a queue
-
     One StreamQueue should be created in the consumer process, and passed
-    to each child process.
-
-    In the child, we call StreamQueue.connect with a process name that will be
-    unique and meaningful to the user
-
-    The consumer then periodically calls StreamQueue.get() to read these
-    messages
+    to each child process. In the child, we call StreamQueue.connect with a
+    process name that will be unique and meaningful to the user. The consumer
+    then periodically calls StreamQueue.get() to read these messages.
 
     inspired by http://stackoverflow.com/questions/23947281/
     """
+
     instance = None
 
     def __init__(self, *args, **kwargs):
+        """Create a StreamQueue, passing all args & kwargs to Queue."""
         self.queue = mp.Queue(*args, **kwargs)
         self.last_read_ts = mp.Value('d', time.time())
         self._last_stream = None
@@ -138,6 +150,15 @@ class StreamQueue:
         self.initial_streams = None
 
     def connect(self, process_name):
+        """
+        Connect a child process to the StreamQueue.
+
+        After this, stdout and stderr go to a queue rather than being
+        printed to a console.
+
+        process_name: a short string that will clearly identify this process
+            to the user.
+        """
         if self.initial_streams is not None:
             raise RuntimeError('StreamQueue is already connected')
 
@@ -147,12 +168,14 @@ class StreamQueue:
         sys.stderr = _SQWriter(self, process_name + ' ERR')
 
     def disconnect(self):
+        """Disconnect a child from the queues and revert stdout & stderr."""
         if self.initial_streams is None:
             raise RuntimeError('StreamQueue is not connected')
         sys.stdout, sys.stderr = self.initial_streams
         self.initial_streams = None
 
     def get(self):
+        """Read new messages from the queue and format them for printing."""
         out = ''
         while not self.queue.empty():
             timestr, stream_name, msg = self.queue.get()
@@ -172,6 +195,7 @@ class StreamQueue:
         return out
 
     def __del__(self):
+        """Tear down the StreamQueue either on the main or a child process."""
         try:
             self.disconnect()
         except:
@@ -231,23 +255,38 @@ class _SQWriter:
 
 
 class ServerManager:
-    """
-    creates and manages connections to a separate server process
 
-    name: the name of the server. Can include .format specs to insert
-        all or part of the uuid
-    server_class: the class to create within the new process.
-        the constructor will be passed arguments:
-            query_queue, response_queue, shared_attrs
-        and should start an infinite loop watching query_queue and posting
-        responses to response_queue.
-    shared_attrs: any objects that need to be passed to the server on startup,
-        generally objects like Queues that are picklable only for inheritance
-        by a new process.
-    query_timeout: (default None) the default time to wait for responses
     """
+    Creates and communicates with a separate server process.
+
+    Starts a `QcodesProcess`, and on that process it constructs a server
+    object of type `server_class`, which should normally be a subclass of
+    `BaseServer`. Client processes query the server via:
+    `manager.ask(func_name, *args, **kwargs)`: if they want a response or want
+        to wait for confirmation that the query has completed
+    `manager.write(func_name, *args, **kwargs)`: if they want to continue
+        immediately without blocking for the query.
+    The server communicates with this manager via two multiprocessing `Queue`s.
+    """
+
     def __init__(self, name, server_class, shared_attrs=None,
                  query_timeout=None):
+        """
+        Construct the ServerManager and start its server.
+
+        name: the name of the server. Can include .format specs to insert
+            all or part of the uuid
+        server_class: the class to create within the new process.
+            the constructor will be passed arguments:
+                query_queue, response_queue, shared_attrs
+            and should start an infinite loop watching query_queue and posting
+            responses to response_queue.
+        shared_attrs: any objects that need to be passed to the server on
+            startup, generally objects like Queues that are picklable only for
+            inheritance by a new process.
+        query_timeout: (default None) the default max time to wait for
+            responses
+        """
         self._query_queue = mp.Queue()
         self._response_queue = mp.Queue()
         self._server_class = server_class
@@ -289,13 +328,22 @@ class ServerManager:
     def write(self, func_name, *args, **kwargs):
         """
         Send a query to the server that does not expect a response.
+
+        `write(func_name, *args, **kwargs)` proxies to server method:
+        `server.handle_<func_name>(*args, **kwargs)`
         """
         self._check_alive()
         self._query_queue.put((QUERY_WRITE, func_name, args, kwargs))
 
     def ask(self, func_name, *args, timeout=None, **kwargs):
         """
-        Send a query to the server and wait for a response
+        Send a query to the server and wait for a response.
+
+        `resp = ask(func_name, *args, **kwargs)` proxies to server method:
+        `resp = server.handle_<func_name>(*args, **kwargs)`
+
+        optional timeout (default None) - not recommended, as if we quit
+        before reading the response, the query queue can get out of sync
         """
         self._check_alive()
 
@@ -354,8 +402,9 @@ class ServerManager:
 
     def halt(self, timeout=2):
         """
-        Halt the server and end its process, but in a way that it can
-        be started again
+        Halt the server and end its process.
+
+        Does not tear down, after this the server can still be started again.
         """
         try:
             if self._server.is_alive():
@@ -373,16 +422,12 @@ class ServerManager:
             pass
 
     def restart(self):
-        """
-        Restart the server
-        """
+        """Restart the server."""
         self.halt()
         self._start_server()
 
     def close(self):
-        """
-        Irreversibly stop the server and manager
-        """
+        """Irreversibly stop the server and manager."""
         self.halt()
         for q in ['query', 'response', 'error']:
             qname = '_{}_queue'.format(q)
@@ -394,45 +439,90 @@ class ServerManager:
 
 
 class BaseServer:
+
     """
-    Base class to run in server processes, to unify the query handling
-    protocol.
+    Base class for servers to run in separate processes.
+
+    The server is started inside a `QcodesProcess` by a `ServerManager`,
+    and unifies the query handling protocol so that we are robust against
+    deadlocks, out of sync queues, or hidden errors.
 
     This base class doesn't start the event loop, a subclass should
-    either use the `run_event_loop` method below at the end of its
-    `__init__` or provide its own event loop. If making your own event loop,
-    be sure to call `process_query` to ensure robust error handling between
-    the ask and write cases.
+    either call `self.run_event_loop()` at the end of its `__init__` or
+    provide its own event loop. If making your own event loop, be sure to
+    call `self.process_query(query)` on any item that arrives in
+    `self._query_queue`.
 
-    Subclasses should define handlers `handle_<func_name>`, such that
-    `process_query` can take queries of the form:
-        (code, func_name[, args][, kwargs])
-    and turns them into method calls:
-        response = self.handle_<func_name>(*args, **kwargs)
-    If code is QUERY_ASK, the response or an error is put on the response queue
-    If code is QUERY_WRITE, the response is discarded, and errors are handled
-        by logging.error (so the calling process never sees them directly)
+    Subclasses should define handlers `handle_<func_name>`, such that calls:
+        `response = server_manager.ask(func_name, *args, **kwargs)`
+        `server_manager.write(func_name, *args, **kwargs)`
+    map onto method calls:
+        `response = self.handle_<func_name>(*args, **kwargs)`
 
-    two handlers are predefined:
-    `handle_halt` (but override it if your event loop does not use
-        self.running=False to stop)
-    `handle_get_handlers` (lists all available handler methods)
+    The actual query passed through the queue and unpacked by `process_query`
+    has the form `(code, func_name[, args][, kwargs])` where `code` is:
+
+    - `QUERY_ASK` (from `server_manager.ask`): will always send a response,
+      even if the function returns nothing (None) or throws an error.
+
+    - `QUERY_WRITE` (from `server_manager.write`): will NEVER send a response,
+      return values are ignored and errors go to the logging framework.
+
+    Two handlers are predefined:
+
+    - `handle_halt` (but override it if your event loop does not use
+      self.running=False to stop)
+
+    - `handle_get_handlers` (lists all available handler methods)
     """
+
     # just for testing - how long to allow it to wait on a queue.get
+    # in real situations this should always be None
     timeout = None
 
     def __init__(self, query_queue, response_queue, shared_attrs=None):
+        """
+        Create the BaseServer.
+
+        Subclasses should match this call signature exactly, even if they
+        do not need shared_attrs, because it is used by `ServerManager`
+        to instantiate the server.
+        The base class does not start the event loop, subclasses should do
+        this at the end of their own `__init__`.
+
+        query_queue: a multiprocessing.Queue that we listen to
+
+        response_queue: a multiprocessing.Queue where we put responses
+
+        shared_attrs: (default None) any objects (such as other Queues)
+            that we need to supply on initialization of the server because
+            they cannot be picked normally to pass through the Queue later.
+        """
         self._query_queue = query_queue
         self._response_queue = response_queue
         self._shared_attrs = shared_attrs
 
     def run_event_loop(self):
+        """
+        The default event loop. When this method returns, the server stops.
+
+        Override this method if you need to do more than just process queries
+        repeatedly, but make sure your event loop:
+        - calls `self.process_query` to ensure robust error handling
+        - provides a way to halt the server (and override `handle_halt` if
+          it's not by setting `self.running = False`)
+        """
         self.running = True
         while self.running:
             query = self._query_queue.get(timeout=self.timeout)
             self.process_query(query)
 
     def process_query(self, query):
+        """
+        Act on one query received through the query queue.
+
+        query: should have the form `(code, func_name[, args][, kwargs])`
+        """
         try:
             code = None
             code, func_name = query[:2]
@@ -456,21 +546,28 @@ class BaseServer:
             else:
                 raise ValueError(code)
         except:
-            self._report_error(query, code)
+            self.report_error(query, code)
 
-    def _report_error(self, query, code):
+    def report_error(self, query, code):
+        """
+        Common error handler for all queries.
+
+        QUERY_ASK puts errors into the response queue for the asker to see.
+        QUERY_WRITE shouldn't write a response, so it logs errors instead.
+        Unknown modes do *both*, because we don't know where the user will be
+        looking and an error that severe it's OK to muck up the queue.
+        That's the only way you'll get a response without asking for one.
+        """
         error_str = (
             'Expected query to be a tuple (code, func_name[, args][, kwargs]) '
             'where code is QUERY_ASK or QUERY_WRITE, func_name points to a '
             'method `handle_<func_name>`, and optionally args is a tuple and '
             'kwargs is a dict\nquery: ' + repr(query) + '\n' + format_exc())
 
-        if code == QUERY_WRITE:
+        if code != QUERY_ASK:
             logging.error(error_str)
-        else:
+        if code != QUERY_WRITE:
             try:
-                # the only way you'll get a response without asking for one
-                # is if we don't understand the query type code
                 self._response_queue.put((RESPONSE_ERROR, error_str))
             except:
                 logging.error('Could not put error on response queue\n' +
@@ -493,15 +590,17 @@ class BaseServer:
 
     def handle_halt(self):
         """
-        Quit this server, by setting self.running=False to break the
-        event loop
+        Quit this server.
+
+        Just sets self.running=False, which the default event loop looks for
+        between queries. If you provide your own event loop and it does NOT
+        look for self.running, you should override this handler with a
+        different way to halt.
         """
         self.running = False
 
     def handle_get_handlers(self):
-        """
-        List all available query handlers
-        """
+        """List all available query handlers."""
         handlers = []
         for name in dir(self):
             if name.startswith('handle_') and callable(getattr(self, name)):
@@ -510,6 +609,7 @@ class BaseServer:
 
 
 def kill_queue(queue):
+    """Tear down a multiprocessing.Queue to help garbage collection."""
     try:
         queue.close()
         queue.join_thread()
