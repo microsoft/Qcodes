@@ -7,7 +7,7 @@ from qcodes.instrument.mock import MockInstrument
 from qcodes.instrument.parameter import Parameter, ManualParameter
 from qcodes.instrument.sweep_values import SweepValues
 from qcodes.instrument.function import Function
-from qcodes.instrument.server import get_instrument_server
+from qcodes.instrument.server import get_instrument_server_manager
 
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
 from qcodes.utils.sync_async import NoCommandError
@@ -303,7 +303,7 @@ class TestParameters(TestCase):
         # we don't have the instrument but its server doesn't know to stop.
         # should figure out a way to remove it. (I thought I had but it
         # doesn't seem to have worked...)
-        get_instrument_server('MockInstruments').close()
+        get_instrument_server_manager('MockInstruments').close()
         time.sleep(0.5)
 
         with self.assertRaises(AttributeError):

@@ -3,23 +3,27 @@ import multiprocessing as mp
 from qcodes.utils.multiprocessing import ServerManager, BaseServer
 
 
-def get_instrument_server(server_name, shared_kwargs={}):
+def get_instrument_server_manager(server_name, shared_kwargs={}):
     """
-    Find or make an instrument server process with the given name
-    and shared attributes. An InstrumentServer can hold the connections
-    to one or more instruments, but any unpicklable attributes need to be
-    provided when the server is started and shared between all such
-    instruments.
+    Find or make a given `InstrumentServerManager`.
 
-    server_name: which server to put the instrument on. If a server with
-        this name exists, the instrument will be added to it. If not, a
-        new server is created with this name. Default 'Instruments'
+    An `InstrumentServer` holds one or more Instrument objects, and an
+    `InstrumentServerManager` allows other processes to communicate with this
+    `InstrumentServer`.
+
+    Both the name and the shared attributes must match exactly. If no manager
+    exists with this name, it will be created with the given `shared_kwargs`.
+    If an manager exists with this name but different `shared_kwargs` we
+    raise an error.
+
+    server_name: (default 'Instruments') which server to put the instrument on.
+        If a server with this name exists, the instrument will be added to it.
+        If not, a new server is created with this name.
 
     shared_kwargs: unpicklable items needed by the instruments on the
         server, will get sent with the manager when it's started up
         and included in the kwargs to construct each new instrument
     """
-
     if not server_name:
         server_name = 'Instruments'
 

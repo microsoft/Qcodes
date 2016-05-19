@@ -4,7 +4,7 @@ from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import DelegateAttributes
 from .parameter import Parameter, GetLatest
 from .function import Function
-from .server import get_instrument_server
+from .server import get_instrument_server_manager
 
 
 class RemoteInstrument(DelegateAttributes):
@@ -27,8 +27,8 @@ class RemoteInstrument(DelegateAttributes):
 
         self._server_name = server_name
         self._shared_kwargs = shared_kwargs
-        self._manager = get_instrument_server(self._server_name,
-                                              self._shared_kwargs)
+        self._manager = get_instrument_server_manager(self._server_name,
+                                                      self._shared_kwargs)
 
         self._instrument_class = instrument_class
         self._args = args
