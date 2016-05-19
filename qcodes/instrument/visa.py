@@ -30,8 +30,6 @@ class VisaInstrument(Instrument):
         self.set_address(address)
         self.set_timeout(timeout)
         self.set_terminator(terminator)
-        self.add_parameter('IDN', get_cmd='*IDN?',
-                           get_parser=self.get_idn_dict)
 
     @classmethod
     def default_server_name(cls, **kwargs):
