@@ -165,11 +165,11 @@ class SignalHound_USB_SA124B(Instrument):
         self.deviceHandle = ct.c_int(0)
         deviceHandlePnt = ct.pointer(self.deviceHandle)
         ret = self.dll.saOpenDevice(deviceHandlePnt)
-        if ret != self.hf.saNoError:
-            if ret == self.hf.saNullPtrErr:
+        if ret != self.saStatus['saNoError']:
+            if ret == self.saStatus['saNullPtrErr']:
                 raise ValueError('Could not open device due to '
                                  'null-pointer error!')
-            elif ret == self.hf.saDeviceNotOpenErr:
+            elif ret == self.saStatus['saDeviceNotOpenErr']:
                 raise ValueError('Could not open device!')
             else:
                 raise ValueError('Could not open device due to unknown '
@@ -189,7 +189,7 @@ class SignalHound_USB_SA124B(Instrument):
             self.log.info('Could not abort acquisition: %s', e)
 
         ret = self.dll.saCloseDevice(self.deviceHandle)
-        if ret != self.hf.saNoError:
+        if ret != self.saStatus['saNoError']:
             raise ValueError('Error closing device!')
         print('Closed Device with handle num: ', self.deviceHandle.value)
         self.devOpen = False
@@ -644,34 +644,3 @@ class constants:
 
     TG_THRU_0DB = 0x1
     TG_THRU_20DB = 0x2
-
-    saUnknownErr = -666
-
-    saFrequencyRangeErr = -99
-    saInvalidDetectorErr = -95
-    saInvalidScaleErr = -94
-    saBandwidthErr = -91
-    saExternalReferenceNotFound = -89
-
-    saOvenColdErr = -20
-
-    saInternetErr = -12
-    saUSBCommErr = -11
-
-    saTrackingGeneratorNotFound = -10
-    saDeviceNotIdleErr = -9
-    saDeviceNotFoundErr = -8
-    saInvalidModeErr = -7
-    saNotConfiguredErr = -6
-    saTooManyDevicesErr = -5
-    saInvalidParameterErr = -4
-    saDeviceNotOpenErr = -3
-    saInvalidDeviceErr = -2
-    saNullPtrErr = -1
-
-    saNoError = 0
-
-    saNoCorrections = 1
-    saCompressionWarning = 2
-    saParameterClamped = 3
-    saBandwidthClamped = 4
