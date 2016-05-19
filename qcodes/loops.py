@@ -233,6 +233,27 @@ class Loop(Metadatable):
         return self.run(*args, background=False, quiet=True,
                         data_manager=False, location=False, **kwargs)
 
+    def then(self, *actions, overwrite=False):
+        """
+        Attach actions to be performed after the loop completes.
+        These can only be `Task` and `Wait` actions, as they may not generate
+        any data.
+
+        returns a new Loop object - the original is untouched
+
+        This is more naturally done to an ActiveLoop (ie after .each())
+        and can also be done there, but it's allowed at this stage too so that
+        you can define final actions and share them among several `Loop`s that
+        have different loop actions.
+
+        *actions: `Task` and `Wait` objects to execute in order
+
+        overwrite: (default False) whether subsequent .then() calls (including
+            calls in an ActiveLoop after .then() has already been called on
+            the Loop) will add to each other or overwrite the earlier ones.
+        """
+        return _attach_then_actions(self._copy(), actions, overwrite)
+
     def snapshot_base(self, update=False):
         snap = {}
         snap['__class__'] = str(self.__class__.__module__ +
