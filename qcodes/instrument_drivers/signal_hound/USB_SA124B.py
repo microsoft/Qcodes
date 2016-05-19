@@ -13,6 +13,8 @@ class SignalHound_USB_SA124B(Instrument):
         This driver is functional but has untested features
         and is in need of a code cleanup.
     '''
+    dll_path = 'C:\Windows\System32\sa_api.dll'
+
     saStatus = {
         "saUnknownErr": -666,
         "saFrequencyRangeErr": -99,
@@ -47,14 +49,14 @@ class SignalHound_USB_SA124B(Instrument):
     }
     saStatus_inverted = dict((v, k) for k, v in saStatus.items())
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, dll_path=None, **kwargs):
         t0 = time()
         super().__init__(name, tags=['physical'], **kwargs)
 
         self.log = logging.getLogger("Main.DeviceInt")
         logging.info(__name__ +
                      ' : Initializing instrument SignalHound USB 124A')
-        self.dll = ct.CDLL("C:\Windows\System32\sa_api.dll")
+        self.dll = ct.CDLL(dll_path or self.dll_path)
         self.hf = constants
 
         self.add_parameter('frequency',
