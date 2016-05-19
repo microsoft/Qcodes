@@ -145,7 +145,7 @@ class Tektronix_AWG5014(VisaInstrument):
     }
 
     def __init__(self, name, setup_folder, address, reset=False,
-                 clock=1e9, numpoints=1000, **kwargs):
+                 clock=1e9, numpoints=1000, timeout=180, **kwargs):
         '''
         Initializes the AWG5014.
 
@@ -156,11 +156,13 @@ class Tektronix_AWG5014(VisaInstrument):
             address (string)        : GPIB or ethernet address
             reset (bool)            : resets to default values, default=false
             numpoints (int)         : sets the number of datapoints
+            timeout (float)         : visa timeout, in secs. long default (180)
+                                        to accommodate large waveforms
 
         Output:
             None
         '''
-        super().__init__(name, address, **kwargs)
+        super().__init__(name, address, timeout=timeout, **kwargs)
 
         self._address = address
 
@@ -248,14 +250,6 @@ class Tektronix_AWG5014(VisaInstrument):
                            # vals=vals.Strings())
                            # set function has optional args and therefore
                            # does not work with QCodes
-
-        # this parameter is added to prevent timeouts when loading very long
-        # AWG sequences
-        self.add_parameter('timeout',
-                           get_cmd=self._get_visa_timeout,
-                           set_cmd=self._set_visa_timeout,
-                           units='s')
-
 
         # Channel parameters #
         for i in range(1, 5):
@@ -367,12 +361,6 @@ class Tektronix_AWG5014(VisaInstrument):
         Convenience function, identical to run()
         '''
         return self.run()
-
-    def _set_visa_timeout(self, timeout):
-        self.visa_handle.timeout = timeout
-
-    def _get_visa_timeout(self):
-        return self.visa_handle.timeout
 
     def run(self):
         self.write('AWGC:RUN')
