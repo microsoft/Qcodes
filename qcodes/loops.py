@@ -236,6 +236,7 @@ class Loop(Metadatable):
     def then(self, *actions, overwrite=False):
         """
         Attach actions to be performed after the loop completes.
+
         These can only be `Task` and `Wait` actions, as they may not generate
         any data.
 
@@ -244,7 +245,8 @@ class Loop(Metadatable):
         This is more naturally done to an ActiveLoop (ie after .each())
         and can also be done there, but it's allowed at this stage too so that
         you can define final actions and share them among several `Loop`s that
-        have different loop actions.
+        have different loop actions, or attach final actions to a Loop run
+        with default actions.
 
         *actions: `Task` and `Wait` objects to execute in order
 
@@ -330,6 +332,7 @@ class ActiveLoop(Metadatable):
     def then(self, *actions, overwrite=False):
         """
         Attach actions to be performed after the loop completes.
+
         These can only be `Task` and `Wait` actions, as they may not generate
         any data.
 
