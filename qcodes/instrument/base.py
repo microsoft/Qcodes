@@ -2,7 +2,7 @@ import weakref
 import time
 
 from qcodes.utils.metadata import Metadatable
-from qcodes.utils.helpers import DelegateAttributes, strip_attrs
+from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
 from qcodes.utils.validators import Anything
 from .parameter import StandardParameter
 from .function import Function
@@ -356,8 +356,7 @@ class Instrument(Metadatable, DelegateAttributes):
                                    for name, param in self.parameters.items()),
                 'functions': dict((name, func.snapshot(update=update))
                                   for name, func in self.functions.items()),
-                '__class__': str(self.__class__.__module__ +
-                                 '.' + self.__class__.__name__),
+                '__class__': full_class(self),
                 }
         for attr in set(self._meta_attrs):
             if hasattr(self, attr):
