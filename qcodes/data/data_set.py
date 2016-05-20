@@ -5,7 +5,7 @@ import time
 from .manager import get_data_manager, NoData
 from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
-from qcodes.utils.helpers import DelegateAttributes
+from qcodes.utils.helpers import DelegateAttributes, full_class, deep_update
 
 
 class DataMode(Enum):
@@ -454,21 +454,16 @@ class DataSet(DelegateAttributes):
                 self.last_write = time.time()
 
     def read(self):
-        """
-        Read the whole DataSet from storage, overwriting the local data
-        """
+        """Read the whole DataSet from storage, overwriting the local data."""
         if self.location is False:
             return
         self.formatter.read(self)
 
     def read_metadata(self):
-        """
-        Read the metadata from storage, overwriting the local data
-        """
+        """Read the metadata from storage, overwriting the local data."""
         if self.location is False:
             return
-        metadata = self.formatter.read_metadata(self)
-        self.metadata.update(metadata)
+        self.formatter.read_metadata(self)
 
     def write(self):
         """
@@ -483,38 +478,18 @@ class DataSet(DelegateAttributes):
             return
         self.formatter.write(self)
 
-    def add_metadata(self, key=None, metadata=None, save=False):
-        """
-        Update the DataSet.metadata[key] with metadata.
-        if save==True the metadata will be saved by the formatter
-        """
-        if key and metadata:
-            try:
-                self.metadata[key].update(metadata)
-            except:
-                self.metadata[key] = metadata
-        if save:
-
-            # Matadata on server?
-            # if self.mode != DataMode.LOCAL:
-            #     raise RuntimeError('This object is connected to a DataServer, '
-            #                        'which handles writing automatically.')
-
-            if self.location is False:
-                return
-            self.snapshot()
-            self.formatter.write_metadata(self, self.metadata)
+    def add_metadata(self, new_metadata):
+        """Update DataSet.metadata with additional data."""
+        deep_update(self.metadata, new_metadata)
 
     def save_metadata(self):
-        """
-        Shortcut to add_metadata(save=True)
-        """
-        self.add_metadata(save=True)
+        """Evaluate and save the DataSet's metadata."""
+        if self.location is not False:
+            self.snapshot()
+            self.formatter.write_metadata(self)
 
     def finalize(self):
-        """
-        Mark the DataSet as complete
-        """
+        """Mark the DataSet as complete."""
         if self.mode == DataMode.PUSH_TO_SERVER:
             self.data_manager.ask('end_data')
         elif self.mode == DataMode.LOCAL:
@@ -522,27 +497,33 @@ class DataSet(DelegateAttributes):
         else:
             raise RuntimeError('This mode does not allow finalizing',
                                self.mode)
+        self.save_metadata()
 
     def snapshot(self, update=False):
-        arrs = {}
+        array_snaps = {}
         for array_id, array in self.arrays.items():
-            arrs[array_id] = array.snapshot(update=update)
+            array_snaps[array_id] = array.snapshot(update=update)
 
-        snap = {'__class__': self.__class__.__module__ +
-                             '.' + self.__class__.__name__,
-                'mode': repr(self.mode),
-                'location': self.location,
-                'arrays': arrs,
-                'formatter': self.formatter.__class__.__module__ +
-                             '.' + self.formatter.__class__.__name__,
-                'io': repr(self.io),
-                'base_location': self.io.base_location}
+        snap = {
+            '__class__': full_class(self),
+            'mode': repr(self.mode),
+            'location': self.location,
+            'arrays': array_snaps,
+            'formatter': full_class(self.formatter),
+            'io': repr(self.io)
+        }
         self.metadata['data'] = snap
         if 'station' in self.metadata:
             snap['station'] = self.metadata['station']
         if 'loop' in self.metadata:
             snap['loop'] = self.metadata['loop']
         return snap
+
+    def get_array_metadata(self, array_id):
+        try:
+            return self.metadata['data']['arrays'][array_id]
+        except:
+            return None
 
     def __repr__(self):
         out = self.__class__.__name__ + ':'
@@ -553,32 +534,25 @@ class DataSet(DelegateAttributes):
         for var, val in attrs:
             out += attr_template.format(var, val)
 
-        arr_info =[['<Type>', '<array_id>', '<array.name>', '<array.shape>']]
+        arr_info = [['<Type>', '<array_id>', '<array.name>', '<array.shape>']]
 
         for array_id, array in self.arrays.items():
             setp = 'Setpoint' if array.is_setpoint else 'Measured'
-            arr_info.extend([[setp,
-                              array_id,
-                              array.name,
-                              repr(array.shape)]])
+            arr_info.append([setp, array_id, array.name, repr(array.shape)])
 
-        maxlen_type = max([len(x[0]) for x in arr_info])
-        maxlen_id = max([len(x[1]) for x in arr_info])
-        maxlen_name = max([len(x[2]) for x in arr_info])
-        # We dont use maxlen_shape here to avoid trailing spaces.
-        # Add it again when extending the template
-        # maxlen_shape = max([len(x[3]) for x in arr_info])
-
-        out_template = '\n   {:%d} | {:%d} | {:%d} | {:}'%(maxlen_type,
-                                                             maxlen_id,
-                                                             maxlen_name)
+        column_lengths = [max(len(row[i]) for row in arr_info)
+                          for i in range(len(arr_info[0]))]
+        out_template = ('\n   '
+                        '{info[0]:{lens[0]}} | {info[1]:{lens[1]}} | '
+                        '{info[2]:{lens[2]}} | {info[3]}')
 
         out_set = ''
         out_get = ''
-        for array_type, array_id, array_name, array_shape in arr_info:
-            line = out_template.format(array_type, array_id, array_name, array_shape)
+        for arr_info_i in arr_info:
+            array_type = arr_info_i[0]
+            line = out_template.format(info=arr_info_i, lens=column_lengths)
             if array_type == '<Type>':
-                out_set += line
+                out += line
             elif array_type == 'Setpoint':
                 out_set += line
             else:

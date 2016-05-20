@@ -1,5 +1,5 @@
 """
-Data acquisition loops
+Data acquisition loops.
 
 The general scheme is:
 
@@ -37,19 +37,18 @@ Supported actions (args to .set_measurement or .each) are:
     Task: any callable that does not generate data
     Wait: a delay
 """
+
 from datetime import datetime
 import multiprocessing as mp
 import time
 import numpy as np
-import json
-import os
 
 from qcodes.station import Station
 from qcodes.data.data_set import new_data, DataMode
 from qcodes.data.data_array import DataArray
 from qcodes.utils.deferred_operations import is_function
 from qcodes.data.manager import get_data_manager
-from qcodes.utils.helpers import wait_secs
+from qcodes.utils.helpers import wait_secs, full_class
 from qcodes.utils.multiprocessing import QcodesProcess
 from qcodes.utils.threading import thread_map
 from qcodes.utils.metadata import Metadatable
@@ -83,9 +82,7 @@ def get_bg(return_first=False):
 
 
 def halt_bg(timeout=5):
-    """
-    Stop the active background measurement process, if any
-    """
+    """Stop the active background measurement process, if any."""
     loop = get_bg(return_first=True)
     if not loop:
         print('No loop running')
@@ -135,20 +132,21 @@ class Loop(Metadatable):
     data), `Wait` times, or other `ActiveLoop`s or `Loop`s to nest inside
     this one.
     """
-    def __init__(self, sweep_values, delay=0):
+    def __init__(self, sweep_values, delay=0, station=None):
         super().__init__()
         if not delay >= 0:
             raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
 
         self.sweep_values = sweep_values
         self.delay = delay
+        self.station = station
         self.nested_loop = None
         self.actions = None
         self.then_actions = ()
 
     def loop(self, sweep_values, delay=0):
         """
-        Nest another loop inside this one
+        Nest another loop inside this one.
 
         Loop(sv1, d1).loop(sv2, d2).each(*a) is equivalent to:
         Loop(sv1, d1).each(Loop(sv2, d2).each(*a))
@@ -169,11 +167,12 @@ class Loop(Metadatable):
         out = Loop(self.sweep_values, self.delay)
         out.nested_loop = self.nested_loop
         out.then_actions = self.then_actions
+        out.station = self.station
         return out
 
     def each(self, *actions):
         """
-        Perform a set of actions at each setting of this loop
+        Perform a set of actions at each setting of this loop.
 
         Each action can be:
         - a Parameter to measure
@@ -181,22 +180,22 @@ class Loop(Metadatable):
         - a Wait
         - another Loop or ActiveLoop
         """
-        self.actions = list(actions)
+        actions = list(actions)
 
         # check for nested Loops, and activate them with default measurement
-        for i, action in enumerate(self.actions):
+        for i, action in enumerate(actions):
             if isinstance(action, Loop):
                 default = Station.default.default_measurement
-                self.actions[i] = action.each(*default)
+                actions[i] = action.each(*default)
 
-        self.validate_actions(*self.actions)
+        self.validate_actions(*actions)
 
         if self.nested_loop:
             # recurse into the innermost loop and apply these actions there
-            self.actions = [self.nested_loop.each(*self.actions)]
+            actions = [self.nested_loop.each(*actions)]
 
-        return ActiveLoop(self.sweep_values, self.delay, *self.actions,
-                          then_actions=self.then_actions)
+        return ActiveLoop(self.sweep_values, self.delay, *actions,
+                          then_actions=self.then_actions, station=self.station)
 
     @staticmethod
     def validate_actions(*actions):
@@ -257,26 +256,17 @@ class Loop(Metadatable):
         return _attach_then_actions(self._copy(), actions, overwrite)
 
     def snapshot_base(self, update=False):
-        snap = {}
-        snap['__class__'] = str(self.__class__.__module__ +
-                                '.' + self.__class__.__name__)
-        snap['sweep_values'] = self.sweep_values.snapshot(update=update)
-        snap['delay'] = self.delay
-        if self.actions:
-            snap['actions'] = []
-            for actn in self.actions:
-                if hasattr(actn, 'snapshot'):
-                    snap['actions'].append(actn.snapshot(update=update))
-                else:
-                    snap['actions'].append({'type': None,
-                                            'description': 'Action without snapshot'})
+        """Snapshot of this Loop's definition."""
+        return {
+            '__class__': full_class(self),
+            'sweep_values': self.sweep_values.snapshot(update=update),
+            'delay': self.delay,
+            'then_actions': _actions_snapshot(self.then_actions, update)
+        }
 
-        return snap
 
 def _attach_then_actions(loop, actions, overwrite):
-    """
-    inner code for both Loop.then and ActiveLoop.then
-    """
+    """Inner code for both Loop.then and ActiveLoop.then."""
     for action in actions:
         if not isinstance(action, (Task, Wait)):
             raise TypeError('Unrecognized action:', action,
@@ -291,6 +281,20 @@ def _attach_then_actions(loop, actions, overwrite):
     return loop
 
 
+_NO_SNAPSHOT = {'type': None, 'description': 'Action without snapshot'}
+
+
+def _actions_snapshot(actions, update):
+    """Make a list of snapshots from a list of actions."""
+    snapshot = []
+    for action in actions:
+        if hasattr(action, 'snapshot'):
+            snapshot.append(action.snapshot(update=update))
+        else:
+            snapshot.append(_NO_SNAPSHOT)
+    return snapshot
+
+
 class ActiveLoop(Metadatable):
     """
     Created by attaching actions to a `Loop`, this is the object that actually
@@ -302,12 +306,14 @@ class ActiveLoop(Metadatable):
     """
     HALT = 'HALT LOOP'
 
-    def __init__(self, sweep_values, delay, *actions, then_actions=()):
+    def __init__(self, sweep_values, delay, *actions, then_actions=(),
+                 station=None):
         super().__init__()
         self.sweep_values = sweep_values
         self.delay = delay
         self.actions = actions
         self.then_actions = then_actions
+        self.station = station
 
         # compile now, but don't save the results
         # just used for preemptive error checking
@@ -345,25 +351,18 @@ class ActiveLoop(Metadatable):
             the Loop) will add to each other or overwrite the earlier ones.
         """
         loop = ActiveLoop(self.sweep_values, self.delay, *self.actions,
-                          then_actions=self.then_actions)
+                          then_actions=self.then_actions, station=self.station)
         return _attach_then_actions(loop, actions, overwrite)
 
     def snapshot_base(self, update=False):
-        snap = {}
-        snap['__class__'] = str(self.__class__.__module__ +
-                                '.' + self.__class__.__name__)
-        snap['sweep_values'] = self.sweep_values.snapshot(update=update)
-        snap['delay'] = self.delay
-
-        snap['actions'] = []
-        for actn in self.actions:
-            if hasattr(actn, 'snapshot'):
-                snap['actions'].append(actn.snapshot(update=update))
-            else:
-                snap['actions'].append({'type': None,
-                                        'description': 'Action without snapshot'})
-        return snap
-
+        """Snapshot of this ActiveLoop's definition."""
+        return {
+            '__class__': full_class(self),
+            'sweep_values': self.sweep_values.snapshot(update=update),
+            'delay': self.delay,
+            'actions': _actions_snapshot(self.actions, update),
+            'then_actions': _actions_snapshot(self.then_actions, update)
+        }
 
     def containers(self):
         """
@@ -555,9 +554,9 @@ class ActiveLoop(Metadatable):
                         data_manager=False, location=False, **kwargs)
 
     def run(self, background=True, use_threads=True, quiet=False,
-            data_manager=None, station_snap=None, *args, **kwargs):
+            data_manager=None, station=None, *args, **kwargs):
         """
-        execute this loop
+        Execute this loop.
 
         background: (default True) run this sweep in a separate process
             so we can have live plotting and other analysis in the main process
@@ -567,6 +566,8 @@ class ActiveLoop(Metadatable):
         quiet: (default False): set True to not print anything except errors
         data_manager: a DataManager instance (omit to use default,
             False to store locally)
+        station: a Station instance for snapshots (omit to use a previously
+            provided Station, or the default Station)
 
         kwargs are passed along to data_set.new_data. The key ones are:
         location: the location of the DataSet, a string whose meaning
@@ -586,7 +587,6 @@ class ActiveLoop(Metadatable):
         returns:
             a DataSet object that we can use to plot
         """
-
         prev_loop = get_bg()
         if prev_loop:
             if not quiet:
@@ -604,13 +604,13 @@ class ActiveLoop(Metadatable):
         self.set_common_attrs(data_set=data_set, use_threads=use_threads,
                               signal_queue=self.signal_queue)
 
-        # How to do this? We need the station.snapshot, which is not available
-        # here without explicitly passing it to run
-        if station_snap:
-            data_set.add_metadata('station', station_snap)
+        station = station or self.station or Station.default
+        if station:
+            data_set.add_metadata({'station': station.snapshot()})
 
-        data_set.add_metadata('loop', self.snapshot())
-        data_set.add_metadata('loop', {'ts_start':datetime.now().strftime('%Y-%m-%d %H:%M:%S')})
+        data_set.add_metadata({'loop': self.snapshot()})
+        ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        data_set.add_metadata({'loop': {'ts_start': ts}})
 
         data_set.save_metadata()
 
@@ -684,7 +684,7 @@ class ActiveLoop(Metadatable):
                 # somehow this does not show up in the data_set returned by
                 # run(), but it is saved to the metadata
                 ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                self.data_set.add_metadata('loop', {'ts_end':ts}, save=True)
+                self.data_set.add_metadata({'loop': {'ts_end': ts}})
                 self.data_set.finalize()
 
     def _run_loop(self, first_delay=0, action_indices=(),

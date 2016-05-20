@@ -41,7 +41,7 @@ import os
 
 from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import (permissive_range, wait_secs,
-                                  DelegateAttributes)
+                                  DelegateAttributes, full_class)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import syncable_command, NoCommandError
 from qcodes.utils.validators import Validator, Numbers, Ints, Enum
@@ -176,7 +176,7 @@ class Parameter(Metadatable, DeferredOperations):
                 # is this unit s a typo? shouldnt that be unit?
                 '* `units` %s' % self.units,
                 '* `vals` %s' % repr(self._vals)))
-            self._meta_attrs.extend(['name','label', 'units', 'vals'])
+            self._meta_attrs.extend(['name', 'label', 'units', 'vals'])
 
         else:
             raise ValueError('either name or names is required')
@@ -251,26 +251,28 @@ class Parameter(Metadatable, DeferredOperations):
         return out
 
     def snapshot_base(self, update=False):
-        '''
-        json state of the Parameter
+        """
+        json state of the Parameter.
 
         optionally pass in the state, so if this is an instrument parameter
         we can collect all calls to the server into one
-        '''
+        """
 
         if self.has_get and self._snapshot_get and update:
             self.get()
 
         state = self._latest()
-        state['__class__'] = str(self.__class__.__module__ +
-                                 '.' + self.__class__.__name__)
+        state['__class__'] = full_class(self)
 
-        if state['ts'] is not None:
+        if isinstance(state['ts'], datetime):
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
 
         for attr in set(self._meta_attrs):
-            if attr == 'instrument':
-                state['instrument'] = str(self._instrument.__class__.__name__)
+            if attr == 'instrument' and getattr(self, '_instrument', None):
+                state.update({
+                    'instrument': full_class(self._instrument),
+                    'instrument_name': self._instrument.name
+                })
 
             elif hasattr(self, attr):
                 state[attr] = getattr(self, attr)

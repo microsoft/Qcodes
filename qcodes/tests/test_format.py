@@ -53,6 +53,9 @@ class TestBaseFormatter(TestCase):
                 data_set.files_read.append(f.name)
                 raise ValueError('garbage in, garbage out')
 
+            def read_metadata(self, data_set):
+                pass
+
         formatter = MyFormatter()
         data = DataSet1D(location)
         data.x.ndarray = None
@@ -236,22 +239,6 @@ class TestGNUPlotFormat(TestCase):
         self.assertEqual(data2.x[2], 3)
         self.assertEqual(data2.y[2], 5)
 
-    def test_no_nest(self):
-        formatter = GNUPlotFormat(always_nest=False)
-        location = self.locations[0]
-        data = DataSet1D(location)
-
-        # mark the data set as modified by... modifying it!
-        # without actually changing it :)
-        # TODO - are there cases we should automatically mark the data as
-        # modified on construction?
-        data.y[4] = data.y[4]
-
-        formatter.write(data)
-
-        with open(location + '.dat', 'r') as f:
-            self.assertEqual(f.read(), file_1d())
-
     def test_format_options(self):
         formatter = GNUPlotFormat(extension='.splat', terminator='\r',
                                   separator='  ', comment='?:',
@@ -381,7 +368,7 @@ class TestGNUPlotFormat(TestCase):
         self.assertTrue('ValueError' in logstr, logstr)
 
     def test_multifile(self):
-        formatter = GNUPlotFormat(always_nest=False)  # will nest anyway
+        formatter = GNUPlotFormat()
         location = self.locations[1]
         data = DataSetCombined(location)
 

@@ -1,4 +1,5 @@
-from collections import Iterable
+from collections import Iterable, Mapping
+from copy import deepcopy
 import time
 import logging
 import math
@@ -24,6 +25,28 @@ def is_sequence(obj):
     sequences by this definition.
     '''
     return isinstance(obj, Iterable) and not isinstance(obj, (str, bytes))
+
+
+def full_class(obj):
+    """The full importable path to an object's class."""
+    return type(obj).__module__ + '.' + type(obj).__name__
+
+
+def deep_update(dest, update):
+    """
+    Recursively update one JSON structure with another.
+
+    Only dives into nested dicts; lists get replaced completely.
+    If the original value is a dict and the new value is not, or vice versa,
+    we also replace the value completely.
+    """
+    for k, v_update in update.items():
+        v_dest = dest.get(k)
+        if isinstance(v_update, Mapping) and isinstance(v_dest, Mapping):
+            deep_update(v_dest, v_update)
+        else:
+            dest[k] = deepcopy(v_update)
+    return dest
 
 
 # could use numpy.arange here, but

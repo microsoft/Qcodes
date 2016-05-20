@@ -1,10 +1,13 @@
-class Metadatable:
-    def __init__(self, *args, **kwargs):
-        self.metadata = {}
-        self.load_metadata(kwargs)
+from .helpers import deep_update
 
-    def load_metadata(self, attributes):
-        self.metadata.update(attributes.get('metadata', {}))
+
+class Metadatable:
+    def __init__(self, metadata=None):
+        self.metadata = {}
+        self.load_metadata(metadata or {})
+
+    def load_metadata(self, metadata):
+        deep_update(self.metadata, metadata)
 
     def snapshot(self, update=False):
         '''

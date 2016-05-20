@@ -3,6 +3,7 @@ import re
 import math
 import json
 
+from qcodes.utils.helpers import deep_update
 from .data_array import DataArray
 from .format import Formatter
 
@@ -62,8 +63,7 @@ class GNUPlotFormat(Formatter):
     of corresponds to our situation.)
     """
     def __init__(self, extension='dat', terminator='\n', separator='\t',
-                 comment='# ', number_format='g', always_nest=True,
-                 metadata_file=None):
+                 comment='# ', number_format='g', metadata_file=None):
         self.metadata_file = metadata_file or 'snapshot.json'
         # file extension: accept either with or without leading dot
         self.extension = '.' + extension.lstrip('.')
@@ -89,8 +89,6 @@ class GNUPlotFormat(Formatter):
 
         # number format (only used for writing; will read any number)
         self.number_format = '{:' + number_format + '}'
-
-        self.always_nest = always_nest
 
     def read_one_file(self, data_set, f, ids_read):
         """
@@ -119,10 +117,7 @@ class GNUPlotFormat(Formatter):
         indexed_ids = list(enumerate(ids))
 
         for i, array_id in indexed_ids[:ndim]:
-            try:
-                snap = data_set.metadata['data']['arrays'][array_id]
-            except:
-                snap = None
+            snap = data_set.get_array_metadata(array_id)
 
             # setpoint arrays
             set_size = size[: i + 1]
@@ -140,7 +135,7 @@ class GNUPlotFormat(Formatter):
             else:
                 set_array = DataArray(label=labels[i], array_id=array_id,
                                       set_arrays=set_arrays, size=set_size,
-                                      is_setpoint=True, parameter=snap)
+                                      is_setpoint=True, snapshot=snap)
                 set_array.init_data()
                 data_set.add_array(set_array)
 
@@ -148,10 +143,7 @@ class GNUPlotFormat(Formatter):
             ids_read.add(array_id)
 
         for i, array_id in indexed_ids[ndim:]:
-            try:
-                snap = data_set.metadata['data']['arrays'][array_id]
-            except:
-                snap = None
+            snap = data_set.get_array_metadata(array_id)
 
             # data arrays
             if array_id in ids_read:
@@ -163,7 +155,7 @@ class GNUPlotFormat(Formatter):
             else:
                 data_array = DataArray(label=labels[i], array_id=array_id,
                                        set_arrays=set_arrays, size=size,
-                                       parameter=snap)
+                                       snapshot=snap)
                 data_array.init_data()
                 data_set.add_array(data_array)
             data_arrays.append(data_array)
@@ -290,17 +282,21 @@ class GNUPlotFormat(Formatter):
             for array in group.data + (group.set_arrays[-1],):
                 array.mark_saved(save_range[1])
 
-    # No idea on how to put this in the base formatter...
-    def write_metadata(self, data_set, metadata, key=None):
-        read_metadata = self.read_metadata(data_set)
-        if key:
-            metadata = {key: metadata}
-        read_metadata.update(metadata)
+    def write_metadata(self, data_set, read_first=True):
+        if read_first:
+            # In case the saved file has more metadata than we have here,
+            # read it in first. But any changes to the in-memory copy should
+            # override the saved file data.
+            memory_metadata = data_set.metadata
+            data_set.metadata = {}
+            self.read_metadata(data_set)
+            deep_update(data_set.metadata, memory_metadata)
+
         io_manager = data_set.io
         location = data_set.location
         fn = io_manager.join(location, self.metadata_file)
         with io_manager.open(fn, 'w', encoding='utf8') as snap_file:
-            json.dump(metadata, snap_file, sort_keys=True,
+            json.dump(data_set.metadata, snap_file, sort_keys=True,
                       indent=4, ensure_ascii=False)
 
     def read_metadata(self, data_set):
@@ -310,8 +306,7 @@ class GNUPlotFormat(Formatter):
         if io_manager.list(fn):
             with io_manager.open(fn, 'r') as snap_file:
                 metadata = json.load(snap_file, encoding='utf8')
-            return metadata
-        return {}
+            data_set.metadata.update(metadata)
 
     def _make_header(self, group):
         ids, labels = [], []

@@ -70,7 +70,7 @@ class Formatter:
                     logging.warning('error reading file ' + fn)
                     logging.warning(format_exc())
 
-    def write_metadata(self, data_set, key, metadata):
+    def write_metadata(self, data_set, read_first=True):
         raise NotImplementedError
 
     def read_metadata(self, data_set):

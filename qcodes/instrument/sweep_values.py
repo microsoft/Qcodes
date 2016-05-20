@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from qcodes.utils.helpers import is_sequence, permissive_range, make_sweep
 from qcodes.utils.sync_async import mock_async, mock_sync
 from qcodes.utils.metadata import Metadatable
@@ -41,6 +43,9 @@ class SweepValues(Metadatable):
         self.parameter = parameter
         self.name = parameter.name
         self._values = []
+
+        if not getattr(parameter, 'has_set', None):
+            raise TypeError('parameter {} is not settable'.format(parameter))
 
         # create the set and set_async shortcuts
         if hasattr(parameter, 'set'):
@@ -120,27 +125,23 @@ class SweepFixedValues(SweepValues):
         self._value_snapshot = []
 
         if keys is None:
-            keyset = make_sweep(start=start, stop=stop,
-                                step=step, num=num)
-            self._value_snapshot.append({'first': keyset[0],
-                                         'last': keyset[-1],
-                                         'num': len(keyset)})
+            keys = make_sweep(start=start, stop=stop,
+                              step=step, num=num)
+            self._value_snapshot.append({'first': keys[0],
+                                         'last': keys[-1],
+                                         'num': len(keys)})
 
-        elif is_sequence(keys):
-            keyset = keys
-        elif isinstance(keys, slice):
-            keyset = (keys,)
-        else:
-            raise TypeError('Invalid sweep input.')
+        elif not is_sequence(keys):
+            keys = (keys,)
 
-        for key in keyset:
+        for key in keys:
             if is_sequence(key):
                 self._values.extend(key)
                 # we dont want the snapshot to go crazy on big data
-                if len(keys) > 0:
-                    self._value_snapshot.append({'min': min(keys),
-                                                 'max': max(keys),
-                                                 'len': len(keys)})
+                if len(key) > 0:
+                    self._value_snapshot.append({'min': min(key),
+                                                 'max': max(key),
+                                                 'len': len(key)})
             elif isinstance(key, slice):
                 if key.start is None or key.stop is None or key.step is None:
                     raise TypeError('all 3 slice parameters are required, ' +
@@ -154,6 +155,7 @@ class SweepFixedValues(SweepValues):
             else:
                 # assume a single value
                 self._values.append(key)
+                self._value_snapshot.append({'item': key})
 
         self.validate(self._values)
 
@@ -185,14 +187,15 @@ class SweepFixedValues(SweepValues):
         # skip validation by adding values and snapshot separately
         # instead of on init
         new_sv._values = self._values[:]
-        new_sv._value_snapshot = self._value_snapshot
+        new_sv._value_snapshot = deepcopy(self._value_snapshot)
         return new_sv
 
     def reverse(self):
         self._values.reverse()
         self._value_snapshot.reverse()
         for snap in self._value_snapshot:
-            snap['stop'], snap['start'] = snap['start'], snap['stop']
+            if 'first' in snap and 'last' in snap:
+                snap['last'], snap['first'] = snap['first'], snap['last']
 
     def snapshot_base(self, update=False):
         '''

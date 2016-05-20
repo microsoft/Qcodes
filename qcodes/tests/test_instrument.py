@@ -465,9 +465,47 @@ class TestParameters(TestCase):
         with self.assertRaises(ValueError):
             f(20)
 
+    def strip_qc(self, d, keys=('instrument', '__class__')):
+        # depending on how you run the tests, __module__ can either
+        # have qcodes on the front or not. Just strip it off.
+        for key in keys:
+            if key in d:
+                d[key] = d[key].replace('qcodes.tests.', 'tests.')
+
     def test_standard_snapshot(self):
-        self.assertEqual(self.meter.snapshot(), {
-            'parameters': {'amplitude': {'value': None, 'ts': None}},
+        self.maxDiff = None
+        snap = self.meter.snapshot()
+        self.strip_qc(snap)
+        for psnap in snap['parameters'].values():
+            self.strip_qc(psnap)
+
+        self.assertEqual(snap, {
+            '__class__': 'tests.instrument_mocks.MockMeter',
+            'name': 'meter',
+            'parameters': {
+                'IDN': {
+                    '__class__': (
+                        'qcodes.instrument.parameter.StandardParameter'),
+                    'instrument': 'tests.instrument_mocks.MockMeter',
+                    'instrument_name': 'meter',
+                    'label': 'IDN',
+                    'name': 'IDN',
+                    'ts': None,
+                    'units': '',
+                    'value': None
+                },
+                'amplitude': {
+                    '__class__': (
+                        'qcodes.instrument.parameter.StandardParameter'),
+                    'instrument': 'tests.instrument_mocks.MockMeter',
+                    'instrument_name': 'meter',
+                    'label': 'amplitude',
+                    'name': 'amplitude',
+                    'ts': None,
+                    'units': '',
+                    'value': None
+                }
+            },
             'functions': {'echo': {}}
         })
 
@@ -482,8 +520,18 @@ class TestParameters(TestCase):
         self.source.add_parameter('noise', parameter_class=ManualParameter)
         noise = self.source.noise
 
-        self.assertEqual(self.source.snapshot()['parameters']['noise'],
-                         {'value': None, 'ts': None})
+        noisesnap = self.source.snapshot()['parameters']['noise']
+        self.strip_qc(noisesnap)
+        self.assertEqual(noisesnap, {
+            '__class__': 'qcodes.instrument.parameter.ManualParameter',
+            'instrument': 'tests.instrument_mocks.MockSource',
+            'instrument_name': 'source',
+            'label': 'noise',
+            'name': 'noise',
+            'ts': None,
+            'units': '',
+            'value': None
+        })
 
         noise.set(100)
         noisesnap = self.source.snapshot()['parameters']['noise']
@@ -556,8 +604,8 @@ class TestParameters(TestCase):
             c0[:]  # For Enum params we *could* define this one too...
 
         # fails if the parameter has no setter
-        # with self.assertRaises(AttributeError):
-        meter_amp[0]
+        with self.assertRaises(TypeError):
+            meter_amp[0:0.1:0.01]
 
         # validates every step value against the parameter's Validator
         with self.assertRaises(ValueError):

@@ -98,7 +98,7 @@ class DiskIO:
         return os.path.relpath(path, self.base_location)
 
     def __repr__(self):
-        return '<DiskIO, base_location={}>'.format(self.base_location)
+        return '<DiskIO, base_location=\'{}\'>'.format(self.base_location)
 
     def join(self, *args):
         '''

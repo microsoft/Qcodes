@@ -31,10 +31,13 @@ class TestDataArray(TestCase):
         action_indices = (1, 2, 3, 4, 5)
 
         p_data = DataArray(parameter=MockParam(), name=name, label=label)
+        p_data2 = DataArray(parameter=MockParam())
 
-        # parameter overrides explicitly given name and label
-        self.assertEqual(p_data.name, pname)
-        self.assertEqual(p_data.label, plabel)
+        # explicitly given name and label override parameter vals
+        self.assertEqual(p_data.name, name)
+        self.assertEqual(p_data.label, label)
+        self.assertEqual(p_data2.name, pname)
+        self.assertEqual(p_data2.label, plabel)
         # test default values
         self.assertIsNone(p_data.array_id)
         self.assertEqual(p_data.size, ())
@@ -288,6 +291,7 @@ class TestLoadData(TestCase):
         data = load_data(formatter=MockFormatter(), data_manager=dm,
                          location='here!')
         self.assertEqual(data.has_read_data, True)
+        self.assertEqual(data.has_read_metadata, True)
 
 
 class TestNewData(TestCase):
