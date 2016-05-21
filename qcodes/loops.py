@@ -608,9 +608,16 @@ class ActiveLoop(Metadatable):
         if station:
             data_set.add_metadata({'station': station.snapshot()})
 
+        # information about the loop definition is in its snapshot
         data_set.add_metadata({'loop': self.snapshot()})
+        # then add information about how and when it was run
         ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        data_set.add_metadata({'loop': {'ts_start': ts}})
+        data_set.add_metadata({'loop': {
+            'ts_start': ts,
+            'background': background,
+            'use_threads': use_threads,
+            'use_data_manager': (data_manager is not False)
+        }})
 
         data_set.save_metadata()
 

@@ -507,7 +507,6 @@ class DataSet(DelegateAttributes):
 
         self.metadata.update({
             '__class__': full_class(self),
-            'mode': repr(self.mode),
             'location': self.location,
             'arrays': array_snaps,
             'formatter': full_class(self.formatter),
