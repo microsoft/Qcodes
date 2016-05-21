@@ -160,6 +160,7 @@ class SweepFixedValues(SweepValues):
     def append(self, value):
         self.validate((value,))
         self._values.append(value)
+        self._value_snapshot.append({'item': value})
 
     def extend(self, new_values):
         if isinstance(new_values, SweepFixedValues):
