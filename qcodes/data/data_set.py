@@ -500,33 +500,29 @@ class DataSet(DelegateAttributes):
         self.save_metadata()
 
     def snapshot(self, update=False):
+        """JSON state of the DataSet."""
         array_snaps = {}
         for array_id, array in self.arrays.items():
             array_snaps[array_id] = array.snapshot(update=update)
 
-        snap = {
+        self.metadata.update({
             '__class__': full_class(self),
             'mode': repr(self.mode),
             'location': self.location,
             'arrays': array_snaps,
             'formatter': full_class(self.formatter),
             'io': repr(self.io)
-        }
-        self.metadata['data'] = snap
-        if 'station' in self.metadata:
-            snap['station'] = self.metadata['station']
-        if 'loop' in self.metadata:
-            snap['loop'] = self.metadata['loop']
-        return snap
+        })
+        return self.metadata
 
     def get_array_metadata(self, array_id):
         try:
-            return self.metadata['data']['arrays'][array_id]
+            return self.metadata['arrays'][array_id]
         except:
             return None
 
     def __repr__(self):
-        out = self.__class__.__name__ + ':'
+        out = type(self).__name__ + ':'
 
         attrs = [['mode', self.mode],
                  ['location', repr(self.location)]]
