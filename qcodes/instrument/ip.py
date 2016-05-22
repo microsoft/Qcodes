@@ -31,6 +31,7 @@ class IPInstrument(Instrument):
         self._confirmation = write_confirmation
 
         self._ensure_connection = EnsureConnection(self)
+        self._buffer_size = 1400
 
         self._socket = None
 
@@ -83,7 +84,7 @@ class IPInstrument(Instrument):
             self._timeout = timeout
 
         if self._socket is not None:
-            self.socket.settimeout(float(self.timeout))
+            self._socket.settimeout(float(self._timeout))
 
     def set_terminator(self, terminator):
         self._terminator = terminator
@@ -93,32 +94,43 @@ class IPInstrument(Instrument):
         self._socket.send(data.encode())
 
     def _recv(self):
-        return self._socket.recv(512).decode()
+        return self._socket.recv(self._buffer_size).decode()
 
     def close(self):
         self._disconnect()
         super().close()
 
     def write(self, cmd):
-        with self._ensure_connection:
-            self._send(cmd)
-            if self._confirmation:
-                self._recv()
+        try:
+            with self._ensure_connection:
+                self._send(cmd)
+                if self._confirmation:
+                    self._recv()
+        except Exception as e:
+            e.args = e.args + ('writing ' + repr(cmd) + ' to ' + repr(self),)
+            raise e
 
     def ask(self, cmd):
-        with self._ensure_connection:
-            self._send(cmd)
-            return self._recv()
+        try:
+            with self._ensure_connection:
+                self._send(cmd)
+                return self._recv()
+        except Exception as e:
+            e.args = e.args + ('asking ' + repr(cmd) + ' to ' + repr(self),)
+            raise e
+
+    def __del__(self):
+        self.close()
 
 
 class EnsureConnection:
     def __init__(self, instrument):
-        self._instrument = instrument
+        self.instrument = instrument
 
     def __enter__(self):
         if not self.instrument._persistent or self.instrument._socket is None:
             self.instrument._connect()
 
-    def __exit__(self):
+    def __exit__(self, type, value, tb):
         if not self.instrument._persistent:
             self.instrument._disconnect()

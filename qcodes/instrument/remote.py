@@ -1,3 +1,4 @@
+from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import DelegateAttributes
 from .parameter import Parameter, GetLatest
 from .function import Function
@@ -81,6 +82,13 @@ class RemoteInstrument(DelegateAttributes):
         except KeyError:
             return self.functions[key]
 
+    def __repr__(self):
+        s = '<{}.{}: {} at {}>'.format(
+            self.__module__,
+            self.__class__.__name__,
+            str(self.name),
+            id(self))
+        return s
 
 class RemoteComponent:
     '''
@@ -108,10 +116,16 @@ class RemoteMethod(RemoteComponent):
         return self._instrument.connection.ask(self.name, *args, **kwargs)
 
 
-class RemoteParameter(RemoteComponent):
+class RemoteParameter(RemoteComponent, DeferredOperations):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.get_latest = GetLatest(self)
+
+    def __call__(self, *args):
+        if len(args) == 0:
+            return self.get()
+        else:
+            self.set(*args)
 
     def get(self):
         return self._instrument.connection.ask('get', self.name)
@@ -135,9 +149,9 @@ class RemoteParameter(RemoteComponent):
         return self._instrument.connection.ask('param_call', self.name,
                                                '_latest')
 
-    def snapshot(self):
+    def snapshot(self, *args, **kwargs):
         return self._instrument.connection.ask('param_call', self.name,
-                                               'snapshot')
+                                               'snapshot',*args, **kwargs)
 
     def setattr(self, attr, value):
         self._instrument.connection.ask('param_setattr', self.name,
@@ -146,6 +160,14 @@ class RemoteParameter(RemoteComponent):
     def getattr(self, attr):
         return self._instrument.connection.ask('param_getattr', self.name,
                                                attr)
+
+    def __repr__(self):
+        s = '<{}.{}: {} at {}>'.format(
+            self.__module__,
+            self.__class__.__name__,
+            str(self.name),
+            id(self))
+        return s
 
     # TODO: need set_sweep if it exists, and any methods a subclass defines.
 
@@ -159,3 +181,11 @@ class RemoteFunction(RemoteComponent):
 
     def validate(self, *args):
         return Function.validate(self, *args)
+
+    def __repr__(self):
+        s = '<{}.{}: {} at {}>'.format(
+            self.__module__,
+            self.__class__.__name__,
+            str(self.name),
+            id(self))
+        return s

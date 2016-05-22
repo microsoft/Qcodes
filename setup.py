@@ -1,6 +1,23 @@
 from setuptools import setup, find_packages
 from distutils.version import StrictVersion
 from importlib import import_module
+import re
+
+def get_version(verbose=1):
+    """ Extract version information from source code """
+
+    try:
+        with open('qcodes/version.py', 'r') as f:
+            ln = f.readline()
+            # print(ln)
+            m = re.search('.* ''(.*)''', ln)
+            version = (m.group(1)).strip('\'')
+    except Exception as E:
+        print(E)
+        version = 'none'
+    if verbose:
+        print('get_version: %s' % version)
+    return version
 
 
 def readme():
@@ -15,7 +32,7 @@ extras = {
 extras_require = {k: '>='.join(v) for k, v in extras.items()}
 
 setup(name='qcodes',
-      version='0.1.0',
+      version=get_version(),
       use_2to3=False,
       author='Alex Johnson',
       author_email='johnson.alex.c@gmail.com',
@@ -91,4 +108,5 @@ for extra, (module_name, min_version) in extras.items():
     except ImportError:
         print(missing_template.format(module_name, extra))
     except ValueError:
-        print(valueerror_template.format(module_name, module.__version__, min_version, extra))
+        print(valueerror_template.format(
+            module_name, module.__version__, min_version, extra))

@@ -1,8 +1,0 @@
-Copyright (c) 2015-16 Alex Johnson
-
-Qcodes is currently a private development of Microsoft's Station Q
-collaboration, and IS NOT licensed for distribution outside the collaboration.
-We intend to release it as open source software once it is robust and reasonably
-stable under the [MIT license](https://en.wikipedia.org/wiki/MIT_License) or similar,
-so that Qcodes may be used freely and incorporated into other packages, even if they
-are closed source.

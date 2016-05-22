@@ -3,9 +3,10 @@ import time
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs
-from .parameter import Parameter, StandardParameter
+from .parameter import StandardParameter
 from .function import Function
 from .remote import RemoteInstrument
+import logging
 
 
 class NoDefault:
@@ -28,6 +29,8 @@ class Instrument(Metadatable, DelegateAttributes):
         `default_server_name`, passing in all the constructor kwargs, to
         determine the name. If not overridden, this is just 'Instruments'.
 
+        ** see notes below about `server_name` in SUBCLASS CONSTRUCTORS **
+
         Use None to operate without a server - but then this Instrument
         will not work with qcodes Loops or other multiprocess procedures.
 
@@ -46,12 +49,16 @@ class Instrument(Metadatable, DelegateAttributes):
     `shared_kwargs` class attribute to a list of kwarg names that should
     be treated this way.
 
-    shared_kwargs must be provided ONLY as kwargs when constructing
-    instruments that need them, you CANNOT provide them as positional args.
+    It is an error to initialize two instruments on the same server with
+    different keys or values for `shared_kwargs`, unless the later
+    instruments have NO shared_kwargs at all.
 
-    It is an error to initialize two instruments on
-    the same server with different keys or values for these kwargs, unless
-    the later instruments have NO shared_kwargs at all.
+    SUBCLASS CONSTRUCTORS: `server_name` and any `shared_kwargs` must be
+    available as kwargs and kwargs ONLY (not positional) in all subclasses,
+    and not modified in the inheritance chain. This is because we need to
+    create the server before instantiating the actual instrument. The easiest
+    way to manage this is to accept **kwargs in your subclass and pass them
+    on to super().__init()
     '''
     shared_kwargs = []
 
@@ -87,8 +94,13 @@ class Instrument(Metadatable, DelegateAttributes):
         '''
         idn = self.get(param_name).replace(',', ', ').replace('\n', ' ')
 
-        return 'Connected to: {} in {:.2f}s'.format(
+        con_msg = 'Connected to: {} in {:.2f}s'.format(
             idn.strip(), time.time() - (begin_time or self._t0))
+        print(con_msg)
+        return con_msg
+
+    def __repr__(self):
+        return '<{}: {}>'.format(type(self).__name__, self.name)
 
     def getattr(self, attr, default=NoDefault):
         '''
@@ -221,10 +233,13 @@ class Instrument(Metadatable, DelegateAttributes):
                     delattr(self, attr[0])
 
     def __del__(self):
-        wr = weakref.ref(self)
-        if wr in getattr(self, '_instances', {}):
-            self._instances.remove(wr)
-        self.close()
+        try:
+            wr = weakref.ref(self)
+            if wr in getattr(self, '_instances', {}):
+                self._instances.remove(wr)
+            self.close()
+        except:
+            pass
 
     def close(self):
         '''
@@ -410,7 +425,9 @@ class Instrument(Metadatable, DelegateAttributes):
 
         for attr in dir(self):
             value = getattr(self, attr)
-            if (not callable(value)) or isinstance(value, Function):
+            if ((not callable(value)) or
+                    value is self.parameters.get(attr) or
+                    value is self.functions.get(attr)):
                 # Functions are callable, and they show up in dir(),
                 # but we don't want them included in methods, they have
                 # their own listing. But we don't want to just exclude

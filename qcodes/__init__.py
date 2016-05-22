@@ -5,6 +5,7 @@
 # separately import multiprocessing
 from multiprocessing import active_children
 
+from qcodes.version import __version__
 from qcodes.utils.multiprocessing import set_mp_method
 from qcodes.utils.helpers import in_notebook
 
@@ -14,23 +15,28 @@ from qcodes.utils.helpers import in_notebook
 if in_notebook():  # pragma: no cover
     try:
         from qcodes.plots.matplotlib import MatPlot
-    except ImportError:
-        print('matplotlib plotting not supported')
+    except Exception:
+        print('matplotlib plotting not supported, '
+              'try "from qcodes.plots.matplotlib import MatPlot" '
+              'to see the full error')
 
     try:
         from qcodes.plots.pyqtgraph import QtPlot
-    except ImportError:
-        print('pyqtgraph plotting not supported')
+    except Exception:
+        print('pyqtgraph plotting not supported, '
+              'try "from qcodes.plots.pyqtgraph import QtPlot" '
+              'to see the full error')
 
     from qcodes.widgets.widgets import show_subprocess_widget
 
 from qcodes.station import Station
-from qcodes.loops import get_bg, halt_bg, Loop, Task, Wait
+from qcodes.loops import get_bg, halt_bg, Loop, Task, Wait, BreakIf
 
 from qcodes.data.manager import get_data_manager
 from qcodes.data.data_set import DataMode, DataSet, new_data, load_data
 from qcodes.data.data_array import DataArray
-from qcodes.data.format import Formatter, GNUPlotFormat
+from qcodes.data.format import Formatter
+from qcodes.data.gnuplot_format import GNUPlotFormat
 from qcodes.data.io import DiskIO
 
 from qcodes.instrument.base import Instrument

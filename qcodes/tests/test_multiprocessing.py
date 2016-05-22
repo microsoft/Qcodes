@@ -194,11 +194,14 @@ class TestQcodesProcess(TestCase):
                 sender('row row ')
                 sender('row your boat\n')
                 sender('gently down ')
+                time.sleep(0.01)
                 data = [line for line in self.sq.get().split('\n') if line]
                 expected = [
                     label + 'row row row your boat',
                     label + 'gently down '
                 ]
+                # TODO - intermittent error here
+                self.assertEqual(len(data), len(expected), data)
                 for line, expected_line in zip(data, expected):
                     self.assertIsNotNone(queue_format.match(line), data)
                     self.assertEqual(line[14:], expected_line, data)
@@ -211,6 +214,7 @@ class TestQcodesProcess(TestCase):
             p2.send_out('polo\n')  # we don't see these single terminators
             p1.send_out('marco\n')  # when we change streams
             p2.send_out('polo')
+            time.sleep(0.01)
 
             data = self.sq.get().split('\n')
             for line in data:
@@ -393,7 +397,8 @@ class TestServerManager(TestCase):
                              '  OSError: your hard disk went floppy.')
         sm._error_queue.put(builtin_error_str)
         sm._response_queue.put(SERVER_ERR)
-        time.sleep(0.005)
+        while sm._error_queue.empty() or sm._response_queue.empty():
+            time.sleep(0.005)
         with self.assertRaises(OSError):
             sm.ask('which way does the wind blow?')
 

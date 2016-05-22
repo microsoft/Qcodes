@@ -22,17 +22,28 @@ Figured out a new way to use qcodes? Found a package that makes your life better
 
 ### Setup
 
-- Clone and register the package for development as described in [README.md#installation]
+- Clone and register the package for development as described in the [README](README.md#installation)
 
 ### Running Tests
 
-The core test runner is in `qcodes/test.py:
+The core test runner is in `qcodes/test.py`:
 ```
 python qcodes/test.py
-# optional extra verbosity
-python qcodes/test.py -v
+# optional extra verbosity and fail fast
+python qcodes/test.py -v -f
 ```
-You should see output that looks something like this:
+
+You can also run single tests with:
+```
+# python -m unittest module
+# python -m unittest module.class
+# python -m unittest module.class.function
+python -m unittest qcodes.tests.test_metadata
+# or
+python -m unittest qcodes.tests.test_metadata.TestMetadatable.test_snapshot
+```
+
+If you run the core test runner, you should see output that looks something like this:
 ```
 .........***** found one MockMock, testing *****
 ............................................Timing resolution:
@@ -122,7 +133,7 @@ Coverage testing is generally meaningless for instrument drivers, as calls to `a
 
 - Write your new feature or fix. Be sure it doesn't break any existing tests, and please write tests that cover your feature as well, or if you are fixing a bug, write a test that would have failed before your fix. Our goal is 100% test coverage, and although we are not there, we should always strive to increase our coverage with each new feature. Please be aware also that 100% test coverage does NOT necessarily mean 100% logic coverage. If (as is often the case in Python) a single line of code can behave differently for different inputs, coverage in itself will not ensure that this is tested.
 
-- The standard test commands are listed above under [Running Tests](#running_tests). More notes on different test runners can be found in [TESTING.md].
+- The standard test commands are listed above under [Running Tests](#running_tests). More notes on different test runners can be found in [TESTING](TESTING.md).
 
 - Core tests live in [qcodes/tests](https://github.com/qdev-dk/Qcodes/tree/master/qcodes/tests) and instrument tests live in the same directories as the instrument drivers.
 

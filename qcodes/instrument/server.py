@@ -122,10 +122,7 @@ class InstrumentConnection:
     def __init__(self, manager, instrument_class, new_id, args, kwargs):
         self.manager = manager
 
-        # long timeout on the initial call, to allow slow errors
-        # (like visa timeout) to get back to us
-        info = manager.ask('new', instrument_class, new_id, args, kwargs,
-                           timeout=20)
+        info = manager.ask('new', instrument_class, new_id, args, kwargs)
         for k, v in info.items():
             setattr(self, k, v)
 
@@ -190,7 +187,9 @@ class InstrumentServer:
         if query:
             e.args = e.args + ('error processing query ' + repr(query),)
         self._error_queue.put(format_exc())
-        self._response_queue.put(SERVER_ERR)  # to short-circuit timeout
+        # the caller is waiting on _response_queue, so put a signal there
+        # to say there's an error coming
+        self._response_queue.put(SERVER_ERR)
 
     def handle_halt(self, *args, **kwargs):
         '''

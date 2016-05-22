@@ -62,4 +62,11 @@ target/
 # Generated data
 *.csv
 *.data
+*.dat
 *.hdf5
+
+# Temporary files
+*.md~
+tmp/
+
+docs/examples/data/*

@@ -1,6 +1,6 @@
 # Notes on test runners compatible with Qcodes
 
-There is now a test script [test.py] in the root directory that uses the standard `unittest` machinery to run all the core tests (does not include instrument drivers). It has been tested on Mac (terminal), and Windows (cmd, git bash, and PowerShell). It includes coverage testing, but will only print a coverage report if tests pass.
+There is now a test script [test.py](qcodes/test.py) in the qcodes directory that uses the standard `unittest` machinery to run all the core tests (does not include instrument drivers). It has been tested on Mac (terminal), and Windows (cmd, git bash, and PowerShell). It includes coverage testing, but will only print a coverage report if tests pass.
 
 The biggest difficulty with testing Qcodes is windows multiprocessing. The spawn method restricts execution in ways that are annoying for regular users (no class/function definitions in the notebook, no closures) but seem to be completely incompatible with some test runners (and/or coverage tracking)
 

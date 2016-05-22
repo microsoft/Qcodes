@@ -31,8 +31,8 @@ class Station(Metadatable, DelegateAttributes):
 
         self.monitor = monitor
 
-    def snapshot_base(self):
-        return {'instruments': {name: ins.snapshot()
+    def snapshot_base(self, *args, **kwargs):
+        return {'instruments': {name: ins.snapshot(*args, **kwargs)
                                 for name, ins in self.instruments.items()}}
 
     def add_instrument(self, instrument, name=None):
@@ -57,6 +57,13 @@ class Station(Metadatable, DelegateAttributes):
         default Station, and any measurements among them can be done once
         by .measure
         '''
+        # Validate now so the user gets an error message ASAP
+        # and so we don't accept `Loop` as an action here, where
+        # it would cause infinite recursion.
+        # We need to import Loop inside here to avoid circular import
+        from .loops import Loop
+        Loop.validate_actions(*actions)
+
         self.default_measurement = actions
 
     def measure(self, *actions):

@@ -40,7 +40,7 @@ class AModel(MockModel):
 
     def gates_get(self, parameter):
         if parameter[0] == 'c':
-            return self.fmt(self.gates[int(parameter[1:])])
+            return self.fmt(self._gates[int(parameter[1:])])
         else:
             raise ValueError
 
@@ -94,8 +94,8 @@ class MockSource(MockInstrument):
                            set_cmd='ampl:{:.4f}',
                            get_parser=float,
                            vals=Numbers(0, 10),
-                           sweep_step=0.1,
-                           sweep_delay=0.05)
+                           step=0.1,
+                           delay=0.05)
 
 
 class MockMeter(MockInstrument):
