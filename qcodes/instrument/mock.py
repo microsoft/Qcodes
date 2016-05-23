@@ -135,16 +135,36 @@ class MockModel(ServerManager):  # pragma: no cover
         # this will primarily be called via the attached instruments.
         super().__init__(name, server_class=None)
 
+    def get_attribute(self, name):
+        ''' Get an attribute from the model (server side) '''        
+        return self.ask('_magicget:%s' % (name, ))        
+
+    def call_function(self, name, *args):
+        ''' Call a function from the model (server side) '''        
+        return self.ask('_magiccall:%s' % (name, ), *args)        
+        
     def _run_server(self):
         while True:
             try:
                 # make sure no matter what there is a query for error handling
                 query = None
                 query = self._query_queue.get()
+                query_args = query[1:]
                 query = query[0].split(':')
 
                 instrument = query[0]
 
+                if instrument == '_magicget':
+                    name = query[1]
+                    value = getattr(self, name)
+                    self._response_queue.put(value)
+                    continue
+                if instrument == '_magiccall':
+                    name = query[1]
+                    func = getattr(self, name)
+                    self._response_queue.put( func(*query_args) )
+                    continue
+                
                 if instrument == 'halt':
                     self._response_queue.put(True)
                     break
