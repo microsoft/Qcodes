@@ -305,7 +305,7 @@ class ServerManager:
 
     def _check_response(self, timeout, query=None):
         res = self._response_queue.get(timeout=timeout)
-        if res == SERVER_ERR:
+        if res is SERVER_ERR:
             # TODO: I think the way we're doing this now, I could get rid of
             # _error_queue completely and just have errors and regular
             # responses labeled differently in _response_queue
