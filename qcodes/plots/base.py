@@ -25,8 +25,8 @@ class BasePlot:
         self.traces = []
         self.data_updaters = set()
 
+        self.interval = interval
         if interval:
-            self.interval = interval
             self.update_widget = HiddenUpdateWidget(self.update, interval)
             display(self.update_widget)
 
