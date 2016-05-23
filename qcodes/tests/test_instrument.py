@@ -5,7 +5,6 @@ import time
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
 from qcodes.instrument.parameter import Parameter, ManualParameter
-from qcodes.instrument.sweep_values import SweepValues
 from qcodes.instrument.function import Function
 from qcodes.instrument.server import get_instrument_server
 
@@ -586,105 +585,6 @@ class TestParameters(TestCase):
             b.add_function('jump')
         with self.assertRaises(NoCommandError):
             b.add_parameter('height')
-
-    def test_sweep_values_errors(self):
-        gates, source, meter = self.gates, self.source, self.meter
-        c0 = gates.parameters['chan0']
-        source_amp = source.parameters['amplitude']
-        meter_amp = meter.parameters['amplitude']
-
-        # only complete 3-part slices are valid
-        with self.assertRaises(TypeError):
-            c0[1:2]  # For Int params this could be defined as step=1
-        with self.assertRaises(TypeError):
-            c0[:2:3]
-        with self.assertRaises(TypeError):
-            c0[1::3]
-        with self.assertRaises(TypeError):
-            c0[:]  # For Enum params we *could* define this one too...
-
-        # fails if the parameter has no setter
-        with self.assertRaises(TypeError):
-            meter_amp[0:0.1:0.01]
-
-        # validates every step value against the parameter's Validator
-        with self.assertRaises(ValueError):
-            c0[5:15:1]
-        with self.assertRaises(ValueError):
-            c0[5.0:15.0:1.0]
-        with self.assertRaises(ValueError):
-            c0[-12]
-        with self.assertRaises(ValueError):
-            c0[-5, 12, 5]
-        with self.assertRaises(ValueError):
-            c0[-5, 12:8:1, 5]
-
-        # cannot combine SweepValues for different parameters
-        with self.assertRaises(TypeError):
-            c0[0.1] + source_amp[0.2]
-
-        # improper use of extend
-        with self.assertRaises(TypeError):
-            c0[0.1].extend(5)
-
-        # SweepValue object has no getter, even if the parameter does
-        with self.assertRaises(AttributeError):
-            c0[0.1].get
-
-    def test_sweep_values_valid(self):
-        gates = self.gates
-        c0 = gates.parameters['chan0']
-
-        c0_sv = c0[1]
-        # setter gets mapped
-        self.assertEqual(c0_sv.set, c0.set)
-        # normal sequence operations access values
-        self.assertEqual(list(c0_sv), [1])
-        self.assertEqual(c0_sv[0], 1)
-        self.assertTrue(1 in c0_sv)
-        self.assertFalse(2 in c0_sv)
-
-        # in-place and copying addition
-        c0_sv += c0[1.5:1.8:0.1]
-        c0_sv2 = c0_sv + c0[2]
-        self.assertEqual(list(c0_sv), [1, 1.5, 1.6, 1.7])
-        self.assertEqual(list(c0_sv2), [1, 1.5, 1.6, 1.7, 2])
-
-        # append and extend
-        c0_sv3 = c0[2]
-        # append only works with straight values
-        c0_sv3.append(2.1)
-        # extend can use another SweepValue, (even if it only has one value)
-        c0_sv3.extend(c0[2.2])
-        # extend can also take a sequence
-        c0_sv3.extend([2.3])
-        # as can addition
-        c0_sv3 += [2.4]
-        c0_sv4 = c0_sv3 + [2.5, 2.6]
-        self.assertEqual(list(c0_sv3), [2, 2.1, 2.2, 2.3, 2.4])
-        self.assertEqual(list(c0_sv4), [2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6])
-
-        # len
-        self.assertEqual(len(c0_sv3), 5)
-
-        # in-place and copying reverse
-        c0_sv.reverse()
-        c0_sv5 = reversed(c0_sv)
-        self.assertEqual(list(c0_sv), [1.7, 1.6, 1.5, 1])
-        self.assertEqual(list(c0_sv5), [1, 1.5, 1.6, 1.7])
-
-        # multi-key init, where first key is itself a list
-        c0_sv6 = c0[[1, 3], 4]
-        # copying
-        c0_sv7 = c0_sv6.copy()
-        self.assertEqual(list(c0_sv6), [1, 3, 4])
-        self.assertEqual(list(c0_sv7), [1, 3, 4])
-        self.assertFalse(c0_sv6 is c0_sv7)
-
-    def test_sweep_values_base(self):
-        p = self.gates.chan0
-        with self.assertRaises(NotImplementedError):
-            iter(SweepValues(p))
 
     def test_manual_parameter(self):
         self.source.add_parameter('bias_resistor',
