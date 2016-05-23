@@ -106,3 +106,48 @@ class TestSweepValues(TestCase):
         p = ManualParameter('p')
         with self.assertRaises(NotImplementedError):
             iter(SweepValues(p))
+
+    def test_snapshot(self):
+        c0 = self.c0
+
+        self.assertEqual(c0[0].snapshot(), {
+            'parameter': c0.snapshot(),
+            'values': [{'item': 0}]
+        })
+
+        self.assertEqual(c0[0:5:0.3].snapshot()['values'], [{
+            'first': 0,
+            'last': 4.8,
+            'num': 17,
+            'type': 'linear'
+        }])
+
+        sv = c0.sweep(start=2, stop=4, num=5)
+        self.assertEqual(sv.snapshot()['values'], [{
+            'first': 2,
+            'last': 4,
+            'num': 5,
+            'type': 'linear'
+        }])
+
+        # mixture of bare items, nested lists, and slices
+        sv = c0[1, 7, 3.2, [1, 2, 3], 6:9:1, -4.5, 5.3]
+        self.assertEqual(sv.snapshot()['values'], [{
+            'first': 1,
+            'last': 5.3,
+            'min': -4.5,
+            'max': 8,
+            'num': 11,
+            'type': 'sequence'
+            }])
+
+        self.assertEqual((c0[0] + c0[1]).snapshot()['values'], [
+            {'item': 0},
+            {'item': 1}
+            ])
+
+        self.assertEqual((c0[0:3:1] + c0[4, 6, 9]).snapshot()['values'], [
+            {'first': 0, 'last': 2, 'num': 3, 'type': 'linear'},
+            {'first': 4, 'last': 9, 'min': 4, 'max': 9, 'num': 3,
+             'type': 'sequence'}
+            ])
