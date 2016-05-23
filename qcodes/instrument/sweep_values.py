@@ -128,15 +128,11 @@ class SweepFixedValues(SweepValues):
             keys = make_sweep(start=start, stop=stop,
                               step=step, num=num)
             self._values = keys
-            self._value_snapshot.append({'first': keys[0],
-                                         'last': keys[-1],
-                                         'num': len(keys)})
+            self._add_linear_snapshot(self._values)
 
         elif isinstance(keys, slice):
             self._add_slice(keys)
-            self._value_snapshot.append({'first': self._values[0],
-                                         'last': self._values[-1],
-                                         'num': len(self._values)})
+            self._add_linear_snapshot(self._values)
 
         elif is_sequence(keys):
             for key in keys:
@@ -151,10 +147,8 @@ class SweepFixedValues(SweepValues):
                     # assume a single value
                     self._values.append(key)
             # we dont want the snapshot to go crazy on big data
-            if len(self._values) > 0:
-                self._value_snapshot.append({'min': min(self._values),
-                                             'max': max(self._values),
-                                             'num': len(self._values)})
+            if self._values:
+                self._add_sequence_snapshot(self._values)
 
         else:
             # assume a single value
@@ -162,6 +156,20 @@ class SweepFixedValues(SweepValues):
             self._value_snapshot.append({'item': keys})
 
         self.validate(self._values)
+
+    def _add_linear_snapshot(self, vals):
+        self._value_snapshot.append({'first': vals[0],
+                                     'last': vals[-1],
+                                     'num': len(vals),
+                                     'type': 'linear'})
+
+    def _add_sequence_snapshot(self, vals):
+        self._value_snapshot.append({'min': min(vals),
+                                     'max': max(vals),
+                                     'first': vals[0],
+                                     'last': vals[-1],
+                                     'num': len(vals),
+                                     'type': 'sequence'})
 
     def _add_slice(self, slice_):
         if slice_.start is None or slice_.stop is None or slice_.step is None:
@@ -186,10 +194,7 @@ class SweepFixedValues(SweepValues):
         elif is_sequence(new_values):
             self.validate(new_values)
             self._values.extend(new_values)
-            self._value_snapshot.append({'min': min(new_values),
-                                         'max': max(new_values),
-                                         'len': len(new_values),
-                                         'type': 'sequence'})
+            self._add_sequence_snapshot(new_values)
         else:
             raise TypeError(
                 'cannot extend SweepFixedValues with {}'.format(new_values))
