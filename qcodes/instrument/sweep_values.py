@@ -127,28 +127,34 @@ class SweepFixedValues(SweepValues):
         if keys is None:
             keys = make_sweep(start=start, stop=stop,
                               step=step, num=num)
-            self._values.extend(keys)
+            self._values = keys
             self._value_snapshot.append({'first': keys[0],
                                          'last': keys[-1],
                                          'num': len(keys)})
 
         elif isinstance(keys, slice):
-            if keys.start is None or keys.stop is None or keys.step is None:
-                raise TypeError('all 3 slice parameters are required, ' +
-                                '{} is missing some'.format(keys))
-            p_range = permissive_range(keys.start, keys.stop, keys.step)
-            self._values.extend(p_range)
-            self._value_snapshot.append({'first': p_range[0],
-                                         'last': p_range[-1],
-                                         'num': len(p_range)})
+            self._add_slice(keys)
+            self._value_snapshot.append({'first': self._values[0],
+                                         'last': self._values[-1],
+                                         'num': len(self._values)})
 
         elif is_sequence(keys):
-            self._values.extend(keys)
+            for key in keys:
+                if isinstance(key, slice):
+                    self._add_slice(key)
+                elif is_sequence(key):
+                    # not sure if we really need to support this (and I'm not
+                    # going to recurse any more!) but we will get nested lists
+                    # if for example someone does `p[list1, list2]`
+                    self._values.extend(key)
+                else:
+                    # assume a single value
+                    self._values.append(key)
             # we dont want the snapshot to go crazy on big data
-            if len(keys) > 0:
-                self._value_snapshot.append({'min': min(keys),
-                                             'max': max(keys),
-                                             'num': len(keys)})
+            if len(self._values) > 0:
+                self._value_snapshot.append({'min': min(self._values),
+                                             'max': max(self._values),
+                                             'num': len(self._values)})
 
         else:
             # assume a single value
@@ -156,6 +162,13 @@ class SweepFixedValues(SweepValues):
             self._value_snapshot.append({'item': keys})
 
         self.validate(self._values)
+
+    def _add_slice(self, slice_):
+        if slice_.start is None or slice_.stop is None or slice_.step is None:
+            raise TypeError('all 3 slice parameters are required, ' +
+                            '{} is missing some'.format(slice_))
+        p_range = permissive_range(slice_.start, slice_.stop, slice_.step)
+        self._values.extend(p_range)
 
     def append(self, value):
         self.validate((value,))
