@@ -138,6 +138,10 @@ class MockModel(ServerManager):  # pragma: no cover
     def get_attribute(self, name):
         ''' Get an attribute from the model (server side) '''        
         return self.ask('_magicget:%s' % (name, ))        
+
+    def call_function(self, name, *args):
+        ''' Call a function from the model (server side) '''        
+        return self.ask('_magiccall:%s' % (name, ), *args)        
         
     def _run_server(self):
         while True:
@@ -145,6 +149,7 @@ class MockModel(ServerManager):  # pragma: no cover
                 # make sure no matter what there is a query for error handling
                 query = None
                 query = self._query_queue.get()
+                query_args = query[1:]
                 query = query[0].split(':')
 
                 instrument = query[0]
@@ -153,6 +158,11 @@ class MockModel(ServerManager):  # pragma: no cover
                     name = query[1]
                     value = getattr(self, name)
                     self._response_queue.put(value)
+                    continue
+                if instrument == '_magiccall':
+                    name = query[1]
+                    func = getattr(self, name)
+                    self._response_queue.put( func(*query_args) )
                     continue
                 
                 if instrument == 'halt':
