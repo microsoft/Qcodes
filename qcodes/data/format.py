@@ -4,7 +4,7 @@ from traceback import format_exc
 from operator import attrgetter
 import logging
 
-from .data.io import DiskIO
+from .io import DiskIO
 
 class Formatter:
     """
