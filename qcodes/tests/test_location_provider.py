@@ -6,16 +6,21 @@ from qcodes.data.data_set import SafeFormatter
 
 from .data_mocks import MatchIO
 
+
 class TestSafeFormatter(TestCase):
     def test_normal_formatting(self):
         formatter = SafeFormatter()
-        self.assertEqual(formatter.format('{}{{{}}}', 1,2), '1{2}')
-        self.assertEqual(formatter.format('{apples}{{{oranges}}}', apples='red', oranges='unicorn'), 'red{unicorn}')
+        self.assertEqual(formatter.format('{}{{{}}}', 1, 2), '1{2}')
+        self.assertEqual(formatter.format('{apples}{{{oranges}}}',
+                                          apples='red', oranges='unicorn'),
+                         'red{unicorn}')
 
     def test_missing(self):
         formatter = SafeFormatter()
         self.assertEqual(formatter.format('{}'), '{0}')
-        self.assertEqual(formatter.format('{cheese}', fruit='pears'), '{cheese}')
+        self.assertEqual(formatter.format('{cheese}', fruit='pears'),
+                         '{cheese}')
+
 
 class TestFormatLocation(TestCase):
     def test_default(self):
@@ -65,7 +70,8 @@ class TestFormatLocation(TestCase):
                          expected)
 
         # missing label
-        expected = datetime.now().strftime('%Y-%m-%d/#001_%H-%M-%S_Fred_{label}')
+        expected = datetime.now().strftime(
+            '%Y-%m-%d/#001_%H-%M-%S_Fred_{label}')
         self.assertEqual(lp(MatchIO([]), {'name': 'Fred'}), expected)
 
     def test_record_override(self):
