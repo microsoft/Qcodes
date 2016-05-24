@@ -35,6 +35,12 @@ class MockFormatter:
     def write(self, data_set):
         data_set.has_written_data = True
 
+    def read_metadata(self, data_set):
+        data_set.has_read_metadata = True
+
+    def write_metadata(self, data_set):
+        data_set.has_written_metadata = True
+
 
 class MatchIO:
     def __init__(self, existing_matches, fmt=None):
