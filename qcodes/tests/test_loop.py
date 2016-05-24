@@ -5,22 +5,24 @@ import multiprocessing as mp
 import numpy as np
 
 from qcodes.loops import (Loop, MP_NAME, get_bg, halt_bg, Task, Wait,
-                          ActiveLoop, BreakIf)
+                          ActiveLoop, BreakIf, _DebugInterrupt)
 from qcodes.station import Station
 from qcodes.data.io import DiskIO
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager
 from qcodes.instrument.parameter import Parameter, ManualParameter
-from qcodes.utils.multiprocessing import QcodesProcess
+from qcodes.process.helpers import kill_processes
+from qcodes.process.qcodes_process import QcodesProcess
 from qcodes.utils.validators import Numbers
-from qcodes.utils.helpers import killprocesses, LogCapture
+from qcodes.utils.helpers import LogCapture
+
 from .instrument_mocks import AMockModel, MockGates, MockSource, MockMeter
 
 
 class TestMockInstLoop(TestCase):
     def setUp(self):
         get_data_manager().restart(force=True)
-        killprocesses()
+        kill_processes()
         # TODO: figure out what's leaving DataManager in a weird state
         # and fix it
         get_data_manager().restart(force=True)
@@ -137,7 +139,7 @@ def sleeper(t):
 
 class TestBG(TestCase):
     def test_get_halt(self):
-        killprocesses()
+        kill_processes()
         self.assertIsNone(get_bg())
 
         p1 = QcodesProcess(name=MP_NAME, target=sleeper, args=(10, ))
@@ -203,7 +205,7 @@ class MultiGetter(Parameter):
 
 class TestLoop(TestCase):
     def setUp(self):
-        killprocesses()
+        kill_processes()
         self.p1 = ManualParameter('p1', vals=Numbers(-10, 10))
         self.p2 = ManualParameter('p2', vals=Numbers(-10, 10))
         self.p3 = ManualParameter('p3', vals=Numbers(-10, 10))
@@ -429,20 +431,16 @@ class TestLoop(TestCase):
             Loop(self.p1[-20:20:1]).each(self.p1)
 
     def test_very_short_delay(self):
-        with LogCapture() as s:
+        with LogCapture() as logs:
             Loop(self.p1[1:3:1], 1e-9).each(self.p1).run_temp()
 
-        logstr = s.getvalue()
-        s.close()
-        self.assertEqual(logstr.count('negative delay'), 2, logstr)
+        self.assertEqual(logs.value.count('negative delay'), 2, logs.value)
 
     def test_zero_delay(self):
-        with LogCapture() as s:
+        with LogCapture() as logs:
             Loop(self.p1[1:3:1]).each(self.p1).run_temp()
 
-        logstr = s.getvalue()
-        s.close()
-        self.assertEqual(logstr.count('negative delay'), 0, logstr)
+        self.assertEqual(logs.value.count('negative delay'), 0, logs.value)
 
     def test_breakif(self):
         nan = float('nan')
@@ -557,15 +555,16 @@ class AbortingGetter(ManualParameter):
     You have to attach the queue after construction with set_queue
     so you can grab it from the loop that uses the parameter.
     '''
-    def __init__(self, *args, count=1, **kwargs):
+    def __init__(self, *args, count=1, msg=None, **kwargs):
         self._count = self._initial_count = count
+        self.msg = msg
         # also need a _signal_queue, but that has to be added later
         super().__init__(*args, **kwargs)
 
     def get(self):
         self._count -= 1
         if self._count <= 0:
-            self._signal_queue.put(ActiveLoop.HALT)
+            self._signal_queue.put(self.msg)
         return super().get()
 
     def set_queue(self, queue):
@@ -577,15 +576,29 @@ class AbortingGetter(ManualParameter):
 
 class TestSignal(TestCase):
     def test_halt(self):
-        p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10))
+        p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10),
+                            msg=ActiveLoop.HALT_DEBUG)
         loop = Loop(p1[1:6:1], 0.005).each(p1)
         p1.set_queue(loop.signal_queue)
 
-        with self.assertRaises(KeyboardInterrupt):
+        with self.assertRaises(_DebugInterrupt):
             loop.run_temp()
 
         data = loop.data_set
+        self.check_data(data)
 
+    def test_halt_quiet(self):
+        p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10),
+                            msg=ActiveLoop.HALT)
+        loop = Loop(p1[1:6:1], 0.005).each(p1)
+        p1.set_queue(loop.signal_queue)
+
+        # does not raise, just quits, but the data set looks the same
+        # as in test_halt
+        data = loop.run_temp()
+        self.check_data(data)
+
+    def check_data(self, data):
         nan = float('nan')
         self.assertEqual(data.p1.tolist()[:2], [1, 2])
         # when NaN is involved, I'll just compare reprs, because NaN!=NaN

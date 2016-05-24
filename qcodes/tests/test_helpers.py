@@ -194,13 +194,11 @@ class TestWaitSecs(TestCase):
             self.assertLessEqual(secs_out, secs)
 
     def test_warning(self):
-        with LogCapture() as s:
+        with LogCapture() as logs:
             secs_out = wait_secs(time.perf_counter() - 1)
         self.assertEqual(secs_out, 0)
 
-        logstr = s.getvalue()
-        s.close()
-        self.assertEqual(logstr.count('negative delay'), 1, logstr)
+        self.assertEqual(logs.value.count('negative delay'), 1, logs.value)
 
 
 class TestMakeUnique(TestCase):

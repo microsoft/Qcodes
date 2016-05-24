@@ -62,12 +62,11 @@ class TestBaseFormatter(TestCase):
         with open(path, 'w') as f:
             f.write('garbage')
 
-        with LogCapture() as s:
+        with LogCapture() as logs:
             formatter.read(data)
-        logstr = s.getvalue()
-        s.close()
+
         # we tried to read this file but it generated an error
-        self.assertEqual(logstr.count('error reading file'), 1, logstr)
+        self.assertEqual(logs.value.count('error reading file'), 1, logs.value)
         self.assertEqual(data.files_read, [os.path.abspath(path)])
 
         expected_array_repr = repr([float('nan')] * 5)
@@ -222,11 +221,10 @@ class TestGNUPlotFormat(TestCase):
         # initially give it a different location so we can make it without
         # error, then change back to the location we want.
         data3.location = location
-        with LogCapture() as s:
+        with LogCapture() as logs:
             formatter.read(data3)
-        logstr = s.getvalue()
-        s.close()
-        self.assertTrue('ValueError' in logstr, logstr)
+
+        self.assertTrue('ValueError' in logs.value, logs.value)
 
         # no problem reading again if only data has changed, it gets
         # overwritten with the disk copy
@@ -360,11 +358,10 @@ class TestGNUPlotFormat(TestCase):
         os.makedirs(location, exist_ok=True)
         with open(location + '/x.dat', 'w') as f:
             f.write('1\t2\n' + file_1d())
-        with LogCapture() as s:
+        with LogCapture() as logs:
             formatter.read(data)
-        logstr = s.getvalue()
-        s.close()
-        self.assertTrue('ValueError' in logstr, logstr)
+
+        self.assertTrue('ValueError' in logs.value, logs.value)
 
         # same data array in 2 files
         location = self.locations[1]
@@ -374,11 +371,10 @@ class TestGNUPlotFormat(TestCase):
             f.write('\n'.join(['# x\ty', '# "X"\t"Y"', '# 2', '1\t2', '3\t4']))
         with open(location + '/q.dat', 'w') as f:
             f.write('\n'.join(['# q\ty', '# "Q"\t"Y"', '# 2', '1\t2', '3\t4']))
-        with LogCapture() as s:
+        with LogCapture() as logs:
             formatter.read(data)
-        logstr = s.getvalue()
-        s.close()
-        self.assertTrue('ValueError' in logstr, logstr)
+
+        self.assertTrue('ValueError' in logs.value, logs.value)
 
     def test_multifile(self):
         formatter = GNUPlotFormat(always_nest=False)  # will nest anyway

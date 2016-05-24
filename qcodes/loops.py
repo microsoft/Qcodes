@@ -1,5 +1,5 @@
 """
-Data acquisition loops
+Data acquisition loops.
 
 The general scheme is:
 
@@ -37,6 +37,7 @@ Supported actions (args to .set_measurement or .each) are:
     Task: any callable that does not generate data
     Wait: a delay
 """
+
 from datetime import datetime
 import multiprocessing as mp
 import time
@@ -48,7 +49,7 @@ from qcodes.data.data_array import DataArray
 from qcodes.utils.deferred_operations import is_function
 from qcodes.data.manager import get_data_manager
 from qcodes.utils.helpers import wait_secs
-from qcodes.utils.multiprocessing import QcodesProcess
+from qcodes.process.qcodes_process import QcodesProcess
 from qcodes.utils.threading import thread_map
 
 
@@ -79,16 +80,27 @@ def get_bg(return_first=False):
     return None
 
 
-def halt_bg(timeout=5):
+def halt_bg(timeout=5, traceback=True):
     """
-    Stop the active background measurement process, if any
+    Stop the active background measurement process, if any.
+
+    timeout: (default 5) seconds to wait for a clean exit before
+        forcibly terminating
+
+    traceback: (default True) whether to print a traceback at the point
+        of interrupt, for debugging purposes
     """
     loop = get_bg(return_first=True)
     if not loop:
         print('No loop running')
         return
 
-    loop.signal_queue.put(ActiveLoop.HALT)
+    if traceback:
+        signal_ = ActiveLoop.HALT_DEBUG
+    else:
+        signal_ = ActiveLoop.HALT
+
+    loop.signal_queue.put(signal_)
     loop.join(timeout)
 
     if loop.is_alive():
@@ -276,7 +288,12 @@ class ActiveLoop:
     The `ActiveLoop` determines what `DataArray`s it will need to hold the data
     it collects, and it creates a `DataSet` holding these `DataArray`s
     """
+    # constants for signal_queue
     HALT = 'HALT LOOP'
+    HALT_DEBUG = 'HALT AND DEBUG'
+
+    # maximum sleep time (secs) between checking the signal_queue for a HALT
+    signal_period = 1
 
     def __init__(self, sweep_values, delay, *actions, then_actions=()):
         self.sweep_values = sweep_values
@@ -496,9 +513,13 @@ class ActiveLoop:
 
     def _check_signal(self):
         while not self.signal_queue.empty():
-            signal = self.signal_queue.get()
-            if signal == self.HALT:
-                raise KeyboardInterrupt('sweep was halted')
+            signal_ = self.signal_queue.get()
+            if signal_ == self.HALT:
+                raise _QuietInterrupt('sweep was halted')
+            elif signal_ == self.HALT_DEBUG:
+                raise _DebugInterrupt('sweep was halted')
+            else:
+                raise ValueError('unknown signal', signal_)
 
     def run_temp(self, **kwargs):
         """
@@ -624,6 +645,8 @@ class ActiveLoop:
     def _run_wrapper(self, *args, **kwargs):
         try:
             self._run_loop(*args, **kwargs)
+        except _QuietInterrupt:
+            pass
         finally:
             if hasattr(self, 'data_set'):
                 self.data_set.finalize()
@@ -683,10 +706,17 @@ class ActiveLoop:
             finish_clock = time.perf_counter() + delay
 
             if self._monitor:
+                # TODO - perhpas pass self._check_signal in here
+                # so that we can halt within monitor.call if it
+                # lasts a very long time?
                 self._monitor.call(finish_by=finish_clock)
 
-            self._check_signal()
-            time.sleep(wait_secs(finish_clock))
+            while True:
+                self._check_signal()
+                t = wait_secs(finish_clock)
+                time.sleep(min(t, self.signal_period))
+                if t <= self.signal_period:
+                    break
         else:
             self._check_signal()
 
@@ -814,4 +844,12 @@ class BreakIf:
 
 
 class _QcodesBreak(Exception):
+    pass
+
+
+class _QuietInterrupt(Exception):
+    pass
+
+
+class _DebugInterrupt(Exception):
     pass

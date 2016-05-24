@@ -7,11 +7,12 @@ from qcodes.instrument.mock import MockInstrument
 from qcodes.instrument.parameter import Parameter, ManualParameter
 from qcodes.instrument.sweep_values import SweepValues
 from qcodes.instrument.function import Function
-from qcodes.instrument.server import get_instrument_server
+from qcodes.instrument.server import get_instrument_server_manager
 
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
 from qcodes.utils.sync_async import NoCommandError
-from qcodes.utils.helpers import LogCapture, killprocesses
+from qcodes.utils.helpers import LogCapture
+from qcodes.process.helpers import kill_processes
 
 from .instrument_mocks import (AMockModel, MockInstTester,
                                MockGates, MockSource, MockMeter)
@@ -136,7 +137,7 @@ class TestParameters(TestCase):
                                 ('chan0slow5', 0)):
             gatesLocal.chan0.set(-0.5)
 
-            with LogCapture() as s:
+            with LogCapture() as logs:
                 if param in ('chan0slow', 'chan0slow2', 'chan0slow3'):
                     # these are the stepped parameters
                     gatesLocal.set(param, 0.5)
@@ -146,12 +147,10 @@ class TestParameters(TestCase):
                     gatesLocal.set(param, -1)
                     gatesLocal.set(param, 1)
 
-            logs = s.getvalue().split('\n')[:-1]
-            s.close()
-
+            loglines = logs.value.split('\n')[:-1]
             # TODO: occasional extra negative delays here
-            self.assertEqual(len(logs), logcount, (param, logs))
-            for line in logs:
+            self.assertEqual(len(loglines), logcount, (param, logs.value))
+            for line in loglines:
                 self.assertTrue(line.startswith('negative delay'), line)
 
     def test_max_delay_errors(self):
@@ -294,9 +293,6 @@ class TestParameters(TestCase):
             gates.ask('question?yes but more after')
 
         with self.assertRaises(ValueError):
-            gates.write('ampl 1')
-            self.meter.echo(9.99)  # known good call, just to read the error
-        with self.assertRaises(ValueError):
             gates.ask('ampl?')
 
         with self.assertRaises(TypeError):
@@ -308,7 +304,7 @@ class TestParameters(TestCase):
         # we don't have the instrument but its server doesn't know to stop.
         # should figure out a way to remove it. (I thought I had but it
         # doesn't seem to have worked...)
-        get_instrument_server('MockInstruments').close()
+        get_instrument_server_manager('MockInstruments').close()
         time.sleep(0.5)
 
         with self.assertRaises(AttributeError):
@@ -332,18 +328,17 @@ class TestParameters(TestCase):
         # we don't have the instrument but its server doesn't know to stop.
         # should figure out a way to remove it. (I thought I had but it
         # doesn't seem to have worked...)
-        killprocesses()
+        kill_processes()
 
     def check_set_amplitude2(self, val, log_count, history_count):
         source = self.sourceLocal
-        with LogCapture() as s:
+        with LogCapture() as logs:
             source.amplitude2.set(val)
 
-        logs = s.getvalue().split('\n')[:-1]
-        s.close()
+        loglines = logs.value.split('\n')[:-1]
 
-        self.assertEqual(len(logs), log_count, logs)
-        for line in logs:
+        self.assertEqual(len(loglines), log_count, logs.value)
+        for line in loglines:
             self.assertIn('cannot sweep', line.lower())
         hist = source.getattr('history')
         self.assertEqual(len(hist), history_count)
@@ -778,7 +773,6 @@ class TestAttrAccess(TestCase):
 
         with self.assertRaises(TypeError):
             instrument.setattr(('d1', 'a', 1))
-            instrument.getattr('name')
 
         # set one attribute that requires creating nested levels
         instrument.setattr(('d1', 'a', 1), 2)
@@ -786,7 +780,6 @@ class TestAttrAccess(TestCase):
         # can't nest inside a non-container
         with self.assertRaises(TypeError):
             instrument.setattr(('d1', 'a', 1, 'secret'), 42)
-            instrument.getattr('name')
 
         # get the whole dict with simple getattr style
         # TODO: twice (out of maybe 50 runs) I saw the below fail,
@@ -826,7 +819,7 @@ class TestAttrAccess(TestCase):
         # test restarting the InstrumentServer - this clears these attrs
         instrument.setattr('answer', 42)
         self.assertEqual(instrument.getattr('answer', None), 42)
-        instrument.connection.manager.restart()
+        instrument._manager.restart()
         self.assertIsNone(instrument.getattr('answer', None))
 
 
