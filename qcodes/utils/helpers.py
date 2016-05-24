@@ -94,17 +94,20 @@ def make_sweep(start, stop, step=None, num=None):
         raise AttributeError('Don\'t use `step` and `num` at the same time.')
     if (step is None) and (num is None):
         raise ValueError('If you really want to go from `start` to '
-                         '`stop` in one step, specify `num = 1`.')
+                         '`stop` in one step, specify `num=2`.')
     if step is not None:
-        num_lo = np.floor((stop-start)/step)
-        num_hi = np.ceil((stop-start)/step)
+        steps = abs((stop - start) / step)
+        tolerance = 1e-10
+        steps_lo = int(np.floor(steps + tolerance))
+        steps_hi = int(np.ceil(steps - tolerance))
 
-        if num_lo != num_hi:
-            raise ValueError('Could not find an integer number of steps for '
-                             'the the given `start`, `stop`, and `step` '
-                             'values. \nNumber of steps is {:d} or {:d}.'
-                             .format(abs(int(num_lo))+1, abs(int(num_hi))+1))
-        num = abs(num_lo)+1
+        if steps_lo != steps_hi:
+            raise ValueError(
+                'Could not find an integer number of points for '
+                'the the given `start`, `stop`, and `step` '
+                'values. \nNumber of points is {:d} or {:d}.'
+                .format(steps_lo + 1, steps_hi + 1))
+        num = steps_lo + 1
 
     return np.linspace(start, stop, num=num)
 
