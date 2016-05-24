@@ -16,6 +16,7 @@ The main thing these managers need to implement is the open context manager:
         difference between write and append is that write empties the file
         before adding new data, and append leaves the existing contents in
         place but starts writing at the end.
+    encoding: If a special output encoding is desired. i.e. 'utf8
 
 - the file-like object returned should implement a minimal set of operations.
 
@@ -60,7 +61,7 @@ class DiskIO:
         self.base_location = os.path.abspath(base_location)
 
     @contextmanager
-    def open(self, filename, mode):
+    def open(self, filename, mode, encoding=None):
         '''
         mimics the interface of the built in open context manager
         filename: string, relative to base_location
@@ -80,7 +81,7 @@ class DiskIO:
 
         # normally we'd construct this context manager with try/finally, but
         # here we already have a context manager for open so we just wrap it
-        with open(filepath, mode) as f:
+        with open(filepath, mode, encoding=encoding) as f:
             yield f
 
     def _normalize_slashes(self, location):
@@ -97,7 +98,7 @@ class DiskIO:
         return os.path.relpath(path, self.base_location)
 
     def __repr__(self):
-        return '<DiskIO, base_location={}>'.format(self.base_location)
+        return '<DiskIO, base_location=\'{}\'>'.format(self.base_location)
 
     def join(self, *args):
         '''

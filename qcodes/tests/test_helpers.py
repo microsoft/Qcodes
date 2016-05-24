@@ -2,10 +2,13 @@ from unittest import TestCase
 import time
 from datetime import datetime
 import asyncio
+import json
+import numpy as np
 
 from qcodes.utils.helpers import (is_sequence, permissive_range, wait_secs,
                                   make_unique, DelegateAttributes,
-                                  LogCapture, strip_attrs)
+                                  LogCapture, strip_attrs, full_class,
+                                  named_repr, make_sweep)
 from qcodes.utils.deferred_operations import is_function
 
 
@@ -177,6 +180,41 @@ class TestPermissiveRange(TestCase):
 
         for args, result in good_args.items():
             self.assertEqual(permissive_range(*args), result)
+
+
+class TestMakeSweep(TestCase):
+    def test_good_calls(self):
+        swp = make_sweep(1, 3, num=6)
+        self.assertEqual(list(swp), [1, 1.4, 1.8, 2.2, 2.6, 3])
+
+        swp = make_sweep(1, 3, step=0.5)
+        self.assertEqual(list(swp), [1, 1.5, 2, 2.5, 3])
+
+        # with step, test a lot of combinations with weird fractions
+        # to make sure we don't fail on a rounding error
+        for r in np.linspace(1, 4, 15):
+            for steps in range(5, 55, 6):
+                step = r / steps
+                swp = make_sweep(1, 1 + r, step=step)
+                self.assertEqual(len(swp), steps + 1)
+                self.assertEqual(swp[0], 1)
+                self.assertEqual(swp[-1], 1 + r)
+
+    def test_bad_calls(self):
+        with self.assertRaises(AttributeError):
+            make_sweep(1, 3, num=3, step=1)
+
+        with self.assertRaises(ValueError):
+            make_sweep(1, 3)
+
+        # this first one should succeed
+        make_sweep(1, 3, step=1)
+        # but if we change step slightly (more than the tolerance of
+        # 1e-10 steps) it will fail.
+        with self.assertRaises(ValueError):
+            make_sweep(1, 3, step=1.00000001)
+        with self.assertRaises(ValueError):
+            make_sweep(1, 3, step=0.99999999)
 
 
 class TestWaitSecs(TestCase):
@@ -438,3 +476,19 @@ class TestStripAttrs(TestCase):
 
         strip_attrs(a)
         self.assertEqual(a.x, s)
+
+
+class TestClassStrings(TestCase):
+    # use a standard library object so we don't need to worry about where
+    # this test is run. A little annoying to find one we can mutate though!
+    def setUp(self):
+        self.j = json.JSONEncoder()
+
+    def test_full_class(self):
+        self.assertEqual(full_class(self.j), 'json.encoder.JSONEncoder')
+
+    def test_named_repr(self):
+        id_ = id(self.j)
+        self.j.name = 'Peppa'
+        self.assertEqual(named_repr(self.j),
+                         '<json.encoder.JSONEncoder: Peppa at {}>'.format(id_))

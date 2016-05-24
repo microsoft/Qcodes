@@ -1,7 +1,7 @@
 import multiprocessing as mp
 
 from qcodes.utils.deferred_operations import DeferredOperations
-from qcodes.utils.helpers import DelegateAttributes
+from qcodes.utils.helpers import DelegateAttributes, named_repr
 from .parameter import Parameter, GetLatest
 from .function import Function
 from .server import get_instrument_server_manager
@@ -105,12 +105,7 @@ class RemoteInstrument(DelegateAttributes):
             return self.functions[key]
 
     def __repr__(self):
-        s = '<{}.{}: {} at {}>'.format(
-            self.__module__,
-            self.__class__.__name__,
-            str(self.name),
-            id(self))
-        return s
+        return named_repr(self)
 
 
 class RemoteComponent:
@@ -163,13 +158,16 @@ class RemoteParameter(RemoteComponent, DeferredOperations):
     def __getitem__(self, keys):
         return Parameter.__getitem__(self, keys)
 
+    def sweep(self, *args, **kwargs):
+        return Parameter.sweep(self, *args, **kwargs)
+
     def _latest(self):
         return self._instrument._ask_server('param_call', self.name,
                                             '_latest')
 
-    def snapshot(self):
+    def snapshot(self, update=False):
         return self._instrument._ask_server('param_call', self.name,
-                                            'snapshot')
+                                            'snapshot', update)
 
     def setattr(self, attr, value):
         self._instrument._ask_server('param_setattr', self.name,
@@ -180,12 +178,7 @@ class RemoteParameter(RemoteComponent, DeferredOperations):
                                             attr)
 
     def __repr__(self):
-        s = '<{}.{}: {} at {}>'.format(
-            self.__module__,
-            self.__class__.__name__,
-            str(self.name),
-            id(self))
-        return s
+        return named_repr(self)
 
     # TODO: need set_sweep if it exists, and any methods a subclass defines.
 
@@ -201,9 +194,4 @@ class RemoteFunction(RemoteComponent):
         return Function.validate(self, *args)
 
     def __repr__(self):
-        s = '<{}.{}: {} at {}>'.format(
-            self.__module__,
-            self.__class__.__name__,
-            str(self.name),
-            id(self))
-        return s
+        return named_repr(self)

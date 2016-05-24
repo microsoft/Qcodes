@@ -117,30 +117,35 @@ class ServerManager:
             # in case a previous query errored and left something on the
             # response queue, clear it
             while not self._response_queue.empty():
+                value = self._get_response()
                 logging.warning(
                     'unexpected data in response queue before ask:\n' +
-                    repr(self._response_queue.get()))
+                    repr(value))
 
             self._query_queue.put(query)
 
-            res = self._response_queue.get(timeout=timeout)
+            value = self._get_response(timeout=timeout, query=query)
 
             while not self._response_queue.empty():
                 logging .warning(
                     'unexpected multiple responses in queue during ask, '
                     'using the last one. earlier item(s):\n' +
-                    repr(res))
-                res = self._response_queue.get(timeout=timeout)
+                    repr(value))
+                value = self._get_response(query=query)
 
-            try:
-                code, value = res
-            except (TypeError, ValueError):
-                code, value = '<MALFORMED>', res
+        return value
 
-            if code == RESPONSE_OK:
-                return value
+    def _get_response(self, timeout=None, query=None):
+        res = self._response_queue.get(timeout=timeout)
+        try:
+            code, value = res
+        except (TypeError, ValueError):
+            code, value = '<MALFORMED>', res
 
-            self._handle_error(code, value, query)
+        if code == RESPONSE_OK:
+            return value
+
+        self._handle_error(code, value, query)
 
     def _handle_error(self, code, error_str, query=None):
         error_head = '*** error on {} ***'.format(self.name)
