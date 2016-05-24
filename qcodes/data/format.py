@@ -71,9 +71,11 @@ class Formatter:
                     logging.warning(format_exc())
 
     def write_metadata(self, data_set, read_first=True):
+        """Write the metadata for this DataSet to storage."""
         raise NotImplementedError
 
     def read_metadata(self, data_set):
+        """Read the metadata from this DataSet from storage."""
         raise NotImplementedError
 
     def read_one_file(self, data_set, f, ids_read):
