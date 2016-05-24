@@ -12,7 +12,7 @@ from qcodes.process.qcodes_process import QcodesProcess
 from qcodes.process.stream_queue import get_stream_queue, _SQWriter
 from qcodes.process.server import ServerManager, RESPONSE_OK, RESPONSE_ERROR
 import qcodes.process.helpers as qcmp
-from qcodes.utils.helpers import in_notebook
+from qcodes.utils.helpers import in_notebook, LogCapture
 from qcodes.utils.timing import calibrate
 
 BREAK_SIGNAL = '~~BREAK~~'
@@ -398,21 +398,33 @@ class TestServerManager(TestCase):
         # non-built-in errors we fall back on RuntimeError
         custom_error_str = ('traceback\nlines\nand then\n'
                             'CustomError: the Balrog is loose!')
-        sm._response_queue.put((RESPONSE_OK,
-                                'should get tossed by the error checker'))
-        sm._response_queue.put((RESPONSE_OK, 'so should this.'))
+        extra_resp1 = 'should get tossed by the error checker'
+        extra_resp2 = 'so should this.'
+        sm._response_queue.put((RESPONSE_OK, extra_resp1))
+        sm._response_queue.put((RESPONSE_OK, extra_resp2))
         sm._response_queue.put((RESPONSE_ERROR, custom_error_str))
-        with self.assertRaises(RuntimeError):
-            sm.ask('something benign')
-        self.assertTrue(sm._response_queue.empty())
+
+        with LogCapture() as logs:
+            with self.assertRaises(RuntimeError):
+                sm.ask('something benign')
+            self.assertTrue(sm._response_queue.empty())
+        self.assertIn(extra_resp1, logs.value)
+        self.assertIn(extra_resp2, logs.value)
 
         # extra responses to a query, only the last should be taken
-        sm._response_queue.put((RESPONSE_OK, 'boo!'))
-        sm._response_queue.put((RESPONSE_OK, 'a barrel of monkeys!'))
+        extra_resp1 = 'boo!'
+        extra_resp2 = 'a barrel of monkeys!'
+        sm._response_queue.put((RESPONSE_OK, extra_resp1))
+        sm._response_queue.put((RESPONSE_OK, extra_resp2))
+        time.sleep(0.05)
         p = mp.Process(target=delayed_put,
                        args=(sm._response_queue, (RESPONSE_OK, 42), 0.05))
         p.start()
-        self.assertEqual(sm.ask('what is the answer'), 42)
+
+        with LogCapture() as logs:
+            self.assertEqual(sm.ask('what is the answer'), 42)
+        self.assertIn(extra_resp1, logs.value)
+        self.assertIn(extra_resp2, logs.value)
 
         # no response to a query
         with self.assertRaises(Empty):
@@ -424,9 +436,11 @@ class TestServerManager(TestCase):
 
         self.assertIn(sm._server, mp.active_children())
 
-        sm.halt(0.01)
+        with LogCapture() as logs:
+            sm.halt(0.01)
+        self.assertIn('ServerManager did not respond '
+                      'to halt signal, terminated', logs.value)
 
-        # TODO: test our print ('ServerManager did not respond...')
         self.assertNotIn(sm._server, mp.active_children())
 
     def test_pathological_edge_cases(self):
