@@ -92,7 +92,8 @@ class BasePlot:
                         self.data_updaters.add(data_array.data_set.sync)
 
         if self.data_updaters:
-            self.update_widget.interval = self.interval
+            if hasattr(self, 'update_widget'):
+                self.update_widget.interval = self.interval
 
     def get_default_title(self):
         '''
