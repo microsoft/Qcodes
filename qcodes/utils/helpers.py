@@ -5,7 +5,6 @@ import logging
 import math
 import sys
 import io
-import multiprocessing as mp
 import numpy as np
 
 
@@ -139,6 +138,12 @@ class LogCapture():
     '''
     context manager to grab all log messages, optionally
     from a specific logger
+
+    usage:
+
+    with LogCapture() as logs:
+        code_that_makes_logs(...)
+    log_str = logs.value
     '''
     def __init__(self, logger=logging.getLogger()):
         self.logger = logger
@@ -148,10 +153,12 @@ class LogCapture():
         self.string_handler = logging.StreamHandler(self.log_capture)
         self.string_handler.setLevel(logging.DEBUG)
         self.logger.addHandler(self.string_handler)
-        return self.log_capture
+        return self
 
     def __exit__(self, type, value, tb):
         self.logger.removeHandler(self.string_handler)
+        self.value = self.log_capture.getvalue()
+        self.log_capture.close()
 
 
 def make_unique(s, existing):
@@ -262,15 +269,3 @@ def strip_attrs(obj):
                 pass
     except:
         pass
-
-
-def killprocesses():
-    # TODO: Instrument processes don't appropriately stop in all tests...
-    # this just kills everything that's running.
-    for process in mp.active_children():
-        try:
-            process.terminate()
-        except:
-            pass
-
-    time.sleep(0.5)

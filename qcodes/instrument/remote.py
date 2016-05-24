@@ -1,8 +1,10 @@
+import multiprocessing as mp
+
 from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import DelegateAttributes, named_repr
 from .parameter import Parameter, GetLatest
 from .function import Function
-from .server import get_instrument_server
+from .server import get_instrument_server_manager
 
 
 class RemoteInstrument(DelegateAttributes):
@@ -23,58 +25,78 @@ class RemoteInstrument(DelegateAttributes):
                 shared_kwargs[kwname] = kwargs[kwname]
                 del kwargs[kwname]
 
-        manager = get_instrument_server(server_name, shared_kwargs)
-        # connect sets self.connection
-        manager.connect(self, instrument_class, args, kwargs)
+        self._server_name = server_name
+        self._shared_kwargs = shared_kwargs
+        self._manager = get_instrument_server_manager(self._server_name,
+                                                      self._shared_kwargs)
+
+        self._instrument_class = instrument_class
+        self._args = args
+        self._kwargs = kwargs
+
+        instrument_class.record_instance(self)
+        self.connect()
+
+    def connect(self):
+        connection_attrs = self._manager.connect(self, self._instrument_class,
+                                                 self._args, self._kwargs)
 
         # bind all the different categories of actions we need
         # to interface with the remote instrument
         # TODO: anything else?
 
-        self.name = self.connection.instrument_name
+        self.name = connection_attrs['name']
+        self._id = connection_attrs['id']
 
         self._methods = {
             name: RemoteMethod(name, self, attrs)
-            for name, attrs in self.connection.methods.items()
+            for name, attrs in connection_attrs['methods'].items()
         }
 
         self.parameters = {
             name: RemoteParameter(name, self, attrs)
-            for name, attrs in self.connection.parameters.items()
+            for name, attrs in connection_attrs['parameters'].items()
         }
 
         self.functions = {
             name: RemoteFunction(name, self, attrs)
-            for name, attrs in self.connection.functions.items()
+            for name, attrs in connection_attrs['functions'].items()
         }
 
-        self._instrument_class = instrument_class
-        self._server_name = server_name
-        self._shared_attrs = shared_kwargs
+    def _ask_server(self, func_name, *args, **kwargs):
+        """
+        Query the server copy of this instrument, expecting a response
+        """
+        return self._manager.ask('cmd', self._id, func_name, *args, **kwargs)
 
-        instrument_class.record_instance(self)
+    def _write_server(self, func_name, *args, **kwargs):
+        """
+        Send a command to the server copy of this instrument, without
+        waiting for a response
+        """
+        self._manager.write('cmd', self._id, func_name, *args, **kwargs)
 
     def add_parameter(self, name, **kwargs):
-        attrs = self.connection.ask('add_parameter', name, **kwargs)
+        attrs = self._ask_server('add_parameter', name, **kwargs)
         self.parameters[name] = RemoteParameter(name, self, attrs)
 
     def add_function(self, name, **kwargs):
-        attrs = self.connection.ask('add_function', name, **kwargs)
+        attrs = self._ask_server('add_function', name, **kwargs)
         self.functions[name] = RemoteFunction(name, self, attrs)
 
     def instances(self):
         return self._instrument_class.instances()
 
     def close(self):
-        if self.connection:
-            self.connection.close()
-        self.connection = None
+        if hasattr(self, '_manager'):
+            if self._manager._server in mp.active_children():
+                self._manager.delete(self._id)
+            del self._manager
         self._instrument_class.remove_instance(self)
 
     def restart(self):
         self.close()
-        manager = get_instrument_server(self._server_name, self._shared_attrs)
-        manager.restart()
+        self._manager.restart()
 
     def __getitem__(self, key):
         try:
@@ -85,6 +107,7 @@ class RemoteInstrument(DelegateAttributes):
     def __repr__(self):
         return named_repr(self)
 
+
 class RemoteComponent:
     '''
     One piece of a RemoteInstrument, that proxies all of its calls to the
@@ -92,11 +115,6 @@ class RemoteComponent:
     '''
     def __init__(self, name, instrument, attrs):
         self.name = name
-
-        # Note that we don't store the connection itself in these objects, we
-        # just store the instrument. That's so if the connection gets reset,
-        # we don't keep an old copy of it here but instead look it up on the
-        # instrument and use the current copy.
         self._instrument = instrument
 
         for attribute, value in attrs.items():
@@ -108,7 +126,7 @@ class RemoteComponent:
 
 class RemoteMethod(RemoteComponent):
     def __call__(self, *args, **kwargs):
-        return self._instrument.connection.ask(self.name, *args, **kwargs)
+        return self._instrument._ask_server(self.name, *args, **kwargs)
 
 
 class RemoteParameter(RemoteComponent, DeferredOperations):
@@ -123,14 +141,14 @@ class RemoteParameter(RemoteComponent, DeferredOperations):
             self.set(*args)
 
     def get(self):
-        return self._instrument.connection.ask('get', self.name)
+        return self._instrument._ask_server('get', self.name)
 
     def set(self, value):
         # TODO: sometimes we want set to block (as here) and sometimes
-        # we want it async... which would just be changing the 'ask'
-        # to 'write' below. how do we decide, and how do we let the user
-        # do it?
-        self._instrument.connection.ask('set', self.name, value)
+        # we want it async... which would just be changing the '_ask_server'
+        # to '_write_server' below. how do we decide, and how do we let the
+        # user do it?
+        self._instrument._ask_server('set', self.name, value)
 
     # manually copy over validate and __getitem__ so they execute locally
     # no reason to send these to the server, unless the validators change...
@@ -144,21 +162,20 @@ class RemoteParameter(RemoteComponent, DeferredOperations):
         return Parameter.sweep(self, *args, **kwargs)
 
     def _latest(self):
-        return self._instrument.connection.ask('param_call', self.name,
-                                               '_latest')
+        return self._instrument._ask_server('param_call', self.name,
+                                            '_latest')
 
     def snapshot(self, update=False):
-        # how to propagate the update?, just like this? Seems to work...
-        return self._instrument.connection.ask('param_call', self.name,
-                                               'snapshot', update)
+        return self._instrument._ask_server('param_call', self.name,
+                                            'snapshot', update)
 
     def setattr(self, attr, value):
-        self._instrument.connection.ask('param_setattr', self.name,
-                                        attr, value)
+        self._instrument._ask_server('param_setattr', self.name,
+                                     attr, value)
 
     def getattr(self, attr):
-        return self._instrument.connection.ask('param_getattr', self.name,
-                                               attr)
+        return self._instrument._ask_server('param_getattr', self.name,
+                                            attr)
 
     def __repr__(self):
         return named_repr(self)
@@ -168,7 +185,7 @@ class RemoteParameter(RemoteComponent, DeferredOperations):
 
 class RemoteFunction(RemoteComponent):
     def __call__(self, *args):
-        return self._instrument.connection.ask('call', self.name, *args)
+        return self._instrument._ask_server('call', self.name, *args)
 
     def call(self, *args):
         return self.__call__(*args)
