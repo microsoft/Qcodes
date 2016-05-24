@@ -14,6 +14,7 @@ from qcodes.utils.helpers import LogCapture, killprocesses
 
 from .instrument_mocks import (AMockModel, MockInstTester,
                                MockGates, MockSource, MockMeter)
+from .common import strip_qc
 
 
 class TestParamConstructor(TestCase):
@@ -464,19 +465,12 @@ class TestParameters(TestCase):
         with self.assertRaises(ValueError):
             f(20)
 
-    def strip_qc(self, d, keys=('instrument', '__class__')):
-        # depending on how you run the tests, __module__ can either
-        # have qcodes on the front or not. Just strip it off.
-        for key in keys:
-            if key in d:
-                d[key] = d[key].replace('qcodes.tests.', 'tests.')
-
     def test_standard_snapshot(self):
         self.maxDiff = None
         snap = self.meter.snapshot()
-        self.strip_qc(snap)
+        strip_qc(snap)
         for psnap in snap['parameters'].values():
-            self.strip_qc(psnap)
+            strip_qc(psnap)
 
         self.assertEqual(snap, {
             '__class__': 'tests.instrument_mocks.MockMeter',
@@ -520,7 +514,7 @@ class TestParameters(TestCase):
         noise = self.source.noise
 
         noisesnap = self.source.snapshot()['parameters']['noise']
-        self.strip_qc(noisesnap)
+        strip_qc(noisesnap)
         self.assertEqual(noisesnap, {
             '__class__': 'qcodes.instrument.parameter.ManualParameter',
             'instrument': 'tests.instrument_mocks.MockSource',

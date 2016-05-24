@@ -151,3 +151,9 @@ class TestSweepValues(TestCase):
             {'first': 4, 'last': 9, 'min': 4, 'max': 9, 'num': 3,
              'type': 'sequence'}
             ])
+
+    def test_repr(self):
+        sv = self.c0[0]
+        self.assertEqual(repr(sv),
+                         '<qcodes.instrument.sweep_values.SweepFixedValues: '
+                         'c0 at {}>'.format(id(sv)))

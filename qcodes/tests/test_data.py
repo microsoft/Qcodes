@@ -12,6 +12,7 @@ from qcodes import active_children
 
 from .data_mocks import (MockDataManager, MockFormatter, FullIO, EmptyIO,
                          MissingMIO, MockLive, MockArray)
+from .common import strip_qc
 
 
 class TestDataArray(TestCase):
@@ -292,6 +293,43 @@ class TestLoadData(TestCase):
                          location='here!')
         self.assertEqual(data.has_read_data, True)
         self.assertEqual(data.has_read_metadata, True)
+
+
+class TestDataSetMetaData(TestCase):
+    def test_snapshot(self):
+        data = new_data(location=False)
+        expected_snap = {
+            '__class__': 'qcodes.data.data_set.DataSet',
+            'location': False,
+            'arrays': {},
+            'formatter': 'qcodes.data.gnuplot_format.GNUPlotFormat',
+        }
+        snap = strip_qc(data.snapshot())
+
+        # handle io separately so we don't need to figure out our path
+        self.assertIn('DiskIO', snap['io'])
+        del snap['io']
+        self.assertEqual(snap, expected_snap)
+
+        # even though we removed io from the snapshot, it's still in .metadata
+        self.assertIn('io', data.metadata)
+
+        # then do the same transormations to metadata to check it too
+        del data.metadata['io']
+        strip_qc(data.metadata)
+        self.assertEqual(data.metadata, expected_snap)
+
+        # location is False so read_metadata should be a noop
+        data.metadata = {'food': 'Fried chicken'}
+        data.read_metadata()
+        self.assertEqual(data.metadata, {'food': 'Fried chicken'})
+
+        # snapshot should never delete things from metadata, only add or update
+        data.metadata['location'] = 'Idaho'
+        snap = strip_qc(data.snapshot())
+        expected_snap['food'] = 'Fried chicken'
+        del snap['io']
+        self.assertEqual(snap, expected_snap)
 
 
 class TestNewData(TestCase):

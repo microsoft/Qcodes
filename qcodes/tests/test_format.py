@@ -31,6 +31,11 @@ class TestBaseFormatter(TestCase):
         with self.assertRaises(NotImplementedError):
             formatter.read_one_file(data, 'a file!', set())
 
+        with self.assertRaises(NotImplementedError):
+            formatter.write_metadata(data)
+        with self.assertRaises(NotImplementedError):
+            formatter.read_metadata(data)
+
     def test_no_files(self):
         formatter = Formatter()
         data = DataSet1D(self.locations[0])
