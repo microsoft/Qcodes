@@ -1,6 +1,7 @@
 from enum import Enum
 from datetime import datetime
 import time
+from copy import deepcopy
 
 from .manager import get_data_manager, NoData
 from .gnuplot_format import GNUPlotFormat
@@ -512,7 +513,7 @@ class DataSet(DelegateAttributes):
             'formatter': full_class(self.formatter),
             'io': repr(self.io)
         })
-        return self.metadata
+        return deepcopy(self.metadata)
 
     def get_array_metadata(self, array_id):
         try:
