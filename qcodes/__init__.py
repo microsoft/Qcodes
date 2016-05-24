@@ -30,7 +30,8 @@ if in_notebook():  # pragma: no cover
     from qcodes.widgets.widgets import show_subprocess_widget
 
 from qcodes.station import Station
-from qcodes.loops import get_bg, halt_bg, Loop, Task, Wait, BreakIf
+from qcodes.loops import get_bg, halt_bg, Loop
+from qcodes.actions import Task, Wait, BreakIf
 
 from qcodes.data.manager import get_data_manager
 from qcodes.data.data_set import DataMode, DataSet, new_data, load_data
