@@ -2,10 +2,13 @@ from unittest import TestCase
 import time
 from datetime import datetime
 import asyncio
+import json
+import numpy as np
 
 from qcodes.utils.helpers import (is_sequence, permissive_range, wait_secs,
                                   make_unique, DelegateAttributes,
-                                  LogCapture, strip_attrs)
+                                  LogCapture, strip_attrs, full_class,
+                                  named_repr, make_sweep)
 from qcodes.utils.deferred_operations import is_function
 
 
@@ -472,3 +475,19 @@ class TestStripAttrs(TestCase):
 
         strip_attrs(a)
         self.assertEqual(a.x, s)
+
+
+class TestClassStrings(TestCase):
+    # use a standard library object so we don't need to worry about where
+    # this test is run. A little annoying to find one we can mutate though!
+    def setUp(self):
+        self.j = json.JSONEncoder()
+
+    def test_full_class(self):
+        self.assertEqual(full_class(self.j), 'json.encoder.JSONEncoder')
+
+    def test_named_repr(self):
+        id_ = id(self.j)
+        self.j.name = 'Peppa'
+        self.assertEqual(named_repr(self.j),
+                         '<json.encoder.JSONEncoder: Peppa at {}>'.format(id_))

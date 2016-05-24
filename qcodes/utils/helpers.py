@@ -32,6 +32,16 @@ def full_class(obj):
     return type(obj).__module__ + '.' + type(obj).__name__
 
 
+def named_repr(obj):
+    """Enhance the standard repr() with the object's name attribute."""
+    s = '<{}.{}: {} at {}>'.format(
+        obj.__module__,
+        type(obj).__name__,
+        str(obj.name),
+        id(obj))
+    return s
+
+
 def deep_update(dest, update):
     """
     Recursively update one JSON structure with another.

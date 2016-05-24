@@ -41,7 +41,7 @@ import os
 
 from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import (permissive_range, wait_secs,
-                                  DelegateAttributes, full_class)
+                                  DelegateAttributes, full_class, named_repr)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import syncable_command, NoCommandError
 from qcodes.utils.validators import Validator, Numbers, Ints, Enum
@@ -203,12 +203,7 @@ class Parameter(Metadatable, DeferredOperations):
         self.get_latest = GetLatest(self)
 
     def __repr__(self):
-        s = '<{}.{}: {} at {}>'.format(
-            self.__module__,
-            self.__class__.__name__,
-            str(self.name),
-            id(self))
-        return s
+        return named_repr(self)
 
     def __call__(self, *args):
         if len(args) == 0:

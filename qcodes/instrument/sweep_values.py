@@ -1,6 +1,7 @@
 from copy import deepcopy
 
-from qcodes.utils.helpers import is_sequence, permissive_range, make_sweep
+from qcodes.utils.helpers import (is_sequence, permissive_range, make_sweep,
+                                  named_repr)
 from qcodes.utils.sync_async import mock_async, mock_sync
 from qcodes.utils.metadata import Metadatable
 
@@ -74,12 +75,7 @@ class SweepValues(Metadatable):
         raise NotImplementedError
 
     def __repr__(self):
-        s = '<{}.{}: {} at {}>'.format(
-            self.__module__,
-            self.__class__.__name__,
-            str(self.name),
-            id(self))
-        return s
+        return named_repr(self)
 
 
 class SweepFixedValues(SweepValues):

@@ -1,5 +1,5 @@
 from qcodes.utils.deferred_operations import DeferredOperations
-from qcodes.utils.helpers import DelegateAttributes
+from qcodes.utils.helpers import DelegateAttributes, named_repr
 from .parameter import Parameter, GetLatest
 from .function import Function
 from .server import get_instrument_server
@@ -83,12 +83,7 @@ class RemoteInstrument(DelegateAttributes):
             return self.functions[key]
 
     def __repr__(self):
-        s = '<{}.{}: {} at {}>'.format(
-            self.__module__,
-            self.__class__.__name__,
-            str(self.name),
-            id(self))
-        return s
+        return named_repr(self)
 
 class RemoteComponent:
     '''
@@ -166,12 +161,7 @@ class RemoteParameter(RemoteComponent, DeferredOperations):
                                                attr)
 
     def __repr__(self):
-        s = '<{}.{}: {} at {}>'.format(
-            self.__module__,
-            self.__class__.__name__,
-            str(self.name),
-            id(self))
-        return s
+        return named_repr(self)
 
     # TODO: need set_sweep if it exists, and any methods a subclass defines.
 
@@ -187,9 +177,4 @@ class RemoteFunction(RemoteComponent):
         return Function.validate(self, *args)
 
     def __repr__(self):
-        s = '<{}.{}: {} at {}>'.format(
-            self.__module__,
-            self.__class__.__name__,
-            str(self.name),
-            id(self))
-        return s
+        return named_repr(self)
