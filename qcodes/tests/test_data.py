@@ -314,7 +314,7 @@ class TestDataSetMetaData(TestCase):
         # even though we removed io from the snapshot, it's still in .metadata
         self.assertIn('io', data.metadata)
 
-        # then do the same transormations to metadata to check it too
+        # then do the same transformations to metadata to check it too
         del data.metadata['io']
         strip_qc(data.metadata)
         self.assertEqual(data.metadata, expected_snap)

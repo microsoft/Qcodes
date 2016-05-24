@@ -207,7 +207,10 @@ class TestMakeSweep(TestCase):
         with self.assertRaises(ValueError):
             make_sweep(1, 3)
 
+        # this first one should succeed
         make_sweep(1, 3, step=1)
+        # but if we change step slightly (more than the tolerance of
+        # 1e-10 steps) it will fail.
         with self.assertRaises(ValueError):
             make_sweep(1, 3, step=1.00000001)
         with self.assertRaises(ValueError):
