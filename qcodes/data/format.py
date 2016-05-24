@@ -4,6 +4,7 @@ from traceback import format_exc
 from operator import attrgetter
 import logging
 
+from .data.io import DiskIO
 
 class Formatter:
     """
@@ -40,6 +41,22 @@ class Formatter:
         update the file(s).
         """
         raise NotImplementedError
+
+    def write_to_disk(self, data_set, location):
+        """
+        Write the DataSet to storage. It is up to the Formatter to decide
+        when to overwrite completely, and when to just append or otherwise
+        update the file(s).
+        """
+        io_orig=data_set.io
+        location_orig=data_set.location
+        # update and write
+        data_set.io=DiskIO('/')
+        data_set.location=location
+        self.write(data_set)
+        # restore
+        data_set.io=io_orig
+        data_set.location=location_orig
 
     def read(self, data_set):
         """
