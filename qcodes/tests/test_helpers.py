@@ -3,9 +3,10 @@ import time
 from datetime import datetime
 import asyncio
 
-from qcodes.utils.helpers import (is_function, is_sequence, permissive_range,
-                                  wait_secs, make_unique, DelegateAttributes,
+from qcodes.utils.helpers import (is_sequence, permissive_range, wait_secs,
+                                  make_unique, DelegateAttributes,
                                   LogCapture, strip_attrs)
+from qcodes.utils.deferred_operations import is_function
 
 
 class TestIsFunction(TestCase):
@@ -193,13 +194,11 @@ class TestWaitSecs(TestCase):
             self.assertLessEqual(secs_out, secs)
 
     def test_warning(self):
-        with LogCapture() as s:
+        with LogCapture() as logs:
             secs_out = wait_secs(time.perf_counter() - 1)
         self.assertEqual(secs_out, 0)
 
-        logstr = s.getvalue()
-        s.close()
-        self.assertEqual(logstr.count('negative delay'), 1, logstr)
+        self.assertEqual(logs.value.count('negative delay'), 1, logs.value)
 
 
 class TestMakeUnique(TestCase):

@@ -1,17 +1,15 @@
-from asyncio import iscoroutinefunction
 from collections import Iterable
 import time
-from inspect import signature
 import logging
 import math
 import sys
 import io
-import multiprocessing as mp
 
 
 def in_notebook():
     '''
-    is this code in a process directly connected to a jupyter notebook?
+    Returns True if the code is running with a ipython or jypyter
+    This could mean we are connected to a notebook, but this is not guaranteed.
     see: http://stackoverflow.com/questions/15411967
     '''
     return 'ipy' in repr(sys.stdout)
@@ -24,39 +22,6 @@ def is_sequence(obj):
     sequences by this definition.
     '''
     return isinstance(obj, Iterable) and not isinstance(obj, (str, bytes))
-
-
-def is_function(f, arg_count, coroutine=False):
-    '''
-    require a function that can accept the specified number of positional
-    arguments, which either is or is not a coroutine
-    type casting "functions" are allowed, but only in the 1-argument form
-    '''
-    if not isinstance(arg_count, int) or arg_count < 0:
-        raise TypeError('arg_count must be a non-negative integer')
-
-    if not (callable(f) and bool(coroutine) is iscoroutinefunction(f)):
-        return False
-
-    if isinstance(f, type):
-        # for type casting functions, eg int, str, float
-        # only support the one-parameter form of these,
-        # otherwise the user should make an explicit function.
-        return arg_count == 1
-
-    try:
-        sig = signature(f)
-    except ValueError:
-        # some built-in functions/methods don't describe themselves to inspect
-        # we already know it's a callable and coroutine is correct.
-        return True
-
-    try:
-        inputs = [0] * arg_count
-        sig.bind(*inputs)
-        return True
-    except TypeError:
-        return False
 
 
 # could use numpy.arange here, but
@@ -95,6 +60,12 @@ class LogCapture():
     '''
     context manager to grab all log messages, optionally
     from a specific logger
+
+    usage:
+
+    with LogCapture() as logs:
+        code_that_makes_logs(...)
+    log_str = logs.value
     '''
     def __init__(self, logger=logging.getLogger()):
         self.logger = logger
@@ -104,10 +75,12 @@ class LogCapture():
         self.string_handler = logging.StreamHandler(self.log_capture)
         self.string_handler.setLevel(logging.DEBUG)
         self.logger.addHandler(self.string_handler)
-        return self.log_capture
+        return self
 
     def __exit__(self, type, value, tb):
         self.logger.removeHandler(self.string_handler)
+        self.value = self.log_capture.getvalue()
+        self.log_capture.close()
 
 
 def make_unique(s, existing):
@@ -218,15 +191,3 @@ def strip_attrs(obj):
                 pass
     except:
         pass
-
-
-def killprocesses():
-    # TODO: Instrument processes don't appropriately stop in all tests...
-    # this just kills everything that's running.
-    for process in mp.active_children():
-        try:
-            process.terminate()
-        except:
-            pass
-
-    time.sleep(0.5)

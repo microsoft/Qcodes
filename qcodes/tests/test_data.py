@@ -5,7 +5,7 @@ import numpy as np
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager, NoData
 from qcodes.data.data_set import load_data, new_data, DataMode, DataSet
-from qcodes.utils.helpers import killprocesses
+from qcodes.utils.helpers import kill_processes
 from qcodes import active_children
 
 from .data_mocks import (MockDataManager, MockFormatter, MatchIO,
@@ -234,7 +234,7 @@ class TestDataArray(TestCase):
 
 class TestLoadData(TestCase):
     def setUp(self):
-        killprocesses()
+        kill_processes()
 
     def test_no_live_data(self):
         # live data with no DataManager at all
@@ -290,7 +290,7 @@ class TestLoadData(TestCase):
 
 class TestNewData(TestCase):
     def setUp(self):
-        killprocesses()
+        kill_processes()
         self.original_lp = DataSet.location_provider
 
     def tearDown(self):
@@ -333,7 +333,7 @@ class TestNewData(TestCase):
 
 class TestDataSet(TestCase):
     def tearDown(self):
-        killprocesses()
+        kill_processes()
 
     def test_constructor_errors(self):
         # no location - only allowed with load_data
