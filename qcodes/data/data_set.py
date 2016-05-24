@@ -22,7 +22,9 @@ SERVER_MODES = set((DataMode.PULL_FROM_SERVER, DataMode.PUSH_TO_SERVER))
 def new_data(location=None, loc_record=None, name=None, overwrite=False,
              io=None, data_manager=None, mode=DataMode.LOCAL, **kwargs):
     """
-    Create a new DataSet. Arguments are the same as DataSet constructor, plus:
+    Create a new DataSet.
+
+    Arguments are the same as DataSet constructor, plus:
 
     overwrite: Are we allowed to overwrite an existing location? default False
 
@@ -73,8 +75,9 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
 
 def load_data(location=None, data_manager=None, formatter=None, io=None):
     """
-    Load an existing DataSet. Arguments are a subset of the DataSet
-    constructor:
+    Load an existing DataSet.
+
+    Arguments are a subset of the DataSet constructor:
 
     location: a string for the location to load from
         if omitted (None) defaults to the current live DataSet.
@@ -126,11 +129,11 @@ def _get_live_data(data_manager):
 
 
 class SafeFormatter(string.Formatter):
+
+    """Modified string formatter that doesn't complain about missing keys."""
+
     def get_value(self, key, args, kwargs):
-        """
-        Overrides string.Formatter.get_value so a missing key wont raise an
-        error.
-        """
+        """Missing keys just get left as they were: '{key}'."""
         try:
             return super().get_value(key, args, kwargs)
         except:
@@ -138,13 +141,17 @@ class SafeFormatter(string.Formatter):
 
 
 class FormatLocation:
-    """
-    This is the default DataSet Location provider. It provides a callable that
-    returns a new (not used by another DataSet) location string, based on a
-    format string `fmt` and a
 
-    The location string is formatted with the `fmt` string provided in
-    `__init__` or `__call__`. And a dict provided through the record arguments.
+    """
+    This is the default DataSet Location provider.
+
+    It provides a callable that returns a new (not used by another DataSet)
+    location string, based on a format string `fmt` and a dict `record` of
+    information to pass to `fmt`.
+
+    A base record can be provided on instantiating the FormatLocation, and
+    another one can be provided on call, which overrides parts of the base
+    just for that call.
 
     Default record items are `{date}`, `{time}`, and `{counter}`
     Record item priority from lowest to highest (double items will be
@@ -181,11 +188,36 @@ class FormatLocation:
     it is '{date}/{time}_{name}'
     with `fmt_date='%Y-%m-%d'` and `fmt_time='%H-%M-%S'`
     """
+
     default_fmt = '{date}/{time}'
 
     def __init__(self, fmt=None, fmt_date=None, fmt_time=None,
                  fmt_counter=None, record=None):
+        """
+        Construct a FormatLocation location_provider.
 
+        fmt (default '{date}/{time}'): a format string that all the other info
+            will get inserted into
+
+        fmt_date (default '%Y-%m-%d'): a `datetime.strftime` format string,
+            accepts datetime.now() but should only use the date part. The
+            result will be inserted in '{date}' in `fmt`. Do not include
+            date formatting in `fmt` itself (such as '{date:%Y-%m-%d}')
+
+        fmt_time (default '%H-%M-%S'): a `datetime.strftime` format string,
+            accepts datetime.now() but should only use the time part. The
+            result will be inserted in '{time}' in `fmt`. Do not include
+            date formatting in `fmt` itself (such as '{time:%H-%M-%S}')
+
+        fmt_counter (default '{:03}'): a format string for the counter
+            (integer) which is automatically generated from existing
+            DataSets that the io manager can see. Do not include
+            number formatting in `fmt` itself (such as '{counter:03}')
+
+        record (default None): a dict of default values to provide when
+            calling the location_provider. Values provided later will
+            override these values.
+        """
         self.fmt = fmt or self.default_fmt
         self.fmt_date = fmt_date or '%Y-%m-%d'
         self.fmt_time = fmt_time or '%H-%M-%S'
@@ -206,6 +238,14 @@ class FormatLocation:
             return 0
 
     def __call__(self, io, record=None):
+        """
+        Call the location provider to get a new location.
+
+        io: an io manager instance
+
+        record (default None): a dict of information to use in the
+            format string
+        """
         loc_fmt = self.fmt
 
         time_now = datetime.now()
