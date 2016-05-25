@@ -43,6 +43,8 @@ import multiprocessing as mp
 import time
 import numpy as np
 
+from qcodes.utils.helpers import tprint
+
 from qcodes.station import Station
 from qcodes.data.data_set import new_data, DataMode
 from qcodes.data.data_array import DataArray
@@ -790,7 +792,6 @@ class ActiveLoop(Metadatable):
             self._check_signal()
 
 
-<<<<<<< HEAD
 class Task:
 
     """
