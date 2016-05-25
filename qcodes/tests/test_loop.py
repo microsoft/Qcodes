@@ -110,6 +110,26 @@ class TestMockInstLoop(TestCase):
 
         self.check_loop_data(data)
 
+    @patch('qcodes.loops.tprint')
+    def test_progress_calls(self, tprint_mock):
+        data = self.loop_progress.run(location=self.location, background=False,
+                                      data_manager=False, quiet=True)
+        self.assertFalse(hasattr(self.loop, 'process'))
+
+        self.check_loop_data(data)
+        expected_calls = len(self.loop_progress.sweep_values) + 1
+        self.assertEqual(tprint_mock.call_count, expected_calls)
+
+        # now run again with no progress interval and check that we get no
+        # additional calls
+        data = self.loop_progress.run(location=False, background=False,
+                                      data_manager=False, quiet=True,
+                                      progress_interval=None)
+        self.assertFalse(hasattr(self.loop, 'process'))
+
+        self.check_loop_data(data)
+        self.assertEqual(tprint_mock.call_count, expected_calls)
+
     def test_foreground_no_datamanager(self):
         data = self.loop.run(location=self.location, background=False,
                              data_manager=False, quiet=True)
