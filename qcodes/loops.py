@@ -126,12 +126,7 @@ def _clear_data_manager():
 #     pass
 
 
-<<<<<<< HEAD
-class Loop:
-
-=======
 class Loop(Metadatable):
->>>>>>> master
     """
     The entry point for creating measurement loops
 
@@ -154,7 +149,7 @@ class Loop(Metadatable):
     this one.
     """
 
-    def __init__(self, sweep_values, delay=0, station=None, progress_interval=None)):
+    def __init__(self, sweep_values, delay=0, station=None, progress_interval=None):
         super().__init__()
         if not delay >= 0:
             raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
