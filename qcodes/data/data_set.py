@@ -1,6 +1,7 @@
 from enum import Enum
 from datetime import datetime
 import time
+import logging
 
 from .manager import get_data_manager, NoData
 from .gnuplot_format import GNUPlotFormat
@@ -458,18 +459,32 @@ class DataSet(DelegateAttributes):
             return
         self.formatter.read(self)
 
-    def write(self):
+    def write(self, path=None):
         """
         Write the whole (or only changed parts) DataSet to storage,
         overwriting the existing storage if any.
         """
+
+        if path is not None:
+            # write to user specified path
+            logging.info('writing dataset to path %s' % path)
+            
+            for a in self.arrays.keys():
+                # clear save is not enough, we _need_ to set modified_range
+                self.arrays[a].last_saved_index = None
+                self.arrays[a].modified_range=[0, self.arrays[a].shape[0]-1] 
+                self.arrays[a].clear_save()
+            
+            self.formatter.write(self, io_manager=DiskIO('/'), location=path)
+            return
+            
         if self.mode != DataMode.LOCAL:
             raise RuntimeError('This object is connected to a DataServer, '
                                'which handles writing automatically.')
 
         if self.location is False:
             return
-        self.formatter.write(self)
+        self.formatter.write(self, self.io, self.location)
 
     def finalize(self):
         """

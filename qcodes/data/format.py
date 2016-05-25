@@ -34,29 +34,13 @@ class Formatter:
     """
     ArrayGroup = namedtuple('ArrayGroup', 'size set_arrays data name')
 
-    def write(self, data_set):
+    def write(self, data_set, io_manager=None, location=None):
         """
         Write the DataSet to storage. It is up to the Formatter to decide
         when to overwrite completely, and when to just append or otherwise
         update the file(s).
         """
         raise NotImplementedError
-
-    def write_to_disk(self, data_set, location):
-        """
-        Write the DataSet to storage. It is up to the Formatter to decide
-        when to overwrite completely, and when to just append or otherwise
-        update the file(s).
-        """
-        io_orig=data_set.io
-        location_orig=data_set.location
-        # update and write
-        data_set.io=DiskIO('/')
-        data_set.location=location
-        self.write(data_set)
-        # restore
-        data_set.io=io_orig
-        data_set.location=location_orig
 
     def read(self, data_set):
         """
@@ -118,6 +102,7 @@ class Formatter:
         last_saved_index = (inner_setpoint.last_saved_index if file_exists
                             else None)
         modified_range = inner_setpoint.modified_range
+        logging.info('match_save_range:modified_range  %s' % (modified_range, )) 
         for array in group.data:
             # force overwrite if inconsistent last_saved_index
             if array.last_saved_index != last_saved_index:
@@ -132,6 +117,8 @@ class Formatter:
                 else:
                     modified_range = amr
 
+        logging.info('match_save_range:only_complete  %s' % (only_complete, )) 
+        logging.info('match_save_range:modified_range  %s' % (modified_range, )) 
         if only_complete and modified_range:
             modified_range = self._get_completed_range(modified_range,
                                                        inner_setpoint.shape,
