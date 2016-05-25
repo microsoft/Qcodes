@@ -2,11 +2,12 @@ from enum import Enum
 from datetime import datetime
 import time
 import logging
+from copy import deepcopy
 
 from .manager import get_data_manager, NoData
 from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
-from qcodes.utils.helpers import DelegateAttributes
+from qcodes.utils.helpers import DelegateAttributes, full_class, deep_update
 
 
 class DataMode(Enum):
@@ -99,6 +100,7 @@ def load_data(location=None, data_manager=None, formatter=None, io=None):
     else:
         data = DataSet(location=location, formatter=formatter, io=io,
                        mode=DataMode.LOCAL)
+        data.read_metadata()
         data.read()
         return data
 
@@ -213,6 +215,8 @@ class DataSet(DelegateAttributes):
 
         self.write_period = write_period
         self.last_write = 0
+
+        self.metadata = {}
 
         self.arrays = {}
         if arrays:
@@ -451,20 +455,17 @@ class DataSet(DelegateAttributes):
                 self.write()
                 self.last_write = time.time()
 
-    def read(self):
-        """
-        Read the whole DataSet from storage, overwriting the local data
-        """
+    def read_metadata(self):
+        """Read the metadata from storage, overwriting the local data."""
         if self.location is False:
             return
-        self.formatter.read(self)
+        self.formatter.read_metadata(self)
 
     def write(self, path=None):
         """
         Write the whole (or only changed parts) DataSet to storage,
         overwriting the existing storage if any.
         """
-
         if path is not None:
             # write to user specified path
             logging.info('writing dataset to path %s' % path)
@@ -486,10 +487,18 @@ class DataSet(DelegateAttributes):
             return
         self.formatter.write(self, self.io, self.location)
 
+    def add_metadata(self, new_metadata):
+        """Update DataSet.metadata with additional data."""
+        deep_update(self.metadata, new_metadata)
+
+    def save_metadata(self):
+        """Evaluate and save the DataSet's metadata."""
+        if self.location is not False:
+            self.snapshot()
+            self.formatter.write_metadata(self)
+
     def finalize(self):
-        """
-        Mark the DataSet as complete
-        """
+        """Mark the DataSet as complete."""
         if self.mode == DataMode.PUSH_TO_SERVER:
             self.data_manager.ask('end_data')
         elif self.mode == DataMode.LOCAL:
@@ -497,11 +506,60 @@ class DataSet(DelegateAttributes):
         else:
             raise RuntimeError('This mode does not allow finalizing',
                                self.mode)
+        self.save_metadata()
+
+    def snapshot(self, update=False):
+        """JSON state of the DataSet."""
+        array_snaps = {}
+        for array_id, array in self.arrays.items():
+            array_snaps[array_id] = array.snapshot(update=update)
+
+        self.metadata.update({
+            '__class__': full_class(self),
+            'location': self.location,
+            'arrays': array_snaps,
+            'formatter': full_class(self.formatter),
+            'io': repr(self.io)
+        })
+        return deepcopy(self.metadata)
+
+    def get_array_metadata(self, array_id):
+        try:
+            return self.metadata['arrays'][array_id]
+        except:
+            return None
 
     def __repr__(self):
-        out = '{}: {}, location={}'.format(
-            self.__class__.__name__, self.mode, repr(self.location))
-        for array_id, array in self.arrays.items():
-            out += '\n   {}: {}'.format(array_id, array.name)
+        out = type(self).__name__ + ':'
 
-        return out
+        attrs = [['mode', self.mode],
+                 ['location', repr(self.location)]]
+        attr_template = '\n   {:8} = {}'
+        for var, val in attrs:
+            out += attr_template.format(var, val)
+
+        arr_info = [['<Type>', '<array_id>', '<array.name>', '<array.shape>']]
+
+        for array_id, array in self.arrays.items():
+            setp = 'Setpoint' if array.is_setpoint else 'Measured'
+            arr_info.append([setp, array_id, array.name, repr(array.shape)])
+
+        column_lengths = [max(len(row[i]) for row in arr_info)
+                          for i in range(len(arr_info[0]))]
+        out_template = ('\n   '
+                        '{info[0]:{lens[0]}} | {info[1]:{lens[1]}} | '
+                        '{info[2]:{lens[2]}} | {info[3]}')
+
+        out_set = ''
+        out_get = ''
+        for arr_info_i in arr_info:
+            array_type = arr_info_i[0]
+            line = out_template.format(info=arr_info_i, lens=column_lengths)
+            if array_type == '<Type>':
+                out += line
+            elif array_type == 'Setpoint':
+                out_set += line
+            else:
+                out_get += line
+
+        return out + out_set + out_get

@@ -46,11 +46,13 @@ import numpy as np
 from qcodes.station import Station
 from qcodes.data.data_set import new_data, DataMode
 from qcodes.data.data_array import DataArray
-from qcodes.utils.deferred_operations import is_function
 from qcodes.data.manager import get_data_manager
-from qcodes.utils.helpers import wait_secs
+from qcodes.utils.helpers import wait_secs, full_class, tprint
 from qcodes.process.qcodes_process import QcodesProcess
-from qcodes.utils.threading import thread_map
+from qcodes.utils.metadata import Metadatable
+
+from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
+                      BreakIf, _QcodesBreak)
 
 
 MP_NAME = 'Measurement'
@@ -124,7 +126,7 @@ def _clear_data_manager():
 #     pass
 
 
-class Loop:
+class Loop(Metadatable):
     """
     The entry point for creating measurement loops
 
@@ -134,6 +136,8 @@ class Loop:
         continuing. 0 (default) means no waiting and no warnings. > 0
         means to wait, potentially filling the delay time with monitoring,
         and give an error if you wait longer than expected.
+    progress_interval - should progress of the loop every x seconds. Default
+        is None (no output)
 
     After creating a Loop, you attach `action`s to it, making an `ActiveLoop`
     that you can `.run()`, or you can `.run()` a `Loop` directly, in which
@@ -144,17 +148,23 @@ class Loop:
     data), `Wait` times, or other `ActiveLoop`s or `Loop`s to nest inside
     this one.
     """
-    def __init__(self, sweep_values, delay=0):
+    def __init__(self, sweep_values, delay=0, station=None,
+                 progress_interval=None):
+        super().__init__()
         if not delay >= 0:
             raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
+
         self.sweep_values = sweep_values
         self.delay = delay
+        self.station = station
         self.nested_loop = None
+        self.actions = None
         self.then_actions = ()
+        self.progress_interval = progress_interval
 
     def loop(self, sweep_values, delay=0):
         """
-        Nest another loop inside this one
+        Nest another loop inside this one.
 
         Loop(sv1, d1).loop(sv2, d2).each(*a) is equivalent to:
         Loop(sv1, d1).each(Loop(sv2, d2).each(*a))
@@ -172,14 +182,16 @@ class Loop:
         return out
 
     def _copy(self):
-        out = Loop(self.sweep_values, self.delay)
+        out = Loop(self.sweep_values, self.delay,
+                   progress_interval=self.progress_interval)
         out.nested_loop = self.nested_loop
         out.then_actions = self.then_actions
+        out.station = self.station
         return out
 
     def each(self, *actions):
         """
-        Perform a set of actions at each setting of this loop
+        Perform a set of actions at each setting of this loop.
 
         Each action can be:
         - a Parameter to measure
@@ -202,7 +214,8 @@ class Loop:
             actions = [self.nested_loop.each(*actions)]
 
         return ActiveLoop(self.sweep_values, self.delay, *actions,
-                          then_actions=self.then_actions)
+                          then_actions=self.then_actions, station=self.station,
+                          progress_interval=self.progress_interval)
 
     @staticmethod
     def validate_actions(*actions):
@@ -242,6 +255,7 @@ class Loop:
     def then(self, *actions, overwrite=False):
         """
         Attach actions to be performed after the loop completes.
+
         These can only be `Task` and `Wait` actions, as they may not generate
         any data.
 
@@ -250,7 +264,8 @@ class Loop:
         This is more naturally done to an ActiveLoop (ie after .each())
         and can also be done there, but it's allowed at this stage too so that
         you can define final actions and share them among several `Loop`s that
-        have different loop actions.
+        have different loop actions, or attach final actions to a Loop run
+        with default actions.
 
         *actions: `Task` and `Wait` objects to execute in order
 
@@ -260,11 +275,18 @@ class Loop:
         """
         return _attach_then_actions(self._copy(), actions, overwrite)
 
+    def snapshot_base(self, update=False):
+        """Snapshot of this Loop's definition."""
+        return {
+            '__class__': full_class(self),
+            'sweep_values': self.sweep_values.snapshot(update=update),
+            'delay': self.delay,
+            'then_actions': _actions_snapshot(self.then_actions, update)
+        }
+
 
 def _attach_then_actions(loop, actions, overwrite):
-    """
-    inner code for both Loop.then and ActiveLoop.then
-    """
+    """Inner code for both Loop.then and ActiveLoop.then."""
     for action in actions:
         if not isinstance(action, (Task, Wait)):
             raise TypeError('Unrecognized action:', action,
@@ -279,7 +301,7 @@ def _attach_then_actions(loop, actions, overwrite):
     return loop
 
 
-class ActiveLoop:
+class ActiveLoop(Metadatable):
     """
     Created by attaching actions to a `Loop`, this is the object that actually
     runs a measurement loop. An `ActiveLoop` can no longer be nested, only run,
@@ -295,11 +317,15 @@ class ActiveLoop:
     # maximum sleep time (secs) between checking the signal_queue for a HALT
     signal_period = 1
 
-    def __init__(self, sweep_values, delay, *actions, then_actions=()):
+    def __init__(self, sweep_values, delay, *actions, then_actions=(),
+                 station=None, progress_interval=None):
+        super().__init__()
         self.sweep_values = sweep_values
         self.delay = delay
         self.actions = actions
+        self.progress_interval = progress_interval
         self.then_actions = then_actions
+        self.station = station
 
         # compile now, but don't save the results
         # just used for preemptive error checking
@@ -324,6 +350,7 @@ class ActiveLoop:
     def then(self, *actions, overwrite=False):
         """
         Attach actions to be performed after the loop completes.
+
         These can only be `Task` and `Wait` actions, as they may not generate
         any data.
 
@@ -336,8 +363,18 @@ class ActiveLoop:
             the Loop) will add to each other or overwrite the earlier ones.
         """
         loop = ActiveLoop(self.sweep_values, self.delay, *self.actions,
-                          then_actions=self.then_actions)
+                          then_actions=self.then_actions, station=self.station)
         return _attach_then_actions(loop, actions, overwrite)
+
+    def snapshot_base(self, update=False):
+        """Snapshot of this ActiveLoop's definition."""
+        return {
+            '__class__': full_class(self),
+            'sweep_values': self.sweep_values.snapshot(update=update),
+            'delay': self.delay,
+            'actions': _actions_snapshot(self.actions, update),
+            'then_actions': _actions_snapshot(self.then_actions, update)
+        }
 
     def containers(self):
         """
@@ -347,7 +384,8 @@ class ActiveLoop:
         Recursively calls `.containers` on any enclosed actions.
         """
         loop_size = len(self.sweep_values)
-        loop_array = DataArray(parameter=self.sweep_values.parameter)
+        loop_array = DataArray(parameter=self.sweep_values.parameter,
+                               is_setpoint=True)
         loop_array.nest(size=loop_size)
 
         data_arrays = [loop_array]
@@ -444,7 +482,8 @@ class ActiveLoop:
 
             # finally, make the output data array with these setpoints
             out.append(DataArray(name=name, label=label, size=size,
-                       action_indices=i, set_arrays=setpoints))
+                                 action_indices=i, set_arrays=setpoints,
+                                 parameter=action))
 
         return out
 
@@ -530,10 +569,11 @@ class ActiveLoop:
         return self.run(background=False, quiet=True,
                         data_manager=False, location=False, **kwargs)
 
-    def run(self, background=True, use_threads=True,
-            quiet=False, data_manager=None, **kwargs):
+    def run(self, background=True, use_threads=True, quiet=False,
+            data_manager=None, station=None, progress_interval=False,
+            *args, **kwargs):
         """
-        execute this loop
+        Execute this loop.
 
         background: (default True) run this sweep in a separate process
             so we can have live plotting and other analysis in the main process
@@ -543,6 +583,11 @@ class ActiveLoop:
         quiet: (default False): set True to not print anything except errors
         data_manager: a DataManager instance (omit to use default,
             False to store locally)
+        station: a Station instance for snapshots (omit to use a previously
+            provided Station, or the default Station)
+        progress_interval (default None): show progress of the loop every x
+            seconds. If provided here, will override any interval provided
+            with the Loop definition
 
         kwargs are passed along to data_set.new_data. The key ones are:
         location: the location of the DataSet, a string whose meaning
@@ -562,6 +607,8 @@ class ActiveLoop:
         returns:
             a DataSet object that we can use to plot
         """
+        if progress_interval is not False:
+            self.progress_interval = progress_interval
 
         prev_loop = get_bg()
         if prev_loop:
@@ -576,9 +623,26 @@ class ActiveLoop:
             data_mode = DataMode.PUSH_TO_SERVER
 
         data_set = new_data(arrays=self.containers(), mode=data_mode,
-                            data_manager=data_manager, **kwargs)
+                            data_manager=data_manager, *args, **kwargs)
         self.set_common_attrs(data_set=data_set, use_threads=use_threads,
                               signal_queue=self.signal_queue)
+
+        station = station or self.station or Station.default
+        if station:
+            data_set.add_metadata({'station': station.snapshot()})
+
+        # information about the loop definition is in its snapshot
+        data_set.add_metadata({'loop': self.snapshot()})
+        # then add information about how and when it was run
+        ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        data_set.add_metadata({'loop': {
+            'ts_start': ts,
+            'background': background,
+            'use_threads': use_threads,
+            'use_data_manager': (data_manager is not False)
+        }})
+
+        data_set.save_metadata()
 
         if prev_loop and not quiet:
             print('...done. Starting ' + (data_set.location or 'new loop'),
@@ -649,6 +713,10 @@ class ActiveLoop:
             pass
         finally:
             if hasattr(self, 'data_set'):
+                # somehow this does not show up in the data_set returned by
+                # run(), but it is saved to the metadata
+                ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                self.data_set.add_metadata({'loop': {'ts_end': ts}})
                 self.data_set.finalize()
 
     def _run_loop(self, first_delay=0, action_indices=(),
@@ -672,7 +740,13 @@ class ActiveLoop:
 
         callables = self._compile_actions(self.actions, action_indices)
 
+        t0 = time.time()
+        imax = len(self.sweep_values)
         for i, value in enumerate(self.sweep_values):
+            if self.progress_interval is not None:
+                tprint('loop %s: %d/%d (%.1f [s])' % (
+                    self.sweep_values.name, i, imax, time.time() - t0),
+                    dt=self.progress_interval, tag='outerloop')
             self.sweep_values.set(value)
             new_indices = loop_indices + (i,)
             new_values = current_values + (value,)
@@ -696,6 +770,11 @@ class ActiveLoop:
 
             # after the first setpoint, delay reverts to the loop delay
             delay = self.delay
+        if self.progress_interval is not None:
+            # final progress note: set dt=-1 so it *always* prints
+            tprint('loop %s DONE: %d/%d (%.1f [s])' % (
+                   self.sweep_values.name, i + 1, imax, time.time() - t0),
+                   dt=-1, tag='outerloop')
 
         # the loop is finished - run the .then actions
         for f in self._compile_actions(self.then_actions, ()):
@@ -719,132 +798,6 @@ class ActiveLoop:
                     break
         else:
             self._check_signal()
-
-
-class Task:
-    """
-    A predefined task to be executed within a measurement Loop
-    This form is for a simple task that does not measure any data,
-    and does not depend on the state of the loop when it is called.
-
-    The first argument should be a callable, to which any subsequent
-    args and kwargs (which are evaluated before the loop starts) are passed.
-
-    kwargs passed when the Task is called are ignored,
-    but are accepted for compatibility with other things happening in a Loop.
-    """
-    def __init__(self, func, *args, **kwargs):
-        self.func = func
-        self.args = args
-        self.kwargs = kwargs
-
-    def __call__(self, **ignore_kwargs):
-        self.func(*self.args, **self.kwargs)
-
-
-class Wait:
-    """
-    A simple class to tell a Loop to wait <delay> seconds
-
-    This is transformed into a Task within the Loop, such that
-    it can do other things (monitor, check for halt) during the delay.
-
-    But for use outside of a Loop, it is also callable (then it just sleeps)
-    """
-    def __init__(self, delay):
-        if not delay >= 0:
-            raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
-        self.delay = delay
-
-    def __call__(self):
-        if self.delay:
-            time.sleep(self.delay)
-
-
-class _Measure:
-    """
-    A callable collection of parameters to measure.
-    This should not be constructed manually, only by an ActiveLoop.
-    """
-    def __init__(self, params_indices, data_set, use_threads):
-        self.use_threads = use_threads and len(params_indices) > 1
-        # the applicable DataSet.store function
-        self.store = data_set.store
-
-        # for performance, pre-calculate which params return data for
-        # multiple arrays, and the name mappings
-        self.getters = []
-        self.param_ids = []
-        self.composite = []
-        for param, action_indices in params_indices:
-            self.getters.append(param.get)
-
-            if hasattr(param, 'names'):
-                part_ids = []
-                for i in range(len(param.names)):
-                    param_id = data_set.action_id_map[action_indices + (i,)]
-                    part_ids.append(param_id)
-                self.param_ids.append(None)
-                self.composite.append(part_ids)
-            else:
-                param_id = data_set.action_id_map[action_indices]
-                self.param_ids.append(param_id)
-                self.composite.append(False)
-
-    def __call__(self, loop_indices, **ignore_kwargs):
-        out_dict = {}
-        if self.use_threads:
-            out = thread_map(self.getters)
-        else:
-            out = [g() for g in self.getters]
-
-        for param_out, param_id, composite in zip(out, self.param_ids,
-                                                  self.composite):
-            if composite:
-                for val, part_id in zip(param_out, composite):
-                    out_dict[part_id] = val
-            else:
-                out_dict[param_id] = param_out
-
-        self.store(loop_indices, out_dict)
-
-
-class _Nest:
-    """
-    wrapper to make a callable nested ActiveLoop
-    This should not be constructed manually, only by an ActiveLoop.
-    """
-    def __init__(self, inner_loop, action_indices):
-        self.inner_loop = inner_loop
-        self.action_indices = action_indices
-
-    def __call__(self, **kwargs):
-        self.inner_loop._run_loop(action_indices=self.action_indices, **kwargs)
-
-
-class BreakIf:
-    """
-    Loop action that breaks out of the loop if a condition is truthy
-
-    condition: a callable taking no arguments.
-        Can be a simple function that returns truthy when it's time to quit
-        May also be constructed by deferred operations on `Parameter`s, eg:
-            BreakIf(gates.chan1 >= 3)
-            BreakIf(abs(source.I * source.V) >= source.power_limit.get_latest)
-    """
-    def __init__(self, condition):
-        if not is_function(condition, 0):
-            raise TypeError('BreakIf condition must be a callable with '
-                            'no arguments')
-        self.condition = condition
-
-    def __call__(self, **ignore_kwargs):
-        if self.condition():
-            raise _QcodesBreak
-
-
-class _QcodesBreak(Exception):
-    pass
 
 
 class _QuietInterrupt(Exception):

@@ -60,6 +60,8 @@ class Formatter:
             if array.ndarray is None:
                 array.init_data()
 
+        self.read_metadata(data_set)
+
         ids_read = set()
         for fn in data_files:
             with io_manager.open(fn, 'r') as f:
@@ -68,6 +70,14 @@ class Formatter:
                 except ValueError:
                     logging.warning('error reading file ' + fn)
                     logging.warning(format_exc())
+
+    def write_metadata(self, data_set, read_first=True):
+        """Write the metadata for this DataSet to storage."""
+        raise NotImplementedError
+
+    def read_metadata(self, data_set):
+        """Read the metadata from this DataSet from storage."""
+        raise NotImplementedError
 
     def read_one_file(self, data_set, f, ids_read):
         """
