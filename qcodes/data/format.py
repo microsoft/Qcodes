@@ -33,7 +33,7 @@ class Formatter:
     """
     ArrayGroup = namedtuple('ArrayGroup', 'size set_arrays data name')
 
-    def write(self, data_set):
+    def write(self, data_set, io_manager=None, location=None):
         """
         Write the DataSet to storage. It is up to the Formatter to decide
         when to overwrite completely, and when to just append or otherwise
