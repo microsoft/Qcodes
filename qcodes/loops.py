@@ -47,7 +47,7 @@ from qcodes.station import Station
 from qcodes.data.data_set import new_data, DataMode
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager
-from qcodes.utils.helpers import wait_secs, full_class
+from qcodes.utils.helpers import wait_secs, full_class, tprint
 from qcodes.process.qcodes_process import QcodesProcess
 from qcodes.utils.metadata import Metadatable
 
@@ -136,6 +136,8 @@ class Loop(Metadatable):
         continuing. 0 (default) means no waiting and no warnings. > 0
         means to wait, potentially filling the delay time with monitoring,
         and give an error if you wait longer than expected.
+    progress_interval - should progress of the loop every x seconds. Default
+        is None (no output)
 
     After creating a Loop, you attach `action`s to it, making an `ActiveLoop`
     that you can `.run()`, or you can `.run()` a `Loop` directly, in which
@@ -146,7 +148,8 @@ class Loop(Metadatable):
     data), `Wait` times, or other `ActiveLoop`s or `Loop`s to nest inside
     this one.
     """
-    def __init__(self, sweep_values, delay=0, station=None):
+    def __init__(self, sweep_values, delay=0, station=None,
+                 progress_interval=None):
         super().__init__()
         if not delay >= 0:
             raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
@@ -157,6 +160,7 @@ class Loop(Metadatable):
         self.nested_loop = None
         self.actions = None
         self.then_actions = ()
+        self.progress_interval = progress_interval
 
     def loop(self, sweep_values, delay=0):
         """
@@ -178,7 +182,8 @@ class Loop(Metadatable):
         return out
 
     def _copy(self):
-        out = Loop(self.sweep_values, self.delay)
+        out = Loop(self.sweep_values, self.delay,
+                   progress_interval=self.progress_interval)
         out.nested_loop = self.nested_loop
         out.then_actions = self.then_actions
         out.station = self.station
@@ -209,7 +214,8 @@ class Loop(Metadatable):
             actions = [self.nested_loop.each(*actions)]
 
         return ActiveLoop(self.sweep_values, self.delay, *actions,
-                          then_actions=self.then_actions, station=self.station)
+                          then_actions=self.then_actions, station=self.station,
+                          progress_interval=self.progress_interval)
 
     @staticmethod
     def validate_actions(*actions):
@@ -312,11 +318,12 @@ class ActiveLoop(Metadatable):
     signal_period = 1
 
     def __init__(self, sweep_values, delay, *actions, then_actions=(),
-                 station=None):
+                 station=None, progress_interval=None):
         super().__init__()
         self.sweep_values = sweep_values
         self.delay = delay
         self.actions = actions
+        self.progress_interval = progress_interval
         self.then_actions = then_actions
         self.station = station
 
@@ -563,7 +570,8 @@ class ActiveLoop(Metadatable):
                         data_manager=False, location=False, **kwargs)
 
     def run(self, background=True, use_threads=True, quiet=False,
-            data_manager=None, station=None, *args, **kwargs):
+            data_manager=None, station=None, progress_interval=False,
+            *args, **kwargs):
         """
         Execute this loop.
 
@@ -577,6 +585,9 @@ class ActiveLoop(Metadatable):
             False to store locally)
         station: a Station instance for snapshots (omit to use a previously
             provided Station, or the default Station)
+        progress_interval (default None): show progress of the loop every x
+            seconds. If provided here, will override any interval provided
+            with the Loop definition
 
         kwargs are passed along to data_set.new_data. The key ones are:
         location: the location of the DataSet, a string whose meaning
@@ -596,6 +607,9 @@ class ActiveLoop(Metadatable):
         returns:
             a DataSet object that we can use to plot
         """
+        if progress_interval is not False:
+            self.progress_interval = progress_interval
+
         prev_loop = get_bg()
         if prev_loop:
             if not quiet:
@@ -726,7 +740,13 @@ class ActiveLoop(Metadatable):
 
         callables = self._compile_actions(self.actions, action_indices)
 
+        t0 = time.time()
+        imax = len(self.sweep_values)
         for i, value in enumerate(self.sweep_values):
+            if self.progress_interval is not None:
+                tprint('loop %s: %d/%d (%.1f [s])' % (
+                    self.sweep_values.name, i, imax, time.time() - t0),
+                    dt=self.progress_interval, tag='outerloop')
             self.sweep_values.set(value)
             new_indices = loop_indices + (i,)
             new_values = current_values + (value,)
@@ -750,6 +770,11 @@ class ActiveLoop(Metadatable):
 
             # after the first setpoint, delay reverts to the loop delay
             delay = self.delay
+        if self.progress_interval is not None:
+            # final progress note: set dt=-1 so it *always* prints
+            tprint('loop %s DONE: %d/%d (%.1f [s])' % (
+                   self.sweep_values.name, i + 1, imax, time.time() - t0),
+                   dt=-1, tag='outerloop')
 
         # the loop is finished - run the .then actions
         for f in self._compile_actions(self.then_actions, ()):
