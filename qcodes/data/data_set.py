@@ -455,6 +455,12 @@ class DataSet(DelegateAttributes):
                 self.write()
                 self.last_write = time.time()
 
+    def read(self):
+        """Read the whole DataSet from storage, overwriting the local data."""
+        if self.location is False:
+            return
+        self.formatter.read(self)
+
     def read_metadata(self):
         """Read the metadata from storage, overwriting the local data."""
         if self.location is False:
