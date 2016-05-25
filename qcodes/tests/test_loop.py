@@ -41,6 +41,7 @@ class TestMockInstLoop(TestCase):
 
         c1 = self.gates.chan1
         self.loop = Loop(c1[1:5:1], 0.001).each(c1)
+        self.loop_progress = Loop(c1[1:5:1], 0.001, progress_interval=1).each(c1)
 
         self.assertFalse(self.io.list(self.location))
         self.assertFalse(self.io.list(self.location2))
@@ -97,6 +98,13 @@ class TestMockInstLoop(TestCase):
     def test_foreground_and_datamanager(self):
         data = self.loop.run(location=self.location, background=False,
                              quiet=True)
+        self.assertFalse(hasattr(self.loop, 'process'))
+
+        self.check_loop_data(data)
+
+    def test_foreground_no_datamanager_progress(self):
+        data = self.loop_progress.run(location=self.location, background=False,
+                             data_manager=False, quiet=True)
         self.assertFalse(hasattr(self.loop, 'process'))
 
         self.check_loop_data(data)
