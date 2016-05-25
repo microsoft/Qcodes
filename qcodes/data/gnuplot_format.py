@@ -224,15 +224,19 @@ class GNUPlotFormat(Formatter):
             parts = re.split('"\s+"', labelstr[1:-1])
             return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
 
-    def write(self, data_set):
+    def write(self, data_set, io_manager=None, location=None):
         """
         Write updates in this DataSet to storage. Will choose append if
         possible, overwrite if not.
         """
-        io_manager = data_set.io
-        location = data_set.location
         arrays = data_set.arrays
 
+        # backwards compatible
+        if location is None:
+            io_manager = data_set.io
+        if location is None:
+            location = data_set.location
+            
         groups = self.group_arrays(arrays)
         existing_files = set(io_manager.list(location))
         written_files = set()
