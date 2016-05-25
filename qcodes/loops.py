@@ -43,13 +43,11 @@ import multiprocessing as mp
 import time
 import numpy as np
 
-from qcodes.utils.helpers import tprint
-
 from qcodes.station import Station
 from qcodes.data.data_set import new_data, DataMode
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager
-from qcodes.utils.helpers import wait_secs, full_class
+from qcodes.utils.helpers import wait_secs, full_class, tprint
 from qcodes.process.qcodes_process import QcodesProcess
 from qcodes.utils.metadata import Metadatable
 
@@ -138,7 +136,7 @@ class Loop(Metadatable):
         continuing. 0 (default) means no waiting and no warnings. > 0
         means to wait, potentially filling the delay time with monitoring,
         and give an error if you wait longer than expected.
-    progress_interval - should progrss of the loop every x seconds. Default
+    progress_interval - should progress of the loop every x seconds. Default
         is None (no output)
 
     After creating a Loop, you attach `action`s to it, making an `ActiveLoop`
@@ -150,7 +148,8 @@ class Loop(Metadatable):
     data), `Wait` times, or other `ActiveLoop`s or `Loop`s to nest inside
     this one.
     """
-    def __init__(self, sweep_values, delay=0, station=None, progress_interval=None):
+    def __init__(self, sweep_values, delay=0, station=None,
+                 progress_interval=None):
         super().__init__()
         if not delay >= 0:
             raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
@@ -215,7 +214,7 @@ class Loop(Metadatable):
             actions = [self.nested_loop.each(*actions)]
 
         return ActiveLoop(self.sweep_values, self.delay, *actions,
-                      then_actions=self.then_actions, station=self.station,
+                          then_actions=self.then_actions, station=self.station,
                           progress_interval=self.progress_interval)
 
     @staticmethod
@@ -742,10 +741,11 @@ class ActiveLoop(Metadatable):
         callables = self._compile_actions(self.actions, action_indices)
 
         t0 = time.time()
+        imax = len(self.sweep_values)
         for i, value in enumerate(self.sweep_values):
             if self.progress_interval is not None:
-                tprint('loop %s: %d/%d (%.1f [s])' % (self.sweep_values.name,
-                    i, len(self.sweep_values), time.time() - t0),
+                tprint('loop %s: %d/%d (%.1f [s])' % (
+                    self.sweep_values.name, i, imax, time.time() - t0),
                     dt=self.progress_interval, tag='outerloop')
             self.sweep_values.set(value)
             new_indices = loop_indices + (i,)
@@ -771,9 +771,8 @@ class ActiveLoop(Metadatable):
             # after the first setpoint, delay reverts to the loop delay
             delay = self.delay
         if self.progress_interval is not None:
-            tprint(
-                'loop: %d/%d (%.1f [s]' % (i, len(self.sweep_values),
-                 time.time() - t0), dt=self.progress_interval, tag='outerloop')
+            tprint('loop: %d/%d (%.1f [s]' % (i, imax, time.time() - t0),
+                   dt=self.progress_interval, tag='outerloop')
 
         # the loop is finished - run the .then actions
         for f in self._compile_actions(self.then_actions, ()):

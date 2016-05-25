@@ -8,13 +8,16 @@ import io
 import numpy as np
 
 _tprint_times = {}
+
+
 def tprint(string, dt=1, tag='default'):
     """ Print progress of a loop every dt seconds """
     ptime = _tprint_times.get(tag, 0)
     if (time.time() - ptime) > dt:
         print(string)
         _tprint_times[tag] = time.time()
-            
+
+
 def in_notebook():
     '''
     Returns True if the code is running with a ipython or jypyter
