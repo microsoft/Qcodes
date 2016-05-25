@@ -571,7 +571,8 @@ class ActiveLoop(Metadatable):
                         data_manager=False, location=False, **kwargs)
 
     def run(self, background=True, use_threads=True, quiet=False,
-            data_manager=None, station=None, *args, **kwargs):
+            data_manager=None, station=None, progress_interval=False,
+            *args, **kwargs):
         """
         Execute this loop.
 
@@ -585,6 +586,9 @@ class ActiveLoop(Metadatable):
             False to store locally)
         station: a Station instance for snapshots (omit to use a previously
             provided Station, or the default Station)
+        progress_interval (default None): show progress of the loop every x
+            seconds. If provided here, will override any interval provided
+            with the Loop definition
 
         kwargs are passed along to data_set.new_data. The key ones are:
         location: the location of the DataSet, a string whose meaning
@@ -604,6 +608,9 @@ class ActiveLoop(Metadatable):
         returns:
             a DataSet object that we can use to plot
         """
+        if progress_interval is not False:
+            self.progress_interval = progress_interval
+
         prev_loop = get_bg()
         if prev_loop:
             if not quiet:
