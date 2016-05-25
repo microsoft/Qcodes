@@ -771,8 +771,10 @@ class ActiveLoop(Metadatable):
             # after the first setpoint, delay reverts to the loop delay
             delay = self.delay
         if self.progress_interval is not None:
-            tprint('loop: %d/%d (%.1f [s]' % (i, imax, time.time() - t0),
-                   dt=self.progress_interval, tag='outerloop')
+            # final progress note: set dt=-1 so it *always* prints
+            tprint('loop %s DONE: %d/%d (%.1f [s])' % (
+                   self.sweep_values.name, i + 1, imax, time.time() - t0),
+                   dt=-1, tag='outerloop')
 
         # the loop is finished - run the .then actions
         for f in self._compile_actions(self.then_actions, ()):
