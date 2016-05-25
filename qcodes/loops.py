@@ -109,7 +109,7 @@ def halt_bg(timeout=5, traceback=True):
 
     if loop.is_alive():
         loop.terminate()
-        loop.join(timeout / 2)
+        loop.join(timeout/2)
         print('Background loop did not respond to halt signal, terminated')
 
     _clear_data_manager()
@@ -122,9 +122,9 @@ def _clear_data_manager():
 
 
 # def measure(*actions):
-# measure has been moved into Station
-# TODO - for all-at-once parameters we want to be able to
-# store the output into a DataSet without making a Loop.
+#     # measure has been moved into Station
+#     # TODO - for all-at-once parameters we want to be able to
+#     # store the output into a DataSet without making a Loop.
 #     pass
 
 
@@ -150,7 +150,6 @@ class Loop(Metadatable):
     data), `Wait` times, or other `ActiveLoop`s or `Loop`s to nest inside
     this one.
     """
-
     def __init__(self, sweep_values, delay=0, station=None, progress_interval=None):
         super().__init__()
         if not delay >= 0:
@@ -216,7 +215,8 @@ class Loop(Metadatable):
             actions = [self.nested_loop.each(*actions)]
 
         return ActiveLoop(self.sweep_values, self.delay, *actions,
-                          then_actions=self.then_actions, station=self.station, progress_interval=self.progress_interval)
+                      then_actions=self.then_actions, station=self.station,
+                          progress_interval=self.progress_interval)
 
     @staticmethod
     def validate_actions(*actions):
@@ -791,137 +791,6 @@ class ActiveLoop(Metadatable):
         else:
             self._check_signal()
 
-
-class Task:
-
-    """
-    A predefined task to be executed within a measurement Loop
-    This form is for a simple task that does not measure any data,
-    and does not depend on the state of the loop when it is called.
-
-    The first argument should be a callable, to which any subsequent
-    args and kwargs (which are evaluated before the loop starts) are passed.
-
-    kwargs passed when the Task is called are ignored,
-    but are accepted for compatibility with other things happening in a Loop.
-    """
-
-    def __init__(self, func, *args, **kwargs):
-        self.func = func
-        self.args = args
-        self.kwargs = kwargs
-
-    def __call__(self, **ignore_kwargs):
-        self.func(*self.args, **self.kwargs)
-
-
-class Wait:
-
-    """
-    A simple class to tell a Loop to wait <delay> seconds
-
-    This is transformed into a Task within the Loop, such that
-    it can do other things (monitor, check for halt) during the delay.
-
-    But for use outside of a Loop, it is also callable (then it just sleeps)
-    """
-
-    def __init__(self, delay):
-        if not delay >= 0:
-            raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
-        self.delay = delay
-
-    def __call__(self):
-        if self.delay:
-            time.sleep(self.delay)
-
-
-class _Measure:
-
-    """
-    A callable collection of parameters to measure.
-    This should not be constructed manually, only by an ActiveLoop.
-    """
-
-    def __init__(self, params_indices, data_set, use_threads):
-        self.use_threads = use_threads and len(params_indices) > 1
-        # the applicable DataSet.store function
-        self.store = data_set.store
-
-        # for performance, pre-calculate which params return data for
-        # multiple arrays, and the name mappings
-        self.getters = []
-        self.param_ids = []
-        self.composite = []
-        for param, action_indices in params_indices:
-            self.getters.append(param.get)
-
-            if hasattr(param, 'names'):
-                part_ids = []
-                for i in range(len(param.names)):
-                    param_id = data_set.action_id_map[action_indices + (i,)]
-                    part_ids.append(param_id)
-                self.param_ids.append(None)
-                self.composite.append(part_ids)
-            else:
-                param_id = data_set.action_id_map[action_indices]
-                self.param_ids.append(param_id)
-                self.composite.append(False)
-
-    def __call__(self, loop_indices, **ignore_kwargs):
-        out_dict = {}
-        if self.use_threads:
-            out = thread_map(self.getters)
-        else:
-            out = [g() for g in self.getters]
-
-        for param_out, param_id, composite in zip(out, self.param_ids,
-                                                  self.composite):
-            if composite:
-                for val, part_id in zip(param_out, composite):
-                    out_dict[part_id] = val
-            else:
-                out_dict[param_id] = param_out
-
-        self.store(loop_indices, out_dict)
-
-
-class _Nest:
-
-    """
-    wrapper to make a callable nested ActiveLoop
-    This should not be constructed manually, only by an ActiveLoop.
-    """
-
-    def __init__(self, inner_loop, action_indices):
-        self.inner_loop = inner_loop
-        self.action_indices = action_indices
-
-    def __call__(self, **kwargs):
-        self.inner_loop._run_loop(action_indices=self.action_indices, **kwargs)
-
-
-class BreakIf:
-
-    """
-    Loop action that breaks out of the loop if a condition is truthy
-
-    condition: a callable taking no arguments.
-        Can be a simple function that returns truthy when it's time to quit
-        May also be constructed by deferred operations on `Parameter`s, eg:
-            BreakIf(gates.chan1 >= 3)
-            BreakIf(abs(source.I * source.V) >= source.power_limit.get_latest)
-    """
-
-    def __init__(self, condition):
-        if not is_function(condition, 0):
-            raise TypeError('BreakIf condition must be a callable with '
-                            'no arguments')
-        self.condition = condition
-
-    def __call__(self, **ignore_kwargs):
-        if self.condition():
-            raise _QcodesBreak
 
 class _QuietInterrupt(Exception):
     pass
