@@ -4,7 +4,6 @@ from traceback import format_exc
 from operator import attrgetter
 import logging
 
-from .io import DiskIO
 
 class Formatter:
     """
@@ -112,7 +111,6 @@ class Formatter:
         last_saved_index = (inner_setpoint.last_saved_index if file_exists
                             else None)
         modified_range = inner_setpoint.modified_range
-        logging.info('match_save_range:modified_range  %s' % (modified_range, )) 
         for array in group.data:
             # force overwrite if inconsistent last_saved_index
             if array.last_saved_index != last_saved_index:
@@ -127,8 +125,6 @@ class Formatter:
                 else:
                     modified_range = amr
 
-        logging.info('match_save_range:only_complete  %s' % (only_complete, )) 
-        logging.info('match_save_range:modified_range  %s' % (modified_range, )) 
         if only_complete and modified_range:
             modified_range = self._get_completed_range(modified_range,
                                                        inner_setpoint.shape,

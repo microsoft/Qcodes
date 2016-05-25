@@ -1,7 +1,6 @@
 import numpy as np
 import re
 import math
-import logging
 import json
 
 from qcodes.utils.helpers import deep_update
