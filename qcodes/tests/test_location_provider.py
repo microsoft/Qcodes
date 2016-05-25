@@ -1,8 +1,7 @@
 from unittest import TestCase
 from datetime import datetime
 
-from qcodes.data.data_set import FormatLocation
-from qcodes.data.data_set import SafeFormatter
+from qcodes.data.location import FormatLocation, SafeFormatter
 
 from .data_mocks import MatchIO
 
