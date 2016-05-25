@@ -304,6 +304,12 @@ class GNUPlotFormat(Formatter):
             json.dump(data_set.metadata, snap_file, sort_keys=True,
                       indent=4, ensure_ascii=False)
 
+    def read(self):
+        """Read the whole DataSet from storage, overwriting the local data."""
+        if self.location is False:
+            return
+        self.formatter.read(self)
+
     def read_metadata(self, data_set):
         io_manager = data_set.io
         location = data_set.location
