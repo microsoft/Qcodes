@@ -34,6 +34,12 @@ class MockFormatter:
     def write(self, data_set):
         data_set.has_written_data = True
 
+    def read_metadata(self, data_set):
+        data_set.has_read_metadata = True
+
+    def write_metadata(self, data_set):
+        data_set.has_written_metadata = True
+
 
 class FullIO:
     def list(self, location):

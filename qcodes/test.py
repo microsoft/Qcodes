@@ -1,9 +1,9 @@
 def test_core(verbosity=1, failfast=False):
-    '''
+    """
     Run the qcodes core tests.
 
     Coverage testing is only available from the command line
-    '''
+    """
     import qcodes
     if qcodes.in_notebook():
         qcodes._IN_NOTEBOOK = True
@@ -21,6 +21,21 @@ def _test_core(**kwargs):
         qctest.__path__[0], top_level_dir=qcodes.__path__[0])
     result = unittest.TextTestRunner(**kwargs).run(suite)
     return result.wasSuccessful()
+
+
+def test_part(name):
+    """
+    run part of the qcodes core test suite
+
+    name: a name within the qcodes.tests directory. May be:
+        - a module ('test_loop')
+        - a TestCase ('test_loop.TestLoop')
+        - a test method ('test_loop.TestLoop.test_nesting')
+    """
+    import unittest
+    fullname = 'qcodes.tests.' + name
+    suite = unittest.defaultTestLoader.loadTestsFromName(fullname)
+    return unittest.TextTestRunner().run(suite).wasSuccessful()
 
 if __name__ == '__main__':
     import argparse

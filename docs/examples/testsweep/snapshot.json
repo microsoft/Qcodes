@@ -1,0 +1,112 @@
+{
+    "data": {
+        "__class__": "qcodes.data.data_set.DataSet",
+        "arrays": {
+            "amplitude": {
+                "__class__": "qcodes.data.data_array.DataArray",
+                "action_indices": [
+                    0
+                ],
+                "array_id": "amplitude",
+                "instrument": "MockMeter",
+                "is_setpoint": false,
+                "label": "Current (nA)",
+                "name": "amplitude",
+                "size": [
+                    401
+                ],
+                "unit": null,
+                "units": ""
+            },
+            "chan0": {
+                "__class__": "qcodes.data.data_array.DataArray",
+                "action_indices": [],
+                "array_id": "chan0",
+                "instrument": "MockGates",
+                "is_setpoint": true,
+                "label": "Gate Channel 0 (mV)",
+                "name": "chan0",
+                "size": [
+                    401
+                ],
+                "unit": null,
+                "units": ""
+            }
+        },
+        "base_location": "/Users/Merlin/Google Drive/git/Qcodes/docs/examples",
+        "formatter": "qcodes.data.gnuplot_format.GNUPlotFormat",
+        "io": "<DiskIO, base_location=/Users/Merlin/Google Drive/git/Qcodes/docs/examples>",
+        "location": "testsweep",
+        "loop": {
+            "__class__": "qcodes.loops.ActiveLoop",
+            "actions": [
+                {
+                    "__class__": "qcodes.instrument.parameter.StandardParameter",
+                    "instrument": "MockMeter",
+                    "label": "Current (nA)",
+                    "name": "amplitude",
+                    "ts": "2016-05-17 00:27:37",
+                    "units": "",
+                    "value": 0.117
+                }
+            ],
+            "delay": 0.03,
+            "sweep_values": {
+                "parameter": {
+                    "__class__": "qcodes.instrument.parameter.StandardParameter",
+                    "instrument": "MockGates",
+                    "label": "Gate Channel 0 (mV)",
+                    "name": "chan0",
+                    "ts": "2016-05-17 00:27:36",
+                    "units": "",
+                    "value": 0.0
+                },
+                "values": [
+                    {
+                        "first": -20.0,
+                        "last": 20.0,
+                        "num": 401
+                    }
+                ]
+            },
+            "ts_end": "2016-05-17 00:27:53",
+            "ts_start": "2016-05-17 00:27:38"
+        },
+        "mode": "<DataMode.PUSH_TO_SERVER: 2>"
+    },
+    "loop": {
+        "__class__": "qcodes.loops.ActiveLoop",
+        "actions": [
+            {
+                "__class__": "qcodes.instrument.parameter.StandardParameter",
+                "instrument": "MockMeter",
+                "label": "Current (nA)",
+                "name": "amplitude",
+                "ts": "2016-05-17 00:27:37",
+                "units": "",
+                "value": 0.117
+            }
+        ],
+        "delay": 0.03,
+        "sweep_values": {
+            "parameter": {
+                "__class__": "qcodes.instrument.parameter.StandardParameter",
+                "instrument": "MockGates",
+                "label": "Gate Channel 0 (mV)",
+                "name": "chan0",
+                "ts": "2016-05-17 00:27:36",
+                "units": "",
+                "value": 0.0
+            },
+            "values": [
+                {
+                    "first": -20.0,
+                    "last": 20.0,
+                    "num": 401
+                }
+            ]
+        },
+        "ts_end": "2016-05-17 00:27:53",
+        "ts_start": "2016-05-17 00:27:38"
+    }
+}
