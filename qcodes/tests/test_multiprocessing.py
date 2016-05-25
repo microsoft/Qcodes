@@ -7,12 +7,12 @@ from queue import Empty
 from unittest.mock import patch
 
 import qcodes
-from qcodes.utils.multiprocessing import (set_mp_method, QcodesProcess,
-                                          get_stream_queue, _SQWriter,
-                                          kill_queue, ServerManager,
-                                          SERVER_ERR)
-import qcodes.utils.multiprocessing as qcmp
-from qcodes.utils.helpers import in_notebook
+from qcodes.process.helpers import set_mp_method, kill_queue
+from qcodes.process.qcodes_process import QcodesProcess
+from qcodes.process.stream_queue import get_stream_queue, _SQWriter
+from qcodes.process.server import ServerManager, RESPONSE_OK, RESPONSE_ERROR
+import qcodes.process.helpers as qcmp
+from qcodes.utils.helpers import in_notebook, LogCapture
 from qcodes.utils.timing import calibrate
 
 BREAK_SIGNAL = '~~BREAK~~'
@@ -136,7 +136,7 @@ class TestQcodesProcess(TestCase):
 
             self.assertEqual(self.sq.get(), '')
 
-    @patch('qcodes.utils.multiprocessing.in_notebook')
+    @patch('qcodes.process.qcodes_process.in_notebook')
     def test_qcodes_process_exception(self, in_nb_patch):
         in_nb_patch.return_value = True
 
@@ -163,7 +163,7 @@ class TestQcodesProcess(TestCase):
             self.assertEqual(exc_text.count('RuntimeError'), 2)
             self.assertEqual(exc_text.count('Boo!'), 2)
 
-    @patch('qcodes.utils.multiprocessing.in_notebook')
+    @patch('qcodes.process.qcodes_process.in_notebook')
     def test_qcodes_process(self, in_nb_patch):
         in_nb_patch.return_value = True
 
@@ -358,10 +358,9 @@ class ServerManagerTest(ServerManager):
 
 
 class EmptyServer:
-    def __init__(self, query_queue, response_queue, error_queue, extras):
+    def __init__(self, query_queue, response_queue, extras):
         query_queue.put('why?')
         response_queue.put(extras)
-        error_queue.put('No!')
 
 
 class CustomError(Exception):
@@ -375,9 +374,7 @@ def delayed_put(queue, val, delay):
 
 class TestServerManager(TestCase):
     def check_error(self, manager, error_str, error_class):
-        manager._error_queue.put(error_str)
-        manager._response_queue.put(SERVER_ERR)
-        time.sleep(0.005)
+        manager._response_queue.put(RESPONSE_ERROR, error_str)
         with self.assertRaises(error_class):
             manager.ask('which way does the wind blow?')
 
@@ -390,36 +387,44 @@ class TestServerManager(TestCase):
 
         self.assertEqual(sm._query_queue.get(timeout=1), 'why?')
         self.assertEqual(sm._response_queue.get(timeout=1), extras)
-        self.assertEqual(sm._error_queue.get(timeout=1), 'No!')
 
         # builtin errors we propagate to the server
         builtin_error_str = ('traceback\n  lines\n and then\n'
                              '  OSError: your hard disk went floppy.')
-        sm._error_queue.put(builtin_error_str)
-        sm._response_queue.put(SERVER_ERR)
-        while sm._error_queue.empty() or sm._response_queue.empty():
-            time.sleep(0.005)
+        sm._response_queue.put((RESPONSE_ERROR, builtin_error_str))
         with self.assertRaises(OSError):
             sm.ask('which way does the wind blow?')
 
         # non-built-in errors we fall back on RuntimeError
         custom_error_str = ('traceback\nlines\nand then\n'
                             'CustomError: the Balrog is loose!')
-        sm._response_queue.put('should get tossed by the error checker')
-        sm._response_queue.put('so should this.')
-        sm._error_queue.put(custom_error_str)
-        sm._response_queue.put(SERVER_ERR)
-        time.sleep(0.005)
-        with self.assertRaises(RuntimeError):
-            sm.write('something benign')
-        self.assertTrue(sm._response_queue.empty())
+        extra_resp1 = 'should get tossed by the error checker'
+        extra_resp2 = 'so should this.'
+        sm._response_queue.put((RESPONSE_OK, extra_resp1))
+        sm._response_queue.put((RESPONSE_OK, extra_resp2))
+        sm._response_queue.put((RESPONSE_ERROR, custom_error_str))
+
+        with LogCapture() as logs:
+            with self.assertRaises(RuntimeError):
+                sm.ask('something benign')
+            self.assertTrue(sm._response_queue.empty())
+        self.assertIn(extra_resp1, logs.value)
+        self.assertIn(extra_resp2, logs.value)
 
         # extra responses to a query, only the last should be taken
-        sm._response_queue.put('boo!')
-        sm._response_queue.put('a barrel of monkeys!')
-        p = mp.Process(target=delayed_put, args=(sm._response_queue, 42, 0.05))
+        extra_resp1 = 'boo!'
+        extra_resp2 = 'a barrel of monkeys!'
+        sm._response_queue.put((RESPONSE_OK, extra_resp1))
+        sm._response_queue.put((RESPONSE_OK, extra_resp2))
+        time.sleep(0.05)
+        p = mp.Process(target=delayed_put,
+                       args=(sm._response_queue, (RESPONSE_OK, 42), 0.05))
         p.start()
-        self.assertEqual(sm.ask('what is the answer'), 42)
+
+        with LogCapture() as logs:
+            self.assertEqual(sm.ask('what is the answer'), 42)
+        self.assertIn(extra_resp1, logs.value)
+        self.assertIn(extra_resp2, logs.value)
 
         # no response to a query
         with self.assertRaises(Empty):
@@ -431,9 +436,11 @@ class TestServerManager(TestCase):
 
         self.assertIn(sm._server, mp.active_children())
 
-        sm.halt(0.01)
+        with LogCapture() as logs:
+            sm.halt(0.01)
+        self.assertIn('ServerManager did not respond '
+                      'to halt signal, terminated', logs.value)
 
-        # TODO: test our print ('ServerManager did not respond...')
         self.assertNotIn(sm._server, mp.active_children())
 
     def test_pathological_edge_cases(self):

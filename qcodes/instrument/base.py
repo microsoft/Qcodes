@@ -2,7 +2,8 @@ import weakref
 import time
 
 from qcodes.utils.metadata import Metadatable
-from qcodes.utils.helpers import DelegateAttributes, strip_attrs
+from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
+from qcodes.utils.validators import Anything
 from .parameter import StandardParameter
 from .function import Function
 from .remote import RemoteInstrument
@@ -77,7 +78,16 @@ class Instrument(Metadatable, DelegateAttributes):
 
         self.name = str(name)
 
+        self.add_parameter('IDN', get_cmd=self.get_idn,
+                           vals=Anything())
+
+        self._meta_attrs = ['name']
+
         self.record_instance(self)
+
+    def get_idn(self, *args, **kwargs):
+        return {'vendor': None, 'model': None,
+                'serial': None, 'firmware': None}
 
     @classmethod
     def default_server_name(cls, **kwargs):
@@ -342,15 +352,16 @@ class Instrument(Metadatable, DelegateAttributes):
         return func.get_attrs()
 
     def snapshot_base(self, update=False):
-        if update:
-            for par in self.parameters.values():
-                par.get()
-        return {
-            'parameters': dict((name, param.snapshot())
-                               for name, param in self.parameters.items()),
-            'functions': dict((name, func.snapshot())
-                              for name, func in self.functions.items())
-        }
+        snap = {'parameters': dict((name, param.snapshot(update=update))
+                                   for name, param in self.parameters.items()),
+                'functions': dict((name, func.snapshot(update=update))
+                                  for name, func in self.functions.items()),
+                '__class__': full_class(self),
+                }
+        for attr in set(self._meta_attrs):
+            if hasattr(self, attr):
+                snap[attr] = getattr(self, attr)
+        return snap
 
     ##########################################################################
     # `write`, `read`, and `ask` are the interface to hardware               #

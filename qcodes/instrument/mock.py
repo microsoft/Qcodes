@@ -1,9 +1,8 @@
 import time
 from datetime import datetime
-from traceback import format_exc
 
 from .base import Instrument
-from qcodes.utils.multiprocessing import ServerManager, SERVER_ERR
+from qcodes.process.server import ServerManager, BaseServer
 
 
 class MockInstrument(Instrument):
@@ -22,7 +21,6 @@ class MockInstrument(Instrument):
         <name>_get(param) -> returns the value
     keep_history: record (in self.history) every command sent to this
         instrument (default True)
-    use_async: use the async form of ask and write (default False)
     read_response: simple constant response to send to self.read(),
         just for testing
     server_name: leave default ('') to make a MockServer-#######
@@ -81,7 +79,7 @@ class MockInstrument(Instrument):
             self.history.append((datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                  'write', parameter, value))
 
-        self._model.write(self.name + ':' + cmd)
+        self._model.write('cmd', self.name + ':' + cmd)
 
     def ask(self, cmd):
         if self._delay:
@@ -95,7 +93,7 @@ class MockInstrument(Instrument):
             self.history.append((datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                                  'ask', parameter))
 
-        return self._model.ask(self.name + ':' + cmd)
+        return self._model.ask('cmd', self.name + ':' + cmd)
 
     def read(self):
         if self._delay:
@@ -104,7 +102,7 @@ class MockInstrument(Instrument):
         return self._read_response
 
 
-class MockModel(ServerManager):  # pragma: no cover
+class MockModel(ServerManager, BaseServer):  # pragma: no cover
     # this is purely in service of mock instruments which *are* tested
     # so coverage testing this (by running it locally) would be a waste.
     '''
@@ -136,31 +134,20 @@ class MockModel(ServerManager):  # pragma: no cover
         super().__init__(name, server_class=None)
 
     def _run_server(self):
-        while True:
-            try:
-                # make sure no matter what there is a query for error handling
-                query = None
-                query = self._query_queue.get()
-                query = query[0].split(':')
+        self.run_event_loop()
 
-                instrument = query[0]
+    def handle_cmd(self, cmd):
+        query = cmd.split(':')
 
-                if instrument == 'halt':
-                    self._response_queue.put(True)
-                    break
+        instrument = query[0]
+        param = query[1]
 
-                param = query[1]
-                if param[-1] == '?' and len(query) == 2:
-                    getter = getattr(self, instrument + '_get')
-                    self._response_queue.put(getter(param[:-1]))
-                elif len(query) <= 3:
-                    value = query[2] if len(query) == 3 else None
-                    setter = getattr(self, instrument + '_set')
-                    setter(param, value)
-                else:
-                    raise ValueError
+        if param[-1] == '?' and len(query) == 2:
+            return getattr(self, instrument + '_get')(param[:-1])
 
-            except Exception as e:
-                e.args = e.args + ('error processing query ' + repr(query),)
-                self._error_queue.put(format_exc())
-                self._response_queue.put(SERVER_ERR)
+        elif len(query) <= 3:
+            value = query[2] if len(query) == 3 else None
+            getattr(self, instrument + '_set')(param, value)
+
+        else:
+            raise ValueError

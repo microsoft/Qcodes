@@ -1,26 +1,30 @@
 from unittest import TestCase
 from unittest.mock import patch
 import time
+from datetime import datetime
 import multiprocessing as mp
 import numpy as np
 
-from qcodes.loops import (Loop, MP_NAME, get_bg, halt_bg, Task, Wait,
-                          ActiveLoop, BreakIf)
+from qcodes.loops import (Loop, MP_NAME, get_bg, halt_bg, ActiveLoop,
+                          _DebugInterrupt)
+from qcodes.actions import Task, Wait, BreakIf
 from qcodes.station import Station
 from qcodes.data.io import DiskIO
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager
 from qcodes.instrument.parameter import Parameter, ManualParameter
-from qcodes.utils.multiprocessing import QcodesProcess
+from qcodes.process.helpers import kill_processes
+from qcodes.process.qcodes_process import QcodesProcess
 from qcodes.utils.validators import Numbers
-from qcodes.utils.helpers import killprocesses, LogCapture
+from qcodes.utils.helpers import LogCapture
+
 from .instrument_mocks import AMockModel, MockGates, MockSource, MockMeter
 
 
 class TestMockInstLoop(TestCase):
     def setUp(self):
         get_data_manager().restart(force=True)
-        killprocesses()
+        kill_processes()
         # TODO: figure out what's leaving DataManager in a weird state
         # and fix it
         get_data_manager().restart(force=True)
@@ -137,7 +141,7 @@ def sleeper(t):
 
 class TestBG(TestCase):
     def test_get_halt(self):
-        killprocesses()
+        kill_processes()
         self.assertIsNone(get_bg())
 
         p1 = QcodesProcess(name=MP_NAME, target=sleeper, args=(10, ))
@@ -202,11 +206,15 @@ class MultiGetter(Parameter):
 
 
 class TestLoop(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.p1 = ManualParameter('p1', vals=Numbers(-10, 10))
+        cls.p2 = ManualParameter('p2', vals=Numbers(-10, 10))
+        cls.p3 = ManualParameter('p3', vals=Numbers(-10, 10))
+        Station().set_measurement(cls.p2, cls.p3)
+
     def setUp(self):
-        killprocesses()
-        self.p1 = ManualParameter('p1', vals=Numbers(-10, 10))
-        self.p2 = ManualParameter('p2', vals=Numbers(-10, 10))
-        self.p3 = ManualParameter('p3', vals=Numbers(-10, 10))
+        kill_processes()
 
     def test_nesting(self):
         loop = Loop(self.p1[1:3:1], 0.001).loop(
@@ -224,8 +232,6 @@ class TestLoop(TestCase):
         self.assertEqual(data.p3.tolist(), [[[5, 6]] * 2] * 2)
 
     def test_default_measurement(self):
-        Station().set_measurement(self.p2, self.p3)
-
         self.p2.set(4)
         self.p3.set(5)
 
@@ -429,20 +435,16 @@ class TestLoop(TestCase):
             Loop(self.p1[-20:20:1]).each(self.p1)
 
     def test_very_short_delay(self):
-        with LogCapture() as s:
+        with LogCapture() as logs:
             Loop(self.p1[1:3:1], 1e-9).each(self.p1).run_temp()
 
-        logstr = s.getvalue()
-        s.close()
-        self.assertEqual(logstr.count('negative delay'), 2, logstr)
+        self.assertEqual(logs.value.count('negative delay'), 2, logs.value)
 
     def test_zero_delay(self):
-        with LogCapture() as s:
+        with LogCapture() as logs:
             Loop(self.p1[1:3:1]).each(self.p1).run_temp()
 
-        logstr = s.getvalue()
-        s.close()
-        self.assertEqual(logstr.count('negative delay'), 0, logstr)
+        self.assertEqual(logs.value.count('negative delay'), 0, logs.value)
 
     def test_breakif(self):
         nan = float('nan')
@@ -496,7 +498,12 @@ class TestLoop(TestCase):
             with self.assertRaises(TypeError):
                 loop.then(action)
 
+    def check_snap_ts(self, container, key, ts_set):
+        self.assertIn(container[key], ts_set)
+        del container[key]
+
     def test_then_action(self):
+        self.maxDiff = None
         nan = float('nan')
         self.p1.set(5)
         f_calls, g_calls = [], []
@@ -507,16 +514,67 @@ class TestLoop(TestCase):
         def g():
             g_calls.append(1)
 
+        breaker = BreakIf(self.p1 >= 3)
+        ts1 = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        # evaluate param snapshots now since later value will change
+        p1snap = self.p1.snapshot()
+        self.p2.set(2)
+        p2snap = self.p2.snapshot()
+        self.p3.set(3)
+        p3snap = self.p3.snapshot()
         data = Loop(self.p1[1:6:1]).each(
-            self.p1, BreakIf(self.p1 >= 3)
+            self.p1, breaker
         ).then(
             Task(self.p1.set, 2), Wait(0.01), Task(f)
         ).run_temp()
+        ts2 = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         self.assertEqual(repr(data.p1.tolist()),
                          repr([1., 2., 3., nan, nan]))
         self.assertEqual(self.p1.get(), 2)
         self.assertEqual(len(f_calls), 1)
+
+        # this loop makes use of all the features, so use it to test
+        # DataSet metadata
+        loopmeta = data.metadata['loop']
+        default_meas_meta = data.metadata['station']['default_measurement']
+        # assuming the whole loop takes < 1 sec, all timestamps
+        # should each be the same as one of the bounding times
+        self.check_snap_ts(loopmeta, 'ts_start', (ts1, ts2))
+        self.check_snap_ts(loopmeta, 'ts_end', (ts1, ts2))
+        self.check_snap_ts(loopmeta['sweep_values']['parameter'],
+                           'ts', (ts1, ts2))
+        self.check_snap_ts(loopmeta['actions'][0], 'ts', (ts1, ts2))
+        self.check_snap_ts(default_meas_meta[0], 'ts', (ts1, ts2, None))
+        self.check_snap_ts(default_meas_meta[1], 'ts', (ts1, ts2, None))
+        del p1snap['ts'], p2snap['ts'], p3snap['ts']
+
+        self.assertEqual(data.metadata, {
+            'station': {
+                'instruments': {},
+                'parameters': {},
+                'components': {},
+                'default_measurement': [p2snap, p3snap]
+            },
+            'loop': {
+                'background': False,
+                'use_threads': True,
+                'use_data_manager': False,
+                '__class__': 'qcodes.loops.ActiveLoop',
+                'sweep_values': {
+                    'parameter': p1snap,
+                    'values': [{'first': 1, 'last': 5, 'num': 5,
+                               'type': 'linear'}]
+                },
+                'delay': 0,
+                'actions': [p1snap, breaker.snapshot()],
+                'then_actions': [
+                    {'type': 'Task', 'func': repr(self.p1.set)},
+                    {'type': 'Wait', 'delay': 0.01},
+                    {'type': 'Task', 'func': repr(f)}
+                ]
+            }
+        })
 
         # now test a nested loop with .then inside and outside
         f_calls[:] = []
@@ -557,15 +615,16 @@ class AbortingGetter(ManualParameter):
     You have to attach the queue after construction with set_queue
     so you can grab it from the loop that uses the parameter.
     '''
-    def __init__(self, *args, count=1, **kwargs):
+    def __init__(self, *args, count=1, msg=None, **kwargs):
         self._count = self._initial_count = count
+        self.msg = msg
         # also need a _signal_queue, but that has to be added later
         super().__init__(*args, **kwargs)
 
     def get(self):
         self._count -= 1
         if self._count <= 0:
-            self._signal_queue.put(ActiveLoop.HALT)
+            self._signal_queue.put(self.msg)
         return super().get()
 
     def set_queue(self, queue):
@@ -577,15 +636,29 @@ class AbortingGetter(ManualParameter):
 
 class TestSignal(TestCase):
     def test_halt(self):
-        p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10))
+        p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10),
+                            msg=ActiveLoop.HALT_DEBUG)
         loop = Loop(p1[1:6:1], 0.005).each(p1)
         p1.set_queue(loop.signal_queue)
 
-        with self.assertRaises(KeyboardInterrupt):
+        with self.assertRaises(_DebugInterrupt):
             loop.run_temp()
 
         data = loop.data_set
+        self.check_data(data)
 
+    def test_halt_quiet(self):
+        p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10),
+                            msg=ActiveLoop.HALT)
+        loop = Loop(p1[1:6:1], 0.005).each(p1)
+        p1.set_queue(loop.signal_queue)
+
+        # does not raise, just quits, but the data set looks the same
+        # as in test_halt
+        data = loop.run_temp()
+        self.check_data(data)
+
+    def check_data(self, data):
         nan = float('nan')
         self.assertEqual(data.p1.tolist()[:2], [1, 2])
         # when NaN is involved, I'll just compare reprs, because NaN!=NaN
@@ -594,3 +667,35 @@ class TestSignal(TestCase):
         # point measured before the interrupt is registered. But the
         # test would be valid either way.
         self.assertIn(repr(data.p1[2]), (repr(nan), repr(3), repr(3.0)))
+
+
+class TestMetaData(TestCase):
+    def test_basic(self):
+        p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10))
+        sv = p1[1:3:1]
+        loop = Loop(sv)
+
+        # not sure why you'd do it, but you *can* snapshot a Loop
+        expected = {
+            '__class__': 'qcodes.loops.Loop',
+            'sweep_values': sv.snapshot(),
+            'delay': 0,
+            'then_actions': []
+        }
+        self.assertEqual(loop.snapshot(), expected)
+        loop = loop.then(Task(p1.set, 0), Wait(0.123))
+        expected['then_actions'] = [
+            {'type': 'Task', 'func': repr(p1.set)},
+            {'type': 'Wait', 'delay': 0.123}
+        ]
+
+        # then test snapshot on an ActiveLoop
+        breaker = BreakIf(p1.get_latest > 3)
+        self.assertEqual(breaker.snapshot()['type'], 'BreakIf')
+        # TODO: once we have reprs for DeferredOperations, test that
+        # the right thing shows up in breaker.snapshot()['condition']
+        loop = loop.each(p1, breaker)
+        expected['__class__'] = 'qcodes.loops.ActiveLoop'
+        expected['actions'] = [p1.snapshot(), breaker.snapshot()]
+
+        self.assertEqual(loop.snapshot(), expected)

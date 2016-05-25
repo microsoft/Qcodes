@@ -1,12 +1,13 @@
 import numpy as np
 import collections
 
-from qcodes.utils.helpers import DelegateAttributes
+from qcodes.utils.helpers import DelegateAttributes, full_class
 
 
 class DataArray(DelegateAttributes):
+
     """
-    A container for one parameter in a measurement loop
+    A container for one parameter in a measurement loop.
 
     If this is a measured parameter, This object doesn't contain
     the data of the setpoints it was measured at, but it references
@@ -25,19 +26,71 @@ class DataArray(DelegateAttributes):
     Once the array is initialized, a DataArray acts a lot like a numpy array,
     because we delegate attributes through to the numpy array
     """
-    def __init__(self, parameter=None, name=None, label=None, array_id=None,
-                 set_arrays=(), size=None, action_indices=(),
-                 preset_data=None):
-        if parameter is not None:
-            self.name = parameter.name
-            self.label = getattr(parameter, 'label', self.name)
-        else:
-            self.name = name
-            self.label = name if label is None else label
 
-        self.array_id = array_id
-        self.set_arrays = set_arrays
+    # attributes of self to include in the snapshot
+    SNAP_ATTRS = (
+        'array_id',
+        'name',
+        'size',
+        'units',
+        'label',
+        'action_indices',
+        'is_setpoint')
+
+    # attributes of the parameter (or keys in the incoming snapshot)
+    # to copy to DataArray attributes, if they aren't set some other way
+    COPY_ATTRS_FROM_INPUT = (
+        'name',
+        'label',
+        'units')
+
+    # keys in the parameter snapshot to omit from our snapshot
+    SNAP_OMIT_KEYS = (
+        'ts',
+        'value',
+        '__class__',
+        'set_arrays',
+        'size',
+        'array_id',
+        'action_indices')
+
+    def __init__(self, parameter=None, name=None, label=None, snapshot=None,
+                 array_id=None, set_arrays=(), size=None, action_indices=(),
+                 units=None, is_setpoint=False, preset_data=None):
+
+        self.name = name
+        self.label = label
         self.size = size
+        self.units = units
+        self.array_id = array_id
+        self.is_setpoint = is_setpoint
+        self.action_indices = action_indices
+
+        if snapshot is None:
+            snapshot = {}
+        self._snapshot_input = {}
+
+        if parameter is not None:
+            if hasattr(parameter, 'snapshot') and not snapshot:
+                snapshot = parameter.snapshot()
+            else:
+                for attr in self.COPY_ATTRS_FROM_INPUT:
+                    if (hasattr(parameter, attr) and
+                            not getattr(self, attr, None)):
+                        setattr(self, attr, getattr(parameter, attr))
+
+        for key, value in snapshot.items():
+            if key not in self.SNAP_OMIT_KEYS:
+                self._snapshot_input[key] = value
+
+                if (key in self.COPY_ATTRS_FROM_INPUT and
+                        not getattr(self, key, None)):
+                    setattr(self, key, value)
+
+        if not self.label:
+            self.label = self.name
+
+        self.set_arrays = set_arrays
         self._preset = False
 
         # store a reference up to the containing DataSet
@@ -50,7 +103,6 @@ class DataArray(DelegateAttributes):
         elif size is None:
             self.size = ()
 
-        self.action_indices = action_indices
         self.last_saved_index = None
         self.modified_range = None
 
@@ -264,3 +316,14 @@ class DataArray(DelegateAttributes):
         return '{}[{}]:{}\n{}'.format(self.__class__.__name__,
                                       ','.join(map(str, self.size)),
                                       array_id_or_none, repr(self.ndarray))
+
+    def snapshot(self, update=False):
+        """JSON representation of this DataArray."""
+        snap = {'__class__': full_class(self)}
+
+        snap.update(self._snapshot_input)
+
+        for attr in self.SNAP_ATTRS:
+            snap[attr] = getattr(self, attr)
+
+        return snap
