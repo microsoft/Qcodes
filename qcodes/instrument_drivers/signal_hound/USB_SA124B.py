@@ -10,13 +10,11 @@ from qcodes.instrument.parameter import ManualParameter
 class SignalHound_USB_SA124B(Instrument):
     '''
     This is a direct port of the signal hound QTLab driver by Ramiro
-    Status: Alpha version.
-        This driver is functional but has untested features
-        and is in need of a code cleanup.
+    Edited by Adriaan Rol
 
-    Updates:
-        Cleaned up Manual parameters
-        Make all units in Hz
+    Status: Beta version.
+        This driver is functional but not all features have been implemented.
+
     TODO:
         Add tracking generator mode
     '''
