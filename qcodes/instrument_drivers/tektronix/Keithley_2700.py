@@ -225,6 +225,10 @@ class Keithley_2700(VisaInstrument):
               self.get('IDN_raw').replace(',', ', ').replace('\n', ' '),
               'in %.2fs' % (t1-t0))
 
+    def get_idn(self, *args, **kwargs):
+        idninfo = self.IDN_raw.get().strip().split(',')
+        return {'vendor': idninfo[0], 'model': idninfo[1], 'serial': idninfo[2], 'firmware': idninfo[3]}
+
     def get_all(self):
         '''
         Reads all relevant parameters from instrument
