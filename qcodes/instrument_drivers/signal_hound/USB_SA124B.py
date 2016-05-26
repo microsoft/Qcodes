@@ -301,6 +301,9 @@ class SignalHound_USB_SA124B(Instrument):
         return
 
     def QuerySweep(self):
+        """
+        Queries the sweep for information on the parameters it uses
+        """
         sweep_len = ct.c_int(0)
         start_freq = ct.c_double(0)
         stepsize = ct.c_double(0)
@@ -319,7 +322,7 @@ class SignalHound_USB_SA124B(Instrument):
         else:
             raise IOError('Unknown error!')
 
-        info = np.array([sweep_len.value, start_freq.value, stepsize.value])
+        info = [sweep_len.value, start_freq.value, stepsize.value]
         return info
 
     def configure(self, rejection=True):
@@ -411,30 +414,17 @@ class SignalHound_USB_SA124B(Instrument):
         returns:
 
         """
-        sweep_len = ct.c_int(0)
-        start_freq = ct.c_double(0)
-        stepsize = ct.c_double(0)
-        err = self.dll.saQuerySweepInfo(self.deviceHandle,
-                                        ct.pointer(sweep_len),
-                                        ct.pointer(start_freq),
-                                        ct.pointer(stepsize))
-        if not err == self.saStatus['saNoError']:
-            # if an error occurs tries preparing the device and then asks again
-            print('Error raised in QuerySweepInfo, preparing for measurement')
-            sleep(.1)
+        try:
+            sweep_len, start_freq, stepsize = self.QuerySweep()
+        except:
             self.prepare_for_measurement()
-            sleep(.1)
-            err = self.dll.saQuerySweepInfo(self.deviceHandle,
-                                            ct.pointer(sweep_len),
-                                            ct.pointer(start_freq),
-                                            ct.pointer(stepsize))
-        self.check_for_error(err)
-        end_freq = start_freq.value + stepsize.value*sweep_len.value
-        freq_points = np.arange(start_freq.value, end_freq,
-                                stepsize.value)
+            sweep_len, start_freq, stepsize = self.QuerySweep()
 
-        minarr = (ct.c_float * sweep_len.value)()
-        maxarr = (ct.c_float * sweep_len.value)()
+        end_freq = start_freq + stepsize*(sweep_len-1)
+        freq_points = np.linspace(start_freq, end_freq, sweep_len)
+
+        minarr = (ct.c_float * sweep_len)()
+        maxarr = (ct.c_float * sweep_len)()
         sleep(.1)  # Added extra sleep for updating issue
         err = self.dll.saGetSweep_32f(self.deviceHandle, minarr, maxarr)
         sleep(.1)  # Added extra sleep
@@ -444,8 +434,8 @@ class SignalHound_USB_SA124B(Instrument):
             sleep(.1)
             self.prepare_for_measurement()
             sleep(.1)
-            minarr = (ct.c_float * sweep_len.value)()
-            maxarr = (ct.c_float * sweep_len.value)()
+            minarr = (ct.c_float * sweep_len)()
+            maxarr = (ct.c_float * sweep_len)()
             err = self.dll.saGetSweep_32f(self.deviceHandle, minarr, maxarr)
 
         if err == self.saStatus['saNoError']:
@@ -466,8 +456,8 @@ class SignalHound_USB_SA124B(Instrument):
             raise IOError('Unknown error!')
 
         # note if used in averaged mode (set in config) datamin=datamax
-        datamin = np.array([minarr[elem] for elem in range(sweep_len.value)])
-        datamax = np.array([minarr[elem] for elem in range(sweep_len.value)])
+        datamin = np.array([minarr[elem] for elem in range(sweep_len)])
+        datamax = np.array([minarr[elem] for elem in range(sweep_len)])
 
         return np.array([freq_points, datamin, datamax])
 
