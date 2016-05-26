@@ -69,17 +69,6 @@ class Ithaco_1211(Instrument):
         super().__init__(name, **kwargs)
         self.dmm_parameter = dmm_parameter
 
-        vendor = 'Ithaco (DL Instruments)'
-        model = '1211'
-        serial = None
-        firmware = None
-
-        self.add_parameter('IDN',
-                           parameter_class=ManualParameter,
-                           initial_value={'vendor': vendor, 'model': model,
-                                          'serial': serial, 'firmware': firmware},
-                           vals=Anything())
-
         self.add_parameter('sens',
                            parameter_class=ManualParameter,
                            initial_value=1e-8,
@@ -116,3 +105,12 @@ class Ithaco_1211(Instrument):
                            units='msec',
                            vals=Enum(0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30,
                                      100, 300, 1000))
+
+    def get_idn(self):
+
+        vendor = 'Ithaco (DL Instruments)'
+        model = '1211'
+        serial = None
+        firmware = None
+        return {'vendor': vendor, 'model': model,
+                'serial': serial, 'firmware': firmware}

@@ -21,9 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import re
 from qcodes import VisaInstrument
-from qcodes.utils.validators import Anything
 
 
 class Keithley_2600(VisaInstrument):
@@ -43,9 +41,6 @@ class Keithley_2600(VisaInstrument):
     def __init__(self, name, address, channel, **kwargs):
         super().__init__(name, address, terminator='\n', **kwargs)
         self._channel = channel
-
-        self.add_parameter('IDN', get_cmd=self._get_IDN,
-                           vals=Anything())
 
         self.add_parameter('volt', get_cmd='measure.v()',
                            get_parser=float, set_cmd='source.levelv={:.8f}',
@@ -94,14 +89,14 @@ class Keithley_2600(VisaInstrument):
                            set_cmd='source.limiti={:.4f}',
                            units='A')
 
-    def _get_IDN(self):
-        IDN = self.visa_handle.ask('*IDN?')
+    def get_idn(self):
+        IDN = self.ask_direct('*IDN?')
         vendor, model, serial, firmware = map(str.strip, IDN.split(','))
         model = model[6:]
 
-        self._IDN = {'vendor': vendor, 'model': model,
-                     'serial': serial, 'firmware': firmware}
-        return self._IDN
+        IDN = {'vendor': vendor, 'model': model,
+               'serial': serial, 'firmware': firmware}
+        return IDN
 
     def _mode_parser(self, msg):
         if msg[0] == '0':

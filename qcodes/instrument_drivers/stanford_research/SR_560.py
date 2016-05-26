@@ -68,17 +68,6 @@ class SR_560(Instrument):
         super().__init__(name, **kwargs)
         self.dmm_parameter = dmm_parameter
 
-        vendor = 'Stanford Research Systems'
-        model = 'SR560'
-        serial = None
-        firmware = None
-
-        self.add_parameter('IDN',
-                           parameter_class=ManualParameter,
-                           initial_value={'vendor': vendor, 'model': model,
-                                          'serial': serial, 'firmware': firmware},
-                           vals=Anything())
-
         self.add_parameter('cutoff_lo',
                            parameter_class=ManualParameter,
                            initial_value='DC',
@@ -105,3 +94,13 @@ class SR_560(Instrument):
                            label='gain',
                            units=None,
                            vals=Numbers())
+
+    def get_idn(self):
+
+        vendor = 'Stanford Research Systems'
+        model = 'SR560'
+        serial = None
+        firmware = None
+
+        return {'vendor': vendor, 'model': model,
+                'serial': serial, 'firmware': firmware}
