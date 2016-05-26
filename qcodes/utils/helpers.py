@@ -11,7 +11,7 @@ import json
 _tprint_times = {}
 
 
-class json_encoder(json.JSONEncoder):
+class NumpyJSONEncoder(json.JSONEncoder):
     """
     Return numpy types as standard types.
     http://stackoverflow.com/questions/27050108/convert-numpy-type-to-python
@@ -25,7 +25,7 @@ class json_encoder(json.JSONEncoder):
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
         else:
-            return super(json_encoder, self).default(obj)
+            return super(NumpyJSONEncoder, self).default(obj)
 
 def tprint(string, dt=1, tag='default'):
     """ Print progress of a loop every dt seconds """

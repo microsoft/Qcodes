@@ -3,7 +3,7 @@ import re
 import math
 import json
 
-from qcodes.utils.helpers import deep_update, json_encoder
+from qcodes.utils.helpers import deep_update, NumpyJSONEncoder
 from .data_array import DataArray
 from .format import Formatter
 
@@ -297,7 +297,7 @@ class GNUPlotFormat(Formatter):
         fn = io_manager.join(location, self.metadata_file)
         with io_manager.open(fn, 'w', encoding='utf8') as snap_file:
             json.dump(data_set.metadata, snap_file, sort_keys=True,
-                      indent=4, ensure_ascii=False, cls=json_encoder)
+                      indent=4, ensure_ascii=False, cls=NumpyJSONEncoder)
 
     def read_metadata(self, data_set):
         io_manager = data_set.io
