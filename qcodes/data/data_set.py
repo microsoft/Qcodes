@@ -412,7 +412,7 @@ class DataSet(DelegateAttributes):
 
         for name in array_names:
             param_arrays = [array for array in arrays
-                            if array.name == name]
+                            if array.array_id == name]
             if len(param_arrays) == 1:
                 # simple case, only one param with this name, id = name
                 param_arrays[0].array_id = name
