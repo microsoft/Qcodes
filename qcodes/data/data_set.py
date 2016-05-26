@@ -534,8 +534,8 @@ class DataSet(DelegateAttributes):
 
         for array_id, array in self.arrays.items():
             setp = 'Setpoint' if array.is_setpoint else 'Measured'
-            name=array.name or 'None'
-            array_id=array_id or 'None'
+            name = array.name or 'None'
+            array_id = array_id or 'None'
             arr_info.append([setp, array_id, name, repr(array.shape)])
 
         column_lengths = [max(len(row[i]) for row in arr_info)
