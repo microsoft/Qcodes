@@ -1,6 +1,7 @@
 import visa
 
 from .base import Instrument
+import qcodes.utils.validators as vals
 
 
 class VisaInstrument(Instrument):
@@ -27,9 +28,16 @@ class VisaInstrument(Instrument):
     def __init__(self, name, address=None, timeout=5, terminator='', **kwargs):
         super().__init__(name, **kwargs)
 
+        self.add_parameter('timeout',
+                           get_cmd=self._get_visa_timeout,
+                           set_cmd=self._set_visa_timeout,
+                           units='s',
+                           vals=vals.MultiType(vals.Numbers(min_value=0),
+                                               vals.Enum(None)))
+
         self.set_address(address)
-        self.set_timeout(timeout)
         self.set_terminator(terminator)
+        self.timeout.set(timeout)
 
     @classmethod
     def default_server_name(cls, **kwargs):
@@ -67,13 +75,20 @@ class VisaInstrument(Instrument):
         self.visa_handle.read_termination = terminator
         self._terminator = terminator
 
-    def set_timeout(self, timeout):
-        '''
-        change the read timeout (seconds)
-        '''
-        # visa requires milliseconds
-        self.visa_handle.timeout = 1000.0 * timeout
-        self._timeout = timeout
+    def _set_visa_timeout(self, timeout):
+        if timeout is None:
+            self.visa_handle.timeout = None
+        else:
+            # pyvisa uses milliseconds but we use seconds
+            self.visa_handle.timeout = timeout * 1000.0
+
+    def _get_visa_timeout(self):
+        timeout_ms = self.visa_handle.timeout
+        if timeout_ms is None:
+            return None
+        else:
+            # pyvisa uses milliseconds but we use seconds
+            return timeout_ms / 1000
 
     def close(self):
         if getattr(self, 'visa_handle', None):
