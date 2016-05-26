@@ -12,11 +12,9 @@ _tprint_times = {}
 
 
 class NumpyJSONEncoder(json.JSONEncoder):
-    """
-    Return numpy types as standard types.
-    http://stackoverflow.com/questions/27050108/convert-numpy-type-to-python
-    http://stackoverflow.com/questions/9452775/converting-numpy-dtypes-to-native-python-types/11389998#11389998
-    """
+    """Return numpy types as standard types."""
+    # http://stackoverflow.com/questions/27050108/convert-numpy-type-to-python
+    # http://stackoverflow.com/questions/9452775/converting-numpy-dtypes-to-native-python-types/11389998#11389998
     def default(self, obj):
         if isinstance(obj, np.integer):
             return int(obj)
