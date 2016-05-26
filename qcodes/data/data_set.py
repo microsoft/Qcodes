@@ -534,14 +534,11 @@ class DataSet(DelegateAttributes):
 
         for array_id, array in self.arrays.items():
             setp = 'Setpoint' if array.is_setpoint else 'Measured'
-            arr_info.append([setp, array_id, array.name, repr(array.shape)])
+            name=array.name or 'None'
+            array_id=array_id or 'None'
+            arr_info.append([setp, array_id, name, repr(array.shape)])
 
-        def lenx(v):
-            try:
-                return len(v)
-            except:
-                return 2
-        column_lengths = [max(lenx(row[i]) for row in arr_info)
+        column_lengths = [max(len(row[i]) for row in arr_info)
                           for i in range(len(arr_info[0]))]
         out_template = ('\n   '
                         '{info[0]:{lens[0]}} | {info[1]:{lens[1]}} | '
