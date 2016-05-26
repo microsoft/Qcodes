@@ -6,9 +6,24 @@ import math
 import sys
 import io
 import numpy as np
+import json
 
 _tprint_times = {}
 
+
+class NumpyJSONEncoder(json.JSONEncoder):
+    """Return numpy types as standard types."""
+    # http://stackoverflow.com/questions/27050108/convert-numpy-type-to-python
+    # http://stackoverflow.com/questions/9452775/converting-numpy-dtypes-to-native-python-types/11389998#11389998
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return super(NumpyJSONEncoder, self).default(obj)
 
 def tprint(string, dt=1, tag='default'):
     """ Print progress of a loop every dt seconds """
