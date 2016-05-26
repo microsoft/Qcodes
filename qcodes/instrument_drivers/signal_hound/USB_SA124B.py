@@ -4,6 +4,7 @@ import ctypes as ct
 import logging
 
 from qcodes import Instrument, validators as vals
+from qcodes.instrument.parameter import ManualParameter
 
 
 class SignalHound_USB_SA124B(Instrument):
@@ -60,79 +61,62 @@ class SignalHound_USB_SA124B(Instrument):
         self.add_parameter('frequency',
                            label='Frequency ',
                            units='GHz',
-                           get_cmd=self._do_get_frequency,
-                           set_cmd=self._do_set_frequency,
-                           get_parser=float)
+                           parameter_class=ManualParameter,
+                           vals=vals.Numbers())
         self.add_parameter('span',
                            label='Span ',
                            units='GHz',
-                           get_cmd=self._do_get_span,
-                           set_cmd=self._do_set_span,
-                           get_parser=float)
+                           parameter_class=ManualParameter,
+                           vals=vals.Numbers())
         self.add_parameter('power',
                            label='Power ',
                            units='dBm',
-                           get_cmd=self._do_get_power,
-                           set_cmd=self._do_set_power,
-                           vals=vals.Numbers(max_value=20),
-                           get_parser=float)
+                           parameter_class=ManualParameter,
+                           vals=vals.Numbers(max_value=20))
         self.add_parameter('ref_lvl',
                            label='Reference power ',
                            units='dBm',
-                           get_cmd=self._do_get_ref_lvl,
-                           set_cmd=self._do_set_ref_lvl,
-                           vals=vals.Numbers(max_value=20),
-                           get_parser=float)
+                           parameter_class=ManualParameter,
+                           vals=vals.Numbers(max_value=20))
         self.add_parameter('external_reference',
-                           get_cmd=self._do_get_external_reference,
-                           set_cmd=self._do_set_external_reference,
+                           parameter_class=ManualParameter,
                            vals=vals.Bool())
         self.add_parameter('device_type',
-                           get_cmd=self._do_get_device_type,
-                           set_cmd=self._do_set_device_type,
-                           vals=vals.Anything())
+                           get_cmd=self._do_get_device_type)
 
         self.add_parameter('device_mode',
-                           get_cmd=self._do_get_device_mode,
-                           set_cmd=self._do_set_device_mode,
+                           parameter_class=ManualParameter,
                            vals=vals.Anything())
         self.add_parameter('acquisition_mode',
-                           get_cmd=self._do_get_acquisition_mode,
-                           set_cmd=self._do_set_acquisition_mode,
-                           vals=vals.Anything())
+                           parameter_class=ManualParameter,
+                           vals=vals.Anything()) # Add Enum validator
 
         self.add_parameter('scale',
-                           get_cmd=self._do_get_scale,
-                           set_cmd=self._do_set_scale,
+                           parameter_class=ManualParameter,
                            vals=vals.Anything())
         self.add_parameter('running',
-                           get_cmd=self._do_get_running,
-                           set_cmd=self._do_set_running,
+                           parameter_class=ManualParameter,
                            vals=vals.Bool())
         self.add_parameter('decimation',
-                           get_cmd=self._do_get_decimation,
-                           set_cmd=self._do_set_decimation,
+                           parameter_class=ManualParameter,
                            vals=vals.Ints(1, 8))
         self.add_parameter('bandwidth',
                            label='Bandwidth',
                            units='Hz',
-                           get_cmd=self._do_get_bandwidth,
-                           set_cmd=self._do_set_bandwidth,
+                           parameter_class=ManualParameter,
                            get_parser=float)
         # rbw Resolution bandwidth in Hz. RBW can be arbitrary.
         self.add_parameter('rbw',
                            label='Resolution Bandwidth',
                            units='Hz',
-                           get_cmd=self._do_get_rbw,
-                           set_cmd=self._do_set_rbw,
+                           parameter_class=ManualParameter,
                            get_parser=float)
         # vbw Video bandwidth in Hz. VBW must be less than or equal to RBW.
         #  VBW can be arbitrary. For best performance use RBW as the VBW.
         self.add_parameter('vbw',
                            label='Video Bandwidth',
                            units='Hz',
-                           get_cmd=self._do_get_vbw,
-                           set_cmd=self._do_set_vbw,
+                           parameter_class=ManualParameter,
                            get_parser=float)
 
         self.set('frequency', 5)
@@ -140,7 +124,6 @@ class SignalHound_USB_SA124B(Instrument):
         self.set('power', 0)
         self.set('ref_lvl', 0)
         self.set('external_reference', False)
-        self.set('device_type', 'Not loaded')
         self.set('device_mode', 'sweeping')
         self.set('acquisition_mode', 'average')
         self.set('scale', 'log-scale')
@@ -150,6 +133,7 @@ class SignalHound_USB_SA124B(Instrument):
         self.set('rbw', 1e3)
         self.set('vbw', 1e3)
         self.openDevice()
+        self.device_type()
 
         t1 = time()
         print('Initialized SignalHound in %.2fs' % (t1-t0))
@@ -220,41 +204,6 @@ class SignalHound_USB_SA124B(Instrument):
     # into ManualParameters, but someone who actually *has* this instrument
     # should do that.
 
-    def _do_get_frequency(self):
-        return self._frequency
-
-    def _do_set_frequency(self, freq):
-        self._frequency = freq
-
-    def _do_get_span(self):
-        return self._span
-
-    def _do_set_span(self, span):
-        self._span = span
-
-    def _do_get_power(self):
-        return self._power
-
-    def _do_set_power(self, power):
-        self._power = power
-
-    def _do_get_ref_lvl(self):
-        return self._ref_lvl
-
-    def _do_set_ref_lvl(self, ref_lvl):
-        self._ref_lvl = ref_lvl
-
-    def _do_get_external_reference(self):
-        return self._external_reference
-
-    def _do_set_external_reference(self, external_reference):
-        self._external_reference = external_reference
-
-    def _do_get_running(self):
-        return self._running
-
-    def _do_set_running(self, running):
-        self._running = running
 
     def _do_get_device_type(self):
         self.log.info("Querying device for model information")
@@ -285,53 +234,6 @@ class SignalHound_USB_SA124B(Instrument):
         else:
             raise ValueError("Unknown device type!")
         return dev
-
-    def _do_set_device_type(self, device_type):
-        self._device_type = device_type
-
-    def _do_get_device_mode(self):
-        return self._device_mode
-
-    def _do_set_device_mode(self,device_mode):
-        self._device_mode = device_mode
-        return
-
-    def _do_get_acquisition_mode(self):
-        return self._acquisition_mode
-
-    def _do_set_acquisition_mode(self,acquisition_mode):
-        self._acquisition_mode = acquisition_mode
-        return
-
-    def _do_get_scale(self):
-        return self._scale
-
-    def _do_set_scale(self,scale):
-        self._scale = scale
-
-    def _do_get_decimation(self):
-        return self.decimation
-
-    def _do_set_decimation(self,decimation):
-        self.decimation = decimation
-
-    def _do_get_bandwidth(self):
-        return self._bandwidth
-
-    def _do_set_bandwidth(self, bandwidth):
-        self._bandwidth = bandwidth
-
-    def _do_get_rbw(self):
-        return self._rbw
-
-    def _do_set_rbw(self, rbw):
-        self._rbw = rbw
-
-    def _do_get_vbw(self):
-        return self._vbw
-
-    def _do_set_vbw(self, vbw):
-        self._vbw = vbw
 
     ########################################################################
 
