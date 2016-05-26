@@ -230,12 +230,6 @@ class GNUPlotFormat(Formatter):
         possible, overwrite if not.
         """
         arrays = data_set.arrays
-
-        # backwards compatible
-        if location is None:
-            io_manager = data_set.io
-        if location is None:
-            location = data_set.location
             
         groups = self.group_arrays(arrays)
         existing_files = set(io_manager.list(location))
