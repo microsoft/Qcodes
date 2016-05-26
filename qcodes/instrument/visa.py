@@ -1,4 +1,5 @@
 import visa
+import logging
 
 from .base import Instrument
 
@@ -42,6 +43,30 @@ class VisaInstrument(Instrument):
         # TODO - any others to break out by default?
         # break out separate GPIB or serial connections?
         return 'VisaServer'
+
+    def get_idn(self):
+        """Parse a standard VISA '*IDN?' response into an ID dict."""
+        idstr = self.ask('*IDN?')
+        try:
+            # form is supposed to be comma-separated, but we've seen
+            # other separators occasionally
+            for separator in ',;:':
+                # split into no more than 4 parts, so we don't lose info
+                idparts = [p.strip() for p in idstr.split(separator, 3)]
+                if len(idparts) > 1:
+                    break
+            # in case parts at the end are missing, fill in None
+            if len(idparts) < 4:
+                idparts += [None] * (4 - len(idparts))
+        except:
+            logging.warn('Error interpreting *IDN? response ' + repr(idstr))
+            idparts = [None, None, None, None]
+
+        # some strings include the word 'model' at the front of model
+        if str(idparts[1]).lower().startswith('model'):
+            idparts[1] = str(idparts[1])[5:].strip()
+
+        return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
     def set_address(self, address):
         '''

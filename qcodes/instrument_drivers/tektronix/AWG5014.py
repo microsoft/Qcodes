@@ -169,7 +169,6 @@ class Tektronix_AWG5014(VisaInstrument):
         self._clock = clock
         self._numpoints = numpoints
 
-        self.add_parameter('IDN', get_cmd='*IDN?')
         self.add_function('reset', call_cmd='*RST')
 
         self.add_parameter('state',
@@ -336,7 +335,7 @@ class Tektronix_AWG5014(VisaInstrument):
         if self.get('clock_freq') != 1e9:
             logging.warning('AWG clock freq not set to 1GHz')
 
-        self.connect_message('IDN')
+        self.connect_message()
 
     # Functions
     def get_all(self, update=True):
