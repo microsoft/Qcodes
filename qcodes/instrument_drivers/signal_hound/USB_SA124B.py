@@ -16,8 +16,8 @@ class SignalHound_USB_SA124B(Instrument):
 
     Updates:
         Cleaned up Manual parameters
-    TODO:
         Make all units in Hz
+    TODO:
         Add tracking generator mode
     '''
     dll_path = 'C:\Windows\System32\sa_api.dll'
@@ -68,14 +68,14 @@ class SignalHound_USB_SA124B(Instrument):
 
         self.add_parameter('frequency',
                            label='Frequency ',
-                           units='GHz',
-                           initial_value=5,
+                           units='Hz',
+                           initial_value=5e9,
                            parameter_class=ManualParameter,
                            vals=vals.Numbers())
         self.add_parameter('span',
                            label='Span ',
-                           units='GHz',
-                           initial_value=.25e-3,
+                           units='Hz',
+                           initial_value=.25e6,
                            parameter_class=ManualParameter,
                            vals=vals.Numbers())
         self.add_parameter('power',
@@ -343,8 +343,8 @@ class SignalHound_USB_SA124B(Instrument):
         These two functions are combined in prepare_for_measurement()
         """
         # CenterSpan Configuration
-        frequency = self.get('frequency') * 1e9
-        span = self.get('span') * 1e9
+        frequency = self.get('frequency')
+        span = self.get('span')
         center = ct.c_double(frequency)
         span = ct.c_double(span)
         self.log.info('Setting device CenterSpan configuration.')
@@ -432,9 +432,8 @@ class SignalHound_USB_SA124B(Instrument):
                                             ct.pointer(stepsize))
         self.check_for_error(err)
         end_freq = start_freq.value + stepsize.value*sweep_len.value
-        freq_points = np.arange(start_freq.value*1e-9,
-                                end_freq*1e-9,
-                                stepsize.value*1e-9)
+        freq_points = np.arange(start_freq.value, end_freq,
+                                stepsize.value)
 
         minarr = (ct.c_float * sweep_len.value)()
         maxarr = (ct.c_float * sweep_len.value)()
