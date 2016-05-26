@@ -78,15 +78,18 @@ def DataSet1D(location=None):
                   set_arrays=(x,))
     return new_data(arrays=(x, y), location=location)
 
+
 def DataSet2D(location=None):
     # DataSet with one 2D array with 4 x 6 points
-    yy, xx = numpy.meshgrid( range(4), range(6) )
-    zz=xx**2+yy**2
-    xx=xx[:,0]
+    yy, xx = numpy.meshgrid(range(4), range(6))
+    zz = xx**2+yy**2
+    # outer setpoint should be 1D
+    xx = xx[:, 0]
     x = DataArray(name='x', label='X', preset_data=xx)
     y = DataArray(name='y', label='Y', preset_data=yy, set_arrays=(x,))
-    z = DataArray(name='z', label='Z', preset_data=zz, set_arrays=(x,y))
-    return new_data(arrays=(x, y,z), location=location)
+    z = DataArray(name='z', label='Z', preset_data=zz, set_arrays=(x, y))
+    return new_data(arrays=(x, y, z), location=location)
+
 
 def file_1d():
     return '\n'.join([
