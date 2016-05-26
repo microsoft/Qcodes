@@ -17,8 +17,8 @@ class SignalHound_USB_SA124B(Instrument):
     Updates:
         Cleaned up Manual parameters
     TODO:
-        make initial set_statements for parameters
         Make all units in Hz
+        Add tracking generator mode
     '''
     dll_path = 'C:\Windows\System32\sa_api.dll'
 
@@ -81,43 +81,54 @@ class SignalHound_USB_SA124B(Instrument):
         self.add_parameter('power',
                            label='Power ',
                            units='dBm',
+                           initial_value=0,
                            parameter_class=ManualParameter,
                            vals=vals.Numbers(max_value=20))
         self.add_parameter('ref_lvl',
                            label='Reference power ',
                            units='dBm',
+                           initial_value=0,
                            parameter_class=ManualParameter,
                            vals=vals.Numbers(max_value=20))
         self.add_parameter('external_reference',
                            parameter_class=ManualParameter,
+                           initial_value=False,
                            vals=vals.Bool())
         self.add_parameter('device_type',
                            get_cmd=self._do_get_device_type)
 
         self.add_parameter('device_mode',
+                           initial_value='sweeping',
                            parameter_class=ManualParameter,
                            vals=vals.Anything())
         self.add_parameter('acquisition_mode',
                            parameter_class=ManualParameter,
+                           initial_value='average',
                            vals=vals.Enum('average', 'min-max'))
         self.add_parameter('scale',
                            parameter_class=ManualParameter,
-                           vals=vals.Anything())
+                           initial_value='log-scale',
+                           vals=vals.Enum('log-scale', 'lin-scale',
+                                          'log-full-scale', 'lin-full-scale'))
         self.add_parameter('running',
                            parameter_class=ManualParameter,
+                           initial_value=False,
                            vals=vals.Bool())
         self.add_parameter('decimation',
                            parameter_class=ManualParameter,
+                           initial_value=1,
                            vals=vals.Ints(1, 8))
         self.add_parameter('bandwidth',
                            label='Bandwidth',
                            units='Hz',
+                           initial_value=0,
                            parameter_class=ManualParameter,
                            get_parser=float)
         # rbw Resolution bandwidth in Hz. RBW can be arbitrary.
         self.add_parameter('rbw',
                            label='Resolution Bandwidth',
                            units='Hz',
+                           initial_value=1e3,
                            parameter_class=ManualParameter,
                            get_parser=float)
         # vbw Video bandwidth in Hz. VBW must be less than or equal to RBW.
@@ -125,20 +136,10 @@ class SignalHound_USB_SA124B(Instrument):
         self.add_parameter('vbw',
                            label='Video Bandwidth',
                            units='Hz',
+                           initial_value=1e3,
                            parameter_class=ManualParameter,
                            get_parser=float)
 
-        self.set('power', 0)
-        self.set('ref_lvl', 0)
-        self.set('external_reference', False)
-        self.set('device_mode', 'sweeping')
-        self.set('acquisition_mode', 'average')
-        self.set('scale', 'log-scale')
-        self.set('running', False)
-        self.set('decimation', 1)
-        self.set('bandwidth', 0)
-        self.set('rbw', 1e3)
-        self.set('vbw', 1e3)
         self.openDevice()
         self.device_type()
 
