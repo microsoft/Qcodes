@@ -1,3 +1,4 @@
+"""Standard location_provider class(es) for creating DataSet locations."""
 from datetime import datetime
 import re
 import string
@@ -21,78 +22,70 @@ class FormatLocation:
     This is the default DataSet Location provider.
 
     It provides a callable that returns a new (not used by another DataSet)
-    location string, based on a format string `fmt` and a dict `record` of
-    information to pass to `fmt`.
+    location string, based on a format string ``fmt`` and a dict ``record`` of
+    information to pass to ``fmt``.
 
-    A base record can be provided on instantiating the FormatLocation, and
-    another one can be provided on call, which overrides parts of the base
-    just for that call.
-
-    Default record items are `{date}`, `{time}`, and `{counter}`
+    Default record items are ``date``, ``time``, and ``counter``
     Record item priority from lowest to highest (double items will be
-    overwritten)
-    - `{counter}`, `{date}`, `{time}`
-    - records dict from `__init__`
-    - records dict from `__call__`
-    Thus if any record dict contains a `date` keyword, it will no longer be
-    auto-generated.
+    overwritten):
 
-    Uses `io.list` to search for existing data at a matching location.
+    - current ``date``, and ``time``
+    - record dict from ``__init__``
+    - record dict from ``__call__``
+    - automatic ``counter``
 
-    `{counter}` is special and must NOT be provided in the record.
-    If the format string contains `{counter}`, we look for existing files
-    matching everything before the counter, then find the highest counter
-    (integer) among those files and use the next value. That means the counter
-    only increments as long as fields before it do not change, and files with
-    incrementing counters will always group together and sort correctly in
-    directory listings
+    For example if any record dict contains a `date` keyword, it will no longer
+    be auto-generated.
 
-    If the format string does not contain `{counter}` but the location we would
-    return is occupied, we will add '_{counter}' to the end and do the same.
+    Uses ``io.list`` to search for existing data at a matching location.
 
-    Usage:
-    ```
+    ``counter`` must NOT be provided in the record. If ``fmt`` contains
+    '{counter}', we look for existing files matching everything BEFORE this,
+    then find the highest counter (integer) among those files and use the next
+    value.
+
+    If the format string does not contain ``{counter}`` but the location we
+    would return is occupied, we add ``'_{counter}'`` to the end.
+
+    Usage::
+
         loc_provider = FormatLocation(
             fmt='{date}/#{counter}_{time}_{name}_{label}')
         loc = loc_provider(DiskIO('.'),
                            record={'name': 'Rainbow', 'label': 'test'})
         loc
         > '2016-04-30/#001_13-28-15_Rainbow_test'
-    ```
-    Default format string is '{date}/{time}', and if `name` exists in record,
-    it is '{date}/{time}_{name}'
-    with `fmt_date='%Y-%m-%d'` and `fmt_time='%H-%M-%S'`
+
+    Args:
+        fmt (str, optional): a format string that all the other info will be
+            inserted into. Default '{date}/{time}', or '{date}/{time}_{name}'
+            if there is a ``name`` in the record.
+
+        fmt_date (str, optional): a ``datetime.strftime`` format string,
+            should only use the date part. The result will be inserted in
+            '{date}' in ``fmt``. Default '%Y-%m-%d'.
+
+        fmt_time (str, optional): a ``datetime.strftime`` format string,
+            should only use the time part. The result will be inserted in
+            '{time}' in ``fmt``. Default '%H-%M-%S'.
+
+        fmt_counter (str, optional): a format string for the counter (integer)
+            which is automatically generated from existing DataSets that the
+            io manager can see. Default '{03}'.
+
+        record (dict, optional): A dict of default values to provide when
+            calling the location_provider. Values provided later will
+            override these values.
+
+    Note:
+        Do not include date/time or number formatting in ``fmt`` itself, such
+        as '{date:%Y-%m-%d}' or '{counter:03}'
     """
 
     default_fmt = '{date}/{time}'
 
     def __init__(self, fmt=None, fmt_date=None, fmt_time=None,
                  fmt_counter=None, record=None):
-        """
-        Construct a FormatLocation location_provider.
-
-        fmt (default '{date}/{time}'): a format string that all the other info
-            will get inserted into
-
-        fmt_date (default '%Y-%m-%d'): a `datetime.strftime` format string,
-            accepts datetime.now() but should only use the date part. The
-            result will be inserted in '{date}' in `fmt`. Do not include
-            date formatting in `fmt` itself (such as '{date:%Y-%m-%d}')
-
-        fmt_time (default '%H-%M-%S'): a `datetime.strftime` format string,
-            accepts datetime.now() but should only use the time part. The
-            result will be inserted in '{time}' in `fmt`. Do not include
-            date formatting in `fmt` itself (such as '{time:%H-%M-%S}')
-
-        fmt_counter (default '{:03}'): a format string for the counter
-            (integer) which is automatically generated from existing
-            DataSets that the io manager can see. Do not include
-            number formatting in `fmt` itself (such as '{counter:03}')
-
-        record (default None): a dict of default values to provide when
-            calling the location_provider. Values provided later will
-            override these values.
-        """
         self.fmt = fmt or self.default_fmt
         self.fmt_date = fmt_date or '%Y-%m-%d'
         self.fmt_time = fmt_time or '%H-%M-%S'
@@ -116,10 +109,11 @@ class FormatLocation:
         """
         Call the location provider to get a new location.
 
-        io: an io manager instance
+        Args:
+            io (io manager): where we intend to put the new DataSet.
 
-        record (default None): a dict of information to use in the
-            format string
+            record (dict, optional): information to insert in the format string
+                Any key provided here will override the default record
         """
         loc_fmt = self.fmt
 
