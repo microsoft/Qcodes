@@ -128,7 +128,7 @@ def make_sweep(start, stop, step=None, num=None):
                 .format(steps_lo + 1, steps_hi + 1))
         num = steps_lo + 1
 
-    return np.linspace(start, stop, num=num)
+    return np.linspace(start, stop, num=num).tolist()
 
 
 def wait_secs(finish_clock):

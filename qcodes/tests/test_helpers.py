@@ -185,10 +185,10 @@ class TestPermissiveRange(TestCase):
 class TestMakeSweep(TestCase):
     def test_good_calls(self):
         swp = make_sweep(1, 3, num=6)
-        self.assertEqual(list(swp), [1, 1.4, 1.8, 2.2, 2.6, 3])
+        self.assertEqual(swp, [1, 1.4, 1.8, 2.2, 2.6, 3])
 
         swp = make_sweep(1, 3, step=0.5)
-        self.assertEqual(list(swp), [1, 1.5, 2, 2.5, 3])
+        self.assertEqual(swp, [1, 1.5, 2, 2.5, 3])
 
         # with step, test a lot of combinations with weird fractions
         # to make sure we don't fail on a rounding error
