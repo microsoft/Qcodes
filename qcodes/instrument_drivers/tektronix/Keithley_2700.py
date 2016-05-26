@@ -22,7 +22,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-import time
 import logging
 from functools import partial
 
@@ -201,15 +200,15 @@ class Keithley_2700(VisaInstrument):
 
         # add functions
         self.add_parameter('amplitude',
-                          units='arb.unit',
-                          label=name,
-                          get_cmd=':DATA:FRESH?',
-                          get_parser=float)
+                           units='arb.unit',
+                           label=name,
+                           get_cmd=':DATA:FRESH?',
+                           get_parser=float)
         self.add_parameter('readnext',
-                          units='arb.unit',
-                          label=name,
-                          get_cmd=':DATA:FRESH?',
-                          get_parser=float)
+                           units='arb.unit',
+                           label=name,
+                           get_cmd=':DATA:FRESH?',
+                           get_parser=float)
 
         if reset:
             self.reset()
@@ -394,4 +393,3 @@ class Keithley_2700(VisaInstrument):
         logging.debug('Resetting instrument')
         self._visainstrument.write('*RST')
         self.get_all()
-
