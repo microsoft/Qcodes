@@ -69,11 +69,13 @@ class SignalHound_USB_SA124B(Instrument):
         self.add_parameter('frequency',
                            label='Frequency ',
                            units='GHz',
+                           initial_value=5,
                            parameter_class=ManualParameter,
                            vals=vals.Numbers())
         self.add_parameter('span',
                            label='Span ',
                            units='GHz',
+                           initial_value=.25e-3,
                            parameter_class=ManualParameter,
                            vals=vals.Numbers())
         self.add_parameter('power',
@@ -97,8 +99,7 @@ class SignalHound_USB_SA124B(Instrument):
                            vals=vals.Anything())
         self.add_parameter('acquisition_mode',
                            parameter_class=ManualParameter,
-                           vals=vals.Anything()) # Add Enum validator
-
+                           vals=vals.Enum('average', 'min-max'))
         self.add_parameter('scale',
                            parameter_class=ManualParameter,
                            vals=vals.Anything())
@@ -127,8 +128,6 @@ class SignalHound_USB_SA124B(Instrument):
                            parameter_class=ManualParameter,
                            get_parser=float)
 
-        self.set('frequency', 5)
-        self.set('span', .25e-3)
         self.set('power', 0)
         self.set('ref_lvl', 0)
         self.set('external_reference', False)
@@ -212,11 +211,6 @@ class SignalHound_USB_SA124B(Instrument):
             raise IOError('Device not open!')
         else:
             raise IOError('Unknown error calling preset! Error = %s' % err)
-
-    # TODO (AJ note): all these boilerplate _do_(get|set) should just turn
-    # into ManualParameters, but someone who actually *has* this instrument
-    # should do that.
-
 
     def _do_get_device_type(self):
         self.log.info('Querying device for model information')
@@ -330,6 +324,23 @@ class SignalHound_USB_SA124B(Instrument):
         return info
 
     def configure(self, rejection=True):
+        """
+        Configure consists of five parts
+            1. Center span configuration (freqs and span)
+            2. Acquisition configuration
+                lin-scale/log-scale
+                avg/max power
+            3. Configuring the external 10MHz refernce
+            4. Configuration of the mode that is being used
+            5. Configuration of the tracking generator (not implemented)
+                used in VNA mode
+
+        Configure sets the configuration of the instrument using the parameters
+        specified in the Qcodes instrument.
+
+        Note that to ensure loading call self.initialisation()
+        These two functions are combined in prepare_for_measurement()
+        """
         # CenterSpan Configuration
         frequency = self.get('frequency') * 1e9
         span = self.get('span') * 1e9
@@ -394,7 +405,13 @@ class SignalHound_USB_SA124B(Instrument):
         return
 
     def sweep(self):
-        # this needs an initialized device. Originally used by read_power()
+        """
+        This function performs a sweep over the configured ranges.
+        The result of the sweep is returned along with the sweep points
+
+        returns:
+
+        """
         sweep_len = ct.c_int(0)
         start_freq = ct.c_double(0)
         stepsize = ct.c_double(0)
@@ -414,7 +431,8 @@ class SignalHound_USB_SA124B(Instrument):
                                             ct.pointer(stepsize))
         self.check_for_error(err)
         end_freq = start_freq.value + stepsize.value*sweep_len.value
-        freq_points = np.arange(start_freq.value*1e-9, end_freq*1e-9,
+        freq_points = np.arange(start_freq.value*1e-9,
+                                end_freq*1e-9,
                                 stepsize.value*1e-9)
 
         minarr = (ct.c_float * sweep_len.value)()
@@ -449,13 +467,11 @@ class SignalHound_USB_SA124B(Instrument):
         else:
             raise IOError('Unknown error!')
 
+        # note if used in averaged mode (set in config) datamin=datamax
         datamin = np.array([minarr[elem] for elem in range(sweep_len.value)])
         datamax = np.array([minarr[elem] for elem in range(sweep_len.value)])
-        info = np.array([sweep_len.value, start_freq.value,
-                        stepsize.value])
 
-        return np.array([freq_points[0:sweep_len.value-1],
-                        datamin, datamax, info])
+        return np.array([freq_points, datamin, datamax])
 
     def get_power_at_freq(self, Navg=1):
         '''
@@ -472,6 +488,10 @@ class SignalHound_USB_SA124B(Instrument):
         return self.power()
 
     def get_spectrum(self, Navg=1):
+        """
+        Averages over SH.sweep Navg times
+
+        """
         sweep_params = self.QuerySweep()
         data_spec = np.zeros(sweep_params[0])
         for i in range(Navg):
@@ -479,7 +499,7 @@ class SignalHound_USB_SA124B(Instrument):
             data_spec[:] += data[1][:]
         data_spec[:] = data_spec[:] / Navg
         sweep_points = data[0][:]
-        return np.array([data_spec, sweep_points])
+        return np.array([sweep_points, data_spec])
 
     def prepare_for_measurement(self):
         self.set('device_mode', 'sweeping')
