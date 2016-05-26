@@ -78,10 +78,7 @@ class Keithley_2700(VisaInstrument):
     most commonly used.
     '''
     def __init__(self, name, address, reset=False, **kwargs):
-        t0 = time.time()
         super().__init__(name, address, **kwargs)
-
-        self.add_parameter('IDN_raw', get_cmd='*IDN?')
 
         self._modes = ['VOLT:AC', 'VOLT:DC', 'CURR:AC', 'CURR:DC', 'RES',
                        'FRES', 'TEMP', 'FREQ']
@@ -220,14 +217,7 @@ class Keithley_2700(VisaInstrument):
             self.get_all()
             self.set_defaults()
 
-        t1 = time.time()
-        print('Connected to: ',
-              self.get('IDN_raw').replace(',', ', ').replace('\n', ' '),
-              'in %.2fs' % (t1-t0))
-
-    def get_idn(self, *args, **kwargs):
-        idninfo = self.IDN_raw.get().strip().split(',')
-        return {'vendor': idninfo[0], 'model': idninfo[1], 'serial': idninfo[2], 'firmware': idninfo[3]}
+        self.connect_message()
 
     def get_all(self):
         '''
@@ -405,4 +395,3 @@ class Keithley_2700(VisaInstrument):
         self._visainstrument.write('*RST')
         self.get_all()
 
-    
