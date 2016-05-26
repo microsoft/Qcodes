@@ -81,7 +81,7 @@ class Keithley_2700(VisaInstrument):
         t0 = time.time()
         super().__init__(name, address, **kwargs)
 
-        self.add_parameter('IDN', get_cmd='*IDN?')
+        self.add_parameter('IDN_raw', get_cmd='*IDN?')
 
         self._modes = ['VOLT:AC', 'VOLT:DC', 'CURR:AC', 'CURR:DC', 'RES',
                        'FRES', 'TEMP', 'FREQ']
@@ -222,7 +222,7 @@ class Keithley_2700(VisaInstrument):
 
         t1 = time.time()
         print('Connected to: ',
-              self.get('IDN').replace(',', ', ').replace('\n', ' '),
+              self.get('IDN_raw').replace(',', ', ').replace('\n', ' '),
               'in %.2fs' % (t1-t0))
 
     def get_all(self):
