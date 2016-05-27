@@ -28,22 +28,42 @@ class MatPlot(BasePlot):
 
     kwargs: passed along to MatPlot.add() to add the first data trace
     '''
-    def __init__(self, *args, figsize=(8, 5), interval=1, subplots=(1, 1),
+    def __init__(self, *args, figsize=None, interval=1, subplots=None,
                  **kwargs):
 
         super().__init__(interval)
 
+        self._init_plot(subplots, figsize)
+
+        if args or kwargs:
+            self.add(*args, **kwargs)
+
+    def _init_plot(self, subplots=None, figsize=None, num=None):
+        if figsize is None:
+            figsize = (8, 5)
+
+        if subplots is None:
+            subplots = (1, 1)
+
         if isinstance(subplots, Mapping):
-            self.fig, self.subplots = plt.subplots(figsize=figsize, **subplots)
+            self.fig, self.subplots = plt.subplots(figsize=figsize, num=num,
+                                                   **subplots)
         else:
-            self.fig, self.subplots = plt.subplots(*subplots, figsize=figsize)
+            self.fig, self.subplots = plt.subplots(*subplots, num=num,
+                                                   figsize=figsize)
         if not hasattr(self.subplots, '__len__'):
             self.subplots = (self.subplots,)
 
         self.title = self.fig.suptitle('')
 
-        if args or kwargs:
-            self.add(*args, **kwargs)
+    def clear(self, subplots=None, figsize=None):
+        '''
+        Clears the plot window and removes all subplots and traces
+        so that the window can be reused.
+        '''
+        self.traces = []
+        self.fig.clf()
+        self._init_plot(subplots, figsize, num=self.fig.number)
 
     def add_to_plot(self, **kwargs):
         '''

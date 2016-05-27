@@ -36,6 +36,11 @@ class TestBaseFormatter(TestCase):
         with self.assertRaises(NotImplementedError):
             formatter.read_one_file(data, 'a file!', set())
 
+        with self.assertRaises(NotImplementedError):
+            formatter.write_metadata(data)
+        with self.assertRaises(NotImplementedError):
+            formatter.read_metadata(data)
+
     def test_no_files(self):
         formatter = Formatter()
         data = DataSet1D(self.locations[0])
@@ -58,6 +63,9 @@ class TestBaseFormatter(TestCase):
                 data_set.files_read.append(f.name)
                 raise ValueError('garbage in, garbage out')
 
+            def read_metadata(self, data_set):
+                pass
+
         formatter = MyFormatter()
         data = DataSet1D(location)
         data.x.ndarray = None
@@ -67,12 +75,11 @@ class TestBaseFormatter(TestCase):
         with open(path, 'w') as f:
             f.write('garbage')
 
-        with LogCapture() as s:
+        with LogCapture() as logs:
             formatter.read(data)
-        logstr = s.getvalue()
-        s.close()
+
         # we tried to read this file but it generated an error
-        self.assertEqual(logstr.count('error reading file'), 1, logstr)
+        self.assertEqual(logs.value.count('error reading file'), 1, logs.value)
         self.assertEqual(data.files_read, [os.path.abspath(path)])
 
         expected_array_repr = repr([float('nan')] * 5)
@@ -227,11 +234,10 @@ class TestGNUPlotFormat(TestCase):
         # initially give it a different location so we can make it without
         # error, then change back to the location we want.
         data3.location = location
-        with LogCapture() as s:
+        with LogCapture() as logs:
             formatter.read(data3)
-        logstr = s.getvalue()
-        s.close()
-        self.assertTrue('ValueError' in logstr, logstr)
+
+        self.assertTrue('ValueError' in logs.value, logs.value)
 
         # no problem reading again if only data has changed, it gets
         # overwritten with the disk copy
@@ -240,22 +246,6 @@ class TestGNUPlotFormat(TestCase):
         formatter.read(data2)
         self.assertEqual(data2.x[2], 3)
         self.assertEqual(data2.y[2], 5)
-
-    def test_no_nest(self):
-        formatter = GNUPlotFormat(always_nest=False)
-        location = self.locations[0]
-        data = DataSet1D(location)
-
-        # mark the data set as modified by... modifying it!
-        # without actually changing it :)
-        # TODO - are there cases we should automatically mark the data as
-        # modified on construction?
-        data.y[4] = data.y[4]
-
-        formatter.write(data)
-
-        with open(location + '.dat', 'r') as f:
-            self.assertEqual(f.read(), file_1d())
 
     def test_format_options(self):
         formatter = GNUPlotFormat(extension='.splat', terminator='\r',
@@ -365,11 +355,10 @@ class TestGNUPlotFormat(TestCase):
         os.makedirs(location, exist_ok=True)
         with open(location + '/x.dat', 'w') as f:
             f.write('1\t2\n' + file_1d())
-        with LogCapture() as s:
+        with LogCapture() as logs:
             formatter.read(data)
-        logstr = s.getvalue()
-        s.close()
-        self.assertTrue('ValueError' in logstr, logstr)
+
+        self.assertTrue('ValueError' in logs.value, logs.value)
 
         # same data array in 2 files
         location = self.locations[1]
@@ -379,14 +368,13 @@ class TestGNUPlotFormat(TestCase):
             f.write('\n'.join(['# x\ty', '# "X"\t"Y"', '# 2', '1\t2', '3\t4']))
         with open(location + '/q.dat', 'w') as f:
             f.write('\n'.join(['# q\ty', '# "Q"\t"Y"', '# 2', '1\t2', '3\t4']))
-        with LogCapture() as s:
+        with LogCapture() as logs:
             formatter.read(data)
-        logstr = s.getvalue()
-        s.close()
-        self.assertTrue('ValueError' in logstr, logstr)
+
+        self.assertTrue('ValueError' in logs.value, logs.value)
 
     def test_multifile(self):
-        formatter = GNUPlotFormat(always_nest=False)  # will nest anyway
+        formatter = GNUPlotFormat()
         location = self.locations[1]
         data = DataSetCombined(location)
 

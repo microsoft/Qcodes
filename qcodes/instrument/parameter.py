@@ -41,7 +41,7 @@ import os
 
 from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import (permissive_range, wait_secs,
-                                  DelegateAttributes)
+                                  DelegateAttributes, full_class, named_repr)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import syncable_command, NoCommandError
 from qcodes.utils.validators import Validator, Numbers, Ints, Enum
@@ -136,11 +136,13 @@ class Parameter(Metadatable, DeferredOperations):
                  units=None,
                  size=None, sizes=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
-                 vals=None, docstring=None, **kwargs):
+                 vals=None, docstring=None, snapshot_get=True, **kwargs):
         super().__init__(**kwargs)
+        self._snapshot_get = snapshot_get
 
         self.has_get = False
         self.has_set = False
+        self._meta_attrs = ['setpoint_names', 'setpoint_labels']
 
         if names is not None:
             # check for names first - that way you can provide both name
@@ -156,6 +158,7 @@ class Parameter(Metadatable, DeferredOperations):
                 '* `names` %s' % ', '.join(self.names),
                 '* `labels` %s' % ', '.join(self.labels),
                 '* `units` %s' % ', '.join(self.units)))
+            self._meta_attrs.extend(['names', 'labels', 'units'])
 
         elif name is not None:
             self.name = name
@@ -170,8 +173,10 @@ class Parameter(Metadatable, DeferredOperations):
                 'Parameter class:',
                 '* `name` %s' % self.name,
                 '* `label` %s' % self.label,
+                # is this unit s a typo? shouldnt that be unit?
                 '* `units` %s' % self.units,
                 '* `vals` %s' % repr(self._vals)))
+            self._meta_attrs.extend(['name', 'label', 'units', 'vals'])
 
         else:
             raise ValueError('either name or names is required')
@@ -196,6 +201,9 @@ class Parameter(Metadatable, DeferredOperations):
             self.__doc__ = docstring + os.linesep + self.__doc__
 
         self.get_latest = GetLatest(self)
+
+    def __repr__(self):
+        return named_repr(self)
 
     def __call__(self, *args):
         if len(args) == 0:
@@ -237,17 +245,32 @@ class Parameter(Metadatable, DeferredOperations):
 
         return out
 
-    def snapshot_base(self):
-        '''
-        json state of the Parameter
+    def snapshot_base(self, update=False):
+        """
+        json state of the Parameter.
 
         optionally pass in the state, so if this is an instrument parameter
         we can collect all calls to the server into one
-        '''
-        state = self._latest()
+        """
 
-        if state['ts'] is not None:
+        if self.has_get and self._snapshot_get and update:
+            self.get()
+
+        state = self._latest()
+        state['__class__'] = full_class(self)
+
+        if isinstance(state['ts'], datetime):
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
+
+        for attr in set(self._meta_attrs):
+            if attr == 'instrument' and getattr(self, '_instrument', None):
+                state.update({
+                    'instrument': full_class(self._instrument),
+                    'instrument_name': self._instrument.name
+                })
+
+            elif hasattr(self, attr):
+                state[attr] = getattr(self, attr)
 
         return state
 
@@ -274,6 +297,24 @@ class Parameter(Metadatable, DeferredOperations):
             context = self.name
 
         self._vals.validate(value, 'Parameter: ' + context)
+
+    def sweep(self, start, stop, step=None, num=None):
+        '''
+        Requires `start` and `stop` and (`step` or `num`)
+        The sign of `step` is not relevant.
+
+        returns: a numpy.linespace(start, stop, num)
+
+        Examples:
+            sweep(0, 10, num=5)
+            > [0.0, 2.5, 5.0, 7.5, 10.0]
+            sweep(5, 10, step=1)
+            > [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+            sweep(15, 10.5, step=1.5)
+            >[15.0, 13.5, 12.0, 10.5]
+        '''
+        return SweepFixedValues(self, start=start, stop=stop,
+                                step=step, num=num)
 
     def __getitem__(self, keys):
         '''
@@ -367,6 +408,9 @@ class StandardParameter(Parameter):
         super().__init__(name=name, vals=vals, **kwargs)
 
         self._instrument = instrument
+
+        self._meta_attrs.extend(['instrument', 'sweep_step', 'sweep_delay',
+                                'max_sweep_delay'])
 
         # stored value from last .set() or .get()
         # normally only used by set with a sweep, to avoid
@@ -625,6 +669,8 @@ class ManualParameter(Parameter):
     def __init__(self, name, instrument=None, initial_value=None, **kwargs):
         super().__init__(name=name, **kwargs)
         self._instrument = instrument
+        self._meta_attrs.extend(['instrument', 'initial_value'])
+
         if initial_value is not None:
             self.validate(initial_value)
             self._save_val(initial_value)
