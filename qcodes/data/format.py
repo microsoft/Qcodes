@@ -33,7 +33,7 @@ class Formatter:
     """
     ArrayGroup = namedtuple('ArrayGroup', 'size set_arrays data name')
 
-    def write(self, data_set):
+    def write(self, data_set, io_manager=None, location=None):
         """
         Write the DataSet to storage. It is up to the Formatter to decide
         when to overwrite completely, and when to just append or otherwise
@@ -70,7 +70,7 @@ class Formatter:
                     logging.warning('error reading file ' + fn)
                     logging.warning(format_exc())
 
-    def write_metadata(self, data_set, read_first=True):
+    def write_metadata(self, data_set, read_first=True, io_manager=None, location=None):
         """Write the metadata for this DataSet to storage."""
         raise NotImplementedError
 
