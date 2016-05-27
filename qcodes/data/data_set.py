@@ -1,6 +1,7 @@
 from enum import Enum
 from datetime import datetime
 import time
+import logging
 from copy import deepcopy
 
 from .manager import get_data_manager, NoData
@@ -466,28 +467,56 @@ class DataSet(DelegateAttributes):
             return
         self.formatter.read_metadata(self)
 
-    def write(self):
+    def write(self, path=None, io_manager=None, location=None):
         """
         Write the whole (or only changed parts) DataSet to storage,
         overwriting the existing storage if any.
+
+        If path is set, then this location will be used to write to.
+        Otherwise the location and io_manager will be used.
+
+        :path string: Path on disk to write to
         """
+
+        if path is not None:
+            # make sure the data is written!
+            for a in self.arrays.keys():
+                # clear save is not enough, we _need_ to set modified_range
+                self.arrays[a].last_saved_index = None
+                self.arrays[a].modified_range=(0, self.arrays[a].ndarray.size - 1)
+                self.arrays[a].clear_save()
+            # write to user specified path
+            logging.info('writing dataset to path %s' % path)
+            self.formatter.write(self, io_manager=DiskIO(''), location=path)
+            return
+
         if self.mode != DataMode.LOCAL:
             raise RuntimeError('This object is connected to a DataServer, '
                                'which handles writing automatically.')
 
+        # if not user specified, then take the io and location from the dataset
+        if io_manager is None:
+            io_manager=self.io
+        if location is None:
+            location=self.location
+
         if self.location is False:
             return
-        self.formatter.write(self)
+        self.formatter.write(self, io_manager, location)
 
     def add_metadata(self, new_metadata):
         """Update DataSet.metadata with additional data."""
         deep_update(self.metadata, new_metadata)
 
-    def save_metadata(self):
+    def save_metadata(self, path=None, io_manager=None, location=None):
         """Evaluate and save the DataSet's metadata."""
+        if path is not None:
+            logging.info('writing dataset metadata to path %s' % path)
+            self.formatter.write_metadata(self, io_manager=DiskIO(''), location=path)
+
         if self.location is not False:
             self.snapshot()
-            self.formatter.write_metadata(self)
+            self.formatter.write_metadata(self, io_manager=None, location=None)
 
     def finalize(self):
         """Mark the DataSet as complete."""
