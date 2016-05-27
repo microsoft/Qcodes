@@ -70,7 +70,7 @@ class Formatter:
                     logging.warning('error reading file ' + fn)
                     logging.warning(format_exc())
 
-    def write_metadata(self, data_set, read_first=True):
+    def write_metadata(self, data_set, read_first=True, io_manager=None, location=None):
         """Write the metadata for this DataSet to storage."""
         raise NotImplementedError
 
