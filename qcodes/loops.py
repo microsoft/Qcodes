@@ -481,7 +481,7 @@ class ActiveLoop(Metadatable):
                 setpoints = setpoints + (all_setpoints[sp_def],)
 
             # finally, make the output data array with these setpoints
-            out.append(DataArray(name=name, label=label, size=size,
+            out.append(DataArray(name=name, label=label, shape=size,
                                  action_indices=i, set_arrays=setpoints,
                                  parameter=action))
 
@@ -523,7 +523,7 @@ class ActiveLoop(Metadatable):
             name = 'index{}'.format(i)
 
         return DataArray(name=name, label=label, set_arrays=prev_setpoints,
-                         size=size, preset_data=vals)
+                         shape=size, preset_data=vals)
 
     def _default_setpoints(self, size):
         if len(size) == 1:

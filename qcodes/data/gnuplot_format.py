@@ -123,7 +123,7 @@ class GNUPlotFormat(Formatter):
             set_size = size[: i + 1]
             if array_id in arrays:
                 set_array = arrays[array_id]
-                if set_array.size != set_size:
+                if set_array.shape != set_size:
                     raise ValueError(
                         'sizes do not match for set array: ' + array_id)
                 if array_id not in ids_read:
@@ -134,7 +134,7 @@ class GNUPlotFormat(Formatter):
                     set_array.clear()
             else:
                 set_array = DataArray(label=labels[i], array_id=array_id,
-                                      set_arrays=set_arrays, size=set_size,
+                                      set_arrays=set_arrays, shape=set_size,
                                       is_setpoint=True, snapshot=snap)
                 set_array.init_data()
                 data_set.add_array(set_array)
@@ -154,7 +154,7 @@ class GNUPlotFormat(Formatter):
                 data_array.clear()
             else:
                 data_array = DataArray(label=labels[i], array_id=array_id,
-                                       set_arrays=set_arrays, size=size,
+                                       set_arrays=set_arrays, shape=size,
                                        snapshot=snap)
                 data_array.init_data()
                 data_set.add_array(data_array)
