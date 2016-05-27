@@ -17,7 +17,8 @@ class TestAgilent_E8527D(DriverTestCase):
 
     def test_firmware_version(self):
         v = self.instrument.IDN.get()
-        self.assertTrue(v.startswith('Agilent Technologies, E8257D,'))
+        self.assertEqual(v['vendor'], 'Agilent Technologies')
+        self.assertEqual(v['model'], 'E8257D')
 
     def test_on_off(self):
         self.instrument.off()
