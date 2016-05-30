@@ -27,12 +27,11 @@ from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils.validators import Enum, Bool, Anything
 
 
-
 class CurrentParameter(Parameter):
     def __init__(self, measured_param, camp_ins, name='curr'):
         p_name = measured_param.name
         self.name = name
-        super().__init__(names=('camp_raw_'+p_name, name))
+        super().__init__(names=(p_name+'_raw', name))
 
         _p_label = None
         _p_unit = None
@@ -45,8 +44,8 @@ class CurrentParameter(Parameter):
         if hasattr(measured_param, 'units'):
             _p_unit = measured_param.units
 
-        self.labels = (_p_label, 'Current')
-        self.units = (_p_unit, 'A')
+        self.labels = (_p_label, _p_label)
+        self.units = (_p_unit, _p_unit)
 
     def get(self):
         volt = self.measured_param.get()
@@ -55,7 +54,10 @@ class CurrentParameter(Parameter):
 
         if self._instrument.invert.get():
             current *= -1
-        return (volt, current)
+
+        value = (volt, current)
+        self._save_val(value)
+        return value
 
 
 class Ithaco_1211(Instrument):
@@ -107,7 +109,6 @@ class Ithaco_1211(Instrument):
                                      100, 300, 1000))
 
     def get_idn(self):
-
         vendor = 'Ithaco (DL Instruments)'
         model = '1211'
         serial = None

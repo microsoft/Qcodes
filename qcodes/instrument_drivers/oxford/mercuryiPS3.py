@@ -410,6 +410,6 @@ class MercuryiPS(IPInstrument):
             theta = 0
             phi = 0
         else:
-            theta = np.arccos(field[2] / r);
+            theta = np.arccos(field[2] / r)
             phi = np.arctan2(field[1],  field[0])
         return [r, theta, phi]

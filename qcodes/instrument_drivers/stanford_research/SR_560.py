@@ -32,7 +32,7 @@ class VoltageParameter(Parameter):
     def __init__(self, measured_param, vamp_ins, name='volt'):
         p_name = measured_param.name
         self.name = name
-        super().__init__(names=('vamp_raw_'+p_name, name))
+        super().__init__(names=(p_name+'_raw', name))
 
         _p_label = None
         _p_unit = None
@@ -45,8 +45,8 @@ class VoltageParameter(Parameter):
         if hasattr(measured_param, 'units'):
             _p_unit = measured_param.units
 
-        self.labels = (_p_label, 'Voltage')
-        self.units = (_p_unit, 'V')
+        self.labels = (_p_label, _p_label)
+        self.units = (_p_unit, _p_unit)
 
     def get(self):
         volt = self.measured_param.get()
@@ -54,7 +54,10 @@ class VoltageParameter(Parameter):
 
         if self._instrument.invert.get():
             volt_amp *= -1
-        return (volt, volt_amp)
+
+        value = (volt, volt_amp)
+        self._save_val(value)
+        return value
 
 
 class SR_560(Instrument):
