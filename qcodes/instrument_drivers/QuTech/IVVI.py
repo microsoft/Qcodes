@@ -99,7 +99,14 @@ class IVVI(VisaInstrument):
         Overwrites the get_idn function using constants as the hardware
         does not have a proper *IDN function.
         """
-        idparts = ['QuTech', 'IVVI', 'None',  self.version()]
+        # Trye except construct is there because version is not added at
+        # the time when get_idn is first called (in super).
+        # This should be fixed in a better way
+        try:
+            idparts = ['QuTech', 'IVVI', 'None', self.version()]
+        except:
+            idparts = ['QuTech', 'IVVI', 'None', 'None']
+
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
     def _get_version(self):
