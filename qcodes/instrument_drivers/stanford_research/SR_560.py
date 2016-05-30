@@ -29,10 +29,10 @@ from qcodes.instrument.parameter import Parameter
 
 
 class VoltageParameter(Parameter):
-    def __init__(self, measured_param, vamp_ins, name='volt'):
+    def __init__(self, measured_param, vamp_ins, name=None):
         p_name = measured_param.name
-        self.name = name
-        super().__init__(names=(p_name+'_raw', name))
+        self.name = name or 'volt'
+        super().__init__(names=(p_name+'_raw', self.name))
 
         _p_label = None
         _p_unit = None
@@ -45,8 +45,8 @@ class VoltageParameter(Parameter):
         if hasattr(measured_param, 'units'):
             _p_unit = measured_param.units
 
-        self.labels = (_p_label, _p_label)
-        self.units = (_p_unit, _p_unit)
+        self.labels = (_p_label, 'Voltage')
+        self.units = (_p_unit, 'V')
 
     def get(self):
         volt = self.measured_param.get()

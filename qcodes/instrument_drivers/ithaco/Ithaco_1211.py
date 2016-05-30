@@ -28,10 +28,10 @@ from qcodes.utils.validators import Enum, Bool, Anything
 
 
 class CurrentParameter(Parameter):
-    def __init__(self, measured_param, camp_ins, name='curr'):
+    def __init__(self, measured_param, camp_ins, name=None):
         p_name = measured_param.name
-        self.name = name
-        super().__init__(names=(p_name+'_raw', name))
+        self.name = name or 'curr'
+        super().__init__(names=(p_name+'_raw', self.name))
 
         _p_label = None
         _p_unit = None
@@ -44,8 +44,8 @@ class CurrentParameter(Parameter):
         if hasattr(measured_param, 'units'):
             _p_unit = measured_param.units
 
-        self.labels = (_p_label, _p_label)
-        self.units = (_p_unit, _p_unit)
+        self.labels = (_p_label, 'Current')
+        self.units = (_p_unit, 'A')
 
     def get(self):
         volt = self.measured_param.get()
