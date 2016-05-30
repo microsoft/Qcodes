@@ -150,6 +150,6 @@ class VisaInstrument(Instrument):
 
         snap['address'] = self._address
         snap['terminator'] = self._terminator
-        snap['timeout'] = self._timeout
+        snap['timeout'] = self.timeout.get()
 
         return snap
