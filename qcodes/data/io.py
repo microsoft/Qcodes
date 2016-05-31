@@ -129,8 +129,8 @@ class DiskIO:
             the results or just files
         """
         location = self._normalize_slashes(location)
-        base_location, pattern = os.path.split(location)
-        path = self._add_base(base_location)
+        search_dir, pattern = os.path.split(location)
+        path = self._add_base(search_dir)
 
         if not os.path.isdir(path):
             return []
@@ -152,7 +152,7 @@ class DiskIO:
                             out.append(self._strip_base(self.join(root, fn)))
 
                 elif include_dirs:
-                    out.append(self.join(base_location, match))
+                    out.append(self.join(search_dir, match))
 
             elif (os.path.isfile(matchpath) and
                   (fnmatch(match, pattern) or
