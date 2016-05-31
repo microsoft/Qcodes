@@ -1,3 +1,5 @@
+"""DataSet class and factory functions."""
+
 from enum import Enum
 import time
 from copy import deepcopy
@@ -10,6 +12,9 @@ from qcodes.utils.helpers import DelegateAttributes, full_class, deep_update
 
 
 class DataMode(Enum):
+
+    """Server connection modes supported by a DataSet."""
+
     LOCAL = 1
     PUSH_TO_SERVER = 2
     PULL_FROM_SERVER = 3
@@ -23,27 +28,62 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
     """
     Create a new DataSet.
 
-    Arguments are the same as DataSet constructor, plus:
+    Args:
+        location (str or callable or False, optional): If you provide a string,
+            it must be an unused location in the io manager. Can also be:
+            - a callable ``location provider`` with one required parameter
+              (the io manager), and one optional (``record`` dict),
+              which returns a location string when called
+            - ``False`` - denotes an only-in-memory temporary DataSet.
+            Note that the full path to or physical location of the data is a
+            combination of io + location. the default ``DiskIO`` sets the base
+            directory, which this location is a relative path inside.
+            Default ``DataSet.location_provider`` which is initially
+            ``FormatLocation()``
 
-    overwrite: Are we allowed to overwrite an existing location? default False
+        loc_record (dict, optional): If location is a callable, this will be
+            passed to it as ``record``
 
-    location: (default `DataSet.location_provider`) can be:
-        - a location string
-        - a callable with one required parameter, the io manager, and an
-          optional `record` dict), to generate an automatic location
-        - False - denotes an only-in-memory temporary DataSet.
-        Note that the full path to or physical location of the data is a
-        combination of io + location. the default DiskIO sets the base
-        directory, which this location is a relative path inside.
+        name (str, optional): overrides the ``name`` key in the ``loc_record``.
 
-    loc_record: an optional dict to use in formatting the location. If
-        location is a callable, this will be passed to it as `record`
+        overwrite (bool): Are we allowed to overwrite an existing location?
+            Default False.
 
-    name: an optional string to be passed to location_provider to augment
-        the automatic location with something meaningful.
-        If provided, name overrides the `name` key in the `loc_record`.
+        io (io_manager, optional): base physical location of the ``DataSet``.
+            Default ``DataSet.default_io`` is initially ``DiskIO('.')`` which
+            says the root data directory is the current working directory, ie
+            where you started the python session.
 
-    overwrite: (default False) overwrite any data already at this location
+        data_manager (DataManager or False, optional): manager for the
+            ``DataServer`` that offloads storage and syncing of this
+            ``DataSet``. Usually omitted (default None) to use the default
+            from ``get_data_manager()``. If ``False``, this ``DataSet`` will
+            store itself.
+
+        mode (DataMode, optional): connection type to the ``DataServer``.
+            ``DataMode.LOCAL``: this DataSet doesn't communicate across
+                processes.
+            ``DataMode.PUSH_TO_SERVER``: no local copy of data, just pushes
+                each measurement to a ``DataServer``.
+            ``DataMode.PULL_FROM_SERVER``: pulls changes from the
+                ``DataServer`` on calling ``self.sync()``. Reverts to local if
+                and when it stops being the live measurement.
+            Default ``DataMode.LOCAL``.
+
+        arrays (dict, optional): dict of ``array_id: DataArray``, can also be
+            added later with ``self.add_array(array)``.
+
+        formatter (Formatter, optional): sets the file format/structure to
+            write (and read) with. Default ``DataSet.default_formatter`` which
+            is initially ``GNUPlotFormat()``.
+
+        write_period (float or None, optional): Only if ``mode=LOCAL``, seconds
+            between saves to disk. If not ``LOCAL``, the ``DataServer`` handles
+            this and generally writes more often. Use None to disable writing
+            from calls to ``self.store``. Default 5.
+
+    Returns:
+        A new ``DataSet`` object ready for storing new data in.
     """
     if io is None:
         io = DataSet.default_io
@@ -76,22 +116,34 @@ def load_data(location=None, data_manager=None, formatter=None, io=None):
     """
     Load an existing DataSet.
 
-    Arguments are a subset of the DataSet constructor:
+    The resulting ``DataSet.mode`` is determined automatically from location:
+    PULL_FROM_SERVER if this is the live DataSet, otherwise LOCAL
 
-    location: a string for the location to load from
-        if omitted (None) defaults to the current live DataSet.
-        `mode` is determined automatically from location: PULL_FROM_SERVER if
-        this is the live DataSet, otherwise LOCAL
-        Note that the full path to or physical location of the data is a
-        combination of io + location. the default DiskIO sets the base
-        directory, which this location sits inside.
+    Args:
+        location (str, optional): the location to load from. Default is the
+            current live DataSet.
+            Note that the full path to or physical location of the data is a
+            combination of io + location. the default ``DiskIO`` sets the base
+            directory, which this location is a relative path inside.
 
-    data_manager: usually omitted (default None) to get the default
-        DataManager. load_data will not start a DataManager but may
-        query an existing one to determine (and pull) the live data
+        data_manager (DataManager or False, optional): manager for the
+            ``DataServer`` that offloads storage and syncing of this
+            ``DataSet``. Usually omitted (default None) to use the default
+            from ``get_data_manager()``. If ``False``, this ``DataSet`` will
+            store itself. ``load_data`` will not start a DataManager but may
+            query an existing one to determine (and pull) the live data.
 
-    formatter: as in DataSet
-    io: as in DataSet
+        formatter (Formatter, optional): sets the file format/structure to
+            read with. Default ``DataSet.default_formatter`` which
+            is initially ``GNUPlotFormat()``.
+
+        io (io_manager, optional): base physical location of the ``DataSet``.
+            Default ``DataSet.default_io`` is initially ``DiskIO('.')`` which
+            says the root data directory is the current working directory, ie
+            where you started the python session.
+
+    Returns:
+        A new ``DataSet`` object loaded with pre-existing data.
     """
     if data_manager is None:
         data_manager = get_data_manager(only_existing=True)
@@ -129,50 +181,58 @@ def _get_live_data(data_manager):
 
 
 class DataSet(DelegateAttributes):
+
     """
-    A container for one complete measurement loop
+    A container for one complete measurement loop.
+
     May contain many individual arrays with potentially different
     sizes and dimensionalities.
 
     Normally a DataSet should not be instantiated directly, but through
-    new_data or load_data
+    ``new_data`` or ``load_data``.
 
-    location: where this data set is stored, also the DataSet's identifier.
-        location=False or None means this is a temporary DataSet and
-        cannot be stored or read.
-        Note that the full path to or physical location of the data is a
-        combination of io + location. the default DiskIO sets the base
-        directory, which this location sits inside.
+    Args:
+        location (str or False): A location in the io manager, or ``False`` for
+            an only-in-memory temporary DataSet.
+            Note that the full path to or physical location of the data is a
+            combination of io + location. the default ``DiskIO`` sets the base
+            directory, which this location is a relative path inside.
 
-    arrays: a dict of array_id: DataArray's contained in this DataSet
+        io (io_manager, optional): base physical location of the ``DataSet``.
+            Default ``DataSet.default_io`` is initially ``DiskIO('.')`` which
+            says the root data directory is the current working directory, ie
+            where you started the python session.
 
-    mode: sets whether and how this instance connects to a DataServer
-        DataMode.LOCAL: this DataSet doesn't communicate across processes,
-            ie it lives entirely either in the main proc, or in the DataServer
-        DataMode.PUSH_TO_SERVER: no local copy of data, just pushes each
-            measurement to a DataServer
-        DataMode.PULL_FROM_SERVER: pulls changes from the DataServer
-            on calling sync(). Reverts to local if and when this
-            DataSet stops being the live measurement
+        data_manager (DataManager or False, optional): manager for the
+            ``DataServer`` that offloads storage and syncing of this
+            ``DataSet``. Usually omitted (default None) to use the default
+            from ``get_data_manager()``. If ``False``, this ``DataSet`` will
+            store itself.
 
-    data_manager: usually omitted (default None) to get the default
-        DataManager. But False is different: that means do NOT connect
-        to any DataManager (implies mode=LOCAL)
+        mode (DataMode, optional): connection type to the ``DataServer``.
+            ``DataMode.LOCAL``: this DataSet doesn't communicate across
+                processes.
+            ``DataMode.PUSH_TO_SERVER``: no local copy of data, just pushes
+                each measurement to a ``DataServer``.
+            ``DataMode.PULL_FROM_SERVER``: pulls changes from the
+                ``DataServer`` on calling ``self.sync()``. Reverts to local if
+                and when it stops being the live measurement.
+            Default ``DataMode.LOCAL``.
 
-    formatter: knows how to read and write the file format
+        arrays (dict, optional): dict of ``array_id: DataArray``, can also be
+            added later with ``self.add_array(array)``.
 
-    io: knows how to connect to the storage (disk vs cloud etc)
-        The default (stored in class attribute DataSet.default_io) is
-        DiskIO('.') which says the root data storage directory is the
-        current working directory, ie where you started the notebook or python.
+        formatter (Formatter, optional): sets the file format/structure to
+            write (and read) with. Default ``DataSet.default_formatter`` which
+            is initially ``GNUPlotFormat()``.
 
-    write_period: seconds (default 5) between saves to disk. This only applies
-        if mode=LOCAL, otherwise the DataManager handles this (and generally
-        writes more often because it's not tying up the main process to do so).
-        use None to disable writing from calls to self.store
+        write_period (float or None, optional): Only if ``mode=LOCAL``, seconds
+            between saves to disk. If not ``LOCAL``, the ``DataServer`` handles
+            this and generally writes more often. Use None to disable writing
+            from calls to ``self.store``. Default 5.
     """
 
-    # ie data_array.arrays['vsd'] === data_array.vsd
+    # ie data_set.arrays['vsd'] === data_set.vsd
     delegate_attr_dicts = ['arrays']
 
     default_io = DiskIO('.')

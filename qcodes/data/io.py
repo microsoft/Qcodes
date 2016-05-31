@@ -1,5 +1,5 @@
 """
-IO managers for QCodes
+IO managers for QCodes.
 
 IO managers wrap whatever physical storage layer the user wants to use
 in an interface mimicking the built-in <open> context manager, with
@@ -51,12 +51,20 @@ ALLOWED_OPEN_MODES = ('r', 'w', 'a')
 
 
 class DiskIO:
+
     """
-    Simple IO object to wrap disk operations with a custom base location
+    Simple IO object to wrap disk operations with a custom base location.
 
     Also accepts both forward and backward slashes at any point, and
-    normalizes both to the OS we are currently on
+    normalizes both to the OS we are currently on.
+
+    Args:
+        base_location (str): a path to the root data folder.
+            Converted to an absolute path immediately, so even if you supply a
+            relative path, later changes to the OS working directory will not
+            affect data paths.
     """
+
     def __init__(self, base_location):
         base_location = self._normalize_slashes(base_location)
         self.base_location = os.path.abspath(base_location)
@@ -64,11 +72,17 @@ class DiskIO:
     @contextmanager
     def open(self, filename, mode, encoding=None):
         """
-        mimics the interface of the built in open context manager
-        filename: string, relative to base_location
-        mode: 'r' (read), 'w' (write), or 'a' (append)
-            other open modes are not supported because we don't want
-            to force all IO managers to support others.
+        Mimic the interface of the built in open context manager.
+
+        Args:
+            filename (str): path relative to base_location.
+
+            mode (str): 'r' (read), 'w' (write), or 'a' (append).
+                Other open modes are not supported because we don't want
+                to force all IO managers to support others.
+
+        Returns:
+            context manager yielding the open file
         """
         if mode not in ALLOWED_OPEN_MODES:
             raise ValueError('mode {} not allowed in IO managers'.format(mode))
@@ -99,34 +113,38 @@ class DiskIO:
         return os.path.relpath(path, self.base_location)
 
     def __repr__(self):
+        """Show the base location in the repr."""
         return '<DiskIO, base_location=\'{}\'>'.format(self.base_location)
 
     def join(self, *args):
-        """
-        the context-dependent version of os.path.join for this io manager
-        """
+        """Context-dependent os.path.join for this io manager."""
         return os.path.join(*list(map(self._normalize_slashes, args)))
 
     def isfile(self, location):
-        """
-        does `location` match a file?
-        """
+        """Check whether this location matches a file."""
         path = self._add_base(location)
         return os.path.isfile(path)
 
     def list(self, location, maxdepth=1, include_dirs=False):
         """
-        return all files that match location, either files
-        whose names match up to an arbitrary extension
-        or any files within an exactly matching directory name
+        Return all files that match location.
 
-        location: the location to match, may contain wildcards * and ?
+        This is either files whose names match up to an arbitrary extension,
+        or any files within an exactly matching directory name.
 
-        maxdepth: (default 1) maximum levels of directory nesting to
-            recurse into looking for files
+        Args:
+            location (str): the location to match.
+                May contain the usual path wildcards * and ?
 
-        include_dirs: (default False) whether to allow directories in
-            the results or just files
+            maxdepth (int, optional): maximum levels of directory nesting to
+                recurse into looking for files. Default 1.
+
+            include_dirs (bool, optional): whether to allow directories in
+                the results or just files. Default False.
+
+        Returns:
+            A list of matching files and/or directories, as locations
+            relative to our base_location.
         """
         location = self._normalize_slashes(location)
         search_dir, pattern = os.path.split(location)
@@ -161,14 +179,12 @@ class DiskIO:
                 # note that we need fnmatch(match, pattern) in addition to the
                 # splitext test to cover the case of the base filename itself
                 # containing a dot.
-                out.append(self.join(base_location, match))
+                out.append(self.join(search_dir, match))
 
         return out
 
     def remove(self, filename):
-        """
-        delete this file/folder and prune the directory tree
-        """
+        """Delete a file or folder and prune the directory tree."""
         path = self._add_base(filename)
         if(os.path.isdir(path)):
             shutil.rmtree(path)
@@ -184,8 +200,9 @@ class DiskIO:
 
     def remove_all(self, location):
         """
-        delete all files/directories in the dataset at this location,
-        and prune the directory tree
+        Delete all files/directories in the dataset at this location.
+
+        Afterward prunes the directory tree.
         """
         for fn in self.list(location):
             self.remove(fn)
