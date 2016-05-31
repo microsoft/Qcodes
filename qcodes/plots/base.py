@@ -7,7 +7,7 @@ import time
 import logging
 
 from qcodes.widgets.widgets import HiddenUpdateWidget
-from qcodes.utils import in_ipynb
+from qcodes.utils.helpers import in_ipynb
 
 
 class QCodesTimer(threading.Thread):

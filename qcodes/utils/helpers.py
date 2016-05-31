@@ -8,6 +8,7 @@ import io
 import os
 import numpy as np
 import json
+from IPython import get_ipython
 
 _tprint_times = {}
 
@@ -44,6 +45,18 @@ def is_interactive():
 def in_spyder():
     """Return True if we are running in the Spyder environment."""
     return bool(any('SPYDER' in name for name in os.environ))
+
+
+def in_ipynb():
+    """Return True if we are running in an IPython / Jupyter notebook."""
+    try:
+        cfg = get_ipython().config
+        if cfg['IPKernelApp']['parent_appname'] == 'ipython-notebook':
+            return True
+        else:
+            return False
+    except NameError:
+        return False
 
 
 def in_notebook():
