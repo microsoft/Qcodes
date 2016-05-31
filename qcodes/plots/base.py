@@ -2,19 +2,15 @@
 Live plotting in Jupyter notebooks
 '''
 from IPython.display import display
-
-from qcodes.widgets.widgets import HiddenUpdateWidget
-from qcodes.utils import in_notebook, in_ipynb, in_spyder
-
 import threading
-
-
-
-
 import time
 import logging
-class QCodesTimer(threading.Thread):
 
+from qcodes.widgets.widgets import HiddenUpdateWidget
+from qcodes.utils import in_ipynb
+
+
+class QCodesTimer(threading.Thread):
     def __init__(self, fn, interval=1, **kwargs):
         super().__init__(**kwargs)
         self.fn = fn
