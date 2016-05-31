@@ -56,7 +56,7 @@ class SignalHound_USB_SA124B(Instrument):
 
     def __init__(self, name, dll_path=None, **kwargs):
         t0 = time()
-        super().__init__(name, tags=['physical'], **kwargs)
+        super().__init__(name, **kwargs)
 
         self.log = logging.getLogger('Main.DeviceInt')
         logging.info(__name__ +
@@ -121,14 +121,14 @@ class SignalHound_USB_SA124B(Instrument):
                            units='Hz',
                            initial_value=0,
                            parameter_class=ManualParameter,
-                           get_parser=float)
+                           vals=vals.Numbers())
         # rbw Resolution bandwidth in Hz. RBW can be arbitrary.
         self.add_parameter('rbw',
                            label='Resolution Bandwidth',
                            units='Hz',
                            initial_value=1e3,
                            parameter_class=ManualParameter,
-                           get_parser=float)
+                           vals=vals.Numbers())
         # vbw Video bandwidth in Hz. VBW must be less than or equal to RBW.
         #  VBW can be arbitrary. For best performance use RBW as the VBW.
         self.add_parameter('vbw',
@@ -136,7 +136,7 @@ class SignalHound_USB_SA124B(Instrument):
                            units='Hz',
                            initial_value=1e3,
                            parameter_class=ManualParameter,
-                           get_parser=float)
+                           vals=vals.Numbers())
 
         self.openDevice()
         self.device_type()
