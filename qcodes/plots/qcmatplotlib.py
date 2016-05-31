@@ -28,12 +28,12 @@ class MatPlot(BasePlot):
 
     kwargs: passed along to MatPlot.add() to add the first data trace
     '''
-    def __init__(self, *args, figsize=None, interval=1, subplots=None,
+    def __init__(self, *args, figsize=None, interval=1, subplots=None, num=None,
                  **kwargs):
 
         super().__init__(interval)
 
-        self._init_plot(subplots, figsize)
+        self._init_plot(subplots, figsize, num=num)
 
         if args or kwargs:
             self.add(*args, **kwargs)
