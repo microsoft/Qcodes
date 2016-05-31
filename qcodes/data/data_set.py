@@ -1,11 +1,12 @@
 from enum import Enum
 from datetime import datetime
 import time
+from copy import deepcopy
 
 from .manager import get_data_manager, NoData
 from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
-from qcodes.utils.helpers import DelegateAttributes
+from qcodes.utils.helpers import DelegateAttributes, full_class, deep_update
 
 
 class DataMode(Enum):
@@ -19,7 +20,7 @@ SERVER_MODES = set((DataMode.PULL_FROM_SERVER, DataMode.PUSH_TO_SERVER))
 
 def new_data(location=None, name=None, overwrite=False, io=None,
              data_manager=None, mode=DataMode.LOCAL, **kwargs):
-    '''
+    """
     Create a new DataSet. Arguments are the same as DataSet constructor, plus:
 
     overwrite: Are we allowed to overwrite an existing location? default False
@@ -35,7 +36,7 @@ def new_data(location=None, name=None, overwrite=False, io=None,
 
     name: an optional string to be passed to location_provider to augment
         the automatic location with something meaningful
-    '''
+    """
     if io is None:
         io = DataSet.default_io
 
@@ -58,7 +59,7 @@ def new_data(location=None, name=None, overwrite=False, io=None,
 
 
 def load_data(location=None, data_manager=None, formatter=None, io=None):
-    '''
+    """
     Load an existing DataSet. Arguments are a subset of the DataSet
     constructor:
 
@@ -76,7 +77,7 @@ def load_data(location=None, data_manager=None, formatter=None, io=None):
 
     formatter: as in DataSet
     io: as in DataSet
-    '''
+    """
     if data_manager is None:
         data_manager = get_data_manager(only_existing=True)
 
@@ -98,6 +99,7 @@ def load_data(location=None, data_manager=None, formatter=None, io=None):
     else:
         data = DataSet(location=location, formatter=formatter, io=io,
                        mode=DataMode.LOCAL)
+        data.read_metadata()
         data.read()
         return data
 
@@ -112,7 +114,7 @@ def _get_live_data(data_manager):
 
 
 class TimestampLocation:
-    '''
+    """
     This is the default `DataSet.location_provider`.
     A `location_provider` object should be a callable taking two parameters:
     - an io manager `io` used to search for existing data using
@@ -126,7 +128,7 @@ class TimestampLocation:
     format string, which can include slashes (forward and backward are
     equivalent) to create folder structure.
     Default format string is '%Y-%m-%d/%H-%M-%S'
-    '''
+    """
     def __init__(self, fmt='%Y-%m-%d/%H-%M-%S'):
         self.fmt = fmt
 
@@ -148,7 +150,7 @@ class TimestampLocation:
 
 
 class DataSet(DelegateAttributes):
-    '''
+    """
     A container for one complete measurement loop
     May contain many individual arrays with potentially different
     sizes and dimensionalities.
@@ -189,7 +191,7 @@ class DataSet(DelegateAttributes):
         if mode=LOCAL, otherwise the DataManager handles this (and generally
         writes more often because it's not tying up the main process to do so).
         use None to disable writing from calls to self.store
-    '''
+    """
 
     # ie data_array.arrays['vsd'] === data_array.vsd
     delegate_attr_dicts = ['arrays']
@@ -212,6 +214,8 @@ class DataSet(DelegateAttributes):
 
         self.write_period = write_period
         self.last_write = 0
+
+        self.metadata = {}
 
         self.arrays = {}
         if arrays:
@@ -262,10 +266,10 @@ class DataSet(DelegateAttributes):
         self.data_manager = data_manager
 
     def init_on_server(self):
-        '''
+        """
         Configure this DataSet as the DataServer copy
         Should be run only by the DataServer itself.
-        '''
+        """
         if not self.arrays:
             raise RuntimeError('A server-side DataSet needs DataArrays.')
 
@@ -283,18 +287,18 @@ class DataSet(DelegateAttributes):
 
     @property
     def is_live_mode(self):
-        '''
+        """
         indicate whether this DataSet thinks it is live in the DataServer
         without actually talking to the DataServer or syncing with it
-        '''
+        """
         return self.mode in SERVER_MODES and self.data_manager and True
 
     @property
     def is_on_server(self):
-        '''
+        """
         Check whether this DataSet is being mirrored in the DataServer
         If it thought it was but isn't, convert it to mode=LOCAL
-        '''
+        """
         if not self.is_live_mode or self.location is False:
             return False
 
@@ -303,12 +307,12 @@ class DataSet(DelegateAttributes):
             return self.location == live_location
 
     def sync(self):
-        '''
+        """
         synchronize this data set with a possibly newer version either
         in storage or on the DataServer, depending on its mode
 
         returns: boolean, is this DataSet live on the server
-        '''
+        """
         # TODO: sync implies bidirectional... and it could be!
         # we should keep track of last sync timestamp and last modification
         # so we can tell whether this one, the other one, or both copies have
@@ -330,14 +334,15 @@ class DataSet(DelegateAttributes):
 
         with self.data_manager.query_lock:
             if self.is_on_server:
-                # TODO: can we reduce the amount of data to send?
-                # seems like in the most general case this would need to
-                # remember each client DataSet on the server, and what has
-                # changed since that particular client last synced
-                # (at least first and last pt)
-                live_data = self.data_manager.ask('get_data').arrays
-                for array_id in self.arrays:
-                    self.arrays[array_id].ndarray = live_data[array_id].ndarray
+                synced_indices = {
+                    array_id: array.get_synced_index()
+                    for array_id, array in self.arrays.items()
+                }
+
+                changes = self.data_manager.ask('get_changes', synced_indices)
+
+                for array_id, array_changes in changes.items():
+                    self.arrays[array_id].apply_changes(**array_changes)
 
                 measuring = self.data_manager.ask('get_measuring')
                 if not measuring:
@@ -354,8 +359,18 @@ class DataSet(DelegateAttributes):
                 self.read()
                 return False
 
+    def get_changes(self, synced_index):
+        changes = {}
+
+        for array_id, synced_index in synced_index.items():
+            array_changes = self.arrays[array_id].get_changes(synced_index)
+            if array_changes:
+                changes[array_id] = array_changes
+
+        return changes
+
     def add_array(self, data_array):
-        '''
+        """
         add one DataArray to this DataSet
 
         note: DO NOT just set data_set.arrays[id] = data_array
@@ -363,7 +378,7 @@ class DataSet(DelegateAttributes):
         reference back to this DataSet. It would also allow you to
         load the array in with different id than it holds itself.
 
-        '''
+        """
         # TODO: mask self.arrays so you *can't* set it directly
 
         if data_array.array_id in self.arrays:
@@ -375,10 +390,10 @@ class DataSet(DelegateAttributes):
         data_array.data_set = self
 
     def _clean_array_ids(self, arrays):
-        '''
+        """
         replace action_indices tuple with compact string array_ids
         stripping off as much extraneous info as possible
-        '''
+        """
         action_indices = [array.action_indices for array in arrays]
         array_names = set(array.name for array in arrays)
         for name in array_names:
@@ -421,14 +436,14 @@ class DataSet(DelegateAttributes):
             array.array_id = name + ''.join('_' + str(i) for i in ai)
 
     def store(self, loop_indices, ids_values):
-        '''
+        """
         Set some collection of data points
 
         loop_indices: the indices within whatever loops we are inside
         values: a dict of action_index:value or array_id:value
             where value may be an arbitrarily nested list, to record
             many values at once into one array
-        '''
+        """
         if self.mode == DataMode.PUSH_TO_SERVER:
             self.data_manager.write('store_data', loop_indices, ids_values)
         else:
@@ -440,18 +455,22 @@ class DataSet(DelegateAttributes):
                 self.last_write = time.time()
 
     def read(self):
-        '''
-        Read the whole DataSet from storage, overwriting the local data
-        '''
+        """Read the whole DataSet from storage, overwriting the local data."""
         if self.location is False:
             return
         self.formatter.read(self)
 
+    def read_metadata(self):
+        """Read the metadata from storage, overwriting the local data."""
+        if self.location is False:
+            return
+        self.formatter.read_metadata(self)
+
     def write(self):
-        '''
+        """
         Write the whole (or only changed parts) DataSet to storage,
         overwriting the existing storage if any.
-        '''
+        """
         if self.mode != DataMode.LOCAL:
             raise RuntimeError('This object is connected to a DataServer, '
                                'which handles writing automatically.')
@@ -460,10 +479,18 @@ class DataSet(DelegateAttributes):
             return
         self.formatter.write(self)
 
+    def add_metadata(self, new_metadata):
+        """Update DataSet.metadata with additional data."""
+        deep_update(self.metadata, new_metadata)
+
+    def save_metadata(self):
+        """Evaluate and save the DataSet's metadata."""
+        if self.location is not False:
+            self.snapshot()
+            self.formatter.write_metadata(self)
+
     def finalize(self):
-        '''
-        Mark the DataSet as complete
-        '''
+        """Mark the DataSet as complete."""
         if self.mode == DataMode.PUSH_TO_SERVER:
             self.data_manager.ask('end_data')
         elif self.mode == DataMode.LOCAL:
@@ -471,11 +498,62 @@ class DataSet(DelegateAttributes):
         else:
             raise RuntimeError('This mode does not allow finalizing',
                                self.mode)
+        self.save_metadata()
+
+    def snapshot(self, update=False):
+        """JSON state of the DataSet."""
+        array_snaps = {}
+        for array_id, array in self.arrays.items():
+            array_snaps[array_id] = array.snapshot(update=update)
+
+        self.metadata.update({
+            '__class__': full_class(self),
+            'location': self.location,
+            'arrays': array_snaps,
+            'formatter': full_class(self.formatter),
+            'io': repr(self.io)
+        })
+        return deepcopy(self.metadata)
+
+    def get_array_metadata(self, array_id):
+        try:
+            return self.metadata['arrays'][array_id]
+        except:
+            return None
 
     def __repr__(self):
-        out = '{}: {}, location={}'.format(
-            self.__class__.__name__, self.mode, repr(self.location))
-        for array_id, array in self.arrays.items():
-            out += '\n   {}: {}'.format(array_id, array.name)
+        out = type(self).__name__ + ':'
 
-        return out
+        attrs = [['mode', self.mode],
+                 ['location', repr(self.location)]]
+        attr_template = '\n   {:8} = {}'
+        for var, val in attrs:
+            out += attr_template.format(var, val)
+
+        arr_info = [['<Type>', '<array_id>', '<array.name>', '<array.shape>']]
+
+        for array_id, array in self.arrays.items():
+            setp = 'Setpoint' if array.is_setpoint else 'Measured'
+            name = array.name or 'None'
+            array_id = array_id or 'None'
+            arr_info.append([setp, array_id, name, repr(array.shape)])
+
+        column_lengths = [max(len(row[i]) for row in arr_info)
+                          for i in range(len(arr_info[0]))]
+        out_template = ('\n   '
+                        '{info[0]:{lens[0]}} | {info[1]:{lens[1]}} | '
+                        '{info[2]:{lens[2]}} | {info[3]}')
+
+        out_set = ''
+        out_get = ''
+        for arr_info_i in arr_info:
+            array_type = arr_info_i[0]
+            line = out_template.format(info=arr_info_i, lens=column_lengths)
+            if array_type == '<Type>':
+                out += line
+            elif array_type == 'Setpoint':
+                out_set += line
+            else:
+                out_get += line
+
+        return out + out_set + out_get

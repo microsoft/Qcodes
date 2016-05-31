@@ -30,6 +30,7 @@ class QCodesTimer(threading.Thread):
 
 
 class BasePlot:
+
     '''
     create an auto-updating plot connected to a Jupyter notebook
 
@@ -41,13 +42,14 @@ class BasePlot:
         default 'xyz' (treated as a sequence) but add more if
         for example marker size or color can contain data
     '''
+
     def __init__(self, interval=1, data_keys='xyz'):
         self.data_keys = data_keys
         self.traces = []
         self.data_updaters = set()
 
+        self.interval = interval
         if interval:
-            self.interval = interval
             if in_ipynb():
                 self.update_widget = HiddenUpdateWidget(self.update, interval)
                 display(self.update_widget)
@@ -55,6 +57,22 @@ class BasePlot:
                 logging.info('create QCodesTimer: interval %.1f ' % interval)
                 self.update_widget = QCodesTimer(self.update, interval)
                 self.update_widget.start()
+
+    def clear(self):
+        '''
+        Clears the plot window and removes all subplots and traces
+        so that the window can be reused.
+        '''
+        # any derived class should implement this
+        raise NotImplementedError
+        # typically traces and subplots should be cleared as well as the
+        # figure window for the particular backend
+        self.traces = []
+        self.subplots = []
+
+    def replace(self, *args, updater=None, **kwargs):
+        self.clear()
+        self.add(*args, updater=updater, **kwargs)
 
     def add(self, *args, updater=None, **kwargs):
         '''
@@ -98,10 +116,12 @@ class BasePlot:
             for key in self.data_keys:
                 data_array = plot_config.get(key, '')
                 if hasattr(data_array, 'data_set'):
-                    self.data_updaters.add(data_array.data_set.sync)
+                    if data_array.data_set is not None:
+                        self.data_updaters.add(data_array.data_set.sync)
 
         if self.data_updaters:
-            self.update_widget.interval = self.interval
+            if hasattr(self, 'update_widget'):
+                self.update_widget.interval = self.interval
 
     def get_default_title(self):
         '''
@@ -116,9 +136,10 @@ class BasePlot:
             for part in self.data_keys:
                 data_array = config.get(part, '')
                 if hasattr(data_array, 'data_set'):
-                    location = data_array.data_set.location
-                    if location and location not in title_parts:
-                        title_parts.append(location)
+                    if data_array.data_set is not None:
+                        location = data_array.data_set.location
+                        if location and location not in title_parts:
+                            title_parts.append(location)
         return ', '.join(title_parts)
 
     def get_label(self, data_array):
