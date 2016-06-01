@@ -2,11 +2,11 @@
 
 Hi, thanks for your interest in the project! We welcome pull requests from developers of all skill levels.
 
-Alex Johnson (alexcjohnson) & and an undercover ninja  are the creators and current maintainers of Qcodes, along with a group of talented and smart volunteers. Please don't hesitate to reach out if you have any questions, or just need a little help getting started.
+Alex Johnson (alexcjohnson) & and Giulio Ungaretti (giulio.ungaretti@gmail.com) are the creators and current maintainers of Qcodes (aka core developers), along with a group of talented and smart volunteers. Please don't hesitate to reach out if you have any questions, or just need a little help getting started.
 
-Join us on slack, where informal discussion is more than welcome. (For now ask us to be invited) 
+Join us on Slack, where informal discussion is more than welcome. (For now ask us to be invited)
 
-### Bugs reports and feature requests
+## Bugs reports and feature requests
 
 We use github's [issues](https://github.com/qdev-dk/Qcodes/issues). Search for existing and closed issues. If your problem or idea is not yet addressed, [please open a new issue](https://github.com/qdev-dk/Qcodes/issues/new)
 
@@ -16,7 +16,11 @@ The github GUI will show you a template both for bugs and features. Delete the w
 
 Have an idea about future directions to go with Qcodes? Visions of data-utopia that would take more than a few weeks to add or might change some core ideas in the package? We can use issues for this too. Pick the `long-term` or `discussion` labels, but maybe ping on slack before doing so!
 
-### Clever usage
+Please do not assign issues, but instead mention a core developer. If somebody is assigned to an issue it means that somebody is working on it.
+
+Use p1, p2, p3 to suggest a priority, but do not be surprised if the core team changes it.
+
+## Clever usage
 
 Figured out a new way to use qcodes? Found a package that makes your life better and easier? Got realtime analysis working after struggling with it for days? Write it on Slack so we can keep github more organized.
 
@@ -25,10 +29,10 @@ Figured out a new way to use qcodes? Found a package that makes your life better
 ### Setup
 
 - Clone and register the package for development as described in the [README](README.md#installation)
+- Run tests
+- Ready to hack
 
 ### Running Tests
-NOTE(giulioungaretti): maybe running test locally should be simplfied, and then unit testing should be run on pull-request, using CI. 
-Maybe simplify to a one command that says: if there's enough cover, and all good or fail and where it fails.
 
 The core test runner is in `qcodes/test.py`:
 ```
@@ -130,7 +134,7 @@ Coverage testing is generally meaningless for instrument drivers, as calls to `a
         - foo/bar      (if you foo the bar)
     - never use your username
   If you can't figure out a name for your branch, re-think about what you would be doing. It's always a good exercise to model the problem before you try to solve it.
-  Also, ping on slack we <3 you in the first place.
+  Also, ping on slack. We <3 you in the first place.
   
 #### Commit Message Format
 A useful git repo starts with great commits. This is not optional, and it may seem daunting at first but you'll soon get the hang of it
@@ -156,7 +160,7 @@ Must be one of the following:
 * **fix**: A bug fix
 * **docs**: Documentation only changes
 * **style**: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
-* **refactor**: A code change that neither fixes a bug or adds a feature
+* **refactor**: A code change that neither fixes a bug nor adds a feature
 * **perf**: A code change that improves performance
 * **test**: Adding missing tests
 * **chore**: Changes to the build process or auxiliary tools and libraries such as documentation generation
@@ -181,10 +185,14 @@ You are allowed to skip both body and footer only and only if your header is ind
 A good commit is really important (for you writing it in the first place). If you need a loving guide all the time you commit, see [here](http://codeinthehole.com/writing/a-useful-template-for-commit-messages/).
 Do not push! Unless you are sure about your commits. If you have a typo in your commit message, do not push. If you added more files/changes that the commit says, do not push.
 In general everything is fixable if you don't push. The reason is that on your local machine you can always re-write history and make everything look nice, once pushed is just harder to go back.
-If in doubt, ask and help will be given. Nobody was born familiar with git! 
+If in doubt, ask and help will be given. Nobody was born familiar with git, and everybody makes mistakes.
 
 - Write your new feature or fix. Be sure it doesn't break any existing tests, and please write tests that cover your feature as well, or if you are fixing a bug, write a test that would have failed before your fix. Our goal is 100% test coverage, and although we are not there, we should always strive to increase our coverage with each new feature. Please be aware also that 100% test coverage does NOT necessarily mean 100% logic coverage. If (as is often the case in Python) a single line of code can behave differently for different inputs, coverage in itself will not ensure that this is tested. 
+
 NOTE(giulioungaretti) in the future pull-requests that lower the code coverage will be simply marked as failing.
+
+NOTE(giulioungaretti): maybe running test locally should be simplified, and then unit testing should be run on pull-request, using CI. 
+Maybe simplify to a one command that says: if there's enough cover, and all good or fail and where it fails.
 
 - The standard test commands are listed above under [Running Tests](#running_tests). More notes on different test runners can be found in [TESTING](TESTING.md).
 
@@ -194,8 +202,9 @@ NOTE(giulioungaretti) in the future pull-requests that lower the code coverage w
   - If complex tests fail it's more difficult to tell why
   - When features change it is likely that more tests will need to change
   - Unit tests can cover many scenarios much faster than integration tests.
+  - You don't want to test a test
 
-- If you're having difficulty making unit tests, first consider whether your code could be restructured to make it less dependent on other modules. Often, however, extra techniques are needed to break down a complex test into simpler ones. @alexcjohnson or undercover ninja are happy to help with this. Two ideas that are useful here:
+- If you're having difficulty making unit tests, first consider whether your code could be restructured to make it less dependent on other modules. Often, however, extra techniques are needed to break down a complex test into simpler ones. @alexcjohnson or @giulioungaretti are happy to help with this. Two ideas that are useful here:
   - Patching, one of the most useful parts of the [unittest.mock](https://docs.python.org/3/library/unittest.mock.html) library. This lets you specify exactly how other functions/objects should behave when they're called by the code you are testing. For a simple example, see [test_multiprocessing.py](https://github.com/qdev-dk/Qcodes/blob/58a8692bed55272f4c5865d6ec37f846154ead16/qcodes/tests/test_multiprocessing.py#L63-L65)
   - Supporting files / data: Lets say you have a test of data acquisition and analysis. You can break that up into an acquisition test and an analysis by saving the intermediate state, namely the data file, in the test directory. Use it to compare to the output of the acquisition test, and as the input for the analysis test.
 
@@ -203,7 +212,7 @@ NOTE(giulioungaretti) in the future pull-requests that lower the code coverage w
 
 ### Coding Style
 
-NOTE(giulioungaretti): is this enough ?
+NOTE(giulioungaretti): is this enough ? 
 
 - Try to make your code self-documenting. Python is generally quite amenable to that, but some things that can help are:
 
@@ -223,6 +232,8 @@ NOTE(giulioungaretti): is this enough ?
   - There is a command-line tool (`pip install pep8`) you can run after writing code to validate its style.
   - A lot of editors have plugins that will check this for you automatically as you type. Sublime Text for example has sublimelinter-pep8 and the even more powerful sublimelinter-flake8.
   - BUT: do not change someone else's code to make it pep8-compliant unless that code is fully tested.
+  - BUT: remove all trailing spaces.
+  - BUT: do not mix tabs and indentation for any reason.
 
 - JavaScript: The [Airbnb style guide](https://github.com/airbnb/javascript) is quite good. If we start writing a lot more JavaScript we can go into more detail.
 
