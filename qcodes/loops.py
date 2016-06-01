@@ -431,21 +431,21 @@ class ActiveLoop(Metadatable):
             raise ValueError('a gettable parameter must have .name or .names')
 
         num_arrays = len(names)
-        sizes = getattr(action, 'sizes', None)
+        shapes = getattr(action, 'shapes', None)
         sp_vals = getattr(action, 'setpoints', None)
         sp_names = getattr(action, 'setpoint_names', None)
         sp_labels = getattr(action, 'setpoint_labels', None)
 
-        if sizes is None:
-            sizes = (getattr(action, 'size', ()),) * num_arrays
+        if shapes is None:
+            shapes = (getattr(action, 'shape', ()),) * num_arrays
             sp_vals = (sp_vals,) * num_arrays
             sp_names = (sp_names,) * num_arrays
             sp_labels = (sp_labels,) * num_arrays
         else:
             sp_blank = (None,) * num_arrays
             # _fill_blank both supplies defaults and tests length
-            # if values are supplied (for sizes it ONLY tests length)
-            sizes = self._fill_blank(sizes, sp_blank)
+            # if values are supplied (for shapes it ONLY tests length)
+            shapes = self._fill_blank(shapes, sp_blank)
             sp_vals = self._fill_blank(sp_vals, sp_blank)
             sp_names = self._fill_blank(sp_names, sp_blank)
             sp_labels = self._fill_blank(sp_labels, sp_blank)
@@ -453,35 +453,35 @@ class ActiveLoop(Metadatable):
         # now loop through these all, to make the DataArrays
         # record which setpoint arrays we've made, so we don't duplicate
         all_setpoints = {}
-        for name, label, size, i, sp_vi, sp_ni, sp_li in zip(
-                names, labels, sizes, action_indices,
+        for name, label, shape, i, sp_vi, sp_ni, sp_li in zip(
+                names, labels, shapes, action_indices,
                 sp_vals, sp_names, sp_labels):
 
-            # convert the integer form of each size etc. to the tuple form
-            if isinstance(size, int):
-                size = (size,)
+            # convert the integer form of each shape etc. to the tuple form
+            if isinstance(shape, int):
+                shape = (shape,)
                 sp_vi = (sp_vi,)
                 sp_ni = (sp_ni,)
                 sp_li = (sp_li,)
-            elif size is None or size == ():
-                size, sp_vi, sp_ni, sp_li = (), (), (), ()
+            elif shape is None or shape == ():
+                shape, sp_vi, sp_ni, sp_li = (), (), (), ()
             else:
-                sp_blank = (None,) * len(size)
+                sp_blank = (None,) * len(shape)
                 sp_vi = self._fill_blank(sp_vi, sp_blank)
                 sp_ni = self._fill_blank(sp_ni, sp_blank)
                 sp_li = self._fill_blank(sp_li, sp_blank)
 
             setpoints = ()
-            # loop through dimensions of size to make the setpoint arrays
+            # loop through dimensions of shape to make the setpoint arrays
             for j, (vij, nij, lij) in enumerate(zip(sp_vi, sp_ni, sp_li)):
-                sp_def = (size[: 1 + j], j, setpoints, vij, nij, lij)
+                sp_def = (shape[: 1 + j], j, setpoints, vij, nij, lij)
                 if sp_def not in all_setpoints:
                     all_setpoints[sp_def] = self._make_setpoint_array(*sp_def)
                     out.append(all_setpoints[sp_def])
                 setpoints = setpoints + (all_setpoints[sp_def],)
 
             # finally, make the output data array with these setpoints
-            out.append(DataArray(name=name, label=label, shape=size,
+            out.append(DataArray(name=name, label=label, shape=shape,
                                  action_indices=i, set_arrays=setpoints,
                                  parameter=action))
 
@@ -495,9 +495,10 @@ class ActiveLoop(Metadatable):
         else:
             raise ValueError('Wrong number of inputs supplied')
 
-    def _make_setpoint_array(self, size, i, prev_setpoints, vals, name, label):
+    def _make_setpoint_array(self, shape, i, prev_setpoints, vals, name,
+                             label):
         if vals is None:
-            vals = self._default_setpoints(size)
+            vals = self._default_setpoints(shape)
         elif isinstance(vals, DataArray):
             # can't simply use the DataArray, even though that's
             # what we're going to return here, because it will
@@ -515,22 +516,22 @@ class ActiveLoop(Metadatable):
             # turn any sequence into a (new) numpy array
             vals = np.array(vals)
 
-        if vals.shape != size:
-            raise ValueError('nth setpoint array should have size matching '
-                             'the first n dimensions of size.')
+        if vals.shape != shape:
+            raise ValueError('nth setpoint array should have shape matching '
+                             'the first n dimensions of shape.')
 
         if name is None:
             name = 'index{}'.format(i)
 
         return DataArray(name=name, label=label, set_arrays=prev_setpoints,
-                         shape=size, preset_data=vals)
+                         shape=shape, preset_data=vals)
 
-    def _default_setpoints(self, size):
-        if len(size) == 1:
-            return np.arange(0, size[0], 1)
+    def _default_setpoints(self, shape):
+        if len(shape) == 1:
+            return np.arange(0, shape[0], 1)
 
-        sp = np.ndarray(size)
-        sp_inner = self._default_setpoints(size[1:])
+        sp = np.ndarray(shape)
+        sp_inner = self._default_setpoints(shape[1:])
         for i in range(len(sp)):
             sp[i] = sp_inner
 

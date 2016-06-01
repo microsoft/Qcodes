@@ -175,14 +175,14 @@ class DataArray(DelegateAttributes):
                 self.shape = data.shape
             elif data.shape != self.shape:
                 raise ValueError('preset data must be a sequence '
-                                 'with size matching the array size',
+                                 'with shape matching the array shape',
                                  data.shape, self.shape)
             self.ndarray = data
             self._preset = True
         elif self.ndarray is not None:
             if self.ndarray.shape != self.shape:
                 raise ValueError('data has already been initialized, '
-                                 'but its size doesn\'t match self.shape')
+                                 'but its shape doesn\'t match self.shape')
             return
         else:
             self.ndarray = np.ndarray(self.shape)

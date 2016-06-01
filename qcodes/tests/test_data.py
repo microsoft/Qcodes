@@ -28,7 +28,7 @@ class TestDataArray(TestCase):
         label = 'The grouch. GRR!'
         array_id = 24601
         set_arrays = ('awesomeness', 'chocolate content')
-        size = 'Ginornous'
+        shape = 'Ginornous'
         action_indices = (1, 2, 3, 4, 5)
 
         p_data = DataArray(parameter=MockParam(), name=name, label=label)
@@ -47,14 +47,14 @@ class TestDataArray(TestCase):
         self.assertIsNone(p_data.ndarray)
 
         np_data = DataArray(name=name, label=label, array_id=array_id,
-                            set_arrays=set_arrays, shape=size,
+                            set_arrays=set_arrays, shape=shape,
                             action_indices=action_indices)
         self.assertEqual(np_data.name, name)
         self.assertEqual(np_data.label, label)
         # test simple assignments
         self.assertEqual(np_data.array_id, array_id)
         self.assertEqual(np_data.set_arrays, set_arrays)
-        self.assertEqual(np_data.shape, size)
+        self.assertEqual(np_data.shape, shape)
         self.assertEqual(np_data.action_indices, action_indices)
 
         name_data = DataArray(name=name)
@@ -110,7 +110,7 @@ class TestDataArray(TestCase):
         data.shape = (3, )
 
         # not sure when this would happen... but if you call init_data
-        # and it notices an inconsistency between size and the actual
+        # and it notices an inconsistency between shape and the actual
         # data that's already there, it raises an error
         with self.assertRaises(ValueError):
             data.init_data()

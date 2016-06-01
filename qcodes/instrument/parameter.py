@@ -25,12 +25,12 @@ Measured parameters should have .get() (and/or .get_async()) which can return:
     the same length as returned by .get()
 - an array of values of one type:
     parameter should have .name and optional .label as above, but also
-    .size attribute, which is an integer (or tuple of integers) describing
-    the size of the returned array (which must be fixed)
+    .shape attribute, which is an integer (or tuple of integers) describing
+    the shape of the returned array (which must be fixed)
     optionally also .setpoints, array(s) of setpoint values for this data
     otherwise we will use integers from 0 in each direction as the setpoints
-- several arrays of values (all the same size):
-    define .names (and .labels) AND .size (and .setpoints)
+- several arrays of values (all the same shape):
+    define .names (and .labels) AND .shape (and .setpoints)
 '''
 
 from datetime import datetime, timedelta
@@ -75,8 +75,8 @@ class Parameter(Metadatable, DeferredOperations):
         setpoints (for example, a time trace or fourier transform that
         was acquired in the hardware and all sent to the computer at once)
     4.  2 & 3 together: a sequence of arrays. All arrays should be the same
-        size.
-    5.  a sequence of differently sized items
+        shape.
+    5.  a sequence of differently shaped items
 
     Because .set only supports a single value, if a Parameter is both
     gettable AND settable, .get should return a single value too (case 1)
@@ -101,16 +101,16 @@ class Parameter(Metadatable, DeferredOperations):
         label and snapshot
            (2,4,5) a tuple of units
 
-    size: (3&4) an integer or tuple of integers for the size of array
+    shape: (3&4) an integer or tuple of integers for the shape of array
         returned by .get(). Can be an integer only if the array is 1D, but
         as a tuple it can describe any dimensionality (including 1D)
-        If size is an integer then setpoints, setpoint_names,
+        If shape is an integer then setpoints, setpoint_names,
         and setpoint_labels should also not be wrapped in tuples.
-    sizes: (5) a tuple of integers or tuples, each one as in `size`.
+    shapes: (5) a tuple of integers or tuples, each one as in `shape`.
 
     setpoints: (3,4,5) the setpoints for the returned array of values.
-        3&4 - This should be an array if `size` is an integer, or a
-            tuple of arrays if `size` is a tuple
+        3&4 - This should be an array if `shape` is an integer, or a
+            tuple of arrays if `shape` is a tuple
             The first array should be 1D, the second 2D, etc.
         5 - This should be a tuple of arrays or tuples, each item as above
             Single values should be denoted by None or (), not 1 (because 1
@@ -134,7 +134,7 @@ class Parameter(Metadatable, DeferredOperations):
                  name=None, names=None,
                  label=None, labels=None,
                  units=None,
-                 size=None, sizes=None,
+                 shape=None, shapes=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
                  vals=None, docstring=None, snapshot_get=True, **kwargs):
         super().__init__(**kwargs)
@@ -181,11 +181,11 @@ class Parameter(Metadatable, DeferredOperations):
         else:
             raise ValueError('either name or names is required')
 
-        if size is not None or sizes is not None:
-            if size is not None:
-                self.size = size
+        if shape is not None or shapes is not None:
+            if shape is not None:
+                self.shape = shape
             else:
-                self.sizes = sizes
+                self.shapes = shapes
 
             self.setpoints = setpoints
             self.setpoint_names = setpoint_names
