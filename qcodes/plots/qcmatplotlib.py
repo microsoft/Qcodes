@@ -26,8 +26,8 @@ class MatPlot(BasePlot):
         plt.subplots. default is a single simple subplot (1, 1)
         you can use this to pass kwargs to the plt.figure constructor
 
-    num : integer or None
-	specifies the index of the matplotlib figure window to use. If None
+    num: integer or None
+        specifies the index of the matplotlib figure window to use. If None
         then open a new window
 
     kwargs: passed along to MatPlot.add() to add the first data trace
