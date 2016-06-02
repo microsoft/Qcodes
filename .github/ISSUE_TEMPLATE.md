@@ -1,5 +1,5 @@
-If you have an issue use the template.
-If you have a feature request, feel free to freestyle.
+If you encounter a bug use the following template.
+If you have a feature request feel free to freestyle.
 ### Steps to reproduce
 1.
 2.

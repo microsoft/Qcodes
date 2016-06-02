@@ -204,7 +204,6 @@ Maybe simplify to a one command that says: if there's enough cover, and all good
   - If complex tests fail it's more difficult to tell why
   - When features change it is likely that more tests will need to change
   - Unit tests can cover many scenarios much faster than integration tests.
-  - You don't want to test a test
 
 - If you're having difficulty making unit tests, first consider whether your code could be restructured to make it less dependent on other modules. Often, however, extra techniques are needed to break down a complex test into simpler ones. @alexcjohnson or @giulioungaretti are happy to help with this. Two ideas that are useful here:
   - Patching, one of the most useful parts of the [unittest.mock](https://docs.python.org/3/library/unittest.mock.html) library. This lets you specify exactly how other functions/objects should behave when they're called by the code you are testing. For a simple example, see [test_multiprocessing.py](https://github.com/qdev-dk/Qcodes/blob/58a8692bed55272f4c5865d6ec37f846154ead16/qcodes/tests/test_multiprocessing.py#L63-L65)
@@ -228,7 +227,8 @@ NOTE(giulioungaretti): is this enough ?
     - NOTE( pinky ): Well, that's a good  idea.
 
 - Docstrings are required for classes, attributes, methods, and functions (if public i.e no leading underscore). Because docstrings (and comments) *are not code*, pay special attention to them when modifying code: an incorrect comment or docstring is worse than none at all!
-  Docstrings should utilize the napolean style in order to make them read well, regardless of whether they are viewed through help() or on Read the Docs.
+  Docstrings should utilize the [google style](http://google.github.io/styleguide/pyguide.html?showone=Comments#Comments) in order to make them read well, regardless of whether they are viewed through help() or on Read the Docs.
+  See  [the falcon framework](https://github.com/falconry/falcon) for best practices examples.
 
 - Use [PEP8](http://legacy.python.org/dev/peps/pep-0008/) style. Not only is this style good for readability in an absolute sense, but consistent styling helps us all read each other's code.
   - There is a command-line tool (`pip install pep8`) you can run after writing code to validate its style.
