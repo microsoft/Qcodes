@@ -3,6 +3,7 @@ import multiprocessing as mp
 
 from qcodes.data.data_array import DataArray
 from qcodes.data.data_set import new_data
+from qcodes.data.io import DiskIO
 
 
 class MockDataManager:
@@ -42,22 +43,16 @@ class MockFormatter:
         data_set.has_written_metadata = True
 
 
-class FullIO:
-    def list(self, location):
-        return [location + '.whatever']
+class MatchIO:
+    def __init__(self, existing_matches, fmt=None):
+        self.existing_matches = existing_matches
+        self.fmt = fmt or '{}{}.something'
 
+    def list(self, location, **kwargs):
+        return [self.fmt.format(location, i) for i in self.existing_matches]
 
-class EmptyIO:
-    def list(self, location):
-        return []
-
-
-class MissingMIO:
-    def list(self, location):
-        if 'm' not in location:
-            return [location + '.whatever']
-        else:
-            return []
+    def join(self, *args):
+        return DiskIO('.').join(*args)
 
 
 class MockLive:
