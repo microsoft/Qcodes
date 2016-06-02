@@ -189,6 +189,8 @@ If in doubt, ask and help will be given. Nobody was born familiar with git, and 
 
 - Write your new feature or fix. Be sure it doesn't break any existing tests, and please write tests that cover your feature as well, or if you are fixing a bug, write a test that would have failed before your fix. Our goal is 100% test coverage, and although we are not there, we should always strive to increase our coverage with each new feature. Please be aware also that 100% test coverage does NOT necessarily mean 100% logic coverage. If (as is often the case in Python) a single line of code can behave differently for different inputs, coverage in itself will not ensure that this is tested. 
 
+- Write the docs, following the other documentation files (.rst) in the repo.
+
 NOTE(giulioungaretti) in the future pull-requests that lower the code coverage will be simply marked as failing.
 
 NOTE(giulioungaretti): maybe running test locally should be simplified, and then unit testing should be run on pull-request, using CI. 
