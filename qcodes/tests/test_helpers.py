@@ -106,43 +106,44 @@ class TestIsSequence(TestCase):
         pass
 
     def test_yes(self):
-        f = open(__file__, 'r')
         yes_sequence = [
             [],
             [1, 2, 3],
             range(5),
+            (),
+            ('lions', 'tigers', 'bears'),
 
             # we do have to be careful about generators...
             # ie don't call len() or iterate twice
             (i**2 for i in range(5)),
-
-            # and some possibly useless or confusing matches
-            # that we might want to rule out:
-            set((1, 2, 3)),
-            {1: 2, 3: 4},
-            f
         ]
 
         for val in yes_sequence:
-            self.assertTrue(is_sequence(val))
-
-        f.close()
+            with self.subTest(val=val):
+                self.assertTrue(is_sequence(val))
 
     def test_no(self):
-        no_sequence = [
-            1,
-            1.0,
-            True,
-            None,
-            'you can iterate a string but we won\'t',
-            b'nor will we iterate bytes',
-            self.a_func,
-            self.AClass,
-            self.AClass()
-        ]
+        with open(__file__, 'r') as f:
+            no_sequence = [
+                1,
+                1.0,
+                True,
+                None,
+                'you can iterate a string but we won\'t',
+                b'nor will we iterate bytes',
+                self.a_func,
+                self.AClass,
+                self.AClass(),
+                # previously dicts, sets, and files all returned True, but
+                # we've eliminated them now.
+                {1: 2, 3: 4},
+                set((1, 2, 3)),
+                f
+            ]
 
-        for val in no_sequence:
-            self.assertFalse(is_sequence(val))
+            for val in no_sequence:
+                with self.subTest(val=val):
+                    self.assertFalse(is_sequence(val))
 
 
 class TestPermissiveRange(TestCase):

@@ -1,4 +1,4 @@
-from collections import Iterable, Mapping
+from collections import Iterator, Sequence, Mapping
 from copy import deepcopy
 import time
 import logging
@@ -43,12 +43,14 @@ def in_notebook():
 
 
 def is_sequence(obj):
-    '''
-    is an object a sequence? We do not consider strings to be sequences,
-    but note that mappings (dicts) and unordered sequences (sets) ARE
-    sequences by this definition.
-    '''
-    return isinstance(obj, Iterable) and not isinstance(obj, (str, bytes))
+    """
+    Test if an object is a sequence.
+
+    We do not consider strings or unordered collections like sets to be
+    sequences, but we do accept iterators (such as generators)
+    """
+    return (isinstance(obj, (Iterator, Sequence)) and
+            not isinstance(obj, (str, bytes, io.IOBase)))
 
 
 def is_sequence_of(obj, types, depth=1):
