@@ -8,7 +8,7 @@ import numpy as np
 from qcodes.utils.helpers import (is_sequence, permissive_range, wait_secs,
                                   make_unique, DelegateAttributes,
                                   LogCapture, strip_attrs, full_class,
-                                  named_repr, make_sweep)
+                                  named_repr, make_sweep, is_sequence_of)
 from qcodes.utils.deferred_operations import is_function
 
 
@@ -492,3 +492,58 @@ class TestClassStrings(TestCase):
         self.j.name = 'Peppa'
         self.assertEqual(named_repr(self.j),
                          '<json.encoder.JSONEncoder: Peppa at {}>'.format(id_))
+
+
+class TestIsSequenceOf(TestCase):
+    def test_simple(self):
+        good = [
+            # empty lists pass without even checking that we provided a
+            # valid type spec
+            ([], None), ((), None),
+            ([1, 2, 3], int),
+            ((1, 2, 3), int),
+            ([1, 2.0], (int, float)),
+            ([{}, None], (type(None), dict))
+        ]
+        for args in good:
+            with self.subTest(args=args):
+                self.assertTrue(is_sequence_of(*args))
+
+        bad = [
+            (1, int),
+            ([1, 2.0], int),
+            ([1, 2], float),
+            ([1, 2], (float, dict))
+        ]
+        for args in bad:
+            with self.subTest(args=args):
+                self.assertFalse(is_sequence_of(*args))
+
+        # second arg must be a type or tuple of types - failing this doesn't
+        # return False, it raises an error
+        with self.assertRaises(TypeError):
+            is_sequence_of([1], 1)
+        with self.assertRaises(TypeError):
+            is_sequence_of([1], (1, 2))
+        with self.assertRaises(TypeError):
+            is_sequence_of([1])
+
+    def test_depth(self):
+        good = [
+            ([1, 2], int, 1),
+            ([[1, 2], [3, 4]], int, 2),
+            ([[1, 2.0], []], (int, float), 2),
+            ([[[1]]], int, 3)
+        ]
+        for args in good:
+            with self.subTest(args=args):
+                self.assertTrue(is_sequence_of(*args))
+
+        bad = [
+            ([1], int, 2),
+            ([[1]], int, 1),
+            ([[1]], float, 2)
+        ]
+        for args in bad:
+            with self.subTest(args=args):
+                self.assertFalse(is_sequence_of(*args))

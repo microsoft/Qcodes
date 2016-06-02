@@ -51,6 +51,29 @@ def is_sequence(obj):
     return isinstance(obj, Iterable) and not isinstance(obj, (str, bytes))
 
 
+def is_sequence_of(obj, types, depth=1):
+    """
+    Test if object is a sequence of entirely certain class(es).
+
+    Args:
+        obj (any): the object to test.
+        types (class or tuple of classes): allowed type(s)
+        depth (int, optional): level of nesting, ie if depth=2 we expect
+            a sequence of sequences. Default 1.
+    Returns:
+        bool, True if every item in ``obj`` matches ``types``
+    """
+    if not is_sequence(obj):
+        return False
+    for item in obj:
+        if depth > 1:
+            if not is_sequence_of(item, types, depth=depth - 1):
+                return False
+        elif not isinstance(item, types):
+            return False
+    return True
+
+
 def full_class(obj):
     """The full importable path to an object's class."""
     return type(obj).__module__ + '.' + type(obj).__name__
