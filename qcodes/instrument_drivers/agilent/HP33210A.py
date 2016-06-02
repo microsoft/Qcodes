@@ -10,7 +10,6 @@ class Agilent_HP33210A(VisaInstrument):
     def __init__(self, name, address, reset=False, **kwargs):
         super().__init__(name, address, terminator='\n', **kwargs)
 
-        self.add_parameter('IDN', get_cmd='*IDN?')
         self.add_parameter(name='frequency',
                            label='Frequency',
                            units='Hz',
@@ -102,4 +101,4 @@ class Agilent_HP33210A(VisaInstrument):
                            set_cmd='VOLT:LOW {:.3f}',
                            get_parser=float,
                            vals=vals.Numbers(-5, 5))
-        self.connect_message('IDN')
+        self.connect_message()
