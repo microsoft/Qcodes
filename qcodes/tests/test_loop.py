@@ -411,14 +411,6 @@ class TestLoop(TestCase):
         self.assertEqual(data.arr.tolist(), [[4, 5, 6]] * 2)
         self.assertEqual(data.index0.tolist(), [[0, 1, 2]] * 2)
 
-        # alternate form for 1D shape, just an integer
-        mg.shape = mg.shape[0]
-        loop = Loop(self.p1[1:3:1], 0.001).each(mg)
-        data = loop.run_temp()
-
-        self.assertEqual(data.p1.tolist(), [1, 2])
-        self.assertEqual(data.arr.tolist(), [[4, 5, 6]] * 2)
-
         # 2D shape
         mg = MultiGetter(arr2d=((21, 22), (23, 24)))
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)

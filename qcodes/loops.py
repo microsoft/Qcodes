@@ -457,13 +457,7 @@ class ActiveLoop(Metadatable):
                 names, labels, shapes, action_indices,
                 sp_vals, sp_names, sp_labels):
 
-            # convert the integer form of each shape etc. to the tuple form
-            if isinstance(shape, int):
-                shape = (shape,)
-                sp_vi = (sp_vi,)
-                sp_ni = (sp_ni,)
-                sp_li = (sp_li,)
-            elif shape is None or shape == ():
+            if shape is None or shape == ():
                 shape, sp_vi, sp_ni, sp_li = (), (), (), ()
             else:
                 sp_blank = (None,) * len(shape)

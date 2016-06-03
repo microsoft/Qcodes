@@ -43,10 +43,10 @@ class TestParamConstructor(TestCase):
         # about it looks for names first.
         self.assertFalse(hasattr(p, 'name'))
 
-        shape = 10
-        setpoints = 'we dont check the form of this until later'
-        setpoint_names = 'we dont check this either'
-        setpoint_labels = 'nor this'
+        shape = (10,)
+        setpoints = (range(10),)
+        setpoint_names = ('my_sp',)
+        setpoint_labels = ('A label!',)
         p = Parameter('makes_array', shape=shape, setpoints=setpoints,
                       setpoint_names=setpoint_names,
                       setpoint_labels=setpoint_labels)
@@ -56,7 +56,10 @@ class TestParamConstructor(TestCase):
         self.assertEqual(p.setpoint_names, setpoint_names)
         self.assertEqual(p.setpoint_labels, setpoint_labels)
 
-        shapes = [2, 3]
+        shapes = ((2,), (3,))
+        setpoints = ((range(2),), (range(3),))
+        setpoint_names = (('sp1',), ('sp2',))
+        setpoint_labels = (('first label',), ('second label',))
         p = Parameter('makes arrays', shapes=shapes, setpoints=setpoints,
                       setpoint_names=setpoint_names,
                       setpoint_labels=setpoint_labels)
