@@ -2,6 +2,8 @@ from unittest import TestCase
 from unittest.mock import patch
 import numpy as np
 from datetime import datetime
+import pickle
+import tempfile
 
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager, NoData
@@ -11,7 +13,7 @@ from qcodes.process.helpers import kill_processes
 from qcodes import active_children
 
 from .data_mocks import (MockDataManager, MockFormatter, FullIO, EmptyIO,
-                         MissingMIO, MockLive, MockArray)
+                         MissingMIO, MockLive, MockArray, DataSet2D)
 from .common import strip_qc
 
 
@@ -493,3 +495,15 @@ class TestDataSet(TestCase):
         # we can only add a given array_id once
         with self.assertRaises(ValueError):
             data.add_array(MockArray())
+            
+    def test_pickle_dataset(self):
+        ''' Test pickling of DataSet object
+        
+            If the data_manager is set to None, then the object should pickle.
+        '''
+        with tempfile.TemporaryFile(mode='wb', prefix='qcodes-test') as fid:
+            m=DataSet2D()    
+            pickle.dump(m, fid)
+
+        
+        
