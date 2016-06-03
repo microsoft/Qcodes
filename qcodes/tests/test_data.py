@@ -18,6 +18,7 @@ from .common import strip_qc
 
 
 class TestDataArray(TestCase):
+
     def test_attributes(self):
         pname = 'Betty Sue'
         plabel = 'The best apple pie this side of Wenatchee'
@@ -241,6 +242,7 @@ class TestDataArray(TestCase):
 
 
 class TestLoadData(TestCase):
+
     def setUp(self):
         kill_processes()
 
@@ -298,6 +300,7 @@ class TestLoadData(TestCase):
 
 
 class TestDataSetMetaData(TestCase):
+
     def test_snapshot(self):
         data = new_data(location=False)
         expected_snap = {
@@ -335,6 +338,7 @@ class TestDataSetMetaData(TestCase):
 
 
 class TestNewData(TestCase):
+
     def setUp(self):
         kill_processes()
         self.original_lp = DataSet.location_provider
@@ -404,6 +408,7 @@ class TestTimestampLocation(TestCase):
 
 
 class TestDataSet(TestCase):
+
     def tearDown(self):
         kill_processes()
 
@@ -495,15 +500,12 @@ class TestDataSet(TestCase):
         # we can only add a given array_id once
         with self.assertRaises(ValueError):
             data.add_array(MockArray())
-            
+
     def test_pickle_dataset(self):
         ''' Test pickling of DataSet object
-        
+
             If the data_manager is set to None, then the object should pickle.
         '''
         with tempfile.TemporaryFile(mode='wb', prefix='qcodes-test') as fid:
-            m=DataSet2D()    
+            m = DataSet2D()
             pickle.dump(m, fid)
-
-        
-        
