@@ -404,6 +404,11 @@ class TestServerManager(TestCase):
         sm._response_queue.put((RESPONSE_OK, extra_resp2))
         sm._response_queue.put((RESPONSE_ERROR, custom_error_str))
 
+        # TODO: we have an intermittent failure below, but only when running
+        # the full test suite (including pyqt and matplotlib?), not if we
+        # run just this module, or at least not nearly as frequently.
+        time.sleep(0.2)
+
         with LogCapture() as logs:
             with self.assertRaises(RuntimeError):
                 sm.ask('something benign')
