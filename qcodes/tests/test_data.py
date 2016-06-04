@@ -475,10 +475,7 @@ class TestDataSet(TestCase):
             data.add_array(MockArray())
 
     def test_pickle_dataset(self):
-        ''' Test pickling of DataSet object
-
-            If the data_manager is set to None, then the object should pickle.
-        '''
-        with tempfile.TemporaryFile(mode='wb', prefix='qcodes-test') as fid:
-            m = DataSet2D()
-            pickle.dump(m, fid)
+        # Test pickling of DataSet object
+        # If the data_manager is set to None, then the object should pickle.
+        m = DataSet2D()
+        _ = pickle.dumps(m)
