@@ -92,12 +92,12 @@ class TestBaseFormatter(TestCase):
 
         g1d, g2d = groups
 
-        self.assertEqual(g1d.size, (2,))
+        self.assertEqual(g1d.shape, (2,))
         self.assertEqual(g1d.set_arrays, (data.x,))
         self.assertEqual(g1d.data, (data.y1, data.y2))
         self.assertEqual(g1d.name, 'x')
 
-        self.assertEqual(g2d.size, (2, 3))
+        self.assertEqual(g2d.shape, (2, 3))
         self.assertEqual(g2d.set_arrays, (data.x, data.yset))
         self.assertEqual(g2d.data, (data.z1, data.z2))
         self.assertEqual(g2d.name, 'x_yset')

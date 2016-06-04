@@ -1,4 +1,4 @@
-from collections import Iterable, Mapping
+from collections import Iterator, Sequence, Mapping
 from copy import deepcopy
 import time
 import logging
@@ -43,12 +43,37 @@ def in_notebook():
 
 
 def is_sequence(obj):
-    '''
-    is an object a sequence? We do not consider strings to be sequences,
-    but note that mappings (dicts) and unordered sequences (sets) ARE
-    sequences by this definition.
-    '''
-    return isinstance(obj, Iterable) and not isinstance(obj, (str, bytes))
+    """
+    Test if an object is a sequence.
+
+    We do not consider strings or unordered collections like sets to be
+    sequences, but we do accept iterators (such as generators)
+    """
+    return (isinstance(obj, (Iterator, Sequence)) and
+            not isinstance(obj, (str, bytes, io.IOBase)))
+
+
+def is_sequence_of(obj, types, depth=1):
+    """
+    Test if object is a sequence of entirely certain class(es).
+
+    Args:
+        obj (any): the object to test.
+        types (class or tuple of classes): allowed type(s)
+        depth (int, optional): level of nesting, ie if depth=2 we expect
+            a sequence of sequences. Default 1.
+    Returns:
+        bool, True if every item in ``obj`` matches ``types``
+    """
+    if not is_sequence(obj):
+        return False
+    for item in obj:
+        if depth > 1:
+            if not is_sequence_of(item, types, depth=depth - 1):
+                return False
+        elif not isinstance(item, types):
+            return False
+    return True
 
 
 def full_class(obj):
