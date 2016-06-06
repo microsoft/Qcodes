@@ -97,3 +97,7 @@ if __name__ == '__main__':
 
     if success and args.show_coverage:
         cov.report()
+    # restore unix-y behavior
+    # exit status 1 on fail
+    if not success:
+        sys.exit(1)
