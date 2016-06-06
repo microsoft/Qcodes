@@ -1,4 +1,4 @@
-# Qcodes [![Build Status](https://travis-ci.com/qdev-dk/Qcodes.svg?token=H7MjHi74teZgv8JHTYhx&branch=master)](https://travis-ci.com/qdev-dk/Qcodes)
+# Qcodes [![Build Status](https://travis-ci.com/qdev-dk/Qcodes.svg?token=H7MjHi74teZgv8JHTYhx&branch=master)](https://travis-ci.com/qdev-dk/Qcodes) [![codecov](https://codecov.io/gh/qdev-dk/Qcodes/branch/master/graph/badge.svg?token=KpReTu1pN0)](https://codecov.io/gh/qdev-dk/Qcodes)
 
 Qcodes is a Python-based data acquisition framework developed by the Copenhagen / Delft / Sydney / Microsoft quantum computing consortium. While it has been developed to serve the needs of nanoelectronic device experiments, it is not inherently limited to such experiments, and can be used anywhere a system with many degrees of freedom is controllable by computer.
 
