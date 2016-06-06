@@ -1,6 +1,7 @@
 from unittest import TestCase
 from unittest.mock import patch
 import numpy as np
+import pickle
 
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager, NoData
@@ -9,11 +10,12 @@ from qcodes.process.helpers import kill_processes
 from qcodes import active_children
 
 from .data_mocks import (MockDataManager, MockFormatter, MatchIO,
-                         MockLive, MockArray)
+                         MockLive, MockArray, DataSet2D)
 from .common import strip_qc
 
 
 class TestDataArray(TestCase):
+
     def test_attributes(self):
         pname = 'Betty Sue'
         plabel = 'The best apple pie this side of Wenatchee'
@@ -26,7 +28,7 @@ class TestDataArray(TestCase):
         label = 'The grouch. GRR!'
         array_id = 24601
         set_arrays = ('awesomeness', 'chocolate content')
-        size = 'Ginornous'
+        shape = 'Ginornous'
         action_indices = (1, 2, 3, 4, 5)
 
         p_data = DataArray(parameter=MockParam(), name=name, label=label)
@@ -39,20 +41,20 @@ class TestDataArray(TestCase):
         self.assertEqual(p_data2.label, plabel)
         # test default values
         self.assertIsNone(p_data.array_id)
-        self.assertEqual(p_data.size, ())
+        self.assertEqual(p_data.shape, ())
         self.assertEqual(p_data.action_indices, ())
         self.assertEqual(p_data.set_arrays, ())
         self.assertIsNone(p_data.ndarray)
 
         np_data = DataArray(name=name, label=label, array_id=array_id,
-                            set_arrays=set_arrays, size=size,
+                            set_arrays=set_arrays, shape=shape,
                             action_indices=action_indices)
         self.assertEqual(np_data.name, name)
         self.assertEqual(np_data.label, label)
         # test simple assignments
         self.assertEqual(np_data.array_id, array_id)
         self.assertEqual(np_data.set_arrays, set_arrays)
-        self.assertEqual(np_data.size, size)
+        self.assertEqual(np_data.shape, shape)
         self.assertEqual(np_data.action_indices, action_indices)
 
         name_data = DataArray(name=name)
@@ -80,7 +82,7 @@ class TestDataArray(TestCase):
         for item in onetwothree:
             data = DataArray(preset_data=item)
             self.assertEqual(data.ndarray.tolist(), expected123)
-            self.assertEqual(data.size, (3, ))
+            self.assertEqual(data.shape, (3, ))
 
         # you can re-initialize a DataArray with the same shape data,
         # but not with a different shape
@@ -90,25 +92,25 @@ class TestDataArray(TestCase):
         with self.assertRaises(ValueError):
             data.init_data([1, 2])
         self.assertEqual(data.ndarray.tolist(), list456)
-        self.assertEqual(data.size, (3, ))
+        self.assertEqual(data.shape, (3, ))
 
         # you can call init_data again with no data, and nothing changes
         data.init_data()
         self.assertEqual(data.ndarray.tolist(), list456)
-        self.assertEqual(data.size, (3, ))
+        self.assertEqual(data.shape, (3, ))
 
         # multidimensional works too
         list2d = [[1, 2], [3, 4]]
         data2 = DataArray(preset_data=list2d)
         self.assertEqual(data2.ndarray.tolist(), list2d)
-        self.assertEqual(data2.size, (2, 2))
+        self.assertEqual(data2.shape, (2, 2))
 
     def test_init_data_error(self):
         data = DataArray(preset_data=[1, 2])
-        data.size = (3, )
+        data.shape = (3, )
 
         # not sure when this would happen... but if you call init_data
-        # and it notices an inconsistency between size and the actual
+        # and it notices an inconsistency between shape and the actual
         # data that's already there, it raises an error
         with self.assertRaises(ValueError):
             data.init_data()
@@ -153,7 +155,7 @@ class TestDataArray(TestCase):
     def test_edit_and_mark_slice(self):
         data = DataArray(preset_data=[[1] * 5] * 6)
 
-        self.assertEqual(data.size, (6, 5))
+        self.assertEqual(data.shape, (6, 5))
         self.assertEqual(data.modified_range, None)
 
         data[:4:2, 2:] = 2
@@ -182,7 +184,7 @@ class TestDataArray(TestCase):
     def test_nest_empty(self):
         data = DataArray()
 
-        self.assertEqual(data.size, ())
+        self.assertEqual(data.shape, ())
 
         mock_set_array = 'not really an array but we don\'t check'
         mock_set_array2 = 'another one'
@@ -194,7 +196,7 @@ class TestDataArray(TestCase):
         self.assertIsNone(data.ndarray)
 
         # but other attributes are set
-        self.assertEqual(data.size, (3, 2))
+        self.assertEqual(data.shape, (3, 2))
         self.assertEqual(data.action_indices, (66, 44))
         self.assertEqual(data.set_arrays, (mock_set_array2, mock_set_array))
 
@@ -209,7 +211,7 @@ class TestDataArray(TestCase):
     def test_nest_preset(self):
         data = DataArray(preset_data=[1, 2])
         data.nest(3)
-        self.assertEqual(data.size, (3, 2))
+        self.assertEqual(data.shape, (3, 2))
         self.assertEqual(data.ndarray.tolist(), [[1, 2]] * 3)
         self.assertEqual(data.action_indices, ())
         self.assertEqual(data.set_arrays, (data,))
@@ -237,6 +239,7 @@ class TestDataArray(TestCase):
 
 
 class TestLoadData(TestCase):
+
     def setUp(self):
         kill_processes()
 
@@ -294,6 +297,7 @@ class TestLoadData(TestCase):
 
 
 class TestDataSetMetaData(TestCase):
+
     def test_snapshot(self):
         data = new_data(location=False)
         expected_snap = {
@@ -331,6 +335,7 @@ class TestDataSetMetaData(TestCase):
 
 
 class TestNewData(TestCase):
+
     @classmethod
     def setUpClass(cls):
         kill_processes()
@@ -376,6 +381,7 @@ class TestNewData(TestCase):
 
 
 class TestDataSet(TestCase):
+
     def tearDown(self):
         kill_processes()
 
@@ -467,3 +473,9 @@ class TestDataSet(TestCase):
         # we can only add a given array_id once
         with self.assertRaises(ValueError):
             data.add_array(MockArray())
+
+    def test_pickle_dataset(self):
+        # Test pickling of DataSet object
+        # If the data_manager is set to None, then the object should pickle.
+        m = DataSet2D()
+        _ = pickle.dumps(m)

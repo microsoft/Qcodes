@@ -109,8 +109,8 @@ class GNUPlotFormat(Formatter):
         arrays = data_set.arrays
         ids = self._read_comment_line(f).split()
         labels = self._get_labels(self._read_comment_line(f))
-        size = tuple(map(int, self._read_comment_line(f).split()))
-        ndim = len(size)
+        shape = tuple(map(int, self._read_comment_line(f).split()))
+        ndim = len(shape)
 
         set_arrays = ()
         data_arrays = []
@@ -120,12 +120,12 @@ class GNUPlotFormat(Formatter):
             snap = data_set.get_array_metadata(array_id)
 
             # setpoint arrays
-            set_size = size[: i + 1]
+            set_shape = shape[: i + 1]
             if array_id in arrays:
                 set_array = arrays[array_id]
-                if set_array.size != set_size:
+                if set_array.shape != set_shape:
                     raise ValueError(
-                        'sizes do not match for set array: ' + array_id)
+                        'shapes do not match for set array: ' + array_id)
                 if array_id not in ids_read:
                     # it's OK for setpoints to be duplicated across
                     # multiple files, but we should only empty the
@@ -134,7 +134,7 @@ class GNUPlotFormat(Formatter):
                     set_array.clear()
             else:
                 set_array = DataArray(label=labels[i], array_id=array_id,
-                                      set_arrays=set_arrays, size=set_size,
+                                      set_arrays=set_arrays, shape=set_shape,
                                       is_setpoint=True, snapshot=snap)
                 set_array.init_data()
                 data_set.add_array(set_array)
@@ -154,7 +154,7 @@ class GNUPlotFormat(Formatter):
                 data_array.clear()
             else:
                 data_array = DataArray(label=labels[i], array_id=array_id,
-                                       set_arrays=set_arrays, size=size,
+                                       set_arrays=set_arrays, shape=shape,
                                        snapshot=snap)
                 data_array.init_data()
                 data_set.add_array(data_array)
@@ -316,12 +316,12 @@ class GNUPlotFormat(Formatter):
             label = label.replace('\\', '\\\\').replace('"', '\\"')
             labels.append('"' + label + '"')
 
-        sizes = [str(size) for size in group.set_arrays[-1].shape]
-        if len(sizes) != len(group.set_arrays):
+        shape = [str(size) for size in group.set_arrays[-1].shape]
+        if len(shape) != len(group.set_arrays):
             raise ValueError('array dimensionality does not match setpoints')
 
         out = (self._comment_line(ids) + self._comment_line(labels) +
-               self._comment_line(sizes))
+               self._comment_line(shape))
 
         return out
 

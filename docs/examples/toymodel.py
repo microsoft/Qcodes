@@ -130,10 +130,10 @@ class AverageAndRaw(Parameter):
         self.measured_param = measured_param
         self.sweep_values = sweep_values
         self.delay = delay
-        self.sizes = (len(sweep_values), None)
+        self.shapes = ((len(sweep_values),), None)
         set_array = DataArray(parameter=sweep_values.parameter,
                               preset_data=sweep_values)
-        self.setpoints = (set_array, None)
+        self.setpoints = ((set_array,), None)
         if hasattr(measured_param, 'label'):
             self.labels = (measured_param.label,
                            'Average: ' + measured_param.label)

@@ -43,25 +43,28 @@ class TestParamConstructor(TestCase):
         # about it looks for names first.
         self.assertFalse(hasattr(p, 'name'))
 
-        size = 10
-        setpoints = 'we dont check the form of this until later'
-        setpoint_names = 'we dont check this either'
-        setpoint_labels = 'nor this'
-        p = Parameter('makes_array', size=size, setpoints=setpoints,
+        shape = (10,)
+        setpoints = (range(10),)
+        setpoint_names = ('my_sp',)
+        setpoint_labels = ('A label!',)
+        p = Parameter('makes_array', shape=shape, setpoints=setpoints,
                       setpoint_names=setpoint_names,
                       setpoint_labels=setpoint_labels)
-        self.assertEqual(p.size, size)
-        self.assertFalse(hasattr(p, 'sizes'))
+        self.assertEqual(p.shape, shape)
+        self.assertFalse(hasattr(p, 'shapes'))
         self.assertEqual(p.setpoints, setpoints)
         self.assertEqual(p.setpoint_names, setpoint_names)
         self.assertEqual(p.setpoint_labels, setpoint_labels)
 
-        sizes = [2, 3]
-        p = Parameter('makes arrays', sizes=sizes, setpoints=setpoints,
+        shapes = ((2,), (3,))
+        setpoints = ((range(2),), (range(3),))
+        setpoint_names = (('sp1',), ('sp2',))
+        setpoint_labels = (('first label',), ('second label',))
+        p = Parameter('makes arrays', shapes=shapes, setpoints=setpoints,
                       setpoint_names=setpoint_names,
                       setpoint_labels=setpoint_labels)
-        self.assertEqual(p.sizes, sizes)
-        self.assertFalse(hasattr(p, 'size'))
+        self.assertEqual(p.shapes, shapes)
+        self.assertFalse(hasattr(p, 'shape'))
         self.assertEqual(p.setpoints, setpoints)
         self.assertEqual(p.setpoint_names, setpoint_names)
         self.assertEqual(p.setpoint_labels, setpoint_labels)
