@@ -501,23 +501,27 @@ class DataSet(DelegateAttributes):
             elif location is None:
                 location = self.location
         elif path is not None:
-            io_manager = DiskIO('')
+            io_manager = DiskIO(None)
             location = path
         else:
             raise TypeError('You must provide at least one argument '
                             'to write_copy')
+
+        if location is False:
+            raise ValueError('write_copy needs a location, not False')
 
         lsi_cache = {}
         mr_cache = {}
         for array_id, array in self.arrays.items():
             lsi_cache[array_id] = array.last_saved_index
             mr_cache[array_id] = array.modified_range
-            # clear_save is not enough, we _need_ to set modified_range
+            # array.clear_save() is not enough, we _need_ to set modified_range
             # TODO - identify *when* clear_save is not enough, and fix it
-            # so we *can* use it.
+            # so we *can* use it. That said, maybe we will *still* want to
+            # use the full array here no matter what, or strip trailing NaNs
+            # separately, either here or in formatter.write?
             array.last_saved_index = None
             array.modified_range = (0, array.ndarray.size - 1)
-            # array.clear_save()
 
         try:
             self.formatter.write(self, io_manager, location)
