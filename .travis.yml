@@ -1,0 +1,17 @@
+language: python
+python:
+  - "3.5"
+# command to install dependencies
+
+install:
+    - pip install --upgrade pip
+    - pip install ipython
+    - pip install -r develop_requirements.txt
+    - python setup.py develop
+# command to run tests
+script: 
+    - python  qcodes/test.py -c
+# cover gui thing
+after_success:
+  - cd qcodes
+  - bash <(curl -s https://codecov.io/bash) -t 32b48753-9816-4776-ad14-add73b006484
