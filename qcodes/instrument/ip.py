@@ -118,6 +118,18 @@ class IPInstrument(Instrument):
             e.args = e.args + ('asking ' + repr(cmd) + ' to ' + repr(self),)
             raise e
 
+    def snapshot_base(self, update=False):
+        snap = super().snapshot_base(update=update)
+
+        snap['port'] = self._port
+        snap['confirmation'] = self._confirmation
+        snap['address'] = self._address
+        snap['terminator'] = self._terminator
+        snap['timeout'] = self._timeout
+        snap['persistent'] = self._persistent
+
+        return snap
+
 
 class EnsureConnection:
     def __init__(self, instrument):

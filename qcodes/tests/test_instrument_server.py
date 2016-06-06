@@ -2,8 +2,10 @@ from unittest import TestCase
 import time
 import multiprocessing as mp
 
-from qcodes.utils.multiprocessing import SERVER_ERR
 from qcodes.instrument.server import InstrumentServer
+from qcodes.process.server import (QUERY_WRITE, QUERY_ASK, RESPONSE_OK,
+                                   RESPONSE_ERROR)
+from qcodes.utils.helpers import LogCapture
 
 
 def schedule(queries, query_queue):
@@ -23,15 +25,13 @@ def run_schedule(queries, query_queue):
     return p
 
 
-def get_results(response_queue, error_queue):
+def get_results(response_queue):
     time.sleep(0.05)  # wait for any lingering messages to the queues
-    responses, errors = [], []
+    responses = []
     while not response_queue.empty():
         responses.append(response_queue.get())
-    while not error_queue.empty():
-        errors.append(error_queue.get())
 
-    return responses, errors
+    return responses
 
 
 class Holder:
@@ -83,65 +83,68 @@ class TestInstrumentServer(TestCase):
         # in a subprocess)
         queries = (
             # add an "instrument" to the server
-            (0.5, ('new_id',)),
-            (0.01, ('new', Holder, 0, (), {})),
+            (0.5, (QUERY_ASK, 'new_id',)),
+            (0.01, (QUERY_ASK, 'new', (Holder, 0))),
 
             # some sets and gets that work
-            (0.01, ('write', 0, 'set', ('happiness', 'a warm gun'), {})),
-            (0.01, ('write', 0, 'set', (), {'val': 42, 'key': 'the answer'})),
-            (0.01, ('ask', 0, 'get', (), {'key': 'happiness'})),
-            (0.01, ('ask', 0, 'get', ('the answer',), {})),
+            (0.01, (QUERY_WRITE, 'cmd',
+                    (0, 'set', 'happiness', 'a warm gun'), {})),
+            (0.01, (QUERY_WRITE, 'cmd',
+                    (0, 'set'), {'val': 42, 'key': 'the answer'})),
+            (0.01, (QUERY_ASK, 'cmd', (0, 'get'), {'key': 'happiness'})),
+            (0.01, (QUERY_ASK, 'cmd', (0, 'get', 'the answer',), {})),
 
             # then some that make errors
             # KeyError
-            (0.01, ('ask', 0, 'get', ('Carmen Sandiego',), {})),
-            # TypeError (too many args)
-            (0.01, ('write', 0, 'set', (1, 2, 3), {})),
-            # TypeError (unexpected kwarg)
-            (0.01, ('write', 0, 'set', (), {'c': 'middle'})),
+            (0.01, (QUERY_ASK, 'cmd', (0, 'get', 'Carmen Sandiego',), {})),
+            # TypeError (too many args) shows up in logs
+            (0.01, (QUERY_WRITE, 'cmd', (0, 'set', 1, 2, 3), {})),
+            # TypeError (unexpected kwarg) shows up in logs
+            (0.01, (QUERY_WRITE, 'cmd', (0, 'set', 'do'), {'c': 'middle'})),
 
             # and another good one, just so we know it still works
-            (0.01, ('ask', 0, 'get_extras', (), {})),
+            (0.01, (QUERY_ASK, 'cmd', (0, 'get_extras'), {})),
 
             # delete the instrument and stop the server
             # (no need to explicitly halt)
-            (0.01, ('delete', 0))
+            (0.01, (QUERY_ASK, 'delete', (0,)))
         )
         extras = {'where': 'infinity and beyond'}
 
         run_schedule(queries, self.query_queue)
 
         try:
-            TimedInstrumentServer(self.query_queue, self.response_queue,
-                                  self.error_queue, extras)
+            with LogCapture() as logs:
+                TimedInstrumentServer(self.query_queue, self.response_queue,
+                                      extras)
         except:
             from traceback import format_exc
             print(format_exc())
 
-        responses, errors = get_results(self.response_queue, self.error_queue)
+        self.assertEqual(logs.value.count('TypeError'), 2)
+        for item in ('1, 2, 3', 'middle'):
+            self.assertIn(item, logs.value)
 
-        expected_errors = [
-            ('KeyError', 'Carmen Sandiego'),
-            ('TypeError', '(1, 2, 3)'),
-            ('TypeError', 'middle')
-        ]
-        self.assertEqual(len(errors), len(expected_errors), errors)
-        for error, expected_error in zip(errors, expected_errors):
-            for item in expected_error:
-                self.assertIn(item, error)
+        responses = get_results(self.response_queue)
 
         expected_responses = [
-            0,
-            {
+            (RESPONSE_OK, 0),
+            (RESPONSE_OK, {
                 'functions': {},
                 'id': 0,
-                'instrument_name': 'J Edgar',
+                'name': 'J Edgar',
                 'methods': {},
                 'parameters': {}
-            },
-            'a warm gun',
-            42,
-            SERVER_ERR, SERVER_ERR, SERVER_ERR,
-            extras
+            }),
+            (RESPONSE_OK, 'a warm gun'),
+            (RESPONSE_OK, 42),
+            (RESPONSE_ERROR, ('KeyError', 'Carmen Sandiego')),
+            (RESPONSE_OK, extras)
         ]
-        self.assertEqual(responses, expected_responses)
+        for response, expected in zip(responses, expected_responses):
+            if expected[0] == RESPONSE_OK:
+                self.assertEqual(response, expected)
+            else:
+                self.assertEqual(response[0], expected[0])
+                for item in expected[1]:
+                    self.assertIn(item, response[1])

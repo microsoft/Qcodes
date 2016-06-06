@@ -5,16 +5,17 @@ import time
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
 from qcodes.instrument.parameter import Parameter, ManualParameter
-from qcodes.instrument.sweep_values import SweepValues
 from qcodes.instrument.function import Function
-from qcodes.instrument.server import get_instrument_server
+from qcodes.instrument.server import get_instrument_server_manager
 
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
 from qcodes.utils.sync_async import NoCommandError
-from qcodes.utils.helpers import LogCapture, killprocesses
+from qcodes.utils.helpers import LogCapture
+from qcodes.process.helpers import kill_processes
 
 from .instrument_mocks import (AMockModel, MockInstTester,
                                MockGates, MockSource, MockMeter)
+from .common import strip_qc
 
 
 class TestParamConstructor(TestCase):
@@ -42,28 +43,41 @@ class TestParamConstructor(TestCase):
         # about it looks for names first.
         self.assertFalse(hasattr(p, 'name'))
 
-        size = 10
-        setpoints = 'we dont check the form of this until later'
-        setpoint_names = 'we dont check this either'
-        setpoint_labels = 'nor this'
-        p = Parameter('makes_array', size=size, setpoints=setpoints,
+        shape = (10,)
+        setpoints = (range(10),)
+        setpoint_names = ('my_sp',)
+        setpoint_labels = ('A label!',)
+        p = Parameter('makes_array', shape=shape, setpoints=setpoints,
                       setpoint_names=setpoint_names,
                       setpoint_labels=setpoint_labels)
-        self.assertEqual(p.size, size)
-        self.assertFalse(hasattr(p, 'sizes'))
+        self.assertEqual(p.shape, shape)
+        self.assertFalse(hasattr(p, 'shapes'))
         self.assertEqual(p.setpoints, setpoints)
         self.assertEqual(p.setpoint_names, setpoint_names)
         self.assertEqual(p.setpoint_labels, setpoint_labels)
 
-        sizes = [2, 3]
-        p = Parameter('makes arrays', sizes=sizes, setpoints=setpoints,
+        shapes = ((2,), (3,))
+        setpoints = ((range(2),), (range(3),))
+        setpoint_names = (('sp1',), ('sp2',))
+        setpoint_labels = (('first label',), ('second label',))
+        p = Parameter('makes arrays', shapes=shapes, setpoints=setpoints,
                       setpoint_names=setpoint_names,
                       setpoint_labels=setpoint_labels)
-        self.assertEqual(p.sizes, sizes)
-        self.assertFalse(hasattr(p, 'size'))
+        self.assertEqual(p.shapes, shapes)
+        self.assertFalse(hasattr(p, 'shape'))
         self.assertEqual(p.setpoints, setpoints)
         self.assertEqual(p.setpoint_names, setpoint_names)
         self.assertEqual(p.setpoint_labels, setpoint_labels)
+
+    def test_repr(self):
+        for i in [0, "foo", "", "fåil"]:
+            with self.subTest(i=i):
+                param = Parameter(name=i)
+                s = param.__repr__()
+                st = '<{}.{}: {} at {}>'.format(
+                    param.__module__, param.__class__.__name__,
+                    param.name, id(param))
+                self.assertEqual(s, st)
 
 
 class GatesBadDelayType(MockGates):
@@ -126,7 +140,7 @@ class TestParameters(TestCase):
                                 ('chan0slow5', 0)):
             gatesLocal.chan0.set(-0.5)
 
-            with LogCapture() as s:
+            with LogCapture() as logs:
                 if param in ('chan0slow', 'chan0slow2', 'chan0slow3'):
                     # these are the stepped parameters
                     gatesLocal.set(param, 0.5)
@@ -136,12 +150,10 @@ class TestParameters(TestCase):
                     gatesLocal.set(param, -1)
                     gatesLocal.set(param, 1)
 
-            logs = s.getvalue().split('\n')[:-1]
-            s.close()
-
+            loglines = logs.value.split('\n')[:-1]
             # TODO: occasional extra negative delays here
-            self.assertEqual(len(logs), logcount, (param, logs))
-            for line in logs:
+            self.assertEqual(len(loglines), logcount, (param, logs.value))
+            for line in loglines:
                 self.assertTrue(line.startswith('negative delay'), line)
 
     def test_max_delay_errors(self):
@@ -284,9 +296,6 @@ class TestParameters(TestCase):
             gates.ask('question?yes but more after')
 
         with self.assertRaises(ValueError):
-            gates.write('ampl 1')
-            self.meter.echo(9.99)  # known good call, just to read the error
-        with self.assertRaises(ValueError):
             gates.ask('ampl?')
 
         with self.assertRaises(TypeError):
@@ -298,7 +307,7 @@ class TestParameters(TestCase):
         # we don't have the instrument but its server doesn't know to stop.
         # should figure out a way to remove it. (I thought I had but it
         # doesn't seem to have worked...)
-        get_instrument_server('MockInstruments').close()
+        get_instrument_server_manager('MockInstruments').close()
         time.sleep(0.5)
 
         with self.assertRaises(AttributeError):
@@ -322,18 +331,17 @@ class TestParameters(TestCase):
         # we don't have the instrument but its server doesn't know to stop.
         # should figure out a way to remove it. (I thought I had but it
         # doesn't seem to have worked...)
-        killprocesses()
+        kill_processes()
 
     def check_set_amplitude2(self, val, log_count, history_count):
         source = self.sourceLocal
-        with LogCapture() as s:
+        with LogCapture() as logs:
             source.amplitude2.set(val)
 
-        logs = s.getvalue().split('\n')[:-1]
-        s.close()
+        loglines = logs.value.split('\n')[:-1]
 
-        self.assertEqual(len(logs), log_count, logs)
-        for line in logs:
+        self.assertEqual(len(loglines), log_count, logs.value)
+        for line in loglines:
             self.assertIn('cannot sweep', line.lower())
         hist = source.getattr('history')
         self.assertEqual(len(hist), history_count)
@@ -456,8 +464,39 @@ class TestParameters(TestCase):
             f(20)
 
     def test_standard_snapshot(self):
-        self.assertEqual(self.meter.snapshot(), {
-            'parameters': {'amplitude': {'value': None, 'ts': None}},
+        self.maxDiff = None
+        snap = self.meter.snapshot()
+        strip_qc(snap)
+        for psnap in snap['parameters'].values():
+            strip_qc(psnap)
+
+        self.assertEqual(snap, {
+            '__class__': 'tests.instrument_mocks.MockMeter',
+            'name': 'meter',
+            'parameters': {
+                'IDN': {
+                    '__class__': (
+                        'qcodes.instrument.parameter.StandardParameter'),
+                    'instrument': 'tests.instrument_mocks.MockMeter',
+                    'instrument_name': 'meter',
+                    'label': 'IDN',
+                    'name': 'IDN',
+                    'ts': None,
+                    'units': '',
+                    'value': None
+                },
+                'amplitude': {
+                    '__class__': (
+                        'qcodes.instrument.parameter.StandardParameter'),
+                    'instrument': 'tests.instrument_mocks.MockMeter',
+                    'instrument_name': 'meter',
+                    'label': 'amplitude',
+                    'name': 'amplitude',
+                    'ts': None,
+                    'units': '',
+                    'value': None
+                }
+            },
             'functions': {'echo': {}}
         })
 
@@ -472,8 +511,18 @@ class TestParameters(TestCase):
         self.source.add_parameter('noise', parameter_class=ManualParameter)
         noise = self.source.noise
 
-        self.assertEqual(self.source.snapshot()['parameters']['noise'],
-                         {'value': None, 'ts': None})
+        noisesnap = self.source.snapshot()['parameters']['noise']
+        strip_qc(noisesnap)
+        self.assertEqual(noisesnap, {
+            '__class__': 'qcodes.instrument.parameter.ManualParameter',
+            'instrument': 'tests.instrument_mocks.MockSource',
+            'instrument_name': 'source',
+            'label': 'noise',
+            'name': 'noise',
+            'ts': None,
+            'units': '',
+            'value': None
+        })
 
         noise.set(100)
         noisesnap = self.source.snapshot()['parameters']['noise']
@@ -529,105 +578,6 @@ class TestParameters(TestCase):
         with self.assertRaises(NoCommandError):
             b.add_parameter('height')
 
-    def test_sweep_values_errors(self):
-        gates, source, meter = self.gates, self.source, self.meter
-        c0 = gates.parameters['chan0']
-        source_amp = source.parameters['amplitude']
-        meter_amp = meter.parameters['amplitude']
-
-        # only complete 3-part slices are valid
-        with self.assertRaises(TypeError):
-            c0[1:2]  # For Int params this could be defined as step=1
-        with self.assertRaises(TypeError):
-            c0[:2:3]
-        with self.assertRaises(TypeError):
-            c0[1::3]
-        with self.assertRaises(TypeError):
-            c0[:]  # For Enum params we *could* define this one too...
-
-        # fails if the parameter has no setter
-        # with self.assertRaises(AttributeError):
-        meter_amp[0]
-
-        # validates every step value against the parameter's Validator
-        with self.assertRaises(ValueError):
-            c0[5:15:1]
-        with self.assertRaises(ValueError):
-            c0[5.0:15.0:1.0]
-        with self.assertRaises(ValueError):
-            c0[-12]
-        with self.assertRaises(ValueError):
-            c0[-5, 12, 5]
-        with self.assertRaises(ValueError):
-            c0[-5, 12:8:1, 5]
-
-        # cannot combine SweepValues for different parameters
-        with self.assertRaises(TypeError):
-            c0[0.1] + source_amp[0.2]
-
-        # improper use of extend
-        with self.assertRaises(TypeError):
-            c0[0.1].extend(5)
-
-        # SweepValue object has no getter, even if the parameter does
-        with self.assertRaises(AttributeError):
-            c0[0.1].get
-
-    def test_sweep_values_valid(self):
-        gates = self.gates
-        c0 = gates.parameters['chan0']
-
-        c0_sv = c0[1]
-        # setter gets mapped
-        self.assertEqual(c0_sv.set, c0.set)
-        # normal sequence operations access values
-        self.assertEqual(list(c0_sv), [1])
-        self.assertEqual(c0_sv[0], 1)
-        self.assertTrue(1 in c0_sv)
-        self.assertFalse(2 in c0_sv)
-
-        # in-place and copying addition
-        c0_sv += c0[1.5:1.8:0.1]
-        c0_sv2 = c0_sv + c0[2]
-        self.assertEqual(list(c0_sv), [1, 1.5, 1.6, 1.7])
-        self.assertEqual(list(c0_sv2), [1, 1.5, 1.6, 1.7, 2])
-
-        # append and extend
-        c0_sv3 = c0[2]
-        # append only works with straight values
-        c0_sv3.append(2.1)
-        # extend can use another SweepValue, (even if it only has one value)
-        c0_sv3.extend(c0[2.2])
-        # extend can also take a sequence
-        c0_sv3.extend([2.3])
-        # as can addition
-        c0_sv3 += [2.4]
-        c0_sv4 = c0_sv3 + [2.5, 2.6]
-        self.assertEqual(list(c0_sv3), [2, 2.1, 2.2, 2.3, 2.4])
-        self.assertEqual(list(c0_sv4), [2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6])
-
-        # len
-        self.assertEqual(len(c0_sv3), 5)
-
-        # in-place and copying reverse
-        c0_sv.reverse()
-        c0_sv5 = reversed(c0_sv)
-        self.assertEqual(list(c0_sv), [1.7, 1.6, 1.5, 1])
-        self.assertEqual(list(c0_sv5), [1, 1.5, 1.6, 1.7])
-
-        # multi-key init, where first key is itself a list
-        c0_sv6 = c0[[1, 3], 4]
-        # copying
-        c0_sv7 = c0_sv6.copy()
-        self.assertEqual(list(c0_sv6), [1, 3, 4])
-        self.assertEqual(list(c0_sv7), [1, 3, 4])
-        self.assertFalse(c0_sv6 is c0_sv7)
-
-    def test_sweep_values_base(self):
-        p = self.gates.chan0
-        with self.assertRaises(NotImplementedError):
-            iter(SweepValues(p))
-
     def test_manual_parameter(self):
         self.source.add_parameter('bias_resistor',
                                   parameter_class=ManualParameter,
@@ -660,6 +610,21 @@ class TestParameters(TestCase):
             self.source.add_parameter('alignment2',
                                       parameter_class=ManualParameter,
                                       initial_value='nearsighted')
+
+    def test_deferred_ops(self):
+        gates = self.gates
+        c0, c1, c2 = gates.chan0, gates.chan1, gates.chan2
+
+        c0.set(0)
+        c1.set(1)
+        c2.set(2)
+
+        self.assertEqual((c0 + c1 + c2)(), 3)
+        self.assertEqual((10 + (c0**2) + (c1**2) + (c2**2))(), 15)
+
+        d = c1.get_latest / c0.get_latest
+        with self.assertRaises(ZeroDivisionError):
+            d()
 
 
 class TestAttrAccess(TestCase):
@@ -753,7 +718,6 @@ class TestAttrAccess(TestCase):
 
         with self.assertRaises(TypeError):
             instrument.setattr(('d1', 'a', 1))
-            instrument.getattr('name')
 
         # set one attribute that requires creating nested levels
         instrument.setattr(('d1', 'a', 1), 2)
@@ -761,7 +725,6 @@ class TestAttrAccess(TestCase):
         # can't nest inside a non-container
         with self.assertRaises(TypeError):
             instrument.setattr(('d1', 'a', 1, 'secret'), 42)
-            instrument.getattr('name')
 
         # get the whole dict with simple getattr style
         # TODO: twice (out of maybe 50 runs) I saw the below fail,
@@ -801,7 +764,7 @@ class TestAttrAccess(TestCase):
         # test restarting the InstrumentServer - this clears these attrs
         instrument.setattr('answer', 42)
         self.assertEqual(instrument.getattr('answer', None), 42)
-        instrument.connection.manager.restart()
+        instrument._manager.restart()
         self.assertIsNone(instrument.getattr('answer', None))
 
 

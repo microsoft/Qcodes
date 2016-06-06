@@ -25,12 +25,12 @@ Measured parameters should have .get() (and/or .get_async()) which can return:
     the same length as returned by .get()
 - an array of values of one type:
     parameter should have .name and optional .label as above, but also
-    .size attribute, which is an integer (or tuple of integers) describing
-    the size of the returned array (which must be fixed)
+    .shape attribute, which is an integer (or tuple of integers) describing
+    the shape of the returned array (which must be fixed)
     optionally also .setpoints, array(s) of setpoint values for this data
     otherwise we will use integers from 0 in each direction as the setpoints
-- several arrays of values (all the same size):
-    define .names (and .labels) AND .size (and .setpoints)
+- several arrays of values (all the same shape):
+    define .names (and .labels) AND .shape (and .setpoints)
 '''
 
 from datetime import datetime, timedelta
@@ -38,13 +38,16 @@ import time
 import asyncio
 import logging
 import os
+import collections
 
-from qcodes.utils.helpers import (permissive_range, wait_secs,
-                                  DelegateAttributes)
+from qcodes.utils.deferred_operations import DeferredOperations
+from qcodes.utils.helpers import (permissive_range, wait_secs, is_sequence_of,
+                                  DelegateAttributes, full_class, named_repr)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.sync_async import syncable_command, NoCommandError
 from qcodes.utils.validators import Validator, Numbers, Ints, Enum
 from qcodes.instrument.sweep_values import SweepFixedValues
+from qcodes.data.data_array import DataArray
 
 
 def no_setter(*args, **kwargs):
@@ -57,7 +60,7 @@ def no_getter(*args, **kwargs):
         'set value.')
 
 
-class Parameter(Metadatable):
+class Parameter(Metadatable, DeferredOperations):
     '''
     defines one generic parameter, not necessarily part of
     an instrument. can be settable and/or gettable.
@@ -74,8 +77,8 @@ class Parameter(Metadatable):
         setpoints (for example, a time trace or fourier transform that
         was acquired in the hardware and all sent to the computer at once)
     4.  2 & 3 together: a sequence of arrays. All arrays should be the same
-        size.
-    5.  a sequence of differently sized items
+        shape.
+    5.  a sequence of differently shaped items
 
     Because .set only supports a single value, if a Parameter is both
     gettable AND settable, .get should return a single value too (case 1)
@@ -100,20 +103,13 @@ class Parameter(Metadatable):
         label and snapshot
            (2,4,5) a tuple of units
 
-    size: (3&4) an integer or tuple of integers for the size of array
-        returned by .get(). Can be an integer only if the array is 1D, but
-        as a tuple it can describe any dimensionality (including 1D)
-        If size is an integer then setpoints, setpoint_names,
-        and setpoint_labels should also not be wrapped in tuples.
-    sizes: (5) a tuple of integers or tuples, each one as in `size`.
+    shape: (3&4) a tuple of integers for the shape of array returned by .get().
+    shapes: (5) a tuple of tuples, each one as in `shape`.
+        Single values should be denoted by None or ()
 
     setpoints: (3,4,5) the setpoints for the returned array of values.
-        3&4 - This should be an array if `size` is an integer, or a
-            tuple of arrays if `size` is a tuple
-            The first array should be 1D, the second 2D, etc.
-        5 - This should be a tuple of arrays or tuples, each item as above
-            Single values should be denoted by None or (), not 1 (because 1
-            would be a length-1 array)
+        3&4 - a tuple of arrays. The first array is be 1D, the second 2D, etc.
+        5 - a tuple of tuples of arrays
         Defaults to integers from zero in each respective direction
         Each may be either a DataArray, a numpy array, or a sequence
         (sequences will be converted to numpy arrays)
@@ -133,13 +129,15 @@ class Parameter(Metadatable):
                  name=None, names=None,
                  label=None, labels=None,
                  units=None,
-                 size=None, sizes=None,
+                 shape=None, shapes=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
-                 vals=None, docstring=None, **kwargs):
+                 vals=None, docstring=None, snapshot_get=True, **kwargs):
         super().__init__(**kwargs)
+        self._snapshot_get = snapshot_get
 
         self.has_get = False
         self.has_set = False
+        self._meta_attrs = ['setpoint_names', 'setpoint_labels']
 
         if names is not None:
             # check for names first - that way you can provide both name
@@ -155,6 +153,7 @@ class Parameter(Metadatable):
                 '* `names` %s' % ', '.join(self.names),
                 '* `labels` %s' % ', '.join(self.labels),
                 '* `units` %s' % ', '.join(self.units)))
+            self._meta_attrs.extend(['names', 'labels', 'units'])
 
         elif name is not None:
             self.name = name
@@ -169,17 +168,46 @@ class Parameter(Metadatable):
                 'Parameter class:',
                 '* `name` %s' % self.name,
                 '* `label` %s' % self.label,
+                # is this unit s a typo? shouldnt that be unit?
                 '* `units` %s' % self.units,
                 '* `vals` %s' % repr(self._vals)))
+            self._meta_attrs.extend(['name', 'label', 'units', 'vals'])
 
         else:
             raise ValueError('either name or names is required')
 
-        if size is not None or sizes is not None:
-            if size is not None:
-                self.size = size
+        if shape is not None or shapes is not None:
+            nt = type(None)
+
+            if shape is not None:
+                if not is_sequence_of(shape, int):
+                    raise ValueError('shape must be a tuple of ints, not ' +
+                                     repr(shape))
+                self.shape = shape
+                depth = 1
+                container_str = 'tuple'
             else:
-                self.sizes = sizes
+                if not is_sequence_of(shapes, int, depth=2):
+                    raise ValueError('shapes must be a tuple of tuples '
+                                     'of ints, not ' + repr(shape))
+                self.shapes = shapes
+                depth = 2
+                container_str = 'tuple of tuples'
+
+            sp_types = (nt, DataArray, collections.Sequence,
+                        collections.Iterator)
+            if (setpoints is not None and
+                    not is_sequence_of(setpoints, sp_types, depth)):
+                raise ValueError(
+                    'setpoints must be a {} of arrays'.format(container_str))
+            if (setpoint_names is not None and
+                    not is_sequence_of(setpoint_names, (nt, str), depth)):
+                raise ValueError('setpoint_names must be a {} '
+                                 'of strings'.format(container_str))
+            if (setpoint_labels is not None and
+                    not is_sequence_of(setpoint_labels, (nt, str), depth)):
+                raise ValueError('setpoint_labels must be a {} '
+                                 'of strings'.format(container_str))
 
             self.setpoints = setpoints
             self.setpoint_names = setpoint_names
@@ -195,6 +223,9 @@ class Parameter(Metadatable):
             self.__doc__ = docstring + os.linesep + self.__doc__
 
         self.get_latest = GetLatest(self)
+
+    def __repr__(self):
+        return named_repr(self)
 
     def __call__(self, *args):
         if len(args) == 0:
@@ -236,17 +267,32 @@ class Parameter(Metadatable):
 
         return out
 
-    def snapshot_base(self):
-        '''
-        json state of the Parameter
+    def snapshot_base(self, update=False):
+        """
+        json state of the Parameter.
 
         optionally pass in the state, so if this is an instrument parameter
         we can collect all calls to the server into one
-        '''
-        state = self._latest()
+        """
 
-        if state['ts'] is not None:
+        if self.has_get and self._snapshot_get and update:
+            self.get()
+
+        state = self._latest()
+        state['__class__'] = full_class(self)
+
+        if isinstance(state['ts'], datetime):
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
+
+        for attr in set(self._meta_attrs):
+            if attr == 'instrument' and getattr(self, '_instrument', None):
+                state.update({
+                    'instrument': full_class(self._instrument),
+                    'instrument_name': self._instrument.name
+                })
+
+            elif hasattr(self, attr):
+                state[attr] = getattr(self, attr)
 
         return state
 
@@ -273,6 +319,24 @@ class Parameter(Metadatable):
             context = self.name
 
         self._vals.validate(value, 'Parameter: ' + context)
+
+    def sweep(self, start, stop, step=None, num=None):
+        '''
+        Requires `start` and `stop` and (`step` or `num`)
+        The sign of `step` is not relevant.
+
+        returns: a numpy.linespace(start, stop, num)
+
+        Examples:
+            sweep(0, 10, num=5)
+            > [0.0, 2.5, 5.0, 7.5, 10.0]
+            sweep(5, 10, step=1)
+            > [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+            sweep(15, 10.5, step=1.5)
+            >[15.0, 13.5, 12.0, 10.5]
+        '''
+        return SweepFixedValues(self, start=start, stop=stop,
+                                step=step, num=num)
 
     def __getitem__(self, keys):
         '''
@@ -366,6 +430,9 @@ class StandardParameter(Parameter):
         super().__init__(name=name, vals=vals, **kwargs)
 
         self._instrument = instrument
+
+        self._meta_attrs.extend(['instrument', 'sweep_step', 'sweep_delay',
+                                'max_sweep_delay'])
 
         # stored value from last .set() or .get()
         # normally only used by set with a sweep, to avoid
@@ -624,6 +691,8 @@ class ManualParameter(Parameter):
     def __init__(self, name, instrument=None, initial_value=None, **kwargs):
         super().__init__(name=name, **kwargs)
         self._instrument = instrument
+        self._meta_attrs.extend(['instrument', 'initial_value'])
+
         if initial_value is not None:
             self.validate(initial_value)
             self._save_val(initial_value)
@@ -647,7 +716,7 @@ class ManualParameter(Parameter):
         return self.get()
 
 
-class GetLatest(DelegateAttributes):
+class GetLatest(DelegateAttributes, DeferredOperations):
     '''
     wrapper for a Parameter that just returns the last set or measured value
     stored in the Parameter itself.

@@ -24,7 +24,7 @@ Normal text the container includes and uses this object
       - **DataArray**
       - **Formatter**: GNUPlotFormat
       - **DiskIO** (may become subclass of IOManager?)
-      - **TimestampLocation** (a location_provider)
+      - **FormatLocation** (a location_provider)
 
 ## Station
 
@@ -154,7 +154,7 @@ same API for plotting and analysis during and after acquisition.
 Storage of a `DataSet` is described by three objects - an IO manager, a Location Provider,
 and a Formatter. Their default values are stored in class attributes:
 - `DataSet.default_io = DiskIO('.')`
-- `DataSet.location_provider = TimestampLocation()`
+- `DataSet.location_provider = FormatLocation()`
 - `DataSet.default_formatter = GNUPlotFormat()`.
 
 All of these can be changed for ALL `DataSet`s you create or load by setting these class
@@ -195,7 +195,7 @@ already something stored there and increment a counter to make a new location
 - an optional `name` (you can call `Loop.run(name='first_electron')` to provide this)
 that gets incorporated into the path
 
-One Location Provider class has been implemented, `TimestampLocation`, which can be
+One Location Provider class has been implemented, `FormatLocation`, which can be
 instantiated with a format (`datetime.strftime` format string) that defaults to
 `'%Y-%m-%d/%H-%M-%S'` ie a folder per day, and inside that a filename, or another
 folder, depending on how the Formatter is implemented.

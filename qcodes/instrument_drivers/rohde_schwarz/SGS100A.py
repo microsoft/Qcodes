@@ -23,7 +23,6 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, **kwargs)
 
-        self.add_parameter('IDN', get_cmd='*IDN?')
         self.add_parameter(name='frequency',
                            label='Frequency',
                            units='Hz',
@@ -62,7 +61,7 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
         self.add_function('reset', call_cmd='*RST')
         self.add_function('run_self_tests', call_cmd='*TST?')
 
-        self.connect_message('IDN')
+        self.connect_message()
 
     def parse_on_off(self, stat):
         if stat.startswith('0'):

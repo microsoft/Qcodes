@@ -1,5 +1,5 @@
-'''
-IO managers for QCodes
+"""
+IO managers for QCodes.
 
 IO managers wrap whatever physical storage layer the user wants to use
 in an interface mimicking the built-in <open> context manager, with
@@ -16,6 +16,7 @@ The main thing these managers need to implement is the open context manager:
         difference between write and append is that write empties the file
         before adding new data, and append leaves the existing contents in
         place but starts writing at the end.
+    encoding: If a special output encoding is desired. i.e. 'utf8
 
 - the file-like object returned should implement a minimal set of operations.
 
@@ -38,36 +39,51 @@ IO managers should also implement:
 - a remove method, ala os.remove(path) except that it will remove directories
     as well as files, since we're allowing "locations" to be directories
     or files.
-'''
+"""
 
 from contextlib import contextmanager
 import os
 import re
 import shutil
+from fnmatch import fnmatch
 
 ALLOWED_OPEN_MODES = ('r', 'w', 'a')
 
 
 class DiskIO:
-    '''
-    Simple IO object to wrap disk operations with a custom base location
+
+    """
+    Simple IO object to wrap disk operations with a custom base location.
 
     Also accepts both forward and backward slashes at any point, and
-    normalizes both to the OS we are currently on
-    '''
+    normalizes both to the OS we are currently on.
+
+    Args:
+        base_location (str): a path to the root data folder.
+            Converted to an absolute path immediately, so even if you supply a
+            relative path, later changes to the OS working directory will not
+            affect data paths.
+    """
+
     def __init__(self, base_location):
         base_location = self._normalize_slashes(base_location)
         self.base_location = os.path.abspath(base_location)
 
     @contextmanager
-    def open(self, filename, mode):
-        '''
-        mimics the interface of the built in open context manager
-        filename: string, relative to base_location
-        mode: 'r' (read), 'w' (write), or 'a' (append)
-            other open modes are not supported because we don't want
-            to force all IO managers to support others.
-        '''
+    def open(self, filename, mode, encoding=None):
+        """
+        Mimic the interface of the built in open context manager.
+
+        Args:
+            filename (str): path relative to base_location.
+
+            mode (str): 'r' (read), 'w' (write), or 'a' (append).
+                Other open modes are not supported because we don't want
+                to force all IO managers to support others.
+
+        Returns:
+            context manager yielding the open file
+        """
         if mode not in ALLOWED_OPEN_MODES:
             raise ValueError('mode {} not allowed in IO managers'.format(mode))
 
@@ -80,7 +96,7 @@ class DiskIO:
 
         # normally we'd construct this context manager with try/finally, but
         # here we already have a context manager for open so we just wrap it
-        with open(filepath, mode) as f:
+        with open(filepath, mode, encoding=encoding) as f:
             yield f
 
     def _normalize_slashes(self, location):
@@ -97,63 +113,78 @@ class DiskIO:
         return os.path.relpath(path, self.base_location)
 
     def __repr__(self):
-        return '<DiskIO, base_location={}>'.format(self.base_location)
+        """Show the base location in the repr."""
+        return '<DiskIO, base_location=\'{}\'>'.format(self.base_location)
 
     def join(self, *args):
-        '''
-        the context-dependent version of os.path.join for this io manager
-        '''
+        """Context-dependent os.path.join for this io manager."""
         return os.path.join(*list(map(self._normalize_slashes, args)))
 
     def isfile(self, location):
-        '''
-        does `location` match a file?
-        '''
+        """Check whether this location matches a file."""
         path = self._add_base(location)
         return os.path.isfile(path)
 
-    def list(self, location, maxdepth=1):
-        '''
-        return all files that match location, either files
-        whose names match up to an arbitrary extension
-        or any files within an exactly matching directory name,
-        nested as far as maxdepth (default 1) levels
-        '''
+    def list(self, location, maxdepth=1, include_dirs=False):
+        """
+        Return all files that match location.
+
+        This is either files whose names match up to an arbitrary extension,
+        or any files within an exactly matching directory name.
+
+        Args:
+            location (str): the location to match.
+                May contain the usual path wildcards * and ?
+
+            maxdepth (int, optional): maximum levels of directory nesting to
+                recurse into looking for files. Default 1.
+
+            include_dirs (bool, optional): whether to allow directories in
+                the results or just files. Default False.
+
+        Returns:
+            A list of matching files and/or directories, as locations
+            relative to our base_location.
+        """
         location = self._normalize_slashes(location)
-        base_location, pattern = os.path.split(location)
-        path = self._add_base(base_location)
+        search_dir, pattern = os.path.split(location)
+        path = self._add_base(search_dir)
 
         if not os.path.isdir(path):
             return []
 
-        matches = [fn for fn in os.listdir(path) if fn.startswith(pattern)]
+        matches = [fn for fn in os.listdir(path) if fnmatch(fn, pattern + '*')]
         out = []
 
         for match in matches:
             matchpath = self.join(path, match)
-            if os.path.isdir(matchpath) and match == pattern and maxdepth > 0:
-                # exact directory match - walk down to maxdepth
-                for root, dirs, files in os.walk(matchpath, topdown=True):
-                    depth = root[len(path):].count(os.path.sep)
-                    if depth == maxdepth:
-                        dirs[:] = []  # don't recurse any further
-                    for fn in files:
-                        out.append(self._strip_base(self.join(root, fn)))
+            if os.path.isdir(matchpath) and fnmatch(match, pattern):
+                if maxdepth > 0:
+                    # exact directory match - walk down to maxdepth
+                    for root, dirs, files in os.walk(matchpath, topdown=True):
+                        depth = root[len(path):].count(os.path.sep)
+                        if depth == maxdepth:
+                            dirs[:] = []  # don't recurse any further
+
+                        for fn in files + (dirs if include_dirs else []):
+                            out.append(self._strip_base(self.join(root, fn)))
+
+                elif include_dirs:
+                    out.append(self.join(search_dir, match))
 
             elif (os.path.isfile(matchpath) and
-                  (match == pattern or os.path.splitext(match)[0] == pattern)):
+                  (fnmatch(match, pattern) or
+                   fnmatch(os.path.splitext(match)[0], pattern))):
                 # exact filename match, or match up to an extension
-                # note that we need match == pattern in addition to the
+                # note that we need fnmatch(match, pattern) in addition to the
                 # splitext test to cover the case of the base filename itself
                 # containing a dot.
-                out.append(self.join(base_location, match))
+                out.append(self.join(search_dir, match))
 
         return out
 
     def remove(self, filename):
-        '''
-        delete this file/folder and prune the directory tree
-        '''
+        """Delete a file or folder and prune the directory tree."""
         path = self._add_base(filename)
         if(os.path.isdir(path)):
             shutil.rmtree(path)
@@ -168,10 +199,11 @@ class DiskIO:
             pass
 
     def remove_all(self, location):
-        '''
-        delete all files/directories in the dataset at this location,
-        and prune the directory tree
-        '''
+        """
+        Delete all files/directories in the dataset at this location.
+
+        Afterward prunes the directory tree.
+        """
         for fn in self.list(location):
             self.remove(fn)
 
