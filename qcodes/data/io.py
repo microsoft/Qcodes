@@ -66,8 +66,11 @@ class DiskIO:
     """
 
     def __init__(self, base_location):
-        base_location = self._normalize_slashes(base_location)
-        self.base_location = os.path.abspath(base_location)
+        if base_location is None:
+            self.base_location = None
+        else:
+            base_location = self._normalize_slashes(base_location)
+            self.base_location = os.path.abspath(base_location)
 
     @contextmanager
     def open(self, filename, mode, encoding=None):
@@ -107,14 +110,20 @@ class DiskIO:
 
     def _add_base(self, location):
         location = self._normalize_slashes(location)
-        return os.path.join(self.base_location, location)
+        if self.base_location:
+            return os.path.join(self.base_location, location)
+        else:
+            return location
 
     def _strip_base(self, path):
-        return os.path.relpath(path, self.base_location)
+        if self.base_location:
+            return os.path.relpath(path, self.base_location)
+        else:
+            return path
 
     def __repr__(self):
         """Show the base location in the repr."""
-        return '<DiskIO, base_location=\'{}\'>'.format(self.base_location)
+        return '<DiskIO, base_location={}>'.format(repr(self.base_location))
 
     def join(self, *args):
         """Context-dependent os.path.join for this io manager."""

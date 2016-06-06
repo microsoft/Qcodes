@@ -2,6 +2,7 @@
 
 from enum import Enum
 import time
+import logging
 from copy import deepcopy
 
 from .manager import get_data_manager, NoData
@@ -506,17 +507,70 @@ class DataSet(DelegateAttributes):
         self.formatter.read_metadata(self)
 
     def write(self):
-        """
-        Write the whole (or only changed parts) DataSet to storage,
-        overwriting the existing storage if any.
-        """
+        """Write updates to the DataSet to storage."""
         if self.mode != DataMode.LOCAL:
             raise RuntimeError('This object is connected to a DataServer, '
                                'which handles writing automatically.')
 
         if self.location is False:
             return
-        self.formatter.write(self)
+        self.formatter.write(self, self.io, self.location)
+
+    def write_copy(self, path=None, io_manager=None, location=None):
+        """
+        Write a new complete copy of this DataSet to storage.
+
+        Args:
+            path (str, optional): An absolute path on this system to write to.
+                If you specify this, you may not include either ``io_manager``
+                or ``location``.
+
+            io_manager (io_manager, optional): A new ``io_manager`` to use with
+                either the ``DataSet``'s same or a new ``location``.
+
+            location (str, optional): A new ``location`` to write to, using
+                either this ``DataSet``'s same or a new ``io_manager``.
+        """
+        if io_manager is not None or location is not None:
+            if path is not None:
+                raise TypeError('If you provide io_manager or location '
+                                'to write_copy, you may not provide path.')
+            if io_manager is None:
+                io_manager = self.io
+            elif location is None:
+                location = self.location
+        elif path is not None:
+            io_manager = DiskIO(None)
+            location = path
+        else:
+            raise TypeError('You must provide at least one argument '
+                            'to write_copy')
+
+        if location is False:
+            raise ValueError('write_copy needs a location, not False')
+
+        lsi_cache = {}
+        mr_cache = {}
+        for array_id, array in self.arrays.items():
+            lsi_cache[array_id] = array.last_saved_index
+            mr_cache[array_id] = array.modified_range
+            # array.clear_save() is not enough, we _need_ to set modified_range
+            # TODO - identify *when* clear_save is not enough, and fix it
+            # so we *can* use it. That said, maybe we will *still* want to
+            # use the full array here no matter what, or strip trailing NaNs
+            # separately, either here or in formatter.write?
+            array.last_saved_index = None
+            array.modified_range = (0, array.ndarray.size - 1)
+
+        try:
+            self.formatter.write(self, io_manager, location)
+            self.snapshot()
+            self.formatter.write_metadata(self, io_manager, location,
+                                          read_first=False)
+        finally:
+            for array_id, array in self.arrays.items():
+                array.last_saved_index = lsi_cache[array_id]
+                array.modified_range = mr_cache[array_id]
 
     def add_metadata(self, new_metadata):
         """Update DataSet.metadata with additional data."""
@@ -526,7 +580,7 @@ class DataSet(DelegateAttributes):
         """Evaluate and save the DataSet's metadata."""
         if self.location is not False:
             self.snapshot()
-            self.formatter.write_metadata(self)
+            self.formatter.write_metadata(self, self.io, self.location)
 
     def finalize(self):
         """Mark the DataSet as complete."""
