@@ -66,11 +66,17 @@ class Triton(IPInstrument):
         if tmpfile is not None:
             self._get_temp_channels(tmpfile)
         self.get_pressure_channels()
-        self._get_named_channels()
+
+        try:
+            self._get_named_channels()
+        except:
+            pass
 
     def _get_named_channels(self):
         allchans = self.ask('READ:SYS:DR:CHAN')
+        # print(allchans)
         allchans = allchans.replace('STAT:SYS:DR:CHAN:', '', 1).split(':')
+
         for ch in allchans:
             msg = 'READ:SYS:DR:CHAN:%s' % ch
             rep = self.ask(msg)
