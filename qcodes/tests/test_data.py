@@ -2,16 +2,19 @@ from unittest import TestCase
 from unittest.mock import patch
 import numpy as np
 from datetime import datetime
+import os
 
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager, NoData
 from qcodes.data.data_set import (load_data, new_data, DataMode, DataSet,
                                   TimestampLocation)
+from qcodes.data.io import DiskIO
 from qcodes.process.helpers import kill_processes
 from qcodes import active_children
 
 from .data_mocks import (MockDataManager, MockFormatter, FullIO, EmptyIO,
-                         MissingMIO, MockLive, MockArray)
+                         MissingMIO, MockLive, MockArray, DataSet1D,
+                         RecordingMockFormatter)
 from .common import strip_qc
 
 
@@ -493,3 +496,65 @@ class TestDataSet(TestCase):
         # we can only add a given array_id once
         with self.assertRaises(ValueError):
             data.add_array(MockArray())
+
+    def test_write_copy(self):
+        data = DataSet1D(location=False)
+        mockbase = os.path.abspath('some_folder')
+        data.io = DiskIO(mockbase)
+
+        mr = (2, 3)
+        mr_full = (0, 4)
+        lsi = 1
+        data.x.modified_range = mr
+        data.y.modified_range = mr
+        data.x.last_saved_index = lsi
+        data.y.last_saved_index = lsi
+
+        with self.assertRaises(TypeError):
+            data.write_copy()
+
+        with self.assertRaises(TypeError):
+            data.write_copy(path='some/path', io_manager=DiskIO('.'))
+
+        with self.assertRaises(TypeError):
+            data.write_copy(path='some/path', location='something/else')
+
+        data.formatter = RecordingMockFormatter()
+        data.write_copy(path='/some/abs/path')
+        self.assertEqual(data.formatter.write_calls,
+                         [(None, '/some/abs/path')])
+        self.assertEqual(data.formatter.write_metadata_calls,
+                         [(None, '/some/abs/path', False)])
+        # check that the formatter gets called as if nothing has been saved
+        self.assertEqual(data.formatter.modified_ranges,
+                         [{'x': mr_full, 'y': mr_full}])
+        self.assertEqual(data.formatter.last_saved_indices,
+                         [{'x': None, 'y': None}])
+        # but the dataset afterward has its original mods back
+        self.assertEqual(data.x.modified_range, mr)
+        self.assertEqual(data.y.modified_range, mr)
+        self.assertEqual(data.x.last_saved_index, lsi)
+        self.assertEqual(data.y.last_saved_index, lsi)
+
+        # recreate the formatter to clear the calls attributes
+        data.formatter = RecordingMockFormatter()
+        data.write_copy(location='some/rel/path')
+        self.assertEqual(data.formatter.write_calls,
+                         [(mockbase, 'some/rel/path')])
+        self.assertEqual(data.formatter.write_metadata_calls,
+                         [(mockbase, 'some/rel/path', False)])
+
+        mockbase2 = os.path.abspath('some/other/folder')
+        io2 = DiskIO(mockbase2)
+
+        with self.assertRaises(ValueError):
+            # if location=False we need to specify it in write_copy
+            data.write_copy(io_manager=io2)
+
+        data.location = 'yet/another/path'
+        data.formatter = RecordingMockFormatter()
+        data.write_copy(io_manager=io2)
+        self.assertEqual(data.formatter.write_calls,
+                         [(mockbase2, 'yet/another/path')])
+        self.assertEqual(data.formatter.write_metadata_calls,
+                         [(mockbase2, 'yet/another/path', False)])
