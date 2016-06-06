@@ -336,12 +336,14 @@ class TestDataSetMetaData(TestCase):
 
 class TestNewData(TestCase):
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         kill_processes()
-        self.original_lp = DataSet.location_provider
+        cls.original_lp = DataSet.location_provider
 
-    def tearDown(self):
-        DataSet.location_provider = self.original_lp
+    @classmethod
+    def tearDownClass(cls):
+        DataSet.location_provider = cls.original_lp
 
     def test_overwrite(self):
         io = MatchIO([1])
