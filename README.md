@@ -56,7 +56,7 @@ See the [Roadmap](ROADMAP.md) an overview of where the project intends to go.
 
 ## Docs
 
-We sphinx for documentations, makefiles are provied boht for Windows, and *nix.
+We use sphinx for documentations, makefiles are provied boht for Windows, and *nix.
 Go to the directory  `docs` and
 
 ```
