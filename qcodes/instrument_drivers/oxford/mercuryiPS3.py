@@ -65,7 +65,7 @@ class MercuryiPS(IPInstrument):
                            names=['B'+ax.lower()+'_setpoint' for ax in self.axes],
                            get_cmd=partial(self._get_fld, self.axes, 'FSET'),
                            set_cmd=partial(self._ramp_to_setpoint, self.axes, 'FSET'),
-                           units=['T'for ax in self.axes],
+                           units=['T' for ax in self.axes],
                            vals=Anything())
 
         self.add_parameter('rate',
