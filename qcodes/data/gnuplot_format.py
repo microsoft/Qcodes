@@ -226,8 +226,14 @@ class GNUPlotFormat(Formatter):
 
     def write(self, data_set, io_manager, location):
         """
-        Write updates in this DataSet to storage. Will choose append if
-        possible, overwrite if not.
+        Write updates in this DataSet to storage.
+
+        Will choose append if possible, overwrite if not.
+
+        Args:
+            data_set (DataSet): the data we're storing
+            io_manager (io_manager): the base location to write to
+            location (str): the file location within io_manager
         """
         arrays = data_set.arrays
 
@@ -281,6 +287,22 @@ class GNUPlotFormat(Formatter):
                 array.mark_saved(save_range[1])
 
     def write_metadata(self, data_set, io_manager, location, read_first=True):
+        """
+        Write all metadata in this DataSet to storage.
+
+        Args:
+            data_set (DataSet): the data we're storing
+
+            io_manager (io_manager): the base location to write to
+
+            location (str): the file location within io_manager
+
+            read_first (bool, optional): read previously saved metadata before
+                writing? The current metadata will still be the used if
+                there are changes, but if the saved metadata has information
+                not present in the current metadata, it will be retained.
+                Default True.
+        """
         if read_first:
             # In case the saved file has more metadata than we have here,
             # read it in first. But any changes to the in-memory copy should
