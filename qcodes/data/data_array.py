@@ -31,7 +31,7 @@ class DataArray(DelegateAttributes):
     SNAP_ATTRS = (
         'array_id',
         'name',
-        'size',
+        'shape',
         'units',
         'label',
         'action_indices',
@@ -50,17 +50,17 @@ class DataArray(DelegateAttributes):
         'value',
         '__class__',
         'set_arrays',
-        'size',
+        'shape',
         'array_id',
         'action_indices')
 
     def __init__(self, parameter=None, name=None, label=None, snapshot=None,
-                 array_id=None, set_arrays=(), size=None, action_indices=(),
+                 array_id=None, set_arrays=(), shape=None, action_indices=(),
                  units=None, is_setpoint=False, preset_data=None):
 
         self.name = name
         self.label = label
-        self.size = size
+        self.shape = shape
         self.units = units
         self.array_id = array_id
         self.is_setpoint = is_setpoint
@@ -100,8 +100,8 @@ class DataArray(DelegateAttributes):
         self.ndarray = None
         if preset_data is not None:
             self.init_data(preset_data)
-        elif size is None:
-            self.size = ()
+        elif shape is None:
+            self.shape = ()
 
         self.last_saved_index = None
         self.modified_range = None
@@ -138,7 +138,7 @@ class DataArray(DelegateAttributes):
                 raise TypeError('a setpoint array must be its own inner loop')
             set_array = self
 
-        self.size = (size, ) + self.size
+        self.shape = (size, ) + self.shape
 
         if action_index is not None:
             self.action_indices = (action_index, ) + self.action_indices
@@ -147,7 +147,7 @@ class DataArray(DelegateAttributes):
 
         if self._preset:
             inner_data = self.ndarray
-            self.ndarray = np.ndarray(self.size)
+            self.ndarray = np.ndarray(self.shape)
             # existing preset array copied to every index of the nested array.
             for i in range(size):
                 self.ndarray[i] = inner_data
@@ -171,27 +171,27 @@ class DataArray(DelegateAttributes):
                 else:
                     data = np.array(data)
 
-            if self.size is None:
-                self.size = data.shape
-            elif data.shape != self.size:
+            if self.shape is None:
+                self.shape = data.shape
+            elif data.shape != self.shape:
                 raise ValueError('preset data must be a sequence '
-                                 'with size matching the array size',
-                                 data.shape, self.size)
+                                 'with shape matching the array shape',
+                                 data.shape, self.shape)
             self.ndarray = data
             self._preset = True
         elif self.ndarray is not None:
-            if self.ndarray.shape != self.size:
+            if self.ndarray.shape != self.shape:
                 raise ValueError('data has already been initialized, '
-                                 'but its size doesn\'t match self.size')
+                                 'but its shape doesn\'t match self.shape')
             return
         else:
-            self.ndarray = np.ndarray(self.size)
+            self.ndarray = np.ndarray(self.shape)
             self.clear()
         self._set_index_bounds()
 
     def _set_index_bounds(self):
-        self._min_indices = [0 for d in self.size]
-        self._max_indices = [d - 1 for d in self.size]
+        self._min_indices = [0 for d in self.shape]
+        self._max_indices = [d - 1 for d in self.shape]
 
     def clear(self):
         """
@@ -221,7 +221,7 @@ class DataArray(DelegateAttributes):
 
         for i, index in enumerate(min_indices):
             if isinstance(index, slice):
-                start, stop, step = index.indices(self.size[i])
+                start, stop, step = index.indices(self.shape[i])
                 min_indices[i] = start
                 max_indices[i] = start + (
                     ((stop - start - 1)//step) * step)
@@ -246,7 +246,7 @@ class DataArray(DelegateAttributes):
 
     def _flat_index(self, indices, index_fill):
         indices = indices + index_fill[len(indices):]
-        return np.ravel_multi_index(tuple(zip(indices)), self.size)[0]
+        return np.ravel_multi_index(tuple(zip(indices)), self.shape)[0]
 
     def _update_modified_range(self, low, high):
         if self.modified_range:
@@ -314,7 +314,7 @@ class DataArray(DelegateAttributes):
     def __repr__(self):
         array_id_or_none = ' {}'.format(self.array_id) if self.array_id else ''
         return '{}[{}]:{}\n{}'.format(self.__class__.__name__,
-                                      ','.join(map(str, self.size)),
+                                      ','.join(map(str, self.shape)),
                                       array_id_or_none, repr(self.ndarray))
 
     def snapshot(self, update=False):

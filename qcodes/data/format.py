@@ -31,7 +31,7 @@ class Formatter:
               last_saved_index and modified_range, as well as whether or not
               it found the specified file, to determine how much to write.
     """
-    ArrayGroup = namedtuple('ArrayGroup', 'size set_arrays data name')
+    ArrayGroup = namedtuple('ArrayGroup', 'shape set_arrays data name')
 
     def write(self, data_set, io_manager, location):
         """
@@ -219,7 +219,7 @@ class Formatter:
                 continue
 
             group_name = '_'.join(sai.array_id for sai in set_arrays)
-            out.append(self.ArrayGroup(size=set_arrays[-1].size,
+            out.append(self.ArrayGroup(shape=set_arrays[-1].shape,
                                        set_arrays=set_arrays,
                                        data=tuple(sorted(data, key=id_getter)),
                                        name=group_name))

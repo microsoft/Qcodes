@@ -9,8 +9,7 @@ I considered the following test runners:
 
 - **unittest**: the standard, built-in python tester. The only thing we really need to add to this is coverage testing, so now the question is what's the easiest way to do this? On Windows just using unittest wrapped in coverage fails.
 
-- **nose2**: has a broken coverage plugin - it reports all the unindented lines, ie everything
-# that executes on import, as uncovered - but can be used by wrapping it inside coverage instead, just like unittest.
+- **nose2**: has a broken coverage plugin - it reports all the unindented lines, ie everything that executes on import, as uncovered - but can be used by wrapping it inside coverage instead, just like unittest.
 
 - **py.test**: seems to add lots of features, but it's not clear they are useful for us? Has a good coverage plugin but seems to require tons of command-line options. Requires both `pytest` and `pytest-cov` packages
 
