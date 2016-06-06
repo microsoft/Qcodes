@@ -56,6 +56,7 @@ if __name__ == '__main__':
     import coverage
     import os
     import multiprocessing as mp
+    import sys
     mp.set_start_method('spawn')
 
     # make sure coverage looks for .coveragerc in the right place
@@ -94,7 +95,8 @@ if __name__ == '__main__':
                          test_pattern=args.test_pattern)
 
     cov.stop()
-
+    # save coverage anyway since we computed it
+    cov.save()
     if success and args.show_coverage:
         cov.report()
     # restore unix-y behavior
