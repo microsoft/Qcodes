@@ -467,56 +467,77 @@ class DataSet(DelegateAttributes):
             return
         self.formatter.read_metadata(self)
 
-    def write(self, path=None, io_manager=None, location=None):
-        """
-        Write the whole (or only changed parts) DataSet to storage,
-        overwriting the existing storage if any.
-
-        If path is set, then this location will be used to write to.
-        Otherwise the location and io_manager will be used.
-
-        :path string: Path on disk to write to
-        """
-
-        if path is not None:
-            # make sure the data is written!
-            for a in self.arrays.keys():
-                # clear save is not enough, we _need_ to set modified_range
-                self.arrays[a].last_saved_index = None
-                self.arrays[a].modified_range=(0, self.arrays[a].ndarray.size - 1)
-                self.arrays[a].clear_save()
-            # write to user specified path
-            logging.info('writing dataset to path %s' % path)
-            self.formatter.write(self, io_manager=DiskIO(''), location=path)
-            return
-
+    def write(self):
+        """Write updates to the DataSet to storage."""
         if self.mode != DataMode.LOCAL:
             raise RuntimeError('This object is connected to a DataServer, '
                                'which handles writing automatically.')
 
-        # if not user specified, then take the io and location from the dataset
-        if io_manager is None:
-            io_manager=self.io
-        if location is None:
-            location=self.location
-
         if self.location is False:
             return
-        self.formatter.write(self, io_manager, location)
+        self.formatter.write(self, self.io, self.location)
+
+    def write_copy(self, path=None, io_manager=None, location=None):
+        """
+        Write a new complete copy of this DataSet to storage.
+
+        Args:
+            path (str, optional): An absolute path on this system to write to.
+                If you specify this, you may not include either ``io_manager``
+                or ``location``.
+
+            io_manager (io_manager, optional): A new ``io_manager`` to use with
+                either the ``DataSet``'s same or a new ``location``.
+
+            location (str, optional): A new ``location`` to write to, using
+                either this ``DataSet``'s same or a new ``io_manager``.
+        """
+        if io_manager is not None or location is not None:
+            if path is not None:
+                raise TypeError('If you provide io_manager or location '
+                                'to write_copy, you may not provide path.')
+            if io_manager is None:
+                io_manager = self.io
+            elif location is None:
+                location = self.location
+        elif path is not None:
+            io_manager = DiskIO('')
+            location = path
+        else:
+            raise TypeError('You must provide at least one argument '
+                            'to write_copy')
+
+        lsi_cache = {}
+        mr_cache = {}
+        for array_id, array in self.arrays.items():
+            lsi_cache[array_id] = array.last_saved_index
+            mr_cache[array_id] = array.modified_range
+            # clear_save is not enough, we _need_ to set modified_range
+            # TODO - identify *when* clear_save is not enough, and fix it
+            # so we *can* use it.
+            array.last_saved_index = None
+            array.modified_range = (0, array.ndarray.size - 1)
+            # array.clear_save()
+
+        try:
+            self.formatter.write(self, io_manager, location)
+            self.snapshot()
+            self.formatter.write_metadata(self, io_manager, location,
+                                          read_first=False)
+        finally:
+            for array_id, array in self.arrays.items():
+                array.last_saved_index = lsi_cache[array_id]
+                array.modified_range = mr_cache[array_id]
 
     def add_metadata(self, new_metadata):
         """Update DataSet.metadata with additional data."""
         deep_update(self.metadata, new_metadata)
 
-    def save_metadata(self, path=None, io_manager=None, location=None):
+    def save_metadata(self):
         """Evaluate and save the DataSet's metadata."""
-        if path is not None:
-            logging.info('writing dataset metadata to path %s' % path)
-            self.formatter.write_metadata(self, io_manager=DiskIO(''), location=path)
-
         if self.location is not False:
             self.snapshot()
-            self.formatter.write_metadata(self, io_manager=None, location=None)
+            self.formatter.write_metadata(self, self.io, self.location)
 
     def finalize(self):
         """Mark the DataSet as complete."""

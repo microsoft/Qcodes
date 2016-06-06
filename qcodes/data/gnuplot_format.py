@@ -224,7 +224,7 @@ class GNUPlotFormat(Formatter):
             parts = re.split('"\s+"', labelstr[1:-1])
             return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
 
-    def write(self, data_set, io_manager=None, location=None):
+    def write(self, data_set, io_manager, location):
         """
         Write updates in this DataSet to storage. Will choose append if
         possible, overwrite if not.
@@ -280,7 +280,7 @@ class GNUPlotFormat(Formatter):
             for array in group.data + (group.set_arrays[-1],):
                 array.mark_saved(save_range[1])
 
-    def write_metadata(self, data_set, read_first=True, io_manager=None, location=None):
+    def write_metadata(self, data_set, io_manager, location, read_first=True):
         if read_first:
             # In case the saved file has more metadata than we have here,
             # read it in first. But any changes to the in-memory copy should
@@ -290,10 +290,6 @@ class GNUPlotFormat(Formatter):
             self.read_metadata(data_set)
             deep_update(data_set.metadata, memory_metadata)
 
-        if io_manager is None:
-            io_manager = data_set.io
-        if location is None:
-            location = data_set.location
         fn = io_manager.join(location, self.metadata_file)
         with io_manager.open(fn, 'w', encoding='utf8') as snap_file:
             json.dump(data_set.metadata, snap_file, sort_keys=True,
