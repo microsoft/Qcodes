@@ -1,5 +1,5 @@
 from qcodes.utils.metadata import Metadatable
-from qcodes.utils.sync_async import Command
+from qcodes.utils.command import Command
 from qcodes.utils.validators import Validator, validate_all
 
 
@@ -40,8 +40,8 @@ class Function(Metadatable):
         to the final output value.
         may be a type casting function like `int` or `float`.
         If None (default), will not wait for or read any response
-    NOTE: parsers only apply if call_cmd is a string. The function forms
-        of call_cmd and async_call_cmd should do their own parsing.
+    NOTE: parsers only apply if call_cmd is a string. The function form
+        of call_cmd should do its own parsing.
     docstring: documentation string for the __doc__ field of the object
         The __doc__ field of the instance is used by some help systems,
         but not all (particularly not builtin `help(...)`)

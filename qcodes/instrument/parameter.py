@@ -42,7 +42,7 @@ from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import (permissive_range, wait_secs, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr)
 from qcodes.utils.metadata import Metadatable
-from qcodes.utils.sync_async import Command, NoCommandError
+from qcodes.utils.command import Command, NoCommandError
 from qcodes.utils.validators import Validator, Numbers, Ints, Enum
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
