@@ -53,6 +53,19 @@ See [Contributing](CONTRIBUTING.md) for information about bug/issue reports, con
 
 See the [Roadmap](ROADMAP.md) an overview of where the project intends to go.
 
+
+## Docs
+
+We use sphinx for documentations, makefiles are provied boht for Windows, and *nix.
+Go to the directory  `docs` and
+
+```
+make html
+```
+
+This generate a webpage, index.html,  in  `docs/_build/html` with the rendered html.
+
+
 ## License
 
 Qcodes is currently a private development of Microsoft's Station Q collaboration, and IS NOT licensed for distribution outside the collaboration except by arrangement. We intend to release it as open source software once it is robust and reasonably stable, under the MIT license. See [License](LICENSE.md).
