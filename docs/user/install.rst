@@ -3,8 +3,6 @@
 Installation
 ============
 
-Simple thing from the FAQ
-
 .. note:: this should be pip install qcodes
 
 

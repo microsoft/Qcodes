@@ -9,4 +9,3 @@ This is the guide for you, the developer that wants to maintain/expand QCoDes.
    help
    contributing
    objects
-   faq

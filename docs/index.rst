@@ -40,8 +40,8 @@ Documentation
 .. toctree::
    :maxdepth: 2
 
-   community/index
    user/index
+   community/index
    api/index
    roadmap
    changes/index
