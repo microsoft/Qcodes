@@ -1,7 +1,5 @@
-import asyncio
-
 from qcodes.utils.metadata import Metadatable
-from qcodes.utils.sync_async import syncable_command
+from qcodes.utils.sync_async import Command
 from qcodes.utils.validators import Validator, validate_all
 
 
@@ -19,7 +17,7 @@ class Function(Metadatable):
     in this case.
 
     You execute this function object like a normal function, or use its
-    .call method; or call it async with the .call_async method.
+    .call method.
 
     name: the local name of this function
     instrument: an instrument that handles this function
@@ -30,8 +28,6 @@ class Function(Metadatable):
           you can only use a string if an instrument is provided,
           this string will be passed to instrument.write
         - a function (with arg count matching args list)
-    async_call_cmd: an async function to use for call_async, or for both
-        sync and async if call_cmd is missing or None.
 
     args: list of Validator objects,
         one for each arg to the Function
@@ -50,8 +46,7 @@ class Function(Metadatable):
         The __doc__ field of the instance is used by some help systems,
         but not all (particularly not builtin `help(...)`)
     '''
-    def __init__(self, name, instrument=None,
-                 call_cmd=None, async_call_cmd=None,
+    def __init__(self, name, instrument=None, call_cmd=None,
                  args=[], arg_parser=None, return_parser=None,
                  docstring=None, **kwargs):
         super().__init__(**kwargs)
@@ -63,8 +58,7 @@ class Function(Metadatable):
             self.__doc__ = docstring
 
         self._set_args(args)
-        self._set_call(call_cmd, async_call_cmd,
-                       arg_parser, return_parser)
+        self._set_call(call_cmd, arg_parser, return_parser)
 
     def _set_args(self, args):
         for arg in args:
@@ -73,8 +67,7 @@ class Function(Metadatable):
         self._args = args
         self._arg_count = len(args)
 
-    def _set_call(self, call_cmd, async_call_cmd,
-                  arg_parser, return_parser):
+    def _set_call(self, call_cmd, arg_parser, return_parser):
         if self._instrument:
             ask_or_write = self._instrument.write
             if isinstance(call_cmd, str) and return_parser:
@@ -82,11 +75,9 @@ class Function(Metadatable):
         else:
             ask_or_write = None
 
-        self._call, self._call_async = syncable_command(
-            arg_count=self._arg_count,
-            cmd=call_cmd, acmd=async_call_cmd,
-            exec_str=ask_or_write,
-            input_parser=arg_parser, output_parser=return_parser)
+        self._call = Command(arg_count=self._arg_count, cmd=call_cmd,
+                             exec_str=ask_or_write, input_parser=arg_parser,
+                             output_parser=return_parser)
 
     def validate(self, *args):
         '''
@@ -112,11 +103,6 @@ class Function(Metadatable):
     def call(self, *args):
         self.validate(*args)
         return self._call(*args)
-
-    @asyncio.coroutine
-    def call_async(self, *args):
-        self.validate(*args)
-        return (yield from self._call_async(*args))
 
     def get_attrs(self):
         '''

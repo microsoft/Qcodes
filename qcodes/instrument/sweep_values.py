@@ -2,7 +2,6 @@ from copy import deepcopy
 
 from qcodes.utils.helpers import (is_sequence, permissive_range, make_sweep,
                                   named_repr)
-from qcodes.utils.sync_async import mock_async, mock_sync
 from qcodes.utils.metadata import Metadatable
 
 
@@ -13,11 +12,11 @@ class SweepValues(Metadatable):
 
     inputs:
         parameter: the target of the sweep, an object with
-            set (and/or set_async), and optionally validate methods
+            set, and optionally validate methods
 
     intended use is to iterate over in a sweep, so it must support:
         .__iter__ (and .__next__ if necessary).
-        .set and .set_async are provided by the base class
+        .set is provided by the base class
 
     optionally, it can have a feedback method that allows the sweep to pass
     measurements back to this object for adaptive sampling:
@@ -26,18 +25,16 @@ class SweepValues(Metadatable):
 
     example usage:
         for i, value in eumerate(sv):
-            sv.set(value)  # or (await / yield from) sv.set_async(value)
-                           # set(_async) just shortcuts sv.parameter.set
+            sv.set(value)
             sleep(delay)
             vals = measure()
             sv.feedback((i, ), vals) # optional - sweep should not assume
                                      # .feedback exists
 
-    note though that sweeps should only require set, set_async, and
-    __iter__ - ie "for val in sv", so any class that implements these
-    may be used in sweeps. That allows things like adaptive sampling,
-    where you don't know ahead of time what the values will be or even
-    how many there are.
+    note though that sweeps should only require set and __iter__ - ie
+    "for val in sv", so any class that implements these may be used in sweeps.
+    That allows things like adaptive sampling, where you don't know ahead of
+    time what the values will be or even how many there are.
     '''
     def __init__(self, parameter, **kwargs):
         super().__init__(**kwargs)
@@ -45,19 +42,13 @@ class SweepValues(Metadatable):
         self.name = parameter.name
         self._values = []
 
-        if not getattr(parameter, 'has_set', None):
+        # allow has_set=False to override the existence of a set method,
+        # but don't require it to be present (and truthy) otherwise
+        if not (getattr(parameter, 'set', None) and
+                getattr(parameter, 'has_set', True)):
             raise TypeError('parameter {} is not settable'.format(parameter))
 
-        # create the set and set_async shortcuts
-        if hasattr(parameter, 'set'):
-            self.set = parameter.set
-        else:
-            self.set = mock_sync(parameter.set_async)
-
-        if hasattr(parameter, 'set_async'):
-            self.set_async = parameter.set_async
-        else:
-            self.set_async = mock_async(parameter.set)
+        self.set = parameter.set
 
     def validate(self, values):
         '''
@@ -83,8 +74,8 @@ class SweepFixedValues(SweepValues):
     a fixed collection of parameter values to be iterated over during a sweep.
 
     inputs:
-        parameter: the target of the sweep, an object with
-            set (and/or set_async), and optionally validate methods
+        parameter: the target of the sweep, an object with set and
+            optionally validate methods
         keys: one or a sequence of items, each of which can be:
             - a single parameter value
             - a sequence of parameter values
@@ -108,11 +99,10 @@ class SweepFixedValues(SweepValues):
     sv3 = sv + sv2
     sv4 = sv.copy()
 
-    note though that sweeps should only require set, set_async, and
-    __iter__ - ie "for val in sv", so any class that implements these
-    may be used in sweeps. That allows things like adaptive sampling,
-    where you don't know ahead of time what the values will be or even
-    how many there are.
+    note though that sweeps should only require set and __iter__ - ie
+    "for val in sv", so any class that implements these may be used in sweeps.
+    That allows things like adaptive sampling, where you don't know ahead of
+    time what the values will be or even how many there are.
     '''
     def __init__(self, parameter, keys=None, start=None, stop=None,
                  step=None, num=None):

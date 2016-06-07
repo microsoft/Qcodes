@@ -10,12 +10,11 @@ To use Parameters in data acquisition loops, they should have:
     .label - string to use as an axis label (optional, defaults to .name)
     (except for composite measurements, see below)
 
-Controlled parameters should have a .set(value) (and/or .set_async(value))
-method, which takes a single value to apply to this parameter.
-To use this parameter for sweeping, also connect its __getitem__ to
-SweepFixedValues as below.
+Controlled parameters should have a .set(value) method, which takes a single
+value to apply to this parameter. To use this parameter for sweeping, also
+connect its __getitem__ to SweepFixedValues as below.
 
-Measured parameters should have .get() (and/or .get_async()) which can return:
+Measured parameters should have .get() which can return:
 - a single value:
     parameter should have .name and optional .label as above
 - several values of different meaning (raw and measured, I and Q,
@@ -35,7 +34,6 @@ Measured parameters should have .get() (and/or .get_async()) which can return:
 
 from datetime import datetime, timedelta
 import time
-import asyncio
 import logging
 import os
 import collections
@@ -44,7 +42,7 @@ from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import (permissive_range, wait_secs, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr)
 from qcodes.utils.metadata import Metadatable
-from qcodes.utils.sync_async import syncable_command, NoCommandError
+from qcodes.utils.sync_async import Command, NoCommandError
 from qcodes.utils.validators import Validator, Numbers, Ints, Enum
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
@@ -65,11 +63,10 @@ class Parameter(Metadatable, DeferredOperations):
     defines one generic parameter, not necessarily part of
     an instrument. can be settable and/or gettable.
 
-    A settable Parameter has a .set and/or a .set_async method,
-    and supports only a single value at a time (see below)
+    A settable Parameter has a .set method, and supports only a single value
+    at a time (see below)
 
-    A gettable Parameter has a .get and/or a .get_async method,
-    which may return:
+    A gettable Parameter has a .get method, which may return:
     1.  a single value
     2.  a sequence of values with different names (for example,
         raw and interpreted, I and Q, several fit parameters...)
@@ -357,12 +354,10 @@ class StandardParameter(Parameter):
     get_cmd: a string or function to get this parameter
         you can only use a string if an instrument is provided,
         this string will be passed to instrument.ask
-    async_get_cmd: a function to use for async get, or for both sync
-        and async if get_cmd is missing or None
     get_parser: function to transform the response from get
         to the final output value.
-        NOTE: only applies if get_cmd is a string. The function forms
-        of get_cmd and async_get_cmd should do their own parsing
+        NOTE: only applies if get_cmd is a string. The function form
+        of get_cmd should do its own parsing
         See also val_mapping
 
     set_cmd: command to set this parameter, either:
@@ -370,12 +365,10 @@ class StandardParameter(Parameter):
           you can only use a string if an instrument is provided,
           this string will be passed to instrument.write
         - a function (of one parameter)
-    async_set_cmd: a function to use for async set, or for both sync
-        and async if set_cmd is missing or None
     set_parser: function to transform the input set value to an encoded
         value sent to the instrument.
-        NOTE: only applies if set_cmd is a string. The function forms
-        of set_cmd and async_set_cmd should do their own parsing
+        NOTE: only applies if set_cmd is a string. The function form
+        of set_cmd  should do its own parsing
         See also val_mapping
 
     val_mapping: a bidirectional map from data/readable values to
@@ -406,8 +399,8 @@ class StandardParameter(Parameter):
         but not all
     '''
     def __init__(self, name, instrument=None,
-                 get_cmd=None, async_get_cmd=None, get_parser=None,
-                 set_cmd=None, async_set_cmd=None, set_parser=None,
+                 get_cmd=None, get_parser=None,
+                 set_cmd=None, set_parser=None,
                  delay=None, max_delay=None, step=None, max_val_age=3600,
                  vals=None, val_mapping=None, **kwargs):
         # handle val_mapping before super init because it impacts
@@ -439,8 +432,8 @@ class StandardParameter(Parameter):
         # having to call .get() for every .set()
         self._max_val_age = 0
 
-        self._set_get(get_cmd, async_get_cmd, get_parser)
-        self._set_set(set_cmd, async_set_cmd, set_parser)
+        self._set_get(get_cmd, get_parser)
+        self._set_set(set_cmd, set_parser)
         self.set_delay(delay, max_delay)
         self.set_step(step, max_val_age)
 
@@ -458,30 +451,23 @@ class StandardParameter(Parameter):
                 'getting {}:{}'.format(self._instrument.name, self.name),)
             raise e
 
-    @asyncio.coroutine
-    def get_async(self):
-        value = yield from self._get_async()
-        self._save_val(value)
-        return value
+    def _set_get(self, get_cmd, get_parser):
+        exec_str = self._instrument.ask if self._instrument else None
+        self._get = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str,
+                            output_parser=get_parser,
+                            no_cmd_function=no_getter)
 
-    def _set_get(self, get_cmd, async_get_cmd, get_parser):
-        self._get, self._get_async = syncable_command(
-            arg_count=0, cmd=get_cmd, acmd=async_get_cmd,
-            exec_str=self._instrument.ask if self._instrument else None,
-            output_parser=get_parser, no_cmd_function=no_getter)
-
-        if self._get is not no_getter:
+        if get_cmd is not None:
             self.has_get = True
 
-    def _set_set(self, set_cmd, async_set_cmd, set_parser):
+    def _set_set(self, set_cmd, set_parser):
         # note: this does not set the final setter functions. that's handled
         # in self.set_sweep, when we choose a swept or non-swept setter.
-        self._set, self._set_async = syncable_command(
-            arg_count=1, cmd=set_cmd, acmd=async_set_cmd,
-            exec_str=self._instrument.write if self._instrument else None,
-            input_parser=set_parser, no_cmd_function=no_setter)
+        exec_str = self._instrument.write if self._instrument else None
+        self._set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str,
+                            input_parser=set_parser, no_cmd_function=no_setter)
 
-        if self._set is not no_setter:
+        if set_cmd is not None:
             self.has_set = True
 
     def _validate_and_set(self, value):
@@ -498,16 +484,6 @@ class StandardParameter(Parameter):
                 'setting {}:{} to {}'.format(self._instrument.name,
                                              self.name, repr(value)),)
             raise e
-
-    @asyncio.coroutine
-    def _validate_and_set_async(self, value):
-        clock = time.perf_counter()
-        self.validate(value)
-        yield from self._set_async(value)
-        self._save_val(value)
-        if self._delay is not None:
-            clock, remainder = self._update_set_ts(clock)
-            yield from asyncio.sleep(remainder)
 
     def _sweep_steps(self, value):
         oldest_ok_val = datetime.now() - timedelta(seconds=self._max_val_age)
@@ -570,21 +546,6 @@ class StandardParameter(Parameter):
                                              self.name, repr(value)),)
             raise e
 
-    @asyncio.coroutine
-    def _validate_and_sweep_async(self, value):
-        self.validate(value)
-        step_clock = time.perf_counter()
-
-        for step_val in self._sweep_steps(value):
-            yield from self._set_async(step_val)
-            self._save_val(step_val)
-            if self._delay is not None:
-                step_clock, remainder = self._update_set_ts(step_clock)
-                yield from asyncio.sleep(remainder)
-
-        yield from self._set_async(value)
-        self._save_val(value)
-
     def set_step(self, step, max_val_age=None):
         '''
         Configure whether this Parameter uses steps during set operations.
@@ -604,7 +565,6 @@ class StandardParameter(Parameter):
         if not step:
             # single-command setting
             self.set = self._validate_and_set
-            self.set_async = self._validate_and_set_async
 
         elif not self._vals.is_numeric:
             raise TypeError('you can only step numeric parameters')
@@ -629,7 +589,6 @@ class StandardParameter(Parameter):
 
             self._step = step
             self.set = self._validate_and_sweep
-            self.set_async = self._validate_and_sweep_async
 
     def get_delay(self):
         ''' Return the delay time of this parameter. Also see `set_delay` '''
@@ -704,16 +663,8 @@ class ManualParameter(Parameter):
         self.validate(value)
         self._save_val(value)
 
-    @asyncio.coroutine
-    def set_async(self, value):
-        return self.set(value)
-
     def get(self):
         return self._latest()['value']
-
-    @asyncio.coroutine
-    def get_async(self):
-        return self.get()
 
 
 class GetLatest(DelegateAttributes, DeferredOperations):
@@ -731,14 +682,10 @@ class GetLatest(DelegateAttributes, DeferredOperations):
         self.parameter = parameter
 
     delegate_attr_objects = ['parameter']
-    omit_delegate_attrs = ['set', 'set_async']
+    omit_delegate_attrs = ['set']
 
     def get(self):
         return self.parameter._latest()['value']
-
-    @asyncio.coroutine
-    def get_async(self):
-        return self.get()
 
     def __call__(self):
         return self.get()
