@@ -33,14 +33,39 @@ class MockFormatter:
     def read(self, data_set):
         data_set.has_read_data = True
 
-    def write(self, data_set):
+    def write(self, data_set, io_manager, location):
         data_set.has_written_data = True
 
     def read_metadata(self, data_set):
         data_set.has_read_metadata = True
 
-    def write_metadata(self, data_set):
+    def write_metadata(self, data_set, io_manager, location, read_first=True):
         data_set.has_written_metadata = True
+
+
+class RecordingMockFormatter:
+    def __init__(self):
+        self.write_calls = []
+        self.modified_ranges = []
+        self.last_saved_indices = []
+        self.write_metadata_calls = []
+
+    def write(self, data_set, io_manager, location):
+        self.write_calls.append((io_manager.base_location, location))
+
+        self.modified_ranges.append({
+            array_id: array.modified_range
+            for array_id, array in data_set.arrays.items()
+        })
+
+        self.last_saved_indices.append({
+            array_id: array.last_saved_index
+            for array_id, array in data_set.arrays.items()
+        })
+
+    def write_metadata(self, data_set, io_manager, location, read_first=True):
+        self.write_metadata_calls.append((io_manager.base_location,
+                                          location, read_first))
 
 
 class MatchIO:
