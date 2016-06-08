@@ -227,6 +227,9 @@ dummy:
 	@echo "Build finished. Dummy builder generates no files."
 
 gh-pages:
+	git status
+	git remote -v
+	git fetch
 	git checkout gh-pages
 	rm -rf build _sources _static _modules
 	git checkout master $(GH_PAGES_SOURCES)

@@ -43,15 +43,13 @@ If you registered Qcodes with Python via `setup.py develop`, all you need to do 
 
 ## Usage
 
-See the [docs](docs) directory, particularly the notebooks in [docs/examples](docs/examples)
+Read the [docs](http://qdev-dk.github.io/Qcodes) and the notebooks in [docs/examples](docs/examples)
 
-For frequently asked questions see the [Qcodes FAQ](docs/FAQ.md).
 
 ## Contributing
 
-See [Contributing](CONTRIBUTING.md) for information about bug/issue reports, contributing code, style, and testing
-
-See the [Roadmap](ROADMAP.md) an overview of where the project intends to go.
+See [Contributing](CONTRIBUTING.rst) for information about bug/issue reports, contributing code, style, and testing
+See the [Roadmap](http://qdev-dk.github.io/Qcodes/roadmap.html) an overview of where the project intends to go.
 
 
 ## Docs
@@ -64,6 +62,8 @@ make html
 ```
 
 This generate a webpage, index.html,  in  `docs/_build/html` with the rendered html.
+
+Documentation is updated on every successful build.
 
 
 ## License
