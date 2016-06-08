@@ -2,8 +2,27 @@
 Live plotting in Jupyter notebooks
 '''
 from IPython.display import display
+import threading
+import time
+import logging
 
 from qcodes.widgets.widgets import HiddenUpdateWidget
+from qcodes.utils.helpers import in_ipynb
+
+
+class QCodesTimer(threading.Thread):
+    def __init__(self, fn, interval=1, **kwargs):
+        super().__init__(**kwargs)
+        self.fn = fn
+        self.interval = interval
+
+    def run(self):
+        while 1:
+            logging.debug('QCodesTimer: start sleep')
+            time.sleep(self.interval)
+            # do something
+            logging.debug('QCodesTimer: run!')
+            self.fn()
 
 
 class BasePlot:
@@ -27,8 +46,13 @@ class BasePlot:
 
         self.interval = interval
         if interval:
-            self.update_widget = HiddenUpdateWidget(self.update, interval)
-            display(self.update_widget)
+            if in_ipynb():
+                self.update_widget = HiddenUpdateWidget(self.update, interval)
+                display(self.update_widget)
+            else:
+                logging.info('create QCodesTimer: interval %.1f ' % interval)
+                self.update_widget = QCodesTimer(self.update, interval)
+                self.update_widget.start()
 
     def clear(self):
         '''

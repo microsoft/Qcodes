@@ -5,8 +5,10 @@ import logging
 import math
 import sys
 import io
+import os
 import numpy as np
 import json
+from IPython import get_ipython
 
 _tprint_times = {}
 
@@ -25,20 +27,45 @@ class NumpyJSONEncoder(json.JSONEncoder):
         else:
             return super(NumpyJSONEncoder, self).default(obj)
 
+
 def tprint(string, dt=1, tag='default'):
-    """ Print progress of a loop every dt seconds """
+    """Print progress of a loop every dt seconds."""
     ptime = _tprint_times.get(tag, 0)
     if (time.time() - ptime) > dt:
         print(string)
         _tprint_times[tag] = time.time()
 
 
+def is_interactive():
+    """Return True if we are running in any interactive environment."""
+    import __main__ as main
+    return not hasattr(main, '__file__')
+
+
+def in_spyder():
+    """Return True if we are running in the Spyder environment."""
+    return bool(any('SPYDER' in name for name in os.environ))
+
+
+def in_ipynb():
+    """Return True if we are running in an IPython / Jupyter notebook."""
+    try:
+        cfg = get_ipython().config
+        if cfg['IPKernelApp']['parent_appname'] == 'ipython-notebook':
+            return True
+        else:
+            return False
+    except NameError:
+        return False
+
+
 def in_notebook():
-    '''
-    Returns True if the code is running with a ipython or jypyter
+    """
+    Return True if we are running in ipython or jypyter.
+
     This could mean we are connected to a notebook, but this is not guaranteed.
     see: http://stackoverflow.com/questions/15411967
-    '''
+    """
     return 'ipy' in repr(sys.stdout)
 
 
