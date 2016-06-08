@@ -100,12 +100,14 @@ class IPInstrument(Instrument):
         super().close()
 
     def write_raw(self, cmd):
+        """Low-level interface to send a command that gets no response."""
         with self._ensure_connection:
             self._send(cmd)
             if self._confirmation:
                 self._recv()
 
     def ask_raw(self, cmd):
+        """Low-level interface to send a command an read a response."""
         with self._ensure_connection:
             self._send(cmd)
             return self._recv()
