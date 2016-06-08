@@ -227,10 +227,10 @@ dummy:
 	@echo "Build finished. Dummy builder generates no files."
 
 gh-pages:
-	git checkout -b gh-pages
-	git rm -rf .
-	git push --set-upstream origin gh-pages
-	rm -rf build _sources _static _modules
+	git remote add upstream https://${GITHUB_API_KEY}@github.com/qdev-dk/Qcodes.git
+	git fetch upstream
+	git checkout gh-pages
+	rm -rf ./*
 	git checkout master $(GH_PAGES_SOURCES)
 	git reset HEAD
 	cd docs && make html && \
