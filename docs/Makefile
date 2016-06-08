@@ -229,8 +229,9 @@ dummy:
 gh-pages:
 	git status
 	git remote -v
-	git fetch
-	git checkout gh-pages
+	git fetch upstream
+	git fetch gh-pages
+	git checkout upstream/gh-pages
 	rm -rf build _sources _static _modules
 	git checkout master $(GH_PAGES_SOURCES)
 	git reset HEAD
