@@ -227,11 +227,9 @@ dummy:
 	@echo "Build finished. Dummy builder generates no files."
 
 gh-pages:
-	git status
-	git remote -v
-	git fetch upstream
-	git fetch gh-pages
-	git checkout upstream/gh-pages
+	git checkout -b gh-pages
+	git rm -rf .
+	git push --set-upstream origin gh-pages
 	rm -rf build _sources _static _modules
 	git checkout master $(GH_PAGES_SOURCES)
 	git reset HEAD
