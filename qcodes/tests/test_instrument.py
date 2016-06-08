@@ -105,13 +105,10 @@ class GatesBadDelayValue(MockGates):
 class TestParameters(TestCase):
     def setUp(self):
         self.model = AMockModel()
-        self.read_response = 'I am the walrus!'
 
-        self.gates = MockGates(model=self.model,
-                               read_response=self.read_response)
+        self.gates = MockGates(model=self.model)
         self.source = MockSource(model=self.model)
-        self.meter = MockMeter(model=self.model,
-                               read_response=self.read_response)
+        self.meter = MockMeter(model=self.model)
 
         self.init_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -555,16 +552,9 @@ class TestParameters(TestCase):
         with self.assertRaises(AttributeError):
             noise.get_latest.set(50)
 
-    def test_mock_read(self):
-        gates, meter = self.gates, self.meter
-        self.assertEqual(meter.read(), self.read_response)
-        self.assertEqual(gates.read(), self.read_response)
-
     def test_base_instrument_errors(self):
         b = Instrument('silent', server_name=None)
 
-        with self.assertRaises(NotImplementedError):
-            b.read()
         with self.assertRaises(NotImplementedError):
             b.write('hello!')
         with self.assertRaises(NotImplementedError):

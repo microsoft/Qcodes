@@ -389,11 +389,6 @@ class Instrument(Metadatable, DelegateAttributes):
             'Instrument {} has not defined a write method'.format(
                 type(self).__name__))
 
-    def read(self):
-        raise NotImplementedError(
-            'Instrument {} has not defined a read method'.format(
-                type(self).__name__))
-
     def ask(self, cmd):
         raise NotImplementedError(
             'Instrument {} has not defined an ask method'.format(

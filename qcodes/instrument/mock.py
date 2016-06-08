@@ -21,8 +21,6 @@ class MockInstrument(Instrument):
         <name>_get(param) -> returns the value
     keep_history: record (in self.history) every command sent to this
         instrument (default True)
-    read_response: simple constant response to send to self.read(),
-        just for testing
     server_name: leave default ('') to make a MockServer-#######
         with the number matching the model server id, or set None
         to not use a server.
@@ -36,8 +34,7 @@ class MockInstrument(Instrument):
     '''
     shared_kwargs = ['model']
 
-    def __init__(self, name, delay=0, model=None, keep_history=True,
-                 read_response=None, **kwargs):
+    def __init__(self, name, delay=0, model=None, keep_history=True, **kwargs):
 
         super().__init__(name, **kwargs)
 
@@ -55,9 +52,6 @@ class MockInstrument(Instrument):
         if keep_history:
             self.keep_history = True
             self.history = []
-
-        # just for test purposes
-        self._read_response = read_response
 
     @classmethod
     def default_server_name(cls, **kwargs):
@@ -94,12 +88,6 @@ class MockInstrument(Instrument):
                                  'ask', parameter))
 
         return self._model.ask('cmd', self.name + ':' + cmd)
-
-    def read(self):
-        if self._delay:
-            time.sleep(self._delay)
-
-        return self._read_response
 
 
 class MockModel(ServerManager, BaseServer):  # pragma: no cover
