@@ -1,3 +1,5 @@
+.. _Community :
+
 Community Guide
 ===============
 
