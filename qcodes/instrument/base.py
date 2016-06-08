@@ -380,16 +380,70 @@ class Instrument(Metadatable, DelegateAttributes):
         return snap
 
     ##########################################################################
-    # `write`, `read`, and `ask` are the interface to hardware               #
-    # Override these in a subclass.                                          #
+    # `write_raw` and `ask_raw` are the interface to hardware                #
+    # `write` and `ask` are standard wrappers to help with error reporting   #
     ##########################################################################
 
     def write(self, cmd):
+        """
+        Write a command string with NO response to the hardware.
+
+        Subclasses that transform ``cmd`` should override this method, and in
+        it call ``super().write(new_cmd)``. Subclasses that define a new
+        hardware communication should instead override ``write_raw``.
+
+        Args:
+            cmd (str): the string to send to the instrument
+
+        Returns:
+            None
+        """
+        try:
+            self.write_raw(cmd)
+        except Exception as e:
+            e.args = e.args + ('writing ' + repr(cmd) + ' to ' + repr(self),)
+            raise e
+
+    def write_raw(self, cmd):
+        """
+        Low level method to write a command string to the hardware.
+
+        Subclasses that define a new hardware communication should override
+        this method. Subclasses that transform ``cmd`` should instead
+        override ``write``.
+        """
         raise NotImplementedError(
             'Instrument {} has not defined a write method'.format(
                 type(self).__name__))
 
     def ask(self, cmd):
+        """
+        Write a command string to the hardware and return a response.
+
+        Subclasses that transform ``cmd`` should override this method, and in
+        it call ``super().ask(new_cmd)``. Subclasses that define a new
+        hardware communication should instead override ``ask_raw``.
+
+        Args:
+            cmd (str): the string to send to the instrument
+
+        Returns:
+            response (str, normally)
+        """
+        try:
+            return self.ask_raw(cmd)
+        except Exception as e:
+            e.args = e.args + ('asking ' + repr(cmd) + ' to ' + repr(self),)
+            raise e
+
+    def ask_raw(self, cmd):
+        """
+        Low level method to write to the hardware and return a response.
+
+        Subclasses that define a new hardware communication should override
+        this method. Subclasses that transform ``cmd`` should instead
+        override ``ask``.
+        """
         raise NotImplementedError(
             'Instrument {} has not defined an ask method'.format(
                 type(self).__name__))

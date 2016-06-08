@@ -130,20 +130,14 @@ class VisaInstrument(Instrument):
         if ret_code != 0:
             raise visa.VisaIOError(ret_code)
 
-    def write(self, cmd):
-        try:
-            nr_bytes_written, ret_code = self.visa_handle.write(cmd)
-            self.check_error(ret_code)
-        except Exception as e:
-            e.args = e.args + ('writing ' + repr(cmd) + ' to ' + repr(self),)
-            raise e
+    def write_raw(self, cmd):
+        """Low-level interface to ``visa_handle.write``."""
+        nr_bytes_written, ret_code = self.visa_handle.write(cmd)
+        self.check_error(ret_code)
 
-    def ask(self, cmd):
-        try:
-            return self.visa_handle.ask(cmd)
-        except Exception as e:
-            e.args = e.args + ('asking ' + repr(cmd) + ' to ' + repr(self),)
-            raise e
+    def ask_raw(self, cmd):
+        """Low-level interface to ``visa_handle.ask``."""
+        return self.visa_handle.ask(cmd)
 
     def snapshot_base(self, update=False):
         snap = super().snapshot_base(update=update)

@@ -60,7 +60,8 @@ class MockInstrument(Instrument):
             return model.name.replace('Model', 'MockInsts')
         return 'MockInstruments'
 
-    def write(self, cmd):
+    def write_raw(self, cmd):
+        """Low-level interface to ``model.write``."""
         if self._delay:
             time.sleep(self._delay)
 
@@ -75,7 +76,8 @@ class MockInstrument(Instrument):
 
         self._model.write('cmd', self.name + ':' + cmd)
 
-    def ask(self, cmd):
+    def ask_raw(self, cmd):
+        """Low-level interface to ``model.ask``."""
         if self._delay:
             time.sleep(self._delay)
 
