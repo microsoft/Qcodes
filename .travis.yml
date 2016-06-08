@@ -12,6 +12,7 @@ script:
     - python  qcodes/test.py -c
 after_success:
     # build the docs
+    - ls
     - make -f docs/Makefile gh-pages
     # codecov
     - cd qcodes
