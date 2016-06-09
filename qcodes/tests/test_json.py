@@ -18,7 +18,8 @@ class TestNumpyJson(TestCase):
             'weight': 19,
             'length': 45.23,
             'points': [12, 24, 48],
-            'RapunzelNumber': np.float64(4.89) + np.float64(0.11) * 1j
+            'RapunzelNumber': np.float64(4.89) + np.float64(0.11) * 1j,
+            'verisimilitude': 1j
         }
 
     def test_numpy_fail(self):
@@ -40,7 +41,8 @@ class TestNumpyJson(TestCase):
             'weight': 19,
             'length': 45.23,
             'points': [12, 24, 48],
-            'RapunzelNumber': {'__dtype__': 'complex', 're': 4.89, 'im': 0.11}
+            'RapunzelNumber': {'__dtype__': 'complex', 're': 4.89, 'im': 0.11},
+            'verisimilitude': {'__dtype__': 'complex', 're': 0, 'im': 1}
         }
 
         self.assertEqual(metadata, data_dict)

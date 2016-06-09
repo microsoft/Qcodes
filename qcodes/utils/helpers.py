@@ -23,8 +23,8 @@ class NumpyJSONEncoder(json.JSONEncoder):
             return float(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
-        elif isinstance(obj, numbers.Complex):
-            return {'__dtype__': 'complex', 're': self.default(obj.real), 'im': self.default(obj.imag)}
+        elif isinstance(obj, numbers.Complex) and not isinstance(obj, numbers.Real):
+            return {'__dtype__': 'complex', 're': float(obj.real), 'im': float(obj.imag)}
         else:
             return super(NumpyJSONEncoder, self).default(obj)
 
