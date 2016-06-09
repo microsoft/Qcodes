@@ -3,7 +3,7 @@ import time
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
-from qcodes.utils.nested_attrs import NestedAttrAccess, _NoDefault
+from qcodes.utils.nested_attrs import NestedAttrAccess
 from qcodes.utils.validators import Anything
 from .parameter import StandardParameter
 from .function import Function
@@ -335,20 +335,7 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
     def get(self, param_name):
         return self.parameters[param_name].get()
 
-    def param_getattr(self, param_name, attr, default=_NoDefault):
-        if default is _NoDefault:
-            return getattr(self.parameters[param_name], attr)
-        else:
-            return getattr(self.parameters[param_name], attr, default)
-
-    def param_setattr(self, param_name, attr, value):
-        setattr(self.parameters[param_name], attr, value)
-
-    def param_call(self, param_name, method_name, *args, **kwargs):
-        func = getattr(self.parameters[param_name], method_name)
-        return func(*args, **kwargs)
-
-    # and one lonely one for Functions
+    # and one for Functions
     def call(self, func_name, *args):
         return self.functions[func_name].call(*args)
 

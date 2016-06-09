@@ -162,25 +162,33 @@ class RemoteParameter(RemoteComponent, DeferredOperations):
         return Parameter.sweep(self, *args, **kwargs)
 
     def _latest(self):
-        return self._instrument._ask_server('param_call', self.name,
-                                            '_latest')
+        return self._instrument._ask_server('callattr', self.name + '._latest')
 
     def snapshot(self, update=False):
-        return self._instrument._ask_server('param_call', self.name,
-                                            'snapshot', update)
+        return self._instrument._ask_server('callattr',
+                                            self.name + '.snapshot', update)
 
     def setattr(self, attr, value):
-        self._instrument._ask_server('param_setattr', self.name,
-                                     attr, value)
+        self._instrument._ask_server('setattr', self.name + '.' + attr, value)
 
     def getattr(self, attr):
-        return self._instrument._ask_server('param_getattr', self.name,
-                                            attr)
+        return self._instrument._ask_server('getattr', self.name + '.' + attr)
+
+    def callattr(self, attr, *args, **kwargs):
+        """
+        Call arbitrary methods of the parameter on the server.
+
+        Args:
+            attr (str): the method name. Can be nested as in
+                ``NestedAttrAccess``
+            *args: positional args to the method
+            **kwargs: keyword args to the method
+        """
+        return self._instrument._ask_server(
+            'callattr', self.name + '.' + attr, *args, **kwargs)
 
     def __repr__(self):
         return named_repr(self)
-
-    # TODO: need set_sweep if it exists, and any methods a subclass defines.
 
 
 class RemoteFunction(RemoteComponent):
