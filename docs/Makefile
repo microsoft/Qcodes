@@ -227,8 +227,12 @@ dummy:
 	@echo "Build finished. Dummy builder generates no files."
 
 gh-pages:
+	git config --global user.email "bot@travics.com"
+	git config --global user.name "Documentation Bot"
+	git remote add upstream https://${GITHUB_API_KEY}@github.com/qdev-dk/Qcodes.git
+	git fetch upstream
 	git checkout gh-pages
-	rm -rf build _sources _static _modules
+	rm -rf ./*
 	git checkout master $(GH_PAGES_SOURCES)
 	git reset HEAD
 	cd docs && make html && \
