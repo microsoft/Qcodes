@@ -135,20 +135,29 @@ def permissive_range(start, stop, step):
 # Furthermore the sweep allows to take a number of points and generates
 # an array with endpoints included, which is more intuitive to use in a sweep.
 def make_sweep(start, stop, step=None, num=None):
-    '''
+    """
+    Genrates  numbers over a specified interval.
     Requires `start` and `stop` and (`step` or `num`)
     The sign of `step` is not relevant.
 
-    returns: a numpy.linespace(start, stop, num)
+    Args:
+        start (Union[int, float]): The starting value of the sequence.
+        stop (Union[int, float]): The end value of the sequence.
+        step (Optional[Union[int, float]]):  Spacing between values.
+        num (Optional[int]): Number of values to generate.
+
+
+    Returns:
+        numpy.linespace: numbers over a specified interval.
 
     Examples:
-        make_sweep(0, 10, num=5)
-        > [0.0, 2.5, 5.0, 7.5, 10.0]
-        make_sweep(5, 10, step=1)
-        > [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-        make_sweep(15, 10.5, step=1.5)
+        >>> make_sweep(0, 10, num=5)
+        [0.0, 2.5, 5.0, 7.5, 10.0]
+        >>> make_sweep(5, 10, step=1)
+        [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        >>> make_sweep(15, 10.5, step=1.5)
         >[15.0, 13.5, 12.0, 10.5]
-    '''
+    """
     if step and num:
         raise AttributeError('Don\'t use `step` and `num` at the same time.')
     if (step is None) and (num is None):

@@ -127,15 +127,21 @@ class Strings(Validator):
 
 
 class Numbers(Validator):
-    '''
-    requires a number, either int or float
-    optional parameters min_value and max_value enforce
-    min_value <= value <= max_value
-    '''
+    """
+    Args:
+        min_value (Optional[Union[float, int]):  Min value allowed, default inf
+        max_value:  (Optional[Union[float, int]): Max  value allowed, default inf
+
+    Raises:
+
+    Todo:
+        - fix raises
+    """
 
     validtypes = (float, int, numpy.integer, numpy.floating)
 
     def __init__(self, min_value=-float("inf"), max_value=float("inf")):
+
         if isinstance(min_value, self.validtypes):
             self._min_value = min_value
         else:

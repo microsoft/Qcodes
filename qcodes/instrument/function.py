@@ -4,13 +4,13 @@ from qcodes.utils.validators import Validator, validate_all
 
 
 class Function(Metadatable):
-    '''
-    defines a function (with arbitrary args) that this instrument
-    can execute.
+    """
+    Defines a function  that an instrument can execute.
 
-    This functionality is meant for simple cases, principally things that
+    This class is meant for simple cases, principally things that
     map to simple commands like '*RST' (reset) or those with just a few
-    arguments. It requires a fixed argument count, and positional args
+    arguments.
+    It requires a fixed argument count, and positional args
     only. If your case is more complicated, you're probably better off
     simply making a new method in your Instrument subclass definition.
     The function validators.validate_all can help reduce boilerplate code
@@ -19,35 +19,45 @@ class Function(Metadatable):
     You execute this function object like a normal function, or use its
     .call method.
 
-    name: the local name of this function
-    instrument: an instrument that handles this function
-        default None
+    Note:
+        Parsers only apply if call_cmd is a string. The function form of
+        call_cmd should do its own parsing.
 
-    call_cmd: command to execute on instrument
-        - a string (with positional fields to .format, "{}" or "{0}" etc)
-          you can only use a string if an instrument is provided,
-          this string will be passed to instrument.write
-        - a function (with arg count matching args list)
+    Args:
+        name (str): the local name of this function
 
-    args: list of Validator objects,
-        one for each arg to the Function
+        instrument (Optional[Instrument]): an instrument that handles this function
+            default None
 
-    arg_parser: function to transform the input arg(s)
-        to encoded value(s) sent to the instrument.
-        If there are multiple arguments, this function should accept all
-        the arguments in order, and return a tuple of values.
-    return_parser: function to transform the response from the instrument
-        to the final output value.
-        may be a type casting function like `int` or `float`.
-        If None (default), will not wait for or read any response
-    NOTE: parsers only apply if call_cmd is a string. The function form
-        of call_cmd should do its own parsing.
-    docstring: documentation string for the __doc__ field of the object
-        The __doc__ field of the instance is used by some help systems,
-        but not all (particularly not builtin `help(...)`)
-    '''
+        call_cmd (Optional[Union[string, function]]): command to execute on instrument
+
+            - a string (with positional fields to .format, "{}" or "{0}" etc)
+              you can only use a string if an instrument is provided,
+              this string will be passed to instrument.write
+
+            - a function (with arg count matching args list)
+
+        args (Optional[List[Validator]]): list of Validator objects, one for
+            each arg to the Function
+
+        arg_parser (Optional[function]): function to transform the input arg(s) to encoded value(s)
+            sent to the instrument.  If there are multiple arguments, this function
+            should accept all the arguments in order, and return a tuple of values.
+
+        return_parser (Optional[function]): function to transform the response from the
+            instrument to the final output value.  may be a type casting function
+            like `int` or `float`.  If None (default), will not wait for or read
+            any response
+
+        docstring (Optional[string]): documentation string for the __doc__ field of the object
+            The __doc__ field of the instance is used by some help systems,
+            but not all (particularly not builtin `help(...)`)
+
+        **kwargs: Arbitrary keyword arguments passed to parent class
+
+    """
     def __init__(self, name, instrument=None, call_cmd=None,
-                 args=[], arg_parser=None, return_parser=None,
+                 args=None, arg_parser=None, return_parser=None,
                  docstring=None, **kwargs):
         super().__init__(**kwargs)
 
@@ -56,7 +66,8 @@ class Function(Metadatable):
 
         if docstring is not None:
             self.__doc__ = docstring
-
+        if args is None:
+            args = []
         self._set_args(args)
         self._set_call(call_cmd, arg_parser, return_parser)
 
@@ -80,9 +91,11 @@ class Function(Metadatable):
                              output_parser=return_parser)
 
     def validate(self, *args):
-        '''
-        check that all arguments to this Function are allowed
-        '''
+        """
+        Check that all arguments to this Function are allowed.
+        Args:
+            *args: Variable length argument list, passed to the call_cmd
+        """
         if self._instrument:
             func_name = (getattr(self._instrument, 'name', '') or
                          str(self._instrument.__class__)) + '.' + self.name
@@ -101,13 +114,23 @@ class Function(Metadatable):
         return self._call(*args)
 
     def call(self, *args):
-        self.validate(*args)
-        return self._call(*args)
+        """
+        Call methods wraps __call__
+        Args:
+
+           *args: argument to pass to Command __call__ function
+
+        """
+        return self.__call__(*args)
 
     def get_attrs(self):
-        '''
-        attributes used in the RemoteFunction proxy
-        '''
+        """
+        Attributes used in the RemoteFunction proxy.
+
+        Returns (dict):
+            Dictionary containing docstring, arguments validators, and theirs
+            count
+        """
         return {
             '__doc__': self.__doc__,
             '_args': self._args,

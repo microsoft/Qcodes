@@ -43,6 +43,9 @@ extensions = [
         'sphinx.ext.githubpages',
         ]
 
+# include special __xxx__ that DO have a docstring
+# it probably means something important
+napoleon_include_special_with_doc=True
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -364,8 +367,8 @@ todo_include_todos=True
 # Add any paths that contain templates
 templates_path = ['_templates']
 
-autodoc_default_flags = [ 'members', 'undoc-members', 'show-inheritance' ]
+autodoc_default_flags = [ 'members', 'undoc-members', 'inherited-members', 'show-inheritance' ]
 
-autoclass_content = "both" # classes should include both the class' and the __init__ method's docstring
+autoclass_content = "class" # classes should include both the class' and the __init__ method's docstring
 
 autosummary_generate = True

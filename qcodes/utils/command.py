@@ -6,35 +6,42 @@ class NoCommandError(Exception):
 
 
 class Command:
-
     """
     Create a callable command from a string or function.
 
     Args:
         arg_count (int): the number of arguments to the command
 
-        cmd (str or callable): If a function, it will be called directly
+        cmd (Optional[Union[str, callable]]): If a function, it will be called directly
             when the command is invoked. If a string, it should contain
             positional fields to ``.format`` like ``'{}'`` or ``'{0}'``,
             and it will be passed on to ``exec_str`` after formatting
 
-        exec_str (callable, optional): If provided, should be a callable
+        exec_str (Optional[callable]): If provided, should be a callable
             taking one parameter, the ``cmd`` string after parameters
             are inserted. If not provided, ``cmd`` must not be a string.
 
-        input_parser (callable, optional): Transform the input arg(s) before
+        input_parser (Optional[callable]): Transform the input arg(s) before
             sending them to the command. If there are multiple arguments, this
             function should accept all the arguments in order, and
             return a tuple of values.
 
-        output_parser (callable, optional): transform the return value of the
+        output_parser (Optional[callable]): transform the return value of the
             command.
 
-        no_cmd_function (callable, optional): If provided and we cannot
+        no_cmd_function (Optional[callable]): If provided and we cannot
             create a command to return, we won't throw an error on constructing
             the command. Instead, we call this function when the command is
             invoked, and it should probably throw an error of its own (eg
             ``NotImplementedError``)
+
+
+    Raises:
+        TypeError: if no_cmd_function is not the expected type
+        TypeError: if input_parser is not the expected type
+        TypeError: if output_parser is not the expected type
+        TypeError: if exec_string is not the expected type
+        NoCommandError: if no cmd is found no_cmd_function is missing
     """
 
     def __init__(self, arg_count, cmd=None, exec_str=None, input_parser=None,

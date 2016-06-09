@@ -7,6 +7,11 @@ class Metadatable:
         self.load_metadata(metadata or {})
 
     def load_metadata(self, metadata):
+        """ Load metadata
+
+        Args:
+            metadata (dict): metadata to load
+        """
         deep_update(self.metadata, metadata)
 
     def snapshot(self, update=False):
