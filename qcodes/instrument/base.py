@@ -3,19 +3,12 @@ import time
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
-from qcodes.utils.nested_attrs import NestedAttrAccess
+from qcodes.utils.nested_attrs import NestedAttrAccess, _NoDefault
 from qcodes.utils.validators import Anything
 from .parameter import StandardParameter
 from .function import Function
 from .remote import RemoteInstrument
 import logging
-
-
-class NoDefault:
-    '''
-    empty class to provide a missing default to getattr
-    '''
-    pass
 
 
 class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
@@ -342,8 +335,8 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
     def get(self, param_name):
         return self.parameters[param_name].get()
 
-    def param_getattr(self, param_name, attr, default=NoDefault):
-        if default is NoDefault:
+    def param_getattr(self, param_name, attr, default=_NoDefault):
+        if default is _NoDefault:
             return getattr(self.parameters[param_name], attr)
         else:
             return getattr(self.parameters[param_name], attr, default)
