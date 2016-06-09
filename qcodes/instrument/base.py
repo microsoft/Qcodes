@@ -3,6 +3,7 @@ import time
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
+from qcodes.utils.nested_attrs import NestedAttrAccess
 from qcodes.utils.validators import Anything
 from .parameter import StandardParameter
 from .function import Function
@@ -17,7 +18,7 @@ class NoDefault:
     pass
 
 
-class Instrument(Metadatable, DelegateAttributes):
+class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
     '''
     Base class for all QCodes instruments
 
@@ -127,136 +128,6 @@ class Instrument(Metadatable, DelegateAttributes):
 
     def __repr__(self):
         return '<{}: {}>'.format(type(self).__name__, self.name)
-
-    def getattr(self, attr, default=NoDefault):
-        '''
-        Get an attribute of this Instrument.
-        Exact proxy for getattr if attr is a string, but can also
-        get parts from nested items if attr is a sequence.
-
-        attr: a string or sequence
-            if a string, this behaves exactly as normal getattr
-            if a sequence, treats the parts as diving into a nested dictionary,
-                or attribute lookup for any part starting with '.' (the first
-                part is always an attribute and doesn't need a '.').
-                if a default is provided, it will be returned if
-                the lookup fails at any level of the nesting, otherwise
-                an AttributeError or KeyError will be raised
-                NOTE: even with a default, if an intermediate nesting
-                encounters a non-container, a TypeError will be raised.
-                for example if obj.d = {'a': 1} and we call
-                obj.getattr(('d','a','b'), None)
-
-        default: value to return if the lookup fails
-        '''
-        try:
-            if isinstance(attr, str):
-                # simply attribute lookup
-                return getattr(self, attr)
-
-            else:
-                # nested dictionary lookup
-                obj = getattr(self, attr[0])
-                for key in attr[1:]:
-                    if str(key).startswith('.'):
-                        obj = getattr(obj, key[1:])
-                    else:
-                        obj = obj[key]
-                return obj
-
-        except (AttributeError, KeyError):
-            if default is NoDefault:
-                raise
-            else:
-                return default
-
-    def setattr(self, attr, value):
-        '''
-        Set an attribute of this Instrument
-        Exact proxy for setattr if attr is a string, but can also
-        set parts in nested items if attr is a sequence.
-
-        attr: a string or sequence
-            if a string, this behaves exactly as normal setattr
-            if a sequence, treats the parts as diving into a nested dictionary,
-                or attribute lookup for any part starting with '.' (the first
-                part is always an attribute and doesn't need a '.').
-                if any level is missing it will be created
-                NOTE: if an intermediate nesting encounters a non-container,
-                a TypeError will be raised.
-                for example if obj.d = {'a': 1} and we call
-                obj.setattr(('d','a','b'), 2)
-
-        value: the value to store
-        '''
-        if isinstance(attr, str):
-            setattr(self, attr, value)
-        elif len(attr) == 1:
-            setattr(self, attr[0], value)
-        else:
-            if not hasattr(self, attr[0]):
-                setattr(self, attr[0], {})
-            obj = getattr(self, attr[0])
-
-            for key in attr[1: -1]:
-                if str(key).startswith('.'):
-                    # we don't make intermediate attributes, only
-                    # intermediate dicts.
-                    obj = getattr(obj, key)
-                else:
-                    if key not in obj:
-                        obj[key] = {}
-                    obj = obj[key]
-
-            if str(attr[-1]).startswith('.'):
-                setattr(obj, attr[-1][1:], value)
-            else:
-                obj[attr[-1]] = value
-
-    def delattr(self, attr, prune=True):
-        '''
-        Delete an attribute from this Instrument
-        Exact proxy for __delattr__ if attr is a string, but can also
-        remove parts of nested items if attr is a sequence, in which case
-        it may prune empty containers of the final attribute
-
-        attr: a string or sequence
-            if a string, this behaves exactly as normal __delattr__
-            if a sequence, treats the parts as diving into a nested dictionary,
-                or attribute lookup for any part starting with '.' (the first
-                part is always an attribute and doesn't need a '.').
-        prune: if True (default) and attr is a sequence, will try to remove
-            any containing levels which have become empty
-        '''
-        if isinstance(attr, str):
-            delattr(self, attr)
-        elif len(attr) == 1:
-            delattr(self, attr[0])
-        else:
-            obj = getattr(self, attr[0])
-            # dive into the nesting, saving what we did
-            tree = []
-            for key in attr[1:-1]:
-                if str(key).startswith('.'):
-                    newobj = getattr(obj, key[1:])
-                else:
-                    newobj = obj[key]
-                tree.append((newobj, obj, key))
-                obj = newobj
-            # delete the leaf
-            del obj[attr[-1]]
-            # work back out, deleting branches if we can
-            if prune:
-                for child, parent, key in reversed(tree):
-                    if not child:
-                        if str(key).startswith('.'):
-                            delattr(parent, key[1:])
-                        else:
-                            del parent[key]
-                    else:
-                        break
-                if not getattr(self, attr[0]):
-                    delattr(self, attr[0])
 
     def __del__(self):
         try:

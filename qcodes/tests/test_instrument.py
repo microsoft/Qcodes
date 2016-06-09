@@ -623,139 +623,31 @@ class TestAttrAccess(TestCase):
         # do it twice - should not error, though the second is irrelevant
         self.instrument.close()
 
-    def test_simple_noserver(self):
-        instrument = Instrument(name='test_simple_local', server_name=None)
-        self.instrument = instrument
-
-        # before setting attr1
-        self.assertEqual(instrument.getattr('attr1', 99), 99)
-        with self.assertRaises(AttributeError):
-            instrument.getattr('attr1')
-
-        with self.assertRaises(TypeError):
-            instrument.setattr('attr1')
-
-        self.assertFalse(hasattr(instrument, 'attr1'))
-
-        # set it to a value
-        instrument.setattr('attr1', 98)
-        self.assertTrue(hasattr(instrument, 'attr1'))
-
-        self.assertEqual(instrument.getattr('attr1', 99), 98)
-        self.assertEqual(instrument.getattr('attr1'), 98)
-
-        # then delete it
-        instrument.delattr('attr1')
-
-        with self.assertRaises(AttributeError):
-            instrument.delattr('attr1')
-
-        with self.assertRaises(AttributeError):
-            instrument.getattr('attr1')
-
-    def test_nested_noserver(self):
-        instrument = Instrument(name='test_nested_local', server_name=None)
-        self.instrument = instrument
-
-        self.assertFalse(hasattr(instrument, 'd1'))
-
-        with self.assertRaises(TypeError):
-            instrument.setattr(('d1', 'a', 1))
-
-        # set one attribute that requires creating nested levels
-        instrument.setattr(('d1', 'a', 1), 2)
-
-        # can't nest inside a non-container
-        with self.assertRaises(TypeError):
-            instrument.setattr(('d1', 'a', 1, 'secret'), 42)
-
-        # get the whole dict with simple getattr style
-        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
-
-        # get the whole or parts with nested style
-        self.assertEqual(instrument.getattr(('d1',)), {'a': {1: 2}})
-        self.assertEqual(instrument.getattr(('d1',), 55), {'a': {1: 2}})
-        self.assertEqual(instrument.getattr(('d1', 'a')), {1: 2})
-        self.assertEqual(instrument.getattr(('d1', 'a', 1)), 2)
-        self.assertEqual(instrument.getattr(('d1', 'a', 1), 3), 2)
-
-        # add an attribute inside, then delete it again
-        instrument.setattr(('d1', 'a', 2, 3), 4)
-        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2, 2: {3: 4}}})
-        instrument.delattr(('d1', 'a', 2, 3))
-        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
-
-        # deleting it without pruning should leave empty containers
-        instrument.delattr(('d1', 'a', 1), prune=False)
-        self.assertEqual(instrument.getattr('d1'), {'a': {}})
-
-        with self.assertRaises(KeyError):
-            instrument.delattr(('d1', 'a', 1))
-
-        # now prune
-        instrument.delattr(('d1', 'a'))
-        self.assertIsNone(instrument.getattr('d1', None))
-
-        # a little more with top-level attrs as tuples
-        instrument.setattr(('d2',), 'potato')
-        self.assertEqual(instrument.getattr('d2'), 'potato')
-        instrument.delattr(('d2',))
-        self.assertIsNone(instrument.getattr('d2', None))
-
     def test_server(self):
         instrument = Instrument(name='test_server', server_name='attr_test')
         self.instrument = instrument
 
-        with self.assertRaises(TypeError):
-            instrument.setattr(('d1', 'a', 1))
+        # set one attribute with nested levels
+        instrument.setattr('d1', {'a': {1: 2}})
 
-        # set one attribute that requires creating nested levels
-        instrument.setattr(('d1', 'a', 1), 2)
-
-        # can't nest inside a non-container
-        with self.assertRaises(TypeError):
-            instrument.setattr(('d1', 'a', 1, 'secret'), 42)
-
-        # get the whole dict with simple getattr style
-        # TODO: twice (out of maybe 50 runs) I saw the below fail,
-        # it returned "test_server" which should have been the response
-        # above if it didn't raise an error.
-        # I guess this is catching the error before receiving the
-        # next response somehow. I've added a bit of a wait in there
-        # that may have fixed this but lets leave the comment for a
-        # while to see if it recurs.
+        # get the whole dict
         self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
+        self.assertEqual(instrument.getattr('d1', 55), {'a': {1: 2}})
 
-        # get the whole or parts with nested style
-        self.assertEqual(instrument.getattr(('d1',)), {'a': {1: 2}})
-        self.assertEqual(instrument.getattr(('d1',), 55), {'a': {1: 2}})
-        self.assertEqual(instrument.getattr(('d1', 'a')), {1: 2})
-        self.assertEqual(instrument.getattr(('d1', 'a', 1)), 2)
-        self.assertEqual(instrument.getattr(('d1', 'a', 1), 3), 2)
+        # get parts
+        self.assertEqual(instrument.getattr('d1["a"]'), {1: 2})
+        self.assertEqual(instrument.getattr("d1['a'][1]"), 2)
+        self.assertEqual(instrument.getattr('d1["a"][1]', 3), 2)
 
         # add an attribute inside, then delete it again
-        instrument.setattr(('d1', 'a', 2), 23)
+        instrument.setattr('d1["a"][2]', 23)
         self.assertEqual(instrument.getattr('d1'), {'a': {1: 2, 2: 23}})
-        instrument.delattr(('d1', 'a', 2))
+        instrument.delattr('d1["a"][2]')
         self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
 
-        # deleting it without pruning should leave empty containers
-        instrument.delattr(('d1', 'a', 1), prune=False)
-        self.assertEqual(instrument.getattr('d1'), {'a': {}})
-
-        with self.assertRaises(KeyError):
-            instrument.delattr(('d1', 'a', 1))
-            instrument.getattr('name')
-
-        # now prune
-        instrument.delattr(('d1', 'a'))
-        self.assertIsNone(instrument.getattr('d1', None))
-
         # test restarting the InstrumentServer - this clears these attrs
-        instrument.setattr('answer', 42)
-        self.assertEqual(instrument.getattr('answer', None), 42)
         instrument._manager.restart()
-        self.assertIsNone(instrument.getattr('answer', None))
+        self.assertIsNone(instrument.getattr('d1', None))
 
 
 class TestLocalMock(TestCase):
