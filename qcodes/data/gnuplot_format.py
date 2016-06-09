@@ -224,13 +224,17 @@ class GNUPlotFormat(Formatter):
             parts = re.split('"\s+"', labelstr[1:-1])
             return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
 
-    def write(self, data_set):
+    def write(self, data_set, io_manager, location):
         """
-        Write updates in this DataSet to storage. Will choose append if
-        possible, overwrite if not.
+        Write updates in this DataSet to storage.
+
+        Will choose append if possible, overwrite if not.
+
+        Args:
+            data_set (DataSet): the data we're storing
+            io_manager (io_manager): the base location to write to
+            location (str): the file location within io_manager
         """
-        io_manager = data_set.io
-        location = data_set.location
         arrays = data_set.arrays
 
         groups = self.group_arrays(arrays)
@@ -282,7 +286,23 @@ class GNUPlotFormat(Formatter):
             for array in group.data + (group.set_arrays[-1],):
                 array.mark_saved(save_range[1])
 
-    def write_metadata(self, data_set, read_first=True):
+    def write_metadata(self, data_set, io_manager, location, read_first=True):
+        """
+        Write all metadata in this DataSet to storage.
+
+        Args:
+            data_set (DataSet): the data we're storing
+
+            io_manager (io_manager): the base location to write to
+
+            location (str): the file location within io_manager
+
+            read_first (bool, optional): read previously saved metadata before
+                writing? The current metadata will still be the used if
+                there are changes, but if the saved metadata has information
+                not present in the current metadata, it will be retained.
+                Default True.
+        """
         if read_first:
             # In case the saved file has more metadata than we have here,
             # read it in first. But any changes to the in-memory copy should
@@ -292,8 +312,6 @@ class GNUPlotFormat(Formatter):
             self.read_metadata(data_set)
             deep_update(data_set.metadata, memory_metadata)
 
-        io_manager = data_set.io
-        location = data_set.location
         fn = io_manager.join(location, self.metadata_file)
         with io_manager.open(fn, 'w', encoding='utf8') as snap_file:
             json.dump(data_set.metadata, snap_file, sort_keys=True,

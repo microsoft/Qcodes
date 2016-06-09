@@ -27,12 +27,12 @@ class TestBaseFormatter(TestCase):
         data = DataSet1D()
 
         with self.assertRaises(NotImplementedError):
-            formatter.write(data)
+            formatter.write(data, data.io, data.location)
         with self.assertRaises(NotImplementedError):
             formatter.read_one_file(data, 'a file!', set())
 
         with self.assertRaises(NotImplementedError):
-            formatter.write_metadata(data)
+            formatter.write_metadata(data, data.io, data.location)
         with self.assertRaises(NotImplementedError):
             formatter.read_metadata(data)
 
@@ -194,7 +194,7 @@ class TestGNUPlotFormat(TestCase):
         # modified on construction?
         data.y[4] = data.y[4]
 
-        formatter.write(data)
+        formatter.write(data, data.io, data.location)
 
         with open(location + '/x.dat', 'r') as f:
             self.assertEqual(f.read(), file_1d())
@@ -255,7 +255,7 @@ class TestGNUPlotFormat(TestCase):
         # modified on construction?
         data.y[4] = data.y[4]
 
-        formatter.write(data)
+        formatter.write(data, data.io, data.location)
 
         # TODO - Python3 uses universal newlines for read and write...
         # which means '\n' gets converted on write to the OS standard
@@ -304,11 +304,11 @@ class TestGNUPlotFormat(TestCase):
         self.stars_before_write = 0
         for i, (x, y) in enumerate(zip(data_copy.x, data_copy.y)):
             data.x[i] = x
-            formatter.write(data)
+            formatter.write(data, data.io, data.location)
             self.add_star(path)
 
             data.y[i] = y
-            formatter.write(data)
+            formatter.write(data, data.io, data.location)
             self.add_star(path)
 
         starred_file = '\n'.join([
@@ -378,7 +378,7 @@ class TestGNUPlotFormat(TestCase):
         # the other data and setpoint arrays are not marked as modified
         data.y1[:] += 0
         data.z1[:, :] += 0
-        formatter.write(data)
+        formatter.write(data, data.io, data.location)
 
         filex, filexy = files_combined()
 
