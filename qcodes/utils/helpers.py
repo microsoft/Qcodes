@@ -7,6 +7,7 @@ import sys
 import io
 import numpy as np
 import json
+import numbers
 
 _tprint_times = {}
 
@@ -22,8 +23,8 @@ class NumpyJSONEncoder(json.JSONEncoder):
             return float(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
-        elif isinstance(obj, complex):
-            return [self.default(obj.real), self.default(obj.imag)]
+        elif isinstance(obj, numbers.Complex):
+            return {'__dtype__': 'complex', 're': self.default(obj.real), 'im': self.default(obj.imag)}
         else:
             return super(NumpyJSONEncoder, self).default(obj)
 

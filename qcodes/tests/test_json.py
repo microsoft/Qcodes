@@ -40,7 +40,7 @@ class TestNumpyJson(TestCase):
             'weight': 19,
             'length': 45.23,
             'points': [12, 24, 48],
-            'RapunzelNumber': [4.89, 0.11]
+            'RapunzelNumber': {'__dtype__': 'complex', 're': 4.89, 'im': 0.11}
         }
 
         self.assertEqual(metadata, data_dict)
