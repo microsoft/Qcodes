@@ -22,6 +22,8 @@ class NumpyJSONEncoder(json.JSONEncoder):
             return float(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
+        elif isinstance(obj, complex):
+            return [self.default(obj.real), self.default(obj.imag)]
         else:
             return super(NumpyJSONEncoder, self).default(obj)
 
