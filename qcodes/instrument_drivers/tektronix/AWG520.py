@@ -114,7 +114,7 @@ class Tektronix_AWG520(VisaInstrument):
                                units='V',
                                get_cmd=amp_cmd + '?',
                                set_cmd=amp_cmd + ' {:.6f}',
-                               vals=vals.Numbers(0.02, 1.5),
+                               vals=vals.Numbers(0.02, 2.0),
                                get_parser=float)
 
             self.add_parameter('ch{}_offset'.format(ch),
@@ -122,7 +122,7 @@ class Tektronix_AWG520(VisaInstrument):
                                units='V',
                                get_cmd=offset_cmd + '?',
                                set_cmd=offset_cmd + ' {:.3f}',
-                               vals=vals.Numbers(-.1, .1),
+                               vals=vals.Numbers(-1.0, 1.0),
                                get_parser=float)
             self.add_parameter('ch{}_status'.format(ch),
                                get_cmd='OUTP{}?'.format(ch),
