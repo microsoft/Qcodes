@@ -625,7 +625,13 @@ class DataSet(DelegateAttributes):
 
         arr_info = [['<Type>', '<array_id>', '<array.name>', '<array.shape>']]
 
-        for array_id, array in self.arrays.items():
+        if hasattr(self, 'action_id_map'):
+            id_items = [item for index, item in sorted(self.action_id_map.items())]
+        else:
+            id_items = self.arrays.keys()
+
+        for array_id in id_items:
+            array = self.arrays[array_id]
             setp = 'Setpoint' if array.is_setpoint else 'Measured'
             name = array.name or 'None'
             array_id = array_id or 'None'
@@ -637,16 +643,7 @@ class DataSet(DelegateAttributes):
                         '{info[0]:{lens[0]}} | {info[1]:{lens[1]}} | '
                         '{info[2]:{lens[2]}} | {info[3]}')
 
-        out_set = ''
-        out_get = ''
         for arr_info_i in arr_info:
-            array_type = arr_info_i[0]
-            line = out_template.format(info=arr_info_i, lens=column_lengths)
-            if array_type == '<Type>':
-                out += line
-            elif array_type == 'Setpoint':
-                out_set += line
-            else:
-                out_get += line
+            out += out_template.format(info=arr_info_i, lens=column_lengths)
 
-        return out + out_set + out_get
+        return out
