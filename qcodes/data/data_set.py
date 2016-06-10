@@ -435,15 +435,35 @@ class DataSet(DelegateAttributes):
         stripping off as much extraneous info as possible
         """
         action_indices = [array.action_indices for array in arrays]
-        array_names = set(array.name for array in arrays)
+
+        for array in arrays:
+            if array.instrument_name is not None:
+                ins_name = array.instrument_name + '_'
+            else:
+                ins_name = ''
+
+            if array.is_setpoint:
+                set_str = '_set'
+            else:
+                set_str = ''
+            array.array_id = ins_name + array.name + set_str
+
+        array_names = set(array.array_id for array in arrays)
+
         for name in array_names:
             param_arrays = [array for array in arrays
-                            if array.name == name]
+                            if array.array_id == name]
             if len(param_arrays) == 1:
                 # simple case, only one param with this name, id = name
                 param_arrays[0].array_id = name
                 continue
 
+            # this is even more weird now, it might still happen even though
+            # all set-arrays have _set by default.
+            # lets say an instrument has a volt and a volt_set parameter,
+            # if now one loops over the volt, and measures the volt_set,
+            # then bang ^^
+            # So I leave this in here.
             # partition into set and measured arrays (weird use case, but
             # it'll happen, if perhaps only in testing)
             set_param_arrays = [pa for pa in param_arrays

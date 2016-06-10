@@ -59,12 +59,12 @@ class TestMockInstLoop(TestCase):
 
     def check_empty_data(self, data):
         expected = repr([float('nan')] * 4)
-        self.assertEqual(repr(data.chan1.tolist()), expected)
-        self.assertEqual(repr(data.chan1_set.tolist()), expected)
+        self.assertEqual(repr(data.gates_chan1.tolist()), expected)
+        self.assertEqual(repr(data.gates_chan1_set.tolist()), expected)
 
     def check_loop_data(self, data):
-        self.assertEqual(data.chan1.tolist(), [1, 2, 3, 4])
-        self.assertEqual(data.chan1_set.tolist(), [1, 2, 3, 4])
+        self.assertEqual(data.gates_chan1.tolist(), [1, 2, 3, 4])
+        self.assertEqual(data.gates_chan1_set.tolist(), [1, 2, 3, 4])
 
         self.assertTrue(self.io.list(self.location))
 
@@ -149,13 +149,13 @@ class TestMockInstLoop(TestCase):
 
         data1.sync()
         data2.sync()
-        self.assertEqual(data1.chan1.tolist(), [1, 2, 3, 4])
-        for v in data2.chan1:
+        self.assertEqual(data1.gates_chan1.tolist(), [1, 2, 3, 4])
+        for v in data2.gates_chan1:
             self.assertTrue(np.isnan(v))
 
         loop.process.join()
         data2.sync()
-        self.assertEqual(data2.chan1.tolist(), [1, 2, 3, 4])
+        self.assertEqual(data2.gates_chan1.tolist(), [1, 2, 3, 4])
 
         # and while we're here, check that running a loop in the
         # foreground *after* the background clears its .process
@@ -266,14 +266,14 @@ class TestLoop(TestCase):
 
         data = Loop(self.p1[1:3:1], 0.001).run_temp()
 
-        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.p2.tolist(), [4, 4])
         self.assertEqual(data.p3.tolist(), [5, 5])
 
         data = Loop(self.p1[1:3:1], 0.001).each(
             Loop(self.p2[3:5:1], 0.001)).run_temp()
 
-        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.p2.tolist(), [[3, 4], [3, 4]])
         self.assertEqual(data.p2_set.tolist(), [[3, 4], [3, 4]])
         self.assertEqual(data.p3.tolist(), [[5, 5]] * 2)
@@ -298,7 +298,7 @@ class TestLoop(TestCase):
 
         self.assertFalse(hasattr(loop, 'process'))
 
-        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.p2_2.tolist(), [-1, -1])
         self.assertEqual(data.p2_4.tolist(), [1, 1])
 
@@ -317,7 +317,7 @@ class TestLoop(TestCase):
         self.assertEqual(loop.delay, 0)
 
         data = loop.run_temp()
-        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.p2.tolist(), [3, 3])
 
         self.assertEqual(sleep_mock.call_count, 0)
@@ -351,7 +351,7 @@ class TestLoop(TestCase):
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
         data = loop.run_temp()
 
-        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.one.tolist(), [1, 1])
         self.assertEqual(data.onetwo.tolist(), [[1, 2]] * 2)
         self.assertEqual(data.index0.tolist(), [[0, 1]] * 2)
@@ -407,7 +407,7 @@ class TestLoop(TestCase):
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
         data = loop.run_temp()
 
-        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.arr.tolist(), [[4, 5, 6]] * 2)
         self.assertEqual(data.index0.tolist(), [[0, 1, 2]] * 2)
 
@@ -416,7 +416,7 @@ class TestLoop(TestCase):
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
         data = loop.run_temp()
 
-        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.arr2d.tolist(), [[[21, 22], [23, 24]]] * 2)
         self.assertEqual(data.index0.tolist(), [[0, 1]] * 2)
         self.assertEqual(data.index1.tolist(), [[[0, 1]] * 2] * 2)

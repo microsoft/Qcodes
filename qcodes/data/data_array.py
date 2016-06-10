@@ -66,6 +66,11 @@ class DataArray(DelegateAttributes):
         self.is_setpoint = is_setpoint
         self.action_indices = action_indices
 
+        try:
+            self.instrument_name = parameter._instrument.name
+        except:
+            self.instrument_name = None
+
         if snapshot is None:
             snapshot = {}
         self._snapshot_input = {}
