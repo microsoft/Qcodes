@@ -7,7 +7,7 @@ except Exception:
     noQtPlot = True
 
 try:
-    from qcodes.plots.matplotlib import MatPlot
+    from qcodes.plots.qcmatplotlib import MatPlot
     import matplotlib.pyplot as plt
     noMatPlot = False
 except Exception:

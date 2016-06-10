@@ -85,7 +85,17 @@ class Instrument(Metadatable, DelegateAttributes):
 
         self.record_instance(self)
 
-    def get_idn(self, *args, **kwargs):
+    def get_idn(self):
+        """
+        Placeholder for instrument ID parameter getter.
+
+        Subclasses should override this and return dicts containing
+        at least these 4 fields:
+            vendor
+            model
+            serial
+            firmware
+        """
         return {'vendor': None, 'model': None,
                 'serial': None, 'firmware': None}
 
@@ -93,21 +103,27 @@ class Instrument(Metadatable, DelegateAttributes):
     def default_server_name(cls, **kwargs):
         return 'Instruments'
 
-    def connect_message(self, param_name, begin_time=None):
-        '''
-        standard message on initial connection to an instrument
+    def connect_message(self, idn_param='IDN', begin_time=None):
+        """
+        Print a standard message on initial connection to an instrument.
 
-        param_name: parameter that returns ID information
+        Args:
+            idn_param (str): name of parameter that returns ID dict.
+                Default 'IDN'.
+            begin_time (number, optional): time.time() when init started.
+                Default is self._t0, set at start of Instrument.__init__.
+        """
+        # start with an empty dict, just in case an instrument doesn't
+        # heed our request to return all 4 fields.
+        idn = {'vendor': None, 'model': None,
+               'serial': None, 'firmware': None}
+        idn.update(self.get(idn_param))
+        t = time.time() - (begin_time or self._t0)
 
-        begin_time: optional: time.time() when init started, if you
-            don't want to use the time Instrument.__init__ started.
-        '''
-        idn = self.get(param_name).replace(',', ', ').replace('\n', ' ')
-
-        con_msg = 'Connected to: {} in {:.2f}s'.format(
-            idn.strip(), time.time() - (begin_time or self._t0))
+        con_msg = ('Connected to: {vendor} {model} '
+                   '(serial:{serial}, firmware:{firmware}) '
+                   'in {t:.2f}s'.format(t=t, **idn))
         print(con_msg)
-        return con_msg
 
     def __repr__(self):
         return '<{}: {}>'.format(type(self).__name__, self.name)
