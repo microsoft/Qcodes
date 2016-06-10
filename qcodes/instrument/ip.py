@@ -27,6 +27,18 @@ class IPInstrument(Instrument):
 
         write_confirmation (bool): Whether the instrument acknowledges writes
             with some response we should read. Default True.
+
+        server_name (str): Name of the InstrumentServer to use. Defaults to
+            'IPInstruments'.
+
+            Use ``None`` to run locally - but then this instrument will not
+            work with qcodes Loops or other multiprocess procedures.
+
+        metadata (Optional[Dict]): additional static metadata to add to this
+            instrument's JSON snapshot.
+
+    See help for ``qcodes.Instrument`` for additional information on writing
+    instrument subclasses.
     """
 
     def __init__(self, name, address=None, port=None, timeout=5,

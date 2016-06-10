@@ -1,3 +1,4 @@
+"""Visa instrument driver based on pyvisa."""
 import visa
 import logging
 
@@ -6,26 +7,34 @@ import qcodes.utils.validators as vals
 
 
 class VisaInstrument(Instrument):
-    '''
-    Base class for all instruments using visa connections
 
-    name: what this instrument is called locally
-    address: the visa resource name. see eg:
-        http://pyvisa.readthedocs.org/en/stable/names.html
-        (can be changed later with set_address)
-    server_name: name of the InstrumentServer to use. By default
-        uses 'VisaServer', ie all visa instruments go on the same
-        server, but you can provide any other string, or None to
-        not use a server (not recommended, then it cannot be used
-        with subprocesses like background Loop's)
-    timeout: seconds to allow for responses (default 5)
-        (can be changed later with set_timeout)
-    terminator: the read termination character(s) to expect
-        (can be changed later with set_terminator)
+    """
+    Base class for all instruments using visa connections.
 
-    See help for qcodes.Instrument for information on writing
-    instrument subclasses
-    '''
+    Args:
+        name (str): What this instrument is called locally.
+
+        address (str): The visa resource name. see eg:
+            http://pyvisa.readthedocs.org/en/stable/names.html
+
+        timeout (number): seconds to allow for responses. Default 5.
+
+        terminator: Read termination character(s) to look for. Default ''.
+
+        server_name (str): Name of the InstrumentServer to use. By default
+            uses 'GPIBServer' for all GPIB instruments, 'SerialServer' for
+            serial port instruments, and 'VisaServer' for all others.
+
+            Use ``None`` to run locally - but then this instrument will not
+            work with qcodes Loops or other multiprocess procedures.
+
+        metadata (Optional[Dict]): additional static metadata to add to this
+            instrument's JSON snapshot.
+
+    See help for ``qcodes.Instrument`` for additional information on writing
+    instrument subclasses.
+    """
+
     def __init__(self, name, address=None, timeout=5, terminator='', **kwargs):
         super().__init__(name, **kwargs)
 
@@ -42,14 +51,17 @@ class VisaInstrument(Instrument):
 
     @classmethod
     def default_server_name(cls, **kwargs):
+        """
+        Default is either 'GPIBServer', 'SerialServer', or 'VisaServer'.
+
+        Chooses a name based on the address supplied in the constructor.
+        """
         upper_address = kwargs.get('address', '').upper()
         if 'GPIB' in upper_address:
             return 'GPIBServer'
         elif 'ASRL' in upper_address:
             return 'SerialServer'
 
-        # TODO - any others to break out by default?
-        # break out separate GPIB or serial connections?
         return 'VisaServer'
 
     def get_idn(self):
@@ -77,13 +89,12 @@ class VisaInstrument(Instrument):
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
     def set_address(self, address):
-        '''
-        change the address (visa resource name) for this instrument
+        """
+        Change the address (visa resource name) for this instrument.
+
         see eg: http://pyvisa.readthedocs.org/en/stable/names.html
-        '''
+        """
         # in case we're changing the address - close the old handle first
-        # but not by calling self.close() because that tears down the whole
-        # instrument!
         if getattr(self, 'visa_handle', None):
             self.visa_handle.close()
 
@@ -94,9 +105,13 @@ class VisaInstrument(Instrument):
         self._address = address
 
     def set_terminator(self, terminator):
-        '''
-        change the read terminator (string, eg '\r\n')
-        '''
+        r"""
+        Change the read terminator to use.
+
+        Args:
+            terminator (str): Character(s) to look for at the end of a read.
+                eg. '\r\n'.
+        """
         self.visa_handle.read_termination = terminator
         self._terminator = terminator
 
@@ -116,17 +131,23 @@ class VisaInstrument(Instrument):
             return timeout_ms / 1000
 
     def close(self):
+        """Disconnect and irreversibly tear down the instrument."""
         if getattr(self, 'visa_handle', None):
             self.visa_handle.close()
         super().close()
 
     def check_error(self, ret_code):
-        '''
-        Default error checking, raises an error if return code !=0
-        does not differentiate between warnings or specific error messages
-        overwrite this function in your driver if you want to add specific
-        error messages
-        '''
+        """
+        Default error checking, raises an error if return code !=0.
+
+        Does not differentiate between warnings or specific error messages.
+        Override this function in your driver if you want to add specific
+        error messages.
+
+        Args:
+            ret_code (int): A Visa error code. See eg:
+                https://github.com/hgrecco/pyvisa/blob/master/pyvisa/errors.py
+        """
         if ret_code != 0:
             raise visa.VisaIOError(ret_code)
 
@@ -140,6 +161,7 @@ class VisaInstrument(Instrument):
         return self.visa_handle.ask(cmd)
 
     def snapshot_base(self, update=False):
+        """JSON state of the instrument."""
         snap = super().snapshot_base(update=update)
 
         snap['address'] = self._address
