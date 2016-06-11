@@ -104,6 +104,3 @@ class Keithley_2400(VisaInstrument):
     def _resistance_parser(self, msg):
         JohanSmiler = [float(x) for x in msg.split(',')]
         return JohanSmiler[0]/JohanSmiler[1]
-
-
-        
