@@ -121,11 +121,8 @@ class AverageGetter(Parameter):
     def get(self):
         loop = Loop(self.sweep_values, self.delay).each(self.measured_param)
         data = loop.run_temp()
-        if self.measured_param._instrument.name is not None:
-            inst = self.measured_param._instrument.name + '_'
-        else:
-            inst = ''
-        return data.arrays[inst+self.measured_param.name].mean()
+        array = data.arrays[self.measured_param.full_name]
+        return array.mean()
 
 
 class AverageAndRaw(Parameter):
@@ -147,9 +144,5 @@ class AverageAndRaw(Parameter):
     def get(self):
         loop = Loop(self.sweep_values, self.delay).each(self.measured_param)
         data = loop.run_temp()
-        if self.measured_param._instrument.name is not None:
-            inst = self.measured_param._instrument.name + '_'
-        else:
-            inst = ''
-        array = data.arrays[inst+self.measured_param.name]
+        array = data.arrays[self.measured_param.full_name]
         return (array, array.mean())
