@@ -54,11 +54,12 @@ class DataArray(DelegateAttributes):
         'array_id',
         'action_indices')
 
-    def __init__(self, parameter=None, name=None, label=None, snapshot=None,
-                 array_id=None, set_arrays=(), shape=None, action_indices=(),
-                 units=None, is_setpoint=False, preset_data=None):
-
+    def __init__(self, parameter=None, name=None, full_name=None, label=None,
+                 snapshot=None, array_id=None, set_arrays=(), shape=None,
+                 action_indices=(), units=None, is_setpoint=False,
+                 preset_data=None):
         self.name = name
+        self.full_name = full_name or name
         self.label = label
         self.shape = shape
         self.units = units
@@ -71,6 +72,12 @@ class DataArray(DelegateAttributes):
         self._snapshot_input = {}
 
         if parameter is not None:
+            # Is it ok to overwrite full_name like this, would we ever provide a
+            # 'better' one that the one in parameter?
+            if parameter.full_name is not None:
+                self.full_name = parameter.full_name
+
+
             if hasattr(parameter, 'snapshot') and not snapshot:
                 snapshot = parameter.snapshot()
             else:

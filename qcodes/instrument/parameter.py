@@ -345,6 +345,33 @@ class Parameter(Metadatable, DeferredOperations):
         '''
         return SweepFixedValues(self, keys)
 
+    @property
+    def full_name(self):
+        try:
+            inst_name = self._instrument.name
+            if inst_name:
+                return inst_name + '_' + self.name
+        except AttributeError:
+            pass
+        try:
+            return self.name
+        except AttributeError:
+            pass
+        return None
+
+    @property
+    def full_names(self):
+        try:
+            inst_name = self._instrument.name
+            if inst_name:
+                return [inst_name + '_' + nme for nme in self.names]
+        except AttributeError:
+            pass
+        try:
+            return self.names
+        except AttributeError:
+            pass
+        return None
 
 class StandardParameter(Parameter):
     '''

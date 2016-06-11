@@ -419,12 +419,14 @@ class ActiveLoop(Metadatable):
         # first massage all the input parameters to the general multi-name form
         if hasattr(action, 'names'):
             names = action.names
+            full_names = action.full_names
             labels = getattr(action, 'labels', names)
             if len(labels) != len(names):
                 raise ValueError('must have equal number of names and labels')
             action_indices = tuple((i,) for i in range(len(names)))
         elif hasattr(action, 'name'):
             names = (action.name,)
+            full_names = (action.full_name,)
             labels = (getattr(action, 'label', action.name),)
             action_indices = ((),)
         else:
@@ -453,8 +455,8 @@ class ActiveLoop(Metadatable):
         # now loop through these all, to make the DataArrays
         # record which setpoint arrays we've made, so we don't duplicate
         all_setpoints = {}
-        for name, label, shape, i, sp_vi, sp_ni, sp_li in zip(
-                names, labels, shapes, action_indices,
+        for name, full_name, label, shape, i, sp_vi, sp_ni, sp_li in zip(
+                names, full_names, labels, shapes, action_indices,
                 sp_vals, sp_names, sp_labels):
 
             if shape is None or shape == ():
@@ -475,9 +477,9 @@ class ActiveLoop(Metadatable):
                 setpoints = setpoints + (all_setpoints[sp_def],)
 
             # finally, make the output data array with these setpoints
-            out.append(DataArray(name=name, label=label, shape=shape,
-                                 action_indices=i, set_arrays=setpoints,
-                                 parameter=action))
+            out.append(DataArray(name=name, full_name=full_name, label=label,
+                                 shape=shape, action_indices=i,
+                                 set_arrays=setpoints, parameter=action))
 
         return out
 
