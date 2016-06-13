@@ -60,7 +60,15 @@ class IPInstrument(Instrument):
 
     @classmethod
     def default_server_name(cls, **kwargs):
-        """By default all IP instruments go on the server 'IPInstruments'."""
+        """
+        Get the default server name for this instrument.
+
+        Args:
+            **kwargs: All the kwargs supplied in the constructor.
+
+        Returns:
+            str: By default all IPInstruments go on the server 'IPInstruments'.
+        """
         return 'IPInstruments'
 
     def set_address(self, address=None, port=None):
@@ -124,7 +132,7 @@ class IPInstrument(Instrument):
         self._timeout = timeout
 
         if self._socket is not None:
-            self.socket.settimeout(float(self._timeout))
+            self._socket.settimeout(float(self._timeout))
 
     def set_terminator(self, terminator):
         r"""
@@ -149,20 +157,43 @@ class IPInstrument(Instrument):
         super().close()
 
     def write_raw(self, cmd):
-        """Low-level interface to send a command that gets no response."""
+        """
+        Low-level interface to send a command that gets no response.
+
+        Args:
+            cmd (str): The command to send to the instrument.
+        """
+
         with self._ensure_connection:
             self._send(cmd)
             if self._confirmation:
                 self._recv()
 
     def ask_raw(self, cmd):
-        """Low-level interface to send a command an read a response."""
+        """
+        Low-level interface to send a command an read a response.
+
+        Args:
+            cmd (str): The command to send to the instrument.
+
+        Returns:
+            str: The instrument's response.
+        """
         with self._ensure_connection:
             self._send(cmd)
             return self._recv()
 
     def snapshot_base(self, update=False):
-        """JSON state of the instrument."""
+        """
+        State of the instrument as a JSON-compatible dict.
+
+        Args:
+            update (bool): If True, update the state by querying the
+                instrument. If False, just use the latest values in memory.
+
+        Returns:
+            dict: base snapshot
+        """
         snap = super().snapshot_base(update=update)
 
         snap['port'] = self._port
@@ -182,6 +213,9 @@ class EnsureConnection:
 
     Uses ``instrument._persistent`` to determine whether or not to close
     the connection immediately on completion.
+
+    Args:
+        instrument (IPInstrument): the instance to connect.
     """
 
     def __init__(self, instrument):

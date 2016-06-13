@@ -19,6 +19,11 @@ class MockInstrument(Instrument):
     (instrument server and model server) both of which must be involved in any
     given query.
 
+    parameters to pass to model should be declared with:
+        get_cmd = param_name + '?'
+        set_cmd = param_name + ':{:.3f}' (specify the format & precision)
+    alternatively independent set/get functions may still be provided.
+
     Args:
         name (str): The name of this instrument.
 
@@ -40,10 +45,17 @@ class MockInstrument(Instrument):
             MockInsts-####### server with the number matching the model server
             id, or set None to not use a server.
 
-    parameters to pass to model should be declared with:
-        get_cmd = param_name + '?'
-        set_cmd = param_name + ':{:.3f}' (specify the format & precision)
-    alternatively independent set/get functions may still be provided.
+    Attributes:
+        shared_kwargs (List[str]): Class attribute, constructor kwargs to
+            provide via server init. For MockInstrument this should always be
+            ['model'] at least.
+
+        keep_history (bool): Whether to record all commands and responses. Set
+            on init, but may be changed at any time.
+
+        history (List[tuple]): All commands and responses while keep_history is
+            enabled, as tuples:
+                (timestamp, 'ask' or 'write', param_name[, value])
     """
 
     shared_kwargs = ['model']
@@ -68,9 +80,14 @@ class MockInstrument(Instrument):
     @classmethod
     def default_server_name(cls, **kwargs):
         """
-        Default MockInstrument server name is MockInsts-#######.
+        Get the default server name for this instrument.
 
-        ####### is the first 7 characters of the MockModel's uuid.
+        Args:
+            **kwargs: All the kwargs supplied in the constructor.
+
+        Returns:
+            str: Default MockInstrument server name is MockInsts-#######, where
+                ####### is the first 7 characters of the MockModel's uuid.
         """
         model = kwargs.get('model', None)
         if model:
@@ -83,6 +100,9 @@ class MockInstrument(Instrument):
 
         Prepends self.name + ':' to the command, so the ``MockModel``
         will direct this query to its ``<name>_set`` method
+
+        Args:
+            cmd (str): The command to send to the instrument.
         """
         if self._delay:
             time.sleep(self._delay)
@@ -104,6 +124,16 @@ class MockInstrument(Instrument):
 
         Prepends self.name + ':' to the command, so the ``MockModel``
         will direct this query to its ``<name>_get`` method
+
+        Args:
+            cmd (str): The command to send to the instrument.
+
+        Returns:
+            str: The instrument's response.
+
+        Raises:
+            ValueError: If ``cmd`` is malformed in that it contains text
+                after the '?'
         """
         if self._delay:
             time.sleep(self._delay)
@@ -169,6 +199,13 @@ class MockModel(ServerManager, BaseServer):  # pragma: no cover
                     calls ``self.<instrument>_set(<parameter>, <value>)``
                 '<instrument>:<parameter>'.
                     calls ``self.<instrument>_set(<parameter>, None)``
+
+        Returns:
+            Union(str, None): The parameter value, if ``cmd`` has the form
+                '<instrument>:<parameter>?', otherwise no return.
+
+        Raises:
+            ValueError: if cmd does not match one of the patterns above.
         """
         query = cmd.split(':')
 

@@ -66,15 +66,15 @@ class NestedAttrAccess:
             attr (str): An attribute or accessor string, like:
                 ``'attr.subattr[item]'``. ``item`` can be an integer or a
                 string; If it's a string it must be quoted as usual.
-            value (any): The object to store in this attribute.
 
-        Returns:
-            None.
+            value (any): The object to store in this attribute.
 
         Raises:
             ValueError: If ``attr`` could not be understood
+
             TypeError: If an intermediate nesting level is not a container
                 and the next level is an item.
+
             AttributeError: If an attribute with this name cannot be set.
         """
         parts = self._split_attr(attr)
@@ -98,9 +98,6 @@ class NestedAttrAccess:
                 ``'attr.subattr[item]'``. ``item`` can be an integer or a
                 string; If it's a string it must be quoted as usual.
 
-        Returns:
-            None.
-
         Raises:
             ValueError: If ``attr`` could not be understood
         """
@@ -122,8 +119,12 @@ class NestedAttrAccess:
                 ``'attr.subattr[item]'``. ``item`` can be an integer or a
                 string; If it's a string it must be quoted as usual.
 
+            *args: Passed on to the method.
+
+            **kwargs: Passed on to the method.
+
         Returns:
-            Whatever the method returns.
+            any: Whatever the method returns.
 
         Raises:
             ValueError: If ``attr`` could not be understood

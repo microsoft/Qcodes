@@ -28,6 +28,16 @@ class RemoteInstrument(DelegateAttributes):
 
         **kwargs: Passed along to the real instrument constructor, also
             to ``default_server_name`` as mentioned.
+
+    Attributes:
+        name (str): an identifier for this instrument, particularly for
+            attaching it to a Station.
+
+        parameters (Dict[Parameter]): All the parameters supported by this
+            instrument. Usually populated via ``add_parameter``
+
+        functions (Dict[Function]): All the functions supported by this
+            instrument. Usually populated via ``add_function``
     """
 
     delegate_attr_dicts = ['_methods', 'parameters', 'functions']
@@ -94,30 +104,50 @@ class RemoteInstrument(DelegateAttributes):
         """
         Proxy to add a new parameter to the server instrument.
 
-        Also replicates its API here.
+        This is only for adding parameters remotely to the server copy.
+        Normally parameters are added in the instrument constructor, rather
+        than via this method. This method is limited in that you can generally
+        only use the string form of a command, not the callable form.
 
-        Adding parameters when the instrument is already on the server is
-        limited in that you can generally only use the string form of a
-        command, not the callable form.
+        Args:
+            name (str): How the parameter will be stored within
+                ``instrument.parameters`` and also how you address it using the
+                shortcut methods: ``instrument.set(param_name, value)`` etc.
+
+            parameter_class (Optional[type]): You can construct the parameter
+                out of any class. Default ``StandardParameter``.
+
+            **kwargs: constructor arguments for ``parameter_class``.
         """
         attrs = self._ask_server('add_parameter', name, **kwargs)
         self.parameters[name] = RemoteParameter(name, self, attrs)
 
     def add_function(self, name, **kwargs):
         """
-        Proxy to add a new function to the server instrument.
+        Proxy to add a new Function to the server instrument.
 
-        Also replicates its API here.
+        This is only for adding functions remotely to the server copy.
+        Normally functions are added in the instrument constructor, rather
+        than via this method. This method is limited in that you can generally
+        only use the string form of a command, not the callable form.
 
-        Adding functions when the instrument is already on the server is
-        limited in that you can generally only use the string form of a
-        command, not the callable form.
+        Args:
+            name (str): how the function will be stored within
+            ``instrument.functions`` and also how you  address it using the
+            shortcut methods: ``instrument.call(func_name, *args)`` etc.
+
+            **kwargs: constructor kwargs for ``Function``
         """
         attrs = self._ask_server('add_function', name, **kwargs)
         self.functions[name] = RemoteFunction(name, self, attrs)
 
     def instances(self):
-        """A RemoteInstrument shows as an instance of its proxied class."""
+        """
+        A RemoteInstrument shows as an instance of its proxied class.
+
+        Returns:
+            List[Union[Instrument, RemoteInstrument]]
+        """
         return self._instrument_class.instances()
 
     def close(self):
@@ -155,8 +185,10 @@ class RemoteComponent:
     instrument.
 
     Args:
-        name (str): the name of this component
+        name (str): The name of this component.
+
         instrument (RemoteInstrument): the instrument this is part of.
+
         attrs (dict): instance attributes to set, to match the server
             copy of this component.
     """
@@ -194,18 +226,38 @@ class RemoteParameter(RemoteComponent, DeferredOperations):
         self.get_latest = GetLatest(self)
 
     def __call__(self, *args):
-        """Shortcut to get (with no args) or set (with one arg)."""
+        """
+        Shortcut to get (with no args) or set (with one arg) the parameter.
+
+        Args:
+            *args: If empty, get the parameter. If one arg, set the parameter
+                to this value
+
+        Returns:
+            any: The parameter value, if called with no args,
+                otherwise no return.
+        """
         if len(args) == 0:
             return self.get()
         else:
             self.set(*args)
 
     def get(self):
-        """Read the value of this parameter."""
+        """
+        Read the value of this parameter.
+
+        Returns:
+            any: the current value of the parameter.
+        """
         return self._instrument._ask_server('get', self.name)
 
     def set(self, value):
-        """Set a new value of this parameter."""
+        """
+        Set a new value of this parameter.
+
+        Args:
+            value (any): the new value for the parameter.
+        """
         # TODO: sometimes we want set to block (as here) and sometimes
         # we want it async... which would just be changing the '_ask_server'
         # to '_write_server' below. how do we decide, and how do we let the
@@ -215,7 +267,12 @@ class RemoteParameter(RemoteComponent, DeferredOperations):
     # manually copy over validate and __getitem__ so they execute locally
     # no reason to send these to the server, unless the validators change...
     def validate(self, value):
-        """Test if a value is allowed for this parameter."""
+        """
+        Raise an error if the given value is not allowed for this Parameter.
+
+        Args:
+            value (any): the proposed new parameter value.
+        """
         return Parameter.validate(self, value)
 
     def __getitem__(self, keys):
@@ -230,7 +287,16 @@ class RemoteParameter(RemoteComponent, DeferredOperations):
         return self._instrument._ask_server('callattr', self.name + '._latest')
 
     def snapshot(self, update=False):
-        """JSON state of this parameter."""
+        """
+        State of the parameter as a JSON-compatible dict.
+
+        Args:
+            update (bool): If True, update the state by querying the
+                instrument. If False, just use the latest value in memory.
+
+        Returns:
+            dict: snapshot
+        """
         return self._instrument._ask_server('callattr',
                                             self.name + '.snapshot', update)
 
@@ -252,6 +318,9 @@ class RemoteParameter(RemoteComponent, DeferredOperations):
         Args:
             attr (str): the attribute name. Can be nested as in
                 ``NestedAttrAccess``.
+
+        Returns:
+            any: The attribute value.
         """
         return self._instrument._ask_server('getattr', self.name + '.' + attr)
 
@@ -264,6 +333,9 @@ class RemoteParameter(RemoteComponent, DeferredOperations):
                 ``NestedAttrAccess``.
             *args: positional args to the method
             **kwargs: keyword args to the method
+
+        Returns:
+            any: the return value of the called method.
         """
         return self._instrument._ask_server(
             'callattr', self.name + '.' + attr, *args, **kwargs)
@@ -274,7 +346,16 @@ class RemoteFunction(RemoteComponent):
     """Proxy for a Function of the server instrument."""
 
     def __call__(self, *args):
-        """Call the Function. Functions take only positional args."""
+        """
+        Call the Function.
+
+        Args:
+            *args: The positional args to this Function. Functions only take
+                positional args, not kwargs.
+
+        Returns:
+            any: the return value of the function.
+        """
         return self._instrument._ask_server('call', self.name, *args)
 
     def call(self, *args):
@@ -282,5 +363,10 @@ class RemoteFunction(RemoteComponent):
         return self.__call__(*args)
 
     def validate(self, *args):
-        """Test if these arguments are valid for this Function."""
+        """
+        Raise an error if the given args are not allowed for this Function.
+
+        Args:
+            *args: the proposed arguments with which to call the Function.
+        """
         return Function.validate(self, *args)

@@ -58,6 +58,16 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
     create the server before instantiating the actual instrument. The easiest
     way to manage this is to accept ``**kwargs`` in your subclass and pass them
     on to ``super().__init()``.
+
+    Attributes:
+        name (str): an identifier for this instrument, particularly for
+            attaching it to a Station.
+
+        parameters (Dict[Parameter]): All the parameters supported by this
+            instrument. Usually populated via ``add_parameter``
+
+        functions (Dict[Function]): All the functions supported by this
+            instrument. Usually populated via ``add_function``
     """
 
     shared_kwargs = ()
@@ -107,10 +117,12 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
         Generate a default name for the server to host this instrument.
 
         Args:
-            **kwargs: used if necessary to choose a name
+            **kwargs: the constructor kwargs, used if necessary to choose a
+                name.
 
         Returns:
-            str
+            str: The default server name for the specific instrument instance
+                we are constructing.
         """
         return 'Instruments'
 
@@ -121,7 +133,7 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
         Args:
             idn_param (str): name of parameter that returns ID dict.
                 Default 'IDN'.
-            begin_time (number, optional): time.time() when init started.
+            begin_time (number): time.time() when init started.
                 Default is self._t0, set at start of Instrument.__init__.
         """
         # start with an empty dict, just in case an instrument doesn't
@@ -182,10 +194,17 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
     @classmethod
     def instances(cls):
         """
-        Return all currently defined instances of this instrument class.
+        Get all currently defined instances of this instrument class.
 
         You can use this to get the objects back if you lose track of them,
         and it's also used by the test system to find objects to test against.
+
+        Note:
+            Will also include ``RemoteInstrument`` instances that proxy
+            instruments of this class.
+
+        Returns:
+            List[Union[Instrument, RemoteInstrument]]
         """
         if getattr(cls, '_type', None) is not cls:
             # only instances of a superclass - we want instances of this
@@ -227,9 +246,9 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
             **kwargs: constructor arguments for ``parameter_class``.
 
         Returns:
-            A dict of attribute information. Only used if you add parameters
-            from the ``RemoteInstrument`` rather than at construction, to
-            properly construct the proxy for this parameter.
+            dict: attribute information. Only used if you add parameters
+                from the ``RemoteInstrument`` rather than at construction, to
+                properly construct the proxy for this parameter.
 
         Raises:
             KeyError: if this instrument already has a parameter with this
@@ -284,9 +303,16 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
 
     def snapshot_base(self, update=False):
         """
-        JSON state of the instrument.
+        State of the instrument as a JSON-compatible dict.
 
         ``Metadatable`` adds metadata, if any, to this snapshot.
+
+        Args:
+            update (bool): If True, update the state by querying the
+                instrument. If False, just use the latest values in memory.
+
+        Returns:
+            dict: base snapshot
         """
         snap = {'parameters': dict((name, param.snapshot(update=update))
                                    for name, param in self.parameters.items()),
@@ -315,8 +341,9 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
         Args:
             cmd (str): the string to send to the instrument
 
-        Returns:
-            None
+        Raises:
+            Exception: wraps any underlying exception with extra context,
+                including the command and the instrument.
         """
         try:
             self.write_raw(cmd)
@@ -331,6 +358,9 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
         Subclasses that define a new hardware communication should override
         this method. Subclasses that transform ``cmd`` should instead
         override ``write``.
+
+        Args:
+            cmd (str): the string to send to the instrument
         """
         raise NotImplementedError(
             'Instrument {} has not defined a write method'.format(
@@ -349,6 +379,10 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
 
         Returns:
             response (str, normally)
+
+        Raises:
+            Exception: wraps any underlying exception with extra context,
+                including the command and the instrument.
         """
         try:
             return self.ask_raw(cmd)
@@ -363,6 +397,9 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
         Subclasses that define a new hardware communication should override
         this method. Subclasses that transform ``cmd`` should instead
         override ``ask``.
+
+        Args:
+            cmd (str): the string to send to the instrument
         """
         raise NotImplementedError(
             'Instrument {} has not defined an ask method'.format(
@@ -387,15 +424,38 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
             return self.functions[key]
 
     def set(self, param_name, value):
-        """Shortcut for setting a parameter from its name and new value."""
+        """
+        Shortcut for setting a parameter from its name and new value.
+
+        Args:
+            param_name (str): The name of a parameter of this instrument.
+            value (any): The new value to set.
+        """
         self.parameters[param_name].set(value)
 
     def get(self, param_name):
-        """Shortcut for getting a parameter from its name."""
+        """
+        Shortcut for getting a parameter from its name.
+
+        Args:
+            param_name (str): The name of a parameter of this instrument.
+
+        Returns:
+            any: The current value of the parameter.
+        """
         return self.parameters[param_name].get()
 
     def call(self, func_name, *args):
-        """Shortcut for calling a function from its name."""
+        """
+        Shortcut for calling a function from its name.
+
+        Args:
+            func_name (str): The name of a function of this instrument.
+            *args: any arguments to the function.
+
+        Returns:
+            any: The return value of the function.
+        """
         return self.functions[func_name].call(*args)
 
     ##########################################################################
