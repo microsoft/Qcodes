@@ -34,8 +34,8 @@ class UpdateWidget(widgets.DOMWidget):
     _message = Unicode(sync=True)
     interval = Float(sync=True)
 
-    def __init__(self, fn, interval, first_call=True, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, fn, interval, first_call=True):
+        super().__init__()
 
         self._fn = fn
         self.interval = interval
@@ -50,7 +50,13 @@ class UpdateWidget(widgets.DOMWidget):
             self.do_update({}, [])
 
     def do_update(self, content=None, buffers=None):
-        """Execute the callback and send its return value to the notebook."""
+        """
+        Execute the callback and send its return value to the notebook.
+
+        Args:
+            content: required by DOMWidget, unused
+            buffers: required by DOMWidget, unused
+        """
         self._message = str(self._fn())
 
     def halt(self):
@@ -66,7 +72,11 @@ class UpdateWidget(widgets.DOMWidget):
         self.interval = 0
 
     def restart(self, **kwargs):
-        """Reinstate updates with the most recent interval."""
+        """
+        Reinstate updates with the most recent interval.
+
+        TODO: why did I include kwargs?
+        """
         if self.interval != self.previous_interval:
             self.interval = self.previous_interval
 
@@ -82,6 +92,16 @@ class HiddenUpdateWidget(UpdateWidget):
     own display. By default, first_call is False here, unlike UpdateWidget,
     because it is assumed this widget is created to update something that
     has been displayed by other means.
+
+    Args:
+        fn (callable): To be called (with no parameters) periodically.
+
+        interval (number): The call period, in seconds. Can be changed later
+            by setting the ``interval`` attribute. ``interval=0`` or the
+            ``halt()`` method disables updates.
+
+        first_call (bool): Whether to call the update function immediately
+            or only after the first interval. Default False.
     """
 
     _view_name = Unicode('HiddenUpdateView', sync=True)  # see widgets.js
@@ -95,6 +115,9 @@ def get_subprocess_widget():
     Convenience function to get a singleton SubprocessWidget.
 
     Restarts widget updates if it has been halted.
+
+    Returns:
+        SubprocessWidget
     """
     if SubprocessWidget.instance is None:
         w = SubprocessWidget()
@@ -154,6 +177,10 @@ class SubprocessWidget(UpdateWidget):
 
         Send any new messages to the notebook, and update the list of
         active processes.
+
+        Args:
+            content: required by DOMWidget, unused
+            buffers: required by DOMWidget, unused
         """
         self._message = self.stream_queue.get()
 
