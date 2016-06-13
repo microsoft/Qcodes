@@ -9,8 +9,35 @@
     box-shadow: 0 0 12px 1px rgba(87, 87, 87, 0.2);
 }
 
-.qcodes-output-header  {
+.qcodes-output-header {
     float: right;
+}
+
+.qcodes-highlight {
+    animation: pulse 1s linear;
+    background-color: #fa4;
+}
+
+@keyframes pulse {
+    0% {
+        background-color: #f00;
+    }
+    100% {
+        background-color: #fa4;
+    }
+}
+
+.qcodes-process-list {
+    float: left;
+    max-width: 780px;
+    margin: 3px 5px 3px 10px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.qcodes-output-view[qcodes-state=minimized] .qcodes-process-list {
+    max-width: 300px;
 }
 
 .qcodes-output-view span {

@@ -56,10 +56,13 @@ require([
 
     var SubprocessView = UpdateView.extend({
         render: function() {
-            var me = window.SPVIEW = this;
+            var me = this;
             me._interval = 0;
             me._minimize = '<i class="fa-minus fa"></i>';
             me._restore = '<i class="fa-plus fa"></i>';
+
+            // max lines of output to show
+            me.maxOutputLength = 500;
 
             // in case there is already an outputView present,
             // like from before restarting the kernel
@@ -70,7 +73,8 @@ require([
                 .attr('qcodes-state', 'docked')
                 .html(
                     '<div class="qcodes-output-header toolbar">' +
-                        '<span></span>' +
+                        '<div class="qcodes-process-list"></div>' +
+                        '<button class="btn qcodes-processlines"><i class="fa-list fa"></i></button>' +
                         '<button class="btn qcodes-abort-loop disabled">Abort</button>' +
                         '<button class="btn qcodes-clear-output disabled qcodes-content">Clear</button>' +
                         '<button class="btn js-state qcodes-minimized"><i class="fa-minus fa"></i></button>' +
@@ -83,8 +87,11 @@ require([
             me.clearButton = me.$el.find('.qcodes-clear-output');
             me.minButton = me.$el.find('.qcodes-minimize');
             me.outputArea = me.$el.find('pre');
-            me.subprocessList = me.$el.find('span');
+            me.subprocessList = me.$el.find('.qcodes-process-list');
             me.abortButton = me.$el.find('.qcodes-abort-loop');
+            me.processLinesButton = me.$el.find('.qcodes-processlines')
+
+            me.outputLines = [];
 
             me.clearButton.click(function() {
                 me.outputArea.html('');
@@ -93,6 +100,12 @@ require([
 
             me.abortButton.click(function() {
                 me.send({abort: true});
+            });
+
+            me.processLinesButton.click(function() {
+                // toggle multiline process list display
+                me.subprocessesMultiline = !me.subprocessesMultiline;
+                me.showSubprocesses();
             });
 
             me.$el.find('.js-state').click(function() {
@@ -117,6 +130,9 @@ require([
                         top: window.innerHeight - me.$el.height() - 10
                     });
                 }
+
+                // any previous highlighting is
+                me.$el.removeClass('qcodes-highlight');
             });
 
             $(window).resize(function() {
@@ -135,30 +151,62 @@ require([
         },
 
         display: function(message) {
+            var me = this;
             if(message) {
-                var initialScroll = this.outputArea.scrollTop();
-                this.outputArea.scrollTop(this.outputArea.prop('scrollHeight'));
-                var scrollBottom = this.outputArea.scrollTop();
+                var initialScroll = me.outputArea.scrollTop();
+                me.outputArea.scrollTop(me.outputArea.prop('scrollHeight'));
+                var scrollBottom = me.outputArea.scrollTop();
 
-                if(this.$el.attr('qcodes-state') === 'minimized') {
-                    this.$el.find('.qcodes-docked').click();
-                    // always scroll to the bottom if we're restoring
-                    // because of a new message
-                    initialScroll = scrollBottom;
+                if(me.$el.attr('qcodes-state') === 'minimized') {
+                    // if we add text and the box is minimized, highlight the
+                    // title bar to alert the user that there are new messages.
+                    // remove then add the class, so we get the animation again
+                    // if it's already highlighted
+                    me.$el.removeClass('qcodes-highlight');
+                    setTimeout(function(){
+                        me.$el.addClass('qcodes-highlight');
+                    }, 0);
                 }
 
-                this.outputArea.append(message);
-                this.clearButton.removeClass('disabled');
+                var newLines = message.split('\n'),
+                    out = me.outputLines,
+                    outLen = out.length;
+                if(outLen) out[outLen - 1] += newLines[0];
+                else out.push(newLines[0]);
+
+                for(var i = 1; i < newLines.length; i++) {
+                    out.push(newLines[i]);
+                }
+
+                if(out.length > me.maxOutputLength) {
+                    out.splice(0, out.length - me.maxOutputLength + 1,
+                        '<<< Output clipped >>>');
+                }
+
+                me.outputArea.text(out.join('\n'));
+                me.clearButton.removeClass('disabled');
 
                 // if we were scrolled to the bottom initially, make sure
                 // we stay that way.
-                this.outputArea.scrollTop(initialScroll === scrollBottom ?
-                    this.outputArea.prop('scrollHeight') : initialScroll);
+                me.outputArea.scrollTop(initialScroll === scrollBottom ?
+                    me.outputArea.prop('scrollHeight') : initialScroll);
             }
 
-            var processes = this.model.get('_processes') || 'No subprocesses';
-            this.abortButton.toggleClass('disabled', processes.indexOf('Measurement')===-1);
-            this.subprocessList.text(processes);
+            var processes = me.model.get('_processes');
+            me.abortButton.toggleClass('disabled', processes.indexOf('Measurement')===-1);
+            me._processes = processes;
+            me.showSubprocesses();
+        },
+
+        showSubprocesses: function() {
+            var me = this,
+                replacer = me.subprocessesMultiline ? '<br>' : ', ',
+                processes = (me._processes || '').replace(/\n/g, '&gt;' + replacer + '&lt;');
+
+            if(processes) processes = '&lt;' + processes + '&gt;';
+            else processes = 'No subprocesses';
+
+            me.subprocessList.html(processes);
         }
     });
     manager.WidgetManager.register_widget_view('SubprocessView', SubprocessView);

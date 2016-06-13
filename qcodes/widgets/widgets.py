@@ -162,11 +162,12 @@ class SubprocessWidget(UpdateWidget):
 
         for p in active_children():
             if getattr(p, 'name', '') == MP_NAME:
-                loops.append(str(p))
+                # take off the <> on the ends, just to shorten the names
+                loops.append(str(p)[1:-1])
             else:
-                others.append(str(p))
+                others.append(str(p)[1:-1])
 
-        self._processes = ', '.join(others + loops)
+        self._processes = '\n'.join(loops + others)
 
         if content.get('abort'):
             halt_bg(timeout=self.abort_timeout, traceback=False)
