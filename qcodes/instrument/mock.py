@@ -61,10 +61,9 @@ class MockInstrument(Instrument):
         self._model = model
 
         # keep a record of every command sent to this instrument
-        # for debugging purposes
-        if keep_history:
-            self.keep_history = True
-            self.history = []
+        # for debugging purposes?
+        self.keep_history = bool(keep_history)
+        self.history = []
 
     @classmethod
     def default_server_name(cls, **kwargs):

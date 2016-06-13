@@ -108,7 +108,7 @@ class TestParameters(TestCase):
 
         self.gates = MockGates(model=self.model)
         self.source = MockSource(model=self.model)
-        self.meter = MockMeter(model=self.model)
+        self.meter = MockMeter(model=self.model, keep_history=False)
 
         self.init_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -191,16 +191,16 @@ class TestParameters(TestCase):
 
         # initial state
         # short form of getter
-        self.assertEqual(meter.get('amplitude'), 0)
+        self.assertEqual(gates.get('chan0'), 0)
         # shortcut to the parameter, longer form of get
-        self.assertEqual(meter['amplitude'].get(), 0)
+        self.assertEqual(gates['chan0'].get(), 0)
         # explicit long form of getter
-        self.assertEqual(meter.parameters['amplitude'].get(), 0)
-        # both should produce the same history entry
-        hist = meter.getattr('history')
+        self.assertEqual(gates.parameters['chan0'].get(), 0)
+        # all 3 should produce the same history entry
+        hist = gates.getattr('history')
         self.assertEqual(len(hist), 3)
-        self.assertEqual(hist[0][1:], ('ask', 'ampl'))
-        self.assertEqual(hist[0][1:], ('ask', 'ampl'))
+        for item in hist:
+            self.assertEqual(item[1:], ('ask', 'c0'))
 
         # errors trying to set (or validate) invalid param values
         # put here so we ensure that these errors don't make it to
@@ -233,9 +233,10 @@ class TestParameters(TestCase):
         # check just the size and timestamps of histories
         for entry in gatehist + sourcehist + meterhist:
             self.check_ts(entry[0])
-        self.assertEqual(len(gatehist), 6)
+        self.assertEqual(len(gatehist), 9)
         self.assertEqual(len(sourcehist), 5)
-        self.assertEqual(len(meterhist), 7)
+        # meter does not keep history but should still have a history attr
+        self.assertEqual(len(meterhist), 0)
 
         # plus enough setters to check the parameter sweep
         # first source has to get the starting value
