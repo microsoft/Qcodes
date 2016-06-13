@@ -125,29 +125,41 @@ require([
                 me.$el.attr('qcodes-state', state);
 
                 if(state === 'floated') {
-                    me.$el.draggable().css({
-                        left: window.innerWidth - me.$el.width() - 15,
-                        top: window.innerHeight - me.$el.height() - 10
-                    });
+                    me.$el
+                        .draggable({stop: function() { me.clipBounds(); }})
+                        .css({
+                            left: window.innerWidth - me.$el.width() - 15,
+                            top: window.innerHeight - me.$el.height() - 10
+                        });
                 }
 
                 // any previous highlighting is
                 me.$el.removeClass('qcodes-highlight');
             });
 
-            $(window).resize(function() {
-                if(me.$el.attr('qcodes-state') === 'floated') {
-                    var position = me.$el.position(),
-                        minVis = 20,
-                        maxLeft = window.innerWidth - minVis,
-                        maxTop = window.innerHeight - minVis;
-
-                    if(position.left > maxLeft) me.$el.css('left', maxLeft);
-                    if(position.top > maxTop) me.$el.css('top', maxTop);
-                }
-            });
+            $(window)
+                .off('resize.qcodes')
+                .on('resize.qcodes', function() {me.clipBounds();});
 
             me.update();
+        },
+
+        clipBounds: function() {
+            var me = this;
+            if(me.$el.attr('qcodes-state') === 'floated') {
+                var bounds = me.$el[0].getBoundingClientRect(),
+                    minVis = 40,
+                    maxLeft = window.innerWidth - minVis,
+                    minLeft = minVis - bounds.width,
+                    maxTop = window.innerHeight - minVis;
+
+                if(bounds.left > maxLeft) me.$el.css('left', maxLeft);
+                else if(bounds.left < minLeft) me.$el.css('left', minLeft);
+
+                if(bounds.top > maxTop) me.$el.css('top', maxTop);
+                else if(bounds.top < 0) me.$el.css('top', 0);
+                console.log(bounds);
+            }
         },
 
         display: function(message) {
