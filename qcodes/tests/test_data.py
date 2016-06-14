@@ -26,6 +26,7 @@ class TestDataArray(TestCase):
         class MockParam:
             name = pname
             label = plabel
+            full_name = None
 
         name = 'Oscar'
         label = 'The grouch. GRR!'
