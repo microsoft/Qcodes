@@ -2,7 +2,6 @@
 
 from enum import Enum
 import time
-import logging
 from copy import deepcopy
 
 from .manager import get_data_manager, NoData
@@ -444,7 +443,8 @@ class DataSet(DelegateAttributes):
             array.array_id = name
         array_ids = set([array.array_id for array in arrays])
         for name in array_ids:
-            param_arrays = [array for array in arrays if array.array_id == name]
+            param_arrays = [array for array in arrays
+                            if array.array_id == name]
             self._clean_param_ids(param_arrays, name)
 
         array_ids = [array.array_id for array in arrays]
@@ -615,7 +615,8 @@ class DataSet(DelegateAttributes):
         arr_info = [['<Type>', '<array_id>', '<array.name>', '<array.shape>']]
 
         if hasattr(self, 'action_id_map'):
-            id_items = [item for index, item in sorted(self.action_id_map.items())]
+            id_items = [
+                item for index, item in sorted(self.action_id_map.items())]
         else:
             id_items = self.arrays.keys()
 

@@ -72,11 +72,10 @@ class DataArray(DelegateAttributes):
         self._snapshot_input = {}
 
         if parameter is not None:
-            # Is it ok to overwrite full_name like this, would we ever provide a
-            # 'better' one that the one in parameter?
+            # Is it ok to overwrite full_name like this, would we ever
+            # provide a 'better' one that the one in parameter?
             if parameter.full_name is not None:
                 self.full_name = parameter.full_name
-
 
             if hasattr(parameter, 'snapshot') and not snapshot:
                 snapshot = parameter.snapshot()

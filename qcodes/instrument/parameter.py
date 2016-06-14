@@ -364,7 +364,7 @@ class Parameter(Metadatable, DeferredOperations):
         try:
             inst_name = self._instrument.name
             if inst_name:
-                return [inst_name + '_' + nme for nme in self.names]
+                return [inst_name + '_' + name for name in self.names]
         except AttributeError:
             pass
         try:
@@ -372,6 +372,7 @@ class Parameter(Metadatable, DeferredOperations):
         except AttributeError:
             pass
         return None
+
 
 class StandardParameter(Parameter):
     '''
