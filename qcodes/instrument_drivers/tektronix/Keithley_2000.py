@@ -174,9 +174,3 @@ class Keithley_2000(VisaInstrument):
 
     def _set_param(self, mode, parameter, value):
         return '{}:{} {}'.format(mode, parameter, value)
-
-if __name__ == '__main__':
-    k = Keithley_2000('Keithley', 'GPIB0::16::INSTR', server_name=None)
-    k.mode('volt:ac')
-
-    print(k.amplitude())
