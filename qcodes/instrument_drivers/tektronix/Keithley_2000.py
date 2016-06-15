@@ -1,5 +1,4 @@
 from qcodes import VisaInstrument
-from qcodes.utils.validators import Numbers, Ints, Strings, Anything, Enum
 
 from functools import partial
 
@@ -25,18 +24,9 @@ def clean_string(s):
     return s
 
 def parse_output_bool(value):
-    # '0' to False, and '1' to True
-    return bool(int(value))
+    on = int(value) == 1
 
-def parse_input_bool(value):
-    # Convert True/1 to 1, and 'on' to 'on'
-    # Convert False/0 to 0, and 'off' to 'off'
-    parser = int
-
-    if type(value) == str:
-        parser = str
-
-    return parser(value)
+    return 'on' if on else 'off'
 
 class Keithley_2000(VisaInstrument):
     '''
@@ -62,6 +52,8 @@ class Keithley_2000(VisaInstrument):
                            set_cmd=partial(self._set_mode_param, 'NPLC'),
                            vals=Numbers(min_value=0.01, max_value=10))
 
+        # TODO: validator, this one is more difficult since different modes
+        # require different validation ranges
         self.add_parameter('range',
                            get_cmd=partial(self._get_mode_param, 'RANG', float),
                            set_cmd=partial(self._set_mode_param, 'RANG'),
@@ -70,7 +62,7 @@ class Keithley_2000(VisaInstrument):
         self.add_parameter('auto_range',
                            get_cmd=partial(self._get_mode_param, 'RANG:AUTO', parse_output_bool),
                            set_cmd=partial(self._set_mode_param, 'RANG:AUTO'),
-                           vals=Anything())
+                           vals=Enum('on', 'off'))
 
         self.add_parameter('digits',
                            get_cmd=partial(self._get_mode_param, 'DIG', int),
@@ -80,37 +72,35 @@ class Keithley_2000(VisaInstrument):
         self.add_parameter('averaging_type',
                            get_cmd=partial(self._get_mode_param, 'AVER:TCON', clean_string),
                            set_cmd=partial(self._set_mode_param, 'AVER:TCON'),
-                           vals=Strings())
+                           vals=Enum('moving', 'repeat'))
 
         self.add_parameter('averaging_count',
                            get_cmd=partial(self._get_mode_param, 'AVER:COUN', int),
                            set_cmd=partial(self._set_mode_param, 'AVER:COUN'),
-                           vals=Numbers(min_value=1, max_value=100))
+                           vals=Ints(min_value=1, max_value=100))
 
         self.add_parameter('averaging',
                            get_cmd=partial(self._get_mode_param, 'AVER:STAT', parse_output_bool),
                            set_cmd=partial(self._set_mode_param, 'AVER:STAT'),
-                           vals=Anything())
+                           vals=Enum('on', 'off'))
 
         # Global parameters
         self.add_parameter('display',
                            get_cmd='DISP:ENAB?',
                            get_parser=parse_output_bool,
                            set_cmd='DISP:ENAB {}',
-                           set_parser=parse_input_bool,
-                           vals=Anything())
+                           vals=Enum('on', 'off'))
 
         self.add_parameter('trigger_continuous',
                            get_cmd='INIT:CONT?',
                            get_parser=parse_output_bool,
                            set_cmd='INIT:CONT {}',
-                           set_parser=parse_input_bool,
-                           vals=Anything())
+                           vals=Enum('on', 'off'))
 
         self.add_parameter('trigger_count',
                            get_cmd='TRIG:COUN?',
                            set_cmd='TRIG:COUN {}',
-                           vals=Ints(min_value=1, max_value=9999))
+                           vals=MultiType(Ints(min_value=1, max_value=9999), Enum('inf')))
 
         self.add_parameter('trigger_delay',
                            get_cmd='TRIG:DEL?',
@@ -140,6 +130,7 @@ class Keithley_2000(VisaInstrument):
                            get_cmd=':DATA:FRESH?',
                            get_parser=float)
 
+        self.add_function('identify', call_cmd='*IDN?')
         self.add_function('reset', call_cmd='*RST')
 
     def _get_mode_param(self, parameter, parser):
