@@ -139,6 +139,6 @@ class EnsureConnection:
         if not self.instrument._persistent or self.instrument._socket is None:
             self.instrument._connect()
 
-    def __exit__(self):
+    def __exit__(self, type, value, tb):
         if not self.instrument._persistent:
             self.instrument._disconnect()
