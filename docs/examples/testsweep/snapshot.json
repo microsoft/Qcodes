@@ -33,7 +33,7 @@
         }
     },
     "formatter": "qcodes.data.gnuplot_format.GNUPlotFormat",
-    "io": "<DiskIO, base_location='/Users/Merlin/Dropbox/google/git/qcodes/docs/examples'>",
+    "io": "<DiskIO, base_location='/Users/alex/qdev/Qcodes/docs/examples'>",
     "location": "testsweep",
     "loop": {
         "__class__": "qcodes.loops.ActiveLoop",
@@ -44,7 +44,7 @@
                 "instrument_name": "meter",
                 "label": "Current (nA)",
                 "name": "amplitude",
-                "ts": "2016-06-11 13:51:57",
+                "ts": "2016-06-15 22:18:12",
                 "units": "",
                 "value": 0.117
             }
@@ -58,7 +58,7 @@
                 "instrument_name": "gates",
                 "label": "Gate Channel 0 (mV)",
                 "name": "chan0",
-                "ts": "2016-06-11 13:51:54",
+                "ts": "2016-06-15 22:18:10",
                 "units": "",
                 "value": 0.0
             },
@@ -72,8 +72,8 @@
             ]
         },
         "then_actions": [],
-        "ts_end": "2016-06-11 13:52:02",
-        "ts_start": "2016-06-11 13:51:59",
+        "ts_end": "2016-06-15 22:18:19",
+        "ts_start": "2016-06-15 22:18:16",
         "use_data_manager": true,
         "use_threads": true
     },
@@ -86,7 +86,7 @@
                 "instrument_name": "meter",
                 "label": "Current (nA)",
                 "name": "amplitude",
-                "ts": "2016-06-11 13:51:57",
+                "ts": "2016-06-15 22:18:12",
                 "units": "",
                 "value": 0.117
             }
@@ -105,7 +105,7 @@
                         "instrument_name": "gates",
                         "label": "IDN",
                         "name": "IDN",
-                        "ts": "2016-06-11 13:51:54",
+                        "ts": "2016-06-15 22:18:10",
                         "units": "",
                         "value": {
                             "firmware": null,
@@ -120,7 +120,7 @@
                         "instrument_name": "gates",
                         "label": "Gate Channel 0 (mV)",
                         "name": "chan0",
-                        "ts": "2016-06-11 13:51:54",
+                        "ts": "2016-06-15 22:18:10",
                         "units": "",
                         "value": 0.0
                     },
@@ -130,7 +130,7 @@
                         "instrument_name": "gates",
                         "label": "Gate Channel 1 (mV)",
                         "name": "chan1",
-                        "ts": "2016-06-11 13:51:54",
+                        "ts": "2016-06-15 22:18:10",
                         "units": "",
                         "value": 0.0
                     },
@@ -140,7 +140,7 @@
                         "instrument_name": "gates",
                         "label": "Gate Channel 2 (mV)",
                         "name": "chan2",
-                        "ts": "2016-06-11 13:51:54",
+                        "ts": "2016-06-15 22:18:10",
                         "units": "",
                         "value": 0.0
                     }
@@ -157,7 +157,7 @@
                         "instrument_name": "meter",
                         "label": "IDN",
                         "name": "IDN",
-                        "ts": "2016-06-11 13:51:54",
+                        "ts": "2016-06-15 22:18:10",
                         "units": "",
                         "value": {
                             "firmware": null,
@@ -172,7 +172,7 @@
                         "instrument_name": "meter",
                         "label": "Current (nA)",
                         "name": "amplitude",
-                        "ts": "2016-06-11 13:51:57",
+                        "ts": "2016-06-15 22:18:12",
                         "units": "",
                         "value": 0.117
                     }
@@ -189,7 +189,7 @@
                         "instrument_name": "source",
                         "label": "IDN",
                         "name": "IDN",
-                        "ts": "2016-06-11 13:51:54",
+                        "ts": "2016-06-15 22:18:10",
                         "units": "",
                         "value": {
                             "firmware": null,
@@ -204,7 +204,7 @@
                         "instrument_name": "source",
                         "label": "Source Amplitude (μV)",
                         "name": "amplitude",
-                        "ts": "2016-06-11 13:51:54",
+                        "ts": "2016-06-15 22:18:10",
                         "units": "",
                         "value": 0.1
                     }

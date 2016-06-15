@@ -111,7 +111,7 @@ class MockMeter(MockInstrument):
 class AverageGetter(Parameter):
     def __init__(self, measured_param, sweep_values, delay):
         super().__init__(name='avg_' + measured_param.name)
-        # needs full_name too
+        self._instrument = getattr(measured_param, '_instrument', None)
         self.measured_param = measured_param
         self.sweep_values = sweep_values
         self.delay = delay
@@ -129,7 +129,7 @@ class AverageAndRaw(Parameter):
     def __init__(self, measured_param, sweep_values, delay):
         name = measured_param.name
         super().__init__(names=(name, 'avg_' + name))
-        # needs full_name too
+        self._instrument = getattr(measured_param, '_instrument', None)
         self.measured_param = measured_param
         self.sweep_values = sweep_values
         self.delay = delay
