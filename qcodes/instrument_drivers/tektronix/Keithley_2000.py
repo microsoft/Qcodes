@@ -1,4 +1,5 @@
 from qcodes import VisaInstrument
+from qcodes.utils.validators import Numbers, Ints, Enum, MultiType
 
 from functools import partial
 
