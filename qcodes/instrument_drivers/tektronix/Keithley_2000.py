@@ -131,7 +131,9 @@ class Keithley_2000(VisaInstrument):
                            get_cmd=':DATA:FRESH?',
                            get_parser=float)
 
-        self.add_function('identify', call_cmd='*IDN?')
+        self.add_parameter('identify',
+                           get_cmd='*IDN?')
+        
         self.add_function('reset', call_cmd='*RST')
 
     def _get_mode_param(self, parameter, parser):
