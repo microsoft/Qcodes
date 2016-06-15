@@ -3,7 +3,7 @@ from qcodes.utils.validators import Numbers, Ints, Strings, Anything, Enum
 
 from functools import partial
 
-def string_cleaner(s):
+def clean_string(s):
     # Remove surrounding whitespace and newline characters
     s = s.strip()
 
@@ -11,13 +11,24 @@ def string_cleaner(s):
     if (s[0] == s[-1]) and s.startswith(("'", '"')):
         s = s[1:-1]
 
-    return s.lower()
+    s = s.lower()
 
-def output_bool_parser(value):
+    # Convert some results to a better readable version
+    conversions = {
+        'mov': 'moving',
+        'rep': 'repeat',
+    }
+
+    if s in conversions.keys():
+        s = conversions[s]
+
+    return s
+
+def parse_output_bool(value):
     # '0' to False, and '1' to True
     return bool(int(value))
 
-def input_bool_parser(value):
+def parse_input_bool(value):
     # Convert True/1 to 1, and 'on' to 'on'
     # Convert False/0 to 0, and 'off' to 'off'
     parser = int
@@ -41,59 +52,59 @@ class Keithley_2000(VisaInstrument):
 
         self.add_parameter('mode',
                            get_cmd='SENS:FUNC?',
-                           get_parser=string_cleaner,
+                           get_parser=clean_string,
                            set_cmd="SENS:FUNC '{}'",
                            vals=Enum(*self._modes))
 
         # Mode specific parameters
         self.add_parameter('nplc',
-                           get_cmd=partial(self._get_mode_param, 'NPLC'),
+                           get_cmd=partial(self._get_mode_param, 'NPLC', float),
                            set_cmd=partial(self._set_mode_param, 'NPLC'),
                            vals=Numbers(min_value=0.01, max_value=10))
 
         self.add_parameter('range',
-                           get_cmd=partial(self._get_mode_param, 'RANG'),
+                           get_cmd=partial(self._get_mode_param, 'RANG', float),
                            set_cmd=partial(self._set_mode_param, 'RANG'),
                            vals=Numbers())
 
         self.add_parameter('auto_range',
-                           get_cmd=partial(self._get_mode_param, 'RANG:AUTO'),
+                           get_cmd=partial(self._get_mode_param, 'RANG:AUTO', parse_output_bool),
                            set_cmd=partial(self._set_mode_param, 'RANG:AUTO'),
                            vals=Anything())
 
         self.add_parameter('digits',
-                           get_cmd=partial(self._get_mode_param, 'DIG'),
+                           get_cmd=partial(self._get_mode_param, 'DIG', int),
                            set_cmd=partial(self._set_mode_param, 'DIG'),
                            vals=Ints(min_value=4, max_value=7))
 
         self.add_parameter('averaging_type',
-                           get_cmd=partial(self._get_mode_param, 'AVER:TCON'),
+                           get_cmd=partial(self._get_mode_param, 'AVER:TCON', clean_string),
                            set_cmd=partial(self._set_mode_param, 'AVER:TCON'),
                            vals=Strings())
 
         self.add_parameter('averaging_count',
-                           get_cmd=partial(self._get_mode_param, 'AVER:COUN'),
+                           get_cmd=partial(self._get_mode_param, 'AVER:COUN', int),
                            set_cmd=partial(self._set_mode_param, 'AVER:COUN'),
                            vals=Numbers(min_value=1, max_value=100))
 
         self.add_parameter('averaging',
-                           get_cmd=partial(self._get_mode_param, 'AVER:STAT'),
+                           get_cmd=partial(self._get_mode_param, 'AVER:STAT', parse_output_bool),
                            set_cmd=partial(self._set_mode_param, 'AVER:STAT'),
                            vals=Anything())
 
         # Global parameters
         self.add_parameter('display',
                            get_cmd='DISP:ENAB?',
-                           get_parser=output_bool_parser,
+                           get_parser=parse_output_bool,
                            set_cmd='DISP:ENAB {}',
-                           set_parser=input_bool_parser,
+                           set_parser=parse_input_bool,
                            vals=Anything())
 
         self.add_parameter('trigger_continuous',
                            get_cmd='INIT:CONT?',
-                           get_parser=output_bool_parser,
+                           get_parser=parse_output_bool,
                            set_cmd='INIT:CONT {}',
-                           set_parser=input_bool_parser,
+                           set_parser=parse_input_bool,
                            vals=Anything())
 
         self.add_parameter('trigger_count',
@@ -131,34 +142,10 @@ class Keithley_2000(VisaInstrument):
 
         self.add_function('reset', call_cmd='*RST')
 
-    def _get_mode_param(self, parameter):
-        # Select the appropriate return value parser according to the parameter
-        parser = float
-
-        if parameter in ['RANG:AUTO', 'AVER:STAT']:
-            parser = bool
-        elif parameter in ['DIG', 'AVER:COUN']:
-            parser = int
-        elif parameter in ['AVER:TCON']:
-            parser = str
-
+    def _get_mode_param(self, parameter, parser):
         cmd = '{}:{}?'.format(self.mode(), parameter)
 
-        result = parser(self.ask(cmd))
-
-        if type(result) == str:
-            result = string_cleaner(result)
-
-        # Convert some results to a better readable version
-        conversions = {
-            'mov': 'moving',
-            'rep': 'repeat',
-        }
-
-        if result in conversions.keys():
-            result = conversions[result]
-
-        return result
+        return parser(self.ask(cmd))
 
     def _set_mode_param(self, parameter, value):
         # Convert input bools to 1/0 as required by the Keithley
@@ -168,9 +155,3 @@ class Keithley_2000(VisaInstrument):
         cmd = '{}:{} {}'.format(self.mode(), parameter, value)
 
         self.write(cmd)
-
-    def _get_param(self, mode, parameter):
-        return '{}:{}?'.format(mode, parameter)
-
-    def _set_param(self, mode, parameter, value):
-        return '{}:{} {}'.format(mode, parameter, value)
