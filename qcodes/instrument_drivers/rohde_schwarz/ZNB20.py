@@ -55,7 +55,7 @@ class RohdeSchwarz_ZNB20(IPInstrument):
                            vals=vals.Numbers(1,2e10))
 
         self.initialise()
-        #TODO: self.connectmessage() ?
+        self.connectmessage()
 
     def initialise(self):
         # TODO: set input and output buffer size (its in the matlab)?
@@ -90,5 +90,3 @@ class RohdeSchwarz_ZNB20(IPInstrument):
                 traces.append([mag1, phase1])
         else: 
             raise ValueError('Unable to get trace, expected int freq and points > 0')
-
-
