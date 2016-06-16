@@ -84,7 +84,9 @@ class SRS_SR830(VisaInstrument):
                            set_cmd='SENS {:d}',
                            get_parser=self.get_sensitivity,
                            set_parser=self.set_sensitivity,
-                           vals=self.ValSensitivity())
+                           vals=vals.MultiType(vals.Enum(*self.VOLT_SENS.keys()),
+                                               vals.Enum(*self.CURR_SENS.keys()),
+                                               vals.Numbers(2e-15, 1)))
         RMOD = {'High_Reserve': 0, 'Normal': 1, 'Low_Noise': 2}
         self.add_parameter(name='Reserve',
                            label='Reserve',
@@ -93,14 +95,16 @@ class SRS_SR830(VisaInstrument):
                            val_mapping=RMOD)
         self.add_parameter(name='time_constant',
                            label='Time Constant',
+                           units='s',
                            get_cmd='OFLT?',
                            set_cmd='OFLT {:d}',
                            get_parser=self.get_tc,
                            set_parser=self.set_tc,
-                           vals=self.ValTC())
+                           vals=vals.Enum(*self.TC_STR.keys()))
         OFSL = {6: 0, 12: 1, 18: 2, 24: 3}
         self.add_parameter(name='filter_slope',
                            label='Filter Slope',
+                           units='dB',
                            get_cmd='OFSL?',
                            set_cmd='OFSL {:d}',
                            val_mapping=OFSL)
@@ -147,43 +151,60 @@ class SRS_SR830(VisaInstrument):
         return state
 
     # TODO: Write sensitivity getters and setters and validators
+    VOLT_SENS = {'2nV': 0, '5nV': 1, '10nV': 2, '20nV': 3, '50nV': 4,
+                 '100nV': 5, '200nV': 6, '500nV': 7, '1μV': 8, '2μV': 9,
+                 '5μV': 10, '10μV': 11, '20μV': 12, '50μV': 13, '100μV': 14,
+                 '200μV': 15, '500μV': 16, '1mV': 17, '2mV': 18, '5mV': 19,
+                 '10mV': 20, '20mV': 21, '50mV': 22, '100mV': 23, '200mV': 24,
+                 '500mV': 25, '1V': 26}
+    RVOLT_SENS = {v: k for k, v in VOLT_SENS.items()}
+    CURR_SENS = {'2fA': 0, '5fA': 1, '10fA': 2, '20fA': 3, '50fA': 4,
+                 '100fA': 5, '200fA': 6, '500fA': 7, '1pA': 8, '2pA': 9,
+                 '5pA': 10, '10pA': 11, '20pA': 12, '50pA': 13, '100pA': 14,
+                 '200pA': 15, '500pA': 16, '1nA': 17, '2nA': 18, '5nA': 19,
+                 '10nA': 20, '20nA': 21, '50nA': 22, '100nA': 23, '200nA': 24,
+                 '500nA': 25, '1μA': 26}
+    RCURR_SENS = {v: k for k, v in CURR_SENS.items()}
     def get_sensitivity(self, val):
-        return 0
+        try:
+            val = int(val)
+        except ValueError:
+            raise ValueError("Failed to parse sensitivity: {!r}".format(val))
+        if self.input_source() in ['A', 'A-B']: # Check whether we are looking at voltages or currents
+            return self.RVOLT_SENS[val]
+        else:
+            return self.RCURR_SENS[val]
 
     def set_sensitivity(self, val):
-        return 0
-
-    class ValSensitivity(vals.Validator):
-        '''
-        validates sensitivity, taking into account the input type
-        Sensitivity can be given as a float, or as a string with units
-        '''
-
-        def __init__(self):
+        # If we have been passed a string, look up the code corresponding to the range in
+        # the map
+        if isinstance(val, str):
+            # Map u to μ
+            val = val.replace('u', 'μ')
+            if self.input_source() in ['A', 'A-B']:
+                return self.VOLT_SENS[val]
+            else:
+                return self.CURR_SENS[val]
+        elif isinstance(val, float) or isinstance(val, int):
+            # TODO: Implement numeric handling of sensitivity
             pass
+        raise ValueError("Invalid sensitivity")
 
-        def validate(self, value, context=''):
-            return True
-
-    # TODO: Write time constant getters and setters and validators
+    TC_STR = {10e-6: 0, 30e-6: 1, 100e-6: 2, 300e-6: 3, 1e-3: 4,
+              3e-3: 5, 10e-3: 6, 30e-3: 7, 100e-3: 8, 300e-3: 9,
+              1.0: 10, 3.0: 11, 10.0: 12, 30.0: 13, 100.0: 14,
+              300.0: 15, 1e3: 16, 3e3: 17, 10e3: 18, 30e3: 19}
+    RTC_STR = {v: k for k, v in TC_STR.items()}
     def get_tc(self, val):
-        return 0
+        try:
+            val = int(val)
+        except ValueError:
+            raise ValueError("Failed to parse time constant: {!r}".format(val))
+        return self.RTC_STR[val]
 
     def set_tc(self, val):
-        return 0
-
-    class ValTC(vals.Validator):
-        '''
-        validate time constant
-        Time constant can be given as a float, or as a string with units
-        '''
-
-        def __init__(self):
-            pass
-
-        def validate(self, value, context=''):
-            return True
-
+        val = float(val) # Convert seconds to float
+        return self.TC_STR[val]
 
     def auto_gain(self):
         """
