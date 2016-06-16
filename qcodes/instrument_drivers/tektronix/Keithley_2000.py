@@ -4,6 +4,7 @@ from qcodes.utils.validators import Numbers, Ints, Enum, MultiType
 from functools import partial
 
 def clean_string(s):
+    """ Clean string outputs of the Keithley """
     # Remove surrounding whitespace and newline characters
     s = s.strip()
 
@@ -25,9 +26,7 @@ def clean_string(s):
     return s
 
 def parse_output_bool(value):
-    on = int(value) == 1
-
-    return 'on' if on else 'off'
+    return 'on' if int(value) == 1 else 'off'
 
 class Keithley_2000(VisaInstrument):
     '''
@@ -40,6 +39,8 @@ class Keithley_2000(VisaInstrument):
                        'FRES', 'TEMP', 'FREQ']
 
         self._modes += [s.lower() for s in self._modes]
+
+        self._trigger_sent = False
 
         self.add_parameter('mode',
                            get_cmd='SENS:FUNC?',
@@ -128,13 +129,26 @@ class Keithley_2000(VisaInstrument):
 
         self.add_parameter('amplitude',
                            units='arb.unit',
-                           get_cmd=':DATA:FRESH?',
-                           get_parser=float)
+                           get_cmd=self._read_next_value)
 
-        self.add_parameter('identify',
-                           get_cmd='*IDN?')
-        
         self.add_function('reset', call_cmd='*RST')
+
+        if reset:
+            self.reset()
+
+    def trigger(self):
+        if self.trigger_continuous() == 'off':
+            self.write('INIT')
+            self._trigger_sent = True
+
+    def _read_next_value(self):
+        # Prevent a timeout when no trigger has been sent
+        if self.trigger_continuous() == 'off' and not self._trigger_sent:
+            return 0.0
+
+        self._trigger_sent = False
+
+        return float(self.ask('DATA:FRESH?'))
 
     def _get_mode_param(self, parameter, parser):
         cmd = '{}:{}?'.format(self.mode(), parameter)
@@ -142,10 +156,6 @@ class Keithley_2000(VisaInstrument):
         return parser(self.ask(cmd))
 
     def _set_mode_param(self, parameter, value):
-        # Convert input bools to 1/0 as required by the Keithley
-        if type(value) is bool:
-            value = int(value)
-
         cmd = '{}:{} {}'.format(self.mode(), parameter, value)
 
         self.write(cmd)
