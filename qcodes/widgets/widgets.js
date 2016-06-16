@@ -109,16 +109,39 @@ require([
             });
 
             me.$el.find('.js-state').click(function() {
-                var oldState = me.$el.attr('qcodes-state'),
-                    state = this.className.substr(this.className.indexOf('qcodes'))
+                var state = this.className.substr(this.className.indexOf('qcodes'))
                         .split('-')[1].split(' ')[0];
+                if(me.model.get('_state') !== state) {
+                    me.model.set('_state', state);
+                    // me.updateState();
+                }
 
+            });
+
+            $(window)
+                .off('resize.qcodes')
+                .on('resize.qcodes', function() {me.clipBounds();});
+
+            me.update();
+        },
+
+        updateState: function() {
+            var me = this,
+                oldState = me.$el.attr('qcodes-state'),
+                state = me.model.get('_state');
+
+            if(state === oldState) return;
+
+            setTimeout(function() {
                 // not sure why I can't pop it out of the widgetarea in render, but it seems that
                 // some other bit of code resets the parent after render if I do it there.
                 // To be safe, just do it on every state click.
                 me.$el.appendTo('body');
+                // me.$el.attr('position', '');
+                // console.log(me.el);
 
                 if(oldState === 'floated') {
+                    console.log('here');
                     me.$el.draggable('destroy').css({left:'', top: ''});
                 }
 
@@ -135,13 +158,8 @@ require([
 
                 // any previous highlighting is
                 me.$el.removeClass('qcodes-highlight');
-            });
+            }, 0);
 
-            $(window)
-                .off('resize.qcodes')
-                .on('resize.qcodes', function() {me.clipBounds();});
-
-            me.update();
         },
 
         clipBounds: function() {
@@ -158,7 +176,6 @@ require([
 
                 if(bounds.top > maxTop) me.$el.css('top', maxTop);
                 else if(bounds.top < 0) me.$el.css('top', 0);
-                console.log(bounds);
             }
         },
 
@@ -204,19 +221,20 @@ require([
                     me.outputArea.prop('scrollHeight') : initialScroll);
             }
 
-            var processes = me.model.get('_processes');
-            me.abortButton.toggleClass('disabled', processes.indexOf('Measurement')===-1);
-            me._processes = processes;
             me.showSubprocesses();
+            me.updateState();
         },
 
         showSubprocesses: function() {
             var me = this,
                 replacer = me.subprocessesMultiline ? '<br>' : ', ',
-                processes = (me._processes || '').replace(/\n/g, '&gt;' + replacer + '&lt;');
+                processes = (me.model.get('_processes') || '')
+                    .replace(/\n/g, '&gt;' + replacer + '&lt;');
 
             if(processes) processes = '&lt;' + processes + '&gt;';
             else processes = 'No subprocesses';
+
+            me.abortButton.toggleClass('disabled', processes.indexOf('Measurement')===-1);
 
             me.subprocessList.html(processes);
         }
