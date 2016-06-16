@@ -441,6 +441,38 @@ class TestParameters(TestCase):
         with self.assertRaises(ValueError):
             gates.memcoded.set('zero')
 
+    def test_val_mapping_ints(self):
+        gates = self.gates
+
+        gates.add_parameter('moderaw', set_cmd='mem0:{}', get_cmd='mem0?',
+                            vals=Enum('0', '1'))
+
+        # modecoded maps the instrument codes ('0' and '1') into nicer
+        # user values 'AC' and 'DC'
+        # Here we're using integers in the mapping, rather than turning
+        # them into strings.
+        gates.add_parameter('modecoded', set_cmd='mem0:{}', get_cmd='mem0?',
+                            val_mapping={'DC': 0, 'AC': 1})
+
+        gates.modecoded.set('AC')
+        self.assertEqual(gates.moderaw.get(), '1')
+        self.assertEqual(gates.modecoded.get(), 'AC')
+        self.assertEqual(self.getmem(0), '1')
+
+        gates.moderaw.set('0')
+        self.assertEqual(gates.modecoded.get(), 'DC')
+        self.assertEqual(gates.moderaw.get(), '0')
+        self.assertEqual(self.getmem(0), '0')
+
+        with self.assertRaises(ValueError):
+            gates.modecoded.set(0)
+
+        with self.assertRaises(ValueError):
+            gates.modecoded.set('0')
+
+        with self.assertRaises(ValueError):
+            gates.moderaw.set('DC')
+
     def test_bare_function(self):
         # not a use case we want to promote, but it's there...
         p = ManualParameter('test')
