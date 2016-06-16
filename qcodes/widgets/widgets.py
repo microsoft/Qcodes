@@ -2,7 +2,7 @@
 from IPython.display import display
 from ipywidgets import widgets
 from multiprocessing import active_children
-from traitlets import Unicode, Float
+from traitlets import Unicode, Float, Enum
 
 from qcodes.process.stream_queue import get_stream_queue
 from .display import display_auto
@@ -77,6 +77,9 @@ class UpdateWidget(widgets.DOMWidget):
 
         TODO: why did I include kwargs?
         """
+        if not hasattr(self, 'previous_interval'):
+            self.previous_interval = 1
+
         if self.interval != self.previous_interval:
             self.interval = self.previous_interval
 
@@ -110,17 +113,20 @@ class HiddenUpdateWidget(UpdateWidget):
         super().__init__(*args, first_call=first_call, **kwargs)
 
 
-def get_subprocess_widget():
+def get_subprocess_widget(**kwargs):
     """
     Convenience function to get a singleton SubprocessWidget.
 
     Restarts widget updates if it has been halted.
 
+    Args:
+        **kwargs: passed to SubprocessWidget constructor
+
     Returns:
         SubprocessWidget
     """
     if SubprocessWidget.instance is None:
-        w = SubprocessWidget()
+        w = SubprocessWidget(**kwargs)
     else:
         w = SubprocessWidget.instance
 
@@ -129,9 +135,14 @@ def get_subprocess_widget():
     return w
 
 
-def show_subprocess_widget():
-    """Display the subprocess widget, creating it if needed."""
-    display(get_subprocess_widget())
+def show_subprocess_widget(**kwargs):
+    """
+    Display the subprocess widget, creating it if needed.
+
+    Args:
+        **kwargs: passed to SubprocessWidget constructor
+    """
+    display(get_subprocess_widget(**kwargs))
 
 
 class SubprocessWidget(UpdateWidget):
@@ -149,27 +160,31 @@ class SubprocessWidget(UpdateWidget):
         interval (number): The call period, in seconds. Can be changed later
             by setting the ``interval`` attribute. ``interval=0`` or the
             ``halt()`` method disables updates. Default 0.5.
+        state (str): starting window state of the widget. Options are
+            'docked' (default), 'minimized', 'floated'
     """
 
     _view_name = Unicode('SubprocessView', sync=True)  # see widgets.js
     _processes = Unicode(sync=True)
+    _state = Enum(('minimized', 'docked', 'floated'), sync=True)
 
     instance = None
 
     # max seconds to wait for a measurement to abort
     abort_timeout = 30
 
-    def __init__(self, interval=0.5):
+    def __init__(self, interval=0.5, state='docked'):
         if self.instance is not None:
             raise RuntimeError(
                 'Only one instance of SubprocessWidget should exist at '
                 'a time. Use the function get_subprocess_output to find or '
                 'create it.')
 
-        self.__class__.instance = self
-
         self.stream_queue = get_stream_queue()
+        self._state = state
         super().__init__(fn=None, interval=interval)
+
+        self.__class__.instance = self
 
     def do_update(self, content=None, buffers=None):
         """
