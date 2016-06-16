@@ -3,8 +3,8 @@ from qcodes.utils.validators import Numbers, Ints, Enum, MultiType
 
 from functools import partial
 
-def clean_string(s):
-    """ Clean string outputs of the Keithley """
+def parse_output_string(s):
+    """ Parses and cleans string outputs of the Keithley """
     # Remove surrounding whitespace and newline characters
     s = s.strip()
 
@@ -75,7 +75,7 @@ class Keithley_2000(VisaInstrument):
                            vals=Ints(min_value=4, max_value=7))
 
         self.add_parameter('averaging_type',
-                           get_cmd=partial(self._get_mode_param, 'AVER:TCON', clean_string),
+                           get_cmd=partial(self._get_mode_param, 'AVER:TCON', parse_output_string),
                            set_cmd=partial(self._set_mode_param, 'AVER:TCON'),
                            vals=Enum('moving', 'repeat'))
 
@@ -138,6 +138,8 @@ class Keithley_2000(VisaInstrument):
 
         if reset:
             self.reset()
+
+        self.connect_message()
 
     def trigger(self):
         if self.trigger_continuous() == 'off':
