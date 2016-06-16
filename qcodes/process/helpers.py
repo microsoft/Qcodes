@@ -54,4 +54,5 @@ def kill_processes():
         except:
             pass
 
-    time.sleep(0.5)
+    if mp.active_children():
+        time.sleep(0.2)

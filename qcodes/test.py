@@ -1,8 +1,15 @@
-import logging
+"""Unified qcodes test runners."""
+
 
 def test_core(verbosity=1, failfast=False):
     """
     Run the qcodes core tests.
+
+    Args:
+        verbosity (int, optional): 0, 1, or 2, higher displays more info
+            Default 1.
+        failfast (bool, optional): If true, stops running on first failure
+            Default False.
 
     Coverage testing is only available from the command line
     """
@@ -12,7 +19,6 @@ def test_core(verbosity=1, failfast=False):
 
     _test_core(verbosity=verbosity, failfast=failfast)
 
-import re
 
 def _test_core(test_pattern='test*.py', **kwargs):
     import unittest
@@ -21,22 +27,24 @@ def _test_core(test_pattern='test*.py', **kwargs):
     import qcodes
 
     suite = unittest.defaultTestLoader.discover(
-        qctest.__path__[0], top_level_dir=qcodes.__path__[0], pattern=test_pattern)   
+        qctest.__path__[0], top_level_dir=qcodes.__path__[0],
+        pattern=test_pattern)
 
-    print('testing %d cases'  % suite.countTestCases() )
-    
+    print('testing %d cases' % suite.countTestCases())
+
     result = unittest.TextTestRunner(**kwargs).run(suite)
     return result.wasSuccessful()
 
 
 def test_part(name):
     """
-    run part of the qcodes core test suite
+    Run part of the qcodes core test suite.
 
-    name: a name within the qcodes.tests directory. May be:
-        - a module ('test_loop')
-        - a TestCase ('test_loop.TestLoop')
-        - a test method ('test_loop.TestLoop.test_nesting')
+    Args:
+        name (str): a name within the qcodes.tests directory. May be:
+            - a module ('test_loop')
+            - a TestCase ('test_loop.TestLoop')
+            - a test method ('test_loop.TestLoop.test_nesting')
     """
     import unittest
     fullname = 'qcodes.tests.' + name
@@ -48,6 +56,7 @@ if __name__ == '__main__':
     import coverage
     import os
     import multiprocessing as mp
+    import sys
     mp.set_start_method('spawn')
 
     # make sure coverage looks for .coveragerc in the right place
@@ -82,9 +91,15 @@ if __name__ == '__main__':
     cov.start()
 
     success = _test_core(verbosity=args.verbosity,
-                         failfast=bool(args.failfast), test_pattern=args.test_pattern)
+                         failfast=bool(args.failfast),
+                         test_pattern=args.test_pattern)
 
     cov.stop()
-
+    # save coverage anyway since we computed it
+    cov.save()
     if success and args.show_coverage:
         cov.report()
+    # restore unix-y behavior
+    # exit status 1 on fail
+    if not success:
+        sys.exit(1)

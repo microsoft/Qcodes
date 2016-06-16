@@ -31,13 +31,21 @@ class Formatter:
               last_saved_index and modified_range, as well as whether or not
               it found the specified file, to determine how much to write.
     """
-    ArrayGroup = namedtuple('ArrayGroup', 'size set_arrays data name')
+    ArrayGroup = namedtuple('ArrayGroup', 'shape set_arrays data name')
 
-    def write(self, data_set):
+    def write(self, data_set, io_manager, location):
         """
-        Write the DataSet to storage. It is up to the Formatter to decide
-        when to overwrite completely, and when to just append or otherwise
-        update the file(s).
+        Write the DataSet to storage.
+
+        Subclasses must override this method.
+
+        It is up to the Formatter to decide when to overwrite completely,
+        and when to just append or otherwise update the file(s).
+
+        Args:
+            data_set (DataSet): the data we are writing.
+            io_manager (io_manager): base physical location to write to.
+            location (str): the file location within the io_manager.
         """
         raise NotImplementedError
 
@@ -70,8 +78,20 @@ class Formatter:
                     logging.warning('error reading file ' + fn)
                     logging.warning(format_exc())
 
-    def write_metadata(self, data_set, read_first=True):
-        """Write the metadata for this DataSet to storage."""
+    def write_metadata(self, data_set, io_manager, location, read_first=True):
+        """
+        Write the metadata for this DataSet to storage.
+
+        Subclasses must override this method.
+
+        Args:
+            data_set (DataSet): the data we are writing.
+            io_manager (io_manager): base physical location to write to.
+            location (str): the file location within the io_manager.
+            read_first (bool, optional): whether to first look for previously
+                saved metadata that may contain more information than the local
+                copy.
+        """
         raise NotImplementedError
 
     def read_metadata(self, data_set):
@@ -199,7 +219,7 @@ class Formatter:
                 continue
 
             group_name = '_'.join(sai.array_id for sai in set_arrays)
-            out.append(self.ArrayGroup(size=set_arrays[-1].size,
+            out.append(self.ArrayGroup(shape=set_arrays[-1].shape,
                                        set_arrays=set_arrays,
                                        data=tuple(sorted(data, key=id_getter)),
                                        name=group_name))

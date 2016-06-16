@@ -223,12 +223,12 @@ class MultiGetter(Parameter):
         if len(kwargs) == 1:
             name, self._return = list(kwargs.items())[0]
             super().__init__(name=name)
-            self.size = np.shape(self._return)
+            self.shape = np.shape(self._return)
         else:
             names = tuple(sorted(kwargs.keys()))
             super().__init__(names=names)
             self._return = tuple(kwargs[k] for k in names)
-            self.sizes = tuple(np.shape(v) for v in self._return)
+            self.shapes = tuple(np.shape(v) for v in self._return)
 
     def get(self):
         return self._return
@@ -259,6 +259,26 @@ class TestLoop(TestCase):
         self.assertEqual(data.p1.tolist(), [[[1, 1]] * 2, [[2, 2]] * 2])
         self.assertEqual(data.p2.tolist(), [[[3, 3], [4, 4]]] * 2)
         self.assertEqual(data.p3.tolist(), [[[5, 6]] * 2] * 2)
+
+    def test_repr(self):
+        loop2 = Loop(self.p2[3:5:1], 0.001).each(self.p2)
+        loop = Loop(self.p1[1:3:1], 0.001).each(self.p3,
+                                                self.p2,
+                                                loop2,
+                                                self.p1)
+        active_loop = loop
+        data = active_loop.run_temp()
+        expected = ('DataSet:\n'
+                    '   mode     = DataMode.LOCAL\n'
+                    '   location = False\n'
+                    '   <Type>   | <array_id> | <array.name> | <array.shape>\n'
+                    '   Setpoint | p1_set     | p1           | (2,)\n'
+                    '   Measured | p3         | p3           | (2,)\n'
+                    '   Measured | p2_1       | p2           | (2,)\n'
+                    '   Setpoint | p2_set     | p2           | (2, 2)\n'
+                    '   Measured | p2_2_0     | p2           | (2, 2)\n'
+                    '   Measured | p1         | p1           | (2,)')
+        self.assertEqual(data.__repr__(), expected)
 
     def test_default_measurement(self):
         self.p2.set(4)
@@ -342,12 +362,12 @@ class TestLoop(TestCase):
         self.assertLessEqual(delay, 0.06)
 
     def test_composite_params(self):
-        # this one has names and sizes
+        # this one has names and shapes
         mg = MultiGetter(one=1, onetwo=(1, 2))
         self.assertTrue(hasattr(mg, 'names'))
-        self.assertTrue(hasattr(mg, 'sizes'))
+        self.assertTrue(hasattr(mg, 'shapes'))
         self.assertFalse(hasattr(mg, 'name'))
-        self.assertFalse(hasattr(mg, 'size'))
+        self.assertFalse(hasattr(mg, 'shape'))
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
         data = loop.run_temp()
 
@@ -398,12 +418,12 @@ class TestLoop(TestCase):
         with self.assertRaises(ValueError):
             loop.run_temp()
 
-        # this one has name and size
+        # this one has name and shape
         mg = MultiGetter(arr=(4, 5, 6))
         self.assertTrue(hasattr(mg, 'name'))
-        self.assertTrue(hasattr(mg, 'size'))
+        self.assertTrue(hasattr(mg, 'shape'))
         self.assertFalse(hasattr(mg, 'names'))
-        self.assertFalse(hasattr(mg, 'sizes'))
+        self.assertFalse(hasattr(mg, 'shapes'))
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
         data = loop.run_temp()
 
@@ -411,15 +431,7 @@ class TestLoop(TestCase):
         self.assertEqual(data.arr.tolist(), [[4, 5, 6]] * 2)
         self.assertEqual(data.index0.tolist(), [[0, 1, 2]] * 2)
 
-        # alternate form for 1D size, just an integer
-        mg.size = mg.size[0]
-        loop = Loop(self.p1[1:3:1], 0.001).each(mg)
-        data = loop.run_temp()
-
-        self.assertEqual(data.p1.tolist(), [1, 2])
-        self.assertEqual(data.arr.tolist(), [[4, 5, 6]] * 2)
-
-        # 2D size
+        # 2D shape
         mg = MultiGetter(arr2d=((21, 22), (23, 24)))
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
         data = loop.run_temp()
