@@ -111,11 +111,7 @@ require([
             me.$el.find('.js-state').click(function() {
                 var state = this.className.substr(this.className.indexOf('qcodes'))
                         .split('-')[1].split(' ')[0];
-                if(me.model.get('_state') !== state) {
-                    me.model.set('_state', state);
-                    // me.updateState();
-                }
-
+                me.model.set('_state', state);
             });
 
             $(window)
@@ -137,8 +133,6 @@ require([
                 // some other bit of code resets the parent after render if I do it there.
                 // To be safe, just do it on every state click.
                 me.$el.appendTo('body');
-                // me.$el.attr('position', '');
-                // console.log(me.el);
 
                 if(oldState === 'floated') {
                     console.log('here');
@@ -156,7 +150,7 @@ require([
                         });
                 }
 
-                // any previous highlighting is
+                // any previous highlighting is now moot
                 me.$el.removeClass('qcodes-highlight');
             }, 0);
 
