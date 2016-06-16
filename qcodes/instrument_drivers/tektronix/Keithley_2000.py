@@ -29,24 +29,27 @@ def parse_output_bool(value):
     return 'on' if int(value) == 1 else 'off'
 
 class Keithley_2000(VisaInstrument):
-    '''
+    """
     Driver for the Keithley 2000 multimeter.
-    '''
+    """
     def __init__(self, name, address, reset=False, **kwargs):
         super().__init__(name, address, **kwargs)
-
-        self._modes = ['VOLT:AC', 'VOLT:DC', 'CURR:AC', 'CURR:DC', 'RES',
-                       'FRES', 'TEMP', 'FREQ']
-
-        self._modes += [s.lower() for s in self._modes]
 
         self._trigger_sent = False
 
         self.add_parameter('mode',
                            get_cmd='SENS:FUNC?',
-                           get_parser=clean_string,
-                           set_cmd="SENS:FUNC '{}'",
-                           vals=Enum(*self._modes))
+                           set_cmd="SENS:FUNC {}",
+                           val_mapping={
+                               'ac current': '"CURR:AC"\n',
+                               'dc current': '"CURR:DC"\n',
+                               'ac voltage': '"VOLT:AC"\n',
+                               'dc voltage': '"VOLT:DC"\n',
+                               '2w resistance': '"RES"\n',
+                               '4w resistance': '"FRES"\n',
+                               'temperature': '"TEMP"\n',
+                               'frequency': '"FREQ"\n',
+                           })
 
         # Mode specific parameters
         self.add_parameter('nplc',
