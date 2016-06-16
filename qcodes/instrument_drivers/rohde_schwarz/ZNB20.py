@@ -1,8 +1,13 @@
-from qcodes import IPInstrument,
+from qcodes import IPInstrument
 from qcodes.utils import validators as vals
 from cmath import phase
 
-
+'''
+    TODO: 
+        better error messages
+        add functionality (ability to set start and stop freq as well as centre and span)
+        needs on/off status?
+'''
 
 class RohdeSchwarz_ZNB20(IPInstrument):
 
@@ -27,7 +32,7 @@ class RohdeSchwarz_ZNB20(IPInstrument):
 
         self.add_parameter(name='avg',
                            label='Averages',
-                           units='#',
+                           units='',
                            get_cmd='AVER:COUN?',
                            set_cmd='AVER:COUN? {:d}',
                            get_parser=str,
@@ -49,13 +54,11 @@ class RohdeSchwarz_ZNB20(IPInstrument):
                            get_parser=str,
                            vals=vals.Numbers(1,2e10))
 
-        # TODO: add start and stop frequency as well as centre and span
-
         self.initialise()
+        #TODO: self.connectmessage() ?
 
-#TODO: is this general enough?
     def initialise(self):
-        # TODO: ask about input and output buffer size (its in the matlab)
+        # TODO: set input and output buffer size (its in the matlab)?
         self.write('SENS1:SWE:TYPE LIN')
         self.write('SENS1:SWE:TIME:AUTO ON')
         self.write('TRIG1:SEQ:SOUR IMM')
@@ -85,6 +88,7 @@ class RohdeSchwarz_ZNB20(IPInstrument):
                 phase1 = phase(complex(re, im))
                 print(mag1, phase1)
                 traces.append([mag1, phase1])
+        else: 
+            raise ValueError('Unable to get trace, expected int freq and points > 0')
 
 
-    # TODO: need on/off status
