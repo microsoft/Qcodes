@@ -1,4 +1,4 @@
-from qcodes import IPInstrument
+from qcodes import VisaInstrument
 from qcodes.utils import validators as vals
 from cmath import phase
 
@@ -9,10 +9,10 @@ from cmath import phase
         needs on/off status?
 '''
 
-class RohdeSchwarz_ZNB20(IPInstrument):
+class RohdeSchwarz_ZNB20(VisaInstrument):
 
-    def __init__(self, name, address, port, **kwargs):
-        super().__init__(name=name, address=address, port=port, **kwargs)
+    def __init__(self, name, address, **kwargs):
+        super().__init__(name=name, address=address, **kwargs)
 
         self.add_parameter(name='power',
                            label='Power',
