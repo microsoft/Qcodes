@@ -7,6 +7,7 @@ from cmath import phase
         better error messages
         add functionality (ability to set start and stop freq as well as centre and span)
         needs on/off status?
+        write string to int and do it
 '''
 
 class RohdeSchwarz_ZNB20(VisaInstrument):
@@ -19,7 +20,7 @@ class RohdeSchwarz_ZNB20(VisaInstrument):
                            units='dBm',
                            get_cmd='SOUR:POW?',
                            set_cmd='SOUR:POW {:d}',
-                           get_parser=str,
+                           get_parser=int,
                            vals=vals.Numbers(-150, 25))
 
         self.add_parameter(name='bandwidth',
@@ -27,7 +28,7 @@ class RohdeSchwarz_ZNB20(VisaInstrument):
                            units='Hz', 
                            get_cmd='SENS:BAND?',
                            set_cmd='SENS:BAND {:d}',
-                           get_parser=str,
+                           get_parser=int,
                            vals=vals.Numbers(1,1e6))
 
         self.add_parameter(name='avg',
@@ -35,7 +36,7 @@ class RohdeSchwarz_ZNB20(VisaInstrument):
                            units='',
                            get_cmd='AVER:COUN?',
                            set_cmd='AVER:COUN? {:d}',
-                           get_parser=str,
+                           get_parser=int,
                            vals=vals.Numbers(1,5000))
 
         self.add_parameter(name='centFreq',
@@ -43,7 +44,7 @@ class RohdeSchwarz_ZNB20(VisaInstrument):
                            units='Hz',
                            get_cmd='SENS:FREQ:CENT?',
                            set_cmd='SENS:FREQ:CENT {:d}',
-                           get_parser=str,
+                           get_parser=int,
                            vals=vals.Numbers(1,2e10))
 
         self.add_parameter(name='spanFreq',
@@ -51,7 +52,7 @@ class RohdeSchwarz_ZNB20(VisaInstrument):
                            units='Hz',
                            get_cmd='SENS:FREQ:SPAN?',
                            set_cmd='SENS:FREQ:SPAN {:d}',
-                           get_parser=str,
+                           get_parser=int,
                            vals=vals.Numbers(1,2e10))
 
         self.initialise()
@@ -65,28 +66,26 @@ class RohdeSchwarz_ZNB20(VisaInstrument):
         # need to set averages?
         self.write('SENS1:AVER:STAT ON')
 
-    def getTrace(self, freq, points):
-        if (freq is int) and (points > 0):
-            self.write('SENS:SWE:POIN'+points)
-            self.write('INIT:CONT OFF') 
-            self.write('AVER:CLE')
+    def getTrace(self):
+      self.write('SENS:SWE:POIN'+points)
+      self.write('INIT:CONT OFF') 
+      self.write('AVER:CLE')
 
-            avgnum = self.avg
-            while (avgnum > 0):
-                self.write('INIT')
-                self.ask('*OPC?')
+      avgnum = self.avg
+      while (avgnum > 0):
+          self.write('INIT')
+          self.ask('*OPC?')
 
-            data_str = self.ask('CALC:DATA? SDAT')
-            self.write('INIT:CONT ON')
+      data_str = self.ask('CALC:DATA? SDAT')
+      self.write('INIT:CONT ON')
 
-            data_list = list(map(float, data_str.split()))
-            data_mat = list(zip(data_list[0::2], data_list[1::2]))
+      data_list = list(map(float, data_str.split()))
+      data_mat = list(zip(data_list[0::2], data_list[1::2]))
 
-            traces = []
-            for (re,im) in data_mat:
-                mag1 = abs(complex(re, im))
-                phase1 = phase(complex(re, im))
-                print(mag1, phase1)
-                traces.append([mag1, phase1])
-        else: 
-            raise ValueError('Unable to get trace, expected int freq and points > 0')
+      traces = []
+      for (re,im) in data_mat:
+          mag1 = abs(complex(re, im))
+          phase1 = phase(complex(re, im))
+          print(mag1, phase1)
+          traces.append([mag1, phase1])
+        return traces
