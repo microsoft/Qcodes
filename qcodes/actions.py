@@ -40,7 +40,15 @@ class Task:
         self.kwargs = kwargs
 
     def __call__(self, **ignore_kwargs):
-        self.func(*self.args, **self.kwargs)
+        evaluated = []
+
+        for arg in self.args:
+            try:
+                evaluated.append(arg())
+            except TypeError:
+                evaluated.append(arg)
+
+        self.func(*evaluated, **self.kwargs)
 
     def snapshot(self, update=False):
         return {'type': 'Task', 'func': repr(self.func)}
