@@ -55,7 +55,7 @@ class RohdeSchwarz_ZNB20(VisaInstrument):
                            vals=vals.Numbers(1,2e10))
 
         self.initialise()
-        self.connectmessage()
+        self.connect_message()
 
     def initialise(self):
         # TODO: set input and output buffer size (its in the matlab)?
