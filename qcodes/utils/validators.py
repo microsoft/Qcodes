@@ -228,6 +228,18 @@ class Enum(Validator):
     def __repr__(self):
         return '<Enum: {}>'.format(repr(self._values))
 
+
+class OnOff(Validator):
+    """
+    requires either the string 'on' or 'off'
+    """
+    def __init__(self):
+        self._validator = Enum('on', 'off')
+
+    def validate(self, value, context=''):
+        return self._validator.validate(value, context)
+
+
 class MultiType(Validator):
     '''
     allow the union of several different validators
