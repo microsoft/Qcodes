@@ -9,7 +9,7 @@ from qcodes.instrument.function import Function
 from qcodes.instrument.server import get_instrument_server_manager
 
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
-from qcodes.utils.sync_async import NoCommandError
+from qcodes.utils.command import NoCommandError
 from qcodes.utils.helpers import LogCapture
 from qcodes.process.helpers import kill_processes
 
