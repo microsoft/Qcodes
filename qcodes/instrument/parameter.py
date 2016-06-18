@@ -162,7 +162,7 @@ class Parameter(Metadatable):
             self.units = units if units is not None else ''
 
             # vals / validate only applies to simple single-value parameters
-            self._set_vals(vals)
+            self.set_validator(vals)
 
             # generate default docstring
             self.__doc__ = os.linesep.join((
@@ -254,7 +254,10 @@ class Parameter(Metadatable):
         self._latest_value = value
         self._latest_ts = datetime.now()
 
-    def _set_vals(self, vals):
+    def set_validator(self, vals):
+        """
+        Sets a validator `vals` for this parameter.
+        """
         if vals is None:
             self._vals = Numbers()
         elif isinstance(vals, Validator):
