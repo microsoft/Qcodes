@@ -189,7 +189,7 @@ class SweepFixedValues(SweepValues):
 
     def append(self, value):
         """
-        Appends a value.
+        Append a value.
 
         Args:
             value (Any): new value to append
@@ -200,7 +200,7 @@ class SweepFixedValues(SweepValues):
 
     def extend(self, new_values):
         """
-        Extends sweep with new_values
+        Extend sweep with new_values
 
         Args:
             new_values (Union[Sequence, SweepFixedValues]): new values to append
@@ -225,7 +225,7 @@ class SweepFixedValues(SweepValues):
 
     def copy(self):
         """
-        Copies SweepFixedValues.
+        Copy SweepFixedValues.
 
         Returns:
             SweepFixedValues: copied values
@@ -247,7 +247,7 @@ class SweepFixedValues(SweepValues):
 
     def snapshot_base(self, update=False):
         """
-        Snapshots state of the Parameter.
+        Snapshot state of the Parameter.
 
         Args:
             update (bool): Update snapshot. Defaults to False

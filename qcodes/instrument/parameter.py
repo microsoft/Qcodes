@@ -64,7 +64,7 @@ def no_getter(*args, **kwargs):
 
 class Parameter(Metadatable, DeferredOperations):
     """
-    Defines one generic parameter, not necessarily part of
+    Define one generic parameter, not necessarily part of
     an instrument. can be settable and/or gettable.
 
     A settable Parameter has a .set method, and supports only a single value
@@ -383,7 +383,7 @@ class Parameter(Metadatable, DeferredOperations):
 
 class StandardParameter(Parameter):
     """
-    Defines one measurement parameter.
+    Define one measurement parameter.
 
     Args:
         name (string): the local name of this parameter
@@ -612,7 +612,7 @@ class StandardParameter(Parameter):
             TypeError: if step is not numeric
             ValueError: if step is negative
             TypeError:  if step is not integer for an integer parameter
-            TypeError: if step is not anumber
+            TypeError: if step is not a number
             TypeError: if max_val_age is not numeric
             ValueError: if max_val_age is negative
         """
@@ -645,12 +645,12 @@ class StandardParameter(Parameter):
             self.set = self._validate_and_sweep
 
     def get_delay(self):
-        """Returns the delay time of this parameter. Also see `set_delay` """
+        """Return the delay time of this parameter. Also see `set_delay` """
         return self._delay
 
     def set_delay(self, delay, max_delay=None):
         """
-        Configures this parameter with a delay between set operations.
+        Configure this parameter with a delay between set operations.
 
         Typically used in conjunction with set_step to create an effective
         ramp rate, but can also be used without a step to enforce a delay
@@ -698,7 +698,7 @@ class StandardParameter(Parameter):
 
 class ManualParameter(Parameter):
     """
-    Defines one parameter that reflects a manual setting / configuration.
+    Define one parameter that reflects a manual setting / configuration.
 
     Args:
         name (string): the local name of this parameter
@@ -710,9 +710,6 @@ class ManualParameter(Parameter):
             value, it cannot be set later
 
         **kwargs: Passed to Parameter parent class
-
-    Todo:
-        - set and get and value should use property, this ain't java (maybe)?
     """
     def __init__(self, name, instrument=None, initial_value=None, **kwargs):
         super().__init__(name=name, **kwargs)
@@ -727,7 +724,8 @@ class ManualParameter(Parameter):
         self.has_set = True
 
     def set(self, value):
-        """ Validate and saves value
+        """
+        Validate and saves value
         Args:
             value (any): value to validate and save
         """

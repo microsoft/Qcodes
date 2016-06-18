@@ -34,11 +34,14 @@ def tprint(string, dt=1, tag='default'):
 
 
 def in_notebook():
-    '''
-    Returns True if the code is running with a ipython or jypyter
+    """
+    Check if inside a notebook.
     This could mean we are connected to a notebook, but this is not guaranteed.
     see: http://stackoverflow.com/questions/15411967
-    '''
+    Returns:
+        bool: True if the code is running with a ipython or jypyter
+
+    """
     return 'ipy' in repr(sys.stdout)
 
 
@@ -136,7 +139,7 @@ def permissive_range(start, stop, step):
 # an array with endpoints included, which is more intuitive to use in a sweep.
 def make_sweep(start, stop, step=None, num=None):
     """
-    Genrates  numbers over a specified interval.
+    Generate numbers over a specified interval.
     Requires `start` and `stop` and (`step` or `num`)
     The sign of `step` is not relevant.
 
@@ -145,7 +148,6 @@ def make_sweep(start, stop, step=None, num=None):
         stop (Union[int, float]): The end value of the sequence.
         step (Optional[Union[int, float]]):  Spacing between values.
         num (Optional[int]): Number of values to generate.
-
 
     Returns:
         numpy.linespace: numbers over a specified interval.
