@@ -11,9 +11,17 @@ This page lists the entrypoints to the qcodes API.
 .. toctree::
    :maxdepth: 4
 
-Instrument
+Station
 ~~~~~~~
 
+.. autosummary::
+   :toctree: generated/
+
+   station.Station
+
+
+Instrument
+~~~~~~~~~~
 .. autosummary::
    :toctree: generated/
 
@@ -32,27 +40,19 @@ Data
 
 
 Actions
-~~~~~~
-
-.. autosummary::
-   :toctree: generated/
-
-   action
-
-
-Loops
-~~~~
-
-.. autosummary::
-   :toctree: generated/
-
-   loops
-
-Station
 ~~~~~~~
 
 .. autosummary::
    :toctree: generated/
 
-   station
+   actions
+
+
+Loops
+~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+   loops
 

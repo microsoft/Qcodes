@@ -46,8 +46,6 @@ extensions = [
 # include special __xxx__ that DO have a docstring
 # it probably means something important
 napoleon_include_special_with_doc=True
-# Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -200,7 +198,7 @@ html_static_path = ['_static']
 
 # If false, no index is generated.
 #
-# html_use_index = True
+html_use_index = True
 
 # If true, the index is split into individual pages for each letter.
 #
@@ -356,19 +354,15 @@ intersphinx_mapping = {
 }
 # theming
 import sphinx_rtd_theme
-
 html_theme = "sphinx_rtd_theme"
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # add todo exteions
 extensions.append('sphinx.ext.todo')
 todo_include_todos=True
-# auto genrate summary
-
-# Add any paths that contain templates
-templates_path = ['_templates']
-
+# Add any paths that contain templates here, relative to this directory.
+autoclass_content = "class" # classes should include both the class' and the __init__ method's docstring
 autodoc_default_flags = [ 'members', 'undoc-members', 'inherited-members', 'show-inheritance' ]
 
-autoclass_content = "class" # classes should include both the class' and the __init__ method's docstring
-
+# auto genrate summary
 autosummary_generate = True
+templates_path = ['../_templates']
