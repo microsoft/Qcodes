@@ -81,6 +81,17 @@ class RohdeSchwarz_ZNB20(VisaInstrument):
         self.write('SENS1:AVER:STAT OFF')
         self.write('INIT:CONT:ALL OFF') 
         self.write('SENS:SWE:POIN %d' % points)
+        self.write('INIT:IMM; *WAI')
+        data = self.ask('CALC:DATA? SDAT')
+        self.write('SYST:DISPl:UPD ONCE')
+        return data
+
+    def getTraceAve(self,points):
+        self.write('SENS1:AVER:STAT ON')
+        self.write('AVER:CLE')
+        self.write('INIT:CONT:ALL OFF') 
+        self.write('SENS:SWE:POIN %d' % points)
+        self.write('INIT:IMM; *WAI')
         data = self.ask('CALC:DATA? SDAT')
         self.write('SYST:DISPl:UPD ONCE')
         return data
@@ -90,17 +101,15 @@ class RohdeSchwarz_ZNB20(VisaInstrument):
         self.write('AVER:CLE')
         self.write('SENS:SWE:POIN %d' %points)
         self.write('INIT:CONT:ALL OFF') 
-        self.write('INIT:IMM; *WAI')
+
+        avgnum = self.get('avg')
+        while avgnum > 0
+            self.write('INIT:IMM; *WAI')
+            avgnum-=1
+
         data_str = self.ask('CALC:DATA? SDAT')
         self.write('SYST:DISPl:UPD ONCE')
-
-
-        # while (self.get('avg') > 0):
-        #     self.write('INIT:IMM; *WAI')
-        #     self.set('avg') = self.get('avg')-1
-
-        # data_str = self.ask('CALC:DATA? SDAT')
-        # self.write('INIT:CONT ON')
+        self.write('INIT:CONT ON')
 
         data_list = list(map(float, data_str.split(',')))
         data_mat = list(zip(data_list[0::2], data_list[1::2]))
