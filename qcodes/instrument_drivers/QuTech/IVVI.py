@@ -55,15 +55,13 @@ class IVVI(VisaInstrument):
             raise ValueError('numdacs must be a positive multiple of 4, '
                              'not {}'.format(numdacs))
 
-        self.pol_num = np.zeros(self._numdacs)  # corresponds to POS polarity
-        self.set_pol_dacrack('BIP', range(self._numdacs))
-
         # values based on descriptor
         self.visa_handle.baud_rate = 115200
         self.visa_handle.parity = visa.constants.Parity(1)  # odd parity
 
         self.add_parameter('version',
                            get_cmd=self._get_version)
+        
         self.add_parameter('dac voltages',
                            label='Dac voltages',
                            get_cmd=self._get_dacs)
@@ -85,6 +83,9 @@ class IVVI(VisaInstrument):
         self._time_last_update = 0  # ensures first call will always update
         t1 = time.time()
 
+        self.pol_num = np.zeros(self._numdacs)  # corresponds to POS polarity
+        self.set_pol_dacrack('BIP', range(self._numdacs))
+
         # basic test to confirm we are properly connected
         try:
             self.get_all()
@@ -99,13 +100,7 @@ class IVVI(VisaInstrument):
         Overwrites the get_idn function using constants as the hardware
         does not have a proper *IDN function.
         """
-        # Trye except construct is there because version is not added at
-        # the time when get_idn is first called (in super).
-        # This should be fixed in a better way
-        try:
-            idparts = ['QuTech', 'IVVI', 'None', self.version()]
-        except:
-            idparts = ['QuTech', 'IVVI', 'None', 'None']
+        idparts = ['QuTech', 'IVVI', 'None', self.version()]
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
@@ -332,7 +327,6 @@ class IVVI(VisaInstrument):
         def get_func():
             return fun(ch)
         return get_func
-
 
 '''
 RS232 PROTOCOL
