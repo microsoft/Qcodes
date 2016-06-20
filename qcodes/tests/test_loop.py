@@ -298,6 +298,26 @@ class TestLoop(TestCase):
         self.assertEqual(data.p2_set.tolist(), [[3, 4], [3, 4]])
         self.assertEqual(data.p3.tolist(), [[5, 5]] * 2)
 
+    def test_tasks_callable_arguments(self):
+        data = Loop(self.p1[1:3:1], 0.01).each(
+            Task(self.p2.set, self.p1),
+            Task(self.p3.set, self.p1.get),
+            self.p2, self.p3).run_temp()
+
+        self.assertEqual(data.p2.tolist(), [1, 2])
+        self.assertEqual(data.p3.tolist(), [1, 2])
+
+        def test_func(*args, **kwargs):
+            self.assertEqual(args, (1, 2))
+            self.assertEqual(kwargs, {'a_kwarg': 4})
+
+        data = Loop(self.p1[1:2:1], 0.01).each(
+            Task(self.p2.set, self.p1 * 2),
+            Task(test_func, self.p1, self.p1 * 2, a_kwarg=self.p1 * 4),
+            self.p2, self.p3).run_temp()
+
+        self.assertEqual(data.p2.tolist(), [2])
+
     def test_tasks_waits(self):
         delay0 = 0.01
         delay1 = 0.03
