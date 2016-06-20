@@ -24,11 +24,10 @@ class Task:
     """
     A predefined task to be executed within a measurement Loop.
 
-    This form is for a simple task that does not measure any data,
-    and does not depend on the state of the loop when it is called.
-
     The first argument should be a callable, to which any subsequent
     args and kwargs (which are evaluated before the loop starts) are passed.
+
+    The args and kwargs are first evaluated if they are found to be callable.
 
     kwargs passed when the Task is called are ignored,
     but are accepted for compatibility with other things happening in a Loop.
@@ -40,15 +39,11 @@ class Task:
         self.kwargs = kwargs
 
     def __call__(self, **ignore_kwargs):
-        evaluated = []
+        # If any of the arguments are callable, evaluate them first
+        eval_args = [arg() if callable(arg) else arg for arg in self.args]
+        eval_kwargs = {k: (v() if callable(v) else v) for k, v in self.kwargs.items()}
 
-        for arg in self.args:
-            try:
-                evaluated.append(arg())
-            except TypeError:
-                evaluated.append(arg)
-
-        self.func(*evaluated, **self.kwargs)
+        self.func(*eval_args, **eval_kwargs)
 
     def snapshot(self, update=False):
         return {'type': 'Task', 'func': repr(self.func)}
