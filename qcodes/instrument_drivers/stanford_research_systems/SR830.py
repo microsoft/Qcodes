@@ -35,8 +35,8 @@ class Stanford_Research_Systems_SR830(VisaInstrument):
     _INPUT_CONFIG_TO_N = {
         'a': 0,
         'a-b': 1,
-        '1 mohm': 2,
-        '100 mohm': 3,
+        'I 1M': 2,
+        'I 100M': 3,
     }
 
     _N_TO_INPUT_CONFIG = {v: k for k, v in _INPUT_CONFIG_TO_N.items()}
@@ -76,8 +76,8 @@ class Stanford_Research_Systems_SR830(VisaInstrument):
                            set_cmd='RSLP {}',
                            val_mapping={
                                'sine': 0,
-                               'ttl rising': 1,
-                               'ttl falling': 2,
+                               'TTL rising': 1,
+                               'TTL falling': 2,
                            })
 
         self.add_parameter('harmonic',
@@ -118,8 +118,8 @@ class Stanford_Research_Systems_SR830(VisaInstrument):
                            get_cmd='ICPL?',
                            set_cmd='ICPL {}',
                            val_mapping={
-                               'ac': 0,
-                               'dc': 1,
+                               'AC': 0,
+                               'DC': 1,
                            })
 
         self.add_parameter('notch_filter',
@@ -231,8 +231,8 @@ class Stanford_Research_Systems_SR830(VisaInstrument):
                            get_cmd='OUTX?',
                            set_cmd='OUTX {}',
                            val_mapping={
-                               'rs232': '0\n',
-                               'gpib': '1\n',
+                               'RS232': '0\n',
+                               'GPIB': '1\n',
                            })
 
         # Auto functions
