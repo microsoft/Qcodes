@@ -81,10 +81,11 @@ class IVVI(VisaInstrument):
 
         self._update_time = 5  # seconds
         self._time_last_update = 0  # ensures first call will always update
-        t1 = time.time()
-
+        
         self.pol_num = np.zeros(self._numdacs)  # corresponds to POS polarity
-        self.set_pol_dacrack('BIP', range(self._numdacs))
+        self.set_pol_dacrack('BIP', range(self._numdacs), get_all=False)
+
+        t1 = time.time()
 
         # basic test to confirm we are properly connected
         try:
@@ -273,14 +274,14 @@ class IVVI(VisaInstrument):
         #     raise Exception('IVVI rack exception "%s"' % mes[1])
         return mes
 
-    def set_pol_dacrack(self, flag, channels, getall=True):
+    def set_pol_dacrack(self, flag, channels, get_all=True):
         '''
         Changes the polarity of the specified set of dacs
 
         Input:
             flag (string) : 'BIP', 'POS' or 'NEG'
             channel (int) : 0 based index of the rack
-            getall (boolean): if True (default) perform a get_all
+            get_all (boolean): if True (default) perform a get_all
 
         Output:
             None
@@ -294,7 +295,7 @@ class IVVI(VisaInstrument):
             self.pol_num[ch-1] = val
             # self.set_parameter_bounds('dac%d' % (i+1), val, val + self.Fullrange.0)
 
-        if getall:
+        if get_all:
             self.get_all()
 
     def get_pol_dac(self, channel):
