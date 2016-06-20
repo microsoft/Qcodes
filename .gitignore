@@ -70,4 +70,9 @@ target/
 *.py~
 tmp/
 
+# Natalie
+.DS_Store
+requirement.txt
+venv/
+
 docs/examples/data/*
