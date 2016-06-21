@@ -144,15 +144,7 @@ class InstrumentServer(BaseServer):
         self.instruments[new_id] = ins
 
         # info to reconstruct the instrument API in the RemoteInstrument
-        return {
-            'name': ins.name,
-            'id': new_id,
-            'parameters': {name: p.get_attrs()
-                           for name, p in ins.parameters.items()},
-            'functions': {name: f.get_attrs()
-                          for name, f in ins.functions.items()},
-            'methods': ins._get_method_attrs()
-        }
+        return ins.connection_attrs(new_id)
 
     def handle_delete(self, instrument_id):
         """

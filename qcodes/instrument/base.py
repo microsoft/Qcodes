@@ -462,11 +462,30 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
     # info about what's in this instrument, to help construct the remote     #
     ##########################################################################
 
+    def connection_attrs(self, new_id):
+        """
+        Collect info to reconstruct the instrument API in the RemoteInstrument.
+
+        Args:
+            new_id (int): The ID of this instrument on its server.
+                This is how the RemoteInstrument points its calls to the
+                correct server instrument when it calls the server.
+        """
+        return {
+            'name': self.name,
+            'id': new_id,
+            'parameters': {name: p.get_attrs()
+                           for name, p in self.parameters.items()},
+            'functions': {name: f.get_attrs()
+                          for name, f in self.functions.items()},
+            'methods': self._get_method_attrs()
+        }
+
     def _get_method_attrs(self):
         """
         Construct a dict of methods this instrument has.
 
-        Each value is itself a dict of attribute dictionaries
+        Each value is itself a dict of attribute dictionaries.
         """
         out = {}
 

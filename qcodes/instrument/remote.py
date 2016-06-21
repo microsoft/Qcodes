@@ -68,6 +68,10 @@ class RemoteInstrument(DelegateAttributes):
 
     def connect(self):
         """Create the instrument on the server and replicate its API here."""
+
+        # connection_attrs is created by instrument.connection_attrs(),
+        # called by InstrumentServer.handle_new after it creates the instrument
+        # on the server.
         connection_attrs = self._manager.connect(self, self._instrument_class,
                                                  self._args, self._kwargs)
 
