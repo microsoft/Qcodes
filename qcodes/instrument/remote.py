@@ -1,5 +1,6 @@
 """Proxies to interact with server-based instruments from another process."""
 import multiprocessing as mp
+from functools import partial
 
 from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import DelegateAttributes, named_repr
@@ -185,27 +186,99 @@ class RemoteComponent:
     """
     An object that lives inside a RemoteInstrument.
 
-    Proxies all of its calls to the corresponding object in the server
-    instrument.
+    Proxies all of its calls and specific listed attributes to the
+    corresponding object in the server instrument.
 
     Args:
         name (str): The name of this component.
 
         instrument (RemoteInstrument): the instrument this is part of.
 
-        attrs (dict): instance attributes to set, to match the server
+        attrs (list): instance attributes to proxy to the server
             copy of this component.
     """
+    _local_attrs = {
+        '_attrs',
+        'name',
+        '_instrument',
+        '_local_attrs',
+        '__doc__',
+        '_delattrs'
+    }
 
     def __init__(self, name, instrument, attrs):
         self.name = name
         self._instrument = instrument
+        self._attrs = set(attrs)
+        self._set_doc()
+        self._delattrs = set()
 
-        for attribute, value in attrs.items():
-            if attribute == '__doc__' and value:
-                value = '{} {} in RemoteInstrument {}\n---\n\n{}'.format(
-                    type(self).__name__, self.name, instrument.name, value)
-            setattr(self, attribute, value)
+    def __getattr__(self, attr):
+        """
+        Get an attribute value from the server.
+
+        If there was a local attribute, we don't even get here.
+        """
+        if attr not in type(self)._local_attrs and attr in self._attrs:
+            full_attr = self.name + '.' + attr
+            return self._instrument._ask_server('getattr', full_attr)
+        else:
+            raise AttributeError('RemoteComponent has no local or remote '
+                                 'attribute: ' + attr)
+
+    def __setattr__(self, attr, val):
+        """
+        Set a new attribute value.
+
+        If the attribute is listed as remote, we'll set it on the server,
+        otherwise we'll set it locally.
+        """
+        if attr not in type(self)._local_attrs and attr in self._attrs:
+            full_attr = self.name + '.' + attr
+            self._instrument._ask_server('setattr', full_attr, val)
+            self._delattrs.remove(attr)
+        else:
+            object.__setattr__(self, attr, val)
+
+    def __delattr__(self, attr):
+        """
+        Delete an attribute.
+
+        If the attribute is listed as remote, we'll delete it on the server,
+        otherwise we'll delete it locally.
+        """
+
+        if attr not in type(self)._local_attrs and attr in self._attrs:
+            full_attr = self.name + '.' + attr
+            self._instrument._ask_server('delattr', full_attr)
+            self._delattrs.add(attr)
+
+        else:
+            object.__delattr__(self, attr)
+
+    def __dir__(self):
+        """dir listing including both local and server attributes."""
+        remote_attrs = self._attrs - self._delattrs
+        return sorted(remote_attrs.union(super().__dir__()))
+
+    def _set_doc(self):
+        """
+        Prepend a note about remoteness to the server docstring.
+
+        If no server docstring is found, we leave the class docstring.
+
+        __doc__, as a magic attribute, is handled differently from
+        other attributes so we won't make it dynamic (updating on the
+        server when you change it here)
+        """
+        try:
+            doc = self._instrument._ask_server('getattr',
+                                               self.name + '.__doc__')
+
+            self.__doc__ = '{} {} in RemoteInstrument {}\n---\n\n{}'.format(
+                type(self).__name__, self.name, self._instrument.name, doc)
+        except AttributeError:
+            pass
 
     def __repr__(self):
         """repr including the component name."""
@@ -268,8 +341,6 @@ class RemoteParameter(RemoteComponent, DeferredOperations):
         # user do it?
         self._instrument._ask_server('set', self.name, value)
 
-    # manually copy over validate and __getitem__ so they execute locally
-    # no reason to send these to the server, unless the validators change...
     def validate(self, value):
         """
         Raise an error if the given value is not allowed for this Parameter.
@@ -277,8 +348,11 @@ class RemoteParameter(RemoteComponent, DeferredOperations):
         Args:
             value (any): the proposed new parameter value.
         """
-        return Parameter.validate(self, value)
+        return self._instrument._ask_server(
+            'callattr', self.name + '.validate', value)
 
+    # manually copy over sweep and __getitem__ so they execute locally
+    # and are still based off the RemoteParameter
     def __getitem__(self, keys):
         """Create a SweepValues from this parameter with slice notation."""
         return Parameter.__getitem__(self, keys)
@@ -373,4 +447,5 @@ class RemoteFunction(RemoteComponent):
         Args:
             *args: the proposed arguments with which to call the Function.
         """
-        return Function.validate(self, *args)
+        return self._instrument._ask_server(
+            'callattr', self.name + '.validate', *args)

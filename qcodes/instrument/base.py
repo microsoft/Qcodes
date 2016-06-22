@@ -485,7 +485,10 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
         """
         Construct a dict of methods this instrument has.
 
-        Each value is itself a dict of attribute dictionaries.
+        Returns:
+            dict: Dictionary of method names : list of attributes each method
+                has that should be proxied. As of now, this is just its
+                docstring, if it has one.
         """
         out = {}
 
@@ -498,9 +501,6 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
                 # dir(), but they have their own listing.
                 continue
 
-            attrs = out[attr] = {}
-
-            if hasattr(value, '__doc__'):
-                attrs['__doc__'] = value.__doc__
+            out[attr] = ['__doc__'] if hasattr(value, '__doc__') else []
 
         return out
