@@ -19,24 +19,15 @@ Station
 
    station.Station
 
-
-Instrument
-~~~~~~~~~~
-.. autosummary::
-   :toctree: generated/
-
-   Function
-   Parameter
-   StandardParameter
-   SweepValues
-
-Data
-~~~~
+Loops
+~~~~~
 
 .. autosummary::
    :toctree: generated/
 
-   get_data_manager
+   get_bg
+   halt_bg
+   Loop
 
 
 Actions
@@ -45,14 +36,51 @@ Actions
 .. autosummary::
    :toctree: generated/
 
-   actions
+   Task
+   Wait
+   BreakIf
 
-
-Loops
-~~~~~
+Data
+~~~~
 
 .. autosummary::
    :toctree: generated/
 
-   loops
+    get_data_manager
+    DataMode
+    DataSet
+    new_data
+    load_data
+    FormatLocation
+    DataArray
+    Formatter
+    GNUPlotFormat
+    DiskIO
 
+
+
+Instrument
+~~~~~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+   Function
+   Parameter
+   StandardParameter
+   SweepValues
+
+   Instrument
+   IPInstrument
+   VisaInstrument
+   MockInstrument
+   MockModel
+
+Utils
+~~~~~
+.. automodule:: 
+
+.. autosummary::
+   :toctree: generated/
+
+   qcodes.utils.validators
