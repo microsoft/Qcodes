@@ -255,7 +255,8 @@ class RemoteComponent:
         if attr not in type(self)._local_attrs and attr in self._attrs:
             full_attr = self.name + '.' + attr
             self._instrument._ask_server('setattr', full_attr, val)
-            self._delattrs.remove(attr)
+            if attr in self._delattrs:
+                self._delattrs.remove(attr)
         else:
             object.__setattr__(self, attr, val)
 
@@ -290,14 +291,13 @@ class RemoteComponent:
         other attributes so we won't make it dynamic (updating on the
         server when you change it here)
         """
-        try:
-            doc = self._instrument._ask_server('getattr',
-                                               self.name + '.__doc__')
+        doc = self._instrument._ask_server('getattr',
+                                           self.name + '.__doc__')
 
-            self.__doc__ = '{} {} in RemoteInstrument {}\n---\n\n{}'.format(
-                type(self).__name__, self.name, self._instrument.name, doc)
-        except AttributeError:
-            pass
+        docbase = '{} {} in RemoteInstrument {}'.format(
+            type(self).__name__, self.name, self._instrument.name)
+
+        self.__doc__ = docbase + (('\n---\n\n' + doc) if doc else '')
 
     def __repr__(self):
         """repr including the component name."""

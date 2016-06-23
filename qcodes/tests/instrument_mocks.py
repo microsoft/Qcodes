@@ -70,6 +70,14 @@ class AMockModel(MockModel):
             return self.fmt(float(parameter[5:]))
 
 
+class ParamNoDoc:
+    def __init__(self, name, *args, **kwargs):
+        self.name = name
+
+    def get_attrs(self):
+        return []
+
+
 class MockInstTester(MockInstrument):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -137,6 +145,8 @@ class MockGates(MockInstTester):
                            delay=0.01, max_delay=0.08)
 
         self.add_function('reset', call_cmd='rst')
+
+        self.add_parameter('foo', parameter_class=ParamNoDoc)
 
     def slow_neg_set(self, val):
         if val < 0:
