@@ -6,10 +6,13 @@ from qcodes.utils.validators import Numbers
 
 class AMockModel(MockModel):
     def __init__(self):
+        self._memory = {}
+        self._reset()
+        super().__init__()
+
+    def _reset(self):
         self._gates = [0.0, 0.0, 0.0]
         self._excitation = 0.1
-        self._memory = {}
-        super().__init__()
 
     def fmt(self, value):
         return '{:.3f}'.format(value)
@@ -18,7 +21,9 @@ class AMockModel(MockModel):
         if parameter[0] == 'c':
             self._gates[int(parameter[1:])] = float(value)
         elif parameter == 'rst' and value is None:
-            self._gates = [0.0, 0.0, 0.0]
+            # resets gates AND excitation, so we can use gates.reset() to
+            # reset the entire model
+            self._reset()
         elif parameter[:3] == 'mem':
             slot = int(parameter[3:])
             self._memory[slot] = value

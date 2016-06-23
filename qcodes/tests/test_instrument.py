@@ -103,22 +103,39 @@ class GatesBadDelayValue(MockGates):
 
 
 class TestParameters(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.model = AMockModel()
+
+        cls.gates = MockGates(model=cls.model)
+        cls.source = MockSource(model=cls.model)
+        cls.meter = MockMeter(model=cls.model, keep_history=False)
+
     def setUp(self):
-        self.model = AMockModel()
+        # reset the model state via the gates function
+        self.gates.reset()
 
-        self.gates = MockGates(model=self.model)
-        self.source = MockSource(model=self.model)
-        self.meter = MockMeter(model=self.model, keep_history=False)
-
+        # then reset each instrument's state, so we can avoid the time to
+        # completely reinstantiate with every test case
+        for inst in (self.gates, self.source, self.meter):
+            inst.restart()
         self.init_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(cls):
         try:
-            self.model.close()
-            for instrument in [self.gates, self.source, self.meter]:
+            cls.model.close()
+            for instrument in [cls.gates, cls.source, cls.meter]:
                 instrument.close()
         except:
             pass
+
+        # TODO: when an error occurs during constructing an instrument,
+        # we don't have the instrument but its server doesn't know to stop.
+        # should figure out a way to remove it. (I thought I had but it
+        # doesn't seem to have worked...)
+        # for test_mock_instrument_errors
+        kill_processes()
 
     def test_unpicklable(self):
         self.assertEqual(self.gates.add5(6), 11)
@@ -324,12 +341,6 @@ class TestParameters(TestCase):
 
         with self.assertRaises(TypeError):
             gates.add_parameter('fugacity', set_cmd='f {:.4f}', vals=[1, 2, 3])
-
-        # TODO: when an error occurs during constructing an instrument,
-        # we don't have the instrument but its server doesn't know to stop.
-        # should figure out a way to remove it. (I thought I had but it
-        # doesn't seem to have worked...)
-        kill_processes()
 
     def check_set_amplitude2(self, val, log_count, history_count):
         source = self.sourceLocal
