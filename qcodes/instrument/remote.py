@@ -1,11 +1,9 @@
 """Proxies to interact with server-based instruments from another process."""
 import multiprocessing as mp
-from functools import partial
 
 from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import DelegateAttributes, named_repr
 from .parameter import Parameter, GetLatest
-from .function import Function
 from .server import get_instrument_server_manager
 
 
@@ -215,8 +213,8 @@ class RemoteComponent:
         self.name = name
         self._instrument = instrument
         self._attrs = set(attrs)
-        self._set_doc()
         self._delattrs = set()
+        self._set_doc()
 
     def __getattr__(self, attr):
         """
