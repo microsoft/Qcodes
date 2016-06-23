@@ -197,8 +197,24 @@ class RemoteComponent:
 
         instrument (RemoteInstrument): the instrument this is part of.
 
-        attrs (list): instance attributes to proxy to the server
+        attrs (List[str]): instance attributes to proxy to the server
             copy of this component.
+
+    Attributes:
+        name (str): The name of this component.
+
+        _instrument (RemoteInstrument): the instrument this is part of.
+
+        _attrs (Set[str]): All the attributes we are allowed to proxy.
+
+        _delattrs (Set[str]): Attributes we've deleted from the server,
+            a subset of ``_attrs``, but if you set them again, they will
+            still be set on the server.
+
+        _local_attrs (Set[str]): (class attribute only) Attributes that we
+            shouldn't look for on the server, even if they do not exist
+            locally. Mostly present to prevent infinite recursion in the
+            accessors.
     """
     _local_attrs = {
         '_attrs',
