@@ -164,10 +164,15 @@ class RemoteInstrument(DelegateAttributes):
         self._instrument_class.remove_instance(self)
 
     def restart(self):
-        """Remove and recreate the server copy of this instrument."""
-        # TODO - this cannot work! _manager is gone after close!
-        self.close()
-        self._manager.restart()
+        """
+        Remove and recreate the server copy of this instrument.
+
+        All instrument state will be returned to the initial conditions,
+        including deleting any parameters you've added after initialization,
+        or modifications to parameters etc.
+        """
+        self._manager.delete(self._id)
+        self.connect()
 
     def __getitem__(self, key):
         """Delegate instrument['name'] to parameter or function 'name'."""
