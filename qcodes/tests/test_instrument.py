@@ -102,7 +102,7 @@ class GatesBadDelayValue(MockGates):
                            max_delay=0.03)
 
 
-class TestParameters(TestCase):
+class TestInstrument(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.model = AMockModel()
@@ -126,6 +126,9 @@ class TestParameters(TestCase):
         try:
             cls.model.close()
             for instrument in [cls.gates, cls.source, cls.meter]:
+                instrument.close()
+                # do it twice - should not error, though the second is
+                # irrelevant
                 instrument.close()
         except:
             pass
@@ -628,16 +631,8 @@ class TestParameters(TestCase):
         with self.assertRaises(ZeroDivisionError):
             d()
 
-
-class TestAttrAccess(TestCase):
-    def tearDown(self):
-        self.instrument.close()
-        # do it twice - should not error, though the second is irrelevant
-        self.instrument.close()
-
-    def test_server(self):
-        instrument = Instrument(name='test_server', server_name='attr_test')
-        self.instrument = instrument
+    def test_attr_access(self):
+        instrument = self.gates
 
         # set one attribute with nested levels
         instrument.setattr('d1', {'a': {1: 2}})
