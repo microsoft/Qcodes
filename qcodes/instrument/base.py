@@ -478,7 +478,7 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
                            for name, p in self.parameters.items()},
             'functions': {name: f.get_attrs()
                           for name, f in self.functions.items()},
-            'methods': self._get_method_attrs()
+            '_methods': self._get_method_attrs()
         }
 
     def _get_method_attrs(self):

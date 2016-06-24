@@ -76,24 +76,63 @@ class RemoteInstrument(DelegateAttributes):
 
         self.name = connection_attrs['name']
         self._id = connection_attrs['id']
+        self._methods = {}
+        self.parameters = {}
+        self.functions = {}
 
         # bind all the different categories of actions we need
         # to interface with the remote instrument
 
-        self._methods = {
-            name: RemoteMethod(name, self, attrs)
-            for name, attrs in connection_attrs['methods'].items()
-        }
+        self._update_components(connection_attrs)
+        # self._methods = {
+        #     name: RemoteMethod(name, self, attrs)
+        #     for name, attrs in connection_attrs['methods'].items()
+        # }
 
-        self.parameters = {
-            name: RemoteParameter(name, self, attrs)
-            for name, attrs in connection_attrs['parameters'].items()
-        }
+        # self.parameters = {
+        #     name: RemoteParameter(name, self, attrs)
+        #     for name, attrs in connection_attrs['parameters'].items()
+        # }
 
-        self.functions = {
-            name: RemoteFunction(name, self, attrs)
-            for name, attrs in connection_attrs['functions'].items()
-        }
+        # self.functions = {
+        #     name: RemoteFunction(name, self, attrs)
+        #     for name, attrs in connection_attrs['functions'].items()
+        # }
+
+    def _update_components(self, connection_attrs):
+        """
+        Update the three component dicts with new or updated connection attrs.
+
+        ``connection_attrs`` contains dicts (one each for _methods, parameters,
+        and functions) of {component_name: list of attributes}.
+        These get translated into the corresponding dicts eg:
+        ``self.parameters = {parameter_name: RemoteParameter}``
+        """
+        component_types = (('_methods', RemoteMethod),
+                           ('parameters', RemoteParameter),
+                           ('functions', RemoteFunction))
+
+        for container_name, component_class in component_types:
+            container = getattr(self, container_name)
+            components_spec = connection_attrs[container_name]
+
+            # first delete components that are gone and update those that
+            # have changed
+            for name in list(container.keys()):
+                if name in components_spec:
+                    container[name].update(components_spec[name])
+                else:
+                    del container[name]
+
+            # then add new components
+            for name, attrs in components_spec.items():
+                if name not in container:
+                    container[name] = component_class(name, self, attrs)
+
+    def update(self):
+        """Check with the server for updated components."""
+        connection_attrs = self._ask_server('connection_attrs', self._id)
+        self._update_components(connection_attrs)
 
     def _ask_server(self, func_name, *args, **kwargs):
         """Query the server copy of this instrument, expecting a response."""
@@ -228,6 +267,9 @@ class RemoteComponent:
     def __init__(self, name, instrument, attrs):
         self.name = name
         self._instrument = instrument
+        self.update(attrs)
+
+    def update(self, attrs):
         self._attrs = set(attrs)
         self._delattrs = set()
         self._set_doc()

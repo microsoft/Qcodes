@@ -729,6 +729,46 @@ class TestInstrument(TestCase):
         self.assertEqual(foo.__doc__,
                          'RemoteParameter foo in RemoteInstrument gates')
 
+    def test_update_components(self):
+        gates = self.gates
+
+        gates.delattr('chan0.label')
+        gates.setattr('chan0.cheese', 'gorgonzola')
+        # we've altered the server copy, but not the RemoteParameter
+        self.assertIn('label', gates.chan0._attrs)
+        self.assertNotIn('cheese', gates.chan0._attrs)
+        # keep a reference to the original chan0 RemoteParameter to make sure
+        # it is still the same object later
+        chan0_original = gates.chan0
+
+        gates.update()
+
+        self.assertIs(gates.chan0, chan0_original)
+        # now the RemoteParameter should have the updates
+        self.assertNotIn('label', gates.chan0._attrs)
+        self.assertIn('cheese', gates.chan0._attrs)
+
+    def test_add_delete_components(self):
+        gates = self.gates
+
+        # rather than call gates.add_parameter, which has a special proxy
+        # on the remote so it updates the components immediately, we'll call
+        # the server version directly
+        attr_list = gates.callattr('add_parameter', 'chan0X', get_cmd='c0?',
+                                   set_cmd='c0:{:.4f}', get_parser=float)
+        gates.delattr('parameters["chan0"]')
+
+        # the RemoteInstrument does not have these changes yet
+        self.assertIn('chan0', gates.parameters)
+        self.assertNotIn('chan0X', gates.parameters)
+
+        gates.update()
+
+        # now the RemoteInstrument has the changes
+        self.assertNotIn('chan0', gates.parameters)
+        self.assertIn('chan0X', gates.parameters)
+        self.assertEqual(gates.chan0X._attrs, set(attr_list))
+
     def test_reprs(self):
         gates = self.gates
         self.assertIn(gates.name, repr(gates))

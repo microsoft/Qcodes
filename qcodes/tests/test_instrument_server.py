@@ -139,7 +139,7 @@ class TestInstrumentServer(TestCase):
                 'functions': {},
                 'id': 0,
                 'name': 'J Edgar',
-                'methods': {},
+                '_methods': {},
                 'parameters': {}
             }),
             (RESPONSE_OK, 'a warm gun'),
