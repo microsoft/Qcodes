@@ -126,8 +126,23 @@ class InstrumentServer(BaseServer):
 
     def handle_new(self, instrument_class, new_id, *args, **kwargs):
         """
-        Add a new instrument to the server
-        after the initial load, the instrument is referred to by its ID
+        Add a new instrument to the server.
+
+        After the initial load, the instrument is referred to by its ID.
+
+        Args:
+            instrument_class (class): The type of instrument to construct.
+
+            new_id (int): The ID by which this instrument will be known on the
+                server.
+
+            *args: positional arguments to the instrument constructor.
+
+            **kwargs: keyword arguments to the instrument constructor.
+
+        Returns:
+            dict: info to reconstruct this instrument's API in the remote.
+                See ``Instrument.connection_attrs`` for details.
         """
 
         # merge shared_kwargs into kwargs for the constructor,

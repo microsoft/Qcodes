@@ -84,29 +84,18 @@ class RemoteInstrument(DelegateAttributes):
         # to interface with the remote instrument
 
         self._update_components(connection_attrs)
-        # self._methods = {
-        #     name: RemoteMethod(name, self, attrs)
-        #     for name, attrs in connection_attrs['methods'].items()
-        # }
-
-        # self.parameters = {
-        #     name: RemoteParameter(name, self, attrs)
-        #     for name, attrs in connection_attrs['parameters'].items()
-        # }
-
-        # self.functions = {
-        #     name: RemoteFunction(name, self, attrs)
-        #     for name, attrs in connection_attrs['functions'].items()
-        # }
 
     def _update_components(self, connection_attrs):
         """
         Update the three component dicts with new or updated connection attrs.
 
-        ``connection_attrs`` contains dicts (one each for _methods, parameters,
-        and functions) of {component_name: list of attributes}.
-        These get translated into the corresponding dicts eg:
-        ``self.parameters = {parameter_name: RemoteParameter}``
+        Args:
+            connection_attrs (dict): as returned by
+                ``Instrument.connection_attrs``, should contain at least keys
+                ``_methods``, ``parameters``, and ``functions``, whose values
+                are themselves dicts of {component_name: list of attributes}.
+                These get translated into the corresponding dicts eg:
+                ``self.parameters = {parameter_name: RemoteParameter}``
         """
         component_types = (('_methods', RemoteMethod),
                            ('parameters', RemoteParameter),
@@ -270,6 +259,15 @@ class RemoteComponent:
         self.update(attrs)
 
     def update(self, attrs):
+        """
+        Update the set of attributes proxied by this component.
+
+        The docstring is not proxied every time it is accessed, but it is
+        read and updated during this method.
+
+        Args:
+            attrs (Sequence[str]): the new set of attributes to proxy.
+        """
         self._attrs = set(attrs)
         self._delattrs = set()
         self._set_doc()
@@ -408,9 +406,13 @@ class RemoteParameter(RemoteComponent, DeferredOperations):
 
         Args:
             value (any): the proposed new parameter value.
+
+        Raises:
+            TypeError: if ``value`` has the wrong type for this Parameter.
+            ValueError: if the type is correct but the value is wrong.
         """
-        return self._instrument._ask_server(
-            'callattr', self.name + '.validate', value)
+        self._instrument._ask_server('callattr',
+                                     self.name + '.validate', value)
 
     # manually copy over sweep and __getitem__ so they execute locally
     # and are still based off the RemoteParameter

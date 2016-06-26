@@ -470,6 +470,12 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
             new_id (int): The ID of this instrument on its server.
                 This is how the RemoteInstrument points its calls to the
                 correct server instrument when it calls the server.
+
+        Returns:
+            dict: Dictionary of name: str, id: int, parameters: dict,
+                functions: dict, _methods: dict
+                parameters, functions, and _methods are dictionaries of
+                name: List(str) of attributes to be proxied in the remote.
         """
         return {
             'name': self.name,
