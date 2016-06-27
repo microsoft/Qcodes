@@ -462,11 +462,39 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
     # info about what's in this instrument, to help construct the remote     #
     ##########################################################################
 
+    def connection_attrs(self, new_id):
+        """
+        Collect info to reconstruct the instrument API in the RemoteInstrument.
+
+        Args:
+            new_id (int): The ID of this instrument on its server.
+                This is how the RemoteInstrument points its calls to the
+                correct server instrument when it calls the server.
+
+        Returns:
+            dict: Dictionary of name: str, id: int, parameters: dict,
+                functions: dict, _methods: dict
+                parameters, functions, and _methods are dictionaries of
+                name: List(str) of attributes to be proxied in the remote.
+        """
+        return {
+            'name': self.name,
+            'id': new_id,
+            'parameters': {name: p.get_attrs()
+                           for name, p in self.parameters.items()},
+            'functions': {name: f.get_attrs()
+                          for name, f in self.functions.items()},
+            '_methods': self._get_method_attrs()
+        }
+
     def _get_method_attrs(self):
         """
         Construct a dict of methods this instrument has.
 
-        Each value is itself a dict of attribute dictionaries
+        Returns:
+            dict: Dictionary of method names : list of attributes each method
+                has that should be proxied. As of now, this is just its
+                docstring, if it has one.
         """
         out = {}
 
@@ -479,9 +507,6 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
                 # dir(), but they have their own listing.
                 continue
 
-            attrs = out[attr] = {}
-
-            if hasattr(value, '__doc__'):
-                attrs['__doc__'] = value.__doc__
+            out[attr] = ['__doc__'] if hasattr(value, '__doc__') else []
 
         return out

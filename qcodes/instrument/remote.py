@@ -4,7 +4,6 @@ import multiprocessing as mp
 from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import DelegateAttributes, named_repr
 from .parameter import Parameter, GetLatest
-from .function import Function
 from .server import get_instrument_server_manager
 
 
@@ -68,29 +67,61 @@ class RemoteInstrument(DelegateAttributes):
 
     def connect(self):
         """Create the instrument on the server and replicate its API here."""
+
+        # connection_attrs is created by instrument.connection_attrs(),
+        # called by InstrumentServer.handle_new after it creates the instrument
+        # on the server.
         connection_attrs = self._manager.connect(self, self._instrument_class,
                                                  self._args, self._kwargs)
 
         self.name = connection_attrs['name']
         self._id = connection_attrs['id']
+        self._methods = {}
+        self.parameters = {}
+        self.functions = {}
 
         # bind all the different categories of actions we need
         # to interface with the remote instrument
 
-        self._methods = {
-            name: RemoteMethod(name, self, attrs)
-            for name, attrs in connection_attrs['methods'].items()
-        }
+        self._update_components(connection_attrs)
 
-        self.parameters = {
-            name: RemoteParameter(name, self, attrs)
-            for name, attrs in connection_attrs['parameters'].items()
-        }
+    def _update_components(self, connection_attrs):
+        """
+        Update the three component dicts with new or updated connection attrs.
 
-        self.functions = {
-            name: RemoteFunction(name, self, attrs)
-            for name, attrs in connection_attrs['functions'].items()
-        }
+        Args:
+            connection_attrs (dict): as returned by
+                ``Instrument.connection_attrs``, should contain at least keys
+                ``_methods``, ``parameters``, and ``functions``, whose values
+                are themselves dicts of {component_name: list of attributes}.
+                These get translated into the corresponding dicts eg:
+                ``self.parameters = {parameter_name: RemoteParameter}``
+        """
+        component_types = (('_methods', RemoteMethod),
+                           ('parameters', RemoteParameter),
+                           ('functions', RemoteFunction))
+
+        for container_name, component_class in component_types:
+            container = getattr(self, container_name)
+            components_spec = connection_attrs[container_name]
+
+            # first delete components that are gone and update those that
+            # have changed
+            for name in list(container.keys()):
+                if name in components_spec:
+                    container[name].update(components_spec[name])
+                else:
+                    del container[name]
+
+            # then add new components
+            for name, attrs in components_spec.items():
+                if name not in container:
+                    container[name] = component_class(name, self, attrs)
+
+    def update(self):
+        """Check with the server for updated components."""
+        connection_attrs = self._ask_server('connection_attrs', self._id)
+        self._update_components(connection_attrs)
 
     def _ask_server(self, func_name, *args, **kwargs):
         """Query the server copy of this instrument, expecting a response."""
@@ -159,10 +190,15 @@ class RemoteInstrument(DelegateAttributes):
         self._instrument_class.remove_instance(self)
 
     def restart(self):
-        """Remove and recreate the server copy of this instrument."""
-        # TODO - this cannot work! _manager is gone after close!
-        self.close()
-        self._manager.restart()
+        """
+        Remove and recreate the server copy of this instrument.
+
+        All instrument state will be returned to the initial conditions,
+        including deleting any parameters you've added after initialization,
+        or modifications to parameters etc.
+        """
+        self._manager.delete(self._id)
+        self.connect()
 
     def __getitem__(self, key):
         """Delegate instrument['name'] to parameter or function 'name'."""
@@ -181,27 +217,127 @@ class RemoteComponent:
     """
     An object that lives inside a RemoteInstrument.
 
-    Proxies all of its calls to the corresponding object in the server
-    instrument.
+    Proxies all of its calls and specific listed attributes to the
+    corresponding object in the server instrument.
 
     Args:
         name (str): The name of this component.
 
         instrument (RemoteInstrument): the instrument this is part of.
 
-        attrs (dict): instance attributes to set, to match the server
+        attrs (List[str]): instance attributes to proxy to the server
             copy of this component.
+
+    Attributes:
+        name (str): The name of this component.
+
+        _instrument (RemoteInstrument): the instrument this is part of.
+
+        _attrs (Set[str]): All the attributes we are allowed to proxy.
+
+        _delattrs (Set[str]): Attributes we've deleted from the server,
+            a subset of ``_attrs``, but if you set them again, they will
+            still be set on the server.
+
+        _local_attrs (Set[str]): (class attribute only) Attributes that we
+            shouldn't look for on the server, even if they do not exist
+            locally. Mostly present to prevent infinite recursion in the
+            accessors.
     """
+    _local_attrs = {
+        '_attrs',
+        'name',
+        '_instrument',
+        '_local_attrs',
+        '__doc__',
+        '_delattrs'
+    }
 
     def __init__(self, name, instrument, attrs):
         self.name = name
         self._instrument = instrument
+        self.update(attrs)
 
-        for attribute, value in attrs.items():
-            if attribute == '__doc__' and value:
-                value = '{} {} in RemoteInstrument {}\n---\n\n{}'.format(
-                    type(self).__name__, self.name, instrument.name, value)
-            setattr(self, attribute, value)
+    def update(self, attrs):
+        """
+        Update the set of attributes proxied by this component.
+
+        The docstring is not proxied every time it is accessed, but it is
+        read and updated during this method.
+
+        Args:
+            attrs (Sequence[str]): the new set of attributes to proxy.
+        """
+        self._attrs = set(attrs)
+        self._delattrs = set()
+        self._set_doc()
+
+    def __getattr__(self, attr):
+        """
+        Get an attribute value from the server.
+
+        If there was a local attribute, we don't even get here.
+        """
+        if attr not in type(self)._local_attrs and attr in self._attrs:
+            full_attr = self.name + '.' + attr
+            return self._instrument._ask_server('getattr', full_attr)
+        else:
+            raise AttributeError('RemoteComponent has no local or remote '
+                                 'attribute: ' + attr)
+
+    def __setattr__(self, attr, val):
+        """
+        Set a new attribute value.
+
+        If the attribute is listed as remote, we'll set it on the server,
+        otherwise we'll set it locally.
+        """
+        if attr not in type(self)._local_attrs and attr in self._attrs:
+            full_attr = self.name + '.' + attr
+            self._instrument._ask_server('setattr', full_attr, val)
+            if attr in self._delattrs:
+                self._delattrs.remove(attr)
+        else:
+            object.__setattr__(self, attr, val)
+
+    def __delattr__(self, attr):
+        """
+        Delete an attribute.
+
+        If the attribute is listed as remote, we'll delete it on the server,
+        otherwise we'll delete it locally.
+        """
+
+        if attr not in type(self)._local_attrs and attr in self._attrs:
+            full_attr = self.name + '.' + attr
+            self._instrument._ask_server('delattr', full_attr)
+            self._delattrs.add(attr)
+
+        else:
+            object.__delattr__(self, attr)
+
+    def __dir__(self):
+        """dir listing including both local and server attributes."""
+        remote_attrs = self._attrs - self._delattrs
+        return sorted(remote_attrs.union(super().__dir__()))
+
+    def _set_doc(self):
+        """
+        Prepend a note about remoteness to the server docstring.
+
+        If no server docstring is found, we leave the class docstring.
+
+        __doc__, as a magic attribute, is handled differently from
+        other attributes so we won't make it dynamic (updating on the
+        server when you change it here)
+        """
+        doc = self._instrument._ask_server('getattr',
+                                           self.name + '.__doc__')
+
+        docbase = '{} {} in RemoteInstrument {}'.format(
+            type(self).__name__, self.name, self._instrument.name)
+
+        self.__doc__ = docbase + (('\n---\n\n' + doc) if doc else '')
 
     def __repr__(self):
         """repr including the component name."""
@@ -264,17 +400,22 @@ class RemoteParameter(RemoteComponent, DeferredOperations):
         # user do it?
         self._instrument._ask_server('set', self.name, value)
 
-    # manually copy over validate and __getitem__ so they execute locally
-    # no reason to send these to the server, unless the validators change...
     def validate(self, value):
         """
         Raise an error if the given value is not allowed for this Parameter.
 
         Args:
             value (any): the proposed new parameter value.
-        """
-        return Parameter.validate(self, value)
 
+        Raises:
+            TypeError: if ``value`` has the wrong type for this Parameter.
+            ValueError: if the type is correct but the value is wrong.
+        """
+        self._instrument._ask_server('callattr',
+                                     self.name + '.validate', value)
+
+    # manually copy over sweep and __getitem__ so they execute locally
+    # and are still based off the RemoteParameter
     def __getitem__(self, keys):
         """Create a SweepValues from this parameter with slice notation."""
         return Parameter.__getitem__(self, keys)
@@ -369,4 +510,5 @@ class RemoteFunction(RemoteComponent):
         Args:
             *args: the proposed arguments with which to call the Function.
         """
-        return Function.validate(self, *args)
+        return self._instrument._ask_server(
+            'callattr', self.name + '.validate', *args)

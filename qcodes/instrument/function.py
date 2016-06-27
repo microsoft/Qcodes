@@ -125,14 +125,8 @@ class Function(Metadatable):
 
     def get_attrs(self):
         """
-        Attributes used in the RemoteFunction proxy.
+        Attributes recreated as properties in the RemoteFunction proxy.
 
-        Returns (dict):
-            Dictionary containing docstring, arguments validators, and theirs
-            count
+        Returns (list): __doc__, _args, and _arg_count get proxied
         """
-        return {
-            '__doc__': self.__doc__,
-            '_args': self._args,
-            '_arg_count': self._arg_count
-        }
+        return ['__doc__', '_args', '_arg_count']

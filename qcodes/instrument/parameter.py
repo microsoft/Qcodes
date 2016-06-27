@@ -268,21 +268,21 @@ class Parameter(Metadatable, DeferredOperations):
 
     def get_attrs(self):
         """
-        Grab all attributes that the RemoteParameter needs
-        to function like the main one (in loops etc), and return them
-        as a dictionary
+        Attributes recreated as properties in the RemoteParameter proxy.
+
+        Grab the names of all attributes that the RemoteParameter needs
+        to function like the main one (in loops etc)
 
         Returns:
-            dict: attributes
+            list: All public attribute names, plus docstring and _vals
         """
-        out = {}
+        out = []
 
         for attr in dir(self):
-            value = getattr(self, attr)
             if ((attr[0] == '_' and attr not in self._keep_attrs) or
-                    callable(value)):
+                    callable(getattr(self, attr))):
                 continue
-            out[attr] = value
+            out.append(attr)
 
         return out
 
