@@ -1,86 +1,17 @@
-.. currentmodule:: qcodes
+.. _Api :
 
 Classes and Functions
 =====================
 
-This page lists the entrypoints to the qcodes API.
+This page lists the entry points to the qcodes API.
 
-.. note::
-   this should be in sync with the qcodes namespace
+Public refers to what is available in qcodes namespace.
+
+Private refers to everything that is available.
 
 .. toctree::
    :maxdepth: 4
 
-Station
-~~~~~~~
+   public
+   private
 
-.. autosummary::
-   :toctree: generated/
-
-   station.Station
-
-Loops
-~~~~~
-
-.. autosummary::
-   :toctree: generated/
-
-   get_bg
-   halt_bg
-   Loop
-
-
-Actions
-~~~~~~~
-
-.. autosummary::
-   :toctree: generated/
-
-   Task
-   Wait
-   BreakIf
-
-Data
-~~~~
-
-.. autosummary::
-   :toctree: generated/
-
-    get_data_manager
-    DataMode
-    DataSet
-    new_data
-    load_data
-    FormatLocation
-    DataArray
-    Formatter
-    GNUPlotFormat
-    DiskIO
-
-
-
-Instrument
-~~~~~~~~~~
-
-.. autosummary::
-   :toctree: generated/
-
-   Function
-   Parameter
-   StandardParameter
-   SweepValues
-
-   Instrument
-   IPInstrument
-   VisaInstrument
-   MockInstrument
-   MockModel
-
-Utils
-~~~~~
-.. automodule:: 
-
-.. autosummary::
-   :toctree: generated/
-
-   qcodes.utils.validators

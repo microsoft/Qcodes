@@ -20,7 +20,6 @@ def _actions_snapshot(actions, update):
 
 
 class Task:
-
     """
     A predefined task to be executed within a measurement Loop.
 
@@ -29,10 +28,15 @@ class Task:
 
     The args and kwargs are first evaluated if they are found to be callable.
 
-    kwargs passed when the Task is called are ignored,
+    Keyword Args passed when the Task is called are ignored,
     but are accepted for compatibility with other things happening in a Loop.
-    """
 
+    Args:
+        func (callable): Function to executed
+        *args: pass to func, after evaluation if callable
+        **kwargs: pass to func, after evaluation if callable
+
+    """
     def __init__(self, func, *args, **kwargs):
         self.func = func
         self.args = args
@@ -46,11 +50,18 @@ class Task:
         self.func(*eval_args, **eval_kwargs)
 
     def snapshot(self, update=False):
+        """
+        Snapshots  task
+        Args:
+            update (bool): TODO not in use
+
+        Returns:
+            dict: snapshot
+        """
         return {'type': 'Task', 'func': repr(self.func)}
 
 
 class Wait:
-
     """
     A simple class to tell a Loop to wait <delay> seconds.
 
@@ -58,8 +69,13 @@ class Wait:
     it can do other things (monitor, check for halt) during the delay.
 
     But for use outside of a Loop, it is also callable (then it just sleeps)
-    """
 
+    Args:
+        delay: seconds to delay
+
+    Raises:
+        ValueError: if delay is negative
+    """
     def __init__(self, delay):
         if not delay >= 0:
             raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
@@ -70,17 +86,23 @@ class Wait:
             time.sleep(self.delay)
 
     def snapshot(self, update=False):
+        """
+        Snapshots  delay
+        Args:
+            update (bool): TODO not in use
+
+        Returns:
+            dict: snapshot
+        """
         return {'type': 'Wait', 'delay': self.delay}
 
 
 class _Measure:
-
     """
     A callable collection of parameters to measure.
 
     This should not be constructed manually, only by an ActiveLoop.
     """
-
     def __init__(self, params_indices, data_set, use_threads):
         self.use_threads = use_threads and len(params_indices) > 1
         # the applicable DataSet.store function
@@ -144,12 +166,17 @@ class BreakIf:
 
     """
     Loop action that breaks out of the loop if a condition is truthy.
+    
+    Args:
+        condition (callable): a callable taking no arguments.
+            Can be a simple function that returns truthy when it's time to quit
+            May also be constructed by deferred operations on `Parameter`.
+    Raises:
+        TypeError: if condition is not a callable with no aguments.
 
-    condition: a callable taking no arguments.
-        Can be a simple function that returns truthy when it's time to quit
-        May also be constructed by deferred operations on `Parameter`s, eg:
-            BreakIf(gates.chan1 >= 3)
-            BreakIf(abs(source.I * source.V) >= source.power_limit.get_latest)
+    Examples:
+            >>> BreakIf(gates.chan1 >= 3)
+            >>> BreakIf(abs(source.I * source.V) >= source.power_limit.get_latest)
     """
 
     def __init__(self, condition):
@@ -164,6 +191,15 @@ class BreakIf:
 
     def snapshot(self, update=False):
         # TODO: make nice reprs for DeferredOperations
+        """
+        Snapshots breakif action
+        Args:
+            update (bool): TODO not in use
+
+        Returns:
+            dict: snapshot
+
+        """
         return {'type': 'BreakIf', 'condition': repr(self.condition)}
 
 

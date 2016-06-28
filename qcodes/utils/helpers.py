@@ -242,21 +242,23 @@ def make_unique(s, existing):
 
 
 class DelegateAttributes:
-    '''
+    """
     Mixin class to create attributes of this object by
     delegating them to one or more dicts and/or objects
 
     Also fixes __dir__ so the delegated attributes will show up
     in dir() and autocomplete
 
-    delegate_attr_dicts: a list of names (strings) of dictionaries which are
-        (or will be) attributes of self, whose keys should be treated as
-        attributes of self
-    delegate_attr_objects: a list of names (strings) of objects which are
-        (or will be) attributes of self, whose attributes should be passed
-        through to self
-    omit_delegate_attrs: a list of attribute names (strings) to *not* delegate
-        to any other dict or object
+
+   Attributes:
+        delegate_attr_dicts (list): a list of names (strings) of dictionaries which are
+            (or will be) attributes of self, whose keys should be treated as
+            attributes of self
+        delegate_attr_objects (list): a list of names (strings) of objects which are
+            (or will be) attributes of self, whose attributes should be passed
+            through to self
+        omit_delegate_attrs (list): a list of attribute names (strings) to *not* delegate
+            to any other dict or object
 
     any `None` entry is ignored
 
@@ -264,7 +266,7 @@ class DelegateAttributes:
         1. real attributes of this object
         2. keys of each dict in delegate_attr_dicts (in order)
         3. attributes of each object in delegate_attr_objects (in order)
-    '''
+    """
     delegate_attr_dicts = []
     delegate_attr_objects = []
     omit_delegate_attrs = []
@@ -321,10 +323,13 @@ class DelegateAttributes:
 
 
 def strip_attrs(obj):
-    '''
+    """
     Irreversibly remove all direct instance attributes of obj, to help with
     disposal, breaking circular references.
-    '''
+
+    Args:
+        obj:  object to be stripped
+    """
     try:
         for key in list(obj.__dict__.keys()):
             try:
