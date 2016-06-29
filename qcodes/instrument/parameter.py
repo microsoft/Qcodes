@@ -380,6 +380,36 @@ class Parameter(Metadatable, DeferredOperations):
         """
         return SweepFixedValues(self, keys)
 
+    @property
+    def full_name(self):
+        """Include the instrument name with the Parameter name if possible."""
+        if getattr(self, 'name', None) is None:
+            return None
+
+        try:
+            inst_name = self._instrument.name
+            if inst_name:
+                return inst_name + '_' + self.name
+        except AttributeError:
+            pass
+
+        return self.name
+
+    @property
+    def full_names(self):
+        """Include the instrument name with the Parameter names if possible."""
+        if getattr(self, 'names', None) is None:
+            return None
+
+        try:
+            inst_name = self._instrument.name
+            if inst_name:
+                return [inst_name + '_' + name for name in self.names]
+        except AttributeError:
+            pass
+
+        return self.names
+
 
 class StandardParameter(Parameter):
     """

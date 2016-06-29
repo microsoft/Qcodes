@@ -1,6 +1,7 @@
 from unittest import TestCase
 from datetime import datetime, timedelta
 import time
+from collections import namedtuple
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
@@ -78,6 +79,50 @@ class TestParamConstructor(TestCase):
                     param.__module__, param.__class__.__name__,
                     param.name, id(param))
                 self.assertEqual(s, st)
+
+    blank_instruments = (
+        None,  # no instrument at all
+        namedtuple('noname', '')(),  # no .name
+        namedtuple('blank', 'name')('')  # blank .name
+        )
+    named_instrument = namedtuple('yesname', 'name')('astro')
+
+    def test_full_name(self):
+        # three cases where only name gets used for full_name
+        for instrument in self.blank_instruments:
+            p = Parameter(name='fred')
+            p._instrument = instrument
+            self.assertEqual(p.full_name, 'fred')
+
+            p.name = None
+            self.assertEqual(p.full_name, None)
+
+        # and finally an instrument that really has a name
+        p = Parameter(name='wilma')
+        p._instrument = self.named_instrument
+        self.assertEqual(p.full_name, 'astro_wilma')
+
+        p.name = None
+        self.assertEqual(p.full_name, None)
+
+    def test_full_names(self):
+        for instrument in self.blank_instruments:
+            # no instrument
+            p = Parameter(name='simple')
+            p._instrument = instrument
+            self.assertEqual(p.full_names, None)
+
+            p = Parameter(names=['a', 'b'])
+            p._instrument = instrument
+            self.assertEqual(p.full_names, ['a', 'b'])
+
+        p = Parameter(name='simple')
+        p._instrument = self.named_instrument
+        self.assertEqual(p.full_names, None)
+
+        p = Parameter(names=['penn', 'teller'])
+        p._instrument = self.named_instrument
+        self.assertEqual(p.full_names, ['astro_penn', 'astro_teller'])
 
 
 class GatesBadDelayType(MockGates):

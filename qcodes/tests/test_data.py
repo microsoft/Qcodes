@@ -22,26 +22,34 @@ class TestDataArray(TestCase):
     def test_attributes(self):
         pname = 'Betty Sue'
         plabel = 'The best apple pie this side of Wenatchee'
+        pfullname = 'bert'
 
         class MockParam:
             name = pname
             label = plabel
 
+            def __init__(self, full_name=None):
+                self.full_name = full_name
+
         name = 'Oscar'
         label = 'The grouch. GRR!'
+        fullname = 'ernie'
         array_id = 24601
         set_arrays = ('awesomeness', 'chocolate content')
         shape = 'Ginornous'
         action_indices = (1, 2, 3, 4, 5)
 
-        p_data = DataArray(parameter=MockParam(), name=name, label=label)
-        p_data2 = DataArray(parameter=MockParam())
+        p_data = DataArray(parameter=MockParam(pfullname), name=name,
+                           label=label, full_name=fullname)
+        p_data2 = DataArray(parameter=MockParam(pfullname))
 
         # explicitly given name and label override parameter vals
         self.assertEqual(p_data.name, name)
         self.assertEqual(p_data.label, label)
+        self.assertEqual(p_data.full_name, fullname)
         self.assertEqual(p_data2.name, pname)
         self.assertEqual(p_data2.label, plabel)
+        self.assertEqual(p_data2.full_name, pfullname)
         # test default values
         self.assertIsNone(p_data.array_id)
         self.assertEqual(p_data.shape, ())
@@ -54,6 +62,8 @@ class TestDataArray(TestCase):
                             action_indices=action_indices)
         self.assertEqual(np_data.name, name)
         self.assertEqual(np_data.label, label)
+        # no full name or parameter - use name
+        self.assertEqual(np_data.full_name, name)
         # test simple assignments
         self.assertEqual(np_data.array_id, array_id)
         self.assertEqual(np_data.set_arrays, set_arrays)
