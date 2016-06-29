@@ -2,6 +2,7 @@ import time
 import logging
 import numpy as np
 import visa  # used for the parity constant
+import traceback
 
 from qcodes import VisaInstrument, validators as vals
 
@@ -13,7 +14,8 @@ class IVVI(VisaInstrument):
             - Add individual parameters for channel polarities
             - Test polarities different from BIP
             - Add adjustable range and rate protection per channel
-            - Add error handling for the specific error messages in the protocol
+            - Add error handling for the specific error messages in the
+              protocol
             - Remove/fine-tune manual sleep statements
 
     This is the python driver for the D5 module of the IVVI-rack
@@ -26,7 +28,8 @@ class IVVI(VisaInstrument):
     Fullrange = 4000
     Halfrange = Fullrange / 2
 
-    def __init__(self, name, address, reset=False, numdacs=16, **kwargs):
+    def __init__(self, name, address, reset=False, numdacs=16, dac_step=10,
+                 dac_delay=.1, dac_max_delay=0.2, **kwargs):
                  # polarity=['BIP', 'BIP', 'BIP', 'BIP']):
                  # commented because still on the todo list
         '''
@@ -39,6 +42,9 @@ class IVVI(VisaInstrument):
             polarity (string[4]) : list of polarities of each set of 4 dacs
                                    choose from 'BIP', 'POS', 'NEG',
                                    default=['BIP', 'BIP', 'BIP', 'BIP']
+            dac_step (float)         : max step size for dac parameter
+            dac_delay (float)        : delay (in seconds) for dac
+            dac_max_delay (float)    : maximum delay before emitting a warning
         '''
         t0 = time.time()
         super().__init__(name, address, **kwargs)
@@ -49,15 +55,13 @@ class IVVI(VisaInstrument):
             raise ValueError('numdacs must be a positive multiple of 4, '
                              'not {}'.format(numdacs))
 
-        self.pol_num = np.zeros(self._numdacs)  # corresponds to POS polarity
-        self.set_pol_dacrack('BIP', range(self._numdacs))
-
         # values based on descriptor
         self.visa_handle.baud_rate = 115200
         self.visa_handle.parity = visa.constants.Parity(1)  # odd parity
 
         self.add_parameter('version',
                            get_cmd=self._get_version)
+        
         self.add_parameter('dac voltages',
                            label='Dac voltages',
                            get_cmd=self._get_dacs)
@@ -70,15 +74,36 @@ class IVVI(VisaInstrument):
                 get_cmd=self._gen_ch_get_func(self._get_dac, i),
                 set_cmd=self._gen_ch_set_func(self._set_dac, i),
                 vals=vals.Numbers(-2000, 2000),
-                step=10,
-                delay=.1,
-                max_delay=.2,
+                step=dac_step,
+                delay=dac_delay,
+                max_delay=dac_max_delay,
                 max_val_age=10)
 
         self._update_time = 5  # seconds
         self._time_last_update = 0  # ensures first call will always update
+        
+        self.pol_num = np.zeros(self._numdacs)  # corresponds to POS polarity
+        self.set_pol_dacrack('BIP', range(self._numdacs), get_all=False)
+
         t1 = time.time()
+
+        # basic test to confirm we are properly connected
+        try:
+            self.get_all()
+        except Exception as ex:
+            print('IVVI: get_all() failed, maybe connected to wrong port?')
+            print(traceback.format_exc())
+
         print('Initialized IVVI-rack in %.2fs' % (t1-t0))
+
+    def get_idn(self):
+        """
+        Overwrites the get_idn function using constants as the hardware
+        does not have a proper *IDN function.
+        """
+        idparts = ['QuTech', 'IVVI', 'None', self.version()]
+
+        return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
     def _get_version(self):
         mes = self.ask(bytes([3, 4]))
@@ -95,7 +120,9 @@ class IVVI(VisaInstrument):
     # Conversion of data
     def _mvoltage_to_bytes(self, mvoltage):
         '''
-        Converts a mvoltage on a 0mV-4000mV scale to a 16-bit integer equivalent
+        Converts a mvoltage on a 0mV-4000mV scale to a 16-bit integer
+        equivalent
+
         output is a list of two bytes
 
         Input:
@@ -187,7 +214,7 @@ class IVVI(VisaInstrument):
                     self._mvoltages = self._bytes_to_mvoltages(reply)
                     self._time_last_update = time.time()
                     break
-                except:
+                except Exception as ex:
                     logging.warning('IVVI communication error trying again')
             if i+1 == max_tries:  # +1 because range goes stops before end
                 raise('IVVI Communication error')
@@ -247,14 +274,14 @@ class IVVI(VisaInstrument):
         #     raise Exception('IVVI rack exception "%s"' % mes[1])
         return mes
 
-    def set_pol_dacrack(self, flag, channels, getall=True):
+    def set_pol_dacrack(self, flag, channels, get_all=True):
         '''
         Changes the polarity of the specified set of dacs
 
         Input:
             flag (string) : 'BIP', 'POS' or 'NEG'
             channel (int) : 0 based index of the rack
-            getall (boolean): if True (default) perform a get_all
+            get_all (boolean): if True (default) perform a get_all
 
         Output:
             None
@@ -268,7 +295,7 @@ class IVVI(VisaInstrument):
             self.pol_num[ch-1] = val
             # self.set_parameter_bounds('dac%d' % (i+1), val, val + self.Fullrange.0)
 
-        if getall:
+        if get_all:
             self.get_all()
 
     def get_pol_dac(self, channel):
@@ -301,7 +328,6 @@ class IVVI(VisaInstrument):
         def get_func():
             return fun(ch)
         return get_func
-
 
 '''
 RS232 PROTOCOL
