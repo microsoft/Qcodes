@@ -1,33 +1,10 @@
-# mercuryiPS.py driver for Oxford MercuryiPS magnet power supply
-#
-# The MIT License (MIT)
-# Copyright (c) 2016 Merlin von Soosten <merlin.von.soosten@gmail.com>
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in theSoftware without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-
 from functools import partial
 import re
 import time
 import numpy as np
 
 from qcodes import IPInstrument
-from qcodes.utils.validators import Strings, Enum, Anything
+from qcodes.utils.validators import Enum, Anything
 
 
 class MercuryiPS(IPInstrument):
@@ -40,10 +17,8 @@ class MercuryiPS(IPInstrument):
         TODO:
         - SAFETY!! we need to make sure the magnet is only ramped at certain
           conditions!
-        - make ATOB a parameter, and move all possible to use _read_cmd, _write_cmd
-        - Fix this call = ''
-                   eval(call)
-          stuff, I guess there is a smarter way of doing that?
+        - make ATOB a parameter, and move all possible to use
+          _read_cmd, _write_cmd
         - this findall stuff in _get_cmd, is that smart?
     '''
     # def __init__(self, name, axes=None, **kwargs):
@@ -54,7 +29,8 @@ class MercuryiPS(IPInstrument):
         self.axes = axes
         self._ATOB = []
         self._latest_response = ''
-        # for some reason the first call is always invalid?! need some kind of init?
+        # for some reason the first call is always invalid?!
+        # need some kind of init?
         self.ask('*IDN?')
 
         if axes is None:
@@ -62,23 +38,27 @@ class MercuryiPS(IPInstrument):
         self._determine_current_to_field()
 
         self.add_parameter('setpoint',
-                           names=['B'+ax.lower()+'_setpoint' for ax in self.axes],
+                           names=['B'+ax.lower()+'_setpoint'
+                                  for ax in self.axes],
                            get_cmd=partial(self._get_fld, self.axes, 'FSET'),
-                           set_cmd=partial(self._ramp_to_setpoint, self.axes, 'FSET'),
+                           set_cmd=partial(self._ramp_to_setpoint,
+                                           self.axes, 'FSET'),
                            units=['T'for ax in self.axes],
                            vals=Anything())
 
         self.add_parameter('rate',
                            names=['rate_B'+ax.lower() for ax in self.axes],
                            get_cmd=partial(self._get_fld, self.axes, 'RFST'),
-                           set_cmd=partial(self._ramp_to_setpoint, self.axes, 'RFST'),
+                           set_cmd=partial(self._ramp_to_setpoint,
+                                           self.axes, 'RFST'),
                            units=['T/m'for ax in self.axes],
                            vals=Anything())
 
         self.add_parameter('fld',
                            names=['B'+ax.lower() for ax in self.axes],
                            get_cmd=partial(self._get_fld, self.axes, 'FLD'),
-                           set_cmd=partial(self._ramp_to_setpoint, self.axes, 'FSET'),
+                           set_cmd=partial(self._ramp_to_setpoint,
+                                           self.axes, 'FSET'),
                            units=['T'for ax in self.axes],
                            vals=Anything())
 
@@ -86,7 +66,8 @@ class MercuryiPS(IPInstrument):
                            names=['B'+ax.lower() for ax in self.axes],
                            get_cmd=partial(self._get_fld,
                                            self.axes, 'CURR'),
-                           set_cmd=partial(self._ramp_to_setpoint, self.axes, 'CSET'),
+                           set_cmd=partial(self._ramp_to_setpoint,
+                                           self.axes, 'CSET'),
                            units=['T'for ax in self.axes],
                            vals=Anything())
 
@@ -122,32 +103,32 @@ class MercuryiPS(IPInstrument):
                            set_cmd=self._set_phi,
                            units='rad')
 
-        # self.add_parameter('ACTN',
-        #                    get_cmd=self._ACTN,
-        #                    set_cmd='SET:DEV:GRP{}:PSU:ACTN:'.format(ax)+'{}',
-        #                    vals=Enum('HOLD', 'RTOS', 'RTOZ', 'CLMP'))
         for ax in self.axes:
             self.add_parameter(ax.lower()+'_fld',
                                get_cmd=partial(self._get_fld, ax, 'FLD'),
-                               set_cmd=partial(self._ramp_to_setpoint, ax, 'FSET'),
+                               set_cmd=partial(self._ramp_to_setpoint,
+                                               ax, 'FSET'),
                                label='B'+ax.lower(),
                                units='T')
             self.add_parameter(ax.lower()+'_fldC',
                                get_cmd=partial(self._get_fld,
                                                ax, 'CURR'),
-                               set_cmd=partial(self._ramp_to_setpoint, ax, 'CSET'),
+                               set_cmd=partial(self._ramp_to_setpoint,
+                                               ax, 'CSET'),
                                label='B'+ax.lower(),
                                units='T')
             self.add_parameter(ax.lower()+'_fld_wait',
                                get_cmd=partial(self._get_fld,
                                                ax, 'CURR'),
-                               set_cmd=partial(self._ramp_to_setpoint_and_wait, ax, 'CSET'),
+                               set_cmd=partial(self._ramp_to_setpoint_and_wait,
+                                               ax, 'CSET'),
                                label='B'+ax.lower(),
                                units='T')
             self.add_parameter(ax.lower()+'_ACTN',
-                               get_cmd=partial(self._get_cmd,
-                                               'READ:DEV:GRP{}:PSU:ACTN?'.format(ax)),
-                               set_cmd='SET:DEV:GRP{}:PSU:ACTN:'.format(ax)+'{}',
+                               get_cmd=partial(
+                                   self._get_cmd,
+                                   'READ:DEV:GRP' + ax + ':PSU:ACTN?'),
+                               set_cmd='SET:DEV:GRP' + ax + ':PSU:ACTN:{}',
                                vals=Enum('HOLD', 'RTOS', 'RTOZ', 'CLMP'))
             self.add_parameter(ax.lower()+'_setpoint',
                                get_cmd=partial(self._get_fld, ax, 'FSET'),
@@ -168,24 +149,15 @@ class MercuryiPS(IPInstrument):
 
     def hold(self):
         for ax in self.axes:
-            # How do I properly call those parameters from here?
-            # self.{ax}_ACTN.set('HOLD')
-            call = 'self.{}_ACTN.set("HOLD")'.format(ax.lower())
-            eval(call)
+            self.parameters[ax.lower() + '_ACTN'].set('HOLD')
 
     def rtos(self):
         for ax in self.axes:
-            # How do I properly call those parameters from here?
-            # self.{ax}_ACTN.set('HOLD')
-            call = 'self.{}_ACTN.set("RTOS")'.format(ax.lower())
-            eval(call)
+            self.parameters[ax.lower() + '_ACTN'].set('RTOS')
 
     def to_zero(self):
         for ax in self.axes:
-            # How do I properly call those parameters from here?
-            # self.{ax}_ACTN.set('HOLD')
-            call = 'self.{}_ACTN.set("RTOZ")'.format(ax.lower())
-            eval(call)
+            self.parameters[ax.lower() + '_ACTN'].set('RTOZ')
 
     def _ACTN(self):
         actn = self._read_cmd('ACTN', self.axes,
@@ -314,7 +286,8 @@ class MercuryiPS(IPInstrument):
                         val = ln.split(':')[-1]
                         if parser is float:
                             try:
-                                val = float(re.findall("[-+]?\d*\.\d+|\d+", val)[0])
+                                matches = re.findall("[-+]?\d*\.\d+|\d+", val)
+                                val = float(matches[0])
                             except:
                                 continue
                         data[ix] = val
@@ -342,7 +315,8 @@ class MercuryiPS(IPInstrument):
                         val = ln.split(':')[-1]
                         if parser is float:
                             try:
-                                val = float(re.findall("[-+]?\d*\.\d+|\d+", val)[0])
+                                matches = re.findall("[-+]?\d*\.\d+|\d+", val)
+                                val = float(matches[0])
                             except:
                                 continue
                         data[ix] = val
@@ -410,6 +384,6 @@ class MercuryiPS(IPInstrument):
             theta = 0
             phi = 0
         else:
-            theta = np.arccos(field[2] / r);
+            theta = np.arccos(field[2] / r)
             phi = np.arctan2(field[1],  field[0])
         return [r, theta, phi]

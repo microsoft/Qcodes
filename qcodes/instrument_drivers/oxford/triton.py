@@ -1,32 +1,9 @@
-# triton.py driver for Oxford Triton fridges
-#
-# The MIT License (MIT)
-# Copyright (c) 2016 Merlin von Soosten <merlin.von.soosten@gmail.com>
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in theSoftware without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-
 import configparser
 from qcodes import IPInstrument
 
 
 class Triton(IPInstrument):
-    '''
+    """
     Triton Driver
     TODO: fetch registry directly from fridge-computer
 
@@ -36,7 +13,7 @@ class Triton(IPInstrument):
         And I had other problems with the _connect method,
           check those changes :)
         Further there was a problem with the EnsureConnection class
-    '''
+    """
 
     def __init__(self, name, address=None, port=None, terminator='\r\n',
                  tmpfile=None, **kwargs):
@@ -70,7 +47,7 @@ class Triton(IPInstrument):
         self.chan_temps = {}
         if tmpfile is not None:
             self._get_temp_channels(tmpfile)
-        self.get_pressure_channels()
+        self._get_pressure_channels()
         self._get_named_channels()
 
     def _get_named_channels(self):
@@ -87,7 +64,7 @@ class Triton(IPInstrument):
                                    get_cmd='READ:DEV:%s:TEMP:SIG:TEMP' % chan,
                                    get_parser=self._parse_temp)
 
-    def get_pressure_channels(self):
+    def _get_pressure_channels(self):
         for i in range(1, 7):
             chan = 'P%d' % i
             self.add_parameter(name=chan,
