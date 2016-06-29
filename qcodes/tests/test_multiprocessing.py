@@ -112,7 +112,7 @@ class TestMpMethod(TestCase):
 
 class TestQcodesProcess(TestCase):
     def setUp(self):
-        mp_stats = calibrate()
+        mp_stats = calibrate(quiet=True)
         self.MP_START_DELAY = mp_stats['mp_start_delay']
         self.MP_FINISH_DELAY = mp_stats['mp_finish_delay']
         self.SLEEP_DELAY = mp_stats['sleep_delay']

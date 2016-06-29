@@ -4,11 +4,20 @@ from inspect import signature
 
 
 def is_function(f, arg_count, coroutine=False):
-    '''
-    require a function that can accept the specified number of positional
+    """
+    Check and require a function that can accept the specified number of positional
     arguments, which either is or is not a coroutine
     type casting "functions" are allowed, but only in the 1-argument form
-    '''
+
+    Args:
+        f (callable): function to check
+        arg_count (int): number of argument f should accept
+        coroutine (bool): is a coroutine. Default: False
+
+    Return:
+        bool: is function and accepts the specified number of arguments
+
+    """
     if not isinstance(arg_count, int) or arg_count < 0:
         raise TypeError('arg_count must be a non-negative integer')
 
@@ -44,30 +53,38 @@ def is_function(f, arg_count, coroutine=False):
 
 class DeferredOperations:
     """
-    make math and logic operations return callables to defer execution
-    of arbitrary formulae
+    Make math and logic operations return callables to defer execution
+    of arbitrary formulae.
 
     Can be used as a mixin class - in which case you should NOT call __init__
-    and you SHOULD override __call__ and get with identical results
+    and you SHOULD override __call__ and get with identical results.
 
-    call_func: a callable taking no arguments
-    call_parts: the original callables, in case we want to
-        record them all (ie raw data)
 
     You can evaluate a DeferredOperations by calling it or
     by calling its .get() method
 
-    examples:
-        d = DeferredOperations(lambda:42)
-        d() -> 42
-        (d*5)() -> 210
-        (d>10)() -> True
-        ((84/d) + (d*d))() -> 1766
+    Args:
 
-    NOTE: and & or are special: there are no magic methods for
-    the regular and & or, so we need to use the bitwise operators &,| as
-    boolean operators. We DO NOT short-circuit them; the right side is
-    always evaluated.
+        call_func: a callable taking no arguments
+        call_parts: the original callables, in case we want to
+            record them all (ie raw data)
+
+    Examples:
+        >>> d = DeferredOperations(lambda:42)
+        >>> d()
+        42
+        >>> (d*5)()
+        210
+        >>> (d>10)()
+        rue
+        >>> ((84/d) + (d*d))()
+        1766
+
+    Note:
+        and & or are special: there are no magic methods for
+        the regular and & or, so we need to use the bitwise operators &,| as
+        boolean operators. We DO NOT short-circuit them; the right side is
+        always evaluated.
     """
     def __init__(self, call_func, args=(), call_parts=()):
         self._validate_callable(call_func, len(args))

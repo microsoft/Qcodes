@@ -1,7 +1,7 @@
-'''
+"""
 Measured and/or controlled parameters
 
-the Parameter class is meant for direct parameters of instruments (ie
+The Parameter class is meant for direct parameters of instruments (ie
 subclasses of Instrument) but elsewhere in Qcodes we can use anything
 as a parameter if it has the right attributes:
 
@@ -10,32 +10,34 @@ To use Parameters in data acquisition loops, they should have:
     .label - string to use as an axis label (optional, defaults to .name)
     (except for composite measurements, see below)
 
-Controlled parameters should have a .set(value) (and/or .set_async(value))
-method, which takes a single value to apply to this parameter.
-To use this parameter for sweeping, also connect its __getitem__ to
-SweepFixedValues as below.
+Controlled parameters should have a .set(value) method, which takes a single
+value to apply to this parameter. To use this parameter for sweeping, also
+connect its __getitem__ to SweepFixedValues as below.
 
-Measured parameters should have .get() (and/or .get_async()) which can return:
+Measured parameters should have .get() which can return:
+
 - a single value:
     parameter should have .name and optional .label as above
+
 - several values of different meaning (raw and measured, I and Q,
   a set of fit parameters, that sort of thing, that all get measured/calculated
   at once):
     parameter should have .names and optional .labels, each a sequence with
     the same length as returned by .get()
+
 - an array of values of one type:
     parameter should have .name and optional .label as above, but also
     .shape attribute, which is an integer (or tuple of integers) describing
     the shape of the returned array (which must be fixed)
     optionally also .setpoints, array(s) of setpoint values for this data
     otherwise we will use integers from 0 in each direction as the setpoints
+
 - several arrays of values (all the same shape):
     define .names (and .labels) AND .shape (and .setpoints)
-'''
+"""
 
 from datetime import datetime, timedelta
 import time
-import asyncio
 import logging
 import os
 import collections
@@ -44,7 +46,7 @@ from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import (permissive_range, wait_secs, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr)
 from qcodes.utils.metadata import Metadatable
-from qcodes.utils.sync_async import syncable_command, NoCommandError
+from qcodes.utils.command import Command, NoCommandError
 from qcodes.utils.validators import Validator, Numbers, Ints, Enum
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
@@ -61,15 +63,15 @@ def no_getter(*args, **kwargs):
 
 
 class Parameter(Metadatable, DeferredOperations):
-    '''
-    defines one generic parameter, not necessarily part of
+    """
+    Define one generic parameter, not necessarily part of
     an instrument. can be settable and/or gettable.
 
-    A settable Parameter has a .set and/or a .set_async method,
-    and supports only a single value at a time (see below)
+    A settable Parameter has a .set method, and supports only a single value
+    at a time (see below)
 
-    A gettable Parameter has a .get and/or a .get_async method,
-    which may return:
+    A gettable Parameter has a .get method, which may return:
+
     1.  a single value
     2.  a sequence of values with different names (for example,
         raw and interpreted, I and Q, several fit parameters...)
@@ -91,40 +93,54 @@ class Parameter(Metadatable, DeferredOperations):
 
     The constructor arguments change somewhat between these cases:
 
-    name: (1&3) the local name of this parameter, should be a valid
-        identifier, ie no spaces or special characters
-    names: (2,4,5) a tuple of names
+    Todo:
+        no idea how to document such a constructor
 
-    label: (1&3) string to use as an axis label for this parameter
-        defaults to name
-    labels: (2,4,5) a tuple of labels
+    Args:
+        name: (1&3) the local name of this parameter, should be a valid
+            identifier, ie no spaces or special characters
 
-    units: (1&3) string that indicates units of parameter for use in axis
-        label and snapshot
-           (2,4,5) a tuple of units
+        names: (2,4,5) a tuple of names
 
-    shape: (3&4) a tuple of integers for the shape of array returned by .get().
-    shapes: (5) a tuple of tuples, each one as in `shape`.
-        Single values should be denoted by None or ()
+        label: (1&3) string to use as an axis label for this parameter
+            defaults to name
 
-    setpoints: (3,4,5) the setpoints for the returned array of values.
-        3&4 - a tuple of arrays. The first array is be 1D, the second 2D, etc.
-        5 - a tuple of tuples of arrays
-        Defaults to integers from zero in each respective direction
-        Each may be either a DataArray, a numpy array, or a sequence
-        (sequences will be converted to numpy arrays)
-        NOTE: if the setpoints will be different each measurement, leave
-        this out and return the setpoints (with extra names) in the get.
-    setpoint_names: (3,4,5) one identifier (like `name`) per setpoint
-        array.
-        Ignored if `setpoints` are DataArrays, which already have names.
-    setpoint_labels: (3&4) one label (like `label`) per setpoint array.
-        Overridden if `setpoints` are DataArrays and already have labels.
+        labels: (2,4,5) a tuple of labels
 
-    vals: allowed values for setting this parameter (only relevant
-        if it has a setter)
-        defaults to Numbers()
-    '''
+        units: (1&3) string that indicates units of parameter for use in axis
+            label and snapshot
+
+        shape: (3&4) a tuple of integers for the shape of array returned by .get().
+
+        shapes: (5) a tuple of tuples, each one as in `shape`.
+            Single values should be denoted by None or ()
+
+        setpoints: (3,4,5) the setpoints for the returned array of values.
+            3&4 - a tuple of arrays. The first array is be 1D, the second 2D, etc.
+            5 - a tuple of tuples of arrays
+            Defaults to integers from zero in each respective direction
+            Each may be either a DataArray, a numpy array, or a sequence
+            (sequences will be converted to numpy arrays)
+            NOTE: if the setpoints will be different each measurement, leave
+            this out and return the setpoints (with extra names) in the get.
+
+        setpoint_names: (3,4,5) one identifier (like `name`) per setpoint
+            array. Ignored if `setpoints` are DataArrays, which already have names.
+
+        setpoint_labels: (3&4) one label (like `label`) per setpoint array.
+            Overridden if `setpoints` are DataArrays and already have labels.
+
+        vals: allowed values for setting this parameter (only relevant
+            if it has a setter),  defaults to Numbers()
+
+        docstring (Optional[string]): documentation string for the __doc__ field of the object
+            The __doc__ field of the instance is used by some help systems,
+            but not all
+
+        snapshot_get (bool): Prevent any update to the parameter
+          for example if it takes too long to update
+
+    """
     def __init__(self,
                  name=None, names=None,
                  label=None, labels=None,
@@ -168,7 +184,7 @@ class Parameter(Metadatable, DeferredOperations):
                 'Parameter class:',
                 '* `name` %s' % self.name,
                 '* `label` %s' % self.label,
-                # is this unit s a typo? shouldnt that be unit?
+                #TODO is this unit s a typo? shouldnt that be unit?
                 '* `units` %s' % self.units,
                 '* `vals` %s' % repr(self._vals)))
             self._meta_attrs.extend(['name', 'label', 'units', 'vals'])
@@ -251,28 +267,35 @@ class Parameter(Metadatable, DeferredOperations):
     _keep_attrs = ['__doc__', '_vals']
 
     def get_attrs(self):
-        '''
-        grab all attributes that the RemoteParameter needs
-        to function like the main one (in loops etc), and return them
-        as a dictionary
-        '''
-        out = {}
+        """
+        Attributes recreated as properties in the RemoteParameter proxy.
+
+        Grab the names of all attributes that the RemoteParameter needs
+        to function like the main one (in loops etc)
+
+        Returns:
+            list: All public attribute names, plus docstring and _vals
+        """
+        out = []
 
         for attr in dir(self):
-            value = getattr(self, attr)
             if ((attr[0] == '_' and attr not in self._keep_attrs) or
-                    callable(value)):
+                    callable(getattr(self, attr))):
                 continue
-            out[attr] = value
+            out.append(attr)
 
         return out
 
     def snapshot_base(self, update=False):
         """
-        json state of the Parameter.
+        State of the instrument as a JSON-compatible dict.
 
-        optionally pass in the state, so if this is an instrument parameter
-        we can collect all calls to the server into one
+        Args:
+            update (bool): If True, update the state by querying the
+             instrument. If False, just use the latest values in memory.
+
+        Returns:
+            dict: base snapshot
         """
 
         if self.has_get and self._snapshot_get and update:
@@ -309,9 +332,13 @@ class Parameter(Metadatable, DeferredOperations):
             raise TypeError('vals must be a Validator')
 
     def validate(self, value):
-        '''
-        raises an error if this value is not allowed for this Parameter
-        '''
+        """
+        Validate value
+
+        Args:
+            value (any): value to validate
+
+        """
         if hasattr(self, '_instrument'):
             context = (getattr(self._instrument, 'name', '') or
                        str(self._instrument.__class__)) + '.' + self.name
@@ -321,28 +348,36 @@ class Parameter(Metadatable, DeferredOperations):
         self._vals.validate(value, 'Parameter: ' + context)
 
     def sweep(self, start, stop, step=None, num=None):
-        '''
+        """
+        Create a collection of parameter values to be iterated over.
         Requires `start` and `stop` and (`step` or `num`)
         The sign of `step` is not relevant.
 
-        returns: a numpy.linespace(start, stop, num)
+        Args:
+            start (Union[int, float]): The starting value of the sequence.
+            stop (Union[int, float]): The end value of the sequence.
+            step (Optional[Union[int, float]]):  Spacing between values.
+            num (Optional[int]): Number of values to generate.
+
+        Returns:
+            SweepFixedValues: collection of parameter values to be iterated over
 
         Examples:
-            sweep(0, 10, num=5)
-            > [0.0, 2.5, 5.0, 7.5, 10.0]
-            sweep(5, 10, step=1)
-            > [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-            sweep(15, 10.5, step=1.5)
+            >>> sweep(0, 10, num=5)
+             [0.0, 2.5, 5.0, 7.5, 10.0]
+            >>> sweep(5, 10, step=1)
+            [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+            >>> sweep(15, 10.5, step=1.5)
             >[15.0, 13.5, 12.0, 10.5]
-        '''
+        """
         return SweepFixedValues(self, start=start, stop=stop,
                                 step=step, num=num)
 
     def __getitem__(self, keys):
-        '''
-        slice a Parameter to get a SweepValues object
+        """
+        Slice a Parameter to get a SweepValues object
         to iterate over during a sweep
-        '''
+        """
         return SweepFixedValues(self, keys)
 
     @property
@@ -377,67 +412,70 @@ class Parameter(Metadatable, DeferredOperations):
 
 
 class StandardParameter(Parameter):
-    '''
-    defines one measurement parameter
+    """
+    Define one measurement parameter.
 
-    name: the local name of this parameter
-    instrument: an instrument that handles this parameter
-        default None
+    Args:
+        name (string): the local name of this parameter
+        instrument (Optional[Instrument]): an instrument that handles this function
+            default None
 
-    get_cmd: a string or function to get this parameter
-        you can only use a string if an instrument is provided,
-        this string will be passed to instrument.ask
-    async_get_cmd: a function to use for async get, or for both sync
-        and async if get_cmd is missing or None
-    get_parser: function to transform the response from get
-        to the final output value.
-        NOTE: only applies if get_cmd is a string. The function forms
-        of get_cmd and async_get_cmd should do their own parsing
-        See also val_mapping
+        get_cmd (Optional[Union[string, function]]): a string or function to get this parameter
+            you can only use a string if an instrument is provided,
+            this string will be passed to instrument.ask
 
-    set_cmd: command to set this parameter, either:
-        - a string (containing one field to .format, like "{}" etc)
-          you can only use a string if an instrument is provided,
-          this string will be passed to instrument.write
-        - a function (of one parameter)
-    async_set_cmd: a function to use for async set, or for both sync
-        and async if set_cmd is missing or None
-    set_parser: function to transform the input set value to an encoded
-        value sent to the instrument.
-        NOTE: only applies if set_cmd is a string. The function forms
-        of set_cmd and async_set_cmd should do their own parsing
-        See also val_mapping
+        get_parser ( Optional[function]): function to transform the response from get
+            to the final output value.
+            NOTE: only applies if get_cmd is a string. The function form
+            of get_cmd should do its own parsing
+            See also val_mapping
 
-    val_mapping: a bidirectional map from data/readable values to
-        instrument codes, expressed as a dict {data_val: instrument_code}
-        For example, if the instrument uses '0' to mean 1V and '1' to mean
-        10V, set val_mapping={1: '0', 10: '1'} and on the user side you
-        only see 1 and 10, never the coded '0' and '1'
+        set_cmd (Optional[Union[string, function]]): command to set this parameter, either:
+            - a string (containing one field to .format, like "{}" etc)
+              you can only use a string if an instrument is provided,
+              this string will be passed to instrument.write
+            - a function (of one parameter)
 
-        If vals is omitted, will also construct a matching Enum validator.
-        NOTE: only applies to get if get_cmd is a string, and to set if
-        set_cmd is a string.
+        set_parser (Optional[function]): function to transform the input set value to an encoded
+            value sent to the instrument.
+            NOTE: only applies if set_cmd is a string. The function form
+            of set_cmd  should do its own parsing
+            See also val_mapping
 
-    vals: a Validator object for this parameter
+        val_mapping (Optional[dict]): a bidirectional map data/readable values to instrument codes,
+            expressed as a dict {data_val: instrument_code}
+            For example, if the instrument uses '0' to mean 1V and '1' to mean
+            10V, set val_mapping={1: '0', 10: '1'} and on the user side you
+            only see 1 and 10, never the coded '0' and '1'
 
-    delay: time (in seconds) to wait after the *start* of each set,
-        whether part of a sweep or not. Can be set 0 to go maximum speed with
-        no errors.
-    max_delay: If > delay, we don't emit a warning unless the time
-        taken during a single set is greater than this, even though we aim for
-        delay. If delay
-    step: max increment of parameter value - larger changes
-        are broken into steps this size
-    max_val_age: max time (in seconds) to trust a saved value from
-        this parameter as the starting point of a sweep
+            If vals is omitted, will also construct a matching Enum validator.
+            NOTE: only applies to get if get_cmd is a string, and to set if
+            set_cmd is a string.
 
-    docstring: documentation string for the __doc__ field of the object
-        The __doc__ field of the instance is used by some help systems,
-        but not all
-    '''
+        vals (Optional[Validator]): a Validator object for this parameter
+
+        delay (Optional[Union[int, float]]): time (in seconds) to wait after the *start* of each set,
+            whether part of a sweep or not. Can be set 0 to go maximum speed with
+            no errors.
+
+        max_delay (Optional[Union[int, float]]): If > delay, we don't emit a warning unless the time
+            taken during a single set is greater than this, even though we aim for
+            delay. If delay
+
+        step (Optional[Union[int, float]]): max increment of parameter value - larger changes
+            are broken into steps this size
+
+        max_val_age (Optional[Union[int, float]]): max time (in seconds) to trust a saved value from
+            this parameter as the starting point of a sweep
+
+        **kwargs: Passed to Parameter parent class
+
+    Raises:
+        NoCommandError: if get and set are not found
+    """
     def __init__(self, name, instrument=None,
-                 get_cmd=None, async_get_cmd=None, get_parser=None,
-                 set_cmd=None, async_set_cmd=None, set_parser=None,
+                 get_cmd=None, get_parser=None,
+                 set_cmd=None, set_parser=None,
                  delay=None, max_delay=None, step=None, max_val_age=3600,
                  vals=None, val_mapping=None, **kwargs):
         # handle val_mapping before super init because it impacts
@@ -469,8 +507,8 @@ class StandardParameter(Parameter):
         # having to call .get() for every .set()
         self._max_val_age = 0
 
-        self._set_get(get_cmd, async_get_cmd, get_parser)
-        self._set_set(set_cmd, async_set_cmd, set_parser)
+        self._set_get(get_cmd, get_parser)
+        self._set_set(set_cmd, set_parser)
         self.set_delay(delay, max_delay)
         self.set_step(step, max_val_age)
 
@@ -488,30 +526,23 @@ class StandardParameter(Parameter):
                 'getting {}:{}'.format(self._instrument.name, self.name),)
             raise e
 
-    @asyncio.coroutine
-    def get_async(self):
-        value = yield from self._get_async()
-        self._save_val(value)
-        return value
+    def _set_get(self, get_cmd, get_parser):
+        exec_str = self._instrument.ask if self._instrument else None
+        self._get = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str,
+                            output_parser=get_parser,
+                            no_cmd_function=no_getter)
 
-    def _set_get(self, get_cmd, async_get_cmd, get_parser):
-        self._get, self._get_async = syncable_command(
-            arg_count=0, cmd=get_cmd, acmd=async_get_cmd,
-            exec_str=self._instrument.ask if self._instrument else None,
-            output_parser=get_parser, no_cmd_function=no_getter)
-
-        if self._get is not no_getter:
+        if get_cmd is not None:
             self.has_get = True
 
-    def _set_set(self, set_cmd, async_set_cmd, set_parser):
+    def _set_set(self, set_cmd, set_parser):
         # note: this does not set the final setter functions. that's handled
         # in self.set_sweep, when we choose a swept or non-swept setter.
-        self._set, self._set_async = syncable_command(
-            arg_count=1, cmd=set_cmd, acmd=async_set_cmd,
-            exec_str=self._instrument.write if self._instrument else None,
-            input_parser=set_parser, no_cmd_function=no_setter)
+        exec_str = self._instrument.write if self._instrument else None
+        self._set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str,
+                            input_parser=set_parser, no_cmd_function=no_setter)
 
-        if self._set is not no_setter:
+        if set_cmd is not None:
             self.has_set = True
 
     def _validate_and_set(self, value):
@@ -528,16 +559,6 @@ class StandardParameter(Parameter):
                 'setting {}:{} to {}'.format(self._instrument.name,
                                              self.name, repr(value)),)
             raise e
-
-    @asyncio.coroutine
-    def _validate_and_set_async(self, value):
-        clock = time.perf_counter()
-        self.validate(value)
-        yield from self._set_async(value)
-        self._save_val(value)
-        if self._delay is not None:
-            clock, remainder = self._update_set_ts(clock)
-            yield from asyncio.sleep(remainder)
 
     def _sweep_steps(self, value):
         oldest_ok_val = datetime.now() - timedelta(seconds=self._max_val_age)
@@ -600,41 +621,34 @@ class StandardParameter(Parameter):
                                              self.name, repr(value)),)
             raise e
 
-    @asyncio.coroutine
-    def _validate_and_sweep_async(self, value):
-        self.validate(value)
-        step_clock = time.perf_counter()
-
-        for step_val in self._sweep_steps(value):
-            yield from self._set_async(step_val)
-            self._save_val(step_val)
-            if self._delay is not None:
-                step_clock, remainder = self._update_set_ts(step_clock)
-                yield from asyncio.sleep(remainder)
-
-        yield from self._set_async(value)
-        self._save_val(value)
-
     def set_step(self, step, max_val_age=None):
-        '''
+        """
         Configure whether this Parameter uses steps during set operations.
         If step is a positive number, this is the maximum value change
         allowed in one hardware call, so a single set can result in many
         calls to the hardware if the starting value is far from the target.
 
-        step: a positive number, the largest change allowed in one call
-            all but the final change will attempt to change by +/- step
-            exactly
+        Args:
+            step (Union[int, float]): a positive number, the largest change allowed in one call
+                all but the final change will attempt to change by +/- step
+                exactly
 
-        max_val_age: Only used with stepping, the max time (in seconds) to
-            trust a saved value. If this parameter has not been set or measured
-            more recently than this, it will be measured before starting to
-            step, so we're confident in the value we're starting from.
-        '''
+            max_val_age (Optional[int]): Only used with stepping, the max time (in seconds) to
+                trust a saved value. If this parameter has not been set or measured
+                more recently than this, it will be measured before starting to
+                step, so we're confident in the value we're starting from.
+
+        Raises:
+            TypeError: if step is not numeric
+            ValueError: if step is negative
+            TypeError:  if step is not integer for an integer parameter
+            TypeError: if step is not a number
+            TypeError: if max_val_age is not numeric
+            ValueError: if max_val_age is negative
+        """
         if not step:
             # single-command setting
             self.set = self._validate_and_set
-            self.set_async = self._validate_and_set_async
 
         elif not self._vals.is_numeric:
             raise TypeError('you can only step numeric parameters')
@@ -645,47 +659,53 @@ class StandardParameter(Parameter):
             raise TypeError(
                 'step must be a positive int for an Ints parameter')
         elif not isinstance(step, (int, float)):
-            raise TypeError('step must be a positive number')
+            raise TypeError('step must be a number')
 
         else:
             # stepped setting
             if max_val_age is not None:
                 if not isinstance(max_val_age, (int, float)):
                     raise TypeError(
-                        'max_val_age must be a non-negative number')
+                        'max_val_age must be a number')
                 if max_val_age < 0:
                     raise ValueError('max_val_age must be non-negative')
                 self._max_val_age = max_val_age
 
             self._step = step
             self.set = self._validate_and_sweep
-            self.set_async = self._validate_and_sweep_async
 
     def get_delay(self):
-        ''' Return the delay time of this parameter. Also see `set_delay` '''
+        """Return the delay time of this parameter. Also see `set_delay` """
         return self._delay
 
     def set_delay(self, delay, max_delay=None):
-        '''
+        """
         Configure this parameter with a delay between set operations.
+
         Typically used in conjunction with set_step to create an effective
         ramp rate, but can also be used without a step to enforce a delay
         after every set.
-
-        delay: the target time between set calls. The actual time will not be
-            shorter than this, but may be longer if the underlying set call
-            takes longer.
-
-        max_delay: if given, the longest time allowed for the underlying set
-            call before we emit a warning.
-
         If delay and max_delay are both None or 0, we never emit warnings
         no matter how long the set takes.
-        '''
+
+        Args:
+            delay(Union[int, float]): the target time between set calls. The actual time will not be
+                shorter than this, but may be longer if the underlying set call
+                takes longer.
+
+            max_delay(Optional[Union[int, float]]): if given, the longest time allowed for the underlying set
+                call before we emit a warning.
+
+        Raises:
+            TypeError: If delay is not int nor float
+            TypeError: If max_delay is not int nor float
+            ValueError: If delay is negative
+            ValueError: If max_delay is smaller than delay
+        """
         if delay is None:
             delay = 0
         if not isinstance(delay, (int, float)):
-            raise TypeError('delay must be a non-negative number')
+            raise TypeError('delay must be a number')
         if delay < 0:
             raise ValueError('delay must not be negative')
         self._delay = delay
@@ -693,7 +713,7 @@ class StandardParameter(Parameter):
         if max_delay is not None:
             if not isinstance(max_delay, (int, float)):
                 raise TypeError(
-                    'max_delay must be a number no shorter than delay')
+                    'max_delay must be a either  int or a float')
             if max_delay < delay:
                 raise ValueError('max_delay must be no shorter than delay')
             self._delay_tolerance = max_delay - delay
@@ -707,17 +727,20 @@ class StandardParameter(Parameter):
 
 
 class ManualParameter(Parameter):
-    '''
-    defines one parameter that reflects a manual setting / configuration
+    """
+    Define one parameter that reflects a manual setting / configuration.
 
-    name: the local name of this parameter
+    Args:
+        name (string): the local name of this parameter
 
-    instrument: the instrument this applies to, if any.
+        instrument (Optional[Instrument]): the instrument this applies to, if any.
 
-    initial_value: optional starting value. Default is None, which is the
-        only invalid value allowed (and None is only allowed as an initial
-        value, it cannot be set later)
-    '''
+        initial_value (Optional[string]): starting value, the
+            only invalid value allowed, and None is only allowed as an initial
+            value, it cannot be set later
+
+        **kwargs: Passed to Parameter parent class
+    """
     def __init__(self, name, instrument=None, initial_value=None, **kwargs):
         super().__init__(name=name, **kwargs)
         self._instrument = instrument
@@ -731,44 +754,42 @@ class ManualParameter(Parameter):
         self.has_set = True
 
     def set(self, value):
+        """
+        Validate and saves value
+        Args:
+            value (any): value to validate and save
+        """
         self.validate(value)
         self._save_val(value)
 
-    @asyncio.coroutine
-    def set_async(self, value):
-        return self.set(value)
-
     def get(self):
+        """ Return latest value"""
         return self._latest()['value']
-
-    @asyncio.coroutine
-    def get_async(self):
-        return self.get()
 
 
 class GetLatest(DelegateAttributes, DeferredOperations):
-    '''
-    wrapper for a Parameter that just returns the last set or measured value
+    """
+    Wrapper for a Parameter that just returns the last set or measured value
     stored in the Parameter itself.
 
-    Can be called:
-        param.get_latest()
+    Examples:
+        >>> # Can be called:
+        >>> param.get_latest()
+        >>> # Or used as if it were a gettable-only parameter itself:
+        >>> Loop(...).each(param.get_latest)
 
-    Or used as if it were a gettable-only parameter itself:
-        Loop(...).each(param.get_latest)
-    '''
+    Args:
+        parameter (Parameter): Parameter to be wrapped
+    """
     def __init__(self, parameter):
         self.parameter = parameter
 
     delegate_attr_objects = ['parameter']
-    omit_delegate_attrs = ['set', 'set_async']
+    omit_delegate_attrs = ['set']
 
     def get(self):
+        """ Return latest value"""
         return self.parameter._latest()['value']
-
-    @asyncio.coroutine
-    def get_async(self):
-        return self.get()
 
     def __call__(self):
         return self.get()

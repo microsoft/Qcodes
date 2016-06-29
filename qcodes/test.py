@@ -1,5 +1,7 @@
 """Unified qcodes test runners."""
 
+import sys
+
 
 def test_core(verbosity=1, failfast=False):
     """
@@ -29,7 +31,9 @@ def _test_core(test_pattern='test*.py', **kwargs):
     suite = unittest.defaultTestLoader.discover(
         qctest.__path__[0], top_level_dir=qcodes.__path__[0],
         pattern=test_pattern)
-
+    if suite.countTestCases() == 0:
+        print('found no tests')
+        sys.exit(1)
     print('testing %d cases' % suite.countTestCases())
 
     result = unittest.TextTestRunner(**kwargs).run(suite)
