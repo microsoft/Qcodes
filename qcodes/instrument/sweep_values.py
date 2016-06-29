@@ -2,76 +2,83 @@ from copy import deepcopy
 
 from qcodes.utils.helpers import (is_sequence, permissive_range, make_sweep,
                                   named_repr)
-from qcodes.utils.sync_async import mock_async, mock_sync
 from qcodes.utils.metadata import Metadatable
 
 
 class SweepValues(Metadatable):
-    '''
-    base class for sweeping a parameter
-    must be subclassed to provide the sweep values
+    """
+    Base class for sweeping a parameter.
 
-    inputs:
-        parameter: the target of the sweep, an object with
-            set (and/or set_async), and optionally validate methods
+    Must be subclassed to provide the sweep values
+    Intended use is to iterate over in a sweep, so it must support:
 
-    intended use is to iterate over in a sweep, so it must support:
-        .__iter__ (and .__next__ if necessary).
-        .set and .set_async are provided by the base class
+    >>> .__iter__ # (and .__next__ if necessary).
+    >>> .set # is provided by the base class
 
-    optionally, it can have a feedback method that allows the sweep to pass
+    Optionally, it can have a feedback method that allows the sweep to pass
     measurements back to this object for adaptive sampling:
-        .feedback(set_values, measured_values)
+
+    >>> .feedback(set_values, measured_values)
+
+    Todo:
+        - Link to adawptive sweep
+
+    Args:
+        parameter (Parameter): the target of the sweep, an object with
+         set, and optionally validate methods
+
+        **kwargs: Passed on to Metadatable parent
+
+    Raises:
+        TypeError: when parameter is not settable
+
     See AdaptiveSweep for an example
 
     example usage:
-        for i, value in eumerate(sv):
-            sv.set(value)  # or (await / yield from) sv.set_async(value)
-                           # set(_async) just shortcuts sv.parameter.set
+
+    >>> for i, value in eumerate(sv):
+            sv.set(value)
             sleep(delay)
             vals = measure()
             sv.feedback((i, ), vals) # optional - sweep should not assume
                                      # .feedback exists
 
-    note though that sweeps should only require set, set_async, and
-    __iter__ - ie "for val in sv", so any class that implements these
-    may be used in sweeps. That allows things like adaptive sampling,
-    where you don't know ahead of time what the values will be or even
-    how many there are.
-    '''
+    note though that sweeps should only require set and __iter__ - ie
+    "for val in sv", so any class that implements these may be used in sweeps.
+
+    That allows things like adaptive sampling, where you don't know ahead of
+    time what the values will be or even how many there are.
+    """
     def __init__(self, parameter, **kwargs):
         super().__init__(**kwargs)
         self.parameter = parameter
         self.name = parameter.name
         self._values = []
 
-        if not getattr(parameter, 'has_set', None):
+        # allow has_set=False to override the existence of a set method,
+        # but don't require it to be present (and truthy) otherwise
+        if not (getattr(parameter, 'set', None) and
+                getattr(parameter, 'has_set', True)):
             raise TypeError('parameter {} is not settable'.format(parameter))
 
-        # create the set and set_async shortcuts
-        if hasattr(parameter, 'set'):
-            self.set = parameter.set
-        else:
-            self.set = mock_sync(parameter.set_async)
-
-        if hasattr(parameter, 'set_async'):
-            self.set_async = parameter.set_async
-        else:
-            self.set_async = mock_async(parameter.set)
+        self.set = parameter.set
 
     def validate(self, values):
-        '''
-        check that all values are allowed for this Parameter
-        '''
+        """
+        Check that all values are allowed for this Parameter.
+
+        Args:
+            values (List[Any]): values to be validated.
+        """
         if hasattr(self.parameter, 'validate'):
             for value in values:
                 self.parameter.validate(value)
 
     def __iter__(self):
-        '''
+        """
         must be overridden (along with __next__ if this returns self)
         by a subclass to tell how to iterate over these values
-        '''
+        """
         raise NotImplementedError
 
     def __repr__(self):
@@ -79,28 +86,35 @@ class SweepValues(Metadatable):
 
 
 class SweepFixedValues(SweepValues):
-    '''
-    a fixed collection of parameter values to be iterated over during a sweep.
+    """
+    A fixed collection of parameter values to be iterated over during a sweep.
 
-    inputs:
-        parameter: the target of the sweep, an object with
-            set (and/or set_async), and optionally validate methods
-        keys: one or a sequence of items, each of which can be:
+    Args:
+        parameter (Parameter): the target of the sweep, an object with set and
+            optionally validate methods
+
+        keys (Optional[Any]): one or a sequence of items, each of which can be:
             - a single parameter value
             - a sequence of parameter values
             - a slice object, which MUST include all three args
 
-    a SweepFixedValues object is normally created by slicing a Parameter p:
+        start (Union[int, float]): The starting value of the sequence.
+        stop (Union[int, float]): The end value of the sequence.
+        step (Optional[Union[int, float]]):  Spacing between values.
+        num (Optional[int]): Number of values to generate.
 
-        sv = p[1.2:2:0.01]  # slice notation
-        sv = p[1, 1.1, 1.3, 1.6]  # explicit individual values
-        sv = p[1.2:2:0.01, 2:3:0.02]  # sequence of slices
-        sv = p[logrange(1,10,.01)]  # some function that returns a sequence
 
-    you can also use list operations to modify these:
+    A SweepFixedValues object is normally created by slicing a Parameter p:
 
-    sv += p[2:3:.01] (another SweepFixedValues of the same parameter)
-    sv += [4, 5, 6] (a bare sequence)
+    >>>  sv = p[1.2:2:0.01]  # slice notation
+    sv = p[1, 1.1, 1.3, 1.6]  # explicit individual values
+    sv = p[1.2:2:0.01, 2:3:0.02]  # sequence of slices
+    sv = p[logrange(1,10,.01)]  # some function that returns a sequence
+
+    You can also use list operations to modify these:
+
+    >>> sv += p[2:3:.01] # (another SweepFixedValues of the same parameter)
+    sv += [4, 5, 6] # (a bare sequence)
     sv.extend(p[2:3:.01])
     sv.append(3.2)
     sv.reverse()
@@ -108,12 +122,11 @@ class SweepFixedValues(SweepValues):
     sv3 = sv + sv2
     sv4 = sv.copy()
 
-    note though that sweeps should only require set, set_async, and
-    __iter__ - ie "for val in sv", so any class that implements these
-    may be used in sweeps. That allows things like adaptive sampling,
-    where you don't know ahead of time what the values will be or even
-    how many there are.
-    '''
+    note though that sweeps should only require set and __iter__ - ie
+    "for val in sv", so any class that implements these may be used in sweeps.
+    That allows things like adaptive sampling, where you don't know ahead of
+    time what the values will be or even how many there are.
+    """
     def __init__(self, parameter, keys=None, start=None, stop=None,
                  step=None, num=None):
         super().__init__(parameter)
@@ -175,11 +188,26 @@ class SweepFixedValues(SweepValues):
         self._values.extend(p_range)
 
     def append(self, value):
+        """
+        Append a value.
+
+        Args:
+            value (Any): new value to append
+        """
         self.validate((value,))
         self._values.append(value)
         self._value_snapshot.append({'item': value})
 
     def extend(self, new_values):
+        """
+        Extend sweep with new_values
+
+        Args:
+            new_values (Union[Sequence, SweepFixedValues]): new values to append
+
+        Raises:
+            TypeError: if new_values is not Sequence, nor SweepFixedValues
+        """
         if isinstance(new_values, SweepFixedValues):
             if new_values.parameter is not self.parameter:
                 raise TypeError(
@@ -196,6 +224,12 @@ class SweepFixedValues(SweepValues):
                 'cannot extend SweepFixedValues with {}'.format(new_values))
 
     def copy(self):
+        """
+        Copy SweepFixedValues.
+
+        Returns:
+            SweepFixedValues: copied values
+        """
         new_sv = SweepFixedValues(self.parameter, [])
         # skip validation by adding values and snapshot separately
         # instead of on init
@@ -204,6 +238,7 @@ class SweepFixedValues(SweepValues):
         return new_sv
 
     def reverse(self):
+        """ Reverse SweepFixedValues in place. """
         self._values.reverse()
         self._value_snapshot.reverse()
         for snap in self._value_snapshot:
@@ -211,9 +246,15 @@ class SweepFixedValues(SweepValues):
                 snap['last'], snap['first'] = snap['first'], snap['last']
 
     def snapshot_base(self, update=False):
-        '''
-        json state of the Sweep
-        '''
+        """
+        Snapshot state of the Parameter.
+
+        Args:
+            update (bool): Update snapshot. Defaults to False
+
+        Returns:
+            dict: base snapshot
+        """
         self._snapshot['parameter'] = self.parameter.snapshot()
         self._snapshot['values'] = self._value_snapshot
         return self._snapshot

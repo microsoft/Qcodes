@@ -15,10 +15,10 @@ from qcodes.utils.helpers import in_notebook
 # time and spins up other processes in order to try and get a front end
 if in_notebook():  # pragma: no cover
     try:
-        from qcodes.plots.matplotlib import MatPlot
+        from qcodes.plots.qcmatplotlib import MatPlot
     except Exception:
         print('matplotlib plotting not supported, '
-              'try "from qcodes.plots.matplotlib import MatPlot" '
+              'try "from qcodes.plots.qcmatplotlib import MatPlot" '
               'to see the full error')
 
     try:
@@ -36,6 +36,7 @@ from qcodes.actions import Task, Wait, BreakIf
 
 from qcodes.data.manager import get_data_manager
 from qcodes.data.data_set import DataMode, DataSet, new_data, load_data
+from qcodes.data.location import FormatLocation
 from qcodes.data.data_array import DataArray
 from qcodes.data.format import Formatter
 from qcodes.data.gnuplot_format import GNUPlotFormat

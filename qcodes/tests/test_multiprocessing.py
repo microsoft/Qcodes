@@ -112,7 +112,7 @@ class TestMpMethod(TestCase):
 
 class TestQcodesProcess(TestCase):
     def setUp(self):
-        mp_stats = calibrate()
+        mp_stats = calibrate(quiet=True)
         self.MP_START_DELAY = mp_stats['mp_start_delay']
         self.MP_FINISH_DELAY = mp_stats['mp_finish_delay']
         self.SLEEP_DELAY = mp_stats['sleep_delay']
@@ -403,6 +403,11 @@ class TestServerManager(TestCase):
         sm._response_queue.put((RESPONSE_OK, extra_resp1))
         sm._response_queue.put((RESPONSE_OK, extra_resp2))
         sm._response_queue.put((RESPONSE_ERROR, custom_error_str))
+
+        # TODO: we have an intermittent failure below, but only when running
+        # the full test suite (including pyqt and matplotlib?), not if we
+        # run just this module, or at least not nearly as frequently.
+        time.sleep(0.2)
 
         with LogCapture() as logs:
             with self.assertRaises(RuntimeError):

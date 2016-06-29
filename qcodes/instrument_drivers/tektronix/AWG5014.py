@@ -145,7 +145,7 @@ class Tektronix_AWG5014(VisaInstrument):
     }
 
     def __init__(self, name, setup_folder, address, reset=False,
-                 clock=1e9, numpoints=1000, **kwargs):
+                 clock=1e9, numpoints=1000, timeout=180, **kwargs):
         '''
         Initializes the AWG5014.
 
@@ -156,11 +156,13 @@ class Tektronix_AWG5014(VisaInstrument):
             address (string)        : GPIB or ethernet address
             reset (bool)            : resets to default values, default=false
             numpoints (int)         : sets the number of datapoints
+            timeout (float)         : visa timeout, in secs. long default (180)
+                                        to accommodate large waveforms
 
         Output:
             None
         '''
-        super().__init__(name, address, **kwargs)
+        super().__init__(name, address, timeout=timeout, **kwargs)
 
         self._address = address
 
@@ -169,7 +171,6 @@ class Tektronix_AWG5014(VisaInstrument):
         self._clock = clock
         self._numpoints = numpoints
 
-        self.add_parameter('IDN', get_cmd='*IDN?')
         self.add_function('reset', call_cmd='*RST')
 
         self.add_parameter('state',
@@ -336,7 +337,7 @@ class Tektronix_AWG5014(VisaInstrument):
         if self.get('clock_freq') != 1e9:
             logging.warning('AWG clock freq not set to 1GHz')
 
-        self.connect_message('IDN')
+        self.connect_message()
 
     # Functions
     def get_all(self, update=True):
@@ -1137,7 +1138,7 @@ class Tektronix_AWG5014(VisaInstrument):
                     # print 'setting: %s' % key
                     exec('self.set_%s(pars[key]["value"])' % key)
                     comm = True
-                except:
+                except Exception as e:
                     print(key + ' not set!')
                     comm = False
 
@@ -1149,7 +1150,9 @@ class Tektronix_AWG5014(VisaInstrument):
     def is_awg_ready(self):
         try:
             self.ask('*OPC?')
-        except:  # makes the awg read again if there is a timeout
+        # makes the awg read again if there is a timeout
+        except Exception as e:
+            logging.warning(e)
             logging.warning('AWG is not ready')
             self.visa_handle.read()
         return True
