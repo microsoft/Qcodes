@@ -1,7 +1,7 @@
 from qcodes import VisaInstrument
 from qcodes.utils.validators import Numbers, Ints, Enum, MultiType
 
-class Stanford_Research_Systems_SR830(VisaInstrument):
+class SR830(VisaInstrument):
     """
     This is the qcodes driver for the Stanford Research Systems SR830
     Lock-in Amplifier
