@@ -20,9 +20,11 @@ install:
 script: 
     - python  qcodes/test.py -c
 after_success:
+    # codecov
+    - cd qcodes
+    - echo $PWD
+    - coverage xml
+    - python-codacy-coverage -r coverage.xml
     # build the docs
     - ls
     - make -f docs/Makefile gh-pages
-    # codecov
-    - cd qcodes
-    - bash <(curl -s https://codecov.io/bash) -t c3b231db-2db3-4560-a477-6edcf4cf5ad1
