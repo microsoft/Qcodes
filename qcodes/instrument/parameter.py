@@ -177,7 +177,7 @@ class Parameter(Metadatable, DeferredOperations):
             self.units = units if units is not None else ''
 
             # vals / validate only applies to simple single-value parameters
-            self._set_vals(vals)
+            self.set_validator(vals)
 
             # generate default docstring
             self.__doc__ = os.linesep.join((
@@ -323,7 +323,13 @@ class Parameter(Metadatable, DeferredOperations):
         self._latest_value = value
         self._latest_ts = datetime.now()
 
-    def _set_vals(self, vals):
+    def set_validator(self, vals):
+        """
+        Set a validator `vals` for this parameter.
+
+        Args:
+            vals (Validator):  validator to set
+        """
         if vals is None:
             self._vals = Numbers()
         elif isinstance(vals, Validator):
@@ -486,7 +492,7 @@ class StandardParameter(Parameter):
 
             if get_parser is None:
                 self._get_mapping = {v: k for k, v in val_mapping.items()}
-                get_parser = self._get_mapping.__getitem__
+                get_parser = self._valmapping_get_parser
 
             if set_parser is None:
                 self._set_mapping = val_mapping
@@ -525,6 +531,29 @@ class StandardParameter(Parameter):
             e.args = e.args + (
                 'getting {}:{}'.format(self._instrument.name, self.name),)
             raise e
+
+    def _valmapping_get_parser(self, val):
+        """
+        Get parser to be used in the case that a val_mapping is defined
+        and a separate get_parser is not defined.
+
+        Tries to match against defined strings in the mapping dictionary. If
+        there are no matches, we try to convert the val into an integer.
+        """
+
+        # Try and match the raw value from the instrument directly
+        try:
+            return self._get_mapping[val]
+        except KeyError:
+            pass
+
+        # If there is no match, we can try to convert the parameter into a numeric
+        # value
+        try:
+            val = int(val)
+            return self._get_mapping[val]
+        except (ValueError, KeyError):
+            raise KeyError("Unmapped value from instrument: {!r}".format(val))
 
     def _set_get(self, get_cmd, get_parser):
         exec_str = self._instrument.ask if self._instrument else None
