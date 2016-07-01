@@ -36,7 +36,6 @@ to use. Normal text the container includes and uses this object.
 
 Station
 -------
-.. autoclass:: qcodes.station.Station
 
 Read more about :doc:`station`.
 

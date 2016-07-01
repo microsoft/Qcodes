@@ -3,7 +3,7 @@
 .. currentmodule:: qcodes
 
 Private
-======
+=======
 
 Classes and Functions
 ----------------------
