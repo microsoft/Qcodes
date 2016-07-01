@@ -147,6 +147,8 @@ class MercuryiPS(IPInstrument):
                                set_cmd=partial(self._set_fld, ax, 'RCST'),
                                units='T/m')
 
+            self.connect_message()
+
     def hold(self):
         for ax in self.axes:
             self.parameters[ax.lower() + '_ACTN'].set('HOLD')
@@ -158,11 +160,6 @@ class MercuryiPS(IPInstrument):
     def to_zero(self):
         for ax in self.axes:
             self.parameters[ax.lower() + '_ACTN'].set('RTOZ')
-
-    def _ACTN(self):
-        actn = self._read_cmd('ACTN', self.axes,
-                              fmt='READ:DEV:GRP{}:PSU:ACTN?')
-        return actn
 
     def _ramp_to_setpoint(self, ax, cmd, setpoint):
         self._set_fld(ax, cmd, setpoint)

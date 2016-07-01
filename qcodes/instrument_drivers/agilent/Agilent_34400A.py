@@ -66,6 +66,7 @@ class Agilent_34400A(VisaInstrument):
                            set_cmd='VOLT:DC:RES {:f}',
                            # vals=Enum(0.02,0.2,1,10,100),
                            units='NPLC',
+                           # TODO: does this work for get?
                            val_mapping={0.02: 0.0001,
                                         0.2:  0.00001,
                                         1:    0.000003,
@@ -75,12 +76,9 @@ class Agilent_34400A(VisaInstrument):
                            get_cmd='ROUT:TERM?')
         self.add_parameter('range_auto',
                            get_cmd='VOLT:RANG:AUTO?',
-                           get_parser=self._onoff_parser,
                            set_cmd='VOLT:RANG:AUTO {:d}',
-                           val_mapping={'ON': 1,
-                                        'OFF': 0,
-                                        1: 1,
-                                        0: 0})
+                           val_mapping={'on': 1,
+                                        'off': 0})
         self.add_parameter('range',
                            get_cmd='SENS:VOLT:DC:RANG?',
                            get_parser=float,
@@ -101,6 +99,8 @@ class Agilent_34400A(VisaInstrument):
                                get_cmd='DISP:WIND2:TEXT?',
                                set_cmd='DISP:WIND2:TEXT "{}"',
                                vals=Strings())
+
+        self.connect_message()
 
     def clear_errors(self):
         while True:
@@ -126,11 +126,3 @@ class Agilent_34400A(VisaInstrument):
 
     def reset(self):
         self.write('*RST')
-
-    def _onoff_parser(self, msg):
-        # TODO: after #139 is merged, this parser is unnecessary
-        if msg == '0':
-            return 'OFF'
-        elif msg == '1':
-            return 'ON'
-        return None

@@ -29,16 +29,12 @@ class Keithley_2600(VisaInstrument):
                            units='A')
         self.add_parameter('mode',
                            get_cmd='source.func',
-                           get_parser=self._mode_parser,
                            set_cmd='source.func={:d}',
-                           val_mapping={'current': 0, 'curr': 0, 'AMPS': 0,
-                                        'voltage': 1, 'volt': 1, 'VOLT': 1})
+                           val_mapping={'current': 0, 'voltage': 1})
         self.add_parameter('output',
                            get_cmd='source.output',
-                           get_parser=self._output_parser,
                            set_cmd='source.output={:d}',
-                           val_mapping={'on':  1, 'ON':  1,
-                                        'off': 0, 'OFF': 0})
+                           val_mapping={'on':  1, 'off': 0})
         # Source range
         # needs get after set
         self.add_parameter('rangev',
@@ -66,8 +62,10 @@ class Keithley_2600(VisaInstrument):
                            set_cmd='source.limiti={:.4f}',
                            units='A')
 
+        self.connect_message()
+
     def get_idn(self):
-        IDN = self.ask_direct('*IDN?')
+        IDN = self.ask_raw('*IDN?')
         vendor, model, serial, firmware = map(str.strip, IDN.split(','))
         model = model[6:]
 
@@ -75,29 +73,11 @@ class Keithley_2600(VisaInstrument):
                'serial': serial, 'firmware': firmware}
         return IDN
 
-    def _mode_parser(self, msg):
-        if msg[0] == '0':
-            return 'current'
-        elif msg[0] == '1':
-            return 'voltage'
-        return None
-
-    def _output_parser(self, msg):
-        if msg[0] == '0':
-            return 'OFF'
-        elif msg[0] == '1':
-            return 'ON'
-        return None
-
     def reset(self):
         self.write('reset()')
 
-    def ask_direct(self, cmd):
-        return self.visa_handle.ask(cmd)
-
     def ask(self, cmd):
-        return self.visa_handle.ask('print(smu{:s}.{:s})'.format(self._channel,
-                                                                 cmd))
+        return super().ask('print(smu{:s}.{:s})'.format(self._channel, cmd))
 
     def write(self, cmd):
         super().write('smu{:s}.{:s}'.format(self._channel, cmd))

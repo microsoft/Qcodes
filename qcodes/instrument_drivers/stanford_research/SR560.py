@@ -1,6 +1,6 @@
 from qcodes import Instrument
 from qcodes.instrument.parameter import ManualParameter
-from qcodes.utils.validators import Bool, Anything, Numbers
+from qcodes.utils.validators import Bool, Numbers
 
 from qcodes.instrument.parameter import Parameter
 
@@ -36,44 +36,43 @@ class VoltageParameter(Parameter):
 
 class SR560(Instrument):
     """
-    dmm_parameter: The parameter used to measure the voltage output
+    This is the qcodes driver for the SR 560 Voltage-preamplifier.
 
-    This is the qcodes driver for the SR 560 Voltage-preamplifier,
     This is a virtual driver only and will not talk to your instrument.
     """
-    def __init__(self, name, dmm_parameter=None, **kwargs):
+    def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
-        self.dmm_parameter = dmm_parameter
 
+        # TODO: are these Numbers() OK?
+        # Can we be more specific with the ranges?
         self.add_parameter('cutoff_lo',
                            parameter_class=ManualParameter,
                            initial_value='DC',
                            label='High pass',
                            units='Hz',
-                           vals=Anything())
+                           vals=Numbers(min_value=0))
 
         self.add_parameter('cutoff_hi',
                            parameter_class=ManualParameter,
                            initial_value='1e6',
                            label='Low pass',
                            units='Hz',
-                           vals=Anything())
+                           vals=Numbers(min_value=0))
 
         self.add_parameter('invert',
                            parameter_class=ManualParameter,
                            initial_value=True,
-                           label='Iverted output',
+                           label='Inverted output',
                            vals=Bool())
 
         self.add_parameter('gain',
                            parameter_class=ManualParameter,
                            initial_value=10,
-                           label='gain',
+                           label='Gain',
                            units=None,
-                           vals=Numbers())
+                           vals=Numbers(min_value=0))
 
     def get_idn(self):
-
         vendor = 'Stanford Research Systems'
         model = 'SR560'
         serial = None

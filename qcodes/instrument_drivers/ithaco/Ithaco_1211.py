@@ -56,13 +56,13 @@ class Ithaco_1211(Instrument):
         self.add_parameter('invert',
                            parameter_class=ManualParameter,
                            initial_value=True,
-                           label='Iverted output',
+                           label='Inverted output',
                            vals=Bool())
 
         self.add_parameter('sens_factor',
                            parameter_class=ManualParameter,
                            initial_value=1,
-                           label='sensitivity factor',
+                           label='Sensitivity factor',
                            units=None,
                            vals=Enum(0.1, 1, 10))
 
@@ -83,7 +83,6 @@ class Ithaco_1211(Instrument):
                                      100, 300, 1000))
 
     def get_idn(self):
-
         vendor = 'Ithaco (DL Instruments)'
         model = '1211'
         serial = None
