@@ -8,7 +8,7 @@ from qcodes.utils.validators import Enum, Anything
 
 
 class MercuryiPS(IPInstrument):
-    '''
+    """
     MercuryiPS Driver
 
     This is the qcodes driver for the Oxford MercuryiPS magnet power supply.
@@ -20,7 +20,7 @@ class MercuryiPS(IPInstrument):
         - make ATOB a parameter, and move all possible to use
           _read_cmd, _write_cmd
         - this findall stuff in _get_cmd, is that smart?
-    '''
+    """
     # def __init__(self, name, axes=None, **kwargs):
     #     super().__init__(name, terminator='\n', **kwargs)
     def __init__(self, name, address=None, port=None, axes=None, **kwargs):
@@ -165,25 +165,18 @@ class MercuryiPS(IPInstrument):
         return actn
 
     def _ramp_to_setpoint(self, ax, cmd, setpoint):
-        # if cmd is 'CSET':
-        #     self._set_fld(ax, cmd, setpoint)
-        # elif cmd is 'FSET':
-        #     self._set_fld(ax, cmd, setpoint)
         self._set_fld(ax, cmd, setpoint)
-        msg = ''
-        # print(ax, cmd, setpoint)
-        # time.sleep(1)
+        # TODO: why was self.rtos() commented out in favor of
+        # the explicit loop?
         # self.rtos()
         for axis in ax:
             msg = 'SET:DEV:GRP{}:PSU:ACTN:RTOS'.format(axis)
             self.write(msg)
-        # self.ask('')
 
     def _ramp_to_setpoint_and_wait(self, ax, cmd, setpoint):
         error = 0.2e-3
-        fldc = getattr(self, ax.lower()+'_fldC')
+        fldc = self.parameters[ax.lower()+'_fldC']
         fldc.set(setpoint)
-        # self._ramp_to_setpoint(ax, cmd, setpoint)
 
         while abs(fldc.get() - setpoint) > error:
             time.sleep(0.5)
@@ -200,16 +193,11 @@ class MercuryiPS(IPInstrument):
             setpoint = [setpoint]
         if cmd in ['CSET', 'RCST', 'CURR', 'PCUR', 'RCUR']:
             setpoint = np.array(self._ATOB) * np.array(setpoint)
-            # print('a', setpoint)
 
         if len(ax) == 1:
-            # print('b', self.axes.index(ax))
             setpoint = setpoint[self.axes.index(ax)]
-            # print('c', setpoint)
 
-        # print('d', ax, cmd, setpoint)
         msg = 'SET:DEV:GRP{}:PSU:SIG:{}:{:6f}'
-        # print('e', msg)
         self._write_cmd(cmd, ax, setpoint, msg)
 
     def _get_fld(self, ax, cmd):
@@ -222,7 +210,6 @@ class MercuryiPS(IPInstrument):
         if cmd in ['CSET', 'RCST', 'CURR', 'PCUR', 'RCUR']:
             fld = np.array(fld) / np.array(self._ATOB)
 
-        # print(ax, cmd, fld)
         if len(ax) == 1:
             return fld[self.axes.index(ax)]
         return list(fld)
@@ -323,16 +310,12 @@ class MercuryiPS(IPInstrument):
                     if not (None in data):
                         return data
             rep = self._recv()
-        # print(data)
 
     def _get_cmd(self, question, parser=None):
-        # print(question)
         rep = self.ask(question)
-        # print(rep)
-        # print()
         self._latest_response = rep
         msg = rep[len(question):]
-        # How would one macth this without specifying the units?
+        # How would one match this without specifying the units?
         # m = re.match('STAT:DEV:GRPX:PSU:SIG:RFST:(.+?)T/m',
         #              'STAT:DEV:GRPX:PSU:SIG:RFST:0.0200T/m')
         # m.groups()[0]
@@ -340,7 +323,6 @@ class MercuryiPS(IPInstrument):
             try:
                 return(float(re.findall("[-+]?\d*\.\d+|\d+", msg)[0]))
             except:
-                # print(msg)
                 return None
         return msg.strip()
 
@@ -349,23 +331,6 @@ class MercuryiPS(IPInstrument):
         self._latest_response = rep
         if 'INVALID' in rep:
             print('warning', msg, rep)
-
-    # def ask(self, msg):
-    #     mc = msg.count(self._terminator)
-    #     rep = super().ask(msg)
-    #     for i in range(20):
-    #         # print(rep)
-    #         if not rep.startswith(':INVALID'):
-    #             for n in range(mc):
-    #                 rep2 = super().ask('')
-    #                 if 'INVALID' in rep2:
-    #                     break
-    #                 rep += self._terminator
-    #                 rep += rep2
-    #             break
-    #         rep = super().ask('')
-
-    #     return rep
 
     def _spheretocart(self, sphere):
         """
