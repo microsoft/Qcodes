@@ -34,7 +34,7 @@ class VoltageParameter(Parameter):
         return (volt, volt_amp)
 
 
-class SR_560(Instrument):
+class SR560(Instrument):
     """
     dmm_parameter: The parameter used to measure the voltage output
 
