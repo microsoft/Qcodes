@@ -22,9 +22,8 @@ script:
 after_success:
     # codecov
     - cd qcodes
-    - echo $PWD
     - coverage xml
     - python-codacy-coverage -r coverage.xml
-    # build the docs
-    - ls
+    # build the docs, one dir up
+    - cd ../ 
     - make -f docs/Makefile gh-pages
