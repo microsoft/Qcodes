@@ -47,7 +47,7 @@ from qcodes.utils.helpers import (permissive_range, wait_secs, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.command import Command, NoCommandError
-from qcodes.utils.validators import Validator, Numbers, Ints, Enum
+from qcodes.utils.validators import Validator, Numbers, Ints, Enum, Anything
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
 
@@ -168,6 +168,7 @@ class Parameter(Metadatable, DeferredOperations):
             self.labels = names if labels is None else names
             self.units = units if units is not None else [''] * len(names)
 
+            self.set_validator(vals or Anything())
             self.__doc__ = os.linesep.join((
                 'Parameter class:',
                 '* `names` %s' % ', '.join(self.names),
