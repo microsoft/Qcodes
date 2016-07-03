@@ -3,6 +3,7 @@ from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils.validators import Enum, Bool
 
+
 class CurrentParameter(Parameter):
     def __init__(self, measured_param, camp_ins, name=None):
         p_name = measured_param.name
@@ -38,14 +39,12 @@ class CurrentParameter(Parameter):
 
 class Ithaco_1211(Instrument):
     """
-    dmm_parameter: The parameter used to measure the voltage output
+    This is the qcodes driver for the Ithaco 1211 Current-preamplifier.
 
-    This is the qcodes driver for the Ithaco 1211 Current-preamplifier,
     This is a virtual driver only and will not talk to your instrument.
     """
-    def __init__(self, name, dmm_parameter=None, **kwargs):
+    def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
-        self.dmm_parameter = dmm_parameter
 
         self.add_parameter('sens',
                            parameter_class=ManualParameter,
