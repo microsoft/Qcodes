@@ -155,6 +155,10 @@ class Parameter(Metadatable, DeferredOperations):
         self.has_set = False
         self._meta_attrs = ['setpoint_names', 'setpoint_labels']
 
+        # always let the parameter have a single name (in fact, require this!)
+        # even if it has names too
+        self.name = str(name)
+
         if names is not None:
             # check for names first - that way you can provide both name
             # AND names for instrument parameters - name is how you get the
@@ -172,7 +176,6 @@ class Parameter(Metadatable, DeferredOperations):
             self._meta_attrs.extend(['names', 'labels', 'units'])
 
         elif name is not None:
-            self.name = name
             self.label = name if label is None else label
             self.units = units if units is not None else ''
 

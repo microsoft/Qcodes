@@ -32,17 +32,16 @@ class TestParamConstructor(TestCase):
         names = ['H1', 'L1']
         p = Parameter(names=names)
         self.assertEqual(p.names, names)
-        self.assertFalse(hasattr(p, 'name'))
+        # if you don't provide a name, it's called 'None'
+        # TODO: we should probably require an explicit name.
+        self.assertEqual(p.name, 'None')
 
         # or both, that's OK too.
         names = ['Peter', 'Paul', 'Mary']
         p = Parameter(name='complex', names=names)
         self.assertEqual(p.names, names)
-        # TODO: below seems wrong actually - we should let a parameter have
-        # a simple name even if it has a names array. But then we need to
-        # check everywhere this is used, and make sure everyone who cares
-        # about it looks for names first.
-        self.assertFalse(hasattr(p, 'name'))
+        # You can always have a name along with names
+        self.assertEqual(p.name, 'complex')
 
         shape = (10,)
         setpoints = (range(10),)
