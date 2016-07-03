@@ -26,14 +26,18 @@ class MatPlot(BasePlot):
         plt.subplots. default is a single simple subplot (1, 1)
         you can use this to pass kwargs to the plt.figure constructor
 
+    num: integer or None
+        specifies the index of the matplotlib figure window to use. If None
+        then open a new window
+
     kwargs: passed along to MatPlot.add() to add the first data trace
     '''
-    def __init__(self, *args, figsize=None, interval=1, subplots=None,
+    def __init__(self, *args, figsize=None, interval=1, subplots=None, num=None,
                  **kwargs):
 
         super().__init__(interval)
 
-        self._init_plot(subplots, figsize)
+        self._init_plot(subplots, figsize, num=num)
 
         if args or kwargs:
             self.add(*args, **kwargs)

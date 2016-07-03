@@ -41,6 +41,8 @@ class TestMockInstLoop(TestCase):
 
         c1 = self.gates.chan1
         self.loop = Loop(c1[1:5:1], 0.001).each(c1)
+        self.loop_progress = Loop(c1[1:5:1], 0.001,
+                                  progress_interval=1).each(c1)
 
         self.assertFalse(self.io.list(self.location))
         self.assertFalse(self.io.list(self.location2))
@@ -57,12 +59,12 @@ class TestMockInstLoop(TestCase):
 
     def check_empty_data(self, data):
         expected = repr([float('nan')] * 4)
-        self.assertEqual(repr(data.chan1.tolist()), expected)
-        self.assertEqual(repr(data.chan1_set.tolist()), expected)
+        self.assertEqual(repr(data.gates_chan1.tolist()), expected)
+        self.assertEqual(repr(data.gates_chan1_set.tolist()), expected)
 
     def check_loop_data(self, data):
-        self.assertEqual(data.chan1.tolist(), [1, 2, 3, 4])
-        self.assertEqual(data.chan1_set.tolist(), [1, 2, 3, 4])
+        self.assertEqual(data.gates_chan1.tolist(), [1, 2, 3, 4])
+        self.assertEqual(data.gates_chan1_set.tolist(), [1, 2, 3, 4])
 
         self.assertTrue(self.io.list(self.location))
 
@@ -101,6 +103,33 @@ class TestMockInstLoop(TestCase):
 
         self.check_loop_data(data)
 
+    def test_foreground_no_datamanager_progress(self):
+        data = self.loop_progress.run(location=self.location, background=False,
+                                      data_manager=False, quiet=True)
+        self.assertFalse(hasattr(self.loop, 'process'))
+
+        self.check_loop_data(data)
+
+    @patch('qcodes.loops.tprint')
+    def test_progress_calls(self, tprint_mock):
+        data = self.loop_progress.run(location=self.location, background=False,
+                                      data_manager=False, quiet=True)
+        self.assertFalse(hasattr(self.loop, 'process'))
+
+        self.check_loop_data(data)
+        expected_calls = len(self.loop_progress.sweep_values) + 1
+        self.assertEqual(tprint_mock.call_count, expected_calls)
+
+        # now run again with no progress interval and check that we get no
+        # additional calls
+        data = self.loop_progress.run(location=False, background=False,
+                                      data_manager=False, quiet=True,
+                                      progress_interval=None)
+        self.assertFalse(hasattr(self.loop, 'process'))
+
+        self.check_loop_data(data)
+        self.assertEqual(tprint_mock.call_count, expected_calls)
+
     def test_foreground_no_datamanager(self):
         data = self.loop.run(location=self.location, background=False,
                              data_manager=False, quiet=True)
@@ -120,13 +149,13 @@ class TestMockInstLoop(TestCase):
 
         data1.sync()
         data2.sync()
-        self.assertEqual(data1.chan1.tolist(), [1, 2, 3, 4])
-        for v in data2.chan1:
+        self.assertEqual(data1.gates_chan1.tolist(), [1, 2, 3, 4])
+        for v in data2.gates_chan1:
             self.assertTrue(np.isnan(v))
 
         loop.process.join()
         data2.sync()
-        self.assertEqual(data2.chan1.tolist(), [1, 2, 3, 4])
+        self.assertEqual(data2.gates_chan1.tolist(), [1, 2, 3, 4])
 
         # and while we're here, check that running a loop in the
         # foreground *after* the background clears its .process
@@ -194,12 +223,12 @@ class MultiGetter(Parameter):
         if len(kwargs) == 1:
             name, self._return = list(kwargs.items())[0]
             super().__init__(name=name)
-            self.size = np.shape(self._return)
+            self.shape = np.shape(self._return)
         else:
             names = tuple(sorted(kwargs.keys()))
             super().__init__(names=names)
             self._return = tuple(kwargs[k] for k in names)
-            self.sizes = tuple(np.shape(v) for v in self._return)
+            self.shapes = tuple(np.shape(v) for v in self._return)
 
     def get(self):
         return self._return
@@ -231,23 +260,63 @@ class TestLoop(TestCase):
         self.assertEqual(data.p2.tolist(), [[[3, 3], [4, 4]]] * 2)
         self.assertEqual(data.p3.tolist(), [[[5, 6]] * 2] * 2)
 
+    def test_repr(self):
+        loop2 = Loop(self.p2[3:5:1], 0.001).each(self.p2)
+        loop = Loop(self.p1[1:3:1], 0.001).each(self.p3,
+                                                self.p2,
+                                                loop2,
+                                                self.p1)
+        active_loop = loop
+        data = active_loop.run_temp()
+        expected = ('DataSet:\n'
+                    '   mode     = DataMode.LOCAL\n'
+                    '   location = False\n'
+                    '   <Type>   | <array_id> | <array.name> | <array.shape>\n'
+                    '   Setpoint | p1_set     | p1           | (2,)\n'
+                    '   Measured | p3         | p3           | (2,)\n'
+                    '   Measured | p2_1       | p2           | (2,)\n'
+                    '   Setpoint | p2_set     | p2           | (2, 2)\n'
+                    '   Measured | p2_2_0     | p2           | (2, 2)\n'
+                    '   Measured | p1         | p1           | (2,)')
+        self.assertEqual(data.__repr__(), expected)
+
     def test_default_measurement(self):
         self.p2.set(4)
         self.p3.set(5)
 
         data = Loop(self.p1[1:3:1], 0.001).run_temp()
 
-        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.p2.tolist(), [4, 4])
         self.assertEqual(data.p3.tolist(), [5, 5])
 
         data = Loop(self.p1[1:3:1], 0.001).each(
             Loop(self.p2[3:5:1], 0.001)).run_temp()
 
-        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.p2.tolist(), [[3, 4], [3, 4]])
         self.assertEqual(data.p2_set.tolist(), [[3, 4], [3, 4]])
         self.assertEqual(data.p3.tolist(), [[5, 5]] * 2)
+
+    def test_tasks_callable_arguments(self):
+        data = Loop(self.p1[1:3:1], 0.01).each(
+            Task(self.p2.set, self.p1),
+            Task(self.p3.set, self.p1.get),
+            self.p2, self.p3).run_temp()
+
+        self.assertEqual(data.p2.tolist(), [1, 2])
+        self.assertEqual(data.p3.tolist(), [1, 2])
+
+        def test_func(*args, **kwargs):
+            self.assertEqual(args, (1, 2))
+            self.assertEqual(kwargs, {'a_kwarg': 4})
+
+        data = Loop(self.p1[1:2:1], 0.01).each(
+            Task(self.p2.set, self.p1 * 2),
+            Task(test_func, self.p1, self.p1 * 2, a_kwarg=self.p1 * 4),
+            self.p2, self.p3).run_temp()
+
+        self.assertEqual(data.p2.tolist(), [2])
 
     def test_tasks_waits(self):
         delay0 = 0.01
@@ -269,7 +338,7 @@ class TestLoop(TestCase):
 
         self.assertFalse(hasattr(loop, 'process'))
 
-        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.p2_2.tolist(), [-1, -1])
         self.assertEqual(data.p2_4.tolist(), [1, 1])
 
@@ -288,7 +357,7 @@ class TestLoop(TestCase):
         self.assertEqual(loop.delay, 0)
 
         data = loop.run_temp()
-        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.p2.tolist(), [3, 3])
 
         self.assertEqual(sleep_mock.call_count, 0)
@@ -313,16 +382,16 @@ class TestLoop(TestCase):
         self.assertLessEqual(delay, 0.06)
 
     def test_composite_params(self):
-        # this one has names and sizes
+        # this one has names and shapes
         mg = MultiGetter(one=1, onetwo=(1, 2))
         self.assertTrue(hasattr(mg, 'names'))
-        self.assertTrue(hasattr(mg, 'sizes'))
+        self.assertTrue(hasattr(mg, 'shapes'))
         self.assertFalse(hasattr(mg, 'name'))
-        self.assertFalse(hasattr(mg, 'size'))
+        self.assertFalse(hasattr(mg, 'shape'))
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
         data = loop.run_temp()
 
-        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.one.tolist(), [1, 1])
         self.assertEqual(data.onetwo.tolist(), [[1, 2]] * 2)
         self.assertEqual(data.index0.tolist(), [[0, 1]] * 2)
@@ -369,33 +438,24 @@ class TestLoop(TestCase):
         with self.assertRaises(ValueError):
             loop.run_temp()
 
-        # this one has name and size
+        # this one has name and shape
         mg = MultiGetter(arr=(4, 5, 6))
         self.assertTrue(hasattr(mg, 'name'))
-        self.assertTrue(hasattr(mg, 'size'))
+        self.assertTrue(hasattr(mg, 'shape'))
         self.assertFalse(hasattr(mg, 'names'))
-        self.assertFalse(hasattr(mg, 'sizes'))
+        self.assertFalse(hasattr(mg, 'shapes'))
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
         data = loop.run_temp()
 
-        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.arr.tolist(), [[4, 5, 6]] * 2)
         self.assertEqual(data.index0.tolist(), [[0, 1, 2]] * 2)
 
-        # alternate form for 1D size, just an integer
-        mg.size = mg.size[0]
-        loop = Loop(self.p1[1:3:1], 0.001).each(mg)
-        data = loop.run_temp()
-
-        self.assertEqual(data.p1.tolist(), [1, 2])
-        self.assertEqual(data.arr.tolist(), [[4, 5, 6]] * 2)
-
-        # 2D size
         mg = MultiGetter(arr2d=((21, 22), (23, 24)))
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
         data = loop.run_temp()
 
-        self.assertEqual(data.p1.tolist(), [1, 2])
+        self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.arr2d.tolist(), [[[21, 22], [23, 24]]] * 2)
         self.assertEqual(data.index0.tolist(), [[0, 1]] * 2)
         self.assertEqual(data.index1.tolist(), [[[0, 1]] * 2] * 2)

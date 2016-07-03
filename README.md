@@ -1,4 +1,4 @@
-# Qcodes
+# Qcodes [![Build Status](https://travis-ci.com/qdev-dk/Qcodes.svg?token=H7MjHi74teZgv8JHTYhx&branch=master)](https://travis-ci.com/qdev-dk/Qcodes) [![codecov](https://codecov.io/gh/qdev-dk/Qcodes/branch/master/graph/badge.svg?token=KpReTu1pN0)](https://codecov.io/gh/qdev-dk/Qcodes)
 
 Qcodes is a Python-based data acquisition framework developed by the Copenhagen / Delft / Sydney / Microsoft quantum computing consortium. While it has been developed to serve the needs of nanoelectronic device experiments, it is not inherently limited to such experiments, and can be used anywhere a system with many degrees of freedom is controllable by computer.
 
@@ -43,15 +43,28 @@ If you registered Qcodes with Python via `setup.py develop`, all you need to do 
 
 ## Usage
 
-See the [docs](docs) directory, particularly the notebooks in [docs/examples](docs/examples)
+Read the [docs](http://qdev-dk.github.io/Qcodes) and the notebooks in [docs/examples](docs/examples)
 
-For frequently asked questions see the [Qcodes FAQ](docs/FAQ.md).
 
 ## Contributing
 
-See [Contributing](CONTRIBUTING.md) for information about bug/issue reports, contributing code, style, and testing
+See [Contributing](CONTRIBUTING.rst) for information about bug/issue reports, contributing code, style, and testing
+See the [Roadmap](http://qdev-dk.github.io/Qcodes/roadmap.html) an overview of where the project intends to go.
 
-See the [Roadmap](ROADMAP.md) an overview of where the project intends to go.
+
+## Docs
+
+We use sphinx for documentations, makefiles are provied boht for Windows, and *nix.
+Go to the directory  `docs` and
+
+```
+make html
+```
+
+This generate a webpage, index.html,  in  `docs/_build/html` with the rendered html.
+
+Documentation is updated on every successful build.
+
 
 ## License
 

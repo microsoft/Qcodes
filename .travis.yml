@@ -1,0 +1,30 @@
+language: python
+notifications:
+  email: false
+    # send all notifcations to slack
+  slack: qcodes:tNlhSminOHdt2fZf6x6hyT24
+
+python:
+  - "3.4"
+  # whitelist
+branches:
+  only:
+    - master
+# command to install dependencies
+install:
+    - pip install --upgrade pip
+    - pip install ipython
+    - pip install -r develop_requirements.txt
+    - python setup.py develop
+# command to run tests
+script: 
+    - python  qcodes/test.py -c
+after_success:
+    # codecov
+    - cd qcodes
+    - echo $PWD
+    - coverage xml
+    - python-codacy-coverage -r coverage.xml
+    # build the docs
+    - ls
+    - make -f docs/Makefile gh-pages

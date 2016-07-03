@@ -8,7 +8,7 @@ import numpy as np
 from qcodes.utils.helpers import (is_sequence, permissive_range, wait_secs,
                                   make_unique, DelegateAttributes,
                                   LogCapture, strip_attrs, full_class,
-                                  named_repr, make_sweep)
+                                  named_repr, make_sweep, is_sequence_of)
 from qcodes.utils.deferred_operations import is_function
 
 
@@ -106,43 +106,44 @@ class TestIsSequence(TestCase):
         pass
 
     def test_yes(self):
-        f = open(__file__, 'r')
         yes_sequence = [
             [],
             [1, 2, 3],
             range(5),
+            (),
+            ('lions', 'tigers', 'bears'),
 
             # we do have to be careful about generators...
             # ie don't call len() or iterate twice
             (i**2 for i in range(5)),
-
-            # and some possibly useless or confusing matches
-            # that we might want to rule out:
-            set((1, 2, 3)),
-            {1: 2, 3: 4},
-            f
         ]
 
         for val in yes_sequence:
-            self.assertTrue(is_sequence(val))
-
-        f.close()
+            with self.subTest(val=val):
+                self.assertTrue(is_sequence(val))
 
     def test_no(self):
-        no_sequence = [
-            1,
-            1.0,
-            True,
-            None,
-            'you can iterate a string but we won\'t',
-            b'nor will we iterate bytes',
-            self.a_func,
-            self.AClass,
-            self.AClass()
-        ]
+        with open(__file__, 'r') as f:
+            no_sequence = [
+                1,
+                1.0,
+                True,
+                None,
+                'you can iterate a string but we won\'t',
+                b'nor will we iterate bytes',
+                self.a_func,
+                self.AClass,
+                self.AClass(),
+                # previously dicts, sets, and files all returned True, but
+                # we've eliminated them now.
+                {1: 2, 3: 4},
+                set((1, 2, 3)),
+                f
+            ]
 
-        for val in no_sequence:
-            self.assertFalse(is_sequence(val))
+            for val in no_sequence:
+                with self.subTest(val=val):
+                    self.assertFalse(is_sequence(val))
 
 
 class TestPermissiveRange(TestCase):
@@ -185,10 +186,10 @@ class TestPermissiveRange(TestCase):
 class TestMakeSweep(TestCase):
     def test_good_calls(self):
         swp = make_sweep(1, 3, num=6)
-        self.assertEqual(list(swp), [1, 1.4, 1.8, 2.2, 2.6, 3])
+        self.assertEqual(swp, [1, 1.4, 1.8, 2.2, 2.6, 3])
 
         swp = make_sweep(1, 3, step=0.5)
-        self.assertEqual(list(swp), [1, 1.5, 2, 2.5, 3])
+        self.assertEqual(swp, [1, 1.5, 2, 2.5, 3])
 
         # with step, test a lot of combinations with weird fractions
         # to make sure we don't fail on a rounding error
@@ -492,3 +493,58 @@ class TestClassStrings(TestCase):
         self.j.name = 'Peppa'
         self.assertEqual(named_repr(self.j),
                          '<json.encoder.JSONEncoder: Peppa at {}>'.format(id_))
+
+
+class TestIsSequenceOf(TestCase):
+    def test_simple(self):
+        good = [
+            # empty lists pass without even checking that we provided a
+            # valid type spec
+            ([], None), ((), None),
+            ([1, 2, 3], int),
+            ((1, 2, 3), int),
+            ([1, 2.0], (int, float)),
+            ([{}, None], (type(None), dict))
+        ]
+        for args in good:
+            with self.subTest(args=args):
+                self.assertTrue(is_sequence_of(*args))
+
+        bad = [
+            (1, int),
+            ([1, 2.0], int),
+            ([1, 2], float),
+            ([1, 2], (float, dict))
+        ]
+        for args in bad:
+            with self.subTest(args=args):
+                self.assertFalse(is_sequence_of(*args))
+
+        # second arg must be a type or tuple of types - failing this doesn't
+        # return False, it raises an error
+        with self.assertRaises(TypeError):
+            is_sequence_of([1], 1)
+        with self.assertRaises(TypeError):
+            is_sequence_of([1], (1, 2))
+        with self.assertRaises(TypeError):
+            is_sequence_of([1])
+
+    def test_depth(self):
+        good = [
+            ([1, 2], int, 1),
+            ([[1, 2], [3, 4]], int, 2),
+            ([[1, 2.0], []], (int, float), 2),
+            ([[[1]]], int, 3)
+        ]
+        for args in good:
+            with self.subTest(args=args):
+                self.assertTrue(is_sequence_of(*args))
+
+        bad = [
+            ([1], int, 2),
+            ([[1]], int, 1),
+            ([[1]], float, 2)
+        ]
+        for args in bad:
+            with self.subTest(args=args):
+                self.assertFalse(is_sequence_of(*args))

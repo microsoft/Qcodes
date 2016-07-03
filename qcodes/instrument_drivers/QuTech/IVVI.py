@@ -55,15 +55,13 @@ class IVVI(VisaInstrument):
             raise ValueError('numdacs must be a positive multiple of 4, '
                              'not {}'.format(numdacs))
 
-        self.pol_num = np.zeros(self._numdacs)  # corresponds to POS polarity
-        self.set_pol_dacrack('BIP', range(self._numdacs))
-
         # values based on descriptor
         self.visa_handle.baud_rate = 115200
         self.visa_handle.parity = visa.constants.Parity(1)  # odd parity
 
         self.add_parameter('version',
                            get_cmd=self._get_version)
+        
         self.add_parameter('dac voltages',
                            label='Dac voltages',
                            get_cmd=self._get_dacs)
@@ -83,6 +81,10 @@ class IVVI(VisaInstrument):
 
         self._update_time = 5  # seconds
         self._time_last_update = 0  # ensures first call will always update
+        
+        self.pol_num = np.zeros(self._numdacs)  # corresponds to POS polarity
+        self.set_pol_dacrack('BIP', range(self._numdacs), get_all=False)
+
         t1 = time.time()
 
         # basic test to confirm we are properly connected
@@ -93,6 +95,15 @@ class IVVI(VisaInstrument):
             print(traceback.format_exc())
 
         print('Initialized IVVI-rack in %.2fs' % (t1-t0))
+
+    def get_idn(self):
+        """
+        Overwrites the get_idn function using constants as the hardware
+        does not have a proper *IDN function.
+        """
+        idparts = ['QuTech', 'IVVI', 'None', self.version()]
+
+        return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
     def _get_version(self):
         mes = self.ask(bytes([3, 4]))
@@ -263,14 +274,14 @@ class IVVI(VisaInstrument):
         #     raise Exception('IVVI rack exception "%s"' % mes[1])
         return mes
 
-    def set_pol_dacrack(self, flag, channels, getall=True):
+    def set_pol_dacrack(self, flag, channels, get_all=True):
         '''
         Changes the polarity of the specified set of dacs
 
         Input:
             flag (string) : 'BIP', 'POS' or 'NEG'
             channel (int) : 0 based index of the rack
-            getall (boolean): if True (default) perform a get_all
+            get_all (boolean): if True (default) perform a get_all
 
         Output:
             None
@@ -284,7 +295,7 @@ class IVVI(VisaInstrument):
             self.pol_num[ch-1] = val
             # self.set_parameter_bounds('dac%d' % (i+1), val, val + self.Fullrange.0)
 
-        if getall:
+        if get_all:
             self.get_all()
 
     def get_pol_dac(self, channel):
@@ -317,7 +328,6 @@ class IVVI(VisaInstrument):
         def get_func():
             return fun(ch)
         return get_func
-
 
 '''
 RS232 PROTOCOL

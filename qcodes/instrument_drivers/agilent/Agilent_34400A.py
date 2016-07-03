@@ -1,33 +1,9 @@
-# Agilent_34401A.py driver for Agilent 34401A DMM
-#
-# The MIT License (MIT)
-# Copyright (c) 2016 Merlin von Soosten <merlin.von.soosten@gmail.com>
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in theSoftware without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-
-
-from qcodes.utils.validators import Enum, Strings, Anything
+from qcodes.utils.validators import Enum, Strings
 from qcodes import VisaInstrument
 
 
 class Agilent_34400A(VisaInstrument):
-    '''
+    """
     This is the qcodes driver for the Agilent_34400A DMM Series,
     tested with Agilent_34401A
 
@@ -38,7 +14,7 @@ class Agilent_34400A(VisaInstrument):
         - Need a clear_cmd thing in the parameter
         - Add labels
 
-    '''
+    """
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, terminator='\n', **kwargs)
 
@@ -90,6 +66,7 @@ class Agilent_34400A(VisaInstrument):
                            set_cmd='VOLT:DC:RES {:f}',
                            # vals=Enum(0.02,0.2,1,10,100),
                            units='NPLC',
+                           # TODO: does this work for get?
                            val_mapping={0.02: 0.0001,
                                         0.2:  0.00001,
                                         1:    0.000003,
@@ -99,12 +76,9 @@ class Agilent_34400A(VisaInstrument):
                            get_cmd='ROUT:TERM?')
         self.add_parameter('range_auto',
                            get_cmd='VOLT:RANG:AUTO?',
-                           get_parser=self._onoff_parser,
                            set_cmd='VOLT:RANG:AUTO {:d}',
-                           val_mapping={'ON': 1,
-                                        'OFF': 0,
-                                        1: 1,
-                                        0: 0})
+                           val_mapping={'on': 1,
+                                        'off': 0})
         self.add_parameter('range',
                            get_cmd='SENS:VOLT:DC:RANG?',
                            get_parser=float,
@@ -126,6 +100,8 @@ class Agilent_34400A(VisaInstrument):
                                set_cmd='DISP:WIND2:TEXT "{}"',
                                vals=Strings())
 
+        self.connect_message()
+
     def clear_errors(self):
         while True:
             err = self.ask('SYST:ERR?')
@@ -138,20 +114,15 @@ class Agilent_34400A(VisaInstrument):
 
     def display_clear(self):
         if self.model in ['34401A']:
-            self.write('DISP:WIND:TEXT:CLE')
-            self.write('DISP:WIND:STAT 1')
+            lines = ['WIND']
         elif self.model in ['34410A', '34411A']:
-            self.write('DISP:WIND1:TEXT:CLE')
-            self.write('DISP:WIND1:STAT 1')
-            self.write('DISP:WIND2:TEXT:CLE')
-            self.write('DISP:WIND2:STAT 1')
+            lines = ['WIND1', 'WIND2']
+        else:
+            raise ValueError('unrecognized model: ' + str(self.model))
+
+        for line in lines:
+            self.write('DISP:' + line + ':TEXT:CLE')
+            self.write('DISP:' + line + ':STAT 1')
 
     def reset(self):
         self.write('*RST')
-
-    def _onoff_parser(self, msg):
-        if msg == '0':
-            return 'OFF'
-        elif msg == '1':
-            return 'ON'
-        return None

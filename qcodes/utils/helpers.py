@@ -1,4 +1,4 @@
-from collections import Iterable, Mapping
+from collections import Iterator, Sequence, Mapping
 from copy import deepcopy
 import time
 import logging
@@ -6,24 +6,80 @@ import math
 import sys
 import io
 import numpy as np
+import json
+import numbers
+
+_tprint_times = {}
+
+
+class NumpyJSONEncoder(json.JSONEncoder):
+    """Return numpy types as standard types."""
+    # http://stackoverflow.com/questions/27050108/convert-numpy-type-to-python
+    # http://stackoverflow.com/questions/9452775/converting-numpy-dtypes-to-native-python-types/11389998#11389998
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, numbers.Complex) and not isinstance(obj, numbers.Real):
+            return {'__dtype__': 'complex', 're': float(obj.real), 'im': float(obj.imag)}
+        else:
+            return super(NumpyJSONEncoder, self).default(obj)
+
+def tprint(string, dt=1, tag='default'):
+    """ Print progress of a loop every dt seconds """
+    ptime = _tprint_times.get(tag, 0)
+    if (time.time() - ptime) > dt:
+        print(string)
+        _tprint_times[tag] = time.time()
 
 
 def in_notebook():
-    '''
-    Returns True if the code is running with a ipython or jypyter
+    """
+    Check if inside a notebook.
     This could mean we are connected to a notebook, but this is not guaranteed.
     see: http://stackoverflow.com/questions/15411967
-    '''
+    Returns:
+        bool: True if the code is running with a ipython or jypyter
+
+    """
     return 'ipy' in repr(sys.stdout)
 
 
 def is_sequence(obj):
-    '''
-    is an object a sequence? We do not consider strings to be sequences,
-    but note that mappings (dicts) and unordered sequences (sets) ARE
-    sequences by this definition.
-    '''
-    return isinstance(obj, Iterable) and not isinstance(obj, (str, bytes))
+    """
+    Test if an object is a sequence.
+
+    We do not consider strings or unordered collections like sets to be
+    sequences, but we do accept iterators (such as generators)
+    """
+    return (isinstance(obj, (Iterator, Sequence)) and
+            not isinstance(obj, (str, bytes, io.IOBase)))
+
+
+def is_sequence_of(obj, types, depth=1):
+    """
+    Test if object is a sequence of entirely certain class(es).
+
+    Args:
+        obj (any): the object to test.
+        types (class or tuple of classes): allowed type(s)
+        depth (int, optional): level of nesting, ie if depth=2 we expect
+            a sequence of sequences. Default 1.
+    Returns:
+        bool, True if every item in ``obj`` matches ``types``
+    """
+    if not is_sequence(obj):
+        return False
+    for item in obj:
+        if depth > 1:
+            if not is_sequence_of(item, types, depth=depth - 1):
+                return False
+        elif not isinstance(item, types):
+            return False
+    return True
 
 
 def full_class(obj):
@@ -85,20 +141,28 @@ def permissive_range(start, stop, step):
 # Furthermore the sweep allows to take a number of points and generates
 # an array with endpoints included, which is more intuitive to use in a sweep.
 def make_sweep(start, stop, step=None, num=None):
-    '''
+    """
+    Generate numbers over a specified interval.
     Requires `start` and `stop` and (`step` or `num`)
     The sign of `step` is not relevant.
 
-    returns: a numpy.linespace(start, stop, num)
+    Args:
+        start (Union[int, float]): The starting value of the sequence.
+        stop (Union[int, float]): The end value of the sequence.
+        step (Optional[Union[int, float]]):  Spacing between values.
+        num (Optional[int]): Number of values to generate.
+
+    Returns:
+        numpy.linespace: numbers over a specified interval.
 
     Examples:
-        make_sweep(0, 10, num=5)
-        > [0.0, 2.5, 5.0, 7.5, 10.0]
-        make_sweep(5, 10, step=1)
-        > [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-        make_sweep(15, 10.5, step=1.5)
+        >>> make_sweep(0, 10, num=5)
+        [0.0, 2.5, 5.0, 7.5, 10.0]
+        >>> make_sweep(5, 10, step=1)
+        [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        >>> make_sweep(15, 10.5, step=1.5)
         >[15.0, 13.5, 12.0, 10.5]
-    '''
+    """
     if step and num:
         raise AttributeError('Don\'t use `step` and `num` at the same time.')
     if (step is None) and (num is None):
@@ -118,7 +182,7 @@ def make_sweep(start, stop, step=None, num=None):
                 .format(steps_lo + 1, steps_hi + 1))
         num = steps_lo + 1
 
-    return np.linspace(start, stop, num=num)
+    return np.linspace(start, stop, num=num).tolist()
 
 
 def wait_secs(finish_clock):
@@ -178,21 +242,23 @@ def make_unique(s, existing):
 
 
 class DelegateAttributes:
-    '''
+    """
     Mixin class to create attributes of this object by
     delegating them to one or more dicts and/or objects
 
     Also fixes __dir__ so the delegated attributes will show up
     in dir() and autocomplete
 
-    delegate_attr_dicts: a list of names (strings) of dictionaries which are
-        (or will be) attributes of self, whose keys should be treated as
-        attributes of self
-    delegate_attr_objects: a list of names (strings) of objects which are
-        (or will be) attributes of self, whose attributes should be passed
-        through to self
-    omit_delegate_attrs: a list of attribute names (strings) to *not* delegate
-        to any other dict or object
+
+   Attributes:
+        delegate_attr_dicts (list): a list of names (strings) of dictionaries which are
+            (or will be) attributes of self, whose keys should be treated as
+            attributes of self
+        delegate_attr_objects (list): a list of names (strings) of objects which are
+            (or will be) attributes of self, whose attributes should be passed
+            through to self
+        omit_delegate_attrs (list): a list of attribute names (strings) to *not* delegate
+            to any other dict or object
 
     any `None` entry is ignored
 
@@ -200,7 +266,7 @@ class DelegateAttributes:
         1. real attributes of this object
         2. keys of each dict in delegate_attr_dicts (in order)
         3. attributes of each object in delegate_attr_objects (in order)
-    '''
+    """
     delegate_attr_dicts = []
     delegate_attr_objects = []
     omit_delegate_attrs = []
@@ -257,10 +323,13 @@ class DelegateAttributes:
 
 
 def strip_attrs(obj):
-    '''
+    """
     Irreversibly remove all direct instance attributes of obj, to help with
     disposal, breaking circular references.
-    '''
+
+    Args:
+        obj:  object to be stripped
+    """
     try:
         for key in list(obj.__dict__.keys()):
             try:

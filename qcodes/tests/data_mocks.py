@@ -1,7 +1,9 @@
+import numpy
 import multiprocessing as mp
 
 from qcodes.data.data_array import DataArray
 from qcodes.data.data_set import new_data
+from qcodes.data.io import DiskIO
 
 
 class MockDataManager:
@@ -31,32 +33,51 @@ class MockFormatter:
     def read(self, data_set):
         data_set.has_read_data = True
 
-    def write(self, data_set):
+    def write(self, data_set, io_manager, location):
         data_set.has_written_data = True
 
     def read_metadata(self, data_set):
         data_set.has_read_metadata = True
 
-    def write_metadata(self, data_set):
+    def write_metadata(self, data_set, io_manager, location, read_first=True):
         data_set.has_written_metadata = True
 
 
-class FullIO:
-    def list(self, location):
-        return [location + '.whatever']
+class RecordingMockFormatter:
+    def __init__(self):
+        self.write_calls = []
+        self.modified_ranges = []
+        self.last_saved_indices = []
+        self.write_metadata_calls = []
+
+    def write(self, data_set, io_manager, location):
+        self.write_calls.append((io_manager.base_location, location))
+
+        self.modified_ranges.append({
+            array_id: array.modified_range
+            for array_id, array in data_set.arrays.items()
+        })
+
+        self.last_saved_indices.append({
+            array_id: array.last_saved_index
+            for array_id, array in data_set.arrays.items()
+        })
+
+    def write_metadata(self, data_set, io_manager, location, read_first=True):
+        self.write_metadata_calls.append((io_manager.base_location,
+                                          location, read_first))
 
 
-class EmptyIO:
-    def list(self, location):
-        return []
+class MatchIO:
+    def __init__(self, existing_matches, fmt=None):
+        self.existing_matches = existing_matches
+        self.fmt = fmt or '{}{}.something'
 
+    def list(self, location, **kwargs):
+        return [self.fmt.format(location, i) for i in self.existing_matches]
 
-class MissingMIO:
-    def list(self, location):
-        if 'm' not in location:
-            return [location + '.whatever']
-        else:
-            return []
+    def join(self, *args):
+        return DiskIO('.').join(*args)
 
 
 class MockLive:
@@ -76,6 +97,18 @@ def DataSet1D(location=None):
     y = DataArray(name='y', label='Y', preset_data=(3., 4., 5., 6., 7.),
                   set_arrays=(x,))
     return new_data(arrays=(x, y), location=location)
+
+
+def DataSet2D(location=None):
+    # DataSet with one 2D array with 4 x 6 points
+    yy, xx = numpy.meshgrid(range(4), range(6))
+    zz = xx**2+yy**2
+    # outer setpoint should be 1D
+    xx = xx[:, 0]
+    x = DataArray(name='x', label='X', preset_data=xx)
+    y = DataArray(name='y', label='Y', preset_data=yy, set_arrays=(x,))
+    z = DataArray(name='z', label='Z', preset_data=zz, set_arrays=(x, y))
+    return new_data(arrays=(x, y, z), location=location)
 
 
 def file_1d():
