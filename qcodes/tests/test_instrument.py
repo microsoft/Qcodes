@@ -538,6 +538,40 @@ class TestInstrument(TestCase):
         with self.assertRaises(ValueError):
             gates.moderaw.set('DC')
 
+    def test_val_mapping_parsers(self):
+        gates = self.gates
+
+        gates.add_parameter('moderaw', set_cmd='mem0:{}', get_cmd='mem0?',
+                            vals=Enum('0', '1'))
+
+        with self.assertRaises(TypeError):
+            # set_parser is not allowed with val_mapping
+            gates.add_parameter('modecoded', set_cmd='mem0:{}',
+                                get_cmd='mem0?',
+                                val_mapping={'DC': 0, 'AC': 1},
+                                set_parser=float)
+
+        gates.add_parameter('modecoded', set_cmd='mem0:{:.0f}',
+                            get_cmd='mem0?',
+                            val_mapping={'DC': 0.0, 'AC': 1.0},
+                            get_parser=float)
+
+        gates.modecoded.set('AC')
+        self.assertEqual(gates.moderaw.get(), '1')
+        self.assertEqual(gates.modecoded.get(), 'AC')
+        self.assertEqual(self.getmem(0), '1')
+
+        gates.moderaw.set('0')
+        self.assertEqual(gates.modecoded.get(), 'DC')
+        self.assertEqual(gates.moderaw.get(), '0')
+        self.assertEqual(self.getmem(0), '0')
+
+        with self.assertRaises(ValueError):
+            gates.modecoded.set(0)
+
+        with self.assertRaises(ValueError):
+            gates.modecoded.set('0')
+
     def test_bare_function(self):
         # not a use case we want to promote, but it's there...
         p = ManualParameter('test')

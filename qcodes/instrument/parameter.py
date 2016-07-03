@@ -490,13 +490,22 @@ class StandardParameter(Parameter):
             if vals is None:
                 vals = Enum(*val_mapping.keys())
 
+            self._get_mapping = {v: k for k, v in val_mapping.items()}
+
             if get_parser is None:
-                self._get_mapping = {v: k for k, v in val_mapping.items()}
                 get_parser = self._valmapping_get_parser
+            else:
+                # First run get_parser, then run the result through
+                # val_mapping
+                self._get_preparser = get_parser
+                get_parser = self._valmapping_with_preparser
 
             if set_parser is None:
                 self._set_mapping = val_mapping
                 set_parser = self._set_mapping.__getitem__
+            else:
+                raise TypeError(
+                    'You cannot use set_parser and val_mapping together.')
 
         if get_parser is not None and not isinstance(get_cmd, str):
             logging.warning('get_parser is set, but will not be used ' +
@@ -554,6 +563,9 @@ class StandardParameter(Parameter):
             return self._get_mapping[val]
         except (ValueError, KeyError):
             raise KeyError("Unmapped value from instrument: {!r}".format(val))
+
+    def _valmapping_with_preparser(self, val):
+        return self._valmapping_get_parser(self._get_preparser(val))
 
     def _set_get(self, get_cmd, get_parser):
         exec_str = self._instrument.ask if self._instrument else None
