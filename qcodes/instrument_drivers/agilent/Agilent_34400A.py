@@ -31,8 +31,7 @@ class Agilent_34400A(VisaInstrument):
         self.add_parameter('resolution',
                            get_cmd='VOLT:DC:RES?',
                            get_parser=float,
-                           set_parser=self._set_resolution,
-                           set_cmd='VOLT:DC:RES {:.7f}',
+                           set_cmd=self._set_resolution,
                            label='Resolution',
                            units='V')
 
@@ -56,8 +55,8 @@ class Agilent_34400A(VisaInstrument):
 
         self.add_parameter('NPLC',
                            get_cmd='VOLT:NPLC?',
-                           get_parser=self._set_NPLC,
-                           set_cmd='VOLT:NPLC {:f}',
+                           get_parser=float,
+                           set_cmd=self._set_NPLC,
                            vals=Enum(*NPLC_list),
                            label='Integration time',
                            units='NPLC')
@@ -96,18 +95,39 @@ class Agilent_34400A(VisaInstrument):
 
         self.connect_message()
 
+    # TODO: _set_NPLC and _set_range can go away when we have events to bind to
+    # then we just get resolution when either of those events is emitted.
     def _set_NPLC(self, value):
+        self.write('VOLT:NPLC {:f}'.format(value))
+
         # resolution settings change with NPLC
         self.resolution.get()
-        return float(value)
 
     def _set_resolution(self, value):
         rang = self.range.get()
-        if value*rang not in self._resolution_factor:
-            raise ValueError('Resolution setting does not exist.')
+
+        # convert both value*range and the resolution factors
+        # to strings with few digits, so we avoid floating point
+        # rounding errors.
+        # TODO: the format string should be the same as used in
+        # self.write below, once we know what that should be.
+        # (it shouldn't be {:.7f} because that's sometimes not enough digits)
+        res_fac_strs = ['{:.1e}'.format(v) for v in self._resolution_factor]
+        if '{:.1e}'.format(value * rang) not in res_fac_strs:
+            raise ValueError(
+                'Resolution setting {:.1e} ({} at range {}) '
+                'does not exist.'.format(value * rang, value, rang))
+
+        self.write('VOLT:DC:RES {:.7f}'.format(value))
+
         # NPLC settings change with resolution
         self.NPLC.get()
-        return value
+
+    def _set_range(self, value):
+        self.write('SENS:VOLT:DC:RANG {:f}'.format(value))
+
+        # resolution settings change with range
+        self.resolution.get()
 
     def clear_errors(self):
         while True:
