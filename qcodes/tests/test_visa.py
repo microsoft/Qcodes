@@ -1,4 +1,5 @@
 from unittest import TestCase
+from unittest.mock import patch
 import visa
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils.validators import Numbers
@@ -147,3 +148,27 @@ class TestVisaInstrument(TestCase):
             mv.state.get()
         for arg in self.args3:
             self.assertIn(repr(arg), e.exception.args[0])
+
+    @patch('qcodes.instrument.visa.visa.ResourceManager')
+    def test_visa_backend(self, rm_mock):
+        class MockBackendVisaInstrument(VisaInstrument):
+            visa_handle = MockVisaHandle()
+
+        class MockRM:
+            def open_resource(self, address):
+                self.address = address
+                return MockVisaHandle()
+
+        rm_mock.return_value = MockRM()
+
+        VisaInstrument('name', server_name=None)
+        self.assertEqual(rm_mock.call_count, 1)
+        self.assertEqual(rm_mock.call_args, ((),))
+
+        VisaInstrument('name', server_name=None, address='ASRL2')
+        self.assertEqual(rm_mock.call_count, 2)
+        self.assertEqual(rm_mock.call_args, ((),))
+
+        VisaInstrument('name', server_name=None, address='ASRL2@py')
+        self.assertEqual(rm_mock.call_count, 3)
+        self.assertEqual(rm_mock.call_args, (('@py',),))
