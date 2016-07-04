@@ -1,16 +1,22 @@
 import configparser
-from qcodes import IPInstrument
-from qcodes.utils.validators import Strings, Enum, Anything
 import re
+from functools import partial
+import logging
+from traceback import format_exc
+
+from qcodes import IPInstrument
+from qcodes.utils.validators import Strings, Enum
+
 
 class Triton(IPInstrument):
     """
     Triton Driver
 
     Args:
-        tmpfile: Expects an exported windows registry file from the registry path:
-        `[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry]`
-        and is used to extract the available temperature channels.
+        tmpfile: Expects an exported windows registry file from the registry
+            path:
+            `[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry]`
+            and is used to extract the available temperature channels.
 
 
     Status: beta-version.
@@ -56,39 +62,38 @@ class Triton(IPInstrument):
         self.add_parameter(name='pid_mode',
                            label='PID Mode',
                            units='',
-                           get_cmd='READ:DEV:T%s:TEMP:LOOP:MODE' % (self._get_control_channel()),
-                           get_parser=self._get_response,
-                           set_cmd='SET:DEV:T%s:TEMP:LOOP:MODE:{}' % (self._get_control_channel()),
+                           get_cmd=partial(self._get_control_param, 'MODE'),
+                           set_cmd=partial(self._set_control_param, 'MODE'),
                            vals=Strings())
 
         self.add_parameter(name='pid_ramp',
                            label='PID ramp enabled',
                            units='',
-                           get_cmd='READ:DEV:T%s:TEMP:LOOP:RAMP:ENAB' % (self._get_control_channel()),
-                           get_parser=self._get_response,
-                           set_cmd='SET:DEV:T%s:TEMP:LOOP:RAMP:ENAB:{}' % (self._get_control_channel()),
+                           get_cmd=partial(self._get_control_param,
+                                           'RAMP:ENAB'),
+                           set_cmd=partial(self._set_control_param,
+                                           'RAMP:ENAB'),
                            vals=Strings())
 
         self.add_parameter(name='pid_setpoint',
                            label='PID temperature setpoint',
                            units='',
-                           get_cmd='READ:DEV:T%s:TEMP:LOOP:TSET' % (self._get_control_channel()),
-                           get_parser=self._get_response_value,
-                           set_cmd='SET:DEV:T%s:TEMP:LOOP:TSET:{:f}' % (self._get_control_channel()))
+                           get_cmd=partial(self._get_control_param, 'TSET'),
+                           set_cmd=partial(self._set_control_param, 'TSET'))
 
         self.add_parameter(name='pid_rate',
                            label='PID ramp rate',
                            units='',
-                           get_cmd='READ:DEV:T%s:TEMP:LOOP:RAMP:RATE' % (self._get_control_channel()),
-                           get_parser=self._get_response_value,
-                           set_cmd='SET:DEV:T%s:TEMP:LOOP:RAMP:RATE:{:f}' % (self._get_control_channel()))
+                           get_cmd=partial(self._get_control_param,
+                                           'RAMP:RATE'),
+                           set_cmd=partial(self._set_control_param,
+                                           'RAMP:RATE'))
 
         self.add_parameter(name='pid_range',
                            label='PID heater range',
                            units='',
-                           get_cmd='READ:DEV:T%s:TEMP:LOOP:RANGE' % (self._get_control_channel()),
-                           get_parser=self._get_response_value,
-                           set_cmd='SET:DEV:T%s:TEMP:LOOP:RANGE:{:f}' % (self._get_control_channel()),
+                           get_cmd=partial(self._get_control_param, 'RANGE'),
+                           set_cmd=partial(self._set_control_param, 'RANGE'),
                            vals=Enum(*self._heater_range_curr))
 
         self.chan_alias = {}
@@ -100,7 +105,8 @@ class Triton(IPInstrument):
         try:
             self._get_named_channels()
         except:
-            pass
+            logging.warn('Ignored an error in _get_named_channels\n' +
+                         format_exc())
 
         self.connect_message()
 
@@ -135,7 +141,18 @@ class Triton(IPInstrument):
 
     def _set_control_channel(self, channel):
         self._control_channel = channel
-        self.write('SET:DEV:T%s:TEMP:LOOP:HTR:H1' % self._get_control_channel())
+        self.write('SET:DEV:T%s:TEMP:LOOP:HTR:H1' %
+                   self._get_control_channel())
+
+    def _get_control_param(self, param):
+        chan = self._get_control_channel()
+        cmd = 'READ:DEV:T{}:TEMP:LOOP:{}'.format(chan, param)
+        return self._get_response_value(self.ask(cmd))
+
+    def _set_control_param(self, param, value):
+        chan = self._get_control_channel()
+        cmd = 'SET:DEV:T{}:TEMP:LOOP:{}:{}'.format(chan, param, value)
+        self.write(cmd)
 
     def _get_named_channels(self):
         allchans = self.ask('READ:SYS:DR:CHAN')
