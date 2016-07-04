@@ -5,15 +5,7 @@ from qcodes import VisaInstrument
 class Agilent_34400A(VisaInstrument):
     """
     This is the qcodes driver for the Agilent_34400A DMM Series,
-    tested with Agilent_34401A
-
-    Status: beta-version.
-        TODO:
-        - Add all parameters that are in the manual
-        - Integration time does no value mapping
-        - Need a clear_cmd thing in the parameter
-        - Add labels
-
+    tested with Agilent_34401A, Agilent_34410A, and Agilent_34411A
     """
 
     def __init__(self, name, address, **kwargs):
