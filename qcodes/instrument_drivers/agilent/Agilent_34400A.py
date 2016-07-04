@@ -15,70 +15,70 @@ class Agilent_34400A(VisaInstrument):
         - Add labels
 
     """
+
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, terminator='\n', **kwargs)
 
         idn = self.IDN.get()
         self.model = idn['model']
-        # Async has to send 'INIT' and later ask for 'FETCH?'
+
+        NPLC_list = {'34401A': [0.02, 0.2, 1, 10, 100],
+                     '34410A': [0.006, 0.02, 0.06, 0.2, 1, 2, 10, 100],
+                     '34411A': [0.001, 0.002, 0.006, 0.02, 0.06, 0.2,
+                                1, 2, 10, 100]
+                     }[self.model]
+
+        self._resolution_factor = {'34401A': [1e-4, 1e-5, 3e-6, 1e-6, 3e-7],
+                                   '34410A': [6e-06, 3e-06, 1.5e-06, 7e-07,
+                                              3e-07, 2e-07, 1e-07, 3e-08],
+                                   '34411A': [3e-05, 1.5e-05, 6e-06, 3e-06,
+                                              1.5e-06, 7e-07, 3e-07, 2e-07,
+                                              1e-07, 3e-08]
+                                   }[self.model]
+
+        self.add_parameter('resolution',
+                           get_cmd='VOLT:DC:RES?',
+                           get_parser=float,
+                           set_parser=self._set_resolution,
+                           set_cmd='VOLT:DC:RES {:.7f}',
+                           label='Resolution',
+                           units='V')
 
         self.add_parameter('volt',
                            get_cmd='READ?',
                            label='Voltage',
                            get_parser=float,
                            units='V')
+
         self.add_parameter('fetch',
                            get_cmd='FETCH?',
                            label='Voltage',
                            get_parser=float,
                            units='V',
                            snapshot_get=False,
-                           docstring=('Reads the data you asked for, i.e.'
+                           docstring=('Reads the data you asked for, i.e. '
                                       'after an `init_measurement()` you can '
                                       'read the data with fetch.\n'
                                       'Do not call this when you didn\'t ask '
                                       'for data in the first place!'))
+
         self.add_parameter('NPLC',
                            get_cmd='VOLT:NPLC?',
-                           get_parser=float,
+                           get_parser=self._set_NPLC,
                            set_cmd='VOLT:NPLC {:f}',
-                           vals=Enum(0.02, 0.2, 1, 10, 100))
-        # For DC and resistance measurements, changing the number of digits
-        # does more than just change the resolution of the multimeter. It also
-        # changes the integration time!
-        # Resolution Choices          Integration Time
-        #   Fast 4 Digit                0.02 PLC
-        #   * Slow 4 Digit              1 PLC
-        #   Fast 5 Digit                0.2 PLC
-        #   * Slow 5 Digit (default)    10 PLC
-        #   * Fast 6 Digit              10 PLC
-        #   Slow 6 Digit                100 PLC
-        self.add_parameter('resolution',
-                           get_cmd='VOLT:DC:RES?',
-                           get_parser=float,
-                           set_cmd='VOLT:DC:RES {:.7f}',
-                           vals=Enum(3e-07, 1e-06, 3e-06, 1e-05, 1e-04),
-                           units='V')
-        # Integration Time    Resolutionc
-        self.add_parameter('integration_time',
-                           get_cmd='VOLT:DC:RES?',
-                           get_parser=float,
-                           set_cmd='VOLT:DC:RES {:f}',
-                           # vals=Enum(0.02,0.2,1,10,100),
-                           units='NPLC',
-                           # TODO: does this work for get?
-                           val_mapping={0.02: 0.0001,
-                                        0.2:  0.00001,
-                                        1:    0.000003,
-                                        10:   0.000001,
-                                        100:  0.0000003})
+                           vals=Enum(*NPLC_list),
+                           label='Integration time',
+                           units='NPLC')
+
         self.add_parameter('terminals',
                            get_cmd='ROUT:TERM?')
+
         self.add_parameter('range_auto',
                            get_cmd='VOLT:RANG:AUTO?',
                            set_cmd='VOLT:RANG:AUTO {:d}',
                            val_mapping={'on': 1,
                                         'off': 0})
+
         self.add_parameter('range',
                            get_cmd='SENS:VOLT:DC:RANG?',
                            get_parser=float,
@@ -90,17 +90,32 @@ class Agilent_34400A(VisaInstrument):
                                get_cmd='DISP:TEXT?',
                                set_cmd='DISP:TEXT "{}"',
                                vals=Strings())
+
         elif self.model in ['34410A', '34411A']:
             self.add_parameter('display_text',
                                get_cmd='DISP:WIND1:TEXT?',
                                set_cmd='DISP:WIND1:TEXT "{}"',
                                vals=Strings())
+
             self.add_parameter('display_text_2',
                                get_cmd='DISP:WIND2:TEXT?',
                                set_cmd='DISP:WIND2:TEXT "{}"',
                                vals=Strings())
 
         self.connect_message()
+
+    def _set_NPLC(self, value):
+        # resolution settings change with NPLC
+        self.resolution.get()
+        return float(value)
+
+    def _set_resolution(self, value):
+        rang = self.range.get()
+        if value*rang not in self._resolution_factor:
+            raise ValueError('Resolution setting does not exist.')
+        # NPLC settings change with resolution
+        self.NPLC.get()
+        return value
 
     def clear_errors(self):
         while True:
