@@ -1,24 +1,33 @@
 import configparser
 from qcodes import IPInstrument
-
+from qcodes.utils.validators import Strings, Enum, Anything
+import re
 
 class Triton(IPInstrument):
     """
     Triton Driver
-    TODO: fetch registry directly from fridge-computer
 
-    Comment from Merlin:
-        I had to change the IP instrument, somehow the port does not get
-        transferred to the socket connection
-        And I had other problems with the _connect method,
-          check those changes :)
-        Further there was a problem with the EnsureConnection class
+    Args:
+        tmpfile: Expects an exported windows registry file from the registry path:
+        `[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry]`
+        and is used to extract the available temperature channels.
+
+
+    Status: beta-version.
+        TODO:
+        fetch registry directly from fridge-computer
     """
 
     def __init__(self, name, address=None, port=None, terminator='\r\n',
-                 tmpfile=None, **kwargs):
+                 tmpfile=None, timeout=20, **kwargs):
         super().__init__(name, address=address, port=port,
-                         terminator=terminator, **kwargs)
+                         terminator=terminator, timeout=timeout, **kwargs)
+
+        self._heater_range_auto = False
+        self._heater_range_temp = [0.03, 0.1, 0.3, 1, 12, 40]
+        self._heater_range_curr = [0.316, 1, 3.16, 10, 31.6, 100]
+
+        self._control_channel = 5
 
         self.add_parameter(name='time',
                            label='System Time',
@@ -38,14 +47,95 @@ class Triton(IPInstrument):
                            get_cmd='READ:SYS:DR:STATUS',
                            get_parser=self._parse_status)
 
+        self.add_parameter(name='pid_control_channel',
+                           label='PID control channel',
+                           units='',
+                           get_cmd=self._get_control_channel,
+                           set_cmd=self._set_control_channel)
+
+        self.add_parameter(name='pid_mode',
+                           label='PID Mode',
+                           units='',
+                           get_cmd='READ:DEV:T%s:TEMP:LOOP:MODE' % (self._get_control_channel()),
+                           get_parser=self._get_response,
+                           set_cmd='SET:DEV:T%s:TEMP:LOOP:MODE:{}' % (self._get_control_channel()),
+                           vals=Strings())
+
+        self.add_parameter(name='pid_ramp',
+                           label='PID ramp enabled',
+                           units='',
+                           get_cmd='READ:DEV:T%s:TEMP:LOOP:RAMP:ENAB' % (self._get_control_channel()),
+                           get_parser=self._get_response,
+                           set_cmd='SET:DEV:T%s:TEMP:LOOP:RAMP:ENAB:{}' % (self._get_control_channel()),
+                           vals=Strings())
+
+        self.add_parameter(name='pid_setpoint',
+                           label='PID temperature setpoint',
+                           units='',
+                           get_cmd='READ:DEV:T%s:TEMP:LOOP:TSET' % (self._get_control_channel()),
+                           get_parser=self._get_response_value,
+                           set_cmd='SET:DEV:T%s:TEMP:LOOP:TSET:{:f}' % (self._get_control_channel()))
+
+        self.add_parameter(name='pid_rate',
+                           label='PID ramp rate',
+                           units='',
+                           get_cmd='READ:DEV:T%s:TEMP:LOOP:RAMP:RATE' % (self._get_control_channel()),
+                           get_parser=self._get_response_value,
+                           set_cmd='SET:DEV:T%s:TEMP:LOOP:RAMP:RATE:{:f}' % (self._get_control_channel()))
+
+        self.add_parameter(name='pid_range',
+                           label='PID heater range',
+                           units='',
+                           get_cmd='READ:DEV:T%s:TEMP:LOOP:RANGE' % (self._get_control_channel()),
+                           get_parser=self._get_response_value,
+                           set_cmd='SET:DEV:T%s:TEMP:LOOP:RANGE:{:f}' % (self._get_control_channel()),
+                           vals=Enum(*self._heater_range_curr))
+
         self.chan_alias = {}
         self.chan_temps = {}
         if tmpfile is not None:
             self._get_temp_channels(tmpfile)
-        self._get_pressure_channels()
-        self._get_named_channels()
+        self.get_pressure_channels()
+
+        try:
+            self._get_named_channels()
+        except:
+            pass
 
         self.connect_message()
+
+    def _get_response(self, msg):
+        return msg.split(':')[-1]
+
+    def _get_response_value(self, msg):
+        msg = self._get_response(msg)
+        if msg.endswith('NOT_FOUND'):
+            return None
+        val = None
+        try:
+            val = float(re.findall("[-+]?\d*\.\d+|\d+", msg)[0])
+        except:
+            pass
+        return val
+
+    def get_idn(self):
+        idstr = self.ask('*IDN?')
+        idparts = [p.strip() for p in idstr.split(':', 4)][1:]
+
+        return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
+
+    def _get_control_channel(self, force_get=False):
+        if force_get or (not self._control_channel):
+            for i in range(20):
+                tempval = self.ask('READ:DEV:T%s:TEMP:LOOP:MODE' % (i))
+                if not tempval.endswith('NOT_FOUND'):
+                    self._control_channel = i
+
+        return self._control_channel
+
+    def _set_control_channel(self, channel):
+        self._control_channel = channel
+        self.write('SET:DEV:T%s:TEMP:LOOP:HTR:H1' % self._get_control_channel())
 
     def _get_named_channels(self):
         allchans = self.ask('READ:SYS:DR:CHAN')
