@@ -95,7 +95,7 @@ class Triton(IPInstrument):
         self.chan_temps = {}
         if tmpfile is not None:
             self._get_temp_channels(tmpfile)
-        self.get_pressure_channels()
+        self._get_pressure_channels()
 
         try:
             self._get_named_channels()
