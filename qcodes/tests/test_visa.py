@@ -163,17 +163,17 @@ class TestVisaInstrument(TestCase):
 
         rm_mock.return_value = MockRM()
 
-        VisaInstrument('name', server_name=None)
+        MockBackendVisaInstrument('name', server_name=None)
         self.assertEqual(rm_mock.call_count, 1)
         self.assertEqual(rm_mock.call_args, ((),))
         self.assertEqual(address_opened[0], None)
 
-        VisaInstrument('name', server_name=None, address='ASRL2')
+        MockBackendVisaInstrument('name', server_name=None, address='ASRL2')
         self.assertEqual(rm_mock.call_count, 2)
         self.assertEqual(rm_mock.call_args, ((),))
         self.assertEqual(address_opened[0], 'ASRL2')
 
-        VisaInstrument('name', server_name=None, address='ASRL3@py')
+        MockBackendVisaInstrument('name', server_name=None, address='ASRL3@py')
         self.assertEqual(rm_mock.call_count, 3)
         self.assertEqual(rm_mock.call_args, (('@py',),))
         self.assertEqual(address_opened[0], 'ASRL3')
