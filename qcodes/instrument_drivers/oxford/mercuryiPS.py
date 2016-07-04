@@ -163,12 +163,7 @@ class MercuryiPS(IPInstrument):
 
     def _ramp_to_setpoint(self, ax, cmd, setpoint):
         self._set_fld(ax, cmd, setpoint)
-        # TODO: why was self.rtos() commented out in favor of
-        # the explicit loop?
-        # self.rtos()
-        for axis in ax:
-            msg = 'SET:DEV:GRP{}:PSU:ACTN:RTOS'.format(axis)
-            self.write(msg)
+        self.rtos()
 
     def _ramp_to_setpoint_and_wait(self, ax, cmd, setpoint):
         error = 0.2e-3
