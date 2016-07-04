@@ -151,12 +151,14 @@ class TestVisaInstrument(TestCase):
 
     @patch('qcodes.instrument.visa.visa.ResourceManager')
     def test_visa_backend(self, rm_mock):
+        address_opened = [None]
+
         class MockBackendVisaInstrument(VisaInstrument):
             visa_handle = MockVisaHandle()
 
         class MockRM:
             def open_resource(self, address):
-                self.address = address
+                address_opened[0] = address
                 return MockVisaHandle()
 
         rm_mock.return_value = MockRM()
@@ -164,11 +166,14 @@ class TestVisaInstrument(TestCase):
         VisaInstrument('name', server_name=None)
         self.assertEqual(rm_mock.call_count, 1)
         self.assertEqual(rm_mock.call_args, ((),))
+        self.assertEqual(address_opened[0], None)
 
         VisaInstrument('name', server_name=None, address='ASRL2')
         self.assertEqual(rm_mock.call_count, 2)
         self.assertEqual(rm_mock.call_args, ((),))
+        self.assertEqual(address_opened[0], 'ASRL2')
 
-        VisaInstrument('name', server_name=None, address='ASRL2@py')
+        VisaInstrument('name', server_name=None, address='ASRL3@py')
         self.assertEqual(rm_mock.call_count, 3)
         self.assertEqual(rm_mock.call_args, (('@py',),))
+        self.assertEqual(address_opened[0], 'ASRL3')
