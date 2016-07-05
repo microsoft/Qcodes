@@ -301,7 +301,17 @@ class Loop(Metadatable):
         return _attach_then_actions(self._copy(), actions, overwrite)
 
     def snapshot_base(self, update=False):
-        """Snapshot of this Loop's definition."""
+        """
+        State of the loop as a JSON-compatible dict.
+
+        Args:
+            update (bool): If True, update the state by querying the underlying
+             sweep_values and actions. If False, just use the latest values in
+             memory.
+
+        Returns:
+            dict: base snapshot
+        """
         return {
             '__class__': full_class(self),
             'sweep_values': self.sweep_values.snapshot(update=update),

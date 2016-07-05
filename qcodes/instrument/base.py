@@ -305,8 +305,6 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
         """
         State of the instrument as a JSON-compatible dict.
 
-        ``Metadatable`` adds metadata, if any, to this snapshot.
-
         Args:
             update (bool): If True, update the state by querying the
                 instrument. If False, just use the latest values in memory.

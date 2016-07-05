@@ -247,10 +247,10 @@ class SweepFixedValues(SweepValues):
 
     def snapshot_base(self, update=False):
         """
-        Snapshot state of the Parameter.
+        Snapshot state of SweepValues.
 
         Args:
-            update (bool): Update snapshot. Defaults to False
+            update (bool): Place holder for API compatibility.
 
         Returns:
             dict: base snapshot

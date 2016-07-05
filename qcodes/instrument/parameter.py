@@ -288,11 +288,11 @@ class Parameter(Metadatable, DeferredOperations):
 
     def snapshot_base(self, update=False):
         """
-        State of the instrument as a JSON-compatible dict.
+        State of the parameter as a JSON-compatible dict.
 
         Args:
-            update (bool): If True, update the state by querying the
-             instrument. If False, just use the latest values in memory.
+            update (bool): If True, update the state by calling parameter.get().
+             If False, just use the latest values in memory.
 
         Returns:
             dict: base snapshot
