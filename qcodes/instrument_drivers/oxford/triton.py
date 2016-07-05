@@ -37,53 +37,49 @@ class Triton(IPInstrument):
 
         self.add_parameter(name='time',
                            label='System Time',
-                           units='',
                            get_cmd='READ:SYS:TIME',
                            get_parser=self._parse_time)
 
         self.add_parameter(name='action',
                            label='Current action',
-                           units='',
                            get_cmd='READ:SYS:DR:ACTN',
                            get_parser=self._parse_action)
 
         self.add_parameter(name='status',
                            label='Status',
-                           units='',
                            get_cmd='READ:SYS:DR:STATUS',
                            get_parser=self._parse_status)
 
         self.add_parameter(name='pid_control_channel',
                            label='PID control channel',
-                           units='',
                            get_cmd=self._get_control_channel,
                            set_cmd=self._set_control_channel)
 
         self.add_parameter(name='pid_mode',
                            label='PID Mode',
-                           units='',
                            get_cmd=partial(self._get_control_param, 'MODE'),
                            set_cmd=partial(self._set_control_param, 'MODE'),
+                           # TODO: set/get_parser=OnOff(),
                            vals=Strings())
 
         self.add_parameter(name='pid_ramp',
                            label='PID ramp enabled',
-                           units='',
                            get_cmd=partial(self._get_control_param,
                                            'RAMP:ENAB'),
                            set_cmd=partial(self._set_control_param,
                                            'RAMP:ENAB'),
+                           # TODO: set/get_parser=OnOff(),
                            vals=Strings())
 
         self.add_parameter(name='pid_setpoint',
                            label='PID temperature setpoint',
-                           units='',
+                           units='K',
                            get_cmd=partial(self._get_control_param, 'TSET'),
                            set_cmd=partial(self._set_control_param, 'TSET'))
 
         self.add_parameter(name='pid_rate',
                            label='PID ramp rate',
-                           units='',
+                           units='K/min',
                            get_cmd=partial(self._get_control_param,
                                            'RAMP:RATE'),
                            set_cmd=partial(self._set_control_param,
@@ -91,7 +87,9 @@ class Triton(IPInstrument):
 
         self.add_parameter(name='pid_range',
                            label='PID heater range',
-                           units='',
+                           # TODO: The units in the software are mA, how to
+                           # do this correctly?
+                           units='mA',
                            get_cmd=partial(self._get_control_param, 'RANGE'),
                            set_cmd=partial(self._set_control_param, 'RANGE'),
                            vals=Enum(*self._heater_range_curr))
@@ -117,12 +115,10 @@ class Triton(IPInstrument):
         msg = self._get_response(msg)
         if msg.endswith('NOT_FOUND'):
             return None
-        val = None
         try:
-            val = float(re.findall("[-+]?\d*\.\d+|\d+", msg)[0])
+            return float(re.findall("[-+]?\d*\.\d+|\d+", msg)[0])
         except:
-            pass
-        return val
+            return msg
 
     def get_idn(self):
         idstr = self.ask('*IDN?')
