@@ -13,7 +13,7 @@ from qcodes import active_children
 
 from .data_mocks import (MockDataManager, MockFormatter, MatchIO,
                          MockLive, MockArray, DataSet2D, DataSet1D,
-                         RecordingMockFormatter)
+                         DataSetCombined, RecordingMockFormatter)
 from .common import strip_qc
 
 
@@ -249,6 +249,31 @@ class TestDataArray(TestCase):
         self.assertIsNone(data.data_set)
         data.data_set = mock_data_set2
         self.assertEqual(data.data_set, mock_data_set2)
+
+    def test_fraction_complete(self):
+        data = DataArray(shape=(5, 10))
+        self.assertIsNone(data.ndarray)
+        self.assertEqual(data.fraction_complete(), 0.0)
+
+        data.init_data()
+        self.assertEqual(data.fraction_complete(), 0.0)
+
+        # index = 1 * 10 + 7 - add 1 (for index 0) and you get 18
+        # each index is 2% of the total, so this is 36%
+        data[1, 7] = 1
+        self.assertEqual(data.fraction_complete(), 18/50)
+
+        # add a last_saved_index but modified_range is still bigger
+        data.mark_saved(13)
+        self.assertEqual(data.fraction_complete(), 18/50)
+
+        # now last_saved_index wins
+        data.mark_saved(19)
+        self.assertEqual(data.fraction_complete(), 20/50)
+
+        # now pretend we get more info from syncing
+        data.synced_index = 22
+        self.assertEqual(data.fraction_complete(), 23/50)
 
 
 class TestLoadData(TestCase):
@@ -495,9 +520,9 @@ class TestDataSet(TestCase):
         mr = (2, 3)
         mr_full = (0, 4)
         lsi = 1
-        data.x.modified_range = mr
+        data.x_set.modified_range = mr
         data.y.modified_range = mr
-        data.x.last_saved_index = lsi
+        data.x_set.last_saved_index = lsi
         data.y.last_saved_index = lsi
 
         with self.assertRaises(TypeError):
@@ -517,13 +542,13 @@ class TestDataSet(TestCase):
                          [(None, '/some/abs/path', False)])
         # check that the formatter gets called as if nothing has been saved
         self.assertEqual(data.formatter.modified_ranges,
-                         [{'x': mr_full, 'y': mr_full}])
+                         [{'x_set': mr_full, 'y': mr_full}])
         self.assertEqual(data.formatter.last_saved_indices,
-                         [{'x': None, 'y': None}])
+                         [{'x_set': None, 'y': None}])
         # but the dataset afterward has its original mods back
-        self.assertEqual(data.x.modified_range, mr)
+        self.assertEqual(data.x_set.modified_range, mr)
         self.assertEqual(data.y.modified_range, mr)
-        self.assertEqual(data.x.last_saved_index, lsi)
+        self.assertEqual(data.x_set.last_saved_index, lsi)
         self.assertEqual(data.y.last_saved_index, lsi)
 
         # recreate the formatter to clear the calls attributes
@@ -554,3 +579,10 @@ class TestDataSet(TestCase):
         # If the data_manager is set to None, then the object should pickle.
         m = DataSet2D()
         pickle.dumps(m)
+
+    def test_fraction_complete(self):
+        empty_data = new_data(arrays=(), location=False)
+        self.assertEqual(empty_data.fraction_complete(), 0.0)
+
+        data = DataSetCombined(location=False)
+

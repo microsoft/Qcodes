@@ -505,9 +505,9 @@ class DataSet(DelegateAttributes):
         action_indices = [array.action_indices for array in arrays]
         for array in arrays:
             name = array.full_name
-            if array.is_setpoint:
-                if name:
-                    name += '_set'
+            if array.is_setpoint and name and not name.endswith('_set'):
+                name += '_set'
+
             array.array_id = name
         array_ids = set([array.array_id for array in arrays])
         for name in array_ids:
