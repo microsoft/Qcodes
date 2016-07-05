@@ -16,3 +16,4 @@ Classes and Functions
     utils.helpers
     utils.timing
     utils.metadata
+    process.qcodes_process

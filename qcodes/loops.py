@@ -154,6 +154,7 @@ class Loop(Metadatable):
         is None (no output)
 
     After creating a Loop, you attach `action`s to it, making an `ActiveLoop`
+    TODO: how? Maybe obvious but not specified!
     that you can `.run()`, or you can `.run()` a `Loop` directly, in which
     case it takes the default `action`s from the default `Station`
 
@@ -214,9 +215,10 @@ class Loop(Metadatable):
     def each(self, *actions):
         """
         Perform a set of actions at each setting of this loop.
+        TODO(setting vs setpoints) ? better be verbose.
 
         Args:
-            *actions (): actions to perfrom at each setting of the loop
+            *actions (Any): actions to perform at each setting of the loop
 
         Each action can be:
         - a Parameter to measure
@@ -290,6 +292,7 @@ class Loop(Metadatable):
         and can also be done there, but it's allowed at this stage too so that
         you can define final actions and share them among several `Loop`s that
         have different loop actions, or attach final actions to a Loop run
+        TODO: examples of this ?
         with default actions.
 
         *actions: `Task` and `Wait` objects to execute in order

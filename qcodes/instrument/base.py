@@ -29,7 +29,7 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
             passing in all the constructor kwargs, to determine the name.
             If not overridden, this just gives 'Instruments'.
 
-            ** see SUBCLASS CONSTRUCTORS below for more on ``server_name`` **
+            **see subclass constructors below for more on ``server_name``**
 
             Use None to operate without a server - but then this Instrument
             will not work with qcodes Loops or other multiprocess procedures.
@@ -53,7 +53,7 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
     different keys or values for ``shared_kwargs``, unless the later
     instruments have NO ``shared_kwargs`` at all.
 
-    SUBCLASS CONSTRUCTORS: ``server_name`` and any ``shared_kwargs`` must be
+    subclass constructors: ``server_name`` and any ``shared_kwargs`` must be
     available as kwargs and kwargs ONLY (not positional) in all subclasses,
     and not modified in the inheritance chain. This is because we need to
     create the server before instantiating the actual instrument. The easiest

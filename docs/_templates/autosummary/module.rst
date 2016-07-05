@@ -5,7 +5,7 @@
 
    {% block functions %}
    {% if functions %}
-   .. rubric:: Fonctions
+   .. rubric:: Functions
 
    .. autosummary::
       :toctree:
