@@ -1,7 +1,9 @@
 import numpy as np
 import re
 import math
+import json
 
+from qcodes.utils.helpers import deep_update, NumpyJSONEncoder
 from .data_array import DataArray
 from .format import Formatter
 
@@ -61,7 +63,8 @@ class GNUPlotFormat(Formatter):
     of corresponds to our situation.)
     """
     def __init__(self, extension='dat', terminator='\n', separator='\t',
-                 comment='# ', number_format='g', always_nest=True):
+                 comment='# ', number_format='g', metadata_file=None):
+        self.metadata_file = metadata_file or 'snapshot.json'
         # file extension: accept either with or without leading dot
         self.extension = '.' + extension.lstrip('.')
 
@@ -87,8 +90,6 @@ class GNUPlotFormat(Formatter):
         # number format (only used for writing; will read any number)
         self.number_format = '{:' + number_format + '}'
 
-        self.always_nest = always_nest
-
     def read_one_file(self, data_set, f, ids_read):
         """
         Called by Formatter.read to bring one data file into
@@ -108,21 +109,23 @@ class GNUPlotFormat(Formatter):
         arrays = data_set.arrays
         ids = self._read_comment_line(f).split()
         labels = self._get_labels(self._read_comment_line(f))
-        size = tuple(map(int, self._read_comment_line(f).split()))
-        ndim = len(size)
+        shape = tuple(map(int, self._read_comment_line(f).split()))
+        ndim = len(shape)
 
         set_arrays = ()
         data_arrays = []
         indexed_ids = list(enumerate(ids))
 
         for i, array_id in indexed_ids[:ndim]:
+            snap = data_set.get_array_metadata(array_id)
+
             # setpoint arrays
-            set_size = size[: i + 1]
+            set_shape = shape[: i + 1]
             if array_id in arrays:
                 set_array = arrays[array_id]
-                if set_array.size != set_size:
+                if set_array.shape != set_shape:
                     raise ValueError(
-                        'sizes do not match for set array: ' + array_id)
+                        'shapes do not match for set array: ' + array_id)
                 if array_id not in ids_read:
                     # it's OK for setpoints to be duplicated across
                     # multiple files, but we should only empty the
@@ -131,7 +134,8 @@ class GNUPlotFormat(Formatter):
                     set_array.clear()
             else:
                 set_array = DataArray(label=labels[i], array_id=array_id,
-                                      set_arrays=set_arrays, size=set_size)
+                                      set_arrays=set_arrays, shape=set_shape,
+                                      is_setpoint=True, snapshot=snap)
                 set_array.init_data()
                 data_set.add_array(set_array)
 
@@ -139,6 +143,8 @@ class GNUPlotFormat(Formatter):
             ids_read.add(array_id)
 
         for i, array_id in indexed_ids[ndim:]:
+            snap = data_set.get_array_metadata(array_id)
+
             # data arrays
             if array_id in ids_read:
                 raise ValueError('duplicate data id found: ' + array_id)
@@ -148,7 +154,8 @@ class GNUPlotFormat(Formatter):
                 data_array.clear()
             else:
                 data_array = DataArray(label=labels[i], array_id=array_id,
-                                       set_arrays=set_arrays, size=size)
+                                       set_arrays=set_arrays, shape=shape,
+                                       snapshot=snap)
                 data_array.init_data()
                 data_set.add_array(data_array)
             data_arrays.append(data_array)
@@ -217,13 +224,17 @@ class GNUPlotFormat(Formatter):
             parts = re.split('"\s+"', labelstr[1:-1])
             return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
 
-    def write(self, data_set):
+    def write(self, data_set, io_manager, location):
         """
-        Write updates in this DataSet to storage. Will choose append if
-        possible, overwrite if not.
+        Write updates in this DataSet to storage.
+
+        Will choose append if possible, overwrite if not.
+
+        Args:
+            data_set (DataSet): the data we're storing
+            io_manager (io_manager): the base location to write to
+            location (str): the file location within io_manager
         """
-        io_manager = data_set.io
-        location = data_set.location
         arrays = data_set.arrays
 
         groups = self.group_arrays(arrays)
@@ -231,10 +242,7 @@ class GNUPlotFormat(Formatter):
         written_files = set()
 
         for group in groups:
-            if len(groups) == 1 and not self.always_nest:
-                fn = io_manager.join(location + self.extension)
-            else:
-                fn = io_manager.join(location, group.name + self.extension)
+            fn = io_manager.join(location, group.name + self.extension)
 
             written_files.add(fn)
 
@@ -278,6 +286,46 @@ class GNUPlotFormat(Formatter):
             for array in group.data + (group.set_arrays[-1],):
                 array.mark_saved(save_range[1])
 
+    def write_metadata(self, data_set, io_manager, location, read_first=True):
+        """
+        Write all metadata in this DataSet to storage.
+
+        Args:
+            data_set (DataSet): the data we're storing
+
+            io_manager (io_manager): the base location to write to
+
+            location (str): the file location within io_manager
+
+            read_first (bool, optional): read previously saved metadata before
+                writing? The current metadata will still be the used if
+                there are changes, but if the saved metadata has information
+                not present in the current metadata, it will be retained.
+                Default True.
+        """
+        if read_first:
+            # In case the saved file has more metadata than we have here,
+            # read it in first. But any changes to the in-memory copy should
+            # override the saved file data.
+            memory_metadata = data_set.metadata
+            data_set.metadata = {}
+            self.read_metadata(data_set)
+            deep_update(data_set.metadata, memory_metadata)
+
+        fn = io_manager.join(location, self.metadata_file)
+        with io_manager.open(fn, 'w', encoding='utf8') as snap_file:
+            json.dump(data_set.metadata, snap_file, sort_keys=True,
+                      indent=4, ensure_ascii=False, cls=NumpyJSONEncoder)
+
+    def read_metadata(self, data_set):
+        io_manager = data_set.io
+        location = data_set.location
+        fn = io_manager.join(location, self.metadata_file)
+        if io_manager.list(fn):
+            with io_manager.open(fn, 'r') as snap_file:
+                metadata = json.load(snap_file, encoding='utf8')
+            data_set.metadata.update(metadata)
+
     def _make_header(self, group):
         ids, labels = [], []
         for array in group.set_arrays + group.data:
@@ -286,12 +334,12 @@ class GNUPlotFormat(Formatter):
             label = label.replace('\\', '\\\\').replace('"', '\\"')
             labels.append('"' + label + '"')
 
-        sizes = [str(size) for size in group.set_arrays[-1].shape]
-        if len(sizes) != len(group.set_arrays):
+        shape = [str(size) for size in group.set_arrays[-1].shape]
+        if len(shape) != len(group.set_arrays):
             raise ValueError('array dimensionality does not match setpoints')
 
         out = (self._comment_line(ids) + self._comment_line(labels) +
-               self._comment_line(sizes))
+               self._comment_line(shape))
 
         return out
 

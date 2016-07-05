@@ -27,9 +27,14 @@ class TestBaseFormatter(TestCase):
         data = DataSet1D()
 
         with self.assertRaises(NotImplementedError):
-            formatter.write(data)
+            formatter.write(data, data.io, data.location)
         with self.assertRaises(NotImplementedError):
             formatter.read_one_file(data, 'a file!', set())
+
+        with self.assertRaises(NotImplementedError):
+            formatter.write_metadata(data, data.io, data.location)
+        with self.assertRaises(NotImplementedError):
+            formatter.read_metadata(data)
 
     def test_no_files(self):
         formatter = Formatter()
@@ -53,6 +58,9 @@ class TestBaseFormatter(TestCase):
                 data_set.files_read.append(f.name)
                 raise ValueError('garbage in, garbage out')
 
+            def read_metadata(self, data_set):
+                pass
+
         formatter = MyFormatter()
         data = DataSet1D(location)
         data.x.ndarray = None
@@ -62,12 +70,11 @@ class TestBaseFormatter(TestCase):
         with open(path, 'w') as f:
             f.write('garbage')
 
-        with LogCapture() as s:
+        with LogCapture() as logs:
             formatter.read(data)
-        logstr = s.getvalue()
-        s.close()
+
         # we tried to read this file but it generated an error
-        self.assertEqual(logstr.count('error reading file'), 1, logstr)
+        self.assertEqual(logs.value.count('error reading file'), 1, logs.value)
         self.assertEqual(data.files_read, [os.path.abspath(path)])
 
         expected_array_repr = repr([float('nan')] * 5)
@@ -85,12 +92,12 @@ class TestBaseFormatter(TestCase):
 
         g1d, g2d = groups
 
-        self.assertEqual(g1d.size, (2,))
+        self.assertEqual(g1d.shape, (2,))
         self.assertEqual(g1d.set_arrays, (data.x,))
         self.assertEqual(g1d.data, (data.y1, data.y2))
         self.assertEqual(g1d.name, 'x')
 
-        self.assertEqual(g2d.size, (2, 3))
+        self.assertEqual(g2d.shape, (2, 3))
         self.assertEqual(g2d.set_arrays, (data.x, data.yset))
         self.assertEqual(g2d.data, (data.z1, data.z2))
         self.assertEqual(g2d.name, 'x_yset')
@@ -187,7 +194,7 @@ class TestGNUPlotFormat(TestCase):
         # modified on construction?
         data.y[4] = data.y[4]
 
-        formatter.write(data)
+        formatter.write(data, data.io, data.location)
 
         with open(location + '/x.dat', 'r') as f:
             self.assertEqual(f.read(), file_1d())
@@ -222,11 +229,10 @@ class TestGNUPlotFormat(TestCase):
         # initially give it a different location so we can make it without
         # error, then change back to the location we want.
         data3.location = location
-        with LogCapture() as s:
+        with LogCapture() as logs:
             formatter.read(data3)
-        logstr = s.getvalue()
-        s.close()
-        self.assertTrue('ValueError' in logstr, logstr)
+
+        self.assertTrue('ValueError' in logs.value, logs.value)
 
         # no problem reading again if only data has changed, it gets
         # overwritten with the disk copy
@@ -235,22 +241,6 @@ class TestGNUPlotFormat(TestCase):
         formatter.read(data2)
         self.assertEqual(data2.x[2], 3)
         self.assertEqual(data2.y[2], 5)
-
-    def test_no_nest(self):
-        formatter = GNUPlotFormat(always_nest=False)
-        location = self.locations[0]
-        data = DataSet1D(location)
-
-        # mark the data set as modified by... modifying it!
-        # without actually changing it :)
-        # TODO - are there cases we should automatically mark the data as
-        # modified on construction?
-        data.y[4] = data.y[4]
-
-        formatter.write(data)
-
-        with open(location + '.dat', 'r') as f:
-            self.assertEqual(f.read(), file_1d())
 
     def test_format_options(self):
         formatter = GNUPlotFormat(extension='.splat', terminator='\r',
@@ -265,7 +255,7 @@ class TestGNUPlotFormat(TestCase):
         # modified on construction?
         data.y[4] = data.y[4]
 
-        formatter.write(data)
+        formatter.write(data, data.io, data.location)
 
         # TODO - Python3 uses universal newlines for read and write...
         # which means '\n' gets converted on write to the OS standard
@@ -314,11 +304,11 @@ class TestGNUPlotFormat(TestCase):
         self.stars_before_write = 0
         for i, (x, y) in enumerate(zip(data_copy.x, data_copy.y)):
             data.x[i] = x
-            formatter.write(data)
+            formatter.write(data, data.io, data.location)
             self.add_star(path)
 
             data.y[i] = y
-            formatter.write(data)
+            formatter.write(data, data.io, data.location)
             self.add_star(path)
 
         starred_file = '\n'.join([
@@ -360,11 +350,10 @@ class TestGNUPlotFormat(TestCase):
         os.makedirs(location, exist_ok=True)
         with open(location + '/x.dat', 'w') as f:
             f.write('1\t2\n' + file_1d())
-        with LogCapture() as s:
+        with LogCapture() as logs:
             formatter.read(data)
-        logstr = s.getvalue()
-        s.close()
-        self.assertTrue('ValueError' in logstr, logstr)
+
+        self.assertTrue('ValueError' in logs.value, logs.value)
 
         # same data array in 2 files
         location = self.locations[1]
@@ -374,14 +363,13 @@ class TestGNUPlotFormat(TestCase):
             f.write('\n'.join(['# x\ty', '# "X"\t"Y"', '# 2', '1\t2', '3\t4']))
         with open(location + '/q.dat', 'w') as f:
             f.write('\n'.join(['# q\ty', '# "Q"\t"Y"', '# 2', '1\t2', '3\t4']))
-        with LogCapture() as s:
+        with LogCapture() as logs:
             formatter.read(data)
-        logstr = s.getvalue()
-        s.close()
-        self.assertTrue('ValueError' in logstr, logstr)
+
+        self.assertTrue('ValueError' in logs.value, logs.value)
 
     def test_multifile(self):
-        formatter = GNUPlotFormat(always_nest=False)  # will nest anyway
+        formatter = GNUPlotFormat()
         location = self.locations[1]
         data = DataSetCombined(location)
 
@@ -390,7 +378,7 @@ class TestGNUPlotFormat(TestCase):
         # the other data and setpoint arrays are not marked as modified
         data.y1[:] += 0
         data.z1[:, :] += 0
-        formatter.write(data)
+        formatter.write(data, data.io, data.location)
 
         filex, filexy = files_combined()
 

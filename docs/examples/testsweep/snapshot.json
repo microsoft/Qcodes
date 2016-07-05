@@ -1,0 +1,216 @@
+{
+    "__class__": "qcodes.data.data_set.DataSet",
+    "arrays": {
+        "gates_chan0_set": {
+            "__class__": "qcodes.data.data_array.DataArray",
+            "action_indices": [],
+            "array_id": "gates_chan0_set",
+            "instrument": "toymodel.MockGates",
+            "instrument_name": "gates",
+            "is_setpoint": true,
+            "label": "Gate Channel 0 (mV)",
+            "name": "chan0",
+            "shape": [
+                401
+            ],
+            "units": ""
+        },
+        "meter_amplitude": {
+            "__class__": "qcodes.data.data_array.DataArray",
+            "action_indices": [
+                0
+            ],
+            "array_id": "meter_amplitude",
+            "instrument": "toymodel.MockMeter",
+            "instrument_name": "meter",
+            "is_setpoint": false,
+            "label": "Current (nA)",
+            "name": "amplitude",
+            "shape": [
+                401
+            ],
+            "units": ""
+        }
+    },
+    "formatter": "qcodes.data.gnuplot_format.GNUPlotFormat",
+    "io": "<DiskIO, base_location='/Users/alex/qdev/Qcodes/docs/examples'>",
+    "location": "testsweep",
+    "loop": {
+        "__class__": "qcodes.loops.ActiveLoop",
+        "actions": [
+            {
+                "__class__": "qcodes.instrument.parameter.StandardParameter",
+                "instrument": "toymodel.MockMeter",
+                "instrument_name": "meter",
+                "label": "Current (nA)",
+                "name": "amplitude",
+                "ts": "2016-06-15 22:18:12",
+                "units": "",
+                "value": 0.117
+            }
+        ],
+        "background": true,
+        "delay": 0.003,
+        "sweep_values": {
+            "parameter": {
+                "__class__": "qcodes.instrument.parameter.StandardParameter",
+                "instrument": "toymodel.MockGates",
+                "instrument_name": "gates",
+                "label": "Gate Channel 0 (mV)",
+                "name": "chan0",
+                "ts": "2016-06-15 22:18:10",
+                "units": "",
+                "value": 0.0
+            },
+            "values": [
+                {
+                    "first": -20.0,
+                    "last": 20.0,
+                    "num": 401,
+                    "type": "linear"
+                }
+            ]
+        },
+        "then_actions": [],
+        "ts_end": "2016-06-15 22:18:19",
+        "ts_start": "2016-06-15 22:18:16",
+        "use_data_manager": true,
+        "use_threads": true
+    },
+    "station": {
+        "components": {},
+        "default_measurement": [
+            {
+                "__class__": "qcodes.instrument.parameter.StandardParameter",
+                "instrument": "toymodel.MockMeter",
+                "instrument_name": "meter",
+                "label": "Current (nA)",
+                "name": "amplitude",
+                "ts": "2016-06-15 22:18:12",
+                "units": "",
+                "value": 0.117
+            }
+        ],
+        "instruments": {
+            "gates": {
+                "__class__": "toymodel.MockGates",
+                "functions": {
+                    "reset": {}
+                },
+                "name": "gates",
+                "parameters": {
+                    "IDN": {
+                        "__class__": "qcodes.instrument.parameter.StandardParameter",
+                        "instrument": "toymodel.MockGates",
+                        "instrument_name": "gates",
+                        "label": "IDN",
+                        "name": "IDN",
+                        "ts": "2016-06-15 22:18:10",
+                        "units": "",
+                        "value": {
+                            "firmware": null,
+                            "model": null,
+                            "serial": null,
+                            "vendor": null
+                        }
+                    },
+                    "chan0": {
+                        "__class__": "qcodes.instrument.parameter.StandardParameter",
+                        "instrument": "toymodel.MockGates",
+                        "instrument_name": "gates",
+                        "label": "Gate Channel 0 (mV)",
+                        "name": "chan0",
+                        "ts": "2016-06-15 22:18:10",
+                        "units": "",
+                        "value": 0.0
+                    },
+                    "chan1": {
+                        "__class__": "qcodes.instrument.parameter.StandardParameter",
+                        "instrument": "toymodel.MockGates",
+                        "instrument_name": "gates",
+                        "label": "Gate Channel 1 (mV)",
+                        "name": "chan1",
+                        "ts": "2016-06-15 22:18:10",
+                        "units": "",
+                        "value": 0.0
+                    },
+                    "chan2": {
+                        "__class__": "qcodes.instrument.parameter.StandardParameter",
+                        "instrument": "toymodel.MockGates",
+                        "instrument_name": "gates",
+                        "label": "Gate Channel 2 (mV)",
+                        "name": "chan2",
+                        "ts": "2016-06-15 22:18:10",
+                        "units": "",
+                        "value": 0.0
+                    }
+                }
+            },
+            "meter": {
+                "__class__": "toymodel.MockMeter",
+                "functions": {},
+                "name": "meter",
+                "parameters": {
+                    "IDN": {
+                        "__class__": "qcodes.instrument.parameter.StandardParameter",
+                        "instrument": "toymodel.MockMeter",
+                        "instrument_name": "meter",
+                        "label": "IDN",
+                        "name": "IDN",
+                        "ts": "2016-06-15 22:18:10",
+                        "units": "",
+                        "value": {
+                            "firmware": null,
+                            "model": null,
+                            "serial": null,
+                            "vendor": null
+                        }
+                    },
+                    "amplitude": {
+                        "__class__": "qcodes.instrument.parameter.StandardParameter",
+                        "instrument": "toymodel.MockMeter",
+                        "instrument_name": "meter",
+                        "label": "Current (nA)",
+                        "name": "amplitude",
+                        "ts": "2016-06-15 22:18:12",
+                        "units": "",
+                        "value": 0.117
+                    }
+                }
+            },
+            "source": {
+                "__class__": "toymodel.MockSource",
+                "functions": {},
+                "name": "source",
+                "parameters": {
+                    "IDN": {
+                        "__class__": "qcodes.instrument.parameter.StandardParameter",
+                        "instrument": "toymodel.MockSource",
+                        "instrument_name": "source",
+                        "label": "IDN",
+                        "name": "IDN",
+                        "ts": "2016-06-15 22:18:10",
+                        "units": "",
+                        "value": {
+                            "firmware": null,
+                            "model": null,
+                            "serial": null,
+                            "vendor": null
+                        }
+                    },
+                    "amplitude": {
+                        "__class__": "qcodes.instrument.parameter.StandardParameter",
+                        "instrument": "toymodel.MockSource",
+                        "instrument_name": "source",
+                        "label": "Source Amplitude (μV)",
+                        "name": "amplitude",
+                        "ts": "2016-06-15 22:18:10",
+                        "units": "",
+                        "value": 0.1
+                    }
+                }
+            }
+        },
+        "parameters": {}
+    }
+}

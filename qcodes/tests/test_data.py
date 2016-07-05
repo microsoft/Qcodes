@@ -1,56 +1,73 @@
 from unittest import TestCase
 from unittest.mock import patch
 import numpy as np
-from datetime import datetime
+import os
+import pickle
 
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager, NoData
-from qcodes.data.data_set import (load_data, new_data, DataMode, DataSet,
-                                  TimestampLocation)
-from qcodes.utils.helpers import killprocesses
+from qcodes.data.io import DiskIO
+from qcodes.data.data_set import load_data, new_data, DataMode, DataSet
+from qcodes.process.helpers import kill_processes
 from qcodes import active_children
 
-from .data_mocks import (MockDataManager, MockFormatter, FullIO, EmptyIO,
-                         MissingMIO, MockLive, MockArray)
+from .data_mocks import (MockDataManager, MockFormatter, MatchIO,
+                         MockLive, MockArray, DataSet2D, DataSet1D,
+                         RecordingMockFormatter)
+from .common import strip_qc
 
 
 class TestDataArray(TestCase):
+
     def test_attributes(self):
         pname = 'Betty Sue'
         plabel = 'The best apple pie this side of Wenatchee'
+        pfullname = 'bert'
 
         class MockParam:
             name = pname
             label = plabel
 
+            def __init__(self, full_name=None):
+                self.full_name = full_name
+
         name = 'Oscar'
         label = 'The grouch. GRR!'
+        fullname = 'ernie'
         array_id = 24601
         set_arrays = ('awesomeness', 'chocolate content')
-        size = 'Ginornous'
+        shape = 'Ginornous'
         action_indices = (1, 2, 3, 4, 5)
 
-        p_data = DataArray(parameter=MockParam(), name=name, label=label)
+        p_data = DataArray(parameter=MockParam(pfullname), name=name,
+                           label=label, full_name=fullname)
+        p_data2 = DataArray(parameter=MockParam(pfullname))
 
-        # parameter overrides explicitly given name and label
-        self.assertEqual(p_data.name, pname)
-        self.assertEqual(p_data.label, plabel)
+        # explicitly given name and label override parameter vals
+        self.assertEqual(p_data.name, name)
+        self.assertEqual(p_data.label, label)
+        self.assertEqual(p_data.full_name, fullname)
+        self.assertEqual(p_data2.name, pname)
+        self.assertEqual(p_data2.label, plabel)
+        self.assertEqual(p_data2.full_name, pfullname)
         # test default values
         self.assertIsNone(p_data.array_id)
-        self.assertEqual(p_data.size, ())
+        self.assertEqual(p_data.shape, ())
         self.assertEqual(p_data.action_indices, ())
         self.assertEqual(p_data.set_arrays, ())
         self.assertIsNone(p_data.ndarray)
 
         np_data = DataArray(name=name, label=label, array_id=array_id,
-                            set_arrays=set_arrays, size=size,
+                            set_arrays=set_arrays, shape=shape,
                             action_indices=action_indices)
         self.assertEqual(np_data.name, name)
         self.assertEqual(np_data.label, label)
+        # no full name or parameter - use name
+        self.assertEqual(np_data.full_name, name)
         # test simple assignments
         self.assertEqual(np_data.array_id, array_id)
         self.assertEqual(np_data.set_arrays, set_arrays)
-        self.assertEqual(np_data.size, size)
+        self.assertEqual(np_data.shape, shape)
         self.assertEqual(np_data.action_indices, action_indices)
 
         name_data = DataArray(name=name)
@@ -78,7 +95,7 @@ class TestDataArray(TestCase):
         for item in onetwothree:
             data = DataArray(preset_data=item)
             self.assertEqual(data.ndarray.tolist(), expected123)
-            self.assertEqual(data.size, (3, ))
+            self.assertEqual(data.shape, (3, ))
 
         # you can re-initialize a DataArray with the same shape data,
         # but not with a different shape
@@ -88,25 +105,25 @@ class TestDataArray(TestCase):
         with self.assertRaises(ValueError):
             data.init_data([1, 2])
         self.assertEqual(data.ndarray.tolist(), list456)
-        self.assertEqual(data.size, (3, ))
+        self.assertEqual(data.shape, (3, ))
 
         # you can call init_data again with no data, and nothing changes
         data.init_data()
         self.assertEqual(data.ndarray.tolist(), list456)
-        self.assertEqual(data.size, (3, ))
+        self.assertEqual(data.shape, (3, ))
 
         # multidimensional works too
         list2d = [[1, 2], [3, 4]]
         data2 = DataArray(preset_data=list2d)
         self.assertEqual(data2.ndarray.tolist(), list2d)
-        self.assertEqual(data2.size, (2, 2))
+        self.assertEqual(data2.shape, (2, 2))
 
     def test_init_data_error(self):
         data = DataArray(preset_data=[1, 2])
-        data.size = (3, )
+        data.shape = (3, )
 
         # not sure when this would happen... but if you call init_data
-        # and it notices an inconsistency between size and the actual
+        # and it notices an inconsistency between shape and the actual
         # data that's already there, it raises an error
         with self.assertRaises(ValueError):
             data.init_data()
@@ -151,7 +168,7 @@ class TestDataArray(TestCase):
     def test_edit_and_mark_slice(self):
         data = DataArray(preset_data=[[1] * 5] * 6)
 
-        self.assertEqual(data.size, (6, 5))
+        self.assertEqual(data.shape, (6, 5))
         self.assertEqual(data.modified_range, None)
 
         data[:4:2, 2:] = 2
@@ -180,7 +197,7 @@ class TestDataArray(TestCase):
     def test_nest_empty(self):
         data = DataArray()
 
-        self.assertEqual(data.size, ())
+        self.assertEqual(data.shape, ())
 
         mock_set_array = 'not really an array but we don\'t check'
         mock_set_array2 = 'another one'
@@ -192,7 +209,7 @@ class TestDataArray(TestCase):
         self.assertIsNone(data.ndarray)
 
         # but other attributes are set
-        self.assertEqual(data.size, (3, 2))
+        self.assertEqual(data.shape, (3, 2))
         self.assertEqual(data.action_indices, (66, 44))
         self.assertEqual(data.set_arrays, (mock_set_array2, mock_set_array))
 
@@ -207,7 +224,7 @@ class TestDataArray(TestCase):
     def test_nest_preset(self):
         data = DataArray(preset_data=[1, 2])
         data.nest(3)
-        self.assertEqual(data.size, (3, 2))
+        self.assertEqual(data.shape, (3, 2))
         self.assertEqual(data.ndarray.tolist(), [[1, 2]] * 3)
         self.assertEqual(data.action_indices, ())
         self.assertEqual(data.set_arrays, (data,))
@@ -235,8 +252,9 @@ class TestDataArray(TestCase):
 
 
 class TestLoadData(TestCase):
+
     def setUp(self):
-        killprocesses()
+        kill_processes()
 
     def test_no_live_data(self):
         # live data with no DataManager at all
@@ -288,18 +306,60 @@ class TestLoadData(TestCase):
         data = load_data(formatter=MockFormatter(), data_manager=dm,
                          location='here!')
         self.assertEqual(data.has_read_data, True)
+        self.assertEqual(data.has_read_metadata, True)
+
+
+class TestDataSetMetaData(TestCase):
+
+    def test_snapshot(self):
+        data = new_data(location=False)
+        expected_snap = {
+            '__class__': 'qcodes.data.data_set.DataSet',
+            'location': False,
+            'arrays': {},
+            'formatter': 'qcodes.data.gnuplot_format.GNUPlotFormat',
+        }
+        snap = strip_qc(data.snapshot())
+
+        # handle io separately so we don't need to figure out our path
+        self.assertIn('DiskIO', snap['io'])
+        del snap['io']
+        self.assertEqual(snap, expected_snap)
+
+        # even though we removed io from the snapshot, it's still in .metadata
+        self.assertIn('io', data.metadata)
+
+        # then do the same transformations to metadata to check it too
+        del data.metadata['io']
+        strip_qc(data.metadata)
+        self.assertEqual(data.metadata, expected_snap)
+
+        # location is False so read_metadata should be a noop
+        data.metadata = {'food': 'Fried chicken'}
+        data.read_metadata()
+        self.assertEqual(data.metadata, {'food': 'Fried chicken'})
+
+        # snapshot should never delete things from metadata, only add or update
+        data.metadata['location'] = 'Idaho'
+        snap = strip_qc(data.snapshot())
+        expected_snap['food'] = 'Fried chicken'
+        del snap['io']
+        self.assertEqual(snap, expected_snap)
 
 
 class TestNewData(TestCase):
-    def setUp(self):
-        killprocesses()
-        self.original_lp = DataSet.location_provider
 
-    def tearDown(self):
-        DataSet.location_provider = self.original_lp
+    @classmethod
+    def setUpClass(cls):
+        kill_processes()
+        cls.original_lp = DataSet.location_provider
+
+    @classmethod
+    def tearDownClass(cls):
+        DataSet.location_provider = cls.original_lp
 
     def test_overwrite(self):
-        io = FullIO()
+        io = MatchIO([1])
 
         with self.assertRaises(FileExistsError):
             new_data(location='somewhere', io=io, data_manager=False)
@@ -313,11 +373,12 @@ class TestNewData(TestCase):
             new_data(mode=DataMode.PUSH_TO_SERVER, data_manager=False)
 
     def test_location_functions(self):
-        def my_location(io, name):
-            return 'data/{}'.format(name or 'LOOP!')
+        def my_location(io, record):
+            return 'data/{}'.format((record or {}).get('name') or 'LOOP!')
 
-        def my_location2(io, name):
-            return 'data/{}/folder'.format(name or 'loop?')
+        def my_location2(io, record):
+            name = (record or {}).get('name') or 'loop?'
+            return 'data/{}/folder'.format(name)
 
         DataSet.location_provider = my_location
 
@@ -332,36 +393,10 @@ class TestNewData(TestCase):
         self.assertEqual(data.location, 'data/iceCream/folder')
 
 
-class TestTimestampLocation(TestCase):
-    default_fmt = TimestampLocation().fmt
-    custom_fmt = 'DATA%Y/%B/%d/%I%p'
-
-    def check_cases(self, tsl, fmt):
-        self.assertEqual(tsl(EmptyIO()),
-                         datetime.now().strftime(fmt))
-        self.assertEqual(tsl(EmptyIO(), 'who?'),
-                         datetime.now().strftime(fmt) + '_who?')
-
-        self.assertEqual(tsl(MissingMIO()),
-                         datetime.now().strftime(fmt) + '_m')
-        self.assertEqual(tsl(MissingMIO(), 'you!'),
-                         datetime.now().strftime(fmt) + '_you!_m')
-
-        with self.assertRaises(FileExistsError):
-            tsl(FullIO())
-        with self.assertRaises(FileExistsError):
-            tsl(FullIO(), 'some_name')
-
-    def test_default(self):
-        self.check_cases(TimestampLocation(), self.default_fmt)
-
-    def test_fmt(self):
-        self.check_cases(TimestampLocation(self.custom_fmt), self.custom_fmt)
-
-
 class TestDataSet(TestCase):
+
     def tearDown(self):
-        killprocesses()
+        kill_processes()
 
     def test_constructor_errors(self):
         # no location - only allowed with load_data
@@ -451,3 +486,71 @@ class TestDataSet(TestCase):
         # we can only add a given array_id once
         with self.assertRaises(ValueError):
             data.add_array(MockArray())
+
+    def test_write_copy(self):
+        data = DataSet1D(location=False)
+        mockbase = os.path.abspath('some_folder')
+        data.io = DiskIO(mockbase)
+
+        mr = (2, 3)
+        mr_full = (0, 4)
+        lsi = 1
+        data.x.modified_range = mr
+        data.y.modified_range = mr
+        data.x.last_saved_index = lsi
+        data.y.last_saved_index = lsi
+
+        with self.assertRaises(TypeError):
+            data.write_copy()
+
+        with self.assertRaises(TypeError):
+            data.write_copy(path='some/path', io_manager=DiskIO('.'))
+
+        with self.assertRaises(TypeError):
+            data.write_copy(path='some/path', location='something/else')
+
+        data.formatter = RecordingMockFormatter()
+        data.write_copy(path='/some/abs/path')
+        self.assertEqual(data.formatter.write_calls,
+                         [(None, '/some/abs/path')])
+        self.assertEqual(data.formatter.write_metadata_calls,
+                         [(None, '/some/abs/path', False)])
+        # check that the formatter gets called as if nothing has been saved
+        self.assertEqual(data.formatter.modified_ranges,
+                         [{'x': mr_full, 'y': mr_full}])
+        self.assertEqual(data.formatter.last_saved_indices,
+                         [{'x': None, 'y': None}])
+        # but the dataset afterward has its original mods back
+        self.assertEqual(data.x.modified_range, mr)
+        self.assertEqual(data.y.modified_range, mr)
+        self.assertEqual(data.x.last_saved_index, lsi)
+        self.assertEqual(data.y.last_saved_index, lsi)
+
+        # recreate the formatter to clear the calls attributes
+        data.formatter = RecordingMockFormatter()
+        data.write_copy(location='some/rel/path')
+        self.assertEqual(data.formatter.write_calls,
+                         [(mockbase, 'some/rel/path')])
+        self.assertEqual(data.formatter.write_metadata_calls,
+                         [(mockbase, 'some/rel/path', False)])
+
+        mockbase2 = os.path.abspath('some/other/folder')
+        io2 = DiskIO(mockbase2)
+
+        with self.assertRaises(ValueError):
+            # if location=False we need to specify it in write_copy
+            data.write_copy(io_manager=io2)
+
+        data.location = 'yet/another/path'
+        data.formatter = RecordingMockFormatter()
+        data.write_copy(io_manager=io2)
+        self.assertEqual(data.formatter.write_calls,
+                         [(mockbase2, 'yet/another/path')])
+        self.assertEqual(data.formatter.write_metadata_calls,
+                         [(mockbase2, 'yet/another/path', False)])
+
+    def test_pickle_dataset(self):
+        # Test pickling of DataSet object
+        # If the data_manager is set to None, then the object should pickle.
+        m = DataSet2D()
+        pickle.dumps(m)
