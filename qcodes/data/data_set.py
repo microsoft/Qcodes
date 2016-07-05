@@ -2,14 +2,10 @@
 
 from enum import Enum
 import time
-<<<<<<< HEAD
-import numpy
+import numpy as np
 import logging
-import traceback
-||||||| merged common ancestors
-=======
+from traceback import format_exc
 from copy import deepcopy
->>>>>>> master
 
 from .manager import get_data_manager, NoData
 from .gnuplot_format import GNUPlotFormat
@@ -244,16 +240,10 @@ class DataSet(DelegateAttributes):
 
     default_io = DiskIO('.')
     default_formatter = GNUPlotFormat()
-<<<<<<< HEAD
-    location_provider = TimestampLocation()
-    
-    # functions to be called when operating in background mode
-    background_functions=dict()
-||||||| merged common ancestors
-    location_provider = TimestampLocation()
-=======
     location_provider = FormatLocation()
->>>>>>> master
+
+    # functions to be called when operating in background mode
+    background_functions = {}
 
     def __init__(self, location=None, mode=DataMode.LOCAL, arrays=None,
                  data_manager=None, formatter=None, io=None, write_period=5):
@@ -417,33 +407,37 @@ class DataSet(DelegateAttributes):
     def fraction_complete(self):
         try:
             first_param = next(iter(self.arrays.keys()))
-            A=getattr(self, first_param)
-            sz=numpy.prod(A.size)
-            fraction = (sz-numpy.isnan(A).sum())/sz 
-        except Exception as ex:
-            logging.debug(traceback.format_exc(ex))
-            fraction = numpy.NaN
-        return fraction 
+            A = getattr(self, first_param)
+            sz = np.prod(A.size)
+            fraction = (sz - np.isnan(A).sum()) / sz
+        except:
+            logging.debug(format_exc())
+            fraction = np.NaN
+        return fraction
+
     def complete(self, delay=1.5):
         logging.info('waiting for DataSet to complete')
 
         try:
-            nloops=0
+            nloops = 0
             while True:
-                logging.info('waiting for DataSet to complete (fraction %.2f)' % (self.fraction_complete(),) )
-                if self.sync()==False:
+                logging.info(
+                    'waiting for DataSet to complete (fraction %.2f)' %
+                    self.fraction_complete())
+                if self.sync() is False:
                     break
+
                 time.sleep(delay)
-                nloops=nloops+1
-                
+                nloops += 1
+
                 for key, fn in self.background_functions.items():
                     logging.debug('calling %s: %s' % (key, fn))
                     fn()
-        except Exception as ex:
-            print(traceback.format_exc(ex))
+        except:
+            print(format_exc())
             return False
         return True
-        
+
     def get_changes(self, synced_index):
         changes = {}
 
