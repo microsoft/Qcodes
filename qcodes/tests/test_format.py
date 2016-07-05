@@ -4,7 +4,7 @@ import os
 from qcodes.data.format import Formatter
 from qcodes.data.gnuplot_format import GNUPlotFormat
 from qcodes.data.data_array import DataArray
-from qcodes.data.data_set import DataSet, new_data
+from qcodes.data.data_set import DataSet, new_data, load_data
 from qcodes.utils.helpers import LogCapture
 
 from .data_mocks import DataSet1D, file_1d, DataSetCombined, files_combined
@@ -110,6 +110,7 @@ class TestBaseFormatter(TestCase):
 
         # no matter what else, if nothing is listed as modified
         # then save_range is None
+        data.x_set.modified_range = data.y.modified_range = None
         for lsi_x in [None, 0, 3]:
             data.x_set.last_saved_index = lsi_x
             for lsi_y in [None, 1, 4]:
@@ -188,12 +189,6 @@ class TestGNUPlotFormat(TestCase):
         location = self.locations[0]
         data = DataSet1D(location)
 
-        # mark the data set as modified by... modifying it!
-        # without actually changing it :)
-        # TODO - are there cases we should automatically mark the data as
-        # modified on construction?
-        data.y[4] = data.y[4]
-
         formatter.write(data, data.io, data.location)
 
         with open(location + '/x_set.dat', 'r') as f:
@@ -217,6 +212,12 @@ class TestGNUPlotFormat(TestCase):
 
         self.checkArraysEqual(data2.x_set, data.x_set)
         self.checkArraysEqual(data2.y, data.y)
+
+        # data has been saved
+        self.assertEqual(data.y.last_saved_index, 4)
+        # data2 has been read back in, should show the same
+        # last_saved_index
+        self.assertEqual(data2.y.last_saved_index, 4)
 
         # while we're here, check some errors on bad reads
 
@@ -249,12 +250,6 @@ class TestGNUPlotFormat(TestCase):
         location = self.locations[0]
         data = DataSet1D(location)
 
-        # mark the data set as modified by... modifying it!
-        # without actually changing it :)
-        # TODO - are there cases we should automatically mark the data as
-        # modified on construction?
-        data.y[4] = data.y[4]
-
         formatter.write(data, data.io, data.location)
 
         # TODO - Python3 uses universal newlines for read and write...
@@ -285,6 +280,7 @@ class TestGNUPlotFormat(TestCase):
     def test_incremental_write(self):
         formatter = GNUPlotFormat()
         location = self.locations[0]
+        location2 = self.locations[1]  # use 2nd location for reading back in
         data = DataSet1D(location)
         path = location + '/x_set.dat'
 
@@ -305,11 +301,27 @@ class TestGNUPlotFormat(TestCase):
         for i, (x, y) in enumerate(zip(data_copy.x_set, data_copy.y)):
             data.x_set[i] = x
             formatter.write(data, data.io, data.location)
+            formatter.write(data, data.io, location2)
             self.add_star(path)
 
             data.y[i] = y
             formatter.write(data, data.io, data.location)
+            data.x_set.clear_save()
+            data.y.clear_save()
+            formatter.write(data, data.io, location2)
             self.add_star(path)
+
+            # we wrote to a second location without the stars, so we can read
+            # back in and make sure that we get the right last_saved_index
+            # for the amount of data we've read.
+            reread_data = load_data(location=location2, data_manager=False,
+                                    formatter=formatter, io=data.io)
+            self.assertEqual(repr(reread_data.x_set.tolist()),
+                             repr(data.x_set.tolist()))
+            self.assertEqual(repr(reread_data.y.tolist()),
+                             repr(data.y.tolist()))
+            self.assertEqual(reread_data.x_set.last_saved_index, i)
+            self.assertEqual(reread_data.y.last_saved_index, i)
 
         starred_file = '\n'.join([
             '# x_set\ty',
@@ -374,11 +386,6 @@ class TestGNUPlotFormat(TestCase):
         location = self.locations[1]
         data = DataSetCombined(location)
 
-        # mark one array in each file as completely modified
-        # that should cause the whole files to be written, even though
-        # the other data and setpoint arrays are not marked as modified
-        data.y1[:] += 0
-        data.z1[:, :] += 0
         formatter.write(data, data.io, data.location)
 
         filex, filexy = files_combined()

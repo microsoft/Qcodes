@@ -140,7 +140,7 @@ class TestDataArray(TestCase):
         self.assertEqual(data[0].tolist(), [1, 2])
         self.assertEqual(data[0, 1], 2)
 
-        self.assertIsNone(data.modified_range)
+        data.modified_range = None
         self.assertIsNone(data.last_saved_index)
 
         self.assertEqual(len(data), 2)
@@ -169,7 +169,7 @@ class TestDataArray(TestCase):
         data = DataArray(preset_data=[[1] * 5] * 6)
 
         self.assertEqual(data.shape, (6, 5))
-        self.assertEqual(data.modified_range, None)
+        data.modified_range = None
 
         data[:4:2, 2:] = 2
         self.assertEqual(data.tolist(), [
@@ -228,6 +228,10 @@ class TestDataArray(TestCase):
         self.assertEqual(data.ndarray.tolist(), [[1, 2]] * 3)
         self.assertEqual(data.action_indices, ())
         self.assertEqual(data.set_arrays, (data,))
+
+        # test that the modified range gets correctly set to
+        # (0, 2*3-1 = 5)
+        self.assertEqual(data.modified_range, (0, 5))
 
         # you need a set array for all but the inner nesting
         with self.assertRaises(TypeError):
