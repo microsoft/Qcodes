@@ -2,7 +2,6 @@
 
 from enum import Enum
 import time
-import numpy as np
 import logging
 from traceback import format_exc
 from copy import deepcopy
