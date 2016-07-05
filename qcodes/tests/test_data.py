@@ -589,4 +589,17 @@ class TestDataSet(TestCase):
         self.assertEqual(empty_data.fraction_complete(), 0.0)
 
         data = DataSetCombined(location=False)
+        self.assertEqual(data.fraction_complete(), 1.0)
 
+        # alter only the measured arrays, check that only these are used
+        # to calculate fraction_complete
+        data.y1.modified_range = (0, 0)  # 1 of 2
+        data.y2.modified_range = (0, 0)  # 1 of 2
+        data.z1.modified_range = (0, 2)  # 3 of 6
+        data.z2.modified_range = (0, 2)  # 3 of 6
+        self.assertEqual(data.fraction_complete(), 0.5)
+
+        # mark more things complete using last_saved_index and synced_index
+        data.y1.last_saved_index = 1  # 2 of 2
+        data.z1.synced_index = 5  # 6 of 6
+        self.assertEqual(data.fraction_complete(), 0.75)
