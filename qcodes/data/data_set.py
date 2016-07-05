@@ -233,6 +233,15 @@ class DataSet(DelegateAttributes):
             between saves to disk. If not ``LOCAL``, the ``DataServer`` handles
             this and generally writes more often. Use None to disable writing
             from calls to ``self.store``. Default 5.
+
+    Attributes:
+        background_functions (Dict[callable]): Class attribute, ``{key: fn}``,
+            ``fn`` is a callable accepting no arguments, and ``key`` is a name
+            to identify the function and help you attach and remove it.
+            In ``DataSet.complete`` we will call each of these periodically.
+            Note that because this is a class attribute, the functions will
+            apply to every DataSet. If you want specific functions for one
+            DataSet you can override this with an instance attribute.
     """
 
     # ie data_set.arrays['vsd'] === data_set.vsd
@@ -405,17 +414,37 @@ class DataSet(DelegateAttributes):
                 return False
 
     def fraction_complete(self):
-        try:
-            first_param = next(iter(self.arrays.keys()))
-            A = getattr(self, first_param)
-            sz = np.prod(A.size)
-            fraction = (sz - np.isnan(A).sum()) / sz
-        except:
-            logging.debug(format_exc())
-            fraction = np.NaN
-        return fraction
+        """
+        Get the fraction of this DataSet which has data in it.
+
+        Returns:
+            float: the average of all measured (not setpoint) arrays'
+                ``fraction_complete()`` values, independent of the individual
+                array sizes. If there are no measured arrays, returns zero.
+        """
+        array_count, total = 0, 0
+
+        for array in self.arrays.values():
+            if not array.is_setpoint:
+                array_count += 1
+                total += array.fraction_complete()
+
+        return total / (array_count or 1)
 
     def complete(self, delay=1.5):
+        """
+        Periodically sync the DataSet and display percent complete status.
+
+        Also, each period, execute functions stored in (class attribute)
+        ``self.background_functions``
+
+        Args:
+            delay (float): seconds between status messages
+
+        Returns:
+            bool: True if we managed to wait until the DataSet finished,
+                False if something went wrong and it it not yet complete.
+        """
         logging.info('waiting for DataSet to complete')
 
         try:

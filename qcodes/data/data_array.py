@@ -332,3 +332,26 @@ class DataArray(DelegateAttributes):
             snap[attr] = getattr(self, attr)
 
         return snap
+
+    def fraction_complete(self):
+        """
+        Get the fraction of this array which has data in it.
+
+        Or more specifically, the fraction of the latest point in the array
+        where we have touched it.
+
+        Returns:
+            float: fraction of array which is complete, from 0.0 to 1.0
+        """
+        if self.ndarray is None:
+            return 0.0
+
+        last_index = -1
+        if self.last_saved_index is not None:
+            last_index = max(last_index, self.last_saved_index)
+        if self.modified_range is not None:
+            last_index = max(last_index, self.modified_range[1])
+        if getattr(self, 'synced_index', None) is not None:
+            last_index = max(last_index, self.synced_index)
+
+        return (last_index + 1) / self.ndarray.size
