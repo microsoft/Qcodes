@@ -109,11 +109,14 @@ class Agilent_34400A(VisaInstrument):
         # convert both value*range and the resolution factors
         # to strings with few digits, so we avoid floating point
         # rounding errors.
-        res_fac_strs = ['{:.1e}'.format(v) for v in self._resolution_factor]
-        if '{:.1e}'.format(value / rang) not in res_fac_strs:
+        res_fac_strs = ['{:.1e}'.format(v * rang)
+                        for v in self._resolution_factor]
+        if '{:.1e}'.format(value) not in res_fac_strs:
             raise ValueError(
                 'Resolution setting {:.1e} ({} at range {}) '
-                'does not exist.'.format(value / rang, value, rang))
+                'does not exist. '
+                'Possible values are {}'.format(value, value, rang,
+                                                res_fac_strs))
 
         self.write('VOLT:DC:RES {:.1e}'.format(value))
 
