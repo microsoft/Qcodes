@@ -261,7 +261,6 @@ class TestLoop(TestCase):
         self.assertEqual(data.p3.tolist(), [[[5, 6]] * 2] * 2)
 
     def test_repr(self):
-        self.maxDiff=None
         loop2 = Loop(self.p2[3:5:1], 0.001).each(self.p2)
         loop = Loop(self.p1[1:3:1], 0.001).each(self.p3,
                                                 self.p2,
