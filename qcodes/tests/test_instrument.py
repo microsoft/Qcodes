@@ -5,7 +5,8 @@ from collections import namedtuple
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
-from qcodes.instrument.parameter import Parameter, ManualParameter
+from qcodes.instrument.parameter import (Parameter, ManualParameter,
+                                         StandardParameter)
 from qcodes.instrument.function import Function
 from qcodes.instrument.server import get_instrument_server_manager
 
@@ -570,6 +571,23 @@ class TestInstrument(TestCase):
 
         with self.assertRaises(ValueError):
             gates.modecoded.set('0')
+
+    def test_param_cmd_with_parsing(self):
+        def set_p(val):
+            self._p = val
+
+        def get_p():
+            return self._p
+
+        def parse_set_p(val):
+            return '{:d}'.format(val)
+
+        p = StandardParameter('p_int', get_cmd=get_p, get_parser=int,
+                              set_cmd=set_p, set_parser=parse_set_p)
+
+        p(5)
+        self.assertEqual(self._p, '5')
+        self.assertEqual(p(), 5)
 
     def test_bare_function(self):
         # not a use case we want to promote, but it's there...

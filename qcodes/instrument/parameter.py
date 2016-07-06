@@ -436,8 +436,6 @@ class StandardParameter(Parameter):
 
         get_parser ( Optional[function]): function to transform the response from get
             to the final output value.
-            NOTE: only applies if get_cmd is a string. The function form
-            of get_cmd should do its own parsing
             See also val_mapping
 
         set_cmd (Optional[Union[string, function]]): command to set this parameter, either:
@@ -448,8 +446,6 @@ class StandardParameter(Parameter):
 
         set_parser (Optional[function]): function to transform the input set value to an encoded
             value sent to the instrument.
-            NOTE: only applies if set_cmd is a string. The function form
-            of set_cmd  should do its own parsing
             See also val_mapping
 
         val_mapping (Optional[dict]): a bidirectional map data/readable values to instrument codes,
@@ -461,6 +457,13 @@ class StandardParameter(Parameter):
             If vals is omitted, will also construct a matching Enum validator.
             NOTE: only applies to get if get_cmd is a string, and to set if
             set_cmd is a string.
+
+            You can use ``val_mapping`` with ``get_parser``, in which case
+            ``get_parser`` acts on the return value from the instrument first,
+            then ``val_mapping`` is applied (in reverse).
+
+            You CANNOT use ``val_mapping`` and ``set_parser`` together - that
+            would just provide too many ways to do the same thing.
 
         vals (Optional[Validator]): a Validator object for this parameter
 

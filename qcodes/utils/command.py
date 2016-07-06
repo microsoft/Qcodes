@@ -55,29 +55,29 @@ class Command:
                             'taking the same args as the command, not '
                             '{}'.format(no_cmd_function))
 
+        if input_parser is None:
+            parse_input = False
+        elif is_function(input_parser, arg_count):
+            parse_input = True if arg_count == 1 else 'multi'
+            self.input_parser = input_parser
+        else:
+            raise TypeError(
+                'input_parser must be a function with one arg_count args,'
+                ' not {}'.format(repr(input_parser)))
+
+        if output_parser is None:
+            parse_output = False
+        elif is_function(output_parser, 1):
+            parse_output = True
+            self.output_parser = output_parser
+        else:
+            raise TypeError(
+                'output_parser must be a function with one arg,'
+                ' not {}'.format(repr(output_parser)))
+
         if isinstance(cmd, str):
             self.cmd_str = cmd
             self.exec_str = exec_str
-
-            if input_parser is None:
-                parse_input = False
-            elif is_function(input_parser, arg_count):
-                parse_input = True if arg_count == 1 else 'multi'
-                self.input_parser = input_parser
-            else:
-                raise TypeError(
-                    'input_parser must be a function with one arg_count args,'
-                    ' not {}'.format(repr(input_parser)))
-
-            if output_parser is None:
-                parse_output = False
-            elif is_function(output_parser, 1):
-                parse_output = True
-                self.output_parser = output_parser
-            else:
-                raise TypeError(
-                    'output_parser must be a function with one arg,'
-                    ' not {}'.format(repr(output_parser)))
 
             if is_function(exec_str, 1):
                 self.exec_function = {  # (parse_input, parse_output)
@@ -94,7 +94,15 @@ class Command:
                                 ' not {}'.format(repr(exec_str)))
 
         elif is_function(cmd, arg_count):
-            self.exec_function = cmd
+            self._cmd = cmd
+            self.exec_function = {  # (parse_input, parse_output)
+                (False, False): cmd,
+                (False, True): self.call_cmd_parsed_out,
+                (True, False): self.call_cmd_parsed_in,
+                (True, True): self.call_cmd_parsed_in_out,
+                ('multi', False): self.call_cmd_parsed_in2,
+                ('multi', True): self.call_cmd_parsed_in2_out
+            }[(parse_input, parse_output)]
 
         elif cmd is None:
             if no_cmd_function is not None:
@@ -137,6 +145,28 @@ class Command:
         """Execute a formatted string with multi-arg input & output parsing."""
         return self.output_parser(self.exec_str(
             self.cmd_str.format(*self.input_parser(*args))))
+
+    # And the same for parsing + command as a function
+
+    def call_cmd_parsed_out(self, *args):
+        """Execute a function with output parsing."""
+        return self.output_parser(self._cmd(*args))
+
+    def call_cmd_parsed_in(self, arg):
+        """Execute a function with 1-arg input parsing."""
+        return self._cmd(self.input_parser(arg))
+
+    def call_cmd_parsed_in_out(self, arg):
+        """Execute a function with 1-arg input and output parsing."""
+        return self.output_parser(self._cmd(self.input_parser(arg)))
+
+    def call_cmd_parsed_in2(self, *args):
+        """Execute a function with multi-arg input parsing."""
+        return self._cmd(*self.input_parser(*args))
+
+    def call_cmd_parsed_in2_out(self, *args):
+        """Execute a function with multi-arg input & output parsing."""
+        return self.output_parser(self._cmd(*self.input_parser(*args)))
 
     def __call__(self, *args):
         """Invoke the command."""

@@ -96,3 +96,25 @@ class TestCommand(TestCase):
 
         with self.assertRaises(TypeError):
             Command(3, myexp)
+
+        # with output parsing
+        cmd = Command(2, myexp, output_parser=lambda x: 5 * x)
+        self.assertEqual(cmd(10, 3), 5000)
+
+        # input parsing
+        cmd = Command(1, abs, input_parser=lambda x: x + 1)
+        self.assertEqual(cmd(-10), 9)
+
+        # input *and* output parsing
+        cmd = Command(1, abs, input_parser=lambda x: x + 2,
+                      output_parser=lambda x: 3 * x)
+        self.assertEqual(cmd(-6), 12)
+
+        # multi-input parsing, no output parsing
+        cmd = Command(2, myexp, input_parser=lambda x, y: (y, x))
+        self.assertEqual(cmd(3, 10), 1000)
+
+        # multi-input parsing *and* output parsing
+        cmd = Command(2, myexp, input_parser=lambda x, y: (y, x),
+                      output_parser=lambda x: 10 * x)
+        self.assertEqual(cmd(8, 2), 2560)
