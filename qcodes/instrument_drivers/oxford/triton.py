@@ -59,8 +59,7 @@ class Triton(IPInstrument):
                            label='PID Mode',
                            get_cmd=partial(self._get_control_param, 'MODE'),
                            set_cmd=partial(self._set_control_param, 'MODE'),
-                           # TODO: set/get_parser=OnOff(),
-                           vals=Strings())
+                           val_mapping={'on':  'ON', 'off': 'OFF'})
 
         self.add_parameter(name='pid_ramp',
                            label='PID ramp enabled',
@@ -68,8 +67,7 @@ class Triton(IPInstrument):
                                            'RAMP:ENAB'),
                            set_cmd=partial(self._set_control_param,
                                            'RAMP:ENAB'),
-                           # TODO: set/get_parser=OnOff(),
-                           vals=Strings())
+                           val_mapping={'on':  'ON', 'off': 'OFF'})
 
         self.add_parameter(name='pid_setpoint',
                            label='PID temperature setpoint',
@@ -108,6 +106,13 @@ class Triton(IPInstrument):
 
         self.connect_message()
 
+    def _get_on_off(self, mgs):
+        print(msg)
+        return str.lower(msg)
+
+    def _set_on_off(self, mgs):
+        return str.upper(msg)
+
     def _get_response(self, msg):
         return msg.split(':')[-1]
 
@@ -117,7 +122,7 @@ class Triton(IPInstrument):
             return None
         try:
             return float(re.findall("[-+]?\d*\.\d+|\d+", msg)[0])
-        except:
+        except Exception:
             return msg
 
     def get_idn(self):
