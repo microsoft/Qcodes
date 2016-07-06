@@ -626,10 +626,9 @@ class TestDataSet(TestCase):
         self.syncing_array = array
         self.sync_index = 0
         data.sync = self.mock_sync
-        DataSet.background_functions.update({
-            'fail': self.failing_func,
-            'log': self.logging_func
-        })
+        bf = DataSet.background_functions
+        bf['fail'] = self.failing_func
+        bf['log'] = self.logging_func
 
         with LogCapture() as logs:
             # grab info and warnings but not debug messages
