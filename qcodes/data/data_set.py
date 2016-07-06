@@ -5,6 +5,7 @@ import time
 import logging
 from traceback import format_exc
 from copy import deepcopy
+from collections import OrderedDict
 
 from .manager import get_data_manager, NoData
 from .gnuplot_format import GNUPlotFormat
@@ -234,10 +235,14 @@ class DataSet(DelegateAttributes):
             from calls to ``self.store``. Default 5.
 
     Attributes:
-        background_functions (Dict[callable]): Class attribute, ``{key: fn}``,
-            ``fn`` is a callable accepting no arguments, and ``key`` is a name
-            to identify the function and help you attach and remove it.
-            In ``DataSet.complete`` we will call each of these periodically.
+        background_functions (OrderedDict[callable]): Class attribute,
+            ``{key: fn}``: ``fn`` is a callable accepting no arguments, and
+            ``key`` is a name to identify the function and help you attach and
+            remove it.
+
+            In ``DataSet.complete`` we call each of these periodically, in the
+            order that they were attached.
+
             Note that because this is a class attribute, the functions will
             apply to every DataSet. If you want specific functions for one
             DataSet you can override this with an instance attribute.
@@ -250,8 +255,7 @@ class DataSet(DelegateAttributes):
     default_formatter = GNUPlotFormat()
     location_provider = FormatLocation()
 
-    # functions to be called when operating in background mode
-    background_functions = {}
+    background_functions = OrderedDict()
 
     def __init__(self, location=None, mode=DataMode.LOCAL, arrays=None,
                  data_manager=None, formatter=None, io=None, write_period=5):
@@ -435,36 +439,45 @@ class DataSet(DelegateAttributes):
         Periodically sync the DataSet and display percent complete status.
 
         Also, each period, execute functions stored in (class attribute)
-        ``self.background_functions``
+        ``self.background_functions``. If a function fails, we log its
+        traceback and continue on. If any one function fails twice in
+        a row, it gets removed.
 
         Args:
-            delay (float): seconds between status messages
-
-        Returns:
-            bool: True if we managed to wait until the DataSet finished,
-                False if something went wrong and it it not yet complete.
+            delay (float): seconds between iterations. Default 1.5
         """
-        logging.info('waiting for DataSet to complete')
+        logging.info(
+            'waiting for DataSet <{}> to complete'.format(self.location))
 
-        try:
-            nloops = 0
-            while True:
-                logging.info(
-                    'waiting for DataSet to complete (fraction %.2f)' %
-                    self.fraction_complete())
-                if self.sync() is False:
-                    break
+        failing = {key: False for key in self.background_functions}
 
-                time.sleep(delay)
-                nloops += 1
+        nloops = 0
+        completed = False
+        while not completed:
+            logging.info('DataSet: {:.0f}% complete'.format(
+                self.fraction_complete() * 100))
 
-                for key, fn in self.background_functions.items():
-                    logging.debug('calling %s: %s' % (key, fn))
+            time.sleep(delay)
+            nloops += 1
+
+            if self.sync() is False:
+                completed = True
+
+            for key, fn in list(self.background_functions.items()):
+                try:
+                    logging.debug('calling {}: {}'.format(key, repr(fn)))
                     fn()
-        except:
-            print(format_exc())
-            return False
-        return True
+                    failing[key] = False
+                except Exception:
+                    logging.info(format_exc())
+                    if failing[key]:
+                        logging.warning(
+                            'background function {} failed twice in a row, '
+                            'removing it'.format(key))
+                        del self.background_functions[key]
+                    failing[key] = True
+
+        logging.info('DataSet <{}> is complete'.format(self.location))
 
     def get_changes(self, synced_index):
         changes = {}

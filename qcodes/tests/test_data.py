@@ -3,12 +3,14 @@ from unittest.mock import patch
 import numpy as np
 import os
 import pickle
+import logging
 
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager, NoData
 from qcodes.data.io import DiskIO
 from qcodes.data.data_set import load_data, new_data, DataMode, DataSet
 from qcodes.process.helpers import kill_processes
+from qcodes.utils.helpers import LogCapture
 from qcodes import active_children
 
 from .data_mocks import (MockDataManager, MockFormatter, MatchIO,
@@ -603,3 +605,61 @@ class TestDataSet(TestCase):
         data.y1.last_saved_index = 1  # 2 of 2
         data.z1.synced_index = 5  # 6 of 6
         self.assertEqual(data.fraction_complete(), 0.75)
+
+    def mock_sync(self):
+        # import pdb; pdb.set_trace()
+        i = self.sync_index
+        self.syncing_array[i] = i
+        self.sync_index = i + 1
+        return self.sync_index < self.syncing_array.size
+
+    def failing_func(self):
+        raise RuntimeError('it is called failing_func for a reason!')
+
+    def logging_func(self):
+        logging.info('background at index {}'.format(self.sync_index))
+
+    def test_complete(self):
+        array = DataArray(name='y', shape=(5,))
+        array.init_data()
+        data = new_data(arrays=(array,), location=False)
+        self.syncing_array = array
+        self.sync_index = 0
+        data.sync = self.mock_sync
+        DataSet.background_functions.update({
+            'fail': self.failing_func,
+            'log': self.logging_func
+        })
+
+        with LogCapture() as logs:
+            # grab info and warnings but not debug messages
+            logging.getLogger().setLevel(logging.INFO)
+            data.complete(delay=0.001)
+
+        logs = logs.value
+
+        expected_logs = [
+            'waiting for DataSet <False> to complete',
+            'DataSet: 0% complete',
+            'RuntimeError: it is called failing_func for a reason!',
+            'background at index 1',
+            'DataSet: 20% complete',
+            'RuntimeError: it is called failing_func for a reason!',
+            'background function fail failed twice in a row, removing it',
+            'background at index 2',
+            'DataSet: 40% complete',
+            'background at index 3',
+            'DataSet: 60% complete',
+            'background at index 4',
+            'DataSet: 80% complete',
+            'background at index 5',
+            'DataSet <False> is complete'
+        ]
+
+        log_index = 0
+        for line in expected_logs:
+            self.assertIn(line, logs, logs)
+            log_index = logs.index(line, log_index)
+            self.assertTrue(log_index >= 0, logs)
+            log_index += len(line) + 1  # +1 for \n
+        self.assertEqual(log_index, len(logs), logs)
