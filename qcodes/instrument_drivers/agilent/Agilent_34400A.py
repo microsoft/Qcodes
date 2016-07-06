@@ -22,7 +22,7 @@ class Agilent_34400A(VisaInstrument):
 
         self._resolution_factor = {'34401A': [1e-4, 1e-5, 3e-6, 1e-6, 3e-7],
                                    '34410A': [6e-06, 3e-06, 1.5e-06, 7e-07,
-                                              3e-07, 2e-07, 1e-07, 3e-08],
+                                              3e-07, 2e-07, 1e-07],
                                    '34411A': [3e-05, 1.5e-05, 6e-06, 3e-06,
                                               1.5e-06, 7e-07, 3e-07, 2e-07,
                                               1e-07, 3e-08]
@@ -109,16 +109,13 @@ class Agilent_34400A(VisaInstrument):
         # convert both value*range and the resolution factors
         # to strings with few digits, so we avoid floating point
         # rounding errors.
-        # TODO: the format string should be the same as used in
-        # self.write below, once we know what that should be.
-        # (it shouldn't be {:.7f} because that's sometimes not enough digits)
         res_fac_strs = ['{:.1e}'.format(v) for v in self._resolution_factor]
-        if '{:.1e}'.format(value * rang) not in res_fac_strs:
+        if '{:.1e}'.format(value / rang) not in res_fac_strs:
             raise ValueError(
                 'Resolution setting {:.1e} ({} at range {}) '
-                'does not exist.'.format(value * rang, value, rang))
+                'does not exist.'.format(value / rang, value, rang))
 
-        self.write('VOLT:DC:RES {:.7f}'.format(value))
+        self.write('VOLT:DC:RES {:.1e}'.format(value))
 
         # NPLC settings change with resolution
         self.NPLC.get()
