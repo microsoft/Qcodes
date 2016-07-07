@@ -13,7 +13,7 @@ class VoltageParameter(Parameter):
     output voltage to a lockin or other voltage amplifier, and you have
     the voltage reading from that amplifier as a qcodes parameter.
 
-    ``VoltageParameter.get()`` returns ``(raw_voltage, voltage)``
+    ``VoltageParameter.get()`` returns ``(voltage_raw, voltage)``
 
     Args:
         measured_param (Parameter): a gettable parameter returning the

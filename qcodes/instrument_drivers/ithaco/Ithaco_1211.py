@@ -12,7 +12,7 @@ class CurrentParameter(Parameter):
     output voltage to a lockin or other voltage amplifier, and you have
     the voltage reading from that amplifier as a qcodes parameter.
 
-    ``CurrentParameter.get()`` returns ``(raw_voltage, current)``
+    ``CurrentParameter.get()`` returns ``(voltage_raw, current)``
 
     Args:
         measured_param (Parameter): a gettable parameter returning the
