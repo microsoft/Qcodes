@@ -1,6 +1,6 @@
 from qcodes import Instrument
 from qcodes.instrument.parameter import ManualParameter
-from qcodes.utils.validators import Bool, Numbers, Enum
+from qcodes.utils.validators import Bool, Enum
 
 from qcodes.instrument.parameter import Parameter
 
@@ -106,7 +106,7 @@ class SR560(Instrument):
                            initial_value=10,
                            label='Gain',
                            units=None,
-                           vals=Numbers(*gains))
+                           vals=Enum(*gains))
 
     def get_idn(self):
         vendor = 'Stanford Research Systems'
