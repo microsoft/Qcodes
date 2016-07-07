@@ -12,30 +12,33 @@ from qcodes import Parameter
 '''
 
 class FrequencySweep(Parameter):
-    def __init__(self, instrument, start, stop, npts):
-        self._instrument = instrument
-        self.set_sweep(start, stop, npts)
-        self.names = ('magnitude', 'phase')
-        self.units = ('dBm', 'degrees')
-        self.setpoint_names = (('frequency',), ('frequency',))
+	def __init__(self, name, instrument, start, stop, npts, **kwargs):
+		super().__init__(name)
+		self.p = 'ex'
+		self.name = name
+		self._instrument = instrument
+		self.set_sweep(start, stop, npts)
+		self.names = ('magnitude', 'phase')
+		self.units = ('dBm', 'degrees')
+		self.setpoint_names = (('frequency',), ('frequency',))
  
-    def set_sweep(self, start, stop, npts):
-        # update the config of the software parameter
-        f = np.linspace(start, stop, num=npts)
-        self.setpoints = ((f,), (f,))
-        self.shapes = ((npts,), (npts,))
+	def set_sweep(self, start, stop, npts):
+		# update the config of the software parameter
+		f = np.linspace(int(start), int(stop), num=npts)
+		self.setpoints = ((f,), (f,))
+		self.shapes = ((npts,), (npts,))
  
-    def get(self):      
-        self.write('INIT:IMM; *WAI')
-        data_list = [float(v) for v in self._instrument.ask('CALC:DATA? SDAT').split(',')]
-        data_arr = data_arr = np.array(data_list).reshape(len(data_list)/2,2)
-        mag_array=[]
-        phase_array=[]
-        for comp in data_arr:
-            complex_num = complex(comp[0],comp[1])
-            mag_array.append(abs(complex_num))
-            phase_array.append(phase(complex_num))
-        return mag_array, phase_array
+	def get(self):      
+		self._instrument.write('INIT:IMM; *WAI')
+		data_list = [float(v) for v in self._instrument.ask('CALC:DATA? SDAT').split(',')]
+		data_arr = data_arr = np.array(data_list).reshape(len(data_list)/2,2)
+		mag_array=[]
+		phase_array=[]
+		for comp in data_arr:
+			complex_num = complex(comp[0],comp[1])
+			mag_array.append(abs(complex_num))
+			phase_array.append(phase(complex_num))
+		return mag_array, phase_array
 
 
 class ZNB20(VisaInstrument):
@@ -83,31 +86,33 @@ class ZNB20(VisaInstrument):
         #                    get_parser=int,
         #                    vals=vals.Numbers(1,2e10))
 
+		#TODO: vals make this work
         self.add_parameter(name='start', 
                            get_cmd='SENS:FREQ:START?',
-                           set_cmd=self._set_start,
-                           vals=Numbers(1e3, 1e10))
+                           set_cmd=self._set_start
+                           )
 
         self.add_parameter(name='stop', 
                            get_cmd='SENS:FREQ:STOP?',
-                           set_cmd=self._set_stop,
-                           vals=Numbers(1e3, 1e10))
+                           set_cmd=self._set_stop
+                           )
 
         self.add_parameter(name='npts',
                            get_cmd='SENS:SWE:POIN?',
                            set_cmd=self._set_npts,
-                           get_parser=int,
-                           vals=vals.Numbers(1,1e3))
+                           get_parser=int
+                           )
 
-        self.add_parameter(name='read',
-                           start=self.start(),
+        self.add_parameter(name = 'trace',
+						   start=self.start(),
                            stop=self.stop(),
                            npts=self.npts(),
                            parameter_class=FrequencySweep)       
 
         self.add_function('reset', call_cmd='*RST')
-        self.add_function('turn_on_error_tooltip', call_cmd='SYST:ERR:DISP:REM ON')
-        self.add_function('turn_off_error_tooltip', call_cmd='SYST:ERR:DISP:REM OFF')
+		#TODO: check
+        self.add_function('turn_on_error_tooltip', call_cmd='SYST:ERR:DISP ON')
+        self.add_function('turn_off_error_tooltip', call_cmd='SYST:ERR:DISP OFF')
         self.add_function('turn_on_cont_meas', call_cmd='INIT:CONT:ALL ON')
         self.add_function('turn_off_cont_meas', call_cmd='INIT:CONT:ALL OFF')
         self.add_function('update_display_once', call_cmd='SYST:DISP:UPD ONCE')
@@ -159,6 +164,6 @@ class ZNB20(VisaInstrument):
         mag_array=[]
         phase_array=[]
         for complex_num in data_arr:
-            mag_array.append(abs(complex(cpl[0],cpl[1])))
-            phase_array.append(phase(complex(cpl[0],cpl[1])))
+            mag_array.append(abs(complex(complex_num[0],complex_num[1])))
+            phase_array.append(phase(complex(complex_num[0],complex_num[1])))
         return [np.array(mag_array), np.array(phase_array)]
