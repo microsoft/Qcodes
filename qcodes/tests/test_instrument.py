@@ -1,6 +1,7 @@
 from unittest import TestCase
 from datetime import datetime, timedelta
 import time
+from collections import namedtuple
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
@@ -9,7 +10,7 @@ from qcodes.instrument.function import Function
 from qcodes.instrument.server import get_instrument_server_manager
 
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
-from qcodes.utils.sync_async import NoCommandError
+from qcodes.utils.command import NoCommandError
 from qcodes.utils.helpers import LogCapture
 from qcodes.process.helpers import kill_processes
 
@@ -79,6 +80,50 @@ class TestParamConstructor(TestCase):
                     param.name, id(param))
                 self.assertEqual(s, st)
 
+    blank_instruments = (
+        None,  # no instrument at all
+        namedtuple('noname', '')(),  # no .name
+        namedtuple('blank', 'name')('')  # blank .name
+        )
+    named_instrument = namedtuple('yesname', 'name')('astro')
+
+    def test_full_name(self):
+        # three cases where only name gets used for full_name
+        for instrument in self.blank_instruments:
+            p = Parameter(name='fred')
+            p._instrument = instrument
+            self.assertEqual(p.full_name, 'fred')
+
+            p.name = None
+            self.assertEqual(p.full_name, None)
+
+        # and finally an instrument that really has a name
+        p = Parameter(name='wilma')
+        p._instrument = self.named_instrument
+        self.assertEqual(p.full_name, 'astro_wilma')
+
+        p.name = None
+        self.assertEqual(p.full_name, None)
+
+    def test_full_names(self):
+        for instrument in self.blank_instruments:
+            # no instrument
+            p = Parameter(name='simple')
+            p._instrument = instrument
+            self.assertEqual(p.full_names, None)
+
+            p = Parameter(names=['a', 'b'])
+            p._instrument = instrument
+            self.assertEqual(p.full_names, ['a', 'b'])
+
+        p = Parameter(name='simple')
+        p._instrument = self.named_instrument
+        self.assertEqual(p.full_names, None)
+
+        p = Parameter(names=['penn', 'teller'])
+        p._instrument = self.named_instrument
+        self.assertEqual(p.full_names, ['astro_penn', 'astro_teller'])
+
 
 class GatesBadDelayType(MockGates):
     def __init__(self, *args, **kwargs):
@@ -102,26 +147,43 @@ class GatesBadDelayValue(MockGates):
                            max_delay=0.03)
 
 
-class TestParameters(TestCase):
+class TestInstrument(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.model = AMockModel()
+
+        cls.gates = MockGates(model=cls.model)
+        cls.source = MockSource(model=cls.model)
+        cls.meter = MockMeter(model=cls.model, keep_history=False)
+
     def setUp(self):
-        self.model = AMockModel()
-        self.read_response = 'I am the walrus!'
+        # reset the model state via the gates function
+        self.gates.reset()
 
-        self.gates = MockGates(model=self.model,
-                               read_response=self.read_response)
-        self.source = MockSource(model=self.model)
-        self.meter = MockMeter(model=self.model,
-                               read_response=self.read_response)
-
+        # then reset each instrument's state, so we can avoid the time to
+        # completely reinstantiate with every test case
+        for inst in (self.gates, self.source, self.meter):
+            inst.restart()
         self.init_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(cls):
         try:
-            self.model.close()
-            for instrument in [self.gates, self.source, self.meter]:
+            cls.model.close()
+            for instrument in [cls.gates, cls.source, cls.meter]:
+                instrument.close()
+                # do it twice - should not error, though the second is
+                # irrelevant
                 instrument.close()
         except:
             pass
+
+        # TODO: when an error occurs during constructing an instrument,
+        # we don't have the instrument but its server doesn't know to stop.
+        # should figure out a way to remove it. (I thought I had but it
+        # doesn't seem to have worked...)
+        # for test_mock_instrument_errors
+        kill_processes()
 
     def test_unpicklable(self):
         self.assertEqual(self.gates.add5(6), 11)
@@ -194,16 +256,16 @@ class TestParameters(TestCase):
 
         # initial state
         # short form of getter
-        self.assertEqual(meter.get('amplitude'), 0)
+        self.assertEqual(gates.get('chan0'), 0)
         # shortcut to the parameter, longer form of get
-        self.assertEqual(meter['amplitude'].get(), 0)
+        self.assertEqual(gates['chan0'].get(), 0)
         # explicit long form of getter
-        self.assertEqual(meter.parameters['amplitude'].get(), 0)
-        # both should produce the same history entry
-        hist = meter.getattr('history')
+        self.assertEqual(gates.parameters['chan0'].get(), 0)
+        # all 3 should produce the same history entry
+        hist = gates.getattr('history')
         self.assertEqual(len(hist), 3)
-        self.assertEqual(hist[0][1:], ('ask', 'ampl'))
-        self.assertEqual(hist[0][1:], ('ask', 'ampl'))
+        for item in hist:
+            self.assertEqual(item[1:], ('ask', 'c0'))
 
         # errors trying to set (or validate) invalid param values
         # put here so we ensure that these errors don't make it to
@@ -236,9 +298,10 @@ class TestParameters(TestCase):
         # check just the size and timestamps of histories
         for entry in gatehist + sourcehist + meterhist:
             self.check_ts(entry[0])
-        self.assertEqual(len(gatehist), 6)
+        self.assertEqual(len(gatehist), 9)
         self.assertEqual(len(sourcehist), 5)
-        self.assertEqual(len(meterhist), 7)
+        # meter does not keep history but should still have a history attr
+        self.assertEqual(len(meterhist), 0)
 
         # plus enough setters to check the parameter sweep
         # first source has to get the starting value
@@ -326,12 +389,6 @@ class TestParameters(TestCase):
 
         with self.assertRaises(TypeError):
             gates.add_parameter('fugacity', set_cmd='f {:.4f}', vals=[1, 2, 3])
-
-        # TODO: when an error occurs during constructing an instrument,
-        # we don't have the instrument but its server doesn't know to stop.
-        # should figure out a way to remove it. (I thought I had but it
-        # doesn't seem to have worked...)
-        kill_processes()
 
     def check_set_amplitude2(self, val, log_count, history_count):
         source = self.sourceLocal
@@ -449,6 +506,38 @@ class TestParameters(TestCase):
         with self.assertRaises(ValueError):
             gates.memcoded.set('zero')
 
+    def test_val_mapping_ints(self):
+        gates = self.gates
+
+        gates.add_parameter('moderaw', set_cmd='mem0:{}', get_cmd='mem0?',
+                            vals=Enum('0', '1'))
+
+        # modecoded maps the instrument codes ('0' and '1') into nicer
+        # user values 'AC' and 'DC'
+        # Here we're using integers in the mapping, rather than turning
+        # them into strings.
+        gates.add_parameter('modecoded', set_cmd='mem0:{}', get_cmd='mem0?',
+                            val_mapping={'DC': 0, 'AC': 1})
+
+        gates.modecoded.set('AC')
+        self.assertEqual(gates.moderaw.get(), '1')
+        self.assertEqual(gates.modecoded.get(), 'AC')
+        self.assertEqual(self.getmem(0), '1')
+
+        gates.moderaw.set('0')
+        self.assertEqual(gates.modecoded.get(), 'DC')
+        self.assertEqual(gates.moderaw.get(), '0')
+        self.assertEqual(self.getmem(0), '0')
+
+        with self.assertRaises(ValueError):
+            gates.modecoded.set(0)
+
+        with self.assertRaises(ValueError):
+            gates.modecoded.set('0')
+
+        with self.assertRaises(ValueError):
+            gates.moderaw.set('DC')
+
     def test_bare_function(self):
         # not a use case we want to promote, but it's there...
         p = ManualParameter('test')
@@ -555,16 +644,9 @@ class TestParameters(TestCase):
         with self.assertRaises(AttributeError):
             noise.get_latest.set(50)
 
-    def test_mock_read(self):
-        gates, meter = self.gates, self.meter
-        self.assertEqual(meter.read(), self.read_response)
-        self.assertEqual(gates.read(), self.read_response)
-
     def test_base_instrument_errors(self):
         b = Instrument('silent', server_name=None)
 
-        with self.assertRaises(NotImplementedError):
-            b.read()
         with self.assertRaises(NotImplementedError):
             b.write('hello!')
         with self.assertRaises(NotImplementedError):
@@ -588,8 +670,9 @@ class TestParameters(TestCase):
         res.set(1e9)
         self.assertEqual(res.get(), 1e9)
         # default vals is all numbers
-        res.set(-1)
-        self.assertEqual(res.get(), -1)
+        # set / get with __call__ shortcut
+        res(-1)
+        self.assertEqual(res(), -1)
 
         self.source.add_parameter('alignment',
                                   parameter_class=ManualParameter,
@@ -626,146 +709,168 @@ class TestParameters(TestCase):
         with self.assertRaises(ZeroDivisionError):
             d()
 
+    def test_attr_access(self):
+        instrument = self.gates
 
-class TestAttrAccess(TestCase):
-    def tearDown(self):
-        self.instrument.close()
-        # do it twice - should not error, though the second is irrelevant
-        self.instrument.close()
+        # set one attribute with nested levels
+        instrument.setattr('d1', {'a': {1: 2}})
 
-    def test_simple_noserver(self):
-        instrument = Instrument(name='test_simple_local', server_name=None)
-        self.instrument = instrument
-
-        # before setting attr1
-        self.assertEqual(instrument.getattr('attr1', 99), 99)
-        with self.assertRaises(AttributeError):
-            instrument.getattr('attr1')
-
-        with self.assertRaises(TypeError):
-            instrument.setattr('attr1')
-
-        self.assertFalse(hasattr(instrument, 'attr1'))
-
-        # set it to a value
-        instrument.setattr('attr1', 98)
-        self.assertTrue(hasattr(instrument, 'attr1'))
-
-        self.assertEqual(instrument.getattr('attr1', 99), 98)
-        self.assertEqual(instrument.getattr('attr1'), 98)
-
-        # then delete it
-        instrument.delattr('attr1')
-
-        with self.assertRaises(AttributeError):
-            instrument.delattr('attr1')
-
-        with self.assertRaises(AttributeError):
-            instrument.getattr('attr1')
-
-    def test_nested_noserver(self):
-        instrument = Instrument(name='test_nested_local', server_name=None)
-        self.instrument = instrument
-
-        self.assertFalse(hasattr(instrument, 'd1'))
-
-        with self.assertRaises(TypeError):
-            instrument.setattr(('d1', 'a', 1))
-
-        # set one attribute that requires creating nested levels
-        instrument.setattr(('d1', 'a', 1), 2)
-
-        # can't nest inside a non-container
-        with self.assertRaises(TypeError):
-            instrument.setattr(('d1', 'a', 1, 'secret'), 42)
-
-        # get the whole dict with simple getattr style
+        # get the whole dict
         self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
+        self.assertEqual(instrument.getattr('d1', 55), {'a': {1: 2}})
 
-        # get the whole or parts with nested style
-        self.assertEqual(instrument.getattr(('d1',)), {'a': {1: 2}})
-        self.assertEqual(instrument.getattr(('d1',), 55), {'a': {1: 2}})
-        self.assertEqual(instrument.getattr(('d1', 'a')), {1: 2})
-        self.assertEqual(instrument.getattr(('d1', 'a', 1)), 2)
-        self.assertEqual(instrument.getattr(('d1', 'a', 1), 3), 2)
+        # get parts
+        self.assertEqual(instrument.getattr('d1["a"]'), {1: 2})
+        self.assertEqual(instrument.getattr("d1['a'][1]"), 2)
+        self.assertEqual(instrument.getattr('d1["a"][1]', 3), 2)
 
         # add an attribute inside, then delete it again
-        instrument.setattr(('d1', 'a', 2, 3), 4)
-        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2, 2: {3: 4}}})
-        instrument.delattr(('d1', 'a', 2, 3))
-        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
-
-        # deleting it without pruning should leave empty containers
-        instrument.delattr(('d1', 'a', 1), prune=False)
-        self.assertEqual(instrument.getattr('d1'), {'a': {}})
-
-        with self.assertRaises(KeyError):
-            instrument.delattr(('d1', 'a', 1))
-
-        # now prune
-        instrument.delattr(('d1', 'a'))
-        self.assertIsNone(instrument.getattr('d1', None))
-
-        # a little more with top-level attrs as tuples
-        instrument.setattr(('d2',), 'potato')
-        self.assertEqual(instrument.getattr('d2'), 'potato')
-        instrument.delattr(('d2',))
-        self.assertIsNone(instrument.getattr('d2', None))
-
-    def test_server(self):
-        instrument = Instrument(name='test_server', server_name='attr_test')
-        self.instrument = instrument
-
-        with self.assertRaises(TypeError):
-            instrument.setattr(('d1', 'a', 1))
-
-        # set one attribute that requires creating nested levels
-        instrument.setattr(('d1', 'a', 1), 2)
-
-        # can't nest inside a non-container
-        with self.assertRaises(TypeError):
-            instrument.setattr(('d1', 'a', 1, 'secret'), 42)
-
-        # get the whole dict with simple getattr style
-        # TODO: twice (out of maybe 50 runs) I saw the below fail,
-        # it returned "test_server" which should have been the response
-        # above if it didn't raise an error.
-        # I guess this is catching the error before receiving the
-        # next response somehow. I've added a bit of a wait in there
-        # that may have fixed this but lets leave the comment for a
-        # while to see if it recurs.
-        self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
-
-        # get the whole or parts with nested style
-        self.assertEqual(instrument.getattr(('d1',)), {'a': {1: 2}})
-        self.assertEqual(instrument.getattr(('d1',), 55), {'a': {1: 2}})
-        self.assertEqual(instrument.getattr(('d1', 'a')), {1: 2})
-        self.assertEqual(instrument.getattr(('d1', 'a', 1)), 2)
-        self.assertEqual(instrument.getattr(('d1', 'a', 1), 3), 2)
-
-        # add an attribute inside, then delete it again
-        instrument.setattr(('d1', 'a', 2), 23)
+        instrument.setattr('d1["a"][2]', 23)
         self.assertEqual(instrument.getattr('d1'), {'a': {1: 2, 2: 23}})
-        instrument.delattr(('d1', 'a', 2))
+        instrument.delattr('d1["a"][2]')
         self.assertEqual(instrument.getattr('d1'), {'a': {1: 2}})
-
-        # deleting it without pruning should leave empty containers
-        instrument.delattr(('d1', 'a', 1), prune=False)
-        self.assertEqual(instrument.getattr('d1'), {'a': {}})
-
-        with self.assertRaises(KeyError):
-            instrument.delattr(('d1', 'a', 1))
-            instrument.getattr('name')
-
-        # now prune
-        instrument.delattr(('d1', 'a'))
-        self.assertIsNone(instrument.getattr('d1', None))
 
         # test restarting the InstrumentServer - this clears these attrs
-        instrument.setattr('answer', 42)
-        self.assertEqual(instrument.getattr('answer', None), 42)
         instrument._manager.restart()
-        self.assertIsNone(instrument.getattr('answer', None))
+        self.assertIsNone(instrument.getattr('d1', None))
+
+    def test_component_attr_access(self):
+        instrument = self.gates
+        method = instrument.add5
+        parameter = instrument.chan1
+        function = instrument.reset
+
+        # RemoteMethod objects have no attributes besides __doc__, so test
+        # that this gets appropriately decorated
+        self.assertIn('RemoteMethod add5 in RemoteInstrument', method.__doc__)
+        # and also contains the remote doc
+        self.assertIn('not the same function as the original method',
+                      method.__doc__)
+
+        # units is a remote attribute of parameters
+        # this one is initially blank
+        self.assertEqual(parameter.units, '')
+        parameter.units = 'Smoots'
+        self.assertEqual(parameter.units, 'Smoots')
+        self.assertNotIn('units', parameter.__dict__)
+        self.assertEqual(instrument.getattr(parameter.name + '.units'),
+                         'Smoots')
+        # we can delete it remotely, and this is reflected in dir()
+        self.assertIn('units', dir(parameter))
+        del parameter.units
+        self.assertNotIn('units', dir(parameter))
+        with self.assertRaises(AttributeError):
+            parameter.units
+
+        # and set it again, it's still remote.
+        parameter.units = 'Furlongs per fortnight'
+        self.assertIn('units', dir(parameter))
+        self.assertEqual(parameter.units, 'Furlongs per fortnight')
+        self.assertNotIn('units', parameter.__dict__)
+        self.assertEqual(instrument.getattr(parameter.name + '.units'),
+                         'Furlongs per fortnight')
+        # we get the correct result if someone else sets it on the server
+        instrument._write_server('setattr', parameter.name + '.units', 'T')
+        self.assertEqual(parameter.units, 'T')
+        self.assertEqual(parameter.getattr('units'), 'T')
+
+        # attributes not specified as remote are local
+        with self.assertRaises(AttributeError):
+            parameter.something
+        parameter.something = 42
+        self.assertEqual(parameter.something, 42)
+        self.assertEqual(parameter.__dict__['something'], 42)
+        with self.assertRaises(AttributeError):
+            instrument.getattr(parameter.name + '.something')
+        with self.assertRaises(AttributeError):
+            # getattr method is only for remote attributes
+            parameter.getattr('something')
+        self.assertIn('something', dir(parameter))
+        del parameter.something
+        self.assertNotIn('something', dir(parameter))
+        with self.assertRaises(AttributeError):
+            parameter.something
+
+        # call a remote method
+        self.assertEqual(set(parameter.callattr('get_attrs')),
+                         parameter._attrs)
+
+        # functions have remote attributes too
+        self.assertEqual(function._args, [])
+        self.assertNotIn('_args', function.__dict__)
+        function._args = 'args!'
+        self.assertEqual(function._args, 'args!')
+
+        # a component with no docstring still gets the decoration
+        foo = instrument.foo
+        self.assertEqual(foo.__doc__,
+                         'RemoteParameter foo in RemoteInstrument gates')
+
+    def test_update_components(self):
+        gates = self.gates
+
+        gates.delattr('chan0.label')
+        gates.setattr('chan0.cheese', 'gorgonzola')
+        # we've altered the server copy, but not the RemoteParameter
+        self.assertIn('label', gates.chan0._attrs)
+        self.assertNotIn('cheese', gates.chan0._attrs)
+        # keep a reference to the original chan0 RemoteParameter to make sure
+        # it is still the same object later
+        chan0_original = gates.chan0
+
+        gates.update()
+
+        self.assertIs(gates.chan0, chan0_original)
+        # now the RemoteParameter should have the updates
+        self.assertNotIn('label', gates.chan0._attrs)
+        self.assertIn('cheese', gates.chan0._attrs)
+
+    def test_add_delete_components(self):
+        gates = self.gates
+
+        # rather than call gates.add_parameter, which has a special proxy
+        # on the remote so it updates the components immediately, we'll call
+        # the server version directly
+        attr_list = gates.callattr('add_parameter', 'chan0X', get_cmd='c0?',
+                                   set_cmd='c0:{:.4f}', get_parser=float)
+        gates.delattr('parameters["chan0"]')
+
+        # the RemoteInstrument does not have these changes yet
+        self.assertIn('chan0', gates.parameters)
+        self.assertNotIn('chan0X', gates.parameters)
+
+        gates.update()
+
+        # now the RemoteInstrument has the changes
+        self.assertNotIn('chan0', gates.parameters)
+        self.assertIn('chan0X', gates.parameters)
+        self.assertEqual(gates.chan0X._attrs, set(attr_list))
+
+    def test_reprs(self):
+        gates = self.gates
+        self.assertIn(gates.name, repr(gates))
+        self.assertIn('chan1', repr(gates.chan1))
+        self.assertIn('reset', repr(gates.reset))
+
+    def test_remote_sweep_values(self):
+        chan1 = self.gates.chan1
+
+        sv1 = chan1[1:4:1]
+        self.assertEqual(len(sv1), 3)
+        self.assertIn(2, sv1)
+
+        sv2 = chan1.sweep(start=2, stop=3, num=6)
+        self.assertEqual(len(sv2), 6)
+        self.assertIn(2.2, sv2)
+
+    def test_add_function(self):
+        gates = self.gates
+        # add a function remotely
+        gates.add_function('reset2', call_cmd='rst')
+        gates.chan1(4)
+        self.assertEqual(gates.chan1(), 4)
+        gates.reset2()
+        self.assertEqual(gates.chan1(), 0)
 
 
 class TestLocalMock(TestCase):

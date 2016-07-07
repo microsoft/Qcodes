@@ -1,12 +1,17 @@
+.. _Api :
+
 Classes and Functions
 =====================
 
+This page lists the entry points to the qcodes API.
 
-.. todo:: what are the high level abstraction we want to provide as entry points ?
+Public refers to what is available in qcodes namespace.
+
+Private refers to everything that is available.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
 
-   data
-   loops
-   station
+   public
+   private
+

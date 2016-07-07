@@ -2,7 +2,6 @@
 
 from enum import Enum
 import time
-import logging
 from copy import deepcopy
 
 from .manager import get_data_manager, NoData
@@ -434,32 +433,22 @@ class DataSet(DelegateAttributes):
         replace action_indices tuple with compact string array_ids
         stripping off as much extraneous info as possible
         """
-        action_indices = [array.action_indices for array in arrays]
-        array_names = set(array.name for array in arrays)
-        for name in array_names:
-            param_arrays = [array for array in arrays
-                            if array.name == name]
-            if len(param_arrays) == 1:
-                # simple case, only one param with this name, id = name
-                param_arrays[0].array_id = name
-                continue
 
-            # partition into set and measured arrays (weird use case, but
-            # it'll happen, if perhaps only in testing)
-            set_param_arrays = [pa for pa in param_arrays
-                                if pa.set_arrays[-1] == pa]
-            meas_param_arrays = [pa for pa in param_arrays
-                                 if pa.set_arrays[-1] != pa]
-            if len(set_param_arrays) and len(meas_param_arrays):
-                # if the same param is in both set and measured,
-                # suffix the set with '_set'
-                self._clean_param_ids(set_param_arrays, name + '_set')
-                self._clean_param_ids(meas_param_arrays, name)
-            else:
-                # if either only set or only measured, no suffix
-                self._clean_param_ids(param_arrays, name)
+        action_indices = [array.action_indices for array in arrays]
+        for array in arrays:
+            name = array.full_name
+            if array.is_setpoint:
+                if name:
+                    name += '_set'
+            array.array_id = name
+        array_ids = set([array.array_id for array in arrays])
+        for name in array_ids:
+            param_arrays = [array for array in arrays
+                            if array.array_id == name]
+            self._clean_param_ids(param_arrays, name)
 
         array_ids = [array.array_id for array in arrays]
+
         return dict(zip(action_indices, array_ids))
 
     def _clean_param_ids(self, arrays, name):
@@ -626,7 +615,8 @@ class DataSet(DelegateAttributes):
         arr_info = [['<Type>', '<array_id>', '<array.name>', '<array.shape>']]
 
         if hasattr(self, 'action_id_map'):
-            id_items = [item for index, item in sorted(self.action_id_map.items())]
+            id_items = [
+                item for index, item in sorted(self.action_id_map.items())]
         else:
             id_items = self.arrays.keys()
 

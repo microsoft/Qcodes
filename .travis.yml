@@ -1,6 +1,11 @@
 language: python
+notifications:
+  email: false
+    # send all notifcations to slack
+  slack: qcodes:tNlhSminOHdt2fZf6x6hyT24
+
 python:
-  - "3.5"
+  - "3.4"
   # whitelist
 branches:
   only:
@@ -15,9 +20,10 @@ install:
 script: 
     - python  qcodes/test.py -c
 after_success:
-    # build the docs
-    - ls
-    - make -f docs/Makefile gh-pages
     # codecov
     - cd qcodes
-    - bash <(curl -s https://codecov.io/bash) -t c3b231db-2db3-4560-a477-6edcf4cf5ad1
+    - coverage xml
+    - python-codacy-coverage -r coverage.xml
+    # build the docs, one dir up
+    - cd ../ 
+    - make -f docs/Makefile gh-pages

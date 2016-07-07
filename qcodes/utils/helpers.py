@@ -37,11 +37,14 @@ def tprint(string, dt=1, tag='default'):
 
 
 def in_notebook():
-    '''
-    Returns True if the code is running with a ipython or jypyter
+    """
+    Check if inside a notebook.
     This could mean we are connected to a notebook, but this is not guaranteed.
     see: http://stackoverflow.com/questions/15411967
-    '''
+    Returns:
+        bool: True if the code is running with a ipython or jypyter
+
+    """
     return 'ipy' in repr(sys.stdout)
 
 
@@ -138,20 +141,28 @@ def permissive_range(start, stop, step):
 # Furthermore the sweep allows to take a number of points and generates
 # an array with endpoints included, which is more intuitive to use in a sweep.
 def make_sweep(start, stop, step=None, num=None):
-    '''
+    """
+    Generate numbers over a specified interval.
     Requires `start` and `stop` and (`step` or `num`)
     The sign of `step` is not relevant.
 
-    returns: a numpy.linespace(start, stop, num)
+    Args:
+        start (Union[int, float]): The starting value of the sequence.
+        stop (Union[int, float]): The end value of the sequence.
+        step (Optional[Union[int, float]]):  Spacing between values.
+        num (Optional[int]): Number of values to generate.
+
+    Returns:
+        numpy.linespace: numbers over a specified interval.
 
     Examples:
-        make_sweep(0, 10, num=5)
-        > [0.0, 2.5, 5.0, 7.5, 10.0]
-        make_sweep(5, 10, step=1)
-        > [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-        make_sweep(15, 10.5, step=1.5)
+        >>> make_sweep(0, 10, num=5)
+        [0.0, 2.5, 5.0, 7.5, 10.0]
+        >>> make_sweep(5, 10, step=1)
+        [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+        >>> make_sweep(15, 10.5, step=1.5)
         >[15.0, 13.5, 12.0, 10.5]
-    '''
+    """
     if step and num:
         raise AttributeError('Don\'t use `step` and `num` at the same time.')
     if (step is None) and (num is None):
@@ -231,21 +242,23 @@ def make_unique(s, existing):
 
 
 class DelegateAttributes:
-    '''
+    """
     Mixin class to create attributes of this object by
     delegating them to one or more dicts and/or objects
 
     Also fixes __dir__ so the delegated attributes will show up
     in dir() and autocomplete
 
-    delegate_attr_dicts: a list of names (strings) of dictionaries which are
-        (or will be) attributes of self, whose keys should be treated as
-        attributes of self
-    delegate_attr_objects: a list of names (strings) of objects which are
-        (or will be) attributes of self, whose attributes should be passed
-        through to self
-    omit_delegate_attrs: a list of attribute names (strings) to *not* delegate
-        to any other dict or object
+
+   Attributes:
+        delegate_attr_dicts (list): a list of names (strings) of dictionaries which are
+            (or will be) attributes of self, whose keys should be treated as
+            attributes of self
+        delegate_attr_objects (list): a list of names (strings) of objects which are
+            (or will be) attributes of self, whose attributes should be passed
+            through to self
+        omit_delegate_attrs (list): a list of attribute names (strings) to *not* delegate
+            to any other dict or object
 
     any `None` entry is ignored
 
@@ -253,7 +266,7 @@ class DelegateAttributes:
         1. real attributes of this object
         2. keys of each dict in delegate_attr_dicts (in order)
         3. attributes of each object in delegate_attr_objects (in order)
-    '''
+    """
     delegate_attr_dicts = []
     delegate_attr_objects = []
     omit_delegate_attrs = []
@@ -310,10 +323,13 @@ class DelegateAttributes:
 
 
 def strip_attrs(obj):
-    '''
+    """
     Irreversibly remove all direct instance attributes of obj, to help with
     disposal, breaking circular references.
-    '''
+
+    Args:
+        obj:  object to be stripped
+    """
     try:
         for key in list(obj.__dict__.keys()):
             try:

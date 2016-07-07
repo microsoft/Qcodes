@@ -1,69 +1,79 @@
+"""Instrument base class."""
 import weakref
 import time
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
+from qcodes.utils.nested_attrs import NestedAttrAccess
 from qcodes.utils.validators import Anything
 from .parameter import StandardParameter
 from .function import Function
 from .remote import RemoteInstrument
-import logging
 
 
-class NoDefault:
-    '''
-    empty class to provide a missing default to getattr
-    '''
-    pass
+class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
 
+    """
+    Base class for all QCodes instruments.
 
-class Instrument(Metadatable, DelegateAttributes):
-    '''
-    Base class for all QCodes instruments
+    Args:
+        name (str): an identifier for this instrument, particularly for
+            attaching it to a Station.
 
-    name: an identifier for this instrument, particularly for attaching it to
-        a Station.
+        server_name (Optional[str]): If not ``None``, this instrument starts a
+            separate server process (or connects to one, if one already exists
+            with the same name) and all hardware calls are made there.
 
-    server_name: this instrument starts a separate server process (or connects
-        to one, if one already exists with the same name) and all hardware
-        calls are made there. If '' (default), then we call classmethod
-        `default_server_name`, passing in all the constructor kwargs, to
-        determine the name. If not overridden, this is just 'Instruments'.
+            Default '', then we call classmethod ``default_server_name``,
+            passing in all the constructor kwargs, to determine the name.
+            If not overridden, this just gives 'Instruments'.
 
-        ** see notes below about `server_name` in SUBCLASS CONSTRUCTORS **
+            ** see SUBCLASS CONSTRUCTORS below for more on ``server_name`` **
 
-        Use None to operate without a server - but then this Instrument
-        will not work with qcodes Loops or other multiprocess procedures.
+            Use None to operate without a server - but then this Instrument
+            will not work with qcodes Loops or other multiprocess procedures.
 
-        If a server is used, the Instrument you asked for is instantiated
-        on the server, and the object you get in the main process is actually
-        a RemoteInstrument that proxies all method calls, Parameters, and
-        Functions to the server.
+            If a server is used, the ``Instrument`` you asked for is
+            instantiated on the server, and the object you get in the main
+            process is actually a ``RemoteInstrument`` that proxies all method
+            calls, ``Parameters``, and ``Functions`` to the server.
 
-    kwargs: any that make it all the way to this base class get stored as
-        metadata with this instrument
+        metadata (Optional[Dict]): additional static metadata to add to this
+            instrument's JSON snapshot.
 
 
     Any unpicklable objects that are inputs to the constructor must be set
     on server initialization, and must be shared between all instruments
     that reside on the same server. To make this happen, set the
-    `shared_kwargs` class attribute to a list of kwarg names that should
+    ``shared_kwargs`` class attribute to a tuple of kwarg names that should
     be treated this way.
 
     It is an error to initialize two instruments on the same server with
-    different keys or values for `shared_kwargs`, unless the later
-    instruments have NO shared_kwargs at all.
+    different keys or values for ``shared_kwargs``, unless the later
+    instruments have NO ``shared_kwargs`` at all.
 
-    SUBCLASS CONSTRUCTORS: `server_name` and any `shared_kwargs` must be
+    SUBCLASS CONSTRUCTORS: ``server_name`` and any ``shared_kwargs`` must be
     available as kwargs and kwargs ONLY (not positional) in all subclasses,
     and not modified in the inheritance chain. This is because we need to
     create the server before instantiating the actual instrument. The easiest
-    way to manage this is to accept **kwargs in your subclass and pass them
-    on to super().__init()
-    '''
-    shared_kwargs = []
+    way to manage this is to accept ``**kwargs`` in your subclass and pass them
+    on to ``super().__init()``.
+
+    Attributes:
+        name (str): an identifier for this instrument, particularly for
+            attaching it to a Station.
+
+        parameters (Dict[Parameter]): All the parameters supported by this
+            instrument. Usually populated via ``add_parameter``
+
+        functions (Dict[Function]): All the functions supported by this
+            instrument. Usually populated via ``add_function``
+    """
+
+    shared_kwargs = ()
 
     def __new__(cls, *args, server_name='', **kwargs):
+        """Figure out whether to create a base instrument or proxy."""
         if server_name is None:
             return super().__new__(cls)
         else:
@@ -89,18 +99,31 @@ class Instrument(Metadatable, DelegateAttributes):
         """
         Placeholder for instrument ID parameter getter.
 
-        Subclasses should override this and return dicts containing
-        at least these 4 fields:
-            vendor
-            model
-            serial
-            firmware
+        Subclasses should override this.
+
+        Returns:
+            A dict containing (at least) these 4 fields:
+                vendor
+                model
+                serial
+                firmware
         """
         return {'vendor': None, 'model': None,
                 'serial': None, 'firmware': None}
 
     @classmethod
     def default_server_name(cls, **kwargs):
+        """
+        Generate a default name for the server to host this instrument.
+
+        Args:
+            **kwargs: the constructor kwargs, used if necessary to choose a
+                name.
+
+        Returns:
+            str: The default server name for the specific instrument instance
+                we are constructing.
+        """
         return 'Instruments'
 
     def connect_message(self, idn_param='IDN', begin_time=None):
@@ -110,7 +133,7 @@ class Instrument(Metadatable, DelegateAttributes):
         Args:
             idn_param (str): name of parameter that returns ID dict.
                 Default 'IDN'.
-            begin_time (number, optional): time.time() when init started.
+            begin_time (number): time.time() when init started.
                 Default is self._t0, set at start of Instrument.__init__.
         """
         # start with an empty dict, just in case an instrument doesn't
@@ -126,139 +149,11 @@ class Instrument(Metadatable, DelegateAttributes):
         print(con_msg)
 
     def __repr__(self):
+        """Simplified repr giving just the class and name."""
         return '<{}: {}>'.format(type(self).__name__, self.name)
 
-    def getattr(self, attr, default=NoDefault):
-        '''
-        Get an attribute of this Instrument.
-        Exact proxy for getattr if attr is a string, but can also
-        get parts from nested items if attr is a sequence.
-
-        attr: a string or sequence
-            if a string, this behaves exactly as normal getattr
-            if a sequence, treats the parts as diving into a nested dictionary,
-                or attribute lookup for any part starting with '.' (the first
-                part is always an attribute and doesn't need a '.').
-                if a default is provided, it will be returned if
-                the lookup fails at any level of the nesting, otherwise
-                an AttributeError or KeyError will be raised
-                NOTE: even with a default, if an intermediate nesting
-                encounters a non-container, a TypeError will be raised.
-                for example if obj.d = {'a': 1} and we call
-                obj.getattr(('d','a','b'), None)
-
-        default: value to return if the lookup fails
-        '''
-        try:
-            if isinstance(attr, str):
-                # simply attribute lookup
-                return getattr(self, attr)
-
-            else:
-                # nested dictionary lookup
-                obj = getattr(self, attr[0])
-                for key in attr[1:]:
-                    if str(key).startswith('.'):
-                        obj = getattr(obj, key[1:])
-                    else:
-                        obj = obj[key]
-                return obj
-
-        except (AttributeError, KeyError):
-            if default is NoDefault:
-                raise
-            else:
-                return default
-
-    def setattr(self, attr, value):
-        '''
-        Set an attribute of this Instrument
-        Exact proxy for setattr if attr is a string, but can also
-        set parts in nested items if attr is a sequence.
-
-        attr: a string or sequence
-            if a string, this behaves exactly as normal setattr
-            if a sequence, treats the parts as diving into a nested dictionary,
-                or attribute lookup for any part starting with '.' (the first
-                part is always an attribute and doesn't need a '.').
-                if any level is missing it will be created
-                NOTE: if an intermediate nesting encounters a non-container,
-                a TypeError will be raised.
-                for example if obj.d = {'a': 1} and we call
-                obj.setattr(('d','a','b'), 2)
-
-        value: the value to store
-        '''
-        if isinstance(attr, str):
-            setattr(self, attr, value)
-        elif len(attr) == 1:
-            setattr(self, attr[0], value)
-        else:
-            if not hasattr(self, attr[0]):
-                setattr(self, attr[0], {})
-            obj = getattr(self, attr[0])
-
-            for key in attr[1: -1]:
-                if str(key).startswith('.'):
-                    # we don't make intermediate attributes, only
-                    # intermediate dicts.
-                    obj = getattr(obj, key)
-                else:
-                    if key not in obj:
-                        obj[key] = {}
-                    obj = obj[key]
-
-            if str(attr[-1]).startswith('.'):
-                setattr(obj, attr[-1][1:], value)
-            else:
-                obj[attr[-1]] = value
-
-    def delattr(self, attr, prune=True):
-        '''
-        Delete an attribute from this Instrument
-        Exact proxy for __delattr__ if attr is a string, but can also
-        remove parts of nested items if attr is a sequence, in which case
-        it may prune empty containers of the final attribute
-
-        attr: a string or sequence
-            if a string, this behaves exactly as normal __delattr__
-            if a sequence, treats the parts as diving into a nested dictionary,
-                or attribute lookup for any part starting with '.' (the first
-                part is always an attribute and doesn't need a '.').
-        prune: if True (default) and attr is a sequence, will try to remove
-            any containing levels which have become empty
-        '''
-        if isinstance(attr, str):
-            delattr(self, attr)
-        elif len(attr) == 1:
-            delattr(self, attr[0])
-        else:
-            obj = getattr(self, attr[0])
-            # dive into the nesting, saving what we did
-            tree = []
-            for key in attr[1:-1]:
-                if str(key).startswith('.'):
-                    newobj = getattr(obj, key[1:])
-                else:
-                    newobj = obj[key]
-                tree.append((newobj, obj, key))
-                obj = newobj
-            # delete the leaf
-            del obj[attr[-1]]
-            # work back out, deleting branches if we can
-            if prune:
-                for child, parent, key in reversed(tree):
-                    if not child:
-                        if str(key).startswith('.'):
-                            delattr(parent, key[1:])
-                        else:
-                            del parent[key]
-                    else:
-                        break
-                if not getattr(self, attr[0]):
-                    delattr(self, attr[0])
-
     def __del__(self):
+        """Close the instrument and remove its instance record."""
         try:
             wr = weakref.ref(self)
             if wr in getattr(self, '_instances', {}):
@@ -268,11 +163,12 @@ class Instrument(Metadatable, DelegateAttributes):
             pass
 
     def close(self):
-        '''
-        Irreversibly stop this instrument and free its resources
-        subclasses should override this if they have other specific
+        """
+        Irreversibly stop this instrument and free its resources.
+
+        Subclasses should override this if they have other specific
         resources to close.
-        '''
+        """
         if hasattr(self, 'connection') and hasattr(self.connection, 'close'):
             self.connection.close()
 
@@ -281,13 +177,15 @@ class Instrument(Metadatable, DelegateAttributes):
 
     @classmethod
     def record_instance(cls, instance):
-        '''
-        record (a weak ref to) an instance in a class's instance list
+        """
+        Record (a weak ref to) an instance in a class's instance list.
 
-        note that we *do not* check that instance is actually an instance of
-        cls. This is important, because a RemoteInstrument should function as
-        an instance of the real Instrument it is connected to on the server.
-        '''
+        Args:
+            instance (Union[Instrument, RemoteInstrument]): Note: we *do not*
+                check that instance is actually an instance of ``cls``. This is
+                important, because a ``RemoteInstrument`` should function as an
+                instance of the instrument it proxies.
+        """
         if getattr(cls, '_type', None) is not cls:
             cls._type = cls
             cls._instances = []
@@ -295,11 +193,19 @@ class Instrument(Metadatable, DelegateAttributes):
 
     @classmethod
     def instances(cls):
-        '''
-        returns all currently defined instances of this instrument class
-        you can use this to get the objects back if you lose track of them,
+        """
+        Get all currently defined instances of this instrument class.
+
+        You can use this to get the objects back if you lose track of them,
         and it's also used by the test system to find objects to test against.
-        '''
+
+        Note:
+            Will also include ``RemoteInstrument`` instances that proxy
+            instruments of this class.
+
+        Returns:
+            List[Union[Instrument, RemoteInstrument]]
+        """
         if getattr(cls, '_type', None) is not cls:
             # only instances of a superclass - we want instances of this
             # exact class only
@@ -308,31 +214,46 @@ class Instrument(Metadatable, DelegateAttributes):
 
     @classmethod
     def remove_instance(cls, instance):
+        """
+        Remove a particular instance from the record.
+
+        Args:
+            instance (Union[Instrument, RemoteInstrument])
+        """
         wr = weakref.ref(instance)
         if wr in cls._instances:
             cls._instances.remove(wr)
 
     def add_parameter(self, name, parameter_class=StandardParameter,
                       **kwargs):
-        '''
-        binds one Parameter to this instrument.
+        """
+        Bind one Parameter to this instrument.
 
-        instrument subclasses can call this repeatedly in their __init__
+        Instrument subclasses can call this repeatedly in their ``__init__``
         for every real parameter of the instrument.
 
         In this sense, parameters are the state variables of the instrument,
         anything the user can set and/or get
 
-        `name` is how the Parameter will be stored within
-        instrument.parameters and also how you address it using the
-        shortcut methods:
-        instrument.set(param_name, value) etc.
+        Args:
+            name (str): How the parameter will be stored within
+                ``instrument.parameters`` and also how you address it using the
+                shortcut methods: ``instrument.set(param_name, value)`` etc.
 
-        `parameter_class` can be used to construct the parameter out of
-            something other than StandardParameter
+            parameter_class (Optional[type]): You can construct the parameter
+                out of any class. Default ``StandardParameter``.
 
-        kwargs: see StandardParameter (or `parameter_class`)
-        '''
+            **kwargs: constructor arguments for ``parameter_class``.
+
+        Returns:
+            dict: attribute information. Only used if you add parameters
+                from the ``RemoteInstrument`` rather than at construction, to
+                properly construct the proxy for this parameter.
+
+        Raises:
+            KeyError: if this instrument already has a parameter with this
+                name.
+        """
         if name in self.parameters:
             raise KeyError('Duplicate parameter name {}'.format(name))
         param = parameter_class(name=name, instrument=self, **kwargs)
@@ -343,21 +264,34 @@ class Instrument(Metadatable, DelegateAttributes):
         return param.get_attrs()
 
     def add_function(self, name, **kwargs):
-        '''
-        binds one Function to this instrument.
+        """
+        Bind one Function to this instrument.
 
-        instrument subclasses can call this repeatedly in their __init__
+        Instrument subclasses can call this repeatedly in their ``__init__``
         for every real function of the instrument.
 
-        In this sense, functions are actions of the instrument, that typically
-        transcend any one parameter, such as reset, activate, or trigger.
+        This functionality is meant for simple cases, principally things that
+        map to simple commands like '*RST' (reset) or those with just a few
+        arguments. It requires a fixed argument count, and positional args
+        only. If your case is more complicated, you're probably better off
+        simply making a new method in your ``Instrument`` subclass definition.
 
-        `name` is how the Function will be stored within instrument.functions
-        and also how you  address it using the shortcut methods:
-        instrument.call(func_name, *args) etc.
+        Args:
+            name (str): how the Function will be stored within
+            ``instrument.Functions`` and also how you  address it using the
+            shortcut methods: ``instrument.call(func_name, *args)`` etc.
 
-        see Function for the list of kwargs and notes on its limitations.
-        '''
+            **kwargs: constructor kwargs for ``Function``
+
+        Returns:
+            A dict of attribute information. Only used if you add functions
+            from the ``RemoteInstrument`` rather than at construction, to
+            properly construct the proxy for this function.
+
+        Raises:
+            KeyError: if this instrument already has a function with this
+                name.
+        """
         if name in self.functions:
             raise KeyError('Duplicate function name {}'.format(name))
         func = Function(name=name, instrument=self, **kwargs)
@@ -368,6 +302,16 @@ class Instrument(Metadatable, DelegateAttributes):
         return func.get_attrs()
 
     def snapshot_base(self, update=False):
+        """
+        State of the instrument as a JSON-compatible dict.
+
+        Args:
+            update (bool): If True, update the state by querying the
+                instrument. If False, just use the latest values in memory.
+
+        Returns:
+            dict: base snapshot
+        """
         snap = {'parameters': dict((name, param.snapshot(update=update))
                                    for name, param in self.parameters.items()),
                 'functions': dict((name, func.snapshot(update=update))
@@ -380,21 +324,81 @@ class Instrument(Metadatable, DelegateAttributes):
         return snap
 
     ##########################################################################
-    # `write`, `read`, and `ask` are the interface to hardware               #
-    # Override these in a subclass.                                          #
+    # `write_raw` and `ask_raw` are the interface to hardware                #
+    # `write` and `ask` are standard wrappers to help with error reporting   #
     ##########################################################################
 
     def write(self, cmd):
+        """
+        Write a command string with NO response to the hardware.
+
+        Subclasses that transform ``cmd`` should override this method, and in
+        it call ``super().write(new_cmd)``. Subclasses that define a new
+        hardware communication should instead override ``write_raw``.
+
+        Args:
+            cmd (str): the string to send to the instrument
+
+        Raises:
+            Exception: wraps any underlying exception with extra context,
+                including the command and the instrument.
+        """
+        try:
+            self.write_raw(cmd)
+        except Exception as e:
+            e.args = e.args + ('writing ' + repr(cmd) + ' to ' + repr(self),)
+            raise e
+
+    def write_raw(self, cmd):
+        """
+        Low level method to write a command string to the hardware.
+
+        Subclasses that define a new hardware communication should override
+        this method. Subclasses that transform ``cmd`` should instead
+        override ``write``.
+
+        Args:
+            cmd (str): the string to send to the instrument
+        """
         raise NotImplementedError(
             'Instrument {} has not defined a write method'.format(
                 type(self).__name__))
 
-    def read(self):
-        raise NotImplementedError(
-            'Instrument {} has not defined a read method'.format(
-                type(self).__name__))
-
     def ask(self, cmd):
+        """
+        Write a command string to the hardware and return a response.
+
+        Subclasses that transform ``cmd`` should override this method, and in
+        it call ``super().ask(new_cmd)``. Subclasses that define a new
+        hardware communication should instead override ``ask_raw``.
+
+        Args:
+            cmd (str): the string to send to the instrument
+
+        Returns:
+            response (str, normally)
+
+        Raises:
+            Exception: wraps any underlying exception with extra context,
+                including the command and the instrument.
+        """
+        try:
+            return self.ask_raw(cmd)
+        except Exception as e:
+            e.args = e.args + ('asking ' + repr(cmd) + ' to ' + repr(self),)
+            raise e
+
+    def ask_raw(self, cmd):
+        """
+        Low level method to write to the hardware and return a response.
+
+        Subclasses that define a new hardware communication should override
+        this method. Subclasses that transform ``cmd`` should instead
+        override ``ask``.
+
+        Args:
+            cmd (str): the string to send to the instrument
+        """
         raise NotImplementedError(
             'Instrument {} has not defined an ask method'.format(
                 type(self).__name__))
@@ -411,43 +415,85 @@ class Instrument(Metadatable, DelegateAttributes):
     delegate_attr_dicts = ['parameters', 'functions']
 
     def __getitem__(self, key):
+        """Delegate instrument['name'] to parameter or function 'name'."""
         try:
             return self.parameters[key]
         except KeyError:
             return self.functions[key]
 
     def set(self, param_name, value):
+        """
+        Shortcut for setting a parameter from its name and new value.
+
+        Args:
+            param_name (str): The name of a parameter of this instrument.
+            value (any): The new value to set.
+        """
         self.parameters[param_name].set(value)
 
     def get(self, param_name):
+        """
+        Shortcut for getting a parameter from its name.
+
+        Args:
+            param_name (str): The name of a parameter of this instrument.
+
+        Returns:
+            any: The current value of the parameter.
+        """
         return self.parameters[param_name].get()
 
-    def param_getattr(self, param_name, attr, default=NoDefault):
-        if default is NoDefault:
-            return getattr(self.parameters[param_name], attr)
-        else:
-            return getattr(self.parameters[param_name], attr, default)
-
-    def param_setattr(self, param_name, attr, value):
-        setattr(self.parameters[param_name], attr, value)
-
-    def param_call(self, param_name, method_name, *args, **kwargs):
-        func = getattr(self.parameters[param_name], method_name)
-        return func(*args, **kwargs)
-
-    # and one lonely one for Functions
     def call(self, func_name, *args):
+        """
+        Shortcut for calling a function from its name.
+
+        Args:
+            func_name (str): The name of a function of this instrument.
+            *args: any arguments to the function.
+
+        Returns:
+            any: The return value of the function.
+        """
         return self.functions[func_name].call(*args)
 
     ##########################################################################
     # info about what's in this instrument, to help construct the remote     #
     ##########################################################################
 
+    def connection_attrs(self, new_id):
+        """
+        Collect info to reconstruct the instrument API in the RemoteInstrument.
+
+        Args:
+            new_id (int): The ID of this instrument on its server.
+                This is how the RemoteInstrument points its calls to the
+                correct server instrument when it calls the server.
+
+        Returns:
+            dict: Dictionary of name: str, id: int, parameters: dict,
+                functions: dict, _methods: dict
+                parameters, functions, and _methods are dictionaries of
+                name: List(str) of attributes to be proxied in the remote.
+        """
+        return {
+            'name': self.name,
+            'id': new_id,
+            'parameters': {name: p.get_attrs()
+                           for name, p in self.parameters.items()},
+            'functions': {name: f.get_attrs()
+                          for name, f in self.functions.items()},
+            '_methods': self._get_method_attrs()
+        }
+
     def _get_method_attrs(self):
-        '''
-        grab all methods of the instrument, and return them
-        as a dictionary of attribute dictionaries
-        '''
+        """
+        Construct a dict of methods this instrument has.
+
+        Returns:
+            dict: Dictionary of method names : list of attributes each method
+                has that should be proxied. As of now, this is just its
+                docstring, if it has one.
+        """
         out = {}
 
         for attr in dir(self):
@@ -455,17 +501,10 @@ class Instrument(Metadatable, DelegateAttributes):
             if ((not callable(value)) or
                     value is self.parameters.get(attr) or
                     value is self.functions.get(attr)):
-                # Functions are callable, and they show up in dir(),
-                # but we don't want them included in methods, they have
-                # their own listing. But we don't want to just exclude
-                # all Functions, in case a Function conflicts with a method,
-                # then we want the method to win because the function can still
-                # be called via instrument.call or instrument.functions
+                # Functions and Parameters are callable and they show up in
+                # dir(), but they have their own listing.
                 continue
 
-            attrs = out[attr] = {}
-
-            if hasattr(value, '__doc__'):
-                attrs['__doc__'] = value.__doc__
+            out[attr] = ['__doc__'] if hasattr(value, '__doc__') else []
 
         return out
