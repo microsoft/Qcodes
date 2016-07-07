@@ -24,7 +24,7 @@ class FrequencySweep(Parameter):
  
 	def set_sweep(self, start, stop, npts):
 		# update the config of the software parameter
-		f = np.linspace(int(start), int(stop), num=npts)
+		f = tuple(np.linspace(int(start), int(stop), num=npts))
 		self.setpoints = ((f,), (f,))
 		self.shapes = ((npts,), (npts,))
  
@@ -123,15 +123,15 @@ class ZNB20(VisaInstrument):
 
     def _set_start(self, val):
         self.write('SENS:FREQ:START {:.4f}'.format(val))
-        self.read.set_sweep(val, self.stop(), self.npts())
+        self.trace.set_sweep(val, self.stop(), self.npts())
 
     def _set_stop(self, val):
         self.write('SENS:FREQ:STOP {:.4f}'.format(val))
-        self.read.set_sweep(self.start(), val, self.npts())
+        self.trace.set_sweep(self.start(), val, self.npts())
  
     def _set_npts(self, val):
         self.write('SENS:SWE:POIN {:.4f}'.format(val))
-        self.read.set_sweep(self.start(), self.stop(), val)
+        self.trace.set_sweep(self.start(), self.stop(), val)
 
     def initialise(self):
         # TODO: set input and output buffer size (its in the matlab)?
