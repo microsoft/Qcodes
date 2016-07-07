@@ -79,8 +79,6 @@ class SR560(Instrument):
         gains = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000,
                  10000, 20000, 50000]
 
-        # TODO: are these Numbers() OK?
-        # Can we be more specific with the ranges?
         self.add_parameter('cutoff_lo',
                            parameter_class=ManualParameter,
                            initial_value='DC',
