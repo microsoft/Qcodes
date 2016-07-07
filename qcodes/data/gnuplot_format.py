@@ -200,10 +200,20 @@ class GNUPlotFormat(Formatter):
                                      myindices, indices)
 
             for value, data_array in zip(values[ndim:], data_arrays):
+                # set .ndarray directly to avoid the overhead of __setitem__
+                # which updates modified_range on every call
                 data_array.ndarray[tuple(indices)] = value
 
             indices[-1] += 1
             first_point = False
+
+        # Since we skipped __setitem__, back up to the last read point and
+        # mark it as saved that far.
+        # Using mark_saved is better than directly setting last_saved_index
+        # because it also ensures modified_range is set correctly.
+        indices[-1] -= 1
+        for array in set_arrays + tuple(data_arrays):
+            array.mark_saved(array.flat_index(indices[:array.ndim]))
 
     def _is_comment(self, line):
         return line[:self.comment_len] == self.comment_chars
