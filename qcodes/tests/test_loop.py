@@ -70,6 +70,7 @@ class TestMockInstLoop(TestCase):
 
     def test_background_and_datamanager(self):
         # make sure that an unpicklable instrument can indeed run in a loop
+        # because the instrument itself is in a server
 
         # TODO: if we don't save the dataset (location=False) then we can't
         # sync it when we're done. Should fix that - for now that just means
@@ -84,6 +85,20 @@ class TestMockInstLoop(TestCase):
         self.loop.process.join()
 
         data.sync()
+        self.check_loop_data(data)
+
+    def test_local_instrument(self):
+        # a local instrument should work in a foreground loop, but
+        # not in a background loop (should give a RuntimeError)
+        gates_local = MockGates(model=self.model, server_name=None)
+        c1 = gates_local.chan1
+        loop_local = Loop(c1[1:5:1], 0.001).each(c1)
+
+        with self.assertRaises(RuntimeError):
+            loop_local.run(location=self.location, quiet=True)
+
+        data = loop_local.run(location=self.location2, background=False,
+                              quiet=True)
         self.check_loop_data(data)
 
     def test_background_no_datamanager(self):

@@ -93,6 +93,8 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
 
         self._meta_attrs = ['name']
 
+        self._no_proxy_methods = {'__getstate__'}
+
         self.record_instance(self)
 
     def get_idn(self):
@@ -500,7 +502,8 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
             value = getattr(self, attr)
             if ((not callable(value)) or
                     value is self.parameters.get(attr) or
-                    value is self.functions.get(attr)):
+                    value is self.functions.get(attr) or
+                    attr in self._no_proxy_methods):
                 # Functions and Parameters are callable and they show up in
                 # dir(), but they have their own listing.
                 continue
@@ -508,3 +511,11 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
             out[attr] = ['__doc__'] if hasattr(value, '__doc__') else []
 
         return out
+
+    def __getstate__(self):
+        """Prevent pickling instruments, and give a nice error message."""
+        raise RuntimeError(
+            'qcodes Instruments should not be pickled. Likely this means you '
+            'were trying to use a local instrument (defined with '
+            'server_name=None) in a background Loop. Local instruments can '
+            'only be used in Loops with background=False.')
