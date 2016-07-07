@@ -26,10 +26,11 @@ class Function(Metadatable):
     Args:
         name (str): the local name of this function
 
-        instrument (Optional[Instrument]): an instrument that handles this function
-            default None
+        instrument (Optional[Instrument]): an instrument that handles this
+            function. Default None.
 
-        call_cmd (Optional[Union[string, function]]): command to execute on instrument
+        call_cmd (Optional[Union[string, function]]): command to execute on
+            the instrument:
 
             - a string (with positional fields to .format, "{}" or "{0}" etc)
               you can only use a string if an instrument is provided,
@@ -40,18 +41,19 @@ class Function(Metadatable):
         args (Optional[List[Validator]]): list of Validator objects, one for
             each arg to the Function
 
-        arg_parser (Optional[function]): function to transform the input arg(s) to encoded value(s)
-            sent to the instrument.  If there are multiple arguments, this function
-            should accept all the arguments in order, and return a tuple of values.
+        arg_parser (Optional[function]): function to transform the input arg(s)
+            to encoded value(s) sent to the instrument.  If there are multiple
+            arguments, this function should accept all the arguments in order,
+            and return a tuple of values.
 
-        return_parser (Optional[function]): function to transform the response from the
-            instrument to the final output value.  may be a type casting function
-            like `int` or `float`.  If None (default), will not wait for or read
-            any response
+        return_parser (Optional[function]): function to transform the response
+            from the instrument to the final output value.  may be a
+            type casting function like `int` or `float`.  If None (default),
+            will not wait for or read any response.
 
-        docstring (Optional[string]): documentation string for the __doc__ field of the object
-            The __doc__ field of the instance is used by some help systems,
-            but not all (particularly not builtin `help(...)`)
+        docstring (Optional[string]): documentation string for the __doc__
+            field of the object. The __doc__ field of the instance is used by
+            some help systems, but not all (particularly not builtin `help()`)
 
         **kwargs: Arbitrary keyword arguments passed to parent class
 

@@ -1,6 +1,7 @@
 """Instrument base class."""
 import weakref
 import time
+import logging
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
@@ -97,19 +98,43 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
 
     def get_idn(self):
         """
-        Placeholder for instrument ID parameter getter.
+        Parse a standard VISA '*IDN?' response into an ID dict.
 
-        Subclasses should override this.
+        Even though this is the VISA standard, it applies to various other
+        types as well, such as IPInstruments, so it is included here in the
+        Instrument base class.
+
+        Override this if your instrument does not support '*IDN?' or
+        returns a nonstandard IDN string. This string is supposed to be a
+        comma-separated list of vendor, model, serial, and firmware, but
+        semicolon and colon are also common separators so we accept them here
+        as well.
 
         Returns:
-            A dict containing (at least) these 4 fields:
-                vendor
-                model
-                serial
-                firmware
+            A dict containing vendor, model, serial, and firmware.
         """
-        return {'vendor': None, 'model': None,
-                'serial': None, 'firmware': None}
+        try:
+            idstr = ''  # in case self.ask fails
+            idstr = self.ask('*IDN?')
+            # form is supposed to be comma-separated, but we've seen
+            # other separators occasionally
+            for separator in ',;:':
+                # split into no more than 4 parts, so we don't lose info
+                idparts = [p.strip() for p in idstr.split(separator, 3)]
+                if len(idparts) > 1:
+                    break
+            # in case parts at the end are missing, fill in None
+            if len(idparts) < 4:
+                idparts += [None] * (4 - len(idparts))
+        except:
+            logging.warn('Error getting or interpreting *IDN?: ' + repr(idstr))
+            idparts = [None, None, None, None]
+
+        # some strings include the word 'model' at the front of model
+        if str(idparts[1]).lower().startswith('model'):
+            idparts[1] = str(idparts[1])[5:].strip()
+
+        return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
     @classmethod
     def default_server_name(cls, **kwargs):

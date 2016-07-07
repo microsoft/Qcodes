@@ -386,7 +386,7 @@ class TestLoop(TestCase):
         mg = MultiGetter(one=1, onetwo=(1, 2))
         self.assertTrue(hasattr(mg, 'names'))
         self.assertTrue(hasattr(mg, 'shapes'))
-        self.assertFalse(hasattr(mg, 'name'))
+        self.assertEqual(mg.name, 'None')
         self.assertFalse(hasattr(mg, 'shape'))
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
         data = loop.run_temp()

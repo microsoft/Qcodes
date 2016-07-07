@@ -700,6 +700,7 @@ class ActiveLoop(Metadatable):
                 del self.process
 
             self._run_wrapper()
+
             if self.data_set.mode != DataMode.LOCAL:
                 self.data_set.sync()
 
