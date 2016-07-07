@@ -12,14 +12,12 @@ from qcodes import Parameter
 '''
 
 class FrequencySweep(Parameter):
-	def __init__(self, name, instrument, start, stop, npts, **kwargs):
+	def __init__(self, name, instrument, start, stop, npts):
 		super().__init__(name)
-		self.p = 'ex'
-		self.name = name
 		self._instrument = instrument
 		self.set_sweep(start, stop, npts)
 		self.names = ('magnitude', 'phase')
-		self.units = ('dBm', 'degrees')
+		self.units = ('dBm', 'rad')
 		self.setpoint_names = (('frequency',), ('frequency',))
  
 	def set_sweep(self, start, stop, npts):
@@ -28,10 +26,17 @@ class FrequencySweep(Parameter):
 		self.setpoints = ((f,), (f,))
 		self.shapes = ((npts,), (npts,))
  
-	def get(self):      
-		self._instrument.write('INIT:IMM; *WAI')
+	def get(self):   
+		self._instrument.write('SENS1:AVER:STAT ON')
+        self._instrument.write('AVER:CLE')
+		self._instrument.turn_off_cont_meas()
+		avgnum = self._instrument.avg()
+		while avgnum > 0:
+			self._instrument.write('INIT:IMM; *WAI')
+			avgnum-=1
+		self._instrument.update_display()
 		data_list = [float(v) for v in self._instrument.ask('CALC:DATA? SDAT').split(',')]
-		data_arr = data_arr = np.array(data_list).reshape(len(data_list)/2,2)
+		data_arr = data_arr = np.array(data_list).reshape(int(len(data_list)/2),2)
 		mag_array=[]
 		phase_array=[]
 		for comp in data_arr:
@@ -70,31 +75,16 @@ class ZNB20(VisaInstrument):
                            get_parser=int,
                            vals=vals.Numbers(1,5000))
 
-        # self.add_parameter(name='centFreq',
-        #                    label='Central Frequency',
-        #                    units='Hz',
-        #                    get_cmd='SENS:FREQ:CENT?',
-        #                    set_cmd='SENS:FREQ:CENT {:d}',
-        #                    get_parser=int,
-        #                    vals=vals.Numbers(1,2e10))
-
-        # self.add_parameter(name='spanFreq',
-        #                    label='Span Frequency',
-        #                    units='Hz',
-        #                    get_cmd='SENS:FREQ:SPAN?',
-        #                    set_cmd='SENS:FREQ:SPAN {:d}',
-        #                    get_parser=int,
-        #                    vals=vals.Numbers(1,2e10))
-
-		#TODO: vals make this work
         self.add_parameter(name='start', 
                            get_cmd='SENS:FREQ:START?',
-                           set_cmd=self._set_start
+                           set_cmd=self._set_start,
+						   get_parser=int,
                            )
 
         self.add_parameter(name='stop', 
                            get_cmd='SENS:FREQ:STOP?',
-                           set_cmd=self._set_stop
+                           set_cmd=self._set_stop,
+						   get_parser=int,
                            )
 
         self.add_parameter(name='npts',
@@ -111,15 +101,14 @@ class ZNB20(VisaInstrument):
 
         self.add_function('reset', call_cmd='*RST')
 		#TODO: check
-        self.add_function('turn_on_error_tooltip', call_cmd='SYST:ERR:DISP ON')
-        self.add_function('turn_off_error_tooltip', call_cmd='SYST:ERR:DISP OFF')
+        self.add_function('turn_on_tooltip', call_cmd='SYST:ERR:DISP ON')
+        self.add_function('turn_off_tooltip', call_cmd='SYST:ERR:DISP OFF')
         self.add_function('turn_on_cont_meas', call_cmd='INIT:CONT:ALL ON')
         self.add_function('turn_off_cont_meas', call_cmd='INIT:CONT:ALL OFF')
-        self.add_function('update_display_once', call_cmd='SYST:DISP:UPD ONCE')
+        self.add_function('update_display', call_cmd='SYST:DISP:UPD ONCE')
 
         self.initialise()
         self.connect_message()
-
 
     def _set_start(self, val):
         self.write('SENS:FREQ:START {:.4f}'.format(val))
