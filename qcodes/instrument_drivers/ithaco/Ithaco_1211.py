@@ -5,27 +5,45 @@ from qcodes.utils.validators import Enum, Bool
 
 
 class CurrentParameter(Parameter):
-    def __init__(self, measured_param, camp_ins, name=None):
+    """
+    Current measurement via an Ithaco preamp and a measured voltage.
+
+    To be used when you feed a current into the Ithaco, send the Ithaco's
+    output voltage to a lockin or other voltage amplifier, and you have
+    the voltage reading from that amplifier as a qcodes parameter.
+
+    ``CurrentParameter.get()`` returns ``(raw_voltage, current)``
+
+    Args:
+        measured_param (Parameter): a gettable parameter returning the
+            voltage read from the Ithaco output.
+
+        c_amp_ins (Ithaco_1211): an Ithaco instance where you manually
+            maintain the present settings of the real Ithaco amp.
+
+            Note: it should be possible to use other current preamps, if they
+            define parameters ``sens`` (sensitivity, in A/V), ``sens_factor``
+            (an additional gain) and ``invert`` (bool, output is inverted)
+
+        name (str): the name of the current output. Default 'curr'.
+            Also used as the name of the whole parameter.
+    """
+    def __init__(self, measured_param, c_amp_ins, name='curr'):
         p_name = measured_param.name
-        self.name = name or 'curr'
-        super().__init__(names=(p_name+'_raw', self.name))
 
-        _p_label = None
-        _p_unit = None
+        super().__init__(name=name, names=(p_name+'_raw', name))
 
-        self.measured_param = measured_param
-        self._instrument = camp_ins
+        self._measured_param = measured_param
+        self._instrument = c_amp_ins
 
-        if hasattr(measured_param, 'label'):
-            _p_label = measured_param.label
-        if hasattr(measured_param, 'units'):
-            _p_unit = measured_param.units
+        p_label = getattr(measured_param, 'label', None)
+        p_unit = getattr(measured_param, 'units', None)
 
-        self.labels = (_p_label, 'Current')
-        self.units = (_p_unit, 'A')
+        self.labels = (p_label, 'Current')
+        self.units = (p_unit, 'A')
 
     def get(self):
-        volt = self.measured_param.get()
+        volt = self._measured_param.get()
         current = (self._instrument.sens.get() *
                    self._instrument.sens_factor.get()) * volt
 

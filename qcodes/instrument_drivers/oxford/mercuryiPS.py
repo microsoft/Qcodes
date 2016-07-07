@@ -9,9 +9,16 @@ from qcodes.utils.validators import Enum, Anything
 
 class MercuryiPS(IPInstrument):
     """
-    MercuryiPS Driver
-
     This is the qcodes driver for the Oxford MercuryiPS magnet power supply.
+
+    Args:
+        name (str): name of the instrument
+        address (str): The IP address or domain name of this instrument
+        port (int): the IP port to communicate on (TODO: what port is normal?)
+
+        axes (List[str], Optional): axes to support, as a list of uppercase
+            characters, eg ``['X', 'Y', 'Z']``. If omitted, will ask the
+            instrument what axes it supports.
 
     Status: beta-version.
         TODO:
@@ -20,6 +27,11 @@ class MercuryiPS(IPInstrument):
         - make ATOB a parameter, and move all possible to use
           _read_cmd, _write_cmd
         - this findall stuff in _get_cmd, is that smart?
+
+    The driver is written as an IPInstrument, but it can likely be converted to
+    ``VisaInstrument`` by removing the ``port`` arg and defining methods:
+        ``def _send(self, msg): self.visa_handle.write(msg)``
+        ``def _recv(self): return self.visa_handle.read()``
     """
     # def __init__(self, name, axes=None, **kwargs):
     #     super().__init__(name, terminator='\n', **kwargs)

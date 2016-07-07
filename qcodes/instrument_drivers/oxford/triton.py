@@ -5,7 +5,7 @@ import logging
 from traceback import format_exc
 
 from qcodes import IPInstrument
-from qcodes.utils.validators import Strings, Enum
+from qcodes.utils.validators import Enum
 
 
 class Triton(IPInstrument):
@@ -105,13 +105,6 @@ class Triton(IPInstrument):
                          format_exc())
 
         self.connect_message()
-
-    def _get_on_off(self, mgs):
-        print(msg)
-        return str.lower(msg)
-
-    def _set_on_off(self, mgs):
-        return str.upper(msg)
 
     def _get_response(self, msg):
         return msg.split(':')[-1]
