@@ -11,6 +11,7 @@ QUERY_ASK = 'ASK'
 RESPONSE_OK = 'OK'
 RESPONSE_ERROR = 'ERROR'
 
+from qcodes.utils.nested_attrs import NestedAttrAccess
 from .qcodes_process import QcodesProcess
 from .helpers import kill_queue
 
@@ -204,7 +205,7 @@ class ServerManager:
             del self.query_lock
 
 
-class BaseServer:
+class BaseServer(NestedAttrAccess):
 
     """
     Base class for servers to run in separate processes.
@@ -234,12 +235,14 @@ class BaseServer:
     - `QUERY_WRITE` (from `server_manager.write`): will NEVER send a response,
       return values are ignored and errors go to the logging framework.
 
-    Two handlers are predefined:
+    Three handlers are predefined:
 
     - `handle_halt` (but override it if your event loop does not use
       self.running=False to stop)
 
     - `handle_get_handlers` (lists all available handler methods)
+
+    - `handle_method_call` (call an arbitrary method on the server)
     """
 
     # just for testing - how long to allow it to wait on a queue.get
@@ -372,3 +375,21 @@ class BaseServer:
             if name.startswith('handle_') and callable(getattr(self, name)):
                 handlers.append(name[len('handle_'):])
         return handlers
+
+    def handle_method_call(self, method_name, *args, **kwargs):
+        """
+        Pass through arbitrary method calls to the server.
+
+        Args:
+            method_name (str): the method name to call.
+                Primarily intended for NestedAttrAccess, ie:
+                ``getattr``, ``setattr``, ``callattr``, ``delattr``.
+
+            *args (Any): passed to the method
+
+            **kwargs (Any): passed to the method
+
+        Returns:
+            Any: the return value of the method
+        """
+        return getattr(self, method_name)(*args, **kwargs)
