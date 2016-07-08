@@ -601,7 +601,7 @@ class DataSet(DelegateAttributes):
         """ Return default parameter for plotting """
 
         arraynames = self.arrays.keys()
-        
+
         # try to return the exact name
         if paramname in arraynames:
             return paramname
