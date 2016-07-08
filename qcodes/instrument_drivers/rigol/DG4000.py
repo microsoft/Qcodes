@@ -1,5 +1,5 @@
 from qcodes import VisaInstrument
-from qcodes.utils.validators import Numbers, Ints, Enum, MultiType, Bool
+from qcodes.utils.validators import Numbers, Ints, Enum, MultiType
 
 from functools import partial
 
@@ -10,8 +10,8 @@ def is_number(s):
     except ValueError:
         return False
 
-def parse_output_string(s):
-    """ Parses and cleans string outputs of the Keithley """
+def parse_string_output(s):
+    """ Parses and cleans string outputs """
     # Remove surrounding whitespace and newline characters
     s = s.strip()
 
@@ -30,15 +30,6 @@ def parse_output_string(s):
         'inf': 'infinity',
         'min': 'minimum',
         'max': 'maximum',
-        'norm': 'normal',
-        'inv': 'inverted',
-        'pos': 'positive',
-        'neg': 'negative',
-        'dc': 'DC',
-        'ac': 'AC',
-        'lin': 'linear',
-        'log': 'logarithmic',
-        'ste': 'step',
     }
 
     if s in conversions.keys():
@@ -46,37 +37,54 @@ def parse_output_string(s):
 
     return s
 
-def parse_on_off_bool(s):
-    if s == 'ON\n':
-        return True
-    elif s == 'OFF\n':
-        return False
-    else:
-        raise ValueError(s + ' is not parsable to a boolean value')
+def parse_single_output(i, s):
+    """ Used as a partial function to parse output i in string s """
+    parts = s.split(',')
+
+    return parse_string_output(parts[i])
+
+def parse_multiple_outputs(s):
+    """ Parse an output such as 'sin,1.5,0,2' and return a parsed array """
+    parts = s.split(',')
+
+    return [parse_string_output(part) for part in parts]
 
 class Rigol_DG4000(VisaInstrument):
     """
     Driver for the Rigol DG4000 arbitrary waveform generator.
     """
     def __init__(self, name, address, reset=False, **kwargs):
-        super().__init__(name, address, **kwargs)
+        super().__init__(name, address, terminator='\n', **kwargs)
 
-        self._channel = 1
+        model = self.get_idn()['model']
+
+        models =    ['DG4202',  'DG4162',   'DG4102',   'DG4062']
+
+        if model in models:
+            i = models.index(model)
+
+            sine_freq =      [200e6,     160e6,      100e6,      60e6][i]
+            square_freq =    [60e6,      50e6,       40e6,       25e6][i]
+            ramp_freq =      [5e6,       4e6,        3e6,        1e6][i]
+            pulse_freq =     [50e6,      40e6,       25e6,       15e6][i]
+            harmonic_freq =  [100e6,     80e6,       50e6,       30e6][i]
+            noise_freq =     [120e6,     120e6,      80e6,       60e6][i]
+            arb_freq =       [50e6,      40e6,       25e6,       15e6][i]
+        else:
+            raise KeyError('Model code ' + model + ' is not recognized')
+
+        on_off_map = {True: 'ON', False: 'OFF'}
 
         # Counter
         self.add_parameter('counter_attenuation',
                            get_cmd='COUN:ATT?',
                            set_cmd='COUN:ATT {}',
-                           val_mapping={
-                               1: '1X\n',
-                               10: '10X\n',
-                           })
+                           val_mapping={1: '1X', 10: '10X'})
 
         self.add_function('auto_counter', call_cmd='COUN:AUTO')
 
         self.add_parameter('counter_coupling',
                            get_cmd='COUN:COUP?',
-                           get_parser=parse_output_string,
                            set_cmd='COUN:COUP {}',
                            vals=Enum('AC', 'DC'))
 
@@ -85,29 +93,25 @@ class Rigol_DG4000(VisaInstrument):
                            set_cmd='COUN:GATE {}',
                            units='s',
                            val_mapping={
-                               'auto': 'AUTO\n',
-                               0.001:  'USER1\n',
-                               0.01:   'USER2\n',
-                               0.1:    'USER3\n',
-                               1:      'USER4\n',
-                               10:     'USER5\n',
-                               '>10':  'USER6\n',
+                               'auto': 'AUTO',
+                               0.001:  'USER1',
+                               0.01:   'USER2',
+                               0.1:    'USER3',
+                               1:      'USER4',
+                               10:     'USER5',
+                               '>10':  'USER6',
                            })
 
         self.add_parameter('counter_hf_reject_enabled',
                            get_cmd='COUN:HF?',
-                           get_parser=parse_on_off_bool,
                            set_cmd='COUN:HF {}',
-                           vals=Bool())
+                           val_mapping=on_off_map)
 
         self.add_parameter('counter_impedance',
                            get_cmd='COUN:IMP?',
                            set_cmd='COUN:IMP {}',
                            units='Ohm',
-                           val_mapping={
-                               50:  '50\n',
-                               1e6: '1M\n',
-                           })
+                           val_mapping={50:  '50', 1e6: '1M'})
 
         self.add_parameter('counter_trigger_level',
                            get_cmd='COUN:LEVE?',
@@ -118,23 +122,17 @@ class Rigol_DG4000(VisaInstrument):
 
         self.add_parameter('counter_enabled',
                            get_cmd='COUN:STAT?',
-                           get_parser=parse_output_string,
                            set_cmd='COUN:STAT {}',
-                           vals=Bool())
+                           val_mapping=on_off_map)
 
-        def parse_counter_measure(i, s):
-            parts = s.split(',')
-
-            return float(parts[i])
-
-        measure_params = ['frequency', 'period', 'duty_cycle', 
+        measure_params = ['frequency', 'period', 'duty_cycle',
                           'positive_width', 'negative_width']
 
         # TODO: Check units of outputs
         for i, param in enumerate(measure_params):
             self.add_parameter('counter_{}'.format(param),
                            get_cmd='COUN:MEAS?',
-                           get_parser=partial(parse_counter_measure, i))
+                           get_parser=partial(parse_single_output, i))
 
         self.add_parameter('counter_trigger_sensitivity',
                            get_cmd='COUN:SENS?',
@@ -143,7 +141,7 @@ class Rigol_DG4000(VisaInstrument):
                            units='%',
                            vals=Numbers(min_value=0, max_value=100))
 
-        # Output
+        # Output and Source parameters for both channel 1 and 2
         for i in [1, 2]:
             ch = 'ch{}_'.format(i)
             output = 'OUTP{}:'.format(i)
@@ -151,10 +149,10 @@ class Rigol_DG4000(VisaInstrument):
 
             self.add_parameter(ch + 'output_impedance',
                                get_cmd=output + 'IMP?',
-                               get_parser=parse_output_string,
+                               get_parser=parse_string_output,
                                set_cmd=output + 'IMP {}',
                                units='Ohm',
-                               vals=MultiType(Numbers(min_value=1, max_value=10e3), 
+                               vals=MultiType(Numbers(min_value=1, max_value=10e3),
                                               Enum('infinity', 'minimum', 'maximum')))
 
             self.add_parameter(ch + 'add_noise_scale',
@@ -166,84 +164,83 @@ class Rigol_DG4000(VisaInstrument):
 
             self.add_parameter(ch + 'add_noise_enabled',
                                get_cmd=output + 'NOIS?',
-                               get_parser=parse_on_off_bool,
                                set_cmd=output + 'NOIS',
-                               vals=Bool())
+                               val_mapping=on_off_map)
 
             self.add_parameter(ch + 'output_polarity',
                                get_cmd=output + 'POL?',
-                               get_parser=parse_output_string,
                                set_cmd=output + 'POL',
-                               vals=Enum('normal', 'inverted'))
+                               val_mapping={'normal': 'NORM', 'inverted': 'INV'})
 
             self.add_parameter(ch + 'output_enabled',
                                get_cmd=output + 'STAT?',
-                               get_parser=parse_on_off_bool,
                                set_cmd=output + 'STAT',
-                               vals=Bool())
+                               val_mapping=on_off_map)
 
             self.add_parameter(ch + 'sync_polarity',
                                get_cmd=output + 'SYNC:POL?',
-                               get_parser=parse_output_string,
                                set_cmd=output + 'SYNC:POL',
-                               vals=Enum('positive', 'negative'))
+                               val_mapping={'positive': 'POS', 'negative': 'NEG'})
 
             self.add_parameter(ch + 'sync_enabled',
                                get_cmd=output + 'SYNC?',
-                               get_parser=parse_on_off_bool,
                                set_cmd=output + 'SYNC',
-                               vals=Bool())
+                               val_mapping=on_off_map)
 
             # Source Apply
-            # TODO: Frequencies are dependent on model
-            # TODO: Various parameters are limited by impedance/freq/period/amplitude settings
-            self.add_function(ch + 'custom', 
+            # TODO: Various parameters are limited by
+            # impedance/freq/period/amplitude settings, this might be very hard
+            # to implement in here
+            self.add_function(ch + 'custom',
                               call_cmd=source + 'APPL:CUST {:.6e},{:.6e},{:.6e},{:.6e}',
-                              args=[Numbers(1e-6, 40e6), Numbers(), Numbers(), Numbers(0, 360)])
+                              args=[Numbers(1e-6, arb_freq),
+                                    Numbers(), Numbers(), Numbers(0, 360)])
 
-            self.add_function(ch + 'harmonic', 
-                              call_cmd=source + 'APPL:HARM {:.6e},{:.6e},{:.6e},{:.6e}', 
-                              args=[Numbers(1e-6, 80e6), Numbers(), Numbers(), Numbers(0, 360)])
+            self.add_function(ch + 'harmonic',
+                              call_cmd=source + 'APPL:HARM {:.6e},{:.6e},{:.6e},{:.6e}',
+                              args=[Numbers(1e-6, harmonic_freq),
+                                    Numbers(), Numbers(), Numbers(0, 360)])
 
-            self.add_function(ch + 'noise', 
-                              call_cmd=source + 'APPL:NOIS {:.6e},{:.6e}', 
+            self.add_function(ch + 'noise',
+                              call_cmd=source + 'APPL:NOIS {:.6e},{:.6e}',
                               args=[Numbers(0, 10), Numbers()])
 
-            self.add_function(ch + 'pulse', 
-                               call_cmd=source + 'APPL:PULS {:.6e},{:.6e},{:.6e},{:.6e}', 
-                               args=[Numbers(1e-6, 40e6), Numbers(), Numbers(), Numbers(0)])
+            self.add_function(ch + 'pulse',
+                               call_cmd=source + 'APPL:PULS {:.6e},{:.6e},{:.6e},{:.6e}',
+                               args=[Numbers(1e-6, pulse_freq),
+                                    Numbers(), Numbers(), Numbers(0)])
 
-            self.add_function(ch + 'ramp', 
-                               call_cmd=source + 'APPL:RAMP {:.6e},{:.6e},{:.6e},{:.6e}', 
-                               args=[Numbers(1e-6, 4e6), Numbers(), Numbers(), Numbers(0, 360)])
+            self.add_function(ch + 'ramp',
+                               call_cmd=source + 'APPL:RAMP {:.6e},{:.6e},{:.6e},{:.6e}',
+                               args=[Numbers(1e-6, ramp_freq),
+                                    Numbers(), Numbers(), Numbers(0, 360)])
 
-            self.add_function(ch + 'sinusoid', 
-                               call_cmd=source + 'APPL:SIN {:.6e},{:.6e},{:.6e},{:.6e}', 
-                               args=[Numbers(1e-6, 160e6), Numbers(), Numbers(), Numbers(0, 360)])
+            self.add_function(ch + 'sinusoid',
+                               call_cmd=source + 'APPL:SIN {:.6e},{:.6e},{:.6e},{:.6e}',
+                               args=[Numbers(1e-6, sine_freq),
+                                    Numbers(), Numbers(), Numbers(0, 360)])
 
-            self.add_function(ch + 'square', 
-                               call_cmd=source + 'APPL:SQU {:.6e},{:.6e},{:.6e},{:.6e}', 
-                               args=[Numbers(1e-6, 50e6), Numbers(), Numbers(), Numbers(0, 360)])
+            self.add_function(ch + 'square',
+                               call_cmd=source + 'APPL:SQU {:.6e},{:.6e},{:.6e},{:.6e}',
+                               args=[Numbers(1e-6, square_freq),
+                                    Numbers(), Numbers(), Numbers(0, 360)])
 
-            self.add_function(ch + 'user', 
-                               call_cmd=source + 'APPL:USER {:.6e},{:.6e},{:.6e},{:.6e}', 
-                               args=[Numbers(1e-6, 40e6), Numbers(), Numbers(), Numbers(0, 360)])
-
-            def parse_configuration(s):
-                parts = s.split(',')
-
-                return [parse_output_string(part) for part in parts]
+            self.add_function(ch + 'user',
+                               call_cmd=source + 'APPL:USER {:.6e},{:.6e},{:.6e},{:.6e}',
+                               args=[Numbers(1e-6, arb_freq),
+                                    Numbers(), Numbers(), Numbers(0, 360)])
 
             self.add_parameter(ch + 'configuration',
-                               get_cmd=source + 'APPL?'
-                               get_parser=parse_configuration)
+                               get_cmd=source + 'APPL?',
+                               get_parser=parse_multiple_outputs)
 
             # Source Burst
             self.add_parameter(ch + 'burst_mode',
                                get_cmd=output + 'BURS:MODE?',
-                               get_parser=parse_output_string,
                                set_cmd=output + 'BURS:MODE',
-                               vals=Enum('triggered', 'gated', 'infinity'))
+                               val_mapping={'triggered': 'TRIG',
+                                            'gated': 'GAT',
+                                            'infinity': 'INF'})
 
             self.add_parameter(ch + 'burst_cycles',
                                get_cmd=output + 'BURS:NCYC?',
@@ -267,65 +264,67 @@ class Rigol_DG4000(VisaInstrument):
 
             self.add_parameter(ch + 'burst_trigger_edge',
                                get_cmd=output + 'BURS:TRIG:SLOP?',
-                               get_parser=parse_output_string,
                                set_cmd=output + 'BURS:TRIG:SLOP',
-                               vals=Enum('positive', 'negative'))
+                               val_mapping={'positive': 'POS', 'negative': 'NEG'})
 
             self.add_parameter(ch + 'burst_trigger_source',
                                get_cmd=output + 'BURS:TRIG:SOUR?',
-                               get_parser=parse_output_string,
                                set_cmd=output + 'BURS:TRIG:SOUR',
-                               vals=Enum('internal', 'external', 'manual'))
+                               val_mapping={'internal': 'INT',
+                                            'external': 'EXT',
+                                            'manual': 'MAN'})
 
             self.add_parameter(ch + 'burst_trigger_out',
                                get_cmd=output + 'BURS:TRIG:TRIGO?',
-                               get_parser=parse_output_string,
                                set_cmd=output + 'BURS:TRIG:TRIGO',
-                               vals=Enum('off', 'positive', 'negative'))
+                               val_mapping={'off': 'OFF',
+                                            'positive': 'POS',
+                                            'negative': 'NEG'})
 
             # Source Frequency
+            # TODO: These parameter bounds also depend on the current waveform
             self.add_parameter(ch + 'frequency_center',
                                get_cmd=output + 'FREQ:CENT?',
                                get_parser=float,
                                set_cmd=output + 'FREQ:CENT',
                                units='Hz',
-                               vals=Numbers(1e-6)) # TODO model dependent
+                               vals=Numbers(1e-6))
 
             self.add_parameter(ch + 'frequency',
                                get_cmd=output + 'FREQ?',
                                get_parser=float,
                                set_cmd=output + 'FREQ',
                                units='Hz',
-                               vals=Numbers(1e-6, 160e6)) # TODO model dependent
+                               vals=Numbers(1e-6))
 
             self.add_parameter(ch + 'frequency_start',
                                get_cmd=output + 'FREQ:STAR?',
                                get_parser=float,
                                set_cmd=output + 'FREQ:STAR',
                                units='Hz',
-                               vals=Numbers(1e-6)) # TODO model dependent
+                               vals=Numbers(1e-6))
 
             self.add_parameter(ch + 'frequency_stop',
                                get_cmd=output + 'FREQ:STOP?',
                                get_parser=float,
                                set_cmd=output + 'FREQ:STOP',
                                units='Hz',
-                               vals=Numbers(1e-6)) # TODO model dependent
+                               vals=Numbers(1e-6))
 
             # Source Function
             self.add_parameter(ch + 'ramp_symmetry',
-                               get_cmd=output + 'FREQ:STOP?',
+                               get_cmd=output + 'FUNC:RAMP:SYMM?',
                                get_parser=float,
-                               set_cmd=output + 'FREQ:STOP',
+                               set_cmd=output + 'FUNC:RAMP:SYMM',
                                units='%',
                                vals=Numbers(0, 100))
 
             self.add_parameter(ch + 'square_duty_cycle',
-                               get_cmd=output + 'FREQ:STOP?',
+                               get_cmd=output + 'FUNC:SQU:DCYC?',
                                get_parser=float,
-                               set_cmd=output + 'FREQ:STOP',
+                               set_cmd=output + 'FUNC:SQU:DCYC',
                                units='%',
-                               vals=Numbers(20, 80)) # TODO setting dependent
+                               vals=Numbers(20, 80))
 
             # Source Harmonic
             # TODO Multi-argument parameters
@@ -351,7 +350,7 @@ class Rigol_DG4000(VisaInstrument):
 
             self.add_parameter(ch + 'harmonic_type',
                                get_cmd=output + 'HARM:TYP?',
-                               get_parser=parse_output_string,
+                               get_parser=str.lower,
                                set_cmd=output + 'HARM:TYP',
                                vals=Enum('even', 'odd', 'all', 'user'))
 
@@ -365,15 +364,14 @@ class Rigol_DG4000(VisaInstrument):
 
             self.add_parameter(ch + 'marker_enabled',
                                get_cmd=output + 'MARK?',
-                               get_parser=parse_on_off_bool,
                                set_cmd=output + 'MARK',
-                               vals=Bool())
+                               val_mapping=on_off_map)
 
             # Source Modulation
-            
+
 
             # Source Period
-            
+
 
             # Source Phase
             self.add_parameter(ch + 'phase',
@@ -400,10 +398,9 @@ class Rigol_DG4000(VisaInstrument):
 
             self.add_parameter(ch + 'pulse_hold',
                                get_cmd=output + 'PULS:DEL?',
-                               get_parser=float,
                                set_cmd=output + 'PULS:DEL',
                                units='s',
-                               vals=Enum('width', 'duty'))
+                               val_mapping={'width': 'WIDT', 'duty': 'DUTY'})
 
             self.add_parameter(ch + 'pulse_leading_edge',
                                get_cmd=output + 'PULS:TRAN:LEAD?',
@@ -450,15 +447,15 @@ class Rigol_DG4000(VisaInstrument):
 
             self.add_parameter(ch + 'sweep_spacing',
                                get_cmd=output + 'SWE:SPAC?',
-                               get_parser=parse_output_string,
                                set_cmd=output + 'SWE:SPAC',
-                               vals=Enum('linear', 'logarithmic', 'step')) # TODO: add to parser
+                               val_mapping={'linear': 'LIN',
+                                            'logarithmic': 'LOG',
+                                            'step': 'STE'})
 
             self.add_parameter(ch + 'sweep_enabled',
                                get_cmd=output + 'SWE:STAT?',
-                               get_parser=parse_on_off_bool,
                                set_cmd=output + 'SWE:STAT',
-                               vals=Bool())
+                               val_mapping=on_off_map)
 
             self.add_parameter(ch + 'sweep_step',
                                get_cmd=output + 'SWE:STEP?',
@@ -470,7 +467,7 @@ class Rigol_DG4000(VisaInstrument):
                                get_cmd=output + 'SWE:TIME?',
                                get_parser=float,
                                set_cmd=output + 'SWE:TIME',
-                               units='s'
+                               units='s',
                                vals=Numbers(1e-3, 300))
 
             # Source Voltage
@@ -490,19 +487,17 @@ class Rigol_DG4000(VisaInstrument):
 
             self.add_parameter(ch + 'unit',
                                get_cmd=output + 'VOLT:UNIT?',
-                               get_parser=parse_output_string,
+                               get_parser=str.lower,
                                set_cmd=output + 'VOLT:UNIT',
                                vals=Enum('vpp', 'vrms', 'dbm'))
-
 
         # System
         self.add_function('beep', call_cmd='SYST:BEEP')
 
-        self.add_parameter('beeper',
+        self.add_parameter('beeper_enabled',
                            get_cmd='SYST:BEEP:STAT?',
-                           get_parser=parse_output_bool,
                            set_cmd='SYST:BEEP:STAT {}',
-                           vals=Enum('on', 'off'))
+                           val_mapping=on_off_map)
 
         self.add_function('copy_config_to_ch1', call_cmd='SYST:CSC CH2,CH1')
         self.add_function('copy_config_to_ch2', call_cmd='SYST:CSC CH1,CH2')
@@ -512,18 +507,18 @@ class Rigol_DG4000(VisaInstrument):
 
         self.add_parameter('error', get_cmd='SYST:ERR?')
 
-        self.add_parameter('keyboard_lock',
+        self.add_parameter('keyboard_locked',
                            get_cmd='SYST:KLOCK?',
-                           get_parser=parse_output_string,
                            set_cmd='SYST:KLOCK {}',
-                           vals=Enum('on', 'off'))
+                           val_mapping=on_off_map)
 
         self.add_parameter('startup_mode',
                            get_cmd='SYST:POWS?',
+                           get_parser=str.lower,
                            set_cmd='SYST:POWS {}',
                            vals=Enum('user', 'auto'))
 
-        system_states = Enum('default', 'user1', 'user2', 'user3', 'user4', 'user5', 
+        system_states = Enum('default', 'user1', 'user2', 'user3', 'user4', 'user5',
                              'user6', 'user7', 'user8', 'user9', 'user10')
         self.add_function('preset', call_cmd='SYST:PRES {}', args=[system_states])
 
@@ -531,9 +526,8 @@ class Rigol_DG4000(VisaInstrument):
 
         self.add_parameter('reference_clock_source',
                            get_cmd='SYST:ROSC:SOUR?',
-                           get_parser=parse_output_string,
                            set_cmd='SYST:ROSC:SOUR {}',
-                           vals=Enum('internal', 'external'))
+                           val_mapping={'internal': 'INT', 'external': 'EXT'})
 
         self.add_function('shutdown', call_cmd='SYST:SHUTDOWN')
 
@@ -556,10 +550,13 @@ class Rigol_DG4000(VisaInstrument):
         data: list, tuple or numpy array containing the datapoints
         """
         if 1 <= len(data) <= 16384:
+            # Convert the input to a comma-separated string
             string = str(tuple(data))[1:-1]
+
             self.write('DATA VOLATILE,' + string)
         else:
-            raise Exception('Data size of ' + str(len(data)) + ' is 0 or too large')
+            raise Exception('Data length of ' + str(len(data)) +
+                            ' is not in the range of 1 to 16384')
 
 if __name__ == '__main__':
     #d = Rigol_DG4000('DG4102', ':TCPIP0:10.210.128.208::INSTR')
