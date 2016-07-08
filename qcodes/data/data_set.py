@@ -597,6 +597,33 @@ class DataSet(DelegateAttributes):
                 self.write()
                 self.last_write = time.time()
 
+    def default_array(self, paramname='amplitude'):
+        """ Return default parameter for plotting """
+
+        arraynames = self.arrays.keys()
+        
+        # try to return the exact name
+        if paramname in arraynames:
+            return paramname
+
+        # try find something similar
+        vv = [v for v in arraynames if v.endswith(paramname)]
+        if (len(vv) > 0):
+            return vv[0]
+
+        # try to get the first non-setpoint array
+        vv = [v for v in arraynames if v.is_setpoint]
+        if (len(vv) > 0):
+            return vv[0]
+
+        # fallback: return the first array found
+        try:
+            name = next(iter(arraynames))
+            return name
+        except:
+            pass
+        return None
+
     def read(self):
         """Read the whole DataSet from storage, overwriting the local data."""
         if self.location is False:
