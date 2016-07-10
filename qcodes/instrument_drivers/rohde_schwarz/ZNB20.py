@@ -4,14 +4,12 @@ from cmath import phase
 import numpy as np
 from qcodes import Parameter
 
-'''
-    TODO: 
-        better error messages (eg do I have enough to do a sweep?)
-        add functionality (ability to set start and stop freq as well as centre and span)
-        needs on/off status?
-'''
-
 class FrequencySweep(Parameter):
+  '''
+    This is the composite parameter class for a frequency sweep done with the Rohde Schwarz RSZNB20 
+    it allows for 'fast redout' where the instrument returns an list of transmission data in the form 
+    of a complex numbers taken from a frequency sweep.
+  '''
 	def __init__(self, name, instrument, start, stop, npts):
 		super().__init__(name)
 		self._instrument = instrument
@@ -21,23 +19,26 @@ class FrequencySweep(Parameter):
 		self.setpoint_names = (('frequency',), ('frequency',))
  
 	def set_sweep(self, start, stop, npts):
-		# update the config of the software parameter
+		# function to update the config of the software parameter (wouldn't be needed if we had dynamic sizing)
+    # f is a tuple because it needs to be hashable in parameter.py
 		f = tuple(np.linspace(int(start), int(stop), num=npts))
 		self.setpoints = ((f,), (f,))
 		self.shapes = ((npts,), (npts,))
  
-	def get(self):   
+	def get(self):
+    # function to get the trace data for preset start, stop, npts and avg
 		self._instrument.write('SENS1:AVER:STAT ON')
         self._instrument.write('AVER:CLE')
 		self._instrument.turn_off_cont_meas()
-		avgnum = self._instrument.avg()
-		while avgnum > 0:
+    # instrument averages over its last 'avg' number of sweeps so this is needed to ensure the return is the result
+		for avgcount in range(self._instrument.avg()-1):
+      self._instrument.write('INIT:IMM; *WAI')
 			self._instrument.write('INIT:IMM; *WAI')
-			avgnum-=1
-		self._instrument.update_display()
+		self._instrument.update_display_once()
 		data_list = [float(v) for v in self._instrument.ask('CALC:DATA? SDAT').split(',')]
-		data_arr = data_arr = np.array(data_list).reshape(int(len(data_list)/2),2)
-		mag_array=[]
+		# complex numbers returned in a list [re1,im1,re2,im2...] so needs processing
+    data_arr = data_arr = np.array(data_list).reshape(int(len(data_list)/2),2)
+    mag_array=[]
 		phase_array=[]
 		for comp in data_arr:
 			complex_num = complex(comp[0],comp[1])
@@ -47,7 +48,15 @@ class FrequencySweep(Parameter):
 
 
 class ZNB20(VisaInstrument):
+    '''
+      This is the qcodes driver for the Rohde & Schwarz ZNB20 virtual network analyser
 
+        TODO:
+        - Add all parameters that are in the manual
+        - Add test suite
+        - Error handling
+        - check initialisation settings and test functions
+    '''
     def __init__(self, name, address, **kwargs):
         super().__init__(name=name, address=address, **kwargs)
 
@@ -100,12 +109,14 @@ class ZNB20(VisaInstrument):
                            parameter_class=FrequencySweep)       
 
         self.add_function('reset', call_cmd='*RST')
-		#TODO: check
         self.add_function('turn_on_tooltip', call_cmd='SYST:ERR:DISP ON')
         self.add_function('turn_off_tooltip', call_cmd='SYST:ERR:DISP OFF')
         self.add_function('turn_on_cont_meas', call_cmd='INIT:CONT:ALL ON')
         self.add_function('turn_off_cont_meas', call_cmd='INIT:CONT:ALL OFF')
-        self.add_function('update_display', call_cmd='SYST:DISP:UPD ONCE')
+        self.add_function('update_display_once', call_cmd='SYST:DISP:UPD ONCE')
+        self.add_function('update_display_on', call_cmd='SYST:DISP:UPD ON')
+        self.add_function('update_display_off', call_cmd='SYST:DISP:UPD OFF')
+        self.add_function('rf_off', call_cmd='OUTP1 OFF')
 
         self.initialise()
         self.connect_message()
@@ -123,36 +134,11 @@ class ZNB20(VisaInstrument):
         self.trace.set_sweep(self.start(), self.stop(), val)
 
     def initialise(self):
-        # TODO: set input and output buffer size (its in the matlab)?
         self.write('*RST')
         self.write('SENS1:SWE:TYPE LIN')
         self.write('SENS1:SWE:TIME:AUTO ON')
         self.write('TRIG1:SEQ:SOUR IMM')
         self.write('SENS1:AVER:STAT ON')
-
-    #TODO: get rid of this
-    def getTrace(self, points):
-        self.write('SENS1:AVER:STAT ON')
-        self.write('AVER:CLE')
-        self.write('SENS:SWE:POIN %d' %points)
-        self.turn_off_cont_meas()
-
-        avgnum = self.get('avg')
-        while avgnum > 0:
-            self.write('INIT:IMM; *WAI')
-            avgnum-=1
-
-        data_str = self.ask('CALC:DATA? SDAT')
-        self.update_display_once()
-        self.write('INIT:CONT ON')
-
-        data_list = list(map(float, data_str.split(',')))
-        data_arr = np.array(data_list).reshape(len(data_list)/2,2)
-
-        #TODO: better python here
-        mag_array=[]
-        phase_array=[]
-        for complex_num in data_arr:
-            mag_array.append(abs(complex(complex_num[0],complex_num[1])))
-            phase_array.append(phase(complex(complex_num[0],complex_num[1])))
-        return [np.array(mag_array), np.array(phase_array)]
+        self._set_start(1e6)
+        self._set_stop(2e6)
+        self._set_npts(10)
