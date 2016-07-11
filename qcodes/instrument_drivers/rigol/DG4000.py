@@ -329,15 +329,14 @@ class Rigol_DG4000(VisaInstrument):
                                vals=Numbers(20, 80))
 
             # Source Harmonic
-            # TODO Multi-argument parameters
-            #self.add_function(ch + 'harmonic_amplitude', call_cmd=)
+            self.add_function(ch + 'set_harmonic_amplitude',
+                              call_cmd=source + 'HARM:AMPL {},{:.6e}',
+                              args=[Ints(2, 16), Numbers(0)])
 
-            self.add_parameter(ch + 'harmonic_amplitude',
-                               get_cmd=source + 'HARM:AMPL?',
-                               get_parser=float,
-                               set_cmd=source + 'HARM:AMPL {}',
-                               units='V',
-                               vals=Numbers(1e-6))
+            self.add_function(ch + 'get_harmonic_amplitude',
+                              call_cmd=source + 'HARM:AMPL? {}',
+                              args=[Ints(2, 16)],
+                              return_parser=float)
 
             self.add_parameter(ch + 'harmonic_order',
                                get_cmd=source + 'HARM:ORDE?',
@@ -345,12 +344,14 @@ class Rigol_DG4000(VisaInstrument):
                                set_cmd=source + 'HARM:ORDE {}',
                                vals=Numbers(1e-6))
 
-            self.add_parameter(ch + 'harmonic_phase',
-                               get_cmd=source + 'HARM:PHAS?',
-                               get_parser=float,
-                               set_cmd=source + 'HARM:PHAS {}',
-                               units='deg',
-                               vals=Numbers(1e-6))
+            self.add_function(ch + 'set_harmonic_phase',
+                              call_cmd=source + 'HARM:AMPL {},{:.6e}',
+                              args=[Ints(2, 16), Numbers(0, 360)])
+
+            self.add_function(ch + 'get_harmonic_phase',
+                              call_cmd=source + 'HARM:AMPL? {}',
+                              args=[Ints(2, 16)],
+                              return_parser=float)
 
             self.add_parameter(ch + 'harmonic_type',
                                get_cmd=source + 'HARM:TYP?',
