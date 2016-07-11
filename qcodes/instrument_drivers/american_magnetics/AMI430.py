@@ -201,28 +201,49 @@ class AMI430_2D(Instrument):
     Virtual driver for a system of two AMI430 magnet power supplies.
 
     This driver provides methods that simplify setting fields as vectors.
-
-    TODO:
-    -   Offsets?
     """
     def __init__(self, name, magnet_x, magnet_y, **kwargs):
         super().__init__(name, **kwargs)
 
         self.magnet_x, self.magnet_y = magnet_x, magnet_y
 
-    def _is_within_field_limit(self):
-        pass
+        self._alpha = 0.0
+        self._field = 0.0
+
+        self.add_parameter('alpha',
+                           get_cmd=self._get_alpha,
+                           set_cmd=self._set_alpha,
+                           units='deg',
+                           vals=Numbers(0, 360))
+
+        self.add_parameter('field',
+                           get_cmd=self._get_field,
+                           set_cmd=self._set_field,
+                           units='T',
+                           vals=Numbers())
 
     def _get_alpha(self):
-        pass
+        return np.arctan2(self.magnet_y.field(), self.magnet_x.field())
 
     def _set_alpha(self, alpha):
-        field = self._get_field()
+        self._alpha = alpha
 
-        alpha = np.radians(alpha)
+        self._set_field(self._field)
 
     def _get_field(self):
         return np.hypot(self.magnet_x.field(), self.magnet_y.field())
 
     def _set_field(self, field):
-        pass
+        self._field = field
+
+        B_x = field * np.cos(self._alpha)
+        B_y = field * np.sin(self._alpha)
+
+        # First ramp the magnet that is decreasing in field strength
+        if np.abs(self.magnet_x.field()) < np.abs(B_x):
+            self.magnet_x.field(B_x)
+            self.magnet_y.field(B_y)
+        else:
+            self.magnet_y.field(B_y)
+            self.magnet_x.field(B_x)
+
