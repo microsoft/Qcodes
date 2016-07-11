@@ -602,6 +602,13 @@ class DataSet(DelegateAttributes):
 
         arraynames = self.arrays.keys()
 
+        # overrule parameter name from the metadata
+        try:
+            if 'default_array' in self.metadata:
+                paramname = self.metadata['default_array']
+        except:
+            pass
+
         # try to return the exact name
         if paramname in arraynames:
             return paramname
