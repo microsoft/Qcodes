@@ -1,6 +1,8 @@
 import time
 
-from qcodes import VisaInstrument
+import numpy as np
+
+from qcodes import Instrument, VisaInstrument
 from qcodes.utils.validators import Numbers, Ints, Enum, MultiType
 
 class AMI430(VisaInstrument):
@@ -190,3 +192,34 @@ class AMI430(VisaInstrument):
             # Wait until cooling is finished
             while self.ramping_state() == 'cooling switch':
                 time.sleep(0.3)
+
+class AMI430_2D(Instrument):
+    """
+    Virtual driver for a system of two AMI430 magnet power supplies.
+
+    This driver provides methods that simplify setting fields as vectors.
+
+    TODO:
+    -   Offsets?
+    """
+    def __init__(self, name, magnet_x, magnet_y, **kwargs):
+        super().__init__(name, **kwargs)
+
+        self.magnet_x, self.magnet_y = magnet_x, magnet_y
+
+    def _is_within_field_limit(self):
+        pass
+
+    def _get_alpha(self):
+        pass
+
+    def _set_alpha(self, alpha):
+        field = self._get_field()
+
+        alpha = np.radians(alpha)
+
+    def _get_field(self):
+        return np.hypot(self.magnet_x.field(), self.magnet_y.field())
+
+    def _set_field(self, field):
+        pass
