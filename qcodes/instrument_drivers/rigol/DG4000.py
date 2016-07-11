@@ -51,7 +51,9 @@ def parse_multiple_outputs(s):
 
 class Rigol_DG4000(VisaInstrument):
     """
-    Driver for the Rigol DG4000 arbitrary waveform generator.
+    Driver for the Rigol DG4000 series arbitrary waveform generator.
+
+    This driver works for all four models (DG4202, DG4162, DG4102, DG4062).
     """
     def __init__(self, name, address, reset=False, **kwargs):
         super().__init__(name, address, terminator='\n', **kwargs)
@@ -236,47 +238,47 @@ class Rigol_DG4000(VisaInstrument):
 
             # Source Burst
             self.add_parameter(ch + 'burst_mode',
-                               get_cmd=output + 'BURS:MODE?',
-                               set_cmd=output + 'BURS:MODE {}',
+                               get_cmd=source + 'BURS:MODE?',
+                               set_cmd=source + 'BURS:MODE {}',
                                val_mapping={'triggered': 'TRIG',
                                             'gated': 'GAT',
                                             'infinity': 'INF'})
 
             self.add_parameter(ch + 'burst_cycles',
-                               get_cmd=output + 'BURS:NCYC?',
+                               get_cmd=source + 'BURS:NCYC?',
                                get_parser=float,
-                               set_cmd=output + 'BURS:NCYC {}',
+                               set_cmd=source + 'BURS:NCYC {}',
                                vals=Ints(1, 1e6))
 
             self.add_parameter(ch + 'burst_period',
-                               get_cmd=output + 'BURS:INT:PER?',
+                               get_cmd=source + 'BURS:INT:PER?',
                                get_parser=float,
-                               set_cmd=output + 'BURS:INT:PER {}',
+                               set_cmd=source + 'BURS:INT:PER {}',
                                units='s',
                                vals=Numbers(1e-6))
 
             self.add_parameter(ch + 'burst_phase',
-                               get_cmd=output + 'BURS:PHAS?',
+                               get_cmd=source + 'BURS:PHAS?',
                                get_parser=float,
-                               set_cmd=output + 'BURS:PHAS {}',
+                               set_cmd=source + 'BURS:PHAS {}',
                                units='deg',
                                vals=Numbers(0, 360))
 
             self.add_parameter(ch + 'burst_trigger_edge',
-                               get_cmd=output + 'BURS:TRIG:SLOP?',
-                               set_cmd=output + 'BURS:TRIG:SLOP {}',
+                               get_cmd=source + 'BURS:TRIG:SLOP?',
+                               set_cmd=source + 'BURS:TRIG:SLOP {}',
                                val_mapping={'positive': 'POS', 'negative': 'NEG'})
 
             self.add_parameter(ch + 'burst_trigger_source',
-                               get_cmd=output + 'BURS:TRIG:SOUR?',
-                               set_cmd=output + 'BURS:TRIG:SOUR {}',
+                               get_cmd=source + 'BURS:TRIG:SOUR?',
+                               set_cmd=source + 'BURS:TRIG:SOUR {}',
                                val_mapping={'internal': 'INT',
                                             'external': 'EXT',
                                             'manual': 'MAN'})
 
             self.add_parameter(ch + 'burst_trigger_out',
-                               get_cmd=output + 'BURS:TRIG:TRIGO?',
-                               set_cmd=output + 'BURS:TRIG:TRIGO {}',
+                               get_cmd=source + 'BURS:TRIG:TRIGO?',
+                               set_cmd=source + 'BURS:TRIG:TRIGO {}',
                                val_mapping={'off': 'OFF',
                                             'positive': 'POS',
                                             'negative': 'NEG'})
@@ -284,87 +286,89 @@ class Rigol_DG4000(VisaInstrument):
             # Source Frequency
             # TODO: These parameter bounds also depend on the current waveform
             self.add_parameter(ch + 'frequency_center',
-                               get_cmd=output + 'FREQ:CENT?',
+                               get_cmd=source + 'FREQ:CENT?',
                                get_parser=float,
-                               set_cmd=output + 'FREQ:CENT {}',
+                               set_cmd=source + 'FREQ:CENT {}',
                                units='Hz',
                                vals=Numbers(1e-6))
 
             self.add_parameter(ch + 'frequency',
-                               get_cmd=output + 'FREQ?',
+                               get_cmd=source + 'FREQ?',
                                get_parser=float,
-                               set_cmd=output + 'FREQ {}',
+                               set_cmd=source + 'FREQ {}',
                                units='Hz',
                                vals=Numbers(1e-6))
 
             self.add_parameter(ch + 'frequency_start',
-                               get_cmd=output + 'FREQ:STAR?',
+                               get_cmd=source + 'FREQ:STAR?',
                                get_parser=float,
-                               set_cmd=output + 'FREQ:STAR {}',
+                               set_cmd=source + 'FREQ:STAR {}',
                                units='Hz',
                                vals=Numbers(1e-6))
 
             self.add_parameter(ch + 'frequency_stop',
-                               get_cmd=output + 'FREQ:STOP?',
+                               get_cmd=source + 'FREQ:STOP?',
                                get_parser=float,
-                               set_cmd=output + 'FREQ:STOP {}',
+                               set_cmd=source + 'FREQ:STOP {}',
                                units='Hz',
                                vals=Numbers(1e-6))
 
             # Source Function
             self.add_parameter(ch + 'ramp_symmetry',
-                               get_cmd=output + 'FUNC:RAMP:SYMM?',
+                               get_cmd=source + 'FUNC:RAMP:SYMM?',
                                get_parser=float,
-                               set_cmd=output + 'FUNC:RAMP:SYMM {}',
+                               set_cmd=source + 'FUNC:RAMP:SYMM {}',
                                units='%',
                                vals=Numbers(0, 100))
 
             self.add_parameter(ch + 'square_duty_cycle',
-                               get_cmd=output + 'FUNC:SQU:DCYC?',
+                               get_cmd=source + 'FUNC:SQU:DCYC?',
                                get_parser=float,
-                               set_cmd=output + 'FUNC:SQU:DCYC {}',
+                               set_cmd=source + 'FUNC:SQU:DCYC {}',
                                units='%',
                                vals=Numbers(20, 80))
 
             # Source Harmonic
             # TODO Multi-argument parameters
+            #self.add_function(ch + 'harmonic_amplitude', call_cmd=)
+
             self.add_parameter(ch + 'harmonic_amplitude',
-                               get_cmd=output + 'HARM:AMPL?',
+                               get_cmd=source + 'HARM:AMPL?',
                                get_parser=float,
-                               set_cmd=output + 'HARM:AMPL {}',
+                               set_cmd=source + 'HARM:AMPL {}',
                                units='V',
                                vals=Numbers(1e-6))
 
             self.add_parameter(ch + 'harmonic_order',
-                               get_cmd=output + 'HARM:ORDE?',
+                               get_cmd=source + 'HARM:ORDE?',
                                get_parser=float,
-                               set_cmd=output + 'HARM:ORDE {}',
+                               set_cmd=source + 'HARM:ORDE {}',
                                vals=Numbers(1e-6))
 
             self.add_parameter(ch + 'harmonic_phase',
-                               get_cmd=output + 'HARM:PHAS?',
+                               get_cmd=source + 'HARM:PHAS?',
                                get_parser=float,
-                               set_cmd=output + 'HARM:PHAS {}',
+                               set_cmd=source + 'HARM:PHAS {}',
                                units='deg',
                                vals=Numbers(1e-6))
 
             self.add_parameter(ch + 'harmonic_type',
-                               get_cmd=output + 'HARM:TYP?',
+                               get_cmd=source + 'HARM:TYP?',
                                get_parser=str.lower,
-                               set_cmd=output + 'HARM:TYP {}',
+                               set_cmd=source + 'HARM:TYP {}',
                                vals=Enum('even', 'odd', 'all', 'user'))
 
             # Source Marker
             self.add_parameter(ch + 'marker_frequency',
-                               get_cmd=output + 'MARK:FREQ?',
+                               get_cmd=source + 'MARK:FREQ?',
                                get_parser=float,
-                               set_cmd=output + 'HMARK:FREQ {}',
+                               set_cmd=source + 'HMARK:FREQ {}',
                                units='Hz',
                                vals=Numbers(1e-6))
 
             self.add_parameter(ch + 'marker_enabled',
-                               get_cmd=output + 'MARK?',
-                               set_cmd=output + 'MARK {}',
+                               get_cmd=source + 'MARK?',
+                               set_cmd=source + 'MARK {}',
                                val_mapping=on_off_map)
 
             # Source Modulation
@@ -375,120 +379,120 @@ class Rigol_DG4000(VisaInstrument):
 
             # Source Phase
             self.add_parameter(ch + 'phase',
-                               get_cmd=output + 'PHAS?',
+                               get_cmd=source + 'PHAS?',
                                get_parser=float,
-                               set_cmd=output + 'PHAS {}',
+                               set_cmd=source + 'PHAS {}',
                                units='deg',
                                vals=Numbers(0, 360))
 
             # Source Pulse
             self.add_parameter(ch + 'pulse_duty_cycle',
-                               get_cmd=output + 'PULS:DCYC?',
+                               get_cmd=source + 'PULS:DCYC?',
                                get_parser=float,
-                               set_cmd=output + 'PULS:DCYC {}',
+                               set_cmd=source + 'PULS:DCYC {}',
                                units='%',
                                vals=Numbers(0, 100))
 
             self.add_parameter(ch + 'pulse_delay',
-                               get_cmd=output + 'PULS:DEL?',
+                               get_cmd=source + 'PULS:DEL?',
                                get_parser=float,
-                               set_cmd=output + 'PULS:DEL {}',
+                               set_cmd=source + 'PULS:DEL {}',
                                units='s',
                                vals=Numbers(0))
 
             self.add_parameter(ch + 'pulse_hold',
-                               get_cmd=output + 'PULS:DEL?',
-                               set_cmd=output + 'PULS:DEL {}',
+                               get_cmd=source + 'PULS:DEL?',
+                               set_cmd=source + 'PULS:DEL {}',
                                units='s',
                                val_mapping={'width': 'WIDT', 'duty': 'DUTY'})
 
             self.add_parameter(ch + 'pulse_leading_edge',
-                               get_cmd=output + 'PULS:TRAN:LEAD?',
+                               get_cmd=source + 'PULS:TRAN:LEAD?',
                                get_parser=float,
-                               set_cmd=output + 'PULS:TRAN:LEAD {}',
+                               set_cmd=source + 'PULS:TRAN:LEAD {}',
                                units='s',
                                vals=Numbers(0))
 
             self.add_parameter(ch + 'pulse_trailing_edge',
-                               get_cmd=output + 'PULS:TRAN:TRA?',
+                               get_cmd=source + 'PULS:TRAN:TRA?',
                                get_parser=float,
-                               set_cmd=output + 'PULS:TRAN:TRA {}',
+                               set_cmd=source + 'PULS:TRAN:TRA {}',
                                units='s',
                                vals=Numbers(0))
 
             self.add_parameter(ch + 'pulse_width',
-                               get_cmd=output + 'PULS:WIDT?',
+                               get_cmd=source + 'PULS:WIDT?',
                                get_parser=float,
-                               set_cmd=output + 'PULS:WIDT {}',
+                               set_cmd=source + 'PULS:WIDT {}',
                                units='s',
                                vals=Numbers(0))
 
             # Source Sweep
             self.add_parameter(ch + 'sweep_hold_start',
-                               get_cmd=output + 'SWE:HTIM:STAR?',
+                               get_cmd=source + 'SWE:HTIM:STAR?',
                                get_parser=float,
-                               set_cmd=output + 'SWE:HTIM:STAR {}',
+                               set_cmd=source + 'SWE:HTIM:STAR {}',
                                units='s',
                                vals=Numbers(0, 300))
 
             self.add_parameter(ch + 'sweep_hold_stop',
-                               get_cmd=output + 'SWE:HTIM:STOP?',
+                               get_cmd=source + 'SWE:HTIM:STOP?',
                                get_parser=float,
-                               set_cmd=output + 'SWE:HTIM:STOP {}',
+                               set_cmd=source + 'SWE:HTIM:STOP {}',
                                units='s',
                                vals=Numbers(0, 300))
 
             self.add_parameter(ch + 'sweep_return_time',
-                               get_cmd=output + 'SWE:RTIM?',
+                               get_cmd=source + 'SWE:RTIM?',
                                get_parser=float,
-                               set_cmd=output + 'SWE:RTIM {}',
+                               set_cmd=source + 'SWE:RTIM {}',
                                units='s',
                                vals=Numbers(0, 300))
 
             self.add_parameter(ch + 'sweep_spacing',
-                               get_cmd=output + 'SWE:SPAC?',
-                               set_cmd=output + 'SWE:SPAC {}',
+                               get_cmd=source + 'SWE:SPAC?',
+                               set_cmd=source + 'SWE:SPAC {}',
                                val_mapping={'linear': 'LIN',
                                             'logarithmic': 'LOG',
                                             'step': 'STE'})
 
             self.add_parameter(ch + 'sweep_enabled',
-                               get_cmd=output + 'SWE:STAT?',
-                               set_cmd=output + 'SWE:STAT {}',
+                               get_cmd=source + 'SWE:STAT?',
+                               set_cmd=source + 'SWE:STAT {}',
                                val_mapping=on_off_map)
 
             self.add_parameter(ch + 'sweep_step',
-                               get_cmd=output + 'SWE:STEP?',
+                               get_cmd=source + 'SWE:STEP?',
                                get_parser=int,
-                               set_cmd=output + 'SWE:STEP {}',
+                               set_cmd=source + 'SWE:STEP {}',
                                vals=Ints(2, 2048))
 
             self.add_parameter(ch + 'sweep_time',
-                               get_cmd=output + 'SWE:TIME?',
+                               get_cmd=source + 'SWE:TIME?',
                                get_parser=float,
-                               set_cmd=output + 'SWE:TIME {}',
+                               set_cmd=source + 'SWE:TIME {}',
                                units='s',
                                vals=Numbers(1e-3, 300))
 
             # Source Voltage
             self.add_parameter(ch + 'amplitude',
-                               get_cmd=output + 'VOLT?',
+                               get_cmd=source + 'VOLT?',
                                get_parser=float,
-                               set_cmd=output + 'VOLT {}',
+                               set_cmd=source + 'VOLT {}',
                                units='V',
                                vals=Numbers())
 
             self.add_parameter(ch + 'offset',
-                               get_cmd=output + 'VOLT:OFFS?',
+                               get_cmd=source + 'VOLT:OFFS?',
                                get_parser=float,
-                               set_cmd=output + 'VOLT:OFFS {}',
+                               set_cmd=source + 'VOLT:OFFS {}',
                                units='V',
                                vals=Numbers())
 
             self.add_parameter(ch + 'unit',
-                               get_cmd=output + 'VOLT:UNIT?',
+                               get_cmd=source + 'VOLT:UNIT?',
                                get_parser=str.lower,
-                               set_cmd=output + 'VOLT:UNIT {}',
+                               set_cmd=source + 'VOLT:UNIT {}',
                                vals=Enum('vpp', 'vrms', 'dbm'))
 
         # System
