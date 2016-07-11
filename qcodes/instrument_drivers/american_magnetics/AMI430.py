@@ -44,9 +44,9 @@ class AMI430(VisaInstrument):
                            units='T')
 
         if persistent_switch:
-            self.add_parameter('persistent_switch_heater_enabled',
+            self.add_parameter('switch_heater_enabled',
                                get_cmd='PS?',
-                               set_cmd=self._set_persistent_switch_heater,
+                               set_cmd=self._set_switch_heater,
                                val_mapping={False: '0', True: '1'})
 
             self.add_parameter('in_persistent_mode',
@@ -90,8 +90,7 @@ class AMI430(VisaInstrument):
 
     def _can_start_ramping(self):
         """
-        Check the current state of the magnet to see if we
-        can start ramping
+        Check the current state of the magnet to see if we can start ramping
         """
         if self.is_quenched():
             return False
@@ -102,16 +101,11 @@ class AMI430(VisaInstrument):
         state = self.ramping_state()
 
         if state == 'ramping':
-            if not self._persistent_switch:
+            # If we don't have a persistent switch, or it's heating: OK to ramp
+            if not self._persistent_switch or self.switch_heater_enabled():
                 return True
-            elif self.persistent_switch_heater_enabled():
-                return True
-            else:
-                return False
         elif state in ['holding', 'paused', 'at zero current']:
             return True
-        else:
-            return False
 
         return False
 
@@ -123,10 +117,10 @@ class AMI430(VisaInstrument):
             # Set the ramp target
             self.write('CONF:FIELD:TARG {}'.format(value))
 
-            # If we have a persistent switch, make sure it is enabled
+            # If we have a persistent switch, make sure it is heating
             if self._persistent_switch:
-                if not self.persistent_switch_heater_enabled():
-                    self.persistent_switch_heater_enabled(True)
+                if not self.switch_heater_enabled():
+                    self.switch_heater_enabled(True)
 
             self.ramp()
 
@@ -154,8 +148,8 @@ class AMI430(VisaInstrument):
 
             # If we have a persistent switch, make sure it is enabled
             if self._persistent_switch:
-                if not self.persistent_switch_heater_enabled():
-                    self.persistent_switch_heater_enabled(True)
+                if not self.switch_heater_enabled():
+                    self.switch_heater_enabled(True)
 
             self.ramp()
 
@@ -165,18 +159,18 @@ class AMI430(VisaInstrument):
         return float(results[0])
 
     def _set_ramp_rate(self, rate):
-        cmd = 'CONF:RAMP:RATE:FIELD 1,{}{}'.format(rate, self._field_rating)
+        cmd = 'CONF:RAMP:RATE:FIELD 1,{},{}'.format(rate, self._field_rating)
 
         self.write(cmd)
 
-    def _set_persistent_switch_heater(self, value):
+    def _set_persistent_switch_heater(self, on):
         """
         This function sets the persistent switch heater state and blocks until
         it has finished either heating or cooling
 
         value: False/True
         """
-        if value:
+        if on:
             self.write('PS 1')
 
             time.sleep(0.5)
