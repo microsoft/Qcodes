@@ -20,6 +20,15 @@ class AMI430(VisaInstrument):
         self._persistent_switch = persistent_switch
 
         self._field_rating = coil_constant * current_rating
+        self._field_ramp_limit = coil_constant * current_ramp_limit
+
+        # Make sure the ramp rate time unit is seconds
+        if self.ask('RAMP:RATE:UNITS') == '1':
+            self.write('CONF:RAMP:RATE:UNITS 0')
+
+        # Make sure the field unit is Tesla
+        if self.ask('FIELD:UNITS?') == '0':
+            self.write('CONF:FIELD:UNITS 1')
 
         self.add_parameter('field',
                            get_cmd='FIELD:MAG?',
@@ -36,7 +45,7 @@ class AMI430(VisaInstrument):
                            get_cmd=self._get_ramp_rate,
                            set_cmd=self._set_ramp_rate,
                            units='T/s',
-                           vals=Numbers())
+                           vals=Numbers(0, self._field_ramp_limit))
 
         self.add_parameter('setpoint',
                            get_cmd='FIELD:TARG?',
@@ -117,7 +126,7 @@ class AMI430(VisaInstrument):
             # Set the ramp target
             self.write('CONF:FIELD:TARG {}'.format(value))
 
-            # If we have a persistent switch, make sure it is heating
+            # If we have a persistent switch, make sure it is resistive
             if self._persistent_switch:
                 if not self.switch_heater_enabled():
                     self.switch_heater_enabled(True)
@@ -146,7 +155,7 @@ class AMI430(VisaInstrument):
             # Set the ramp target
             self.write('CONF:FIELD:TARG {}'.format(value))
 
-            # If we have a persistent switch, make sure it is enabled
+            # If we have a persistent switch, make sure it is resistive
             if self._persistent_switch:
                 if not self.switch_heater_enabled():
                     self.switch_heater_enabled(True)
@@ -165,10 +174,10 @@ class AMI430(VisaInstrument):
 
     def _set_persistent_switch_heater(self, on):
         """
-        This function sets the persistent switch heater state and blocks until
-        it has finished either heating or cooling
+        Blocking function that sets the persistent switch heater state and
+        waits until it has finished either heating or cooling
 
-        value: False/True
+        on: False/True
         """
         if on:
             self.write('PS 1')
