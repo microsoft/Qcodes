@@ -216,13 +216,13 @@ class AMI430_2D(Instrument):
 
         self.magnet_x, self.magnet_y = magnet_x, magnet_y
 
-        self._offset_angle = 0.0
+        self._angle_offset = 0.0
         self._angle = 0.0
         self._field = 0.0
 
-        self.add_parameter('offset_angle',
-                           get_cmd=self._get_offset_angle,
-                           set_cmd=self._set_offset_angle,
+        self.add_parameter('angle_offset',
+                           get_cmd=self._get_angle_offset,
+                           set_cmd=self._set_angle_offset,
                            units='deg',
                            vals=Numbers(0, 360))
 
@@ -238,19 +238,19 @@ class AMI430_2D(Instrument):
                            units='T',
                            vals=Numbers())
 
-    def _get_offset_angle(self):
-        return np.degrees(self._offset_angle)
+    def _get_angle_offset(self):
+        return np.degrees(self._angle_offset)
 
-    def _set_offset_angle(self, angle):
+    def _set_angle_offset(self, angle):
         # Adjust the field if the offset angle is changed
-        if self._offset_angle != np.radians(angle):
-            self._offset_angle = np.radians(angle)
+        if self._angle_offset != np.radians(angle):
+            self._angle_offset = np.radians(angle)
             self._set_field(self._field)
 
     def _get_angle(self):
         angle = np.arctan2(self.magnet_y.field(), self.magnet_x.field())
 
-        return np.degrees(angle - self._offset_angle)
+        return np.degrees(angle - self._angle_offset)
 
     def _set_angle(self, angle):
         self._angle = np.radians(angle)
@@ -263,8 +263,8 @@ class AMI430_2D(Instrument):
     def _set_field(self, field):
         self._field = field
 
-        B_x = field * np.cos(self._angle + self._offset_angle)
-        B_y = field * np.sin(self._angle + self._offset_angle)
+        B_x = field * np.cos(self._angle + self._angle_offset)
+        B_y = field * np.sin(self._angle + self._angle_offset)
 
         # First ramp the magnet that is decreasing in field strength
         if np.abs(self.magnet_x.field()) < np.abs(B_x):
@@ -286,13 +286,19 @@ class AMI430_3D(Instrument):
 
         self.magnet_x, self.magnet_y, self.magnet_z = magnet_x, magnet_y, magnet_z
 
-        self._phi = 0.0
-        self._theta = 0.0
+        self._phi,   self._phi_offset = 0.0, 0.0
+        self._theta, self._theta_offset = 0.0, 0.0
         self._field = 0.0
 
         self.add_parameter('phi',
                            get_cmd=self._get_phi,
                            set_cmd=self._set_phi,
+                           units='deg',
+                           vals=Numbers(0, 360))
+
+        self.add_parameter('phi_offset',
+                           get_cmd=self._get_phi_offset,
+                           set_cmd=self._set_phi_offset,
                            units='deg',
                            vals=Numbers(0, 360))
 
@@ -302,36 +308,91 @@ class AMI430_3D(Instrument):
                            units='deg',
                            vals=Numbers(0, 360))
 
+        self.add_parameter('theta_offset',
+                           get_cmd=self._get_theta_offset,
+                           set_cmd=self._set_theta_offset,
+                           units='deg',
+                           vals=Numbers(0, 360))
+
         self.add_parameter('field',
                            get_cmd=self._get_field,
                            set_cmd=self._set_field,
                            units='T',
                            vals=Numbers())
 
-    def set_basis_vectors(self, x, y):
-        pass
-
     def _get_phi(self):
-        return np.arctan2(self.magnet_y.field(), self.magnet_x.field())
+        angle = np.arctan2(self.magnet_y.field(), self.magnet_x.field())
 
-    def _set_phi(self, alpha):
-        self._alpha = alpha
+        return np.degrees(angle - self._phi_offset)
+
+    def _set_phi(self, phi):
+        self._phi = np.radians(phi)
 
         self._set_field(self._field)
 
+    def _get_phi_offset(self):
+        return np.degrees(self._phi_offset)
+
+    def _set_phi_offset(self, phi):
+        # Adjust the field if the offset phi is changed
+        if self._phi_offset != np.radians(phi):
+            self._angle_offset = np.radians(phi)
+
+            self._set_field(self._field)
+
+    def _get_theta(self):
+        return np.arccos(self.magnet_z.field() / self._get_field())
+
+    def _set_theta(self, theta):
+        self._theta = np.radians(theta)
+
+        self._set_field(self._field)
+
+    def _get_theta_offset(self):
+        return np.degrees(self._theta_offset)
+
+    def _set_theta_offset(self, theta):
+        # Adjust the field if the offset theta is changed
+        if self._theta_offset != np.radians(theta):
+            self._angle_offset = np.radians(theta)
+
+            self._set_field(self._field)
+
     def _get_field(self):
-        return np.hypot(self.magnet_x.field(), self.magnet_y.field())
+        x, y, z = self.magnet_x.field(), self.magnet_y.field(), self.magnet_z.field()
+
+        return np.sqrt(x**2 + y**2 + z**2)
 
     def _set_field(self, field):
         self._field = field
 
-        B_x = field * np.cos(self._alpha)
-        B_y = field * np.sin(self._alpha)
+        phi = self._phi + self._phi_offset
+        theta = self._theta + self._theta_offset
 
-        # First ramp the magnet that is decreasing in field strength
+        B_x = field * np.sin(theta) * np.cos(phi)
+        B_y = field * np.sin(theta) * np.sin(phi)
+        B_z = field * np.cos(theta)
+
+        swept_x, swept_y, swept_z = False, False, False
+
+        # First ramp the coils that are decreasing in field strength
         if np.abs(self.magnet_x.field()) < np.abs(B_x):
             self.magnet_x.field(B_x)
+            swept_x = True
+
+        if np.abs(self.magnet_y.field()) < np.abs(B_y):
             self.magnet_y.field(B_y)
-        else:
-            self.magnet_y.field(B_y)
+            swept_y = True
+
+        if np.abs(self.magnet_z.field()) < np.abs(B_z):
+            self.magnet_z.field(B_z)
+            swept_z = True
+
+        if not swept_x:
             self.magnet_x.field(B_x)
+
+        if not swept_y:
+            self.magnet_y.field(B_y)
+
+        if not swept_z:
+            self.magnet_z.field(B_z)
