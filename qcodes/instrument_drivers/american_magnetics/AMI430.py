@@ -1,17 +1,18 @@
+import logging
+import numpy as np
 import time
 
-import numpy as np
-
 from qcodes import Instrument, VisaInstrument
-from qcodes.utils.validators import Numbers, Ints, Enum, MultiType
+from qcodes.utils.validators import Numbers
+
 
 class AMI430(VisaInstrument):
     """
     Driver for the American Magnetics Model 430 magnet power supply programmer
     """
-    def __init__(self, name, address,
-                 coil_constant, current_rating, current_ramp_limit, persistent_switch=True,
-                 terminator='\n', reset=False, **kwargs):
+    def __init__(self, name, address, coil_constant, current_rating,
+                 current_ramp_limit, persistent_switch=True, terminator='\n',
+                 reset=False, **kwargs):
         super().__init__(name, address, **kwargs)
 
         self._coil_constant = coil_constant
@@ -102,9 +103,11 @@ class AMI430(VisaInstrument):
         Check the current state of the magnet to see if we can start ramping
         """
         if self.is_quenched():
+            logging.error(__name__ + ': Could not ramp because of quench')
             return False
 
         if self._persistent_switch and self.in_persistent_mode():
+            logging.error(__name__ + ': Could not ramp because persistent')
             return False
 
         state = self.ramping_state()
@@ -115,6 +118,8 @@ class AMI430(VisaInstrument):
                 return True
         elif state in ['holding', 'paused', 'at zero current']:
             return True
+
+        logging.error(__name__ + ': Could not ramp, state: {}'.format(state))
 
         return False
 
@@ -141,11 +146,14 @@ class AMI430(VisaInstrument):
 
             time.sleep(2.0)
 
+            state = self.ramping_state()
+
             # If we are now holding, it was succesful
-            if self.ramping_state() == 'holding':
+            if state == 'holding':
                 self.pause()
             else:
-                pass # ramp ended
+                msg = ': _set_field({}) failed with state: {}'
+                logging.error(__name__ + msg.format(value, state))
 
     def _ramp_to(self, value):
         """ Non-blocking method to ramp to a certain field """
@@ -195,6 +203,7 @@ class AMI430(VisaInstrument):
             # Wait until cooling is finished
             while self.ramping_state() == 'cooling switch':
                 time.sleep(0.3)
+
 
 class AMI430_2D(Instrument):
     """
@@ -247,3 +256,64 @@ class AMI430_2D(Instrument):
             self.magnet_y.field(B_y)
             self.magnet_x.field(B_x)
 
+
+class AMI430_3D(Instrument):
+    """
+    Virtual driver for a system of three AMI430 magnet power supplies.
+
+    This driver provides methods that simplify setting fields as vectors.
+    """
+    def __init__(self, name, magnet_x, magnet_y, magnet_z, **kwargs):
+        super().__init__(name, **kwargs)
+
+        self.magnet_x, self.magnet_y, self.magnet_z = magnet_x, magnet_y, magnet_z
+
+        self._phi = 0.0
+        self._theta = 0.0
+        self._field = 0.0
+
+        self.add_parameter('phi',
+                           get_cmd=self._get_phi,
+                           set_cmd=self._set_phi,
+                           units='deg',
+                           vals=Numbers(0, 360))
+
+        self.add_parameter('theta',
+                           get_cmd=self._get_theta,
+                           set_cmd=self._set_theta,
+                           units='deg',
+                           vals=Numbers(0, 360))
+
+        self.add_parameter('field',
+                           get_cmd=self._get_field,
+                           set_cmd=self._set_field,
+                           units='T',
+                           vals=Numbers())
+
+    def set_basis_vectors(self, x, y):
+        pass
+
+    def _get_phi(self):
+        return np.arctan2(self.magnet_y.field(), self.magnet_x.field())
+
+    def _set_phi(self, alpha):
+        self._alpha = alpha
+
+        self._set_field(self._field)
+
+    def _get_field(self):
+        return np.hypot(self.magnet_x.field(), self.magnet_y.field())
+
+    def _set_field(self, field):
+        self._field = field
+
+        B_x = field * np.cos(self._alpha)
+        B_y = field * np.sin(self._alpha)
+
+        # First ramp the magnet that is decreasing in field strength
+        if np.abs(self.magnet_x.field()) < np.abs(B_x):
+            self.magnet_x.field(B_x)
+            self.magnet_y.field(B_y)
+        else:
+            self.magnet_y.field(B_y)
+            self.magnet_x.field(B_x)
