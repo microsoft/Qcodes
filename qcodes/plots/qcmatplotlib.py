@@ -1,12 +1,13 @@
-'''
+"""
 Live plotting in Jupyter notebooks
 using the nbagg backend and matplotlib
-'''
+"""
+from collections import Mapping
+
 import matplotlib.pyplot as plt
 from matplotlib.transforms import Bbox
 import numpy as np
 from numpy.ma import masked_invalid, getmask
-from collections import Mapping
 
 from .base import BasePlot
 
@@ -38,7 +39,6 @@ class MatPlot(BasePlot):
         super().__init__(interval)
 
         self._init_plot(subplots, figsize, num=num)
-
         if args or kwargs:
             self.add(*args, **kwargs)
 
@@ -85,7 +85,6 @@ class MatPlot(BasePlot):
                 `x`, `y`, and `fmt` (if present) are passed as positional args
         '''
         # TODO some way to specify overlaid axes?
-
         ax = self._get_axes(kwargs)
         if 'z' in kwargs:
             plot_object = self._draw_pcolormesh(ax, **kwargs)
@@ -162,8 +161,10 @@ class MatPlot(BasePlot):
         self.fig.canvas.draw()
 
     def _draw_plot(self, ax, y, x=None, fmt=None, subplot=1, **kwargs):
+        # TODO (write why is this)
         # subplot=1 is just there to strip this out of kwargs
         args = [arg for arg in [x, y, fmt] if arg is not None]
+        # TODO (write why is this returning the 0th)
         return ax.plot(*args, **kwargs)[0]
 
     def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1, **kwargs):
@@ -175,7 +176,6 @@ class MatPlot(BasePlot):
                 # if any entire array is masked, don't draw at all
                 # there's nothing to draw, and anyway it throws a warning
                 return False
-
         pc = ax.pcolormesh(*args, **kwargs)
 
         if getattr(ax, 'qcodes_colorbar', None):
