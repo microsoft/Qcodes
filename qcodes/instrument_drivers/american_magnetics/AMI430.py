@@ -388,6 +388,7 @@ class AMI430_3D(Instrument):
             self.magnet_z.field(B_z)
             swept_z = True
 
+        # Finally, ramp up the coils that are increasing
         if not swept_x:
             self.magnet_x.field(B_x)
 
