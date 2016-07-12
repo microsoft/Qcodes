@@ -3,12 +3,15 @@ from qcodes.utils import validators as vals
 from cmath import phase
 import numpy as np
 from qcodes import Parameter
+from math import log
 
 class FrequencySweep(Parameter):
   '''
     This is the composite parameter class for a frequency sweep done with the Rohde Schwarz RSZNB20 
     it allows for 'fast redout' where the instrument returns an list of transmission data in the form 
     of a complex numbers taken from a frequency sweep.
+
+    TODO: ability to choose for abs or db in magnitude return
   '''
 	def __init__(self, name, instrument, start, stop, npts):
 		super().__init__(name)
@@ -19,18 +22,19 @@ class FrequencySweep(Parameter):
 		self.setpoint_names = (('frequency',), ('frequency',))
  
 	def set_sweep(self, start, stop, npts):
-		# function to update the config of the software parameter (wouldn't be needed if we had dynamic sizing)
-    # f is a tuple because it needs to be hashable in parameter.py
-		f = tuple(np.linspace(int(start), int(stop), num=npts))
+		'''
+    it is neccesary to update the config of the software parameter when sweep is chaged 
+    as dynamic sizing isn't implemented yet
+		'''
+    f = tuple(np.linspace(int(start), int(stop), num=npts)) # f is a tuple because it needs to be hashable in parameter.py
 		self.setpoints = ((f,), (f,))
 		self.shapes = ((npts,), (npts,))
  
 	def get(self):
-    # function to get the trace data for preset start, stop, npts and avg
 		self._instrument.write('SENS1:AVER:STAT ON')
         self._instrument.write('AVER:CLE')
 		self._instrument.turn_off_cont_meas()
-    # instrument averages over its last 'avg' number of sweeps so this is needed to ensure the return is the result
+    # instrument averages over its last 'avg' number of sweeps so this is needed to ensure the return is the averaged result
 		for avgcount in range(self._instrument.avg()-1):
       self._instrument.write('INIT:IMM; *WAI')
 			self._instrument.write('INIT:IMM; *WAI')
@@ -42,7 +46,7 @@ class FrequencySweep(Parameter):
 		phase_array=[]
 		for comp in data_arr:
 			complex_num = complex(comp[0],comp[1])
-			mag_array.append(abs(complex_num))
+			mag_array.append(log(abs(complex_num),10))
 			phase_array.append(phase(complex_num))
 		return mag_array, phase_array
 
@@ -52,8 +56,7 @@ class ZNB20(VisaInstrument):
       This is the qcodes driver for the Rohde & Schwarz ZNB20 virtual network analyser
 
         TODO:
-        - Add all parameters that are in the manual
-        - Add test suite
+        - Add testing
         - Error handling
         - check initialisation settings and test functions
     '''
@@ -87,23 +90,20 @@ class ZNB20(VisaInstrument):
         self.add_parameter(name='start', 
                            get_cmd='SENS:FREQ:START?',
                            set_cmd=self._set_start,
-						   get_parser=int,
-                           )
+						               get_parser=int)
 
         self.add_parameter(name='stop', 
                            get_cmd='SENS:FREQ:STOP?',
                            set_cmd=self._set_stop,
-						   get_parser=int,
-                           )
+						               get_parser=int)
 
         self.add_parameter(name='npts',
                            get_cmd='SENS:SWE:POIN?',
                            set_cmd=self._set_npts,
-                           get_parser=int
-                           )
+                           get_parser=int)
 
         self.add_parameter(name = 'trace',
-						   start=self.start(),
+						               start=self.start(),
                            stop=self.stop(),
                            npts=self.npts(),
                            parameter_class=FrequencySweep)       
