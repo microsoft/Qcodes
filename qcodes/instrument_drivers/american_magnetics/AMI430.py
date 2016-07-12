@@ -216,12 +216,19 @@ class AMI430_2D(Instrument):
 
         self.magnet_x, self.magnet_y = magnet_x, magnet_y
 
-        self._alpha = 0.0
+        self._offset_angle = 0.0
+        self._angle = 0.0
         self._field = 0.0
 
-        self.add_parameter('alpha',
-                           get_cmd=self._get_alpha,
-                           set_cmd=self._set_alpha,
+        self.add_parameter('offset_angle',
+                           get_cmd=self._get_offset_angle,
+                           set_cmd=self._set_offset_angle,
+                           units='deg',
+                           vals=Numbers(0, 360))
+
+        self.add_parameter('angle',
+                           get_cmd=self._get_angle,
+                           set_cmd=self._set_angle,
                            units='deg',
                            vals=Numbers(0, 360))
 
@@ -231,11 +238,22 @@ class AMI430_2D(Instrument):
                            units='T',
                            vals=Numbers())
 
-    def _get_alpha(self):
-        return np.arctan2(self.magnet_y.field(), self.magnet_x.field())
+    def _get_offset_angle(self):
+        return np.degrees(self._offset_angle)
 
-    def _set_alpha(self, alpha):
-        self._alpha = alpha
+    def _set_offset_angle(self, angle):
+        # Adjust the field if the offset angle is changed
+        if self._offset_angle != np.radians(angle):
+            self._offset_angle = np.radians(angle)
+            self._set_field(self._field)
+
+    def _get_angle(self):
+        angle = np.arctan2(self.magnet_y.field(), self.magnet_x.field())
+
+        return np.degrees(angle - self._offset_angle)
+
+    def _set_angle(self, angle):
+        self._angle = np.radians(angle)
 
         self._set_field(self._field)
 
@@ -245,8 +263,8 @@ class AMI430_2D(Instrument):
     def _set_field(self, field):
         self._field = field
 
-        B_x = field * np.cos(self._alpha)
-        B_y = field * np.sin(self._alpha)
+        B_x = field * np.cos(self._angle + self._offset_angle)
+        B_y = field * np.sin(self._angle + self._offset_angle)
 
         # First ramp the magnet that is decreasing in field strength
         if np.abs(self.magnet_x.field()) < np.abs(B_x):
