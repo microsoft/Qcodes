@@ -6,12 +6,13 @@ from qcodes import Parameter
 from math import log
 
 class FrequencySweep(Parameter):
-  '''
-    This is the composite parameter class for a frequency sweep done with the Rohde Schwarz RSZNB20 
-    it allows for 'fast redout' where the instrument returns an list of transmission data in the form 
+  '''Composite parameter class for a frequency sweep done with the Rohde Schwarz RSZNB20.
+
+    Allows for 'fast redout' where the instrument returns an list of transmission data in the form 
     of a complex numbers taken from a frequency sweep.
 
-    TODO: ability to choose for abs or db in magnitude return
+    TODO: 
+      - ability to choose for abs or db in magnitude return
   '''
 	def __init__(self, name, instrument, start, stop, npts):
 		super().__init__(name)
@@ -22,43 +23,41 @@ class FrequencySweep(Parameter):
 		self.setpoint_names = (('frequency',), ('frequency',))
  
 	def set_sweep(self, start, stop, npts):
-		'''
-    it is neccesary to update the config of the software parameter when sweep is chaged 
-    as dynamic sizing isn't implemented yet
-		'''
-    f = tuple(np.linspace(int(start), int(stop), num=npts)) # f is a tuple because it needs to be hashable in parameter.py
+    # neccesary to update the config of the software parameter when sweep is chaged 
+    f = tuple(np.linspace(int(start), int(stop), num=npts)) # tuple as it needs to be hashable for look up
 		self.setpoints = ((f,), (f,))
 		self.shapes = ((npts,), (npts,))
  
 	def get(self):
 		self._instrument.write('SENS1:AVER:STAT ON')
-        self._instrument.write('AVER:CLE')
+    self._instrument.write('AVER:CLE')
 		self._instrument.turn_off_cont_meas()
-    # instrument averages over its last 'avg' number of sweeps so this is needed to ensure the return is the averaged result
-		for avgcount in range(self._instrument.avg()-1):
+
+    # instrument averages over its last 'avg' number of sweeps need to ensure averaged result is returned
+		for avgcount in range(self._instrument.avg()):
       self._instrument.write('INIT:IMM; *WAI')
-			self._instrument.write('INIT:IMM; *WAI')
-		self._instrument.update_display_once()
-		data_list = [float(v) for v in self._instrument.ask('CALC:DATA? SDAT').split(',')]
-		# complex numbers returned in a list [re1,im1,re2,im2...] so needs processing
+		data_list = [float(v) for v in self._instrument.ask('CALC:DATA? SDAT').split(',')] 
+    
+    # data_list of complex numbers [re1,im1,re2,im2...]
     data_arr = data_arr = np.array(data_list).reshape(int(len(data_list)/2),2)
-    mag_array=[]
-		phase_array=[]
+    mag_array, phase_array = [], []
 		for comp in data_arr:
 			complex_num = complex(comp[0],comp[1])
 			mag_array.append(log(abs(complex_num),10))
 			phase_array.append(phase(complex_num))
+    self._instrument.update_display_once()
 		return mag_array, phase_array
 
 
 class ZNB20(VisaInstrument):
-    '''
-      This is the qcodes driver for the Rohde & Schwarz ZNB20 virtual network analyser
+    ''' This is the qcodes driver for the Rohde & Schwarz ZNB20 virtual network analyser
 
-        TODO:
-        - Add testing
-        - Error handling
-        - check initialisation settings and test functions
+    Requires FrequencySweep parameter for taking a trace     
+
+    TODO:
+    - Add testing
+    - Error handling
+    - check initialisation settings and test functions
     '''
     def __init__(self, name, address, **kwargs):
         super().__init__(name=name, address=address, **kwargs)
@@ -123,15 +122,15 @@ class ZNB20(VisaInstrument):
 
     def _set_start(self, val):
         self.write('SENS:FREQ:START {:.4f}'.format(val))
-        self.trace.set_sweep(val, self.stop(), self.npts())
+        self.trace.set_sweep(val, self.stop(), self.npts()) # update setpoints for FrequencySweep param
 
     def _set_stop(self, val):
         self.write('SENS:FREQ:STOP {:.4f}'.format(val))
-        self.trace.set_sweep(self.start(), val, self.npts())
+        self.trace.set_sweep(self.start(), val, self.npts()) # update setpoints for FrequencySweep param
  
     def _set_npts(self, val):
         self.write('SENS:SWE:POIN {:.4f}'.format(val))
-        self.trace.set_sweep(self.start(), self.stop(), val)
+        self.trace.set_sweep(self.start(), self.stop(), val) # update setpoints for FrequencySweep param
 
     def initialise(self):
         self.write('*RST')
