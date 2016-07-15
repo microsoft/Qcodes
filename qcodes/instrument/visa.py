@@ -14,8 +14,13 @@ class VisaInstrument(Instrument):
     Args:
         name (str): What this instrument is called locally.
 
-        address (str): The visa resource name. see eg:
-            http://pyvisa.readthedocs.org/en/stable/names.html
+        address (str): The visa resource name to use to connect.
+             Optionally includes '@<backend>' at the end. For example,
+            'ASRL2' will open COM2 with the default NI backend, but
+            'ASRL2@py' will open COM2 using pyvisa-py. Note that qcodes
+            does not install (or even require) ANY backends, it is up to
+            the user to do that.
+            see eg: http://pyvisa.readthedocs.org/en/stable/names.html
 
         timeout (number): seconds to allow for responses. Default 5.
 
@@ -72,50 +77,29 @@ class VisaInstrument(Instrument):
 
         return 'VisaServer'
 
-    def get_idn(self):
-        """
-        Parse a standard VISA '*IDN?' response into an ID dict.
-
-        Override this if your instrument returns a nonstandard IDN string.
-
-        Returns:
-            A dict containing vendor, model, serial, and firmware.
-        """
-        idstr = self.ask('*IDN?')
-        try:
-            # form is supposed to be comma-separated, but we've seen
-            # other separators occasionally
-            for separator in ',;:':
-                # split into no more than 4 parts, so we don't lose info
-                idparts = [p.strip() for p in idstr.split(separator, 3)]
-                if len(idparts) > 1:
-                    break
-            # in case parts at the end are missing, fill in None
-            if len(idparts) < 4:
-                idparts += [None] * (4 - len(idparts))
-        except:
-            logging.warn('Error interpreting *IDN? response ' + repr(idstr))
-            idparts = [None, None, None, None]
-
-        # some strings include the word 'model' at the front of model
-        if str(idparts[1]).lower().startswith('model'):
-            idparts[1] = str(idparts[1])[5:].strip()
-
-        return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
-
     def set_address(self, address):
         """
         Change the address for this instrument.
 
         Args:
             address: The visa resource name to use to connect.
+                Optionally includes '@<backend>' at the end. For example,
+                'ASRL2' will open COM2 with the default NI backend, but
+                'ASRL2@py' will open COM2 using pyvisa-py. Note that qcodes
+                does not install (or even require) ANY backends, it is up to
+                the user to do that.
                 see eg: http://pyvisa.readthedocs.org/en/stable/names.html
         """
         # in case we're changing the address - close the old handle first
         if getattr(self, 'visa_handle', None):
             self.visa_handle.close()
 
-        resource_manager = visa.ResourceManager()
+        if address and '@' in address:
+            address, visa_library = address.split('@')
+            resource_manager = visa.ResourceManager('@' + visa_library)
+        else:
+            resource_manager = visa.ResourceManager()
+
         self.visa_handle = resource_manager.open_resource(address)
 
         self.visa_handle.clear()

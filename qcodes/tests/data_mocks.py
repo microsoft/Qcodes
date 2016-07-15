@@ -93,7 +93,12 @@ class MockArray:
 
 def DataSet1D(location=None):
     # DataSet with one 1D array with 5 points
-    x = DataArray(name='x', label='X', preset_data=(1., 2., 3., 4., 5.))
+
+    # TODO: since y lists x as a set_array, it should automatically
+    # set is_setpoint=True for x, shouldn't it? Any reason we woundn't
+    # want that?
+    x = DataArray(name='x', label='X', preset_data=(1., 2., 3., 4., 5.),
+                  is_setpoint=True)
     y = DataArray(name='y', label='Y', preset_data=(3., 4., 5., 6., 7.),
                   set_arrays=(x,))
     return new_data(arrays=(x, y), location=location)
@@ -105,15 +110,16 @@ def DataSet2D(location=None):
     zz = xx**2+yy**2
     # outer setpoint should be 1D
     xx = xx[:, 0]
-    x = DataArray(name='x', label='X', preset_data=xx)
-    y = DataArray(name='y', label='Y', preset_data=yy, set_arrays=(x,))
+    x = DataArray(name='x', label='X', preset_data=xx, is_setpoint=True)
+    y = DataArray(name='y', label='Y', preset_data=yy, set_arrays=(x,),
+                  is_setpoint=True)
     z = DataArray(name='z', label='Z', preset_data=zz, set_arrays=(x, y))
     return new_data(arrays=(x, y, z), location=location)
 
 
 def file_1d():
     return '\n'.join([
-        '# x\ty',
+        '# x_set\ty',
         '# "X"\t"Y"',
         '# 5',
         '1\t3',
@@ -125,13 +131,15 @@ def file_1d():
 
 def DataSetCombined(location=None):
     # Complex DataSet with two 1D and two 2D arrays
-    x = DataArray(name='x', label='X!', preset_data=(16., 17.))
+    x = DataArray(name='x', label='X!', preset_data=(16., 17.),
+                  is_setpoint=True)
     y1 = DataArray(name='y1', label='Y1 value', preset_data=(18., 19.),
                    set_arrays=(x,))
     y2 = DataArray(name='y2', label='Y2 value', preset_data=(20., 21.),
                    set_arrays=(x,))
 
-    yset = DataArray(name='yset', label='Y', preset_data=(22., 23., 24.))
+    yset = DataArray(name='y', label='Y', preset_data=(22., 23., 24.),
+                     is_setpoint=True)
     yset.nest(2, 0, x)
     z1 = DataArray(name='z1', label='Z1',
                    preset_data=((25., 26., 27.), (28., 29., 30.)),
@@ -145,14 +153,14 @@ def DataSetCombined(location=None):
 def files_combined():
     return [
         '\n'.join([
-            '# x\ty1\ty2',
+            '# x_set\ty1\ty2',
             '# "X!"\t"Y1 value"\t"Y2 value"',
             '# 2',
             '16\t18\t20',
             '17\t19\t21', '']),
 
         '\n'.join([
-            '# x\tyset\tz1\tz2',
+            '# x_set\ty_set\tz1\tz2',
             '# "X!"\t"Y"\t"Z1"\t"Z2"',
             '# 2\t3',
             '16\t22\t25\t31',

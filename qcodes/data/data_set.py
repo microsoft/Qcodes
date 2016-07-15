@@ -3,7 +3,9 @@
 from enum import Enum
 import time
 import logging
+from traceback import format_exc
 from copy import deepcopy
+from collections import OrderedDict
 
 from .manager import get_data_manager, NoData
 from .gnuplot_format import GNUPlotFormat
@@ -231,6 +233,19 @@ class DataSet(DelegateAttributes):
             between saves to disk. If not ``LOCAL``, the ``DataServer`` handles
             this and generally writes more often. Use None to disable writing
             from calls to ``self.store``. Default 5.
+
+    Attributes:
+        background_functions (OrderedDict[callable]): Class attribute,
+            ``{key: fn}``: ``fn`` is a callable accepting no arguments, and
+            ``key`` is a name to identify the function and help you attach and
+            remove it.
+
+            In ``DataSet.complete`` we call each of these periodically, in the
+            order that they were attached.
+
+            Note that because this is a class attribute, the functions will
+            apply to every DataSet. If you want specific functions for one
+            DataSet you can override this with an instance attribute.
     """
 
     # ie data_set.arrays['vsd'] === data_set.vsd
@@ -239,6 +254,8 @@ class DataSet(DelegateAttributes):
     default_io = DiskIO('.')
     default_formatter = GNUPlotFormat()
     location_provider = FormatLocation()
+
+    background_functions = OrderedDict()
 
     def __init__(self, location=None, mode=DataMode.LOCAL, arrays=None,
                  data_manager=None, formatter=None, io=None, write_period=5):
@@ -399,6 +416,69 @@ class DataSet(DelegateAttributes):
                 self.read()
                 return False
 
+    def fraction_complete(self):
+        """
+        Get the fraction of this DataSet which has data in it.
+
+        Returns:
+            float: the average of all measured (not setpoint) arrays'
+                ``fraction_complete()`` values, independent of the individual
+                array sizes. If there are no measured arrays, returns zero.
+        """
+        array_count, total = 0, 0
+
+        for array in self.arrays.values():
+            if not array.is_setpoint:
+                array_count += 1
+                total += array.fraction_complete()
+
+        return total / (array_count or 1)
+
+    def complete(self, delay=1.5):
+        """
+        Periodically sync the DataSet and display percent complete status.
+
+        Also, each period, execute functions stored in (class attribute)
+        ``self.background_functions``. If a function fails, we log its
+        traceback and continue on. If any one function fails twice in
+        a row, it gets removed.
+
+        Args:
+            delay (float): seconds between iterations. Default 1.5
+        """
+        logging.info(
+            'waiting for DataSet <{}> to complete'.format(self.location))
+
+        failing = {key: False for key in self.background_functions}
+
+        nloops = 0
+        completed = False
+        while not completed:
+            logging.info('DataSet: {:.0f}% complete'.format(
+                self.fraction_complete() * 100))
+
+            time.sleep(delay)
+            nloops += 1
+
+            if self.sync() is False:
+                completed = True
+
+            for key, fn in list(self.background_functions.items()):
+                try:
+                    logging.debug('calling {}: {}'.format(key, repr(fn)))
+                    fn()
+                    failing[key] = False
+                except Exception:
+                    logging.info(format_exc())
+                    if failing[key]:
+                        logging.warning(
+                            'background function {} failed twice in a row, '
+                            'removing it'.format(key))
+                        del self.background_functions[key]
+                    failing[key] = True
+
+        logging.info('DataSet <{}> is complete'.format(self.location))
+
     def get_changes(self, synced_index):
         changes = {}
 
@@ -434,32 +514,22 @@ class DataSet(DelegateAttributes):
         replace action_indices tuple with compact string array_ids
         stripping off as much extraneous info as possible
         """
-        action_indices = [array.action_indices for array in arrays]
-        array_names = set(array.name for array in arrays)
-        for name in array_names:
-            param_arrays = [array for array in arrays
-                            if array.name == name]
-            if len(param_arrays) == 1:
-                # simple case, only one param with this name, id = name
-                param_arrays[0].array_id = name
-                continue
 
-            # partition into set and measured arrays (weird use case, but
-            # it'll happen, if perhaps only in testing)
-            set_param_arrays = [pa for pa in param_arrays
-                                if pa.set_arrays[-1] == pa]
-            meas_param_arrays = [pa for pa in param_arrays
-                                 if pa.set_arrays[-1] != pa]
-            if len(set_param_arrays) and len(meas_param_arrays):
-                # if the same param is in both set and measured,
-                # suffix the set with '_set'
-                self._clean_param_ids(set_param_arrays, name + '_set')
-                self._clean_param_ids(meas_param_arrays, name)
-            else:
-                # if either only set or only measured, no suffix
-                self._clean_param_ids(param_arrays, name)
+        action_indices = [array.action_indices for array in arrays]
+        for array in arrays:
+            name = array.full_name
+            if array.is_setpoint and name and not name.endswith('_set'):
+                name += '_set'
+
+            array.array_id = name
+        array_ids = set([array.array_id for array in arrays])
+        for name in array_ids:
+            param_arrays = [array for array in arrays
+                            if array.array_id == name]
+            self._clean_param_ids(param_arrays, name)
 
         array_ids = [array.array_id for array in arrays]
+
         return dict(zip(action_indices, array_ids))
 
     def _clean_param_ids(self, arrays, name):
@@ -633,7 +703,8 @@ class DataSet(DelegateAttributes):
         arr_info = [['<Type>', '<array_id>', '<array.name>', '<array.shape>']]
 
         if hasattr(self, 'action_id_map'):
-            id_items = [item for index, item in sorted(self.action_id_map.items())]
+            id_items = [
+                item for index, item in sorted(self.action_id_map.items())]
         else:
             id_items = self.arrays.keys()
 

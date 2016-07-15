@@ -3,6 +3,7 @@ import time
 import multiprocessing as mp
 
 from qcodes.instrument.server import InstrumentServer
+from qcodes.instrument.base import Instrument
 from qcodes.process.server import (QUERY_WRITE, QUERY_ASK, RESPONSE_OK,
                                    RESPONSE_ERROR)
 from qcodes.utils.helpers import LogCapture
@@ -59,12 +60,17 @@ class Holder:
     def close(self):
         pass
 
+    def connection_attrs(self, new_id):
+        return Instrument.connection_attrs(self, new_id)
+
 
 class TimedInstrumentServer(InstrumentServer):
     timeout = 2
 
 
 class TestInstrumentServer(TestCase):
+    maxDiff = None
+
     @classmethod
     def setUpClass(cls):
         cls.query_queue = mp.Queue()
@@ -133,7 +139,7 @@ class TestInstrumentServer(TestCase):
                 'functions': {},
                 'id': 0,
                 'name': 'J Edgar',
-                'methods': {},
+                '_methods': {},
                 'parameters': {}
             }),
             (RESPONSE_OK, 'a warm gun'),

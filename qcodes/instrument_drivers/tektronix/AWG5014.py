@@ -1138,7 +1138,7 @@ class Tektronix_AWG5014(VisaInstrument):
                     # print 'setting: %s' % key
                     exec('self.set_%s(pars[key]["value"])' % key)
                     comm = True
-                except:
+                except Exception as e:
                     print(key + ' not set!')
                     comm = False
 
@@ -1150,7 +1150,9 @@ class Tektronix_AWG5014(VisaInstrument):
     def is_awg_ready(self):
         try:
             self.ask('*OPC?')
-        except:  # makes the awg read again if there is a timeout
+        # makes the awg read again if there is a timeout
+        except Exception as e:
+            logging.warning(e)
             logging.warning('AWG is not ready')
             self.visa_handle.read()
         return True

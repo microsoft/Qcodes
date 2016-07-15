@@ -6,7 +6,7 @@ from qcodes.data.format import Formatter
 from qcodes.data.gnuplot_format import GNUPlotFormat
 from qcodes.data.hdf5_format import HDF5Format
 from qcodes.data.data_array import DataArray
-from qcodes.data.data_set import DataSet, new_data
+from qcodes.data.data_set import DataSet, new_data, load_data
 from qcodes.utils.helpers import LogCapture
 from qcodes.station import Station
 from qcodes import Loop
@@ -68,7 +68,7 @@ class TestBaseFormatter(TestCase):
 
         formatter = MyFormatter()
         data = DataSet1D(location)
-        data.x.ndarray = None
+        data.x_set.ndarray = None
         data.y.ndarray = None
 
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -83,7 +83,7 @@ class TestBaseFormatter(TestCase):
         self.assertEqual(data.files_read, [os.path.abspath(path)])
 
         expected_array_repr = repr([float('nan')] * 5)
-        self.assertEqual(repr(data.x.tolist()), expected_array_repr)
+        self.assertEqual(repr(data.x_set.tolist()), expected_array_repr)
         self.assertEqual(repr(data.y.tolist()), expected_array_repr)
 
     def test_group_arrays(self):
@@ -98,14 +98,14 @@ class TestBaseFormatter(TestCase):
         g1d, g2d = groups
 
         self.assertEqual(g1d.shape, (2,))
-        self.assertEqual(g1d.set_arrays, (data.x,))
+        self.assertEqual(g1d.set_arrays, (data.x_set,))
         self.assertEqual(g1d.data, (data.y1, data.y2))
-        self.assertEqual(g1d.name, 'x')
+        self.assertEqual(g1d.name, 'x_set')
 
         self.assertEqual(g2d.shape, (2, 3))
-        self.assertEqual(g2d.set_arrays, (data.x, data.yset))
+        self.assertEqual(g2d.set_arrays, (data.x_set, data.y_set))
         self.assertEqual(g2d.data, (data.z1, data.z2))
-        self.assertEqual(g2d.name, 'x_yset')
+        self.assertEqual(g2d.name, 'x_set_y_set')
 
     def test_match_save_range(self):
         formatter = Formatter()
@@ -115,8 +115,9 @@ class TestBaseFormatter(TestCase):
 
         # no matter what else, if nothing is listed as modified
         # then save_range is None
+        data.x_set.modified_range = data.y.modified_range = None
         for lsi_x in [None, 0, 3]:
-            data.x.last_saved_index = lsi_x
+            data.x_set.last_saved_index = lsi_x
             for lsi_y in [None, 1, 4]:
                 data.y.last_saved_index = lsi_y
                 for fe in [True, False]:
@@ -128,12 +129,12 @@ class TestBaseFormatter(TestCase):
         # modified range, or if file does not exist, we need to overwrite
         # otherwise start just after last_saved_index
         for lsi, start in [(None, 0), (0, 1), (1, 2), (2, 3), (3, 0), (4, 0)]:
-            data.x.last_saved_index = data.y.last_saved_index = lsi
+            data.x_set.last_saved_index = data.y.last_saved_index = lsi
 
             # inconsistent modified_range: expands to greatest extent
             # so these situations are identical
             for xmr, ymr in ([(4, 4), (3, 3)], [(3, 4), None], [None, (3, 4)]):
-                data.x.modified_range = xmr
+                data.x_set.modified_range = xmr
                 data.y.modified_range = ymr
 
                 save_range = formatter.match_save_range(group,
@@ -145,7 +146,7 @@ class TestBaseFormatter(TestCase):
                 self.assertEqual(save_range, (start, 4))
 
         # inconsistent last_saved_index: need to overwrite no matter what
-        data.x.last_saved_index = 1
+        data.x_set.last_saved_index = 1
         data.y.last_saved_index = 2
         save_range = formatter.match_save_range(group, file_exists=True)
         self.assertEqual(save_range, (0, 4))
@@ -154,7 +155,7 @@ class TestBaseFormatter(TestCase):
         # but this will only back up one point!
         data.y[4] = float('nan')
         data.y[3] = float('nan')
-        data.x.last_saved_index = data.y.last_saved_index = 2
+        data.x_set.last_saved_index = data.y.last_saved_index = 2
 
         save_range = formatter.match_save_range(group, file_exists=True)
         self.assertEqual(save_range, (3, 3))
@@ -193,15 +194,9 @@ class TestGNUPlotFormat(TestCase):
         location = self.locations[0]
         data = DataSet1D(location)
 
-        # mark the data set as modified by... modifying it!
-        # without actually changing it :)
-        # TODO - are there cases we should automatically mark the data as
-        # modified on construction?
-        data.y[4] = data.y[4]
-
         formatter.write(data, data.io, data.location)
 
-        with open(location + '/x.dat', 'r') as f:
+        with open(location + '/x_set.dat', 'r') as f:
             self.assertEqual(f.read(), file_1d())
 
         # check that we can add comment lines randomly into the file
@@ -212,7 +207,7 @@ class TestGNUPlotFormat(TestCase):
         lines[1] = lines[1].replace('"', '')
         lines[3:3] = ['# this data is awesome!']
         lines[6:6] = ['# the next point is my favorite.']
-        with open(location + '/x.dat', 'w') as f:
+        with open(location + '/x_set.dat', 'w') as f:
             f.write('\n'.join(lines))
 
         # normally this would be just done by data2 = load_data(location)
@@ -220,14 +215,20 @@ class TestGNUPlotFormat(TestCase):
         data2 = DataSet(location=location)
         formatter.read(data2)
 
-        self.checkArraysEqual(data2.x, data.x)
+        self.checkArraysEqual(data2.x_set, data.x_set)
         self.checkArraysEqual(data2.y, data.y)
+
+        # data has been saved
+        self.assertEqual(data.y.last_saved_index, 4)
+        # data2 has been read back in, should show the same
+        # last_saved_index
+        self.assertEqual(data2.y.last_saved_index, 4)
 
         # while we're here, check some errors on bad reads
 
         # first: trying to read into a dataset that already has the
         # wrong size
-        x = DataArray(name='x', label='X', preset_data=(1., 2.))
+        x = DataArray(name='x_set', label='X', preset_data=(1., 2.))
         y = DataArray(name='y', label='Y', preset_data=(3., 4.),
                       set_arrays=(x,))
         data3 = new_data(arrays=(x, y), location=location + 'XX')
@@ -241,10 +242,10 @@ class TestGNUPlotFormat(TestCase):
 
         # no problem reading again if only data has changed, it gets
         # overwritten with the disk copy
-        data2.x[2] = 42
+        data2.x_set[2] = 42
         data2.y[2] = 99
         formatter.read(data2)
-        self.assertEqual(data2.x[2], 3)
+        self.assertEqual(data2.x_set[2], 3)
         self.assertEqual(data2.y[2], 5)
 
     def test_format_options(self):
@@ -254,12 +255,6 @@ class TestGNUPlotFormat(TestCase):
         location = self.locations[0]
         data = DataSet1D(location)
 
-        # mark the data set as modified by... modifying it!
-        # without actually changing it :)
-        # TODO - are there cases we should automatically mark the data as
-        # modified on construction?
-        data.y[4] = data.y[4]
-
         formatter.write(data, data.io, data.location)
 
         # TODO - Python3 uses universal newlines for read and write...
@@ -268,7 +263,7 @@ class TestGNUPlotFormat(TestCase):
         # back to '\n' on read. So I'm tempted to just take out terminator
         # as an option rather than turn this feature off.
         odd_format = '\n'.join([
-            '?:x  y',
+            '?:x_set  y',
             '?:"X"  "Y"',
             '?:5',
             ' 1.00   3.00',
@@ -277,7 +272,7 @@ class TestGNUPlotFormat(TestCase):
             ' 4.00   6.00',
             ' 5.00   7.00', ''])
 
-        with open(location + '/x.splat', 'r') as f:
+        with open(location + '/x_set.splat', 'r') as f:
             self.assertEqual(f.read(), odd_format)
 
     def add_star(self, path):
@@ -290,15 +285,16 @@ class TestGNUPlotFormat(TestCase):
     def test_incremental_write(self):
         formatter = GNUPlotFormat()
         location = self.locations[0]
+        location2 = self.locations[1]  # use 2nd location for reading back in
         data = DataSet1D(location)
-        path = location + '/x.dat'
+        path = location + '/x_set.dat'
 
         data_copy = DataSet1D(False)
 
         # empty the data and mark it as unmodified
-        data.x[:] = float('nan')
+        data.x_set[:] = float('nan')
         data.y[:] = float('nan')
-        data.x.modified_range = None
+        data.x_set.modified_range = None
         data.y.modified_range = None
 
         # simulate writing after every value comes in, even within
@@ -307,17 +303,33 @@ class TestGNUPlotFormat(TestCase):
         # in the right places afterward, ie we don't write any given
         # row until it's done and we never totally rewrite the file
         self.stars_before_write = 0
-        for i, (x, y) in enumerate(zip(data_copy.x, data_copy.y)):
-            data.x[i] = x
+        for i, (x, y) in enumerate(zip(data_copy.x_set, data_copy.y)):
+            data.x_set[i] = x
             formatter.write(data, data.io, data.location)
+            formatter.write(data, data.io, location2)
             self.add_star(path)
 
             data.y[i] = y
             formatter.write(data, data.io, data.location)
+            data.x_set.clear_save()
+            data.y.clear_save()
+            formatter.write(data, data.io, location2)
             self.add_star(path)
 
+            # we wrote to a second location without the stars, so we can read
+            # back in and make sure that we get the right last_saved_index
+            # for the amount of data we've read.
+            reread_data = load_data(location=location2, data_manager=False,
+                                    formatter=formatter, io=data.io)
+            self.assertEqual(repr(reread_data.x_set.tolist()),
+                             repr(data.x_set.tolist()))
+            self.assertEqual(repr(reread_data.y.tolist()),
+                             repr(data.y.tolist()))
+            self.assertEqual(reread_data.x_set.last_saved_index, i)
+            self.assertEqual(reread_data.y.last_saved_index, i)
+
         starred_file = '\n'.join([
-            '# x\ty',
+            '# x_set\ty',
             '# "X"\t"Y"',
             '# 5',
             '1\t3',
@@ -353,7 +365,7 @@ class TestGNUPlotFormat(TestCase):
         location = self.locations[0]
         data = DataSet(location=location)
         os.makedirs(location, exist_ok=True)
-        with open(location + '/x.dat', 'w') as f:
+        with open(location + '/x_set.dat', 'w') as f:
             f.write('1\t2\n' + file_1d())
         with LogCapture() as logs:
             formatter.read(data)
@@ -364,8 +376,9 @@ class TestGNUPlotFormat(TestCase):
         location = self.locations[1]
         data = DataSet(location=location)
         os.makedirs(location, exist_ok=True)
-        with open(location + '/x.dat', 'w') as f:
-            f.write('\n'.join(['# x\ty', '# "X"\t"Y"', '# 2', '1\t2', '3\t4']))
+        with open(location + '/x_set.dat', 'w') as f:
+            f.write('\n'.join(['# x_set\ty',
+                               '# "X"\t"Y"', '# 2', '1\t2', '3\t4']))
         with open(location + '/q.dat', 'w') as f:
             f.write('\n'.join(['# q\ty', '# "Q"\t"Y"', '# 2', '1\t2', '3\t4']))
         with LogCapture() as logs:
@@ -378,24 +391,19 @@ class TestGNUPlotFormat(TestCase):
         location = self.locations[1]
         data = DataSetCombined(location)
 
-        # mark one array in each file as completely modified
-        # that should cause the whole files to be written, even though
-        # the other data and setpoint arrays are not marked as modified
-        data.y1[:] += 0
-        data.z1[:, :] += 0
         formatter.write(data, data.io, data.location)
 
         filex, filexy = files_combined()
 
-        with open(location + '/x.dat', 'r') as f:
+        with open(location + '/x_set.dat', 'r') as f:
             self.assertEqual(f.read(), filex)
-        with open(location + '/x_yset.dat', 'r') as f:
+        with open(location + '/x_set_y_set.dat', 'r') as f:
             self.assertEqual(f.read(), filexy)
 
         data2 = DataSet(location=location)
         formatter.read(data2)
 
-        for array_id in ('x', 'y1', 'y2', 'yset', 'z1', 'z2'):
+        for array_id in ('x_set', 'y1', 'y2', 'y_set', 'z1', 'z2'):
             self.checkArraysEqual(data2.arrays[array_id],
                                   data.arrays[array_id])
 

@@ -53,6 +53,7 @@ class IPInstrument(Instrument):
         self._confirmation = write_confirmation
 
         self._ensure_connection = EnsureConnection(self)
+        self._buffer_size = 1400
 
         self._socket = None
 
@@ -149,7 +150,7 @@ class IPInstrument(Instrument):
         self._socket.send(data.encode())
 
     def _recv(self):
-        return self._socket.recv(512).decode()
+        return self._socket.recv(self._buffer_size).decode()
 
     def close(self):
         """Disconnect and irreversibly tear down the instrument."""
@@ -182,6 +183,9 @@ class IPInstrument(Instrument):
         with self._ensure_connection:
             self._send(cmd)
             return self._recv()
+
+    def __del__(self):
+        self.close()
 
     def snapshot_base(self, update=False):
         """
@@ -219,14 +223,14 @@ class EnsureConnection:
     """
 
     def __init__(self, instrument):
-        self._instrument = instrument
+        self.instrument = instrument
 
     def __enter__(self):
         """Make sure we connect when entering the context."""
         if not self.instrument._persistent or self.instrument._socket is None:
             self.instrument._connect()
 
-    def __exit__(self):
+    def __exit__(self, type, value, tb):
         """Possibly disconnect on exiting the context."""
         if not self.instrument._persistent:
             self.instrument._disconnect()
