@@ -1,7 +1,8 @@
 from qcodes import VisaInstrument
-from qcodes.utils.validators import Numbers, Ints, Enum, MultiType
+from qcodes.utils.validators import Numbers, Ints, Enum, MultiType, Anything
 
 from functools import partial
+
 
 def is_number(s):
     try:
@@ -9,6 +10,7 @@ def is_number(s):
         return True
     except ValueError:
         return False
+
 
 def parse_string_output(s):
     """ Parses and cleans string outputs """
@@ -21,21 +23,16 @@ def parse_string_output(s):
 
     s = s.lower()
 
+    # prevent float() from parsing 'infinity' into a float
+    if s == 'infinity':
+        return s
+
     # If it is a number; parse it
     if is_number(s):
         return float(s)
 
-    # Convert some results to a better readable version
-    conversions = {
-        'inf': 'infinity',
-        'min': 'minimum',
-        'max': 'maximum',
-    }
-
-    if s in conversions.keys():
-        s = conversions[s]
-
     return s
+
 
 def parse_single_output(i, s):
     """ Used as a partial function to parse output i in string s """
@@ -43,11 +40,13 @@ def parse_single_output(i, s):
 
     return parse_string_output(parts[i])
 
+
 def parse_multiple_outputs(s):
     """ Parse an output such as 'sin,1.5,0,2' and return a parsed array """
-    parts = s.split(',')
+    parts = parse_string_output(s).split(',')
 
     return [parse_string_output(part) for part in parts]
+
 
 class Rigol_DG4000(VisaInstrument):
     """
@@ -60,7 +59,7 @@ class Rigol_DG4000(VisaInstrument):
 
         model = self.get_idn()['model']
 
-        models =    ['DG4202',  'DG4162',   'DG4102',   'DG4062']
+        models = ['DG4202',  'DG4162',   'DG4102',   'DG4062']
 
         if model in models:
             i = models.index(model)
@@ -133,8 +132,8 @@ class Rigol_DG4000(VisaInstrument):
         # TODO: Check units of outputs
         for i, param in enumerate(measure_params):
             self.add_parameter('counter_{}'.format(param),
-                           get_cmd='COUN:MEAS?',
-                           get_parser=partial(parse_single_output, i))
+                               get_cmd='COUN:MEAS?',
+                               get_parser=partial(parse_single_output, i))
 
         self.add_parameter('counter_trigger_sensitivity',
                            get_cmd='COUN:SENS?',
@@ -208,28 +207,28 @@ class Rigol_DG4000(VisaInstrument):
                               args=[Numbers(0, 10), Numbers()])
 
             self.add_function(ch + 'pulse',
-                               call_cmd=source + 'APPL:PULS {:.6e},{:.6e},{:.6e},{:.6e}',
-                               args=[Numbers(1e-6, pulse_freq),
+                              call_cmd=source + 'APPL:PULS {:.6e},{:.6e},{:.6e},{:.6e}',
+                              args=[Numbers(1e-6, pulse_freq),
                                     Numbers(), Numbers(), Numbers(0)])
 
             self.add_function(ch + 'ramp',
-                               call_cmd=source + 'APPL:RAMP {:.6e},{:.6e},{:.6e},{:.6e}',
-                               args=[Numbers(1e-6, ramp_freq),
+                              call_cmd=source + 'APPL:RAMP {:.6e},{:.6e},{:.6e},{:.6e}',
+                              args=[Numbers(1e-6, ramp_freq),
                                     Numbers(), Numbers(), Numbers(0, 360)])
 
             self.add_function(ch + 'sinusoid',
-                               call_cmd=source + 'APPL:SIN {:.6e},{:.6e},{:.6e},{:.6e}',
-                               args=[Numbers(1e-6, sine_freq),
+                              call_cmd=source + 'APPL:SIN {:.6e},{:.6e},{:.6e},{:.6e}',
+                              args=[Numbers(1e-6, sine_freq),
                                     Numbers(), Numbers(), Numbers(0, 360)])
 
             self.add_function(ch + 'square',
-                               call_cmd=source + 'APPL:SQU {:.6e},{:.6e},{:.6e},{:.6e}',
-                               args=[Numbers(1e-6, square_freq),
+                              call_cmd=source + 'APPL:SQU {:.6e},{:.6e},{:.6e},{:.6e}',
+                              args=[Numbers(1e-6, square_freq),
                                     Numbers(), Numbers(), Numbers(0, 360)])
 
             self.add_function(ch + 'user',
-                               call_cmd=source + 'APPL:USER {:.6e},{:.6e},{:.6e},{:.6e}',
-                               args=[Numbers(1e-6, arb_freq),
+                              call_cmd=source + 'APPL:USER {:.6e},{:.6e},{:.6e},{:.6e}',
+                              args=[Numbers(1e-6, arb_freq),
                                     Numbers(), Numbers(), Numbers(0, 360)])
 
             self.add_parameter(ch + 'configuration',
@@ -248,7 +247,7 @@ class Rigol_DG4000(VisaInstrument):
                                get_cmd=source + 'BURS:NCYC?',
                                get_parser=float,
                                set_cmd=source + 'BURS:NCYC {}',
-                               vals=Ints(1, 1e6))
+                               vals=Ints(1, 1000000))
 
             self.add_parameter(ch + 'burst_period',
                                get_cmd=source + 'BURS:INT:PER?',
@@ -340,16 +339,16 @@ class Rigol_DG4000(VisaInstrument):
 
             self.add_parameter(ch + 'harmonic_order',
                                get_cmd=source + 'HARM:ORDE?',
-                               get_parser=float,
+                               get_parser=int,
                                set_cmd=source + 'HARM:ORDE {}',
-                               vals=Numbers(1e-6))
+                               vals=Ints(2, 16))
 
             self.add_function(ch + 'set_harmonic_phase',
-                              call_cmd=source + 'HARM:AMPL {},{:.6e}',
+                              call_cmd=source + 'HARM:PHAS {},{:.6e}',
                               args=[Ints(2, 16), Numbers(0, 360)])
 
             self.add_function(ch + 'get_harmonic_phase',
-                              call_cmd=source + 'HARM:AMPL? {}',
+                              call_cmd=source + 'HARM:PHAS? {}',
                               args=[Ints(2, 16)],
                               return_parser=float)
 
@@ -402,8 +401,8 @@ class Rigol_DG4000(VisaInstrument):
                                vals=Numbers(0))
 
             self.add_parameter(ch + 'pulse_hold',
-                               get_cmd=source + 'PULS:DEL?',
-                               set_cmd=source + 'PULS:DEL {}',
+                               get_cmd=source + 'PULS:HOLD?',
+                               set_cmd=source + 'PULS:HOLD {}',
                                units='s',
                                val_mapping={'width': 'WIDT', 'duty': 'DUTY'})
 
@@ -523,8 +522,9 @@ class Rigol_DG4000(VisaInstrument):
                            set_cmd='SYST:POWS {}',
                            vals=Enum('user', 'auto'))
 
-        system_states = Enum('default', 'user1', 'user2', 'user3', 'user4', 'user5',
-                             'user6', 'user7', 'user8', 'user9', 'user10')
+        system_states = Enum('default', 'user1', 'user2', 'user3', 'user4',
+                             'user5', 'user6', 'user7', 'user8', 'user9', 'user10')
+
         self.add_function('preset', call_cmd='SYST:PRES {}', args=[system_states])
 
         self.add_function('restart', call_cmd='SYST:RESTART')
@@ -539,7 +539,9 @@ class Rigol_DG4000(VisaInstrument):
         self.add_parameter('scpi_version', get_cmd='SYST:VERS?')
 
         # Trace
-        self.add_function('upload_data', call_cmd=self._upload_data)
+        self.add_function('upload_data',
+                          call_cmd=self._upload_data,
+                          args=[Anything()])
 
         self.add_function('reset', call_cmd='*RST')
 
@@ -556,23 +558,9 @@ class Rigol_DG4000(VisaInstrument):
         """
         if 1 <= len(data) <= 16384:
             # Convert the input to a comma-separated string
-            string = str(tuple(data))[1:-1]
+            string = ','.join(format(f, '.9f') for f in data)
 
             self.write('DATA VOLATILE,' + string)
         else:
             raise Exception('Data length of ' + str(len(data)) +
                             ' is not in the range of 1 to 16384')
-
-if __name__ == '__main__':
-    #d = Rigol_DG4000('DG4102', ':TCPIP0:10.210.128.208::INSTR')
-    d = Rigol_DG4000('DG4102', 'USB0::0x1AB1::0x0641::DG4E153100321::INSTR')
-    #print(d.get_idn())
-
-    d.channel(1)
-
-    d.sync('off')
-
-    d.sinusoid(1, 1, 0, 0)
-    print(d.configuration())
-
-    d.keyboard_lock('off')
