@@ -6,47 +6,47 @@ from qcodes import Parameter
 from math import log
 
 class FrequencySweep(Parameter):
-  '''Composite parameter class for a frequency sweep done with the Rohde Schwarz RSZNB20.
+    '''Composite parameter class for a frequency sweep done with the Rohde Schwarz RSZNB20.
 
     Allows for 'fast redout' where the instrument returns an list of transmission data in the form 
     of a complex numbers taken from a frequency sweep.
 
     TODO: 
-      - ability to choose for abs or db in magnitude return
-  '''
-	def __init__(self, name, instrument, start, stop, npts):
-		super().__init__(name)
-		self._instrument = instrument
-		self.set_sweep(start, stop, npts)
-		self.names = ('magnitude', 'phase')
-		self.units = ('dBm', 'rad')
-		self.setpoint_names = (('frequency',), ('frequency',))
+      - ability to choose for abs or db in magnitude return (important?)
+    '''
+    def __init__(self, name, instrument, start, stop, npts):
+        super().__init__(name)
+        self._instrument = instrument
+        self.set_sweep(start, stop, npts)
+        self.names = ('magnitude', 'phase')
+        self.units = ('dBm', 'rad')
+        self.setpoint_names = (('frequency',), ('frequency',))
  
-	def set_sweep(self, start, stop, npts):
+    def set_sweep(self, start, stop, npts):
     # neccesary to update the config of the software parameter when sweep is chaged 
-    f = tuple(np.linspace(int(start), int(stop), num=npts)) # tuple as it needs to be hashable for look up
-		self.setpoints = ((f,), (f,))
-		self.shapes = ((npts,), (npts,))
+        f = tuple(np.linspace(int(start), int(stop), num=npts)) # tuple as it needs to be hashable for look up
+        self.setpoints = ((f,), (f,))
+        self.shapes = ((npts,), (npts,))
  
-	def get(self):
-		self._instrument.write('SENS1:AVER:STAT ON')
-    self._instrument.write('AVER:CLE')
-		self._instrument.turn_off_cont_meas()
+    def get(self):
+        self._instrument.write('SENS1:AVER:STAT ON')
+        self._instrument.write('AVER:CLE')
+        self._instrument.cont_meas_off()
 
     # instrument averages over its last 'avg' number of sweeps need to ensure averaged result is returned
-		for avgcount in range(self._instrument.avg()):
-      self._instrument.write('INIT:IMM; *WAI')
-		data_list = [float(v) for v in self._instrument.ask('CALC:DATA? SDAT').split(',')] 
+        for avgcount in range(self._instrument.avg()):
+            self._instrument.write('INIT:IMM; *WAI')
+        data_list = [float(v) for v in self._instrument.ask('CALC:DATA? SDAT').split(',')] 
     
     # data_list of complex numbers [re1,im1,re2,im2...]
-    data_arr = data_arr = np.array(data_list).reshape(int(len(data_list)/2),2)
-    mag_array, phase_array = [], []
-		for comp in data_arr:
-			complex_num = complex(comp[0],comp[1])
-			mag_array.append(log(abs(complex_num),10))
-			phase_array.append(phase(complex_num))
-    self._instrument.update_display_once()
-		return mag_array, phase_array
+        data_arr = data_arr = np.array(data_list).reshape(int(len(data_list)/2),2)
+        mag_array, phase_array = [], []
+        for comp in data_arr:
+            complex_num = complex(comp[0],comp[1])
+            mag_array.append(abs(complex_num))
+            phase_array.append(phase(complex_num))
+        self._instrument.update_display_once()
+        return mag_array, phase_array
 
 
 class ZNB20(VisaInstrument):
@@ -55,18 +55,17 @@ class ZNB20(VisaInstrument):
     Requires FrequencySweep parameter for taking a trace     
 
     TODO:
-    - Add testing
-    - Error handling
+    - centre/span, is it important?
     - check initialisation settings and test functions
     '''
     def __init__(self, name, address, **kwargs):
         super().__init__(name=name, address=address, **kwargs)
-
+        
         self.add_parameter(name='power',
                            label='Power',
                            units='dBm',
                            get_cmd='SOUR:POW?',
-                           set_cmd='SOUR:POW {:d}',
+                           set_cmd='SOUR:POW {:.4f}',
                            get_parser=int,
                            vals=vals.Numbers(-150, 25))
 
@@ -74,7 +73,7 @@ class ZNB20(VisaInstrument):
                            label='Bandwidth',
                            units='Hz', 
                            get_cmd='SENS:BAND?',
-                           set_cmd='SENS:BAND {:d}',
+                           set_cmd='SENS:BAND {:.4f}',
                            get_parser=int,
                            vals=vals.Numbers(1,1e6))
 
@@ -82,19 +81,19 @@ class ZNB20(VisaInstrument):
                            label='Averages',
                            units='',
                            get_cmd='AVER:COUN?',
-                           set_cmd='AVER:COUN {:d}',
+                           set_cmd='AVER:COUN {:.4f}',
                            get_parser=int,
                            vals=vals.Numbers(1,5000))
 
         self.add_parameter(name='start', 
                            get_cmd='SENS:FREQ:START?',
                            set_cmd=self._set_start,
-						               get_parser=int)
+                           get_parser=int)
 
         self.add_parameter(name='stop', 
                            get_cmd='SENS:FREQ:STOP?',
                            set_cmd=self._set_stop,
-						               get_parser=int)
+                           get_parser=int)
 
         self.add_parameter(name='npts',
                            get_cmd='SENS:SWE:POIN?',
@@ -102,20 +101,21 @@ class ZNB20(VisaInstrument):
                            get_parser=int)
 
         self.add_parameter(name = 'trace',
-						               start=self.start(),
+                           start=self.start(),
                            stop=self.stop(),
                            npts=self.npts(),
                            parameter_class=FrequencySweep)       
 
         self.add_function('reset', call_cmd='*RST')
-        self.add_function('turn_on_tooltip', call_cmd='SYST:ERR:DISP ON')
-        self.add_function('turn_off_tooltip', call_cmd='SYST:ERR:DISP OFF')
-        self.add_function('turn_on_cont_meas', call_cmd='INIT:CONT:ALL ON')
-        self.add_function('turn_off_cont_meas', call_cmd='INIT:CONT:ALL OFF')
+        self.add_function('tooltip_on', call_cmd='SYST:ERR:DISP ON')
+        self.add_function('tooltip_off', call_cmd='SYST:ERR:DISP OFF')
+        self.add_function('cont_meas_on', call_cmd='INIT:CONT:ALL ON')
+        self.add_function('cont_meas_off', call_cmd='INIT:CONT:ALL OFF')
         self.add_function('update_display_once', call_cmd='SYST:DISP:UPD ONCE')
         self.add_function('update_display_on', call_cmd='SYST:DISP:UPD ON')
         self.add_function('update_display_off', call_cmd='SYST:DISP:UPD OFF')
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
+        self.add_function('rf_on', call_cmd='OUTP1 ON')
 
         self.initialise()
         self.connect_message()
@@ -141,3 +141,4 @@ class ZNB20(VisaInstrument):
         self._set_start(1e6)
         self._set_stop(2e6)
         self._set_npts(10)
+        self.power(-50)
