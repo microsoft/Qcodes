@@ -5,7 +5,8 @@ from collections import namedtuple
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
-from qcodes.instrument.parameter import Parameter, ManualParameter
+from qcodes.instrument.parameter import (Parameter, ManualParameter,
+                                         StandardParameter)
 from qcodes.instrument.function import Function
 from qcodes.instrument.server import get_instrument_server_manager
 
@@ -32,17 +33,16 @@ class TestParamConstructor(TestCase):
         names = ['H1', 'L1']
         p = Parameter(names=names)
         self.assertEqual(p.names, names)
-        self.assertFalse(hasattr(p, 'name'))
+        # if you don't provide a name, it's called 'None'
+        # TODO: we should probably require an explicit name.
+        self.assertEqual(p.name, 'None')
 
         # or both, that's OK too.
         names = ['Peter', 'Paul', 'Mary']
         p = Parameter(name='complex', names=names)
         self.assertEqual(p.names, names)
-        # TODO: below seems wrong actually - we should let a parameter have
-        # a simple name even if it has a names array. But then we need to
-        # check everywhere this is used, and make sure everyone who cares
-        # about it looks for names first.
-        self.assertFalse(hasattr(p, 'name'))
+        # You can always have a name along with names
+        self.assertEqual(p.name, 'complex')
 
         shape = (10,)
         setpoints = (range(10),)
@@ -537,6 +537,57 @@ class TestInstrument(TestCase):
 
         with self.assertRaises(ValueError):
             gates.moderaw.set('DC')
+
+    def test_val_mapping_parsers(self):
+        gates = self.gates
+
+        gates.add_parameter('moderaw', set_cmd='mem0:{}', get_cmd='mem0?',
+                            vals=Enum('0', '1'))
+
+        with self.assertRaises(TypeError):
+            # set_parser is not allowed with val_mapping
+            gates.add_parameter('modecoded', set_cmd='mem0:{}',
+                                get_cmd='mem0?',
+                                val_mapping={'DC': 0, 'AC': 1},
+                                set_parser=float)
+
+        gates.add_parameter('modecoded', set_cmd='mem0:{:.0f}',
+                            get_cmd='mem0?',
+                            val_mapping={'DC': 0.0, 'AC': 1.0},
+                            get_parser=float)
+
+        gates.modecoded.set('AC')
+        self.assertEqual(gates.moderaw.get(), '1')
+        self.assertEqual(gates.modecoded.get(), 'AC')
+        self.assertEqual(self.getmem(0), '1')
+
+        gates.moderaw.set('0')
+        self.assertEqual(gates.modecoded.get(), 'DC')
+        self.assertEqual(gates.moderaw.get(), '0')
+        self.assertEqual(self.getmem(0), '0')
+
+        with self.assertRaises(ValueError):
+            gates.modecoded.set(0)
+
+        with self.assertRaises(ValueError):
+            gates.modecoded.set('0')
+
+    def test_param_cmd_with_parsing(self):
+        def set_p(val):
+            self._p = val
+
+        def get_p():
+            return self._p
+
+        def parse_set_p(val):
+            return '{:d}'.format(val)
+
+        p = StandardParameter('p_int', get_cmd=get_p, get_parser=int,
+                              set_cmd=set_p, set_parser=parse_set_p)
+
+        p(5)
+        self.assertEqual(self._p, '5')
+        self.assertEqual(p(), 5)
 
     def test_bare_function(self):
         # not a use case we want to promote, but it's there...

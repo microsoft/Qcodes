@@ -3,17 +3,19 @@ from unittest.mock import patch
 import numpy as np
 import os
 import pickle
+import logging
 
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager, NoData
 from qcodes.data.io import DiskIO
 from qcodes.data.data_set import load_data, new_data, DataMode, DataSet
 from qcodes.process.helpers import kill_processes
+from qcodes.utils.helpers import LogCapture
 from qcodes import active_children
 
 from .data_mocks import (MockDataManager, MockFormatter, MatchIO,
                          MockLive, MockArray, DataSet2D, DataSet1D,
-                         RecordingMockFormatter)
+                         DataSetCombined, RecordingMockFormatter)
 from .common import strip_qc
 
 
@@ -140,7 +142,7 @@ class TestDataArray(TestCase):
         self.assertEqual(data[0].tolist(), [1, 2])
         self.assertEqual(data[0, 1], 2)
 
-        self.assertIsNone(data.modified_range)
+        data.modified_range = None
         self.assertIsNone(data.last_saved_index)
 
         self.assertEqual(len(data), 2)
@@ -169,7 +171,7 @@ class TestDataArray(TestCase):
         data = DataArray(preset_data=[[1] * 5] * 6)
 
         self.assertEqual(data.shape, (6, 5))
-        self.assertEqual(data.modified_range, None)
+        data.modified_range = None
 
         data[:4:2, 2:] = 2
         self.assertEqual(data.tolist(), [
@@ -229,6 +231,10 @@ class TestDataArray(TestCase):
         self.assertEqual(data.action_indices, ())
         self.assertEqual(data.set_arrays, (data,))
 
+        # test that the modified range gets correctly set to
+        # (0, 2*3-1 = 5)
+        self.assertEqual(data.modified_range, (0, 5))
+
         # you need a set array for all but the inner nesting
         with self.assertRaises(TypeError):
             data.nest(4)
@@ -249,6 +255,31 @@ class TestDataArray(TestCase):
         self.assertIsNone(data.data_set)
         data.data_set = mock_data_set2
         self.assertEqual(data.data_set, mock_data_set2)
+
+    def test_fraction_complete(self):
+        data = DataArray(shape=(5, 10))
+        self.assertIsNone(data.ndarray)
+        self.assertEqual(data.fraction_complete(), 0.0)
+
+        data.init_data()
+        self.assertEqual(data.fraction_complete(), 0.0)
+
+        # index = 1 * 10 + 7 - add 1 (for index 0) and you get 18
+        # each index is 2% of the total, so this is 36%
+        data[1, 7] = 1
+        self.assertEqual(data.fraction_complete(), 18/50)
+
+        # add a last_saved_index but modified_range is still bigger
+        data.mark_saved(13)
+        self.assertEqual(data.fraction_complete(), 18/50)
+
+        # now last_saved_index wins
+        data.mark_saved(19)
+        self.assertEqual(data.fraction_complete(), 20/50)
+
+        # now pretend we get more info from syncing
+        data.synced_index = 22
+        self.assertEqual(data.fraction_complete(), 23/50)
 
 
 class TestLoadData(TestCase):
@@ -495,9 +526,9 @@ class TestDataSet(TestCase):
         mr = (2, 3)
         mr_full = (0, 4)
         lsi = 1
-        data.x.modified_range = mr
+        data.x_set.modified_range = mr
         data.y.modified_range = mr
-        data.x.last_saved_index = lsi
+        data.x_set.last_saved_index = lsi
         data.y.last_saved_index = lsi
 
         with self.assertRaises(TypeError):
@@ -517,13 +548,13 @@ class TestDataSet(TestCase):
                          [(None, '/some/abs/path', False)])
         # check that the formatter gets called as if nothing has been saved
         self.assertEqual(data.formatter.modified_ranges,
-                         [{'x': mr_full, 'y': mr_full}])
+                         [{'x_set': mr_full, 'y': mr_full}])
         self.assertEqual(data.formatter.last_saved_indices,
-                         [{'x': None, 'y': None}])
+                         [{'x_set': None, 'y': None}])
         # but the dataset afterward has its original mods back
-        self.assertEqual(data.x.modified_range, mr)
+        self.assertEqual(data.x_set.modified_range, mr)
         self.assertEqual(data.y.modified_range, mr)
-        self.assertEqual(data.x.last_saved_index, lsi)
+        self.assertEqual(data.x_set.last_saved_index, lsi)
         self.assertEqual(data.y.last_saved_index, lsi)
 
         # recreate the formatter to clear the calls attributes
@@ -554,3 +585,80 @@ class TestDataSet(TestCase):
         # If the data_manager is set to None, then the object should pickle.
         m = DataSet2D()
         pickle.dumps(m)
+
+    def test_fraction_complete(self):
+        empty_data = new_data(arrays=(), location=False)
+        self.assertEqual(empty_data.fraction_complete(), 0.0)
+
+        data = DataSetCombined(location=False)
+        self.assertEqual(data.fraction_complete(), 1.0)
+
+        # alter only the measured arrays, check that only these are used
+        # to calculate fraction_complete
+        data.y1.modified_range = (0, 0)  # 1 of 2
+        data.y2.modified_range = (0, 0)  # 1 of 2
+        data.z1.modified_range = (0, 2)  # 3 of 6
+        data.z2.modified_range = (0, 2)  # 3 of 6
+        self.assertEqual(data.fraction_complete(), 0.5)
+
+        # mark more things complete using last_saved_index and synced_index
+        data.y1.last_saved_index = 1  # 2 of 2
+        data.z1.synced_index = 5  # 6 of 6
+        self.assertEqual(data.fraction_complete(), 0.75)
+
+    def mock_sync(self):
+        # import pdb; pdb.set_trace()
+        i = self.sync_index
+        self.syncing_array[i] = i
+        self.sync_index = i + 1
+        return self.sync_index < self.syncing_array.size
+
+    def failing_func(self):
+        raise RuntimeError('it is called failing_func for a reason!')
+
+    def logging_func(self):
+        logging.info('background at index {}'.format(self.sync_index))
+
+    def test_complete(self):
+        array = DataArray(name='y', shape=(5,))
+        array.init_data()
+        data = new_data(arrays=(array,), location=False)
+        self.syncing_array = array
+        self.sync_index = 0
+        data.sync = self.mock_sync
+        bf = DataSet.background_functions
+        bf['fail'] = self.failing_func
+        bf['log'] = self.logging_func
+
+        with LogCapture() as logs:
+            # grab info and warnings but not debug messages
+            logging.getLogger().setLevel(logging.INFO)
+            data.complete(delay=0.001)
+
+        logs = logs.value
+
+        expected_logs = [
+            'waiting for DataSet <False> to complete',
+            'DataSet: 0% complete',
+            'RuntimeError: it is called failing_func for a reason!',
+            'background at index 1',
+            'DataSet: 20% complete',
+            'RuntimeError: it is called failing_func for a reason!',
+            'background function fail failed twice in a row, removing it',
+            'background at index 2',
+            'DataSet: 40% complete',
+            'background at index 3',
+            'DataSet: 60% complete',
+            'background at index 4',
+            'DataSet: 80% complete',
+            'background at index 5',
+            'DataSet <False> is complete'
+        ]
+
+        log_index = 0
+        for line in expected_logs:
+            self.assertIn(line, logs, logs)
+            log_index = logs.index(line, log_index)
+            self.assertTrue(log_index >= 0, logs)
+            log_index += len(line) + 1  # +1 for \n
+        self.assertEqual(log_index, len(logs), logs)

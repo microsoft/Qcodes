@@ -47,7 +47,7 @@ from qcodes.utils.helpers import (permissive_range, wait_secs, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.command import Command, NoCommandError
-from qcodes.utils.validators import Validator, Numbers, Ints, Enum
+from qcodes.utils.validators import Validator, Numbers, Ints, Enum, Anything
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
 
@@ -110,13 +110,15 @@ class Parameter(Metadatable, DeferredOperations):
         units: (1&3) string that indicates units of parameter for use in axis
             label and snapshot
 
-        shape: (3&4) a tuple of integers for the shape of array returned by .get().
+        shape: (3&4) a tuple of integers for the shape of array returned by
+            .get().
 
         shapes: (5) a tuple of tuples, each one as in `shape`.
             Single values should be denoted by None or ()
 
         setpoints: (3,4,5) the setpoints for the returned array of values.
-            3&4 - a tuple of arrays. The first array is be 1D, the second 2D, etc.
+            3&4 - a tuple of arrays. The first array is be 1D, the second 2D,
+                etc.
             5 - a tuple of tuples of arrays
             Defaults to integers from zero in each respective direction
             Each may be either a DataArray, a numpy array, or a sequence
@@ -125,7 +127,8 @@ class Parameter(Metadatable, DeferredOperations):
             this out and return the setpoints (with extra names) in the get.
 
         setpoint_names: (3,4,5) one identifier (like `name`) per setpoint
-            array. Ignored if `setpoints` are DataArrays, which already have names.
+            array. Ignored if `setpoints` are DataArrays, which already have
+            names.
 
         setpoint_labels: (3&4) one label (like `label`) per setpoint array.
             Overridden if `setpoints` are DataArrays and already have labels.
@@ -133,9 +136,9 @@ class Parameter(Metadatable, DeferredOperations):
         vals: allowed values for setting this parameter (only relevant
             if it has a setter),  defaults to Numbers()
 
-        docstring (Optional[string]): documentation string for the __doc__ field of the object
-            The __doc__ field of the instance is used by some help systems,
-            but not all
+        docstring (Optional[string]): documentation string for the __doc__
+            field of the object. The __doc__ field of the instance is used by
+            some help systems, but not all
 
         snapshot_get (bool): Prevent any update to the parameter
           for example if it takes too long to update
@@ -155,6 +158,10 @@ class Parameter(Metadatable, DeferredOperations):
         self.has_set = hasattr(self, 'set')
         self._meta_attrs = ['setpoint_names', 'setpoint_labels']
 
+        # always let the parameter have a single name (in fact, require this!)
+        # even if it has names too
+        self.name = str(name)
+
         if names is not None:
             # check for names first - that way you can provide both name
             # AND names for instrument parameters - name is how you get the
@@ -164,6 +171,7 @@ class Parameter(Metadatable, DeferredOperations):
             self.labels = names if labels is None else names
             self.units = units if units is not None else [''] * len(names)
 
+            self.set_validator(vals or Anything())
             self.__doc__ = os.linesep.join((
                 'Parameter class:',
                 '* `names` %s' % ', '.join(self.names),
@@ -172,7 +180,6 @@ class Parameter(Metadatable, DeferredOperations):
             self._meta_attrs.extend(['names', 'labels', 'units'])
 
         elif name is not None:
-            self.name = name
             self.label = name if label is None else label
             self.units = units if units is not None else ''
 
@@ -184,7 +191,7 @@ class Parameter(Metadatable, DeferredOperations):
                 'Parameter class:',
                 '* `name` %s' % self.name,
                 '* `label` %s' % self.label,
-                #TODO is this unit s a typo? shouldnt that be unit?
+                # TODO is this unit s a typo? shouldnt that be unit?
                 '* `units` %s' % self.units,
                 '* `vals` %s' % repr(self._vals)))
             self._meta_attrs.extend(['name', 'label', 'units', 'vals'])
@@ -366,7 +373,8 @@ class Parameter(Metadatable, DeferredOperations):
             num (Optional[int]): Number of values to generate.
 
         Returns:
-            SweepFixedValues: collection of parameter values to be iterated over
+            SweepFixedValues: collection of parameter values to be
+                iterated over
 
         Examples:
             >>> sweep(0, 10, num=5)
@@ -423,33 +431,31 @@ class StandardParameter(Parameter):
 
     Args:
         name (string): the local name of this parameter
-        instrument (Optional[Instrument]): an instrument that handles this function
-            default None
+        instrument (Optional[Instrument]): an instrument that handles this
+            function. Default None.
 
-        get_cmd (Optional[Union[string, function]]): a string or function to get this parameter
-            you can only use a string if an instrument is provided,
-            this string will be passed to instrument.ask
+        get_cmd (Optional[Union[string, function]]): a string or function to
+            get this parameter. You can only use a string if an instrument is
+            provided, then this string will be passed to instrument.ask
 
-        get_parser ( Optional[function]): function to transform the response from get
-            to the final output value.
-            NOTE: only applies if get_cmd is a string. The function form
-            of get_cmd should do its own parsing
+        get_parser ( Optional[function]): function to transform the response
+            from get to the final output value.
             See also val_mapping
 
-        set_cmd (Optional[Union[string, function]]): command to set this parameter, either:
+        set_cmd (Optional[Union[string, function]]): command to set this
+            parameter, either:
             - a string (containing one field to .format, like "{}" etc)
               you can only use a string if an instrument is provided,
               this string will be passed to instrument.write
             - a function (of one parameter)
 
-        set_parser (Optional[function]): function to transform the input set value to an encoded
-            value sent to the instrument.
-            NOTE: only applies if set_cmd is a string. The function form
-            of set_cmd  should do its own parsing
+        set_parser (Optional[function]): function to transform the input set
+            value to an encoded value sent to the instrument.
             See also val_mapping
 
-        val_mapping (Optional[dict]): a bidirectional map data/readable values to instrument codes,
-            expressed as a dict {data_val: instrument_code}
+        val_mapping (Optional[dict]): a bidirectional map data/readable values
+            to instrument codes, expressed as a dict:
+            ``{data_val: instrument_code}``
             For example, if the instrument uses '0' to mean 1V and '1' to mean
             10V, set val_mapping={1: '0', 10: '1'} and on the user side you
             only see 1 and 10, never the coded '0' and '1'
@@ -458,21 +464,29 @@ class StandardParameter(Parameter):
             NOTE: only applies to get if get_cmd is a string, and to set if
             set_cmd is a string.
 
+            You can use ``val_mapping`` with ``get_parser``, in which case
+            ``get_parser`` acts on the return value from the instrument first,
+            then ``val_mapping`` is applied (in reverse).
+
+            You CANNOT use ``val_mapping`` and ``set_parser`` together - that
+            would just provide too many ways to do the same thing.
+
         vals (Optional[Validator]): a Validator object for this parameter
 
-        delay (Optional[Union[int, float]]): time (in seconds) to wait after the *start* of each set,
-            whether part of a sweep or not. Can be set 0 to go maximum speed with
-            no errors.
+        delay (Optional[Union[int, float]]): time (in seconds) to wait after
+            the *start* of each set, whether part of a sweep or not. Can be
+            set to 0 to go maximum speed with no errors.
 
-        max_delay (Optional[Union[int, float]]): If > delay, we don't emit a warning unless the time
-            taken during a single set is greater than this, even though we aim for
-            delay. If delay
+        max_delay (Optional[Union[int, float]]): If > delay, we don't emit a
+            warning unless the time taken during a single set is greater than
+            this, even though we aim for delay.
 
-        step (Optional[Union[int, float]]): max increment of parameter value - larger changes
-            are broken into steps this size
+        step (Optional[Union[int, float]]): max increment of parameter value.
+            Larger changes are broken into multiple steps this size.
 
-        max_val_age (Optional[Union[int, float]]): max time (in seconds) to trust a saved value from
-            this parameter as the starting point of a sweep
+        max_val_age (Optional[Union[int, float]]): max time (in seconds) to
+            trust a saved value from this parameter as the starting point of
+            a sweep.
 
         **kwargs: Passed to Parameter parent class
 
@@ -490,13 +504,22 @@ class StandardParameter(Parameter):
             if vals is None:
                 vals = Enum(*val_mapping.keys())
 
+            self._get_mapping = {v: k for k, v in val_mapping.items()}
+
             if get_parser is None:
-                self._get_mapping = {v: k for k, v in val_mapping.items()}
                 get_parser = self._valmapping_get_parser
+            else:
+                # First run get_parser, then run the result through
+                # val_mapping
+                self._get_preparser = get_parser
+                get_parser = self._valmapping_with_preparser
 
             if set_parser is None:
                 self._set_mapping = val_mapping
                 set_parser = self._set_mapping.__getitem__
+            else:
+                raise TypeError(
+                    'You cannot use set_parser and val_mapping together.')
 
         if get_parser is not None and not isinstance(get_cmd, str):
             logging.warning('get_parser is set, but will not be used ' +
@@ -547,13 +570,16 @@ class StandardParameter(Parameter):
         except KeyError:
             pass
 
-        # If there is no match, we can try to convert the parameter into a numeric
-        # value
+        # If there is no match, we can try to convert the parameter into a
+        # numeric value
         try:
             val = int(val)
             return self._get_mapping[val]
         except (ValueError, KeyError):
             raise KeyError("Unmapped value from instrument: {!r}".format(val))
+
+    def _valmapping_with_preparser(self, val):
+        return self._valmapping_get_parser(self._get_preparser(val))
 
     def _set_get(self, get_cmd, get_parser):
         exec_str = self._instrument.ask if self._instrument else None
@@ -656,14 +682,15 @@ class StandardParameter(Parameter):
         calls to the hardware if the starting value is far from the target.
 
         Args:
-            step (Union[int, float]): a positive number, the largest change allowed in one call
-                all but the final change will attempt to change by +/- step
-                exactly
+            step (Union[int, float]): A positive number, the largest change
+                allowed in one call. All but the final change will attempt to
+                change by +/- step exactly
 
-            max_val_age (Optional[int]): Only used with stepping, the max time (in seconds) to
-                trust a saved value. If this parameter has not been set or measured
-                more recently than this, it will be measured before starting to
-                step, so we're confident in the value we're starting from.
+            max_val_age (Optional[int]): Only used with stepping, the max time
+                (in seconds) to trust a saved value. If this parameter has not
+                been set or measured more recently than this, it will be
+                measured before starting to step, so we're confident in the
+                value we're starting from.
 
         Raises:
             TypeError: if step is not numeric
@@ -716,12 +743,12 @@ class StandardParameter(Parameter):
         no matter how long the set takes.
 
         Args:
-            delay(Union[int, float]): the target time between set calls. The actual time will not be
-                shorter than this, but may be longer if the underlying set call
-                takes longer.
+            delay(Union[int, float]): the target time between set calls. The
+                actual time will not be shorter than this, but may be longer
+                if the underlying set call takes longer.
 
-            max_delay(Optional[Union[int, float]]): if given, the longest time allowed for the underlying set
-                call before we emit a warning.
+            max_delay(Optional[Union[int, float]]): if given, the longest time
+                allowed for the underlying set call before we emit a warning.
 
         Raises:
             TypeError: If delay is not int nor float
@@ -760,7 +787,8 @@ class ManualParameter(Parameter):
     Args:
         name (string): the local name of this parameter
 
-        instrument (Optional[Instrument]): the instrument this applies to, if any.
+        instrument (Optional[Instrument]): the instrument this applies to,
+            if any.
 
         initial_value (Optional[string]): starting value, the
             only invalid value allowed, and None is only allowed as an initial

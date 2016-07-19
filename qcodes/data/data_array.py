@@ -66,7 +66,18 @@ class DataArray(DelegateAttributes):
         self.array_id = array_id
         self.is_setpoint = is_setpoint
         self.action_indices = action_indices
+        self.set_arrays = set_arrays
 
+        self._preset = False
+
+        # store a reference up to the containing DataSet
+        # this also lets us make sure a DataArray is only in one DataSet
+        self._data_set = None
+
+        self.last_saved_index = None
+        self.modified_range = None
+
+        self.ndarray = None
         if snapshot is None:
             snapshot = {}
         self._snapshot_input = {}
@@ -95,21 +106,10 @@ class DataArray(DelegateAttributes):
         if not self.label:
             self.label = self.name
 
-        self.set_arrays = set_arrays
-        self._preset = False
-
-        # store a reference up to the containing DataSet
-        # this also lets us make sure a DataArray is only in one DataSet
-        self._data_set = None
-
-        self.ndarray = None
         if preset_data is not None:
             self.init_data(preset_data)
         elif shape is None:
             self.shape = ()
-
-        self.last_saved_index = None
-        self.modified_range = None
 
     @property
     def data_set(self):
@@ -157,6 +157,9 @@ class DataArray(DelegateAttributes):
             for i in range(size):
                 self.ndarray[i] = inner_data
 
+            # update modified_range so the entire array still looks modified
+            self.modified_range = (0, self.ndarray.size - 1)
+
             self._set_index_bounds()
 
         return self
@@ -184,6 +187,10 @@ class DataArray(DelegateAttributes):
                                  data.shape, self.shape)
             self.ndarray = data
             self._preset = True
+
+            # mark the entire array as modified
+            self.modified_range = (0, data.size - 1)
+
         elif self.ndarray is not None:
             if self.ndarray.shape != self.shape:
                 raise ValueError('data has already been initialized, '
@@ -231,8 +238,8 @@ class DataArray(DelegateAttributes):
                 max_indices[i] = start + (
                     ((stop - start - 1)//step) * step)
 
-        min_li = self._flat_index(min_indices, self._min_indices)
-        max_li = self._flat_index(max_indices, self._max_indices)
+        min_li = self.flat_index(min_indices, self._min_indices)
+        max_li = self.flat_index(max_indices, self._max_indices)
         self._update_modified_range(min_li, max_li)
 
         self.ndarray.__setitem__(loop_indices, value)
@@ -249,8 +256,27 @@ class DataArray(DelegateAttributes):
         """
         return len(self.ndarray)
 
-    def _flat_index(self, indices, index_fill):
-        indices = indices + index_fill[len(indices):]
+    def flat_index(self, indices, index_fill=None):
+        """
+        Generate the raveled index for the given indices.
+
+        This is the index you would have if the array is reshaped to 1D,
+        looping over the indices from inner to outer.
+
+        Args:
+            indices (sequence): indices of an element or slice of this array.
+
+            index_fill (sequence, optional): extra indices to use if
+                ``indices`` has less dimensions than the array, ie it points
+                to a slice rather than a single element. Use zeros to get the
+                beginning of this slice, and [d - 1 for d in shape] to get the
+                end of the slice.
+
+        Returns:
+            int: the resulting flat index.
+        """
+        if len(indices) < len(self.shape):
+            indices = indices + index_fill[len(indices):]
         return np.ravel_multi_index(tuple(zip(indices)), self.shape)[0]
 
     def _update_modified_range(self, low, high):
@@ -332,3 +358,26 @@ class DataArray(DelegateAttributes):
             snap[attr] = getattr(self, attr)
 
         return snap
+
+    def fraction_complete(self):
+        """
+        Get the fraction of this array which has data in it.
+
+        Or more specifically, the fraction of the latest point in the array
+        where we have touched it.
+
+        Returns:
+            float: fraction of array which is complete, from 0.0 to 1.0
+        """
+        if self.ndarray is None:
+            return 0.0
+
+        last_index = -1
+        if self.last_saved_index is not None:
+            last_index = max(last_index, self.last_saved_index)
+        if self.modified_range is not None:
+            last_index = max(last_index, self.modified_range[1])
+        if getattr(self, 'synced_index', None) is not None:
+            last_index = max(last_index, self.synced_index)
+
+        return (last_index + 1) / self.ndarray.size
