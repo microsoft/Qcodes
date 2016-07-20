@@ -324,7 +324,8 @@ class DataSet(DelegateAttributes):
 
     def init_on_server(self):
         """
-        Configure this DataSet as the DataServer copy
+        Configure this DataSet as the DataServer copy.
+
         Should be run only by the DataServer itself.
         """
         if not self.arrays:
@@ -345,15 +346,17 @@ class DataSet(DelegateAttributes):
     @property
     def is_live_mode(self):
         """
-        indicate whether this DataSet thinks it is live in the DataServer
-        without actually talking to the DataServer or syncing with it
+        Indicate whether this DataSet thinks it is live in the DataServer.
+
+        Does not actually talk to the DataServer or sync with it.
         """
         return self.mode in SERVER_MODES and self.data_manager and True
 
     @property
     def is_on_server(self):
         """
-        Check whether this DataSet is being mirrored in the DataServer
+        Check whether this DataSet is actually live in the DataServer.
+
         If it thought it was but isn't, convert it to mode=LOCAL
         """
         if not self.is_live_mode or self.location is False:
@@ -365,10 +368,13 @@ class DataSet(DelegateAttributes):
 
     def sync(self):
         """
-        synchronize this data set with a possibly newer version either
-        in storage or on the DataServer, depending on its mode
+        Synchronize this DataSet with the DataServer or storage.
 
-        returns: boolean, is this DataSet live on the server
+        If this DataSet is on the server, asks the server for changes.
+        If not, reads the entire DataSet from disk.
+
+        Returns:
+            bool: True if this DataSet is live on the server
         """
         # TODO: sync implies bidirectional... and it could be!
         # we should keep track of last sync timestamp and last modification
@@ -479,10 +485,25 @@ class DataSet(DelegateAttributes):
 
         logging.info('DataSet <{}> is complete'.format(self.location))
 
-    def get_changes(self, synced_index):
+    def get_changes(self, synced_indices):
+        """
+        Find changes since the last sync of this DataSet.
+
+        Args:
+            synced_indices (dict): ``{array_id: synced_index}`` where
+                synced_index is the last flat index which has already
+                been synced, for any (usually all) arrays in the DataSet.
+
+        Returns:
+            Dict[dict]: keys are ``array_id`` for each array with changes,
+                values are dicts as returned by ``DataArray.get_changes``
+                and required as kwargs to ``DataArray.apply_changes``.
+                Note that not all arrays in ``synced_indices`` need be
+                present in the return, only those with changes.
+        """
         changes = {}
 
-        for array_id, synced_index in synced_index.items():
+        for array_id, synced_index in synced_indices.items():
             array_changes = self.arrays[array_id].get_changes(synced_index)
             if array_changes:
                 changes[array_id] = array_changes
@@ -491,15 +512,20 @@ class DataSet(DelegateAttributes):
 
     def add_array(self, data_array):
         """
-        add one DataArray to this DataSet
+        Add one DataArray to this DataSet, and mark it as part of this DataSet.
 
-        note: DO NOT just set data_set.arrays[id] = data_array
-        because this will not check for overriding, nor set the
-        reference back to this DataSet. It would also allow you to
-        load the array in with different id than it holds itself.
+        Note: DO NOT just set ``data_set.arrays[id] = data_array``, because
+        this will not check if we are overwriting another array, nor set the
+        reference back to this DataSet, nor that the ``array_id`` in the array
+        matches how you're storing it here.
 
+        Args:
+            data_array (DataArray): the new array to add
+
+        Raises:
+            ValueError: if there is already an array with this id here.
         """
-        # TODO: mask self.arrays so you *can't* set it directly
+        # TODO: mask self.arrays so you *can't* set it directly?
 
         if data_array.array_id in self.arrays:
             raise ValueError('array_id {} already exists in this '
@@ -547,13 +573,20 @@ class DataSet(DelegateAttributes):
 
     def store(self, loop_indices, ids_values):
         """
-        Set some collection of data points
+        Insert data into one or more of our DataArrays.
 
-        loop_indices: the indices within whatever loops we are inside
-        values: a dict of action_index:value or array_id:value
-            where value may be an arbitrarily nested list, to record
-            many values at once into one array
-        """
+        If in ``PUSH_TO_SERVER`` mode, this is where we do that!
+        Otherwise we also periodically trigger a write to storage.
+
+        Args:
+            loop_indices (tuple): the indices within whatever loops we are
+                inside. May have fewer dimensions than some of the arrays
+                we are inserting into, if the corresponding value makes up
+                the remaining dimensionality.
+            values (Dict[Union[float, sequence]]): a dict whose keys are
+                array_ids, and values are single numbers or entire slices
+                to insert into that array.
+         """
         if self.mode == DataMode.PUSH_TO_SERVER:
             self.data_manager.write('store_data', loop_indices, ids_values)
         else:
@@ -643,7 +676,13 @@ class DataSet(DelegateAttributes):
                 array.modified_range = mr_cache[array_id]
 
     def add_metadata(self, new_metadata):
-        """Update DataSet.metadata with additional data."""
+        """
+        Update DataSet.metadata with additional data.
+
+        Args:
+            new_metadata (dict): new data to be deep updated into
+                the existing metadata
+        """
         deep_update(self.metadata, new_metadata)
 
     def save_metadata(self):
@@ -653,7 +692,7 @@ class DataSet(DelegateAttributes):
             self.formatter.write_metadata(self, self.io, self.location)
 
     def finalize(self):
-        """Mark the DataSet as complete."""
+        """Mark the DataSet complete and write any remaining modifications."""
         if self.mode == DataMode.PUSH_TO_SERVER:
             self.data_manager.ask('end_data')
         elif self.mode == DataMode.LOCAL:
@@ -679,12 +718,22 @@ class DataSet(DelegateAttributes):
         return deepcopy(self.metadata)
 
     def get_array_metadata(self, array_id):
+        """
+        Get the metadata for a single contained DataArray.
+
+        Args:
+            array_id (str): the array to get metadata for.
+
+        Returns:
+            dict: metadata for this array.
+        """
         try:
             return self.metadata['arrays'][array_id]
-        except:
+        except (AttributeError, KeyError):
             return None
 
     def __repr__(self):
+        """Rich information about the DataSet and contained arrays."""
         out = type(self).__name__ + ':'
 
         attrs = [['mode', self.mode],
