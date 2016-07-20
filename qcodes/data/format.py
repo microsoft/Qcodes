@@ -128,61 +128,74 @@ class Formatter:
         saved unless it contains no NaN values
         """
         inner_setpoint = group.set_arrays[-1]
-        last_saved_index = (inner_setpoint.last_saved_index if file_exists
-                            else None)
-        modified_range = inner_setpoint.modified_range
-        for array in group.data:
-            # force overwrite if inconsistent last_saved_index
-            if array.last_saved_index != last_saved_index:
-                last_saved_index = None
+        full_dim_data = (inner_setpoint, ) + group.data
 
-            # find the modified_range that encompasses all modifications
-            amr = array.modified_range
-            if amr:
-                if modified_range:
-                    modified_range = (min(modified_range[0], amr[0]),
-                                      max(modified_range[1], amr[1]))
-                else:
-                    modified_range = amr
-
-        if only_complete and modified_range:
-            modified_range = self._get_completed_range(modified_range,
-                                                       inner_setpoint.shape,
-                                                       group.data)
-            if not modified_range:
-                return None
-
-        # calculate the range to save
-        if not modified_range:
-            # nothing to save
-            return None
-        if last_saved_index is None or last_saved_index >= modified_range[0]:
-            # need to overwrite - start save from 0
-            return (0, modified_range[1])
+        # always return None if there are no modifications,
+        # even if there are last_saved_index inconsistencies
+        # so we don't do extra writing just to reshape the file
+        for array in full_dim_data:
+            if array.modified_range:
+                break
         else:
-            # we can append! save only from last save to end of mods
-            return (last_saved_index + 1, modified_range[1])
+            return None
 
-    def _get_completed_range(self, modified_range, shape, arrays):
-        """
-        check the last data point to see if it's complete.
+        last_saved_index = inner_setpoint.last_saved_index
 
-        If it's not complete, back up one point so that we don't need
-        to rewrite this point later on when it *is* complete
+        if last_saved_index is None or not file_exists:
+            return self._match_save_range_whole_file(
+                full_dim_data, only_complete)
 
-        This should work for regular `Loop` data that comes in sequentially.
-        But if you have non-sequential data, such as a parallel simulation,
-        then you would want to look farther back.
-        """
-        last_pt = modified_range[1]
-        indices = np.unravel_index(last_pt, shape)
+        # force overwrite if inconsistent last_saved_index
+        for array in group.data:
+            if array.last_saved_index != last_saved_index:
+                return self._match_save_range_whole_file(
+                    full_dim_data, only_complete)
+
+        return self._match_save_range_incremental(
+            full_dim_data, last_saved_index, only_complete)
+
+    def _match_save_range_whole_file(self, arrays, only_complete):
+        max_save = None
+        agg = (min if only_complete else max)
         for array in arrays:
-            if np.isnan(array[indices]):
-                if last_pt == modified_range[0]:
+            array_max = array.last_saved_index
+            if array_max is None:
+                array_max = -1
+            mr = array.modified_range
+            if mr:
+                array_max = max(array_max, mr[1])
+            max_save = (array_max if max_save is None else
+                        agg(max_save, array_max))
+
+        if max_save >= 0:
+            return (0, max_save)
+        else:
+            return None
+
+    def _match_save_range_incremental(self, arrays, last_saved_index,
+                                      only_complete):
+        mod_ranges = []
+        for array in arrays:
+            mr = array.modified_range
+            if not mr:
+                if only_complete:
                     return None
                 else:
-                    return (modified_range[0], last_pt - 1)
-        return modified_range
+                    continue
+            mod_ranges.append(mr)
+
+        mod_range = mod_ranges[0]
+        agg = (min if only_complete else max)
+        for mr in mod_ranges[1:]:
+            mod_range = (min(mod_range[0], mr[0]),
+                         agg(mod_range[1], mr[1]))
+
+        if last_saved_index >= mod_range[1]:
+            return (0, last_saved_index)
+        elif last_saved_index >= mod_range[0]:
+            return (0, mod_range[1])
+        else:
+            return (last_saved_index + 1, mod_range[1])
 
     def group_arrays(self, arrays):
         """
