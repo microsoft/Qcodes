@@ -55,7 +55,7 @@ class ZNB20(VisaInstrument):
     Requires FrequencySweep parameter for taking a trace     
 
     TODO:
-    - centre/span, is it important?
+    - centre/span settable for frequwncy sweep
     - check initialisation settings and test functions
     '''
     def __init__(self, name, address, **kwargs):
@@ -138,6 +138,7 @@ class ZNB20(VisaInstrument):
         self.write('SENS1:SWE:TIME:AUTO ON')
         self.write('TRIG1:SEQ:SOUR IMM')
         self.write('SENS1:AVER:STAT ON')
+        self.update_display_on()
         self._set_start(1e6)
         self._set_stop(2e6)
         self._set_npts(10)
