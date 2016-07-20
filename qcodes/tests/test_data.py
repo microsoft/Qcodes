@@ -267,19 +267,19 @@ class TestDataArray(TestCase):
         # index = 1 * 10 + 7 - add 1 (for index 0) and you get 18
         # each index is 2% of the total, so this is 36%
         data[1, 7] = 1
-        self.assertEqual(data.fraction_complete(), 18/50)
+        self.assertEqual(data.fraction_complete(), 18 / 50)
 
         # add a last_saved_index but modified_range is still bigger
         data.mark_saved(13)
-        self.assertEqual(data.fraction_complete(), 18/50)
+        self.assertEqual(data.fraction_complete(), 18 / 50)
 
         # now last_saved_index wins
         data.mark_saved(19)
-        self.assertEqual(data.fraction_complete(), 20/50)
+        self.assertEqual(data.fraction_complete(), 20 / 50)
 
         # now pretend we get more info from syncing
         data.synced_index = 22
-        self.assertEqual(data.fraction_complete(), 23/50)
+        self.assertEqual(data.fraction_complete(), 23 / 50)
 
 
 class TestLoadData(TestCase):
@@ -585,6 +585,15 @@ class TestDataSet(TestCase):
         # If the data_manager is set to None, then the object should pickle.
         m = DataSet2D()
         pickle.dumps(m)
+
+    def test_default_array(self):
+        # Test whether the default_array function works
+        m = DataSet2D()
+        name = m.default_array()
+
+        m.metadata = dict({'default_array': 'x_set'})
+        name = m.default_array()
+        self.assertEqual(name, 'x_set')
 
     def test_fraction_complete(self):
         empty_data = new_data(arrays=(), location=False)
