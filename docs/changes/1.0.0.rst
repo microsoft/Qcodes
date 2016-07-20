@@ -1,0 +1,17 @@
+Changelog for QCoDeS 0.0.1
+==========================
+
+Breaking Changes
+----------------
+
+- None
+
+New & Improved
+--------------
+
+- None
+
+Fixed
+-----
+
+- stuff

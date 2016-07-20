@@ -260,6 +260,26 @@ class TestLoop(TestCase):
         self.assertEqual(data.p2.tolist(), [[[3, 3], [4, 4]]] * 2)
         self.assertEqual(data.p3.tolist(), [[[5, 6]] * 2] * 2)
 
+    def test_repr(self):
+        loop2 = Loop(self.p2[3:5:1], 0.001).each(self.p2)
+        loop = Loop(self.p1[1:3:1], 0.001).each(self.p3,
+                                                self.p2,
+                                                loop2,
+                                                self.p1)
+        active_loop = loop
+        data = active_loop.run_temp()
+        expected = ('DataSet:\n'
+                    '   mode     = DataMode.LOCAL\n'
+                    '   location = False\n'
+                    '   <Type>   | <array_id> | <array.name> | <array.shape>\n'
+                    '   Setpoint | p1_set     | p1           | (2,)\n'
+                    '   Measured | p3         | p3           | (2,)\n'
+                    '   Measured | p2_1       | p2           | (2,)\n'
+                    '   Setpoint | p2_set     | p2           | (2, 2)\n'
+                    '   Measured | p2_2_0     | p2           | (2, 2)\n'
+                    '   Measured | p1         | p1           | (2,)')
+        self.assertEqual(data.__repr__(), expected)
+
     def test_default_measurement(self):
         self.p2.set(4)
         self.p3.set(5)

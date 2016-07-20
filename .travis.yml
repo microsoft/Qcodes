@@ -1,8 +1,11 @@
 language: python
 python:
   - "3.5"
+  # whitelist
+branches:
+  only:
+    - master
 # command to install dependencies
-
 install:
     - pip install --upgrade pip
     - pip install ipython
@@ -11,7 +14,10 @@ install:
 # command to run tests
 script: 
     - python  qcodes/test.py -c
-# cover gui thing
 after_success:
-  - cd qcodes
-  - bash <(curl -s https://codecov.io/bash) -t 32b48753-9816-4776-ad14-add73b006484
+    # build the docs
+    - ls
+    - make -f docs/Makefile gh-pages
+    # codecov
+    - cd qcodes
+    - bash <(curl -s https://codecov.io/bash) -t c3b231db-2db3-4560-a477-6edcf4cf5ad1
