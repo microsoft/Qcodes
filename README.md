@@ -1,4 +1,4 @@
-# Qcodes [![Build Status](https://travis-ci.com/qdev-dk/Qcodes.svg?token=H7MjHi74teZgv8JHTYhx&branch=master)](https://travis-ci.com/qdev-dk/Qcodes) [![codecov](https://codecov.io/gh/qdev-dk/Qcodes/branch/master/graph/badge.svg?token=KpReTu1pN0)](https://codecov.io/gh/qdev-dk/Qcodes)
+# QCoDeS [![Build Status](https://travis-ci.com/qdev-dk/Qcodes.svg?token=H7MjHi74teZgv8JHTYhx&branch=master)](https://travis-ci.com/qdev-dk/Qcodes)
 
 Qcodes is a Python-based data acquisition framework developed by the Copenhagen / Delft / Sydney / Microsoft quantum computing consortium. While it has been developed to serve the needs of nanoelectronic device experiments, it is not inherently limited to such experiments, and can be used anywhere a system with many degrees of freedom is controllable by computer.
 
@@ -8,9 +8,34 @@ Qcodes has taken inspiration from many similar frameworks that have come before 
 - "Alex Igor Procedures" see [thesis](http://qdev.nbi.ku.dk/student_theses/pdf_files/A_Johnson_thesis.pdf) appendix D and [successors](http://www.igorexchange.com/project/Expt_Procedures)
 - and countless smaller components created by students and postdocs throughout the quantum computing community
 
-Qcodes is compatible with Python 3.3+. It is primarily intended for use from Jupyter notebooks, but can be used from traditional terminal-based shells and in stand-alone scripts as well.
+Qcodes is compatible with Python 3.4+. It is primarily intended for use from Jupyter notebooks, but can be used from traditional terminal-based shells and in stand-alone scripts as well.
+Although some feature at the moment are b0rken outside the notebook.
 
-## Installation
+## Install
+
+### PyPy
+PyPy is the fastest way to install QCoDeS, will be avaiable once out of beta/private.
+
+### Developer
+
+We use virtualenv and pyenv to make sure all the system are the same, this rules out issues and the usual "it works on my machine".
+Install virtual env (optionally virtualenvwrapper for convenience, if you are on linux) and pyenv according to your distribution.
+Once all is installed, and working:
+
+```bash
+pyenv install 3.4.5
+pyenv local 3.4.5
+mkvirtualenv qcodes-dev -r develop_requirements.txt --python $HOME/.pyenv/versions/3.4.5/bin/python3.4
+pip install -e .
+python qcodes/test.py -f
+```
+
+If the tests pass you are ready to hack!
+Note that sometimes the test suite because there is a bug somewhere in the mulitprocessing  architecture.
+
+This is the reference setup one needs to have to contribute, otherwise too many non-reproducible situation will happen.
+
+### Anaconda (possibly b0rken)
 
 We recommend [Anaconda](https://www.continuum.io/downloads) as an easy way to get most of the dependencies out-of-the-box.
 
