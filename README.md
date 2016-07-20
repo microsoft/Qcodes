@@ -1,14 +1,14 @@
-# QCoDeS [![Build Status](https://travis-ci.com/qdev-dk/Qcodes.svg?token=H7MjHi74teZgv8JHTYhx&branch=master)](https://travis-ci.com/qdev-dk/Qcodes)
+# QCoDeS [![Build Status](https://travis-ci.com/qdev-dk/QCoDeS.svg?token=H7MjHi74teZgv8JHTYhx&branch=master)](https://travis-ci.com/qdev-dk/QCoDeS)
 
-Qcodes is a Python-based data acquisition framework developed by the Copenhagen / Delft / Sydney / Microsoft quantum computing consortium. While it has been developed to serve the needs of nanoelectronic device experiments, it is not inherently limited to such experiments, and can be used anywhere a system with many degrees of freedom is controllable by computer.
+QCoDeS is a Python-based data acquisition framework developed by the Copenhagen / Delft / Sydney / Microsoft quantum computing consortium. While it has been developed to serve the needs of nanoelectronic device experiments, it is not inherently limited to such experiments, and can be used anywhere a system with many degrees of freedom is controllable by computer.
 
-Qcodes has taken inspiration from many similar frameworks that have come before it, including:
+QCoDeS has taken inspiration from many similar frameworks that have come before it, including:
 - [QTLab](https://github.com/heeres/qtlab)
 - [Special Measure](https://github.com/yacobylab/special-measure)
 - "Alex Igor Procedures" see [thesis](http://qdev.nbi.ku.dk/student_theses/pdf_files/A_Johnson_thesis.pdf) appendix D and [successors](http://www.igorexchange.com/project/Expt_Procedures)
 - and countless smaller components created by students and postdocs throughout the quantum computing community
 
-Qcodes is compatible with Python 3.4+. It is primarily intended for use from Jupyter notebooks, but can be used from traditional terminal-based shells and in stand-alone scripts as well.
+QCoDeS is compatible with Python 3.4+. It is primarily intended for use from Jupyter notebooks, but can be used from traditional terminal-based shells and in stand-alone scripts as well.
 Although some feature at the moment are b0rken outside the notebook.
 
 ## Install
@@ -43,9 +43,9 @@ As the project is still private, install it directly from this repository:
 
 - Install git: the [command-line toolset](https://git-scm.com/) is the most powerful but the [desktop GUI from github](https://desktop.github.com/) is also quite good
 
-- Clone this repository somewhere on your hard drive. If you're using command line git, open a terminal window in the directory where you'd like to put qcodes and type:
+- Clone this repository somewhere on your hard drive. If you're using command line git, open a terminal window in the directory where you'd like to put QCoDeS and type:
 ```
-git clone https://github.com/qdev-dk/Qcodes.git
+git clone https://github.com/qdev-dk/qcodes.git
 ```
 
 - Register it with Python, and install dependencies if any are missing: run this from the root directory of the repository you just cloned:
@@ -53,7 +53,7 @@ git clone https://github.com/qdev-dk/Qcodes.git
 python setup.py develop
 ```
 
-Now Qcodes should be available to import into all Python sessions you run. To test, run `python` from some other directory (not where you just ran `setup.py`) and type `import qcodes`. If it works without an error you're ready to go.
+Now QCoDeS should be available to import into all Python sessions you run. To test, run `python` from some other directory (not where you just ran `setup.py`) and type `import qcodes`. If it works without an error you're ready to go.
 
 ### Plotting Requirements
 
@@ -62,19 +62,19 @@ Because these can sometimes be tricky to install (and not everyone will want all
 - For `qcodes.MatPlot`: matplotlib version 1.5 or higher
 - For `qcodes.QtPlot`: pyqtgraph version 0.9.10 or higher
 
-### Updating Qcodes
+### Updating QCoDeS
 
-If you registered Qcodes with Python via `setup.py develop`, all you need to do to get the latest code is open a terminal window pointing to anywhere inside the repository and run `git pull`
+If you registered QCoDeS with Python via `setup.py develop`, all you need to do to get the latest code is open a terminal window pointing to anywhere inside the repository and run `git pull`
 
 ## Usage
 
-Read the [docs](http://qdev-dk.github.io/Qcodes) and the notebooks in [docs/examples](docs/examples)
+Read the [docs](http://qdev-dk.github.io/qcodes) and the notebooks in [docs/examples](docs/examples)
 
 
 ## Contributing
 
 See [Contributing](CONTRIBUTING.rst) for information about bug/issue reports, contributing code, style, and testing
-See the [Roadmap](http://qdev-dk.github.io/Qcodes/roadmap.html) an overview of where the project intends to go.
+See the [Roadmap](http://qdev-dk.github.io/qcodes/roadmap.html) an overview of where the project intends to go.
 
 
 ## Docs
@@ -93,4 +93,4 @@ Documentation is updated on every successful build.
 
 ## License
 
-Qcodes is currently a private development of Microsoft's Station Q collaboration, and IS NOT licensed for distribution outside the collaboration except by arrangement. We intend to release it as open source software once it is robust and reasonably stable, under the MIT license. See [License](LICENSE.md).
+QCoDeS is currently a private development of Microsoft's Station Q collaboration, and IS NOT licensed for distribution outside the collaboration except by arrangement. We intend to release it as open source software once it is robust and reasonably stable, under the MIT license. See [License](LICENSE.md).
