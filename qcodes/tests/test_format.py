@@ -126,38 +126,49 @@ class TestBaseFormatter(TestCase):
         for lsi, start in [(None, 0), (0, 1), (1, 2), (2, 3), (3, 0), (4, 0)]:
             data.x_set.last_saved_index = data.y.last_saved_index = lsi
 
-            # inconsistent modified_range: expands to greatest extent
-            # so these situations are identical
-            for xmr, ymr in ([(4, 4), (3, 3)], [(3, 4), None], [None, (3, 4)]):
+            # inconsistent modified_range: if only_complete is False, expands
+            # to greatest extent so these situations are identical
+            # if only_complete is True, only gets to the last common point
+            for xmr, ymr, last_common in (
+                    [(4, 4), (3, 3), 3],
+                    [(3, 4), None, None],
+                    [None, (3, 4), None]):
                 data.x_set.modified_range = xmr
                 data.y.modified_range = ymr
 
-                save_range = formatter.match_save_range(group,
-                                                        file_exists=False)
+                save_range = formatter.match_save_range(
+                    group, file_exists=False, only_complete=False)
                 self.assertEqual(save_range, (0, 4))
 
-                save_range = formatter.match_save_range(group,
-                                                        file_exists=True)
+                save_range = formatter.match_save_range(
+                    group, file_exists=True, only_complete=False)
                 self.assertEqual(save_range, (start, 4))
 
-        # inconsistent last_saved_index: need to overwrite no matter what
+                save_all = formatter.match_save_range(group, file_exists=False)
+                save_inc = formatter.match_save_range(group, file_exists=True)
+                if last_common:
+                    # if last_saved_index is greater than we would otherwise
+                    # save, we still go up to last_saved_index (wouldn't want
+                    # this write to delete data!)
+                    last_save = max(last_common, lsi) if lsi else last_common
+                    self.assertEqual(save_all, (0, last_save),
+                                     (lsi, xmr, ymr))
+                    self.assertEqual(save_inc, (start, last_save),
+                                     (lsi, xmr, ymr))
+                else:
+                    if lsi is None:
+                        self.assertIsNone(save_all)
+                    else:
+                        self.assertEqual(save_all, (0, lsi))
+                    self.assertIsNone(save_inc)
+
+        # inconsistent last_saved_index: need to overwrite if there are any
+        # modifications
         data.x_set.last_saved_index = 1
         data.y.last_saved_index = 2
+        data.x_set.modified_range = data.y.modified_range = (3, 4)
         save_range = formatter.match_save_range(group, file_exists=True)
         self.assertEqual(save_range, (0, 4))
-
-        # missing data point: don't write it unless only_complete is False
-        # but this will only back up one point!
-        data.y[4] = float('nan')
-        data.y[3] = float('nan')
-        data.x_set.last_saved_index = data.y.last_saved_index = 2
-
-        save_range = formatter.match_save_range(group, file_exists=True)
-        self.assertEqual(save_range, (3, 3))
-
-        save_range = formatter.match_save_range(group, file_exists=True,
-                                                only_complete=False)
-        self.assertEqual(save_range, (3, 4))
 
 
 class TestGNUPlotFormat(TestCase):

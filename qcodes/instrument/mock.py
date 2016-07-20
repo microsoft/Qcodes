@@ -94,6 +94,15 @@ class MockInstrument(Instrument):
             return model.name.replace('Model', 'MockInsts')
         return 'MockInstruments'
 
+    def get_idn(self):
+        """Shim for IDN parameter."""
+        return {
+            'vendor': None,
+            'model': type(self).__name__,
+            'serial': self.name,
+            'firmware': None
+        }
+
     def write_raw(self, cmd):
         """
         Low-level interface to ``model.write``.
