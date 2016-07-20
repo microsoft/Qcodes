@@ -342,6 +342,14 @@ class TestInstrument(TestCase):
         gates.call('reset')
         self.assertEqual(gates.get('chan0'), 0)
 
+    def test_mock_idn(self):
+        self.assertEqual(self.gates.IDN(), {
+            'vendor': None,
+            'model': 'MockGates',
+            'serial': 'gates',
+            'firmware': None
+        })
+
     def test_mock_set_sweep(self):
         gates = self.gates
         gates.set('chan0step', 0.5)
