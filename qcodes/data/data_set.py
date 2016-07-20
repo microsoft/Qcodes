@@ -586,7 +586,7 @@ class DataSet(DelegateAttributes):
             return vv[0]
 
         # try to get the first non-setpoint array
-        vv = [v for v in arraynames if v.is_setpoint]
+        vv = [v for v in arraynames if self.arrays[v].is_setpoint]
         if (len(vv) > 0):
             return vv[0]
 
