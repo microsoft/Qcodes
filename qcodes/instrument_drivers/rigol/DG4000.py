@@ -389,11 +389,9 @@ class Rigol_DG4000(VisaInstrument):
                                set_cmd=source + 'MARK {}',
                                val_mapping=on_off_map)
 
-            # Source Modulation
+            # Source Modulation (not implemented yet)
 
-
-            # Source Period
-
+            # Source Period (not implemented yet)
 
             # Source Phase
             self.add_parameter(ch + 'phase',
