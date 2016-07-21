@@ -1,5 +1,4 @@
 from collections import namedtuple
-import numpy as np
 from traceback import format_exc
 from operator import attrgetter
 import logging
@@ -11,22 +10,27 @@ class Formatter:
 
     Formatters translate between DataSets and data files.
 
-    Each Formatter is expected to implement a write method:
-        write(self, data_set)
+    Each Formatter is expected to implement writing methods:
+    - ``write``: to write the ``DataArray``s
+    - ``write_metadata``: to write the metadata JSON structure
 
-    and either read or read_one_file:
-        read(self, data_set)
-        read_one_file(data_set, f, ids_read)
-            f: a file-like object supporting .readline() and for ... in
-            ids_read: a set of array_id's we've already encountered, so
-                read_one_file can check for duplication and consistency
+    and reading methods:
+    - ``read`` or ``read_one_file`` to reconstruct the ``DataArray``s, either
+      all at once (``read``) or one file at a time, supplied by the base class
+      ``read`` method that loops over all data files at the correct location.
 
-    data_set is a DataSet object, which is expected to have attributes:
-        io: an IO manager (see qcodes.io)
+    - ``read_metadata``: to reload saved metadata. If a subclass overrides
+      ``read``, this method should call ``read_metadata``, but keep it also
+      as a separate method because it occasionally gets called independently.
+
+    All of these methods accept a ``data_set`` argument, which should be a
+    ``DataSet`` object. Even if you are loading a new data set from disk, this
+    object should already have attributes:
+        io: an IO manager (see qcodes.data.io)
         location: a string, like a file path, that identifies the DataSet and
             tells the IO manager where to store it
-        arrays: a dict of {array_id:DataArray} to read into.
-            - read will create DataArrays that don't yet exist.
+        arrays: a dict of ``{array_id:DataArray}`` to read into.
+            - read will create entries that don't yet exist.
             - write will write ALL DataArrays in the DataSet, using
               last_saved_index and modified_range, as well as whether or not
               it found the specified file, to determine how much to write.
@@ -51,9 +55,20 @@ class Formatter:
 
     def read(self, data_set):
         """
-        Read the entire DataSet by finding all files matching its location
-        (using io_manager.list) and calling read_one_file from the Formatter
-        subclass. Subclasses may alternatively override this entire method.
+        Read the entire ``DataSet``.
+
+        Find all files matching ``data_set.location`` (using io_manager.list)
+        and call ``read_one_file`` on each. Subclasses may either override
+        this method (if they use only one file or want to do their own
+        searching) or override ``read_one_file`` to use the search and
+        initialization functionality defined here.
+
+        Args:
+            data_set (DataSet): the data to read into. Should already have
+                attributes ``io`` (an io manager), ``location`` (string),
+                and ``arrays`` (dict of ``{array_id: array}``, can be empty
+                or can already have some or all of the arrays present, they
+                expect to be overwritten)
         """
         io_manager = data_set.io
         location = data_set.location
@@ -95,100 +110,163 @@ class Formatter:
         raise NotImplementedError
 
     def read_metadata(self, data_set):
-        """Read the metadata from this DataSet from storage."""
+        """
+        Read the metadata from this DataSet from storage.
+
+        Subclasses must override this method.
+
+        Args:
+            data_set (DataSet): the data to read metadata into
+        """
         raise NotImplementedError
 
     def read_one_file(self, data_set, f, ids_read):
         """
-        Formatter subclasses that handle multiple data files may choose to
-        override this method, which handles one file at a time.
+        Read data from a single file into a ``DataSet``.
 
-        data_set: the DataSet we are reading into
-        f: a file-like object to read from
-        ids_read: a `set` of array_ids that we have already read.
-            when you read an array, check that it's not in this set (except
-            setpoints, which can be in several files with different inner loop)
-            then add it to the set so other files know not to read it again
+        Formatter subclasses that break a DataSet into multiple data files may
+        choose to override either this method, which handles one file at a
+        time, or ``read`` which finds matching files on its own.
+
+        Args:
+            data_set (DataSet): the data we are reading into.
+
+            f (file-like): a file-like object to read from, as provided by
+                ``io_manager.open``.
+
+            ids_read (set): ``array_id``s that we have already read.
+                When you read an array, check that it's not in this set (except
+                setpoints, which can be in several files with different inner
+                loops) then add it to the set so other files know it should not
+                be read again.
+
+        Raises:
+            ValueError: if a duplicate array_id of measured data is found
         """
         raise NotImplementedError
 
     def match_save_range(self, group, file_exists, only_complete=True):
         """
-        Find the save range that will capture all changes in an array group.
-        matches all full-sized arrays: the data arrays plus the inner loop
-        setpoint array
+        Find the save range that will joins all changes in an array group.
 
-        note: if an outer loop has changed values (without the inner
-        loop or measured data changing) we won't notice it here
+        Matches all full-sized arrays: the data arrays plus the inner loop
+        setpoint array.
 
-        use the inner setpoint as a base and look for differences
-        in last_saved_index and modified_range in the data arrays
+        Note: if an outer loop has changed values (without the inner
+        loop or measured data changing) we won't notice it here. We assume
+        that before an iteration of the inner loop starts, the outer loop
+        setpoint gets set and then does not change later.
 
-        if `only_complete` is True (default), will not mark any range to be
-        saved unless it contains no NaN values
+        Args:
+            group (Formatter.ArrayGroup): a ``namedtuple`` containing the
+                arrays that go together in one file, as tuple ``group.data``.
+
+            file_exists (bool): Does this file already exist? If True, and
+                all arrays in the group agree on ``last_saved_index``, we
+                assume the file has been written up to this index and we can
+                append to it. Otherwise we will set the returned range to start
+                from zero (so if the file does exist, it gets completely
+                overwritten).
+
+            only_complete (bool): Should we write all available new data,
+                or only complete rows? If True, we write only the range of
+                array indices which all arrays in the group list as modified,
+                so that future writes will be able to do a clean append to
+                the data file as more data arrives.
+                Default True.
+
+        Returns:
+            Tuple(int, int): the first and last raveled indices that should
+                be saved.
         """
         inner_setpoint = group.set_arrays[-1]
-        last_saved_index = (inner_setpoint.last_saved_index if file_exists
-                            else None)
-        modified_range = inner_setpoint.modified_range
-        for array in group.data:
-            # force overwrite if inconsistent last_saved_index
-            if array.last_saved_index != last_saved_index:
-                last_saved_index = None
+        full_dim_data = (inner_setpoint, ) + group.data
 
-            # find the modified_range that encompasses all modifications
-            amr = array.modified_range
-            if amr:
-                if modified_range:
-                    modified_range = (min(modified_range[0], amr[0]),
-                                      max(modified_range[1], amr[1]))
-                else:
-                    modified_range = amr
-
-        if only_complete and modified_range:
-            modified_range = self._get_completed_range(modified_range,
-                                                       inner_setpoint.shape,
-                                                       group.data)
-            if not modified_range:
-                return None
-
-        # calculate the range to save
-        if not modified_range:
-            # nothing to save
-            return None
-        if last_saved_index is None or last_saved_index >= modified_range[0]:
-            # need to overwrite - start save from 0
-            return (0, modified_range[1])
+        # always return None if there are no modifications,
+        # even if there are last_saved_index inconsistencies
+        # so we don't do extra writing just to reshape the file
+        for array in full_dim_data:
+            if array.modified_range:
+                break
         else:
-            # we can append! save only from last save to end of mods
-            return (last_saved_index + 1, modified_range[1])
+            return None
 
-    def _get_completed_range(self, modified_range, shape, arrays):
-        """
-        check the last data point to see if it's complete.
+        last_saved_index = inner_setpoint.last_saved_index
 
-        If it's not complete, back up one point so that we don't need
-        to rewrite this point later on when it *is* complete
+        if last_saved_index is None or not file_exists:
+            return self._match_save_range_whole_file(
+                full_dim_data, only_complete)
 
-        This should work for regular `Loop` data that comes in sequentially.
-        But if you have non-sequential data, such as a parallel simulation,
-        then you would want to look farther back.
-        """
-        last_pt = modified_range[1]
-        indices = np.unravel_index(last_pt, shape)
+        # force overwrite if inconsistent last_saved_index
+        for array in group.data:
+            if array.last_saved_index != last_saved_index:
+                return self._match_save_range_whole_file(
+                    full_dim_data, only_complete)
+
+        return self._match_save_range_incremental(
+            full_dim_data, last_saved_index, only_complete)
+
+    @staticmethod
+    def _match_save_range_whole_file(arrays, only_complete):
+        max_save = None
+        agg = (min if only_complete else max)
         for array in arrays:
-            if np.isnan(array[indices]):
-                if last_pt == modified_range[0]:
+            array_max = array.last_saved_index
+            if array_max is None:
+                array_max = -1
+            mr = array.modified_range
+            if mr:
+                array_max = max(array_max, mr[1])
+            max_save = (array_max if max_save is None else
+                        agg(max_save, array_max))
+
+        if max_save >= 0:
+            return (0, max_save)
+        else:
+            return None
+
+    @staticmethod
+    def _match_save_range_incremental(arrays, last_saved_index, only_complete):
+        mod_ranges = []
+        for array in arrays:
+            mr = array.modified_range
+            if not mr:
+                if only_complete:
                     return None
                 else:
-                    return (modified_range[0], last_pt - 1)
-        return modified_range
+                    continue
+            mod_ranges.append(mr)
+
+        mod_range = mod_ranges[0]
+        agg = (min if only_complete else max)
+        for mr in mod_ranges[1:]:
+            mod_range = (min(mod_range[0], mr[0]),
+                         agg(mod_range[1], mr[1]))
+
+        if last_saved_index >= mod_range[1]:
+            return (0, last_saved_index)
+        elif last_saved_index >= mod_range[0]:
+            return (0, mod_range[1])
+        else:
+            return (last_saved_index + 1, mod_range[1])
 
     def group_arrays(self, arrays):
         """
-        find the sets of arrays which share all the same setpoint arrays
-        so each set can be grouped together into one file
-        returns ArrayGroup namedtuples
+        Find the sets of arrays which share all the same setpoint arrays.
+
+        Some Formatters use this grouping to determine which arrays to save
+        together in one file.
+
+        Args:
+            arrays (Dict[DataArray]): all the arrays in a DataSet
+
+        Returns:
+            List[Formatter.ArrayGroup]: namedtuples giving:
+                shape (Tuple[int]): dimensions as in numpy
+                set_arrays (Tuple[DataArray]): the setpoints of this group
+                data (Tuple[DataArray]): measured arrays in this group
+                name (str): a unique name of this group, obtained by joining
+                    the setpoint array ids.
         """
 
         set_array_sets = tuple(set(array.set_arrays
