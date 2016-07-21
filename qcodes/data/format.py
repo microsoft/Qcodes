@@ -1,5 +1,4 @@
 from collections import namedtuple
-import numpy as np
 from traceback import format_exc
 from operator import attrgetter
 import logging
