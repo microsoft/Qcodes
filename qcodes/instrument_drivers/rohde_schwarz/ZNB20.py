@@ -45,7 +45,7 @@ class FrequencySweep(Parameter):
             complex_num = complex(comp[0],comp[1])
             mag_array.append(abs(complex_num))
             phase_array.append(phase(complex_num))
-        self._instrument.update_display_once()
+        self._instrument.cont_meas_on()
         return mag_array, phase_array
 
 
@@ -139,7 +139,7 @@ class ZNB20(VisaInstrument):
         self.write('TRIG1:SEQ:SOUR IMM')
         self.write('SENS1:AVER:STAT ON')
         self.update_display_on()
-        self._set_start(1e6)
-        self._set_stop(2e6)
-        self._set_npts(10)
+        self.start(1e6)
+        self.stop(2e6)
+        self.npts(10)
         self.power(-50)
