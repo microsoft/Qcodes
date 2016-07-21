@@ -3,13 +3,6 @@ QCodes FAQ
 
 This FAQ is intended for users for Qcodes. For development, see :ref:`Community`.
 
-Installation
-------------
-
-How to install Qcodes?
-~~~~~~~~~~~~~~~~~~~~~~
-
-.. todo::  TBD
 
 Usage
 -----
@@ -68,7 +61,7 @@ Loop modes of operations
    that ``run`` prints describing the ``DataSet`` it makes.
 
 How to abort a running measurement ?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Use ``qc.halt_bg()``.
 

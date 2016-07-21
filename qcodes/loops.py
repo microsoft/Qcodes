@@ -3,39 +3,47 @@ Data acquisition loops.
 
 The general scheme is:
 
-1. create a (potentially nested) Loop, which defines the sweep
-    setpoints and delays
+1. create a (potentially nested) Loop, which defines the sweep setpoints and
+delays
+
 2. activate the loop (which changes it to an ActiveLoop object),
-    or omit this step to use the default measurement as given by the
-    Loop.set_measurement class method.
+or omit this step to use the default measurement as given by the
+Loop.set_measurement class method.
+
 3. run it with the .run method, which creates a DataSet to hold the data,
-    and defines how and where to save the data.
+and defines how and where to save the data.
 
 Some examples:
 
-    # set default measurements for later Loop's to use
-    Loop.set_measurement(param1, param2, param3)
+- set default measurements for later Loop's to use
 
-    # 1D sweep, using the default measurement set
-    Loop(sweep_values, delay).run()
+>>> Loop.set_measurement(param1, param2, param3)
 
-    # 2D sweep, using the default measurement set
-    # sv1 is the outer loop, sv2 is the inner.
-    Loop(sv1, delay1).loop(sv2, delay2).run()
+- 1D sweep, using the default measurement set
 
-    # 1D sweep with specific measurements to take at each point
-    Loop(sv, delay).each(param4, param5).run()
+>>> Loop(sweep_values, delay).run()
 
-    # Multidimensional sweep: 1D measurement of param6 on the outer loop,
-    # and the default measurements in a 2D loop
-    Loop(sv1, delay).each(param6, Loop(sv2, delay)).run()
+- 2D sweep, using the default measurement set sv1 is the outer loop, sv2 is the
+  inner.
 
-Supported actions (args to .set_measurement or .each) are:
-    Parameter: anything with a .get method and .name or .names
-        see parameter.py for options
-    ActiveLoop (or Loop, will be activated with default measurement)
-    Task: any callable that does not generate data
-    Wait: a delay
+>>> Loop(sv1, delay1).loop(sv2, delay2).run()
+
+- 1D sweep with specific measurements to take at each point
+
+>>> Loop(sv, delay).each(param4, param5).run()
+
+- Multidimensional sweep: 1D measurement of param6 on the outer loop, and the
+  default measurements in a 2D loop
+
+>>> Loop(sv1, delay).each(param6, Loop(sv2, delay)).run()
+
+Supported commands to .set_measurement or .each are:
+
+    - Parameter: anything with a .get method and .name or .names see
+      parameter.py for options
+    - ActiveLoop (or Loop, will be activated with default measurement)
+    - Task: any callable that does not generate data
+    - Wait: a delay
 """
 
 from datetime import datetime
@@ -60,12 +68,17 @@ MP_NAME = 'Measurement'
 
 def get_bg(return_first=False):
     """
-    find the active background measurement process, if any
-    returns None otherwise
+    Find the active background measurement process, if any
+    returns None otherwise.
 
-    return_first: if there are multiple loops running return the first anyway.
-        If false, multiple loops is a RuntimeError.
-        default False
+    Todo:
+        RuntimeError message is really hard to understand.
+    Args:
+        return_first(bool): if there are multiple loops running return the first anyway.
+    Raises:
+        RuntimeError: if multiple loops are active and return_first is False.
+    Returns:
+        Union[loop, None]: active loop or none if no loops are active
     """
     processes = mp.active_children()
     loops = [p for p in processes if getattr(p, 'name', '') == MP_NAME]
@@ -86,11 +99,12 @@ def halt_bg(timeout=5, traceback=True):
     """
     Stop the active background measurement process, if any.
 
-    timeout: (default 5) seconds to wait for a clean exit before
-        forcibly terminating
+    Args:
+        timeout (int): seconds to wait for a clean exit before forcibly
+         terminating.
 
-    traceback: (default True) whether to print a traceback at the point
-        of interrupt, for debugging purposes
+        traceback (bool):  whether to print a traceback at the point of
+         interrupt, for debugging purposes.
     """
     loop = get_bg(return_first=True)
     if not loop:
@@ -118,7 +132,7 @@ def _clear_data_manager():
     if dm and dm.ask('get_measuring'):
         dm.ask('end_data')
 
-
+# TODO(giulioungaretti) remove dead code
 # def measure(*actions):
 #     # measure has been moved into Station
 #     # TODO - for all-at-once parameters we want to be able to
@@ -140,6 +154,7 @@ class Loop(Metadatable):
         is None (no output)
 
     After creating a Loop, you attach `action`s to it, making an `ActiveLoop`
+    TODO: how? Maybe obvious but not specified!
     that you can `.run()`, or you can `.run()` a `Loop` directly, in which
     case it takes the default `action`s from the default `Station`
 
@@ -166,10 +181,18 @@ class Loop(Metadatable):
         """
         Nest another loop inside this one.
 
-        Loop(sv1, d1).loop(sv2, d2).each(*a) is equivalent to:
-        Loop(sv1, d1).each(Loop(sv2, d2).each(*a))
+        Args:
+            sweep_values ():
+            delay (int):
 
-        returns a new Loop object - the original is untouched
+        Examples:
+            >>> Loop(sv1, d1).loop(sv2, d2).each(*a)
+
+            is equivalent to:
+
+            >>> Loop(sv1, d1).each(Loop(sv2, d2).each(*a))
+
+        Returns: a new Loop object - the original is untouched
         """
         out = self._copy()
 
@@ -192,6 +215,10 @@ class Loop(Metadatable):
     def each(self, *actions):
         """
         Perform a set of actions at each setting of this loop.
+        TODO(setting vs setpoints) ? better be verbose.
+
+        Args:
+            *actions (Any): actions to perform at each setting of the loop
 
         Each action can be:
         - a Parameter to measure
@@ -265,6 +292,7 @@ class Loop(Metadatable):
         and can also be done there, but it's allowed at this stage too so that
         you can define final actions and share them among several `Loop`s that
         have different loop actions, or attach final actions to a Loop run
+        TODO: examples of this ?
         with default actions.
 
         *actions: `Task` and `Wait` objects to execute in order
@@ -276,7 +304,17 @@ class Loop(Metadatable):
         return _attach_then_actions(self._copy(), actions, overwrite)
 
     def snapshot_base(self, update=False):
-        """Snapshot of this Loop's definition."""
+        """
+        State of the loop as a JSON-compatible dict.
+
+        Args:
+            update (bool): If True, update the state by querying the underlying
+             sweep_values and actions. If False, just use the latest values in
+             memory.
+
+        Returns:
+            dict: base snapshot
+        """
         return {
             '__class__': full_class(self),
             'sweep_values': self.sweep_values.snapshot(update=update),
@@ -419,12 +457,14 @@ class ActiveLoop(Metadatable):
         # first massage all the input parameters to the general multi-name form
         if hasattr(action, 'names'):
             names = action.names
+            full_names = action.full_names
             labels = getattr(action, 'labels', names)
             if len(labels) != len(names):
                 raise ValueError('must have equal number of names and labels')
             action_indices = tuple((i,) for i in range(len(names)))
         elif hasattr(action, 'name'):
             names = (action.name,)
+            full_names = (action.full_name,)
             labels = (getattr(action, 'label', action.name),)
             action_indices = ((),)
         else:
@@ -453,8 +493,8 @@ class ActiveLoop(Metadatable):
         # now loop through these all, to make the DataArrays
         # record which setpoint arrays we've made, so we don't duplicate
         all_setpoints = {}
-        for name, label, shape, i, sp_vi, sp_ni, sp_li in zip(
-                names, labels, shapes, action_indices,
+        for name, full_name, label, shape, i, sp_vi, sp_ni, sp_li in zip(
+                names, full_names, labels, shapes, action_indices,
                 sp_vals, sp_names, sp_labels):
 
             if shape is None or shape == ():
@@ -475,9 +515,9 @@ class ActiveLoop(Metadatable):
                 setpoints = setpoints + (all_setpoints[sp_def],)
 
             # finally, make the output data array with these setpoints
-            out.append(DataArray(name=name, label=label, shape=shape,
-                                 action_indices=i, set_arrays=setpoints,
-                                 parameter=action))
+            out.append(DataArray(name=name, full_name=full_name, label=label,
+                                 shape=shape, action_indices=i,
+                                 set_arrays=setpoints, parameter=action))
 
         return out
 
@@ -663,6 +703,7 @@ class ActiveLoop(Metadatable):
                 del self.process
 
             self._run_wrapper()
+
             if self.data_set.mode != DataMode.LOCAL:
                 self.data_set.sync()
 

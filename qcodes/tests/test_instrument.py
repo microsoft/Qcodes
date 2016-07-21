@@ -1,15 +1,17 @@
 from unittest import TestCase
 from datetime import datetime, timedelta
 import time
+from collections import namedtuple
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
-from qcodes.instrument.parameter import Parameter, ManualParameter
+from qcodes.instrument.parameter import (Parameter, ManualParameter,
+                                         StandardParameter)
 from qcodes.instrument.function import Function
 from qcodes.instrument.server import get_instrument_server_manager
 
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
-from qcodes.utils.sync_async import NoCommandError
+from qcodes.utils.command import NoCommandError
 from qcodes.utils.helpers import LogCapture
 from qcodes.process.helpers import kill_processes
 
@@ -31,17 +33,16 @@ class TestParamConstructor(TestCase):
         names = ['H1', 'L1']
         p = Parameter(names=names)
         self.assertEqual(p.names, names)
-        self.assertFalse(hasattr(p, 'name'))
+        # if you don't provide a name, it's called 'None'
+        # TODO: we should probably require an explicit name.
+        self.assertEqual(p.name, 'None')
 
         # or both, that's OK too.
         names = ['Peter', 'Paul', 'Mary']
         p = Parameter(name='complex', names=names)
         self.assertEqual(p.names, names)
-        # TODO: below seems wrong actually - we should let a parameter have
-        # a simple name even if it has a names array. But then we need to
-        # check everywhere this is used, and make sure everyone who cares
-        # about it looks for names first.
-        self.assertFalse(hasattr(p, 'name'))
+        # You can always have a name along with names
+        self.assertEqual(p.name, 'complex')
 
         shape = (10,)
         setpoints = (range(10),)
@@ -79,6 +80,50 @@ class TestParamConstructor(TestCase):
                     param.name, id(param))
                 self.assertEqual(s, st)
 
+    blank_instruments = (
+        None,  # no instrument at all
+        namedtuple('noname', '')(),  # no .name
+        namedtuple('blank', 'name')('')  # blank .name
+        )
+    named_instrument = namedtuple('yesname', 'name')('astro')
+
+    def test_full_name(self):
+        # three cases where only name gets used for full_name
+        for instrument in self.blank_instruments:
+            p = Parameter(name='fred')
+            p._instrument = instrument
+            self.assertEqual(p.full_name, 'fred')
+
+            p.name = None
+            self.assertEqual(p.full_name, None)
+
+        # and finally an instrument that really has a name
+        p = Parameter(name='wilma')
+        p._instrument = self.named_instrument
+        self.assertEqual(p.full_name, 'astro_wilma')
+
+        p.name = None
+        self.assertEqual(p.full_name, None)
+
+    def test_full_names(self):
+        for instrument in self.blank_instruments:
+            # no instrument
+            p = Parameter(name='simple')
+            p._instrument = instrument
+            self.assertEqual(p.full_names, None)
+
+            p = Parameter(names=['a', 'b'])
+            p._instrument = instrument
+            self.assertEqual(p.full_names, ['a', 'b'])
+
+        p = Parameter(name='simple')
+        p._instrument = self.named_instrument
+        self.assertEqual(p.full_names, None)
+
+        p = Parameter(names=['penn', 'teller'])
+        p._instrument = self.named_instrument
+        self.assertEqual(p.full_names, ['astro_penn', 'astro_teller'])
+
 
 class GatesBadDelayType(MockGates):
     def __init__(self, *args, **kwargs):
@@ -102,23 +147,43 @@ class GatesBadDelayValue(MockGates):
                            max_delay=0.03)
 
 
-class TestParameters(TestCase):
+class TestInstrument(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.model = AMockModel()
+
+        cls.gates = MockGates(model=cls.model)
+        cls.source = MockSource(model=cls.model)
+        cls.meter = MockMeter(model=cls.model, keep_history=False)
+
     def setUp(self):
-        self.model = AMockModel()
+        # reset the model state via the gates function
+        self.gates.reset()
 
-        self.gates = MockGates(model=self.model)
-        self.source = MockSource(model=self.model)
-        self.meter = MockMeter(model=self.model, keep_history=False)
-
+        # then reset each instrument's state, so we can avoid the time to
+        # completely reinstantiate with every test case
+        for inst in (self.gates, self.source, self.meter):
+            inst.restart()
         self.init_ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(cls):
         try:
-            self.model.close()
-            for instrument in [self.gates, self.source, self.meter]:
+            cls.model.close()
+            for instrument in [cls.gates, cls.source, cls.meter]:
+                instrument.close()
+                # do it twice - should not error, though the second is
+                # irrelevant
                 instrument.close()
         except:
             pass
+
+        # TODO: when an error occurs during constructing an instrument,
+        # we don't have the instrument but its server doesn't know to stop.
+        # should figure out a way to remove it. (I thought I had but it
+        # doesn't seem to have worked...)
+        # for test_mock_instrument_errors
+        kill_processes()
 
     def test_unpicklable(self):
         self.assertEqual(self.gates.add5(6), 11)
@@ -325,12 +390,6 @@ class TestParameters(TestCase):
         with self.assertRaises(TypeError):
             gates.add_parameter('fugacity', set_cmd='f {:.4f}', vals=[1, 2, 3])
 
-        # TODO: when an error occurs during constructing an instrument,
-        # we don't have the instrument but its server doesn't know to stop.
-        # should figure out a way to remove it. (I thought I had but it
-        # doesn't seem to have worked...)
-        kill_processes()
-
     def check_set_amplitude2(self, val, log_count, history_count):
         source = self.sourceLocal
         with LogCapture() as logs:
@@ -446,6 +505,89 @@ class TestParameters(TestCase):
 
         with self.assertRaises(ValueError):
             gates.memcoded.set('zero')
+
+    def test_val_mapping_ints(self):
+        gates = self.gates
+
+        gates.add_parameter('moderaw', set_cmd='mem0:{}', get_cmd='mem0?',
+                            vals=Enum('0', '1'))
+
+        # modecoded maps the instrument codes ('0' and '1') into nicer
+        # user values 'AC' and 'DC'
+        # Here we're using integers in the mapping, rather than turning
+        # them into strings.
+        gates.add_parameter('modecoded', set_cmd='mem0:{}', get_cmd='mem0?',
+                            val_mapping={'DC': 0, 'AC': 1})
+
+        gates.modecoded.set('AC')
+        self.assertEqual(gates.moderaw.get(), '1')
+        self.assertEqual(gates.modecoded.get(), 'AC')
+        self.assertEqual(self.getmem(0), '1')
+
+        gates.moderaw.set('0')
+        self.assertEqual(gates.modecoded.get(), 'DC')
+        self.assertEqual(gates.moderaw.get(), '0')
+        self.assertEqual(self.getmem(0), '0')
+
+        with self.assertRaises(ValueError):
+            gates.modecoded.set(0)
+
+        with self.assertRaises(ValueError):
+            gates.modecoded.set('0')
+
+        with self.assertRaises(ValueError):
+            gates.moderaw.set('DC')
+
+    def test_val_mapping_parsers(self):
+        gates = self.gates
+
+        gates.add_parameter('moderaw', set_cmd='mem0:{}', get_cmd='mem0?',
+                            vals=Enum('0', '1'))
+
+        with self.assertRaises(TypeError):
+            # set_parser is not allowed with val_mapping
+            gates.add_parameter('modecoded', set_cmd='mem0:{}',
+                                get_cmd='mem0?',
+                                val_mapping={'DC': 0, 'AC': 1},
+                                set_parser=float)
+
+        gates.add_parameter('modecoded', set_cmd='mem0:{:.0f}',
+                            get_cmd='mem0?',
+                            val_mapping={'DC': 0.0, 'AC': 1.0},
+                            get_parser=float)
+
+        gates.modecoded.set('AC')
+        self.assertEqual(gates.moderaw.get(), '1')
+        self.assertEqual(gates.modecoded.get(), 'AC')
+        self.assertEqual(self.getmem(0), '1')
+
+        gates.moderaw.set('0')
+        self.assertEqual(gates.modecoded.get(), 'DC')
+        self.assertEqual(gates.moderaw.get(), '0')
+        self.assertEqual(self.getmem(0), '0')
+
+        with self.assertRaises(ValueError):
+            gates.modecoded.set(0)
+
+        with self.assertRaises(ValueError):
+            gates.modecoded.set('0')
+
+    def test_param_cmd_with_parsing(self):
+        def set_p(val):
+            self._p = val
+
+        def get_p():
+            return self._p
+
+        def parse_set_p(val):
+            return '{:d}'.format(val)
+
+        p = StandardParameter('p_int', get_cmd=get_p, get_parser=int,
+                              set_cmd=set_p, set_parser=parse_set_p)
+
+        p(5)
+        self.assertEqual(self._p, '5')
+        self.assertEqual(p(), 5)
 
     def test_bare_function(self):
         # not a use case we want to promote, but it's there...
@@ -579,8 +721,9 @@ class TestParameters(TestCase):
         res.set(1e9)
         self.assertEqual(res.get(), 1e9)
         # default vals is all numbers
-        res.set(-1)
-        self.assertEqual(res.get(), -1)
+        # set / get with __call__ shortcut
+        res(-1)
+        self.assertEqual(res(), -1)
 
         self.source.add_parameter('alignment',
                                   parameter_class=ManualParameter,
@@ -617,16 +760,8 @@ class TestParameters(TestCase):
         with self.assertRaises(ZeroDivisionError):
             d()
 
-
-class TestAttrAccess(TestCase):
-    def tearDown(self):
-        self.instrument.close()
-        # do it twice - should not error, though the second is irrelevant
-        self.instrument.close()
-
-    def test_server(self):
-        instrument = Instrument(name='test_server', server_name='attr_test')
-        self.instrument = instrument
+    def test_attr_access(self):
+        instrument = self.gates
 
         # set one attribute with nested levels
         instrument.setattr('d1', {'a': {1: 2}})
@@ -649,6 +784,144 @@ class TestAttrAccess(TestCase):
         # test restarting the InstrumentServer - this clears these attrs
         instrument._manager.restart()
         self.assertIsNone(instrument.getattr('d1', None))
+
+    def test_component_attr_access(self):
+        instrument = self.gates
+        method = instrument.add5
+        parameter = instrument.chan1
+        function = instrument.reset
+
+        # RemoteMethod objects have no attributes besides __doc__, so test
+        # that this gets appropriately decorated
+        self.assertIn('RemoteMethod add5 in RemoteInstrument', method.__doc__)
+        # and also contains the remote doc
+        self.assertIn('not the same function as the original method',
+                      method.__doc__)
+
+        # units is a remote attribute of parameters
+        # this one is initially blank
+        self.assertEqual(parameter.units, '')
+        parameter.units = 'Smoots'
+        self.assertEqual(parameter.units, 'Smoots')
+        self.assertNotIn('units', parameter.__dict__)
+        self.assertEqual(instrument.getattr(parameter.name + '.units'),
+                         'Smoots')
+        # we can delete it remotely, and this is reflected in dir()
+        self.assertIn('units', dir(parameter))
+        del parameter.units
+        self.assertNotIn('units', dir(parameter))
+        with self.assertRaises(AttributeError):
+            parameter.units
+
+        # and set it again, it's still remote.
+        parameter.units = 'Furlongs per fortnight'
+        self.assertIn('units', dir(parameter))
+        self.assertEqual(parameter.units, 'Furlongs per fortnight')
+        self.assertNotIn('units', parameter.__dict__)
+        self.assertEqual(instrument.getattr(parameter.name + '.units'),
+                         'Furlongs per fortnight')
+        # we get the correct result if someone else sets it on the server
+        instrument._write_server('setattr', parameter.name + '.units', 'T')
+        self.assertEqual(parameter.units, 'T')
+        self.assertEqual(parameter.getattr('units'), 'T')
+
+        # attributes not specified as remote are local
+        with self.assertRaises(AttributeError):
+            parameter.something
+        parameter.something = 42
+        self.assertEqual(parameter.something, 42)
+        self.assertEqual(parameter.__dict__['something'], 42)
+        with self.assertRaises(AttributeError):
+            instrument.getattr(parameter.name + '.something')
+        with self.assertRaises(AttributeError):
+            # getattr method is only for remote attributes
+            parameter.getattr('something')
+        self.assertIn('something', dir(parameter))
+        del parameter.something
+        self.assertNotIn('something', dir(parameter))
+        with self.assertRaises(AttributeError):
+            parameter.something
+
+        # call a remote method
+        self.assertEqual(set(parameter.callattr('get_attrs')),
+                         parameter._attrs)
+
+        # functions have remote attributes too
+        self.assertEqual(function._args, [])
+        self.assertNotIn('_args', function.__dict__)
+        function._args = 'args!'
+        self.assertEqual(function._args, 'args!')
+
+        # a component with no docstring still gets the decoration
+        foo = instrument.foo
+        self.assertEqual(foo.__doc__,
+                         'RemoteParameter foo in RemoteInstrument gates')
+
+    def test_update_components(self):
+        gates = self.gates
+
+        gates.delattr('chan0.label')
+        gates.setattr('chan0.cheese', 'gorgonzola')
+        # we've altered the server copy, but not the RemoteParameter
+        self.assertIn('label', gates.chan0._attrs)
+        self.assertNotIn('cheese', gates.chan0._attrs)
+        # keep a reference to the original chan0 RemoteParameter to make sure
+        # it is still the same object later
+        chan0_original = gates.chan0
+
+        gates.update()
+
+        self.assertIs(gates.chan0, chan0_original)
+        # now the RemoteParameter should have the updates
+        self.assertNotIn('label', gates.chan0._attrs)
+        self.assertIn('cheese', gates.chan0._attrs)
+
+    def test_add_delete_components(self):
+        gates = self.gates
+
+        # rather than call gates.add_parameter, which has a special proxy
+        # on the remote so it updates the components immediately, we'll call
+        # the server version directly
+        attr_list = gates.callattr('add_parameter', 'chan0X', get_cmd='c0?',
+                                   set_cmd='c0:{:.4f}', get_parser=float)
+        gates.delattr('parameters["chan0"]')
+
+        # the RemoteInstrument does not have these changes yet
+        self.assertIn('chan0', gates.parameters)
+        self.assertNotIn('chan0X', gates.parameters)
+
+        gates.update()
+
+        # now the RemoteInstrument has the changes
+        self.assertNotIn('chan0', gates.parameters)
+        self.assertIn('chan0X', gates.parameters)
+        self.assertEqual(gates.chan0X._attrs, set(attr_list))
+
+    def test_reprs(self):
+        gates = self.gates
+        self.assertIn(gates.name, repr(gates))
+        self.assertIn('chan1', repr(gates.chan1))
+        self.assertIn('reset', repr(gates.reset))
+
+    def test_remote_sweep_values(self):
+        chan1 = self.gates.chan1
+
+        sv1 = chan1[1:4:1]
+        self.assertEqual(len(sv1), 3)
+        self.assertIn(2, sv1)
+
+        sv2 = chan1.sweep(start=2, stop=3, num=6)
+        self.assertEqual(len(sv2), 6)
+        self.assertIn(2.2, sv2)
+
+    def test_add_function(self):
+        gates = self.gates
+        # add a function remotely
+        gates.add_function('reset2', call_cmd='rst')
+        gates.chan1(4)
+        self.assertEqual(gates.chan1(), 4)
+        gates.reset2()
+        self.assertEqual(gates.chan1(), 0)
 
 
 class TestLocalMock(TestCase):

@@ -3,7 +3,9 @@
 from enum import Enum
 import time
 import logging
+from traceback import format_exc
 from copy import deepcopy
+from collections import OrderedDict
 
 from .manager import get_data_manager, NoData
 from .gnuplot_format import GNUPlotFormat
@@ -231,6 +233,19 @@ class DataSet(DelegateAttributes):
             between saves to disk. If not ``LOCAL``, the ``DataServer`` handles
             this and generally writes more often. Use None to disable writing
             from calls to ``self.store``. Default 5.
+
+    Attributes:
+        background_functions (OrderedDict[callable]): Class attribute,
+            ``{key: fn}``: ``fn`` is a callable accepting no arguments, and
+            ``key`` is a name to identify the function and help you attach and
+            remove it.
+
+            In ``DataSet.complete`` we call each of these periodically, in the
+            order that they were attached.
+
+            Note that because this is a class attribute, the functions will
+            apply to every DataSet. If you want specific functions for one
+            DataSet you can override this with an instance attribute.
     """
 
     # ie data_set.arrays['vsd'] === data_set.vsd
@@ -239,6 +254,8 @@ class DataSet(DelegateAttributes):
     default_io = DiskIO('.')
     default_formatter = GNUPlotFormat()
     location_provider = FormatLocation()
+
+    background_functions = OrderedDict()
 
     def __init__(self, location=None, mode=DataMode.LOCAL, arrays=None,
                  data_manager=None, formatter=None, io=None, write_period=5):
@@ -307,7 +324,8 @@ class DataSet(DelegateAttributes):
 
     def init_on_server(self):
         """
-        Configure this DataSet as the DataServer copy
+        Configure this DataSet as the DataServer copy.
+
         Should be run only by the DataServer itself.
         """
         if not self.arrays:
@@ -328,15 +346,17 @@ class DataSet(DelegateAttributes):
     @property
     def is_live_mode(self):
         """
-        indicate whether this DataSet thinks it is live in the DataServer
-        without actually talking to the DataServer or syncing with it
+        Indicate whether this DataSet thinks it is live in the DataServer.
+
+        Does not actually talk to the DataServer or sync with it.
         """
         return self.mode in SERVER_MODES and self.data_manager and True
 
     @property
     def is_on_server(self):
         """
-        Check whether this DataSet is being mirrored in the DataServer
+        Check whether this DataSet is actually live in the DataServer.
+
         If it thought it was but isn't, convert it to mode=LOCAL
         """
         if not self.is_live_mode or self.location is False:
@@ -348,10 +368,13 @@ class DataSet(DelegateAttributes):
 
     def sync(self):
         """
-        synchronize this data set with a possibly newer version either
-        in storage or on the DataServer, depending on its mode
+        Synchronize this DataSet with the DataServer or storage.
 
-        returns: boolean, is this DataSet live on the server
+        If this DataSet is on the server, asks the server for changes.
+        If not, reads the entire DataSet from disk.
+
+        Returns:
+            bool: True if this DataSet is live on the server
         """
         # TODO: sync implies bidirectional... and it could be!
         # we should keep track of last sync timestamp and last modification
@@ -399,10 +422,88 @@ class DataSet(DelegateAttributes):
                 self.read()
                 return False
 
-    def get_changes(self, synced_index):
+    def fraction_complete(self):
+        """
+        Get the fraction of this DataSet which has data in it.
+
+        Returns:
+            float: the average of all measured (not setpoint) arrays'
+                ``fraction_complete()`` values, independent of the individual
+                array sizes. If there are no measured arrays, returns zero.
+        """
+        array_count, total = 0, 0
+
+        for array in self.arrays.values():
+            if not array.is_setpoint:
+                array_count += 1
+                total += array.fraction_complete()
+
+        return total / (array_count or 1)
+
+    def complete(self, delay=1.5):
+        """
+        Periodically sync the DataSet and display percent complete status.
+
+        Also, each period, execute functions stored in (class attribute)
+        ``self.background_functions``. If a function fails, we log its
+        traceback and continue on. If any one function fails twice in
+        a row, it gets removed.
+
+        Args:
+            delay (float): seconds between iterations. Default 1.5
+        """
+        logging.info(
+            'waiting for DataSet <{}> to complete'.format(self.location))
+
+        failing = {key: False for key in self.background_functions}
+
+        nloops = 0
+        completed = False
+        while not completed:
+            logging.info('DataSet: {:.0f}% complete'.format(
+                self.fraction_complete() * 100))
+
+            time.sleep(delay)
+            nloops += 1
+
+            if self.sync() is False:
+                completed = True
+
+            for key, fn in list(self.background_functions.items()):
+                try:
+                    logging.debug('calling {}: {}'.format(key, repr(fn)))
+                    fn()
+                    failing[key] = False
+                except Exception:
+                    logging.info(format_exc())
+                    if failing[key]:
+                        logging.warning(
+                            'background function {} failed twice in a row, '
+                            'removing it'.format(key))
+                        del self.background_functions[key]
+                    failing[key] = True
+
+        logging.info('DataSet <{}> is complete'.format(self.location))
+
+    def get_changes(self, synced_indices):
+        """
+        Find changes since the last sync of this DataSet.
+
+        Args:
+            synced_indices (dict): ``{array_id: synced_index}`` where
+                synced_index is the last flat index which has already
+                been synced, for any (usually all) arrays in the DataSet.
+
+        Returns:
+            Dict[dict]: keys are ``array_id`` for each array with changes,
+                values are dicts as returned by ``DataArray.get_changes``
+                and required as kwargs to ``DataArray.apply_changes``.
+                Note that not all arrays in ``synced_indices`` need be
+                present in the return, only those with changes.
+        """
         changes = {}
 
-        for array_id, synced_index in synced_index.items():
+        for array_id, synced_index in synced_indices.items():
             array_changes = self.arrays[array_id].get_changes(synced_index)
             if array_changes:
                 changes[array_id] = array_changes
@@ -411,15 +512,20 @@ class DataSet(DelegateAttributes):
 
     def add_array(self, data_array):
         """
-        add one DataArray to this DataSet
+        Add one DataArray to this DataSet, and mark it as part of this DataSet.
 
-        note: DO NOT just set data_set.arrays[id] = data_array
-        because this will not check for overriding, nor set the
-        reference back to this DataSet. It would also allow you to
-        load the array in with different id than it holds itself.
+        Note: DO NOT just set ``data_set.arrays[id] = data_array``, because
+        this will not check if we are overwriting another array, nor set the
+        reference back to this DataSet, nor that the ``array_id`` in the array
+        matches how you're storing it here.
 
+        Args:
+            data_array (DataArray): the new array to add
+
+        Raises:
+            ValueError: if there is already an array with this id here.
         """
-        # TODO: mask self.arrays so you *can't* set it directly
+        # TODO: mask self.arrays so you *can't* set it directly?
 
         if data_array.array_id in self.arrays:
             raise ValueError('array_id {} already exists in this '
@@ -434,32 +540,22 @@ class DataSet(DelegateAttributes):
         replace action_indices tuple with compact string array_ids
         stripping off as much extraneous info as possible
         """
-        action_indices = [array.action_indices for array in arrays]
-        array_names = set(array.name for array in arrays)
-        for name in array_names:
-            param_arrays = [array for array in arrays
-                            if array.name == name]
-            if len(param_arrays) == 1:
-                # simple case, only one param with this name, id = name
-                param_arrays[0].array_id = name
-                continue
 
-            # partition into set and measured arrays (weird use case, but
-            # it'll happen, if perhaps only in testing)
-            set_param_arrays = [pa for pa in param_arrays
-                                if pa.set_arrays[-1] == pa]
-            meas_param_arrays = [pa for pa in param_arrays
-                                 if pa.set_arrays[-1] != pa]
-            if len(set_param_arrays) and len(meas_param_arrays):
-                # if the same param is in both set and measured,
-                # suffix the set with '_set'
-                self._clean_param_ids(set_param_arrays, name + '_set')
-                self._clean_param_ids(meas_param_arrays, name)
-            else:
-                # if either only set or only measured, no suffix
-                self._clean_param_ids(param_arrays, name)
+        action_indices = [array.action_indices for array in arrays]
+        for array in arrays:
+            name = array.full_name
+            if array.is_setpoint and name and not name.endswith('_set'):
+                name += '_set'
+
+            array.array_id = name
+        array_ids = set([array.array_id for array in arrays])
+        for name in array_ids:
+            param_arrays = [array for array in arrays
+                            if array.array_id == name]
+            self._clean_param_ids(param_arrays, name)
 
         array_ids = [array.array_id for array in arrays]
+
         return dict(zip(action_indices, array_ids))
 
     def _clean_param_ids(self, arrays, name):
@@ -477,13 +573,20 @@ class DataSet(DelegateAttributes):
 
     def store(self, loop_indices, ids_values):
         """
-        Set some collection of data points
+        Insert data into one or more of our DataArrays.
 
-        loop_indices: the indices within whatever loops we are inside
-        values: a dict of action_index:value or array_id:value
-            where value may be an arbitrarily nested list, to record
-            many values at once into one array
-        """
+        If in ``PUSH_TO_SERVER`` mode, this is where we do that!
+        Otherwise we also periodically trigger a write to storage.
+
+        Args:
+            loop_indices (tuple): the indices within whatever loops we are
+                inside. May have fewer dimensions than some of the arrays
+                we are inserting into, if the corresponding value makes up
+                the remaining dimensionality.
+            values (Dict[Union[float, sequence]]): a dict whose keys are
+                array_ids, and values are single numbers or entire slices
+                to insert into that array.
+         """
         if self.mode == DataMode.PUSH_TO_SERVER:
             self.data_manager.write('store_data', loop_indices, ids_values)
         else:
@@ -573,7 +676,13 @@ class DataSet(DelegateAttributes):
                 array.modified_range = mr_cache[array_id]
 
     def add_metadata(self, new_metadata):
-        """Update DataSet.metadata with additional data."""
+        """
+        Update DataSet.metadata with additional data.
+
+        Args:
+            new_metadata (dict): new data to be deep updated into
+                the existing metadata
+        """
         deep_update(self.metadata, new_metadata)
 
     def save_metadata(self):
@@ -583,7 +692,7 @@ class DataSet(DelegateAttributes):
             self.formatter.write_metadata(self, self.io, self.location)
 
     def finalize(self):
-        """Mark the DataSet as complete."""
+        """Mark the DataSet complete and write any remaining modifications."""
         if self.mode == DataMode.PUSH_TO_SERVER:
             self.data_manager.ask('end_data')
         elif self.mode == DataMode.LOCAL:
@@ -609,12 +718,22 @@ class DataSet(DelegateAttributes):
         return deepcopy(self.metadata)
 
     def get_array_metadata(self, array_id):
+        """
+        Get the metadata for a single contained DataArray.
+
+        Args:
+            array_id (str): the array to get metadata for.
+
+        Returns:
+            dict: metadata for this array.
+        """
         try:
             return self.metadata['arrays'][array_id]
-        except:
+        except (AttributeError, KeyError):
             return None
 
     def __repr__(self):
+        """Rich information about the DataSet and contained arrays."""
         out = type(self).__name__ + ':'
 
         attrs = [['mode', self.mode],
@@ -626,7 +745,8 @@ class DataSet(DelegateAttributes):
         arr_info = [['<Type>', '<array_id>', '<array.name>', '<array.shape>']]
 
         if hasattr(self, 'action_id_map'):
-            id_items = [item for index, item in sorted(self.action_id_map.items())]
+            id_items = [
+                item for index, item in sorted(self.action_id_map.items())]
         else:
             id_items = self.arrays.keys()
 
