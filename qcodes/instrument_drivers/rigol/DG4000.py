@@ -12,8 +12,7 @@ def is_number(s):
         return False
 
 
-def parse_string_output(s):
-    """ Parses and cleans string outputs """
+def clean_string(s):
     # Remove surrounding whitespace and newline characters
     s = s.strip()
 
@@ -22,6 +21,12 @@ def parse_string_output(s):
         s = s[1:-1]
 
     s = s.lower()
+
+    return s
+
+
+def parse_string_output(s):
+    s = clean_string(s)
 
     # prevent float() from parsing 'infinity' into a float
     if s == 'infinity':
@@ -36,14 +41,14 @@ def parse_string_output(s):
 
 def parse_single_output(i, s):
     """ Used as a partial function to parse output i in string s """
-    parts = s.split(',')
+    parts = clean_string(s).split(',')
 
     return parse_string_output(parts[i])
 
 
 def parse_multiple_outputs(s):
     """ Parse an output such as 'sin,1.5,0,2' and return a parsed array """
-    parts = parse_string_output(s).split(',')
+    parts = clean_string(s).split(',')
 
     return [parse_string_output(part) for part in parts]
 
@@ -112,7 +117,7 @@ class Rigol_DG4000(VisaInstrument):
                            get_cmd='COUN:IMP?',
                            set_cmd='COUN:IMP {}',
                            units='Ohm',
-                           val_mapping={50:  '50', 1e6: '1M'})
+                           val_mapping={50: '50', 1e6: '1M'})
 
         self.add_parameter('counter_trigger_level',
                            get_cmd='COUN:LEVE?',
