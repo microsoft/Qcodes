@@ -10,18 +10,22 @@ class Formatter:
 
     Formatters translate between DataSets and data files.
 
-    Each Formatter is expected to implement a write method:
-        write(self, data_set)
+    Each Formatter is expected to implement writing methods:
+    - ``write``: to write the ``DataArray``s
+    - ``write_metadata``: to write the metadata JSON structure
 
-    and either read or read_one_file:
-        read(self, data_set)
-        read_one_file(data_set, f, ids_read)
-            f: a file-like object supporting .readline() and for ... in
-            ids_read: a set of array_id's we've already encountered, so
-                read_one_file can check for duplication and consistency
+    and reading methods:
+    - ``read`` or ``read_one_file`` to reconstruct the ``DataArray``s, either
+      all at once (``read``) or one file at a time, supplied by the base class
+      ``read`` method that loops over all data files at the correct location.
 
-    data_set is a DataSet object, which is expected to have attributes:
-        io: an IO manager (see qcodes.io)
+    - ``read_metadata``: to reload saved metadata. If a subclass overrides
+      ``read``, this method should call ``read_metadata``, but keep it also
+      as a separate method because it occasionally gets called independently.
+
+    All of these methods accept a ``data_set`` argument, which should be a
+    ``DataSet`` object. Even if
+        io: an IO manager (see qcodes.data.io)
         location: a string, like a file path, that identifies the DataSet and
             tells the IO manager where to store it
         arrays: a dict of {array_id:DataArray} to read into.
