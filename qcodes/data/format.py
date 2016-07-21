@@ -154,7 +154,8 @@ class Formatter:
         return self._match_save_range_incremental(
             full_dim_data, last_saved_index, only_complete)
 
-    def _match_save_range_whole_file(self, arrays, only_complete):
+    @staticmethod
+    def _match_save_range_whole_file(arrays, only_complete):
         max_save = None
         agg = (min if only_complete else max)
         for array in arrays:
@@ -172,8 +173,8 @@ class Formatter:
         else:
             return None
 
-    def _match_save_range_incremental(self, arrays, last_saved_index,
-                                      only_complete):
+    @staticmethod
+    def _match_save_range_incremental(arrays, last_saved_index, only_complete):
         mod_ranges = []
         for array in arrays:
             mr = array.modified_range
