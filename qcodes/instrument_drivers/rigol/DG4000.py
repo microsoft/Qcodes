@@ -69,13 +69,13 @@ class Rigol_DG4000(VisaInstrument):
         if model in models:
             i = models.index(model)
 
-            sine_freq =      [200e6,     160e6,      100e6,      60e6][i]
-            square_freq =    [60e6,      50e6,       40e6,       25e6][i]
-            ramp_freq =      [5e6,       4e6,        3e6,        1e6][i]
-            pulse_freq =     [50e6,      40e6,       25e6,       15e6][i]
-            harmonic_freq =  [100e6,     80e6,       50e6,       30e6][i]
-            noise_freq =     [120e6,     120e6,      80e6,       60e6][i]
-            arb_freq =       [50e6,      40e6,       25e6,       15e6][i]
+            sine_freq = [200e6, 160e6, 100e6, 60e6][i]
+            square_freq = [60e6, 50e6, 40e6, 25e6][i]
+            ramp_freq = [5e6, 4e6, 3e6, 1e6][i]
+            pulse_freq = [50e6, 40e6, 25e6, 15e6][i]
+            harmonic_freq = [100e6, 80e6, 50e6, 30e6][i]
+            noise_freq = [120e6, 120e6, 80e6, 60e6][i]
+            arb_freq = [50e6, 40e6, 25e6, 15e6][i]
         else:
             raise KeyError('Model code ' + model + ' is not recognized')
 
@@ -158,8 +158,11 @@ class Rigol_DG4000(VisaInstrument):
                                get_parser=parse_string_output,
                                set_cmd=output + 'IMP {}',
                                units='Ohm',
-                               vals=MultiType(Numbers(min_value=1, max_value=10e3),
-                                              Enum('infinity', 'minimum', 'maximum')))
+                               vals=MultiType(Numbers(min_value=1,
+                                                      max_value=10e3),
+                                              Enum('infinity',
+                                                   'minimum',
+                                                   'maximum')))
 
             self.add_parameter(ch + 'add_noise_scale',
                                get_cmd=output + 'NOIS:SCAL?',
@@ -176,7 +179,8 @@ class Rigol_DG4000(VisaInstrument):
             self.add_parameter(ch + 'output_polarity',
                                get_cmd=output + 'POL?',
                                set_cmd=output + 'POL {}',
-                               val_mapping={'normal': 'NORM', 'inverted': 'INV'})
+                               val_mapping={'normal': 'NORM',
+                                            'inverted': 'INV'})
 
             self.add_parameter(ch + 'output_enabled',
                                get_cmd=output + 'STAT?',
@@ -186,7 +190,8 @@ class Rigol_DG4000(VisaInstrument):
             self.add_parameter(ch + 'sync_polarity',
                                get_cmd=output + 'SYNC:POL?',
                                set_cmd=output + 'SYNC:POL {}',
-                               val_mapping={'positive': 'POS', 'negative': 'NEG'})
+                               val_mapping={'positive': 'POS',
+                                            'negative': 'NEG'})
 
             self.add_parameter(ch + 'sync_enabled',
                                get_cmd=output + 'SYNC?',
@@ -198,12 +203,14 @@ class Rigol_DG4000(VisaInstrument):
             # impedance/freq/period/amplitude settings, this might be very hard
             # to implement in here
             self.add_function(ch + 'custom',
-                              call_cmd=source + 'APPL:CUST {:.6e},{:.6e},{:.6e},{:.6e}',
+                              call_cmd=source + 'APPL:CUST '
+                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
                               args=[Numbers(1e-6, arb_freq),
                                     Numbers(), Numbers(), Numbers(0, 360)])
 
             self.add_function(ch + 'harmonic',
-                              call_cmd=source + 'APPL:HARM {:.6e},{:.6e},{:.6e},{:.6e}',
+                              call_cmd=source + 'APPL:HARM '
+                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
                               args=[Numbers(1e-6, harmonic_freq),
                                     Numbers(), Numbers(), Numbers(0, 360)])
 
@@ -212,27 +219,32 @@ class Rigol_DG4000(VisaInstrument):
                               args=[Numbers(0, 10), Numbers()])
 
             self.add_function(ch + 'pulse',
-                              call_cmd=source + 'APPL:PULS {:.6e},{:.6e},{:.6e},{:.6e}',
+                              call_cmd=source + 'APPL:PULS '
+                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
                               args=[Numbers(1e-6, pulse_freq),
                                     Numbers(), Numbers(), Numbers(0)])
 
             self.add_function(ch + 'ramp',
-                              call_cmd=source + 'APPL:RAMP {:.6e},{:.6e},{:.6e},{:.6e}',
+                              call_cmd=source + 'APPL:RAMP '
+                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
                               args=[Numbers(1e-6, ramp_freq),
                                     Numbers(), Numbers(), Numbers(0, 360)])
 
             self.add_function(ch + 'sinusoid',
-                              call_cmd=source + 'APPL:SIN {:.6e},{:.6e},{:.6e},{:.6e}',
+                              call_cmd=source + 'APPL:SIN '
+                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
                               args=[Numbers(1e-6, sine_freq),
                                     Numbers(), Numbers(), Numbers(0, 360)])
 
             self.add_function(ch + 'square',
-                              call_cmd=source + 'APPL:SQU {:.6e},{:.6e},{:.6e},{:.6e}',
+                              call_cmd=source + 'APPL:SQU '
+                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
                               args=[Numbers(1e-6, square_freq),
                                     Numbers(), Numbers(), Numbers(0, 360)])
 
             self.add_function(ch + 'user',
-                              call_cmd=source + 'APPL:USER {:.6e},{:.6e},{:.6e},{:.6e}',
+                              call_cmd=source + 'APPL:USER '
+                                                '{:.6e},{:.6e},{:.6e},{:.6e}',
                               args=[Numbers(1e-6, arb_freq),
                                     Numbers(), Numbers(), Numbers(0, 360)])
 
@@ -271,7 +283,8 @@ class Rigol_DG4000(VisaInstrument):
             self.add_parameter(ch + 'burst_trigger_edge',
                                get_cmd=source + 'BURS:TRIG:SLOP?',
                                set_cmd=source + 'BURS:TRIG:SLOP {}',
-                               val_mapping={'positive': 'POS', 'negative': 'NEG'})
+                               val_mapping={'positive': 'POS',
+                                            'negative': 'NEG'})
 
             self.add_parameter(ch + 'burst_trigger_source',
                                get_cmd=source + 'BURS:TRIG:SOUR?',
@@ -527,10 +540,13 @@ class Rigol_DG4000(VisaInstrument):
                            set_cmd='SYST:POWS {}',
                            vals=Enum('user', 'auto'))
 
-        system_states = Enum('default', 'user1', 'user2', 'user3', 'user4',
-                             'user5', 'user6', 'user7', 'user8', 'user9', 'user10')
+        system_states = Enum('default', 'user1', 'user2', 'user3',
+                             'user4', 'user5', 'user6', 'user7',
+                             'user8', 'user9', 'user10')
 
-        self.add_function('preset', call_cmd='SYST:PRES {}', args=[system_states])
+        self.add_function('preset',
+                          call_cmd='SYST:PRES {}',
+                          args=[system_states])
 
         self.add_function('restart', call_cmd='SYST:RESTART')
 
