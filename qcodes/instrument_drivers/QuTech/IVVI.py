@@ -58,9 +58,11 @@ class IVVI(VisaInstrument):
         # values based on descriptor
         self.visa_handle.baud_rate = 115200
         self.visa_handle.parity = visa.constants.Parity(1)  # odd parity
+        self.visa_handle.write_termination=''
+        self.visa_handle.read_termination=''
 
-        self.add_parameter('version',
-                           get_cmd=self._get_version)
+#        self.add_parameter('version',
+#                           get_cmd=self._get_version)
         
         self.add_parameter('dac voltages',
                            label='Dac voltages',
@@ -87,7 +89,7 @@ class IVVI(VisaInstrument):
 
         t1 = time.time()
 
-        # basic test to confirm we are properly connected
+#         basic test to confirm we are properly connected
         try:
             self.get_all()
         except Exception as ex:
@@ -96,19 +98,27 @@ class IVVI(VisaInstrument):
 
         print('Initialized IVVI-rack in %.2fs' % (t1-t0))
 
+#    def get_idn(self):
+#        """
+#        Overwrites the get_idn function using constants as the hardware
+#        does not have a proper *IDN function.
+#        """
+#        idparts = ['QuTech', 'IVVI', 'None', self.version()]
+#
+#        return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
+
     def get_idn(self):
-        """
-        Overwrites the get_idn function using constants as the hardware
-        does not have a proper *IDN function.
-        """
-        idparts = ['QuTech', 'IVVI', 'None', self.version()]
+        '''
+        makeshift replacement for the get_idn, because the original wants to do a get_version
+        '''
+        IDN=['vendor','model','serial','etc.']
+        
+        return IDN
 
-        return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
-
-    def _get_version(self):
-        mes = self.ask(bytes([3, 4]))
-        v = mes[2]
-        return v
+#    def _get_version(self):
+#        mes = self.ask(bytes([3, 4]))
+#        v = mes[2]
+#        return v
 
     def get_all(self):
         return self.snapshot(update=True)
@@ -247,6 +257,28 @@ class IVVI(VisaInstrument):
         message_len = self.write(message, raw=raw)
         return self.read(message_len=message_len)
 
+    def _read_raw_bytes(self, size, maxread=256, verbose=0):
+        """ Read raw data in blocks using the visa lib
+        
+        The pyvisa visalib.read always terminates at a newline, this is a workaround
+        
+        Also see: https://github.com/qdev-dk/Qcodes/issues/276
+                  https://github.com/hgrecco/pyvisa/issues/225
+        """
+        ret = []
+        instr=self.visa_handle
+        with self.visa_handle.ignore_warning(visa.constants.VI_SUCCESS_MAX_CNT):
+            nread=0
+            while nread < size:
+                nn=min(maxread, size-nread)
+                chunk, status = instr.visalib.read(instr.session, nn)
+                ret += [chunk]
+                nread+=len(chunk)
+                if verbose:
+                    print('_read_raw: %d/%d bytes'  % (len(chunk), nread))
+        ret=b''.join(ret)
+        return ret  
+
     def read(self, message_len=None):
         # because protocol has no termination chars the read reads the number
         # of bytes in the buffer
@@ -265,10 +297,8 @@ class IVVI(VisaInstrument):
             if t1-t0 > timeout:
                 raise TimeoutError()
         # a workaround for a timeout error in the pyvsia read_raw() function
-        with(self.visa_handle.ignore_warning(visa.constants.VI_SUCCESS_MAX_CNT)):
-            mes = self.visa_handle.visalib.read(
-                self.visa_handle.session, bytes_in_buffer)
-        mes = mes[0]  # cannot be done on same line for some reason
+        mes=self._read_raw_bytes(bytes_in_buffer)
+                
         # if mes[1] != 0:
         #     # see protocol descriptor for error codes
         #     raise Exception('IVVI rack exception "%s"' % mes[1])
