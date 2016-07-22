@@ -531,7 +531,7 @@ class Rigol_DG4000(VisaInstrument):
         self.add_function('copy_waveform_to_ch1', call_cmd='SYST:CWC CH2,CH1')
         self.add_function('copy_waveform_to_ch2', call_cmd='SYST:CWC CH1,CH2')
 
-        self.add_parameter('error', get_cmd='SYST:ERR?')
+        self.add_function('get_error', call_cmd='SYST:ERR?', return_parser=str)
 
         self.add_parameter('keyboard_locked',
                            get_cmd='SYST:KLOCK?',
@@ -561,7 +561,9 @@ class Rigol_DG4000(VisaInstrument):
 
         self.add_function('shutdown', call_cmd='SYST:SHUTDOWN')
 
-        self.add_parameter('scpi_version', get_cmd='SYST:VERS?')
+        self.add_function('get_scpi_version',
+                          call_cmd='SYST:VERS?',
+                          return_parser=str)
 
         # Trace
         self.add_function('upload_data',
