@@ -36,11 +36,13 @@ class AMI430(VisaInstrument):
                            get_parser=float,
                            set_cmd=self._set_field,
                            units='T',
-                           vals=Numbers(-self._field_rating, self._field_rating))
+                           vals=Numbers(-self._field_rating,
+                                        self._field_rating))
 
         self.add_function('ramp_to',
                           call_cmd=self._ramp_to,
-                          args=[Numbers(-self._field_rating, self._field_rating)])
+                          args=[Numbers(-self._field_rating,
+                                        self._field_rating)])
 
         self.add_parameter('ramp_rate',
                            get_cmd=self._get_ramp_rate,
@@ -284,7 +286,9 @@ class AMI430_3D(Instrument):
     def __init__(self, name, magnet_x, magnet_y, magnet_z, **kwargs):
         super().__init__(name, **kwargs)
 
-        self.magnet_x, self.magnet_y, self.magnet_z = magnet_x, magnet_y, magnet_z
+        self.magnet_x = magnet_x
+        self.magnet_y = magnet_y
+        self.magnet_z = magnet_z
 
         self._phi,   self._phi_offset = 0.0, 0.0
         self._theta, self._theta_offset = 0.0, 0.0
@@ -359,7 +363,9 @@ class AMI430_3D(Instrument):
             self._set_field(self._field)
 
     def _get_field(self):
-        x, y, z = self.magnet_x.field(), self.magnet_y.field(), self.magnet_z.field()
+        x = self.magnet_x.field()
+        y = self.magnet_y.field()
+        z = self.magnet_z.field()
 
         return np.sqrt(x**2 + y**2 + z**2)
 
