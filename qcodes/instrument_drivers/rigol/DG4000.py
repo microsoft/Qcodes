@@ -404,7 +404,7 @@ class Rigol_DG4000(VisaInstrument):
                                units='deg',
                                vals=Numbers(0, 360))
 
-            self.add_function(ch + 'align_pahse',
+            self.add_function(ch + 'align_phase',
                               call_cmd=source + 'PHAS:INIT')
 
             # Source Pulse
