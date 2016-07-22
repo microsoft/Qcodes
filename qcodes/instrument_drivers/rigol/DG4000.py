@@ -561,9 +561,7 @@ class Rigol_DG4000(VisaInstrument):
 
         self.add_function('shutdown', call_cmd='SYST:SHUTDOWN')
 
-        self.add_function('get_scpi_version',
-                          call_cmd='SYST:VERS?',
-                          return_parser=str)
+        self.add_parameter('scpi_version', get_cmd='SYST:VERS?')
 
         # Trace
         self.add_function('upload_data',
