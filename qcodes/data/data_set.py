@@ -597,8 +597,8 @@ class DataSet(DelegateAttributes):
                 self.write()
                 self.last_write = time.time()
 
-    def default_array(self, paramname='amplitude'):
-        """ Return default parameter for plotting """
+    def default_parameter(self, paramname='amplitude'):
+        """ Return name of default parameter for plotting """
 
         arraynames = self.arrays.keys()
 
@@ -627,6 +627,11 @@ class DataSet(DelegateAttributes):
         except:
             pass
         return None
+
+    def default_array(self, paramname='amplitude'):
+        """ Return default parameter for plotting """
+        paramname = self.default_parameter(paramname=paramname)
+        return getattr(self, paramname, None)
 
     def read(self):
         """Read the whole DataSet from storage, overwriting the local data."""
