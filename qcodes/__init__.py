@@ -33,7 +33,6 @@ if in_notebook():  # pragma: no cover
 
     # only load the show_subprocess_widget when running jupyter notebook
     if frontend()=='notebook':
-        print('load show_subprocess_widget')
         from qcodes.widgets.widgets import show_subprocess_widget
 
 from qcodes.station import Station
