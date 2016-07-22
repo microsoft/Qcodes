@@ -589,10 +589,11 @@ class TestDataSet(TestCase):
     def test_default_array(self):
         # Test whether the default_array function works
         m = DataSet2D()
+        name = m.default_parameter()
         name = m.default_array()
 
         m.metadata = dict({'default_array': 'x_set'})
-        name = m.default_array()
+        name = m.default_parameter()
         self.assertEqual(name, 'x_set')
 
     def test_fraction_complete(self):
