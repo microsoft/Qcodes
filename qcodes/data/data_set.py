@@ -597,14 +597,25 @@ class DataSet(DelegateAttributes):
                 self.write()
                 self.last_write = time.time()
 
-    def default_parameter(self, paramname='amplitude'):
-        """ Return name of default parameter for plotting """
+    def default_parameter_name(self, paramname='amplitude'):
+        """ Return name of default parameter for plotting
+
+        The default parameter is determined by looking into metdata['default_parameter_name'].
+        If this variable is not present, then the closest match to the argument
+        paramname is tried.
+
+        Args:
+            paramname (string): Name to match to parameter name
+
+        Returns:
+            name (string): name of the default parameter
+        """
 
         arraynames = self.arrays.keys()
 
         # overrule parameter name from the metadata
-        if self.metadata.get('default_array', False):
-            paramname = self.metadata['default_array']
+        if self.metadata.get('default_parameter_name', False):
+            paramname = self.metadata['default_parameter_name']
 
         # try to return the exact name
         if paramname in arraynames:
@@ -628,9 +639,20 @@ class DataSet(DelegateAttributes):
             pass
         return None
 
-    def default_array(self, paramname='amplitude'):
-        """ Return default parameter for plotting """
-        paramname = self.default_parameter(paramname=paramname)
+    def default_parameter_array(self, paramname='amplitude'):
+        """ Return default parameter array
+
+        Args:
+            paramname (string): Name to match to parameter name
+
+        Returns:
+            array (DataArray): array corresponding to the default parameter
+
+        See also:
+            default_parameter_name
+
+        """
+        paramname = self.default_parameter_name(paramname=paramname)
         return getattr(self, paramname, None)
 
     def read(self):
