@@ -74,7 +74,6 @@ class Rigol_DG4000(VisaInstrument):
             ramp_freq = [5e6, 4e6, 3e6, 1e6][i]
             pulse_freq = [50e6, 40e6, 25e6, 15e6][i]
             harmonic_freq = [100e6, 80e6, 50e6, 30e6][i]
-            noise_freq = [120e6, 120e6, 80e6, 60e6][i]
             arb_freq = [50e6, 40e6, 25e6, 15e6][i]
         else:
             raise KeyError('Model code ' + model + ' is not recognized')
