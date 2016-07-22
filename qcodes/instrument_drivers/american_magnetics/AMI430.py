@@ -8,7 +8,12 @@ from qcodes.utils.validators import Numbers
 
 class AMI430(VisaInstrument):
     """
-    Driver for the American Magnetics Model 430 magnet power supply programmer
+    Driver for the American Magnetics Model 430 magnet power supply programmer.
+
+    This class controls a single magnet power supply. In order to use two or
+    three magnets simultaniously to set field vectors, first instantiate the
+    individual magnets using this class and then pass them as arguments to
+    either the AMI430_2D or AMI430_3D virtual instrument classes.
     """
     def __init__(self, name, address, coil_constant, current_rating,
                  current_ramp_limit, persistent_switch=True, terminator='\n',
@@ -58,7 +63,7 @@ class AMI430(VisaInstrument):
         if persistent_switch:
             self.add_parameter('switch_heater_enabled',
                                get_cmd='PS?',
-                               set_cmd=self._set_switch_heater,
+                               set_cmd=self._set_persistent_switch,
                                val_mapping={False: '0', True: '1'})
 
             self.add_parameter('in_persistent_mode',
@@ -173,16 +178,18 @@ class AMI430(VisaInstrument):
             self.ramp()
 
     def _get_ramp_rate(self):
+        """ Return the ramp rate of the first segment in Tesla per second """
         results = self.ask('RAMP:RATE:FIELD:1?').split(',')
 
         return float(results[0])
 
     def _set_ramp_rate(self, rate):
+        """ Set the ramp rate of the first segment in Tesla per second """
         cmd = 'CONF:RAMP:RATE:FIELD 1,{},{}'.format(rate, self._field_rating)
 
         self.write(cmd)
 
-    def _set_persistent_switch_heater(self, on):
+    def _set_persistent_switch(self, on):
         """
         Blocking function that sets the persistent switch heater state and
         waits until it has finished either heating or cooling
