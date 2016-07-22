@@ -164,8 +164,8 @@ class MatPlot(BasePlot):
         # TODO (write why is this)
         # subplot=1 is just there to strip this out of kwargs
         args = [arg for arg in [x, y, fmt] if arg is not None]
-        # TODO (write why is this returning the 0th)
-        return ax.plot(*args, **kwargs)[0]
+        line,  =  ax.plot(*args, **kwargs)
+        return line
 
     def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1, **kwargs):
         args = [masked_invalid(arg) for arg in [x, y, z]
