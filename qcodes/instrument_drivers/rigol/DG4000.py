@@ -5,6 +5,7 @@ from functools import partial
 
 
 def is_number(s):
+    """ Test whether a given string can be parsed as a float """
     try:
         float(s)
         return True
@@ -13,6 +14,7 @@ def is_number(s):
 
 
 def clean_string(s):
+    """ Clean string outputs of a VISA instrument for further parsing """
     # Remove surrounding whitespace and newline characters
     s = s.strip()
 
@@ -26,6 +28,7 @@ def clean_string(s):
 
 
 def parse_string_output(s):
+    """ Parse an output of the VISA instrument into either text of a number """
     s = clean_string(s)
 
     # prevent float() from parsing 'infinity' into a float
@@ -300,7 +303,8 @@ class Rigol_DG4000(VisaInstrument):
                                             'negative': 'NEG'})
 
             # Source Frequency
-            # TODO: These parameter bounds also depend on the current waveform
+            # TODO: The upper bounds of these parameters also depend on the
+            # current waveform
             self.add_parameter(ch + 'frequency_center',
                                get_cmd=source + 'FREQ:CENT?',
                                get_parser=float,
