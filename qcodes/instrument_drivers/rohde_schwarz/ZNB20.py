@@ -6,14 +6,15 @@ from qcodes import Parameter
 
 
 class FrequencySweep(Parameter):
-    '''Hardware controlled parameter class for Rohde Schwarz RSZNB20 trace.
+    """
+    Hardware controlled parameter class for Rohde Schwarz RSZNB20 trace.
 
     Instrument returns an list of transmission data in the form of a list of
     complex numbers taken from a frequency sweep.
 
     TODO:
       - ability to choose for abs or db in magnitude return
-    '''
+    """
     def __init__(self, name, instrument, start, stop, npts):
         super().__init__(name)
         self._instrument = instrument
@@ -34,14 +35,14 @@ class FrequencySweep(Parameter):
         self._instrument.write('AVER:CLE')
         self._instrument.cont_meas_off()
 
-    # instrument averages over its last 'avg' number of sweeps
-    # need to ensure averaged result is returned
+        # instrument averages over its last 'avg' number of sweeps
+        # need to ensure averaged result is returned
         for avgcount in range(self._instrument.avg()):
             self._instrument.write('INIT:IMM; *WAI')
         data_str = self._instrument.ask('CALC:DATA? SDAT').split(',')
         data_list = [float(v) for v in data_str]
 
-    # data_list of complex numbers [re1,im1,re2,im2...]
+        # data_list of complex numbers [re1,im1,re2,im2...]
         data_arr = np.array(data_list).reshape(int(len(data_list) / 2), 2)
         mag_array, phase_array = [], []
         for comp in data_arr:
@@ -53,14 +54,15 @@ class FrequencySweep(Parameter):
 
 
 class ZNB20(VisaInstrument):
-    ''' qcodes driver for the Rohde & Schwarz ZNB20 virtual network analyser
+    """
+    qcodes driver for the Rohde & Schwarz ZNB20 virtual network analyser
 
     Requires FrequencySweep parameter for taking a trace
 
     TODO:
     - centre/span settable for frequwncy sweep
     - check initialisation settings and test functions
-    '''
+    """
     def __init__(self, name, address, **kwargs):
 
         super().__init__(name=name, address=address, **kwargs)
