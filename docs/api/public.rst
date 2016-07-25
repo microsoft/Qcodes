@@ -79,6 +79,17 @@ Instrument
    MockInstrument
    MockModel
 
+
+Plot
+~~~~
+Note that the plotting modules may not be available if their dependencies were not met during installation of the package.
+
+.. autosummary::
+   :toctree: generated/
+
+    qcodes.plots.qcmatplotlib.MatPlot
+    qcodes.plots.qcmatplotlib.QtPlot
+
 Utils & misc
 ~~~~~~~~~~~~
 .. automodule::

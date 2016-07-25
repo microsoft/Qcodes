@@ -13,8 +13,8 @@ Although some feature at the moment are b0rken outside the notebook.
 
 ## Install
 
-### PyPy
-PyPy is the fastest way to install QCoDeS, will be avaiable once out of beta/private.
+### PyPi
+PyPi is the fastest way to install QCoDeS, will be avaiable once out of beta/private.
 
 ### Developer
 
@@ -26,14 +26,16 @@ Once all is installed, and working:
 pyenv install 3.4.5
 pyenv local 3.4.5
 mkvirtualenv qcodes-dev -r develop_requirements.txt --python $HOME/.pyenv/versions/3.4.5/bin/python3.4
+git clone https://github.com/qdev-dk/Qcodes.git $QCODES_INSTALL_DIR
+cd $QCODES_INSTALL_DIR
 pip install -e .
 python qcodes/test.py -f
 ```
 
 If the tests pass you are ready to hack!
-Note that sometimes the test suite because there is a bug somewhere in the mulitprocessing  architecture.
+Note that sometimes the test suite because there is a bug somewhere in the mulitprocessing architecture.
 
-This is the reference setup one needs to have to contribute, otherwise too many non-reproducible situation will happen.
+This is the reference setup one needs to have to contribute, otherwise too many non-reproducible environments will show up.
 
 ### Anaconda (possibly b0rken)
 
@@ -45,7 +47,7 @@ As the project is still private, install it directly from this repository:
 
 - Clone this repository somewhere on your hard drive. If you're using command line git, open a terminal window in the directory where you'd like to put QCoDeS and type:
 ```
-git clone https://github.com/qdev-dk/qcodes.git
+git clone https://github.com/qdev-dk/Qcodes.git
 ```
 
 - Register it with Python, and install dependencies if any are missing: run this from the root directory of the repository you just cloned:
@@ -80,6 +82,7 @@ See the [Roadmap](http://qdev-dk.github.io/qcodes/roadmap.html) an overview of w
 ## Docs
 
 We use sphinx for documentations, makefiles are provied boht for Windows, and *nix.
+
 Go to the directory  `docs` and
 
 ```
@@ -87,8 +90,7 @@ make html
 ```
 
 This generate a webpage, index.html,  in  `docs/_build/html` with the rendered html.
-
-Documentation is updated on every successful build.
+Documentation is updated  and deployed on every successful build.
 
 
 ## License

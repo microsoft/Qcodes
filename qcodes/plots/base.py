@@ -40,6 +40,8 @@ class BasePlot:
         raise NotImplementedError
         # typically traces and subplots should be cleared as well as the
         # figure window for the particular backend
+        # TODO(giulioungaretti) the following unreachable lines should really
+        # be documentation.
         self.traces = []
         self.subplots = []
 
@@ -48,7 +50,7 @@ class BasePlot:
         Clear all conentent and add new trace.
 
         Args:
-            args (: optional way to provide x/y/z data without keywords
+            args (): optional way to provide x/y/z data without keywords
                 If the last one is 1D, may be `y` or `x`, `y`
                 If the last one is 2D, may be `z` or `x`, `y`, `z`
 
@@ -81,6 +83,7 @@ class BasePlot:
         Array shapes for 2D plots:
             x:(1D-length m), y:(1D-length n), z: (2D- n*m array)
         """
+        # TODO(giulioungaretti): replace with an explicit version, see expand trace
         self.expand_trace(args, kwargs)
         self.add_to_plot(**kwargs)
         self.add_updater(updater, kwargs)
@@ -99,7 +102,7 @@ class BasePlot:
 
     def add_updater(self, updater, plot_config):
         """
-        Adds an updater to the plot.
+        Add an updater to the plot.
         Args:
             updater (callable): callable (with no args) that updates the data in this trace
                 if omitted, we will look for DataSets referenced in this data, and
@@ -118,15 +121,24 @@ class BasePlot:
                     if data_array.data_set is not None:
                         self.data_updaters.add(data_array.data_set.sync)
 
-        # TODO explain explicitely why the following 3 lines
+        # If previous data on this plot became static, perhaps because
+        # its measurement loop finished, the updater may have been halted.
+        # If we have new update functions, re-activate the updater
+        # by reinstating its update interval
         if self.data_updaters:
             if hasattr(self, 'update_widget'):
                 self.update_widget.interval = self.interval
 
     def get_default_title(self):
         """
-        Get the default title, which for a plot is just a list of DataSet locations;
-        TODO: a custom title can be passed using **kwargs. From where? @alexj ?
+        Get the default title, which for a plot is just a list of DataSet locations.
+        A custom title can be set when adding any trace (via either __init__ or add.
+        these kwargs all eventually end up in self.traces[i]['config']) and it looks
+        like we will take the first title we find from any trace... otherwise, if no
+        trace specifies a title, then we combine whatever dataset locations we find.
+
+        Note: (alexj): yeah, that's awkward, isn't it, and it looks like a weird
+        implementation, feel free to change it 👼
 
         Returns:
             string: the title of the figure
@@ -154,31 +166,47 @@ class BasePlot:
 
         Returns:
             string: label or name of the data_array
+
         """
+        # TODO this should really be a static method
         return (getattr(data_array, 'label', '') or
                 getattr(data_array, 'name', ''))
 
     def expand_trace(self, args, kwargs):
         """
-        TODO: this docstring code may need a bit more rewording.
-        I don't understand what this function does just by reading the 
-        docstring.
+        Complete the x, y (and possibly z) data definition for a trace.
 
-        the x, y (and potentially z) data for a trace may be provided
-        as positional rather than keyword args. The allowed forms are
-        [y] or [x, y] if the last arg is 1D, and
-        [z] or [x, y, z] if the last arg is 2D
+        Also modifies kwargs in place so that all the data needed to fully specify the
+                trace is present (ie either x and y or x and y and z)
 
-        also, look in the main data array (`z` if it exists, else `y`)
-        for set_arrays that can provide the `x` (and potentially `y`) data
+        Both ``__init__`` (for the first trace) and the ``add`` method support multiple
+        ways to specify the data in the trace:
 
-        even if we allow data in other attributes (like marker size/color)
-        by providing a different self.data_keys, set_arrays will only
-        contribute x from y, or x & y from z, so we don't use data_keys here
-    
-        TODO:
-           what are args kwargs and why called like that?
+            As *args:
+                ``add(y)`` or ``add(z)`` specify just the main 1D or 2D data, with the setpoint
+                    axis or axes implied.
+                ``add(x, y)`` or ``add(x, y, z)`` specify all axes of the data.
+            And as **kwargs:
+                ``add(x=x, y=y, z=z)`` you specify exactly the data you want on each axis.
+                    Any but the last (y or z) can be omitted, which allows for all of the same
+                    forms as with *args, plus x and z or y and z, with just one axis implied from
+                    the setpoints of the z data.
+
+        This method takes any of those forms and converts them into a complete set of
+        kwargs, containing all of the explicit or implied data to be used in plotting this trace.
+
+        Args:
+            args (Tuple[DataArray]): positional args, as passed to either ``__init__`` or ``add``
+            kwargs (Dict(DataArray]): keyword args, as passed to either ``__init__`` or ``add``.
+                kwargs may contain non-data items in keys other than x, y, and z.
+
+        Raises:
+           ValueError: if the shape of the data does not match that of args
+           ValueError: if the data is provided twice
         """
+        # TODO(giulioungaretti): replace with an explicit version:
+        # return the new kwargs  instead of modifying in place
+        # TODO this should really be a static method
         if args:
             if hasattr(args[-1][0], '__len__'):
                 # 2D (or higher... but ignore this for now)
@@ -219,9 +247,9 @@ class BasePlot:
         """
         Update the data in this plot, using the updaters given with
         MatPlot.add() or in the included DataSets, then include this in
-        the plot
+        the plot.
 
-        this is a wrapper routine that the update widget calls,
+        This is a wrapper routine that the update widget calls,
         inside this we call self.update() which should be subclassed
         """
         any_updates = False
@@ -240,7 +268,7 @@ class BasePlot:
     def update_plot(self):
         """
         Update the plot itself (typically called by self.update).
-        should be implemented by a subclass
+        Should be implemented by a subclass
         """
         raise NotImplementedError
 
