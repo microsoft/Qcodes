@@ -60,7 +60,6 @@ if __name__ == '__main__':
     import coverage
     import os
     import multiprocessing as mp
-    import sys
     mp.set_start_method('spawn')
 
     # make sure coverage looks for .coveragerc in the right place
