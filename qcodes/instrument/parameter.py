@@ -154,8 +154,8 @@ class Parameter(Metadatable, DeferredOperations):
         super().__init__(**kwargs)
         self._snapshot_get = snapshot_get
 
-        self.has_get = False
-        self.has_set = False
+        self.has_get = hasattr(self, 'get')
+        self.has_set = hasattr(self, 'set')
         self._meta_attrs = ['setpoint_names', 'setpoint_labels']
 
         # always let the parameter have a single name (in fact, require this!)
@@ -587,8 +587,7 @@ class StandardParameter(Parameter):
                             output_parser=get_parser,
                             no_cmd_function=no_getter)
 
-        if get_cmd is not None:
-            self.has_get = True
+        self.has_get = (get_cmd is not None)
 
     def _set_set(self, set_cmd, set_parser):
         # note: this does not set the final setter functions. that's handled
@@ -597,8 +596,7 @@ class StandardParameter(Parameter):
         self._set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str,
                             input_parser=set_parser, no_cmd_function=no_setter)
 
-        if set_cmd is not None:
-            self.has_set = True
+        self.has_set = set_cmd is not None
 
     def _validate_and_set(self, value):
         try:
@@ -806,9 +804,6 @@ class ManualParameter(Parameter):
         if initial_value is not None:
             self.validate(initial_value)
             self._save_val(initial_value)
-
-        self.has_get = True
-        self.has_set = True
 
     def set(self, value):
         """
