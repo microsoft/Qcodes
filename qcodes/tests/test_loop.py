@@ -94,7 +94,16 @@ class TestMockInstLoop(TestCase):
         c1 = gates_local.chan1
         loop_local = Loop(c1[1:5:1], 0.001).each(c1)
 
-        with self.assertRaises(RuntimeError):
+        # if spawn, pickle will happen
+        if mp.get_start_method() == "spawn":
+            with self.assertRaises(RuntimeError):
+                loop_local.run(location=self.location, quiet=True)
+        # allow for *nix
+        # TODO(giulioungaretti) see what happens ?
+        # what is the expected beavhiour ?
+        # The RunimError will never be raised here, as the forkmethod
+        # won't try to pickle anything at all.
+        else:
             loop_local.run(location=self.location, quiet=True)
 
         data = loop_local.run(location=self.location2, background=False,
