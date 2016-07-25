@@ -62,9 +62,9 @@ if __name__ == '__main__':
 
     try:
         import coverage
-        coverage_available = True
+        coverage_missing = False
     except ImportError:
-        coverage_available = False
+        coverage_missing = True
 
     # make sure coverage looks for .coveragerc in the right place
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     if args.mp_spawn:
         mp.set_start_method('spawn')
 
-    args.skip_coverage &= coverage_available
+    args.skip_coverage |= coverage_missing
 
     if not args.skip_coverage:
         cov = coverage.Coverage(source=['qcodes'])
@@ -110,10 +110,8 @@ if __name__ == '__main__':
 
     if not args.skip_coverage:
         cov.stop()
-        # save coverage anyway since we computed it
         cov.save()
-        if success and args.skip_coverage:
-            cov.report()
+        cov.report()
 
     # restore unix-y behavior
     # exit status 1 on fail
