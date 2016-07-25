@@ -66,8 +66,6 @@ if __name__ == '__main__':
     except ImportError:
         coverage_available = False
 
-    mp.set_start_method('spawn')
-
     # make sure coverage looks for .coveragerc in the right place
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -91,7 +89,14 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--failfast', action='store_true',
                         help='halt on first error/failure')
 
+    parser.add_argument('-m', '--mp-spawn', action='store_true',
+                        help=('force "spawn" method of starting child '
+                              'processes to emulate Win behavior on Unix'))
+
     args = parser.parse_args()
+
+    if args.mp_spawn:
+        mp.set_start_method('spawn')
 
     args.skip_coverage &= coverage_available
 
