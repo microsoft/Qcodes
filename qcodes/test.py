@@ -70,39 +70,39 @@ if __name__ == '__main__':
         description=('Core test suite for Qcodes, '
                      'covering everything except instrument drivers'))
 
-    parser.add_argument('-v', '--verbose', nargs='?', dest='verbosity',
-                        const=2, default=1, type=int,
-                        help=('increase verbosity. default 1, '
-                              '-v is the same as -v 2'))
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='increase verbosity')
 
-    parser.add_argument('-c', '--coverage', nargs='?', dest='show_coverage',
-                        const=1, default=1, type=int,
-                        help=('show coverage. default is True '
-                              '-c is the same as -c 1'))
+    parser.add_argument('-q', '--quiet', action='store_true',
+                        help='reduce verbosity (opposite of --verbose)')
 
-    parser.add_argument('-t', '--test_pattern', nargs='?', dest='test_pattern',
-                        const=1, default='test*.py', type=str,
-                        help=('regexp for test name to match'))
+    parser.add_argument('-s', '--skip-coverage', action='store_true',
+                        help='skip coverage reporting')
 
-    parser.add_argument('-f', '--failfast', nargs='?', dest='failfast',
-                        const=1, default=0, type=int,
-                        help=('halt on first error/failure? default 0 '
-                              '(false), -f is the same as -f 1 (true)'))
+    parser.add_argument('-t', '--test_pattern', type=str, default='test*.py',
+                        help=('regexp for test name to match, '
+                              'default "test*.py"'))
+
+    parser.add_argument('-f', '--failfast', action='store_true',
+                        help='halt on first error/failure')
 
     args = parser.parse_args()
 
-    cov = coverage.Coverage(source=['qcodes'])
-    cov.start()
+    if not args.skip_coverage:
+        cov = coverage.Coverage(source=['qcodes'])
+        cov.start()
 
-    success = _test_core(verbosity=args.verbosity,
-                         failfast=bool(args.failfast),
+    success = _test_core(verbosity=(1 + args.verbose - args.quiet),
+                         failfast=args.failfast,
                          test_pattern=args.test_pattern)
 
-    cov.stop()
-    # save coverage anyway since we computed it
-    cov.save()
-    if success and args.show_coverage:
-        cov.report()
+    if not args.skip_coverage:
+        cov.stop()
+        # save coverage anyway since we computed it
+        cov.save()
+        if success and args.skip_coverage:
+            cov.report()
+
     # restore unix-y behavior
     # exit status 1 on fail
     if not success:
