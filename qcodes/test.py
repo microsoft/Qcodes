@@ -91,7 +91,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    cov = coverage.Coverage()
+    cov = coverage.Coverage(source=['qcodes'])
     cov.start()
 
     success = _test_core(verbosity=args.verbosity,
