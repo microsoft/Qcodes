@@ -4,7 +4,7 @@ from datetime import datetime
 
 from .base import Instrument
 from qcodes.process.server import ServerManager, BaseServer
-from qcodes.utils.nested_attrs import NestedAttrAccess, _NoDefault
+from qcodes.utils.nested_attrs import _NoDefault
 
 
 class MockInstrument(Instrument):
