@@ -18,7 +18,8 @@ install:
     - python setup.py develop
 # command to run tests
 script: 
-    - python  qcodes/test.py -c
+    - python  qcodes/test.py --skip-coverage
+    - python  qcodes/test.py --mp-spawn
 after_success:
     # codecov
     - cd qcodes
