@@ -57,9 +57,15 @@ def test_part(name):
 
 if __name__ == '__main__':
     import argparse
-    import coverage
     import os
     import multiprocessing as mp
+
+    try:
+        import coverage
+        coverage_available = True
+    except ImportError:
+        coverage_available = False
+
     mp.set_start_method('spawn')
 
     # make sure coverage looks for .coveragerc in the right place
@@ -86,6 +92,8 @@ if __name__ == '__main__':
                         help='halt on first error/failure')
 
     args = parser.parse_args()
+
+    args.skip_coverage &= coverage_available
 
     if not args.skip_coverage:
         cov = coverage.Coverage(source=['qcodes'])
