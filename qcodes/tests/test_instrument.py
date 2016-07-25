@@ -954,3 +954,31 @@ class TestLocalMock(TestCase):
 
         with self.assertRaises(ValueError):
             self.gates.ask('knock knock? Oh never mind.')
+
+
+class TestModelAttrAccess(TestCase):
+    def setUp(self):
+        self.model = AMockModel()
+
+    def tearDown(self):
+        self.model.close()
+
+    def test_attr_access(self):
+        model = self.model
+
+        model.a = 'local'
+        with self.assertRaises(AttributeError):
+            model.getattr('a')
+
+        self.assertEqual(model.getattr('a', 'dflt'), 'dflt')
+
+        model.setattr('a', 'remote')
+        self.assertEqual(model.a, 'local')
+        self.assertEqual(model.getattr('a'), 'remote')
+
+        model.delattr('a')
+        self.assertEqual(model.getattr('a', 'dflt'), 'dflt')
+
+        model.fmt = 'local override of a remote method'
+        self.assertEqual(model.callattr('fmt', 42), '42.000')
+        self.assertEqual(model.callattr('fmt', value=12.4), '12.400')
