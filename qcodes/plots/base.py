@@ -47,7 +47,7 @@ class BasePlot:
 
     def replace(self, *args, updater=None, **kwargs):
         """
-        Clear all conentent and add new trace.
+        Clear all content and add new trace.
 
         Args:
             args (): optional way to provide x/y/z data without keywords

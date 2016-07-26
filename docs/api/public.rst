@@ -88,7 +88,7 @@ Note that the plotting modules may not be available if their dependencies were n
    :toctree: generated/
 
     qcodes.plots.qcmatplotlib.MatPlot
-    qcodes.plots.qcmatplotlib.QtPlot
+    qcodes.plots.pyqtgraph.QtPlot
 
 Utils & misc
 ~~~~~~~~~~~~

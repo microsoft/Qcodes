@@ -18,7 +18,7 @@ class MatPlot(BasePlot):
     in the constructor, other traces can be added with MatPlot.add()
 
     Args:
-        args: shortcut to provide the x/y/z data. See BasePlot.add
+        *args: shortcut to provide the x/y/z data. See BasePlot.add
 
         figsize (Tuple[Float, Float]): (width, height) tuple in inches to pass to plt.figure
             default (8, 5)
@@ -33,7 +33,7 @@ class MatPlot(BasePlot):
             specifies the index of the matplotlib figure window to use. If None
             then open a new window
 
-        kwargs: passed along to MatPlot.add() to add the first data trace
+        **kwargs: passed along to MatPlot.add() to add the first data trace
     """
     def __init__(self, *args, figsize=None, interval=1, subplots=None, num=None,
                  **kwargs):
