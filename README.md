@@ -1,4 +1,4 @@
-# QCoDeS [![Build Status](https://travis-ci.com/qdev-dk/QCoDeS.svg?token=H7MjHi74teZgv8JHTYhx&branch=master)](https://travis-ci.com/qdev-dk/QCoDeS)
+# QCoDeS [![Build Status](https://travis-ci.com/qdev-dk/Qcodes.svg?token=H7MjHi74teZgv8JHTYhx&branch=master)](https://travis-ci.com/qdev-dk/Qcodes)
 
 QCoDeS is a Python-based data acquisition framework developed by the Copenhagen / Delft / Sydney / Microsoft quantum computing consortium. While it has been developed to serve the needs of nanoelectronic device experiments, it is not inherently limited to such experiments, and can be used anywhere a system with many degrees of freedom is controllable by computer.
 
@@ -70,13 +70,13 @@ If you registered QCoDeS with Python via `setup.py develop`, all you need to do 
 
 ## Usage
 
-Read the [docs](http://qdev-dk.github.io/qcodes) and the notebooks in [docs/examples](docs/examples)
+Read the [docs](http://qdev-dk.github.io/Qcodes) and the notebooks in [docs/examples](docs/examples)
 
 
 ## Contributing
 
 See [Contributing](CONTRIBUTING.rst) for information about bug/issue reports, contributing code, style, and testing
-See the [Roadmap](http://qdev-dk.github.io/qcodes/roadmap.html) an overview of where the project intends to go.
+See the [Roadmap](http://qdev-dk.github.io/Qcodes/roadmap.html) an overview of where the project intends to go.
 
 
 ## Docs
