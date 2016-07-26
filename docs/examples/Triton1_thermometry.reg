@@ -1,0 +1,295 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry]
+
+[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry\chan[-1]]
+"m_lpszCalibFileName"="C:/Oxford Instruments/Thermometry Calibration Files/Magnet top/X55352.cof"
+
+[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry\chan[0]]
+"m_lpszName"="PT2 Head"
+"m_lpszCalibFileName"="C:/Oxford Instruments/Thermometry Calibration Files/4K head/X53075.cof"
+"m_dwEnabled"=dword:00000001
+"m_dwRange"=dword:0000000d
+"m_dwExcitation"=dword:00000005
+"m_dblRange"="2000"
+"m_dblExcitation"="0.0002"
+"m_dwSettleDelay"=dword:00001f40
+"m_dblOldResistance"="897.18"
+"m_dblResistance"="944.51"
+"m_dblOldTemperature"="21.8619581878346"
+"m_dblTemperature"="20.7073938117749"
+"m_dblOldTime"="1460555546"
+"m_dblTime"="1460555661"
+"m_bAutorange"="true"
+"m_dwInCalibRange"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry\chan[10]]
+"m_lpszName"="Still shield tail"
+"m_lpszCalibFileName"="C:/Oxford Instruments/Thermometry Calibration Files/CP/M_RuO2_Ext_4.cof"
+"m_dwEnabled"=dword:00000000
+"m_dwRange"=dword:0000000b
+"m_dwExcitation"=dword:00000005
+"m_dblRange"="200"
+"m_dblExcitation"="0.000199999893084169"
+"m_dwSettleDelay"=dword:00001f40
+"m_dblOldResistance"="67.869"
+"m_dblResistance"="67.855"
+"m_dblOldTemperature"="287.095485095483"
+"m_dblTemperature"="287.167409962017"
+"m_dblOldTime"="1387444773"
+"m_dblTime"="1387444887"
+"m_bAutorange"="true"
+"m_dwInCalibRange"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry\chan[11]]
+"m_lpszName"="chan[11]"
+"m_lpszCalibFileName"="C:\\VeriCold\\Thermometry\\none.dll"
+"m_dwEnabled"=dword:00000000
+"m_dwRange"=dword:00000011
+"m_dwExcitation"=dword:00000007
+"m_dblRange"="200000"
+"m_dblExcitation"="0.002"
+"m_dwSettleDelay"=dword:00001f40
+"m_dblOldResistance"="149"
+"m_dblResistance"="192"
+"m_dblOldTemperature"="0"
+"m_dblTemperature"="0"
+"m_dblOldTime"="1455629381"
+"m_dblTime"="1455629514"
+"m_bAutorange"="true"
+"m_dwInCalibRange"=dword:000003ea
+
+[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry\chan[12]]
+"m_lpszName"="Lead 1"
+"m_lpszCalibFileName"="C:/Oxford Instruments/Thermometry Calibration Files/Lead 1/X53306.cof"
+"m_dwEnabled"=dword:00000000
+"m_dwRange"=dword:00000016
+"m_dwExcitation"=dword:00000005
+"m_dblRange"="632000"
+"m_dblExcitation"="0.000199999776668847"
+"m_dwSettleDelay"=dword:00001f40
+"m_dblOldResistance"="7840"
+"m_dblResistance"="17319"
+"m_dblOldTemperature"="1.62496396307643"
+"m_dblTemperature"="1.41588562351072"
+"m_dblOldTime"="1386671337"
+"m_dblTime"="1386671488"
+"m_bAutorange"="true"
+"m_dwInCalibRange"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry\chan[13]]
+"m_lpszName"="Lead 2"
+"m_lpszCalibFileName"="C:/Oxford Instruments/Thermometry Calibration Files/Lead 2/X55193.cof"
+"m_dwEnabled"=dword:00000000
+"m_dwRange"=dword:00000016
+"m_dwExcitation"=dword:00000000
+"m_dblRange"="1000"
+"m_dblExcitation"="2.47032822920623e-323"
+"m_dwSettleDelay"=dword:00001f40
+"m_dblOldResistance"="0"
+"m_dblResistance"="0"
+"m_dblOldTemperature"="0"
+"m_dblTemperature"="0"
+"m_dblOldTime"="0"
+"m_dblTime"="0"
+"m_bAutorange"="true"
+"m_dwInCalibRange"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry\chan[14]]
+"m_lpszName"="Sample rod"
+"m_lpszCalibFileName"="C:/Oxford Instruments/Thermometry Calibration Files/CP/M_RuO2_Ext_4.cof"
+"m_dwEnabled"=dword:00000000
+"m_dwRange"=dword:00000016
+"m_dwExcitation"=dword:00000000
+"m_dblRange"="1000"
+"m_dblExcitation"="9.99998883344234e-05"
+"m_dwSettleDelay"=dword:00001f40
+"m_dblOldResistance"="0"
+"m_dblResistance"="0"
+"m_dblOldTemperature"="0"
+"m_dblTemperature"="0"
+"m_dblOldTime"="0"
+"m_dblTime"="0"
+"m_bAutorange"="false"
+"m_dwInCalibRange"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry\chan[15]]
+"m_lpszName"="Lower 4K shield"
+"m_lpszCalibFileName"="C:/Oxford Instruments/Thermometry Calibration Files/4K shield bottom/X55350.cof"
+"m_dwEnabled"=dword:00000000
+"m_dwRange"=dword:00000016
+"m_dwExcitation"=dword:00000000
+"m_dblRange"="1000"
+"m_dblExcitation"="9.99998883344234e-05"
+"m_dwSettleDelay"=dword:00001f40
+"m_dblOldResistance"="0"
+"m_dblResistance"="0"
+"m_dblOldTemperature"="0"
+"m_dblTemperature"="0"
+"m_dblOldTime"="0"
+"m_dblTime"="0"
+"m_bAutorange"="false"
+"m_dwInCalibRange"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry\chan[1]]
+"m_lpszName"="PT2 Plate"
+"m_lpszCalibFileName"="C:/Oxford Instruments/Thermometry Calibration Files/4K plate/X52922.340"
+"m_dwEnabled"=dword:00000001
+"m_dwRange"=dword:0000000d
+"m_dwExcitation"=dword:00000005
+"m_dblRange"="2000"
+"m_dblExcitation"="0.0002"
+"m_dwSettleDelay"=dword:00001f40
+"m_dblOldResistance"="1162.17"
+"m_dblResistance"="1231.5"
+"m_dblOldTemperature"="21.2899987351121"
+"m_dblTemperature"="20.0278849440418"
+"m_dblOldTime"="1460555555"
+"m_dblTime"="1460555670"
+"m_bAutorange"="true"
+"m_dwInCalibRange"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry\chan[2]]
+"m_lpszName"="Still Plate"
+"m_lpszCalibFileName"="C:/Oxford Instruments/Thermometry Calibration Files/still/Cgbh9.vcc"
+"m_dwEnabled"=dword:00000001
+"m_dwRange"=dword:0000000e
+"m_dwExcitation"=dword:00000005
+"m_dblRange"="6320"
+"m_dblExcitation"="0.0002"
+"m_dwSettleDelay"=dword:00001f40
+"m_dblOldResistance"="4518.41"
+"m_dblResistance"="4520.25"
+"m_dblOldTemperature"="62.7156089361273"
+"m_dblTemperature"="62.3436033599238"
+"m_dblOldTime"="1460555569"
+"m_dblTime"="1460555684"
+"m_bAutorange"="true"
+"m_dwInCalibRange"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry\chan[3]]
+"m_lpszName"="MC Cernox"
+"m_lpszCalibFileName"="C:/Oxford Instruments/Thermometry Calibration Files/MC/X52921.cof"
+"m_dwEnabled"=dword:00000001
+"m_dwRange"=dword:0000000d
+"m_dwExcitation"=dword:00000005
+"m_dblRange"="2000"
+"m_dblExcitation"="0.0002"
+"m_dwSettleDelay"=dword:00001f40
+"m_dblOldResistance"="675.35"
+"m_dblResistance"="676.68"
+"m_dblOldTemperature"="34.8821016614691"
+"m_dblTemperature"="34.8088886990759"
+"m_dblOldTime"="1460555582"
+"m_dblTime"="1460555698"
+"m_bAutorange"="true"
+"m_dwInCalibRange"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry\chan[4]]
+"m_lpszName"="MC RuO2"
+"m_lpszCalibFileName"="C:/Oxford Instruments/Thermometry Calibration Files/MC/DDah8_DAH8.vcc"
+"m_dwEnabled"=dword:00000001
+"m_dwRange"=dword:0000000d
+"m_dwExcitation"=dword:00000004
+"m_dblRange"="2000"
+"m_dblExcitation"="6.32e-05"
+"m_dwSettleDelay"=dword:00001f40
+"m_dblOldResistance"="531.8"
+"m_dblResistance"="531.79"
+"m_dblOldTemperature"="17.4380571653974"
+"m_dblTemperature"="17.4414440709406"
+"m_dblOldTime"="1460555476"
+"m_dblTime"="1460555591"
+"m_bAutorange"="true"
+"m_dwInCalibRange"=dword:00000001
+
+[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry\chan[5]]
+"m_lpszName"="100mK Plate"
+"m_lpszCalibFileName"="C:/Oxford Instruments/Thermometry Calibration Files/CP/M_RuO2_Ext_4.cof"
+"m_dwEnabled"=dword:00000001
+"m_dwRange"=dword:0000000e
+"m_dwExcitation"=dword:00000004
+"m_dblRange"="6320"
+"m_dblExcitation"="6.32e-05"
+"m_dwSettleDelay"=dword:00001f40
+"m_dblOldResistance"="2252.99"
+"m_dblResistance"="2255.98"
+"m_dblOldTemperature"="51.8305567689997"
+"m_dblTemperature"="49.9064763085877"
+"m_dblOldTime"="1460555489"
+"m_dblTime"="1460555604"
+"m_bAutorange"="true"
+"m_dwInCalibRange"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry\chan[6]]
+"m_lpszName"="Magnet  Bottom"
+"m_lpszCalibFileName"="C:/Oxford Instruments/Thermometry Calibration Files/Magnet top/X55352.cof"
+"m_dwEnabled"=dword:00000001
+"m_dwRange"=dword:0000000c
+"m_dwExcitation"=dword:00000005
+"m_dblRange"="632"
+"m_dblExcitation"="0.0002"
+"m_dwSettleDelay"=dword:00001f40
+"m_dblOldResistance"="431.724"
+"m_dblResistance"="432.145"
+"m_dblOldTemperature"="21.8656699671321"
+"m_dblTemperature"="21.8374371966018"
+"m_dblOldTime"="1460555502"
+"m_dblTime"="1460555617"
+"m_bAutorange"="true"
+"m_dwInCalibRange"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry\chan[7]]
+"m_lpszName"="Magnet Almost Bottom"
+"m_lpszCalibFileName"="C:/Oxford Instruments/Thermometry Calibration Files/Magnet Bottom/X55342.cof"
+"m_dwEnabled"=dword:00000001
+"m_dwRange"=dword:0000000b
+"m_dwExcitation"=dword:00000005
+"m_dblRange"="200"
+"m_dblExcitation"="0.0002"
+"m_dwSettleDelay"=dword:00001f40
+"m_dblOldResistance"="250.825"
+"m_dblResistance"="251.859"
+"m_dblOldTemperature"="58.0663607489416"
+"m_dblTemperature"="57.7839958105985"
+"m_dblOldTime"="1459019529"
+"m_dblTime"="1459019646"
+"m_bAutorange"="false"
+"m_dwInCalibRange"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry\chan[8]]
+"m_lpszName"="PT1 Head"
+"m_lpszCalibFileName"="C:/Oxford Instruments/Thermometry Calibration Files/pt100std.dll"
+"m_dwEnabled"=dword:00000001
+"m_dwRange"=dword:00000009
+"m_dwExcitation"=dword:00000005
+"m_dblRange"="20"
+"m_dblExcitation"="0.0002"
+"m_dwSettleDelay"=dword:00001f40
+"m_dblOldResistance"="11.6661"
+"m_dblResistance"="11.571"
+"m_dblOldTemperature"="57.3984906949643"
+"m_dblTemperature"="57.1817076128138"
+"m_dblOldTime"="1460555522"
+"m_dblTime"="1460555638"
+"m_bAutorange"="true"
+"m_dwInCalibRange"=dword:00000000
+
+[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry\chan[9]]
+"m_lpszName"="PT1 Plate"
+"m_lpszCalibFileName"="C:/Oxford Instruments/Thermometry Calibration Files/pt100std.dll"
+"m_dwEnabled"=dword:00000001
+"m_dwRange"=dword:00000009
+"m_dwExcitation"=dword:00000005
+"m_dblRange"="20"
+"m_dblExcitation"="0.0002"
+"m_dwSettleDelay"=dword:00001f40
+"m_dblOldResistance"="18.382"
+"m_dblResistance"="18.3744"
+"m_dblOldTemperature"="72.8123204216882"
+"m_dblTemperature"="72.7947627066479"
+"m_dblOldTime"="1460555531"
+"m_dblTime"="1460555647"
+"m_bAutorange"="true"
+"m_dwInCalibRange"=dword:00000000
+

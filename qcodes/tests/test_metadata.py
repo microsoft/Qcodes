@@ -7,25 +7,26 @@ class TestMetadatable(TestCase):
     def test_load(self):
         m = Metadatable()
         self.assertEqual(m.metadata, {})
-        m.load_metadata({'something else': {1: 2, 3: 4}})
-        self.assertEqual(m.metadata, {})
-        m.load_metadata({'metadata': {1: 2, 3: 4}})
+        m.load_metadata({1: 2, 3: 4})
         self.assertEqual(m.metadata, {1: 2, 3: 4})
-        m.load_metadata({'metadata': {1: 5}})
+        m.load_metadata({1: 5})
         self.assertEqual(m.metadata, {1: 5, 3: 4})
 
     def test_init(self):
-        m = Metadatable(metadata={2: 3}, not_metadata={4: 5})
+        with self.assertRaises(TypeError):
+            Metadatable(metadata={2: 3}, not_metadata={4: 5})
+
+        m = Metadatable(metadata={2: 3})
         self.assertEqual(m.metadata, {2: 3})
 
     class HasSnapshotBase(Metadatable):
-        def snapshot_base(self):
+        def snapshot_base(self, update=False):
             return {'cheese': 'gruyere'}
 
     class HasSnapshot(Metadatable):
         # Users shouldn't do this... but we'll test its behavior
         # for completeness
-        def snapshot(self):
+        def snapshot(self, update=False):
             return {'fruit': 'kiwi'}
 
     def test_snapshot(self):

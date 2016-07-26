@@ -22,7 +22,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-import time
 import logging
 from functools import partial
 
@@ -78,10 +77,7 @@ class Keithley_2700(VisaInstrument):
     most commonly used.
     '''
     def __init__(self, name, address, reset=False, **kwargs):
-        t0 = time.time()
         super().__init__(name, address, **kwargs)
-
-        self.add_parameter('IDN', get_cmd='*IDN?')
 
         self._modes = ['VOLT:AC', 'VOLT:DC', 'CURR:AC', 'CURR:DC', 'RES',
                        'FRES', 'TEMP', 'FREQ']
@@ -203,10 +199,16 @@ class Keithley_2700(VisaInstrument):
         '''
 
         # add functions
-        self.add_function('readnext',
-                          units='arb.unit',
-                          call_cmd=':DATA:FRESH?',
-                          return_parser=float)
+        self.add_parameter('amplitude',
+                           units='arb.unit',
+                           label=name,
+                           get_cmd=':DATA:FRESH?',
+                           get_parser=float)
+        self.add_parameter('readnext',
+                           units='arb.unit',
+                           label=name,
+                           get_cmd=':DATA:FRESH?',
+                           get_parser=float)
 
         if reset:
             self.reset()
@@ -214,10 +216,7 @@ class Keithley_2700(VisaInstrument):
             self.get_all()
             self.set_defaults()
 
-        t1 = time.time()
-        print('Connected to: ',
-              self.get('IDN').replace(',', ', ').replace('\n', ' '),
-              'in %.2fs' % (t1-t0))
+        self.connect_message()
 
     def get_all(self):
         '''
@@ -394,5 +393,3 @@ class Keithley_2700(VisaInstrument):
         logging.debug('Resetting instrument')
         self._visainstrument.write('*RST')
         self.get_all()
-
-    

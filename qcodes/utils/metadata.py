@@ -1,27 +1,42 @@
+from .helpers import deep_update
+
+
 class Metadatable:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, metadata=None):
         self.metadata = {}
-        self.load_metadata(kwargs)
+        self.load_metadata(metadata or {})
 
-    def load_metadata(self, attributes):
-        self.metadata.update(attributes.get('metadata', {}))
+    def load_metadata(self, metadata):
+        """
+        Load metadata
 
-    def snapshot(self, *args, **kwargs):
-        '''
-        decorate a snapshot dictionary with metadata
+        Args:
+            metadata (dict): metadata to load
+        """
+        deep_update(self.metadata, metadata)
+
+    def snapshot(self, update=False):
+        """
+        Decorate a snapshot dictionary with metadata.
         DO NOT override this method if you want metadata in the snapshot
-        instead, override snapshot_base
-        '''
+        instead, override snapshot_base.
 
-        snap = self.snapshot_base(*args, **kwargs)
+        Args:
+            update (bool): Passed to snapshot_base
+
+        Returns:
+            dict: base snapshot
+        """
+
+        snap = self.snapshot_base(update=update)
 
         if len(self.metadata):
             snap['metadata'] = self.metadata
 
         return snap
 
-    def snapshot_base(self, *ignore_args, **ignore_kwargs):
-        '''
+    def snapshot_base(self, update=False):
+        """
         override this with the primary information for a subclass
-        '''
+        """
         return {}

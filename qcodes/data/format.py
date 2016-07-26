@@ -1,80 +1,75 @@
 from collections import namedtuple
-import numpy as np
-import re
-import math
 from traceback import format_exc
-
-from .data_array import DataArray
+from operator import attrgetter
+import logging
 
 
 class Formatter:
-    '''
+    """
     Data file formatters
 
     Formatters translate between DataSets and data files.
 
-    Each Formatter is expected to implement a write method:
-        write(self, data_set)
+    Each Formatter is expected to implement writing methods:
+    - ``write``: to write the ``DataArray``s
+    - ``write_metadata``: to write the metadata JSON structure
 
-    and either read or read_one_file:
-        read(self, data_set)
-        read_one_file(data_set, f, ids_read)
-            f: a file-like object supporting .readline() and for ... in
-            ids_read: a set of array_id's we've already encountered, so
-                read_one_file can check for duplication and consistency
+    and reading methods:
+    - ``read`` or ``read_one_file`` to reconstruct the ``DataArray``s, either
+      all at once (``read``) or one file at a time, supplied by the base class
+      ``read`` method that loops over all data files at the correct location.
 
-    data_set is a DataSet object, which is expected to have attributes:
-        io: an IO manager (see qcodes.io)
+    - ``read_metadata``: to reload saved metadata. If a subclass overrides
+      ``read``, this method should call ``read_metadata``, but keep it also
+      as a separate method because it occasionally gets called independently.
+
+    All of these methods accept a ``data_set`` argument, which should be a
+    ``DataSet`` object. Even if you are loading a new data set from disk, this
+    object should already have attributes:
+        io: an IO manager (see qcodes.data.io)
         location: a string, like a file path, that identifies the DataSet and
             tells the IO manager where to store it
-        arrays: a dict of {array_id:DataArray} to read into.
-            - read will create DataArrays that don't yet exist.
+        arrays: a dict of ``{array_id:DataArray}`` to read into.
+            - read will create entries that don't yet exist.
             - write will write ALL DataArrays in the DataSet, using
               last_saved_index and modified_range, as well as whether or not
               it found the specified file, to determine how much to write.
-    '''
-    ArrayGroup = namedtuple('ArrayGroup', 'size set_arrays data name')
+    """
+    ArrayGroup = namedtuple('ArrayGroup', 'shape set_arrays data name')
 
-    def find_changes(self, arrays):
-        '''
-        Collect changes made to any of these arrays and determine whether
-        the WHOLE group is elligible for appending or not.
-        Subclasses may choose to use or ignore this information.
-        '''
-        new_data = {}
-        can_append = True
+    def write(self, data_set, io_manager, location):
+        """
+        Write the DataSet to storage.
 
-        for array in arrays.values():
-            if array.modified_range:
-                if array.modified_range[0] <= array.last_saved_index:
-                    can_append = False
-                    new_data[array.array_id] = 'overwrite'
-                else:
-                    new_data[array.array_id] = 'append'
+        Subclasses must override this method.
 
-        return new_data, can_append
+        It is up to the Formatter to decide when to overwrite completely,
+        and when to just append or otherwise update the file(s).
 
-    def mark_saved(self, arrays):
-        '''
-        Mark all DataArrays in this group as saved
-        '''
-        for array in arrays.values():
-            array.mark_saved()
-
-    def write(self, data_set):
-        '''
-        Write the DataSet to storage. It is up to the Formatter to decide
-        when to overwrite completely, and when to just append or otherwise
-        update the file(s).
-        '''
+        Args:
+            data_set (DataSet): the data we are writing.
+            io_manager (io_manager): base physical location to write to.
+            location (str): the file location within the io_manager.
+        """
         raise NotImplementedError
 
     def read(self, data_set):
-        '''
-        Read the entire DataSet by finding all files matching its location
-        (using io_manager.list) and calling read_one_file from the Formatter
-        subclass. Subclasses may alternatively override this entire method.
-        '''
+        """
+        Read the entire ``DataSet``.
+
+        Find all files matching ``data_set.location`` (using io_manager.list)
+        and call ``read_one_file`` on each. Subclasses may either override
+        this method (if they use only one file or want to do their own
+        searching) or override ``read_one_file`` to use the search and
+        initialization functionality defined here.
+
+        Args:
+            data_set (DataSet): the data to read into. Should already have
+                attributes ``io`` (an io manager), ``location`` (string),
+                and ``arrays`` (dict of ``{array_id: array}``, can be empty
+                or can already have some or all of the arrays present, they
+                expect to be overwritten)
+        """
         io_manager = data_set.io
         location = data_set.location
 
@@ -84,8 +79,10 @@ class Formatter:
 
         # in case the DataArrays exist but haven't been initialized
         for array in data_set.arrays.values():
-            if array.data is None:
+            if array.ndarray is None:
                 array.init_data()
+
+        self.read_metadata(data_set)
 
         ids_read = set()
         for fn in data_files:
@@ -93,66 +90,184 @@ class Formatter:
                 try:
                     self.read_one_file(data_set, f, ids_read)
                 except ValueError:
-                    print(format_exc())
-                    print('error reading file ' + fn)
+                    logging.warning('error reading file ' + fn)
+                    logging.warning(format_exc())
 
-    def read_one_file(self, data_set, f, ids_read):
+    def write_metadata(self, data_set, io_manager, location, read_first=True):
+        """
+        Write the metadata for this DataSet to storage.
+
+        Subclasses must override this method.
+
+        Args:
+            data_set (DataSet): the data we are writing.
+            io_manager (io_manager): base physical location to write to.
+            location (str): the file location within the io_manager.
+            read_first (bool, optional): whether to first look for previously
+                saved metadata that may contain more information than the local
+                copy.
+        """
         raise NotImplementedError
 
-    def match_save_range(self, group, file_exists):
-        '''
-        Find the save range that will capture all changes in an array group.
-        matches all full-sized arrays: the data arrays plus the inner loop
-        setpoint array
+    def read_metadata(self, data_set):
+        """
+        Read the metadata from this DataSet from storage.
 
-        note: if an outer loop has changed values (without the inner
-        loop or measured data changing) we won't notice it here
+        Subclasses must override this method.
 
-        use the inner setpoint as a base and look for differences
-        in last_saved_index and modified_range in the data arrays
-        '''
+        Args:
+            data_set (DataSet): the data to read metadata into
+        """
+        raise NotImplementedError
+
+    def read_one_file(self, data_set, f, ids_read):
+        """
+        Read data from a single file into a ``DataSet``.
+
+        Formatter subclasses that break a DataSet into multiple data files may
+        choose to override either this method, which handles one file at a
+        time, or ``read`` which finds matching files on its own.
+
+        Args:
+            data_set (DataSet): the data we are reading into.
+
+            f (file-like): a file-like object to read from, as provided by
+                ``io_manager.open``.
+
+            ids_read (set): ``array_id``s that we have already read.
+                When you read an array, check that it's not in this set (except
+                setpoints, which can be in several files with different inner
+                loops) then add it to the set so other files know it should not
+                be read again.
+
+        Raises:
+            ValueError: if a duplicate array_id of measured data is found
+        """
+        raise NotImplementedError
+
+    def match_save_range(self, group, file_exists, only_complete=True):
+        """
+        Find the save range that will joins all changes in an array group.
+
+        Matches all full-sized arrays: the data arrays plus the inner loop
+        setpoint array.
+
+        Note: if an outer loop has changed values (without the inner
+        loop or measured data changing) we won't notice it here. We assume
+        that before an iteration of the inner loop starts, the outer loop
+        setpoint gets set and then does not change later.
+
+        Args:
+            group (Formatter.ArrayGroup): a ``namedtuple`` containing the
+                arrays that go together in one file, as tuple ``group.data``.
+
+            file_exists (bool): Does this file already exist? If True, and
+                all arrays in the group agree on ``last_saved_index``, we
+                assume the file has been written up to this index and we can
+                append to it. Otherwise we will set the returned range to start
+                from zero (so if the file does exist, it gets completely
+                overwritten).
+
+            only_complete (bool): Should we write all available new data,
+                or only complete rows? If True, we write only the range of
+                array indices which all arrays in the group list as modified,
+                so that future writes will be able to do a clean append to
+                the data file as more data arrives.
+                Default True.
+
+        Returns:
+            Tuple(int, int): the first and last raveled indices that should
+                be saved.
+        """
         inner_setpoint = group.set_arrays[-1]
-        last_saved_index = (inner_setpoint.last_saved_index if file_exists
-                            else None)
-        modified_range = inner_setpoint.modified_range
-        for array in group.data:
-            # force overwrite if inconsistent last_saved_index
-            if array.last_saved_index != last_saved_index:
-                last_saved_index = None
+        full_dim_data = (inner_setpoint, ) + group.data
 
-            # find the modified_range that encompasses all modifications
-            amr = array.modified_range
-            if amr:
-                if modified_range:
-                    modified_range = (min(modified_range[0], amr[0]),
-                                      max(modified_range[1], amr[1]))
-                else:
-                    modified_range = amr
-
-        # update all sources with the new matching values
-        for array in group.data + (inner_setpoint, ):
-            array.modified_range = modified_range
-            array.last_saved_index = last_saved_index
-
-        # calculate the range to save
-        if not modified_range:
-            # nothing to save
-            return None
-        if last_saved_index is None or last_saved_index >= modified_range[0]:
-            # need to overwrite - start save from 0
-            return (0, modified_range[1])
+        # always return None if there are no modifications,
+        # even if there are last_saved_index inconsistencies
+        # so we don't do extra writing just to reshape the file
+        for array in full_dim_data:
+            if array.modified_range:
+                break
         else:
-            # we can append! save only from last save to end of mods
-            return (last_saved_index + 1, modified_range[1])
+            return None
 
-        return last_saved_index, modified_range
+        last_saved_index = inner_setpoint.last_saved_index
+
+        if last_saved_index is None or not file_exists:
+            return self._match_save_range_whole_file(
+                full_dim_data, only_complete)
+
+        # force overwrite if inconsistent last_saved_index
+        for array in group.data:
+            if array.last_saved_index != last_saved_index:
+                return self._match_save_range_whole_file(
+                    full_dim_data, only_complete)
+
+        return self._match_save_range_incremental(
+            full_dim_data, last_saved_index, only_complete)
+
+    @staticmethod
+    def _match_save_range_whole_file(arrays, only_complete):
+        max_save = None
+        agg = (min if only_complete else max)
+        for array in arrays:
+            array_max = array.last_saved_index
+            if array_max is None:
+                array_max = -1
+            mr = array.modified_range
+            if mr:
+                array_max = max(array_max, mr[1])
+            max_save = (array_max if max_save is None else
+                        agg(max_save, array_max))
+
+        if max_save >= 0:
+            return (0, max_save)
+        else:
+            return None
+
+    @staticmethod
+    def _match_save_range_incremental(arrays, last_saved_index, only_complete):
+        mod_ranges = []
+        for array in arrays:
+            mr = array.modified_range
+            if not mr:
+                if only_complete:
+                    return None
+                else:
+                    continue
+            mod_ranges.append(mr)
+
+        mod_range = mod_ranges[0]
+        agg = (min if only_complete else max)
+        for mr in mod_ranges[1:]:
+            mod_range = (min(mod_range[0], mr[0]),
+                         agg(mod_range[1], mr[1]))
+
+        if last_saved_index >= mod_range[1]:
+            return (0, last_saved_index)
+        elif last_saved_index >= mod_range[0]:
+            return (0, mod_range[1])
+        else:
+            return (last_saved_index + 1, mod_range[1])
 
     def group_arrays(self, arrays):
-        '''
-        find the sets of arrays which share all the same setpoint arrays
-        so each set can be grouped together into one file
-        returns ArrayGroup namedtuples
-        '''
+        """
+        Find the sets of arrays which share all the same setpoint arrays.
+
+        Some Formatters use this grouping to determine which arrays to save
+        together in one file.
+
+        Args:
+            arrays (Dict[DataArray]): all the arrays in a DataSet
+
+        Returns:
+            List[Formatter.ArrayGroup]: namedtuples giving:
+                shape (Tuple[int]): dimensions as in numpy
+                set_arrays (Tuple[DataArray]): the setpoints of this group
+                data (Tuple[DataArray]): measured arrays in this group
+                name (str): a unique name of this group, obtained by joining
+                    the setpoint array ids.
+        """
 
         set_array_sets = tuple(set(array.set_arrays
                                    for array in arrays.values()))
@@ -169,6 +284,7 @@ class Formatter:
                 grouped_data[i].append(array)
 
         out = []
+        id_getter = attrgetter('array_id')
         for set_arrays, data in zip(set_array_sets, grouped_data):
             leni = len(set_arrays)
             if not data and any(1 for other_set_arrays in set_array_sets if
@@ -181,271 +297,8 @@ class Formatter:
                 continue
 
             group_name = '_'.join(sai.array_id for sai in set_arrays)
-            out.append(self.ArrayGroup(size=set_arrays[-1].size,
+            out.append(self.ArrayGroup(shape=set_arrays[-1].shape,
                                        set_arrays=set_arrays,
-                                       data=tuple(data),
+                                       data=tuple(sorted(data, key=id_getter)),
                                        name=group_name))
         return out
-
-
-class GNUPlotFormat(Formatter):
-    '''
-    Saves data in one or more gnuplot-format files. We make one file for
-    each set of matching dependent variables in the loop.
-
-    These files are basically tab-separated values, but any quantity of
-    any whitespace characters is accepted.
-
-    Each row represents one setting of the setpoint variable(s)
-    the setpoint variable(s) are in the first column(s)
-    measured variable(s) come after.
-
-    The data is preceded by comment lines (starting with #).
-    We use three:
-    - one for the variable name
-    - the (longer) axis label, in quotes so a label can contain whitespace.
-    - for each dependent var, the (max) number of points in that dimension
-        (this also tells us how many dependent vars we have in this file)
-
-    # id1\tid2\t\id3...
-    # "label1"\t"label2"\t"label3"...
-    # 100\t250
-    1\t2\t3...
-    2\t3\t4...
-
-    For data of 2 dependent variables, gnuplot puts each inner loop into one
-    block, then increments the outer loop in the next block, separated by a
-    blank line.
-
-    We extend this to an arbitrary quantity of dependent variables by using
-    one blank line for each loop level that resets. (gnuplot *does* seem to
-    use 2 blank lines sometimes, to denote a whole new dataset, which sort
-    of corresponds to our situation.)
-    '''
-    def __init__(self, extension='dat', terminator='\n', separator='\t',
-                 comment='# ', number_format='g'):
-        # file extension: accept either with or without leading dot
-        self.extension = '.' + extension.lstrip('.')
-
-        # line terminator (only used for writing; will read any \r\n combo)
-        if terminator not in ('\r', '\n', '\r\n'):
-            raise ValueError(
-                r'GNUPlotFormat terminator must be \r, \n, or \r\n')
-        self.terminator = terminator
-
-        # field separator (only used for writing; will read any whitespace)
-        if not re.fullmatch(r'\s+', separator):
-            raise ValueError('GNUPlotFormat separator must be whitespace')
-        self.separator = separator
-
-        # beginning of a comment line. (when reading, just checks the
-        # non-whitespace character(s) of comment
-        self.comment = comment
-        self.comment_chars = comment.rstrip()
-        if not self.comment_chars:
-            raise ValueError('comment must have some non-whitespace')
-        self.comment_len = len(self.comment_chars)
-
-        # number format (only used for writing; will read any number)
-        self.number_format = '{:' + number_format + '}'
-
-    def read_one_file(self, data_set, f, ids_read):
-        '''
-        Called by Formatter.read to bring one data file into
-        a DataSet. Setpoint data may be duplicated across multiple files,
-        but each measured DataArray must only map to one file.
-        '''
-        arrays = data_set.arrays
-        ids = self._read_comment_line(f).split()
-        labels = self._get_labels(self._read_comment_line(f))
-        size = tuple(map(int, self._read_comment_line(f).split()))
-        ndim = len(size)
-
-        set_arrays = ()
-        data_arrays = []
-        indexed_ids = list(enumerate(ids))
-
-        for i, array_id in indexed_ids[:ndim]:
-            # setpoint arrays
-            set_size = size[: i + 1]
-            if array_id in arrays:
-                set_array = arrays[array_id]
-                if set_array.size != set_size:
-                    raise ValueError(
-                        'sizes do not match for set array: ' + array_id)
-                if array_id not in ids_read:
-                    # it's OK for setpoints to be duplicated across
-                    # multiple files, but we should only empty the
-                    # array out the first time we see it, so subsequent
-                    # reads can check for consistency
-                    set_array.clear()
-            else:
-                set_array = DataArray(label=labels[i], array_id=array_id,
-                                      set_arrays=set_arrays, size=set_size)
-                set_array.init_data()
-                data_set.add_array(set_array)
-
-            set_arrays = set_arrays + (set_array, )
-            ids_read.add(array_id)
-
-        for i, array_id in indexed_ids[ndim:]:
-            # data arrays
-            if array_id in ids_read:
-                raise ValueError('duplicate data id found: ' + array_id)
-
-            if array_id in arrays:
-                data_array = arrays[array_id]
-                data_array.clear()
-            else:
-                data_array = DataArray(label=labels[i], array_id=array_id,
-                                       set_arrays=set_arrays, size=size)
-                data_array.init_data()
-                data_set.add_array(data_array)
-            data_arrays.append(data_array)
-            ids_read.add(array_id)
-
-        indices = [0] * ndim
-        first_point = True
-        resetting = 0
-        for line in f:
-            if self._is_comment(line):
-                continue
-
-            # ignore leading or trailing whitespace (including in blank lines)
-            line = line.strip()
-
-            if not line:
-                # each consecutive blank line implies one more loop to reset
-                # when we read the next data point. Don't depend on the number
-                # of setpoints that change, as there could be weird cases, like
-                # bidirectional sweeps, or highly diagonal sweeps, where this
-                # is incorrect. Anyway this really only matters for >2D sweeps.
-                if not first_point:
-                    resetting += 1
-                continue
-
-            values = tuple(map(float, line.split()))
-
-            if resetting:
-                indices[-resetting - 1] += 1
-                indices[-resetting:] = [0] * resetting
-                resetting = 0
-
-            for value, set_array in zip(values[:ndim], set_arrays):
-                nparray = set_array.ndarray
-                myindices = tuple(indices[:nparray.ndim])
-                stored_value = nparray[myindices]
-                if math.isnan(stored_value):
-                    nparray[myindices] = value
-                elif stored_value != value:
-                    raise ValueError('inconsistent setpoint values',
-                                     stored_value, value, set_array.name,
-                                     myindices, indices)
-
-            for value, data_array in zip(values[ndim:], data_arrays):
-                data_array.ndarray[tuple(indices)] = value
-
-            indices[-1] += 1
-            first_point = False
-
-    def _is_comment(self, line):
-        return line[:self.comment_len] == self.comment_chars
-
-    def _read_comment_line(self, f):
-        s = f.readline()
-        if not self._is_comment(s):
-            raise ValueError('expected a comment line, found:\n' + s)
-        return s[self.comment_len:]
-
-    def _get_labels(self, labelstr):
-        labelstr = labelstr.strip()
-        if labelstr[0] != '"' or labelstr[-1] != '"':
-            # fields are *not* quoted
-            return labelstr.split()
-        else:
-            # fields *are* quoted (and escaped)
-            parts = re.split('"\s+"', labelstr[1:-1])
-            return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
-
-    def write(self, data_set):
-        '''
-        Write updates in this DataSet to storage. Will choose append if
-        possible, overwrite if not.
-        '''
-        io_manager = data_set.io
-        location = data_set.location
-        arrays = data_set.arrays
-
-        groups = self.group_arrays(arrays)
-        existing_files = set(io_manager.list(location))
-        written_files = set()
-
-        for group in groups:
-            if len(groups) == 1:
-                fn = io_manager.join(location + self.extension)
-            else:
-                fn = io_manager.join(location, group.name + self.extension)
-
-            written_files.add(fn)
-
-            file_exists = fn in existing_files
-            save_range = self.match_save_range(group, file_exists)
-
-            if save_range is None:
-                continue
-
-            overwrite = save_range[0] == 0
-            open_mode = 'w' if overwrite else 'a'
-            shape = group.set_arrays[-1].shape
-
-            with io_manager.open(fn, open_mode) as f:
-                if overwrite:
-                    f.write(self._make_header(group))
-
-                for i in range(save_range[0], save_range[1] + 1):
-                    indices = np.unravel_index(i, shape)
-
-                    # insert a blank line for each loop that reset (to index 0)
-                    # note that if *all* indices are zero (the first point)
-                    # we won't put any blanks
-                    for j, index in enumerate(reversed(indices)):
-                        if index != 0:
-                            if j:
-                                f.write(self.terminator * j)
-                            break
-
-                    one_point = self._data_point(group, indices)
-                    f.write(self.separator.join(one_point) + self.terminator)
-
-        extra_files = existing_files - written_files
-        if extra_files:
-            print('removing obsolete files: ' + ','.join(extra_files))
-            for fn in extra_files:
-                io_manager.remove(fn)
-
-    def _make_header(self, group):
-        ids, labels = [], []
-        for array in group.set_arrays + group.data:
-            ids.append(array.array_id)
-            label = getattr(array, 'label', array.array_id)
-            label = label.replace('\\', '\\\\').replace('"', '\\"')
-            labels.append('"' + label + '"')
-
-        sizes = [str(size) for size in group.set_arrays[-1].shape]
-        if len(sizes) != len(group.set_arrays):
-            raise ValueError('array dimensionality does not match setpoints')
-
-        out = (self._comment_line(ids) + self._comment_line(labels) +
-               self._comment_line(sizes))
-
-        return out
-
-    def _comment_line(self, items):
-        return self.comment + self.separator.join(items) + self.terminator
-
-    def _data_point(self, group, indices):
-        for array in group.set_arrays:
-            yield self.number_format.format(array[indices[:array.ndim]])
-
-        for array in group.data:
-            yield self.number_format.format(array[indices])
