@@ -123,7 +123,7 @@ class TestInstrumentServer(TestCase):
             with LogCapture() as logs:
                 TimedInstrumentServer(self.query_queue, self.response_queue,
                                       extras)
-        except:
+        except TypeError:
             from traceback import format_exc
             print(format_exc())
 
