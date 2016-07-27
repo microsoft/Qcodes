@@ -92,25 +92,22 @@ class SR865(VisaInstrument):
                            val_mapping={6: 0,
                                         12: 1,
                                         18: 2,
-                                        24: 3,
-                                        })
+                                        24: 3})
         self.add_parameter(name='sync_filter',
                            label='Sync filter',
                            get_cmd='SYNC?',
                            set_cmd='SYNC {}',
                            val_mapping={'OFF': 0,
-                                        'ON': 1,
-                                        })
-        self.add_parameter(name='noise_bndwdth',
+                                        'ON': 1})
+        self.add_parameter(name='noise_bandwidth',
                            label='Noise bandwidth',
+                           units='Hz',
                            get_cmd='ENBW?',
-                           set_cmd='ENBW {}',
                            get_parser=float)
-        self.add_parameter(name='signal_str',
+        self.add_parameter(name='signal_strength',
                            label='Signal strength indicator',
                            get_cmd='ILVL?',
-                           set_cmd='ILVL {}',
-                           get_parser=float)
+                           get_parser=int)
         self.add_parameter(name='signal_input',
                            label='Signal input',
                            get_cmd='IVMD?',
@@ -127,37 +124,32 @@ class SR865(VisaInstrument):
                                         300e-3: 1,
                                         100e-3: 2,
                                         30e-3: 3,
-                                        10e-3: 4,
-                                        })
+                                        10e-3: 4})
         self.add_parameter(name='input_config',
                            label='Input configuration',
                            get_cmd='ISRC?',
                            set_cmd='ISRC {}',
                            val_mapping={'a': 0,
-                                        'a-b': 1,
-                                        })
+                                        'a-b': 1})
         self.add_parameter(name='input_shield',
                            label='Input shield',
                            get_cmd='IGND?',
                            set_cmd='IGND {}',
                            val_mapping={'float': 0,
-                                        'ground': 1,
-                                        })
+                                        'ground': 1})
         self.add_parameter(name='input_gain',
                            label='Input gain',
                            units='ohm',
                            get_cmd='ICUR?',
                            set_cmd='ICUR {}',
                            val_mapping={1e6:   0,
-                                        100e6: 1,
-                                        })
+                                        100e6: 1})
         self.add_parameter(name='adv_filter',
                            label='Advanced filter',
                            get_cmd='ADVFILT?',
                            set_cmd='ADVFILT {}',
                            val_mapping={'OFF': 0,
-                                        'ON': 1,
-                                        })
+                                        'ON': 1})
         self.add_parameter(name='input_coupling',
                            label='Input coupling',
                            get_cmd='ICPL?',
@@ -173,13 +165,12 @@ class SR865(VisaInstrument):
                                         100e-6: 4, 300e-6: 5,
                                         1e-3: 6, 3e-3: 7,
                                         10e-3: 8, 30e-3: 9,
-                                        100e-6: 10, 300e-6: 11,
+                                        100e-3: 10, 300e-3: 11,
                                         1: 12, 3: 13,
                                         10: 14, 30: 15,
                                         100: 16, 300: 17,
                                         1e3: 18, 3e3: 19,
-                                        10e3: 20, 30e3: 21,
-                                        })
+                                        10e3: 20, 30e3: 21})
         # Auto functions
         self.add_function('auto_range', call_cmd='ARNG')
         self.add_function('auto_scale', call_cmd='ASCL')
@@ -188,37 +179,44 @@ class SR865(VisaInstrument):
         # Data transfer
         # first 4 parameters from a list of 16 below.
         self.add_parameter('X',
+                           label='In-phase Magnitude',
                            get_cmd='OUTP? 0',
                            get_parser=float,
                            units='V')
         self.add_parameter('Y',
+                           label='Out-phase Magnitude',
                            get_cmd='OUTP? 1',
                            get_parser=float,
                            units='V')
         self.add_parameter('R',
+                           label='Magnitude',
                            get_cmd='OUTP? 2',
                            get_parser=float,
                            units='V')
         self.add_parameter('P',
+                           label='Phase',
                            get_cmd='OUTP? 3',
                            get_parser=float,
                            units='deg')
 
         # CH1/CH2 Output Commands
         self.add_parameter('X_offset',
-                           label='X offset percentage',
+                           label='X offset ',
+                           units='%',
                            get_cmd='COFP? 0',
                            set_cmd='COFP 0, {}',
                            get_parser=float,
                            vals=Numbers(min_value=-999.99, max_value=999.99))
         self.add_parameter('Y_offset',
-                           label='Y offset percentage',
+                           label='Y offset',
+                           units='%',
                            get_cmd='COFP? 1',
                            set_cmd='COFP 1, {}',
                            get_parser=float,
                            vals=Numbers(min_value=-999.99, max_value=999.99))
         self.add_parameter('R_offset',
-                           label='R offset percentage',
+                           label='R offset',
+                           units='%',
                            get_cmd='COFP? 2',
                            set_cmd='COFP 2, {}',
                            get_parser=float,
@@ -269,8 +267,6 @@ class SR865(VisaInstrument):
         self.connect_message()
 
     def _set_units(self, units):
-        # TODO:
-        # make a public parameter function that allows to change the units
         for param in [self.X, self.Y, self.R, self.sensitivity]:
             param.units = units
 
