@@ -186,10 +186,14 @@ class MockMeter(MockInstTester):
 class DummyInstrument(Instrument):
 
     def __init__(self, name='dummy', gates=['dac1', 'dac2', 'dac3'], **kwargs):
+        ''' Create a dummy instrument that can be used for testing
+        
+        Args:
+            name (string): name for the instrument
+            gates (list): list of names that is used to create parameters for
+                            the instrument
+        '''
         super().__init__(name, **kwargs)
-
-        # container for the data
-        self._data = dict()
 
         # make gates
         for i, g in enumerate(gates):
