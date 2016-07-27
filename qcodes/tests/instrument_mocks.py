@@ -1,10 +1,14 @@
 import time
+import logging
+from functools import partial
 
+from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument, MockModel
 from qcodes.utils.validators import Numbers
 
 
 class AMockModel(MockModel):
+
     def __init__(self):
         self._memory = {}
         self._reset()
@@ -71,6 +75,7 @@ class AMockModel(MockModel):
 
 
 class ParamNoDoc:
+
     def __init__(self, name, *args, **kwargs):
         self.name = name
 
@@ -79,6 +84,7 @@ class ParamNoDoc:
 
 
 class MockInstTester(MockInstrument):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.attach_adder()
@@ -107,6 +113,7 @@ class MockInstTester(MockInstrument):
 
 
 class MockGates(MockInstTester):
+
     def __init__(self, model=None, **kwargs):
         super().__init__('gates', model=model, delay=0.001, **kwargs)
 
@@ -155,6 +162,7 @@ class MockGates(MockInstTester):
 
 
 class MockSource(MockInstTester):
+
     def __init__(self, model=None, **kwargs):
         super().__init__('source', model=model, delay=0.001, **kwargs)
 
@@ -165,9 +173,37 @@ class MockSource(MockInstTester):
 
 
 class MockMeter(MockInstTester):
+
     def __init__(self, model=None, **kwargs):
         super().__init__('meter', model=model, delay=0.001, **kwargs)
 
         self.add_parameter('amplitude', get_cmd='ampl?', get_parser=float)
         self.add_function('echo', call_cmd='echo {:.2f}?',
                           args=[Numbers(0, 1000)], return_parser=float)
+
+
+class DummyInstrument(Instrument):
+
+    def __init__(self, name='dummy', gates=['dac1', 'dac2', 'dac3'], **kwargs):
+        super().__init__(name, **kwargs)
+
+        # container for the data
+        self._data = dict()
+
+        # make gates
+        for i, g in enumerate(gates):
+            self.add_parameter(g,
+                               label='Gate {} (arb. units)'.format(g),
+                               get_cmd=partial(self.get_gate, g),
+                               set_cmd=partial(self.set_gate, g),
+                               get_parser=float,
+                               vals=Numbers(-800, 400))
+
+    def get_gate(self, gate):
+        logging.debug('DummyInstrument: get_gate %s' % gate)
+        return self._data.get(gate, 0)
+
+    def set_gate(self, gate, value):
+        logging.debug('DummyInstrument: set_gate %s: %s' % (gate, value))
+        self._data[gate] = value
+        return
