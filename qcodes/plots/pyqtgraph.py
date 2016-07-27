@@ -1,6 +1,6 @@
-'''
+"""
 Live plotting using pyqtgraph
-'''
+"""
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as pgmp
@@ -15,30 +15,31 @@ TransformState = namedtuple('TransformState', 'translate scale revisit')
 
 
 class QtPlot(BasePlot):
-    '''
+    """
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with QtPlot.add().
 
     For information on how x/y/z *args are handled see add() in the base
     plotting class.
 
-    args: shortcut to provide the x/y/z data. See BasePlot.add
+    Args:
+        *args: shortcut to provide the x/y/z data. See BasePlot.add
 
-    figsize: (width, height) tuple in pixels to pass to GraphicsWindow
-        default (1000, 600)
-    interval: period in seconds between update checks
-        default 0.25
-    theme: tuple of (foreground_color, background_color), where each is
-        a valid Qt color. default (dark gray, white), opposite the pyqtgraph
-        default of (white, black)
+        figsize: (width, height) tuple in pixels to pass to GraphicsWindow
+            default (1000, 600)
+        interval: period in seconds between update checks
+            default 0.25
+        theme: tuple of (foreground_color, background_color), where each is
+            a valid Qt color. default (dark gray, white), opposite the pyqtgraph
+            default of (white, black)
 
-    kwargs: passed along to QtPlot.add() to add the first data trace
-    '''
+        **kwargs: passed along to QtPlot.add() to add the first data trace
+    """
     proc = None
     rpg = None
 
     def __init__(self, *args, figsize=(1000, 600), interval=0.25,
-                 windowTitle='', theme=((60, 60, 60), 'w'), remote=True, **kwargs):
+                 windowTitle='', theme=((60, 60, 60), 'w'), show_window=True, remote=True, **kwargs):
         super().__init__(interval)
 
         self.theme = theme
@@ -46,9 +47,9 @@ class QtPlot(BasePlot):
         if remote:
             if not self.__class__.proc:
                 self._init_qt()
-        else:            
+        else:
             # overrule the remote pyqtgraph class
-            self.rpg = pg 
+            self.rpg = pg
         self.win = self.rpg.GraphicsWindow(title=windowTitle)
         self.win.setBackground(theme[1])
         self.win.resize(*figsize)
@@ -56,6 +57,9 @@ class QtPlot(BasePlot):
 
         if args or kwargs:
             self.add(*args, **kwargs)
+
+        if not show_window:
+            self.win.hide()
 
     def _init_qt(self):
         # starting the process for the pyqtgraph plotting
@@ -66,10 +70,10 @@ class QtPlot(BasePlot):
         self.__class__.rpg = self.proc._import('pyqtgraph')
 
     def clear(self):
-        '''
+        """
         Clears the plot window and removes all subplots and traces
         so that the window can be reused.
-        '''
+        """
         self.win.clear()
         self.traces = []
         self.subplots = []
@@ -130,8 +134,13 @@ class QtPlot(BasePlot):
             if 'symbolBrush' not in kwargs:
                 kwargs['symbolBrush'] = color
 
-        return subplot_object.plot(*self._line_data(x, y), antialias=antialias,
-                                   **kwargs)
+        # suppress warnings when there are only NaN to plot
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', 'All-NaN axis encountered')
+            warnings.filterwarnings('ignore', 'All-NaN slice encountered')
+            pl = subplot_object.plot(*self._line_data(x, y),
+                                     antialias=antialias, **kwargs)
+        return pl
 
     def _line_data(self, x, y):
         return [self._clean_array(arg) for arg in [x, y] if arg is not None]
@@ -163,6 +172,7 @@ class QtPlot(BasePlot):
         }
 
         self._update_image(plot_object, {'x': x, 'y': y, 'z': z})
+        self._update_cmap(plot_object)
 
         return plot_object
 
@@ -187,8 +197,6 @@ class QtPlot(BasePlot):
                 # nothing to plot, so give up.
                 return
         z[np.where(np.isnan(z))] = z_range[0]
-
-        self._update_cmap(plot_object)
 
         hist_range = hist.getLevels()
         if hist_range == plot_object['histlevels']:
@@ -232,7 +240,7 @@ class QtPlot(BasePlot):
             self._update_cmap(plot_object)
 
     def _get_transform(self, array):
-        '''
+        """
         pyqtgraph seems to only support uniform pixels in image plots.
 
         for a given setpoint array, extract the linear transform it implies
@@ -249,7 +257,7 @@ class QtPlot(BasePlot):
 
         revisit is True if we just don't have enough info to scale yet,
         but we might later.
-        '''
+        """
 
         if array is None:
             return TransformState(0, 1, True)
@@ -326,11 +334,11 @@ class QtPlot(BasePlot):
         return TransformState(translate, scale, revisit)
 
     def _update_labels(self, subplot_object, config):
-        '''
+        """
         Updates x and y labels, by default tries to extract label from
         the DataArray objects located in the trace config. Custom labels
         can be specified the **kwargs "xlabel" and "ylabel"
-        '''
+        """
         for axletter, side in (('x', 'bottom'), ('y', 'left')):
             ax = subplot_object.getAxis(side)
             # pyqtgraph doesn't seem able to get labels, only set
@@ -356,10 +364,10 @@ class QtPlot(BasePlot):
                 plot_object.setData(*self._line_data(config['x'], config['y']))
 
     def _clean_array(self, array):
-        '''
+        """
         we can't send a DataArray to remote pyqtgraph for some reason,
         so send the plain numpy array
-        '''
+        """
         if hasattr(array, 'ndarray') and isinstance(array.ndarray, np.ndarray):
             return array.ndarray
         return array

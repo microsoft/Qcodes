@@ -1,17 +1,18 @@
 import math
+import numpy
 
 BIGSTRING = 1000000000
 BIGINT = int(1e18)
 
 
 def validate_all(*args, context=''):
-    '''
-    takes a list of (validator, value) couplets and tests whether they are
+    """
+    Takes a list of (validator, value) couplets and tests whether they are
     all valid, raising ValueError otherwise
 
     context: keyword-only arg with a string to include in the error message
         giving the user context for the error
-    '''
+    """
     if context:
         context = '; ' + context
 
@@ -20,9 +21,9 @@ def validate_all(*args, context=''):
 
 
 def range_str(min_val, max_val, name):
-    '''
+    """
     utility to represent ranges in Validator repr's
-    '''
+    """
     if max_val is not None:
         if min_val is not None:
             if max_val == min_val:
@@ -38,7 +39,7 @@ def range_str(min_val, max_val, name):
 
 
 class Validator:
-    '''
+    """
     base class for all value validators
     each should have its own constructor, and override:
 
@@ -49,7 +50,7 @@ class Validator:
         raises an error (TypeError or ValueError) if the value fails
 
     is_numeric: is this a numeric type (so it can be swept)?
-    '''
+    """
     def __init__(self):
         raise NotImplementedError
 
@@ -60,13 +61,15 @@ class Validator:
 
 
 class Anything(Validator):
-    '''allow any value to pass'''
+    """allow any value to pass"""
     def __init__(self):
         pass
 
     def validate(self, value, context=''):
         pass
-
+    # NOTE(giulioungaretti): why is_numeric?
+    # it allows fort set_step in parameter
+    # TODO(giulioungaretti): possible refactor
     is_numeric = True
 
     def __repr__(self):
@@ -74,9 +77,9 @@ class Anything(Validator):
 
 
 class Bool(Validator):
-    '''
+    """
     requires a boolean
-    '''
+    """
     def __init__(self):
         pass
 
@@ -90,11 +93,11 @@ class Bool(Validator):
 
 
 class Strings(Validator):
-    '''
+    """
     requires a string
     optional parameters min_length and max_length limit the allowed length
     to min_length <= len(value) <= max_length
-    '''
+    """
 
     def __init__(self, min_length=0, max_length=BIGSTRING):
         if isinstance(min_length, int) and min_length >= 0:
@@ -126,25 +129,33 @@ class Strings(Validator):
 
 
 class Numbers(Validator):
-    '''
-    requires a number, either int or float
-    optional parameters min_value and max_value enforce
-    min_value <= value <= max_value
-    '''
+    """
+    Args:
+        min_value (Optional[Union[float, int]):  Min value allowed, default inf
+        max_value:  (Optional[Union[float, int]): Max  value allowed, default inf
+
+    Raises:
+
+    Todo:
+        - fix raises
+    """
+
+    validtypes = (float, int, numpy.integer, numpy.floating)
 
     def __init__(self, min_value=-float("inf"), max_value=float("inf")):
-        if isinstance(min_value, (float, int)):
+
+        if isinstance(min_value, self.validtypes):
             self._min_value = min_value
         else:
             raise TypeError('min_value must be a number')
 
-        if isinstance(max_value, (float, int)) and max_value > min_value:
+        if isinstance(max_value, self.validtypes) and max_value > min_value:
             self._max_value = max_value
         else:
             raise TypeError('max_value must be a number bigger than min_value')
 
     def validate(self, value, context=''):
-        if not isinstance(value, (float, int)):
+        if not isinstance(value, self.validtypes):
             raise TypeError(
                 '{} is not an int or float; {}'.format(repr(value), context))
 
@@ -163,28 +174,30 @@ class Numbers(Validator):
 
 
 class Ints(Validator):
-    '''
+    """
     requires an integer
     optional parameters min_value and max_value enforce
     min_value <= value <= max_value
-    '''
+    """
+
+    validtypes = (int, numpy.integer)
 
     def __init__(self, min_value=-BIGINT, max_value=BIGINT):
-        if isinstance(min_value, int):
-            self._min_value = min_value
+        if isinstance(min_value, self.validtypes):
+            self._min_value = int(min_value)
         else:
             raise TypeError('min_value must be an integer')
 
-        if not isinstance(max_value, int):
+        if not isinstance(max_value, self.validtypes):
             raise TypeError('max_value must be an integer')
         if max_value > min_value:
-            self._max_value = max_value
+            self._max_value = int(max_value)
         else:
             raise TypeError(
                 'max_value must be an integer bigger than min_value')
 
     def validate(self, value, context=''):
-        if not isinstance(value, int):
+        if not isinstance(value, self.validtypes):
             raise TypeError(
                 '{} is not an int; {}'.format(repr(value), context))
 
@@ -203,10 +216,10 @@ class Ints(Validator):
 
 
 class Enum(Validator):
-    '''
+    """
     requires one of a provided set of values
     eg. Enum(val1, val2, val3)
-    '''
+    """
 
     def __init__(self, *values):
         if not len(values):
@@ -229,12 +242,23 @@ class Enum(Validator):
         return '<Enum: {}>'.format(repr(self._values))
 
 
+class OnOff(Validator):
+    """
+    requires either the string 'on' or 'off'
+    """
+    def __init__(self):
+        self._validator = Enum('on', 'off')
+
+    def validate(self, value, context=''):
+        return self._validator.validate(value, context)
+
+
 class MultiType(Validator):
-    '''
+    """
     allow the union of several different validators
     for example to allow numbers as well as "off":
     MultiType(Numbers(), Enum("off"))
-    '''
+    """
 
     def __init__(self, *validators):
         if not validators:

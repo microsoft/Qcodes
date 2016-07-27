@@ -111,6 +111,7 @@ class MockMeter(MockInstrument):
 class AverageGetter(Parameter):
     def __init__(self, measured_param, sweep_values, delay):
         super().__init__(name='avg_' + measured_param.name)
+        self._instrument = getattr(measured_param, '_instrument', None)
         self.measured_param = measured_param
         self.sweep_values = sweep_values
         self.delay = delay
@@ -120,20 +121,22 @@ class AverageGetter(Parameter):
     def get(self):
         loop = Loop(self.sweep_values, self.delay).each(self.measured_param)
         data = loop.run_temp()
-        return data.arrays[self.measured_param.name].mean()
+        array = data.arrays[self.measured_param.full_name]
+        return array.mean()
 
 
 class AverageAndRaw(Parameter):
     def __init__(self, measured_param, sweep_values, delay):
         name = measured_param.name
         super().__init__(names=(name, 'avg_' + name))
+        self._instrument = getattr(measured_param, '_instrument', None)
         self.measured_param = measured_param
         self.sweep_values = sweep_values
         self.delay = delay
-        self.sizes = (len(sweep_values), None)
+        self.shapes = ((len(sweep_values),), None)
         set_array = DataArray(parameter=sweep_values.parameter,
                               preset_data=sweep_values)
-        self.setpoints = (set_array, None)
+        self.setpoints = ((set_array,), None)
         if hasattr(measured_param, 'label'):
             self.labels = (measured_param.label,
                            'Average: ' + measured_param.label)
@@ -141,5 +144,5 @@ class AverageAndRaw(Parameter):
     def get(self):
         loop = Loop(self.sweep_values, self.delay).each(self.measured_param)
         data = loop.run_temp()
-        array = data.arrays[self.measured_param.name]
+        array = data.arrays[self.measured_param.full_name]
         return (array, array.mean())
