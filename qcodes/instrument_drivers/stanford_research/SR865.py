@@ -33,12 +33,11 @@ class SR865(VisaInstrument):
     _VOLT_ENUM = Enum(*_VOLT_TO_N.keys())
     _CURR_ENUM = Enum(*_CURR_TO_N.keys())
 
-    _INPUT_CONFIG_TO_N = {
-        'a': 0,
-        'a-b': 1,
+    _INPUT_SIGNAL_TO_N = {
+        'voltage': 0,
+        'current': 1,
     }
-
-    _N_TO_INPUT_CONFIG = {v: k for k, v in _INPUT_CONFIG_TO_N.items()}
+    _N_TO_INPUT_SIGNAL = {v: k for k, v in _INPUT_SIGNAL_TO_N.items()}
 
     def __init__(self, name, address, reset=False,  **kwargs):
         super().__init__(name, address,  terminator='\n', **kwargs)
@@ -115,10 +114,10 @@ class SR865(VisaInstrument):
         self.add_parameter(name='signal_input',
                            label='Signal input',
                            get_cmd='IVMD?',
+                           get_parser=self._get_input_config,
                            set_cmd='IVMD {}',
-                           val_mapping={'voltage': 0,
-                                        'current': 1,
-                                        })
+                           set_parser=self._set_input_config,
+                           vals=Enum(*self._INPUT_SIGNAL_TO_N.keys()))
         self.add_parameter(name='input_range',
                            label='Input range',
                            units='V',
@@ -133,10 +132,10 @@ class SR865(VisaInstrument):
         self.add_parameter(name='input_config',
                            label='Input configuration',
                            get_cmd='ISRC?',
-                           get_parser=self._get_input_config,
                            set_cmd='ISRC {}',
-                           set_parser=self._set_input_config,
-                           vals=Enum(*self._INPUT_CONFIG_TO_N.keys()))
+                           val_mapping={'a': 0,
+                                        'a-b': 1,
+                                        })
         self.add_parameter(name='input_shield',
                            label='Input shield',
                            get_cmd='IGND?',
@@ -186,10 +185,79 @@ class SR865(VisaInstrument):
         self.add_function('auto_scale', call_cmd='ASCL')
         self.add_function('auto_phase', call_cmd='APHS')
 
-        def parse_offset_get(s):
-            parts = s.split(',')
+        # Data transfer
+        # first 4 parameters from a list of 16 below.
+        self.add_parameter('X',
+                           get_cmd='OUTP? 0',
+                           get_parser=float,
+                           units='V')
+        self.add_parameter('Y',
+                           get_cmd='OUTP? 1',
+                           get_parser=float,
+                           units='V')
+        self.add_parameter('R',
+                           get_cmd='OUTP? 2',
+                           get_parser=float,
+                           units='V')
+        self.add_parameter('P',
+                           get_cmd='OUTP? 3',
+                           get_parser=float,
+                           units='deg')
 
-            return float(parts[0]), int(parts[1])
+        # CH1/CH2 Output Commands
+        self.add_parameter('X_offset',
+                           label='X offset percentage',
+                           get_cmd='COFP? 0',
+                           set_cmd='COFP 0, {}',
+                           get_parser=float,
+                           vals=Numbers(min_value=-999.99, max_value=999.99))
+        self.add_parameter('Y_offset',
+                           label='Y offset percentage',
+                           get_cmd='COFP? 1',
+                           set_cmd='COFP 1, {}',
+                           get_parser=float,
+                           vals=Numbers(min_value=-999.99, max_value=999.99))
+        self.add_parameter('R_offset',
+                           label='R offset percentage',
+                           get_cmd='COFP? 2',
+                           set_cmd='COFP 2, {}',
+                           get_parser=float,
+                           vals=Numbers(min_value=-999.99, max_value=999.99))
+        self.add_parameter('X_expand',
+                           label='X expand multiplier',
+                           get_cmd='CEXP? 0',
+                           set_cmd='CEXP 0, {}',
+                           val_mapping={'OFF': '0',
+                                        'X10': '1',
+                                        'X100': '2'})
+        self.add_parameter('Y_expand',
+                           label='Y expand multiplier',
+                           get_cmd='CEXP? 1',
+                           set_cmd='CEXP 1, {}',
+                           val_mapping={'OFF': 0,
+                                        'X10': 1,
+                                        'X100': 2})
+        self.add_parameter('R_expand',
+                           label='R expand multiplier',
+                           get_cmd='CEXP? 2',
+                           set_cmd='CEXP 2, {}',
+                           val_mapping={'OFF': 0,
+                                        'X10': 1,
+                                        'X100': 2})
+        # Aux input/output
+        for i in [0, 1, 2, 3]:
+            self.add_parameter('aux_in{}'.format(i),
+                               label='Aux input {}'.format(i),
+                               get_cmd='OAUX? {}'.format(i),
+                               get_parser=float,
+                               units='V')
+
+            self.add_parameter('aux_out{}'.format(i),
+                               label='Aux output {}'.format(i),
+                               get_cmd='AUXV? {}'.format(i),
+                               get_parser=float,
+                               set_cmd='AUXV {0}, {{}}'.format(i),
+                               units='V')
 
         # Interface
         self.add_function('reset', call_cmd='*RST')
@@ -203,13 +271,13 @@ class SR865(VisaInstrument):
     def _set_units(self, units):
         # TODO:
         # make a public parameter function that allows to change the units
-        for param in [self.sensitivity]:
+        for param in [self.X, self.Y, self.R, self.sensitivity]:
             param.units = units
 
     def _get_input_config(self, s):
-        mode = self._N_TO_INPUT_CONFIG[int(s)]
+        mode = self._N_TO_INPUT_SIGNAL[int(s)]
 
-        if mode in ['a', 'a-b']:
+        if mode == 'voltage':
             self.sensitivity.set_validator(self._VOLT_ENUM)
             self._set_units('V')
         else:
@@ -219,23 +287,23 @@ class SR865(VisaInstrument):
         return mode
 
     def _set_input_config(self, s):
-        if s in ['a', 'a-b']:
+        if s == 'voltage':
             self.sensitivity.set_validator(self._VOLT_ENUM)
             self._set_units('V')
         else:
             self.sensitivity.set_validator(self._CURR_ENUM)
             self._set_units('A')
 
-        return self._INPUT_CONFIG_TO_N[s]
+        return self._INPUT_SIGNAL_TO_N[s]
 
     def _get_sensitivity(self, s):
-        if self.input_config() in ['a', 'a-b']:
+        if self.signal_input() == 'voltage':
             return self._N_TO_VOLT[int(s)]
         else:
             return self._N_TO_CURR[int(s)]
 
     def _set_sensitivity(self, s):
-        if self.input_config() in ['a', 'a-b']:
+        if self.signal_input() == 'voltage':
             return self._VOLT_TO_N[s]
         else:
             return self._CURR_TO_N[s]
