@@ -529,7 +529,7 @@ class AlazarTech_ATS(Instrument):
         all_params = self.parameters.values()
         update_params = []
         for arg in args:
-            if arg in all_params:
+            if isinstance(arg,AlazarParameter):
                 args_out.append(arg._get_byte())
                 update_params.append(arg)
             else:
