@@ -5,6 +5,7 @@ from functools import partial
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument, MockModel
 from qcodes.utils.validators import Numbers
+from qcodes.instrument.parameter import ManualParameter
 
 
 class AMockModel(MockModel):
@@ -193,17 +194,7 @@ class DummyInstrument(Instrument):
         # make gates
         for i, g in enumerate(gates):
             self.add_parameter(g,
+                               parameter_class=ManualParameter,
+                               initial_value=0,
                                label='Gate {} (arb. units)'.format(g),
-                               get_cmd=partial(self.get_gate, g),
-                               set_cmd=partial(self.set_gate, g),
-                               get_parser=float,
                                vals=Numbers(-800, 400))
-
-    def get_gate(self, gate):
-        logging.debug('DummyInstrument: get_gate %s' % gate)
-        return self._data.get(gate, 0)
-
-    def set_gate(self, gate, value):
-        logging.debug('DummyInstrument: set_gate %s: %s' % (gate, value))
-        self._data[gate] = value
-        return
