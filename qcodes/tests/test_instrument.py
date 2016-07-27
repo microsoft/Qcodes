@@ -16,11 +16,12 @@ from qcodes.utils.helpers import LogCapture
 from qcodes.process.helpers import kill_processes
 
 from .instrument_mocks import (AMockModel, MockInstTester,
-                               MockGates, MockSource, MockMeter)
+                               MockGates, MockSource, MockMeter, DummyInstrument)
 from .common import strip_qc
 
 
 class TestParamConstructor(TestCase):
+
     def test_name_s(self):
         p = Parameter('simple')
         self.assertEqual(p.name, 'simple')
@@ -84,7 +85,7 @@ class TestParamConstructor(TestCase):
         None,  # no instrument at all
         namedtuple('noname', '')(),  # no .name
         namedtuple('blank', 'name')('')  # blank .name
-        )
+    )
     named_instrument = namedtuple('yesname', 'name')('astro')
 
     def test_full_name(self):
@@ -126,6 +127,7 @@ class TestParamConstructor(TestCase):
 
 
 class GatesBadDelayType(MockGates):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.add_parameter('chan0bad', get_cmd='c0?',
@@ -137,6 +139,7 @@ class GatesBadDelayType(MockGates):
 
 
 class GatesBadDelayValue(MockGates):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.add_parameter('chan0bad', get_cmd='c0?',
@@ -148,6 +151,7 @@ class GatesBadDelayValue(MockGates):
 
 
 class TestInstrument(TestCase):
+
     @classmethod
     def setUpClass(cls):
         cls.model = AMockModel()
@@ -933,6 +937,7 @@ class TestInstrument(TestCase):
 
 
 class TestLocalMock(TestCase):
+
     def setUp(self):
         self.model = AMockModel()
 
@@ -957,6 +962,7 @@ class TestLocalMock(TestCase):
 
 
 class TestModelAttrAccess(TestCase):
+
     def setUp(self):
         self.model = AMockModel()
 
@@ -982,3 +988,30 @@ class TestModelAttrAccess(TestCase):
         model.fmt = 'local override of a remote method'
         self.assertEqual(model.callattr('fmt', 42), '42.000')
         self.assertEqual(model.callattr('fmt', value=12.4), '12.400')
+
+
+class TestInstrument2(TestCase):
+
+    def setUp(self):
+        self.instrument = DummyInstrument(
+            name='testdummy', gates=['dac1', 'dac2', 'dac3'], server_name=None)
+
+    def tearDown(self):
+        pass
+
+    def test_attr_access(self):
+        instrument = self.instrument
+
+        # test the instrument works
+        instrument.dac1.set(10)
+        val = instrument.dac1.get()
+        self.assertEqual(val, 10)
+
+        # close the instrument
+        instrument.close()
+
+        # make sure we can still print the instrument
+        s = instrument.__repr__()
+
+        # make sure the gate is removed
+        self.assertEqual(hasattr(instrument, 'dac1'), False)

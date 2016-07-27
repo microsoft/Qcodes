@@ -13,9 +13,11 @@ _tprint_times = {}
 
 
 class NumpyJSONEncoder(json.JSONEncoder):
+
     """Return numpy types as standard types."""
     # http://stackoverflow.com/questions/27050108/convert-numpy-type-to-python
     # http://stackoverflow.com/questions/9452775/converting-numpy-dtypes-to-native-python-types/11389998#11389998
+
     def default(self, obj):
         if isinstance(obj, np.integer):
             return int(obj)
@@ -27,6 +29,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
             return {'__dtype__': 'complex', 're': float(obj.real), 'im': float(obj.imag)}
         else:
             return super(NumpyJSONEncoder, self).default(obj)
+
 
 def tprint(string, dt=1, tag='default'):
     """ Print progress of a loop every dt seconds """
@@ -199,6 +202,7 @@ def wait_secs(finish_clock):
 
 
 class LogCapture():
+
     '''
     context manager to grab all log messages, optionally
     from a specific logger
@@ -209,6 +213,7 @@ class LogCapture():
         code_that_makes_logs(...)
     log_str = logs.value
     '''
+
     def __init__(self, logger=logging.getLogger()):
         self.logger = logger
 
@@ -242,6 +247,7 @@ def make_unique(s, existing):
 
 
 class DelegateAttributes:
+
     """
     Mixin class to create attributes of this object by
     delegating them to one or more dicts and/or objects
@@ -322,16 +328,18 @@ class DelegateAttributes:
         return sorted(set(names))
 
 
-def strip_attrs(obj):
+def strip_attrs(obj, whitelist=()):
     """
     Irreversibly remove all direct instance attributes of obj, to help with
     disposal, breaking circular references.
 
     Args:
         obj:  object to be stripped
+        whitelist (list): list of names that are not stripped from the object
     """
     try:
-        for key in list(obj.__dict__.keys()):
+        lst = set(list(obj.__dict__.keys())) - set(whitelist)
+        for key in lst:
             try:
                 del obj.__dict__[key]
             except:

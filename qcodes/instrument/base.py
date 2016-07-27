@@ -199,7 +199,7 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
         if hasattr(self, 'connection') and hasattr(self.connection, 'close'):
             self.connection.close()
 
-        strip_attrs(self)
+        strip_attrs(self, whitelist=['name'])
         self.remove_instance(self)
 
     @classmethod
@@ -350,10 +350,10 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
                 snap[attr] = getattr(self, attr)
         return snap
 
-    ##########################################################################
+    #
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #
-    ##########################################################################
+    #
 
     def write(self, cmd):
         """
@@ -430,14 +430,14 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
             'Instrument {} has not defined an ask method'.format(
                 type(self).__name__))
 
-    ##########################################################################
+    #
     # shortcuts to parameters & setters & getters                            #
-    #                                                                        #
-    #  instrument['someparam'] === instrument.parameters['someparam']        #
-    #  instrument.someparam === instrument.parameters['someparam']           #
-    #  instrument.get('someparam') === instrument['someparam'].get()         #
-    #  etc...                                                                #
-    ##########################################################################
+    #
+    # instrument['someparam'] === instrument.parameters['someparam']        #
+    # instrument.someparam === instrument.parameters['someparam']           #
+    # instrument.get('someparam') === instrument['someparam'].get()         #
+    # etc...                                                                #
+    #
 
     delegate_attr_dicts = ['parameters', 'functions']
 
@@ -483,9 +483,9 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
         """
         return self.functions[func_name].call(*args)
 
-    ##########################################################################
+    #
     # info about what's in this instrument, to help construct the remote     #
-    ##########################################################################
+    #
 
     def connection_attrs(self, new_id):
         """
