@@ -328,13 +328,14 @@ class DelegateAttributes:
         return sorted(set(names))
 
 
-def strip_attrs(obj, whitelist=[]):
+def strip_attrs(obj, whitelist=()):
     """
     Irreversibly remove all direct instance attributes of obj, to help with
     disposal, breaking circular references.
 
     Args:
         obj:  object to be stripped
+        whitelist (list): list of names that are not stripped from the object
     """
     try:
         lst = set(list(obj.__dict__.keys())) - set(whitelist)
