@@ -19,6 +19,8 @@ from .instrument_mocks import (AMockModel, MockInstTester,
                                MockGates, MockSource, MockMeter, DummyInstrument)
 from .common import strip_qc
 
+from qcodes.instrument_drivers.QuTech.TimeStamp import TimeStampInstrument
+
 
 class TestParamConstructor(TestCase):
 
@@ -1015,3 +1017,14 @@ class TestInstrument2(TestCase):
 
         # make sure the gate is removed
         self.assertEqual(hasattr(instrument, 'dac1'), False)
+
+
+class TestTimeStampInstrument(TestCase):
+
+    def test_instrument(self):
+        instrument = TimeStampInstrument(name='timekeeper')
+        t0=instrument.timestamp.get()
+        tstr=instrument.timestring.get()
+        
+        
+
