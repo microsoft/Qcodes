@@ -342,7 +342,7 @@ class AlazarTech_ATS(Instrument):
                              buffers_per_acquisition)
         self._set_if_present('channel_selection', channel_selection)
         self._set_if_present('transfer_offset', transfer_offset)
-        self._set_if_present('external_starcapture', external_startcapture)
+        self._set_if_present('external_startcapture', external_startcapture)
         self._set_if_present('enable_record_headers', enable_record_headers)
         self._set_if_present('alloc_buffers', alloc_buffers)
         self._set_if_present('fifo_only_streaming', fifo_only_streaming)
@@ -540,7 +540,7 @@ class AlazarTech_ATS(Instrument):
         return_code = func(*args_out)
 
         # check for errors
-        if return_code != self._success:
+        if (return_code != self._success) and (return_code !=518):
             # TODO (C) log error
 
             argrepr = repr(args_out)
