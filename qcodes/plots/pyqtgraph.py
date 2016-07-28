@@ -15,6 +15,7 @@ TransformState = namedtuple('TransformState', 'translate scale revisit')
 
 
 class QtPlot(BasePlot):
+
     """
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with QtPlot.add().
@@ -344,8 +345,8 @@ class QtPlot(BasePlot):
             # pyqtgraph doesn't seem able to get labels, only set
             # so we'll store it in the axis object and hope the user
             # doesn't set it separately before adding all traces
-            if axletter+'label' in config and not ax._qcodes_label:
-                label = config[axletter+'label']
+            if axletter + 'label' in config and not ax._qcodes_label:
+                label = config[axletter + 'label']
                 ax._qcodes_label = label
                 ax.setLabel(label)
             if axletter in config and not ax._qcodes_label:
@@ -363,7 +364,8 @@ class QtPlot(BasePlot):
             else:
                 canplot = np.isfinite(config['x']).any()
                 if canplot:
-                    plot_object.setData(*self._line_data(config['x'], config['y']))
+                    plot_object.setData(
+                        *self._line_data(config['x'], config['y']))
 
     def _clean_array(self, array):
         """
