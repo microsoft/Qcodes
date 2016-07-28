@@ -3,8 +3,9 @@ from qcodes.utils import validators
 
 
 class AlazarTech_ATS9870(AlazarTech_ATS):
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(self, name, server_name=None):
+        dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
+        super().__init__(name, dll_path=dll_path)
         # add parameters
 
         # ----- Parameters for the configuration of the board -----
@@ -162,6 +163,9 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
         # TODO (M) figure out if this also has to be a multiple of something,
         # I could not find this in the documentation but somehow I have the
         # feeling it still should be a multiple of something
+        # NOTE by ramiro: At least in previous python implementations(PycQED delft), this is an artifact for compatibility with AWG sequencing, not particular to any ATS architecture.
+        #                  ==> this is a construction imposed by the memory strategy implemented on the python driver we are writing, not limited by any actual ATS feature.
+
         self.add_parameter(name='records_per_buffer',
                            parameter_class=AlazarParameter,
                            label='Records per Buffer',
@@ -268,4 +272,4 @@ class Multiples(validators.Ints):
                 repr(value), repr(self._divisor), context))
 
     def __repr__(self):
-        super().__repr__()[:-1] + ', Multiples of {}>'.format(self._divisor)
+        return super().__repr__()[:-1] + ', Multiples of {}>'.format(self._divisor)

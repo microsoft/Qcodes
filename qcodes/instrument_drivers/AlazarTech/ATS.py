@@ -529,7 +529,7 @@ class AlazarTech_ATS(Instrument):
         all_params = self.parameters.values()
         update_params = []
         for arg in args:
-            if arg in all_params:
+            if isinstance(arg,AlazarParameter):
                 args_out.append(arg._get_byte())
                 update_params.append(arg)
             else:
@@ -597,7 +597,7 @@ class AlazarParameter(Parameter):
                 # TODO (S) test this validator
                 vals = validators.Enum(*byte_to_value_dict.values())
 
-        super().__init__(name=name, label=label, unit=unit, vals=vals)
+        super().__init__(name=name, label=label, units=unit, vals=vals)
         self.instrument = instrument
         self._byte = None
         self._uptodate_flag = False
