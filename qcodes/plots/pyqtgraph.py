@@ -361,7 +361,9 @@ class QtPlot(BasePlot):
             if 'z' in config:
                 self._update_image(plot_object, config)
             else:
-                plot_object.setData(*self._line_data(config['x'], config['y']))
+                canplot = np.isfinite(config['x']).any()
+                if canplot:
+                    plot_object.setData(*self._line_data(config['x'], config['y']))
 
     def _clean_array(self, array):
         """
