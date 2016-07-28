@@ -10,11 +10,11 @@ from qcodes.utils.helpers import LogCapture
 
 
 def schedule(queries, query_queue):
-    '''
-    queries is a sequence of (delay, args)
+    """
+        queries is a sequence of (delay, args)
     query_queue is a queue to push these queries to, with each one waiting
         its delay after sending the previous one
-    '''
+    """
     for delay, args in queries:
         time.sleep(delay)
         query_queue.put(args)

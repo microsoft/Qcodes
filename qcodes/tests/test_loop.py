@@ -1,9 +1,10 @@
-from unittest import TestCase
-from unittest.mock import patch
-import time
 from datetime import datetime
+import logging
 import multiprocessing as mp
 import numpy as np
+import time
+from unittest import TestCase
+from unittest.mock import patch
 
 from qcodes.loops import (Loop, MP_NAME, get_bg, halt_bg, ActiveLoop,
                           _DebugInterrupt)
@@ -104,6 +105,7 @@ class TestMockInstLoop(TestCase):
         # The RunimError will never be raised here, as the forkmethod
         # won't try to pickle anything at all.
         else:
+            logging.error("this should not be allowed, but for now we let it be")
             loop_local.run(location=self.location, quiet=True)
 
         data = loop_local.run(location=self.location2, background=False,
