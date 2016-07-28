@@ -25,6 +25,9 @@ after_success:
     - cd qcodes
     - coverage xml
     - python-codacy-coverage -r coverage.xml
+    # codecvo
+    - bash <(curl -s https://codecov.io/bash) -t c3b231db-2db3-4560-a477-6edcf4cf5ad1
+    #
     # build the docs, one dir up
     - cd ../ 
     - make -f docs/Makefile gh-pages
