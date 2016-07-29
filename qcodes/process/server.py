@@ -205,6 +205,8 @@ class ServerManager:
             del self.query_lock
 
 
+import qcodes.process.heartbeat
+
 class BaseServer(NestedAttrAccess):
 
     """
@@ -271,6 +273,7 @@ class BaseServer(NestedAttrAccess):
         self._response_queue = response_queue
         self._shared_attrs = shared_attrs
 
+        self.hb = qcodes.process.heartbeat.openHeartBeat(qcodes.process.heartbeat.bfile)
     def run_event_loop(self):
         """
         The default event loop. When this method returns, the server stops.
@@ -285,6 +288,9 @@ class BaseServer(NestedAttrAccess):
         while self.running:
             query = self._query_queue.get(timeout=self.timeout)
             self.process_query(query)
+            if not qcodes.process.heartbeat.readHeartBeat(self.hb):
+                logging.info('no heartbeat, stopping process')
+                self.running=False
 
     def process_query(self, query):
         """
