@@ -21,7 +21,7 @@ class BasePlot:
             for example marker size or color can contain data
     """
 
-    def __init__(self, interval=1, data_keys='xyz'):
+    def __init__(self, interval=None, data_keys='xyz'):
         self.data_keys = data_keys
         self.traces = []
         self.data_updaters = set()
@@ -85,8 +85,8 @@ class BasePlot:
         """
         # TODO(giulioungaretti): replace with an explicit version, see expand trace
         self.expand_trace(args, kwargs)
-        self.add_to_plot(**kwargs)
         self.add_updater(updater, kwargs)
+        return self.add_to_plot(**kwargs)
 
     def add_to_plot(self, **kwargs):
         """
@@ -157,6 +157,29 @@ class BasePlot:
                             title_parts.append(location)
         return ', '.join(title_parts)
 
+    def get_default_array_title(self, data_array):
+        '''
+        Get the default title for a data_array, which is used as the subplot
+        title. It is just the DataSet location and the array_id.
+        A custom title can be passed using **kwargs.
+
+        Args:
+            data_array (DataArray): Data array from which to extract the
+            information.
+
+        Returns:
+            string: the combined title
+        '''
+        title_parts = []
+        if hasattr(data_array, 'data_set'):
+            location = getattr(data_array.data_set, 'location', None)
+            if location:
+                title_parts.append(location)
+        array_id = getattr(data_array, 'array_id', None)
+        if array_id:
+            title_parts.append(array_id)
+        return ' - '.join(title_parts)
+
     def get_label(self, data_array):
         """
         Look for a label in data_array falling back on name.
@@ -171,6 +194,12 @@ class BasePlot:
         # TODO this should really be a static method
         return (getattr(data_array, 'label', '') or
                 getattr(data_array, 'name', ''))
+
+    def get_units(self, data_array):
+        '''
+        look for units.
+        '''
+        return getattr(data_array, 'units', None)
 
     def expand_trace(self, args, kwargs):
         """
@@ -204,9 +233,14 @@ class BasePlot:
            ValueError: if the shape of the data does not match that of args
            ValueError: if the data is provided twice
         """
+        # TODO(merlin): This docstring is totally crossing line lengths,
+        #     And I cant figure out how the structure here is intended to be
         # TODO(giulioungaretti): replace with an explicit version:
         # return the new kwargs  instead of modifying in place
         # TODO this should really be a static method
+        # TODO: If we plot a set_array, it will just add its own set_array,
+        # effectively doing plot(x=y,y=y) But we should really only plot y.
+
         if args:
             if hasattr(args[-1][0], '__len__'):
                 # 2D (or higher... but ignore this for now)
@@ -243,19 +277,19 @@ class BasePlot:
                 if axletter not in kwargs:
                     kwargs[axletter] = set_array
 
-    def update(self):
+    def update_data(self):
         """
         Update the data in this plot, using the updaters given with
         MatPlot.add() or in the included DataSets, then include this in
         the plot.
 
         This is a wrapper routine that the update widget calls,
-        inside this we call self.update() which should be subclassed
+        inside this we call self.update_plot() which should be subclassed
         """
         any_updates = False
         for updater in self.data_updaters:
             updates = updater()
-            if updates is not False:
+            if updates:
                 any_updates = True
 
         self.update_plot()

@@ -1,20 +1,97 @@
 """
 Live plotting using pyqtgraph
 """
+
 import numpy as np
+
+from PyQt4 import QtCore, QtGui
+from PyQt4.Qt import QBuffer, QIODevice, QByteArray
+
 import pyqtgraph as pg
-import pyqtgraph.multiprocess as pgmp
+from pyqtgraph import dockarea
+
 import warnings
 from collections import namedtuple
 
 from .base import BasePlot
 from .colors import color_cycle, colorscales
 
+pg.mkQApp()
+
+
+# Subclass of pyqtgraph Dock to change style and to add png representation for
+# interactive ipython environments
+class Dock(dockarea.Dock):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        def updateStyle():
+            r = '2px'
+            if self.label.dim:
+                # This is the background-tab
+                fg = '#888'
+                bg = '#ddd'
+                border = '#ccc'
+                border_px = '1px'
+            else:
+                fg = '#333'
+                bg = '#ccc'
+                border = '#888'
+                border_px = '1px'
+
+            if self.label.orientation == 'vertical':
+                self.label.vStyle = """DockLabel {
+                    background-color : %s;
+                    color : %s;
+                    border-top-right-radius: 0px;
+                    border-top-left-radius: %s;
+                    border-bottom-right-radius: 0px;
+                    border-bottom-left-radius: %s;
+                    border-width: 0px;
+                    border-right: %s solid %s;
+                    padding-top: 3px;
+                    padding-bottom: 3px;
+                }""" % (bg, fg, r, r, border_px, border)
+                self.label.setStyleSheet(self.label.vStyle)
+            else:
+                self.label.hStyle = """DockLabel {
+                    background-color : %s;
+                    color : %s;
+                    border-top-right-radius: %s;
+                    border-top-left-radius: %s;
+                    border-bottom-right-radius: 0px;
+                    border-bottom-left-radius: 0px;
+                    border-width: 0px;
+                    border-bottom: %s solid %s;
+                    padding-left: 3px;
+                    padding-right: 3px;
+                }""" % (bg, fg, r, r, border_px, border)
+                self.label.setStyleSheet(self.label.hStyle)
+        self.label.updateStyle = updateStyle
+        self.label.closeButton.setStyleSheet('border: none')
+
+    def _repr_png_(self):
+        """
+        Create a png representation of the current Dock.
+        """
+
+        QtGui.QApplication.processEvents()
+
+        image = QtGui.QPixmap.grabWidget(self)
+
+        byte_array = QByteArray()
+        buffer = QBuffer(byte_array)
+        buffer.open(QIODevice.ReadWrite)
+        image.save(buffer, 'PNG')
+        buffer.close()
+
+        return bytes(byte_array)
 
 TransformState = namedtuple('TransformState', 'translate scale revisit')
 
 
-class QtPlot(BasePlot):
+class QtPlot(QtGui.QWidget, BasePlot):
     """
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with QtPlot.add().
@@ -27,98 +104,274 @@ class QtPlot(BasePlot):
 
         figsize: (width, height) tuple in pixels to pass to GraphicsWindow
             default (1000, 600)
+
+        figposition (dx, dy) tuple in pixels to pass to GraphicsWindow,
+            distance from the upper left corner. Default None
+
         interval: period in seconds between update checks
             default 0.25
+
         theme: tuple of (foreground_color, background_color), where each is
-            a valid Qt color. default (dark gray, white), opposite the pyqtgraph
-            default of (white, black)
+            a valid Qt color. default (dark gray, white), opposite the
+            pyqtgraph default of (white, black)
 
         **kwargs: passed along to QtPlot.add() to add the first data trace
     """
-    proc = None
-    rpg = None
 
-    def __init__(self, *args, figsize=(1000, 600), interval=0.25,
-                 windowTitle='', theme=((60, 60, 60), 'w'), show_window=True, remote=True, **kwargs):
-        super().__init__(interval)
+    def __init__(self, *args, figsize=(1000, 600), figposition=None,
+                 interval=0.25, windowtitle=None, theme=((60, 60, 60), 'w'),
+                 show_window=True, parent=None, **kwargs):
+
+        QtGui.QWidget.__init__(self, parent=parent)
+        # Set base interval to None to disable that JS update-widget thingy
+        BasePlot.__init__(self, interval=None)
+
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+W"), self, self.close)
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+Q"), self, self.close)
+
+        self.traces = []
+        self.subplots = []
+        self.interval = interval
+        self.auto_updating = False
+
+        self.setWindowTitle(windowtitle or 'Plotwindow')
+        if figposition:
+            self.setGeometry(*figposition, *figsize)
+        else:
+            self.resize(*figsize)
 
         self.theme = theme
+        self.area = dockarea.DockArea()
 
-        if remote:
-            if not self.__class__.proc:
-                self._init_qt()
+        layout = QtGui.QHBoxLayout()
+        layout.setContentsMargins(2, 2, 2, 2)
+        layout.addWidget(self.area)
+        self.setLayout(layout)
+
+        if show_window:
+            self.show()
         else:
-            # overrule the remote pyqtgraph class
-            self.rpg = pg
-        self.win = self.rpg.GraphicsWindow(title=windowTitle)
-        self.win.setBackground(theme[1])
-        self.win.resize(*figsize)
-        self.subplots = [self.add_subplot()]
+            self.hide()
+
+        self.add_subplot()
 
         if args or kwargs:
             self.add(*args, **kwargs)
 
-        if not show_window:
-            self.win.hide()
+        QtGui.QApplication.processEvents()
 
-    def _init_qt(self):
-        # starting the process for the pyqtgraph plotting
-        # You do not want a new process to be created every time you start a
-        # run, so this only starts once and stores the process in the class
-        pg.mkQApp()
-        self.__class__.proc = pgmp.QtProcess()  # pyqtgraph multiprocessing
-        self.__class__.rpg = self.proc._import('pyqtgraph')
+        if self.interval:
+            self.auto_update()
+
+    def closeEvent(self, event):
+        """
+        Make sure all dock-widgets are deleted upon closing or during garbage-
+        collection. Otherwise references keep plots alive forever.
+        """
+        self.area.deleteLater()
+        self.deleteLater()
+        event.accept()
+
+    def auto_update(self, interval=None):
+        """
+        Update the plot in a given interval.
+
+        Args:
+            interval (float): interval in seconds to wait before syncing the
+            data, and updating the plot.
+        """
+        if (interval is not self.interval) and interval is not None:
+            self.interval = interval
+
+        if self.interval is None:
+            self.auto_updating = False
+            return
+
+        self.auto_updating = True
+
+        # update_data also calls self.update_plot()
+        self.update_data()
+
+        QtGui.QApplication.processEvents()
+
+        if self.auto_updating:
+            # We use the singleShot to avoid update queues in case the plotting
+            # is slow
+            QtCore.QTimer.singleShot(self.interval * 1000, self.auto_update)
+
+    def halt(self):
+        """
+        Stop automatic updates to this plot, by disabling its update timer
+        """
+        self.auto_updating = False
+
+    def _repr_png_(self):
+        """
+        Create a png representation of the current window.
+        """
+
+        QtGui.QApplication.processEvents()
+
+        image = QtGui.QPixmap.grabWidget(self.area)
+
+        byte_array = QByteArray()
+        buffer = QBuffer(byte_array)
+        buffer.open(QIODevice.ReadWrite)
+        image.save(buffer, 'PNG')
+        buffer.close()
+        return bytes(byte_array)
 
     def clear(self):
         """
-        Clears the plot window and removes all subplots and traces
+        Clear the plot window and remove all subplots and traces
         so that the window can be reused.
         """
-        self.win.clear()
+        self.area.clear()
         self.traces = []
         self.subplots = []
 
-    def add_subplot(self):
-        subplot_object = self.win.addPlot()
+    def add_subplot(self, title=None, position='right',
+                    relativeto=None, **kwargs):
+        """
+        Add a new dock to the current window.
 
-        for side in ('left', 'bottom'):
-            ax = subplot_object.getAxis(side)
-            ax.setPen(self.theme[0])
-            ax._qcodes_label = ''
+        Args:
+            title (str):
+                Title of the dock
 
-        return subplot_object
+            position (str):
+                'bottom', 'top', 'left', 'right', 'above', or 'below'
+
+            relativeto (DockWidget, int):
+                If relativeto is None, then the new Dock is added to fill an
+                entire edge of the window. If relativeto is another Dock, then
+                the new Dock is placed adjacent to it (or in a tabbed
+                configuration for 'above' and 'below').
+        """
+
+        title = '#{} - {}'.format(len(self.subplots) + 1, title or 'Plot')
+        subplot_dock = Dock(name=title, autoOrientation=False, closable=True)
+
+        if type(relativeto) is int:
+            relativeto = self.subplots[relativeto - 1]
+        self.area.addDock(subplot_dock, position, relativeto)
+
+        subplot_widget = pg.GraphicsLayoutWidget()
+        subplot_widget.setBackground(self.theme[1])
+
+        hist_item = pg.HistogramLUTWidget()
+        hist_item.item.vb.setMinimumWidth(10)
+        hist_item.setMinimumWidth(120)
+        hist_item.setBackground(self.theme[1])
+        hist_item.axis.setPen(self.theme[0])
+        hist_item.hide()
+
+        subplot_dock.addWidget(subplot_widget, 0, 0)
+        subplot_dock.addWidget(hist_item, 0, 1)
+
+        plot_item = subplot_widget.addPlot()
+        for _, ax in plot_item.axes.items():
+            ax['item'].setPen(self.theme[0])
+
+        subplot_dock.subplot_widget = subplot_widget
+        subplot_dock.hist_item = hist_item
+        subplot_dock.plot_item = plot_item
+
+        self.subplots.append(subplot_dock)
+
+        return subplot_dock
 
     def add_to_plot(self, subplot=1, **kwargs):
+        """
+        Add a dataset to a subplot. Create a new subplot if it does not exist.
+
+        Args:
+            subplot (int): The subplot the dataset is added to, indexing starts
+            with 1. -1 represents the last existing index.
+        """
+        if subplot == -1:
+            subplot = len(self.subplots) + 1
         if subplot > len(self.subplots):
             for i in range(subplot - len(self.subplots)):
-                self.subplots.append(self.add_subplot())
+                subplot_dock = self.add_subplot(**kwargs)
+
         subplot_object = self.subplots[subplot - 1]
 
-        if 'z' in kwargs:
-            plot_object = self._draw_image(subplot_object, **kwargs)
+        if 'title' in kwargs:
+            title = kwargs['title']
         else:
-            plot_object = self._draw_plot(subplot_object, **kwargs)
+            if 'z' in kwargs:
+                title = self.get_default_array_title(kwargs['z'])
+            elif 'y' in kwargs:
+                title = self.get_default_array_title(kwargs['y'])
+            elif 'x' in kwargs:
+                title = self.get_default_array_title(kwargs['x'])
 
-        self._update_labels(subplot_object, kwargs)
-        prev_default_title = self.get_default_title()
+        subplot_object.setTitle('#{} - {}'.format(subplot, title or 'Plot'))
+
+        if kwargs.get('clear', False):
+            subplot_object.plot_item.clear()
+            subplot_object.hist_item.hide()
+
+        if 'z' in kwargs:
+            plot_object, subplot_item = self._draw_image(
+                subplot_object, **kwargs)
+
+            self._update_cmap(plot_object)
+
+        else:
+            plot_object, subplot_item = self._draw_plot(
+                subplot_object, **kwargs)
+
+        transpose = kwargs.get('transpose', False)
+
+        x = kwargs.get('x', None)
+        y = kwargs.get('y', None)
+        z = kwargs.get('z', None)
+        if transpose:
+            x, y = y, x
+
+        kwargs['x'] = x
+        kwargs['y'] = y
+
+        transpose_z = False
+        if hasattr(z, 'set_arrays'):
+            if (x in z.set_arrays) and (y in z.set_arrays):
+                if (z.set_arrays.index(x) == 1) and (z.set_arrays.index(y) == 0):
+                    transpose_z = not transpose_z
+            else:
+                kwargs['interpolate'] = True
+        kwargs['transpose_z'] = transpose_z
 
         self.traces.append({
             'config': kwargs,
             'plot_object': plot_object
         })
 
-        if prev_default_title == self.win.windowTitle():
-            self.win.setWindowTitle(self.get_default_title())
+        self.update_plot()
+        self.auto_update()
+
+        self._update_labels(subplot_item, kwargs)
+        return subplot_object
 
     def _draw_plot(self, subplot_object, y, x=None, color=None, width=None,
                    antialias=None, **kwargs):
+
+        subplot_widget = subplot_object.subplot_widget
+        plot_item = subplot_object.plot_item
+
+        for side in ('left', 'bottom'):
+            ax = plot_item.getAxis(side)
+            ax.setPen(self.theme[0])
+            # ax._qcodes_label = ''
+
         if 'pen' not in kwargs:
             if color is None:
                 cycle = color_cycle
                 color = cycle[len(self.traces) % len(cycle)]
             if width is None:
                 width = 2
-            kwargs['pen'] = self.rpg.mkPen(color, width=width)
+            kwargs['pen'] = pg.mkPen(color, width=width)
 
         if antialias is None:
             # looks a lot better antialiased, but slows down with many points
@@ -129,41 +382,55 @@ class QtPlot(BasePlot):
         if any([('symbol' in key) for key in kwargs]):
             if 'symbolPen' not in kwargs:
                 symbol_pen_width = 0.5 if antialias else 1.0
-                kwargs['symbolPen'] = self.rpg.mkPen('444',
-                                                     width=symbol_pen_width)
+                kwargs['symbolPen'] = pg.mkPen('444', width=symbol_pen_width)
             if 'symbolBrush' not in kwargs:
                 kwargs['symbolBrush'] = color
 
-        # suppress warnings when there are only NaN to plot
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', 'All-NaN axis encountered')
-            warnings.filterwarnings('ignore', 'All-NaN slice encountered')
-            pl = subplot_object.plot(*self._line_data(x, y),
-                                     antialias=antialias, **kwargs)
-        return pl
+        pl = plot_item.plot(*self._line_data(x, y),
+                            antialias=antialias, **kwargs)
+
+        return pl, plot_item
 
     def _line_data(self, x, y):
-        return [self._clean_array(arg) for arg in [x, y] if arg is not None]
+        arrs = [arg for arg in [x, y] if arg is not None]
+        for arr in arrs:
+            finite = np.isfinite(arr)
+            if not np.any(finite):
+                return []
+        if len(arrs) == 2:
+            mask = np.logical_and(*[np.isfinite(arr) for arr in arrs])
+        elif len(arrs) == 1:
+            mask = np.isfinite(arrs[0])
+        else:
+            return None
+        return [arr[mask] for arr in arrs]
 
-    def _draw_image(self, subplot_object, z, x=None, y=None, cmap='hot',
-                    **kwargs):
-        img = self.rpg.ImageItem()
-        subplot_object.addItem(img)
+    def _draw_image(self, subplot_object, z, cmap='hot', **kwargs):
 
-        hist = self.rpg.HistogramLUTItem()
-        hist.setImageItem(img)
-        hist.axis.setPen(self.theme[0])
+        hist_item = subplot_object.hist_item
+        plot_item = subplot_object.plot_item
+
+        hist_item.show()
+
+        # Item for displaying image data
+        img = pg.ImageItem()
+        hist_item.setImageItem(img)
+
+        plot_item.addItem(img)
         if 'zlabel' in kwargs:  # used to specify a custom zlabel
-            hist.axis.setLabel(kwargs['zlabel'])
+            hist_item.axis.setLabel(kwargs['zlabel'])
         else:  # otherwise extracts the label from the dataarray
-            hist.axis.setLabel(self.get_label(z))
-        # TODO - ensure this goes next to the correct subplot?
-        self.win.addItem(hist)
+            hist_item.axis.setLabel(self.get_label(z),
+                                    self.get_units(z))
+
+        for side in ('left', 'bottom'):
+            ax = plot_item.getAxis(side)
+            ax.setPen(self.theme[0])
 
         plot_object = {
             'image': img,
-            'hist': hist,
-            'histlevels': hist.getLevels(),
+            'hist': hist_item,
+            'histlevels': hist_item.getLevels(),
             'cmap': cmap,
             'scales': {
                 'x': TransformState(0, 1, True),
@@ -171,13 +438,11 @@ class QtPlot(BasePlot):
             }
         }
 
-        self._update_image(plot_object, {'x': x, 'y': y, 'z': z})
-        self._update_cmap(plot_object)
-
-        return plot_object
+        return plot_object, plot_item
 
     def _update_image(self, plot_object, config):
         z = config['z']
+
         img = plot_object['image']
         hist = plot_object['hist']
         scales = plot_object['scales']
@@ -187,16 +452,27 @@ class QtPlot(BasePlot):
         # pyqtgraph handle nans - though the source does hint at a way:
         # http://www.pyqtgraph.org/documentation/_modules/pyqtgraph/widgets/ColorMapWidget.html
         # see class RangeColorMapItem
-        z = np.asfarray(z).T
-        with warnings.catch_warnings():
-            warnings.simplefilter('error')
-            try:
-                z_range = (np.nanmin(z), np.nanmax(z))
-            except:
-                # we get a warning here when z is entirely NaN
-                # nothing to plot, so give up.
-                return
-        z[np.where(np.isnan(z))] = z_range[0]
+        #
+        # For me (Merlin) nans work fine, its only the histogram that gets
+        # messed up.
+
+        z = np.asfarray(z)
+        if config['transpose_z']:
+            z = z.T
+
+        finite = np.isfinite(z)
+        if not np.any(finite):
+            return
+
+        maskX = np.any(finite, axis=1)
+        maskY = np.any(finite, axis=0)
+
+        minX, maxX = np.amin(np.where(maskX)), np.amax(np.where(maskX))
+        minY, maxY = np.amin(np.where(maskY)), np.amax(np.where(maskY))
+
+        z_range = (np.nanmin(z), np.nanmax(z))
+
+        z = z[minX:maxX + 1, minY:maxY + 1]
 
         hist_range = hist.getLevels()
         if hist_range == plot_object['histlevels']:
@@ -204,9 +480,16 @@ class QtPlot(BasePlot):
             hist.setLevels(*z_range)
             hist_range = z_range
 
-        img.setImage(self._clean_array(z), levels=hist_range)
+        mask = {'y': [minY, maxY + 1],
+                'x': [minX, maxX + 1]}
 
+        # This is only needed for the histogram! otherwise there is no problem
+        # with nans!
+        z[~finite[minX:maxX + 1, minY:maxY + 1]] = z_range[0]
+
+        img.setImage(z, levels=hist_range)
         scales_changed = False
+
         for axletter, axscale in scales.items():
             if axscale.revisit:
                 axdata = config.get(axletter, None)
@@ -299,7 +582,7 @@ class QtPlot(BasePlot):
             revisit = True
 
         indices_setpoints = list(zip(*((i, s) for i, s in enumerate(collapsed)
-                                     if not np.isnan(s))))
+                                       if not np.isnan(s))))
         if not indices_setpoints:
             return TransformState(0, 1, revisit)
 
@@ -339,38 +622,41 @@ class QtPlot(BasePlot):
         the DataArray objects located in the trace config. Custom labels
         can be specified the **kwargs "xlabel" and "ylabel"
         """
+
         for axletter, side in (('x', 'bottom'), ('y', 'left')):
             ax = subplot_object.getAxis(side)
             # pyqtgraph doesn't seem able to get labels, only set
             # so we'll store it in the axis object and hope the user
             # doesn't set it separately before adding all traces
-            if axletter+'label' in config and not ax._qcodes_label:
-                label = config[axletter+'label']
-                ax._qcodes_label = label
+            if axletter + 'label' in config and not ax.labelText:
+                label = config[axletter + 'label']
                 ax.setLabel(label)
-            if axletter in config and not ax._qcodes_label:
+            if axletter in config and not ax.labelText:
                 label = self.get_label(config[axletter])
-                if label:
-                    ax._qcodes_label = label
-                    ax.setLabel(label)
+                units = self.get_units(config[axletter])
+                ax.setLabel(label, units)
 
     def update_plot(self):
         for trace in self.traces:
             config = trace['config']
             plot_object = trace['plot_object']
+
+            # TODO
+            # Only update when data has changed ?!
+            # update plot is called when any updater returned true, but there
+            # is no reason to update all the other subplots, how can I
+            # determine if the data from a trace has changed? I see no easy
+            # link between the updater (i.e. the datset.sync()) and the trace
+            # anymore.
+
             if 'z' in config:
                 self._update_image(plot_object, config)
-            else:
+            elif 'x' in config and 'y' in config:
                 plot_object.setData(*self._line_data(config['x'], config['y']))
-
-    def _clean_array(self, array):
-        """
-        we can't send a DataArray to remote pyqtgraph for some reason,
-        so send the plain numpy array
-        """
-        if hasattr(array, 'ndarray') and isinstance(array.ndarray, np.ndarray):
-            return array.ndarray
-        return array
+            elif 'y' in config:
+                plot_object.setData(*self._line_data(config['y']))
+            elif 'x' in config:
+                plot_object.setData(*self._line_data(config['x']))
 
     def _cmap(self, scale):
         if isinstance(scale, str):
@@ -381,4 +667,4 @@ class QtPlot(BasePlot):
         elif len(scale) == 2:
             values, colors = scale
 
-        return self.rpg.ColorMap(values, colors)
+        return pg.ColorMap(values, colors)
