@@ -675,8 +675,3 @@ class QtPlot(QtGui.QWidget, BasePlot):
         app = pg.mkQApp()
         clipboard = app.clipboard()
         clipboard.setPixmap(QtGui.QPixmap.grabWidget(self))
-
-    def keyPressEvent(self, e):
-        if e.key() == pg.QtCore.Qt.Key_C:
-            self.copyToClipboard()
-        super().keyPressEvent(e)
