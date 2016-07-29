@@ -92,6 +92,7 @@ TransformState = namedtuple('TransformState', 'translate scale revisit')
 
 
 class QtPlot(QtGui.QWidget, BasePlot):
+
     """
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with QtPlot.add().
@@ -668,3 +669,9 @@ class QtPlot(QtGui.QWidget, BasePlot):
             values, colors = scale
 
         return pg.ColorMap(values, colors)
+
+    def copyToClipboard(self):
+        ''' Copy the current image to a the system clipboard '''
+        app = pg.mkQApp()
+        clipboard = app.clipboard()
+        clipboard.setPixmap(QtGui.QPixmap.grabWidget(self))
