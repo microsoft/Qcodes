@@ -18,11 +18,13 @@ from qcodes.utils import validators
 # acquisition that would overflow the board if measurement is not stopped
 # quickly enough. can this be solved by not reposting the buffers?
 
-# TODO: check 8 bit sample thing works
-# TODO: test get_board_info and find_boards
-# TODO: remove guerilla debuggung 'print' statements
-# TODO: call_dll error handling
-# TODO: acquisition_controller
+# TODO: check 8 bit sample thing works - Natalie
+# TODO: test get_board_info and find_boards - Natalie
+# TODO: remove guerilla debuggung 'print' statements - Natalie
+# TODO: call_dll error handling - Natalie
+# TODO: acquisition_controller - Natalie
+# TODO: fix hacky way I use _ATS_dll anywhere - Natalie
+# TODO: make it actually save data! - Natalie
 
 class AlazarTech_ATS(Instrument):
     # override dll_path in your init script or in the board constructor
@@ -476,7 +478,7 @@ class AlazarTech_ATS(Instrument):
         
         self.clear_buffers()
         allocated_buffers = self.allocated_buffers._get_byte()
-        print(str(allocated_buffers)+"allocated buffers")
+        print(str(allocated_buffers)+" allocated buffers")
         for k in range(allocated_buffers):
             try:
                 self.buffer_list.append(DMABuffer(sample_type, bytes_per_buffer))
@@ -487,8 +489,6 @@ class AlazarTech_ATS(Instrument):
         # post buffers to Alazar
         print("made buffer list length "+str(len(self.buffer_list)))
         for buf in self.buffer_list:
-            print(buf.addr)
-            print(type(buf.size_bytes))
             self._ATS_dll.AlazarPostAsyncBuffer.argtypes = [ctypes.c_uint32, ctypes.c_void_p, ctypes.c_uint32]
             self._call_dll('AlazarPostAsyncBuffer',
                            self._handle, buf.addr, buf.size_bytes)
@@ -604,7 +604,6 @@ class AlazarTech_ATS(Instrument):
         func = getattr(self._ATS_dll, func_name)
         try:
             return_code = func(*args_out)
-            print(return_code)
         except Exception as e:
             print(e)
             raise
