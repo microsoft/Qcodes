@@ -25,6 +25,58 @@ class DataArray(DelegateAttributes):
 
     Once the array is initialized, a DataArray acts a lot like a numpy array,
     because we delegate attributes through to the numpy array
+
+    Args:
+        parameter (Optional[Parameter]): The parameter whose values will
+            populate this array, if any. Will copy ``name``, ``full_name``,
+            ``label``, ``units``, and ``snapshot`` from here unless you
+            provide them explicitly.
+
+        name (Optional[str]): The short name of this array.
+            TODO: use full_name as name, and get rid of short name
+
+        full_name (Optional[str]): The complete name of this array. If the
+            array is based on a parameter linked to an instrument, this is
+            typically '<instrument_name>_<param_name>'
+
+        label (Optional[str]): A description of the values in this array to
+            use for axis and colorbar labels on plots.
+
+        snapshot (Optional[dict]): Metadata snapshot to save with this array.
+
+        array_id (Optional[str]): A name for this array that's unique within
+            its ``DataSet``. Typically the full_name, but when the ``DataSet``
+            is constructed we will append '_<i>' (``i`` is an integer starting
+            from 1) if necessary to differentiate arrays with the same id.
+            TODO: this only happens for arrays provided to the DataSet
+            constructor, not those added with add_array. Fix this!
+            Also, do we really need array_id *and* full_name (let alone name
+            but I've already said we should remove this)?
+
+        set_arrays (Optional[Tuple[DataArray]]): If this array is being
+            created with shape already, you can provide one setpoint array
+            per dimension. The first should have one dimension, the second
+            two dimensions, etc.
+
+        shape (Optional[Tuple[int]]): The shape (as in numpy) of the array.
+            Will be prepended with new dimensions by any calls to ``nest``.
+
+        action_indices (Optional[Tuple[int]]): If used within a ``Loop``,
+            these are the indices at each level of nesting within the
+            ``Loop`` of the loop action that's populating this array.
+            TODO: this shouldn't be in DataArray at all, the loop should
+            handle converting this to array_id internally (maybe it
+            already does?)
+
+        units (Optional[str]): The units of the values stored in this array.
+
+        is_setpoint (bool): True if this is a setpoint array, False if it
+            is measured. Default False.
+
+        preset_data (Optional[Union[ndarray, sequence]]): Contents of the
+            array, if already known (for example if this is a setpoint
+            array). ``shape`` will be inferred from this array instead of
+            from the ``shape`` argument.
     """
 
     # attributes of self to include in the snapshot
@@ -90,6 +142,7 @@ class DataArray(DelegateAttributes):
             if hasattr(parameter, 'snapshot') and not snapshot:
                 snapshot = parameter.snapshot()
             else:
+                # TODO: why is this in an else clause?
                 for attr in self.COPY_ATTRS_FROM_INPUT:
                     if (hasattr(parameter, attr) and
                             not getattr(self, attr, None)):
@@ -113,6 +166,12 @@ class DataArray(DelegateAttributes):
 
     @property
     def data_set(self):
+        """
+        The DataSet this array belongs to.
+
+        A DataArray can belong to at most one DataSet.
+        TODO: make this a weakref
+        """
         return self._data_set
 
     @data_set.setter
@@ -125,14 +184,28 @@ class DataArray(DelegateAttributes):
 
     def nest(self, size, action_index=None, set_array=None):
         """
-        nest this array inside a new outer loop
+        Nest this array inside a new outer loop.
 
-        size: length of the new loop
-        action_index: within the outer loop, which action is this in?
-        set_array: a DataArray listing the setpoints of the outer loop
-            if this DataArray *is* a setpoint array, you should omit both
-            action_index and set_array, and it will reference itself as the
-            set_array
+        You cannot call ``nest`` after ``init_data`` unless this is a
+        setpoint array.
+        TODO: is this restriction really useful? And should we maintain
+        a distinction between _preset and is_setpoint, or can wejust use
+        is_setpoint?
+
+        Args:
+            size (int): Length of the new loop.
+
+            action_index (Optional[int]): Within the outer loop at this
+                nesting level, which action does this array derive from?
+
+            set_array (Optional[DataArray]): The setpoints of the new outer
+                loop. If this DataArray *is* a setpoint array, you should
+                omit both ``action_index`` and ``set_array``, and it will
+                reference itself as the inner setpoint array.
+
+        Returns:
+            DataArray: self, in case you want to construct the array with
+                chained method calls.
         """
         if self.ndarray is not None and not self._preset:
             raise RuntimeError('Only preset arrays can be nested after data '
@@ -166,9 +239,26 @@ class DataArray(DelegateAttributes):
 
     def init_data(self, data=None):
         """
-        create a data array (if one doesn't exist)
-        if data is provided, this array is marked as a preset
+        Create the actual numpy array to hold data.
+
+        The array will be sized based on either ``self.shape`` or
+        data provided here.
+
+        Idempotent: will do nothing if the array already exists.
+
+        If data is provided, this array is marked as a preset
         meaning it can still be nested around this data.
+        TODO: per above, perhaps remove this distinction entirely?
+
+        Args:
+            data (Optional[Union[ndarray, sequence]]): If provided,
+                we fill the array with this data. Otherwise the new
+                array will be filled with NaN.
+
+        Raises:
+            ValueError: if ``self.shape`` does not match ``data.shape``
+            ValueError: if the array was already initialized with a
+                different shape than we're about to create
         """
         if data is not None:
             if not isinstance(data, np.ndarray):
@@ -206,9 +296,7 @@ class DataArray(DelegateAttributes):
         self._max_indices = [d - 1 for d in self.shape]
 
     def clear(self):
-        """
-        Fill the (already existing) data array with nan
-        """
+        """Fill the (already existing) data array with nan."""
         # only floats can hold nan values. I guess we could
         # also raise an error in this case? But generally float is
         # what people want anyway.
@@ -218,11 +306,13 @@ class DataArray(DelegateAttributes):
 
     def __setitem__(self, loop_indices, value):
         """
-        set data values. Follows numpy syntax, allowing indices of lower
-        dimensionality than the array, if value makes up the extra dimension(s)
+        Set data values.
 
-        Also updates the record of modifications to the array. If you don't
-        want this overhead, you can access self.ndarray directly.
+        Follows numpy syntax, allowing indices of lower dimensionality than
+        the array, if value makes up the extra dimension(s)
+
+        Also update the record of modifications to the array. If you don't
+        want this overhead, you can access ``self.ndarray`` directly.
         """
         if isinstance(loop_indices, collections.Iterable):
             min_indices = list(loop_indices)
@@ -251,8 +341,10 @@ class DataArray(DelegateAttributes):
 
     def __len__(self):
         """
-        must be explicitly delegated, because len() will look for this
-        attribute to already exist
+        Array length.
+
+        Must be explicitly delegated, because len() will look for this
+        attribute to already exist.
         """
         return len(self.ndarray)
 
@@ -288,8 +380,14 @@ class DataArray(DelegateAttributes):
 
     def mark_saved(self, last_saved_index):
         """
-        after saving data, mark outstanding modifications up to
-        last_saved_index as saved
+        Mark certain outstanding modifications as saved.
+
+        Args:
+            last_saved_index (int): The flat index of the last point
+                saved. If ``modified_range`` extends beyond this, the
+                data past ``last_saved_index`` will still be marked
+                modified, otherwise ``modified_range`` is cleared
+                entirely.
         """
         if self.modified_range:
             if last_saved_index >= self.modified_range[1]:
@@ -302,8 +400,10 @@ class DataArray(DelegateAttributes):
 
     def clear_save(self):
         """
-        make this array look unsaved, so we can force overwrite
-        or rewrite, like if we're moving or copying the DataSet
+        Make previously saved parts of this array look unsaved (modified).
+
+        This can be used to force overwrite or rewrite, like if we're
+        moving or copying the ``DataSet``.
         """
         if self.last_saved_index is not None:
             self._update_modified_range(0, self.last_saved_index)
@@ -311,6 +411,16 @@ class DataArray(DelegateAttributes):
         self.last_saved_index = None
 
     def get_synced_index(self):
+        """
+        Get the last index which has been synced from the server.
+
+        Will also initialize the array if this hasn't happened already.
+        TODO: seems hacky to init_data here.
+
+        Returns:
+            int: the last flat index which has been synced from the server,
+                or -1 if no data has been synced.
+        """
         if not hasattr(self, 'synced_index'):
             self.init_data()
             self.synced_index = -1
@@ -318,6 +428,20 @@ class DataArray(DelegateAttributes):
         return self.synced_index
 
     def get_changes(self, synced_index):
+        """
+        Find changes since the last sync of this array.
+
+        Args:
+            synced_index (int): The last flat index which has already
+                been synced.
+
+        Returns:
+            Union[dict, None]: None if there is no new data. If there is,
+                returns a dict with keys:
+                    start (int): the flat index of the first returned value.
+                    stop (int): the flat index of the last returned value.
+                    vals (List[float]): the new values
+        """
         latest_index = self.last_saved_index
         if latest_index is None:
             latest_index = -1
@@ -337,6 +461,19 @@ class DataArray(DelegateAttributes):
             }
 
     def apply_changes(self, start, stop, vals):
+        """
+        Insert new synced values into the array.
+
+        To be be called in a ``PULL_FROM_SERVER`` ``DataSet`` using results
+        returned by ``get_changes`` from the ``DataServer``.
+
+        TODO: check that vals has the right length?
+
+        Args:
+            start (int): the flat index of the first new value.
+            stop (int): the flat index of the last new value.
+            vals (List[float]): the new values
+        """
         for i, val in enumerate(vals):
             index = np.unravel_index(i + start, self.ndarray.shape)
             self.ndarray[index] = val

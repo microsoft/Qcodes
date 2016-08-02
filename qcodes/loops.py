@@ -166,7 +166,7 @@ class Loop(Metadatable):
     def __init__(self, sweep_values, delay=0, station=None,
                  progress_interval=None):
         super().__init__()
-        if not delay >= 0:
+        if delay < 0:
             raise ValueError('delay must be > 0, not {}'.format(repr(delay)))
 
         self.sweep_values = sweep_values

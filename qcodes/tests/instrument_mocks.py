@@ -1,12 +1,17 @@
 import time
+import logging
+from functools import partial
 
+from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument, MockModel
 from qcodes.instrument.base import Instrument
 from qcodes.utils.validators import Numbers
 from qcodes.instrument.parameter import ManualParameter
 import numpy as np
 
+
 class AMockModel(MockModel):
+
     def __init__(self):
         self._memory = {}
         self._reset()
@@ -73,6 +78,7 @@ class AMockModel(MockModel):
 
 
 class ParamNoDoc:
+
     def __init__(self, name, *args, **kwargs):
         self.name = name
 
@@ -81,6 +87,7 @@ class ParamNoDoc:
 
 
 class MockInstTester(MockInstrument):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.attach_adder()
@@ -109,6 +116,7 @@ class MockInstTester(MockInstrument):
 
 
 class MockGates(MockInstTester):
+
     def __init__(self, model=None, **kwargs):
         super().__init__('gates', model=model, delay=0.001, **kwargs)
 
@@ -157,6 +165,7 @@ class MockGates(MockInstTester):
 
 
 class MockSource(MockInstTester):
+
     def __init__(self, model=None, **kwargs):
         super().__init__('source', model=model, delay=0.001, **kwargs)
 
@@ -167,12 +176,14 @@ class MockSource(MockInstTester):
 
 
 class MockMeter(MockInstTester):
+
     def __init__(self, model=None, **kwargs):
         super().__init__('meter', model=model, delay=0.001, **kwargs)
 
         self.add_parameter('amplitude', get_cmd='ampl?', get_parser=float)
         self.add_function('echo', call_cmd='echo {:.2f}?',
                           args=[Numbers(0, 1000)], return_parser=float)
+
 
 class MockParabola(Instrument):
     '''
@@ -252,4 +263,22 @@ class MockMetaParabola(Instrument):
         return val*self.gain.get()
 
 
+class DummyInstrument(Instrument):
 
+    def __init__(self, name='dummy', gates=['dac1', 'dac2', 'dac3'], **kwargs):
+        ''' Create a dummy instrument that can be used for testing
+
+        Args:
+            name (string): name for the instrument
+            gates (list): list of names that is used to create parameters for
+                            the instrument
+        '''
+        super().__init__(name, **kwargs)
+
+        # make gates
+        for i, g in enumerate(gates):
+            self.add_parameter(g,
+                               parameter_class=ManualParameter,
+                               initial_value=0,
+                               label='Gate {} (arb. units)'.format(g),
+                               vals=Numbers(-800, 400))
