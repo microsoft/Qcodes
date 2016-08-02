@@ -1,0 +1,3 @@
+
+addzmqlogging = 1
+
