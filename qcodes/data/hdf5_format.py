@@ -74,30 +74,61 @@ class HDF5Format(Formatter):
         if self.data_object == None or force_write:
             # Create the file if it is not there yet
             io_manager = data_set.io
+            # FIXME: use the default location provider and not the custom one here
             location = data_set.location
             self.filepath = io_manager.join(
                 io_manager.base_location,
                 data_set.location_provider(io_manager)+'/'+location+'.hdf5')
             self._create_file(self.filepath)
-        arrays = data_set.arrays
-        if not hasattr(self, 'data_arrays_grp') or force_write:
-            self._create_data_arrays_grp(data_set.arrays)
 
-        # Resize the dataset and then append the arrays that need to be written
-        datasetshape = self.dset.shape
-        key0 = list(data_set.arrays.keys())[0] # Dirty way to get a random key
-        # Assumes data arrays have the same length
-        old_datasetlen = datasetshape[0]
-        x = data_set.arrays[key0]
-        new_data_length = len(x[~np.isnan(x)])
-        new_datasetshape = (new_data_length,
-                            datasetshape[1])
-        self.dset.resize(new_datasetshape)
-        for i, key in enumerate(data_set.arrays.keys()):
-            # Would prefer to write all at once but for loop seems easiest
-            # to extract the values from the arrays dict
-            self.dset[old_datasetlen:new_data_length, i] = \
-                data_set.arrays[key][old_datasetlen:new_data_length]
+        if 'Data Arrays' not in self.data_object.keys():
+            self.arr_group = self.data_object.create_group('Data Arrays')
+        for array_id in data_set.arrays.keys():
+            if array_id not in self.arr_group.keys() or force_write:
+                self._create_dataarray_dset(array=data_set[array_id],
+                                            group=self.arr_group)
+            dset = self.arr_group[array_id]
+            # Resize the dataset and add the new values
+
+            # dataset refers to the hdf5 dataset here
+            datasetshape = dset.shape
+            old_datasetlen = datasetshape[0]
+            x = data_set.arrays[array_id]
+            new_data_length = len(x[~np.isnan(x)])
+            new_datasetshape = (new_data_length,
+                                datasetshape[1])
+            dset.resize(new_datasetshape)
+            dset[old_datasetlen:new_data_length] = \
+                data_set[array_id][old_datasetlen:new_data_length]
+
+    def _create_dataarray_dset(self, array, group):
+        '''
+        input arguments
+        array:  Dataset data array
+        group:  group in the hdf5 file where the dset will be created
+
+        creates a hdf5 datasaset that represents the data array.
+        '''
+        dset = group.create_dataset(
+            array.array_id, (0, len(array.units)),
+            maxshape=(None, len(array.units)))
+        if hasattr(array, 'label'):
+            label = array.label
+        else:
+            label = array.array_id
+        if hasattr(array, 'name'):
+            name = array.name
+        else:
+            name = array.array_id
+        if hasattr(array, 'units'):
+            units = array.units
+        else:
+            units += ['']
+        dset.attrs['label'] = _encode_to_utf8(str(label))
+        dset.attrs['name'] = _encode_to_utf8(str(name))
+        dset.attrs['units'] = _encode_to_utf8(str(units))
+        return dset
+
 
     def _create_data_arrays_grp(self, arrays):
         self.data_arrays_grp = self.data_object.create_group('Data Arrays')
