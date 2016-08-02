@@ -196,6 +196,7 @@ class DummyInstrument(Instrument):
         """
         super().__init__(name, **kwargs)
 
+        logging.info('create DummyInstrument')
         # make gates
         for _, g in enumerate(gates):
             self.add_parameter(g,

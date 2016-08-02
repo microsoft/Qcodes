@@ -1,10 +1,17 @@
 import os
 import mmap
 
-bfile=r'p:\tmp\heartbeat.txt'
+from qcodes import config
+
+
+def makeHeartBeatFile(bfile, reinit=False):
+    if (not os.path.exists(bfile) ) or reinit:
+        f = open(bfile, 'wb')
+        f.write(bytes([99,1])) # heartbeat on
+        f.close()
 
 def initHeartBeat(bfile, reinit=False):
-    ''' Initialize connection to heartbear for writing, use with setHeartBeat '''
+    ''' Initialize connection to heartbeat for writing, use with setHeartBeat '''
     if (not os.path.exists(bfile) ) or reinit:
         f = open(bfile, 'wb')
         f.write(bytes([99,1])) # heartbeat on
@@ -32,3 +39,8 @@ def setHeartBeat(m, value):
 def readHeartBeat(m):
     ''' Return heartbeat value '''
     return m[1]    
+    
+    
+_bfile=config.heartbeatfile 
+makeHeartBeatFile(_bfile)
+    

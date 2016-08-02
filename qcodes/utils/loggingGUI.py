@@ -109,16 +109,16 @@ def installZMQlogger(port=5800, name=None, clear=True, level=logging.INFO):
 #%%
 
         
-class HorseLoggingGUI(QtWidgets.QDialog):
+class zmqLoggingGUI(QtWidgets.QDialog):
     
     LOG_LEVELS = dict({logging.DEBUG: 'debug', logging.INFO: 'info',
               logging.WARN: 'warning', logging.ERROR: 'error', logging.CRITICAL: 'critical'})
     
     
     def __init__( self, parent = None ):
-        super(HorseLoggingGUI, self).__init__(parent)
+        super(zmqLoggingGUI, self).__init__(parent)
 
-        self.setWindowTitle('HorseAR logger')
+        self.setWindowTitle('ZMQ logger')
 
         self.imap=dict((v, k) for k, v in self.LOG_LEVELS.items())
 
