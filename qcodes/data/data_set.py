@@ -614,7 +614,7 @@ class DataSet(DelegateAttributes):
             return
         self.formatter.read_metadata(self)
 
-    def write(self, force_write=False):
+    def write(self):
         """Write updates to the DataSet to storage."""
         if self.mode != DataMode.LOCAL:
             raise RuntimeError('This object is connected to a DataServer, '
@@ -623,8 +623,7 @@ class DataSet(DelegateAttributes):
         if self.location is False:
             return
 
-        self.formatter.write(self, self.io, self.location,
-                             force_write=force_write)
+        self.formatter.write(self, self.io, self.location)
 
     def write_copy(self, path=None, io_manager=None, location=None):
         """

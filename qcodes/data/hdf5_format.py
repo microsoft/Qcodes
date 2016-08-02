@@ -9,11 +9,6 @@ from .format import Formatter
 
 """
 list for things that are still missing
-* Data formatter and dataset has no way to tell what parameter was set and
-   which one was measured/get (setpoint in the datset does something
-   like that)
-   but I feel the concept is unclear and can be worked out better.
-   I am thinking ordered dict for the dataset
 * dataset has no way of including units
 * there is an assumption that data arrays are preallocated in the dataset.
   this breaks down when measurements are interupted before they terminate
@@ -23,6 +18,7 @@ list for things that are still missing
   to increment)
 
 """
+
 
 class HDF5Format(Formatter):
     """
@@ -35,14 +31,11 @@ class HDF5Format(Formatter):
         """
         self.data_object = None
 
-
     def _create_file(self, filepath):
         folder, _filename = os.path.split(filepath)
         if not os.path.isdir(folder):
             os.makedirs(folder)
         self.data_object = h5py.File(filepath, 'a')
-
-
 
     def read(self, data_set):
         """
@@ -53,16 +46,23 @@ class HDF5Format(Formatter):
         location = data_set.location
         filepath = location
         self.data_object = h5py.File(filepath, 'r+')
-
         arrays = data_set.arrays
         for i, col_name in enumerate(
                 self.data_object['Data Arrays']['Data'].attrs['column names']):
             # Decoding string is needed because of h5py/issues/379
             col_name = col_name.decode()
+            name = col_name # will be overwritten if not in file
             dat_arr = self.data_object['Data Arrays']['Data']
-            label = dat_arr.attrs['labels'][i].decode()
-            name = dat_arr.attrs['names'][i].decode()
-            unit = dat_arr.attrs['units'][i].decode()
+            if hasattr(dat_arr, 'label'):
+                label = dat_arr.attrs['labels'][i].decode()
+            else:
+                label=None
+            if hasattr(dat_arr, 'names'):
+                name = dat_arr.attrs['names'][i].decode()
+            if hasattr(dat_arr, 'unit'):
+                unit = dat_arr.attrs['units'][i].decode()
+            else:
+                unit = None
             d_array = DataArray(
                 name=name, array_id=col_name, label=label, parameter=None,
                 preset_data=self.data_object['Data Arrays']['Data'].value[:, i])
@@ -71,7 +71,6 @@ class HDF5Format(Formatter):
     def write(self, data_set, force_write=False):
         """
         """
-
         if self.data_object == None or force_write:
             # Create the file if it is not there yet
             io_manager = data_set.io
@@ -83,7 +82,6 @@ class HDF5Format(Formatter):
         arrays = data_set.arrays
         if not hasattr(self, 'data_arrays_grp') or force_write:
             self._create_data_arrays_grp(data_set.arrays)
-
 
         # Resize the dataset and then append the arrays that need to be written
         datasetshape = self.dset.shape
@@ -125,12 +123,16 @@ class HDF5Format(Formatter):
                 units += [arr.units]
             else:
                 units += ['']
-        self.dset.attrs['labels'] = _encode_to_utf8(labels)
-        self.dset.attrs['names'] = _encode_to_utf8(names)
-        self.dset.attrs['units'] = _encode_to_utf8(units)
+        # _encode_to_utf8(str(...)) ensures None gets encoded for h5py aswell
+        self.dset.attrs['labels'] = _encode_to_utf8(str(labels))
+        self.dset.attrs['names'] = _encode_to_utf8(str(names))
+        self.dset.attrs['units'] = _encode_to_utf8(str(units))
         # Added to tell analysis how to extract the data
         self.data_arrays_grp.attrs['datasaving_format'] = _encode_to_utf8(
             'QCodes hdf5 v0.1')
+
+    def write_metadata(self, data_set, io_manager, location, read_first=True):
+        print('Write meta data is passing')
 
     def save_instrument_snapshot(self, snapshot, *args):
         """
@@ -140,7 +142,7 @@ class HDF5Format(Formatter):
 
         META DATA GROUP
         """
-
+        # Todo: merge with write metadata
         # TODO:  should be pretty easy to add this but am waiting
         # for the metadata of @Merlinsmiles
         set_grp = data_object.create_group('Meta-data')
