@@ -246,9 +246,7 @@ if __name__ == '__main__':
 
     # start the log watcher
     try:
-        # sub_logger(port, level=args.level, verbose=verbose)
         qt_logger(port, level=args.level, verbose=verbose, dlg=dlg)
-        pass
     except KeyboardInterrupt:
         pass
 
@@ -260,4 +258,3 @@ if 0:
     port = 5800
     installZMQlogger(port=port, level=None)
     logging.warning('test')
-    # log_worker(port=5700, interval=1)
