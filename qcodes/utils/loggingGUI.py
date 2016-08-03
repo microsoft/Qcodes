@@ -10,8 +10,10 @@ Pieter Eendebak <pieter.eendebak@tno.nl>
 #%% Import packages
 import logging
 import os
+import signal
 import time
 import argparse
+import re
 
 from qtpy import QtGui
 from qtpy import QtWidgets
@@ -126,6 +128,9 @@ class zmqLoggingGUI(QtWidgets.QDialog):
 
         self._button = QtWidgets.QPushButton(self)
         self._button.setText('Clear')
+        self._killbutton = QtWidgets.QPushButton(self)
+        self._killbutton.setText('Kill heartbeat')
+
         self._levelBox = QtWidgets.QComboBox(self)
         for k in sorted(self.LOG_LEVELS.keys()):
             print('item %s' % k)
@@ -134,8 +139,10 @@ class zmqLoggingGUI(QtWidgets.QDialog):
 
         blayout = QtWidgets.QHBoxLayout()
         blayout.addWidget(self._button)
+        blayout.addWidget(self._killbutton)
         blayout.addWidget(self._levelBox)
         self._button.clicked.connect(self.clearMessages)
+        self._killbutton.clicked.connect(self.killPID)
         self._levelBox.currentIndexChanged.connect(self.setLevel)
 
         layout = QtWidgets.QVBoxLayout()
@@ -147,6 +154,7 @@ class zmqLoggingGUI(QtWidgets.QDialog):
 
         self._levelBox.setCurrentIndex(1)
         self.loglevel = logging.INFO
+        self.nkill = 0
 
     def setLevel(self, boxidx):
         name = self._levelBox.itemText(boxidx)
@@ -156,7 +164,6 @@ class zmqLoggingGUI(QtWidgets.QDialog):
             self.loglevel = lvl
 
     def addMessage(self, msg, level=None):
-        print(level)
         if level is not None:
             if level < self.loglevel:
                 return
@@ -166,8 +173,12 @@ class zmqLoggingGUI(QtWidgets.QDialog):
 
     def clearMessages(self):
         ''' Clear the messages in the logging window '''
-        dlg._console.clear()
+        self._console.clear()
         self.addMessage('cleared messages...\n')
+
+    def killPID(self):
+        ''' Clear the messages in the logging window '''
+        self.nkill = 10
 
 
 def qt_logger(port, dlg, level=logging.INFO, verbose=1):
@@ -195,15 +206,26 @@ def qt_logger(port, dlg, level=logging.INFO, verbose=1):
             log = getattr(logging, level)
             lvlvalue = dlg.imap.get(level, None)
 
-            # print(lvlvalue)
-            log(message)
+            if verbose >= 2:
+                log(message)
             dlg.addMessage(message + '\n', lvlvalue)
 
+            if dlg.nkill > 0:
+                print('check pid')
+                m = re.match('pid (\d*): heartbeat', message)
+                dlg.nkill = dlg.nkill - 1
+                if m is not None:
+                    pid = int(m.group(1))
+                    print('killing pid %d' % pid)
+                    cmd = 'kill %d' % pid
+                    os.kill(pid, signal.SIGKILL)  # or signal.SIGKILL
+                    dlg.addMessage(
+                        'send kill signal to pid %d\n' % pid, logging.CRITICAL)
             app.processEvents()
 
             if verbose >= 2:
                 print('message: %s (level %s)' % (message, level))
-        except Exception:
+        except zmq.error.Again as ex:
             # no messages in system....
             app.processEvents()
             time.sleep(.06)
@@ -220,7 +242,7 @@ if __name__ == '__main__':
     app = None
     if (not QtWidgets.QApplication.instance()):
         app = QtWidgets.QApplication([])
-    dlg = HorseLoggingGUI()
+    dlg = zmqLoggingGUI()
     dlg.resize(800, 400)
     dlg.show()
 
@@ -232,8 +254,8 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         pass
 
-    if (app):
-        app.exec_()
+    # if (app):
+    #    app.exec_()
 
 #%% Send message to logger
 if 0:
