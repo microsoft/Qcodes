@@ -13,7 +13,6 @@ import os
 import time
 import argparse
 
-from qtpy import QtCore
 from qtpy import QtGui
 from qtpy import QtWidgets
 
@@ -204,7 +203,7 @@ def qt_logger(port, dlg, level=logging.INFO, verbose=1):
 
             if verbose >= 2:
                 print('message: %s (level %s)' % (message, level))
-        except:
+        except Exception:
             # no messages in system....
             app.processEvents()
             time.sleep(.06)
