@@ -217,7 +217,6 @@ def qt_logger(port, dlg, level=logging.INFO, verbose=1):
                 if m is not None:
                     pid = int(m.group(1))
                     print('killing pid %d' % pid)
-                    cmd = 'kill %d' % pid
                     os.kill(pid, signal.SIGKILL)  # or signal.SIGKILL
                     dlg.addMessage(
                         'send kill signal to pid %d\n' % pid, logging.CRITICAL)
@@ -225,13 +224,12 @@ def qt_logger(port, dlg, level=logging.INFO, verbose=1):
 
             if verbose >= 2:
                 print('message: %s (level %s)' % (message, level))
-        except zmq.error.Again as ex:
+        except zmq.error.Again:
             # no messages in system....
             app.processEvents()
             time.sleep(.06)
             message = ''
             level = None
-            pass
 
 #%%
 if __name__ == '__main__':
