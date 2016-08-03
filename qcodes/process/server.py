@@ -4,6 +4,7 @@ import multiprocessing as mp
 from traceback import format_exc
 from uuid import uuid4
 import builtins
+import os
 import logging
 import time
 
@@ -12,6 +13,8 @@ QUERY_ASK = 'ASK'
 RESPONSE_OK = 'OK'
 RESPONSE_ERROR = 'ERROR'
 
+from qcodes import config
+from qcodes.utils import loggingGUI
 from qcodes.utils.nested_attrs import NestedAttrAccess
 from .qcodes_process import QcodesProcess
 from .helpers import kill_queue
@@ -208,6 +211,7 @@ class ServerManager:
 
 import qcodes.process.heartbeat
 
+
 class BaseServer(NestedAttrAccess):
 
     """
@@ -274,7 +278,9 @@ class BaseServer(NestedAttrAccess):
         self._response_queue = response_queue
         self._shared_attrs = shared_attrs
 
-        self.hb = qcodes.process.heartbeat.openHeartBeat(qcodes.config.heartbeatfile)
+        self.hb = qcodes.process.heartbeat.openHeartBeat(
+            qcodes.config.heartbeatfile)
+
     def run_event_loop(self):
         """
         The default event loop. When this method returns, the server stops.
@@ -286,22 +292,24 @@ class BaseServer(NestedAttrAccess):
           it's not by setting `self.running = False`)
         """
         self.running = True
-        logging.info('run_event_loop')
-        
-        self.timeout = 5    # temporary to make heartbeat work
+
+        if qcodes.config.addzmqlogging:
+            self.timeout = 5    # temporary to make heartbeat work
+            _ = loggingGUI.installZMQlogger()
+            logging.info('run_event_loop')
+
         while self.running:
             try:
                 query = self._query_queue.get(timeout=self.timeout)
             except mp.queues.Empty:
-                query=None
+                query = None
             if query is not None:
                 self.process_query(query)
             if not qcodes.process.heartbeat.readHeartBeat(self.hb):
                 logging.info('no heartbeat, stopping process')
-                self.running=False
+                self.running = False
             else:
                 logging.info('heartbeat alive... %s' % time.ctime())
-
 
     def process_query(self, query):
         """
