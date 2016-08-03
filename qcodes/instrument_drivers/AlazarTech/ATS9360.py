@@ -150,7 +150,6 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            value=0,
                            vals=validators.Ints(min_value=0))
                            
-        # TODO: need to confugure AuxIO??
 
         # ----- Parameters for the acquire function -----
         self.add_parameter(name='mode',

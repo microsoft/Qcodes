@@ -18,13 +18,9 @@ from qcodes.utils import validators
 # acquisition that would overflow the board if measurement is not stopped
 # quickly enough. can this be solved by not reposting the buffers?
 
-# TODO: check 8 bit sample thing works - Natalie
-# TODO: test get_board_info and find_boards - Natalie
-# TODO: remove guerilla debuggung 'print' statements - Natalie
-# TODO: call_dll error handling - Natalie
-# TODO: acquisition_controller - Natalie
-# TODO: fix hacky way I use _ATS_dll anywhere - Natalie
-# TODO: make it actually save data! - Natalie
+# TODO(nataliejpg) get_board_info and find_boards are broken??
+# TODO(nataliejpg) call_dll error handling doesnt catch errors in expected way
+# TODO(nataliejpg) make use of _ATS_dll uniform
 
 class AlazarTech_ATS(Instrument):
     # override dll_path in your init script or in the board constructor
@@ -214,7 +210,6 @@ class AlazarTech_ATS(Instrument):
 
         self.buffer_list = []
     
-    # TODO use get_board_info for this and make it return better stuff!
     def get_idn(self):
         board_kind = self._board_names[self._ATS_dll.AlazarGetBoardKind(self._handle)]
         max_s, bps = self._get_channel_info(self._handle)
@@ -459,26 +454,27 @@ class AlazarTech_ATS(Instrument):
         print("samples_per_record is "+str(samples_per_record))
         print("bytes per record is "+str(bytes_per_record))
         
-        # bytes per buffer
+        # channels
         if self.channel_selection._get_byte() == 3:
             number_of_channels = 2
         else:
             number_of_channels = 1
-            
+        
+        # bytes per buffer
         bytes_per_buffer = bytes_per_record * records_per_buffer * number_of_channels
         
         # create buffers for acquisition
-        # TODO: should this be > 1 (makes sense to me) or > 8 as in alazar sample code? - Natalie
+        # TODO(nataliejpg) should this be > 1 (makes sense to me) or > 8 as in alazar sample code? - Natalie
         sample_type = ctypes.c_uint8
         if bytes_per_sample > 1:
             sample_type = ctypes.c_uint16
         
         print("samples_per_buffer is "+str(samples_per_buffer))
         print("bytes_per_buffer  is "+str(bytes_per_buffer))
+        print("records_per_buffer is "+str(records_per_buffer))
         
         self.clear_buffers()
         allocated_buffers = self.allocated_buffers._get_byte()
-        print(str(allocated_buffers)+" allocated buffers")
         for k in range(allocated_buffers):
             try:
                 self.buffer_list.append(DMABuffer(sample_type, bytes_per_buffer))
@@ -496,13 +492,13 @@ class AlazarTech_ATS(Instrument):
         print("completed AlazarPostAsyncBuffer")
 
         # -----start capture here-----
-#        acquisition_controller.pre_start_capture(self)
+        acquisition_controller.pre_start_capture(self)
         start = time.clock() # Keep track of when acquisition started
         # call the startcapture method
         self._call_dll('AlazarStartCapture', self._handle)
         print("Capturing %d buffers." % buffers_per_acquisition)
         
-#        acquisition_controller.pre_acquire(self)
+        acquisition_controller.pre_acquire(self)
         # buffer handling from acquisition
         buffers_completed = 0
         bytes_transferred = 0
@@ -527,7 +523,7 @@ class AlazarTech_ATS(Instrument):
             # if buffers must be recycled, extract data and repost them
             # otherwise continue to next buffer
             if buffer_recycling:
-#                acquisition_controller.handle_buffer(self, buf.buffer)
+                acquisition_controller.handle_buffer(self, buf.buffer)
                 self._call_dll('AlazarPostAsyncBuffer',
                                self._handle, buf.addr, buf.size_bytes)
             buffers_completed += 1
@@ -538,9 +534,9 @@ class AlazarTech_ATS(Instrument):
 
         # -----cleanup here-----
         # extract data if not yet done
-#        if not buffer_recycling:
-#            for buf in self.buffer_list:
-#                acquisition_controller.handle_buffer(self, buf.buffer)
+        if not buffer_recycling:
+            for buf in self.buffer_list:
+                acquisition_controller.handle_buffer(self, buf.buffer)
 
         # free up memory
         self.clear_buffers()
@@ -550,7 +546,7 @@ class AlazarTech_ATS(Instrument):
             p.get()
 
         # return result
-#        return acquisition_controller.post_acquire(self)
+        return acquisition_controller.post_acquire(self)
 
         # Compute the total transfer time, and display performance information.
         transfer_time_sec = time.clock() - start
@@ -640,7 +636,8 @@ class AlazarTech_ATS(Instrument):
         # TODO (M) use byte value if range{channel}
         return (((signal - 127.5) / 127.5) *
                 (self.parameters['channel_range' + str(channel)].get()))
-
+    
+    # TODO(nataliejpg) surely this should be get_sample_rate?
     def get_sample_speed(self):
         if self.sample_rate.get() == 'EXTERNAL_CLOCK':
             raise Exception('External clock is used, alazar driver '
