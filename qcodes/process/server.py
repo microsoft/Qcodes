@@ -209,6 +209,8 @@ class ServerManager:
 
 
 import qcodes.process.heartbeat
+from multiprocessing import current_process
+
 
 
 class BaseServer(NestedAttrAccess):
@@ -308,7 +310,7 @@ class BaseServer(NestedAttrAccess):
                 logging.info('no heartbeat, stopping process')
                 self.running = False
             else:
-                logging.info('heartbeat alive... %s' % time.ctime())
+                logging.info('heartbeat of %s: alive... %s' % (current_process().name, time.ctime()) )
 
     def process_query(self, query):
         """
