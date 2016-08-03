@@ -4,6 +4,7 @@ import time
 import logging
 import math
 import sys
+import os
 import io
 import numpy as np
 import json
@@ -38,6 +39,13 @@ def tprint(string, dt=1, tag='default'):
         print(string)
         _tprint_times[tag] = time.time()
 
+def frontend():
+    """ Return frontend used
+
+    Returns
+        frontend (string): frontend used. Default is notebook    
+    """
+    return os.environ.get('QCODESFRONTEND', 'notebook')
 
 def in_notebook():
     """

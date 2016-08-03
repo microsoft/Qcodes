@@ -2,13 +2,16 @@
 
 # flake8: noqa (we don't need the "<...> imported but unused" error)
 
+import os
 # just for convenience in debugging, so we don't have to
 # separately import multiprocessing
 from multiprocessing import active_children
 
 from qcodes.version import __version__
 from qcodes.process.helpers import set_mp_method
-from qcodes.utils.helpers import in_notebook
+from qcodes.utils.helpers import in_notebook, frontend
+
+
 
 # code that should only be imported into the main (notebook) thread
 # in particular, importing matplotlib in the side processes takes a long
@@ -28,7 +31,9 @@ if in_notebook():  # pragma: no cover
               'try "from qcodes.plots.pyqtgraph import QtPlot" '
               'to see the full error')
 
-    from qcodes.widgets.widgets import show_subprocess_widget
+    # only load the show_subprocess_widget when running jupyter notebook
+    if frontend()=='notebook':
+        from qcodes.widgets.widgets import show_subprocess_widget
 
 from qcodes.station import Station
 from qcodes.loops import get_bg, halt_bg, Loop

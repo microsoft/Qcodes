@@ -11,7 +11,6 @@ from numpy.ma import masked_invalid, getmask
 
 from .base import BasePlot
 
-
 class MatPlot(BasePlot):
     """
     Plot x/y lines or x/y/z heatmap data. The first trace may be included

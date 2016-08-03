@@ -3,8 +3,12 @@ Live plotting in Jupyter notebooks
 """
 from IPython.display import display
 
-from qcodes.widgets.widgets import HiddenUpdateWidget
+from qcodes.utils.helpers import frontend
 
+if frontend()=='notebook':
+    from qcodes.widgets.widgets import HiddenUpdateWidget
+else:
+    HiddenUpdateWidget=None
 
 class BasePlot:
 
@@ -27,7 +31,7 @@ class BasePlot:
         self.data_updaters = set()
 
         self.interval = interval
-        if interval:
+        if interval and HiddenUpdateWidget:
             self.update_widget = HiddenUpdateWidget(self.update, interval)
             display(self.update_widget)
 
