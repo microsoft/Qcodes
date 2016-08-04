@@ -20,7 +20,7 @@ PyPi is the fastest way to install QCoDeS, will be avaiable once out of beta/pri
 
 We use virtualenv and pyenv to make sure all the system are the same, this rules out issues and the usual "it works on my machine".
 Install virtual env (optionally virtualenvwrapper for convenience, if you are on linux) and pyenv according to your distribution.
-Once all is installed, and working:
+Once all is installed, and working: 
 
 ```bash
 pyenv install 3.4.5
@@ -28,6 +28,7 @@ pyenv local 3.4.5
 mkvirtualenv qcodes-dev -r develop_requirements.txt --python $HOME/.pyenv/versions/3.4.5/bin/python3.4
 git clone https://github.com/qdev-dk/Qcodes.git $QCODES_INSTALL_DIR
 cd $QCODES_INSTALL_DIR
+pip install -r develop_requirements.txt
 pip install -e .
 python qcodes/test.py -f
 ```
