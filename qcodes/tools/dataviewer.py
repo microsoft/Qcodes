@@ -12,14 +12,6 @@ import argparse
 import qcodes
 from qcodes.plots.pyqtgraph import QtPlot
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--verbose', default=1, help="verbosity level")
-parser.add_argument(
-    '-d', '--datadir', type=str, default=None, help="data directory")
-args = parser.parse_args()
-verbose = args.verbose
-datadir = args.datadir
-
 #%% Helper functions
 
 
@@ -75,7 +67,7 @@ class DataViewer(QtWidgets.QWidget):
         self._treemodel = QtGui.QStandardItemModel()
         self.logtree.setModel(self._treemodel)
         self.__debug = dict()
-        self.qplot = QtPlot(remote=False)
+        self.qplot = QtPlot(remote=False, interval=0)
         self.plotwindow = self.qplot.win
 
         vertLayout = QtWidgets.QVBoxLayout()
@@ -99,15 +91,18 @@ class DataViewer(QtWidgets.QWidget):
     def updateLogs(self):
         model = self._treemodel
         dd = findfilesR(self.datadir, '.*dat')
-        print(dd)
+        print('found %d files'  % (len(dd)))        
+        #print(dd)
 
         logs = dict()
         for i, d in enumerate(dd):
-            datetag, logtag = d.split('/')[-3:-1]
-            if not datetag in logs:
-                logs[datetag] = dict()
-            logs[datetag][logtag] = d
-
+            try:
+                datetag, logtag = d.split(os.sep)[-3:-1]
+                if not datetag in logs:
+                    logs[datetag] = dict()
+                logs[datetag][logtag] = d
+            except:
+                pass
         self.logs = logs
 
         for i, datetag in enumerate(sorted(logs.keys())[::-1]):
@@ -184,11 +179,22 @@ class DataViewer(QtWidgets.QWidget):
 
 #%% Testing
 
-if __name__ == '__main__':
+
+if __name__=='__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-v', '--verbose', default=1, help="verbosity level")
+    parser.add_argument(
+        '-d', '--datadir', type=str, default=None, help="data directory")
+    args = parser.parse_args()
+    verbose = args.verbose
+    datadir = args.datadir
+
     app = pg.mkQApp()
 
     dataviewer = DataViewer(datadir=datadir)
-    dataviewer.setGeometry(1920 + 1280, 60, 700, 800)
+    dataviewer.setGeometry(1280, 60, 700, 800)
     dataviewer.qplot.win.setMaximumHeight(400)
     dataviewer.show()
     self = dataviewer
+
+    app.exec()
