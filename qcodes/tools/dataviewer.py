@@ -58,12 +58,13 @@ class DataViewer(QtWidgets.QWidget):
 
         self.default_parameter = default_parameter
 
+        if datadir is None:
+            datadir = qcodes.DataSet.default_io.base_location
         self.datadir = datadir
-        if self.datadir is None:
-            self.datadir = qcodes.DataSet.default_io.base_location
 
         qcodes.DataSet.default_io = qcodes.DiskIO(datadir)
-
+        logging.info('DataViewer: data directory %s' % datadir)
+        
         # setup GUI
         self.text = QtWidgets.QLabel()
         self.text.setText('Log files at %s' %
