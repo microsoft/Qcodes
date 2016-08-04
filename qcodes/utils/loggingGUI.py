@@ -217,7 +217,8 @@ def qt_logger(port, dlg, level=logging.INFO, verbose=1):
                 if m is not None:
                     pid = int(m.group(1))
                     print('killing pid %d' % pid)
-                    os.kill(pid, signal.SIGKILL)  # or signal.SIGKILL
+                    mysignal = getattr(signal, 'SIGKILL', signal.SIGTERM)
+                    os.kill(pid, mysignal)  # or signal.SIGKILL
                     dlg.addMessage(
                         'send kill signal to pid %d\n' % pid, logging.CRITICAL)
             app.processEvents()
