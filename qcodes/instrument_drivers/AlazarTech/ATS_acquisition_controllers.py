@@ -6,12 +6,12 @@ import numpy as np
 # Heterodyne Measurement Controller
 # returns unprocessed data averaged by record for 2 channel use
 class HD_Controller(AcquisitionController):
-    def __init__(self):
+    def __init__(self, freq_dif):
+        self.freq_dif = freq_dif
         self.samples_per_record = None
         self.bits_per_sample = None
         self.records_per_buffer = None
         self.buffers_per_acquisition = None
-        self.allocated_buffers = None
         self.number_of_channels = 2
         self.buffer = None
 
@@ -24,7 +24,13 @@ class HD_Controller(AcquisitionController):
         self.buffer = np.zeros(self.samples_per_record *
                               self.records_per_buffer *
                               self.number_of_channels)
-
+        sample_speed = alazar.get_sample_speed()
+        integer_list = np.arange(self.samples_per_record)
+        angle_list = (2 * np.pi * self.freq_dif / sample_speed *
+                      integer_list)
+        self.cos_list = np.cos(angle_list)
+        self.sin_list = np.sin(angle_list)
+                              
     def pre_acquire(self, alazar):
         # gets called after 'AlazarStartCapture'
         pass
@@ -50,7 +56,21 @@ class HD_Controller(AcquisitionController):
             i0 = (i * self.samples_per_record * self.number_of_channels) + 1
             i1 = i0 + self.samples_per_record *self.number_of_channels
             recordB += self.buffer[i0:i1:self.number_of_channels] / records_per_acquisition
-        return recordA, recordB
+        
+        resA = self.fit(recordA)
+        resB = self.fit(recordB)
+        
+        return resA, resB
+      
+    def fit(self, rec):
+        # Discrete Fourier Transform
+        RePart = np.dot(rec, self.cos_list) / self.samples_per_record
+        ImPart = np.dot(rec, self.sin_list) / self.samples_per_record
+
+        ampl = np.sqrt(RePart ** 2 + ImPart ** 2)
+        phase = math.atan2(ImPart, RePart) * 360 / (2 * math.pi)
+        
+        return [ampl, phase]
 
 
 # Test AcquisitionController tested on ATS9360 (nataliejpg)
@@ -58,19 +78,15 @@ class HD_Controller(AcquisitionController):
 class Test_AcquisitionController(AcquisitionController):
     def __init__(self):
         self.samples_per_record = None
-        self.bits_per_sample = None
         self.records_per_buffer = None
         self.buffers_per_acquisition = None
-        self.allocated_buffers = None
         self.number_of_channels = 2
         self.buffer = None
 
     def pre_start_capture(self, alazar):
-        self.bits_per_sample = alazar.get_idn()['bits_per_sample']
         self.samples_per_record = alazar.samples_per_record()
         self.records_per_buffer = alazar.records_per_buffer()
         self.buffers_per_acquisition = alazar.buffers_per_acquisition()
-        sample_speed = alazar.get_sample_speed()
         self.buffer = np.zeros(self.samples_per_record *
                               self.records_per_buffer *
                               self.number_of_channels)
@@ -101,7 +117,7 @@ class Test_AcquisitionController(AcquisitionController):
             i1 = i0 + self.samples_per_record *self.number_of_channels
             recordB += self.buffer[i0:i1:self.number_of_channels] / records_per_acquisition
         return recordA, recordB
-
+    
 
 
 # DFT AcquisitionController

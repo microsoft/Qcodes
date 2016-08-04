@@ -21,6 +21,7 @@ from qcodes.utils import validators
 # TODO(nataliejpg) get_board_info and find_boards are broken??
 # TODO(nataliejpg) call_dll error handling doesnt catch errors in expected way
 # TODO(nataliejpg) make use of _ATS_dll uniform
+# TODO(nataliejpg) error if no trigger
 
 class AlazarTech_ATS(Instrument):
     # override dll_path in your init script or in the board constructor
