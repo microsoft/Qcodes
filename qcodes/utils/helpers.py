@@ -1,23 +1,23 @@
-from collections import Iterator, Sequence, Mapping
-from copy import deepcopy
-import time
+import io
+import json
 import logging
 import math
-import sys
-import io
-import numpy as np
-import json
 import numbers
+import sys
+import time
+
+from collections import Iterator, Sequence, Mapping
+from copy import deepcopy
+
+import numpy as np
 
 _tprint_times = {}
 
 
 class NumpyJSONEncoder(json.JSONEncoder):
-
     """Return numpy types as standard types."""
     # http://stackoverflow.com/questions/27050108/convert-numpy-type-to-python
     # http://stackoverflow.com/questions/9452775/converting-numpy-dtypes-to-native-python-types/11389998#11389998
-
     def default(self, obj):
         if isinstance(obj, np.integer):
             return int(obj)
@@ -121,7 +121,7 @@ def deep_update(dest, update):
 # a) we don't want to require that as a dep so low level
 # b) I'd like to be more flexible with the sign of step
 def permissive_range(start, stop, step):
-    '''
+    """
     returns range (as a list of values) with floating point step
 
     inputs:
@@ -129,7 +129,7 @@ def permissive_range(start, stop, step):
 
     always starts at start and moves toward stop,
     regardless of the sign of step
-    '''
+    """
     signed_step = abs(step) * (1 if stop > start else -1)
     # take off a tiny bit for rounding errors
     step_count = math.ceil((stop - start) / signed_step - 1e-10)
@@ -189,11 +189,11 @@ def make_sweep(start, stop, step=None, num=None):
 
 
 def wait_secs(finish_clock):
-    '''
+    """
     calculate the number of seconds until a given clock time
     The clock time should be the result of time.perf_counter()
     Does NOT wait for this time.
-    '''
+    """
     delay = finish_clock - time.perf_counter()
     if delay < 0:
         logging.warning('negative delay {:.6f} sec'.format(delay))
@@ -203,7 +203,7 @@ def wait_secs(finish_clock):
 
 class LogCapture():
 
-    '''
+    """
     context manager to grab all log messages, optionally
     from a specific logger
 
@@ -212,7 +212,7 @@ class LogCapture():
     with LogCapture() as logs:
         code_that_makes_logs(...)
     log_str = logs.value
-    '''
+    """
 
     def __init__(self, logger=logging.getLogger()):
         self.logger = logger
@@ -231,10 +231,10 @@ class LogCapture():
 
 
 def make_unique(s, existing):
-    '''
+    """
     make string s unique, able to be added to a sequence `existing` of
     existing names without duplication, by appending _<int> to it if needed
-    '''
+    """
     n = 1
     s_out = s
     existing = set(existing)
@@ -247,7 +247,6 @@ def make_unique(s, existing):
 
 
 class DelegateAttributes:
-
     """
     Mixin class to create attributes of this object by
     delegating them to one or more dicts and/or objects
@@ -256,7 +255,7 @@ class DelegateAttributes:
     in dir() and autocomplete
 
 
-   Attributes:
+    Attributes:
         delegate_attr_dicts (list): a list of names (strings) of dictionaries which are
             (or will be) attributes of self, whose keys should be treated as
             attributes of self
@@ -342,7 +341,9 @@ def strip_attrs(obj, whitelist=()):
         for key in lst:
             try:
                 del obj.__dict__[key]
+            # TODO (giulioungaretti) fix bare-except
             except:
                 pass
+        # TODO (giulioungaretti) fix bare-except
     except:
         pass

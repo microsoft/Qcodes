@@ -1,6 +1,4 @@
 import time
-import logging
-from functools import partial
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument, MockModel
@@ -19,7 +17,8 @@ class AMockModel(MockModel):
         self._gates = [0.0, 0.0, 0.0]
         self._excitation = 0.1
 
-    def fmt(self, value):
+    @staticmethod
+    def fmt(value):
         return '{:.3f}'.format(value)
 
     def gates_set(self, parameter, value):
@@ -48,6 +47,7 @@ class AMockModel(MockModel):
         if parameter == 'ampl':
             try:
                 self._excitation = float(value)
+            # TODO(giulioungaretti)  fix bare-except
             except:
                 # "Off" as in the MultiType sweep step test
                 self._excitation = None
@@ -91,25 +91,25 @@ class MockInstTester(MockInstrument):
         self.attach_adder()
 
     def attach_adder(self):
-        '''
+        """
         this function attaches a closure to the object, so can only be
         executed after creating the server because a closure is not
         picklable
-        '''
+        """
         a = 5
 
         def f(b):
-            '''
+            """
             not the same function as the original method
-            '''
+            """
             return a + b
         self.add5 = f
 
     def add5(self, b):
-        '''
+        """
         The class copy of this should not get run, because it should
         be overwritten on the server by the closure version.
-        '''
+        """
         raise RuntimeError('dont run this one!')
 
 
@@ -186,17 +186,18 @@ class MockMeter(MockInstTester):
 class DummyInstrument(Instrument):
 
     def __init__(self, name='dummy', gates=['dac1', 'dac2', 'dac3'], **kwargs):
-        ''' Create a dummy instrument that can be used for testing
-        
+        """
+        Create a dummy instrument that can be used for testing
+
         Args:
             name (string): name for the instrument
             gates (list): list of names that is used to create parameters for
                             the instrument
-        '''
+        """
         super().__init__(name, **kwargs)
 
         # make gates
-        for i, g in enumerate(gates):
+        for _, g in enumerate(gates):
             self.add_parameter(g,
                                parameter_class=ManualParameter,
                                initial_value=0,
