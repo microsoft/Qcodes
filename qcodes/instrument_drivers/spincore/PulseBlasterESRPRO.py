@@ -50,22 +50,26 @@ class PulseBlaster(Instrument):
         self.add_function('close',
                           call_cmd=self.close)
 
+        self.add_function('get_error',
+                          call_cmd=api.pb_get_error)
+
     def initialize(self):
-        if api.pb_init() != 0:
-            print(api.pb_init())
-            raise IOError("Error initializing board: %s" % api.pb_get_error())
+        result = api.pb_init()
+        assert(result == 0, 'Error initializing board: {}'.format(api.pb_get_error()))
 
     def start_programming(self, device):
-        if api.pb_start_programming(device) != 0:
-            raise IOError("Error starting programming: %s" % api.pb_get_error())
+        result = api.pb_start_programming(device)
+        assert(result == 0, 'Error starting programming: {}'.format(api.pb_get_error()))
 
     def send_instruction(self, flags, instruction, inst_data, length):
         instruction_int = self.instructions[instruction]
         #Need to call underlying spinapi because function does not exist in wrapper
-        api.spinapi.pb_inst_pbonly(ctypes.c_uint64(flags),
-                                   ctypes.c_int(instruction_int),
-                                   ctypes.c_int(inst_data),
-                                   ctypes.c_double(length))
+        result = api.spinapi.pb_inst_pbonly(ctypes.c_uint64(flags),
+                                            ctypes.c_int(instruction_int),
+                                            ctypes.c_int(inst_data),
+                                            ctypes.c_double(length))
+        assert(result == 0, 'Error sending instruction: {}'.format(api.pb_get_error()))
+        return result
 
     def close(self):
         #Terminate communication from api
