@@ -75,3 +75,4 @@ docs/examples/data/*
 .idea/modules.xml
 .idea/vcs.xml
 .idea/Qcodes.iml
+.idea/misc.xml
