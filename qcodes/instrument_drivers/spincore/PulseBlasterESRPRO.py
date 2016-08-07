@@ -26,26 +26,33 @@ class PulseBlaster(Instrument):
                            label='Core clock',
                            units='MHz',
                            set_cmd=api.pb_core_clock,
-                           vals=Numbers(0, 500))  # Not sure what the range is
-
-        self.add_function('select_board',
-                          call_cmd=api.pb_select_board, args=[Enum(0, 1, 2, 3, 4)])
+                           vals=Numbers(0, 500))
 
         self.add_function('initialize',
                           call_cmd=self.initialize)
 
-        self.add_function('start',
-                          call_cmd=api.pb_start)
+        self.add_function('detect_boards',
+                          call_cmd=self.detect_boards)
+
+        self.add_function('select_board',
+                          call_cmd=api.pb_select_board,
+                          args=[Enum(0, 1, 2, 3, 4)])
 
         self.add_function('start_programming',
-                          call_cmd=self.start_programming, args=[Numbers(0,4)])
+                          call_cmd=self.start_programming)
 
         self.add_function('send_instruction',
                           call_cmd=self.send_instruction,
                           args=[Ints(), Strings(), Ints(), Ints()])
 
+        self.add_function('stop_programming',
+                          call_cmd=self.stop_programming)
+
+        self.add_function('start',
+                          call_cmd=self.start)
+
         self.add_function('stop',
-                          call_cmd=api.pb_stop)
+                          call_cmd=self.stop)
 
         self.add_function('close',
                           call_cmd=self.close)
@@ -53,25 +60,116 @@ class PulseBlaster(Instrument):
         self.add_function('get_error',
                           call_cmd=api.pb_get_error)
 
+        self.initialize()
+
     def initialize(self):
-        result = api.pb_init()
-        assert(result == 0, 'Error initializing board: {}'.format(api.pb_get_error()))
+        '''
+        Initializes board. This needs to be performed before any communication with the board is possible
+        Raises error if return message indicates an error.
 
-    def start_programming(self, device):
-        result = api.pb_start_programming(device)
-        assert(result == 0, 'Error starting programming: {}'.format(api.pb_get_error()))
+        Returns:
+            return_msg
+        '''
+        return_msg = api.pb_init()
+        assert(return_msg == 0, 'Error initializing board: {}'.format(api.pb_get_error()))
+        return return_msg
 
-    def send_instruction(self, flags, instruction, inst_data, length):
-        instruction_int = self.instructions[instruction]
+    def detect_boards(self):
+        '''
+        Detects the number of boards.
+        Raises an error if the number of boards is zero, or an error has occurred.
+        Returns:
+            return_msg
+        '''
+        return_msg = api.pb_count_boards()
+        assert(return_msg > 0, 'No boards detected')
+        return return_msg
+
+    def start_programming(self):
+        '''
+        Indicate the start of device programming, after which instruction commands can be sent using PB.send_instruction
+        Raises error if return message indicates an error.
+
+        Returns:
+            return_msg
+        '''
+
+        # Needs constant PULSE_PROGRAM, which is set to equal 0 in the api
+        return_msg = api.pb_start_programming(api.PULSE_PROGRAM)
+        assert(return_msg == 0, 'Error starting programming: {}'.format(api.pb_get_error()))
+        return return_msg
+
+    def send_instruction(self, flags, instruction, inst_args, length):
+        '''
+        Send programming instruction to Pulseblaster.
+        Programming instructions can only be sent after the initial command pb.start_programming.
+        Raises error if return message indicates an error.
+
+        The different types of instructions are:
+            ['CONTINUE', 'LOOP', 'END_LOOP', 'JSR', "RTS', 'BRANCH', 'LONG_DELAY', "WAIT']
+        See manual for detailed description of each of the commands
+
+        Args:
+            flags: Bit representation of state of each output 0=low, 1=high
+            instruction: Instruction to be sent (see above for possible instructions)
+            inst_args: Accompanying instruction argument, dependent on instruction type
+            length: Number of clock cycles to perform instruction
+
+        Returns:
+            return_msg, which contains instruction address
+        '''
+        instruction_int = self.instructions[instruction.upper()]
         #Need to call underlying spinapi because function does not exist in wrapper
-        result = api.spinapi.pb_inst_pbonly(ctypes.c_uint64(flags),
+        return_msg = api.spinapi.pb_inst_pbonly(ctypes.c_uint64(flags),
                                             ctypes.c_int(instruction_int),
-                                            ctypes.c_int(inst_data),
+                                            ctypes.c_int(inst_args),
                                             ctypes.c_double(length))
-        assert(result == 0, 'Error sending instruction: {}'.format(api.pb_get_error()))
-        return result
+        assert(return_msg == 0, 'Error sending instruction: {}'.format(api.pb_get_error()))
+        return return_msg
+
+    def stop_programming(self):
+        '''
+        Stop programming. After this function, instructions may not be sent to PulseBlaster
+        Raises error if return message indicates an error.
+
+        Returns:
+            return_msg
+        '''
+        return_msg = api.pb_stop_programming()
+        assert(return_msg == 0, 'Error stopping programming: {}'.format(api.pb_get_error()))
+        return return_msg
+
+    def start(self):
+        '''
+        Start PulseBlaster sequence.
+        Raises error if return message indicates an error.
+
+        Returns:
+            return_,msg
+        '''
+        return_msg = api.pb_stop_programming()
+        assert(return_msg == 0, 'Error starting: {}'.format(api.pb_get_error()))
+        return return_msg
+
+    def stop(self):
+        '''
+        Stop PulseBlaster sequence
+        Raises error if return message indicates an error.
+
+        Returns:
+            return_msg
+        '''
+        return_msg = api.pb_stop()
+        assert(return_msg == 0, 'Error Stopping: {}'.format(api.pb_get_error()))
+        return return_msg
 
     def close(self):
-        #Terminate communication from api
+        '''
+        Terminate communication with PulseBlaster.
+        After this command, communication is no longer possible with PulseBlaster
+
+        Returns:
+            None
+        '''
         api.pb_close()
         super().close()
