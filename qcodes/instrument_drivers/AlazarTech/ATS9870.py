@@ -162,7 +162,8 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            unit=None,
                            value=96000,
                            vals=Multiples(divisor=16, min_value=0))
-        # TODO (M) figure out if this also has to be a multiple of something,
+        # TODO(damazter) (M) figure out if this also has to be a multiple of
+        # something,
         # I could not find this in the documentation but somehow I have the
         # feeling it still should be a multiple of something
         # NOTE by ramiro: At least in previous python implementations(PycQED delft), this is an artifact for compatibility with AWG sequencing, not particular to any ATS architecture.
@@ -248,9 +249,9 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            value=1000,
                            vals=validators.Ints(min_value=0))
 
-        # TODO (M) make parameter for board type
+        # TODO(damazter) (M) make parameter for board type
 
-        # TODO (M) check board kind
+        # TODO(damazter)(M) check board kind
 
 
 class Multiples(validators.Ints):

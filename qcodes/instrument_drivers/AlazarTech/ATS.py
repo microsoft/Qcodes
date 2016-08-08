@@ -7,14 +7,14 @@ from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
 from qcodes.utils import validators
 
-# TODO (C) logging
+# TODO(damazter) (C) logging
 
 # these items are important for generalizing this code to multiple alazar cards
-# TODO (W) remove 8 bits per sample requirement
-# TODO (W) some alazar cards have a different number of channels :(
+# TODO(damazter) (W) remove 8 bits per sample requirement
+# TODO(damazter) (W) some alazar cards have a different number of channels :(
 # this driver only works with 2-channel cards
 
-# TODO (S) tests to do:
+# TODO(damazter) (S) tests to do:
 # acquisition that would overflow the board if measurement is not stopped
 # quickly enough. can this be solved by not reposting the buffers?
 
@@ -298,7 +298,7 @@ class AlazarTech_ATS(Instrument):
         self._call_dll('AlazarSetTriggerTimeOut',
                        self._handle, self.timeout_ticks)
 
-        # TODO (W) config AUXIO
+        # TODO(damazter) (W) config AUXIO
 
     def _get_channel_info(self, handle):
         bps = np.array([0], dtype=np.uint8)  # bps bits per sample
@@ -473,7 +473,7 @@ class AlazarTech_ATS(Instrument):
             self._call_dll('AlazarWaitAsyncBufferComplete',
                            self._handle, buf.addr, buffer_timeout)
 
-            # TODO (C) last series of buffers must be handled exceptionally
+            # TODO(damazter) (C) last series of buffers must be handled exceptionally
             # (and I want to test the difference) by changing buffer
             # recycling for the last series of buffers
 
@@ -541,7 +541,7 @@ class AlazarTech_ATS(Instrument):
 
         # check for errors
         if (return_code != self._success) and (return_code !=518):
-            # TODO (C) log error
+            # TODO(damazter) (C) log error
 
             argrepr = repr(args_out)
             if len(argrepr) > 100:
@@ -566,8 +566,8 @@ class AlazarTech_ATS(Instrument):
         self.buffer_list = []
 
     def signal_to_volt(self, channel, signal):
-        # TODO (S) check this
-        # TODO (M) use byte value if range{channel}
+        # TODO(damazter) (S) check this
+        # TODO(damazter) (M) use byte value if range{channel}
         return (((signal - 127.5) / 127.5) *
                 (self.parameters['channel_range' + str(channel)].get()))
 
@@ -594,7 +594,7 @@ class AlazarParameter(Parameter):
             if byte_to_value_dict is None:
                 vals = validators.Anything()
             else:
-                # TODO (S) test this validator
+                # TODO(damazter) (S) test this validator
                 vals = validators.Enum(*byte_to_value_dict.values())
 
         super().__init__(name=name, label=label, units=unit, vals=vals)
@@ -602,7 +602,7 @@ class AlazarParameter(Parameter):
         self._byte = None
         self._uptodate_flag = False
 
-        # TODO (M) check this block
+        # TODO(damazter) (M) check this block
         if byte_to_value_dict is None:
             self._byte_to_value_dict = TrivialDictionary()
             self._value_to_byte_dict = TrivialDictionary()
@@ -618,7 +618,7 @@ class AlazarParameter(Parameter):
         This method returns the name of the value set for this parameter
         :return: value
         """
-        # TODO (S) test this exception
+        # TODO(damazter) (S) test this exception
         if self._uptodate_flag is False:
             raise Exception('The value of this parameter (' + self.name +
                             ') is not up to date with the actual value in '
@@ -645,7 +645,7 @@ class AlazarParameter(Parameter):
         :return: None
         """
 
-        # TODO (S) test this validation
+        # TODO(damazter) (S) test this validation
         self.validate(value)
         self._byte = self._value_to_byte_dict[value]
         self._uptodate_flag = False
