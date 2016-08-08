@@ -371,9 +371,10 @@ class AlazarTech_ATS(Instrument):
         # Set record size for NPT mode
         if mode == 'NPT':
             pretriggersize = 0  # pretriggersize is 0 for NPT always
+            post_trigger_size = self.samples_per_record._get_byte()
             self._call_dll('AlazarSetRecordSize',
                            self._handle, pretriggersize,
-                           self.samples_per_record)
+                           post_trigger_size)
 
         # set acquisition parameters here for NPT, TS mode
         if self.channel_selection._get_byte() == 3:
@@ -526,7 +527,6 @@ class AlazarTech_ATS(Instrument):
         """
         # create the argument list
         args_out = []
-        all_params = self.parameters.values()
         update_params = []
         for arg in args:
             if isinstance(arg,AlazarParameter):
