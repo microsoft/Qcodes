@@ -67,8 +67,8 @@ class DataViewer(QtWidgets.QWidget):
         self._treemodel = QtGui.QStandardItemModel()
         self.logtree.setModel(self._treemodel)
         self.__debug = dict()
-        self.qplot = QtPlot(remote=False, interval=0)
-        self.plotwindow = self.qplot.win
+        self.qplot = QtPlot() # remote=False, interval=0)
+        self.plotwindow = self.qplot
 
         vertLayout = QtWidgets.QVBoxLayout()
         vertLayout.addWidget(self.text)
