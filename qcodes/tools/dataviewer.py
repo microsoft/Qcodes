@@ -41,11 +41,11 @@ class DataViewer(QtWidgets.QWidget):
     Arugments
     ---------
 
-        default_parameter : string
-            name of default parameter to plot
+        datadir (string or None): directory to scan for experiments
+        default_parameter (string): name of default parameter to plot
     '''
 
-    def __init__(self, datadir=None, window_title='Log Viewer', default_parameter='amlitude'):
+    def __init__(self, datadir=None, window_title='Data browser', default_parameter='amlitude'):
         super(DataViewer, self).__init__()
 
         self.default_parameter = default_parameter
@@ -56,7 +56,7 @@ class DataViewer(QtWidgets.QWidget):
 
         qcodes.DataSet.default_io = qcodes.DiskIO(datadir)
         logging.info('DataViewer: data directory %s' % datadir)
-        
+
         # setup GUI
         self.text = QtWidgets.QLabel()
         self.text.setText('Log files at %s' %
@@ -89,10 +89,11 @@ class DataViewer(QtWidgets.QWidget):
         self.updateLogs()
 
     def updateLogs(self):
+        ''' Update the list of measurements '''
         model = self._treemodel
         dd = findfilesR(self.datadir, '.*dat')
-        print('found %d files'  % (len(dd)))        
-        #print(dd)
+        print('found %d files' % (len(dd)))
+        # print(dd)
 
         logs = dict()
         for i, d in enumerate(dd):
@@ -101,7 +102,7 @@ class DataViewer(QtWidgets.QWidget):
                 if not datetag in logs:
                     logs[datetag] = dict()
                 logs[datetag][logtag] = d
-            except:
+            except Exception:
                 pass
         self.logs = logs
 
@@ -173,14 +174,13 @@ class DataViewer(QtWidgets.QWidget):
                 print('logCallback! error ...')
                 print(e)
                 logging.warning(e)
-                pass
         pass
 
 
-#%% Testing
+#%% Run the GUI as a standalone program
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbose', default=1, help="verbosity level")
     parser.add_argument(
