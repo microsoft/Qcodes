@@ -111,7 +111,7 @@ class PulseBlaster(Instrument):
 
         Args:
             flags: Bit representation of state of each output 0=low, 1=high
-            instruction: Instruction to be sent (see above for possible instructions)
+            instruction: Instruction to be sent, case-insensitive (see above for possible instructions)
             inst_args: Accompanying instruction argument, dependent on instruction type
             length: Number of clock cycles to perform instruction
 
@@ -145,7 +145,7 @@ class PulseBlaster(Instrument):
         Raises error if return message indicates an error.
 
         Returns:
-            return_,msg
+            return_msg
         '''
         return_msg = api.pb_stop_programming()
         assert(return_msg == 0, 'Error starting: {}'.format(api.pb_get_error()))
