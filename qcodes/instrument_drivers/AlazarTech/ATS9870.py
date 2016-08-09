@@ -3,11 +3,9 @@ from qcodes.utils import validators
 
 
 class AlazarTech_ATS9870(AlazarTech_ATS):
-    def __init__(self, name, server_name=None):
-        # TODO(damazter) allow arbitrary kwargs to be passed to the Instrument
-        # class, including server_name
+    def __init__(self, name, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
-        super().__init__(name, dll_path=dll_path)
+        super().__init__(name, dll_path=dll_path, **kwargs)
         # add parameters
 
         # ----- Parameters for the configuration of the board -----
