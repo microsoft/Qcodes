@@ -575,7 +575,7 @@ class AlazarTech_ATS(Instrument):
         return (((signal - 127.5) / 127.5) *
                 (self.parameters['channel_range' + str(channel)].get()))
 
-    def get_sample_speed(self):
+    def get_sample_rate(self):
         if self.sample_rate.get() == 'EXTERNAL_CLOCK':
             raise Exception('External clock is used, alazar driver '
                             'could not determine sample speed.')

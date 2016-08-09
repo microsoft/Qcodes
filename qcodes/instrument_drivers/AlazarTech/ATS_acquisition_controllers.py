@@ -20,7 +20,7 @@ class DFT_AcquisitionController(AcquisitionController):
         self.samples_per_record = alazar.samples_per_record.get()
         self.records_per_buffer = alazar.records_per_buffer.get()
         self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
-        sample_speed = alazar.get_sample_speed()
+        sample_speed = alazar.get_sample_rate()
         integer_list = np.arange(self.samples_per_record)
         angle_list = (2 * np.pi * self.demodulation_frequency / sample_speed *
                       integer_list)
