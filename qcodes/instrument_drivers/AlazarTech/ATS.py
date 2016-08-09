@@ -190,21 +190,21 @@ class AlazarTech_ATS(Instrument):
         super().__init__(name, **kwargs)
         self._ATS_dll = ctypes.cdll.LoadLibrary(dll_path or self.dll_path)
 
-        # TODO (W) make the board id more general such that more than one card
-        # per system configurations are supported
         self._handle = self._ATS_dll.AlazarGetBoardBySystemID(system_id,
                                                               board_id)
         if not self._handle:
             raise Exception('AlazarTech_ATS not found at '
                             'system {}, board {}'.format(system_id, board_id))
 
-        # TODO (M) do something with board kind here
-
         self.buffer_list = []
 
     def get_idn(self):
-        board_kind = self._board_names[self._ATS_dll.AlazarGetBoardKind(self._handle)]
-        return {'firmware': None, 'model': board_kind, 'serial': None, 'vendor': 'AlazarTech'}
+        board_kind = self._board_names[
+            self._ATS_dll.AlazarGetBoardKind(self._handle)]
+        return {'firmware': None,
+                'model': board_kind,
+                'serial': None,
+                'vendor': 'AlazarTech'}
 
     def config(self, clock_source=None, sample_rate=None, clock_edge=None,
                decimation=None, coupling=None, channel_range=None,
@@ -477,7 +477,8 @@ class AlazarTech_ATS(Instrument):
             self._call_dll('AlazarWaitAsyncBufferComplete',
                            self._handle, buf.addr, buffer_timeout)
 
-            # TODO(damazter) (C) last series of buffers must be handled exceptionally
+            # TODO(damazter) (C) last series of buffers must be handled
+            # exceptionally
             # (and I want to test the difference) by changing buffer
             # recycling for the last series of buffers
 

@@ -164,8 +164,13 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
         # something,
         # I could not find this in the documentation but somehow I have the
         # feeling it still should be a multiple of something
-        # NOTE by ramiro: At least in previous python implementations(PycQED delft), this is an artifact for compatibility with AWG sequencing, not particular to any ATS architecture.
-        #                  ==> this is a construction imposed by the memory strategy implemented on the python driver we are writing, not limited by any actual ATS feature.
+        # NOTE by ramiro: At least in previous python implementations
+        # (PycQED delft), this is an artifact for compatibility with
+        # AWG sequencing, not particular to any ATS architecture.
+        #                  ==> this is a construction imposed by the memory
+        #                      strategy implemented on the python driver we
+        #                      are writing, not limited by any actual ATS
+        #                      feature.
 
         self.add_parameter(name='records_per_buffer',
                            parameter_class=AlazarParameter,
@@ -247,9 +252,10 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            value=1000,
                            vals=validators.Ints(min_value=0))
 
-        # TODO(damazter) (M) make parameter for board type
-
-        # TODO(damazter)(M) check board kind
+        model = self.get_idn()['model']
+        if model != 'ATS9870':
+            raise Exception("The Alazar board kind is not 'ATS9870',"
+                            " found '" + str(model) + "' instead.")
 
 
 class Multiples(validators.Ints):
