@@ -202,6 +202,10 @@ class AlazarTech_ATS(Instrument):
 
         self.buffer_list = []
 
+    def get_idn(self):
+        board_kind = self._board_names[self._ATS_dll.AlazarGetBoardKind(self._handle)]
+        return {'firmware': None, 'model': board_kind, 'serial': None, 'vendor': 'AlazarTech'}
+
     def config(self, clock_source=None, sample_rate=None, clock_edge=None,
                decimation=None, coupling=None, channel_range=None,
                impedance=None, bwlimit=None, trigger_operation=None,
