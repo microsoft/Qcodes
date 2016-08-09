@@ -10,7 +10,7 @@ class DFT_AcquisitionController(AcquisitionController):
         self.samples_per_record = None
         self.records_per_buffer = None
         self.buffers_per_acquisition = None
-        # TODO (S) this is not very general:
+        # TODO(damazter) (S) this is not very general:
         self.number_of_channels = 2
         self.cos_list = None
         self.sin_list = None
