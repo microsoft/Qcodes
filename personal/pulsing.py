@@ -6,8 +6,8 @@ def setup_ESR_pulses(PulseBlaster,
                      readpulse_duration,
                      mw_source=None):
 
-    assert(len(mw_pulses) == len(mw_delays) + 1,
-           'Number of pulses in sequence does not correspond to number of wait times')
+    assert len(mw_pulses) == len(mw_delays) + 1,\
+           'Number of pulses in sequence does not correspond to number of wait times'
 
     output_port = 4 if mw_source == 2 else 2
 

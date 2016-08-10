@@ -9,15 +9,15 @@ from qcodes.instrument_drivers.spincore import spinapi as api
 
 class PulseBlaster(Instrument):
 
-    instructions = {'CONTINUE', 0,  #inst_data=Not used
-                    'STOP', 1,      #inst_data=Not used
-                    'LOOP', 2,      #inst_data=Number of desired loops
-                    'END_LOOP', 3,  #inst_data=Address of instruction originating loop
-                    'JSR', 4,       #inst_data=Address of first instruction in subroutine
-                    'RTS', 5,       #inst_data=Not Used
-                    'BRANCH', 6,    #inst_data=Address of instruction to branch to
-                    'LONG_DELAY', 7,#inst_data=Number of desired repetitions
-                    'WAIT', 8}      #inst_data=Not used
+    instructions = {'CONTINUE': 0,  #inst_data=Not used
+                    'STOP': 1,      #inst_data=Not used
+                    'LOOP': 2,      #inst_data=Number of desired loops
+                    'END_LOOP': 3,  #inst_data=Address of instruction originating loop
+                    'JSR': 4,       #inst_data=Address of first instruction in subroutine
+                    'RTS': 5,       #inst_data=Not Used
+                    'BRANCH': 6,    #inst_data=Address of instruction to branch to
+                    'LONG_DELAY': 7,#inst_data=Number of desired repetitions
+                    'WAIT': 8}      #inst_data=Not used
 
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
@@ -71,7 +71,7 @@ class PulseBlaster(Instrument):
             return_msg
         '''
         return_msg = api.pb_init()
-        assert(return_msg == 0, 'Error initializing board: {}'.format(api.pb_get_error()))
+        assert return_msg == 0, 'Error initializing board: {}'.format(api.pb_get_error())
         return return_msg
 
     def detect_boards(self):
@@ -82,7 +82,7 @@ class PulseBlaster(Instrument):
             return_msg
         '''
         return_msg = api.pb_count_boards()
-        assert(return_msg > 0, 'No boards detected')
+        assert return_msg > 0, 'No boards detected'
         return return_msg
 
     def start_programming(self):
@@ -96,7 +96,7 @@ class PulseBlaster(Instrument):
 
         # Needs constant PULSE_PROGRAM, which is set to equal 0 in the api
         return_msg = api.pb_start_programming(api.PULSE_PROGRAM)
-        assert(return_msg == 0, 'Error starting programming: {}'.format(api.pb_get_error()))
+        assert return_msg == 0, 'Error starting programming: {}'.format(api.pb_get_error())
         return return_msg
 
     def send_instruction(self, flags, instruction, inst_args, length):
@@ -124,7 +124,7 @@ class PulseBlaster(Instrument):
                                             ctypes.c_int(instruction_int),
                                             ctypes.c_int(inst_args),
                                             ctypes.c_double(length))
-        assert(return_msg == 0, 'Error sending instruction: {}'.format(api.pb_get_error()))
+        assert return_msg >= 0, 'Error sending instruction: {}'.format(api.pb_get_error())
         return return_msg
 
     def stop_programming(self):
@@ -136,7 +136,7 @@ class PulseBlaster(Instrument):
             return_msg
         '''
         return_msg = api.pb_stop_programming()
-        assert(return_msg == 0, 'Error stopping programming: {}'.format(api.pb_get_error()))
+        assert return_msg == 0, 'Error stopping programming: {}'.format(api.pb_get_error())
         return return_msg
 
     def start(self):
@@ -147,8 +147,8 @@ class PulseBlaster(Instrument):
         Returns:
             return_msg
         '''
-        return_msg = api.pb_stop_programming()
-        assert(return_msg == 0, 'Error starting: {}'.format(api.pb_get_error()))
+        return_msg = api.pb_start()
+        assert return_msg == 0, 'Error starting: {}'.format(api.pb_get_error())
         return return_msg
 
     def stop(self):
@@ -160,7 +160,7 @@ class PulseBlaster(Instrument):
             return_msg
         '''
         return_msg = api.pb_stop()
-        assert(return_msg == 0, 'Error Stopping: {}'.format(api.pb_get_error()))
+        assert return_msg == 0, 'Error Stopping: {}'.format(api.pb_get_error())
         return return_msg
 
     def close(self):
