@@ -106,14 +106,14 @@ def _set_option(*args, **kwargs):
     nargs = len(args)
     if not nargs or nargs % 2 != 0:
         raise ValueError("Must provide an even number of non-keyword "
-                             "arguments")
+                         "arguments")
 
     # default to false
     silent = kwargs.pop('silent', False)
 
     if kwargs:
         raise TypeError('_set_option() got an unexpected keyword '
-                'argument "{0}"'.format(list(kwargs.keys())[0]))
+                        'argument "{0}"'.format(list(kwargs.keys())[0]))
 
     for k, v in zip(args[::2], args[1::2]):
         key = _get_single_key(k, silent)
@@ -128,6 +128,7 @@ def _set_option(*args, **kwargs):
 
         if o.cb:
             o.cb(key)
+
 
 def _describe_option(pat='', _print_desc=True):
 
@@ -369,6 +370,7 @@ options = DictWrapper(_global_config)
 
 
 class option_context(object):
+
     """
     Context manager to temporarily set options in the `with` statement context.
 
@@ -811,8 +813,9 @@ import os
 import re
 import six
 
+
 def from_file(path, verbose=1):
-    #from pandas.core.common import _get_handle
+    # from pandas.core.common import _get_handle
     option_splitter = re.compile('\s*[:=]\s*').split
     f = open(path, 'r')
     errors = []
@@ -824,10 +827,10 @@ def from_file(path, verbose=1):
                 split = option_splitter(line)
                 if len(split) == 2:
                     option, value = split
-                    if verbose>=2:
+                    if verbose >= 2:
                         print('option %s: %s' % (option, value))
                     if isinstance(get_default_val(option), int):
-                        set_option(option, int(value) )
+                        set_option(option, int(value))
                     else:
                         set_option(option, value)
                 else:
@@ -835,8 +838,9 @@ def from_file(path, verbose=1):
             except (KeyError, ValueError) as e:
                 errors.append("%d: %s" % (i, e))
     if verbose:
-        if len(errors)>0:
-            print( errors )
+        if len(errors) > 0:
+            print(errors)
+
 
 def qcodes_fname():
     """
