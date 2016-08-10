@@ -9,12 +9,12 @@ from multiprocessing import active_children
 from qcodes.version import __version__
 
 # load config system
-import qcodes.qconfig 
-from qcodes.qconfig import (is_int, is_bool, is_text, is_float,
-                                is_instance_factory, is_one_of_factory,
-                                get_default_val)
-from qcodes.qconfig import (get_option, set_option, reset_option,
-                                describe_option, option_context, options)    
+import qcodes.config
+from qcodes.config import (is_int, is_bool, is_text, is_float,
+                           is_instance_factory, is_one_of_factory,
+                           get_default_val)
+from qcodes.config import (get_option, set_option, reset_option,
+                           describe_option, option_context, options)
 
 # create various options
 usezmq_doc = """
@@ -22,18 +22,18 @@ usezmq_doc = """
     If set to True the framework will install a hook to send logging data
     to a ZMQ socket.
 """
-                                
-with qconfig.config_prefix('display'):
-    qconfig.register_option('frontend', 1, 'frontend that is used (1: notebook, 0: unknown, 2: spyder', validator=is_int)
-with qconfig.config_prefix('logging'):
-    qconfig.register_option('usezmq', 1, usezmq_doc, validator=is_int)
+
+with config.config_prefix('display'):
+    config.register_option(
+        'frontend', 1, 'frontend that is used (1: notebook, 0: unknown, 2: spyder', validator=is_int)
+with config.config_prefix('logging'):
+    config.register_option('usezmq', 1, usezmq_doc, validator=is_int)
 
 
 # load config file
-path=qcodes.qconfig.qcodes_fname()
+path = qcodes.config.qcodes_fname()
 if path is not None:
-    print('loading options from path %s' % path)
-    x=qcodes.qconfig.from_file(path)
+    qcodes.config.from_file(path)
 
 
 from qcodes.process.helpers import set_mp_method

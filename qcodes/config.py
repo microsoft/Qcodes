@@ -53,13 +53,14 @@ Implementation
 
 """
 
+import os
+import six
 import re
 
 from collections import namedtuple
 from contextlib import contextmanager
 import warnings
-from pandas.compat import map, lmap, u
-import pandas.compat as compat
+from pandas.compat import lmap, u
 
 DeprecatedOption = namedtuple('DeprecatedOption', 'key msg rkey removal_ver')
 RegisteredOption = namedtuple(
@@ -810,17 +811,13 @@ is_int = is_type_factory(int)
 is_bool = is_type_factory(bool)
 is_float = is_type_factory(float)
 is_str = is_type_factory(str)
-is_unicode = is_type_factory(compat.text_type)
 is_text = is_instance_factory((str, bytes))
 
 #%% Qcodes custom
-import os
-import re
-import six
 
 
-def from_file(path, verbose=1):
-    # from pandas.core.common import _get_handle
+def from_file(path: str, verbose=1):
+    ''' Load options from specified configuration file '''
     option_splitter = re.compile('\s*[:=]\s*').split
     f = open(path, 'r')
     errors = []
