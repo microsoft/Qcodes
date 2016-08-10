@@ -1,4 +1,9 @@
 """
+
+The code in this file is from:
+
+https://github.com/pydata/pandas
+
 The config module holds package-wide configurables and provides
 a uniform API for working with them.
 
