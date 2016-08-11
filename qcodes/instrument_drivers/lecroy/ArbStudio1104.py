@@ -20,6 +20,18 @@ class ArbStudio1104(Instrument):
         from clr import ActiveTechnologies
         self._api = ActiveTechnologies.Instruments.AWG4000.Control
 
+        # Instrument constants (set here since api is only defined above)
+        self._trigger_sources = {'stop': self._api.TriggerSource.Stop,
+                                 'start': self._api.TriggerSource.Start,
+                                 'event_marker': self._api.TriggerSource.Event_Marker,
+                                 'dc_trigger_in': self._api.TriggerSource.DCTriggerIN,
+                                 'fp_trigger_in': self._api.TriggerSource.FPTriggerIN}
+        self._trigger_sensitivity_edges = {'rising': self._api.SensitivityEdge.RisingEdge,
+                                           'falling': self._api.SensitivityEdge.RisingEdge}
+        self._trigger_actions= {'start': self._api.TriggerAction.TriggerStart,
+                                'stop': self._api.TriggerAction.TriggerStop,
+                                'ignore': self._api.TriggerAction.TriggerIgnore}
+
         # Get device object
         self._device = self._api.DeviceSet().DeviceList[0]
 
@@ -28,21 +40,25 @@ class ArbStudio1104(Instrument):
 
         # Initialize waveforms and sequences
         self._waveforms = [[]]*4
-        self._sequences = [[]]*4
 
         for ch in range(1,5):
             self.add_parameter('ch{}_trigger_mode'.format(ch),
-                               label='Trigger mode',
+                               label='Channel {} trigger mode'.format(ch),
                                set_cmd=partial(self._set_trigger_mode, ch),
                                vals=vals.Strings())
 
+            self.add_parameter('ch{}_trigger_source'.format(ch),
+                               label='Channel {} trigger source'.format(ch),
+                               set_cmd=partial(self._set_trigger_source, ch),
+                               vals=vals.Anything())
+                               # vals=vals.Enum('stop', 'start', 'event_marker', 'dc_trigger_in',
+                               #                'fp_trigger_in'))
+
             self.add_parameter('ch{}_sequence'.format(ch),
                                parameter_class=ManualParameter,
-                               label='Sequence',
+                               label='Channel {} Sequence'.format(ch),
+                               initial_value=[],
                                vals=vals.Anything()) # Can we test for an (int, int) tuple list?
-
-            self.add_function('ch{}_set_internal_trigger'.format(ch),
-                              call_cmd=self._channels[ch-1].SetInternalTrigger)
 
             self.add_function('ch{}_add_waveform'.format(ch),
                               call_cmd=self._waveforms[ch-1].append,
@@ -51,6 +67,17 @@ class ArbStudio1104(Instrument):
             self.add_function('ch{}_clear_waveforms'.format(ch),
                               call_cmd=self._waveforms[ch-1].clear)
 
+        self.add_parameter('trigger_sensitivity_edge',
+                           parameter_class=ManualParameter,
+                           initial_value='rising',
+                           label='Trigger sensitivity edge for in/out',
+                           vals=vals.Enum('rising', 'falling'))
+
+        self.add_parameter('trigger_action',
+                           parameter_class=ManualParameter,
+                           initial_value='start',
+                           label='Trigger action',
+                           vals=vals.Enum('start', 'stop', 'ignore'))
     def initialize(self):
         # Create empty array of four channels.
         # These are only necessary for initialization
@@ -66,6 +93,7 @@ class ArbStudio1104(Instrument):
         assert return_msg.ErrorSource == self._api.ErrorCodes.RES_SUCCESS, \
             "Error initializing Arb: {}".format(return_msg.ErrorDescription)
 
+
     def _set_trigger_mode(self, ch, trigger_mode_string):
         #Create dictionary with possible TriggerMode objects
         trigger_modes = {'single': self._api.TriggerMode.Single,
@@ -80,48 +108,75 @@ class ArbStudio1104(Instrument):
         assert return_msg.ErrorSource == self._api.ErrorCodes.RES_SUCCESS, \
             "Error setting Arb channel {} trigger mode: {}".format(ch, return_msg.ErrorDescription)
 
-    def load_waveforms(self):
+    def _set_trigger_source(self, ch, trigger_source_str):
+        if trigger_source_str == 'internal':
+            return_msg = self._channels[ch-1].SetInternalTrigger()
+        else:
+            # Collect external trigger arguments
+            trigger_source = self._trigger_sources[trigger_source_str]
+            trigger_sensitivity_edge = self._trigger_sensitivity_edges[self.trigger_sensitivity_edge()]
+            trigger_action = self._trigger_actions[self.trigger_action()]
+
+            return_msg = self._channels[ch-1].SetExternalTrigger(trigger_source,
+                                                                 trigger_sensitivity_edge,
+                                                                 trigger_action)
+
+        assert return_msg.ErrorSource == self._api.ErrorCodes.RES_SUCCESS, \
+            "Error setting Arb channel {} trigger source to {}: {}".format(ch, trigger_source_str,
+                                                                           return_msg.ErrorDescription)
+
+    def load_waveforms(self, channels=[1, 2, 3, 4]):
+        waveforms_list = []
         for ch, channel in enumerate(self._channels):
-            channel_waveforms = self._waveforms[ch]
+            waveforms_array = self._waveforms[ch]
             # Initialize array of waves
-            waves = Array.CreateInstance(self._api.WaveformStruct,len(channel_waveforms))
+            waveforms = Array.CreateInstance(self._api.WaveformStruct,len(waveforms_array))
             # We have to create separate wave instances and load them into the waves array one by one
-            for k, waveform in enumerate(channel_waveforms):
+            for k, waveform_array in enumerate(waveforms_array):
                 wave = self._api.WaveformStruct()
-                wave.Sample = waveform
-                waves[k] = wave
-            return_msg = channel.LoadWaveforms(waves)
+                wave.Sample = waveform_array
+                waveforms[k] = wave
+            return_msg = channel.LoadWaveforms(waveforms)
             assert return_msg.ErrorSource == self._api.ErrorCodes.RES_SUCCESS,\
                 "Loading waveforms Error: {}".format(return_msg.ErrorDescription)
+        return waveforms_list
 
-    def load_sequence(self):
-        for ch, channel in enumerate(self._channels):
-            channel_sequence = self._sequences[ch]
+    def load_sequence(self, channels=[1, 2, 3, 4]):
+        sequence_list = []
+        for ch in channels:
+            channel = self._channels[ch-1]
+            channel_sequence = eval("self.ch{}_sequence()".format(ch))
+            # Initialize sequence array
             sequence = Array.CreateInstance(self._api.GenerationSequenceStruct,len(channel_sequence))
             for k, subsequence_info in enumerate(channel_sequence):
                 subsequence = self._api.GenerationSequenceStruct()
                 if isinstance(subsequence_info, int):
-                    subsequence.WaveFormIndex = subsequence_info
+                    subsequence.WaveformIndex = subsequence_info
                     # Set repetitions to 1 (default) if subsequence info is an int
-                    subsequence.Repetitions = subsequence_info[1]
+                    subsequence.Repetitions = 1
                 elif isinstance(subsequence_info, tuple):
                     assert len(subsequence_info) == 2, \
                         'A subsequence tuple must be of the form (WaveformIndex, Repetitions)'
-                    subsequence.WaveFormIndex = subsequence_info[0]
+                    subsequence.WaveformIndex = subsequence_info[0]
                     subsequence.Repetitions = subsequence_info[1]
+                else:
+                    raise TypeError("A subsequence must be either an int or (int, int) tuple")
                 sequence[k] = subsequence
+
+            sequence_list.append(sequence)
 
             # Set transfermode to USB (seems to be a fixed function)
             trans = Array.CreateInstance(self._api.TransferMode, 1)
             return_msg = channel.LoadGenerationSequence(sequence, trans[0], True)
             assert return_msg.ErrorSource == self._api.ErrorCodes.RES_SUCCESS, \
                 "Loading sequence Error: {}".format(return_msg.ErrorDescription);
+        return sequence_list
 
     def run(self, channels=[1, 2, 3, 4]):
         """
         Run sequences on given channels
         Args:
-            channels: List of channels to run (default all)
+            channels: List of channels to run, starting at 1 (default all)
 
         Returns:
             None
@@ -134,7 +189,7 @@ class ArbStudio1104(Instrument):
         """
         Stop sequence on given channels
         Args:
-            channels: List of channels to stop (default all)
+            channels: List of channels to stop, starting at 1 (default all)
 
         Returns:
             None
@@ -142,3 +197,10 @@ class ArbStudio1104(Instrument):
         return_msg = self._device.STOP()
         assert return_msg.ErrorSource == self._api.ErrorCodes.RES_SUCCESS,\
             "Stopping ArbStudio error: {}".format(return_msg.ErrorDescription)
+
+        # A stop command seems to reset trigger sources. For the channels that had a trigger source,
+        # this will reset it to its previoius value
+        for ch in range(1,5):
+            trigger_source = eval('self.ch{}_trigger_source.get_latest()'.format(ch))
+            if trigger_source:
+                eval("self.ch{}_trigger_source(trigger_source)".format(ch))
