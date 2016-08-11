@@ -7,6 +7,7 @@ jupyter-client==4.1.1
 jupyter-console==4.1.0
 jupyter-core==4.0.6
 notebook==4.1.0
+numpy==1.10.4
 python-dateutil==2.4.2
 PyVISA==1.8
 coverage==4.1
