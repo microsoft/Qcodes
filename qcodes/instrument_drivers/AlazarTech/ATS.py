@@ -458,11 +458,12 @@ class AlazarTech_ATS(Instrument):
         self.allocated_buffers._set_updated()
 
         # -----start capture here-----
-        acquisition_controller.pre_start_capture(self)
+        acquisition_controller.set_alazar(self)
+        acquisition_controller.pre_start_capture()
         # call the startcapture method
         self._call_dll('AlazarStartCapture', self._handle)
 
-        acquisition_controller.pre_acquire(self)
+        acquisition_controller.pre_acquire()
         # buffer handling from acquisition
         buffers_completed = 0
         buffer_timeout = self.buffer_timeout._get_byte()
@@ -486,7 +487,7 @@ class AlazarTech_ATS(Instrument):
             # otherwise continue to next buffer
 
             if buffer_recycling:
-                acquisition_controller.handle_buffer(self, buf.buffer)
+                acquisition_controller.handle_buffer(buf.buffer)
                 self._call_dll('AlazarPostAsyncBuffer',
                                self._handle, buf.addr, buf.size_bytes)
             buffers_completed += 1
@@ -498,7 +499,7 @@ class AlazarTech_ATS(Instrument):
         # extract data if not yet done
         if not buffer_recycling:
             for buf in self.buffer_list:
-                acquisition_controller.handle_buffer(self, buf.buffer)
+                acquisition_controller.handle_buffer(buf.buffer)
 
         # free up memory
         self.clear_buffers()
@@ -508,7 +509,7 @@ class AlazarTech_ATS(Instrument):
             p.get()
 
         # return result
-        return acquisition_controller.post_acquire(self)
+        return acquisition_controller.post_acquire()
 
     def _set_if_present(self, param_name, value):
         if value is not None:
@@ -712,32 +713,46 @@ class Buffer:
                 'Memory should have been released before buffer was deleted.')
 
 
-class AcquisitionController:
-    def __init__(self):
+class AcquisitionController(Instrument):
+    def __init__(self, name, alazar, **kwargs):
         """
+        :param alazar: a reference to the alazar driver
         :return: nothing
         """
-        pass
+        super().__init__(name, **kwargs)
+        self.alazar = None
+        self.set_alazar(alazar)
 
-    def pre_start_capture(self, alazar):
+    def get_alazar(self):
+        return self.alazar
+
+    def set_alazar(self, alazar):
+        self.alazar = alazar
+
+    def get(self):
         """
+        :return:
+        """
+        raise NotImplementedError(
+            'This method should be implemented in a subclass, by making an '
+            'appropriate call to alazar.acquire()')
 
-        :param alazar:
+    def pre_start_capture(self):
+        """
         :return:
         """
         raise NotImplementedError(
             'This method should be implemented in a subclass')
 
-    def pre_acquire(self, alazar):
+    def pre_acquire(self):
         """
         Use this method to prepare yourself for the data acquisition
-        :param alazar: a reference to the alazar driver
         :return: nothing
         """
         raise NotImplementedError(
             'This method should be implemented in a subclass')
 
-    def handle_buffer(self, alazar, buffer):
+    def handle_buffer(self, buffer):
         """
         :param buffer: np.array with the data from the alazar card
         :return: something, it is ignored in any case
@@ -745,9 +760,8 @@ class AcquisitionController:
         raise NotImplementedError(
             'This method should be implemented in a subclass')
 
-    def post_acquire(self, alazar):
+    def post_acquire(self):
         """
-        :param alazar: a reference to the alazar driver
         :return: this function should return all relevant data that you want
             to get form the acquisition
         """
