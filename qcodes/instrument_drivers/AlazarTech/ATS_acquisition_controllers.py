@@ -5,7 +5,7 @@ import numpy as np
 
 # DFT AcquisitionController
 class DFT_AcquisitionController(AcquisitionController):
-    def __init__(self, name, alazar, demodulation_frequency, **kwargs):
+    def __init__(self, name, alazar_id, demodulation_frequency, **kwargs):
         self.demodulation_frequency = demodulation_frequency
         self.acquisitionkwargs = {'acquisition_controller': self}
         self.samples_per_record = None
@@ -18,7 +18,7 @@ class DFT_AcquisitionController(AcquisitionController):
         self.buffer = None
         # make a call to the parent class and by extension, create the parameter
         # structure of this class
-        super().__init__(name, alazar, **kwargs)
+        super().__init__(name, alazar_id, **kwargs)
         self.add_parameter("acquisition", get_cmd=self.do_acquisition)
 
     def set_acquisitionkwargs(self, **kwargs):
@@ -26,7 +26,6 @@ class DFT_AcquisitionController(AcquisitionController):
 
     def do_acquisition(self):
         value = self.get_alazar().acquire(**self.acquisitionkwargs)
-        self._save_val(value)
         return value
 
     def pre_start_capture(self):

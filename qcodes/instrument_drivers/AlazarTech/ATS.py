@@ -714,28 +714,20 @@ class Buffer:
 
 
 class AcquisitionController(Instrument):
-    def __init__(self, name, alazar, **kwargs):
+    def __init__(self, name, alazar_id, **kwargs):
         """
         :param alazar: a reference to the alazar driver
         :return: nothing
         """
         super().__init__(name, **kwargs)
         self.alazar = None
-        self.set_alazar(alazar)
+        self.set_alazar(kwargs['server'].instruments[alazar_id])
 
     def get_alazar(self):
         return self.alazar
 
     def set_alazar(self, alazar):
         self.alazar = alazar
-
-    def get(self):
-        """
-        :return:
-        """
-        raise NotImplementedError(
-            'This method should be implemented in a subclass, by making an '
-            'appropriate call to alazar.acquire()')
 
     def pre_start_capture(self):
         """
