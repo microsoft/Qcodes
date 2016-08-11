@@ -20,7 +20,7 @@ PyPi is the fastest way to install QCoDeS, will be avaiable once out of beta/pri
 
 We use virtualenv and pyenv to make sure all the system are the same, this rules out issues and the usual "it works on my machine".
 Install virtual env (optionally virtualenvwrapper for convenience, if you are on linux) and pyenv according to your distribution.
-Once all is installed, and working: 
+Once all is installed, and working:
 
 ```bash
 pyenv install 3.4.5
@@ -38,7 +38,7 @@ Note that sometimes the test suite because there is a bug somewhere in the mulit
 
 This is the reference setup one needs to have to contribute, otherwise too many non-reproducible environments will show up.
 
-### Anaconda 
+### Anaconda
 
 We recommend [Anaconda](https://www.continuum.io/downloads) as an easy way to get most of the dependencies out-of-the-box.
 
@@ -50,31 +50,31 @@ As the project is still private, install it directly from this repository:
 ```
 git clone https://github.com/qdev-dk/Qcodes.git
 ```
-#### the easy way 
+#### the easy way
 - Open the 'navigator' app that was installed with anaconda.
 - On the left side click on "Environments".
 - Then on the "import" icon, on the bottom.
 - Pick a name, and click on the folder icon next to file to import from.
-- Make sure you select "Pip requirement files" from the "Files of type" dialog then navigate to the qcodes folder and select `develop_requirements.txt`.
+- Make sure you select "Pip requirement files" from the "Files of type" dialog then navigate to the qcodes folder and select `basic_requirements.txt`.
 - Finally click import, and wait until done.
 - The enviroment is now created, click on the green arrow to open a terminal inside it.
 - Navigate again with the terminal (or drag and drop the the folder on OsX)
 - Most likely you will want to plot stuff, so type:
 
-  `conda install matplotlib` 
+  `conda install matplotlib`
 
   and after if you want qtplot
 
   `conda install pyqtgraph`
-  
+
 - Then type
-` pip install -e . `
+  ` pip install -e . `
 
 
 Finally bring Giulio  to Sabøtoren, Fensmarkgade 27, 2200 København N.
 
 
-#### the not so easy way that often does not work 
+#### the not so easy way that often does not work
 
 - Register qcoes  with Python, and install dependencies if any are missing: run this from the root directory of the repository you just cloned:
 ```
