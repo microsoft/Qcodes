@@ -50,9 +50,14 @@ class ArbStudio1104(Instrument):
             self.add_parameter('ch{}_trigger_source'.format(ch),
                                label='Channel {} trigger source'.format(ch),
                                set_cmd=partial(self._set_trigger_source, ch),
-                               vals=vals.Anything())
-                               # vals=vals.Enum('stop', 'start', 'event_marker', 'dc_trigger_in',
-                               #                'fp_trigger_in'))
+                               vals=vals.Enum('stop', 'start', 'event_marker', 'dc_trigger_in',
+                                              'fp_trigger_in'))
+
+            self.add_parameter('ch{}_samplig_rate_prescaler'.format(ch),
+                               label='Channel {} sampling rate prescaler'.format(ch),
+                               get_cmd=partial(self._get_sampling_rate_prescaler, ch), #Typo is intentional
+                               set_cmd=partial(self._set_sampling_rate_prescaler, ch),
+                               vals=vals.MultiType(Multiples(2), vals.Enum(1)))
 
             self.add_parameter('ch{}_sequence'.format(ch),
                                parameter_class=ManualParameter,
@@ -66,6 +71,11 @@ class ArbStudio1104(Instrument):
 
             self.add_function('ch{}_clear_waveforms'.format(ch),
                               call_cmd=self._waveforms[ch-1].clear)
+
+        # TODO Need to implement frequency interpolation for channel pairs
+        # self.add_parameter('frequency_interpolation',
+        #                    label='DAC frequency interpolation factor',
+        #                    vals=vals.Enum(1, 2, 4))
 
         self.add_parameter('trigger_sensitivity_edge',
                            parameter_class=ManualParameter,
@@ -93,6 +103,11 @@ class ArbStudio1104(Instrument):
         assert return_msg.ErrorSource == self._api.ErrorCodes.RES_SUCCESS, \
             "Error initializing Arb: {}".format(return_msg.ErrorDescription)
 
+    def _get_sampling_rate_prescaler(self, ch):
+        return self._channels[ch - 1].SampligRatePrescaler
+
+    def _set_sampling_rate_prescaler(self, ch, prescaler):
+        self._channels[ch - 1].SampligRatePrescaler = prescaler
 
     def _set_trigger_mode(self, ch, trigger_mode_string):
         #Create dictionary with possible TriggerMode objects
@@ -204,3 +219,27 @@ class ArbStudio1104(Instrument):
             trigger_source = eval('self.ch{}_trigger_source.get_latest()'.format(ch))
             if trigger_source:
                 eval("self.ch{}_trigger_source(trigger_source)".format(ch))
+
+
+class Multiples(vals.Ints):
+    '''
+    requires an integer
+    optional parameters min_value and max_value enforce
+    min_value <= value <= max_value
+    divisor enforces that value % divisor == 0
+    '''
+
+    def __init__(self, divisor=1, **kwargs):
+        super().__init__(**kwargs)
+        if not isinstance(divisor, int):
+            raise TypeError('divisor must be an integer')
+        self._divisor = divisor
+
+    def validate(self, value, context=''):
+        super().validate(value=value, context=context)
+        if not value % self._divisor == 0:
+            raise TypeError('{} is not a multiple of {}; {}'.format(
+                repr(value), repr(self._divisor), context))
+
+    def __repr__(self):
+        return super().__repr__()[:-1] + ', Multiples of {}>'.format(self._divisor)
