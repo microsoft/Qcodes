@@ -1,23 +1,9 @@
 import numpy as np
 import h5py
-import re
-import math
 import os
 
 from .data_array import DataArray
 from .format import Formatter
-
-"""
-list for things that are still missing
-* dataset has no way of including units
-* there is an assumption that data arrays are preallocated in the dataset.
-  this breaks down when measurements are interupted before they terminate
-  and/or when doing adaptive measurements where you do not know beforehand
-  how many datapoints you will get.
-* Add more robust way of incremental write (check if all arrays are ready
-  to increment)
-
-"""
 
 
 class HDF5Format(Formatter):
@@ -167,7 +153,7 @@ class HDF5Format(Formatter):
             maxshape=(None, len(arrays.keys())))
         self.dset.attrs['column names'] = _encode_to_utf8(arrays.keys())
 
-        labels= []
+        labels = []
         names = []
         units = []
         for key in arrays.keys():
@@ -199,15 +185,13 @@ class HDF5Format(Formatter):
 
     def save_instrument_snapshot(self, snapshot, *args):
         """
+        (MAR) TODO: fix metadata saving
         uses QCodes station snapshot to save the last known value of any
         parameter. Only saves the value and not the update time (which is
         known in the snapshot)
 
         META DATA GROUP
         """
-        # Todo: merge with write metadata
-        # TODO:  should be pretty easy to add this but am waiting
-        # for the metadata of @Merlinsmiles
         set_grp = data_object.create_group('Meta-data')
         inslist = dict_to_ordered_tuples(self.station.instruments)
         for (iname, ins) in inslist:
