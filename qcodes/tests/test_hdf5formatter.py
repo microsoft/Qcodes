@@ -38,15 +38,12 @@ class TestHDF5_Format(TestCase):
         # Copied from GNUplot formatter tests inheritance would be nicer
         self.checkArrayAttrs(a, b)
         self.assertTrue((a.ndarray==b.ndarray).all())
-        print(a.set_arrays, b.set_arrays)
         self.assertEqual(len(a.set_arrays), len(b.set_arrays))
         for sa, sb in zip(a.set_arrays, b.set_arrays):
             self.checkArrayAttrs(sa, sb)
 
     def checkArrayAttrs(self, a, b):
-        print('attributes')
         self.assertEqual(a.tolist(), b.tolist())
-        print(a.label, b.label)
         self.assertEqual(a.label, b.label)
         self.assertEqual(a.array_id, b.array_id)
 
@@ -75,51 +72,31 @@ class TestHDF5_Format(TestCase):
     #     raise(NotImplementedError)
     #     print('NotImplemented')
 
-    # def test_no_nest(self):
-    #     pass
-        # formatter = GNUPlotFormat(always_nest=False)
-        # location = self.locations[0]
-        # data = DataSet1D(location)
+    def test_incremental_write(self):
+        data = DataSet1D()
+        location = data.location
+        data_copy = DataSet1D(False)
 
-        # # mark the data set as modified by... modifying it!
-        # # without actually changing it :)
-        # # TODO - are there cases we should automatically mark the data as
-        # # modified on construction?
-        # data.y[4] = data.y[4]
+        # # empty the data and mark it as unmodified
+        data.x_set[:] = float('nan')
+        data.y[:] = float('nan')
+        data.x_set.modified_range = None
+        data.y.modified_range = None
 
-        # formatter.write(data)
-
-        # with open(location + '.dat', 'r') as f:
-        #     self.assertEqual(f.read(), file_1d())
-
-    # def test_incremental_write(self):
-    #     print('commented out until fixed')
-        # location = self.locations[0]
-        # data = DataSet1D(location)
-        # data_copy = DataSet1D(False)
-
-        # # # empty the data and mark it as unmodified
-        # data.x[:] = float('nan')
-        # data.y[:] = float('nan')
-        # data.x.modified_range = None
-        # data.y.modified_range = None
-
-        # # Comment copied form GNUPlotFormat tests
-        # # simulate writing after every value comes in, even within
-        # # one row (x comes first, it's the setpoint)
-        # for i, (x, y) in enumerate(zip(data_copy.x, data_copy.y)):
-        #     data.x[i] = x
-        #     self.formatter.write(data)
-        #     # should not update here as not a full row has come in
-        #     # TODO: implement this in the data formatter
-        #     data.y[i] = y
-        #     self.formatter.write(data)
-
-        # filepath = self.formatter.filepath
-        # data2 = DataSet(location=filepath, formatter=self.formatter)
-        # data2.read()
-        # self.checkArraysEqual(data2.x, data_copy.x)
-        # self.checkArraysEqual(data2.y, data_copy.y)
+        # simulate writing after every value comes in, even within
+        # one row (x comes first, it's the setpoint)
+        for i, (x, y) in enumerate(zip(data_copy.x_set, data_copy.y)):
+            data.x_set[i] = x
+            self.formatter.write(data)
+            # should not update here as not a full row has come in
+            # TODO: implement this in the data formatter
+            data.y[i] = y
+            self.formatter.write(data)
+        filepath = self.formatter.filepath
+        data2 = DataSet(location=filepath, formatter=self.formatter)
+        data2.read()
+        self.checkArraysEqual(data2.arrays['x_set'], data_copy.arrays['x_set'])
+        self.checkArraysEqual(data2.arrays['y'], data_copy.arrays['y'])
 
 
     # def test_loop_writing(self):
@@ -142,33 +119,4 @@ class TestHDF5_Format(TestCase):
         # arrs = load_data.arrays
         # self.assertTrue((arrs['x'].ndarray == x).all())
         # self.assertTrue((arrs['skewed_parabola'].ndarray == skew_para).all())
-
-
-
-    # def test_multifile(self):
-        # pass
-        # formatter = GNUPlotFormat(always_nest=False)  # will nest anyway
-        # location = self.locations[1]
-        # data = DataSetCombined(location)
-
-        # # mark one array in each file as completely modified
-        # # that should cause the whole files to be written, even though
-        # # the other data and setpoint arrays are not marked as modified
-        # data.y1[:] += 0
-        # data.z1[:, :] += 0
-        # formatter.write(data)
-
-        # filex, filexy = files_combined()
-
-        # with open(location + '/x.dat', 'r') as f:
-        #     self.assertEqual(f.read(), filex)
-        # with open(location + '/x_yset.dat', 'r') as f:
-        #     self.assertEqual(f.read(), filexy)
-
-        # data2 = DataSet(location=location)
-        # formatter.read(data2)
-
-        # for array_id in ('x', 'y1', 'y2', 'yset', 'z1', 'z2'):
-        #     self.checkArraysEqual(data2.arrays[array_id],
-        #                           data.arrays[array_id])
 

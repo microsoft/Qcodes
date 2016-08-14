@@ -80,7 +80,6 @@ class HDF5Format(Formatter):
         # Add copy/ref of setarrays (not array id only)
         # Note, this is not pretty but a result of how the dataset works
         for array_id, d_array in data_set.arrays.items():
-            print(d_array._sa_array_ids)
             for sa_id in d_array._sa_array_ids:
                 d_array.set_arrays += (data_set.arrays[sa_id], )
 
@@ -116,9 +115,10 @@ class HDF5Format(Formatter):
             new_datasetshape = (new_dlen,
                                 datasetshape[1])
             dset.resize(new_datasetshape)
+            new_data_shape = (new_dlen-old_dlen, datasetshape[1])
             dset[old_dlen:new_dlen] = \
                 data_set.arrays[array_id][old_dlen:new_dlen].reshape(
-                    new_datasetshape)
+                    new_data_shape)
 
     def _create_dataarray_dset(self, array, group):
         '''
