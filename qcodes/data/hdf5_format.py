@@ -71,14 +71,16 @@ class HDF5Format(Formatter):
     def write(self, data_set, force_write=False):
         """
         """
-        if self.data_object == None or force_write:
+        if self.data_object is None or force_write:
             # Create the file if it is not there yet
             io_manager = data_set.io
-            # FIXME: use the default location provider and not the custom one here
             location = data_set.location
-            self.filepath = io_manager.join(
-                io_manager.base_location,
-                data_set.location_provider(io_manager)+'/'+location+'.hdf5')
+            filename = os.path.split(location)[-1]
+            self.filepath = io_manager.join(location +
+                                            '/{}.hdf5'.format(filename))
+            # note that this creates an hdf5 file in a folder with the same
+            # name. This is useful for saving e.g. images in the same folder
+            # I think this is a sane default (MAR).
             self._create_file(self.filepath)
 
         if 'Data Arrays' not in self.data_object.keys():
