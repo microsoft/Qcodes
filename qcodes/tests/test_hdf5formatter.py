@@ -88,8 +88,6 @@ class TestHDF5_Format(TestCase):
         for i, (x, y) in enumerate(zip(data_copy.x_set, data_copy.y)):
             data.x_set[i] = x
             self.formatter.write(data)
-            # should not update here as not a full row has come in
-            # TODO: implement this in the data formatter
             data.y[i] = y
             self.formatter.write(data)
         filepath = self.formatter.filepath
@@ -98,9 +96,13 @@ class TestHDF5_Format(TestCase):
         self.checkArraysEqual(data2.arrays['x_set'], data_copy.arrays['x_set'])
         self.checkArraysEqual(data2.arrays['y'], data_copy.arrays['y'])
 
+    def test_snapshot_saving(self):
+        self.fail('snapshot saving not implemented')
 
-    # def test_loop_writing(self):
-    #     print('Loop writing not implemented DEBUG PRINT REMOVE BEFORE MERGE')
+
+    def test_loop_writing(self):
+        self.fail('loop writing not implemented')
+
         # station = Station()
         # MockPar = MockParabola(name='MockParabola')
         # station.add_component(MockPar)
