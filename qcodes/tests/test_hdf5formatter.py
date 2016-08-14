@@ -1,5 +1,7 @@
 from unittest import TestCase
+import sys
 import os
+import numpy as np
 import h5py  # TODO: add this to the dependencies in setup.py
 from qcodes.data.location import FormatLocation
 from qcodes.data.hdf5_format import HDF5Format
@@ -10,80 +12,68 @@ from qcodes.utils.helpers import LogCapture
 from .data_mocks import DataSet1D, file_1d, DataSetCombined, files_combined
 
 from qcodes.tests.instrument_mocks import MockParabola
-from qcodes.tests.instrument_mocks import MockParabola
 
 
 class TestHDF5_Format(TestCase):
     def setUp(self):
         self.io = DataSet.default_io
-        self.locations = ('_simple1d_testsuite_', '_combined_testsuite_')
         self.formatter = HDF5Format()
-
-        for location in self.locations:
-            self.assertFalse(self.io.list(location))
+        # Set up the location provider to always store test data in
+        # "qc.tests.unittest_data
+        cur_fp = os.path.dirname(__file__)
+        base_fp = os.path.abspath(os.path.join(cur_fp, '../unittest_data'))
+        self.loc_provider = FormatLocation(
+            fmt=base_fp+'/{date}/#{counter}_{name}_{time}')
+        DataSet.location_provider = self.loc_provider
 
     def tearDown(self):
-        for location in self.locations:
-            self.io.remove_all(location)
-
-    def test_location_formatter(self):
-        """
-        This tests checks if the files where created in the intended location
-        """
-        self.loc_provider = FormatLocation(fmt='data/{date}/#{counter}_{name}_{time}')
+        pass
+        # for location in self.locations:
+        #     self.io.remove_all(location)
 
     def checkArraysEqual(self, a, b):
+        """
+        Checks if arrays are equal
+        """
         # Copied from GNUplot formatter tests inheritance would be nicer
         self.checkArrayAttrs(a, b)
         self.assertTrue((a.ndarray==b.ndarray).all())
+        print(a.set_arrays, b.set_arrays)
         self.assertEqual(len(a.set_arrays), len(b.set_arrays))
         for sa, sb in zip(a.set_arrays, b.set_arrays):
             self.checkArrayAttrs(sa, sb)
 
     def checkArrayAttrs(self, a, b):
+        print('attributes')
         self.assertEqual(a.tolist(), b.tolist())
+        print(a.label, b.label)
         self.assertEqual(a.label, b.label)
         self.assertEqual(a.array_id, b.array_id)
 
-    def test_full_write_read(self):
+    def test_full_write_read_1D(self):
         """
         Test writing and reading a file back in
         """
-        location = self.locations[0]
-        data = DataSet1D(location)
+        # location = self.locations[0]
+        data = DataSet1D()
+        # print('Data location:', os.path.abspath(data.location))
         self.formatter.write(data)
         # Used because the formatter has no nice find file method
         filepath = self.formatter.filepath
-        with  h5py.File(self.formatter.filepath, mode='r') as f:
-            # Read the raw-HDF5 file
-            saved_arr_vals = np.array(f['Data Arrays']['Data'].value,
-                                      dtype=np.float64)
-            # TODO: There is a bug in the write function that appends
-            # an extra zero to the datafile, made the test pass
-            # so I can test the read functionality
-            # print(saved_arr_vals[:, 1])
-            # print(DataSet1D().arrays['x_set'].ndarray)
-            # self.assertTrue((saved_arr_vals[:, 0] ==
-            #                  DataSet1D().arrays['x_set'].ndarray).all())
-            # self.assertTrue((saved_arr_vals[:, 1] ==
-            #                  DataSet1D().arrays['y'].ndarray).all())
 
         # Test reading the same file through the DataSet.read
-        # Relies explicitly on the filepath,
-        # Currently the formatter does not have a nice way of finding files
-        # TODO: I want to use location here and not the full filepath
+
         data2 = DataSet(location=filepath, formatter=self.formatter)
         data2.read()
-        print('Full read/write works except for the set array')
         self.checkArraysEqual(data2.x_set, data.x_set)
         self.checkArraysEqual(data2.y, data.y)
 
     # def test_read_write_missing_dset_attrs(self):
-        '''
-        If some attributes are missing it should still write correctly
-        '''
-        # raise(NotImplementedError)
-        # print('NotImplemented')
+    #     '''
+    #     If some attributes are missing it should still write correctly
+    #     '''
+    #     raise(NotImplementedError)
+    #     print('NotImplemented')
 
     # def test_no_nest(self):
     #     pass

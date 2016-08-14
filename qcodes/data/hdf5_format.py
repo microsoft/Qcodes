@@ -35,38 +35,54 @@ class HDF5Format(Formatter):
         folder, _filename = os.path.split(filepath)
         if not os.path.isdir(folder):
             os.makedirs(folder)
-        self.data_object = h5py.File(filepath, 'a')
+        data_object = h5py.File(filepath, 'a')
+        return data_object
 
     def read(self, data_set):
         """
         Tested that it correctly opens a file, needs a better way to
         find the actual file. This is not part of the formatter at this point
         """
-        io_manager = data_set.io
         location = data_set.location
         filepath = location
         self.data_object = h5py.File(filepath, 'r+')
-        arrays = data_set.arrays
-        for i, col_name in enumerate(
-                self.data_object['Data Arrays']['Data'].attrs['column names']):
+        for i, array_id in enumerate(
+                self.data_object['Data Arrays'].keys()):
             # Decoding string is needed because of h5py/issues/379
-            col_name = col_name.decode()
-            name = col_name # will be overwritten if not in file
-            dat_arr = self.data_object['Data Arrays']['Data']
-            if hasattr(dat_arr, 'label'):
-                label = dat_arr.attrs['labels'][i].decode()
+            name = array_id  # will be overwritten if not in file
+            dat_arr = self.data_object['Data Arrays'][array_id]
+            if 'label' in dat_arr.attrs.keys():
+                label = dat_arr.attrs['label'].decode()
             else:
-                label=None
-            if hasattr(dat_arr, 'names'):
-                name = dat_arr.attrs['names'][i].decode()
-            if hasattr(dat_arr, 'unit'):
-                unit = dat_arr.attrs['units'][i].decode()
+                label = None
+            if 'name' in dat_arr.attrs.keys():
+                name = dat_arr.attrs['name'].decode()
+            if 'units' in dat_arr.attrs.keys():
+                units = dat_arr.attrs['units'].decode()
             else:
-                unit = None
+                units = None
+            is_setpoint = str_to_bool(dat_arr.attrs['is_setpoint'].decode())
+            if not is_setpoint:
+                set_arrays = dat_arr.attrs['set_arrays']
+                set_arrays = [s.decode() for s in set_arrays]
+            else:
+                set_arrays = ()
+
             d_array = DataArray(
-                name=name, array_id=col_name, label=label, parameter=None,
-                preset_data=self.data_object['Data Arrays']['Data'].value[:, i])
+                name=name, array_id=array_id, label=label, parameter=None,
+                units=units,
+                is_setpoint=is_setpoint, set_arrays=(),
+                preset_data=dat_arr.value[:, 0])
             data_set.add_array(d_array)
+            # needed because I cannot add them at this point
+            data_set.arrays[array_id]._sa_array_ids = set_arrays
+
+        # Add copy/ref of setarrays (not array id only)
+        # Note, this is not pretty but a result of how the dataset works
+        for array_id, d_array in data_set.arrays.items():
+            print(d_array._sa_array_ids)
+            for sa_id in d_array._sa_array_ids:
+                d_array.set_arrays += (data_set.arrays[sa_id], )
 
     def write(self, data_set, force_write=False):
         """
@@ -81,27 +97,28 @@ class HDF5Format(Formatter):
             # note that this creates an hdf5 file in a folder with the same
             # name. This is useful for saving e.g. images in the same folder
             # I think this is a sane default (MAR).
-            self._create_file(self.filepath)
+            self.data_object = self._create_file(self.filepath)
 
         if 'Data Arrays' not in self.data_object.keys():
             self.arr_group = self.data_object.create_group('Data Arrays')
         for array_id in data_set.arrays.keys():
             if array_id not in self.arr_group.keys() or force_write:
-                self._create_dataarray_dset(array=data_set[array_id],
+                self._create_dataarray_dset(array=data_set.arrays[array_id],
                                             group=self.arr_group)
             dset = self.arr_group[array_id]
             # Resize the dataset and add the new values
 
             # dataset refers to the hdf5 dataset here
             datasetshape = dset.shape
-            old_datasetlen = datasetshape[0]
+            old_dlen = datasetshape[0]
             x = data_set.arrays[array_id]
-            new_data_length = len(x[~np.isnan(x)])
-            new_datasetshape = (new_data_length,
+            new_dlen = len(x[~np.isnan(x)])
+            new_datasetshape = (new_dlen,
                                 datasetshape[1])
             dset.resize(new_datasetshape)
-            dset[old_datasetlen:new_data_length] = \
-                data_set[array_id][old_datasetlen:new_data_length]
+            dset[old_dlen:new_dlen] = \
+                data_set.arrays[array_id][old_dlen:new_dlen].reshape(
+                    new_datasetshape)
 
     def _create_dataarray_dset(self, array, group):
         '''
@@ -111,26 +128,36 @@ class HDF5Format(Formatter):
 
         creates a hdf5 datasaset that represents the data array.
         '''
-        dset = group.create_dataset(
-            array.array_id, (0, len(array.units)),
-            maxshape=(None, len(array.units)))
-        if hasattr(array, 'label'):
+        # Check for empty meta attributes, use array_id if name and/or label
+        # is not specified
+        if array.label is not None:
             label = array.label
         else:
             label = array.array_id
-        if hasattr(array, 'name'):
+        if array.name is not None:
             name = array.name
         else:
             name = array.array_id
-        if hasattr(array, 'units'):
-            units = array.units
-        else:
-            units += ['']
+        if array.units is None:
+            array.units = ['']  # used for shape determination
+        units = array.units
+        # Create the hdf5 dataset
+        dset = group.create_dataset(
+            array.array_id, (0, len(array.units)),
+            maxshape=(None, len(array.units)))
         dset.attrs['label'] = _encode_to_utf8(str(label))
         dset.attrs['name'] = _encode_to_utf8(str(name))
         dset.attrs['units'] = _encode_to_utf8(str(units))
-        return dset
+        dset.attrs['is_setpoint'] = _encode_to_utf8(str(array.is_setpoint))
 
+        if not array.is_setpoint:
+            set_arrays = []
+            for i in range(len(array.set_arrays)):
+                set_arrays += [_encode_to_utf8(
+                    str(array.set_arrays[i].array_id))]
+            dset.attrs['set_arrays'] = set_arrays
+
+        return dset
 
     def _create_data_arrays_grp(self, arrays):
         self.data_arrays_grp = self.data_object.create_group('Data Arrays')
@@ -139,6 +166,7 @@ class HDF5Format(Formatter):
             'Data', (0, len(arrays.keys())),
             maxshape=(None, len(arrays.keys())))
         self.dset.attrs['column names'] = _encode_to_utf8(arrays.keys())
+
         labels= []
         names = []
         units = []
@@ -156,10 +184,12 @@ class HDF5Format(Formatter):
                 units += [arr.units]
             else:
                 units += ['']
+
         # _encode_to_utf8(str(...)) ensures None gets encoded for h5py aswell
         self.dset.attrs['labels'] = _encode_to_utf8(str(labels))
         self.dset.attrs['names'] = _encode_to_utf8(str(names))
         self.dset.attrs['units'] = _encode_to_utf8(str(units))
+
         # Added to tell analysis how to extract the data
         self.data_arrays_grp.attrs['datasaving_format'] = _encode_to_utf8(
             'QCodes hdf5 v0.1')
@@ -203,3 +233,12 @@ def _encode_to_utf8(s):
     elif type(s) == np.ndarray or list:
         s = [s.encode('utf-8') for s in s]
     return s
+
+
+def str_to_bool(s):
+    if s == 'True':
+        return True
+    elif s == 'False':
+        return False
+    else:
+        raise ValueError("Cannot covert {} to a bool".format(s))
