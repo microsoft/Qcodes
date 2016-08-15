@@ -3,9 +3,9 @@ from qcodes.utils import validators
 
 
 class AlazarTech_ATS9870(AlazarTech_ATS):
-    def __init__(self, name, server_name=None):
+    def __init__(self, name, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
-        super().__init__(name, dll_path=dll_path)
+        super().__init__(name, dll_path=dll_path, **kwargs)
         # add parameters
 
         # ----- Parameters for the configuration of the board -----
@@ -94,7 +94,7 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                                parameter_class=AlazarParameter,
                                label='Trigger Engine ' + i,
                                unit=None,
-                               value='TRIG_ENGINE_J',
+                               value='TRIG_ENGINE_' + ('J' if i == 0 else 'K'),
                                byte_to_value_dict={0: 'TRIG_ENGINE_J',
                                                    1: 'TRIG_ENGINE_K'})
             self.add_parameter(name='trigger_source' + i,
@@ -153,19 +153,27 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            value='NPT',
                            byte_to_value_dict={0x200: 'NPT', 0x400: 'TS'})
 
-        # samples_per_record must be a multiple of 16!
+        # samples_per_record must be a multiple of of some number (64 in the
+        # case of ATS9870) and and has some minimum (256 in the case of ATS9870)
+        # These values can be found in the ATS-SDK programmar's guide
         self.add_parameter(name='samples_per_record',
                            parameter_class=AlazarParameter,
                            label='Samples per Record',
                            unit=None,
                            value=96000,
-                           vals=Multiples(divisor=16, min_value=0))
-        # TODO (M) figure out if this also has to be a multiple of something,
+                           vals=Multiples(divisor=64, min_value=256))
+
+        # TODO(damazter) (M) figure out if this also has to be a multiple of
+        # something,
         # I could not find this in the documentation but somehow I have the
         # feeling it still should be a multiple of something
-        # NOTE by ramiro: At least in previous python implementations(PycQED delft), this is an artifact for compatibility with AWG sequencing, not particular to any ATS architecture.
-        #                  ==> this is a construction imposed by the memory strategy implemented on the python driver we are writing, not limited by any actual ATS feature.
-
+        # NOTE by ramiro: At least in previous python implementations
+        # (PycQED delft), this is an artifact for compatibility with
+        # AWG sequencing, not particular to any ATS architecture.
+        #                  ==> this is a construction imposed by the memory
+        #                      strategy implemented on the python driver we
+        #                      are writing, not limited by any actual ATS
+        #                      feature.
         self.add_parameter(name='records_per_buffer',
                            parameter_class=AlazarParameter,
                            label='Records per Buffer',
@@ -246,9 +254,10 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            value=1000,
                            vals=validators.Ints(min_value=0))
 
-        # TODO (M) make parameter for board type
-
-        # TODO (M) check board kind
+        model = self.get_idn()['model']
+        if model != 'ATS9870':
+            raise Exception("The Alazar board kind is not 'ATS9870',"
+                            " found '" + str(model) + "' instead.")
 
 
 class Multiples(validators.Ints):

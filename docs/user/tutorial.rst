@@ -43,7 +43,6 @@ The concept of a meta instrument is that of having
 two separate Instrument, real or virtual, whose actions can
 the be controlled from the meta instrument.
 In the following example we will create two dummy instruments and a meta instruments.
->>>>>>> docs: add Meta instrument.
 All the instruments will live on a InstrumentServer.
 
 
@@ -158,7 +157,7 @@ And now one case use the meta as expected:
 
 
 Async Meta
-==========
+----------
 
 Say you want to set two instruments at the same time.
 You can use the following:
