@@ -158,7 +158,7 @@ And now one case use the meta as expected:
 
 
 Async Meta
-==========
+----------
 
 Say you want to set two instruments at the same time.
 You can use the following:
