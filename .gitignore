@@ -71,8 +71,5 @@ target/
 tmp/
 
 docs/examples/data/*
-.idea/workspace.xml
-.idea/modules.xml
-.idea/vcs.xml
-.idea/Qcodes.iml
-.idea/misc.xml
+.idea/*
+personal/lecroy_driver
