@@ -201,10 +201,67 @@ class AlazarTech_ATS(Instrument):
     def get_idn(self):
         board_kind = self._board_names[
             self._ATS_dll.AlazarGetBoardKind(self._handle)]
+
+        major = np.array([0], dtype=np.uint8)
+        minor = np.array([0], dtype=np.uint8)
+        revision = np.array([0], dtype=np.uint8)
+        self._call_dll('AlazarGetCPLDVersion',
+                       self._handle,
+                       major.ctypes.data,
+                       minor.ctypes.data)
+        cpld_ver = str(major[0])+"."+str(minor[0])
+
+        self._call_dll('AlazarGetDriverVersion',
+                       major.ctypes.data,
+                       minor.ctypes.data,
+                       revision.ctypes.data)
+        driver_ver = str(major[0])+"."+str(minor[0])+"."+str(revision[0])
+
+        self._call_dll('AlazarGetSDKVersion',
+                       major.ctypes.data,
+                       minor.ctypes.data,
+                       revision.ctypes.data)
+        sdk_ver = str(major[0])+"."+str(minor[0])+"."+str(revision[0])
+
+        value = np.array([0], dtype=np.uint32)
+        self._call_dll('AlazarQueryCapability',
+                       self._handle, 0x10000024, 0, value.ctypes.data)
+        serial = str(value[0])
+        self._call_dll('AlazarQueryCapability',
+                       self._handle, 0x10000026, 0, value.ctypes.data)
+        latest_cal_date = (str(value[0])[0:2] + "-" +
+                           str(value[0])[2:4] + "-" +
+                           str(value[0])[4:6])
+
+        self._call_dll('AlazarQueryCapability',
+                       self._handle, 0x1000002A, 0, value.ctypes.data)
+        memory_size = str(value[0])
+        self._call_dll('AlazarQueryCapability',
+                       self._handle, 0x1000002C, 0, value.ctypes.data)
+        asopc_type = str(value[0])
+
+        # see the ATS-SDK programmer's guide
+        # about the encoding of the link speed
+        self._call_dll('AlazarQueryCapability',
+                       self._handle, 0x10000030, 0, value.ctypes.data)
+        pcie_link_speed = str(value[0]*2.5/10)+"GB/s"
+        self._call_dll('AlazarQueryCapability',
+                       self._handle, 0x10000031, 0, value.ctypes.data)
+        pcie_link_width = str(value[0])
+
+
         return {'firmware': None,
                 'model': board_kind,
-                'serial': None,
-                'vendor': 'AlazarTech'}
+                'serial': serial,
+                'vendor': 'AlazarTech',
+                'CPLD_version': cpld_ver,
+                'driver_version': driver_ver,
+                'SDK_version': sdk_ver,
+                'latest_cal_date': latest_cal_date,
+                'memory_size': memory_size,
+                'asopc_type': asopc_type,
+                'pcie_link_speed': pcie_link_speed,
+                'pcie_link_width': pcie_link_width}
 
     def config(self, clock_source=None, sample_rate=None, clock_edge=None,
                decimation=None, coupling=None, channel_range=None,
