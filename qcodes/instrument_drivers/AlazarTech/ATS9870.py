@@ -153,13 +153,16 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            value='NPT',
                            byte_to_value_dict={0x200: 'NPT', 0x400: 'TS'})
 
-        # samples_per_record must be a multiple of 16!
+        # samples_per_record must be a multiple of of some number (64 in the
+        # case of ATS9870) and and has some minimum (256 in the case of ATS9870)
+        # These values can be found in the ATS-SDK programmar's guide
         self.add_parameter(name='samples_per_record',
                            parameter_class=AlazarParameter,
                            label='Samples per Record',
                            unit=None,
                            value=96000,
-                           vals=Multiples(divisor=16, min_value=0))
+                           vals=Multiples(divisor=64, min_value=256))
+
         # TODO(damazter) (M) figure out if this also has to be a multiple of
         # something,
         # I could not find this in the documentation but somehow I have the
@@ -171,7 +174,6 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
         #                      strategy implemented on the python driver we
         #                      are writing, not limited by any actual ATS
         #                      feature.
-
         self.add_parameter(name='records_per_buffer',
                            parameter_class=AlazarParameter,
                            label='Records per Buffer',
