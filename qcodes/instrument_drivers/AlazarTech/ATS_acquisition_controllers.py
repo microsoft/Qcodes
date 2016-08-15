@@ -89,12 +89,13 @@ class Basic_AcquisitionController(AcquisitionController):
     """Basic AcquisitionController tested on ATS9360
     returns unprocessed data averaged by record with 2 channels
     """
-    def __init__(self):
+    def __init__(self, name, alazar_id, **kwargs):
         self.samples_per_record = None
         self.records_per_buffer = None
         self.buffers_per_acquisition = None
         self.number_of_channels = 2
         self.buffer = None
+        super().__init__(name, alazar_id, **kwargs)
 
     def pre_start_capture(self, alazar):
         self.samples_per_record = alazar.samples_per_record()
@@ -136,8 +137,8 @@ class Average_AcquisitionController(Basic_AcquisitionController):
     """Basic AcquisitionController tested on ATS9360
     returns unprocessed data averaged by record with 2 channels
     """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, name, alazar_id, **kwargs):
+        super().__init__(name, alazar_id, **kwargs)
 
     def post_acquire(self, alazar):
         # average over records in buffer:
