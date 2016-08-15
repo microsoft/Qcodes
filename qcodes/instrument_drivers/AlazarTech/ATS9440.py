@@ -101,7 +101,9 @@ class ATS9440(AlazarTech_ATS):
                                byte_to_value_dict={0: 'CHANNEL_A',
                                                    1: 'CHANNEL_B',
                                                    2: 'EXTERNAL',
-                                                   3: 'DISABLE'})
+                                                   3: 'DISABLE',
+                                                   4: 'CHANNEL_C',
+                                                   5: 'CHANNEL_D'})
             self.add_parameter(name='trigger_slope' + i,
                                parameter_class=AlazarParameter,
                                label='Trigger Slope ' + i,
