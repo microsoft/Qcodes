@@ -43,7 +43,6 @@ The concept of a meta instrument is that of having
 two separate Instrument, real or virtual, whose actions can
 the be controlled from the meta instrument.
 In the following example we will create two dummy instruments and a meta instruments.
->>>>>>> docs: add Meta instrument.
 All the instruments will live on a InstrumentServer.
 
 
