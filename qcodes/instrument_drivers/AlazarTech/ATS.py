@@ -712,6 +712,7 @@ class AlazarParameter(Parameter):
         self.validate(value)
         self._byte = self._value_to_byte_dict[value]
         self._uptodate_flag = False
+        self._save_val(value)
         return None
 
     def _set_updated(self):
