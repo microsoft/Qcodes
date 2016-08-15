@@ -130,6 +130,37 @@ class Basic_AcquisitionController(AcquisitionController):
             i1 = i0 + self.samples_per_record *self.number_of_channels
             recordB += self.buffer[i0:i1:self.number_of_channels] / records_per_acquisition
         return recordA, recordB
+
+
+class Average_AcquisitionController(Basic_AcquisitionController):
+    """Basic AcquisitionController tested on ATS9360
+    returns unprocessed data averaged by record with 2 channels
+    """
+    def __init__(self):
+        super().__init__()
+
+    def post_acquire(self, alazar):
+        # average over records in buffer:
+        # for ATS9360 samples are arranged in the buffer as follows:
+        # S0A, S0B, ..., S1A, S1B, ...
+        # with SXY the sample number X of channel Y.
+        records_per_acquisition = (1. * self.buffers_per_acquisition *
+                                   self.records_per_buffer)
+        recordA = np.zeros(self.samples_per_record)
+        for i in range(self.records_per_buffer):
+            i0 = i * self.samples_per_record * self.number_of_channels
+            i1 = i0 + self.samples_per_record * self.number_of_channels
+            recordA += self.buffer[i0:i1:self.number_of_channels] / records_per_acquisition
+
+        recordB = np.zeros(self.samples_per_record)
+        for i in range(self.records_per_buffer):
+            i0 = (i * self.samples_per_record * self.number_of_channels) + 1
+            i1 = i0 + self.samples_per_record *self.number_of_channels
+            recordB += self.buffer[i0:i1:self.number_of_channels] / records_per_acquisition
+
+        recordA = 4*(recordA / 2**16 - 0.5) * alazar.channel_range1()
+        recordB = 4*(recordB / 2**16 - 0.5) * alazar.channel_range2()
+        return recordA, recordB
     
 
 
