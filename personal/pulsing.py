@@ -37,6 +37,7 @@ def setup_ESR_pulses(PulseBlaster,
     readpulse *= 1e6
 
     PulseBlaster.select_board(0)
+    PulseBlaster.start()
     PulseBlaster.start_programming(PULSE_PROGRAM)
     start = PulseBlaster.send_instruction(1, CONTINUE, 0, loadpulse-(sum(mwpulses)+sum(mwtaos)+mwpost))
 
@@ -54,5 +55,3 @@ def setup_ESR_pulses(PulseBlaster,
     PulseBlaster.send_instruction(1, CONTINUE, 0, readpulse/2)
 
     PulseBlaster.stop_programming()
-
-    PulseBlaster.start()
