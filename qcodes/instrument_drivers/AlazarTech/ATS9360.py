@@ -6,8 +6,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
     def __init__(self, name, server_name=None):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
         super().__init__(name, dll_path=dll_path)
-        
-        samplesPerSec = None
+
         # add parameters
 
         # ----- Parameters for the configuration of the board -----
@@ -133,7 +132,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            unit='Sample clock cycles',
                            value=0,
                            vals=validators.Ints(min_value=0))
-                           
+
         # NOTE: The board will wait for a for this amount of time for a
         # trigger event.  If a trigger event does not arrive, then the
         # board will automatically trigger. Set the trigger timeout value
@@ -149,7 +148,6 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            unit='10 us',
                            value=0,
                            vals=validators.Ints(min_value=0))
-                           
 
         # ----- Parameters for the acquire function -----
         self.add_parameter(name='mode',
@@ -169,8 +167,12 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
         # TODO (M) figure out if this also has to be a multiple of something,
         # I could not find this in the documentation but somehow I have the
         # feeling it still should be a multiple of something
-        # NOTE by ramiro: At least in previous python implementations(PycQED delft), this is an artifact for compatibility with AWG sequencing, not particular to any ATS architecture.
-        #                  ==> this is a construction imposed by the memory strategy implemented on the python driver we are writing, not limited by any actual ATS feature.
+        # NOTE by ramiro: At least in previous python implementations(PycQED delft),
+        # this is an artifact for compatibility with AWG sequencing, 
+        # not particular to any ATS architecture.
+        #   ==> this is a construction imposed by the memory strategy 
+        # implemented on the python driver 
+        # we are writing, not limited by any actual ATS feature.
 
         self.add_parameter(name='records_per_buffer',
                            parameter_class=AlazarParameter,
@@ -255,7 +257,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
         # TODO (M) make parameter for board type
 
         # TODO (M) check board kind
-         
+
 
 class Multiples(validators.Ints):
     '''

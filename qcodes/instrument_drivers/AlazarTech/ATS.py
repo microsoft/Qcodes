@@ -23,6 +23,7 @@ from qcodes.utils import validators
 # TODO(nataliejpg) make use of _ATS_dll uniform
 # TODO(nataliejpg) error if no trigger
 
+
 class AlazarTech_ATS(Instrument):
     # override dll_path in your init script or in the board constructor
     # if you have it somewhere else
@@ -193,7 +194,7 @@ class AlazarTech_ATS(Instrument):
     def __init__(self, name, system_id=1, board_id=1, dll_path=None, **kwargs):
         super().__init__(name, **kwargs)
         self._ATS_dll = None
-    
+
         if os.name == 'nt':
             self._ATS_dll = ctypes.cdll.LoadLibrary(dll_path or self.dll_path)
         else:
