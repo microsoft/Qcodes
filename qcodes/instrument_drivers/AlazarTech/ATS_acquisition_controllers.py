@@ -133,14 +133,43 @@ class Basic_AcquisitionController(AcquisitionController):
         return recordA, recordB
 
 
-class Average_AcquisitionController(Basic_AcquisitionController):
+class Average_AcquisitionController(AcquisitionController):
     """Basic AcquisitionController tested on ATS9360
     returns unprocessed data averaged by record with 2 channels
     """
     def __init__(self, name, alazar_id, **kwargs):
+        self.samples_per_record = None
+        self.records_per_buffer = None
+        self.buffers_per_acquisition = None
+        self.number_of_channels = 2
+        self.buffer = None
+        self.acquisitionkwargs = {'acquisition_controller': self}
         super().__init__(name, alazar_id, **kwargs)
+        self.alazar = self.get_alazar()
 
-    def post_acquire(self, alazar):
+    def set_acquisitionkwargs(self, **kwargs):
+        self.acquisitionkwargs.update(**kwargs)
+
+    def pre_start_capture(self):
+        self.samples_per_record = self.alazar.samples_per_record()
+        self.records_per_buffer = self.alazar.records_per_buffer()
+        self.buffers_per_acquisition = self.alazar.buffers_per_acquisition()
+        self.buffer = np.zeros(self.samples_per_record *
+                              self.records_per_buffer *
+                              self.number_of_channels)
+
+    def pre_acquire(self):
+        # gets called after 'AlazarStartCapture'
+        pass
+
+    def do_acquisition(self):
+        value = self.alazar.acquire(**self.acquisitionkwargs)
+        return value
+
+    def handle_buffer(self, data):
+        self.buffer += data
+
+    def post_acquire(self):
         # average over records in buffer:
         # for ATS9360 samples are arranged in the buffer as follows:
         # S0A, S0B, ..., S1A, S1B, ...
@@ -159,8 +188,8 @@ class Average_AcquisitionController(Basic_AcquisitionController):
             i1 = i0 + self.samples_per_record *self.number_of_channels
             recordB += self.buffer[i0:i1:self.number_of_channels] / records_per_acquisition
 
-        recordA = 4*(recordA / 2**16 - 0.5) * alazar.channel_range1()
-        recordB = 4*(recordB / 2**16 - 0.5) * alazar.channel_range2()
+        recordA = 4*(recordA / 2**16 - 0.5) * self.alazar.channel_range1()
+        recordB = 4*(recordB / 2**16 - 0.5) * self.alazar.channel_range2()
         return recordA, recordB
     
 

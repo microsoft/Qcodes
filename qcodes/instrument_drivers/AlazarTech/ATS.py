@@ -513,11 +513,8 @@ class AlazarTech_ATS(Instrument):
         print("samples_per_record is "+str(samples_per_record))
         print("bytes per record is "+str(bytes_per_record))
         
-        # channels
-        if self.channel_selection._get_byte() == 3:
-            number_of_channels = 2
-        else:
-            number_of_channels = 1
+        # channels (can be 1, 2, or 4)
+        number_of_channels = len(self.channel_selection())
         
         # bytes per buffer
         bytes_per_buffer = bytes_per_record * records_per_buffer * number_of_channels
@@ -630,8 +627,12 @@ class AlazarTech_ATS(Instrument):
 
     def _set_list_if_present(self, param_base, value):
         if value is not None:
+            # Create list of identical values if a single value is given
+            if not isinstance(value, list):
+                value = [value] * self.channels
             for i, v in enumerate(value):
-                self.parameters[param_base + str(i + 1)]._set(v)
+                if param_base + str(i+1) in self.parameters.keys():
+                    self.parameters[param_base + str(i + 1)]._set(v)
 
     def _call_dll(self, func_name, *args):
         """

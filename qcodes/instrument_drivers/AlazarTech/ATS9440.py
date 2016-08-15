@@ -3,12 +3,13 @@ from qcodes.utils import validators
 
 
 class ATS9440(AlazarTech_ATS):
-    def __init__(self, name, server_name=None):
+    def __init__(self, name, server_name=None, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
-        super().__init__(name, dll_path=dll_path)
+        super().__init__(name, dll_path=dll_path, **kwargs)
 
         samplesPerSec = None
         # add parameters
+        self.channels = 4
 
         # ----- Parameters for the configuration of the board -----
         self.add_parameter(name='clock_source',
@@ -48,7 +49,7 @@ class ATS9440(AlazarTech_ATS):
                            value=0,
                            vals=validators.Ints(0, 100000))
 
-        for i in ['1', '2']:
+        for i in map(str, range(1, self.channels+1)):
             self.add_parameter(name='coupling' + i,
                                parameter_class=AlazarParameter,
                                label='Coupling channel ' + i,
@@ -59,7 +60,7 @@ class ATS9440(AlazarTech_ATS):
                                parameter_class=AlazarParameter,
                                label='Range channel ' + i,
                                unit='V',
-                               value=0.4,
+                               value=1,
                                byte_to_value_dict={
                                    5: 0.1, 6: 0.2, 7: 0.4,
                                    10: 1., 11: 2., 12: 4.})
@@ -84,13 +85,12 @@ class ATS9440(AlazarTech_ATS):
                                5: 'TRIG_ENGINE_OP_J_AND_NOT_K',
                                6: 'TRIG_ENGINE_OP_NOT_J_AND_K'})
 
-        # TODO Add channels 3, 4
         for i in ['1', '2']:
             self.add_parameter(name='trigger_engine' + i,
                                parameter_class=AlazarParameter,
                                label='Trigger Engine ' + i,
                                unit=None,
-                               value='TRIG_ENGINE_J',
+                               value='TRIG_ENGINE_' + ('J' if i == 0 else 'K'),
                                byte_to_value_dict={0: 'TRIG_ENGINE_J',
                                                    1: 'TRIG_ENGINE_K'})
             self.add_parameter(name='trigger_source' + i,
@@ -191,7 +191,8 @@ class ATS9440(AlazarTech_ATS):
                            label='Channel Selection',
                            unit=None,
                            value='AB',
-                           byte_to_value_dict={1: 'A', 2: 'B', 3: 'AB'})
+                           byte_to_value_dict={1: 'A', 2: 'B', 3: 'AB', 4:'C', 5: 'AC', 6: 'BC',
+                                               8:'D', 9: 'AD', 10: 'BD', 12: 'CD', 15: 'ABCD'})
         self.add_parameter(name='transfer_offset',
                            parameter_class=AlazarParameter,
                            label='Transer Offset',
