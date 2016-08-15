@@ -7,31 +7,18 @@ Introduction
    :maxdepth: 2
 
 
-Big Picture
------------
-
-As computers and electronic hardware have gotten more powerful and pervasive, several quantities involved in computer-controlled experiments (and simulations) continue to increase:
-
-  - the number of instruments involved in any experiment
-  - the frequency with which users move those instruments around
-  - the number of settings available on each instrument
-  - the amount and variety of data produced
-
-QCoDeS is designed to manage that complexity, giving a consistent way to control and loop over all the settings of all the instruments, tracking what instruments are connected and what their settings were at any time during the experiment, structuring the data for clear analysis, and sharing code to minimize the setup time on a new experiment.
-
-Concepts
---------
-
 The framework is designed for extreme modularity. Don't panic when looking at the source code.
 Read the following descriptions of the *pillars* of the framework first.
 
+
 Instrument
-~~~~~~~~~~
+----------
 .. Description
 
-An instrument is first and most fundamental pillar of qcodes as it represent the hardware you would want to talk to, either to control your system, collect data, or both. Instruments come in several flavors:
+An instrument is first and most fundamental pillar of qcodes as it represent the hardware you would want to talk to, either to control your system, collect data, or both.
 
-  - Hardware: most instruments map one-to-one to a real piece of hardware; in these instances, the QCoDeS Instrument requires a driver or communication channel to the hardware. See  :ref:`driver` and/or :ref:`instrument`.
+Instruments come in several flavors:
+  - Hardware: most instruments map one-to-one to a real piece of hardware; in these instances, the QCoDeS Instrument requires a driver or communication channel to the hardware. See  :ref:`driver`.
 
   - Simulation: for theoretical or computational work, an instrument may contain or connect to a model that has its own state and generates results in much the same way that an instrument returns measurements. See :ref:`simulation`.
 
@@ -39,7 +26,7 @@ An instrument is first and most fundamental pillar of qcodes as it represent the
 
   - Meta: Sometimes to make the experiment easier to manage, it is useful to make an instrument to represent some element of the system that may be controlled in part by several separate instruments. For example, a device that uses one instrument to supply DC voltages, another to supply AC signals, and a third to measure it. We can make a new QCoDeS Instrument that references these lower-level Instruments, and we refer to this as a "Meta-Instrument". This imposes some requirements and limitations with remote instruments and multiple processes - see :ref:`metainstrument` for more information.
 
-An instrument can exist as local instrument or remote instrument. A local instrument is instantiated in the main process, and you interact with it directly. This is convenient for testing and debugging, but a local instrument cannot be used with a measurement loop_ in a separate process (ie a background loop). For that purpose you need a remote instrument. A remote instrument starts (or connects to) a server process, instantiates the instrument in that process, and returns a proxy object that mimicks the API of the instrument. This proxy holds no state or hardware connection, so it can be freely copied to other processes, in particular background loops and meta-instrument servers.
+An instrument can exist as local instrument or remote instrument. A local instrument is instantiated in the main process, and you interact with it directly. This is convenient for testing and debugging, but a local instrument cannot be used with a measurement loop in a separate process (ie a background loop). For that purpose you need a remote instrument. A remote instrument starts (or connects to) a server process, instantiates the instrument in that process, and returns a proxy object that mimicks the API of the instrument. This proxy holds no state or hardware connection, so it can be freely copied to other processes, in particular background loops and composite-instrument servers.
 
 .. responsibilities
 Instruments are responsible for:
@@ -50,16 +37,16 @@ Instruments are responsible for:
 .. state
 Instruments hold state of:
   - The communication address, and in many cases the open communication channel.
-  - The most recent set or measured value of every parameter_, so that it does not need to query the hardware for every value when asked for a snapshot.
+  - A list of references to parameters added to the instrument.
 
 .. failures
 Instruments can fail:
   - When a VisaInstrument has been instantiated before, particularly with TCPIP, sometimes it will complain "VI_ERROR_RSRC_NFOUND: Insufficient location information or the requested device or resource is not present in the system" and not allow you to open the instrument until either the hardware has been power cycled or the network cable disconnected and reconnected. Are we using visa/pyvisa in a brittle way?
-  - If you try to use a background loop_ with a local instrument, because that would require copying the local instrument and there may only be one local copy of the instrument (if you make a remote instrument, the server instance is the one local copy).
+  - If you try to use a background loop with a local instrument, because that would require copying the local instrument and there may only be one local copy of the instrument (if you make a remote instrument, the server instance is the one local copy).
 
 
 Parameter
-~~~~~~~~~
+---------
 
 .. Description
 
@@ -69,7 +56,7 @@ A settable Parameter typically represents a configuration setting of an instrume
 
 A Parameter that is only gettable typically maps to a single measurement command or sequence. Often this returns a single value, like one voltage measurement, but it can also return multiple distinct values (for example magnitude and phase or the x/y/z components of a vector) or a sequence of values (for example an entire sampled waveform, or a power spectrum) or even multiple sequences (for example waveforms sampled on several channels).
 
-Most Parameters that you would use as setpoints and measurements in a loop_ accept or return numbers, but configuration Parameters can use strings or any other data type (although it should generally be JSON-compatible for snapshots and logging).
+Most Parameters that you would use as setpoints and measurements in a loop accept or return numbers, but configuration Parameters can use strings or any other data type (although it should generally be JSON-compatible for snapshots and logging).
 
 When a RemoteInstrument is created, the Parameters contained in the Instrument are mirrored as RemoteParameters, which connect to the original Parameter via the associated InstrumentServer.
 
@@ -85,17 +72,19 @@ Parameters are responsible for:
     - and more if multi-valued or array-valued
 
 .. state
-Parameters hold onto their latest set or measured value, as well as when this happened, so that snapshots (and eventually monitor logs) need not always query the hardware for this information but can update it intelligently when it has gotten stale.
+Parameters hold onto their latest set or measured value, as well as when this happened. So that snapshots need not always query the hardware for this information but can update it intelligently when it has gotten stale.
 
 .. failures
 A Parameter that is part of an Instrument, even though it can be used as an independent object without directly referencing the Instrument, is subject to the same local/remote limitations as the Instrument.
 
 Loop
-~~~~
+----
 
 .. Description
 
-A Loop is the QCoDeS way to acquire one or more arrays of data. Every Loop that's executed consists of a settable Parameter to be varied, some collection of values to set it to, some actions to do at each setpoint, and some conditions by which to run the Loop. An action can be:
+A Loop is the QCoDeS way to acquire one or more arrays of data. Every Loop that's executed consists of a settable Parameter to be varied, some collection of values to set it to, some actions to do at each setpoint, and some conditions by which to run the Loop.
+
+An action can be:
   - A gettable Parameter (something to measure). Each such Parameter will generate one (or more, if the Parameter itself creates multiple outputs).
   - A Task to do (for example you measure once, then have a Task to change a gate voltage, then you measure again, and finally a Task to put the gate voltage back where it was).
   - Wait, a specialized task that just delays execution (but may do other things like monitoring the system in that time)
@@ -124,7 +113,7 @@ Loops can fail:
   - If you try to use a (parameter of a) local instrument in a background loop
 
 DataSet
-~~~~~~~
+-------
 
 .. Description
 
@@ -142,12 +131,14 @@ One DataArray can only be part of at most one DataSet. This ensures that we don'
 
 The DataSet also specifies where and how it is to be stored on disk, as well as its relationship (if any) to a :ref:`datamanager`. Storage is specified by an :ref:`iomanager` (the physical device / protocol, and base location in the normal case of disk storage), a location (string, relative path within the io manager), and :ref:`formatter` (specifies the file type and how to read to and write from a DataSet).
 
-A DataManager can be used during acquisition to offload io operations to a separate DataServer process, and to update any live plots without burdening the Loop process. A DataSet can have one of three modes (in reference to the DataServer):
+A DataManager can be used during acquisition to offload io operations to a separate DataServer process, and to update any live plots without burdening the Loop process.
+
+A DataSet can have one of three modes (in reference to the DataServer):
   - PUSH_TO_SERVER: this DataSet and its DataArrays maintain no local copy of the data. Whenever new data arrives it is sent immediately to the DataServer. At the end of a background loop, this object just disappears. At the end of a foreground loop, it asks to sync with the server, at which point it's done so it becomes LOCAL.
   - PULL_FROM_SERVER: updates are requested from the DataServer when the sync() method is called (eg during live plotting) such that after updating, this copy contains all the same data as on the server. When the DataServer indicates that the DataSet is done, the mode changes to LOCAL.
   - LOCAL: No communication with the server. If no server is specified, this is the only allowed mode.
 
-Note: metadata is not (yet) integrated with the DataServer. It is (almost) entirely dealt with locally: in the main process before the Loop process (if any) starts, the station snapshot and loop definition is recorded and saved to disk. The only thing that happens later is the loop end timestamp gets added immediately before the Loop terminates
+.. note:: metadata is not (yet) integrated with the DataServer. It is (almost) entirely dealt with locally: in the main process before the Loop process (if any) starts, the station snapshot and loop definition is recorded and saved to disk. The only thing that happens later is the loop end timestamp gets added immediately before the Loop terminates
 
 .. responsibilities
 
