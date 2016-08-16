@@ -344,12 +344,13 @@ class AlazarTech_ATS(Instrument):
                        self._handle, self.clock_source, self.sample_rate,
                        self.clock_edge, self.decimation)
 
-        for i in range(1, self.channels + 1):
+        for i in range(1, self.channels+1):
             self._call_dll('AlazarInputControl',
-                           self._handle, i,
+                           self._handle, 2**(i-1), # Channel in binary format
                            self.parameters['coupling' + str(i)],
                            self.parameters['channel_range' + str(i)],
                            self.parameters['impedance' + str(i)])
+
             if bwlimit is not None:
                 self._call_dll('AlazarSetBWLimit',
                               self._handle, i,
