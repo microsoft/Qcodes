@@ -184,9 +184,9 @@ class Average_AcquisitionController(AcquisitionController):
         records_per_acquisition = (1. * self.buffers_per_acquisition *
                                    self.records_per_buffer)
 
-        if self.average_mode() is 'none':
+        if self.average_mode() == 'none':
             raise NameError('Not implemented yet')
-        elif self.average_mode() is 'trace':
+        elif self.average_mode() == 'trace':
             records = [np.zeros(self.samples_per_record) for k in range(self.number_of_channels)]
 
             for channel in range(self.number_of_channels):
@@ -195,19 +195,20 @@ class Average_AcquisitionController(AcquisitionController):
                     i0 = channel_offset + i * self.samples_per_record
                     i1 = i0 + self.samples_per_record
                     records[channel] += self.buffer[i0:i1] / records_per_acquisition
-
-            for i, record in enumerate(records):
-                channel_range = eval('self.alazar.channel_range{}()'.format(i+1))
-                # Somehow if buffers_per_acquisition=1, a different offset is needed
-                if self.buffers_per_acquisition == 1:
-                    records[i] = 2*(record / 2**16 - 1) * channel_range
-                else:
-                    records[i] = 2*(record / 2**16 - 0.5) * channel_range
-        elif self.average_mode() is 'full':
+        elif self.average_mode() == 'point':
             trace_length = self.samples_per_record * self.records_per_buffer
-            records = [np.mean(self.buffer[i*trace_length:(i+1)*trace_length]) for i in range(self.number_of_channels)]
+            records = [np.mean(self.buffer[i*trace_length:(i+1)*trace_length])/ records_per_acquisition
+                       for i in range(self.number_of_channels)]
+
+        # Scale datapoints
+        for i, record in enumerate(records):
+            channel_range = eval('self.alazar.channel_range{}()'.format(i + 1))
+            # Somehow if buffers_per_acquisition=1, a different offset is needed
+            if self.buffers_per_acquisition == 1:
+                records[i] = 2 * (record / 2 ** 16 - 1) * channel_range
+            else:
+                records[i] = 2 * (record / 2 ** 16 - 0.5) * channel_range
         return records
-        return self.buffer/self.buffers_per_acquisition
 
 
 # DFT AcquisitionController

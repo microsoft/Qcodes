@@ -16,10 +16,12 @@ class SIM900(VisaInstrument):
         self.add_parameter('channels',
                            get_cmd=lambda: self._channels)
         for i in range(1, channels + 1):
-            self.add_parameter('chan{}{}'.format(i,channel_label),
+            self.add_parameter('chan{}{}'.format(channel_label, i),
                                label='Gate Channel {} (V)'.format(i),
                                get_cmd=partial(self.get_voltage, channel=i),
                                set_cmd=cmdbase(i) + '"VOLT {:.4f}"',
+                               step=0.01,
+                               delay=0.2,
                                vals=Numbers(0, 20))
 
     def get_voltage(self, channel):
