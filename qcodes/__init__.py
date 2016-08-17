@@ -10,8 +10,8 @@ from qcodes.version import __version__
 from qcodes.process.helpers import set_mp_method
 from qcodes.utils.helpers import in_notebook
 
-from qcodes.utils.config import HorseConfig
-config = HorseConfig()
+from qcodes.utils.config import QCodesConfig
+config = QCodesConfig()
 
 # add default config values
 config.add_entry('general.verbosity', 1)

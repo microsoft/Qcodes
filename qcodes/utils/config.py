@@ -3,7 +3,7 @@ import os
 import six
 
 
-class HorseConfig(configparser.ConfigParser):
+class QCodesConfig(configparser.ConfigParser):
 
     def show(self):
         """ Show all the entries in the config object """
