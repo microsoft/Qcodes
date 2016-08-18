@@ -217,7 +217,7 @@ class Average_AcquisitionController(AcquisitionController):
 
 # DFT AcquisitionController
 class DFT_AcquisitionController(AcquisitionController):
-    def __init__(self, name, alazar_id, demodulation_frequency, **kwargs):
+    def __init__(self, name, alazar_name, demodulation_frequency, **kwargs):
         self.demodulation_frequency = demodulation_frequency
         self.acquisitionkwargs = {'acquisition_controller': self}
         self.samples_per_record = None
@@ -231,18 +231,18 @@ class DFT_AcquisitionController(AcquisitionController):
         self.buffer = None
         # make a call to the parent class and by extension, create the parameter
         # structure of this class
-        super().__init__(name, alazar_id, **kwargs)
+        super().__init__(name, alazar_name, **kwargs)
         self.add_parameter("acquisition", get_cmd=self.do_acquisition)
 
     def set_acquisitionkwargs(self, **kwargs):
         self.acquisitionkwargs.update(**kwargs)
 
     def do_acquisition(self):
-        value = self.get_alazar().acquire(**self.acquisitionkwargs)
+        value = self._get_alazar().acquire(**self.acquisitionkwargs)
         return value
 
     def pre_start_capture(self):
-        alazar = self.get_alazar()
+        alazar = self._get_alazar()
         self.samples_per_record = alazar.samples_per_record.get()
         self.records_per_buffer = alazar.records_per_buffer.get()
         self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
@@ -267,7 +267,7 @@ class DFT_AcquisitionController(AcquisitionController):
         self.buffer += data
 
     def post_acquire(self):
-        alazar = self.get_alazar()
+        alazar = self._get_alazar()
         # average all records in a buffer
         records_per_acquisition = (1. * self.buffers_per_acquisition *
                                    self.records_per_buffer)
@@ -287,10 +287,11 @@ class DFT_AcquisitionController(AcquisitionController):
             # fit channel A and channel B
             res1 = self.fit(recordA)
             res2 = self.fit(recordB)
-            return [alazar.signal_to_volt(1, res1[0] + 127.5),
-                    alazar.signal_to_volt(2, res2[0] + 127.5),
-                    res1[1], res2[1],
-                    (res1[1] - res2[1]) % 360]
+            #return [alazar.signal_to_volt(1, res1[0] + 127.5),
+            #        alazar.signal_to_volt(2, res2[0] + 127.5),
+            #        res1[1], res2[1],
+            #        (res1[1] - res2[1]) % 360]
+            return alazar.signal_to_volt(1, res1[0] + 127.5)
         else:
             raise Exception("Could not find CHANNEL_B during data extraction")
         return None

@@ -549,7 +549,6 @@ class AlazarTech_ATS(Instrument):
         print("completed AlazarPostAsyncBuffer")
 
         # -----start capture here-----
-        acquisition_controller.set_alazar(self)
         acquisition_controller.pre_start_capture()
         # call the startcapture method
         self._call_dll('AlazarStartCapture', self._handle)
@@ -860,23 +859,32 @@ class DMABuffer:
 
 
 class AcquisitionController(Instrument):
-    def __init__(self, name, alazar_id, **kwargs):
+    def __init__(self, name, alazar_name, **kwargs):
         """
-        :param alazar: a reference to the alazar driver
+        :param alazar_name: The name of the alazar instrument on the server
         :return: nothing
         """
         super().__init__(name, **kwargs)
         self.alazar = None
-        self.set_alazar(kwargs['server'].instruments[alazar_id])
+        for inst in kwargs['server'].instruments.values():
+            if inst.name == alazar_name:
+                self._set_alazar(inst)
+        if self._get_alazar() is None:
+            raise LookupError("No instrument with the name " +
+                              str(alazar_name) +
+                              " was found on this instrument server")
 
-    def get_alazar(self):
+    def _get_alazar(self):
         return self.alazar
 
-    def set_alazar(self, alazar):
+    def _set_alazar(self, alazar):
         self.alazar = alazar
 
     def pre_start_capture(self):
         """
+        Use this method to prepare yourself for the data acquisition
+        The Alazar instrument will call this method right before
+        'AlazarStartCapture' is called
         :return:
         """
         raise NotImplementedError(
@@ -884,7 +892,7 @@ class AcquisitionController(Instrument):
 
     def pre_acquire(self):
         """
-        Use this method to prepare yourself for the data acquisition
+        This method is called immediately after 'AlazarStartCapture' is called
         :return: nothing
         """
         raise NotImplementedError(
@@ -892,7 +900,9 @@ class AcquisitionController(Instrument):
 
     def handle_buffer(self, buffer):
         """
-        :param buffer: np.array with the data from the alazar card
+        This method should store or process the information that is contained
+        in the buffers obtained during the acquisition.
+        :param buffer: np.array with the data from the Alazar card
         :return: something, it is ignored in any case
         """
         raise NotImplementedError(
@@ -900,6 +910,9 @@ class AcquisitionController(Instrument):
 
     def post_acquire(self):
         """
+        This method should return any information you want to save from this
+        acquisition. The acquisition method from the Alazar driver will use
+        this data as its own return value
         :return: this function should return all relevant data that you want
             to get form the acquisition
         """
