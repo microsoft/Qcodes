@@ -92,13 +92,13 @@ class Basic_AcquisitionController(AcquisitionController):
     """Basic AcquisitionController tested on ATS9360
     returns unprocessed data averaged by record with 2 channels
     """
-    def __init__(self, name, alazar_id, **kwargs):
+    def __init__(self, name, alazar_name, **kwargs):
         self.samples_per_record = None
         self.records_per_buffer = None
         self.buffers_per_acquisition = None
         self.number_of_channels = 2
         self.buffer = None
-        super().__init__(name, alazar_id, **kwargs)
+        super().__init__(name, alazar_name, **kwargs)
 
     def pre_start_capture(self, alazar):
         self.samples_per_record = alazar.samples_per_record()
@@ -140,14 +140,14 @@ class Average_AcquisitionController(AcquisitionController):
     """Basic AcquisitionController tested on ATS9360
     returns unprocessed data averaged by record with 2 channels
     """
-    def __init__(self, name, alazar_id, **kwargs):
+    def __init__(self, name, alazar_name, **kwargs):
         self.samples_per_record = None
         self.records_per_buffer = None
         self.buffers_per_acquisition = None
         self.buffer = None
         self.acquisitionkwargs = {'acquisition_controller': self}
-        super().__init__(name, alazar_id, **kwargs)
-        self.alazar = self.get_alazar()
+        super().__init__(name, alazar_name, **kwargs)
+        self.alazar = self._get_alazar()
         self.add_parameter(name='average_mode',
                            parameter_class=ManualParameter,
                            initial_value='trace',
