@@ -152,10 +152,7 @@ class Average_AcquisitionController(AcquisitionController):
                            parameter_class=ManualParameter,
                            initial_value='trace',
                            vals=vals.Enum('none', 'trace', 'point'))
-        self.add_parameter(name='acquire',
-                           label='Signal',
-                           units='V',
-                           get_cmd=self.do_acquisition)
+        self.add_parameter("acquisition", get_cmd=self.do_acquisition)
 
     def set_acquisitionkwargs(self, **kwargs):
         self.acquisitionkwargs.update(**kwargs)
