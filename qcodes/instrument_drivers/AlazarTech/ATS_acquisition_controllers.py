@@ -171,8 +171,11 @@ class Average_AcquisitionController(AcquisitionController):
         pass
 
     def do_acquisition(self):
-        value = self.alazar.acquire(**self.acquisitionkwargs)
-        return value
+        records = self.alazar.acquire(**self.acquisitionkwargs)
+        if len(records) == 1:
+            return records[0]
+        else:
+            return records
 
     def handle_buffer(self, data):
         self.buffer += data
