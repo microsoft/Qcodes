@@ -66,7 +66,7 @@ class ArbStudio1104(Instrument):
                                vals=vals.Anything()) # Can we test for an (int, int) tuple list?
 
             self.add_function('ch{}_add_waveform'.format(ch),
-                              call_cmd=self._waveforms[ch-1].append,
+                              call_cmd=partial(self._add_waveform, ch),
                               args=[vals.Anything()]) # Can we test for a float list/array?
 
             self.add_function('ch{}_clear_waveforms'.format(ch),
@@ -139,6 +139,10 @@ class ArbStudio1104(Instrument):
         assert return_msg.ErrorSource == self._api.ErrorCodes.RES_SUCCESS, \
             "Error setting Arb channel {} trigger source to {}: {}".format(ch, trigger_source_str,
                                                                            return_msg.ErrorDescription)
+
+    def _add_waveform(self, channel, waveform):
+        assert len(waveform)%2 == 0, 'Waveform must have an even number of points'
+        self._waveforms[channel - 1].append(waveform)
 
     def load_waveforms(self, channels=[1, 2, 3, 4]):
         waveforms_list = []
