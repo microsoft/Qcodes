@@ -152,10 +152,30 @@ class Average_AcquisitionController(AcquisitionController):
                            parameter_class=ManualParameter,
                            initial_value='trace',
                            vals=vals.Enum('none', 'trace', 'point'))
-        self.add_parameter("acquisition", get_cmd=self.do_acquisition)
+        # Names and shapes must have initial value, even through they will be overwritten in set_acquisitionkwargs.
+        # If we don't do this, the remoteInstrument will not recognize that it returns multiple values.
+        self.add_parameter(name="acquisition",
+                           names=['channel_signal'],
+                           get_cmd=self.do_acquisition,
+                           shapes=((),))
 
     def set_acquisitionkwargs(self, **kwargs):
         self.acquisitionkwargs.update(**kwargs)
+
+        # Update acquisition parameter values
+        channel_selection = kwargs['channel_selection']
+        self.acquisition.names = tuple(['Channel_{}_signal'.format(ch) for ch in kwargs['channel_selection']])
+
+        self.acquisition.labels = self.acquisition.names
+        self.acquisition.units = ['V'*len(channel_selection)]
+
+        if self.average_mode() == 'point':
+            self.acquisition.shapes = tuple([()]*len(channel_selection))
+        elif self.average_mode() == 'trace':
+            shape = ((kwargs['samples_per_record']),)
+            self.acquisition.shapes = tuple([shape] * len(kwargs['channel_selection']))
+        else:
+            raise NameError('Mode {} not yet implemented'.format(self.average_mode()))
 
     def pre_start_capture(self):
         self.samples_per_record = self.alazar.samples_per_record()
@@ -172,10 +192,7 @@ class Average_AcquisitionController(AcquisitionController):
 
     def do_acquisition(self):
         records = self.alazar.acquire(**self.acquisitionkwargs)
-        if len(records) == 1:
-            return records[0]
-        else:
-            return records
+        return records
 
     def handle_buffer(self, data):
         self.buffer += data
