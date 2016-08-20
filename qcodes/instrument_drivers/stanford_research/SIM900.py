@@ -20,8 +20,8 @@ class SIM900(VisaInstrument):
                                label='Gate Channel {} (V)'.format(i),
                                get_cmd=partial(self.get_voltage, channel=i),
                                set_cmd=cmdbase(i) + '"VOLT {:.4f}"',
-                               step=0.01,
-                               delay=0.2,
+                               step=0.003,
+                               delay=0.05,
                                vals=Numbers(0, 20))
 
     def get_voltage(self, channel):
