@@ -163,7 +163,9 @@ class Average_AcquisitionController(AcquisitionController):
         self.acquisitionkwargs.update(**kwargs)
 
         # Update acquisition parameter values
-        channel_selection = kwargs['channel_selection']
+        channel_selection = self.acquisitionkwargs['channel_selection']
+        samples_per_record = self.acquisitionkwargs['samples_per_record']
+        records_per_buffer = self.acquisitionkwargs['records_per_buffer']
         self.acquisition.names = tuple(['Channel_{}_signal'.format(ch) for ch in kwargs['channel_selection']])
 
         self.acquisition.labels = self.acquisition.names
@@ -172,19 +174,28 @@ class Average_AcquisitionController(AcquisitionController):
         if self.average_mode() == 'point':
             self.acquisition.shapes = tuple([()]*len(channel_selection))
         elif self.average_mode() == 'trace':
-            shape = ((kwargs['samples_per_record']),)
-            self.acquisition.shapes = tuple([shape] * len(kwargs['channel_selection']))
+            shape = (samples_per_record,)
+            self.acquisition.shapes = tuple([shape] * len(channel_selection))
         else:
-            raise NameError('Mode {} not yet implemented'.format(self.average_mode()))
+            shape = (samples_per_record, records_per_buffer)
+            self.acquisition.shapes = tuple([shape] * len(channel_selection))
 
     def pre_start_capture(self):
         self.samples_per_record = self.alazar.samples_per_record()
         self.records_per_buffer = self.alazar.records_per_buffer()
         self.buffers_per_acquisition = self.alazar.buffers_per_acquisition()
         self.number_of_channels = len(self.alazar.channel_selection())
-        self.buffer = np.zeros(self.samples_per_record *
-                              self.records_per_buffer *
-                              self.number_of_channels)
+        self.buffer_idx = 0
+        if self.average_mode() in ['point', 'trace']:
+            self.buffer = np.zeros(self.samples_per_record *
+                                  self.records_per_buffer *
+                                  self.number_of_channels)
+        else:
+            self.buffer = np.zeros((self.buffers_per_acquisition,
+                                    self.samples_per_record *
+                                    self.records_per_buffer *
+                                    self.number_of_channels))
+
 
     def pre_acquire(self):
         # gets called after 'AlazarStartCapture'
@@ -195,7 +206,14 @@ class Average_AcquisitionController(AcquisitionController):
         return records
 
     def handle_buffer(self, data):
-        self.buffer += data
+        if self.buffer_idx < self.buffers_per_acquisition:
+            if self.average_mode() in ['point', 'trace']:
+                self.buffer += data
+            else:
+                    self.buffer[self.buffer_idx] = data
+        else:
+            print('*'*20+'\nATS Extra buffer')
+        self.buffer_idx += 1
 
     def post_acquire(self):
         # average over records in buffer:
@@ -206,7 +224,10 @@ class Average_AcquisitionController(AcquisitionController):
                                    self.records_per_buffer)
 
         if self.average_mode() == 'none':
-            raise NameError('Not implemented yet')
+            records = self.buffer.reshape((int(records_per_acquisition) *
+                                           self.number_of_channels,
+                                           self.samples_per_record))
+            records = [records[k::self.number_of_channels] for k in range(self.number_of_channels)]
         elif self.average_mode() == 'trace':
             records = [np.zeros(self.samples_per_record) for k in range(self.number_of_channels)]
 
@@ -224,11 +245,7 @@ class Average_AcquisitionController(AcquisitionController):
         # Scale datapoints
         for i, record in enumerate(records):
             channel_range = eval('self.alazar.channel_range{}()'.format(i + 1))
-            # Somehow if buffers_per_acquisition=1, a different offset is needed
-            if self.buffers_per_acquisition == 1:
-                records[i] = 2 * (record / 2 ** 16 - 1) * channel_range
-            else:
-                records[i] = 2 * (record / 2 ** 16 - 0.5) * channel_range
+            records[i] = 2 * (record / 2 ** 16 - 0.5) * channel_range
         return records
 
 
