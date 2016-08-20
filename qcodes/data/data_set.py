@@ -73,8 +73,8 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
                 and when it stops being the live measurement.
             Default ``DataMode.LOCAL``.
 
-        arrays (dict, optional): dict of ``array_id: DataArray``, can also be
-            added later with ``self.add_array(array)``.
+        arrays (Optional[List[qcodes.DataArray]): arrays to add to the DataSet.
+                Can be added later with ``self.add_array(array)``.
 
         formatter (Formatter, optional): sets the file format/structure to
             write (and read) with. Default ``DataSet.default_formatter`` which
@@ -222,8 +222,8 @@ class DataSet(DelegateAttributes):
                 and when it stops being the live measurement.
             Default ``DataMode.LOCAL``.
 
-        arrays (dict, optional): dict of ``array_id: DataArray``, can also be
-            added later with ``self.add_array(array)``.
+        arrays (Optional[List[qcodes.DataArray]): arrays to add to the DataSet.
+                Can be added later with ``self.add_array(array)``.
 
         formatter (Formatter, optional): sets the file format/structure to
             write (and read) with. Default ``DataSet.default_formatter`` which
