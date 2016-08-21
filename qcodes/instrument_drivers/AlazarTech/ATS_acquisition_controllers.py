@@ -169,7 +169,8 @@ class Average_AcquisitionController(AcquisitionController):
         channel_selection = self._acquisition_kwargs['channel_selection']
         samples_per_record = self._acquisition_kwargs['samples_per_record']
         records_per_buffer = self._acquisition_kwargs['records_per_buffer']
-        self.acquisition.names = tuple(['Channel_{}_signal'.format(ch) for ch in kwargs['channel_selection']])
+        self.acquisition.names = tuple(['Channel_{}_signal'.format(ch) for ch in
+                                        self._acquisition_kwargs['channel_selection']])
 
         self.acquisition.labels = self.acquisition.names
         self.acquisition.units = ['V'*len(channel_selection)]
