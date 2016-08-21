@@ -877,6 +877,9 @@ class AcquisitionController(Instrument):
     def _get_alazar(self):
         return self.alazar
 
+    def _get_alazar_parameter(self, parameter):
+        return self.alazar.parameters[parameter]()
+
     def _set_alazar(self, alazar):
         self.alazar = alazar
 

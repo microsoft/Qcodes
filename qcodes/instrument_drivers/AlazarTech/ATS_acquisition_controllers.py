@@ -145,7 +145,7 @@ class Average_AcquisitionController(AcquisitionController):
         self.records_per_buffer = None
         self.buffers_per_acquisition = None
         self.buffer = None
-        self.acquisitionkwargs = {'acquisition_controller': self}
+        self._acquisition_kwargs = {}
         super().__init__(name, alazar_name, **kwargs)
         self.alazar = self._get_alazar()
         self.add_parameter(name='average_mode',
@@ -158,14 +158,17 @@ class Average_AcquisitionController(AcquisitionController):
                            names=['channel_signal'],
                            get_cmd=self.do_acquisition,
                            shapes=((),))
+        self.add_function(name='acquisition_kwargs',
+                           call_cmd=lambda: self._acquisition_kwargs)
 
-    def set_acquisitionkwargs(self, **kwargs):
-        self.acquisitionkwargs.update(**kwargs)
+
+    def update_acquisition_kwargs(self, **kwargs):
+        self._acquisition_kwargs.update(**kwargs)
 
         # Update acquisition parameter values
-        channel_selection = self.acquisitionkwargs['channel_selection']
-        samples_per_record = self.acquisitionkwargs['samples_per_record']
-        records_per_buffer = self.acquisitionkwargs['records_per_buffer']
+        channel_selection = self._acquisition_kwargs['channel_selection']
+        samples_per_record = self._acquisition_kwargs['samples_per_record']
+        records_per_buffer = self._acquisition_kwargs['records_per_buffer']
         self.acquisition.names = tuple(['Channel_{}_signal'.format(ch) for ch in kwargs['channel_selection']])
 
         self.acquisition.labels = self.acquisition.names
@@ -196,13 +199,13 @@ class Average_AcquisitionController(AcquisitionController):
                                     self.records_per_buffer *
                                     self.number_of_channels))
 
-
     def pre_acquire(self):
         # gets called after 'AlazarStartCapture'
         pass
 
     def do_acquisition(self):
-        records = self.alazar.acquire(**self.acquisitionkwargs)
+        records = self.alazar.acquire(acquisition_controller=self,
+                                      **self._acquisition_kwargs)
         return records
 
     def handle_buffer(self, data):
