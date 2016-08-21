@@ -63,13 +63,13 @@ class LoadReadEmptyAnalysis(BasicAnalysis):
         self.ATS_controller = ATS_controller
 
         self.add_parameter(name='load_duration',
-                           unit='ms',
+                           units='ms',
                            parameter_class=parameter.ManualParameter)
         self.add_parameter(name='read_duration',
-                           unit='ms',
+                           units='ms',
                            parameter_class=parameter.ManualParameter)
         self.add_parameter(name='empty_duration',
-                           unit='ms',
+                           units='ms',
                            parameter_class=parameter.ManualParameter)
 
         self.add_parameter(name='fidelity',
@@ -78,8 +78,8 @@ class LoadReadEmptyAnalysis(BasicAnalysis):
 
     def _fidelity(self):
         self.ATS_controller.average_mode('none')
-        traces = self.ATS_controller.acquisitiion()
-        return self.analyse_traces(traces)
+        traces = self.ATS_controller.acquisition()
+        return self.analyse_traces(traces[0])
 
     def analyse_traces(self, traces):
         ATS_sample_rate = self.ATS_controller._get_alazar_parameter('sample_rate')
@@ -88,9 +88,15 @@ class LoadReadEmptyAnalysis(BasicAnalysis):
         read_pts = round(self.read_duration() / 1e3 * ATS_sample_rate)
         empty_pts = round(self.empty_duration() / 1e3 * ATS_sample_rate)
 
-        load_traces = traces[:, :load_pts]
-        read_traces = traces[:, load_pts:load_pts + read_pts]
-        empty_traces = traces[:, load_pts + read_pts:]
+        traces_load = traces[:, :load_pts]
+        traces_read = traces[:, load_pts:load_pts + read_pts]
+        traces_empty = traces[:, load_pts + read_pts:]
+
+        fidelity_load = self.analyse_load(traces_load)
+        fidelity_read = self.analyse_read(traces_read) / read_pts
+        fidelity_empty = self.analyse_empty(traces_empty)
+
+        return fidelity_load, fidelity_read, fidelity_empty
 
     def analyse_read(self, traces):
         low, high, threshold_voltage = self.find_high_low(traces)
