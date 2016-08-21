@@ -12,10 +12,23 @@ class BasicAnalysis(Instrument):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
 
-    def find_high_low(self, traces, plot=False):
+    def find_high_low(self, traces, plot=False, threshold_peak=0.02):
         hist, bin_edges = np.histogram(np.ravel(traces), bins=30)
-        peaks_idx = np.sort(peakutils.indexes(hist, thres=0.02, min_dist=5))
-        assert len(peaks_idx) == 2, 'Found {} peaks instead of two'.format(len(peaks_idx))
+
+        # Find two peaks
+        for k in range(4):
+            peaks_idx = np.sort(peakutils.indexes(hist, thres=threshold_peak, min_dist=5))
+            if len(peaks_idx) == 2:
+                break
+            elif len(peaks_idx) == 1:
+                print('One peak found instead of two, lowering threshold')
+                threshold_peak /= 1.5
+            elif len(peaks_idx) > 2:
+                print('Found {} peaks instead of two, increasing threshold'.format(len(peaks_idx)))
+                threshold_peak *= 1.5
+            else:
+                print('No peaks found')
+                return None, None, None
 
         # Find threshold, mean low, and mean high voltages
         threshold_idx = int(round(np.mean(peaks_idx)))
@@ -35,24 +48,29 @@ class BasicAnalysis(Instrument):
         if plot:
             plt.figure()
             for k, signal in enumerate([low, high]):
-                sub_hist, sub_bin_edges = np.histogram(np.ravel(signal['data']), bins=10)
+                sub_hist, sub_bin_edges = np.histogram(np.ravel(signal['traces']), bins=10)
                 plt.bar(sub_bin_edges[:-1], sub_hist, width=0.05, color='bg'[k])
-                plt.plot(signal['mean'], 100, 'or', ms=12)
+                plt.plot(signal['mean'], hist[peaks_idx[k]], 'or', ms=12)
 
-            plt.plot(bin_edges[:-1][peaks_idx], hist[peaks_idx], 'or', ms=12)
         return low, high, threshold_voltage
 
-    def edge_voltage(self, traces, edge, state, points=4):
+    def edge_voltage(self, traces, edge, state, threshold_voltage=None, points=4, plot=False):
         assert edge in ['begin', 'end'], 'Edge {} must be either "begin" or "end"'.format(edge)
         assert state in ['low', 'high'], 'State {} must be either "low" or "high"'.format(state)
         idx_list = slice(None, 4) if edge == 'begin' else slice(-4, None)
 
-        low, high, threshold_voltage = self.find_high_low(traces)
-        if state == 'low':
+        # Determine threshold voltage if not provided
+        if threshold_voltage is None:
+            low, high, threshold_voltage = self.find_high_low(traces, plot=plot)
+
+        if threshold_voltage is None:
+            print('Could not find two peaks for empty and load state')
+            success = [False]*len(traces)
+        elif state == 'low':
             success = [np.mean(trace[idx_list]) < threshold_voltage for trace in traces]
         else:
             success = [np.mean(trace[idx_list]) > threshold_voltage for trace in traces]
-        return success
+        return np.array(success)
 
 
 class LoadReadEmptyAnalysis(BasicAnalysis):
@@ -81,7 +99,7 @@ class LoadReadEmptyAnalysis(BasicAnalysis):
         traces = self.ATS_controller.acquisition()
         return self.analyse_traces(traces[0])
 
-    def analyse_traces(self, traces):
+    def analyse_traces(self, traces, plot=False):
         ATS_sample_rate = self.ATS_controller._get_alazar_parameter('sample_rate')
 
         load_pts = round(self.load_duration() / 1e3 * ATS_sample_rate)
@@ -92,38 +110,91 @@ class LoadReadEmptyAnalysis(BasicAnalysis):
         traces_read = traces[:, load_pts:load_pts + read_pts]
         traces_empty = traces[:, load_pts + read_pts:]
 
-        fidelity_load = self.analyse_load(traces_load)
-        fidelity_read = self.analyse_read(traces_read) / read_pts
-        fidelity_empty = self.analyse_empty(traces_empty)
+
+
+        fidelity_load = self.analyse_load(traces_load, plot=plot)
+        fidelity_read = self.analyse_read(traces_read, plot=plot) / read_pts
+        fidelity_empty = self.analyse_empty(traces_empty, plot=plot)
 
         return fidelity_load, fidelity_read, fidelity_empty
 
-    def analyse_read(self, traces):
-        low, high, threshold_voltage = self.find_high_low(traces)
+    def analyse_read(self, traces, plot=False, return_mean=True):
+        low, high, threshold_voltage = self.find_high_low(traces, plot=plot)
 
-        # Filter out the traces that start off
-        idx_loaded = self.edge_voltage(traces, edge='begin', state='low')
-        traces_loaded = traces[np.array(idx_loaded)]
+        if threshold_voltage is None:
+            print('Could not find two peaks for empty and load state')
+            # Return the full trace length as mean if return_mean=True
+            return traces.shape[1] if return_mean else []
+
+        # Filter out the traces that start off loaded
+        idx_begin_loaded = self.edge_voltage(traces, edge='begin', state='low',
+                                             threshold_voltage=threshold_voltage)
+        traces_loaded = traces[idx_begin_loaded]
+
+        if not idx_begin_loaded:
+            print('None of the load traces start with an loaded state')
+            return traces.shape[1] if return_mean else []
 
         # Filter out the traces that at some point have conductance
         # Assume that if there is current, the electron must have been up
         final_conductance_idx_list = [max(np.where(trace > threshold_voltage)[0])
                                       for trace in traces_loaded
                                       if np.max(trace) > threshold_voltage]
-        return np.mean(final_conductance_idx_list)
+        if return_mean:
+            return np.mean(final_conductance_idx_list)
+        else:
+            return final_conductance_idx_list
 
-    def analyse_load(self, traces):
+    def analyse_load(self, traces, plot=False, return_idx=False):
+        idx_list = np.arange(len(traces))
+        low, high, threshold_voltage = self.find_high_low(traces, plot=plot)
+
+        if threshold_voltage is None:
+            print('Could not find two peaks for empty and load state')
+            return 0 if not return_idx else 0, []
+
         # Filter data that starts at high conductance (no electron)
-        idx_begin_empty = self.edge_voltage(traces, edge='begin', state='high')
-        traces_begin_empty = traces[np.array(idx_begin_empty)]
+        idx_begin_empty = self.edge_voltage(traces, edge='begin', state='high',
+                                            threshold_voltage=threshold_voltage)
+        traces_begin_empty = traces[idx_begin_empty]
+        idx_list = idx_list[idx_begin_empty]
 
-        idx_end_load = self.edge_voltage(traces_begin_empty, edge='end', state='low')
-        return sum(idx_end_load) / sum(idx_begin_empty)
+        if not idx_begin_empty:
+            print('None of the load traces start with an empty state')
+            return 0 if not return_idx else 0, []
 
-    def analyse_empty(self, traces):
+        idx_end_load = self.edge_voltage(traces_begin_empty, edge='end', state='low',
+                                         threshold_voltage=threshold_voltage)
+        idx_list = idx_list[idx_end_load]
+
+        if return_idx:
+            return sum(idx_end_load) / sum(idx_begin_empty), idx_list
+        else:
+            return sum(idx_end_load) / sum(idx_begin_empty)
+
+    def analyse_empty(self, traces, plot=False, return_idx=False):
+        idx_list = np.arange(len(traces))
+        low, high, threshold_voltage = self.find_high_low(traces, plot=plot)
+
+        if threshold_voltage is None:
+            print('Could not find two peaks for empty and load state')
+            return 0
+
         # Filter data that starts at high conductance (no electron)
-        idx_begin_load = self.edge_voltage(traces, edge='begin', state='low')
-        traces_begin_load = traces[np.array(idx_begin_load)]
+        idx_begin_load = self.edge_voltage(traces, edge='begin', state='low',
+                                           threshold_voltage=threshold_voltage)
+        traces_begin_load = traces[idx_begin_load]
+        idx_list = idx_list[idx_begin_load]
 
-        idx_end_empty = self.edge_voltage(traces_begin_load, edge='end', state='high')
-        return sum(idx_end_empty) / sum(idx_begin_load)
+        if not idx_begin_load:
+            print('None of the empty traces start with a loaded state')
+            return 0
+
+        idx_end_empty = self.edge_voltage(traces_begin_load, edge='end', state='high',
+                                          threshold_voltage=threshold_voltage)
+        idx_list = idx_list[idx_end_empty]
+
+        if return_idx:
+            return sum(idx_end_empty) / sum(idx_begin_load), idx_list
+        else:
+            return sum(idx_end_empty) / sum(idx_begin_load)
