@@ -6,43 +6,38 @@ from time import sleep
 from imp import reload
 import qcodes.instrument.parameter as parameter
 from qcodes import Instrument
+import os
 
 loc_provider = qc.data.location.FormatLocation(fmt='data/{date}/#{counter}_{name}_{time}')
 qc.data.data_set.DataSet.location_provider = loc_provider
 
 mode = 'ATS'
 
+
+def configure_ArbStudio(ArbStudio, voltages, channel_factors, marker_cycles=100):
+    stages = ['empty', 'load', 'read']
+
+    ArbStudio.ch4_clear_waveforms()
+    for ch in [1, 2, 3]:
+        eval("ArbStudio.ch{}_trigger_source('fp_trigger_in')".format(ch))
+        eval("ArbStudio.ch{}_trigger_mode('stepped')".format(ch))
+        eval('ArbStudio.ch{}_clear_waveforms()'.format(ch))
+        waveforms = channel_factors[ch - 1] * np.array([[voltages[stage]] * 10 for stage in stages])
+        for waveform in waveforms:
+            eval('ArbStudio.ch{}_add_waveform(waveform)'.format(ch))
+
+        eval('ArbStudio.ch{}_sequence([0, 1, 2])'.format(ch))
+
+    waveforms = ArbStudio.load_waveforms(channels=[1,2,3])
+    sequences = ArbStudio.load_sequence(channels=[1,2,3])
+
+
 if __name__ == "__main__":
-    import qcodes.instrument_drivers.AlazarTech.ATS9440 as ATS_driver
-    import qcodes.instrument_drivers.AlazarTech.ATS_acquisition_controllers as ATS_controller_driver
+    import qcodes.instrument_drivers.lecroy.ArbStudio1104 as ArbStudio_driver
 
-    ATS = ATS_driver.ATS9440('ATS', server_name='Alazar_server')
-    ATS_controller = ATS_controller_driver.Average_AcquisitionController(name='ATS_control',
-                                                                         alazar_name='ATS',
-                                                                         server_name='Alazar_server')
+    dll_path = os.path.join(os.getcwd(), 'lecroy_driver\\Library\\ArbStudioSDK.dll')
+    ArbStudio = ArbStudio_driver.ArbStudio1104('ArbStudio', dll_path, server_name=None)
 
-    # Configure ATS and ATS_controller
-    ATS.config(trigger_source1='CHANNEL_C',
-               trigger_level1=135,
-               channel_range=2,
-               sample_rate=1e6,
-               coupling='DC')
-
-    read_length = 0.03
-    ATS_controller.average_mode('none')
-    samples_per_record = int(16 * round(float(ATS.sample_rate() * read_length) / 16))
-    ATS_controller.update_acquisition_kwargs(buffer_timeout=5000,
-                                             samples_per_record=samples_per_record,
-                                             records_per_buffer=1,
-                                             buffers_per_acquisition=10,
-                                             channel_selection='AC')
-    ATS_controller.update_acquisition_kwargs(records_per_buffer=1,
-                                             buffers_per_acquisition=10)
-
-
-    from meta_instruments import Analysis
-    lre_analysis = Analysis.LoadReadEmptyAnalysis('LRE_analysis', ATS_controller=ATS_controller)
-    lre_analysis.load_duration(5)
-    lre_analysis.read_duration(20)
-    lre_analysis.empty_duration(5)
-    lre_analysis.fidelity()
+    configure_ArbStudio(ArbStudio, voltages = {'empty': -1.5, 'load': 1.5, 'read': 0},
+                        channel_factors=[1, -1.5, 1]
+                        )

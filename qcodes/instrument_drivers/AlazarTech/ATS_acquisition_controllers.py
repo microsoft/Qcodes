@@ -216,7 +216,7 @@ class Average_AcquisitionController(AcquisitionController):
             else:
                     self.buffer[self.buffer_idx] = data
         else:
-            print('*'*20+'\nATS Extra buffer')
+            print('*'*20+'\nIgnoring extra ATS buffer')
         self.buffer_idx += 1
 
     def post_acquire(self):
@@ -224,21 +224,19 @@ class Average_AcquisitionController(AcquisitionController):
         # for ATS9360 samples are arranged in the buffer as follows:
         # S0A, S0B, ..., S1A, S1B, ...
         # with SXY the sample number X of channel Y.
-        records_per_acquisition = (1. * self.buffers_per_acquisition *
-                                   self.records_per_buffer)
+        records_per_acquisition = self.buffers_per_acquisition * self.records_per_buffer
+        channel_offset = lambda channel: channel * self.samples_per_record * self.records_per_buffer
 
         if self.average_mode() == 'none':
-            records = self.buffer.reshape((int(records_per_acquisition) *
-                                           self.number_of_channels,
-                                           self.samples_per_record))
-            records = [records[k::self.number_of_channels] for k in range(self.number_of_channels)]
+            records = [self.buffer[:,channel_offset(ch):channel_offset(ch+1)].reshape((records_per_acquisition,
+                                                                                       self.samples_per_record))
+                       for ch in range(self.number_of_channels)]
         elif self.average_mode() == 'trace':
             records = [np.zeros(self.samples_per_record) for k in range(self.number_of_channels)]
 
             for channel in range(self.number_of_channels):
-                channel_offset = channel * self.samples_per_record * self.records_per_buffer
                 for i in range(self.records_per_buffer):
-                    i0 = channel_offset + i * self.samples_per_record
+                    i0 = channel_offset(channel) + i * self.samples_per_record
                     i1 = i0 + self.samples_per_record
                     records[channel] += self.buffer[i0:i1] / records_per_acquisition
         elif self.average_mode() == 'point':
