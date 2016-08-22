@@ -75,7 +75,7 @@ class BasicAnalysis(Instrument):
         return np.array(success)
 
 
-class LoadReadEmptyAnalysis(BasicAnalysis):
+class EmptyLoadReadAnalysis(BasicAnalysis):
     shared_kwargs = ['ATS_controller']
 
     def __init__(self, name, ATS_controller, **kwargs):
@@ -105,18 +105,16 @@ class LoadReadEmptyAnalysis(BasicAnalysis):
         ATS_sample_rate = self.ATS_controller._get_alazar_parameter('sample_rate')
 
         load_pts = round(self.load_duration() / 1e3 * ATS_sample_rate)
-        read_pts = round(self.read_duration() / 1e3 * ATS_sample_rate)
         empty_pts = round(self.empty_duration() / 1e3 * ATS_sample_rate)
+        read_pts = round(self.read_duration() / 1e3 * ATS_sample_rate)
 
-        traces_load = traces[:, :load_pts]
-        traces_read = traces[:, load_pts:load_pts + read_pts]
-        traces_empty = traces[:, load_pts + read_pts:]
+        traces_empty = traces[:, :empty_pts]
+        traces_load = traces[:, empty_pts:empty_pts+load_pts]
+        traces_read = traces[:, empty_pts+load_pts:empty_pts + load_pts + read_pts]
 
-
-
-        fidelity_load = self.analyse_load(traces_load, plot=plot)
-        fidelity_read = self.analyse_read(traces_read, plot=plot) / read_pts
         fidelity_empty = self.analyse_empty(traces_empty, plot=plot)
+        fidelity_load = self.analyse_load(traces_load, plot=plot)
+        fidelity_read = 1 - self.analyse_read(traces_read, plot=plot) / read_pts
 
         return fidelity_load, fidelity_read, fidelity_empty
 
