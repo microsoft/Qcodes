@@ -39,7 +39,7 @@ class ArbStudio1104(Instrument):
         self._channels = [self._device.GetChannel(k) for k in range(4)]
 
         # Initialize waveforms and sequences
-        self._waveforms = [[]]*4
+        self._waveforms = [[] for k in range(4)]
 
         for ch in range(1,5):
             self.add_parameter('ch{}_trigger_mode'.format(ch),
@@ -71,6 +71,13 @@ class ArbStudio1104(Instrument):
 
             self.add_function('ch{}_clear_waveforms'.format(ch),
                               call_cmd=self._waveforms[ch-1].clear)
+
+        self.add_parameter('max_voltage',
+                           parameter_class=ManualParameter,
+                           label='Maximum waveform voltage',
+                           units='V',
+                           initial_value=2.5,
+                           vals=vals.Numbers())  # Can we test
 
         # TODO Need to implement frequency interpolation for channel pairs
         # self.add_parameter('frequency_interpolation',
@@ -142,6 +149,8 @@ class ArbStudio1104(Instrument):
 
     def _add_waveform(self, channel, waveform):
         assert len(waveform)%2 == 0, 'Waveform must have an even number of points'
+        assert len(waveform)> 2, 'Waveform must have at least four points'
+        assert max(waveform) <= self.max_voltage(), 'Waveform may not exceed {} V'.format(self.max_voltage())
         self._waveforms[channel - 1].append(waveform)
 
     def load_waveforms(self, channels=[1, 2, 3, 4]):
@@ -156,6 +165,7 @@ class ArbStudio1104(Instrument):
                 wave.Sample = waveform_array
                 waveforms[k] = wave
             return_msg = channel.LoadWaveforms(waveforms)
+            waveforms_list.append(waveforms)
             assert return_msg.ErrorSource == self._api.ErrorCodes.RES_SUCCESS,\
                 "Loading waveforms Error: {}".format(return_msg.ErrorDescription)
         return waveforms_list
