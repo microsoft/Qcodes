@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 
 from qcodes import Instrument
 import qcodes.instrument.parameter as parameter
+from qcodes.utils import validators as vals
 
 
 class BasicAnalysis(Instrument):
@@ -67,7 +68,7 @@ class BasicAnalysis(Instrument):
 
         if threshold_voltage is None:
             print('Could not find two peaks for empty and load state')
-            success = [False]*len(traces)
+            success = np.array([False]*len(traces))
         elif state == 'low':
             success = [np.mean(trace[idx_list]) < threshold_voltage for trace in traces]
         else:
@@ -96,10 +97,16 @@ class EmptyLoadReadAnalysis(BasicAnalysis):
                            names=['load_fidelity', 'read_fidelity', 'empty_fidelity'],
                            get_cmd=self._fidelity)
 
+        self.add_parameter(name='traces',
+                           get_cmd=lambda: self._traces,
+                           vals = vals.Anything())
+
+        self._traces = None
+
     def _fidelity(self):
         self.ATS_controller.average_mode('none')
-        traces = self.ATS_controller.acquisition()
-        return self.analyse_traces(traces[0])
+        self._traces = self.ATS_controller.acquisition()
+        return self.analyse_traces(self._traces[0])
 
     def analyse_traces(self, traces, plot=False):
         ATS_sample_rate = self.ATS_controller._get_alazar_parameter('sample_rate')
@@ -165,7 +172,8 @@ class EmptyLoadReadAnalysis(BasicAnalysis):
 
         idx_end_load = self.edge_voltage(traces_begin_empty, edge='end', state='low',
                                          threshold_voltage=threshold_voltage)
-        idx_list = idx_list[idx_end_load]
+
+        idx_list = idx_list[idx_end_load] if len(idx_end_load) else []
 
         if return_idx:
             return sum(idx_end_load) / sum(idx_begin_empty), idx_list
@@ -192,7 +200,8 @@ class EmptyLoadReadAnalysis(BasicAnalysis):
 
         idx_end_empty = self.edge_voltage(traces_begin_load, edge='end', state='high',
                                           threshold_voltage=threshold_voltage)
-        idx_list = idx_list[idx_end_empty]
+
+        idx_list = idx_list[idx_end_empty] if len(idx_end_empty) else []
 
         if return_idx:
             return sum(idx_end_empty) / sum(idx_begin_load), idx_list
