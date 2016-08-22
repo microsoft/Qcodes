@@ -22,6 +22,9 @@ class PulseBlaster(Instrument):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
 
+        # It seems that the core_clock is not the same as the sampling rate.
+        # At core_clock(500), the PulseBlaster uses 1 ns per wait duration.
+        # The wait duration is inversely proportional to the core clock, in contrast to the sampling rate
         self.add_parameter('core_clock',
                            label='Core clock',
                            units='MHz',
