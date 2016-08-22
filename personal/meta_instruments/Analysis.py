@@ -42,7 +42,9 @@ class BasicAnalysis(Instrument):
             signal['mean'] = np.mean(signal['traces'])
             signal['std'] = np.std(signal['traces'])
         SNR = (high['mean'] - low['mean']) / np.sqrt(high['std'] ** 2 + low['std'] ** 2)
-        assert SNR > 3, 'Signal to noise ratio {} is too low'.format(SNR)
+        if SNR < 3:
+            'Signal to noise ratio {} is too low'.format(SNR)
+            threshold_voltage = None
 
         # Plotting
         if plot:
@@ -131,7 +133,7 @@ class LoadReadEmptyAnalysis(BasicAnalysis):
                                              threshold_voltage=threshold_voltage)
         traces_loaded = traces[idx_begin_loaded]
 
-        if not idx_begin_loaded:
+        if not len(idx_begin_loaded):
             print('None of the load traces start with an loaded state')
             return traces.shape[1] if return_mean else []
 
@@ -159,7 +161,7 @@ class LoadReadEmptyAnalysis(BasicAnalysis):
         traces_begin_empty = traces[idx_begin_empty]
         idx_list = idx_list[idx_begin_empty]
 
-        if not idx_begin_empty:
+        if not len(idx_begin_empty):
             print('None of the load traces start with an empty state')
             return 0 if not return_idx else 0, []
 
@@ -186,7 +188,7 @@ class LoadReadEmptyAnalysis(BasicAnalysis):
         traces_begin_load = traces[idx_begin_load]
         idx_list = idx_list[idx_begin_load]
 
-        if not idx_begin_load:
+        if not len(idx_begin_load):
             print('None of the empty traces start with a loaded state')
             return 0
 

@@ -34,12 +34,15 @@ if __name__ == "__main__":
     ATS_controller.update_acquisition_kwargs(buffer_timeout=5000,
                                              samples_per_record=samples_per_record,
                                              records_per_buffer=1,
-                                             buffers_per_acquisition=100,
+                                             buffers_per_acquisition=10,
                                              channel_selection='AC')
+    ATS_controller.update_acquisition_kwargs(records_per_buffer=1,
+                                             buffers_per_acquisition=10)
+
 
     from meta_instruments import Analysis
     lre_analysis = Analysis.LoadReadEmptyAnalysis('LRE_analysis', ATS_controller=ATS_controller)
     lre_analysis.load_duration(5)
     lre_analysis.read_duration(20)
     lre_analysis.empty_duration(5)
-    print(lre_analysis.fidelity())
+    lre_analysis.fidelity()
