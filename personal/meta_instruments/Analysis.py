@@ -20,6 +20,7 @@ class BasicAnalysis(Instrument):
         for k in range(4):
             peaks_idx = np.sort(peakutils.indexes(hist, thres=threshold_peak, min_dist=5))
             if len(peaks_idx) == 2:
+                print('2 peaks found')
                 break
             elif len(peaks_idx) == 1:
                 print('One peak found instead of two, lowering threshold')
@@ -68,13 +69,32 @@ class BasicAnalysis(Instrument):
 
         if threshold_voltage is None:
             print('Could not find two peaks for empty and load state')
-            success = np.array([False]*len(traces))
+            success = np.array([False] * len(traces))
         elif state == 'low':
             success = [np.mean(trace[idx_list]) < threshold_voltage for trace in traces]
         else:
             success = [np.mean(trace[idx_list]) > threshold_voltage for trace in traces]
         return np.array(success)
 
+    def find_up_proportion(self, traces, threshold_voltage, return_mean=True, plot=False):
+        # trace has to contain read stage only
+
+        if not threshold_voltage:
+            _, _, threshold_voltage = self.find_high_low(traces, plot=plot)
+
+        # Filter out the traces that contain one or more peaks
+        traces_up_electron = [np.any(trace > threshold_voltage) for trace in traces]
+
+        if return_mean:
+
+            return sum(traces_up_electron) / len(traces)
+        else:
+            return traces_up_electron
+
+    def measure_up_proportion(self):
+        self.ATS_controller.average_mode('none')
+        self._traces = self.ATS_controller.acquisition()
+        return self.find_up_proportion(traces=self._traces)
 
 class EmptyLoadReadAnalysis(BasicAnalysis):
     shared_kwargs = ['ATS_controller']
@@ -99,7 +119,7 @@ class EmptyLoadReadAnalysis(BasicAnalysis):
 
         self.add_parameter(name='traces',
                            get_cmd=lambda: self._traces,
-                           vals = vals.Anything())
+                           vals=vals.Anything())
 
         self._traces = None
 
@@ -116,8 +136,8 @@ class EmptyLoadReadAnalysis(BasicAnalysis):
         read_pts = round(self.read_duration() / 1e3 * ATS_sample_rate)
 
         traces_empty = traces[:, :empty_pts]
-        traces_load = traces[:, empty_pts:empty_pts+load_pts]
-        traces_read = traces[:, empty_pts+load_pts:empty_pts + load_pts + read_pts]
+        traces_load = traces[:, empty_pts:empty_pts + load_pts]
+        traces_read = traces[:, empty_pts + load_pts:empty_pts + load_pts + read_pts]
 
         fidelity_empty = self.analyse_empty(traces_empty, plot=plot)
         fidelity_load = self.analyse_load(traces_load, plot=plot)
