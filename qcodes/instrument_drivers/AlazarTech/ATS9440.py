@@ -90,7 +90,7 @@ class ATS9440(AlazarTech_ATS):
                                parameter_class=AlazarParameter,
                                label='Trigger Engine ' + i,
                                unit=None,
-                               value='TRIG_ENGINE_' + ('J' if i == 0 else 'K'),
+                               value='TRIG_ENGINE_' + ('J' if i == '1' else 'K'),
                                byte_to_value_dict={0: 'TRIG_ENGINE_J',
                                                    1: 'TRIG_ENGINE_K'})
             self.add_parameter(name='trigger_source' + i,
