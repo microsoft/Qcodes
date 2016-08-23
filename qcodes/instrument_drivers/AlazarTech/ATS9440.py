@@ -161,7 +161,6 @@ class ATS9440(AlazarTech_ATS):
                            value='NPT',
                            byte_to_value_dict={0x200: 'NPT', 0x400: 'TS'})
 
-        # samples_per_record must be a multiple of 16!
         self.add_parameter(name='samples_per_record',
                            parameter_class=AlazarParameter,
                            label='Samples per Record',

@@ -8,7 +8,19 @@ from qcodes.instrument.parameter import ManualParameter
 from qcodes.instrument_drivers.spincore import spinapi as api
 
 class PulseBlaster(Instrument):
+    """
+    This is the qcodes driver for the PulseBlaster ESR-PRO.
+    The driver communicates with the underlying python wrapper spinapi.py,
+    which in turn communicates with spinapi.dll.
+    Both can be obtained from the manufacturer's website.
 
+    Args:
+        name (str): name of the instrument
+        api_path(str): Path of the spinapi.py file
+
+    Note that only a single instance can communicate with the PulseBlaster.
+    To avoid a locked instrument, always close connection with the Pulseblaster.
+    """
     instructions = {'CONTINUE': 0,  #inst_data=Not used
                     'STOP': 1,      #inst_data=Not used
                     'LOOP': 2,      #inst_data=Number of desired loops
@@ -19,7 +31,7 @@ class PulseBlaster(Instrument):
                     'LONG_DELAY': 7,#inst_data=Number of desired repetitions
                     'WAIT': 8}      #inst_data=Not used
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, api_path, **kwargs):
         super().__init__(name, **kwargs)
 
         # It seems that the core_clock is not the same as the sampling rate.

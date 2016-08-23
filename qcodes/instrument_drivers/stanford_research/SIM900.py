@@ -9,6 +9,17 @@ def cmdbase(i): return "TERM LF\nFLSH\nFLOQ\nSNDT {:d} ,".format(i)
 
 
 class SIM900(VisaInstrument):
+    """
+    This is the qcodes driver for the Stanford Research SIM900.
+    It is currently only programmed for DAC voltage sources.
+
+    Args:
+        name (str): name of the instrument.
+        address (str): The GPIB address of the instrument.
+        channels (int): Number of DAC channels residing in the instument.
+        channel_label (str, Optional): Prefix for the channels.
+            This is useful when multiple SIM900 instruments are used.
+    """
     def __init__(self, name, address, channels=8, channel_label='', **kwargs):
         super().__init__(name, address, **kwargs)
 
@@ -25,7 +36,18 @@ class SIM900(VisaInstrument):
                                vals=Numbers(0, 20))
 
     def get_voltage(self, channel):
+        """
+        Retrieves the DAC voltage from a channel.
+        Note that there is a small delay, since two commands must be sent.
+        Args:
+            channel (int): DAC channel from which to retrieve the voltage
+
+        Returns:
+            Channel voltage
+        """
+        # Two commands must be sent to the instrument to retrieve the channel voltage
         self.write(cmdbase(channel) + '"VOLT?"')
-        sleep(0.1)
+        # A small wait is needed before the actual voltage can be retrieved
+        sleep(0.05)
         return_str = self.ask('GETN?{:d},100'.format(channel))
         return float(return_str[5:-3])
