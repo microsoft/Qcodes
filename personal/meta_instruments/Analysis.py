@@ -76,14 +76,20 @@ class BasicAnalysis(Instrument):
             success = [np.mean(trace[idx_list]) > threshold_voltage for trace in traces]
         return np.array(success)
 
-    def find_up_proportion(self, traces, threshold_voltage, return_mean=True, plot=False):
+    def find_up_proportion(self, traces, threshold_voltage, return_mean=True, start_point=50, filter_window=0, plot=False):
         # trace has to contain read stage only
-
+        # TODO Change start point to start time (sampling rate independent)
         if not threshold_voltage:
             _, _, threshold_voltage = self.find_high_low(traces, plot=plot)
 
+        if filter_window > 0:
+            traces=[np.convolve(trace, np.ones(filter_window) / filter_window, mode='valid') for trace in traces]
+            # from scipy import signal
+            # savgol_filter = signal.savgol_filter
+            # traces=[savgol_filter(trace,window_length=19,polyorder=4) for trace in traces]
+
         # Filter out the traces that contain one or more peaks
-        traces_up_electron = [np.any(trace > threshold_voltage) for trace in traces]
+        traces_up_electron = [np.any(trace[start_point:] > threshold_voltage) for trace in traces]
 
         if return_mean:
 
