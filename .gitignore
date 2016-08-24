@@ -71,3 +71,6 @@ target/
 tmp/
 
 docs/examples/data/*
+.idea/*
+personal/lecroy_driver
+personal/data
