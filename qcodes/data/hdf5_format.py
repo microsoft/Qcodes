@@ -1,4 +1,5 @@
 import numpy as np
+import logging
 import h5py
 import os
 
@@ -69,6 +70,8 @@ class HDF5Format(Formatter):
             for sa_id in d_array._sa_array_ids:
                 d_array.set_arrays += (data_set.arrays[sa_id], )
 
+        return data_set
+
     def write(self, data_set, force_write=False):
         """
         """
@@ -105,6 +108,8 @@ class HDF5Format(Formatter):
             dset[old_dlen:new_dlen] = \
                 data_set.arrays[array_id][old_dlen:new_dlen].reshape(
                     new_data_shape)
+        # self.write_metadata(data_set)
+
 
     def _create_dataarray_dset(self, array, group):
         '''
@@ -145,6 +150,7 @@ class HDF5Format(Formatter):
 
         return dset
 
+
     def _create_data_arrays_grp(self, arrays):
         self.data_arrays_grp = self.data_object.create_group('Data Arrays')
         # Allows reshaping but does not allow adding extra parameters
@@ -180,12 +186,64 @@ class HDF5Format(Formatter):
         self.data_arrays_grp.attrs['datasaving_format'] = _encode_to_utf8(
             'QCodes hdf5 v0.1')
 
-    def write_metadata(self, data_set, io_manager, location, read_first=True):
-        print('Write meta data is passing')
+    def write_metadata(self, data_set):
+        if not hasattr(data_set, 'metadata'):
+            raise ValueError('data_set has not metadata, cannot write meta_data')
+        if 'metadata' in self.data_object.keys():
+            metadata_group = self.data_object['metadata']
+        else:
+            metadata_group = self.data_object.create_group('metadata')
+        # Need a nice recursive structure for this.
+        self.write_dict_to_hdf5(data_set.metadata, metadata_group)
+
+    def write_dict_to_hdf5(self, data_dict, entry_point):
+        for key, item in data_dict.items():
+            if type(item) in [str, bool]:
+                entry_point.attrs[key] = item
+            elif type(item) == np.ndarray:
+                entry_point.create_dataset(key, data=item)
+            elif type(item) == dict:
+                entry_point.create_group(key)
+                self.write_dict_to_hdf5(data_dict=item, entry_point=entry_point[key])
+            elif type(item) == list:
+                elt_type = type(item[0])
+                if all(isinstance(x, elt_type) for x in item):
+                    if elt_type in [int, float]:
+                        entry_point.create_dataset(key, data=np.array(item))
+                    elif elt_type == str:
+                        dt = h5py.special_dtype(vlen=str)
+                        data = np.array(item)
+                        ds = entry_point.create_dataset(key, (len(data),1), dtype=dt)
+                        ds[:] = data
+                    else:
+                        logging.warning('List of type "{}" for "{}:{}" not supported, storing as string'.format(elt_type, key, item))
+                else:
+                    logging.warning('List of mixed type for "{}:{}" not supported, storing as string'.format(type(item), key, item))
+                entry_point.attrs[key] = str(item)
+
+            else:
+                logging.warning('Type "{}" for "{}:{}" not supported, storing as string'.format(type(item), key, item))
+                entry_point.attrs[key] = str(item)
+
+
+
+    def read_metadata(self, data_set):
+        if not hasattr(data_set, 'metadata'):
+            data_set.metadata = {}
+        if 'metadata' in self.data_object.keys():
+            metadata_group = self.data_object['metadata']
+            for key, item in metadata_group:
+                data_set.metadata[key] = item
+            # Only handles top level attributes
+
+
+        raise NotImplementedError
 
     def save_instrument_snapshot(self, snapshot, *args):
         """
         (MAR) TODO: fix metadata saving
+        Should be part of dataset, not part of formatter
+
         uses QCodes station snapshot to save the last known value of any
         parameter. Only saves the value and not the update time (which is
         known in the snapshot)

@@ -96,9 +96,20 @@ class TestHDF5_Format(TestCase):
         self.checkArraysEqual(data2.arrays['x_set'], data_copy.arrays['x_set'])
         self.checkArraysEqual(data2.arrays['y'], data_copy.arrays['y'])
 
-    def test_snapshot_saving(self):
-        self.fail('snapshot saving not implemented')
+    def test_snapshot_metadata_write_read(self):
+        """
+        Test is based on the snapshot of the 1D dataset.
+        Having a more complex snapshot in the metadata would be a better test.
+        """
+        data = DataSet1D()
+        data.snapshot()  # gets the snapshot, not added upon init
+        self.formatter.write(data)  # write_metadata is included in write
+        filepath = self.formatter.filepath
 
+        data2 = DataSet(location=filepath, formatter=self.formatter)
+        data2.read()
+
+        self.assertTrue(data.meta == data2.meta)  # this will raise a failure
 
     def test_loop_writing(self):
         self.fail('loop writing not implemented')
