@@ -271,6 +271,7 @@ class DataSet(DelegateAttributes):
 
         self.write_period = write_period
         self.last_write = 0
+        self.last_store = -1
 
         self.metadata = {}
 
@@ -384,7 +385,9 @@ class DataSet(DelegateAttributes):
         # version on the DataServer from the main copy)
         if not self.is_live_mode:
             # LOCAL DataSet - just read it in
-            # TODO: compare timestamps to know if we need to read?
+            # Compare timestamps to avoid overwriting unsaved data
+            if self.last_store > self.last_write:
+                return True
             try:
                 self.read()
             except IOError:
@@ -592,6 +595,7 @@ class DataSet(DelegateAttributes):
         else:
             for array_id, value in ids_values.items():
                 self.arrays[array_id][loop_indices] = value
+            self.last_store = time.time()
             if (self.write_period is not None and
                     time.time() > self.last_write + self.write_period):
                 self.write()

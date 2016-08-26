@@ -266,19 +266,6 @@ class BasePlot:
         if any_updates is False:
             self.halt()
 
-    def update_bg(self):
-        """
-        Update the data in this plot, using the updaters given with
-        MatPlot.add() or in the included DataSets, then include this in
-        the plot.
-
-        This is a wrapper routine that a loop background task may call,
-        inside this we call self.update_plot() which should be subclassed
-        """
-        for updater in self.data_updaters:
-            updates = updater()
-        self.update_plot()
-
     def update_plot(self):
         """
         Update the plot itself (typically called by self.update).
