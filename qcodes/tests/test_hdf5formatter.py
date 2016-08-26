@@ -3,8 +3,11 @@ import sys
 import os
 import numpy as np
 import h5py  # TODO: add this to the dependencies in setup.py
+from qcodes.station import Station
+from qcodes.loops import Loop
 from qcodes.data.location import FormatLocation
 from qcodes.data.hdf5_format import HDF5Format
+
 
 from qcodes.data.data_array import DataArray
 from qcodes.data.data_set import DataSet, new_data, load_data
@@ -96,7 +99,7 @@ class TestHDF5_Format(TestCase):
         self.checkArraysEqual(data2.arrays['x_set'], data_copy.arrays['x_set'])
         self.checkArraysEqual(data2.arrays['y'], data_copy.arrays['y'])
 
-    def test_snapshot_metadata_write_read(self):
+    def test_metadata_write_read(self):
         """
         Test is based on the snapshot of the 1D dataset.
         Having a more complex snapshot in the metadata would be a better test.
@@ -108,28 +111,24 @@ class TestHDF5_Format(TestCase):
 
         data2 = DataSet(location=filepath, formatter=self.formatter)
         data2.read()
-
-        self.assertTrue(data.meta == data2.meta)  # this will raise a failure
+        from pprint import pprint
+        # pprint(data.metadata)
+        # pprint(data2.metadata)
+        self.fail()
 
     def test_loop_writing(self):
-        self.fail('loop writing not implemented')
-
-        # station = Station()
-        # MockPar = MockParabola(name='MockParabola')
-        # station.add_component(MockPar)
+        station = Station()
+        MockPar = MockParabola(name='MockParabola')
+        station.add_component(MockPar)
         # # added to station to test snapshot at a later stage
-        # loop = Loop(MockPar.x[-100:100:20]).each(MockPar.skewed_parabola)
-        # dset = loop.run(name='MockParabola_run', formatter=self.formatter)
-
-        # dset.write()
-        # skew_para = np.array([ 1010000., 518400., 219600., 65600.,
-        #                      8400., 0., 8400., 65600., 219600., 518400.])
-        # x = np.arange(-100, 100, 20)
-        # print(dset.sync())
-        # print(dset.arrays)
-        # fp = dset.formatter.filepath
-        # loaded_data = load_data(fp, formatter=self.formatter)
-        # arrs = load_data.arrays
-        # self.assertTrue((arrs['x'].ndarray == x).all())
-        # self.assertTrue((arrs['skewed_parabola'].ndarray == skew_para).all())
+        loop = Loop(MockPar.x[-100:100:20]).each(MockPar.skewed_parabola)
+        dset = loop.run(name='MockLoop_hdf5_test',
+                        formatter=self.formatter,
+                        background=False, data_manager=False)
+        location = dset.location
+        data2 = DataSet(location=location, formatter=self.formatter)
+        data2.read()
+        for key in data2.arrays.keys():
+            self.checkArraysEqual(data2.arrays[key], dset.arrays[key])
+        # test metadata
 

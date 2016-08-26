@@ -69,16 +69,19 @@ class HDF5Format(Formatter):
         for array_id, d_array in data_set.arrays.items():
             for sa_id in d_array._sa_array_ids:
                 d_array.set_arrays += (data_set.arrays[sa_id], )
-
+        data_set = self.read_metadata(data_set)
         return data_set
 
-    def write(self, data_set, force_write=False):
+    def write(self, data_set, io_manager=None, location=None,
+              force_write=False):
         """
         """
         if self.data_object is None or force_write:
             # Create the file if it is not there yet
-            io_manager = data_set.io
-            location = data_set.location
+            if io_manager is None:
+                io_manager = data_set.io
+            if location is None:
+                location = data_set.location
             filename = os.path.split(location)[-1]
             self.filepath = io_manager.join(location +
                                             '/{}.hdf5'.format(filename))
@@ -186,15 +189,16 @@ class HDF5Format(Formatter):
         self.data_arrays_grp.attrs['datasaving_format'] = _encode_to_utf8(
             'QCodes hdf5 v0.1')
 
-    def write_metadata(self, data_set):
-        if not hasattr(data_set, 'metadata'):
-            raise ValueError('data_set has not metadata, cannot write meta_data')
-        if 'metadata' in self.data_object.keys():
-            metadata_group = self.data_object['metadata']
-        else:
-            metadata_group = self.data_object.create_group('metadata')
-        # Need a nice recursive structure for this.
-        self.write_dict_to_hdf5(data_set.metadata, metadata_group)
+    def write_metadata(self, data_set,*args, **kw):
+        pass
+        # if not hasattr(data_set, 'metadata'):
+        #     raise ValueError('data_set has not metadata, cannot write meta_data')
+        # if 'metadata' in self.data_object.keys():
+        #     metadata_group = self.data_object['metadata']
+        # else:
+        #     metadata_group = self.data_object.create_group('metadata')
+        # # Need a nice recursive structure for this.
+        # self.write_dict_to_hdf5(data_set.metadata, metadata_group)
 
     def write_dict_to_hdf5(self, data_dict, entry_point):
         for key, item in data_dict.items():
@@ -226,7 +230,6 @@ class HDF5Format(Formatter):
                 entry_point.attrs[key] = str(item)
 
 
-
     def read_metadata(self, data_set):
         if not hasattr(data_set, 'metadata'):
             data_set.metadata = {}
@@ -235,9 +238,8 @@ class HDF5Format(Formatter):
             for key, item in metadata_group:
                 data_set.metadata[key] = item
             # Only handles top level attributes
+        return data_set
 
-
-        raise NotImplementedError
 
     def save_instrument_snapshot(self, snapshot, *args):
         """
