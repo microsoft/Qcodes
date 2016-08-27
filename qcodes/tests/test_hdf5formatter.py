@@ -133,20 +133,25 @@ class TestHDF5_Format(TestCase):
         self.assertTrue(metadata_equal, msg='\n'+err_msg)
 
     def test_loop_writing(self):
-        pass
-        # station = Station()
-        # MockPar = MockParabola(name='MockParabola')
-        # station.add_component(MockPar)
-        # # # added to station to test snapshot at a later stage
-        # loop = Loop(MockPar.x[-100:100:20]).each(MockPar.skewed_parabola)
-        # dset = loop.run(name='MockLoop_hdf5_test',
-        #                 formatter=self.formatter,
-        #                 background=False, data_manager=False)
-        # location = dset.location
-        # data2 = DataSet(location=location, formatter=self.formatter)
-        # data2.read()
-        # self.formatter._close_file()
-        # for key in data2.arrays.keys():
-        #     self.checkArraysEqual(data2.arrays[key], dset.arrays[key])
-        # test metadata
+        # pass
+        station = Station()
+        MockPar = MockParabola(name='MockParabola')
+        station.add_component(MockPar)
+        # # added to station to test snapshot at a later stage
+        loop = Loop(MockPar.x[-100:100:20]).each(MockPar.skewed_parabola)
+        data1 = loop.run(name='MockLoop_hdf5_test',
+                         formatter=self.formatter,
+                         background=False, data_manager=False)
+        location = data1.location
+        data2 = DataSet(location=location, formatter=self.formatter)
+        data2.read()
+        self.formatter._close_file()
+        for key in data2.arrays.keys():
+            self.checkArraysEqual(data2.arrays[key], data1.arrays[key])
+
+        metadata_equal, err_msg = compare_dictionaries(
+            data1.metadata, data2.metadata,
+            'original_metadata', 'loaded_metadata')
+        self.assertTrue(metadata_equal, msg='\n'+err_msg)
+
 

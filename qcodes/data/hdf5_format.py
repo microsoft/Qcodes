@@ -78,23 +78,28 @@ class HDF5Format(Formatter):
         data_set = self.read_metadata(data_set)
         return data_set
 
+    def _create_data_object(self, data_set, io_manager=None,
+                            location=None):
+                # Create the file if it is not there yet
+        if io_manager is None:
+            io_manager = data_set.io
+        if location is None:
+            location = data_set.location
+        filename = os.path.split(location)[-1]
+        self.filepath = io_manager.join(location +
+                                        '/{}.hdf5'.format(filename))
+        # note that this creates an hdf5 file in a folder with the same
+        # name. This is useful for saving e.g. images in the same folder
+        # I think this is a sane default (MAR).
+        self.data_object = self._create_file(self.filepath)
+        return self.data_object
+
     def write(self, data_set, io_manager=None, location=None,
               force_write=False):
         """
         """
         if self.data_object is None or force_write:
-            # Create the file if it is not there yet
-            if io_manager is None:
-                io_manager = data_set.io
-            if location is None:
-                location = data_set.location
-            filename = os.path.split(location)[-1]
-            self.filepath = io_manager.join(location +
-                                            '/{}.hdf5'.format(filename))
-            # note that this creates an hdf5 file in a folder with the same
-            # name. This is useful for saving e.g. images in the same folder
-            # I think this is a sane default (MAR).
-            self.data_object = self._create_file(self.filepath)
+            self.data_object = self._create_data_object(data_set, io_manager, location)
 
         if 'Data Arrays' not in self.data_object.keys():
             self.arr_group = self.data_object.create_group('Data Arrays')
@@ -115,7 +120,7 @@ class HDF5Format(Formatter):
             dset.resize(new_datasetshape)
             new_data_shape = (new_dlen-old_dlen, datasetshape[1])
             dset[old_dlen:new_dlen] = \
-                data_set.arrays[array_id][old_dlen:new_dlen].reshape(
+                x[old_dlen:new_dlen].reshape(
                     new_data_shape)
             # allow resizing extracted data, here so it gets written for
             # incremental writes aswell
@@ -144,9 +149,13 @@ class HDF5Format(Formatter):
             array.units = ['']  # used for shape determination
         units = array.units
         # Create the hdf5 dataset
+        if isinstance(units, str):
+            n_cols = 1
+        else:
+            n_cols = len(array.units)
         dset = group.create_dataset(
-            array.array_id, (0, len(array.units)),
-            maxshape=(None, len(array.units)))
+            array.array_id, (0, n_cols),
+            maxshape=(None, n_cols))
         dset.attrs['label'] = _encode_to_utf8(str(label))
         dset.attrs['name'] = _encode_to_utf8(str(name))
         dset.attrs['units'] = _encode_to_utf8(str(units))
@@ -197,42 +206,51 @@ class HDF5Format(Formatter):
             'QCodes hdf5 v0.1')
 
     def write_metadata(self, data_set, *args, **kw):
+        if self.data_object is None:
+            # added here because loop writes metadata before data itself
+            self.data_object = self._create_data_object(data_set)
         if not hasattr(data_set, 'metadata'):
             raise ValueError('data_set has no metadata')
         if 'metadata' in self.data_object.keys():
-            metadata_group = self.data_object['metadata']
-        else:
-            metadata_group = self.data_object.create_group('metadata')
+            del self.data_object['metadata']
+            # metadata_group = self.data_object['metadata']
+        # else:
+        metadata_group = self.data_object.create_group('metadata')
         self.write_dict_to_hdf5(data_set.metadata, metadata_group)
 
     def write_dict_to_hdf5(self, data_dict, entry_point):
         for key, item in data_dict.items():
-            if type(item) in [str, bool, tuple]:
+            if (isinstance(item, str) or
+                isinstance(item, bool) or
+                isinstance(item, tuple) or
+                isinstance(item, float) or
+                isinstance(item, int)):
                 entry_point.attrs[key] = item
             elif type(item) == np.ndarray:
                 entry_point.create_dataset(key, data=item)
             elif isinstance(item, type(None)):
                 # as h5py does not support saving None as attribute
                 # I create special string, note that this can create
-                # unexpected behaviour
+                # unexpected behaviour if someone saves a string with this name
                 entry_point.attrs[key] = 'NoneType:__None__'
-            elif type(item) == dict:
+            elif isinstance(item, dict):
                 entry_point.create_group(key)
                 self.write_dict_to_hdf5(data_dict=item, entry_point=entry_point[key])
             elif type(item) == list:
-                elt_type = type(item[0])
-                if all(isinstance(x, elt_type) for x in item):
-                    if elt_type in [int, float]:
-                        entry_point.create_dataset(key, data=np.array(item))
-                    elif elt_type == str:
-                        dt = h5py.special_dtype(vlen=str)
-                        data = np.array(item)
-                        ds = entry_point.create_dataset(key, (len(data),1), dtype=dt)
-                        ds[:] = data
+                if len(item)>0:
+                    elt_type = type(item[0])
+                    if all(isinstance(x, elt_type) for x in item):
+                        if elt_type in [int, float]:
+                            entry_point.create_dataset(key, data=np.array(item))
+                        elif elt_type == str:
+                            dt = h5py.special_dtype(vlen=str)
+                            data = np.array(item)
+                            ds = entry_point.create_dataset(key, (len(data),1), dtype=dt)
+                            ds[:] = data
+                        else:
+                            logging.warning('List of type "{}" for "{}:{}" not supported, storing as string'.format(elt_type, key, item))
                     else:
-                        logging.warning('List of type "{}" for "{}:{}" not supported, storing as string'.format(elt_type, key, item))
-                else:
-                    logging.warning('List of mixed type for "{}:{}" not supported, storing as string'.format(type(item), key, item))
+                        logging.warning('List of mixed type for "{}:{}" not supported, storing as string'.format(type(item), key, item))
                 entry_point.attrs[key] = str(item)
 
             else:
