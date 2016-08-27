@@ -347,3 +347,52 @@ def strip_attrs(obj, whitelist=()):
         # TODO (giulioungaretti) fix bare-except
     except:
         pass
+
+
+def compare_dictionaries(dict_1, dict_2,
+                         dict_1_name='d1',
+                         dict_2_name='d2', path=""):
+    """
+    Compare two dictionaries recursively to find non matching elements
+
+    Args:
+        dict_1: dictionary 1
+        dict_2: dictionary 2
+        dict_1_name: optional name used in the differences string
+        dict_2_name: ''
+    Returns:
+        dicts_equal:      Boolean
+        dict_differences: formatted string containing the differences
+
+    """
+    err = ''
+    key_err = ''
+    value_err = ''
+    old_path = path
+    for k in dict_1.keys():
+        path = old_path + "[%s]" % k
+        if k not in dict_2.keys():
+            key_err += "Key {}{} not in {}\n".format(
+                dict_2_name, path, dict_2_name)
+        else:
+            if isinstance(dict_1[k], dict) and isinstance(dict_2[k], dict):
+                err += compare_dictionaries(dict_1[k], dict_2[k],
+                                            dict_1_name, dict_2_name, path)[1]
+            else:
+                if dict_1[k] != dict_2[k]:
+                    value_err += "Value of {}{} ({}) not same as {}{} ({})\n"\
+                        .format(dict_1_name, path, dict_1[k],
+                                dict_2_name, path, dict_2[k])
+
+    for k in dict_2.keys():
+        path = old_path + "[{}]".format(k)
+        if k not in dict_1.keys():
+            key_err += "Key {}{} not in {}\n".format(
+                dict_2_name, path, dict_1_name)
+
+    dict_differences = key_err + value_err + err
+    if len(dict_differences) == 0:
+        dicts_equal = True
+    else:
+        dicts_equal = False
+    return dicts_equal, dict_differences
