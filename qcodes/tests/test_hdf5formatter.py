@@ -98,6 +98,7 @@ class TestHDF5_Format(TestCase):
         data2.read()
         self.checkArraysEqual(data2.arrays['x_set'], data_copy.arrays['x_set'])
         self.checkArraysEqual(data2.arrays['y'], data_copy.arrays['y'])
+        self.formatter._close_file()
 
     def test_metadata_write_read(self):
         """
@@ -111,10 +112,10 @@ class TestHDF5_Format(TestCase):
 
         data2 = DataSet(location=filepath, formatter=self.formatter)
         data2.read()
+        self.formatter._close_file()
         from pprint import pprint
-        # pprint(data.metadata)
-        # pprint(data2.metadata)
-        self.fail()
+        pprint(data.metadata)
+        pprint(data2.metadata)
 
     def test_loop_writing(self):
         station = Station()
@@ -128,6 +129,7 @@ class TestHDF5_Format(TestCase):
         location = dset.location
         data2 = DataSet(location=location, formatter=self.formatter)
         data2.read()
+        self.formatter._close_file()
         for key in data2.arrays.keys():
             self.checkArraysEqual(data2.arrays[key], dset.arrays[key])
         # test metadata

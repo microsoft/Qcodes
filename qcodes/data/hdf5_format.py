@@ -18,6 +18,9 @@ class HDF5Format(Formatter):
         """
         self.data_object = None
 
+    def _close_file(self):
+        self.data_object.close()
+
     def _create_file(self, filepath):
         folder, _filename = os.path.split(filepath)
         if not os.path.isdir(folder):
@@ -111,8 +114,7 @@ class HDF5Format(Formatter):
             dset[old_dlen:new_dlen] = \
                 data_set.arrays[array_id][old_dlen:new_dlen].reshape(
                     new_data_shape)
-        # self.write_metadata(data_set)
-
+        self.write_metadata(data_set)
 
     def _create_dataarray_dset(self, array, group):
         '''
@@ -153,7 +155,6 @@ class HDF5Format(Formatter):
 
         return dset
 
-
     def _create_data_arrays_grp(self, arrays):
         self.data_arrays_grp = self.data_object.create_group('Data Arrays')
         # Allows reshaping but does not allow adding extra parameters
@@ -189,16 +190,14 @@ class HDF5Format(Formatter):
         self.data_arrays_grp.attrs['datasaving_format'] = _encode_to_utf8(
             'QCodes hdf5 v0.1')
 
-    def write_metadata(self, data_set,*args, **kw):
-        pass
-        # if not hasattr(data_set, 'metadata'):
-        #     raise ValueError('data_set has not metadata, cannot write meta_data')
-        # if 'metadata' in self.data_object.keys():
-        #     metadata_group = self.data_object['metadata']
-        # else:
-        #     metadata_group = self.data_object.create_group('metadata')
-        # # Need a nice recursive structure for this.
-        # self.write_dict_to_hdf5(data_set.metadata, metadata_group)
+    def write_metadata(self, data_set, *args, **kw):
+        if not hasattr(data_set, 'metadata'):
+            raise ValueError('data_set has no metadata')
+        if 'metadata' in self.data_object.keys():
+            metadata_group = self.data_object['metadata']
+        else:
+            metadata_group = self.data_object.create_group('metadata')
+        self.write_dict_to_hdf5(data_set.metadata, metadata_group)
 
     def write_dict_to_hdf5(self, data_dict, entry_point):
         for key, item in data_dict.items():
@@ -229,41 +228,24 @@ class HDF5Format(Formatter):
                 logging.warning('Type "{}" for "{}:{}" not supported, storing as string'.format(type(item), key, item))
                 entry_point.attrs[key] = str(item)
 
-
     def read_metadata(self, data_set):
         if not hasattr(data_set, 'metadata'):
             data_set.metadata = {}
         if 'metadata' in self.data_object.keys():
             metadata_group = self.data_object['metadata']
-            for key, item in metadata_group:
-                data_set.metadata[key] = item
-            # Only handles top level attributes
+            self.read_dict_from_hdf5(data_set.metadata, metadata_group)
         return data_set
 
-
-    def save_instrument_snapshot(self, snapshot, *args):
-        """
-        (MAR) TODO: fix metadata saving
-        Should be part of dataset, not part of formatter
-
-        uses QCodes station snapshot to save the last known value of any
-        parameter. Only saves the value and not the update time (which is
-        known in the snapshot)
-
-        META DATA GROUP
-        """
-        set_grp = data_object.create_group('Meta-data')
-        inslist = dict_to_ordered_tuples(self.station.instruments)
-        for (iname, ins) in inslist:
-            instrument_grp = set_grp.create_group(iname)
-            par_snap = ins.snapshot()['parameters']
-            parameter_list = dict_to_ordered_tuples(par_snap)
-            for (p_name, p) in parameter_list:
-                try:
-                    val = str(p['value'])
-                except KeyError:
-                    val = ''
-                instrument_grp.attrs[p_name] = str(val)
+    def read_dict_from_hdf5(self, data_dict, h5_group):
+        for key, item in h5_group.items():
+            if isinstance(item, h5py._hl.group.Group):
+                data_dict[key] = {}
+                self.read_dict_from_hdf5(data_dict[key], item)
+            else:
+                data_dict[key] = item
+        for key, item in h5_group.attrs.items():
+            data_dict[key] = item
+        return data_dict
 
 
 def _encode_to_utf8(s):
