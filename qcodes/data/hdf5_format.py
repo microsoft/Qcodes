@@ -52,17 +52,20 @@ class HDF5Format(Formatter):
             else:
                 units = None
             is_setpoint = str_to_bool(dat_arr.attrs['is_setpoint'].decode())
-            if not is_setpoint:
-                set_arrays = dat_arr.attrs['set_arrays']
-                set_arrays = [s.decode() for s in set_arrays]
-            else:
-                set_arrays = ()
+            # if not is_setpoint:
+            set_arrays = dat_arr.attrs['set_arrays']
+            set_arrays = [s.decode() for s in set_arrays]
+            # else:
+            #     set_arrays = ()
+            vals = dat_arr.value[:, 0]
+            if 'shape' in dat_arr.attrs.keys():
+                vals = vals.reshape(dat_arr.attrs['shape'])
 
             d_array = DataArray(
                 name=name, array_id=array_id, label=label, parameter=None,
                 units=units,
                 is_setpoint=is_setpoint, set_arrays=(),
-                preset_data=dat_arr.value[:, 0])
+                preset_data=vals)
             data_set.add_array(d_array)
             # needed because I cannot add them at this point
             data_set.arrays[array_id]._sa_array_ids = set_arrays
@@ -114,6 +117,9 @@ class HDF5Format(Formatter):
             dset[old_dlen:new_dlen] = \
                 data_set.arrays[array_id][old_dlen:new_dlen].reshape(
                     new_data_shape)
+            # allow resizing extracted data, here so it gets written for
+            # incremental writes aswell
+            dset.attrs['shape'] = x.shape
         self.write_metadata(data_set)
 
     def _create_dataarray_dset(self, array, group):
@@ -146,12 +152,12 @@ class HDF5Format(Formatter):
         dset.attrs['units'] = _encode_to_utf8(str(units))
         dset.attrs['is_setpoint'] = _encode_to_utf8(str(array.is_setpoint))
 
-        if not array.is_setpoint:
-            set_arrays = []
-            for i in range(len(array.set_arrays)):
-                set_arrays += [_encode_to_utf8(
-                    str(array.set_arrays[i].array_id))]
-            dset.attrs['set_arrays'] = set_arrays
+        set_arrays = []
+        # list will remain empty if array does not have set_array
+        for i in range(len(array.set_arrays)):
+            set_arrays += [_encode_to_utf8(
+                str(array.set_arrays[i].array_id))]
+        dset.attrs['set_arrays'] = set_arrays
 
         return dset
 

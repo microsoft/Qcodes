@@ -12,7 +12,7 @@ from qcodes.data.hdf5_format import HDF5Format
 from qcodes.data.data_array import DataArray
 from qcodes.data.data_set import DataSet, new_data, load_data
 from qcodes.utils.helpers import compare_dictionaries
-from .data_mocks import DataSet1D, file_1d, DataSetCombined, files_combined
+from .data_mocks import DataSet1D, DataSet2D, DataSetCombined, files_combined
 
 from qcodes.tests.instrument_mocks import MockParabola
 
@@ -38,10 +38,15 @@ class TestHDF5_Format(TestCase):
         """
         Checks if arrays are equal
         """
-        # Copied from GNUplot formatter tests inheritance would be nicer
+        # Modified from GNUplot would be better to have this in some module
         self.checkArrayAttrs(a, b)
-        self.assertTrue((a.ndarray==b.ndarray).all())
-        self.assertEqual(len(a.set_arrays), len(b.set_arrays))
+        np.testing.assert_array_equal(a, b)
+        if len(a.set_arrays) > 1:
+            for i, set_arr in enumerate(a.set_arrays):
+                np.testing.assert_array_equal(set_arr, b.set_arrays[i])
+        else:
+            np.testing.assert_array_equal(a.set_arrays, b.set_arrays)
+
         for sa, sb in zip(a.set_arrays, b.set_arrays):
             self.checkArrayAttrs(sa, sb)
 
@@ -67,6 +72,22 @@ class TestHDF5_Format(TestCase):
         data2.read()
         self.checkArraysEqual(data2.x_set, data.x_set)
         self.checkArraysEqual(data2.y, data.y)
+
+    def test_full_write_read_2D(self):
+        """
+        Test writing and reading a file back in
+        """
+        data = DataSet2D()
+        self.formatter.write(data)
+        # Used because the formatter has no nice find file method
+        filepath = self.formatter.filepath
+
+        # Test reading the same file through the DataSet.read
+        data2 = DataSet(location=filepath, formatter=self.formatter)
+        data2.read()
+        self.checkArraysEqual(data2.x_set, data.x_set)
+        self.checkArraysEqual(data2.y_set, data.y_set)
+        self.checkArraysEqual(data2.z, data.z)
 
     def test_incremental_write(self):
         data = DataSet1D()
