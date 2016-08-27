@@ -207,10 +207,15 @@ class HDF5Format(Formatter):
 
     def write_dict_to_hdf5(self, data_dict, entry_point):
         for key, item in data_dict.items():
-            if type(item) in [str, bool]:
+            if type(item) in [str, bool, tuple]:
                 entry_point.attrs[key] = item
             elif type(item) == np.ndarray:
                 entry_point.create_dataset(key, data=item)
+            elif isinstance(item, type(None)):
+                # as h5py does not support saving None as attribute
+                # I create special string, note that this can create
+                # unexpected behaviour
+                entry_point.attrs[key] = 'NoneType:__None__'
             elif type(item) == dict:
                 entry_point.create_group(key)
                 self.write_dict_to_hdf5(data_dict=item, entry_point=entry_point[key])
@@ -250,6 +255,12 @@ class HDF5Format(Formatter):
             else:
                 data_dict[key] = item
         for key, item in h5_group.attrs.items():
+            if type(item) is str:
+                # Extracts "None" as an exception as h5py does not support
+                # storing None, nested if statement to avoid elementwise
+                # comparison warning
+                if item == 'NoneType:__None__':
+                    item = None
             data_dict[key] = item
         return data_dict
 
