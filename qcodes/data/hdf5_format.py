@@ -271,7 +271,9 @@ class HDF5Format(Formatter):
                             logging.warning('List of type "{}" for "{}":"{}" not supported, storing as string'.format(elt_type, key, item))
                     else:
                         logging.warning('List of mixed type for "{}":"{}" not supported, storing as string'.format(type(item), key, item))
-                entry_point.attrs[key] = str(item)
+                else:
+                    # as h5py does not support saving None as attribute
+                    entry_point.attrs[key] = 'NoneType:__emptylist__'
 
             else:
                 logging.warning('Type "{}" for "{}":"{}" not supported, storing as string'.format(type(item), key, item))
@@ -286,31 +288,40 @@ class HDF5Format(Formatter):
         return data_set
 
     def read_dict_from_hdf5(self, data_dict, h5_group):
-        for key, item in h5_group.items():
-            if isinstance(item, h5py._hl.group.Group):
-                data_dict[key] = {}
-                if 'list_type' not in h5_group.attrs:
-                    self.read_dict_from_hdf5(data_dict[key], item)
-                elif h5_group.attrs['list_type'] == 'dict':
-                    base_list_key = h5_group.attrs['base_list_key']
-                    data_dict[key] = []
-                    for i in range(h5_group.attrs['list_length']):
-                        data_dict[key].append({})
-                        self.read_dict_from_hdf5(
-                            data_dict[key][i],
-                            h5_group[base_list_key.format(i)])
+        if 'list_type' not in h5_group.attrs:
+            for key, item in h5_group.items():
+                if isinstance(item, h5py._hl.group.Group):
+                    data_dict[key] = {}
+                    data_dict[key] = self.read_dict_from_hdf5(data_dict[key],
+                                                              item)
                 else:
-                    raise NotImplementedError()
-            else:
+                    data_dict[key] = item
+            for key, item in h5_group.attrs.items():
+                if type(item) is str:
+                    # Extracts "None" as an exception as h5py does not support
+                    # storing None, nested if statement to avoid elementwise
+                    # comparison warning
+                    if item == 'NoneType:__None__':
+                        item = None
+                    elif item == 'NoneType:__emptylist__':
+                        item = []
                 data_dict[key] = item
-        for key, item in h5_group.attrs.items():
-            if type(item) is str:
-                # Extracts "None" as an exception as h5py does not support
-                # storing None, nested if statement to avoid elementwise
-                # comparison warning
-                if item == 'NoneType:__None__':
-                    item = None
-            data_dict[key] = item
+        elif h5_group.attrs['list_type'] == 'dict':
+            # preallocate empty list
+            list_to_be_filled = [None]*h5_group.attrs['list_length']
+            base_list_key = h5_group.attrs['base_list_key']
+            for i in range(h5_group.attrs['list_length']):
+                list_to_be_filled[i] = {}
+                self.read_dict_from_hdf5(
+                    data_dict=list_to_be_filled[i],
+                    h5_group=h5_group[base_list_key.format(i)])
+
+            # THe error is here!, extract correctly but not adding to
+            # data dict correctly
+            data_dict = list_to_be_filled
+            print(data_dict, type(data_dict))
+        else:
+            raise NotImplementedError()
         return data_dict
 
 
