@@ -3,37 +3,51 @@ import logging
 import h5py
 import os
 
+from .data_set import DataSet
 from .data_array import DataArray
 from .format import Formatter
 
 
 class HDF5Format(Formatter):
     """
-    HDF5 formatter for saving qcodes datasets
+    HDF5 formatter for saving qcodes datasets.
+
+    Capable of storing (write) and recovering (read) qcodes datasets.
     """
     def __init__(self):
-        """
-        Instantiates the datafile using the location provided by the io_manager
-        see h5py detailed info
-        """
+        # None required for checks in the class
         self.data_object = None
 
     def _close_file(self):
+        """
+        closes the data_object that is opened by the hdf5 formatter
+        """
         self.data_object.close()
 
     def _create_file(self, filepath):
+        """
+        creates a hdf5 file (data_object) at a location specifed by
+        filepath
+        """
         folder, _filename = os.path.split(filepath)
         if not os.path.isdir(folder):
             os.makedirs(folder)
-        data_object = h5py.File(filepath, 'a')
-        return data_object
+        file = h5py.File(filepath, 'a')
+        return file
 
-    def read(self, data_set):
+    def read(self, data_set=None, location=None):
         """
-        Tested that it correctly opens a file, needs a better way to
-        find the actual file. This is not part of the formatter at this point
+        Reads an hdf5 file specified by location into a data_set object.
+        If no data_set is provided will creata an empty data_set to read into.
+        If no location is provided will use the location specified in the
+        dataset.
         """
-        location = data_set.location
+        if location is None and data_set is None:
+            raise ValueError('data_set and location can not both be None')
+        if data_set is None:
+            data_set = DataSet(location=location, formatter=self)
+        if location is None:
+            location = data_set.location
         filepath = location
         self.data_object = h5py.File(filepath, 'r+')
         for i, array_id in enumerate(
@@ -67,7 +81,7 @@ class HDF5Format(Formatter):
                 is_setpoint=is_setpoint, set_arrays=(),
                 preset_data=vals)
             data_set.add_array(d_array)
-            # needed because I cannot add them at this point
+            # needed because I cannot add set_arrays at this point
             data_set.arrays[array_id]._sa_array_ids = set_arrays
 
         # Add copy/ref of setarrays (not array id only)
@@ -97,6 +111,20 @@ class HDF5Format(Formatter):
     def write(self, data_set, io_manager=None, location=None,
               force_write=False):
         """
+        Writes a data_set to an hdf5 file.
+        Write consists of two parts,
+            writing arrays
+            writing metadata
+
+        Writing is split up in two parts, writing DataArrays and writing
+        metadata.
+            The main part of write consists of writing and resizing arrays,
+            the resizing providing support for incremental writes.
+
+            write_metadata is called at the end of write and dumps a
+            dictionary to an hdf5 file. If there already is metadata it will
+            delete this and overwrite it with current metadata.
+
         """
         if self.data_object is None or force_write:
             self.data_object = self._create_data_object(
@@ -209,7 +237,15 @@ class HDF5Format(Formatter):
         self.data_arrays_grp.attrs['datasaving_format'] = _encode_to_utf8(
             'QCodes hdf5 v0.1')
 
-    def write_metadata(self, data_set, *args, **kw):
+    def write_metadata(self, data_set, io=None, location=None):
+        """
+        Writes metadata of dataset to file using write_dict_to_hdf5 method
+
+        Note that io and location are arguments that are only here because
+        of backwards compatibility with the loop.
+        This formatter uses io and location as specified for the main
+        dataset.
+        """
         if self.data_object is None:
             # added here because loop writes metadata before data itself
             self.data_object = self._create_data_object(data_set)
@@ -217,8 +253,6 @@ class HDF5Format(Formatter):
             raise ValueError('data_set has no metadata')
         if 'metadata' in self.data_object.keys():
             del self.data_object['metadata']
-            # metadata_group = self.data_object['metadata']
-        # else:
         metadata_group = self.data_object.create_group('metadata')
         self.write_dict_to_hdf5(data_set.metadata, metadata_group)
 
