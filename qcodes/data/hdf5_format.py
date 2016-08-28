@@ -48,7 +48,9 @@ class HDF5Format(Formatter):
             data_set = DataSet(location=location, formatter=self)
         if location is None:
             location = data_set.location
-        filepath = location
+        filepath = self._filepath_from_location(location,
+                                                io_manager=data_set.io)
+        # filepath=location
         self.data_object = h5py.File(filepath, 'r+')
         for i, array_id in enumerate(
                 self.data_object['Data Arrays'].keys()):
@@ -92,6 +94,12 @@ class HDF5Format(Formatter):
         data_set = self.read_metadata(data_set)
         return data_set
 
+    def _filepath_from_location(self, location, io_manager):
+        filename = os.path.split(location)[-1]
+        filepath = io_manager.join(location +
+                                   '/{}.hdf5'.format(filename))
+        return filepath
+
     def _create_data_object(self, data_set, io_manager=None,
                             location=None):
                 # Create the file if it is not there yet
@@ -99,9 +107,7 @@ class HDF5Format(Formatter):
             io_manager = data_set.io
         if location is None:
             location = data_set.location
-        filename = os.path.split(location)[-1]
-        self.filepath = io_manager.join(location +
-                                        '/{}.hdf5'.format(filename))
+        self.filepath = self._filepath_from_location(location, io_manager)
         # note that this creates an hdf5 file in a folder with the same
         # name. This is useful for saving e.g. images in the same folder
         # I think this is a sane default (MAR).

@@ -60,11 +60,9 @@ class TestHDF5_Format(TestCase):
         # print('Data location:', os.path.abspath(data.location))
         self.formatter.write(data)
         # Used because the formatter has no nice find file method
-        filepath = self.formatter.filepath
 
         # Test reading the same file through the DataSet.read
-
-        data2 = DataSet(location=filepath, formatter=self.formatter)
+        data2 = DataSet(location=data.location, formatter=self.formatter)
         data2.read()
         self.checkArraysEqual(data2.x_set, data.x_set)
         self.checkArraysEqual(data2.y, data.y)
@@ -75,11 +73,8 @@ class TestHDF5_Format(TestCase):
         """
         data = DataSet2D()
         self.formatter.write(data)
-        # Used because the formatter has no nice find file method
-        filepath = self.formatter.filepath
-
         # Test reading the same file through the DataSet.read
-        data2 = DataSet(location=filepath, formatter=self.formatter)
+        data2 = DataSet(location=data.location, formatter=self.formatter)
         data2.read()
         self.checkArraysEqual(data2.x_set, data.x_set)
         self.checkArraysEqual(data2.y_set, data.y_set)
@@ -103,8 +98,7 @@ class TestHDF5_Format(TestCase):
             self.formatter.write(data)
             data.y[i] = y
             self.formatter.write(data)
-        filepath = self.formatter.filepath
-        data2 = DataSet(location=filepath, formatter=self.formatter)
+        data2 = DataSet(location=location, formatter=self.formatter)
         data2.read()
         self.checkArraysEqual(data2.arrays['x_set'], data_copy.arrays['x_set'])
         self.checkArraysEqual(data2.arrays['y'], data_copy.arrays['y'])
@@ -118,9 +112,7 @@ class TestHDF5_Format(TestCase):
         data = DataSet1D()
         data.snapshot()  # gets the snapshot, not added upon init
         self.formatter.write(data)  # write_metadata is included in write
-        filepath = self.formatter.filepath
-
-        data2 = DataSet(location=filepath, formatter=self.formatter)
+        data2 = DataSet(location=data.location, formatter=self.formatter)
         data2.read()
         self.formatter._close_file()
         metadata_equal, err_msg = compare_dictionaries(
@@ -138,9 +130,8 @@ class TestHDF5_Format(TestCase):
         data1 = loop.run(name='MockLoop_hdf5_test',
                          formatter=self.formatter,
                          background=False, data_manager=False)
-        location = data1.formatter.filepath
         self.formatter._close_file()
-        data2 = DataSet(location=location, formatter=self.formatter)
+        data2 = DataSet(location=data1.location, formatter=self.formatter)
         data2.read()
         for key in data2.arrays.keys():
             self.checkArraysEqual(data2.arrays[key], data1.arrays[key])
@@ -161,9 +152,8 @@ class TestHDF5_Format(TestCase):
         data1 = loop.run(name='MockLoop_hdf5_test',
                          formatter=self.formatter,
                          background=False, data_manager=False)
-        location = data1.formatter.filepath
         self.formatter._close_file()
-        data2 = DataSet(location=location, formatter=self.formatter)
+        data2 = DataSet(location=data1.location, formatter=self.formatter)
         data2.read()
         for key in data2.arrays.keys():
             self.checkArraysEqual(data2.arrays[key], data1.arrays[key])
