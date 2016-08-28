@@ -131,7 +131,7 @@ class TestHDF5_Format(TestCase):
     def test_loop_writing(self):
         # pass
         station = Station()
-        MockPar = MockParabola(name='MockParabola')
+        MockPar = MockParabola(name='Loop_writing_test')
         station.add_component(MockPar)
         # # added to station to test snapshot at a later stage
         loop = Loop(MockPar.x[-100:100:20]).each(MockPar.skewed_parabola)
@@ -151,4 +151,25 @@ class TestHDF5_Format(TestCase):
         self.assertTrue(metadata_equal, msg='\n'+err_msg)
         self.formatter._close_file()
 
+    def test_loop_writing_2D(self):
+        # pass
+        station = Station()
+        MockPar = MockParabola(name='Loop_writing_test_2D')
+        station.add_component(MockPar)
+        loop = Loop(MockPar.x[-100:100:20]).loop(
+            MockPar.y[-50:50:10]).each(MockPar.skewed_parabola)
+        data1 = loop.run(name='MockLoop_hdf5_test',
+                         formatter=self.formatter,
+                         background=False, data_manager=False)
+        location = data1.formatter.filepath
+        self.formatter._close_file()
+        data2 = DataSet(location=location, formatter=self.formatter)
+        data2.read()
+        for key in data2.arrays.keys():
+            self.checkArraysEqual(data2.arrays[key], data1.arrays[key])
 
+        metadata_equal, err_msg = compare_dictionaries(
+            data1.metadata, data2.metadata,
+            'original_metadata', 'loaded_metadata')
+        self.assertTrue(metadata_equal, msg='\n'+err_msg)
+        self.formatter._close_file()

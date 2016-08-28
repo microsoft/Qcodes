@@ -379,10 +379,20 @@ def compare_dictionaries(dict_1, dict_2,
                 err += compare_dictionaries(dict_1[k], dict_2[k],
                                             dict_1_name, dict_2_name, path)[1]
             else:
-                if dict_1[k] != dict_2[k]:
-                    value_err += 'Value of "{}{}" ("{}", type"{}") not same as \n"{}{}" ("{}", type"{}")\n\n'\
-                        .format(dict_1_name, path, dict_1[k], type(dict_1[k]),
-                                dict_2_name, path, dict_2[k], type(dict_2[k]))
+                try:
+                    if dict_1[k] != dict_2[k]:
+                        value_err += 'Value of "{}{}" ("{}", type"{}") not same as \n"{}{}" ("{}", type"{}")\n\n'\
+                            .format(dict_1_name, path,
+                                    dict_1[k], type(dict_1[k]),
+                                    dict_2_name, path,
+                                    dict_2[k], type(dict_2[k]))
+                except ValueError:  # if entry is iterable such as a tuple
+                    if any(dict_1[k] != dict_2[k]):
+                        value_err += 'Value of "{}{}" ("{}", type"{}") not same as \n"{}{}" ("{}", type"{}")\n\n'\
+                            .format(dict_1_name, path,
+                                    dict_1[k], type(dict_1[k]),
+                                    dict_2_name, path,
+                                    dict_2[k], type(dict_2[k]))
 
     for k in dict_2.keys():
         path = old_path + "[{}]".format(k)

@@ -319,7 +319,6 @@ class HDF5Format(Formatter):
             # THe error is here!, extract correctly but not adding to
             # data dict correctly
             data_dict = list_to_be_filled
-            print(data_dict, type(data_dict))
         else:
             raise NotImplementedError()
         return data_dict
