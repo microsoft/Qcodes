@@ -1,18 +1,14 @@
 from unittest import TestCase
-import sys
 import os
 import numpy as np
-import h5py  # TODO: add this to the dependencies in setup.py
 from qcodes.station import Station
 from qcodes.loops import Loop
 from qcodes.data.location import FormatLocation
 from qcodes.data.hdf5_format import HDF5Format
 
-
-from qcodes.data.data_array import DataArray
-from qcodes.data.data_set import DataSet, new_data, load_data
+from qcodes.data.data_set import DataSet
 from qcodes.utils.helpers import compare_dictionaries
-from .data_mocks import DataSet1D, DataSet2D, DataSetCombined, files_combined
+from .data_mocks import DataSet1D, DataSet2D
 
 from qcodes.tests.instrument_mocks import MockParabola
 
@@ -142,10 +138,10 @@ class TestHDF5_Format(TestCase):
         data1 = loop.run(name='MockLoop_hdf5_test',
                          formatter=self.formatter,
                          background=False, data_manager=False)
-        location = data1.location
+        location = data1.formatter.filepath
+        self.formatter._close_file()
         data2 = DataSet(location=location, formatter=self.formatter)
         data2.read()
-        self.formatter._close_file()
         for key in data2.arrays.keys():
             self.checkArraysEqual(data2.arrays[key], data1.arrays[key])
 
@@ -153,5 +149,6 @@ class TestHDF5_Format(TestCase):
             data1.metadata, data2.metadata,
             'original_metadata', 'loaded_metadata')
         self.assertTrue(metadata_equal, msg='\n'+err_msg)
+        self.formatter._close_file()
 
 

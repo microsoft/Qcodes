@@ -99,7 +99,8 @@ class HDF5Format(Formatter):
         """
         """
         if self.data_object is None or force_write:
-            self.data_object = self._create_data_object(data_set, io_manager, location)
+            self.data_object = self._create_data_object(
+                data_set, io_manager, location)
 
         if 'Data Arrays' not in self.data_object.keys():
             self.arr_group = self.data_object.create_group('Data Arrays')
@@ -134,6 +135,9 @@ class HDF5Format(Formatter):
         group:  group in the hdf5 file where the dset will be created
 
         creates a hdf5 datasaset that represents the data array.
+
+        note that the attribute "units" is used for shape determination
+        in the case of tuple-like variables.
         '''
         # Check for empty meta attributes, use array_id if name and/or label
         # is not specified
@@ -221,11 +225,11 @@ class HDF5Format(Formatter):
     def write_dict_to_hdf5(self, data_dict, entry_point):
         for key, item in data_dict.items():
             if (isinstance(item, str) or
-                isinstance(item, bool) or
-                isinstance(item, tuple) or
-                isinstance(item, float) or
-                isinstance(item, int)):
-                entry_point.attrs[key] = item
+                    isinstance(item, bool) or
+                    isinstance(item, tuple) or
+                    isinstance(item, float) or
+                    isinstance(item, int)):
+                    entry_point.attrs[key] = item
             elif type(item) == np.ndarray:
                 entry_point.create_dataset(key, data=item)
             elif isinstance(item, type(None)):
@@ -235,26 +239,42 @@ class HDF5Format(Formatter):
                 entry_point.attrs[key] = 'NoneType:__None__'
             elif isinstance(item, dict):
                 entry_point.create_group(key)
-                self.write_dict_to_hdf5(data_dict=item, entry_point=entry_point[key])
-            elif type(item) == list:
-                if len(item)>0:
+                self.write_dict_to_hdf5(data_dict=item,
+                                        entry_point=entry_point[key])
+            elif isinstance(item, list):
+                if len(item) > 0:
                     elt_type = type(item[0])
                     if all(isinstance(x, elt_type) for x in item):
-                        if elt_type in [int, float]:
-                            entry_point.create_dataset(key, data=np.array(item))
-                        elif elt_type == str:
+                        if (isinstance(item[0], int) or
+                                isinstance(item[0], float)):
+                            entry_point.create_dataset(key,
+                                                       data=np.array(item))
+                        elif isinstance(item[0], str):
                             dt = h5py.special_dtype(vlen=str)
                             data = np.array(item)
-                            ds = entry_point.create_dataset(key, (len(data),1), dtype=dt)
+                            ds = entry_point.create_dataset(
+                                key, (len(data), 1), dtype=dt)
                             ds[:] = data
+                        elif isinstance(item[0], dict):
+                            entry_point.create_group(key)
+                            entry_point[key].attrs['list_type'] = 'dict'
+                            base_list_key = 'list_idx_{}'
+                            entry_point[key].attrs['base_list_key'] = base_list_key
+                            entry_point[key].attrs['list_length'] = len(item)
+                            for i, list_item in enumerate(item):
+                                list_item_grp = entry_point[key].create_group(
+                                    base_list_key.format(i))
+                                self.write_dict_to_hdf5(
+                                    data_dict=list_item,
+                                    entry_point=list_item_grp)
                         else:
-                            logging.warning('List of type "{}" for "{}:{}" not supported, storing as string'.format(elt_type, key, item))
+                            logging.warning('List of type "{}" for "{}":"{}" not supported, storing as string'.format(elt_type, key, item))
                     else:
-                        logging.warning('List of mixed type for "{}:{}" not supported, storing as string'.format(type(item), key, item))
+                        logging.warning('List of mixed type for "{}":"{}" not supported, storing as string'.format(type(item), key, item))
                 entry_point.attrs[key] = str(item)
 
             else:
-                logging.warning('Type "{}" for "{}:{}" not supported, storing as string'.format(type(item), key, item))
+                logging.warning('Type "{}" for "{}":"{}" not supported, storing as string'.format(type(item), key, item))
                 entry_point.attrs[key] = str(item)
 
     def read_metadata(self, data_set):
@@ -269,7 +289,18 @@ class HDF5Format(Formatter):
         for key, item in h5_group.items():
             if isinstance(item, h5py._hl.group.Group):
                 data_dict[key] = {}
-                self.read_dict_from_hdf5(data_dict[key], item)
+                if 'list_type' not in h5_group.attrs:
+                    self.read_dict_from_hdf5(data_dict[key], item)
+                elif h5_group.attrs['list_type'] == 'dict':
+                    base_list_key = h5_group.attrs['base_list_key']
+                    data_dict[key] = []
+                    for i in range(h5_group.attrs['list_length']):
+                        data_dict[key].append({})
+                        self.read_dict_from_hdf5(
+                            data_dict[key][i],
+                            h5_group[base_list_key.format(i)])
+                else:
+                    raise NotImplementedError()
             else:
                 data_dict[key] = item
         for key, item in h5_group.attrs.items():
