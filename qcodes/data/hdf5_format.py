@@ -72,13 +72,20 @@ class HDF5Format(Formatter):
             vals = dat_arr.value[:, 0]
             if 'shape' in dat_arr.attrs.keys():
                 vals = vals.reshape(dat_arr.attrs['shape'])
-
-            d_array = DataArray(
-                name=name, array_id=array_id, label=label, parameter=None,
-                units=units,
-                is_setpoint=is_setpoint, set_arrays=(),
-                preset_data=vals)
-            data_set.add_array(d_array)
+            if array_id not in data_set.arrays.keys():  # create new array
+                d_array = DataArray(
+                    name=name, array_id=array_id, label=label, parameter=None,
+                    units=units,
+                    is_setpoint=is_setpoint, set_arrays=(),
+                    preset_data=vals)
+                data_set.add_array(d_array)
+            else:  # update existing array with extracted values
+                data_set.arrays[array_id].name = name
+                data_set.arrays[array_id].label = label
+                data_set.arrays[array_id].units = units
+                data_set.arrays[array_id].is_setpoint = is_setpoint
+                data_set.arrays[array_id].ndarray = vals
+                data_set.arrays[array_id].shape = dat_arr.attrs['shape']
             # needed because I cannot add set_arrays at this point
             data_set.arrays[array_id]._sa_array_ids = set_arrays
 

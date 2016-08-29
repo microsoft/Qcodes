@@ -6,6 +6,7 @@ from qcodes.loops import Loop
 from qcodes.data.location import FormatLocation
 from qcodes.data.hdf5_format import HDF5Format
 
+from qcodes.data.data_array import DataArray
 from qcodes.data.data_set import DataSet
 from qcodes.utils.helpers import compare_dictionaries
 from .data_mocks import DataSet1D, DataSet2D
@@ -176,3 +177,26 @@ class TestHDF5_Format(TestCase):
         self.formatter.close_file(data)
         # Closing file twice should not raise an error
         self.formatter.close_file(data)
+
+    def test_reading_into_existing_data_array(self):
+        data = DataSet1D()
+        # closing before file is written should not raise error
+        self.formatter.write(data)
+
+        data2 = DataSet(location=data.location, formatter=self.formatter)
+        d_array = DataArray(name='dummy', array_id='x_set',  # existing array id in data
+                            label='bla', units='a.u.', is_setpoint=False,
+                            set_arrays=(), preset_data=np.zeros(5))
+        data2.add_array(d_array)
+        # test if d_array refers to same as array x_set in dataset
+        self.assertTrue(d_array is data2.arrays['x_set'])
+        data2.read()
+        # test if reading did not overwrite dataarray
+        self.assertTrue(d_array is data2.arrays['x_set'])
+        # Testing if data was correctly updated into dataset
+        self.checkArraysEqual(data2.arrays['x_set'], data.arrays['x_set'])
+        self.checkArraysEqual(data2.arrays['y'], data.arrays['y'])
+        self.formatter.close_file(data)
+        self.formatter.close_file(data2)
+
+
