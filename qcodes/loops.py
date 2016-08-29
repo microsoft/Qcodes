@@ -736,11 +736,6 @@ class ActiveLoop(Metadatable):
                       flush=True)
             prev_loop.join()
 
-        if data_manager is False:
-            data_mode = DataMode.LOCAL
-        else:
-            data_mode = DataMode.PUSH_TO_SERVER
-
         data_set = self.get_data_set(data_manager, *args, **kwargs)
         self.set_common_attrs(data_set=data_set, use_threads=use_threads,
                               signal_queue=self.signal_queue)
@@ -793,7 +788,9 @@ class ActiveLoop(Metadatable):
         if not quiet:
             print(repr(self.data_set))
             print(datetime.now().strftime('started at %Y-%m-%d %H:%M:%S'))
-        return self.data_set
+        ds = self.data_set
+        self.data_set = None
+        return ds
 
     def _compile_actions(self, actions, action_indices=()):
         callables = []

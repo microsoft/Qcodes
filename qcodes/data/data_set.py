@@ -592,7 +592,7 @@ class DataSet(DelegateAttributes):
          """
         if self.mode == DataMode.PUSH_TO_SERVER:
             self.data_manager.write('store_data', loop_indices, ids_values)
-        else:
+        elif self.mode == DataMode.LOCAL:
             for array_id, value in ids_values.items():
                 self.arrays[array_id][loop_indices] = value
             self.last_store = time.time()
@@ -600,6 +600,9 @@ class DataSet(DelegateAttributes):
                     time.time() > self.last_write + self.write_period):
                 self.write()
                 self.last_write = time.time()
+        else: # in PULL_FROM_SERVER mode; store() isn't legal
+            raise RuntimeError('This object is pulling from a DataServer, '
+                               'so data insertion is not allowed.')
 
     def read(self):
         """Read the whole DataSet from storage, overwriting the local data."""
