@@ -34,7 +34,7 @@ class TestDriverTestCase(DriverTestCase):
     @classmethod
     def setUpClass(cls):
         cls.an_empty_model = EmptyModel()
-        cls.an_instrument = MockMock('a', model=cls.an_empty_model)
+        cls.an_instrument = MockMock('a', model=cls.an_empty_model, server_name='')
         super().setUpClass()
 
     @classmethod

@@ -118,7 +118,7 @@ class TestVisaInstrument(TestCase):
 
     def test_ask_write_server(self):
         # same thing as above but Joe is on a server now...
-        mv = MockVisa('Joe')
+        mv = MockVisa('Joe', server_name='')
 
         # test normal ask and write behavior
         mv.state.set(2)

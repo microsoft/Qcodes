@@ -2,8 +2,9 @@
 
 import multiprocessing as mp
 import sys
-from datetime import datetime
 import time
+
+from datetime import datetime
 
 from .helpers import kill_queue
 
