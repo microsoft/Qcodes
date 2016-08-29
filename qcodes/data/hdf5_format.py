@@ -35,17 +35,13 @@ class HDF5Format(Formatter):
         file = h5py.File(filepath, 'a')
         return file
 
-    def read(self, data_set=None, location=None):
+    def read(self, data_set, location=None):
         """
         Reads an hdf5 file specified by location into a data_set object.
         If no data_set is provided will creata an empty data_set to read into.
         If no location is provided will use the location specified in the
         dataset.
         """
-        if location is None and data_set is None:
-            raise ValueError('data_set and location can not both be None')
-        if data_set is None:
-            data_set = DataSet(location=location, formatter=self)
         if location is None:
             location = data_set.location
         filepath = self._filepath_from_location(location,
