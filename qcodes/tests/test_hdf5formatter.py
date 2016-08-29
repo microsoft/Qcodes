@@ -25,11 +25,6 @@ class TestHDF5_Format(TestCase):
             fmt=base_fp+'/{date}/#{counter}_{name}_{time}')
         DataSet.location_provider = self.loc_provider
 
-    def tearDown(self):
-        pass
-        # for location in self.locations:
-        #     self.io.remove_all(location)
-
     def checkArraysEqual(self, a, b):
         """
         Checks if arrays are equal
@@ -66,6 +61,8 @@ class TestHDF5_Format(TestCase):
         data2.read()
         self.checkArraysEqual(data2.x_set, data.x_set)
         self.checkArraysEqual(data2.y, data.y)
+        self.formatter.close_file(data)
+        self.formatter.close_file(data2)
 
     def test_full_write_read_2D(self):
         """
@@ -79,6 +76,9 @@ class TestHDF5_Format(TestCase):
         self.checkArraysEqual(data2.x_set, data.x_set)
         self.checkArraysEqual(data2.y_set, data.y_set)
         self.checkArraysEqual(data2.z, data.z)
+
+        self.formatter.close_file(data)
+        self.formatter.close_file(data2)
 
     def test_incremental_write(self):
         data = DataSet1D()
@@ -102,7 +102,9 @@ class TestHDF5_Format(TestCase):
         data2.read()
         self.checkArraysEqual(data2.arrays['x_set'], data_copy.arrays['x_set'])
         self.checkArraysEqual(data2.arrays['y'], data_copy.arrays['y'])
-        self.formatter._close_file()
+
+        self.formatter.close_file(data)
+        self.formatter.close_file(data2)
 
     def test_metadata_write_read(self):
         """
@@ -114,7 +116,8 @@ class TestHDF5_Format(TestCase):
         self.formatter.write(data)  # write_metadata is included in write
         data2 = DataSet(location=data.location, formatter=self.formatter)
         data2.read()
-        self.formatter._close_file()
+        self.formatter.close_file(data)
+        self.formatter.close_file(data2)
         metadata_equal, err_msg = compare_dictionaries(
             data.metadata, data2.metadata,
             'original_metadata', 'loaded_metadata')
@@ -130,7 +133,6 @@ class TestHDF5_Format(TestCase):
         data1 = loop.run(name='MockLoop_hdf5_test',
                          formatter=self.formatter,
                          background=False, data_manager=False)
-        self.formatter._close_file()
         data2 = DataSet(location=data1.location, formatter=self.formatter)
         data2.read()
         for key in data2.arrays.keys():
@@ -140,7 +142,8 @@ class TestHDF5_Format(TestCase):
             data1.metadata, data2.metadata,
             'original_metadata', 'loaded_metadata')
         self.assertTrue(metadata_equal, msg='\n'+err_msg)
-        self.formatter._close_file()
+        self.formatter.close_file(data1)
+        self.formatter.close_file(data2)
 
     def test_loop_writing_2D(self):
         # pass
@@ -152,7 +155,6 @@ class TestHDF5_Format(TestCase):
         data1 = loop.run(name='MockLoop_hdf5_test',
                          formatter=self.formatter,
                          background=False, data_manager=False)
-        self.formatter._close_file()
         data2 = DataSet(location=data1.location, formatter=self.formatter)
         data2.read()
         for key in data2.arrays.keys():
@@ -162,4 +164,15 @@ class TestHDF5_Format(TestCase):
             data1.metadata, data2.metadata,
             'original_metadata', 'loaded_metadata')
         self.assertTrue(metadata_equal, msg='\n'+err_msg)
-        self.formatter._close_file()
+        self.formatter.close_file(data1)
+        self.formatter.close_file(data2)
+
+    def test_closed_file(self):
+        data = DataSet1D()
+        # closing before file is written should not raise error
+        self.formatter.close_file(data)
+        self.formatter.write(data)
+        # Used because the formatter has no nice find file method
+        self.formatter.close_file(data)
+        # Closing file twice should not raise an error
+        self.formatter.close_file(data)

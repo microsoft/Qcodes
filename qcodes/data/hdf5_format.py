@@ -3,7 +3,6 @@ import logging
 import h5py
 import os
 
-from .data_set import DataSet
 from .data_array import DataArray
 from .format import Formatter
 
@@ -14,15 +13,16 @@ class HDF5Format(Formatter):
 
     Capable of storing (write) and recovering (read) qcodes datasets.
     """
-    def __init__(self):
-        # None required for checks in the class
-        self.data_object = None
-
-    def _close_file(self):
+    def close_file(self, data_set):
         """
-        closes the data_object that is opened by the hdf5 formatter
+        Closes the hdf5 file open in the dataset.
         """
-        self.data_object.close()
+        if hasattr(data_set, '_h5_base_group'):
+            data_set._h5_base_group.close()
+            # Removes reference to closed file
+            del data_set._h5_base_group
+        else:
+            logging.warning('Cannot close file, data_set has no open hdf5 file')
 
     def _create_file(self, filepath):
         """
@@ -46,13 +46,13 @@ class HDF5Format(Formatter):
             location = data_set.location
         filepath = self._filepath_from_location(location,
                                                 io_manager=data_set.io)
-        # filepath=location
-        self.data_object = h5py.File(filepath, 'r+')
+        data_set._h5_base_group = h5py.File(filepath, 'r+')
+
         for i, array_id in enumerate(
-                self.data_object['Data Arrays'].keys()):
+                data_set._h5_base_group['Data Arrays'].keys()):
             # Decoding string is needed because of h5py/issues/379
             name = array_id  # will be overwritten if not in file
-            dat_arr = self.data_object['Data Arrays'][array_id]
+            dat_arr = data_set._h5_base_group['Data Arrays'][array_id]
             if 'label' in dat_arr.attrs.keys():
                 label = dat_arr.attrs['label'].decode()
             else:
@@ -107,8 +107,8 @@ class HDF5Format(Formatter):
         # note that this creates an hdf5 file in a folder with the same
         # name. This is useful for saving e.g. images in the same folder
         # I think this is a sane default (MAR).
-        self.data_object = self._create_file(self.filepath)
-        return self.data_object
+        data_set._h5_base_group = self._create_file(self.filepath)
+        return data_set._h5_base_group
 
     def write(self, data_set, io_manager=None, location=None,
               force_write=False):
@@ -128,12 +128,12 @@ class HDF5Format(Formatter):
             delete this and overwrite it with current metadata.
 
         """
-        if self.data_object is None or force_write:
-            self.data_object = self._create_data_object(
+        if not hasattr(data_set, '_h5_base_group') or force_write:
+            data_set._h5_base_group = self._create_data_object(
                 data_set, io_manager, location)
 
-        if 'Data Arrays' not in self.data_object.keys():
-            self.arr_group = self.data_object.create_group('Data Arrays')
+        if 'Data Arrays' not in data_set._h5_base_group.keys():
+            self.arr_group = data_set._h5_base_group.create_group('Data Arrays')
         for array_id in data_set.arrays.keys():
             if array_id not in self.arr_group.keys() or force_write:
                 self._create_dataarray_dset(array=data_set.arrays[array_id],
@@ -204,8 +204,8 @@ class HDF5Format(Formatter):
 
         return dset
 
-    def _create_data_arrays_grp(self, arrays):
-        self.data_arrays_grp = self.data_object.create_group('Data Arrays')
+    def _create_data_arrays_grp(self, data_set, arrays):
+        self.data_arrays_grp = data_set._h5_base_group.create_group('Data Arrays')
         # Allows reshaping but does not allow adding extra parameters
         self.dset = self.data_arrays_grp.create_dataset(
             'Data', (0, len(arrays.keys())),
@@ -248,14 +248,14 @@ class HDF5Format(Formatter):
         This formatter uses io and location as specified for the main
         dataset.
         """
-        if self.data_object is None:
+        if not hasattr(data_set, '_h5_base_group'):
             # added here because loop writes metadata before data itself
-            self.data_object = self._create_data_object(data_set)
+            data_set._h5_base_group = self._create_data_object(data_set)
         if not hasattr(data_set, 'metadata'):
             raise ValueError('data_set has no metadata')
-        if 'metadata' in self.data_object.keys():
-            del self.data_object['metadata']
-        metadata_group = self.data_object.create_group('metadata')
+        if 'metadata' in data_set._h5_base_group.keys():
+            del data_set._h5_base_group['metadata']
+        metadata_group = data_set._h5_base_group.create_group('metadata')
         self.write_dict_to_hdf5(data_set.metadata, metadata_group)
 
     def write_dict_to_hdf5(self, data_dict, entry_point):
@@ -318,8 +318,8 @@ class HDF5Format(Formatter):
     def read_metadata(self, data_set):
         if not hasattr(data_set, 'metadata'):
             data_set.metadata = {}
-        if 'metadata' in self.data_object.keys():
-            metadata_group = self.data_object['metadata']
+        if 'metadata' in data_set._h5_base_group.keys():
+            metadata_group = data_set._h5_base_group['metadata']
             self.read_dict_from_hdf5(data_set.metadata, metadata_group)
         return data_set
 
