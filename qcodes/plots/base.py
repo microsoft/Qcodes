@@ -4,7 +4,6 @@ Live plotting in Jupyter notebooks
 from IPython.display import display
 
 from qcodes.widgets.widgets import HiddenUpdateWidget
-from qcodes.utils.helpers import tprint
 
 
 class BasePlot:
