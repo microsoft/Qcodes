@@ -29,7 +29,8 @@ class IVVI(VisaInstrument):
     Halfrange = Fullrange / 2
 
     def __init__(self, name, address, reset=False, numdacs=16, dac_step=10,
-                 dac_delay=.1, dac_max_delay=0.2, check_setpoints=False, **kwargs):
+                 dac_delay=.1, dac_max_delay=0.2, check_setpoints=False,
+                 set_dac_sleep=0.05, **kwargs):
                  # polarity=['BIP', 'BIP', 'BIP', 'BIP']):
                  # commented because still on the todo list
         '''
@@ -51,6 +52,7 @@ class IVVI(VisaInstrument):
         super().__init__(name, address, **kwargs)
 
         self.check_setpoints = check_setpoints
+        self.set_dac_sleep = set_dac_sleep
 
         if numdacs % 4 == 0 and numdacs > 0:
             self._numdacs = int(numdacs)
@@ -198,6 +200,8 @@ class IVVI(VisaInstrument):
             polarity_corrected = mvoltage - self.pol_num[channel - 1]
             byte_val = self._mvoltage_to_bytes(polarity_corrected)
             message = bytes([2, 1, channel]) + byte_val
+
+            time.sleep(self.set_dac_sleep)
 
             reply = self.ask(message)
             self._time_last_update = 0  # ensures get command will update
