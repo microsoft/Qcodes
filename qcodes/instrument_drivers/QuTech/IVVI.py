@@ -87,6 +87,10 @@ class IVVI(VisaInstrument):
 
         t1 = time.time()
 
+        # The setted DAC values are stored here to compare against
+        # and prevent overhead of setting the same value.
+        self.dac_setpoints = [0] * numdacs
+
         # basic test to confirm we are properly connected
         try:
             self.get_all()
@@ -162,24 +166,25 @@ class IVVI(VisaInstrument):
         '''
         Sets the specified dac to the specified voltage.
         Will only send a command to the IVVI if the next value is different
-        than the current value within byte resolution.
-
+        than the last set value
         Input:
             mvoltage (float) : output voltage in mV
             channel (int)    : 1 based index of the dac
-
         Output:
             reply (string) : errormessage
         Private version of function
         '''
-        byte_val = self._mvoltage_to_bytes(mvoltage -
-                                           self.pol_num[channel-1])
-        message = bytes([2, 1, channel]) + byte_val
+        if mvoltage != self.dac_setpoints[channel - 1]:
+            self.dac_setpoints[channel - 1] = mvoltage
 
-        reply = self.ask(message)
-        self._time_last_update = 0  # ensures get command will update
+            byte_val = self._mvoltage_to_bytes(mvoltage -
+                                               self.pol_num[channel-1])
+            message = bytes([2, 1, channel]) + byte_val
 
-        return reply
+            reply = self.ask(message)
+            self._time_last_update = 0  # ensures get command will update
+
+            return reply
 
     def _get_dacs(self):
         '''
