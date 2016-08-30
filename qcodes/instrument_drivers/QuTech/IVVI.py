@@ -29,7 +29,7 @@ class IVVI(VisaInstrument):
     Halfrange = Fullrange / 2
 
     def __init__(self, name, address, reset=False, numdacs=16, dac_step=10,
-                 dac_delay=.1, dac_max_delay=0.2, **kwargs):
+                 dac_delay=.1, dac_max_delay=0.2, check_setpoints=False, **kwargs):
                  # polarity=['BIP', 'BIP', 'BIP', 'BIP']):
                  # commented because still on the todo list
         '''
@@ -45,9 +45,12 @@ class IVVI(VisaInstrument):
             dac_step (float)         : max step size for dac parameter
             dac_delay (float)        : delay (in seconds) for dac
             dac_max_delay (float)    : maximum delay before emitting a warning
+            check_setpoints (bool)   : whether to avoid setting the same values
         '''
         t0 = time.time()
         super().__init__(name, address, **kwargs)
+
+        self.check_setpoints = check_setpoints
 
         if numdacs % 4 == 0 and numdacs > 0:
             self._numdacs = int(numdacs)
@@ -86,10 +89,6 @@ class IVVI(VisaInstrument):
         self.set_pol_dacrack('BIP', range(self._numdacs), get_all=False)
 
         t1 = time.time()
-
-        # The setted DAC values are stored here to compare against
-        # and prevent overhead of setting the same value.
-        self.dac_setpoints = [0] * numdacs
 
         # basic test to confirm we are properly connected
         try:
@@ -165,20 +164,39 @@ class IVVI(VisaInstrument):
     def _set_dac(self, channel, mvoltage):
         '''
         Sets the specified dac to the specified voltage.
-        Will only send a command to the IVVI if the next value is different
-        than the last set value
+        A check to prevent setting the same value is performed if
+        the check_setpoints flag was set.
+
         Input:
             mvoltage (float) : output voltage in mV
             channel (int)    : 1 based index of the dac
+
         Output:
             reply (string) : errormessage
         Private version of function
         '''
-        if mvoltage != self.dac_setpoints[channel - 1]:
-            self.dac_setpoints[channel - 1] = mvoltage
+        proceed = True
 
-            byte_val = self._mvoltage_to_bytes(mvoltage -
-                                               self.pol_num[channel-1])
+        if self.check_setpoints:
+            cur_val = self.get('dac{}'.format(channel))
+            # dac range in mV / 16 bits FIXME make range depend on polarity
+            byte_res = self.Fullrange / 2**16
+            # eps is a magic number to correct for an offset in the values
+            # the IVVI returns (i.e. setting 0 returns byte_res/2 = 0.030518
+            # with rounding
+            eps = 0.0001
+
+            proceed = False
+
+            if (mvoltage > (cur_val + byte_res / 2 + eps) or
+                    mvoltage < (cur_val - byte_res / 2 - eps)):
+                proceed = True
+
+        # only update the value if it is different from the previous one
+        # this saves time in setting values, set cmd takes ~650ms
+        if proceed:
+            polarity_corrected = mvoltage - self.pol_num[channel - 1]
+            byte_val = self._mvoltage_to_bytes(polarity_corrected)
             message = bytes([2, 1, channel]) + byte_val
 
             reply = self.ask(message)
