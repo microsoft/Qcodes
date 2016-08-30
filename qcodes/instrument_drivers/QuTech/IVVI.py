@@ -5,6 +5,8 @@ import visa  # used for the parity constant
 import traceback
 
 from qcodes import VisaInstrument, validators as vals
+from qcodes.instrument.parameter import ManualParameter
+from qcodes.utils.validators import Bool, Numbers
 
 
 class IVVI(VisaInstrument):
@@ -29,8 +31,7 @@ class IVVI(VisaInstrument):
     Halfrange = Fullrange / 2
 
     def __init__(self, name, address, reset=False, numdacs=16, dac_step=10,
-                 dac_delay=.1, dac_max_delay=0.2, check_setpoints=False,
-                 set_dac_sleep=0.05, **kwargs):
+                 dac_delay=.1, dac_max_delay=0.2, **kwargs):
                  # polarity=['BIP', 'BIP', 'BIP', 'BIP']):
                  # commented because still on the todo list
         '''
@@ -51,9 +52,6 @@ class IVVI(VisaInstrument):
         t0 = time.time()
         super().__init__(name, address, **kwargs)
 
-        self.check_setpoints = check_setpoints
-        self.set_dac_sleep = set_dac_sleep
-
         if numdacs % 4 == 0 and numdacs > 0:
             self._numdacs = int(numdacs)
         else:
@@ -66,6 +64,18 @@ class IVVI(VisaInstrument):
 
         self.add_parameter('version',
                            get_cmd=self._get_version)
+
+        self.add_parameter('check_setpoints',
+                           parameter_class=ManualParameter,
+                           initial_value=False,
+                           label='Check setpoints',
+                           vals=Bool())
+
+        self.add_parameter('dac_set_sleep',
+                           parameter_class=ManualParameter,
+                           initial_value=0.05,
+                           label='DAC set sleep',
+                           vals=Numbers(0))
 
         self.add_parameter('dac voltages',
                            label='Dac voltages',
@@ -179,7 +189,7 @@ class IVVI(VisaInstrument):
         '''
         proceed = True
 
-        if self.check_setpoints:
+        if self.check_setpoints():
             cur_val = self.get('dac{}'.format(channel))
             # dac range in mV / 16 bits FIXME make range depend on polarity
             byte_res = self.Fullrange / 2**16
@@ -201,7 +211,7 @@ class IVVI(VisaInstrument):
             byte_val = self._mvoltage_to_bytes(polarity_corrected)
             message = bytes([2, 1, channel]) + byte_val
 
-            time.sleep(self.set_dac_sleep)
+            time.sleep(self.dac_set_sleep())
 
             reply = self.ask(message)
             self._time_last_update = 0  # ensures get command will update
