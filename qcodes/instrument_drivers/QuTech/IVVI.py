@@ -61,7 +61,7 @@ class IVVI(VisaInstrument):
 
         self.add_parameter('version',
                            get_cmd=self._get_version)
-        
+
         self.add_parameter('dac voltages',
                            label='Dac voltages',
                            get_cmd=self._get_dacs)
@@ -81,7 +81,7 @@ class IVVI(VisaInstrument):
 
         self._update_time = 5  # seconds
         self._time_last_update = 0  # ensures first call will always update
-        
+
         self.pol_num = np.zeros(self._numdacs)  # corresponds to POS polarity
         self.set_pol_dacrack('BIP', range(self._numdacs), get_all=False)
 
@@ -172,25 +172,14 @@ class IVVI(VisaInstrument):
             reply (string) : errormessage
         Private version of function
         '''
-        cur_val = self.get('dac{}'.format(channel))
-        # dac range in mV / 16 bits FIXME make range depend on polarity
-        byte_res = self.Fullrange/2**16
-        eps = 0.0001
-        # eps is a magic number to correct for an offset in the values the IVVI
-        # returns (i.e. setting 0 returns byte_res/2 = 0.030518 with rounding
+        byte_val = self._mvoltage_to_bytes(mvoltage -
+                                           self.pol_num[channel-1])
+        message = bytes([2, 1, channel]) + byte_val
 
-        # only update the value if it is different from the previous one
-        # this saves time in setting values, set cmd takes ~650ms
-        if (mvoltage > (cur_val+byte_res/2+eps) or
-                mvoltage < (cur_val - byte_res/2-eps)):
-            byte_val = self._mvoltage_to_bytes(mvoltage -
-                                               self.pol_num[channel-1])
-            message = bytes([2, 1, channel]) + byte_val
-            time.sleep(.05)
-            reply = self.ask(message)
-            self._time_last_update = 0  # ensures get command will update
-            return reply
-        return
+        reply = self.ask(message)
+        self._time_last_update = 0  # ensures get command will update
+
+        return reply
 
     def _get_dacs(self):
         '''
@@ -260,7 +249,7 @@ class IVVI(VisaInstrument):
 
         while bytes_in_buffer < message_len:
             t1 = time.time()
-            time.sleep(.05)
+            time.sleep(.025)
             bytes_in_buffer = self.visa_handle.bytes_in_buffer
             if t1-t0 > timeout:
                 raise TimeoutError()
