@@ -47,7 +47,6 @@ class IVVI(VisaInstrument):
             dac_step (float)         : max step size for dac parameter
             dac_delay (float)        : delay (in seconds) for dac
             dac_max_delay (float)    : maximum delay before emitting a warning
-            check_setpoints (bool)   : whether to avoid setting the same values
         '''
         t0 = time.time()
         super().__init__(name, address, **kwargs)
