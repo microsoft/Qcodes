@@ -73,6 +73,8 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
 
     shared_kwargs = ()
 
+    _all_instruments = {}
+
     def __new__(cls, *args, server_name='', **kwargs):
         """Figure out whether to create a base instrument or proxy."""
         if server_name is None:
@@ -207,16 +209,31 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
         """
         Record (a weak ref to) an instance in a class's instance list.
 
+        Also records the instance in list of *all* instruments, and verifies
+        that there are no other instruments with the same name.
+
         Args:
             instance (Union[Instrument, RemoteInstrument]): Note: we *do not*
                 check that instance is actually an instance of ``cls``. This is
                 important, because a ``RemoteInstrument`` should function as an
                 instance of the instrument it proxies.
+
+        Raises:
+            KeyError: if another instance with the same name is already present
         """
+        wr = weakref.ref(instance)
+        name = instance.name
+
+        existing_wr = Instrument._all_instruments.get(name)
+        if existing_wr and existing_wr():
+            raise KeyError('Another instrument has the name: {}'.format(name))
+
+        Instrument._all_instruments[name] = wr
+
         if getattr(cls, '_type', None) is not cls:
             cls._type = cls
             cls._instances = []
-        cls._instances.append(weakref.ref(instance))
+        cls._instances.append(wr)
 
     @classmethod
     def instances(cls):
@@ -250,6 +267,61 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
         wr = weakref.ref(instance)
         if wr in cls._instances:
             cls._instances.remove(wr)
+
+        # remove from all_instruments too, but don't depend on the
+        # name to do it, in case name has changed or been deleted
+        all_ins = Instrument._all_instruments
+        for name in list(all_ins.keys()):
+            if all_ins[name] is wr:
+                del all_ins[name]
+
+    @classmethod
+    def find_instrument(cls, name):
+        """
+        Find an existing instrument by name.
+
+        Args:
+            name (str)
+
+        Returns:
+            Instrument
+
+        Raises:
+            KeyError: if no instrument of that name was found, or if its
+                reference is invalid (dead).
+        """
+        ins = cls._all_instruments[name]()
+
+        if ins is None:
+            del cls._all_instruments[name]
+            raise KeyError('Instrument {} has been removed'.format(name))
+
+        return ins
+
+    @classmethod
+    def find_component(cls, name_attr):
+        """
+        Find a component of an existing instrument by name and attribute.
+
+        Args:
+            name_attr (str): A string in nested attribute format:
+                <name>.<attribute>[.<subattribute>] and so on.
+                For example, <attribute> can be a parameter name,
+                or a method name.
+
+        Returns:
+            Any: The component requested.
+        """
+
+        if '.' in name_attr:
+            name, attr = name_attr.split('.', 1)
+            ins = cls.find_instrument(name)
+            return ins.getattr(attr)
+
+        else:
+            # allow find_component to return the whole instrument,
+            # if no attribute was specified, for maximum generality.
+            return cls.find_instrument(name_attr)
 
     def add_parameter(self, name, parameter_class=StandardParameter,
                       **kwargs):

@@ -16,7 +16,8 @@ from qcodes.utils.helpers import LogCapture
 from qcodes.process.helpers import kill_processes
 
 from .instrument_mocks import (AMockModel, MockInstTester,
-                               MockGates, MockSource, MockMeter, DummyInstrument)
+                               MockGates, MockSource, MockMeter,
+                               DummyInstrument)
 from .common import strip_qc
 
 
@@ -94,7 +95,8 @@ class TestInstrument(TestCase):
 
     def test_slow_set(self):
         # at least for now, need a local instrument to test logging
-        gatesLocal = MockGates(model=self.model, server_name=None)
+        gatesLocal = MockGates(model=self.model, server_name=None,
+                               name='gateslocal')
         for param, logcount in (('chan0slow', 2), ('chan0slow2', 2),
                                 ('chan0slow3', 0), ('chan0slow4', 1),
                                 ('chan0slow5', 0)):
@@ -123,10 +125,10 @@ class TestInstrument(TestCase):
             # need to talk to the hardware, so these need to be included
             # from the beginning when the instrument is created on the
             # server.
-            GatesBadDelayType(model=self.model)
+            GatesBadDelayType(model=self.model, name='gatesBDT')
 
         with self.assertRaises(ValueError):
-            GatesBadDelayValue(model=self.model)
+            GatesBadDelayValue(model=self.model, name='gatesBDV')
 
     def check_ts(self, ts_str):
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -268,9 +270,11 @@ class TestInstrument(TestCase):
             gates.ask('ampl?')
 
         with self.assertRaises(TypeError):
-            MockInstrument('', delay='forever')
+            MockInstrument('mockbaddelay1', delay='forever')
         with self.assertRaises(TypeError):
-            MockInstrument('', delay=-1)
+            # TODO: since this instrument didn't work, it should be OK
+            # to use the same name again... how do we allow that?
+            MockInstrument('mockbaddelay2', delay=-1)
 
         # TODO: when an error occurs during constructing an instrument,
         # we don't have the instrument but its server doesn't know to stop.
@@ -314,7 +318,8 @@ class TestInstrument(TestCase):
         # but we should handle it
         # at least for now, need a local instrument to check logging
         source = self.sourceLocal = MockSource(model=self.model,
-                                               server_name=None)
+                                               server_name=None,
+                                               name='sourcelocal')
         source.add_parameter('amplitude2', get_cmd='ampl?',
                              set_cmd='ampl:{}', get_parser=float,
                              vals=MultiType(Numbers(0, 1), Strings()),
@@ -804,9 +809,9 @@ class TestLocalMock(TestCase):
     def setUp(self):
         self.model = AMockModel()
 
-        self.gates = MockGates(self.model, server_name=None)
-        self.source = MockSource(self.model, server_name=None)
-        self.meter = MockMeter(self.model, server_name=None)
+        self.gates = MockGates(model=self.model, server_name=None)
+        self.source = MockSource(model=self.model, server_name=None)
+        self.meter = MockMeter(model=self.model, server_name=None)
 
     def tearDown(self):
         self.model.close()

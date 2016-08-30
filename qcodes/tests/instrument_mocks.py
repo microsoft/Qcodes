@@ -74,6 +74,23 @@ class AMockModel(MockModel):
         elif parameter[:5] == 'echo ':
             return self.fmt(float(parameter[5:]))
 
+    # alias because we need new names when we instantiate an instrument
+    # locally at the same time as remotely
+    def gateslocal_set(self, parameter, value):
+        return self.gates_set(parameter, value)
+
+    def gateslocal_get(self, parameter):
+        return self.gates_get(parameter)
+
+    def sourcelocal_set(self, parameter, value):
+        return self.source_set(parameter, value)
+
+    def sourcelocal_get(self, parameter):
+        return self.source_get(parameter)
+
+    def meterlocal_get(self, parameter):
+        return self.meter_get(parameter)
+
 
 class ParamNoDoc:
 
@@ -115,8 +132,8 @@ class MockInstTester(MockInstrument):
 
 class MockGates(MockInstTester):
 
-    def __init__(self, model=None, **kwargs):
-        super().__init__('gates', model=model, delay=0.001, **kwargs)
+    def __init__(self, name='gates', model=None, **kwargs):
+        super().__init__(name, model=model, delay=0.001, **kwargs)
 
         for i in range(3):
             cmdbase = 'c{}'.format(i)
@@ -164,8 +181,8 @@ class MockGates(MockInstTester):
 
 class MockSource(MockInstTester):
 
-    def __init__(self, model=None, **kwargs):
-        super().__init__('source', model=model, delay=0.001, **kwargs)
+    def __init__(self, name='source', model=None, **kwargs):
+        super().__init__(name, model=model, delay=0.001, **kwargs)
 
         self.add_parameter('amplitude', get_cmd='ampl?',
                            set_cmd='ampl:{:.4f}', get_parser=float,
@@ -175,8 +192,8 @@ class MockSource(MockInstTester):
 
 class MockMeter(MockInstTester):
 
-    def __init__(self, model=None, **kwargs):
-        super().__init__('meter', model=model, delay=0.001, **kwargs)
+    def __init__(self, name='meter', model=None, **kwargs):
+        super().__init__(name, model=model, delay=0.001, **kwargs)
 
         self.add_parameter('amplitude', get_cmd='ampl?', get_parser=float)
         self.add_function('echo', call_cmd='echo {:.2f}?',
