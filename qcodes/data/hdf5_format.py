@@ -99,8 +99,8 @@ class HDF5Format(Formatter):
 
     def _filepath_from_location(self, location, io_manager):
         filename = os.path.split(location)[-1]
-        filepath = io_manager.join(location +
-                                   '/{}.hdf5'.format(filename))
+        filepath = io_manager.to_path(location +
+                                      '/{}.hdf5'.format(filename))
         return filepath
 
     def _create_data_object(self, data_set, io_manager=None,
