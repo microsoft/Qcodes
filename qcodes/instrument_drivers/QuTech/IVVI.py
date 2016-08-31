@@ -8,6 +8,7 @@ from qcodes import VisaInstrument, validators as vals
 
 
 class IVVI(VisaInstrument):
+
     '''
     Status: Alpha version, tested for basic get-set commands
         TODO:
@@ -58,12 +59,12 @@ class IVVI(VisaInstrument):
         # values based on descriptor
         self.visa_handle.baud_rate = 115200
         self.visa_handle.parity = visa.constants.Parity(1)  # odd parity
-        self.visa_handle.write_termination=''
-        self.visa_handle.read_termination=''
+        self.visa_handle.write_termination = ''
+        self.visa_handle.read_termination = ''
 
         self.add_parameter('version',
                            get_cmd=self._get_version)
-        
+
         self.add_parameter('dac voltages',
                            label='Dac voltages',
                            get_cmd=self._get_dacs)
@@ -83,7 +84,7 @@ class IVVI(VisaInstrument):
 
         self._update_time = 5  # seconds
         self._time_last_update = 0  # ensures first call will always update
-        
+
         self.pol_num = np.zeros(self._numdacs)  # corresponds to POS polarity
         self.set_pol_dacrack('BIP', range(self._numdacs), get_all=False)
 
@@ -96,13 +97,14 @@ class IVVI(VisaInstrument):
             print('IVVI: get_all() failed, maybe connected to wrong port?')
             print(traceback.format_exc())
 
-        v=self.visa_handle
+        v = self.visa_handle
 
         # make sure we igonore termination characters
-        # http://www.ni.com/tutorial/4256/en/#toc2 on Termination Character Enabled
+        # http://www.ni.com/tutorial/4256/en/#toc2 on Termination Character
+        # Enabled
         v.set_visa_attribute(visa.constants.VI_ATTR_TERMCHAR_EN, 0)
         v.set_visa_attribute(visa.constants.VI_ATTR_ASRL_END_IN, 0)
-        print('Initialized IVVI-rack in %.2fs' % (t1-t0))
+        print('Initialized IVVI-rack in %.2fs' % (t1 - t0))
 
     def get_idn(self):
         """
@@ -125,7 +127,7 @@ class IVVI(VisaInstrument):
 
     def set_dacs_zero(self):
         for i in range(self._numdacs):
-            self._set_dac(i+1, 0)
+            self._set_dac(i + 1, 0)
 
     # Conversion of data
     def _mvoltage_to_bytes(self, mvoltage):
@@ -141,7 +143,7 @@ class IVVI(VisaInstrument):
         Output:
             (dataH, dataL) (int, int) : The high and low value byte equivalent
         '''
-        bytevalue = int(round(mvoltage/self.Fullrange*65535))
+        bytevalue = int(round(mvoltage / self.Fullrange * 65535))
         return bytevalue.to_bytes(length=2, byteorder='big')
 
     def _bytes_to_mvoltages(self, byte_mess):
@@ -153,8 +155,8 @@ class IVVI(VisaInstrument):
         for i in range(self._numdacs):
             # takes two bytes, converts it to a 16 bit int and then divides by
             # the range and adds the offset due to the polarity
-            values[i] = ((byte_mess[2 + 2*i]*256 + byte_mess[3 + 2*i]) /
-                         65535.0*self.Fullrange) + self.pol_num[i]
+            values[i] = ((byte_mess[2 + 2 * i] * 256 + byte_mess[3 + 2 * i]) /
+                         65535.0 * self.Fullrange) + self.pol_num[i]
         return values
 
     # Communication with device
@@ -166,7 +168,7 @@ class IVVI(VisaInstrument):
         this version is a wrapper around the IVVI get function.
         it only updates
         '''
-        return self._get_dacs()[channel-1]
+        return self._get_dacs()[channel - 1]
 
     def _set_dac(self, channel, mvoltage):
         '''
@@ -184,17 +186,17 @@ class IVVI(VisaInstrument):
         '''
         cur_val = self.get('dac{}'.format(channel))
         # dac range in mV / 16 bits FIXME make range depend on polarity
-        byte_res = self.Fullrange/2**16
+        byte_res = self.Fullrange / 2**16
         eps = 0.0001
         # eps is a magic number to correct for an offset in the values the IVVI
         # returns (i.e. setting 0 returns byte_res/2 = 0.030518 with rounding
 
         # only update the value if it is different from the previous one
         # this saves time in setting values, set cmd takes ~650ms
-        if (mvoltage > (cur_val+byte_res/2+eps) or
-                mvoltage < (cur_val - byte_res/2-eps)):
+        if (mvoltage > (cur_val + byte_res / 2 + eps) or
+                mvoltage < (cur_val - byte_res / 2 - eps)):
             byte_val = self._mvoltage_to_bytes(mvoltage -
-                                               self.pol_num[channel-1])
+                                               self.pol_num[channel - 1])
             message = bytes([2, 1, channel]) + byte_val
             time.sleep(.05)
             reply = self.ask(message)
@@ -215,7 +217,7 @@ class IVVI(VisaInstrument):
         get dacs command takes ~450ms according to ipython timeit
         '''
         if (time.time() - self._time_last_update) > self._update_time:
-            message = bytes([self._numdacs*2+2, 2])
+            message = bytes([self._numdacs * 2 + 2, 2])
             # workaround for an error in the readout that occurs sometimes
             max_tries = 10
             for i in range(max_tries):
@@ -226,7 +228,7 @@ class IVVI(VisaInstrument):
                     break
                 except Exception as ex:
                     logging.warning('IVVI communication error trying again')
-            if i+1 == max_tries:  # +1 because range goes stops before end
+            if i + 1 == max_tries:  # +1 because range goes stops before end
                 raise('IVVI Communication error')
         return self._mvoltages
 
@@ -241,7 +243,7 @@ class IVVI(VisaInstrument):
         if not raw:
             # This is used when write is used in the ask command
             expected_answer_length = message[0]
-            message_len = len(message)+2
+            message_len = len(message) + 2
             error_code = bytes([0])
             message = bytes([message_len]) + error_code + message
         self.visa_handle.write_raw(message)
@@ -260,7 +262,7 @@ class IVVI(VisaInstrument):
 
     def _read_raw_bytes_direct(self, size):
         """ Read raw data using the visa lib
-        
+
         """
         with(self.visa_handle.ignore_warning(visa.constants.VI_SUCCESS_MAX_CNT)):
             mes = self.visa_handle.visalib.read(
@@ -269,25 +271,25 @@ class IVVI(VisaInstrument):
 
     def _read_raw_bytes_multiple(self, size, maxread=256, verbose=0):
         """ Read raw data in blocks using the visa lib
-        
+
         The pyvisa visalib.read does not always terminates at a newline, this is a workaround
-        
+
         Also see: https://github.com/qdev-dk/Qcodes/issues/276
                   https://github.com/hgrecco/pyvisa/issues/225
         """
         ret = []
-        instr=self.visa_handle
+        instr = self.visa_handle
         with self.visa_handle.ignore_warning(visa.constants.VI_SUCCESS_MAX_CNT):
-            nread=0
+            nread = 0
             while nread < size:
-                nn=min(maxread, size-nread)
+                nn = min(maxread, size - nread)
                 chunk, status = instr.visalib.read(instr.session, nn)
                 ret += [chunk]
-                nread+=len(chunk)
+                nread += len(chunk)
                 if verbose:
-                    print('_read_raw: %d/%d bytes'  % (len(chunk), nread))
-        ret=b''.join(ret)
-        return ret  
+                    print('_read_raw: %d/%d bytes' % (len(chunk), nread))
+        ret = b''.join(ret)
+        return ret
 
     def read(self, message_len=None):
         # because protocol has no termination chars the read reads the number
@@ -304,13 +306,13 @@ class IVVI(VisaInstrument):
             t1 = time.time()
             time.sleep(.05)
             bytes_in_buffer = self.visa_handle.bytes_in_buffer
-            if t1-t0 > timeout:
+            if t1 - t0 > timeout:
                 raise TimeoutError()
         # a workaround for a timeout error in the pyvsia read_raw() function
-        mes=self._read_raw_bytes_multiple(bytes_in_buffer)
-                
+        mes = self._read_raw_bytes_multiple(bytes_in_buffer)
+
         # if mes[1] != 0:
-        #     # see protocol descriptor for error codes
+        # see protocol descriptor for error codes
         #     raise Exception('IVVI rack exception "%s"' % mes[1])
         return mes
 
@@ -332,8 +334,9 @@ class IVVI(VisaInstrument):
 
         val = flagmap[flag.upper()]
         for ch in channels:
-            self.pol_num[ch-1] = val
-            # self.set_parameter_bounds('dac%d' % (i+1), val, val + self.Fullrange.0)
+            self.pol_num[ch - 1] = val
+            # self.set_parameter_bounds('dac%d' % (i+1), val, val +
+            # self.Fullrange.0)
 
         if get_all:
             self.get_all()
@@ -348,7 +351,7 @@ class IVVI(VisaInstrument):
         Output:
             polarity (string) : 'BIP', 'POS' or 'NEG'
         '''
-        val = self.pol_num[channel-1]
+        val = self.pol_num[channel - 1]
 
         if (val == -self.Fullrange):
             return 'NEG'
