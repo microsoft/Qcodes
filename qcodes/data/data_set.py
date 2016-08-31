@@ -605,10 +605,10 @@ class DataSet(DelegateAttributes):
         paramname is tried.
 
         Args:
-            paramname (string): Name to match to parameter name
+            paramname (str): Name to match to parameter name
 
         Returns:
-            name (string): name of the default parameter
+            name ( Union[str, None] ): name of the default parameter
         """
 
         arraynames = self.arrays.keys()
@@ -635,7 +635,7 @@ class DataSet(DelegateAttributes):
         try:
             name = next(iter(arraynames))
             return name
-        except:
+        except Exception:
             pass
         return None
 
@@ -643,7 +643,7 @@ class DataSet(DelegateAttributes):
         """ Return default parameter array
 
         Args:
-            paramname (string): Name to match to parameter name
+            paramname (str): Name to match to parameter name. Defaults to 'amplitude'
 
         Returns:
             array (DataArray): array corresponding to the default parameter
