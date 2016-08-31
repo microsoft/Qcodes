@@ -90,7 +90,7 @@ class IVVI(VisaInstrument):
 
         t1 = time.time()
 
-#         basic test to confirm we are properly connected
+        # basic test to confirm we are properly connected
         try:
             self.get_all()
         except Exception as ex:
@@ -269,13 +269,26 @@ class IVVI(VisaInstrument):
                 self.visa_handle.session, size)
         return mes[0]
 
-    def _read_raw_bytes_multiple(self, size, maxread=256, verbose=0):
+    def _read_raw_bytes_multiple(self, size, maxread=512, verbose=0):
         """ Read raw data in blocks using the visa lib
 
-        The pyvisa visalib.read does not always terminates at a newline, this is a workaround
+        Arguments:
+            size (int) : number of bytes to read
+            maxread (int) : maximum size of block to read
+            verbose (int): verbosity level
+
+        Returns:
+            ret (bytes): bytes read from the device
+
+        The pyvisa visalib.read does not always terminate at a newline, this is a workaround
 
         Also see: https://github.com/qdev-dk/Qcodes/issues/276
                   https://github.com/hgrecco/pyvisa/issues/225
+
+        Setting both VI_ATTR_TERMCHAR_EN and VI_ATTR_ASRL_END_IN to zero
+        should allow the driver to ignore termination characters, this
+        function is an additional safety mechanism.
+
         """
         ret = []
         instr = self.visa_handle
@@ -292,6 +305,17 @@ class IVVI(VisaInstrument):
         return ret
 
     def read(self, message_len=None):
+        """ Read from the device
+
+        The function waits for the device to have enough data in the buffer
+        and then starts reading.
+
+        Arguments:
+            message_len (int): number of bytes to be read
+        Returns:
+            mes (bytes): bytes read from the device
+
+        """
         # because protocol has no termination chars the read reads the number
         # of bytes in the buffer
         bytes_in_buffer = 0
