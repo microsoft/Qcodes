@@ -593,7 +593,7 @@ class DataSet(DelegateAttributes):
             self.data_manager.write('store_data', loop_indices, ids_values)
         else:
             # You will always end up in this block, either in the copy
-            # on the server (if you hit the if statement above or else here)
+            # on the server (if you hit the if statement above) or else here
             for array_id, value in ids_values.items():
                 self.arrays[array_id][loop_indices] = value
             if (self.write_period is not None and
@@ -606,7 +606,6 @@ class DataSet(DelegateAttributes):
         if self.location is False:
             return
         self.formatter.read(self)
-
 
     def read_metadata(self):
         """Read the metadata from storage, overwriting the local data."""
@@ -698,11 +697,23 @@ class DataSet(DelegateAttributes):
             self.formatter.write_metadata(self, self.io, self.location)
 
     def finalize(self):
-        """Mark the DataSet complete and write any remaining modifications."""
+        """
+        Mark the DataSet complete and write any remaining modifications.
+
+        Also closes the data file(s), if the ``Formatter`` we're using
+        supports that.
+        """
         if self.mode == DataMode.PUSH_TO_SERVER:
-            self.data_manager.ask('end_data')
+            # Just like .store, if this DataSet is on the DataServer,
+            # we defer to the copy there and execute this same method.
+            self.data_manager.ask('finalize_data')
         elif self.mode == DataMode.LOCAL:
+            # You will always end up in this block, either in the copy
+            # on the server (if you hit the if statement above) or else here
             self.write()
+
+            if hasattr(self.formatter, 'close_file'):
+                self.formatter.close_file(self)
         else:
             raise RuntimeError('This mode does not allow finalizing',
                                self.mode)
