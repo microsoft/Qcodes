@@ -22,7 +22,8 @@ class HDF5Format(Formatter):
             # Removes reference to closed file
             del data_set._h5_base_group
         else:
-            logging.warning('Cannot close file, data_set has no open hdf5 file')
+            logging.warning(
+                'Cannot close file, data_set has no open hdf5 file')
 
     def _create_file(self, filepath):
         """
@@ -80,12 +81,13 @@ class HDF5Format(Formatter):
                     preset_data=vals)
                 data_set.add_array(d_array)
             else:  # update existing array with extracted values
-                data_set.arrays[array_id].name = name
-                data_set.arrays[array_id].label = label
-                data_set.arrays[array_id].units = units
-                data_set.arrays[array_id].is_setpoint = is_setpoint
-                data_set.arrays[array_id].ndarray = vals
-                data_set.arrays[array_id].shape = dat_arr.attrs['shape']
+                d_array = data_set.arrays[array_id]
+                d_array.name = name
+                d_array.label = label
+                d_array.units = units
+                d_array.is_setpoint = is_setpoint
+                d_array.ndarray = vals
+                d_array.shape = dat_arr.attrs['shape']
             # needed because I cannot add set_arrays at this point
             data_set.arrays[array_id]._sa_array_ids = set_arrays
 
@@ -267,15 +269,11 @@ class HDF5Format(Formatter):
 
     def write_dict_to_hdf5(self, data_dict, entry_point):
         for key, item in data_dict.items():
-            if (isinstance(item, str) or
-                    isinstance(item, bool) or
-                    isinstance(item, tuple) or
-                    isinstance(item, float) or
-                    isinstance(item, int)):
-                    entry_point.attrs[key] = item
-            elif type(item) == np.ndarray:
+            if isinstance(item, (str, bool, tuple, float, int)):
+                entry_point.attrs[key] = item
+            elif isinstance(item, np.ndarray):
                 entry_point.create_dataset(key, data=item)
-            elif isinstance(item, type(None)):
+            elif item is None:
                 # as h5py does not support saving None as attribute
                 # I create special string, note that this can create
                 # unexpected behaviour if someone saves a string with this name
@@ -288,8 +286,7 @@ class HDF5Format(Formatter):
                 if len(item) > 0:
                     elt_type = type(item[0])
                     if all(isinstance(x, elt_type) for x in item):
-                        if (isinstance(item[0], int) or
-                                isinstance(item[0], float)):
+                        if isinstance(item[0], (int, float)):
                             entry_point.create_dataset(key,
                                                        data=np.array(item))
                         elif isinstance(item[0], str):
@@ -300,10 +297,11 @@ class HDF5Format(Formatter):
                             ds[:] = data
                         elif isinstance(item[0], dict):
                             entry_point.create_group(key)
-                            entry_point[key].attrs['list_type'] = 'dict'
+                            group_attrs = entry_point[key].attrs
+                            group_attrs['list_type'] = 'dict'
                             base_list_key = 'list_idx_{}'
-                            entry_point[key].attrs['base_list_key'] = base_list_key
-                            entry_point[key].attrs['list_length'] = len(item)
+                            group_attrs['base_list_key'] = base_list_key
+                            group_attrs['list_length'] = len(item)
                             for i, list_item in enumerate(item):
                                 list_item_grp = entry_point[key].create_group(
                                     base_list_key.format(i))
@@ -311,15 +309,22 @@ class HDF5Format(Formatter):
                                     data_dict=list_item,
                                     entry_point=list_item_grp)
                         else:
-                            logging.warning('List of type "{}" for "{}":"{}" not supported, storing as string'.format(elt_type, key, item))
+                            logging.warning(
+                                'List of type "{}" for "{}":"{}" not '
+                                'supported, storing as string'.format(
+                                    elt_type, key, item))
                     else:
-                        logging.warning('List of mixed type for "{}":"{}" not supported, storing as string'.format(type(item), key, item))
+                        logging.warning(
+                            'List of mixed type for "{}":"{}" not supported, '
+                            'storing as string'.format(type(item), key, item))
                 else:
                     # as h5py does not support saving None as attribute
                     entry_point.attrs[key] = 'NoneType:__emptylist__'
 
             else:
-                logging.warning('Type "{}" for "{}":"{}" not supported, storing as string'.format(type(item), key, item))
+                logging.warning(
+                    'Type "{}" for "{}":"{}" not supported, '
+                    'storing as string'.format(type(item), key, item))
                 entry_point.attrs[key] = str(item)
 
     def read_metadata(self, data_set):
@@ -333,7 +338,7 @@ class HDF5Format(Formatter):
     def read_dict_from_hdf5(self, data_dict, h5_group):
         if 'list_type' not in h5_group.attrs:
             for key, item in h5_group.items():
-                if isinstance(item, h5py._hl.group.Group):
+                if isinstance(item, h5py.Group):
                     data_dict[key] = {}
                     data_dict[key] = self.read_dict_from_hdf5(data_dict[key],
                                                               item)
@@ -351,7 +356,7 @@ class HDF5Format(Formatter):
                 data_dict[key] = item
         elif h5_group.attrs['list_type'] == 'dict':
             # preallocate empty list
-            list_to_be_filled = [None]*h5_group.attrs['list_length']
+            list_to_be_filled = [None] * h5_group.attrs['list_length']
             base_list_key = h5_group.attrs['base_list_key']
             for i in range(h5_group.attrs['list_length']):
                 list_to_be_filled[i] = {}
