@@ -112,11 +112,11 @@ class HDF5Format(Formatter):
             io_manager = data_set.io
         if location is None:
             location = data_set.location
-        self.filepath = self._filepath_from_location(location, io_manager)
+        filepath = self._filepath_from_location(location, io_manager)
         # note that this creates an hdf5 file in a folder with the same
         # name. This is useful for saving e.g. images in the same folder
         # I think this is a sane default (MAR).
-        data_set._h5_base_group = self._create_file(self.filepath)
+        data_set._h5_base_group = self._create_file(filepath)
         return data_set._h5_base_group
 
     def write(self, data_set, io_manager=None, location=None,
@@ -135,19 +135,23 @@ class HDF5Format(Formatter):
             write_metadata is called at the end of write and dumps a
             dictionary to an hdf5 file. If there already is metadata it will
             delete this and overwrite it with current metadata.
-
         """
         if not hasattr(data_set, '_h5_base_group') or force_write:
             data_set._h5_base_group = self._create_data_object(
                 data_set, io_manager, location)
 
-        if 'Data Arrays' not in data_set._h5_base_group.keys():
-            self.arr_group = data_set._h5_base_group.create_group('Data Arrays')
+        data_name = 'Data Arrays'
+
+        if data_name not in data_set._h5_base_group.keys():
+            arr_group = data_set._h5_base_group.create_group(data_name)
+        else:
+            arr_group = data_set._h5_base_group[data_name]
+
         for array_id in data_set.arrays.keys():
-            if array_id not in self.arr_group.keys() or force_write:
+            if array_id not in arr_group.keys() or force_write:
                 self._create_dataarray_dset(array=data_set.arrays[array_id],
-                                            group=self.arr_group)
-            dset = self.arr_group[array_id]
+                                            group=arr_group)
+            dset = arr_group[array_id]
             # Resize the dataset and add the new values
 
             # dataset refers to the hdf5 dataset here
@@ -159,9 +163,8 @@ class HDF5Format(Formatter):
                                 datasetshape[1])
             dset.resize(new_datasetshape)
             new_data_shape = (new_dlen-old_dlen, datasetshape[1])
-            dset[old_dlen:new_dlen] = \
-                x[old_dlen:new_dlen].reshape(
-                    new_data_shape)
+            dset[old_dlen:new_dlen] = x[old_dlen:new_dlen].reshape(
+                new_data_shape)
             # allow resizing extracted data, here so it gets written for
             # incremental writes aswell
             dset.attrs['shape'] = x.shape
@@ -214,12 +217,12 @@ class HDF5Format(Formatter):
         return dset
 
     def _create_data_arrays_grp(self, data_set, arrays):
-        self.data_arrays_grp = data_set._h5_base_group.create_group('Data Arrays')
+        data_arrays_grp = data_set._h5_base_group.create_group('Data Arrays')
         # Allows reshaping but does not allow adding extra parameters
-        self.dset = self.data_arrays_grp.create_dataset(
+        dset = data_arrays_grp.create_dataset(
             'Data', (0, len(arrays.keys())),
             maxshape=(None, len(arrays.keys())))
-        self.dset.attrs['column names'] = _encode_to_utf8(arrays.keys())
+        dset.attrs['column names'] = _encode_to_utf8(arrays.keys())
 
         labels = []
         names = []
@@ -240,12 +243,12 @@ class HDF5Format(Formatter):
                 units += ['']
 
         # _encode_to_utf8(str(...)) ensures None gets encoded for h5py aswell
-        self.dset.attrs['labels'] = _encode_to_utf8(str(labels))
-        self.dset.attrs['names'] = _encode_to_utf8(str(names))
-        self.dset.attrs['units'] = _encode_to_utf8(str(units))
+        dset.attrs['labels'] = _encode_to_utf8(str(labels))
+        dset.attrs['names'] = _encode_to_utf8(str(names))
+        dset.attrs['units'] = _encode_to_utf8(str(units))
 
         # Added to tell analysis how to extract the data
-        self.data_arrays_grp.attrs['datasaving_format'] = _encode_to_utf8(
+        data_arrays_grp.attrs['datasaving_format'] = _encode_to_utf8(
             'QCodes hdf5 v0.1')
 
     def write_metadata(self, data_set, io=None, location=None):
