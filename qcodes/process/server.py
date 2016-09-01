@@ -299,6 +299,7 @@ class BaseServer(NestedAttrAccess):
             _ = loggingGUI.installZMQlogger()
             logging.info('run_event_loop')
 
+        ptime=time.time()
         while self.running:
             try:
                 query = self._query_queue.get(timeout=self.timeout)
@@ -310,7 +311,9 @@ class BaseServer(NestedAttrAccess):
                 logging.info('no heartbeat, stopping process')
                 self.running = False
             else:
-                logging.info('heartbeat of %s: alive... %s' % (current_process().name, time.ctime()) )
+                if (time.time()-ptime)>.1:
+                    logging.info('heartbeat of %s: alive... %s' % (current_process().name, time.ctime()) )
+                    ptime=time.time()
 
     def process_query(self, query):
         """
