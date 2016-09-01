@@ -458,8 +458,7 @@ class DataSet(DelegateAttributes):
         failing = {key: False for key in self.background_functions}
 
         nloops = 0
-        completed = False
-        while not completed:
+        while True:
             logging.info('DataSet: {:.0f}% complete'.format(
                 self.fraction_complete() * 100))
 
@@ -480,7 +479,6 @@ class DataSet(DelegateAttributes):
                     failing[key] = True
 
             if self.sync() is False:
-                completed = True
                 break
 
             time.sleep(delay)
