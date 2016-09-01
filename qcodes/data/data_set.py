@@ -458,16 +458,11 @@ class DataSet(DelegateAttributes):
         failing = {key: False for key in self.background_functions}
 
         nloops = 0
-        completed = False
-        while not completed:
+        while True:
             logging.info('DataSet: {:.0f}% complete'.format(
                 self.fraction_complete() * 100))
 
-            time.sleep(delay)
             nloops += 1
-
-            if self.sync() is False:
-                completed = True
 
             for key, fn in list(self.background_functions.items()):
                 try:
@@ -482,6 +477,11 @@ class DataSet(DelegateAttributes):
                             'removing it'.format(key))
                         del self.background_functions[key]
                     failing[key] = True
+
+            if self.sync() is False:
+                break
+
+            time.sleep(delay)
 
         logging.info('DataSet <{}> is complete'.format(self.location))
 
