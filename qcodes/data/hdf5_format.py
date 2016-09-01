@@ -376,7 +376,7 @@ def _encode_to_utf8(s):
         s = s.encode('utf-8')
     # If it is an array of value decodes individual entries
     elif isinstance(s, (np.ndarray, list)):
-        s = [s.encode('utf-8') for s in s]
+        s = [si.encode('utf-8') for si in s]
     return s
 
 
