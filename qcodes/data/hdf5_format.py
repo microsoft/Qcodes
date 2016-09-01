@@ -313,10 +313,12 @@ class HDF5Format(Formatter):
                                 'List of type "{}" for "{}":"{}" not '
                                 'supported, storing as string'.format(
                                     elt_type, key, item))
+                            entry_point.attrs[key] = str(item)
                     else:
                         logging.warning(
                             'List of mixed type for "{}":"{}" not supported, '
                             'storing as string'.format(type(item), key, item))
+                        entry_point.attrs[key] = str(item)
                 else:
                     # as h5py does not support saving None as attribute
                     entry_point.attrs[key] = 'NoneType:__emptylist__'
