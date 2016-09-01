@@ -635,7 +635,7 @@ class DataSet(DelegateAttributes):
         try:
             name = next(iter(arraynames))
             return name
-        except Exception:
+        except StopIteration:
             pass
         return None
 
