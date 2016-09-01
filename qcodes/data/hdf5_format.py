@@ -227,20 +227,10 @@ class HDF5Format(Formatter):
         labels = []
         names = []
         units = []
-        for key in arrays.keys():
-            arr = arrays[key]
-            if hasattr(arr, 'label'):
-                labels += [arr.label]
-            else:
-                labels += [key]
-            if hasattr(arr, 'name'):
-                names += [arr.name]
-            else:
-                labels += [key]
-            if hasattr(arr, 'units'):
-                units += [arr.units]
-            else:
-                units += ['']
+        for key, arr in arrays.items():
+            labels.append(getattr(arr, 'label', key))
+            names.append(getattr(arr, 'name', key))
+            units.append(getattr(arr, 'units', ''))
 
         # _encode_to_utf8(str(...)) ensures None gets encoded for h5py aswell
         dset.attrs['labels'] = _encode_to_utf8(str(labels))
