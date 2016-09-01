@@ -372,10 +372,10 @@ def _encode_to_utf8(s):
     Required because h5py does not support python3 strings
     """
     # converts byte type to string because of h5py datasaving
-    if type(s) == str:
+    if isinstance(s, str):
         s = s.encode('utf-8')
     # If it is an array of value decodes individual entries
-    elif type(s) == np.ndarray or list:
+    elif isinstance(s, (np.ndarray, list)):
         s = [s.encode('utf-8') for s in s]
     return s
 
