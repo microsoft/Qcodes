@@ -10,6 +10,11 @@ from qcodes.version import __version__
 from qcodes.process.helpers import set_mp_method
 from qcodes.utils.helpers import in_notebook
 
+config=dict({'logging': {'usezmq': 1} })
+if config['logging']['usezmq']:
+    from qcodes.utils.loggingGUI import installZMQlogger
+    qlogger=installZMQlogger()    
+
 # code that should only be imported into the main (notebook) thread
 # in particular, importing matplotlib in the side processes takes a long
 # time and spins up other processes in order to try and get a front end
