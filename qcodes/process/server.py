@@ -5,6 +5,8 @@ from traceback import format_exc
 from uuid import uuid4
 import builtins
 import logging
+import time
+from multiprocessing import current_process
 
 QUERY_WRITE = 'WRITE'
 QUERY_ASK = 'ASK'
@@ -14,6 +16,8 @@ RESPONSE_ERROR = 'ERROR'
 from qcodes.utils.nested_attrs import NestedAttrAccess
 from .qcodes_process import QcodesProcess
 from .helpers import kill_queue
+from qcodes import config
+from qcodes.utils import loggingGUI
 
 
 class ServerManager:
@@ -282,9 +286,21 @@ class BaseServer(NestedAttrAccess):
           it's not by setting `self.running = False`)
         """
         self.running = True
+
+        if config['logging']['usezmq']:
+            if self.timeout == None:
+                self.timeout = 5
+            _ = loggingGUI.installZMQlogger()
+            logging.info('run_event_loop')
+        prev_time = time.time()
         while self.running:
             query = self._query_queue.get(timeout=self.timeout)
             self.process_query(query)
+
+            if (time.time() - prev_time) > .1:
+                logging.info('heartbeat of %s: alive... %s' %
+                             (current_process().name, time.ctime()))
+                prev_time = time.time()
 
     def process_query(self, query):
         """
