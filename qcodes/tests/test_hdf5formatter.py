@@ -204,20 +204,46 @@ class TestHDF5_Format(TestCase):
 
     def test_dataset_closing(self):
         data = DataSet1D()
+        self.formatter.write(data, flush=False)
+        fp = data._h5_base_group.filename
+        fp2 = fp[:-5]+'_2.hdf5'
+        copy(fp, fp2)
+        # Raises an error because the file was open and not flushed
+        # This tests if this way of testing works
+        with self.assertRaises(OSError):
+            F2 = h5py.File(fp2)
+        self.formatter.close_file(data)
+        fp3 = fp[:-5]+'_3.hdf5'
+        copy(fp, fp3)
+        # Should now not raise an error because the file was properly closed
+        F3 = h5py.File(fp3)
+
+    def test_dataset_flush_after_write(self):
+        data = DataSet1D()
+        self.formatter.write(data, flush=True)
+        fp = data._h5_base_group.filename
+        fp2 = fp[:-5]+'_2.hdf5'
+        copy(fp, fp2)
+        # Opening this copy should not raise an error
+        F2 = h5py.File(fp2)
+
+    def test_dataset_finalize_closes_file(self):
+        data = DataSet1D()
         # closing before file is written should not raise error
-        self.formatter.write(data)
+        self.formatter.write(data, flush=False)
         fp = data._h5_base_group.filename
         fp2 = fp[:-5]+'_2.hdf5'
         copy(fp, fp2)
         # Raises an error because the file was still open
         with self.assertRaises(OSError):
             F2 = h5py.File(fp2)
-        self.formatter.close_file(data)
+        # Attaching the formatter like this should not be neccesary
+        data.formatter = self.formatter
+        data.finalize()
         fp3 = fp[:-5]+'_4.hdf5'
         copy(fp, fp3)
         # Should now not raise an error because the file was properly closed
         F3 = h5py.File(fp3)
-
 
 
 

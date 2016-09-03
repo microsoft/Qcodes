@@ -120,7 +120,7 @@ class HDF5Format(Formatter):
         return data_set._h5_base_group
 
     def write(self, data_set, io_manager=None, location=None,
-              force_write=False):
+              force_write=False, flush=True):
         """
         Writes a data_set to an hdf5 file.
         Write consists of two parts,
@@ -169,6 +169,9 @@ class HDF5Format(Formatter):
             # incremental writes aswell
             dset.attrs['shape'] = x.shape
         self.write_metadata(data_set)
+        # flush ensures buffers are written to disk (useful for ensuring openable by other files)
+        if flush:
+            data_set._h5_base_group.file.flush()
 
     def _create_dataarray_dset(self, array, group):
         '''
