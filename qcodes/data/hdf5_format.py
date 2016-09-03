@@ -123,12 +123,24 @@ class HDF5Format(Formatter):
               force_write=False, flush=True):
         """
         Writes a data_set to an hdf5 file.
-        Write consists of two parts,
-            writing arrays
-            writing metadata
+        Input arguments:
+            data_set        qcodes data_set to write to hdf5 file
+            io_manager      io_manger used for providing path
+            location:       location can be used to specify custom location
+            force_write (bool): if True creates a new file to write to
+            flush (bool) :  whether to flush after writing, can be disabled
+                            for testing or performance reasons
 
-        Writing is split up in two parts, writing DataArrays and writing
-        metadata.
+        N.B. It is recommended to close the file after writing, this can be
+        done by calling
+            'HDF5Format.close_file(data_set)' or
+            'data_set.finalize()'
+        if the data_set formatter is set to an hdf5 formatter. Note that this
+        is not required if the dataset is created from a Loop as this
+        includes a data_set.finalize() statement.
+
+        The write function consists of two parts, writing DataArrays and
+        writing metadata.
             The main part of write consists of writing and resizing arrays,
             the resizing providing support for incremental writes.
 

@@ -614,7 +614,11 @@ class DataSet(DelegateAttributes):
         self.formatter.read_metadata(self)
 
     def write(self):
-        """Write updates to the DataSet to storage."""
+        """
+        Writes updates to the DataSet to storage.
+        N.B. it is recommended to call data_set.finalize() when a DataSet is
+        no longer expected to change to ensure files get closed
+        """
         if self.mode != DataMode.LOCAL:
             raise RuntimeError('This object is connected to a DataServer, '
                                'which handles writing automatically.')
