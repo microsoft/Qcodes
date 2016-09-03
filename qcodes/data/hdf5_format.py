@@ -231,31 +231,6 @@ class HDF5Format(Formatter):
 
         return dset
 
-    def _create_data_arrays_grp(self, data_set, arrays):
-        data_arrays_grp = data_set._h5_base_group.create_group('Data Arrays')
-        # Allows reshaping but does not allow adding extra parameters
-        dset = data_arrays_grp.create_dataset(
-            'Data', (0, len(arrays.keys())),
-            maxshape=(None, len(arrays.keys())))
-        dset.attrs['column names'] = _encode_to_utf8(arrays.keys())
-
-        labels = []
-        names = []
-        units = []
-        for key, arr in arrays.items():
-            labels.append(getattr(arr, 'label', key))
-            names.append(getattr(arr, 'name', key))
-            units.append(getattr(arr, 'units', ''))
-
-        # _encode_to_utf8(str(...)) ensures None gets encoded for h5py aswell
-        dset.attrs['labels'] = _encode_to_utf8(str(labels))
-        dset.attrs['names'] = _encode_to_utf8(str(names))
-        dset.attrs['units'] = _encode_to_utf8(str(units))
-
-        # Added to tell analysis how to extract the data
-        data_arrays_grp.attrs['datasaving_format'] = _encode_to_utf8(
-            'QCodes hdf5 v0.1')
-
     def write_metadata(self, data_set, io=None, location=None):
         """
         Writes metadata of dataset to file using write_dict_to_hdf5 method
@@ -402,3 +377,20 @@ def str_to_bool(s):
         return False
     else:
         raise ValueError("Cannot covert {} to a bool".format(s))
+
+
+# untested lines 60, 66, 204, 208, 247, 273, 295-304, 310-313, 317, 356, 368-369, 379
+# no label
+# no units
+# no name
+
+# saving dicts
+# list of ints or floats in a dict
+# unsuported type in list in dict
+# unsuported mixed type in list
+# general unsupported type in dict
+# reading metadata for dataset that does not have a metadata attribute
+# unrecognized list type when reading in dict
+# boolean string that is not True or False raised Value Error
+
+

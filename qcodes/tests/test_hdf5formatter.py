@@ -3,6 +3,7 @@ import os
 import numpy as np
 import h5py
 from shutil import copy
+import logging
 
 from qcodes.station import Station
 from qcodes.loops import Loop
@@ -245,7 +246,14 @@ class TestHDF5_Format(TestCase):
         # Should now not raise an error because the file was properly closed
         F3 = h5py.File(fp3)
 
-
+    def test_double_closing_gives_warning(self):
+        data = DataSet1D()
+        # closing before file is written should not raise error
+        self.formatter.write(data, flush=False)
+        self.formatter.close_file(data)
+        with self.assertLogs():
+            # Test that this raises a logging message
+            self.formatter.close_file(data)
 
 
 
