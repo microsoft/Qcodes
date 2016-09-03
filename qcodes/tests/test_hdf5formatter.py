@@ -1,6 +1,9 @@
 from unittest import TestCase
 import os
 import numpy as np
+import h5py
+from shutil import copy
+
 from qcodes.station import Station
 from qcodes.loops import Loop
 from qcodes.data.location import FormatLocation
@@ -198,5 +201,25 @@ class TestHDF5_Format(TestCase):
         self.checkArraysEqual(data2.arrays['y'], data.arrays['y'])
         self.formatter.close_file(data)
         self.formatter.close_file(data2)
+
+    def test_dataset_closing(self):
+        data = DataSet1D()
+        # closing before file is written should not raise error
+        self.formatter.write(data)
+        fp = data._h5_base_group.filename
+        fp2 = fp[:-5]+'_2.hdf5'
+        copy(fp, fp2)
+        # Raises an error because the file was still open
+        with self.assertRaises(OSError):
+            F2 = h5py.File(fp2)
+        self.formatter.close_file(data)
+        fp3 = fp[:-5]+'_4.hdf5'
+        copy(fp, fp3)
+        # Should now not raise an error because the file was properly closed
+        F3 = h5py.File(fp3)
+
+
+
+
 
 
