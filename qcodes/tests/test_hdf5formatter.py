@@ -8,10 +8,10 @@ import logging
 from qcodes.station import Station
 from qcodes.loops import Loop
 from qcodes.data.location import FormatLocation
-from qcodes.data.hdf5_format import HDF5Format
+from qcodes.data.hdf5_format import HDF5Format, str_to_bool
 
+from qcodes.data.data_set import new_data, load_data, DataSet
 from qcodes.data.data_array import DataArray
-from qcodes.data.data_set import DataSet
 from qcodes.utils.helpers import compare_dictionaries
 from .data_mocks import DataSet1D, DataSet2D
 
@@ -56,7 +56,8 @@ class TestHDF5_Format(TestCase):
         Test writing and reading a file back in
         """
         # location = self.locations[0]
-        data = DataSet1D()
+        data = DataSet1D(name='test1D_full_write',
+                         location=self.loc_provider)
         # print('Data location:', os.path.abspath(data.location))
         self.formatter.write(data)
         # Used because the formatter has no nice find file method
@@ -73,7 +74,7 @@ class TestHDF5_Format(TestCase):
         """
         Test writing and reading a file back in
         """
-        data = DataSet2D()
+        data = DataSet2D(location=self.loc_provider, name='test2D')
         self.formatter.write(data)
         # Test reading the same file through the DataSet.read
         data2 = DataSet(location=data.location, formatter=self.formatter)
@@ -86,7 +87,7 @@ class TestHDF5_Format(TestCase):
         self.formatter.close_file(data2)
 
     def test_incremental_write(self):
-        data = DataSet1D()
+        data = DataSet1D(location=self.loc_provider, name='test_incremental')
         location = data.location
         data_copy = DataSet1D(False)
 
@@ -116,7 +117,7 @@ class TestHDF5_Format(TestCase):
         Test is based on the snapshot of the 1D dataset.
         Having a more complex snapshot in the metadata would be a better test.
         """
-        data = DataSet1D()
+        data = DataSet1D(location=self.loc_provider, name='test_metadata')
         data.snapshot()  # gets the snapshot, not added upon init
         self.formatter.write(data)  # write_metadata is included in write
         data2 = DataSet(location=data.location, formatter=self.formatter)
@@ -173,7 +174,7 @@ class TestHDF5_Format(TestCase):
         self.formatter.close_file(data2)
 
     def test_closed_file(self):
-        data = DataSet1D()
+        data = DataSet1D(location=self.loc_provider, name='test_closed')
         # closing before file is written should not raise error
         self.formatter.close_file(data)
         self.formatter.write(data)
@@ -183,11 +184,13 @@ class TestHDF5_Format(TestCase):
         self.formatter.close_file(data)
 
     def test_reading_into_existing_data_array(self):
-        data = DataSet1D()
+        data = DataSet1D(location=self.loc_provider,
+                         name='test_read_existing')
         # closing before file is written should not raise error
         self.formatter.write(data)
 
-        data2 = DataSet(location=data.location, formatter=self.formatter)
+        data2 = DataSet(location=data.location,
+                        formatter=self.formatter)
         d_array = DataArray(name='dummy', array_id='x_set',  # existing array id in data
                             label='bla', units='a.u.', is_setpoint=False,
                             set_arrays=(), preset_data=np.zeros(5))
@@ -204,7 +207,7 @@ class TestHDF5_Format(TestCase):
         self.formatter.close_file(data2)
 
     def test_dataset_closing(self):
-        data = DataSet1D()
+        data = DataSet1D(location=self.loc_provider, name='test_closing')
         self.formatter.write(data, flush=False)
         fp = data._h5_base_group.filename
         fp2 = fp[:-5]+'_2.hdf5'
@@ -220,7 +223,7 @@ class TestHDF5_Format(TestCase):
         F3 = h5py.File(fp3)
 
     def test_dataset_flush_after_write(self):
-        data = DataSet1D()
+        data = DataSet1D(name='test_flush', location=self.loc_provider)
         self.formatter.write(data, flush=True)
         fp = data._h5_base_group.filename
         fp2 = fp[:-5]+'_2.hdf5'
@@ -229,7 +232,7 @@ class TestHDF5_Format(TestCase):
         F2 = h5py.File(fp2)
 
     def test_dataset_finalize_closes_file(self):
-        data = DataSet1D()
+        data = DataSet1D(name='test_finalize', location=self.loc_provider)
         # closing before file is written should not raise error
         self.formatter.write(data, flush=False)
         fp = data._h5_base_group.filename
@@ -247,13 +250,107 @@ class TestHDF5_Format(TestCase):
         F3 = h5py.File(fp3)
 
     def test_double_closing_gives_warning(self):
-        data = DataSet1D()
+        data = DataSet1D(name='test_double_close',
+                         location=self.loc_provider)
         # closing before file is written should not raise error
         self.formatter.write(data, flush=False)
         self.formatter.close_file(data)
         with self.assertLogs():
             # Test that this raises a logging message
             self.formatter.close_file(data)
+
+    def test_dataset_with_missing_attrs(self):
+        data1 = new_data(formatter=self.formatter, location=self.loc_provider,
+                         name='test_missing_attr')
+        arr = DataArray(array_id='arr', preset_data=np.linspace(0, 10, 21))
+        data1.add_array(arr)
+        data1.write()
+        # data2 = DataSet(location=data1.location, formatter=self.formatter)
+        # data2.read()
+        data2 = load_data(location=data1.location,
+                         formatter=self.formatter)
+        # cannot use the check arrays equal as I expect the attributes
+        # to not be equal
+        np.testing.assert_array_equal(data2.arrays['arr'], data1.arrays['arr'])
+
+    def test_read_writing_dicts_withlists_to_hdf5(self):
+        some_dict = {}
+        some_dict['list_of_ints'] = list(np.arange(5))
+        some_dict['list_of_floats'] = list(np.arange(5.1))
+        fp = self.loc_provider(
+            io=DataSet.default_io,
+            record={'name': 'test_dict_writing'})+'.hdf5'
+        F = h5py.File(fp, mode='a')
+
+        self.formatter.write_dict_to_hdf5(some_dict, F)
+        new_dict = {}
+        self.formatter.read_dict_from_hdf5(new_dict, F)
+        dicts_equal, err_msg = compare_dictionaries(
+            some_dict, new_dict,
+            'written_dict', 'loaded_dict')
+        self.assertTrue(dicts_equal, msg='\n'+err_msg)
+
+    def test_str_to_bool(self):
+        self.assertEqual(str_to_bool('True'), True)
+        self.assertEqual(str_to_bool('False'), False)
+        with self.assertRaises(ValueError):
+            str_to_bool('flse')
+
+
+    def test_writing_unsupported_types_to_hdf5(self):
+        """
+        Tests writing of
+            - unsuported list type attr
+            - nested dataset
+        """
+        some_dict = {}
+        some_dict['list_of_ints'] = list(np.arange(5))
+        some_dict['list_of_floats'] = list(np.arange(5.1))
+        some_dict['weird_dict'] = {'a': 5}
+        data1 = new_data(formatter=self.formatter, location=self.loc_provider,
+                         name='test_missing_attr')
+        some_dict['nested_dataset'] = data1
+
+        some_dict['list_of_dataset'] = [data1, data1]
+        some_dict['list_of_mixed_type'] = ['hello', 4, 4.2]
+
+        fp = self.loc_provider(
+            io=DataSet.default_io,
+            record={'name': 'test_dict_writing'})+'.hdf5'
+        F = h5py.File(fp, mode='a')
+        self.formatter.write_dict_to_hdf5(some_dict, F)
+        new_dict = {}
+        self.formatter.read_dict_from_hdf5(new_dict, F)
+        # objects are not identical but the string representation should be
+        self.assertEqual(str(some_dict['nested_dataset']),
+                         new_dict['nested_dataset'])
+        self.assertEqual(str(some_dict['list_of_dataset']),
+                         new_dict['list_of_dataset'])
+        self.assertEqual(str(some_dict['list_of_mixed_type']),
+                         new_dict['list_of_mixed_type'])
+
+
+        F['weird_dict'].attrs['list_type'] = 'unsuported_list_type'
+        with self.assertRaises(NotImplementedError):
+            self.formatter.read_dict_from_hdf5(new_dict, F)
+
+
+
+
+# 63, 69, 299-308, 314-317, 329
+# 63, 69, 299-308,
+# no label
+# no units
+# no name
+
+# saving dicts
+# list of ints or floats in a dict
+# unsuported type in list in dict
+# unsuported mixed type in list
+# general unsupported type in dict
+# reading metadata for dataset that does not have a metadata attribute
+# unrecognized list type when reading in dict
+# boolean string that is not True or False raised Value Error
 
 
 

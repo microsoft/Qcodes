@@ -36,6 +36,13 @@ class HDF5Format(Formatter):
         file = h5py.File(filepath, 'a')
         return file
 
+    def _open_file(self, data_set, location=None):
+        if location is None:
+            location = data_set.location
+        filepath = self._filepath_from_location(location,
+                                                io_manager=data_set.io)
+        data_set._h5_base_group = h5py.File(filepath, 'r+')
+
     def read(self, data_set, location=None):
         """
         Reads an hdf5 file specified by location into a data_set object.
@@ -43,27 +50,18 @@ class HDF5Format(Formatter):
         If no location is provided will use the location specified in the
         dataset.
         """
-        if location is None:
-            location = data_set.location
-        filepath = self._filepath_from_location(location,
-                                                io_manager=data_set.io)
-        data_set._h5_base_group = h5py.File(filepath, 'r+')
+        self._open_file(data_set, location)
 
         for i, array_id in enumerate(
                 data_set._h5_base_group['Data Arrays'].keys()):
             # Decoding string is needed because of h5py/issues/379
             name = array_id  # will be overwritten if not in file
             dat_arr = data_set._h5_base_group['Data Arrays'][array_id]
-            if 'label' in dat_arr.attrs.keys():
-                label = dat_arr.attrs['label'].decode()
-            else:
-                label = None
-            if 'name' in dat_arr.attrs.keys():
-                name = dat_arr.attrs['name'].decode()
-            if 'units' in dat_arr.attrs.keys():
-                units = dat_arr.attrs['units'].decode()
-            else:
-                units = None
+
+            # write ensures these attributes always exist
+            name = dat_arr.attrs['name'].decode()
+            label = dat_arr.attrs['label'].decode()
+            units = dat_arr.attrs['units'].decode()
             is_setpoint = str_to_bool(dat_arr.attrs['is_setpoint'].decode())
             # if not is_setpoint:
             set_arrays = dat_arr.attrs['set_arrays']
@@ -243,8 +241,6 @@ class HDF5Format(Formatter):
         if not hasattr(data_set, '_h5_base_group'):
             # added here because loop writes metadata before data itself
             data_set._h5_base_group = self._create_data_object(data_set)
-        if not hasattr(data_set, 'metadata'):
-            raise ValueError('data_set has no metadata')
         if 'metadata' in data_set._h5_base_group.keys():
             del data_set._h5_base_group['metadata']
         metadata_group = data_set._h5_base_group.create_group('metadata')
@@ -269,9 +265,12 @@ class HDF5Format(Formatter):
                 if len(item) > 0:
                     elt_type = type(item[0])
                     if all(isinstance(x, elt_type) for x in item):
-                        if isinstance(item[0], (int, float)):
+                        if isinstance(item[0], (int, float,
+                                                np.int32, np.int64)):
+
                             entry_point.create_dataset(key,
                                                        data=np.array(item))
+                            entry_point[key].attrs['list_type'] = 'array'
                         elif isinstance(item[0], str):
                             dt = h5py.special_dtype(vlen=str)
                             data = np.array(item)
@@ -313,8 +312,14 @@ class HDF5Format(Formatter):
                 entry_point.attrs[key] = str(item)
 
     def read_metadata(self, data_set):
-        if not hasattr(data_set, 'metadata'):
-            data_set.metadata = {}
+        """
+        Reads in the metadata, this is also called at the end of a read
+        statement so there should be no need to call this explicitly.
+        """
+        # checks if there is an open file in the dataset as load_data does
+        # reading of metadata before reading the complete dataset
+        if not hasattr(self, '_h5_base_group'):
+            self._open_file(data_set)
         if 'metadata' in data_set._h5_base_group.keys():
             metadata_group = data_set._h5_base_group['metadata']
             self.read_dict_from_hdf5(data_set.metadata, metadata_group)
@@ -327,8 +332,11 @@ class HDF5Format(Formatter):
                     data_dict[key] = {}
                     data_dict[key] = self.read_dict_from_hdf5(data_dict[key],
                                                               item)
-                else:
-                    data_dict[key] = item
+                else:  # item either a group or a dataset
+                    if 'list_type' not in item.attrs:
+                        data_dict[key] = item.value
+                    else:
+                        data_dict[key] = list(item.value)
             for key, item in h5_group.attrs.items():
                 if type(item) is str:
                     # Extracts "None" as an exception as h5py does not support
@@ -353,21 +361,17 @@ class HDF5Format(Formatter):
             # data dict correctly
             data_dict = list_to_be_filled
         else:
-            raise NotImplementedError()
+            raise NotImplementedError('cannot read "list_type":"{}"'.format(
+                h5_group.attrs['list_type']))
         return data_dict
 
 
 def _encode_to_utf8(s):
     """
     Required because h5py does not support python3 strings
+    converts byte type to string
     """
-    # converts byte type to string because of h5py datasaving
-    if isinstance(s, str):
-        s = s.encode('utf-8')
-    # If it is an array of value decodes individual entries
-    elif isinstance(s, (np.ndarray, list)):
-        s = [si.encode('utf-8') for si in s]
-    return s
+    return s.encode('utf-8')
 
 
 def str_to_bool(s):
@@ -377,20 +381,3 @@ def str_to_bool(s):
         return False
     else:
         raise ValueError("Cannot covert {} to a bool".format(s))
-
-
-# untested lines 60, 66, 204, 208, 247, 273, 295-304, 310-313, 317, 356, 368-369, 379
-# no label
-# no units
-# no name
-
-# saving dicts
-# list of ints or floats in a dict
-# unsuported type in list in dict
-# unsuported mixed type in list
-# general unsupported type in dict
-# reading metadata for dataset that does not have a metadata attribute
-# unrecognized list type when reading in dict
-# boolean string that is not True or False raised Value Error
-
-
