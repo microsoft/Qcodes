@@ -499,7 +499,17 @@ class AlazarTech_ATS(Instrument):
 
         # create buffers for acquisition
         self.clear_buffers()
+        # make sure that allocated_buffers <= buffers_per_acquisition
+        if (self.allocated_buffers._get_byte() >
+                self.buffers_per_acquisition._get_byte()):
+            print("'allocated_buffers' should be smaller than or equal to"
+                  "'buffers_per_acquisition'. Defaulting 'allocated_buffers' to"
+                  "" + str(self.buffers_per_acquisition._get_byte()))
+            self.allocated_buffers._set(
+                self.buffers_per_acquisition._get_byte())
+
         allocated_buffers = self.allocated_buffers._get_byte()
+
         for k in range(allocated_buffers):
             try:
                 self.buffer_list.append(Buffer(bps, samples_per_buffer,
