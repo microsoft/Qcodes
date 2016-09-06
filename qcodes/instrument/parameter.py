@@ -142,6 +142,7 @@ class Parameter(Metadatable, DeferredOperations):
 
         snapshot_get (bool): Update the parameter before a snapshot.
             Set to false if it takes too long to update the parameter.
+            Note that snapshot_get is ignored if snapshot_value=False
 
         snapshot_value (bool): Store the parameter value in a snapshot.
             Set to false if the value is a large array.
