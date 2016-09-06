@@ -25,8 +25,13 @@ class NumpyJSONEncoder(json.JSONEncoder):
             return float(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
-        elif isinstance(obj, numbers.Complex) and not isinstance(obj, numbers.Real):
-            return {'__dtype__': 'complex', 're': float(obj.real), 'im': float(obj.imag)}
+        elif (isinstance(obj, numbers.Complex) and
+              not isinstance(obj, numbers.Real)):
+            return {
+                '__dtype__': 'complex',
+                're': float(obj.real),
+                'im': float(obj.imag)
+            }
         else:
             return super(NumpyJSONEncoder, self).default(obj)
 
@@ -256,14 +261,14 @@ class DelegateAttributes:
 
 
     Attributes:
-        delegate_attr_dicts (list): a list of names (strings) of dictionaries which are
-            (or will be) attributes of self, whose keys should be treated as
-            attributes of self
-        delegate_attr_objects (list): a list of names (strings) of objects which are
-            (or will be) attributes of self, whose attributes should be passed
-            through to self
-        omit_delegate_attrs (list): a list of attribute names (strings) to *not* delegate
-            to any other dict or object
+        delegate_attr_dicts (list): a list of names (strings) of dictionaries
+            which are (or will be) attributes of self, whose keys should
+            be treated as attributes of self
+        delegate_attr_objects (list): a list of names (strings) of objects
+            which are (or will be) attributes of self, whose attributes
+            should be passed through to self
+        omit_delegate_attrs (list): a list of attribute names (strings)
+            to *not* delegate to any other dict or object
 
     any `None` entry is ignored
 
@@ -373,26 +378,30 @@ def compare_dictionaries(dict_1, dict_2,
         path = old_path + "[%s]" % k
         if k not in dict_2.keys():
             key_err += "Key {}{} not in {}\n".format(
-                dict_2_name, path, dict_2_name)
+                dict_1_name, path, dict_2_name)
         else:
             if isinstance(dict_1[k], dict) and isinstance(dict_2[k], dict):
                 err += compare_dictionaries(dict_1[k], dict_2[k],
                                             dict_1_name, dict_2_name, path)[1]
             else:
-                try:
-                    if dict_1[k] != dict_2[k]:
-                        value_err += 'Value of "{}{}" ("{}", type"{}") not same as \n"{}{}" ("{}", type"{}")\n\n'\
-                            .format(dict_1_name, path,
-                                    dict_1[k], type(dict_1[k]),
-                                    dict_2_name, path,
-                                    dict_2[k], type(dict_2[k]))
-                except ValueError:  # if entry is iterable such as a tuple
-                    if any(dict_1[k] != dict_2[k]):
-                        value_err += 'Value of "{}{}" ("{}", type"{}") not same as \n"{}{}" ("{}", type"{}")\n\n'\
-                            .format(dict_1_name, path,
-                                    dict_1[k], type(dict_1[k]),
-                                    dict_2_name, path,
-                                    dict_2[k], type(dict_2[k]))
+                match = (dict_1[k] == dict_2[k])
+
+                # if values are equal-length numpy arrays, the result of
+                # "==" is a bool array, so we need to 'all' it.
+                # In any other case "==" returns a bool
+                # TODO(alexcjohnson): actually, if *one* is a numpy array
+                # and the other is another sequence with the same entries,
+                # this will compare them as equal. Do we want this, or should
+                # we require exact type match?
+                if hasattr(match, 'all'):
+                    match = match.all()
+
+                if not match:
+                    value_err += (
+                        'Value of "{}{}" ("{}", type"{}") not same as\n'
+                        '  "{}{}" ("{}", type"{}")\n\n').format(
+                        dict_1_name, path, dict_1[k], type(dict_1[k]),
+                        dict_2_name, path, dict_2[k], type(dict_2[k]))
 
     for k in dict_2.keys():
         path = old_path + "[{}]".format(k)
