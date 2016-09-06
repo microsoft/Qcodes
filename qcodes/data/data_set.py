@@ -588,8 +588,12 @@ class DataSet(DelegateAttributes):
                 to insert into that array.
          """
         if self.mode == DataMode.PUSH_TO_SERVER:
+            # Defers to the copy on the dataserver to call this identical
+            # function
             self.data_manager.write('store_data', loop_indices, ids_values)
         else:
+            # You will always end up in this block, either in the copy
+            # on the server (if you hit the if statement above) or else here
             for array_id, value in ids_values.items():
                 self.arrays[array_id][loop_indices] = value
             if (self.write_period is not None and
@@ -668,13 +672,18 @@ class DataSet(DelegateAttributes):
         self.formatter.read_metadata(self)
 
     def write(self):
-        """Write updates to the DataSet to storage."""
+        """
+        Writes updates to the DataSet to storage.
+        N.B. it is recommended to call data_set.finalize() when a DataSet is
+        no longer expected to change to ensure files get closed
+        """
         if self.mode != DataMode.LOCAL:
             raise RuntimeError('This object is connected to a DataServer, '
                                'which handles writing automatically.')
 
         if self.location is False:
             return
+
         self.formatter.write(self, self.io, self.location)
 
     def write_copy(self, path=None, io_manager=None, location=None):
@@ -750,11 +759,23 @@ class DataSet(DelegateAttributes):
             self.formatter.write_metadata(self, self.io, self.location)
 
     def finalize(self):
-        """Mark the DataSet complete and write any remaining modifications."""
+        """
+        Mark the DataSet complete and write any remaining modifications.
+
+        Also closes the data file(s), if the ``Formatter`` we're using
+        supports that.
+        """
         if self.mode == DataMode.PUSH_TO_SERVER:
-            self.data_manager.ask('end_data')
+            # Just like .store, if this DataSet is on the DataServer,
+            # we defer to the copy there and execute this same method.
+            self.data_manager.ask('finalize_data')
         elif self.mode == DataMode.LOCAL:
+            # You will always end up in this block, either in the copy
+            # on the server (if you hit the if statement above) or else here
             self.write()
+
+            if hasattr(self.formatter, 'close_file'):
+                self.formatter.close_file(self)
         else:
             raise RuntimeError('This mode does not allow finalizing',
                                self.mode)
