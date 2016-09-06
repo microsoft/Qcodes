@@ -331,19 +331,3 @@ class TestHDF5_Format(TestCase):
         F['weird_dict'].attrs['list_type'] = 'unsuported_list_type'
         with self.assertRaises(NotImplementedError):
             self.formatter.read_dict_from_hdf5(new_dict, F)
-
-
-# 63, 69, 299-308, 314-317, 329
-# 63, 69, 299-308,
-# no label
-# no units
-# no name
-
-# saving dicts
-# list of ints or floats in a dict
-# unsuported type in list in dict
-# unsuported mixed type in list
-# general unsupported type in dict
-# reading metadata for dataset that does not have a metadata attribute
-# unrecognized list type when reading in dict
-# boolean string that is not True or False raised Value Error
