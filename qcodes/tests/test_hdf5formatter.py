@@ -3,7 +3,6 @@ import os
 import numpy as np
 import h5py
 from shutil import copy
-import logging
 
 from qcodes.station import Station
 from qcodes.loops import Loop
@@ -191,7 +190,8 @@ class TestHDF5_Format(TestCase):
 
         data2 = DataSet(location=data.location,
                         formatter=self.formatter)
-        d_array = DataArray(name='dummy', array_id='x_set',  # existing array id in data
+        d_array = DataArray(name='dummy',
+                            array_id='x_set',  # existing array id in data
                             label='bla', units='a.u.', is_setpoint=False,
                             set_arrays=(), preset_data=np.zeros(5))
         data2.add_array(d_array)
@@ -268,7 +268,7 @@ class TestHDF5_Format(TestCase):
         # data2 = DataSet(location=data1.location, formatter=self.formatter)
         # data2.read()
         data2 = load_data(location=data1.location,
-                         formatter=self.formatter)
+                          formatter=self.formatter)
         # cannot use the check arrays equal as I expect the attributes
         # to not be equal
         np.testing.assert_array_equal(data2.arrays['arr'], data1.arrays['arr'])
@@ -295,7 +295,6 @@ class TestHDF5_Format(TestCase):
         self.assertEqual(str_to_bool('False'), False)
         with self.assertRaises(ValueError):
             str_to_bool('flse')
-
 
     def test_writing_unsupported_types_to_hdf5(self):
         """
@@ -329,12 +328,9 @@ class TestHDF5_Format(TestCase):
         self.assertEqual(str(some_dict['list_of_mixed_type']),
                          new_dict['list_of_mixed_type'])
 
-
         F['weird_dict'].attrs['list_type'] = 'unsuported_list_type'
         with self.assertRaises(NotImplementedError):
             self.formatter.read_dict_from_hdf5(new_dict, F)
-
-
 
 
 # 63, 69, 299-308, 314-317, 329
@@ -351,6 +347,3 @@ class TestHDF5_Format(TestCase):
 # reading metadata for dataset that does not have a metadata attribute
 # unrecognized list type when reading in dict
 # boolean string that is not True or False raised Value Error
-
-
-

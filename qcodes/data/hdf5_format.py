@@ -179,7 +179,9 @@ class HDF5Format(Formatter):
             # incremental writes aswell
             dset.attrs['shape'] = x.shape
         self.write_metadata(data_set)
-        # flush ensures buffers are written to disk (useful for ensuring openable by other files)
+
+        # flush ensures buffers are written to disk
+        # (useful for ensuring openable by other files)
         if flush:
             data_set._h5_base_group.file.flush()
 
