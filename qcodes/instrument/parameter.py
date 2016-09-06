@@ -140,8 +140,12 @@ class Parameter(Metadatable, DeferredOperations):
             field of the object. The __doc__ field of the instance is used by
             some help systems, but not all
 
-        snapshot_get (bool): Prevent any update to the parameter
-          for example if it takes too long to update
+        snapshot_get (bool): Update the parameter before a snapshot.
+            Set to false if it takes too long to update the parameter.
+
+        snapshot_value (bool): Store the parameter value in a snapshot.
+            Set to false if the value is a large array.
+
 
     """
     def __init__(self,
@@ -150,9 +154,11 @@ class Parameter(Metadatable, DeferredOperations):
                  units=None,
                  shape=None, shapes=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
-                 vals=None, docstring=None, snapshot_get=True, **kwargs):
+                 vals=None, docstring=None, snapshot_get=True,
+                 snapshot_value=True, **kwargs):
         super().__init__(**kwargs)
         self._snapshot_get = snapshot_get
+        self._snapshot_value = snapshot_value
 
         self.has_get = hasattr(self, 'get')
         self.has_set = hasattr(self, 'set')
@@ -305,11 +311,15 @@ class Parameter(Metadatable, DeferredOperations):
             dict: base snapshot
         """
 
-        if self.has_get and self._snapshot_get and update:
+        if self.has_get and self._snapshot_get and self._snapshot_value and \
+                update:
             self.get()
 
         state = self._latest()
         state['__class__'] = full_class(self)
+
+        if not self._snapshot_value:
+            state.pop('value')
 
         if isinstance(state['ts'], datetime):
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
