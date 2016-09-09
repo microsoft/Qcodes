@@ -114,6 +114,8 @@ class TestVisaInstrument(TestCase):
         for arg in self.args3:
             self.assertIn(arg, e.exception.args)
 
+        mv.close()
+
     def test_ask_write_server(self):
         # same thing as above but Joe is on a server now...
         mv = MockVisa('Joe')
@@ -148,6 +150,8 @@ class TestVisaInstrument(TestCase):
             mv.state.get()
         for arg in self.args3:
             self.assertIn(repr(arg), e.exception.args[0])
+
+        mv.close()
 
     @patch('qcodes.instrument.visa.visa.ResourceManager')
     def test_visa_backend(self, rm_mock):

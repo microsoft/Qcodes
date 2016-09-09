@@ -288,7 +288,7 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
             name (str)
 
         Returns:
-            Instrument
+            Union[Instrument, RemoteInstrument]
 
         Raises:
             KeyError: if no instrument of that name was found, or if its

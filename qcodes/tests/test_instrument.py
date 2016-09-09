@@ -139,10 +139,28 @@ class TestInstrument(TestCase):
         for instrument in instruments:
             for other_instrument in instruments:
                 instances = instrument.instances()
+                # check that each instrument is in only its own
+                # instances list
                 if other_instrument is instrument:
                     self.assertIn(instrument, instances)
                 else:
                     self.assertNotIn(other_instrument, instances)
+
+                # check that we can find each instrument from any other
+                # find_instrument is explicitly mapped in RemoteInstrument
+                # so this call gets executed in the main process
+                self.assertEqual(
+                    instrument,
+                    other_instrument.find_instrument(instrument.name))
+
+                # but find_component is not, so it executes on the server
+                self.assertEqual(
+                    instrument.name,
+                    other_instrument.find_component(instrument.name + '.name'))
+
+            # check that we can find this instrument from the base class
+            self.assertEqual(instrument,
+                             Instrument.find_instrument(instrument.name))
 
         # somehow instances never go away... there are always 3
         # extra references to every instrument object, so del doesn't
@@ -150,6 +168,20 @@ class TestInstrument(TestCase):
         # the *last* instance to test.
         # so we can't test that the list of defined instruments is actually
         # *only* what we want to see defined.
+
+    def test_instance_name_uniqueness(self):
+        with self.assertRaises(KeyError):
+            MockGates(model=self.model)
+
+    def test_remove_instance(self):
+        self.gates.close()
+        self.assertEqual(self.gates.instances(), [])
+        with self.assertRaises(KeyError):
+            Instrument.find_instrument('gates')
+
+        type(self).gates = MockGates(model=self.model)
+        self.assertEqual(self.gates.instances(), [self.gates])
+        self.assertEqual(Instrument.find_instrument('gates'), self.gates)
 
     def test_mock_instrument(self):
         gates, source, meter = self.gates, self.source, self.meter
@@ -806,16 +838,18 @@ class TestInstrument(TestCase):
 
 class TestLocalMock(TestCase):
 
-    def setUp(self):
-        self.model = AMockModel()
+    @classmethod
+    def setUpClass(cls):
+        cls.model = AMockModel()
 
-        self.gates = MockGates(model=self.model, server_name=None)
-        self.source = MockSource(model=self.model, server_name=None)
-        self.meter = MockMeter(model=self.model, server_name=None)
+        cls.gates = MockGates(model=cls.model, server_name=None)
+        cls.source = MockSource(model=cls.model, server_name=None)
+        cls.meter = MockMeter(model=cls.model, server_name=None)
 
-    def tearDown(self):
-        self.model.close()
-        for instrument in [self.gates, self.source, self.meter]:
+    @classmethod
+    def tearDownClass(cls):
+        cls.model.close()
+        for instrument in [cls.gates, cls.source, cls.meter]:
             instrument.close()
 
     def test_local(self):
@@ -827,6 +861,35 @@ class TestLocalMock(TestCase):
 
         with self.assertRaises(ValueError):
             self.gates.ask('knock knock? Oh never mind.')
+
+    def test_instances(self):
+        # copied from the main (server-based) version
+        # make sure it all works the same here
+        instruments = [self.gates, self.source, self.meter]
+        for instrument in instruments:
+            for other_instrument in instruments:
+                instances = instrument.instances()
+                # check that each instrument is in only its own
+                # instances list
+                if other_instrument is instrument:
+                    self.assertIn(instrument, instances)
+                else:
+                    self.assertNotIn(other_instrument, instances)
+
+                # check that we can find each instrument from any other
+                # use find_component here to test that it rolls over to
+                # find_instrument if only a name is given
+                self.assertEqual(
+                    instrument,
+                    other_instrument.find_component(instrument.name))
+
+                self.assertEqual(
+                    instrument.name,
+                    other_instrument.find_component(instrument.name + '.name'))
+
+            # check that we can find this instrument from the base class
+            self.assertEqual(instrument,
+                             Instrument.find_instrument(instrument.name))
 
 
 class TestModelAttrAccess(TestCase):

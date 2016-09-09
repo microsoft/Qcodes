@@ -183,6 +183,22 @@ class RemoteInstrument(DelegateAttributes):
         """
         return self._instrument_class.instances()
 
+    def find_instrument(self, name):
+        """
+        Find an existing instrument by name.
+
+        Args:
+            name (str)
+
+        Returns:
+            Union[Instrument, RemoteInstrument]
+
+        Raises:
+            KeyError: if no instrument of that name was found, or if its
+                reference is invalid (dead).
+        """
+        return self._instrument_class.find_instrument(name)
+
     def close(self):
         """Irreversibly close and tear down the server & remote instruments."""
         if hasattr(self, '_manager'):
