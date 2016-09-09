@@ -224,12 +224,16 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
         wr = weakref.ref(instance)
         name = instance.name
 
-        existing_wr = Instrument._all_instruments.get(name)
+        # First insert this instrument in the record of *all* instruments
+        # making sure its name is unique
+        existing_wr = cls._all_instruments.get(name)
         if existing_wr and existing_wr():
             raise KeyError('Another instrument has the name: {}'.format(name))
 
-        Instrument._all_instruments[name] = wr
+        cls._all_instruments[name] = wr
 
+        # Then add it to the record for this specific subclass, using ``_type``
+        # to make sure we're not recording it in a base class instance list
         if getattr(cls, '_type', None) is not cls:
             cls._type = cls
             cls._instances = []
@@ -270,9 +274,9 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
 
         # remove from all_instruments too, but don't depend on the
         # name to do it, in case name has changed or been deleted
-        all_ins = Instrument._all_instruments
-        for name in list(all_ins.keys()):
-            if all_ins[name] is wr:
+        all_ins = cls._all_instruments
+        for name, ref in list(all_ins.items()):
+            if ref is wr:
                 del all_ins[name]
 
     @classmethod
