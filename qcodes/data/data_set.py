@@ -457,13 +457,17 @@ class DataSet(DelegateAttributes):
 
         failing = {key: False for key in self.background_functions}
 
-        nloops = 0
+        completed = False
         while True:
             logging.info('DataSet: {:.0f}% complete'.format(
                 self.fraction_complete() * 100))
 
-            nloops += 1
+            # first check if we're done
+            if self.sync() is False:
+                completed = True
 
+            # then even if we *are* done, execute the background functions
+            # because we want things like live plotting to get the final data
             for key, fn in list(self.background_functions.items()):
                 try:
                     logging.debug('calling {}: {}'.format(key, repr(fn)))
@@ -478,9 +482,10 @@ class DataSet(DelegateAttributes):
                         del self.background_functions[key]
                     failing[key] = True
 
-            if self.sync() is False:
+            if completed:
                 break
 
+            # but only sleep if we're not already finished
             time.sleep(delay)
 
         logging.info('DataSet <{}> is complete'.format(self.location))
