@@ -2,6 +2,7 @@ import ctypes
 import logging
 import numpy as np
 import os
+import inspect
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
@@ -198,6 +199,10 @@ class AlazarTech_ATS(Instrument):
 
         self.buffer_list = []
 
+        # Some ATS models do not support a bwlimit. This flag defines if the
+        # ATS supports a bwlimit or not. True by default.
+        self._bwlimit_support = True
+
     def get_idn(self):
         board_kind = self._board_names[
             self._ATS_dll.AlazarGetBoardKind(self._handle)]
@@ -334,13 +339,14 @@ class AlazarTech_ATS(Instrument):
 
         for i in range(1, self.channels + 1):
             self._call_dll('AlazarInputControl',
-                           self._handle, i,
+                           self._handle, 2**(i-1), # Channel in binary format
                            self.parameters['coupling' + str(i)],
                            self.parameters['channel_range' + str(i)],
                            self.parameters['impedance' + str(i)])
-            self._call_dll('AlazarSetBWLimit',
-                           self._handle, i,
-                           self.parameters['bwlimit' + str(i)])
+            if self._bwlimit_support:
+                self._call_dll('AlazarSetBWLimit',
+                               self._handle, i,
+                               self.parameters['bwlimit' + str(i)])
 
         self._call_dll('AlazarSetTriggerOperation',
                        self._handle, self.trigger_operation,
@@ -796,11 +802,58 @@ class AcquisitionController(Instrument):
                               str(alazar_name) +
                               " was found on this instrument server")
 
+        self._acquisitionkwargs = {}
+        # Obtain a list of all valid ATS acquisition kwargs
+        # These will be the kwargs that can be added to acquisitionkwargs
+        self._acquisitionkwargs_names = list(inspect.signature(
+            self.alazar.acquire).parameters.keys())
+        # Remove acquisition_controller, because it is not JSON-compatible
+        self._acquisitionkwargs_names.remove('acquisition_controller')
+        self.add_parameter(name='acquisitionkwargs',
+                           get_cmd=lambda: self._acquisitionkwargs)
+
     def _get_alazar(self):
         return self.alazar
 
     def _set_alazar(self, alazar):
         self.alazar = alazar
+
+    def get_acquisitionkwarg(self, kwarg):
+        """
+        Obtain an acquisitionkwarg for the ATS.
+        It first checks if the kwarg is an actual ATS acquisitionkwarg,
+        and raises an error otherwise.
+        It then checks if the kwarg is in ATS_controller._acquisitionkwargs.
+        If not, it will retrieve the ATS latest parameter value
+
+        Args:
+            kwarg: acquisitionkwarg to look for
+
+        Returns:
+            Value of the acquisitionkwarg
+        """
+        assert kwarg in self._acquisitionkwargs_names, \
+            "Kwarg {} is not a valid ATS acquisitionkwarg".format(kwarg)
+        if kwarg in self._acquisition_kwargs.keys():
+            return self._acquisition_kwargs[kwarg]
+        else:
+            # Must get latest value, since it will not be updated in ATS
+            return self.alazar.parameters[kwarg].get_latest()
+
+    def update_acquisitionkwargs(self, **kwargs):
+        """
+        Update the ATS_controller acquisitionkwargs, but only if all kwargs are
+        actually valid kwargs in the function ATS.acquire()
+        Args:
+            kwargs: Updated ATS acquisition kwargs
+        Returns:
+            None
+        """
+        kwargs_valid = all(map(
+            lambda kwarg: kwarg in self._acquisitionkwargs_names,
+            kwargs.keys()))
+        assert kwargs_valid, 'Not all kwargs are valid ATS acquisitionkwargs'
+        self._acquisitionkwargs.update(**kwargs)
 
     def pre_start_capture(self):
         """
