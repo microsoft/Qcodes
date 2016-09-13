@@ -638,7 +638,11 @@ class DataSet(DelegateAttributes):
         # try to get the first non-setpoint array
         vv = [v for v in arraynames if not self.arrays[v].is_setpoint]
         if (len(vv) > 0):
+<<<<<<< 731fa0f8f1c5c410ac883178a021e370aec8b75b
             return sorted(vv)[0]
+=======
+            return vv[0]
+>>>>>>> fix bugs in default_parameter_array
 
         # fallback: any array array found
         try:
