@@ -586,6 +586,29 @@ class TestDataSet(TestCase):
         m = DataSet2D()
         pickle.dumps(m)
 
+    def test_default_parameter(self):
+        # Test whether the default_array function works
+        m = DataSet2D()
+
+        # test we can run with default arguments
+        name = m.default_parameter_name()
+
+        # test with paramname
+        name = m.default_parameter_name(paramname='z')
+        self.assertEqual(name, 'z')
+        # test we can get the array instead of the name
+        array = m.default_parameter_array(paramname='z')
+        self.assertEqual(array, m.z)
+
+        # first non-setpoint array
+        array = m.default_parameter_array()
+        self.assertEqual(array, m.z)
+
+        # test with metadata
+        m.metadata = dict({'default_parameter_name': 'x_set'})
+        name = m.default_parameter_name()
+        self.assertEqual(name, 'x_set')
+
     def test_fraction_complete(self):
         empty_data = new_data(arrays=(), location=False)
         self.assertEqual(empty_data.fraction_complete(), 0.0)
