@@ -609,6 +609,12 @@ class TestDataSet(TestCase):
         name = m.default_parameter_name()
         self.assertEqual(name, 'x_set')
 
+        # test the fallback: no name matches, no non-setpoint array
+        x = DataArray(name='x', label='X', preset_data=(1., 2., 3., 4., 5.), is_setpoint=True)
+        m= new_data(arrays=(x,), name='onlysetpoint')
+        name=m.default_parameter_name(paramname='dummy')
+        self.assertEqual(name, 'x_set')
+
     def test_fraction_complete(self):
         empty_data = new_data(arrays=(), location=False)
         self.assertEqual(empty_data.fraction_complete(), 0.0)

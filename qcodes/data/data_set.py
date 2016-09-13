@@ -640,11 +640,11 @@ class DataSet(DelegateAttributes):
         if (len(vv) > 0):
             return sorted(vv)[0]
 
-        # fallback: any array array found
+        # fallback: any array found
         try:
-            name = next(sorted((list(iter(arraynames)))))
+            name = sorted((list(arraynames)))[0]
             return name
-        except StopIteration:
+        except IndexError:
             pass
         return None
 
