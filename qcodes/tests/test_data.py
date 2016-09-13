@@ -658,7 +658,11 @@ class TestDataSet(TestCase):
         log_index = 0
         for line in expected_logs:
             self.assertIn(line, logs, logs)
-            log_index = logs.index(line, log_index)
-            self.assertTrue(log_index >= 0, logs)
-            log_index += len(line) + 1  # +1 for \n
+            try:
+                log_index_new = logs.index(line, log_index)
+            except ValueError:
+                raise ValueError('line {} not found after {} in: \n {}'.format(
+                    line, log_index, logs))
+            self.assertTrue(log_index_new >= log_index, logs)
+            log_index = log_index_new + len(line) + 1  # +1 for \n
         self.assertEqual(log_index, len(logs), logs)
