@@ -601,64 +601,6 @@ class DataSet(DelegateAttributes):
                 self.write()
                 self.last_write = time.time()
 
-    def default_parameter_name(self, paramname='amplitude'):
-        """ Return name of default parameter for plotting
-
-        The default parameter is determined by looking into metdata['default_parameter_name'].
-        If this variable is not present, then the closest match to the argument
-        paramname is tried.
-
-        Args:
-            paramname (str): Name to match to parameter name
-
-        Returns:
-            name ( Union[str, None] ): name of the default parameter
-        """
-
-        arraynames = self.arrays.keys()
-
-        # overrule parameter name from the metadata
-        if self.metadata.get('default_parameter_name', False):
-            paramname = self.metadata['default_parameter_name']
-
-        # try to return the exact name
-        if paramname in arraynames:
-            return paramname
-
-        # try find something similar
-        vv = [v for v in arraynames if v.endswith(paramname)]
-        if (len(vv) > 0):
-            return vv[0]
-
-        # try to get the first non-setpoint array
-        vv = [v for v in arraynames if self.arrays[v].is_setpoint]
-        if (len(vv) > 0):
-            return vv[0]
-
-        # fallback: return the first array found
-        try:
-            name = next(iter(arraynames))
-            return name
-        except StopIteration:
-            pass
-        return None
-
-    def default_parameter_array(self, paramname='amplitude'):
-        """ Return default parameter array
-
-        Args:
-            paramname (str): Name to match to parameter name. Defaults to 'amplitude'
-
-        Returns:
-            array (DataArray): array corresponding to the default parameter
-
-        See also:
-            default_parameter_name
-
-        """
-        paramname = self.default_parameter_name(paramname=paramname)
-        return getattr(self, paramname, None)
-
     def read(self):
         """Read the whole DataSet from storage, overwriting the local data."""
         if self.location is False:
