@@ -1,117 +1,143 @@
-from qcodes import VisaInstrument
-from qcodes.utils.validators import Numbers, Ints, Enum, MultiType
 
+import logging
 from functools import partial
 
-def parse_output_string(s):
-    """ Parses and cleans string outputs of the Keithley """
-    # Remove surrounding whitespace and newline characters
-    s = s.strip()
+from qcodes.instrument.visa import VisaInstrument
+from qcodes.utils.validators import Strings as StringValidator
+from qcodes.utils.validators import Ints as IntsValidator
+from qcodes.utils.validators import Numbers as NumbersValidator
 
-    # Remove surrounding quotes
-    if (s[0] == s[-1]) and s.startswith(("'", '"')):
-        s = s[1:-1]
+from qcodes.utils.validators import Enum, MultiType
 
-    s = s.lower()
+# %% Helper functions
 
-    # Convert some results to a better readable version
-    conversions = {
-        'mov': 'moving',
-        'rep': 'repeat',
-    }
 
-    if s in conversions.keys():
-        s = conversions[s]
+def bool_to_str(val):
+    '''
+    Function to convert boolean to 'ON' or 'OFF'
+    '''
+    if val:
+        return "ON"
+    else:
+        return "OFF"
 
-    return s
+# %% Driver for Keithley_2000
 
-def parse_output_bool(value):
-    return 'on' if int(value) == 1 else 'off'
+
+def parseint(v):
+    logging.debug('parseint: %s -> %d' % (v, int(v)))
+    return int(v)
+
+
+def parsebool(v):
+    r = bool(int(v))
+    logging.debug('parsetobool: %s -> %d' % (v, r))
+    return r
+
+
+def parsestr(v):
+    return v.strip().strip('"')
+
 
 class Keithley_2000(VisaInstrument):
-    """
-    Driver for the Keithley 2000 multimeter.
-    """
+    '''
+    This is the qcodes driver for the Keithley_2000 Multimeter
+
+    Usage: Initialize with
+    <name> =  = Keithley_2700(<name>, address='<GPIB address>', reset=<bool>,
+            change_display=<bool>, change_autozero=<bool>)
+
+    Status: beta-version.
+
+    This driver will most likely work for multiple Keithley SourceMeters.
+
+    This driver does not contain all commands available, but only the ones
+    most commonly used.
+    '''
     def __init__(self, name, address, reset=False, **kwargs):
         super().__init__(name, address, **kwargs)
 
+        self._modes = ['VOLT:AC', 'VOLT:DC', 'CURR:AC', 'CURR:DC', 'RES',
+                       'FRES', 'TEMP', 'FREQ']
+        self._averaging_types = ['MOV', 'REP']
         self._trigger_sent = False
 
         self.add_parameter('mode',
-                           get_cmd='SENS:FUNC?',
-                           set_cmd="SENS:FUNC {}",
-                           val_mapping={
-                               'ac current': '"CURR:AC"\n',
-                               'dc current': '"CURR:DC"\n',
-                               'ac voltage': '"VOLT:AC"\n',
-                               'dc voltage': '"VOLT:DC"\n',
-                               '2w resistance': '"RES"\n',
-                               '4w resistance': '"FRES"\n',
-                               'temperature': '"TEMP"\n',
-                               'frequency': '"FREQ"\n',
-                           })
+                           get_cmd=':CONF?',
+                           get_parser=parsestr,
+                           set_cmd=':CONF:{}',
+                           vals=StringValidator())
 
         # Mode specific parameters
         self.add_parameter('nplc',
-                           get_cmd=partial(self._get_mode_param, 'NPLC', float),
+                           get_cmd=partial(self._get_mode_param, 'NPLC',
+                                           float),
                            set_cmd=partial(self._set_mode_param, 'NPLC'),
-                           vals=Numbers(min_value=0.01, max_value=10))
+                           vals=NumbersValidator(min_value=0.01, max_value=10))
 
         # TODO: validator, this one is more difficult since different modes
         # require different validation ranges
         self.add_parameter('range',
-                           get_cmd=partial(self._get_mode_param, 'RANG', float),
+                           get_cmd=partial(self._get_mode_param, 'RANG',
+                                           float),
                            set_cmd=partial(self._set_mode_param, 'RANG'),
-                           vals=Numbers())
+                           vals=NumbersValidator())
 
         self.add_parameter('auto_range',
-                           get_cmd=partial(self._get_mode_param, 'RANG:AUTO', parse_output_bool),
+                           get_cmd=partial(self._get_mode_param, 'RANG:AUTO',
+                                           parser=parsebool),
                            set_cmd=partial(self._set_mode_param, 'RANG:AUTO'),
                            vals=Enum('on', 'off'))
 
         self.add_parameter('digits',
                            get_cmd=partial(self._get_mode_param, 'DIG', int),
                            set_cmd=partial(self._set_mode_param, 'DIG'),
-                           vals=Ints(min_value=4, max_value=7))
+                           vals=IntsValidator(min_value=4, max_value=7))
 
         self.add_parameter('averaging_type',
-                           get_cmd=partial(self._get_mode_param, 'AVER:TCON', parse_output_string),
+                           get_cmd=partial(self._get_mode_param, 'AVER:TCON',
+                                           parsestr),
                            set_cmd=partial(self._set_mode_param, 'AVER:TCON'),
                            vals=Enum('moving', 'repeat'))
 
         self.add_parameter('averaging_count',
-                           get_cmd=partial(self._get_mode_param, 'AVER:COUN', int),
+                           get_cmd=partial(self._get_mode_param, 'AVER:COUN',
+                                           int),
                            set_cmd=partial(self._set_mode_param, 'AVER:COUN'),
-                           vals=Ints(min_value=1, max_value=100))
+                           vals=IntsValidator(min_value=1, max_value=100))
 
         self.add_parameter('averaging',
-                           get_cmd=partial(self._get_mode_param, 'AVER:STAT', parse_output_bool),
+                           get_cmd=partial(self._get_mode_param, 'AVER:STAT',
+                                           parser=parsebool),
                            set_cmd=partial(self._set_mode_param, 'AVER:STAT'),
                            vals=Enum('on', 'off'))
 
         # Global parameters
         self.add_parameter('display',
-                           get_cmd='DISP:ENAB?',
-                           get_parser=parse_output_bool,
-                           set_cmd='DISP:ENAB {}',
+                           get_cmd=self._mode_par('DISP', 'ENAB'),
+                           get_parser=parsebool,
+                           set_cmd=self._mode_par_value('DISP', 'ENAB', '{}'),
                            vals=Enum('on', 'off'))
 
         self.add_parameter('trigger_continuous',
                            get_cmd='INIT:CONT?',
-                           get_parser=parse_output_bool,
+                           get_parser=parsebool,
                            set_cmd='INIT:CONT {}',
                            vals=Enum('on', 'off'))
 
         self.add_parameter('trigger_count',
                            get_cmd='TRIG:COUN?',
                            set_cmd='TRIG:COUN {}',
-                           vals=MultiType(Ints(min_value=1, max_value=9999), Enum('inf')))
+                           vals=MultiType(IntsValidator(min_value=1,
+                                                        max_value=9999),
+                                          Enum('inf')))
 
         self.add_parameter('trigger_delay',
                            get_cmd='TRIG:DEL?',
                            set_cmd='TRIG:DEL {}',
                            units='s',
-                           vals=Numbers(min_value=0, max_value=999999.999))
+                           vals=NumbersValidator(min_value=0,
+                                                 max_value=999999.999))
 
         self.add_parameter('trigger_source',
                            get_cmd='TRIG:SOUR?',
@@ -128,7 +154,8 @@ class Keithley_2000(VisaInstrument):
                            get_cmd='TRIG:TIM?',
                            set_cmd='TRIG:TIM {}',
                            units='s',
-                           vals=Numbers(min_value=0.001, max_value=999999.999))
+                           vals=NumbersValidator(min_value=0.001,
+                                                 max_value=999999.999))
 
         self.add_parameter('amplitude',
                            units='arb.unit',
@@ -140,6 +167,55 @@ class Keithley_2000(VisaInstrument):
             self.reset()
 
         self.connect_message()
+
+    def _determine_mode(self, mode):
+        '''
+        Return the mode string to use.
+        If mode is None it will return the currently selected mode.
+        '''
+        logging.debug('Determine mode with mode=%s' % mode)
+        if mode is None:
+            mode = self.mode.get_latest()  # _mode(query=False)
+        if mode not in self._modes and mode not in ('INIT', 'TRIG', 'SYST',
+                                                    'DISP'):
+            logging.warning('Invalid mode %s, assuming current' % mode)
+            mode = self.mode.get_latest()
+        logging.debug('Determine mode: mode=%s' % mode)
+        return mode
+
+    def _mode_par_value(self, mode, par, val):
+        '''
+        For internal use only!!
+        Create command string based on current mode
+
+        Input:
+            mode (string) : The mode to use
+            par (string)  : Parameter
+            val (depends) : Value
+
+        Output:
+            None
+        '''
+        mode = self._determine_mode(mode)
+        string = ':%s:%s %s' % (mode, par, val)
+        return string
+
+    def _mode_par(self, mode, par):
+        '''
+        For internal use only!!
+        Create command string based on current mode
+
+        Input:
+            mode (string) : The mode to use
+            par (string)  : Parameter
+            val (depends) : Value
+
+        Output:
+            None
+        '''
+        mode = self._determine_mode(mode)
+        string = ':%s:%s?' % (mode, par, )
+        return string
 
     def trigger(self):
         if self.trigger_continuous() == 'off':
