@@ -73,8 +73,8 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
                 and when it stops being the live measurement.
             Default ``DataMode.LOCAL``.
 
-        arrays (dict, optional): dict of ``array_id: DataArray``, can also be
-            added later with ``self.add_array(array)``.
+        arrays (Optional[List[qcodes.DataArray]): arrays to add to the DataSet.
+                Can be added later with ``self.add_array(array)``.
 
         formatter (Formatter, optional): sets the file format/structure to
             write (and read) with. Default ``DataSet.default_formatter`` which
@@ -222,8 +222,8 @@ class DataSet(DelegateAttributes):
                 and when it stops being the live measurement.
             Default ``DataMode.LOCAL``.
 
-        arrays (dict, optional): dict of ``array_id: DataArray``, can also be
-            added later with ``self.add_array(array)``.
+        arrays (Optional[List[qcodes.DataArray]): arrays to add to the DataSet.
+                Can be added later with ``self.add_array(array)``.
 
         formatter (Formatter, optional): sets the file format/structure to
             write (and read) with. Default ``DataSet.default_formatter`` which
@@ -460,18 +460,17 @@ class DataSet(DelegateAttributes):
 
         failing = {key: False for key in self.background_functions}
 
-        nloops = 0
         completed = False
-        while not completed:
+        while True:
             logging.info('DataSet: {:.0f}% complete'.format(
                 self.fraction_complete() * 100))
 
-            time.sleep(delay)
-            nloops += 1
-
+            # first check if we're done
             if self.sync() is False:
                 completed = True
 
+            # then even if we *are* done, execute the background functions
+            # because we want things like live plotting to get the final data
             for key, fn in list(self.background_functions.items()):
                 try:
                     logging.debug('calling {}: {}'.format(key, repr(fn)))
@@ -485,6 +484,12 @@ class DataSet(DelegateAttributes):
                             'removing it'.format(key))
                         del self.background_functions[key]
                     failing[key] = True
+
+            if completed:
+                break
+
+            # but only sleep if we're not already finished
+            time.sleep(delay)
 
         logging.info('DataSet <{}> is complete'.format(self.location))
 
@@ -591,8 +596,12 @@ class DataSet(DelegateAttributes):
                 to insert into that array.
          """
         if self.mode == DataMode.PUSH_TO_SERVER:
+            # Defers to the copy on the dataserver to call this identical
+            # function
             self.data_manager.write('store_data', loop_indices, ids_values)
         elif self.mode == DataMode.LOCAL:
+            # You will always end up in this block, either in the copy
+            # on the server (if you hit the if statement above) or else here
             for array_id, value in ids_values.items():
                 self.arrays[array_id][loop_indices] = value
             self.last_store = time.time()
@@ -617,13 +626,18 @@ class DataSet(DelegateAttributes):
         self.formatter.read_metadata(self)
 
     def write(self):
-        """Write updates to the DataSet to storage."""
+        """
+        Writes updates to the DataSet to storage.
+        N.B. it is recommended to call data_set.finalize() when a DataSet is
+        no longer expected to change to ensure files get closed
+        """
         if self.mode != DataMode.LOCAL:
             raise RuntimeError('This object is connected to a DataServer, '
                                'which handles writing automatically.')
 
         if self.location is False:
             return
+
         self.formatter.write(self, self.io, self.location)
 
     def write_copy(self, path=None, io_manager=None, location=None):
@@ -699,11 +713,23 @@ class DataSet(DelegateAttributes):
             self.formatter.write_metadata(self, self.io, self.location)
 
     def finalize(self):
-        """Mark the DataSet complete and write any remaining modifications."""
+        """
+        Mark the DataSet complete and write any remaining modifications.
+
+        Also closes the data file(s), if the ``Formatter`` we're using
+        supports that.
+        """
         if self.mode == DataMode.PUSH_TO_SERVER:
-            self.data_manager.ask('end_data')
+            # Just like .store, if this DataSet is on the DataServer,
+            # we defer to the copy there and execute this same method.
+            self.data_manager.ask('finalize_data')
         elif self.mode == DataMode.LOCAL:
+            # You will always end up in this block, either in the copy
+            # on the server (if you hit the if statement above) or else here
             self.write()
+
+            if hasattr(self.formatter, 'close_file'):
+                self.formatter.close_file(self)
         else:
             raise RuntimeError('This mode does not allow finalizing',
                                self.mode)

@@ -8,7 +8,8 @@ import numpy as np
 from qcodes.utils.helpers import (is_sequence, permissive_range, wait_secs,
                                   make_unique, DelegateAttributes,
                                   LogCapture, strip_attrs, full_class,
-                                  named_repr, make_sweep, is_sequence_of)
+                                  named_repr, make_sweep, is_sequence_of,
+                                  compare_dictionaries)
 from qcodes.utils.deferred_operations import is_function
 
 
@@ -548,3 +549,82 @@ class TestIsSequenceOf(TestCase):
         for args in bad:
             with self.subTest(args=args):
                 self.assertFalse(is_sequence_of(*args))
+
+
+class TestCompareDictionaries(TestCase):
+    def test_same(self):
+        # NOTE(alexcjohnson): the numpy array and list compare equal,
+        # even though a list and tuple would not. See TODO in
+        # compare_dictionaries.
+        a = {'a': 1, 2: [3, 4, {5: 6}], 'b': {'c': 'd'}, 'x': np.array([7, 8])}
+        b = {'a': 1, 2: [3, 4, {5: 6}], 'b': {'c': 'd'}, 'x': [7, 8]}
+
+        match, err = compare_dictionaries(a, b)
+        self.assertTrue(match)
+        self.assertEqual(err, '')
+
+    def test_bad_dict(self):
+        # NOTE(alexcjohnson):
+        # this is a valid dict, but not good JSON because the tuple key cannot
+        # be converted into a string.
+        # It throws an error in compare_dictionaries, which is likely what we
+        # want, but we should be aware of it.
+        a = {(5, 6): (7, 8)}
+        with self.assertRaises(TypeError):
+            compare_dictionaries(a, a)
+
+    def test_key_diff(self):
+        a = {'a': 1, 'c': 4}
+        b = {'b': 1, 'c': 4}
+
+        match, err = compare_dictionaries(a, b)
+
+        self.assertFalse(match)
+        self.assertIn('Key d1[a] not in d2', err)
+        self.assertIn('Key d2[b] not in d1', err)
+
+        # try again with dict names for completeness
+        match, err = compare_dictionaries(a, b, 'a', 'b')
+
+        self.assertFalse(match)
+        self.assertIn('Key a[a] not in b', err)
+        self.assertIn('Key b[b] not in a', err)
+
+    def test_val_diff_simple(self):
+        a = {'a': 1}
+        b = {'a': 2}
+
+        match, err = compare_dictionaries(a, b)
+
+        self.assertFalse(match)
+        self.assertIn(
+            'Value of "d1[a]" ("1", type"<class \'int\'>") not same as', err)
+        self.assertIn(
+            '"d2[a]" ("2", type"<class \'int\'>")', err)
+
+    def test_val_diff_seq(self):
+        # NOTE(alexcjohnson):
+        # we don't dive recursively into lists at the moment.
+        # Perhaps we want to? Seems like list equality does a deep comparison,
+        # so it's not necessary to get ``match`` right, but the error message
+        # could be more helpful if we did.
+        a = {'a': [1, {2: 3}, 4]}
+        b = {'a': [1, {5: 6}, 4]}
+
+        match, err = compare_dictionaries(a, b)
+
+        self.assertFalse(match)
+        self.assertIn('Value of "d1[a]" ("[1, {2: 3}, 4]", '
+                      'type"<class \'list\'>") not same', err)
+        self.assertIn('"d2[a]" ("[1, {5: 6}, 4]", type"<class \'list\'>")',
+                      err)
+
+    def test_nested_key_diff(self):
+        a = {'a': {'b': 'c'}}
+        b = {'a': {'d': 'c'}}
+
+        match, err = compare_dictionaries(a, b)
+
+        self.assertFalse(match)
+        self.assertIn('Key d1[a][b] not in d2', err)
+        self.assertIn('Key d2[a][d] not in d1', err)

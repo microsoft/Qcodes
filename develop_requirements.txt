@@ -3,6 +3,7 @@ decorator==4.0.9
 docutils==0.12
 gnureadline==6.3.3
 greenlet==0.4.9
+h5py==2.6.0
 imagesize==0.7.1
 ipykernel==4.3.1
 ipython==4.2.0
