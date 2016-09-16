@@ -322,6 +322,8 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
                 <name>.<attribute>[.<subattribute>] and so on.
                 For example, <attribute> can be a parameter name,
                 or a method name.
+            instrument_class (Optional[class]): The type of instrument
+                you are looking for this component within.
 
         Returns:
             Any: The component requested.
