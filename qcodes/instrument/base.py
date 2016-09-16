@@ -307,7 +307,7 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
         if instrument_class is not None:
             if not isinstance(ins, instrument_class):
                 raise TypeError(
-                    'Instrument {} is {:r} but {:r} was requested'.format(
+                    'Instrument {} is {} but {} was requested'.format(
                         name, type(ins), instrument_class))
 
         return ins
