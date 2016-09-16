@@ -902,6 +902,10 @@ class ActiveLoop(Metadatable):
             tprint('loop %s DONE: %d/%d (%.1f [s])' % (
                    self.sweep_values.name, i + 1, imax, time.time() - t0),
                    dt=-1, tag='outerloop')
+				   
+		# run the background task one last time to catch the last setpoint(s)
+		if self.bg_task is not None:
+			self.bg_task()
 
         # the loop is finished - run the .then actions
         for f in self._compile_actions(self.then_actions, ()):
