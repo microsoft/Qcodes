@@ -858,7 +858,7 @@ class ActiveLoop(Metadatable):
 
         t0 = time.time()
         last_task = t0
-		last_task_failed = False
+        last_task_failed = False
         imax = len(self.sweep_values)
         for i, value in enumerate(self.sweep_values):
             if self.progress_interval is not None:
@@ -895,13 +895,13 @@ class ActiveLoop(Metadatable):
             if self.bg_task is not None:
                 t = time.time()
                 if t - last_task >= self.bg_min_delay:
-					try:
-						self.bg_task()
-						last_task_failed = False
-					except:
-						if last_task_failed:
-							self.bg_task = None
-						last_task_failed = True
+                    try:
+                        self.bg_task()
+                        last_task_failed = False
+                    except:
+                        if last_task_failed:
+                            self.bg_task = None
+                        last_task_failed = True
                     last_task = t
 
         if self.progress_interval is not None:
@@ -909,10 +909,10 @@ class ActiveLoop(Metadatable):
             tprint('loop %s DONE: %d/%d (%.1f [s])' % (
                    self.sweep_values.name, i + 1, imax, time.time() - t0),
                    dt=-1, tag='outerloop')
-				   
-		# run the background task one last time to catch the last setpoint(s)
-		if self.bg_task is not None:
-			self.bg_task()
+                   
+        # run the background task one last time to catch the last setpoint(s)
+        if self.bg_task is not None:
+            self.bg_task()
 
         # the loop is finished - run the .then actions
         for f in self._compile_actions(self.then_actions, ()):
