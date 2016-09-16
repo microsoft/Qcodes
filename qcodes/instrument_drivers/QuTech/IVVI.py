@@ -61,8 +61,8 @@ class IVVI(VisaInstrument):
         self.visa_handle.write_termination=''
         self.visa_handle.read_termination=''
 
-        self.add_parameter('version',
-                           get_cmd=self._get_version)
+#        self.add_parameter('version',
+#                           get_cmd=self._get_version)
         
         self.add_parameter('dac voltages',
                            label='Dac voltages',
@@ -98,21 +98,27 @@ class IVVI(VisaInstrument):
 
         print('Initialized IVVI-rack in %.2fs' % (t1-t0))
 
+#    def get_idn(self):
+#        """
+#        Overwrites the get_idn function using constants as the hardware
+#        does not have a proper *IDN function.
+#        """
+#        idparts = ['QuTech', 'IVVI', 'None', self.version()]
+#
+#        return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
+
     def get_idn(self):
-        """
-        Overwrites the get_idn function using constants as the hardware
-        does not have a proper *IDN function.
-        """
-        idparts = ['QuTech', 'IVVI', 'None', self.version()]
+        '''
+        makeshift replacement for the get_idn, because the original wants to do a get_version
+        '''
+        IDN=['vendor','model','serial','etc.']
+        
+        return IDN
 
-        return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
-
-    def _get_version(self):
-        # not all IVVI racks support the version command, so return a dummy
-        return -1
-        mes = self.ask(bytes([3, 4]))
-        v = mes[2]
-        return v
+#    def _get_version(self):
+#        mes = self.ask(bytes([3, 4]))
+#        v = mes[2]
+#        return v
 
     def get_all(self):
         return self.snapshot(update=True)
@@ -231,10 +237,9 @@ class IVVI(VisaInstrument):
 
         returns message_len
         '''
-        expected_answer_length = None
+        # This is used when write is used in the ask command
+        expected_answer_length = message[0]
         if not raw:
-            # This is used when write is used in the ask command
-            expected_answer_length = message[0]
             message_len = len(message)+2
             error_code = bytes([0])
             message = bytes([message_len]) + error_code + message
