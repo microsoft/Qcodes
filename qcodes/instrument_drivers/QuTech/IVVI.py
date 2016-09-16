@@ -96,12 +96,6 @@ class IVVI(VisaInstrument):
             print('IVVI: get_all() failed, maybe connected to wrong port?')
             print(traceback.format_exc())
 
-        v=self.visa_handle
-
-        # make sure we igonore termination characters
-        # http://www.ni.com/tutorial/4256/en/#toc2 on Termination Character Enabled
-        v.set_visa_attribute(visa.constants.VI_ATTR_TERMCHAR_EN, 0)
-        v.set_visa_attribute(visa.constants.VI_ATTR_ASRL_END_IN, 0)
         print('Initialized IVVI-rack in %.2fs' % (t1-t0))
 
     def get_idn(self):
@@ -258,19 +252,10 @@ class IVVI(VisaInstrument):
         message_len = self.write(message, raw=raw)
         return self.read(message_len=message_len)
 
-    def _read_raw_bytes_direct(self, size):
-        """ Read raw data using the visa lib
-        
-        """
-        with(self.visa_handle.ignore_warning(visa.constants.VI_SUCCESS_MAX_CNT)):
-            mes = self.visa_handle.visalib.read(
-                self.visa_handle.session, size)
-        return mes[0]
-
-    def _read_raw_bytes_multiple(self, size, maxread=256, verbose=0):
+    def _read_raw_bytes(self, size, maxread=256, verbose=0):
         """ Read raw data in blocks using the visa lib
         
-        The pyvisa visalib.read does not always terminates at a newline, this is a workaround
+        The pyvisa visalib.read always terminates at a newline, this is a workaround
         
         Also see: https://github.com/qdev-dk/Qcodes/issues/276
                   https://github.com/hgrecco/pyvisa/issues/225
@@ -307,7 +292,7 @@ class IVVI(VisaInstrument):
             if t1-t0 > timeout:
                 raise TimeoutError()
         # a workaround for a timeout error in the pyvsia read_raw() function
-        mes=self._read_raw_bytes_multiple(bytes_in_buffer)
+        mes=self._read_raw_bytes(bytes_in_buffer)
                 
         # if mes[1] != 0:
         #     # see protocol descriptor for error codes
