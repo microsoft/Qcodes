@@ -1,20 +1,18 @@
+# **************************************************************************
+#
+# Driver file for M4i.44x-x8
 #
 # **************************************************************************
 #
-# simple_rep_single.py                           (c) Spectrum GmbH , 11/2009
+# QuTech
 #
-# **************************************************************************
-#
-# Example for all SpcMDrv based (M2i and M4i) analog replay cards.
-# Shows a simple standard mode example using only the few necessary commands
-#
-# Feel free to use this source for own projects and modify it in any kind
-#
-# **************************************************************************
+# Written by: Luka Bavdaz, Marco Tagliaferri, Pieter Eendebak
+# Also see: http://spectrum-instrumentation.com/en/m4i-platform-overview
 #
 
 #%%
 import sys
+from functools import partial
 import qcodes
 from qcodes.instrument.base import Instrument
 try:
@@ -25,13 +23,7 @@ except ImportError:
     raise
 import logging
 
-#%%
-#
-# **************************************************************************
-# szTypeToName: doing name translation
-# **************************************************************************
-#
-
+#%% Helper functions
 
 def szTypeToName(lCardType):
     sName = ''
@@ -50,13 +42,7 @@ def szTypeToName(lCardType):
         sName = 'unknown type'
     return sName
 
-#
-# **************************************************************************
-# main
-# **************************************************************************
-#
-
-from functools import partial
+#%% Main driver class
 
 
 class M4i(Instrument):
