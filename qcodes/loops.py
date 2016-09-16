@@ -858,6 +858,7 @@ class ActiveLoop(Metadatable):
 
         t0 = time.time()
         last_task = t0
+		last_task_failed = False
         imax = len(self.sweep_values)
         for i, value in enumerate(self.sweep_values):
             if self.progress_interval is not None:
@@ -894,7 +895,13 @@ class ActiveLoop(Metadatable):
             if self.bg_task is not None:
                 t = time.time()
                 if t - last_task >= self.bg_min_delay:
-                    self.bg_task()
+					try:
+						self.bg_task()
+						last_task_failed = False
+					except:
+						if last_task_failed:
+							self.bg_task = None
+						last_task_failed = True
                     last_task = t
 
         if self.progress_interval is not None:
