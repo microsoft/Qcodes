@@ -183,7 +183,7 @@ class RemoteInstrument(DelegateAttributes):
         """
         return self._instrument_class.instances()
 
-    def find_instrument(self, name):
+    def find_instrument(self, name, instrument_class=None):
         """
         Find an existing instrument by name.
 
@@ -197,7 +197,8 @@ class RemoteInstrument(DelegateAttributes):
             KeyError: if no instrument of that name was found, or if its
                 reference is invalid (dead).
         """
-        return self._instrument_class.find_instrument(name)
+        return self._instrument_class.find_instrument(
+            name, instrument_class=instrument_class)
 
     def close(self):
         """Irreversibly close and tear down the server & remote instruments."""

@@ -280,12 +280,14 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
                 del all_ins[name]
 
     @classmethod
-    def find_instrument(cls, name):
+    def find_instrument(cls, name, instrument_class=None):
         """
         Find an existing instrument by name.
 
         Args:
             name (str)
+            instrument_class (Optional[class]): The type of instrument
+                you are looking for.
 
         Returns:
             Union[Instrument, RemoteInstrument]
@@ -293,6 +295,8 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
         Raises:
             KeyError: if no instrument of that name was found, or if its
                 reference is invalid (dead).
+            TypeError: if a specific class was requested but a different
+                type was found
         """
         ins = cls._all_instruments[name]()
 
@@ -300,10 +304,16 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
             del cls._all_instruments[name]
             raise KeyError('Instrument {} has been removed'.format(name))
 
+        if instrument_class is not None:
+            if not isinstance(ins, instrument_class):
+                raise TypeError(
+                    'Instrument {} is {:r} but {:r} was requested'.format(
+                        name, type(ins), instrument_class))
+
         return ins
 
     @classmethod
-    def find_component(cls, name_attr):
+    def find_component(cls, name_attr, instrument_class=None):
         """
         Find a component of an existing instrument by name and attribute.
 
@@ -319,13 +329,14 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
 
         if '.' in name_attr:
             name, attr = name_attr.split('.', 1)
-            ins = cls.find_instrument(name)
+            ins = cls.find_instrument(name, instrument_class=instrument_class)
             return ins.getattr(attr)
 
         else:
             # allow find_component to return the whole instrument,
             # if no attribute was specified, for maximum generality.
-            return cls.find_instrument(name_attr)
+            return cls.find_instrument(name_attr,
+                                       instrument_class=instrument_class)
 
     def add_parameter(self, name, parameter_class=StandardParameter,
                       **kwargs):

@@ -141,10 +141,23 @@ class TestInstrument(TestCase):
                 instances = instrument.instances()
                 # check that each instrument is in only its own
                 # instances list
+                # also test type checking in find_instrument,
+                # but we need to use find_component so it executes
+                # on the server
                 if other_instrument is instrument:
                     self.assertIn(instrument, instances)
+
+                    name2 = other_instrument.find_component(
+                        instrument.name + '.name',
+                        other_instrument._instrument_class)
+                    self.assertEqual(name2, instrument.name)
                 else:
                     self.assertNotIn(other_instrument, instances)
+
+                    with self.assertRaises(TypeError):
+                        other_instrument.find_component(
+                            instrument.name + '.name',
+                            other_instrument._instrument_class)
 
                 # check that we can find each instrument from any other
                 # find_instrument is explicitly mapped in RemoteInstrument
