@@ -892,13 +892,17 @@ class ActiveLoop(Metadatable):
 
             # now check for a background task and execute it if it's 
             # been long enough since the last time
+            # don't let exceptions in the background task interrupt
+            # the loop
+            # if the background task fails twice consecutively, stop
+            # executing it
             if self.bg_task is not None:
                 t = time.time()
                 if t - last_task >= self.bg_min_delay:
                     try:
                         self.bg_task()
                         last_task_failed = False
-                    except:
+                    except Exception:
                         if last_task_failed:
                             self.bg_task = None
                         last_task_failed = True
