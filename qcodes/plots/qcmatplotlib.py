@@ -13,6 +13,7 @@ from .base import BasePlot
 
 
 class MatPlot(BasePlot):
+    plot_kwargs = {}
     """
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with MatPlot.add()
@@ -57,8 +58,13 @@ class MatPlot(BasePlot):
         else:
             self.fig, self.subplots = plt.subplots(*subplots, num=num,
                                                    figsize=figsize)
-        if not hasattr(self.subplots, '__len__'):
-            self.subplots = (self.subplots,)
+
+        # Test if subplots is actually a single axis
+        if not isinstance(self.subplots, np.ndarray):
+            self.subplots = np.array([self.subplots])
+
+        # Flatten subplots in case it is a 2D array
+        self.subplots = np.ndarray.flatten(self.subplots)
 
         self.title = self.fig.suptitle('')
 
@@ -87,7 +93,7 @@ class MatPlot(BasePlot):
                 `x`, `y`, and `fmt` (if present) are passed as positional args
         """
         # TODO some way to specify overlaid axes?
-        ax = self._get_axes(kwargs)
+        ax = self._get_axes(**kwargs)
         if 'z' in kwargs:
             plot_object = self._draw_pcolormesh(ax, **kwargs)
         else:
@@ -105,8 +111,8 @@ class MatPlot(BasePlot):
             # in case the user has updated title, don't change it anymore
             self.title.set_text(self.get_default_title())
 
-    def _get_axes(self, config):
-        return self.subplots[config.get('subplot', 1) - 1]
+    def _get_axes(self, subplot=1, **kwargs):
+        return self.subplots[subplot - 1]
 
     def _update_labels(self, ax, config):
         if 'x' in config and not ax.get_xlabel():
@@ -132,7 +138,7 @@ class MatPlot(BasePlot):
                 if plot_object:
                     plot_object.remove()
 
-                ax = self._get_axes(config)
+                ax = self._get_axes(**config)
                 plot_object = self._draw_pcolormesh(ax, **config)
                 trace['plot_object'] = plot_object
 
@@ -171,20 +177,78 @@ class MatPlot(BasePlot):
         line, = ax.plot(*args, **kwargs)
         return line
 
-    def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1, **kwargs):
+    def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1,
+                         nticks=None, use_offset=False, **kwargs):
         # NOTE(alexj)stripping out subplot because which subplot we're in is already
         # described by ax, and it's not a kwarg to matplotlib's ax.plot. But I
         # didn't want to strip it out of kwargs earlier because it should stay
         # part of trace['config'].
-        args = [masked_invalid(arg) for arg in [x, y, z]
-                if arg is not None]
 
-        for arg in args:
-            if np.all(getmask(arg)):
-                # if any entire array is masked, don't draw at all
-                # there's nothing to draw, and anyway it throws a warning
-                return False
-        pc = ax.pcolormesh(*args, **kwargs)
+        args_masked = [masked_invalid(arg) for arg in [x, y, z]
+                      if arg is not None]
+
+        if np.any([np.all(getmask(arg)) for arg in args_masked]):
+            # if the z array is masked, don't draw at all
+            # there's nothing to draw, and anyway it throws a warning
+            # pcolormesh does not accept masked x and y axes, so we do not need
+            # to check for them.
+            return False
+
+        if x is not None and y is not None:
+            # If x and y are provided, modify the arrays such that they
+            # correspond to grid corners instead of grid centers.
+            # This is to ensure that pcolormesh centers correctly and
+            # does not ignore edge points.
+            args = []
+            for k, arr in enumerate(args_masked[:-1]):
+                # If a two-dimensional array is provided, only consider the
+                # first row/column, depending on the axis
+                if arr.ndim > 1:
+                    arr = arr[0] if k == 0 else arr[:,0]
+
+                if np.isnan(arr[1]):
+                    # Only the first element is not nan, in this case pad with
+                    # a value, and separate their values by 1
+                    arr_pad = np.pad(arr, (1, 0), mode='symmetric')
+                    arr_pad[:2] += [-0.5, 0.5]
+                else:
+                    # Add padding on both sides equal to endpoints
+                    arr_pad = np.pad(arr, (1, 1), mode='symmetric')
+                    # Add differences to edgepoints (may be nan)
+                    arr_pad[0] += arr_pad[1] - arr_pad[2]
+                    arr_pad[-1] += arr_pad[-2] - arr_pad[-3]
+
+                    diff = np.ma.diff(arr_pad) / 2
+                    # Insert value at beginning and end of diff to ensure same
+                    # length
+                    diff = np.insert(diff, 0, diff[0])
+
+                    arr_pad += diff
+                    # Ignore final value
+                    arr_pad = arr_pad[:-1]
+
+                args.append(arr_pad)
+            args.append(args_masked[-1])
+        else:
+            # Only the masked value of z is used as a mask
+            args = args_masked[-1:]
+
+        # Include default plotting kwargs, which can be overwritten by given
+        # kwargs
+        full_kwargs = {**self.plot_kwargs, **kwargs}
+        pc = ax.pcolormesh(*args, **full_kwargs)
+
+        # Set x and y limits if arrays are provided
+        if x is not None and y is not None:
+            ax.set_xlim(np.nanmin(args[0]), np.nanmax(args[0]))
+            ax.set_ylim(np.nanmin(args[1]), np.nanmax(args[1]))
+
+        # Specify preferred number of ticks with labels
+        if nticks:
+            ax.locator_params(nbins=nticks)
+
+        # Specify if axes can have offset or not
+        ax.ticklabel_format(useOffset=use_offset)
 
         if getattr(ax, 'qcodes_colorbar', None):
             # update_normal doesn't seem to work...
@@ -202,5 +266,10 @@ class MatPlot(BasePlot):
             # and just give it a dummy mappable to start, so we could
             # put this where it belongs.
             ax.qcodes_colorbar.set_label(self.get_label(z))
+
+        # Scale colors
+        cmin = np.nanmin(z)
+        cmax = np.nanmax(z)
+        ax.qcodes_colorbar.set_clim(cmin, cmax)
 
         return pc
