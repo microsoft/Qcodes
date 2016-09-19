@@ -164,13 +164,13 @@ class Keithley_2000(VisaInstrument):
         self.connect_message()
 
     def trigger(self):
-        if self.trigger_continuous():
+        if not self.trigger_continuous():
             self.write('INIT')
             self._trigger_sent = True
 
     def _read_next_value(self):
         # Prevent a timeout when no trigger has been sent
-        if self.trigger_continuous() and not self._trigger_sent:
+        if not self.trigger_continuous() and not self._trigger_sent:
             return 0.0
 
         self._trigger_sent = False
