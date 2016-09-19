@@ -179,6 +179,23 @@ class MatPlot(BasePlot):
 
     def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1,
                          nticks=None, use_offset=False, **kwargs):
+        """
+        Draws a 2D color plot
+
+        Args:
+            ax (Axis): Matplotlib axis object to plot in
+            z: 2D array of data values
+            x (Array, Optional): Array of values along x-axis. Dimensions should
+                be either same as z, or equal to length along x-axis.
+            y (Array, Optional): Array of values along y-axis. Dimensions should
+                be either same as z, or equal to length along y-axis.
+            subplot (int, Optional): Deprecated, see alexj notes below
+            nticks (int, Optional): preferred number of ticks along axes
+            use_offset (bool, Optional): Whether or not axes can have an offset
+            **kwargs: Optional list of kwargs to be passed on to pcolormesh.
+                These will overwrite any of the default kwargs in plot_kwargs.
+        """
+
         # NOTE(alexj)stripping out subplot because which subplot we're in is already
         # described by ax, and it's not a kwarg to matplotlib's ax.plot. But I
         # didn't want to strip it out of kwargs earlier because it should stay
