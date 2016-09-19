@@ -62,8 +62,10 @@ class RemoteInstrument(DelegateAttributes):
         self._args = args
         self._kwargs = kwargs
 
-        instrument_class.record_instance(self)
         self.connect()
+
+        # must come after connect() because that sets self.name
+        instrument_class.record_instance(self)
 
     def connect(self):
         """Create the instrument on the server and replicate its API here."""
@@ -180,6 +182,23 @@ class RemoteInstrument(DelegateAttributes):
             List[Union[Instrument, RemoteInstrument]]
         """
         return self._instrument_class.instances()
+
+    def find_instrument(self, name, instrument_class=None):
+        """
+        Find an existing instrument by name.
+
+        Args:
+            name (str)
+
+        Returns:
+            Union[Instrument, RemoteInstrument]
+
+        Raises:
+            KeyError: if no instrument of that name was found, or if its
+                reference is invalid (dead).
+        """
+        return self._instrument_class.find_instrument(
+            name, instrument_class=instrument_class)
 
     def close(self):
         """Irreversibly close and tear down the server & remote instruments."""

@@ -91,7 +91,9 @@ class TestMockInstLoop(TestCase):
     def test_local_instrument(self):
         # a local instrument should work in a foreground loop, but
         # not in a background loop (should give a RuntimeError)
+        self.gates.close()  # so we don't have two gates with same name
         gates_local = MockGates(model=self.model, server_name=None)
+        self.gates = gates_local
         c1 = gates_local.chan1
         loop_local = Loop(c1[1:5:1], 0.001).each(c1)
 
