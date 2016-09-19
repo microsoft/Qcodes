@@ -13,7 +13,8 @@ from .base import BasePlot
 
 
 class MatPlot(BasePlot):
-    plot_kwargs = {}
+    plot_kwargs_1D = {}
+    plot_kwargs_2D = {}
     """
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with MatPlot.add()
@@ -174,7 +175,9 @@ class MatPlot(BasePlot):
         # didn't want to strip it out of kwargs earlier because it should stay
         # part of trace['config'].
         args = [arg for arg in [x, y, fmt] if arg is not None]
-        line, = ax.plot(*args, **kwargs)
+
+        full_kwargs = {**self.plot_kwargs_1D, **kwargs}
+        line, = ax.plot(*args, **full_kwargs)
         return line
 
     def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1,
@@ -252,7 +255,7 @@ class MatPlot(BasePlot):
 
         # Include default plotting kwargs, which can be overwritten by given
         # kwargs
-        full_kwargs = {**self.plot_kwargs, **kwargs}
+        full_kwargs = {**self.plot_kwargs_2D, **kwargs}
         pc = ax.pcolormesh(*args, **full_kwargs)
 
         # Set x and y limits if arrays are provided
