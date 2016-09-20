@@ -35,22 +35,22 @@ class Keithley_2000(VisaInstrument):
     """
     Driver for the Keithley 2000 multimeter.
     """
-    def __init__(self, name, address, reset=False, terminator='\n', **kwargs):
-        super().__init__(name, address, **kwargs)
+    def __init__(self, name, address, reset=False, **kwargs):
+        super().__init__(name, address, terminator='\n', **kwargs)
 
         self._trigger_sent = False
 
         # Unfortunately the strings have to contain quotation marks and a
         # newline character, as this is how the instrument returns it.
         self._mode_map = {
-            'ac current': '"CURR:AC"\n',
-            'dc current': '"CURR:DC"\n',
-            'ac voltage': '"VOLT:AC"\n',
-            'dc voltage': '"VOLT:DC"\n',
-            '2w resistance': '"RES"\n',
-            '4w resistance': '"FRES"\n',
-            'temperature': '"TEMP"\n',
-            'frequency': '"FREQ"\n',
+            'ac current': '"CURR:AC"',
+            'dc current': '"CURR:DC"',
+            'ac voltage': '"VOLT:AC"',
+            'dc voltage': '"VOLT:DC"',
+            '2w resistance': '"RES"',
+            '4w resistance': '"FRES"',
+            'temperature': '"TEMP"',
+            'frequency': '"FREQ"',
         }
 
         self.add_parameter('mode',
@@ -138,11 +138,11 @@ class Keithley_2000(VisaInstrument):
                            get_cmd='TRIG:SOUR?',
                            set_cmd='TRIG:SOUR {}',
                            val_mapping={
-                               'immediate': 'IMM\n',
-                               'timer': 'TIM\n',
-                               'manual': 'MAN\n',
-                               'bus': 'BUS\n',
-                               'external': 'EXT\n',
+                               'immediate': 'IMM',
+                               'timer': 'TIM',
+                               'manual': 'MAN',
+                               'bus': 'BUS',
+                               'external': 'EXT',
                            })
 
         self.add_parameter('trigger_timer',
