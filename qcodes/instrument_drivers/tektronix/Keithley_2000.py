@@ -186,7 +186,7 @@ class Keithley_2000(VisaInstrument):
 
     def _set_mode_param(self, parameter, value):
         """ Read the current Keithley mode and set a parameter """
-        if type(value) is bool:
+        if isinstance(value, bool):
             value = int(value)
 
         mode = parse_output_string(self._mode_map[self.mode()])
