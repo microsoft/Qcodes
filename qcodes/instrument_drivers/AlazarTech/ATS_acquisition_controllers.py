@@ -66,7 +66,7 @@ class DFT_AcquisitionController(AcquisitionController):
 
         recordB = np.zeros(self.samples_per_record)
         for i in range(self.records_per_buffer):
-            i0 = i * self.samples_per_record + len(self.buffer) / 2
+            i0 = i * self.samples_per_record + len(self.buffer) // 2
             i1 = i0 + self.samples_per_record
             recordB += self.buffer[i0:i1] / records_per_acquisition
 
