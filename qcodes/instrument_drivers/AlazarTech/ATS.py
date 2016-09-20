@@ -787,20 +787,11 @@ class AcquisitionController(Instrument):
         :return: nothing
         """
         super().__init__(name, **kwargs)
-        self.alazar = None
-        for inst in kwargs['server'].instruments.values():
-            if inst.name == alazar_name:
-                self._set_alazar(inst)
-        if self._get_alazar() is None:
-            raise LookupError("No instrument with the name " +
-                              str(alazar_name) +
-                              " was found on this instrument server")
+        self.alazar = self.find_instrument(alazar_name,
+                                           instrument_class=AlazarTech_ATS)
 
     def _get_alazar(self):
         return self.alazar
-
-    def _set_alazar(self, alazar):
-        self.alazar = alazar
 
     def pre_start_capture(self):
         """
