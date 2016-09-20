@@ -376,8 +376,11 @@ if any([re.match("\s*api\s*",l) for l in index_rst_lines]):
 
 autodoc_default_flags = []
 # we have to do this, do avoid sideeffects when importing matplotlib
-import matplotlib
-matplotlib.use('PS')
-autodoc_mock_imports = [ 'matplotlib']
+try:
+    import matplotlib
+    matplotlib.use('PS')
+    autodoc_mock_imports = [ 'matplotlib']
+except ImportError as e:
+        print(e)
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['../_templates']

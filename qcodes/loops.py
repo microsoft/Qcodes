@@ -130,7 +130,7 @@ def halt_bg(timeout=5, traceback=True):
 def _clear_data_manager():
     dm = get_data_manager(only_existing=True)
     if dm and dm.ask('get_measuring'):
-        dm.ask('end_data')
+        dm.ask('finalize_data')
 
 # TODO(giulioungaretti) remove dead code
 # def measure(*actions):
