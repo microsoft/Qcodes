@@ -3,6 +3,12 @@ from qcodes.utils import validators
 
 
 class AlazarTech_ATS9870(AlazarTech_ATS):
+    """
+    This class is the driver for the ATS9870 board
+    it inherits from the ATS base class
+
+    it creates all necessary parameters for the Alazar card
+    """
     def __init__(self, name, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
         super().__init__(name, dll_path=dll_path, **kwargs)
