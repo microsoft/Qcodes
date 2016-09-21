@@ -931,11 +931,16 @@ class AcquisitionController(Instrument):
         :return: nothing
         """
         super().__init__(name, **kwargs)
-        self.alazar = self.find_instrument(alazar_name,
-                                           instrument_class=AlazarTech_ATS)
+        self._alazar = self.find_instrument(alazar_name,
+                                            instrument_class=AlazarTech_ATS)
 
     def _get_alazar(self):
-        return self.alazar
+        """
+        returns a reference to the alazar instrument. A call to self._alazar is
+        quicker, so use that if in need for speed
+        :return: reference to the Alazar instrument
+        """
+        return self._alazar
 
     def pre_start_capture(self):
         """
