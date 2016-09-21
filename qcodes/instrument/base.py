@@ -83,7 +83,7 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
             return RemoteInstrument(*args, instrument_class=cls,
                                     server_name=server_name, **kwargs)
 
-    def __init__(self, name, server_name=None, **kwargs):
+    def __init__(self, name, server_name=None, server=None, **kwargs):
         self._t0 = time.time()
         super().__init__(**kwargs)
         self.parameters = {}

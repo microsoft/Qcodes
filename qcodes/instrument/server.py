@@ -161,7 +161,7 @@ class InstrumentServer(BaseServer):
         for key, value in self._shared_attrs.items():
             if key in instrument_class.shared_kwargs:
                 kwargs[key] = value
-        ins = instrument_class(*args, server_name=None, **kwargs)
+        ins = instrument_class(*args, server_name=None, server=self, **kwargs)
 
         self.instruments[new_id] = ins
 
