@@ -261,12 +261,21 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
 
 
 class Multiples(validators.Ints):
-    '''
-    requires an integer
-    optional parameters min_value and max_value enforce
-    min_value <= value <= max_value
-    divisor enforces that value % divisor == 0
-    '''
+    """
+    A validator that checks if a value is an integer multiple of a fixed devisor
+
+    This class extends validators.Ints such that the value is also checked for
+    being integer between an optional min_value and max_value. Furthermore this
+    validator checks that the value is an integer multiple of an fixed, integer
+    divisor. (i.e. value % divisor == 0)
+
+    Args:
+        divisor (integer), the value need the be a multiple of this divisor
+
+    Inherited Args (see validators.Ints):
+        max_value, value must be <= max_value
+        min_value, value must be >= min_value
+    """
 
     def __init__(self, divisor=1, **kwargs):
         super().__init__(**kwargs)
