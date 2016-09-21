@@ -20,6 +20,19 @@ from qcodes.utils import validators
 
 
 class AlazarTech_ATS(Instrument):
+    """
+    This is the qcodes driver for Alazar data acquisition cards
+
+    status: beta-version
+        this driver is written with the ATS9870 in mind
+        updates might/will be necessary for other versions of Alazar cards
+
+    Args for constructor:
+    name: name ffor this instrument, passed to the base instrument
+    system_id: target system id for this instrument
+    board_id: target board id within the system for this instrument
+    dll_path: string contianing the path of the ATS driver dll
+    """
     # override dll_path in your init script or in the board constructor
     # if you have it somewhere else
     dll_path = 'C:\\WINDOWS\\System32\\ATSApi'
@@ -158,6 +171,12 @@ class AlazarTech_ATS(Instrument):
 
     @classmethod
     def find_boards(cls, dll_path=None):
+        """
+        Find Alazar boards connected
+
+        :param dll_path: (string) path of the Alazar driver dll
+        :return: (list) list of board info for each connected board
+        """
         dll = ctypes.cdll.LoadLibrary(dll_path or cls.dll_path)
 
         system_count = dll.AlazarNumOfSystems()
@@ -170,6 +189,20 @@ class AlazarTech_ATS(Instrument):
 
     @classmethod
     def get_board_info(cls, dll, system_id, board_id):
+        """
+        Get the information from a connected Alazar board
+
+        :param dll: (string) path of the Alazar driver dll
+        :param system_id: id of the Alazar system
+        :param board_id: id of the board within the alazar system
+        :return: dictionary containing the
+            system_id
+            board_id
+            board_kind (as string)
+            max_samples
+            bits_per_sample
+        """
+
         # make a temporary instrument for this board, to make it easier
         # to get its info
         board = cls('temp', system_id=system_id, board_id=board_id,
@@ -199,6 +232,22 @@ class AlazarTech_ATS(Instrument):
         self.buffer_list = []
 
     def get_idn(self):
+        """
+        This methods gets the most relevant information of this instrument
+        :return: a dictionary containing:
+            'firmware': None
+            'model': as string
+            'serial': board serial number
+            'vendor': 'AlazarTech',
+            'CPLD_version': version of the CPLD
+            'driver_version': version of the driver dll
+            'SDK_version': version of the SDK
+            'latest_cal_date': date of the latest calibration (as string)
+            'memory_size': size of the memory in samples,
+            'asopc_type': type of asopc (as decimal number),
+            'pcie_link_speed': the speed of a single pcie link (in GB/s),
+            'pcie_link_width': number of pcie links
+        """
         board_kind = self._board_names[
             self._ATS_dll.AlazarGetBoardKind(self._handle)]
 
@@ -273,7 +322,9 @@ class AlazarTech_ATS(Instrument):
                external_trigger_coupling=None, external_trigger_range=None,
                trigger_delay=None, timeout_ticks=None):
         """
-
+        configure the ATS board and set the corresponding parameters to the
+        appropriate values.
+        For documentation of the parameters, see ATS-SDK programmer's guide
         :param clock_source:
         :param sample_rate:
         :param clock_edge:
@@ -295,7 +346,8 @@ class AlazarTech_ATS(Instrument):
         :param external_trigger_range:
         :param trigger_delay:
         :param timeout_ticks:
-        :return:
+
+        :return: None
         """
         # region set parameters from args
 
@@ -377,7 +429,9 @@ class AlazarTech_ATS(Instrument):
                 allocated_buffers=None, buffer_timeout=None,
                 acquisition_controller=None):
         """
-
+        perform a single acquisition with the Alazar board, and set certain
+        parameters to the appropriate values
+        for the parameters, see the ATS-SDK programmer's guide
         :param mode:
         :param samples_per_record:
         :param records_per_buffer:
@@ -392,8 +446,11 @@ class AlazarTech_ATS(Instrument):
         :param get_processed_data:
         :param allocated_buffers:
         :param buffer_timeout:
-        :param acquisition_controller:
-        :return:
+
+        :param acquisition_controller: An instance of an acquisition controller
+            that handles the dataflow of an acquisition
+
+        :return: whatever is given by acquisition_controller.post_acquire method
         """
         # region set parameters from args
         self._set_if_present('mode', mode)
@@ -633,17 +690,35 @@ class AlazarTech_ATS(Instrument):
             param._set_updated()
 
     def clear_buffers(self):
+        """
+        This method uncommits all buffers that were committed by the driver.
+        This method only has to be called when the acquistion crashes, otherwise
+        the driver will uncommit the buffers itself
+        :return: None
+        """
         for b in self.buffer_list:
             b.free_mem()
         self.buffer_list = []
 
     def signal_to_volt(self, channel, signal):
+        """
+        convert a value from a buffer to an actual value in volts based on the
+        ranges of the channel
+        :param channel: number of the channel where the signal value came from
+        :param signal: the value that needs to be converted
+        :return: the corresponding value in volts
+        """
         # TODO(damazter) (S) check this
         # TODO(damazter) (M) use byte value if range{channel}
         return (((signal - 127.5) / 127.5) *
                 (self.parameters['channel_range' + str(channel)].get()))
 
     def get_sample_rate(self):
+        """
+        Obtain the effective sampling rate of the acquisition
+        based on clock speed and decimation
+        :return: the number of samples (per channel) per second
+        """
         if self.sample_rate.get() == 'EXTERNAL_CLOCK':
             raise Exception('External clock is used, alazar driver '
                             'could not determine sample speed.')
@@ -660,6 +735,29 @@ class AlazarTech_ATS(Instrument):
 
 
 class AlazarParameter(Parameter):
+    """
+    This class represents of many parameters that are relevant for the Alazar
+    driver. This parameters only have a private set method, because the values
+    are set by the Alazar driver. They do have a get function which return a
+    human readable value. Internally the value is stored as an Alazar readable
+    value.
+
+    These parameters also keep track the up-to-dateness of the value of this
+    parameter. If the private set_function is called incorrectly, this parameter
+    raises an error when the get_function is called to warn the user that the
+    value is out-of-date
+
+    Args:
+        name: see Parameter class
+        label: see Parameter class
+        unit: see Parameter class
+        instrument: see Parameter class
+        value: default value
+        byte_to_value_dict: dictionary that maps byte values (readable to the
+            alazar) to values that are readable to humans
+        vals: see Parameter class, should not be set if byte_to_value_dict is
+            provided
+    """
     def __init__(self, name=None, label=None, unit=None, instrument=None,
                  value=None, byte_to_value_dict=None, vals=None):
         if vals is None:
@@ -725,10 +823,27 @@ class AlazarParameter(Parameter):
         return None
 
     def _set_updated(self):
+        """
+        This method is used to keep track of which parameters are updated in the
+        instrument. If the end-user starts messing with this function, things
+        can go wrong.
+
+        Do not use this function if you do not know what you are doing
+        :return: None
+        """
         self._uptodate_flag = True
 
 
 class Buffer:
+    """
+    This class represents a single buffer used for the data acquisition
+
+    Args:
+        bits_per_sample: the number of bits needed to store a sample
+        samples_per_buffer: the number of samples needed per buffer(per channel)
+        number_of_channels: the number of channels that will be stored in the
+            buffer
+    """
     def __init__(self, bits_per_sample, samples_per_buffer,
                  number_of_channels):
         if bits_per_sample != 8:
@@ -761,6 +876,10 @@ class Buffer:
         pointer, read_only_flag = self.buffer.__array_interface__['data']
 
     def free_mem(self):
+        """
+        uncommit memory allocated with this buffer object
+        :return: None
+        """
         mem_release = 0x8000
 
         # for documentation please see:
@@ -773,6 +892,13 @@ class Buffer:
         self._allocated = False
 
     def __del__(self):
+        """
+        If python garbage collects this object, __del__ should be called and it
+        is the last chance to uncommit the memory to prevent a memory leak.
+        This method is not very reliable so users should not rely on this
+        functionality
+        :return:
+        """
         if self._allocated:
             self.free_mem()
             logging.warning(
@@ -781,6 +907,24 @@ class Buffer:
 
 
 class AcquisitionController(Instrument):
+    """
+    This class represents all choices that the end-user has to make regarding
+    the data-acquisition. this class should be subclassed to program these
+    choices.
+
+    The basic structure of an acquisition is:
+    call to AlazarTech_ATS.acquire
+        internal configuration
+        call to acquisitioncontroller.pre_start_capture
+        Call to the start capture of the Alazar board
+        call to acquisitioncontroller.pre_acquire
+        loop over all buffers that need to be acquired
+            dump each buffer to acquisitioncontroller.handle_buffer
+            (only if buffers need to be recycled to finish the acquisiton)
+        dump remaining buffers to acquisitioncontroller.handle_buffer
+        alazar internals
+        return acquisitioncontroller.post_acquire
+    """
     def __init__(self, name, alazar_name, **kwargs):
         """
         :param alazar_name: The name of the alazar instrument on the server
@@ -834,6 +978,10 @@ class AcquisitionController(Instrument):
 
 
 class TrivialDictionary:
+    """
+    This class looks like a dictionary to the outside world
+    every key maps to this key as a value (lambda x: x)
+    """
     def __init__(self):
         pass
 
