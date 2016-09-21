@@ -21,7 +21,7 @@ class DFT_AcquisitionController(AcquisitionController):
         super().__init__(name, alazar_name, **kwargs)
         self.add_parameter("acquisition", get_cmd=self.do_acquisition)
 
-    def set_acquisitionkwargs(self, **kwargs):
+    def update_acquisitionkwargs(self, **kwargs):
         self.acquisitionkwargs.update(**kwargs)
 
     def do_acquisition(self):
