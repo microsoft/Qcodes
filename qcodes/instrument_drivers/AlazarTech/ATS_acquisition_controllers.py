@@ -7,7 +7,7 @@ import numpy as np
 class DFT_AcquisitionController(AcquisitionController):
     def __init__(self, name, alazar_name, demodulation_frequency, **kwargs):
         self.demodulation_frequency = demodulation_frequency
-        self.acquisitionkwargs = {'acquisition_controller': self}
+        self.acquisitionkwargs = {}
         self.samples_per_record = None
         self.records_per_buffer = None
         self.buffers_per_acquisition = None
@@ -25,7 +25,8 @@ class DFT_AcquisitionController(AcquisitionController):
         self.acquisitionkwargs.update(**kwargs)
 
     def do_acquisition(self):
-        value = self._get_alazar().acquire(**self.acquisitionkwargs)
+        value = self._get_alazar().acquire(acquisition_controller=self,
+                                           **self.acquisitionkwargs)
         return value
 
     def pre_start_capture(self):
