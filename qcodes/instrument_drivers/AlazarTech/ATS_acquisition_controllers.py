@@ -5,6 +5,20 @@ import numpy as np
 
 # DFT AcquisitionController
 class DFT_AcquisitionController(AcquisitionController):
+    """
+    This class represents an example acquisition controller. End users will
+    probably want to use something more sophisticated. It will average all
+    buffers and then perform a fourier transform on the resulting average trace
+    for one frequency component. The amplitude of the result of channel_a will
+    be returned.
+
+    args:
+    name: name for this acquisition_conroller as an instrument
+    alazar_name: the name of the alazar instrument such that this controller
+        can communicate with the Alazar
+    demodulation_frequency: the selected component for the fourier transform
+    **kwargs: kwargs are forwarded to the Instrument base class
+    """
     def __init__(self, name, alazar_name, demodulation_frequency, **kwargs):
         self.demodulation_frequency = demodulation_frequency
         self.acquisitionkwargs = {}
@@ -22,14 +36,29 @@ class DFT_AcquisitionController(AcquisitionController):
         self.add_parameter("acquisition", get_cmd=self.do_acquisition)
 
     def update_acquisitionkwargs(self, **kwargs):
+        """
+        This method must be used to update the kwargs used for the acquisition
+        with the alazar_driver.acquire
+        :param kwargs:
+        :return:
+        """
         self.acquisitionkwargs.update(**kwargs)
 
     def do_acquisition(self):
+        """
+        this method performs an acquisition, which is the get_cmd for the
+        acquisiion parameter of this instrument
+        :return:
+        """
         value = self._get_alazar().acquire(acquisition_controller=self,
                                            **self.acquisitionkwargs)
         return value
 
     def pre_start_capture(self):
+        """
+        See AcquisitionController
+        :return:
+        """
         alazar = self._get_alazar()
         self.samples_per_record = alazar.samples_per_record.get()
         self.records_per_buffer = alazar.records_per_buffer.get()
@@ -46,15 +75,27 @@ class DFT_AcquisitionController(AcquisitionController):
                                self.number_of_channels)
 
     def pre_acquire(self):
+        """
+        See AcquisitionController
+        :return:
+        """
         # this could be used to start an Arbitrary Waveform Generator, etc...
         # using this method ensures that the contents are executed AFTER the
         # Alazar card starts listening for a trigger pulse
         pass
 
     def handle_buffer(self, data):
+        """
+        See AcquisitionController
+        :return:
+        """
         self.buffer += data
 
     def post_acquire(self):
+        """
+        See AcquisitionController
+        :return:
+        """
         alazar = self._get_alazar()
         # average all records in a buffer
         records_per_acquisition = (1. * self.buffers_per_acquisition *
@@ -85,6 +126,11 @@ class DFT_AcquisitionController(AcquisitionController):
         return None
 
     def fit(self, buf):
+        """
+        the DFT is implemented in this method
+        :param buf: buffer to perform the transform on
+        :return: return amplitude and phase of the resulted transform
+        """
         # Discrete Fourier Transform
         RePart = np.dot(buf - 127.5, self.cos_list) / self.samples_per_record
         ImPart = np.dot(buf - 127.5, self.sin_list) / self.samples_per_record
