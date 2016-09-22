@@ -4,7 +4,7 @@ import numpy as np
 
 
 # DFT AcquisitionController
-class DFT_AcquisitionController(AcquisitionController):
+class Demodulation_AcquisitionController(AcquisitionController):
     """
     This class represents an example acquisition controller. End users will
     probably want to use something more sophisticated. It will average all
