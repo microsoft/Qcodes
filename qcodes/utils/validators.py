@@ -253,6 +253,36 @@ class OnOff(Validator):
         return self._validator.validate(value, context)
 
 
+class Multiples(Ints):
+    """
+    A validator that checks if a value is an integer multiple of a fixed devisor
+    This class extends validators.Ints such that the value is also checked for
+    being integer between an optional min_value and max_value. Furthermore this
+    validator checks that the value is an integer multiple of an fixed, integer
+    divisor. (i.e. value % divisor == 0)
+    Args:
+        divisor (integer), the value need the be a multiple of this divisor
+    Inherited Args (see validators.Ints):
+        max_value, value must be <= max_value
+        min_value, value must be >= min_value
+    """
+
+    def __init__(self, divisor=1, **kwargs):
+        super().__init__(**kwargs)
+        if not isinstance(divisor, int) or divisor <= 0:
+            raise TypeError('divisor must be a positive integer')
+        self._divisor = divisor
+
+    def validate(self, value, context=''):
+        super().validate(value=value, context=context)
+        if not value % self._divisor == 0:
+            raise ValueError('{} is not a multiple of {}; {}'.format(
+                repr(value), repr(self._divisor), context))
+
+    def __repr__(self):
+        return super().__repr__()[:-1] + ', Multiples of {}>'.format(self._divisor)
+
+
 class MultiType(Validator):
     """
     allow the union of several different validators
