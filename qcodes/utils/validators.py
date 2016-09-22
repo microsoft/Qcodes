@@ -269,8 +269,8 @@ class Multiples(Ints):
 
     def __init__(self, divisor=1, **kwargs):
         super().__init__(**kwargs)
-        if not isinstance(divisor, int):
-            raise TypeError('divisor must be an integer')
+        if not isinstance(divisor, int) and divisor > 0:
+            raise TypeError('divisor must be a positive integer')
         self._divisor = divisor
 
     def validate(self, value, context=''):
