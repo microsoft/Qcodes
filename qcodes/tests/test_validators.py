@@ -381,7 +381,7 @@ class TestEnum(TestCase):
 
 class TestMultiples(TestCase):
     divisors = [3, 7, 11, 13]
-    not_divisors = [0, 0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
+    not_divisors = [0, -1, -5, -1e15, 0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
                      math.pi, math.e, '', None, float("nan"), float("inf"),
                      -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',
                      AClass, AClass(), a_func]
