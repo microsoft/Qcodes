@@ -276,7 +276,7 @@ class Multiples(Ints):
     def validate(self, value, context=''):
         super().validate(value=value, context=context)
         if not value % self._divisor == 0:
-            raise TypeError('{} is not a multiple of {}; {}'.format(
+            raise ValueError('{} is not a multiple of {}; {}'.format(
                 repr(value), repr(self._divisor), context))
 
     def __repr__(self):

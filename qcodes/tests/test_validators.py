@@ -405,7 +405,7 @@ class TestMultiples(TestCase):
             for v in self.multiples:
                 if v == 0:
                     continue
-                with self.assertRaises(TypeError):
+                with self.assertRaises(ValueError):
                     n.validate(v)
 
             for v in self.not_multiples:
