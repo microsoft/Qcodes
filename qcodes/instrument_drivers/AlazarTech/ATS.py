@@ -924,6 +924,9 @@ class AcquisitionController(Instrument):
         dump remaining buffers to acquisitioncontroller.handle_buffer
         alazar internals
         return acquisitioncontroller.post_acquire
+
+    Attributes:
+        _alazar: a reference to the alazar instrument driver
     """
     def __init__(self, name, alazar_name, **kwargs):
         """
