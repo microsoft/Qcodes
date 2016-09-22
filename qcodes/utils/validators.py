@@ -294,3 +294,46 @@ class MultiType(Validator):
     def __repr__(self):
         parts = (repr(v)[1:-1] for v in self._validators)
         return '<MultiType: {}>'.format(', '.join(parts))
+
+
+class MultiType(Validator):
+    """
+    allow the union of several different validators
+    for example to allow numbers as well as "off":
+    MultiType(Numbers(), Enum("off"))
+    """
+
+    def __init__(self, *validators):
+        if not validators:
+            raise TypeError('MultiType needs at least one Validator')
+
+        for v in validators:
+            if not isinstance(v, Validator):
+                raise TypeError('each argument must be a Validator')
+
+            if v.is_numeric:
+                # if ANY of the contained validators is numeric,
+                # the MultiType is considered numeric too.
+                # this could cause problems if you want to sweep
+                # from a non-numeric to a numeric value, so we
+                # need to be careful about this in the sweep code
+                self.is_numeric = True
+
+        self._validators = tuple(validators)
+
+    def validate(self, value, context=''):
+        args = ()
+        for v in self._validators:
+            try:
+                v.validate(value, context)
+                return
+            except Exception as e:
+                # collect the args from all validators so you can see why
+                # each one failed
+                args = args + e.args
+
+        raise ValueError(*args)
+
+    def __repr__(self):
+        parts = (repr(v)[1:-1] for v in self._validators)
+        return '<MultiType: {}>'.format(', '.join(parts))
