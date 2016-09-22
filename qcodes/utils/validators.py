@@ -269,7 +269,7 @@ class Multiples(Ints):
 
     def __init__(self, divisor=1, **kwargs):
         super().__init__(**kwargs)
-        if not isinstance(divisor, int) and divisor > 0:
+        if not isinstance(divisor, int) or divisor <= 0:
             raise TypeError('divisor must be a positive integer')
         self._divisor = divisor
 
