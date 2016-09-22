@@ -416,6 +416,10 @@ class TestMultiples(TestCase):
             with self.assertRaises(TypeError):
                 n = Multiples(divisor=d)
 
+        n = Multiples(divisor=3, min_value=1, max_value=10)
+        self.assertEqual(
+            repr(n), '<Ints 1<=v<=10, Multiples of 3>')
+
 
 class TestMultiType(TestCase):
     def test_good(self):
