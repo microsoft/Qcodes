@@ -253,47 +253,34 @@ class OnOff(Validator):
         return self._validator.validate(value, context)
 
 
-class MultiType(Validator):
+class Multiples(Ints):
     """
-    allow the union of several different validators
-    for example to allow numbers as well as "off":
-    MultiType(Numbers(), Enum("off"))
+    A validator that checks if a value is an integer multiple of a fixed devisor
+    This class extends validators.Ints such that the value is also checked for
+    being integer between an optional min_value and max_value. Furthermore this
+    validator checks that the value is an integer multiple of an fixed, integer
+    divisor. (i.e. value % divisor == 0)
+    Args:
+        divisor (integer), the value need the be a multiple of this divisor
+    Inherited Args (see validators.Ints):
+        max_value, value must be <= max_value
+        min_value, value must be >= min_value
     """
 
-    def __init__(self, *validators):
-        if not validators:
-            raise TypeError('MultiType needs at least one Validator')
-
-        for v in validators:
-            if not isinstance(v, Validator):
-                raise TypeError('each argument must be a Validator')
-
-            if v.is_numeric:
-                # if ANY of the contained validators is numeric,
-                # the MultiType is considered numeric too.
-                # this could cause problems if you want to sweep
-                # from a non-numeric to a numeric value, so we
-                # need to be careful about this in the sweep code
-                self.is_numeric = True
-
-        self._validators = tuple(validators)
+    def __init__(self, divisor=1, **kwargs):
+        super().__init__(**kwargs)
+        if not isinstance(divisor, int):
+            raise TypeError('divisor must be an integer')
+        self._divisor = divisor
 
     def validate(self, value, context=''):
-        args = ()
-        for v in self._validators:
-            try:
-                v.validate(value, context)
-                return
-            except Exception as e:
-                # collect the args from all validators so you can see why
-                # each one failed
-                args = args + e.args
-
-        raise ValueError(*args)
+        super().validate(value=value, context=context)
+        if not value % self._divisor == 0:
+            raise TypeError('{} is not a multiple of {}; {}'.format(
+                repr(value), repr(self._divisor), context))
 
     def __repr__(self):
-        parts = (repr(v)[1:-1] for v in self._validators)
-        return '<MultiType: {}>'.format(', '.join(parts))
+        return super().__repr__()[:-1] + ', Multiples of {}>'.format(self._divisor)
 
 
 class MultiType(Validator):
