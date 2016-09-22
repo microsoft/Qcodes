@@ -167,7 +167,7 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            label='Samples per Record',
                            unit=None,
                            value=96000,
-                           vals=Multiples(divisor=64, min_value=256))
+                           vals=validators.Multiples(divisor=64, min_value=256))
 
         # TODO(damazter) (M) figure out if this also has to be a multiple of
         # something,
@@ -264,36 +264,3 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
         if model != 'ATS9870':
             raise Exception("The Alazar board kind is not 'ATS9870',"
                             " found '" + str(model) + "' instead.")
-
-
-class Multiples(validators.Ints):
-    """
-    A validator that checks if a value is an integer multiple of a fixed devisor
-
-    This class extends validators.Ints such that the value is also checked for
-    being integer between an optional min_value and max_value. Furthermore this
-    validator checks that the value is an integer multiple of an fixed, integer
-    divisor. (i.e. value % divisor == 0)
-
-    Args:
-        divisor (integer), the value need the be a multiple of this divisor
-
-    Inherited Args (see validators.Ints):
-        max_value, value must be <= max_value
-        min_value, value must be >= min_value
-    """
-
-    def __init__(self, divisor=1, **kwargs):
-        super().__init__(**kwargs)
-        if not isinstance(divisor, int):
-            raise TypeError('divisor must be an integer')
-        self._divisor = divisor
-
-    def validate(self, value, context=''):
-        super().validate(value=value, context=context)
-        if not value % self._divisor == 0:
-            raise TypeError('{} is not a multiple of {}; {}'.format(
-                repr(value), repr(self._divisor), context))
-
-    def __repr__(self):
-        return super().__repr__()[:-1] + ', Multiples of {}>'.format(self._divisor)
