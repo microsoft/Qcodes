@@ -3,7 +3,7 @@ import math
 import numpy 
 
 from qcodes.utils.validators import (Validator, Anything, Bool, Strings,
-                                     Numbers, Ints, Enum, MultiType)
+                                     Numbers, Ints, Enum, Multiples, MultiType)
 
 
 class AClass:
@@ -377,6 +377,48 @@ class TestEnum(TestCase):
         for enum in self.not_enums:
             with self.assertRaises(TypeError):
                 Enum(*enum)
+
+
+class TestMultiples(TestCase):
+    divisors = [3, 7, 11, 13]
+    not_divisors = [0, -1, -5, -1e15, 0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
+                     math.pi, math.e, '', None, float("nan"), float("inf"),
+                     -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',
+                     AClass, AClass(), a_func]
+    multiples = [0, 1, 10, -1, 100, 1000000, int(-1e15), int(1e15),
+            # warning: True==1 and False==0 - we *could* prohibit these, using
+            # isinstance(v, bool)
+            True, False,
+            # numpy scalars
+            numpy.int64(2)]
+    not_multiples = [0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
+                     math.pi, math.e, '', None, float("nan"), float("inf"),
+                     -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',
+                     AClass, AClass(), a_func]
+
+    def test_divisors(self):
+        for d in self.divisors:
+            n = Multiples(divisor=d)
+            for v in [d * e for e in self.multiples]:
+                n.validate(v)
+
+            for v in self.multiples:
+                if v == 0:
+                    continue
+                with self.assertRaises(ValueError):
+                    n.validate(v)
+
+            for v in self.not_multiples:
+                with self.assertRaises(TypeError):
+                    n.validate(v)
+
+        for d in self.not_divisors:
+            with self.assertRaises(TypeError):
+                n = Multiples(divisor=d)
+
+        n = Multiples(divisor=3, min_value=1, max_value=10)
+        self.assertEqual(
+            repr(n), '<Ints 1<=v<=10, Multiples of 3>')
 
 
 class TestMultiType(TestCase):
