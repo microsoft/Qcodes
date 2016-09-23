@@ -330,23 +330,34 @@ class Arrays(Validator):
         if value.dtype not in self.validtypes:
             raise TypeError(
                 '{} is not an int or float; {}'.format(repr(value), context))
-        if self._shape != None:
+        if self._shape is not None:
             if (np.shape(value) != self._shape):
                 raise ValueError(
                     '{} does not have expected shape {}; {}'.format(
                             repr(value), self._shape, context))
 
-        if not (self._min_value <= np.min(value) and
-                np.max(value) <= self._max_value):
-            raise ValueError(
-                '{} is invalid: all values must be between '
-                '{} and {} inclusive; {}'.format(
-                    repr(value), self._min_value, self._max_value, context))
+        # Only check if max is not inf as it can be expensive for large arrays
+        if self._max_value != (float("inf")):
+            if not (np.max(value) <= self._max_value):
+                raise ValueError(
+                    '{} is invalid: all values must be between '
+                    '{} and {} inclusive; {}'.format(
+                        repr(value), self._min_value,
+                        self._max_value, context))
+
+        # Only check if min is not -inf as it can be expensive for large arrays
+        if self._min_value != (-float("inf")):
+            if not (self._min_value <= np.min(value)):
+                raise ValueError(
+                    '{} is invalid: all values must be between '
+                    '{} and {} inclusive; {}'.format(
+                        repr(value), self._min_value,
+                        self._max_value, context))
 
     is_numeric = True
 
     def __repr__(self):
         minv = self._min_value if math.isfinite(self._min_value) else None
         maxv = self._max_value if math.isfinite(self._max_value) else None
-        return '<Arrays{}, shape: {}>'.format(range_str(minv, maxv, 'v'), self._shape)
-
+        return '<Arrays{}, shape: {}>'.format(range_str(minv, maxv, 'v'),
+                                              self._shape)

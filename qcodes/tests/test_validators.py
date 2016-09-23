@@ -414,7 +414,7 @@ class TestArrays(TestCase):
 
     def test_min_max(self):
         m = Arrays(min_value=-5, max_value=50, shape=(2, 2))
-        v = np.random.rand(2, 2)
+        v = np.array([[2, 0], [1, 2]])
         m.validate(v)
         v = 100*v
         with self.assertRaises(ValueError):
@@ -423,24 +423,18 @@ class TestArrays(TestCase):
         with self.assertRaises(ValueError):
             m.validate(v)
 
-        v = np.random.rand(3, 2)
-        with self.assertRaises(ValueError):
-            m.validate(v)
+        m = Arrays(min_value=-5, shape=(2, 2))
+        v = np.array([[2, 0], [1, 2]])
+        m.validate(v*100)
 
     def test_shape(self):
         m = Arrays(min_value=-5, max_value=50, shape=(2, 2))
-        v = np.random.rand(2, 2)
-        m.validate(v)
-        v = np.random.rand(3, 2)
+        v = np.array([[2, 0], [1, 2], [2, 3]])
         with self.assertRaises(ValueError):
             m.validate(v)
 
         # should pass if no shape specified
         m = Arrays(min_value=-5, max_value=50)
-        v = np.random.rand(2, 2)
         m.validate(v)
-        v = np.random.rand(3, 2)
+        v = np.array([[2, 0], [1, 2]])
         m.validate(v)
-
-
-
