@@ -551,9 +551,11 @@ class TestInstrument(TestCase):
         gates = self.gates
 
         gates.add_parameter('has_snapshot_value',
+                            parameter_class=ManualParameter,
                             initial_value=42,
                             snapshot_value=True)
         gates.add_parameter('no_snapshot_value',
+                            parameter_class=ManualParameter,
                             initial_value=42,
                             snapshot_value=False)
 
