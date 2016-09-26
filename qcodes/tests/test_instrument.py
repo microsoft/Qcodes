@@ -548,18 +548,16 @@ class TestInstrument(TestCase):
         self.assertGreater(noise_ts, datetime.now() - timedelta(seconds=1.1))
 
     def test_snapshot_value(self):
-        gates = self.gates
-
-        gates.add_parameter('has_snapshot_value',
+        self.source.add_parameter('has_snapshot_value',
                             parameter_class=ManualParameter,
                             initial_value=42,
                             snapshot_value=True)
-        gates.add_parameter('no_snapshot_value',
+        self.source.add_parameter('no_snapshot_value',
                             parameter_class=ManualParameter,
                             initial_value=42,
                             snapshot_value=False)
 
-        snapshot = gates.snapshot()
+        snapshot = self.source.snapshot()
 
         self.assertIn('value', snapshot['parameters']['has_snapshot_value'])
         self.assertEquals(42,
