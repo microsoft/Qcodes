@@ -203,7 +203,6 @@ class MatPlot(BasePlot):
         # described by ax, and it's not a kwarg to matplotlib's ax.plot. But I
         # didn't want to strip it out of kwargs earlier because it should stay
         # part of trace['config'].
-
         args_masked = [masked_invalid(arg) for arg in [x, y, z]
                       if arg is not None]
 
@@ -226,7 +225,7 @@ class MatPlot(BasePlot):
                 if arr.ndim > 1:
                     arr = arr[0] if k == 0 else arr[:,0]
 
-                if np.isnan(arr[1]):
+                if np.ma.is_masked(arr[1]):
                     # Only the first element is not nan, in this case pad with
                     # a value, and separate their values by 1
                     arr_pad = np.pad(arr, (1, 0), mode='symmetric')
@@ -246,8 +245,7 @@ class MatPlot(BasePlot):
                     arr_pad += diff
                     # Ignore final value
                     arr_pad = arr_pad[:-1]
-
-                args.append(arr_pad)
+                args.append(masked_invalid(arr_pad))
             args.append(args_masked[-1])
         else:
             # Only the masked value of z is used as a mask
@@ -287,9 +285,9 @@ class MatPlot(BasePlot):
             # put this where it belongs.
             ax.qcodes_colorbar.set_label(self.get_label(z))
 
-        # Scale colors
-        cmin = np.nanmin(z)
-        cmax = np.nanmax(z)
+        # Scale colors if z has elements
+        cmin = np.nanmin(args_masked[-1])
+        cmax = np.nanmax(args_masked[-1])
         ax.qcodes_colorbar.set_clim(cmin, cmax)
 
         return pc
