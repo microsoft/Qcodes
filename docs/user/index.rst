@@ -10,3 +10,4 @@ This is the guide for you, the user that wants to just use QCoDes.
    install
    faq
    tutorial
+   configuration
