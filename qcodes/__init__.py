@@ -6,6 +6,12 @@
 # separately import multiprocessing
 from multiprocessing import active_children
 
+# config
+
+from qcodes.config import Config
+
+defaults = Config().current_config
+
 from qcodes.version import __version__
 from qcodes.process.helpers import set_mp_method
 from qcodes.utils.helpers import in_notebook
