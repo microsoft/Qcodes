@@ -1,5 +1,5 @@
 import math
-import numpy
+import numpy as np
 
 BIGSTRING = 1000000000
 BIGINT = int(1e18)
@@ -140,7 +140,7 @@ class Numbers(Validator):
         - fix raises
     """
 
-    validtypes = (float, int, numpy.integer, numpy.floating)
+    validtypes = (float, int, np.integer, np.floating)
 
     def __init__(self, min_value=-float("inf"), max_value=float("inf")):
 
@@ -180,7 +180,7 @@ class Ints(Validator):
     min_value <= value <= max_value
     """
 
-    validtypes = (int, numpy.integer)
+    validtypes = (int, np.integer)
 
     def __init__(self, min_value=-BIGINT, max_value=BIGINT):
         if isinstance(min_value, self.validtypes):
@@ -253,6 +253,36 @@ class OnOff(Validator):
         return self._validator.validate(value, context)
 
 
+class Multiples(Ints):
+    """
+    A validator that checks if a value is an integer multiple of a fixed devisor
+    This class extends validators.Ints such that the value is also checked for
+    being integer between an optional min_value and max_value. Furthermore this
+    validator checks that the value is an integer multiple of an fixed, integer
+    divisor. (i.e. value % divisor == 0)
+    Args:
+        divisor (integer), the value need the be a multiple of this divisor
+    Inherited Args (see validators.Ints):
+        max_value, value must be <= max_value
+        min_value, value must be >= min_value
+    """
+
+    def __init__(self, divisor=1, **kwargs):
+        super().__init__(**kwargs)
+        if not isinstance(divisor, int) or divisor <= 0:
+            raise TypeError('divisor must be a positive integer')
+        self._divisor = divisor
+
+    def validate(self, value, context=''):
+        super().validate(value=value, context=context)
+        if not value % self._divisor == 0:
+            raise ValueError('{} is not a multiple of {}; {}'.format(
+                repr(value), repr(self._divisor), context))
+
+    def __repr__(self):
+        return super().__repr__()[:-1] + ', Multiples of {}>'.format(self._divisor)
+
+
 class MultiType(Validator):
     """
     allow the union of several different validators
@@ -294,3 +324,70 @@ class MultiType(Validator):
     def __repr__(self):
         parts = (repr(v)[1:-1] for v in self._validators)
         return '<MultiType: {}>'.format(', '.join(parts))
+
+
+class Arrays(Validator):
+    """
+    Validator for numerical numpy arrays
+    Args:
+        min_value (Optional[Union[float, int]):  Min value allowed, default inf
+        max_value:  (Optional[Union[float, int]): Max  value allowed, default inf
+        shape:     (Optional): None
+    """
+
+    validtypes = (int, float, np.integer, np.floating)
+
+    def __init__(self, min_value=-float("inf"), max_value=float("inf"),
+                 shape=None):
+
+        if isinstance(min_value, self.validtypes):
+            self._min_value = min_value
+        else:
+            raise TypeError('min_value must be a number')
+
+        if isinstance(max_value, self.validtypes) and max_value > min_value:
+            self._max_value = max_value
+        else:
+            raise TypeError('max_value must be a number bigger than min_value')
+        self._shape = shape
+
+    def validate(self, value, context=''):
+
+        if not isinstance(value, np.ndarray):
+            raise TypeError(
+                '{} is not a numpy array; {}'.format(repr(value), context))
+
+        if value.dtype not in self.validtypes:
+            raise TypeError(
+                '{} is not an int or float; {}'.format(repr(value), context))
+        if self._shape is not None:
+            if (np.shape(value) != self._shape):
+                raise ValueError(
+                    '{} does not have expected shape {}; {}'.format(
+                            repr(value), self._shape, context))
+
+        # Only check if max is not inf as it can be expensive for large arrays
+        if self._max_value != (float("inf")):
+            if not (np.max(value) <= self._max_value):
+                raise ValueError(
+                    '{} is invalid: all values must be between '
+                    '{} and {} inclusive; {}'.format(
+                        repr(value), self._min_value,
+                        self._max_value, context))
+
+        # Only check if min is not -inf as it can be expensive for large arrays
+        if self._min_value != (-float("inf")):
+            if not (self._min_value <= np.min(value)):
+                raise ValueError(
+                    '{} is invalid: all values must be between '
+                    '{} and {} inclusive; {}'.format(
+                        repr(value), self._min_value,
+                        self._max_value, context))
+
+    is_numeric = True
+
+    def __repr__(self):
+        minv = self._min_value if math.isfinite(self._min_value) else None
+        maxv = self._max_value if math.isfinite(self._max_value) else None
+        return '<Arrays{}, shape: {}>'.format(range_str(minv, maxv, 'v'),
+                                              self._shape)
