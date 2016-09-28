@@ -1,9 +1,10 @@
 from unittest import TestCase
 import math
-import numpy 
+import numpy as np
 
 from qcodes.utils.validators import (Validator, Anything, Bool, Strings,
-                                     Numbers, Ints, Enum, MultiType)
+                                     Numbers, Ints, Enum, MultiType,
+                                     Arrays, Multiples)
 
 
 class AClass:
@@ -177,7 +178,7 @@ class TestNumbers(TestCase):
                # warning: +/- inf are allowed if max & min are not specified!
                -float("inf"), float("inf"),
                 # numpy scalars
-               numpy.int64(36), numpy.float32(-1.123)
+               np.int64(36), np.float32(-1.123)
                 ]
     not_numbers = ['', None, '1', [], {}, [1, 2], {1: 1},
                    b'good', AClass, AClass(), a_func]
@@ -269,8 +270,8 @@ class TestInts(TestCase):
             # warning: True==1 and False==0 - we *could* prohibit these, using
             # isinstance(v, bool)
             True, False,
-            # numpy scalars
-            numpy.int64(3)]
+            # np scalars
+            np.int64(3)]
     not_ints = [0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
                 math.pi, math.e, '', None, float("nan"), float("inf"),
                 -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',
@@ -379,6 +380,48 @@ class TestEnum(TestCase):
                 Enum(*enum)
 
 
+class TestMultiples(TestCase):
+    divisors = [3, 7, 11, 13]
+    not_divisors = [0, -1, -5, -1e15, 0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
+                     math.pi, math.e, '', None, float("nan"), float("inf"),
+                     -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',
+                     AClass, AClass(), a_func]
+    multiples = [0, 1, 10, -1, 100, 1000000, int(-1e15), int(1e15),
+            # warning: True==1 and False==0 - we *could* prohibit these, using
+            # isinstance(v, bool)
+            True, False,
+            # numpy scalars
+            np.int64(2)]
+    not_multiples = [0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
+                     math.pi, math.e, '', None, float("nan"), float("inf"),
+                     -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',
+                     AClass, AClass(), a_func]
+
+    def test_divisors(self):
+        for d in self.divisors:
+            n = Multiples(divisor=d)
+            for v in [d * e for e in self.multiples]:
+                n.validate(v)
+
+            for v in self.multiples:
+                if v == 0:
+                    continue
+                with self.assertRaises(ValueError):
+                    n.validate(v)
+
+            for v in self.not_multiples:
+                with self.assertRaises(TypeError):
+                    n.validate(v)
+
+        for d in self.not_divisors:
+            with self.assertRaises(TypeError):
+                n = Multiples(divisor=d)
+
+        n = Multiples(divisor=3, min_value=1, max_value=10)
+        self.assertEqual(
+            repr(n), '<Ints 1<=v<=10, Multiples of 3>')
+
+
 class TestMultiType(TestCase):
     def test_good(self):
         m = MultiType(Strings(2, 4), Ints(10, 1000))
@@ -402,3 +445,38 @@ class TestMultiType(TestCase):
         for args in [[], [1], [Strings(), True]]:
             with self.assertRaises(TypeError):
                 MultiType(*args)
+
+
+class TestArrays(TestCase):
+    def test_type(self):
+        m = Arrays(min_value=0.0, max_value=3.2, shape=(2, 2))
+        for v in ['somestring', 4, 2, [[2, 0], [1, 2]]]:
+            with self.assertRaises(TypeError):
+                m.validate(v)
+
+    def test_min_max(self):
+        m = Arrays(min_value=-5, max_value=50, shape=(2, 2))
+        v = np.array([[2, 0], [1, 2]])
+        m.validate(v)
+        v = 100*v
+        with self.assertRaises(ValueError):
+            m.validate(v)
+        v = -1*v
+        with self.assertRaises(ValueError):
+            m.validate(v)
+
+        m = Arrays(min_value=-5, shape=(2, 2))
+        v = np.array([[2, 0], [1, 2]])
+        m.validate(v*100)
+
+    def test_shape(self):
+        m = Arrays(min_value=-5, max_value=50, shape=(2, 2))
+        v = np.array([[2, 0], [1, 2], [2, 3]])
+        with self.assertRaises(ValueError):
+            m.validate(v)
+
+        # should pass if no shape specified
+        m = Arrays(min_value=-5, max_value=50)
+        m.validate(v)
+        v = np.array([[2, 0], [1, 2]])
+        m.validate(v)
