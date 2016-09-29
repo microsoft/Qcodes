@@ -298,6 +298,8 @@ class GNUPlotFormat(Formatter):
             for array in group.data + (group.set_arrays[-1],):
                 array.mark_saved(save_range[1])
 
+	self.write_metadata(data_set)
+
     def write_metadata(self, data_set, io_manager, location, read_first=True):
         """
         Write all metadata in this DataSet to storage.
