@@ -12,7 +12,7 @@ class Formatter:
 
     Each Formatter is expected to implement writing methods:
     - ``write``: to write the ``DataArray``s
-    - ``write_metadata``: to write the metadata JSON structure
+    - ``write_metadata``: to write the metadata structure
 
     Optionally, if this Formatter keeps the data file(s) open
     between write calls, it may implement:
