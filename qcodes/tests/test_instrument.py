@@ -966,14 +966,14 @@ class TestInstrument2(TestCase):
     def validate_function(self):
         instrument = self.instrument
         instrument.validate_status()
-        instrument.dac1._save_val(1000) # overrule the validator
+        instrument.dac1._save_val(1000)  # overrule the validator
         try:
             instrument.validate_status()
         except:
             pass
         else:
             raise Exception('validate_status did not function')
-        
+
     def test_attr_access(self):
         instrument = self.instrument
 
