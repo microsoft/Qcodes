@@ -196,6 +196,25 @@ class TestInstrument(TestCase):
         self.assertEqual(self.gates.instances(), [self.gates])
         self.assertEqual(Instrument.find_instrument('gates'), self.gates)
 
+    def test_creation_failure(self):
+        # this we already know should fail (see test_max_delay_errors)
+        name = 'gatesFailing'
+        with self.assertRaises(ValueError):
+            GatesBadDelayValue(model=self.model, name=name, server_name='')
+
+        # this instrument should not be in the instance list
+        with self.assertRaises(KeyError):
+            Instrument.find_instrument(name)
+
+        # now do the same with a local instrument
+        name = 'gatesFailing2'
+        with self.assertRaises(ValueError):
+            GatesBadDelayValue(model=self.model, name=name, server_name=None)
+
+        # this instrument should not be in the instance list
+        with self.assertRaises(KeyError):
+            Instrument.find_instrument(name)
+
     def test_mock_instrument(self):
         gates, source, meter = self.gates, self.source, self.meter
 
