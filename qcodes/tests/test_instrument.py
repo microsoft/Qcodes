@@ -963,6 +963,17 @@ class TestInstrument2(TestCase):
         # TODO (giulioungaretti) remove ( does nothing ?)
         pass
 
+    def validate_function(self):
+        instrument = self.instrument
+        instrument.validate_status()
+        instrument.dac1._save_val(1000) # overrule the validator
+        try:
+            instrument.validate_status()
+        except:
+            pass
+        else:
+            raise Exception('validate_status did not function')
+        
     def test_attr_access(self):
         instrument = self.instrument
 
@@ -975,7 +986,7 @@ class TestInstrument2(TestCase):
         instrument.close()
 
         # make sure we can still print the instrument
-        s = instrument.__repr__()
+        _ = instrument.__repr__()
 
         # make sure the gate is removed
         self.assertEqual(hasattr(instrument, 'dac1'), False)
