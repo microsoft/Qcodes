@@ -10,9 +10,11 @@ from qcodes.utils.validators import Anything
 from .parameter import StandardParameter
 from .function import Function
 from .remote import RemoteInstrument
+from .metaclass import InstrumentMetaclass
 
 
-class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
+class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
+                 metaclass=InstrumentMetaclass):
 
     """
     Base class for all QCodes instruments.
@@ -97,8 +99,6 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
         self._meta_attrs = ['name']
 
         self._no_proxy_methods = {'__getstate__'}
-
-        self.record_instance(self)
 
     def get_idn(self):
         """
