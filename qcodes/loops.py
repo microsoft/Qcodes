@@ -175,6 +175,8 @@ class Loop(Metadatable):
         self.nested_loop = None
         self.actions = None
         self.then_actions = ()
+        self.bg_task = None
+        self.bg_min_delay = None
         self.progress_interval = progress_interval
 
     def loop(self, sweep_values, delay=0):
@@ -242,7 +244,23 @@ class Loop(Metadatable):
 
         return ActiveLoop(self.sweep_values, self.delay, *actions,
                           then_actions=self.then_actions, station=self.station,
-                          progress_interval=self.progress_interval)
+                          progress_interval=self.progress_interval,
+                          bg_task=self.bg_task, bg_min_delay=self.bg_min_delay)
+
+    def with_bg_task(self, task, min_delay=1):
+        """
+        Attaches a background task to this loop.
+
+        Args:
+            task: A callable object with no parameters. This object will be
+                invoked periodically during the measurement loop.
+
+            min_delay (default 1): The minimum number of seconds to wait
+                between task invocations. Note that the actual time between
+                task invocations may be much longer than this, as the task is
+                only run between passes through the loop.
+        """
+        return _attach_bg_task(self, task, min_delay)
 
     @staticmethod
     def validate_actions(*actions):
@@ -338,6 +356,15 @@ def _attach_then_actions(loop, actions, overwrite):
 
     return loop
 
+def _attach_bg_task(loop, task, min_delay):
+    """Inner code for both Loop and ActiveLoop.bg_task"""
+    if loop.bg_task is None:
+        loop.bg_task = task
+        loop.bg_min_delay = min_delay
+    else:
+        raise RuntimeError('Only one background task is allowed per loop')
+
+    return loop
 
 class ActiveLoop(Metadatable):
     """
@@ -356,7 +383,7 @@ class ActiveLoop(Metadatable):
     signal_period = 1
 
     def __init__(self, sweep_values, delay, *actions, then_actions=(),
-                 station=None, progress_interval=None):
+                 station=None, progress_interval=None, bg_task=None, bg_min_delay=None):
         super().__init__()
         self.sweep_values = sweep_values
         self.delay = delay
@@ -364,6 +391,9 @@ class ActiveLoop(Metadatable):
         self.progress_interval = progress_interval
         self.then_actions = then_actions
         self.station = station
+        self.bg_task = bg_task
+        self.bg_min_delay = bg_min_delay
+        self.data_set = None
 
         # compile now, but don't save the results
         # just used for preemptive error checking
@@ -403,6 +433,21 @@ class ActiveLoop(Metadatable):
         loop = ActiveLoop(self.sweep_values, self.delay, *self.actions,
                           then_actions=self.then_actions, station=self.station)
         return _attach_then_actions(loop, actions, overwrite)
+
+    def with_bg_task(self, task, min_delay=1):
+        """
+        Attaches a background task to this loop.
+
+        Args:
+            task: A callable object with no parameters. This object will be
+                invoked periodically during the measurement loop.
+
+            min_delay (default 1): The minimum number of seconds to wait
+                between task invocations. Note that the actual time between
+                task invocations may be much longer than this, as the task is
+                only run between passes through the loop.
+        """
+        return _attach_bg_task(self, task, min_delay)
 
     def snapshot_base(self, update=False):
         """Snapshot of this ActiveLoop's definition."""
@@ -595,6 +640,45 @@ class ActiveLoop(Metadatable):
             else:
                 raise ValueError('unknown signal', signal_)
 
+    def get_data_set(self, data_manager=None, *args, **kwargs):
+        """
+        Return the data set for this loop.
+        If no data set has been created yet, a new one will be created and returned.
+        Note that all arguments are ignored if the data set has already been created.
+
+        data_manager: a DataManager instance (omit to use default,
+            False to store locally)
+
+        kwargs are passed along to data_set.new_data. The key ones are:
+        location: the location of the DataSet, a string whose meaning
+            depends on formatter and io, or False to only keep in memory.
+            May be a callable to provide automatic locations. If omitted, will
+            use the default DataSet.location_provider
+        name: if location is default or another provider function, name is
+            a string to add to location to make it more readable/meaningful
+            to users
+        formatter: knows how to read and write the file format
+            default can be set in DataSet.default_formatter
+        io: knows how to connect to the storage (disk vs cloud etc)
+        write_period: how often to save to storage during the loop.
+            default 5 sec, use None to write only at the end
+
+        returns:
+            a DataSet object that we can use to plot
+        """
+        if self.data_set is None:
+            if data_manager is False:
+                data_mode = DataMode.LOCAL
+            else:
+                data_mode = DataMode.PUSH_TO_SERVER
+
+            data_set = new_data(arrays=self.containers(), mode=data_mode,
+                                data_manager=data_manager, *args, **kwargs)
+
+            self.data_set = data_set
+
+        return self.data_set
+
     def run_temp(self, **kwargs):
         """
         wrapper to run this loop in the foreground as a temporary data set,
@@ -652,13 +736,7 @@ class ActiveLoop(Metadatable):
                       flush=True)
             prev_loop.join()
 
-        if data_manager is False:
-            data_mode = DataMode.LOCAL
-        else:
-            data_mode = DataMode.PUSH_TO_SERVER
-
-        data_set = new_data(arrays=self.containers(), mode=data_mode,
-                            data_manager=data_manager, *args, **kwargs)
+        data_set = self.get_data_set(data_manager, *args, **kwargs)
         self.set_common_attrs(data_set=data_set, use_threads=use_threads,
                               signal_queue=self.signal_queue)
 
@@ -710,7 +788,9 @@ class ActiveLoop(Metadatable):
         if not quiet:
             print(repr(self.data_set))
             print(datetime.now().strftime('started at %Y-%m-%d %H:%M:%S'))
-        return self.data_set
+        ds = self.data_set
+        self.data_set = None
+        return ds
 
     def _compile_actions(self, actions, action_indices=()):
         callables = []
@@ -777,12 +857,15 @@ class ActiveLoop(Metadatable):
         callables = self._compile_actions(self.actions, action_indices)
 
         t0 = time.time()
+        last_task = t0
+        last_task_failed = False
         imax = len(self.sweep_values)
         for i, value in enumerate(self.sweep_values):
             if self.progress_interval is not None:
                 tprint('loop %s: %d/%d (%.1f [s])' % (
                     self.sweep_values.name, i, imax, time.time() - t0),
                     dt=self.progress_interval, tag='outerloop')
+
             self.sweep_values.set(value)
             new_indices = loop_indices + (i,)
             new_values = current_values + (value,)
@@ -806,11 +889,34 @@ class ActiveLoop(Metadatable):
 
             # after the first setpoint, delay reverts to the loop delay
             delay = self.delay
+
+            # now check for a background task and execute it if it's
+            # been long enough since the last time
+            # don't let exceptions in the background task interrupt
+            # the loop
+            # if the background task fails twice consecutively, stop
+            # executing it
+            if self.bg_task is not None:
+                t = time.time()
+                if t - last_task >= self.bg_min_delay:
+                    try:
+                        self.bg_task()
+                        last_task_failed = False
+                    except Exception:
+                        if last_task_failed:
+                            self.bg_task = None
+                        last_task_failed = True
+                    last_task = t
+
         if self.progress_interval is not None:
             # final progress note: set dt=-1 so it *always* prints
             tprint('loop %s DONE: %d/%d (%.1f [s])' % (
                    self.sweep_values.name, i + 1, imax, time.time() - t0),
                    dt=-1, tag='outerloop')
+
+        # run the background task one last time to catch the last setpoint(s)
+        if self.bg_task is not None:
+            self.bg_task()
 
         # the loop is finished - run the .then actions
         for f in self._compile_actions(self.then_actions, ()):
