@@ -43,7 +43,6 @@ class RemoteInstrument(DelegateAttributes):
 
     def __init__(self, *args, instrument_class=None, server_name='',
                  **kwargs):
-
         if server_name == '':
             server_name = instrument_class.default_server_name(**kwargs)
 

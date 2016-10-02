@@ -1,7 +1,8 @@
 """Instrument base class."""
-import weakref
-import time
 import logging
+import time
+import warnings
+import weakref
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
@@ -75,11 +76,12 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
 
     _all_instruments = {}
 
-    def __new__(cls, *args, server_name='', **kwargs):
+    def __new__(cls, *args, server_name=None, **kwargs):
         """Figure out whether to create a base instrument or proxy."""
         if server_name is None:
             return super().__new__(cls)
         else:
+            warnings.warn("Multiprocessing is in beta, use at own risk", UserWarning)
             return RemoteInstrument(*args, instrument_class=cls,
                                     server_name=server_name, **kwargs)
 

@@ -50,6 +50,7 @@ from datetime import datetime
 import multiprocessing as mp
 import time
 import numpy as np
+import warnings
 
 from qcodes.station import Station
 from qcodes.data.data_set import new_data, DataMode
@@ -62,7 +63,10 @@ from qcodes.utils.metadata import Metadatable
 from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
                       BreakIf, _QcodesBreak)
 
+# Switches off multiprocessing by default, cant' be altered after module import.
+# TODO(giulioungaretti) use config.
 
+USE_MP = False
 MP_NAME = 'Measurement'
 
 
@@ -640,7 +644,7 @@ class ActiveLoop(Metadatable):
             else:
                 raise ValueError('unknown signal', signal_)
 
-    def get_data_set(self, data_manager=None, *args, **kwargs):
+    def get_data_set(self, data_manager=False, *args, **kwargs):
         """
         Return the data set for this loop.
         If no data set has been created yet, a new one will be created and returned.
@@ -670,6 +674,7 @@ class ActiveLoop(Metadatable):
             if data_manager is False:
                 data_mode = DataMode.LOCAL
             else:
+                warnings.warn("Multiprocessing is in beta, use at own risk", UserWarning)
                 data_mode = DataMode.PUSH_TO_SERVER
 
             data_set = new_data(arrays=self.containers(), mode=data_mode,
@@ -688,20 +693,19 @@ class ActiveLoop(Metadatable):
         return self.run(background=False, quiet=True,
                         data_manager=False, location=False, **kwargs)
 
-    def run(self, background=True, use_threads=True, quiet=False,
-            data_manager=None, station=None, progress_interval=False,
+    def run(self, background=USE_MP, use_threads=False, quiet=False,
+            data_manager=USE_MP, station=None, progress_interval=False,
             *args, **kwargs):
         """
         Execute this loop.
 
-        background: (default True) run this sweep in a separate process
+        background: (default False) run this sweep in a separate process
             so we can have live plotting and other analysis in the main process
         use_threads: (default True): whenever there are multiple `get` calls
             back-to-back, execute them in separate threads so they run in
             parallel (as long as they don't block each other)
         quiet: (default False): set True to not print anything except errors
-        data_manager: a DataManager instance (omit to use default,
-            False to store locally)
+        data_manager: set to True to use a DataManager. Default to False.
         station: a Station instance for snapshots (omit to use a previously
             provided Station, or the default Station)
         progress_interval (default None): show progress of the loop every x
@@ -737,6 +741,7 @@ class ActiveLoop(Metadatable):
             prev_loop.join()
 
         data_set = self.get_data_set(data_manager, *args, **kwargs)
+
         self.set_common_attrs(data_set=data_set, use_threads=use_threads,
                               signal_queue=self.signal_queue)
 
@@ -762,6 +767,7 @@ class ActiveLoop(Metadatable):
                   flush=True)
 
         if background:
+            warnings.warn("Multiprocessing is in beta, use at own risk", UserWarning)
             p = QcodesProcess(target=self._run_wrapper, name=MP_NAME)
             p.is_sweep = True
             p.signal_queue = self.signal_queue

@@ -27,7 +27,9 @@ SERVER_MODES = set((DataMode.PULL_FROM_SERVER, DataMode.PUSH_TO_SERVER))
 
 
 def new_data(location=None, loc_record=None, name=None, overwrite=False,
-             io=None, data_manager=None, mode=DataMode.LOCAL, **kwargs):
+             io=None, data_manager=False, mode=DataMode.LOCAL, **kwargs):
+    # NOTE(giulioungaretti): leave this docstrings as it is, because
+    # documenting the types is silly in this case.
     """
     Create a new DataSet.
 
@@ -57,11 +59,11 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
             says the root data directory is the current working directory, ie
             where you started the python session.
 
-        data_manager (DataManager or False, optional): manager for the
-            ``DataServer`` that offloads storage and syncing of this
-            ``DataSet``. Usually omitted (default None) to use the default
-            from ``get_data_manager()``. If ``False``, this ``DataSet`` will
-            store itself.
+        data_manager (Optional[bool]): use a manager for the
+            ``DataServer`` that offloads storage and syncing of this Defaults
+            to  ``False`` i.e. this ``DataSet`` will store itself without extra
+            processes. Set to ``True`` to use the default from
+            ``get_data_manager()``.
 
         mode (DataMode, optional): connection type to the ``DataServer``.
             ``DataMode.LOCAL``: this DataSet doesn't communicate across
@@ -105,11 +107,11 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
     if location and (not overwrite) and io.list(location):
         raise FileExistsError('"' + location + '" already has data')
 
-    if data_manager is False:
+    if data_manager is True:
+        data_manager = get_data_manager()
+    else:
         if mode != DataMode.LOCAL:
             raise ValueError('DataSets without a data_manager must be local')
-    elif data_manager is None:
-        data_manager = get_data_manager()
 
     return DataSet(location=location, io=io, data_manager=data_manager,
                    mode=mode, **kwargs)
@@ -206,11 +208,11 @@ class DataSet(DelegateAttributes):
             says the root data directory is the current working directory, ie
             where you started the python session.
 
-        data_manager (DataManager or False, optional): manager for the
-            ``DataServer`` that offloads storage and syncing of this
-            ``DataSet``. Usually omitted (default None) to use the default
-            from ``get_data_manager()``. If ``False``, this ``DataSet`` will
-            store itself.
+        data_manager (Optional[bool]): use a manager for the
+            ``DataServer`` that offloads storage and syncing of this Defaults
+            to  ``False`` i.e. this ``DataSet`` will store itself without extra
+            processes.  Set to ``True`` to use the default from
+            ``get_data_manager()``.
 
         mode (DataMode, optional): connection type to the ``DataServer``.
             ``DataMode.LOCAL``: this DataSet doesn't communicate across
@@ -258,7 +260,7 @@ class DataSet(DelegateAttributes):
     background_functions = OrderedDict()
 
     def __init__(self, location=None, mode=DataMode.LOCAL, arrays=None,
-                 data_manager=None, formatter=None, io=None, write_period=5):
+                 data_manager=False, formatter=None, io=None, write_period=5):
         if location is False or isinstance(location, str):
             self.location = location
         else:
@@ -281,7 +283,7 @@ class DataSet(DelegateAttributes):
             for array in arrays:
                 self.add_array(array)
 
-        if data_manager is None and mode in SERVER_MODES:
+        if data_manager is True and mode in SERVER_MODES:
             data_manager = get_data_manager()
 
         if mode == DataMode.LOCAL:
