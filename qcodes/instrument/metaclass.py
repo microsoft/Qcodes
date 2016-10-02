@@ -1,10 +1,12 @@
 """Metaclass to choose between Instrument and RemoteInstrument"""
 
+import warnings
+
 from .remote import RemoteInstrument
 
 
 class InstrumentMetaclass(type):
-    def __call__(cls, *args, server_name='', **kwargs):
+    def __call__(cls, *args, server_name=None, **kwargs):
         """
         Create either a real Instrument or a RemoteInstrument as requested.
 
@@ -31,6 +33,8 @@ class InstrumentMetaclass(type):
         if server_name is None:
             instrument = super().__call__(*args, **kwargs)
         else:
+            warnings.warn('Multiprocessing is in beta, use at own risk',
+                          UserWarning)
             instrument = RemoteInstrument(*args, instrument_class=cls,
                                           server_name=server_name, **kwargs)
 

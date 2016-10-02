@@ -1,7 +1,8 @@
 """Instrument base class."""
-import weakref
-import time
 import logging
+import time
+import warnings
+import weakref
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
