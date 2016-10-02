@@ -1,34 +1,41 @@
 import json
+import jsonschema
+import logging
 import os
 import pkg_resources as pkgr
-import os
+
 from os.path import expanduser
 from pathlib import Path
-
-from jsonschema import validate
 
 
 class Config():
     config_file_name = "config.json"
+    schema_file_name = "schema.json"
 
     # get abs path of packge config file
     default_file_name = pkgr.resource_filename(__name__,
-                                             config_file_name)
+                                               config_file_name)
     # get abs path of schema  file
-    schema_file_name = pkgr.resource_filename(__name__,
-                                             "schema.json")
+    schema_default_file_name = pkgr.resource_filename(__name__,
+                                                      schema_file_name)
 
-    with open(schema_file_name, "r") as fp:
+    with open(schema_default_file_name, "r") as fp:
         schema = json.load(fp)
 
     # home dir, os independent
-    home_file_name = expanduser("~/{}".format(config_file_name))
+    home_file_name = expanduser(config_file_name)
+    schema_home_file_name = home_file_name.replace(config_file_name,
+                                                   schema_file_name)
 
     # this is for *nix people
-    env_file_name = os.environ.get("QCODES_CONFIG", False)
-
+    env_file_name = os.environ.get("QCODES_CONFIG", "")
+    schema_env_file_name = env_file_name.replace(config_file_name,
+                                                 schema_file_name)
     # current working dir
     cwd_file_name = "{}/{}".format(Path.cwd(), config_file_name)
+    schema_cwd_file_name = cwd_file_name.replace(config_file_name,
+                                                 schema_file_name)
+
     current_config = None
 
     def __init__(self):
@@ -36,7 +43,7 @@ class Config():
 
     def load_default(self):
         """
-        Load defaults.
+        Load defaults and validates.
 
         Configuration values are loaded and updated in the following order:
             - default json config file from the repository
@@ -44,24 +51,38 @@ class Config():
             - user json config in $QCODES_CONFIG
             - user json config in current working directory
 
-        If a key/value is not specified in the user configuration the default is used.
-        Configs are validated after every update.
+        If a key/value is not specified in the user configuration the default
+        is used.  Configs are validated after every update.
+        Validation is also performed against a custom user provied schema
+        if it's provided.
         """
         config = self.load_config(self.default_file_name)
         if os.path.isfile(self.home_file_name):
             home_config = self.load_config(self.home_file_name)
             config.update(home_config)
-            validate(config, self.schema )
+            self.validate(config, self.schema, self.schema_home_file_name)
         if os.path.isfile(self.env_file_name):
             env_config = self.load_config(self.env_file_name)
             config.update(env_config)
-            validate(config, self.schema )
+            self.validate(config, self.schema, self.schema_env_file_name)
         if os.path.isfile(self.cwd_file_name):
             cwd_config = self.load_config(self.cwd_file_name)
             config.update(cwd_config)
-            validate(config, self.schema )
+            self.validate(config, self.schema, self.schema_cwd_file_name)
         return config
 
+    def validate(self, json_config, schema, extra_schema_path=None):
+        if extra_schema_path is not None:
+            # add custom validation
+            if os.path.isfile(extra_schema_path):
+                with open(extra_schema_path) as f:
+                    schema.update(json.load(f))
+                jsonschema.validate(json_config, schema)
+            else:
+                logging.warning("""User schema is empty.
+                         Custom settings won't be validated""")
+        else:
+            jsonschema.validate(json_config, schema)
 
     def load_config(self, path):
         """Load a config JSON file
@@ -79,7 +100,6 @@ class Config():
 
     def __getitem__(self, name):
         val = self.current_config
-        for key in name.split( '.' ):
+        for key in name.split('.'):
             val = val[key]
         return val
-    
