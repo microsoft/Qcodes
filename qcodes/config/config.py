@@ -25,7 +25,7 @@ class Config():
         schema = json.load(fp)
 
     # home dir, os independent
-    home_file_name = expanduser(config_file_name)
+    home_file_name = expanduser("~/{}".format(config_file_name))
     schema_home_file_name = home_file_name.replace(config_file_name,
                                                    schema_file_name)
 
@@ -89,6 +89,59 @@ class Config():
         else:
             jsonschema.validate(json_config, schema)
 
+    def add(self, key, value, value_type=None, description=None):
+        """ Add custom config value
+        Add  key, value with optional value_type to user cofnig and schema.
+        If value_type is specified then the new value is validated.
+        Args:
+            key(str): key to be added under user config
+            value (any): value to add to config
+            value_type(Optional(string)): type of value
+                allowed are string, boolean, integer
+            description (str): description of key to add to schema
+        example:
+            >>> defaults.add("trace_color", "blue", "string", "description")
+        will update the config:
+            `...
+            "user": { "trace_color": "blue"}
+            ...`
+        and the schema:
+            `...
+            "user":{
+                "type" : "object",
+                "description": "controls user settings of qcodes"
+                "properties" : {
+                            "trace_color": {
+                            "description" : "description",
+                            "type": "string"
+                            }
+                    }
+            }
+            ...`
+
+        Todo:
+            - Add enum  support for value_type
+        """
+        self.current_config["user"].update({key: value})
+
+        if value_type is None:
+            if description is not None:
+                logger.warning(""" Passing a description without a type does
+                        not make sense. Description is ignored """)
+        else:
+            # update schema!
+            schema_entry = {key: {"type": value_type}}
+            if description is not None:
+                schema_entry = {key: {
+                                    "type": value_type,
+                                    "description": description}
+                                }
+            self.schema['properties']["user"]["properties"].update(schema_entry)
+            self.validate(self.current_config, self.schema)
+
+            # TODO(giulioungaretti) to store just the user schema
+            # or the entire thing ?
+
     def load_config(self, path):
         """Load a config JSON file
 
@@ -102,6 +155,30 @@ class Config():
         with open(path, "r") as fp:
             config = json.load(fp)
         return config
+
+    def save_config(self, path):
+        """ Save config file
+        Args:
+            path (string): path of new config file
+        """
+        raise NotImplementedError
+        with open(path, "w") as fp:
+            json.dump(fp, self.current_config)
+
+    def save_home_config(self):
+        """ Save config file to home dir
+        """
+        raise NotImplementedError
+
+    def save_env_config(self):
+        """ Save config file to env path
+        """
+        raise NotImplementedError
+
+    def save_cwd_config(self):
+        """ Save config file to current working dir
+        """
+        raise NotImplementedError
 
     def __getitem__(self, name):
         val = self.current_config
