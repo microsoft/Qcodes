@@ -69,54 +69,9 @@ Parameters may be settable, gettable, or both.
 While many Parameters represent a setting or measurement for a particular Instrument, 
 it is possible to define Parameters that represent more powerful abstractions.
 
-We list some uses for Parameters here:
-
-Simple Parameters
-~~~~~~~~~~~~~~~~~
-
-The simplest Parameters are part of an Instrument_.
-These Parameters are created using ``instrument.add_parameter()`` and use the Instrument's low-level communication methods for execution.
-
-A settable Parameter typically represents a configuration setting or other controlled characteristic of the Instrument. 
-Most such Parameters have a simple numeric value, but the value can be a string or other data type if necessary.
-If a settable Parameter is also gettable, getting it typically just reads back what was previously set, through QCoDeS or by some other means,
-but there can be differences due to rounding, clipping, feedback loops, etc. 
-Note that setting a Parameter of a :ref:`metainstrument` may involve setting several lower-level Parameters of the underlying Instruments, 
-or even getting the values of other Parameters to inform the value(s) to set.
-
-A Parameter that is only gettable typically represents a single measurement command or sequence. 
-The value of such a Parameter may be of many types:
-  - A single numeric value, such as a voltage measurement
-  - Multiple related values, such as the magnitude and phase or Carteian components of a vector
-  - A sequence of values, such as a sampled waveform or a power spectrum
-  - Multiple sequences of values, such as waveforms sampled on multiple channels
-
-When a RemoteInstrument is created, the Parameters contained in the Instrument are mirrored as RemoteParameters, 
-which connect to the original Parameter via the associated InstrumentServer.
-
-Computed Measurements
-~~~~~~~~~~~~~~~~~~~~~
-
-In some cases the measurement value of interest is computed based on values read from more than one instrument.
-For example, you might want to track the power dissipation of a component, computed by multiplying the outputs from a voltmeter and an ammeter.
-QCoDeS allows you to define a Parameter that represents the result of such a computation and include it as part of your experimental results.
-
-A Parameter defined in this way is not associated with an Instrument.
-It is a Python object that encapsulates the computation to be performed and references the underlying Parameters it uses.
-It is gettable, but not settable.
-
-Interdependent Settings
-~~~~~~~~~~~~~~~~~~~~~~~
-
-In some experiments, control values for one or more Instruments must be set together in order to maintain a condition.
-For example, you might want to measure the behavior of a component at different voltage levels, 
-but always keeping the available power within a fixed bound.
-You can define a Parameter that gets initialized with the maximum power to allow, such that setting the Parameter value
-results in setting the voltage to the passed-in value and also adjusting the supplied current appropriately.
-
-Similarly to a Parameter that computes a measurement result, this type of Parameter is not associated with an Instrument.
-It encapsulates the way that the single setting impacts the related settings and references the underlying Parameters, one for each setting.
-It is settable, and may be gettable.
+The variable represented by a Parameter may be a simple number or string.
+It may also be a complicated data structure that contains numerical, textual, or other information.
+More information is available in the API documentation on the Parameter type.
 
 Responsibilities
 ~~~~~~~~~~~~~~~~
@@ -139,6 +94,58 @@ Thus, snapshots need not always query the hardware for this information, but can
 .. failures
 A Parameter that is part of an Instrument, even though it can be used as an independent object without directly referencing the Instrument, 
 is subject to the same local/remote limitations as the Instrument.
+
+Examples
+~~~~~~~~
+
+We list some common types of Parameters here:
+
+**Instrument Parameters**
+
+The simplest Parameters are part of an Instrument_.
+These Parameters are created using ``instrument.add_parameter()`` and use the Instrument's low-level communication methods for execution.
+
+A settable Parameter typically represents a configuration setting or other controlled characteristic of the Instrument. 
+Most such Parameters have a simple numeric value, but the value can be a string or other data type if necessary.
+If a settable Parameter is also gettable, getting it typically just reads back what was previously set, through QCoDeS or by some other means,
+but there can be differences due to rounding, clipping, feedback loops, etc. 
+Note that setting a Parameter of a :ref:`metainstrument` may involve setting several lower-level Parameters of the underlying Instruments, 
+or even getting the values of other Parameters to inform the value(s) to set.
+
+A Parameter that is only gettable typically represents a single measurement command or sequence. 
+The value of such a Parameter may be of many types:
+  - A single numeric value, such as a voltage measurement
+  - A string that represents a discrete instrument setting, such as the orientation of a vector
+  - Multiple related values, such as the magnitude and phase or Cartesian components of a vector
+  - A sequence of values, such as a sampled waveform or a power spectrum
+  - Multiple sequences of values, such as waveforms sampled on multiple channels
+  - Any other shape that appropriately represents a characteristic of the Instrument.
+
+When a RemoteInstrument is created, the Parameters contained in the Instrument are mirrored as RemoteParameters, 
+which connect to the original Parameter via the associated InstrumentServer.
+
+**Computed Measurements**
+
+In some cases the measurement value of interest is computed based on values read from more than one instrument.
+For example, you might want to track the power dissipation of a component, computed by multiplying the outputs from a voltmeter and an ammeter.
+QCoDeS allows you to define a Parameter that represents the result of such a computation and include it as part of your experimental results.
+
+A Parameter defined in this way is not associated with an Instrument.
+It is a Python object that encapsulates the computation to be performed and references the underlying Parameters it uses.
+It is gettable, but not settable.
+
+**Interdependent Settings**
+
+In some experiments, control values for one or more Instruments must be set together in order to maintain a condition.
+For example, you might want to measure the behavior of a component at different voltage levels, 
+but always keeping the available power within a fixed bound.
+You can define a Parameter that gets initialized with the maximum power to allow, such that setting the Parameter value
+results in setting the voltage to the passed-in value and also adjusting the supplied current appropriately.
+
+Similarly to a Parameter that computes a measurement result, this type of Parameter is not associated with an Instrument.
+It encapsulates the way that the single setting impacts the related settings and references the underlying Parameters, one for each setting.
+It is settable, and may be gettable.
+
 
 Loop
 ----
