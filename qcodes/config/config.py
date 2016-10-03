@@ -7,6 +7,8 @@ import pkg_resources as pkgr
 from os.path import expanduser
 from pathlib import Path
 
+logger = logging.getLogger(__name__)
+
 
 class Config():
     config_file_name = "config.json"
