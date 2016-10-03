@@ -1,4 +1,4 @@
-import json
+import copy
 import jsonschema
 
 from functools import partial
@@ -63,6 +63,42 @@ SCHEMA = {
             ]
         }
 
+# schema updaed by adding custom fileds by the
+UPDATED_SCHEMA = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "type": "object",
+        "properties": {
+            "a": {
+                "type": "integer"
+                },
+            "b": {
+                "type": "integer"
+                },
+            "z": {
+                "type": "integer"
+                },
+            "c": {
+                "type": "integer"
+                },
+            "bar": {
+                "type": "boolean"
+                },
+            "user": {
+                "type": "object",
+                "properties": {
+                           "foo":
+                           {
+                               "type": "string",
+                               "description": "foo"
+                               }
+                           }
+                   }
+            },
+        "required": [
+            "z"
+            ]
+        }
+
 USER_SCHEMA = """ {
         "$schema": "http://json-schema.org/draft-04/schema#",
         "type": "object",
@@ -76,7 +112,6 @@ USER_SCHEMA = """ {
                                "description": "foo"
                                }
                            }
-                       }
                    }
                }
         } """
@@ -152,3 +187,22 @@ class TestConfig(TestCase):
         with self.assertRaises(jsonschema.exceptions.ValidationError):
             self.conf.load_default()
 
+    @patch.object(Config, "current_config", new_callable=PropertyMock)
+    def test_update_user_config(self, config):
+        # deep copy because we mutate state
+        config.return_value = copy.deepcopy(CONFIG)
+        self.conf.add("foo", "bar")
+        self.assertEqual(self.conf.current_config, UPDATED_CONFIG)
+
+    @patch.object(Config, 'schema', new_callable=PropertyMock)
+    @patch.object(Config, "current_config", new_callable=PropertyMock)
+    def test_update_and_validate_user_config(self, config, schema):
+        self.maxDiff = None
+        schema.return_value = copy.deepcopy(SCHEMA)
+        # deep copy because we mutate state
+        config.return_value = copy.deepcopy(CONFIG)
+        # import pdb
+        # pdb.set_trace()
+        self.conf.add("foo", "bar", "string", "foo")
+        self.assertEqual(self.conf.current_config, UPDATED_CONFIG)
+        self.assertEqual(self.conf.schema, UPDATED_SCHEMA)
