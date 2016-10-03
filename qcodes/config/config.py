@@ -76,11 +76,14 @@ class Config():
             # add custom validation
             if os.path.isfile(extra_schema_path):
                 with open(extra_schema_path) as f:
-                    schema.update(json.load(f))
+                    # user schema has to be both vaild in itself
+                    # but then just update the properties
+                    schema["properties"].update(json.load(f)["properties"])
+
                 jsonschema.validate(json_config, schema)
             else:
-                logging.warning("""User schema is empty.
-                         Custom settings won't be validated""")
+                logger.warning("User schema is empty.\
+                               Custom settings won't be validated")
         else:
             jsonschema.validate(json_config, schema)
 
