@@ -52,6 +52,7 @@ import time
 import numpy as np
 import warnings
 
+from qcodes import defaults
 from qcodes.station import Station
 from qcodes.data.data_set import new_data, DataMode
 from qcodes.data.data_array import DataArray
@@ -67,7 +68,7 @@ from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
 # import.
 # TODO(giulioungaretti) use config.
 
-USE_MP = False
+USE_MP =  defaults["core.legacy_mp"]
 MP_NAME = 'Measurement'
 
 
@@ -759,6 +760,7 @@ class ActiveLoop(Metadatable):
         returns:
             a DataSet object that we can use to plot
         """
+        print(USE_MP)
         if progress_interval is not False:
             self.progress_interval = progress_interval
 
