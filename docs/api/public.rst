@@ -13,6 +13,17 @@ This page lists the entrypoints to the plubic qcodes API.
 .. toctree::
    :maxdepth: 4
 
+
+.. _config_label:
+
+Config
+~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+   Config
+
 Station
 ~~~~~~~
 

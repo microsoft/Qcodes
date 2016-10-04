@@ -129,7 +129,7 @@ class TestConfig(TestCase):
         with self.assertRaises(FileNotFoundError):
             self.conf.load_config("./missing.json")
 
-    @patch.object(Config, 'schema', new_callable=PropertyMock)
+    @patch.object(Config, 'current_schema', new_callable=PropertyMock)
     @patch.object(Config, 'env_file_name', new_callable=PropertyMock)
     @patch.object(Config, 'load_config')
     @patch('os.path.isfile')
@@ -145,7 +145,7 @@ class TestConfig(TestCase):
         config = self.conf.load_default()
         self.assertEqual(config, CONFIG)
 
-    @patch.object(Config, 'schema', new_callable=PropertyMock)
+    @patch.object(Config, 'current_schema', new_callable=PropertyMock)
     @patch.object(Config, 'env_file_name', new_callable=PropertyMock)
     @patch.object(Config, 'load_config')
     @patch('os.path.isfile')
@@ -161,7 +161,7 @@ class TestConfig(TestCase):
         with self.assertRaises(jsonschema.exceptions.ValidationError):
                 self.conf.load_default()
 
-    @patch.object(Config, 'schema', new_callable=PropertyMock)
+    @patch.object(Config, 'current_schema', new_callable=PropertyMock)
     @patch.object(Config, 'env_file_name', new_callable=PropertyMock)
     @patch.object(Config, 'load_config')
     @patch('os.path.isfile')
@@ -174,7 +174,7 @@ class TestConfig(TestCase):
         config = self.conf.load_default()
         self.assertEqual(config, CONFIG)
 
-    @patch.object(Config, 'schema', new_callable=PropertyMock)
+    @patch.object(Config, 'current_schema', new_callable=PropertyMock)
     @patch.object(Config, 'env_file_name', new_callable=PropertyMock)
     @patch.object(Config, 'load_config')
     @patch('os.path.isfile')
@@ -194,7 +194,7 @@ class TestConfig(TestCase):
         self.conf.add("foo", "bar")
         self.assertEqual(self.conf.current_config, UPDATED_CONFIG)
 
-    @patch.object(Config, 'schema', new_callable=PropertyMock)
+    @patch.object(Config, 'current_schema', new_callable=PropertyMock)
     @patch.object(Config, "current_config", new_callable=PropertyMock)
     def test_update_and_validate_user_config(self, config, schema):
         self.maxDiff = None
@@ -205,4 +205,4 @@ class TestConfig(TestCase):
         # pdb.set_trace()
         self.conf.add("foo", "bar", "string", "foo")
         self.assertEqual(self.conf.current_config, UPDATED_CONFIG)
-        self.assertEqual(self.conf.schema, UPDATED_SCHEMA)
+        self.assertEqual(self.conf.current_schema, UPDATED_SCHEMA)

@@ -9,20 +9,53 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+EMPTY_USER_SCHEMA = "User schema at {} not found." + \
+                    "User settings won't be validated"
+MISS_DESC = """ Passing a description without a type does not make sense.
+Description is ignored """
+
 
 class Config():
+    """ Qcodes config system
+
+    This allows you to start with sane defaults, which you cant' change, and
+    then customize your experience using files that update the configuration.
+
+
+    Attributes:
+        config_file_name(str): Name of config file
+        schema_file_name(str): Name of schema file
+
+        default_file_name(str):Filene name of default config
+        schema_default_file_name(str):Filene name of default schema
+
+        home_file_name(str):Filene name of home config
+        schema_home_file_name(str):Filene name of home schema
+
+        env_file_name(str):Filene name of env config
+        schema_env_file_name(str):Filene name of env schema
+
+        cwd_file_name(str):Filene name of cwd config
+        schema_cwd_file_name(str):Filene name of cwd schema
+
+        current_config(dict): Vaild config values
+        current_schema(dict): Validators and desciptions of config values
+        current_config_path(path): Path of the currently loaded config
+    """
+
     config_file_name = "config.json"
     schema_file_name = "schema.json"
 
     # get abs path of packge config file
-    default_file_name = pkgr.resource_filename(__name__,
-                                               config_file_name)
+    default_file_name = pkgr.resource_filename(__name__, config_file_name)
+    current_config_path = default_file_name
+
     # get abs path of schema  file
     schema_default_file_name = pkgr.resource_filename(__name__,
                                                       schema_file_name)
 
     with open(schema_default_file_name, "r") as fp:
-        schema = json.load(fp)
+        current_schema = json.load(fp)
 
     # home dir, os independent
     home_file_name = expanduser("~/{}".format(config_file_name))
@@ -46,8 +79,10 @@ class Config():
     def load_default(self):
         """
         Load defaults and validates.
-
-        Configuration values are loaded and updated in the following order:
+        A  configuration file must be called config.json
+        A schema file must be called schema.json
+        Configuration files (and their schema) are loaded and updated from the
+        default directories in the following order:
             - default json config file from the repository
             - user json config in user home directory
             - user json config in $QCODES_CONFIG
@@ -55,22 +90,29 @@ class Config():
 
         If a key/value is not specified in the user configuration the default
         is used.  Configs are validated after every update.
-        Validation is also performed against a custom user provied schema
-        if it's provided.
+        Validation is also performed against a user provied schema if it's
+        found in the directory.
         """
         config = self.load_config(self.default_file_name)
+
         if os.path.isfile(self.home_file_name):
             home_config = self.load_config(self.home_file_name)
             config.update(home_config)
-            self.validate(config, self.schema, self.schema_home_file_name)
+            self.validate(config, self.current_schema,
+                          self.schema_home_file_name)
+
         if os.path.isfile(self.env_file_name):
             env_config = self.load_config(self.env_file_name)
             config.update(env_config)
-            self.validate(config, self.schema, self.schema_env_file_name)
+            self.validate(config, self.current_schema,
+                          self.schema_env_file_name)
+
         if os.path.isfile(self.cwd_file_name):
             cwd_config = self.load_config(self.cwd_file_name)
             config.update(cwd_config)
-            self.validate(config, self.schema, self.schema_cwd_file_name)
+            self.validate(config, self.current_schema,
+                          self.schema_cwd_file_name)
+
         return config
 
     def validate(self, json_config, schema, extra_schema_path=None):
@@ -79,27 +121,33 @@ class Config():
             if os.path.isfile(extra_schema_path):
                 with open(extra_schema_path) as f:
                     # user schema has to be both vaild in itself
-                    # but then just update the properties
-                    schema["properties"].update(json.load(f)["properties"])
-
+                    # but then just update the user properties
+                    # so that default types and values can NEVER
+                    # be overwritten
+                    new_user = json.load(f)["properties"]["user"]
+                    user = schema["properties"]['user']
+                    user["properties"].update(
+                            new_user["properties"]
+                            )
                 jsonschema.validate(json_config, schema)
             else:
-                logger.warning("User schema is empty.\
-                               Custom settings won't be validated")
+                logger.warning(EMPTY_USER_SCHEMA.format(extra_schema_path))
         else:
             jsonschema.validate(json_config, schema)
 
     def add(self, key, value, value_type=None, description=None):
-        """ Add custom config value
+        """ Add custom config value in place.
         Add  key, value with optional value_type to user cofnig and schema.
         If value_type is specified then the new value is validated.
+
         Args:
             key(str): key to be added under user config
             value (any): value to add to config
             value_type(Optional(string)): type of value
                 allowed are string, boolean, integer
             description (str): description of key to add to schema
-        example:
+
+        Examples:
             >>> defaults.add("trace_color", "blue", "string", "description")
         will update the config:
             `...
@@ -126,8 +174,7 @@ class Config():
 
         if value_type is None:
             if description is not None:
-                logger.warning(""" Passing a description without a type does
-                        not make sense. Description is ignored """)
+                logger.warning(MISS_DESC)
         else:
             # update schema!
             schema_entry = {key: {"type": value_type}}
@@ -136,14 +183,16 @@ class Config():
                                     "type": value_type,
                                     "description": description}
                                 }
-            self.schema['properties']["user"]["properties"].update(schema_entry)
-            self.validate(self.current_config, self.schema)
+            # the schema is nested we only update properties of the user object
+            user = self.current_schema['properties']["user"]
+            user["properties"].update(schema_entry)
+            self.validate(self.current_config, self.current_schema)
 
-            # TODO(giulioungaretti) to store just the user schema
-            # or the entire thing ?
+# -------------------------------------------------------------------- I/O
 
     def load_config(self, path):
-        """Load a config JSON file
+        """ Load a config JSON file
+        As a side effect it records which file is loaded
 
         Args:
             path(str): path to the config file
@@ -154,34 +203,87 @@ class Config():
         """
         with open(path, "r") as fp:
             config = json.load(fp)
+
+        self.current_config_path = path
         return config
 
     def save_config(self, path):
-        """ Save config file
+        """ Save to file(s)
+        Saves current config to path.
+
         Args:
-            path (string): path of new config file
+            path (string): path of new file(s)
         """
-        raise NotImplementedError
         with open(path, "w") as fp:
-            json.dump(fp, self.current_config)
+            json.dump(self.current_config, fp)
 
-    def save_home_config(self):
-        """ Save config file to home dir
-        """
-        raise NotImplementedError
+    def save_schema(self, path):
+        """ Save to file(s)
+        Saves current schema to path.
 
-    def save_env_config(self):
-        """ Save config file to env path
+        Args:
+            path (string): path of new file(s)
         """
-        raise NotImplementedError
+        with open(path, "w") as fp:
+            json.dump(self.current_schema, fp)
 
-    def save_cwd_config(self):
-        """ Save config file to current working dir
+    def save_to_home(self):
+        """ Save  files to home dir
         """
-        raise NotImplementedError
+        self.save_config(self.home_file_name)
+        self.save_schema(self.schema_home_file_name)
+
+    def save_to_env(self):
+        """ Save  files to env path
+        """
+        self.save_config(self.env_file_name)
+        self.save_schema(self.schema_env_file_name)
+
+    def save_to_cwd(self):
+        """ Save files to current working dir
+        """
+        self.save_config(self.cwd_file_name)
+        self.save_schema(self.schema_cwd_file_name)
+
+# -------------------------------------------------------------------- magic
 
     def __getitem__(self, name):
         val = self.current_config
         for key in name.split('.'):
             val = val[key]
         return val
+
+    def describe(self, name):
+        val = self.current_config
+        sch = self.current_schema["properties"]
+        for key in name.split('.'):
+            val = val[key]
+            if sch.get(key):
+                sch = sch[key]
+                if sch.get("properties"):
+                    sch = sch["properties"]
+
+        description = sch.get("description", None) or "Generic value"
+        _type = str(sch.get("type", None)) or "Not defined"
+        default = sch.get("default", None) or "Not defined"
+
+        # add cool description to docstring
+        base_docstring = """{}.\n Current value: {}. Type: {}. Default: {}."""
+
+        doc = base_docstring.format(
+                description,
+                val,
+                _type,
+                default
+                )
+        return doc
+
+    def __getattr__(self, name):
+        if name in dir(self.current_config):
+            return getattr(self.current_config, name)
+
+    def __repr__(self):
+        old = super().__repr__()
+        return "\n".join([str(self.current_config),
+                         self.current_config_path,
+                         old])
