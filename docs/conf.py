@@ -351,7 +351,6 @@ intersphinx_mapping = {
     'matplotlib': ('http://matplotlib.org/', None),
     'python': ('http://docs.python.org/3', None),
     'numpy': ('http://docs.scipy.org/doc/numpy', None),
-    'scipy': ('http://docs.scipy.org/doc/scipy', None),
     'py': ('http://pylib.readthedocs.org/en/latest/', None)
 }
 # theming
