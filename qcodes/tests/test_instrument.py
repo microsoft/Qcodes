@@ -31,7 +31,6 @@ class GatesBadDelayType(MockGates):
                            vals=Numbers(-10, 10), step=0.2,
                            delay=0.01,
                            max_delay='forever')
-        self.crahs()
 
 
 class GatesBadDelayValue(MockGates):
