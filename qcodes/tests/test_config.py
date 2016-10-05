@@ -89,6 +89,7 @@ UPDATED_SCHEMA = {
                            "foo":
                            {
                                "type": "string",
+                               "default": "bar",
                                "description": "foo"
                                }
                            }
@@ -203,6 +204,6 @@ class TestConfig(TestCase):
         config.return_value = copy.deepcopy(CONFIG)
         # import pdb
         # pdb.set_trace()
-        self.conf.add("foo", "bar", "string", "foo")
+        self.conf.add("foo", "bar", "string", "foo", "bar")
         self.assertEqual(self.conf.current_config, UPDATED_CONFIG)
         self.assertEqual(self.conf.current_schema, UPDATED_SCHEMA)
