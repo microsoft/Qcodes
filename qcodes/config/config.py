@@ -135,7 +135,7 @@ class Config():
         else:
             jsonschema.validate(json_config, schema)
 
-    def add(self, key, value, value_type=None, description=None):
+    def add(self, key, value, value_type=None, description=None, default=None):
         """ Add custom config value in place.
         Add  key, value with optional value_type to user cofnig and schema.
         If value_type is specified then the new value is validated.
@@ -145,6 +145,7 @@ class Config():
             value (any): value to add to config
             value_type(Optional(string)): type of value
                 allowed are string, boolean, integer
+            default (str): default value, stored only in the schema
             description (str): description of key to add to schema
 
         Examples:
@@ -181,6 +182,7 @@ class Config():
             if description is not None:
                 schema_entry = {key: {
                                     "type": value_type,
+                                    "default": default,
                                     "description": description}
                                 }
             # the schema is nested we only update properties of the user object
