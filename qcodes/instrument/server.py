@@ -113,6 +113,13 @@ class InstrumentServer(BaseServer):
         self.instruments = {}
         self.next_id = 0
 
+        # Ensure no references of instruments defined in the main process
+        # are copied to the server process. With the spawn multiprocessing
+        # method this is not an issue, as the class is reimported in the
+        # new process, but with fork it can be a problem ironically.
+        from qcodes.instrument.base import Instrument
+        Instrument._all_instruments = {}
+
         self.run_event_loop()
 
     def handle_new_id(self):

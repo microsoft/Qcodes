@@ -91,7 +91,7 @@ class MockArray:
         self.ready = True
 
 
-def DataSet1D(location=None):
+def DataSet1D(location=None, name=None):
     # DataSet with one 1D array with 5 points
 
     # TODO: since y lists x as a set_array, it should automatically
@@ -101,10 +101,10 @@ def DataSet1D(location=None):
                   is_setpoint=True)
     y = DataArray(name='y', label='Y', preset_data=(3., 4., 5., 6., 7.),
                   set_arrays=(x,))
-    return new_data(arrays=(x, y), location=location)
+    return new_data(arrays=(x, y), location=location, name=name)
 
 
-def DataSet2D(location=None):
+def DataSet2D(location=None, name=None):
     # DataSet with one 2D array with 4 x 6 points
     yy, xx = numpy.meshgrid(range(4), range(6))
     zz = xx**2+yy**2
@@ -114,7 +114,7 @@ def DataSet2D(location=None):
     y = DataArray(name='y', label='Y', preset_data=yy, set_arrays=(x,),
                   is_setpoint=True)
     z = DataArray(name='z', label='Z', preset_data=zz, set_arrays=(x, y))
-    return new_data(arrays=(x, y, z), location=location)
+    return new_data(arrays=(x, y, z), location=location, name=name)
 
 
 def file_1d():

@@ -14,6 +14,11 @@ class Formatter:
     - ``write``: to write the ``DataArray``s
     - ``write_metadata``: to write the metadata JSON structure
 
+    Optionally, if this Formatter keeps the data file(s) open
+    between write calls, it may implement:
+    - ``close_file``: to perform any final cleanup and release the
+      file and any other resources.
+
     and reading methods:
     - ``read`` or ``read_one_file`` to reconstruct the ``DataArray``s, either
       all at once (``read``) or one file at a time, supplied by the base class
