@@ -58,6 +58,8 @@ class IVVI(VisaInstrument):
         # values based on descriptor
         self.visa_handle.baud_rate = 115200
         self.visa_handle.parity = visa.constants.Parity(1)  # odd parity
+        self.visa_handle.write_termination = ''
+        self.visa_handle.read_termination = ''
 
         self.add_parameter('version',
                            get_cmd=self._get_version)
