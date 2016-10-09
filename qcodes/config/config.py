@@ -236,9 +236,6 @@ class Config():
                 props["user"] = {}
             props.get("user").update(schema_entry)
 
-
-# -------------------------------------------------------------------- I/O
-
     def load_config(self, path):
         """ Load a config JSON file
         As a side effect it records which file is loaded
@@ -326,8 +323,6 @@ class Config():
 
         return doc
 
-# -------------------------------------------------------------------- magic
-
     def __getitem__(self, name):
         val = self.current_config
         for key in name.split('.'):
@@ -343,8 +338,6 @@ class Config():
         return base.format(self.current_config,
                            self.current_config_path,
                            old)
-
-# -------------------------------------------------------------------- dot dict
 
 
 class DotDict(dict):
