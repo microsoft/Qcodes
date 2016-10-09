@@ -201,11 +201,12 @@ class Config():
         Raises:
             FileNotFoundError: if config is missing
         Return:
-            Union[dict, None]: a vaild config or None
+            Union[DotDict, None]: a dot accessible config object
         """
         with open(path, "r") as fp:
             config = json.load(fp)
 
+        config = DotDict(config)
         self.current_config_path = path
         return config
 
@@ -257,13 +258,8 @@ class Config():
 
     def describe(self, name):
         val = self.current_config
-        sch = self.current_schema["properties"]
-        for key in name.split('.'):
-            val = val[key]
-            if sch.get(key):
-                sch = sch[key]
-                if sch.get("properties"):
-                    sch = sch["properties"]
+        penis = DotDict(self.current_schema["properties"])
+        sch = getattr(penis, name)
 
         description = sch.get("description", None) or "Generic value"
         _type = str(sch.get("type", None)) or "Not defined"
@@ -289,3 +285,48 @@ class Config():
         return "\n".join([str(self.current_config),
                          self.current_config_path,
                          old])
+
+# -------------------------------------------------------------------- dot dict
+
+
+class DotDict(dict):
+    """
+    Wrapper dict that allows to get dotted attributes
+    """
+    def __init__(self, value=None):
+        if value is None:
+            pass
+        else:
+            for key in value:
+                self.__setitem__(key, value[key])
+
+    def __setitem__(self, key, value):
+        if '.' in key:
+            myKey, restOfKey = key.split('.', 1)
+            target = self.setdefault(myKey, DotDict())
+            target[restOfKey] = value
+        else:
+            if isinstance(value, dict) and not isinstance(value, DotDict):
+                value = DotDict(value)
+            dict.__setitem__(self, key, value)
+
+    def __getitem__(self, key):
+        if '.' not in key:
+            return dict.__getitem__(self, key)
+        myKey, restOfKey = key.split('.', 1)
+        target = dict.__getitem__(self, myKey)
+        return target[restOfKey]
+
+    def __contains__(self, key):
+        if '.' not in key:
+            return dict.__contains__(self, key)
+        myKey, restOfKey = key.split('.', 1)
+        target = dict.__getitem__(self, myKey)
+        return restOfKey in target
+
+    def __deepcopy__(self, memo):
+        return DotDict(copy.deepcopy(dict(self)))
+
+    # dot acces baby
+    __setattr__ = __setitem__
+    __getattr__ = __getitem__
