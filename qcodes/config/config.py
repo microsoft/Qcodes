@@ -1,3 +1,4 @@
+import copy
 import json
 import jsonschema
 import logging
@@ -14,11 +15,19 @@ EMPTY_USER_SCHEMA = "User schema at {} not found." + \
 MISS_DESC = """ Passing a description without a type does not make sense.
 Description is ignored """
 
+BASE_SCHEMA = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "description": "schema for a user qcodes config file",
+    "properties": {},
+    "required": []
+}
+
 
 class Config():
     """ Qcodes config system
 
-    This allows you to start with sane defaults, which you cant' change, and
+    Start with sane defaults, which you can't change, and
     then customize your experience using files that update the configuration.
 
 
@@ -54,9 +63,6 @@ class Config():
     schema_default_file_name = pkgr.resource_filename(__name__,
                                                       schema_file_name)
 
-    with open(schema_default_file_name, "r") as fp:
-        current_schema = json.load(fp)
-
     # home dir, os independent
     home_file_name = expanduser("~/{}".format(config_file_name))
     schema_home_file_name = home_file_name.replace(config_file_name,
@@ -71,12 +77,26 @@ class Config():
     schema_cwd_file_name = cwd_file_name.replace(config_file_name,
                                                  schema_file_name)
 
+    current_schema = None
     current_config = None
 
+    defaults = None
+    defaults_schema = None
+
+    _diff_config = {}
+    _diff_schema = {}
+
     def __init__(self):
-        self.current_config = self.load_default()
+        self.defaults, self.defaults_schema = self.load_default()
+        self.current_config = self.update_config()
 
     def load_default(self):
+        defaults = self.load_config(self.default_file_name)
+        defaults_schema = self.load_config(self.schema_default_file_name)
+        self.validate(defaults, defaults_schema)
+        return defaults, defaults_schema
+
+    def update_config(self):
         """
         Load defaults and validates.
         A  configuration file must be called config.json
@@ -93,7 +113,8 @@ class Config():
         Validation is also performed against a user provied schema if it's
         found in the directory.
         """
-        config = self.load_config(self.default_file_name)
+        config = copy.deepcopy(self.defaults)
+        self.current_schema = copy.deepcopy(self.defaults_schema)
 
         if os.path.isfile(self.home_file_name):
             home_config = self.load_config(self.home_file_name)
@@ -115,7 +136,17 @@ class Config():
 
         return config
 
-    def validate(self, json_config, schema, extra_schema_path=None):
+    def validate(self, json_config=None, schema=None, extra_schema_path=None):
+        """
+        Validate configuration, if no arguments are passed, the default
+        validators are used.
+
+        Args:
+            json_config (Optiona[string]) : json file to validate
+            schema (Optiona[dict]): schema dictionary
+            extra_schema_path (Optiona[string]): schema path that contains
+                    extra validators to be added to schema dictionary
+        """
         if extra_schema_path is not None:
             # add custom validation
             if os.path.isfile(extra_schema_path):
@@ -133,7 +164,10 @@ class Config():
             else:
                 logger.warning(EMPTY_USER_SCHEMA.format(extra_schema_path))
         else:
-            jsonschema.validate(json_config, schema)
+            if json_config is None and schema is None:
+                jsonschema.validate(self.current_config, self.current_schema)
+            else:
+                jsonschema.validate(json_config, schema)
 
     def add(self, key, value, value_type=None, description=None, default=None):
         """ Add custom config value in place.
@@ -170,8 +204,13 @@ class Config():
 
         Todo:
             - Add enum  support for value_type
+            - finsh _diffing
         """
         self.current_config["user"].update({key: value})
+
+        if self._diff_config.get("user", True):
+            self._diff_config["user"] = {}
+        self._diff_config.get("user").update({key: value})
 
         if value_type is None:
             if description is not None:
@@ -189,6 +228,14 @@ class Config():
             user = self.current_schema['properties']["user"]
             user["properties"].update(schema_entry)
             self.validate(self.current_config, self.current_schema)
+            if not self._diff_schema:
+                self._diff_schema = BASE_SCHEMA
+
+            props = self._diff_schema['properties']
+            if props.get("user", True):
+                props["user"] = {}
+            props.get("user").update(schema_entry)
+
 
 # -------------------------------------------------------------------- I/O
 
@@ -218,7 +265,7 @@ class Config():
             path (string): path of new file(s)
         """
         with open(path, "w") as fp:
-            json.dump(self.current_config, fp)
+            json.dump(self.current_config, fp, indent=4)
 
     def save_schema(self, path):
         """ Save to file(s)
@@ -248,6 +295,37 @@ class Config():
         self.save_config(self.cwd_file_name)
         self.save_schema(self.schema_cwd_file_name)
 
+    def describe(self, name):
+        """
+        Describe a configuratio entry
+
+        Args:
+            name (str): name of entry to describe
+        """
+        val = self.current_config
+        sch = self.current_schema["properties"]
+        for key in name.split('.'):
+            val = val[key]
+            if sch.get(key):
+                sch = sch[key]
+            else:
+                sch = sch['properties'][key]
+        description = sch.get("description", None) or "Generic value"
+        _type = str(sch.get("type", None)) or "Not defined"
+        default = sch.get("default", None) or "Not defined"
+
+        # add cool description to docstring
+        base_docstring = """{}.\nCurrent value: {}. Type: {}. Default: {}."""
+
+        doc = base_docstring.format(
+                description,
+                val,
+                _type,
+                default
+                )
+
+        return doc
+
 # -------------------------------------------------------------------- magic
 
     def __getitem__(self, name):
@@ -256,35 +334,15 @@ class Config():
             val = val[key]
         return val
 
-    def describe(self, name):
-        val = self.current_config
-        penis = DotDict(self.current_schema["properties"])
-        sch = getattr(penis, name)
-
-        description = sch.get("description", None) or "Generic value"
-        _type = str(sch.get("type", None)) or "Not defined"
-        default = sch.get("default", None) or "Not defined"
-
-        # add cool description to docstring
-        base_docstring = """{}.\n Current value: {}. Type: {}. Default: {}."""
-
-        doc = base_docstring.format(
-                description,
-                val,
-                _type,
-                default
-                )
-        return doc
-
     def __getattr__(self, name):
-        if name in dir(self.current_config):
-            return getattr(self.current_config, name)
+        return getattr(self.current_config, name)
 
     def __repr__(self):
         old = super().__repr__()
-        return "\n".join([str(self.current_config),
-                         self.current_config_path,
-                         old])
+        base = """Current values: \n {} \n Current path: \n {} \n {}"""
+        return base.format(self.current_config,
+                           self.current_config_path,
+                           old)
 
 # -------------------------------------------------------------------- dot dict
 

@@ -10,17 +10,6 @@ VALID_JSON = "{}"
 ENV_KEY = "/dev/random"
 BAD_JSON = "{}"
 
-# example configs
-GOOD_CONFIG_MAP = {Config.default_file_name: {"z": 1, "a": 1, "b": 0},
-                   ENV_KEY: {"z": 3, "h": 2, "user": {"foo":  "1"}},
-                   Config.home_file_name: {"z": 3, "b": 2},
-                   Config.cwd_file_name: {"z": 4, "c": 3, "bar": True}}
-
-# in this case the home config is messging up a type
-BAD_CONFIG_MAP = {Config.default_file_name: {"z": 1, "a": 1, "b": 0},
-                  ENV_KEY: {"z": 3, "h": 2, "user": {"foo":  1}},
-                  Config.home_file_name: {"z": 3, "b": "2", "user": "foo"},
-                  Config.cwd_file_name: {"z": 4, "c": 3, "bar": True}}
 
 # expected config after successful loading of config files
 CONFIG = {"a": 1, "b": 2, "h": 2,
@@ -117,6 +106,28 @@ USER_SCHEMA = """ {
                }
         } """
 
+# example configs
+GOOD_CONFIG_MAP = {Config.default_file_name: {"z": 1, "a": 1, "b": 0},
+                   ENV_KEY: {"z": 3, "h": 2, "user": {"foo":  "1"}},
+                   Config.home_file_name: {"z": 3, "b": 2},
+                   Config.cwd_file_name: {"z": 4, "c": 3, "bar": True},
+                   Config.schema_cwd_file_name: SCHEMA,
+                   Config.schema_home_file_name: SCHEMA,
+                   Config.schema_env_file_name: SCHEMA,
+                   Config.schema_default_file_name: SCHEMA,
+                   }
+
+# in this case the home config is messging up a type
+BAD_CONFIG_MAP = {Config.default_file_name: {"z": 1, "a": 1, "b": 0},
+                  ENV_KEY: {"z": 3, "h": 2, "user": {"foo":  1}},
+                  Config.home_file_name: {"z": 3, "b": "2", "user": "foo"},
+                  Config.cwd_file_name: {"z": 4, "c": 3, "bar": True},
+                  Config.schema_cwd_file_name: SCHEMA,
+                  Config.schema_home_file_name: SCHEMA,
+                  Config.schema_env_file_name: SCHEMA,
+                  Config.schema_default_file_name: SCHEMA,
+                  }
+
 
 def side_effect(map, name):
     return map[name]
@@ -143,7 +154,10 @@ class TestConfig(TestCase):
         env.return_value = ENV_KEY
         isfile.return_value = True
         load_config.side_effect = partial(side_effect, GOOD_CONFIG_MAP)
-        config = self.conf.load_default()
+        self.conf.defaults, self.defaults_schema = self.conf.load_default()
+        config = self.conf.update_config()
+        import pdb 
+        pdb.set_trace()
         self.assertEqual(config, CONFIG)
 
     @patch.object(Config, 'current_schema', new_callable=PropertyMock)
@@ -160,7 +174,8 @@ class TestConfig(TestCase):
         isfile.return_value = True
         load_config.side_effect = partial(side_effect, BAD_CONFIG_MAP)
         with self.assertRaises(jsonschema.exceptions.ValidationError):
-                self.conf.load_default()
+                self.conf.defaults, self.defaults_schema = self.conf.load_default()
+                self.conf.update_config()
 
     @patch.object(Config, 'current_schema', new_callable=PropertyMock)
     @patch.object(Config, 'env_file_name', new_callable=PropertyMock)
@@ -172,7 +187,8 @@ class TestConfig(TestCase):
         env.return_value = ENV_KEY
         isfile.return_value = True
         load_config.side_effect = partial(side_effect, GOOD_CONFIG_MAP)
-        config = self.conf.load_default()
+        self.conf.defaults, self.defaults_schema = self.conf.load_default()
+        config = self.conf.update_config()
         self.assertEqual(config, CONFIG)
 
     @patch.object(Config, 'current_schema', new_callable=PropertyMock)
@@ -186,7 +202,8 @@ class TestConfig(TestCase):
         isfile.return_value = True
         load_config.side_effect = partial(side_effect, BAD_CONFIG_MAP)
         with self.assertRaises(jsonschema.exceptions.ValidationError):
-            self.conf.load_default()
+            self.conf.defaults, self.defaults_schema = self.conf.load_default()
+            self.conf.update_config()
 
     @patch.object(Config, "current_config", new_callable=PropertyMock)
     def test_update_user_config(self, config):
@@ -202,8 +219,6 @@ class TestConfig(TestCase):
         schema.return_value = copy.deepcopy(SCHEMA)
         # deep copy because we mutate state
         config.return_value = copy.deepcopy(CONFIG)
-        # import pdb
-        # pdb.set_trace()
         self.conf.add("foo", "bar", "string", "foo", "bar")
         self.assertEqual(self.conf.current_config, UPDATED_CONFIG)
         self.assertEqual(self.conf.current_schema, UPDATED_SCHEMA)
