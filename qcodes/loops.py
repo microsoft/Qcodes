@@ -644,11 +644,14 @@ class ActiveLoop(Metadatable):
             else:
                 raise ValueError('unknown signal', signal_)
 
-    def get_data_set(self, data_manager=False, *args, **kwargs):
+    def get_data_set(self, data_manager=USE_MP, *args, **kwargs):
         """
         Return the data set for this loop.
-        If no data set has been created yet, a new one will be created and returned.
-        Note that all arguments are ignored if the data set has already been created.
+
+        If no data set has been created yet, a new one will be created and
+        returned. Note that all arguments can only be provided when the
+        `DataSet` is first created; giving these during `run` when
+        `get_data_set` has already been called on its own is an error.
 
         data_manager: a DataManager instance (omit to use default,
             False to store locally)
@@ -674,13 +677,24 @@ class ActiveLoop(Metadatable):
             if data_manager is False:
                 data_mode = DataMode.LOCAL
             else:
-                warnings.warn("Multiprocessing is in beta, use at own risk", UserWarning)
+                warnings.warn("Multiprocessing is in beta, use at own risk",
+                              UserWarning)
                 data_mode = DataMode.PUSH_TO_SERVER
 
             data_set = new_data(arrays=self.containers(), mode=data_mode,
                                 data_manager=data_manager, *args, **kwargs)
 
             self.data_set = data_set
+
+        else:
+            has_args = len(kwargs) or len(args)
+            uses_data_manager = (self.data_set.mode != DataMode.LOCAL)
+            if has_args or (uses_data_manager != data_manager):
+                raise RuntimeError(
+                    'The DataSet for this loop already exists. '
+                    'You can only provide DataSet attributes, such as '
+                    'data_manager, location, name, formatter, io, '
+                    'write_period, when the DataSet is first created.')
 
         return self.data_set
 
@@ -712,7 +726,11 @@ class ActiveLoop(Metadatable):
             seconds. If provided here, will override any interval provided
             with the Loop definition
 
-        kwargs are passed along to data_set.new_data. The key ones are:
+        kwargs are passed along to data_set.new_data. These can only be
+        provided when the `DataSet` is first created; giving these during `run`
+        when `get_data_set` has already been called on its own is an error.
+        The key ones are:
+
         location: the location of the DataSet, a string whose meaning
             depends on formatter and io, or False to only keep in memory.
             May be a callable to provide automatic locations. If omitted, will
