@@ -52,7 +52,7 @@ import time
 import numpy as np
 import warnings
 
-from qcodes import defaults
+from qcodes import config
 from qcodes.station import Station
 from qcodes.data.data_set import new_data, DataMode
 from qcodes.data.data_array import DataArray
@@ -65,10 +65,7 @@ from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
                       BreakIf, _QcodesBreak)
 
 # Switches off multiprocessing by default, cant' be altered after module
-# import.
-# TODO(giulioungaretti) use config.
-
-USE_MP =  defaults["core.legacy_mp"]
+USE_MP = config.core.legacy_mp
 MP_NAME = 'Measurement'
 
 
@@ -81,7 +78,7 @@ def get_bg(return_first=False):
         RuntimeError message is really hard to understand.
     Args:
         return_first(bool): if there are multiple loops running return the
-        first anyway.
+                            first anyway.
     Raises:
         RuntimeError: if multiple loops are active and return_first is False.
     Returns:

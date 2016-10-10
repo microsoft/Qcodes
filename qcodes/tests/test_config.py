@@ -156,8 +156,6 @@ class TestConfig(TestCase):
         load_config.side_effect = partial(side_effect, GOOD_CONFIG_MAP)
         self.conf.defaults, self.defaults_schema = self.conf.load_default()
         config = self.conf.update_config()
-        import pdb 
-        pdb.set_trace()
         self.assertEqual(config, CONFIG)
 
     @patch.object(Config, 'current_schema', new_callable=PropertyMock)
