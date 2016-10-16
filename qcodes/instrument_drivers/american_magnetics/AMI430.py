@@ -6,6 +6,20 @@ from qcodes import Instrument, VisaInstrument
 from qcodes.utils.validators import Numbers
 
 
+def R_y(theta):
+    """ Construct rotation matrix around y-axis. """
+    return np.array([[np.cos(theta), 0, np.sin(theta)],
+                     [0, 1, 0],
+                     [-np.sin(theta), 0, np.cos(theta)]])
+
+
+def R_z(theta):
+    """ Construct rotation matrix around z-axis. """
+    return np.array([[np.cos(theta), -np.sin(theta), 0],
+                     [np.sin(theta), np.cos(theta), 0],
+                     [0, 0, 1]])
+
+
 class AMI430(VisaInstrument):
     """
     Driver for the American Magnetics Model 430 magnet power supply programmer.
@@ -16,9 +30,9 @@ class AMI430(VisaInstrument):
     either the AMI430_2D or AMI430_3D virtual instrument classes.
     """
     def __init__(self, name, address, coil_constant, current_rating,
-                 current_ramp_limit, persistent_switch=True, terminator='\n',
+                 current_ramp_limit, persistent_switch=True,
                  reset=False, **kwargs):
-        super().__init__(name, address, **kwargs)
+        super().__init__(name, address, terminator='\n', **kwargs)
 
         self._coil_constant = coil_constant
         self._current_rating = current_rating
@@ -217,7 +231,6 @@ class AMI430(VisaInstrument):
 class AMI430_2D(Instrument):
     """
     Virtual driver for a system of two AMI430 magnet power supplies.
-
     This driver provides methods that simplify setting fields as vectors.
     """
     def __init__(self, name, magnet_x, magnet_y, **kwargs):
@@ -233,13 +246,13 @@ class AMI430_2D(Instrument):
                            get_cmd=self._get_angle_offset,
                            set_cmd=self._set_angle_offset,
                            units='deg',
-                           vals=Numbers(0, 360))
+                           vals=Numbers())
 
         self.add_parameter('angle',
                            get_cmd=self._get_angle,
                            set_cmd=self._set_angle,
                            units='deg',
-                           vals=Numbers(0, 360))
+                           vals=Numbers())
 
         self.add_parameter('field',
                            get_cmd=self._get_field,
@@ -267,7 +280,10 @@ class AMI430_2D(Instrument):
         self._set_field(self._field)
 
     def _get_field(self):
-        return np.hypot(self.magnet_x.field(), self.magnet_y.field())
+        x = self.magnet_x.field()
+        y = self.magnet_y.field()
+
+        return np.sqrt(x**2 + y**2)
 
     def _set_field(self, field):
         self._field = field
@@ -287,8 +303,22 @@ class AMI430_2D(Instrument):
 class AMI430_3D(Instrument):
     """
     Virtual driver for a system of three AMI430 magnet power supplies.
-
     This driver provides methods that simplify setting fields as vectors.
+
+    Example of instantiation:
+
+    magnet = AMI430_3D('AMI430_3D',
+        AMI430('AMI430_X', '192.168.2.3', 0.0146, 68.53, 0.2),
+        AMI430('AMI430_Y', '192.168.2.2', 0.0426, 70.45, 0.05),
+        AMI430('AMI430_Z', '192.168.2.1', 0.1107, 81.33, 0.08))
+
+    A spherical coordinate system is used with theta as the polar angle from
+    the positive z-axis to the negative z-axis (0 to pi), and phi as the
+    azimuthal angle starting at the positive x-axis in the direction of the
+    positive y-axis (0 to 2*pi).
+
+    All angles are set and returned in units of degrees and are automatically
+    phase-wrapped.
     """
     def __init__(self, name, magnet_x, magnet_y, magnet_z, **kwargs):
         super().__init__(name, **kwargs)
@@ -297,7 +327,7 @@ class AMI430_3D(Instrument):
         self.magnet_y = magnet_y
         self.magnet_z = magnet_z
 
-        self._phi,   self._phi_offset = 0.0, 0.0
+        self._phi, self._phi_offset = 0.0, 0.0
         self._theta, self._theta_offset = 0.0, 0.0
         self._field = 0.0
 
@@ -305,25 +335,25 @@ class AMI430_3D(Instrument):
                            get_cmd=self._get_phi,
                            set_cmd=self._set_phi,
                            units='deg',
-                           vals=Numbers(0, 360))
+                           vals=Numbers())
 
         self.add_parameter('phi_offset',
                            get_cmd=self._get_phi_offset,
                            set_cmd=self._set_phi_offset,
                            units='deg',
-                           vals=Numbers(0, 360))
+                           vals=Numbers())
 
         self.add_parameter('theta',
                            get_cmd=self._get_theta,
                            set_cmd=self._set_theta,
                            units='deg',
-                           vals=Numbers(0, 360))
+                           vals=Numbers())
 
         self.add_parameter('theta_offset',
                            get_cmd=self._get_theta_offset,
                            set_cmd=self._set_theta_offset,
                            units='deg',
-                           vals=Numbers(0, 360))
+                           vals=Numbers())
 
         self.add_parameter('field',
                            get_cmd=self._get_field,
@@ -379,12 +409,9 @@ class AMI430_3D(Instrument):
     def _set_field(self, field):
         self._field = field
 
-        phi = self._phi + self._phi_offset
-        theta = self._theta + self._theta_offset
-
-        B_x = field * np.sin(theta) * np.cos(phi)
-        B_y = field * np.sin(theta) * np.sin(phi)
-        B_z = field * np.cos(theta)
+        B_x = field * np.sin(self._theta) * np.cos(self._phi)
+        B_y = field * np.sin(self._theta) * np.sin(self._phi)
+        B_z = field * np.cos(self._theta)
 
         swept_x, swept_y, swept_z = False, False, False
 
