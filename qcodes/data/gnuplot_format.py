@@ -234,7 +234,7 @@ class GNUPlotFormat(Formatter):
             parts = re.split('"\s+"', labelstr[1:-1])
             return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
 
-    def write(self, data_set, io_manager, location):
+    def write(self, data_set, io_manager, location, force_write=False):
         """
         Write updates in this DataSet to storage.
 
@@ -247,10 +247,12 @@ class GNUPlotFormat(Formatter):
         """
         arrays = data_set.arrays
 
+        # puts everything with same dimensions together
         groups = self.group_arrays(arrays)
         existing_files = set(io_manager.list(location))
         written_files = set()
 
+        # Every group gets it's own datafile
         for group in groups:
             fn = io_manager.join(location, group.name + self.extension)
 
@@ -262,7 +264,7 @@ class GNUPlotFormat(Formatter):
             if save_range is None:
                 continue
 
-            overwrite = save_range[0] == 0
+            overwrite = save_range[0] == 0 or force_write
             open_mode = 'w' if overwrite else 'a'
             shape = group.set_arrays[-1].shape
 

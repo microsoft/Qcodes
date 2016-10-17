@@ -131,11 +131,11 @@ class DataServer(BaseServer):
         self._data.init_on_server()
         self._measuring = True
 
-    def handle_end_data(self):
+    def handle_finalize_data(self):
         """
         Mark this DataSet as complete and write its final changes to storage
         """
-        self._data.write()
+        self._data.finalize()
         self._measuring = False
 
     def handle_store_data(self, *args):

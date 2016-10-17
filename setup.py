@@ -62,6 +62,7 @@ setup(name='qcodes',
           'pyvisa>=1.8',
           'IPython>=4.0',
           'ipywidgets>=4.1',
+          'h5py>=2.6',
           # nose and coverage are only for tests, but we'd like to encourage
           # people to run tests!
           # coverage has a problem with setuptools on Windows, moved to extras

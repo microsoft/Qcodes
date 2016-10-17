@@ -90,7 +90,7 @@ class DiskIO:
         if mode not in ALLOWED_OPEN_MODES:
             raise ValueError('mode {} not allowed in IO managers'.format(mode))
 
-        filepath = self._add_base(filename)
+        filepath = self.to_path(filename)
 
         # make directories if needed
         dirpath = os.path.dirname(filepath)
@@ -108,14 +108,38 @@ class DiskIO:
         # path you will get a relative path!
         return os.sep.join(re.split('[\\\\/]', location))
 
-    def _add_base(self, location):
+    def to_path(self, location):
+        """
+        Convert a location string into a path on the local file system.
+
+        For DiskIO this just fixes slashes and prepends the base location,
+        doing nothing active with the file. But for other io managers that
+        refer to remote storage, this method may actually fetch the file and
+        put it at a temporary local path.
+
+        Args:
+            location (str): A location string for a complete dataset or
+                a file within it.
+
+        Returns:
+            path (str): The path on disk to which this location maps.
+        """
         location = self._normalize_slashes(location)
         if self.base_location:
             return os.path.join(self.base_location, location)
         else:
             return location
 
-    def _strip_base(self, path):
+    def to_location(self, path):
+        """
+        Convert a local filesystem path into a location string.
+
+        Args:
+            path (str): a path on the local file system.
+
+        Returns:
+            location (str): the location string corresponding to this path.
+        """
         if self.base_location:
             return os.path.relpath(path, self.base_location)
         else:
@@ -131,7 +155,7 @@ class DiskIO:
 
     def isfile(self, location):
         """Check whether this location matches a file."""
-        path = self._add_base(location)
+        path = self.to_path(location)
         return os.path.isfile(path)
 
     def list(self, location, maxdepth=1, include_dirs=False):
@@ -157,7 +181,7 @@ class DiskIO:
         """
         location = self._normalize_slashes(location)
         search_dir, pattern = os.path.split(location)
-        path = self._add_base(search_dir)
+        path = self.to_path(search_dir)
 
         if not os.path.isdir(path):
             return []
@@ -176,7 +200,7 @@ class DiskIO:
                             dirs[:] = []  # don't recurse any further
 
                         for fn in files + (dirs if include_dirs else []):
-                            out.append(self._strip_base(self.join(root, fn)))
+                            out.append(self.to_location(self.join(root, fn)))
 
                 elif include_dirs:
                     out.append(self.join(search_dir, match))
@@ -194,7 +218,7 @@ class DiskIO:
 
     def remove(self, filename):
         """Delete a file or folder and prune the directory tree."""
-        path = self._add_base(filename)
+        path = self.to_path(filename)
         if(os.path.isdir(path)):
             shutil.rmtree(path)
         else:
