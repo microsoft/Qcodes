@@ -72,7 +72,7 @@ class ZNB20(VisaInstrument):
                            units='dBm',
                            get_cmd='SOUR:POW?',
                            set_cmd='SOUR:POW {:.4f}',
-                           get_parser=int,
+                           get_parser=VISA_str_to_int,
                            vals=vals.Numbers(-150, 25))
 
         self.add_parameter(name='bandwidth',
@@ -80,7 +80,7 @@ class ZNB20(VisaInstrument):
                            units='Hz',
                            get_cmd='SENS:BAND?',
                            set_cmd='SENS:BAND {:.4f}',
-                           get_parser=int,
+                           get_parser=VISA_str_to_int,
                            vals=vals.Numbers(1, 1e6))
 
         self.add_parameter(name='avg',
@@ -88,23 +88,23 @@ class ZNB20(VisaInstrument):
                            units='',
                            get_cmd='AVER:COUN?',
                            set_cmd='AVER:COUN {:.4f}',
-                           get_parser=int,
+                           get_parser=VISA_str_to_int,
                            vals=vals.Numbers(1, 5000))
 
         self.add_parameter(name='start',
                            get_cmd='SENS:FREQ:START?',
                            set_cmd=self._set_start,
-                           get_parser=int)
+                           get_parser=VISA_str_to_int)
 
         self.add_parameter(name='stop',
                            get_cmd='SENS:FREQ:STOP?',
                            set_cmd=self._set_stop,
-                           get_parser=int)
+                           get_parser=VISA_str_to_int)
 
         self.add_parameter(name='npts',
                            get_cmd='SENS:SWE:POIN?',
                            set_cmd=self._set_npts,
-                           get_parser=int)
+                           get_parser=VISA_str_to_int)
 
         self.add_parameter(name='trace',
                            start=self.start(),
@@ -142,13 +142,17 @@ class ZNB20(VisaInstrument):
         self.trace.set_sweep(self.start(), self.stop(), val)
 
     def initialise(self):
-        self.write('*RST')
-        self.write('SENS1:SWE:TYPE LIN')
+        self.write('*RST') # reset to default settings
+        self.write('SENS1:SWE:TYPE LIN') # set a linear sweep
         self.write('SENS1:SWE:TIME:AUTO ON')
         self.write('TRIG1:SEQ:SOUR IMM')
         self.write('SENS1:AVER:STAT ON')
-        self.update_display_on()
+        self.update_display_on() # show trace on the instrument display
         self.start(1e6)
         self.stop(2e6)
         self.npts(10)
         self.power(-50)
+
+
+def VISA_str_to_int(message):
+    return int(float(message.strip('\\n')))
