@@ -301,8 +301,9 @@ class Parameter(Metadatable, DeferredOperations):
         State of the parameter as a JSON-compatible dict.
 
         Args:
-            update (bool): If True, update the state by calling parameter.get().
-             If False, just use the latest values in memory.
+            update (bool): If True, update the state by calling
+                    parameter.get().
+                    If False, just use the latest values in memory.
 
         Returns:
             dict: base snapshot
@@ -849,6 +850,7 @@ class GetLatest(DelegateAttributes, DeferredOperations):
     def __call__(self):
         return self.get()
 
+
 def combine(*parameters, name, label=None, units=None, aggregator=None):
     """Combine parameters into one swepable parameter
 
@@ -926,7 +928,12 @@ class CombinedParameter(Metadatable):
         """
         Creates a new combined parameter to be iterated over.
         One can sweep over either:
-             - n arrays  
+             - n array of lenght m
+             - one nxm array
+
+        where n is the number of combined parameters
+        and m is the number of setpoints
+
         Args:
             *array(numpy.ndarray): array(s) of setopoints
 
@@ -940,7 +947,10 @@ class CombinedParameter(Metadatable):
                 raise ValueError("Arrays have different number of setpoints")
             array = numpy.array(array).transpose()
         else:
-            array = array[0]
+            # cast to array in case users
+            # decide to not read docstring
+            # and pass a 2d list
+            array = numpy.array(array[0])
         new = copy(self)
         _error_msg = """ Dimensionality of array does not match\
                         the number of parameter combined. Expected a \
