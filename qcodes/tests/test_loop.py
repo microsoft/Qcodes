@@ -19,7 +19,8 @@ from qcodes.process.qcodes_process import QcodesProcess
 from qcodes.utils.validators import Numbers
 from qcodes.utils.helpers import LogCapture
 
-from .instrument_mocks import AMockModel, MockGates, MockSource, MockMeter
+from .instrument_mocks import (AMockModel, MockGates, MockSource, MockMeter,
+                               MultiGetter)
 
 
 class TestMockInstLoop(TestCase):
@@ -254,22 +255,6 @@ class FakeMonitor:
 
     def call(self, finish_by=None):
         self.delay_array.append(finish_by - time.perf_counter())
-
-
-class MultiGetter(Parameter):
-    def __init__(self, **kwargs):
-        if len(kwargs) == 1:
-            name, self._return = list(kwargs.items())[0]
-            super().__init__(name=name)
-            self.shape = np.shape(self._return)
-        else:
-            names = tuple(sorted(kwargs.keys()))
-            super().__init__(names=names)
-            self._return = tuple(kwargs[k] for k in names)
-            self.shapes = tuple(np.shape(v) for v in self._return)
-
-    def get(self):
-        return self._return
 
 
 class TestLoop(TestCase):
