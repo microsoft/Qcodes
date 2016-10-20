@@ -41,9 +41,13 @@ Combined Parameters Sweep
 If you want to sweep multiple parameters at once qcodes offers the combine function.
 You can combine any number of any kind paramter. 
 We'll use a ManualParameter for this example.
+One can use both an array, or a set of arrays to pass the setpoint.
+We'll cover both cases in this example.
 
 
 .. code:: python
+
+    import numpy as np
 
     from qcodes.instrument.parameter import ManualParameter
     from qcodes.utils.validators import Numbers
@@ -63,10 +67,8 @@ over, but we have to pass a list of values.
 
 .. code:: python
 
-    sweep_vals = [
-       [1,2], # step1 gate=1, frequency=2
-       [2,3], # step2 gate=2, frequency=3
-    ]
+    # use an array with number_of_parameters x number of setpoints 
+    sweep_vals = np.array([[1, 1], [1, 1]])
 
     loop = qc.Loop(combined.sweep(sweep_vals), delay=0.001).each(amplitude)
 
@@ -116,22 +118,23 @@ and we save the sum of them.
 
     magnet = qc.combine(x, y, z,
                          name="myvector",
-                         units="Giga Tesla",
+                         units="T",
                          label="magnetic field",
                          aggregator=linear)
 
-    sweep_vals = [
-       [1,2,9],
-       [2,3,10],
-    ]
+    # use number_of_parameters arrays with a length of number of setpoints 
+    # note that it will error if the length of the arrays are different
+    x_vals = np.linspace(1, 2, 2)
+    y_vals = np.linspace(1, 2, 2)
+    z_vals = np.linspace(1, 2, 2)
 
-    loop = qc.Loop(magnet.sweep(sweep_vals), delay=0.001).each(p4)
+    loop = qc.Loop(magnet.sweep(x_vals, y_vals, z_vals), delay=0.001).each(p4)
     data =loop.run()
 
 
 
    data.myvector_set
-   >>> array([ 12.,  15.])
+   >>> array([ 3.,  6.])
 
 
 .. __metainstrument :

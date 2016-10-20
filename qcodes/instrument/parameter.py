@@ -43,6 +43,8 @@ import logging
 import os
 import collections
 
+import numpy
+
 from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import (permissive_range, wait_secs, is_sequence_of,
                                   DelegateAttributes, full_class, named_repr)
@@ -920,25 +922,39 @@ class CombinedParameter(Metadatable):
             setFunction(value)
         return values
 
-    def sweep(self, setpoints: list):
+    def sweep(self, *array: numpy.ndarray):
         """
         Creates a new combined parameter to be iterated over.
-
-        The setpoints are expected to have:
-            a total length corresponding to the steps
-            a element length corresponding to the number of parameters combined
-
+        One can sweep over either:
+             - n arrays  
         Args:
-            setpoints(list[list]): list of setopoints
+            *array(numpy.ndarray): array(s) of setopoints
 
         Returns:
             MultiPar: combined parameter
         """
-        # just check the first
+        # if it's a list of arrays, convert to one array
+        if len(array) > 1:
+            dim = set([len(a) for a in array])
+            if len(dim) != 1:
+                raise ValueError("Arrays have different number of setpoints")
+            array = numpy.array(array).transpose()
+        else:
+            array = array[0]
         new = copy(self)
-        if len(setpoints[0]) != self.dimensionality:
-            raise ValueError
-        new.setpoints = setpoints
+        _error_msg = """ Dimensionality of array does not match\
+                        the number of parameter combined. Expected a \
+                        {} dimensional array, got a {} dimensional array. \
+                        """
+        try:
+            if array.shape[1] != self.dimensionality:
+                raise ValueError(_error_msg.format(self.dimensionality,
+                                                   array.shape[1]))
+        except KeyError:
+            # this means the array is 1d
+            raise ValueError(_error_msg.format(self.dimensionality, 1))
+
+        new.setpoints = array.tolist()
         return new
 
     def _aggregate(self, *vals):
@@ -949,7 +965,9 @@ class CombinedParameter(Metadatable):
         return iter(range(len(self.setpoints)))
 
     def __len__(self):
-        return len(self.setpoints)
+        # dimension of the sweep_values
+        # i.e. how many setpoint
+        return numpy.shape(self.setpoints)[0]
 
     def snapshot_base(self, update=False):
         """

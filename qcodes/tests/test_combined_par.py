@@ -3,6 +3,9 @@ from collections import OrderedDict
 import unittest
 from unittest.mock import patch
 from unittest.mock import call
+
+import numpy as np
+
 from qcodes.instrument.parameter import combine
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import full_class
@@ -36,13 +39,10 @@ class TestMultiPar(unittest.TestCase):
 
     def testSweepBadSetpoints(self):
         with self.assertRaises(ValueError):
-            combine(*self.parameters, name="fail").sweep([[1, 2]])
+            combine(*self.parameters, name="fail").sweep(np.array([[1, 2]]))
 
     def testSweep(self):
-        setpoints = []
-        sweep_len = 2
-        for _ in range(sweep_len):
-            setpoints.append([1 for i in self.parameters])
+        setpoints = np.array([[1, 1, 1], [1, 1, 1]])
 
         sweep_values = combine(*self.parameters,
                                name="combined").sweep(setpoints)
@@ -58,10 +58,7 @@ class TestMultiPar(unittest.TestCase):
         self.assertEqual(res, expected)
 
     def testSet(self):
-        setpoints = []
-        sweep_len = 2
-        for _ in range(sweep_len):
-            setpoints.append([1 for i in self.parameters])
+        setpoints = np.array([[1, 1, 1], [1, 1, 1]])
 
         sweep_values = combine(*self.parameters,
                                name="combined").sweep(setpoints)
@@ -76,10 +73,7 @@ class TestMultiPar(unittest.TestCase):
             )
 
     def testAggregator(self):
-        setpoints = []
-        sweep_len = 2
-        for _ in range(sweep_len):
-            setpoints.append([1 for i in self.parameters])
+        setpoints = np.array([[1, 1, 1], [1, 1, 1]])
         expected_results = [linear(*set) for set in setpoints]
         sweep_values = combine(*self.parameters,
                                name="combined",
@@ -115,18 +109,47 @@ class TestMultiPar(unittest.TestCase):
         self.assertEqual(out, snap)
 
     def testMutable(self):
-        setpoints = []
-        sweep_len = 2
-        for _ in range(sweep_len):
-            setpoints.append([1 for i in self.parameters])
+        setpoints = np.array([[1, 1, 1], [1, 1, 1]])
 
         sweep_values = combine(*self.parameters,
                                name="combined")
         a = sweep_values.sweep(setpoints)
-        for _ in range(sweep_len):
-            setpoints.append([1 for i in self.parameters])
+        setpoints = np.array([[2, 1, 1], [1, 1, 1]])
         b = sweep_values.sweep(setpoints)
         self.assertNotEqual(a, b)
+
+    def testArrays(self):
+        x_vals = np.linspace(1, 1, 2)
+        y_vals = np.linspace(1, 1, 2)
+        z_vals = np.linspace(1, 1, 2)
+        sweep_values = combine(*self.parameters,
+                               name="combined").sweep(x_vals, y_vals, z_vals)
+        res = []
+        for i in sweep_values:
+            value = sweep_values.set(i)
+            res.append([i, value])
+
+        expected = [
+                [0, [1, 1, 1]],
+                [1, [1, 1, 1]]
+                ]
+        self.assertEqual(res, expected)
+
+    def testWrongLen(self):
+        x_vals = np.linspace(1, 1, 2)
+        y_vals = np.linspace(1, 1, 2)
+        z_vals = np.linspace(1, 1, 3)
+        with self.assertRaises(ValueError):
+            combine(*self.parameters,
+                    name="combined").sweep(x_vals, y_vals, z_vals)
+
+    def testLen(self):
+        x_vals = np.linspace(1, 1, 2)
+        y_vals = np.linspace(1, 1, 2)
+        z_vals = np.linspace(1, 0, 2)
+        sweep_values = combine(*self.parameters,
+                               name="combined").sweep(x_vals, y_vals, z_vals)
+        self.assertEqual(len(x_vals), len(sweep_values.setpoints))
 
 
 def linear(x, y, z):
