@@ -37,6 +37,7 @@ Measured parameters should have .get() which can return:
 """
 
 from datetime import datetime, timedelta
+from copy import copy
 import time
 import logging
 import os
@@ -863,11 +864,11 @@ def combine(*parameters, name, label=None, units=None, aggregator=None):
     sequantially.
     """
     parameters = list(parameters)
-    multi_par = CombinedPar(parameters, name, label, units, aggregator)
+    multi_par = CombinedParameter(parameters, name, label, units, aggregator)
     return multi_par
 
 
-class CombinedPar(Metadatable):
+class CombinedParameter(Metadatable):
     """ A combined parameter
 
     Args:
@@ -892,10 +893,10 @@ class CombinedPar(Metadatable):
         # this is a dummy parameter
         # that mimicks the api that a normal parameter has
         self.parameter = lambda: None
-        setattr(self.parameter, 'full_name', name)
-        setattr(self.parameter, 'name', name)
-        setattr(self.parameter, 'label', label)
-        setattr(self.parameter, 'units', units)
+        self.parameter.full_name = name
+        self.parameter.name = name
+        self.parameter.label = label
+        self.parameter.units = units
         # endhack
         self.parameters = parameters
         self.sets = [parameter.set for parameter in self.parameters]
@@ -906,7 +907,9 @@ class CombinedPar(Metadatable):
             setattr(self, 'aggregate', self._aggregate)
 
     def set(self, index: int):
-        """ Set multiple parameters.
+        """
+        Set multiple parameters.
+
         Args:
             index (int): the index of the setpoints one wants to set
         Returns:
@@ -918,20 +921,25 @@ class CombinedPar(Metadatable):
         return values
 
     def sweep(self, setpoints: list):
-        """Create a collection of values to be iterated over.
+        """
+        Creates a new combined parameter to be iterated over.
+
         The setpoints are expected to have:
             a total length corresponding to the steps
             a element length corresponding to the number of parameters combined
+
         Args:
             setpoints(list[list]): list of setopoints
+
         Returns:
             MultiPar: combined parameter
         """
         # just check the first
+        new = copy(self)
         if len(setpoints[0]) != self.dimensionality:
             raise ValueError
-        self.setpoints = setpoints
-        return self
+        new.setpoints = setpoints
+        return new
 
     def _aggregate(self, *vals):
         # check f args

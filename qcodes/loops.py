@@ -907,6 +907,7 @@ class ActiveLoop(Metadatable):
 
             new_indices = loop_indices + (i,)
             new_values = current_values + (value,)
+            data_to_store = {}
 
             if hasattr(self.sweep_values, "parameters"):
                 set_name = self.data_set.action_id_map[action_indices]
@@ -916,10 +917,12 @@ class ActiveLoop(Metadatable):
                 for j, val in enumerate(set_val):
                     set_index = action_indices + (j+1, )
                     set_name = (self.data_set.action_id_map[set_index])
-                    self.data_set.store(new_indices, {set_name: val})
+                    data_to_store[set_name] = val
             else:
                 set_name = self.data_set.action_id_map[action_indices]
-                self.data_set.store(new_indices, {set_name: value})
+                data_to_store[set_name] = value
+
+            self.data_set.store(new_indices, data_to_store)
 
             if not self._nest_first:
                 # only wait the delay time if an inner loop will not inherit it

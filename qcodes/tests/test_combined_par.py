@@ -114,6 +114,20 @@ class TestMultiPar(unittest.TestCase):
             out[param.full_name] = {}
         self.assertEqual(out, snap)
 
+    def testMutable(self):
+        setpoints = []
+        sweep_len = 2
+        for _ in range(sweep_len):
+            setpoints.append([1 for i in self.parameters])
+
+        sweep_values = combine(*self.parameters,
+                               name="combined")
+        a = sweep_values.sweep(setpoints)
+        for _ in range(sweep_len):
+            setpoints.append([1 for i in self.parameters])
+        b = sweep_values.sweep(setpoints)
+        self.assertNotEqual(a, b)
+
 
 def linear(x, y, z):
     return x+y+z

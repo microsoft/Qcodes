@@ -49,7 +49,7 @@ from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument.mock import MockInstrument, MockModel
 
 from qcodes.instrument.function import Function
-from qcodes.instrument.parameter import Parameter, StandardParameter, combine, CombinedPar
+from qcodes.instrument.parameter import Parameter, StandardParameter, combine, CombinedParameter
 from qcodes.instrument.sweep_values import SweepFixedValues, SweepValues
 
 from qcodes.utils import validators
