@@ -63,7 +63,8 @@ from qcodes.utils.metadata import Metadatable
 from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
                       BreakIf, _QcodesBreak)
 
-# Switches off multiprocessing by default, cant' be altered after module import.
+# Switches off multiprocessing by default, cant' be altered after module
+# import.
 # TODO(giulioungaretti) use config.
 
 USE_MP = False
@@ -78,7 +79,8 @@ def get_bg(return_first=False):
     Todo:
         RuntimeError message is really hard to understand.
     Args:
-        return_first(bool): if there are multiple loops running return the first anyway.
+        return_first(bool): if there are multiple loops running return the
+        first anyway.
     Raises:
         RuntimeError: if multiple loops are active and return_first is False.
     Returns:
@@ -360,6 +362,7 @@ def _attach_then_actions(loop, actions, overwrite):
 
     return loop
 
+
 def _attach_bg_task(loop, task, min_delay):
     """Inner code for both Loop and ActiveLoop.bg_task"""
     if loop.bg_task is None:
@@ -369,6 +372,7 @@ def _attach_bg_task(loop, task, min_delay):
         raise RuntimeError('Only one background task is allowed per loop')
 
     return loop
+
 
 class ActiveLoop(Metadatable):
     """
@@ -387,11 +391,13 @@ class ActiveLoop(Metadatable):
     signal_period = 1
 
     def __init__(self, sweep_values, delay, *actions, then_actions=(),
-                 station=None, progress_interval=None, bg_task=None, bg_min_delay=None):
+                 station=None, progress_interval=None, bg_task=None,
+                 bg_min_delay=None):
         super().__init__()
         self.sweep_values = sweep_values
         self.delay = delay
-        self.actions = actions
+        self.actions = list(actions)
+        self._new_actions = []
         self.progress_interval = progress_interval
         self.then_actions = then_actions
         self.station = station
@@ -471,13 +477,19 @@ class ActiveLoop(Metadatable):
         Recursively calls `.containers` on any enclosed actions.
         """
         loop_size = len(self.sweep_values)
+        data_arrays = []
         loop_array = DataArray(parameter=self.sweep_values.parameter,
                                is_setpoint=True)
         loop_array.nest(size=loop_size)
 
         data_arrays = [loop_array]
+        # hack set_data into actions
+        self._new_actions.extend(self.actions)
+        if hasattr(self.sweep_values, "parameters"):
+            for parameter in self.sweep_values.parameters:
+                self._new_actions.append(parameter)
 
-        for i, action in enumerate(self.actions):
+        for i, action in enumerate(self._new_actions):
             if hasattr(action, 'containers'):
                 action_arrays = action.containers()
 
@@ -785,7 +797,8 @@ class ActiveLoop(Metadatable):
                   flush=True)
 
         if background:
-            warnings.warn("Multiprocessing is in beta, use at own risk", UserWarning)
+            warnings.warn("Multiprocessing is in beta, use at own risk",
+                          UserWarning)
             p = QcodesProcess(target=self._run_wrapper, name=MP_NAME)
             p.is_sweep = True
             p.signal_queue = self.signal_queue
@@ -890,11 +903,26 @@ class ActiveLoop(Metadatable):
                     self.sweep_values.name, i, imax, time.time() - t0),
                     dt=self.progress_interval, tag='outerloop')
 
-            self.sweep_values.set(value)
+            set_val = self.sweep_values.set(value)
+
             new_indices = loop_indices + (i,)
             new_values = current_values + (value,)
-            set_name = self.data_set.action_id_map[action_indices]
-            self.data_set.store(new_indices, {set_name: value})
+            data_to_store = {}
+
+            if hasattr(self.sweep_values, "parameters"):
+                set_name = self.data_set.action_id_map[action_indices]
+                if hasattr(self.sweep_values, 'aggregate'):
+                    value = self.sweep_values.aggregate(*set_val)
+                self.data_set.store(new_indices, {set_name: value})
+                for j, val in enumerate(set_val):
+                    set_index = action_indices + (j+1, )
+                    set_name = (self.data_set.action_id_map[set_index])
+                    data_to_store[set_name] = val
+            else:
+                set_name = self.data_set.action_id_map[action_indices]
+                data_to_store[set_name] = value
+
+            self.data_set.store(new_indices, data_to_store)
 
             if not self._nest_first:
                 # only wait the delay time if an inner loop will not inherit it
