@@ -25,7 +25,8 @@ BASE_SCHEMA = {
 
 
 class Config():
-    """ Qcodes config system
+    """ 
+    QCoDeS config system
 
     Start with sane defaults, which you can't change, and
     then customize your experience using files that update the configuration.
@@ -50,6 +51,7 @@ class Config():
         current_config(dict): Vaild config values
         current_schema(dict): Validators and desciptions of config values
         current_config_path(path): Path of the currently loaded config
+
     """
 
     config_file_name = "config.json"
@@ -183,7 +185,9 @@ class Config():
             description (str): description of key to add to schema
 
         Examples:
+
             >>> defaults.add("trace_color", "blue", "string", "description")
+
         will update the config:
             `...
             "user": { "trace_color": "blue"}
@@ -228,6 +232,15 @@ class Config():
             user = self.current_schema['properties']["user"]
             user["properties"].update(schema_entry)
             self.validate(self.current_config, self.current_schema)
+
+            # TODO(giulioungaretti) finish diffing
+            # now we update the entire schema
+            # and the entire configuration
+            # if it's saved then it will always
+            # take precedence even if the defaults
+            # values are changed upstream, and the local
+            # ones were actually left to their default
+            # values
             if not self._diff_schema:
                 self._diff_schema = BASE_SCHEMA
 
@@ -294,7 +307,7 @@ class Config():
 
     def describe(self, name):
         """
-        Describe a configuratio entry
+        Describe a configuration entry
 
         Args:
             name (str): name of entry to describe
