@@ -60,6 +60,8 @@ class IVVI(VisaInstrument):
         # values based on descriptor
         self.visa_handle.baud_rate = 115200
         self.visa_handle.parity = visa.constants.Parity(1)  # odd parity
+        self.visa_handle.write_termination = ''
+        self.visa_handle.read_termination = ''
 
         self.add_parameter('version',
                            get_cmd=self._get_version)
@@ -108,6 +110,14 @@ class IVVI(VisaInstrument):
             print('IVVI: get_all() failed, maybe connected to wrong port?')
             print(traceback.format_exc())
 
+        v = self.visa_handle
+
+        # make sure we igonore termination characters
+        # http://www.ni.com/tutorial/4256/en/#toc2 on Termination Character
+        # Enabled
+        v.set_visa_attribute(visa.constants.VI_ATTR_TERMCHAR_EN, 0)
+        v.set_visa_attribute(visa.constants.VI_ATTR_ASRL_END_IN, 0)
+
         print('Initialized IVVI-rack in %.2fs' % (t1-t0))
 
     def get_idn(self):
@@ -115,6 +125,9 @@ class IVVI(VisaInstrument):
         Overwrites the get_idn function using constants as the hardware
         does not have a proper *IDN function.
         """
+        # not all IVVI racks support the version command, so return a dummy
+        return -1
+
         idparts = ['QuTech', 'IVVI', 'None', self.version()]
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
@@ -129,7 +142,7 @@ class IVVI(VisaInstrument):
 
     def set_dacs_zero(self):
         for i in range(self._numdacs):
-            self._set_dac(i+1, 0)
+            self._set_dac(i + 1, 0)
 
     # Conversion of data
     def _mvoltage_to_bytes(self, mvoltage):
@@ -145,7 +158,7 @@ class IVVI(VisaInstrument):
         Output:
             (dataH, dataL) (int, int) : The high and low value byte equivalent
         '''
-        bytevalue = int(round(mvoltage/self.Fullrange*65535))
+        bytevalue = int(round(mvoltage / self.Fullrange*65535))
         return bytevalue.to_bytes(length=2, byteorder='big')
 
     def _bytes_to_mvoltages(self, byte_mess):
@@ -157,8 +170,8 @@ class IVVI(VisaInstrument):
         for i in range(self._numdacs):
             # takes two bytes, converts it to a 16 bit int and then divides by
             # the range and adds the offset due to the polarity
-            values[i] = ((byte_mess[2 + 2*i]*256 + byte_mess[3 + 2*i]) /
-                         65535.0*self.Fullrange) + self.pol_num[i]
+            values[i] = ((byte_mess[2 + 2 * i] * 256 + byte_mess[3 + 2 * i]) /
+                         65535.0 * self.Fullrange) + self.pol_num[i]
         return values
 
     # Communication with device
@@ -170,7 +183,7 @@ class IVVI(VisaInstrument):
         this version is a wrapper around the IVVI get function.
         it only updates
         '''
-        return self._get_dacs()[channel-1]
+        return self._get_dacs()[channel - 1]
 
     def _set_dac(self, channel, mvoltage):
         '''
@@ -241,7 +254,7 @@ class IVVI(VisaInstrument):
                     break
                 except Exception as ex:
                     logging.warning('IVVI communication error trying again')
-            if i+1 == max_tries:  # +1 because range goes stops before end
+            if i + 1 == max_tries:  # +1 because range goes stops before end
                 raise('IVVI Communication error')
         return self._mvoltages
 
@@ -253,9 +266,12 @@ class IVVI(VisaInstrument):
         returns message_len
         '''
         # This is used when write is used in the ask command
-        expected_answer_length = message[0]
+        expected_answer_length = None
+
         if not raw:
-            message_len = len(message)+2
+            expected_answer_length = message[0]
+            message_len = len(message) + 2
+
             error_code = bytes([0])
             message = bytes([message_len]) + error_code + message
         self.visa_handle.write_raw(message)
@@ -271,6 +287,43 @@ class IVVI(VisaInstrument):
         # Protocol knows about the expected length of the answer
         message_len = self.write(message, raw=raw)
         return self.read(message_len=message_len)
+
+    def _read_raw_bytes_direct(self, size):
+        """ Read raw data using the visa lib """
+        with(self.visa_handle.ignore_warning(visa.constants.VI_SUCCESS_MAX_CNT)):
+            mes = self.visa_handle.visalib.read(self.visa_handle.session, size)
+
+        return mes[0]
+
+    def _read_raw_bytes_multiple(self, size, maxread=512, verbose=0):
+        """ Read raw data in blocks using the visa lib
+        Arguments:
+            size (int) : number of bytes to read
+            maxread (int) : maximum size of block to read
+            verbose (int): verbosity level
+        Returns:
+            ret (bytes): bytes read from the device
+        The pyvisa visalib.read does not always terminate at a newline, this
+        is a workaround.
+        Also see: https://github.com/qdev-dk/Qcodes/issues/276
+                  https://github.com/hgrecco/pyvisa/issues/225
+        Setting both VI_ATTR_TERMCHAR_EN and VI_ATTR_ASRL_END_IN to zero
+        should allow the driver to ignore termination characters, this
+        function is an additional safety mechanism.
+        """
+        ret = []
+        instr = self.visa_handle
+        with self.visa_handle.ignore_warning(visa.constants.VI_SUCCESS_MAX_CNT):
+            nread = 0
+            while nread < size:
+                nn = min(maxread, size - nread)
+                chunk, status = instr.visalib.read(instr.session, nn)
+                ret += [chunk]
+                nread += len(chunk)
+                if verbose:
+                    print('_read_raw: %d/%d bytes' % (len(chunk), nread))
+        ret = b''.join(ret)
+        return ret
 
     def read(self, message_len=None):
         # because protocol has no termination chars the read reads the number
@@ -290,12 +343,10 @@ class IVVI(VisaInstrument):
             if t1-t0 > timeout:
                 raise TimeoutError()
         # a workaround for a timeout error in the pyvsia read_raw() function
-        with(self.visa_handle.ignore_warning(visa.constants.VI_SUCCESS_MAX_CNT)):
-            mes = self.visa_handle.visalib.read(
-                self.visa_handle.session, bytes_in_buffer)
-        mes = mes[0]  # cannot be done on same line for some reason
+        mes = self._read_raw_bytes_multiple(bytes_in_buffer)
+
         # if mes[1] != 0:
-        #     # see protocol descriptor for error codes
+        # see protocol descriptor for error codes
         #     raise Exception('IVVI rack exception "%s"' % mes[1])
         return mes
 
@@ -317,7 +368,7 @@ class IVVI(VisaInstrument):
 
         val = flagmap[flag.upper()]
         for ch in channels:
-            self.pol_num[ch-1] = val
+            self.pol_num[ch - 1] = val
             # self.set_parameter_bounds('dac%d' % (i+1), val, val + self.Fullrange.0)
 
         if get_all:
@@ -333,7 +384,7 @@ class IVVI(VisaInstrument):
         Output:
             polarity (string) : 'BIP', 'POS' or 'NEG'
         '''
-        val = self.pol_num[channel-1]
+        val = self.pol_num[channel - 1]
 
         if (val == -self.Fullrange):
             return 'NEG'
