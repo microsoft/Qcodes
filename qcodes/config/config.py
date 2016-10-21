@@ -25,7 +25,7 @@ BASE_SCHEMA = {
 
 
 class Config():
-    """ 
+    """
     QCoDeS config system
 
     Start with sane defaults, which you can't change, and
@@ -54,7 +54,7 @@ class Config():
 
     """
 
-    config_file_name = "config.json"
+    config_file_name = "qcodesrc.json"
     schema_file_name = "schema.json"
 
     # get abs path of packge config file
