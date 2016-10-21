@@ -5,52 +5,52 @@ import numpy as np
 from qcodes import Parameter
 
 
-class FrequencySweep(Parameter):
-    """
-    Hardware controlled parameter class for Rohde Schwarz RSZNB20 trace.
+# class FrequencySweep(Parameter):
+#     """
+#     Hardware controlled parameter class for Rohde Schwarz RSZNB20 trace.
 
-    Instrument returns an list of transmission data in the form of a list of
-    complex numbers taken from a frequency sweep.
+#     Instrument returns an list of transmission data in the form of a list of
+#     complex numbers taken from a frequency sweep.
 
-    TODO:
-      - ability to choose for abs or db in magnitude return
-    """
-    def __init__(self, name, instrument, start, stop, npts):
-        super().__init__(name)
-        self._instrument = instrument
-        self.set_sweep(start, stop, npts)
-        self.names = ('magnitude', 'phase')
-        self.units = ('dBm', 'rad')
-        self.setpoint_names = (('frequency',), ('frequency',))
+#     TODO:
+#       - ability to choose for abs or db in magnitude return
+#     """
+#     def __init__(self, name, instrument, start, stop, npts):
+#         super().__init__(name)
+#         self._instrument = instrument
+#         self.set_sweep(start, stop, npts)
+#         self.names = ('magnitude', 'phase')
+#         self.units = ('dBm', 'rad')
+#         self.setpoint_names = (('frequency',), ('frequency',))
 
-    def set_sweep(self, start, stop, npts):
-        #  needed to update config of the software parameter on sweep chage
-        # freq setpoints tuple as needs to be hashable for look up
-        f = tuple(np.linspace(int(start), int(stop), num=npts))
-        self.setpoints = ((f,), (f,))
-        self.shapes = ((npts,), (npts,))
+#     def set_sweep(self, start, stop, npts):
+#         #  needed to update config of the software parameter on sweep chage
+#         # freq setpoints tuple as needs to be hashable for look up
+#         f = tuple(np.linspace(int(start), int(stop), num=npts))
+#         self.setpoints = ((f,), (f,))
+#         self.shapes = ((npts,), (npts,))
 
-    def get(self):
-        self._instrument.write('SENS1:AVER:STAT ON')
-        self._instrument.write('AVER:CLE')
-        self._instrument.cont_meas_off()
+#     def get(self):
+#         self._instrument.write('SENS1:AVER:STAT off')
+#         self._instrument.write('AVER:CLE')
+#         self._instrument.cont_meas_off()
 
-        # instrument averages over its last 'avg' number of sweeps
-        # need to ensure averaged result is returned
-        for avgcount in range(self._instrument.avg()):
-            self._instrument.write('INIT:IMM; *WAI')
-        data_str = self._instrument.ask('CALC:DATA? SDAT').split(',')
-        data_list = [float(v) for v in data_str]
+#         # instrument averages over its last 'avg' number of sweeps
+#         # need to ensure averaged result is returned
+#         for avgcount in range(self._instrument.avg()):
+#             self._instrument.write('INIT:IMM; *WAI')
+#         data_str = self._instrument.ask('CALC:DATA? SDAT').split(',')
+#         data_list = [float(v) for v in data_str]
 
-        # data_list of complex numbers [re1,im1,re2,im2...]
-        data_arr = np.array(data_list).reshape(int(len(data_list) / 2), 2)
-        mag_array, phase_array = [], []
-        for comp in data_arr:
-            complex_num = complex(comp[0], comp[1])
-            mag_array.append(abs(complex_num))
-            phase_array.append(phase(complex_num))
-        self._instrument.cont_meas_on()
-        return mag_array, phase_array
+#         # data_list of complex numbers [re1,im1,re2,im2...]
+#         data_arr = np.array(data_list).reshape(int(len(data_list) / 2), 2)
+#         mag_array, phase_array = [], []
+#         for comp in data_arr:
+#             complex_num = complex(comp[0], comp[1])
+#             mag_array.append(abs(complex_num))
+#             phase_array.append(phase(complex_num))
+#         self._instrument.cont_meas_on()
+#         return mag_array, phase_array
 
 
 class ZNB20(VisaInstrument):
@@ -75,13 +75,7 @@ class ZNB20(VisaInstrument):
                            get_parser=VISA_str_to_int,
                            vals=vals.Numbers(-150, 25))
 
-        self.add_parameter(name='bandwidth',
-                           label='Bandwidth',
-                           units='Hz',
-                           get_cmd='SENS:BAND?',
-                           set_cmd='SENS:BAND {:.4f}',
-                           get_parser=VISA_str_to_int,
-                           vals=vals.Numbers(1, 1e6))
+
 
         self.add_parameter(name='avg',
                            label='Averages',
@@ -91,28 +85,15 @@ class ZNB20(VisaInstrument):
                            get_parser=VISA_str_to_int,
                            vals=vals.Numbers(1, 5000))
 
-        self.add_parameter(name='start',
-                           get_cmd='SENS:FREQ:START?',
-                           set_cmd=self._set_start,
-                           get_parser=VISA_str_to_int)
 
-        self.add_parameter(name='stop',
-                           get_cmd='SENS:FREQ:STOP?',
-                           set_cmd=self._set_stop,
-                           get_parser=VISA_str_to_int)
 
-        self.add_parameter(name='npts',
-                           get_cmd='SENS:SWE:POIN?',
-                           set_cmd=self._set_npts,
-                           get_parser=VISA_str_to_int)
+        # self.add_parameter(name='trace',
+        #                    start=self.start(),
+        #                    stop=self.stop(),
+        #                    npts=self.npts(),
+        #                    parameter_class=FrequencySweep)
 
-        self.add_parameter(name='trace',
-                           start=self.start(),
-                           stop=self.stop(),
-                           npts=self.npts(),
-                           parameter_class=FrequencySweep)
 
-        self.add_function('reset', call_cmd='*RST')
         self.add_function('tooltip_on', call_cmd='SYST:ERR:DISP ON')
         self.add_function('tooltip_off', call_cmd='SYST:ERR:DISP OFF')
         self.add_function('cont_meas_on', call_cmd='INIT:CONT:ALL ON')
@@ -123,35 +104,123 @@ class ZNB20(VisaInstrument):
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
         self.add_function('rf_on', call_cmd='OUTP1 ON')
 
-        self.initialise()
+
+        ###################
+        # Common commands #
+        ###################
+        # common commands for all devices as described in IEEE 488.2
+        self.add_function('reset', call_cmd='*RST')
+        self.add_function('wait_to_continue', call_cmd='*WAI')
+
+
+        ######################
+        # CALCULATE commands #
+        ######################
+        # commands for post-acquisition data processing
+        self.add_parameter('format',
+                           set_cmd='CALCULATE:FORMAT {:s}',
+                           vals=vals.Enum('mlin', 'mlog', 'phas', 'uph', 'pol',
+                                          'smit', 'ism', 'gdel', 'real', 'imag',
+                                          'swr'))
+
+        #####################
+        # INITIATE commands #
+        #####################
+        # commands to control the initialization of the trigger system and define
+        # the scope ot the triggered measurement
+        self.add_parameter(name='continuous_mode_all',
+                           set_cmd='INIT:CONT {:s}',
+                           vals=vals.OnOff())
+
+        self.add_function('start_single_sweep_all', call_cmd='INITIATE:IMMEDIATE:ALL')
+
+
+        ##################
+        # SENSE commands #
+        ##################
+        # commands affecting the receiver settings
+        self.add_parameter(name='bandwidth',
+                           label='Bandwidth',
+                           units='Hz',
+                           get_cmd='SENS:BAND?',
+                           set_cmd='SENS:BAND {:.4f}',
+                           get_parser=VISA_str_to_int,
+                           vals=vals.Numbers(1, 1e6))
+
+        self.add_parameter(name='center_frequency',
+                           units='Hz',
+                           get_cmd='SENSE:FREQUENCY:CENTER?',
+                           set_cmd='SENSE:FREQUENCY:CENTER {:.4f}',
+                           get_parser=VISA_str_to_int,
+                           vals=vals.Numbers(100e3, 20e9))
+
+        self.add_parameter(name='span_frequency',
+                           units='Hz',
+                           get_cmd='SENSE:FREQUENCY:SPAN?',
+                           set_cmd='SENSE:FREQUENCY:SPAN {:.4f}',
+                           get_parser=VISA_str_to_int,
+                           vals=vals.Numbers(0, 20e9))
+
+        self.add_parameter(name='start_frequency',
+                           units='Hz',
+                           get_cmd='SENSE:FREQUENCY:START?',
+                           set_cmd='SENSE:FREQUENCY:START {:.4f}',
+                           get_parser=VISA_str_to_int,
+                           vals=vals.Numbers(100e3, 20e9))
+
+        self.add_parameter(name='stop_frequency',
+                           units='Hz',
+                           get_cmd='SENSE:FREQUENCY:STOP?',
+                           set_cmd='SENSE:FREQUENCY:STOP {:.4f}',
+                           get_parser=VISA_str_to_int,
+                           vals=vals.Numbers(100e3, 20e9))
+
+        self.add_parameter(name='npts',
+                           get_cmd='SENS:SWE:POIN?',
+                           set_cmd='SENS:SWE:POIN {:.4f}',
+                           get_parser=VISA_str_to_int,
+                           vals=vals.Ints(1,100001))
+
+        self.add_parameter(name='min_sweep_time',
+                           get_cmd='SENS:SWE:TIME:AUTO?',
+                           set_cmd='SENS:SWE:TIME:AUTO {:s}',
+                           get_parser=VISA_str_to_int,
+                           vals=vals.OnOff())
+
+
+# need to be fixed
+        self.add_parameter(name='data',
+                           units=('', ''),
+                           get_cmd=self.get_real_imaginary_data)
+
+
+        #####################
+        #  TRIGGER commands #
+        #####################
+        # commands to syncronize analyzer's actions
+        self.add_parameter(name='trigger_source',
+                           set_cmd='TRIGGER:SEQUENCE:SOURCE {:s}',
+                           vals=vals.Enum('immediate', 'external', 'manual', 'multiple'))
+
+
+
+        self.reset()
         self.connect_message()
 
-    def _set_start(self, val):
-        self.write('SENS:FREQ:START {:.4f}'.format(val))
-        # update setpoints for FrequencySweep param
-        self.trace.set_sweep(val, self.stop(), self.npts())
 
-    def _set_stop(self, val):
-        self.write('SENS:FREQ:STOP {:.4f}'.format(val))
-        # update setpoints for FrequencySweep param
-        self.trace.set_sweep(self.start(), val, self.npts())
+    def get_real_imaginary_data(self):
+        data_str = self.ask('CALC:DATA? SDAT')
+        data_double = np.array(data_str.split(','), dtype=np.double)
 
-    def _set_npts(self, val):
-        self.write('SENS:SWE:POIN {:.4f}'.format(val))
-        # update setpoints for FrequencySweep param
-        self.trace.set_sweep(self.start(), self.stop(), val)
+        real_data = data_double[::2]
+        imag_data = data_double[1::2]
 
-    def initialise(self):
-        self.write('*RST') # reset to default settings
-        self.write('SENS1:SWE:TYPE LIN') # set a linear sweep
-        self.write('SENS1:SWE:TIME:AUTO ON')
-        self.write('TRIG1:SEQ:SOUR IMM')
-        self.write('SENS1:AVER:STAT ON')
-        self.update_display_on() # show trace on the instrument display
-        self.start(1e6)
-        self.stop(2e6)
-        self.npts(10)
-        self.power(-50)
+        return real_data, imag_data
+
+    def get_formatted_data(selft, format):
+        print('in progress')
+
+
 
 
 def VISA_str_to_int(message):
