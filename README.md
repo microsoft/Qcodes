@@ -96,13 +96,12 @@ If you registered QCoDeS with Python via `setup.py develop`, all you need to do 
 
 ## Usage
 
-Read the [docs](http://qdev-dk.github.io/Qcodes) and the notebooks in [docs/examples](docs/examples)
+Read the [docs](http://qcodes.github.io/Qcodes) and the notebooks in [docs/examples](docs/examples)
 
 
 ## Contributing
 
 See [Contributing](CONTRIBUTING.rst) for information about bug/issue reports, contributing code, style, and testing
-See the [Roadmap](http://qdev-dk.github.io/Qcodes/roadmap.html) an overview of where the project intends to go.
 
 
 ## Docs
