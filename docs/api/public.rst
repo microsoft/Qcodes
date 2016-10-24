@@ -79,6 +79,9 @@ Instrument
    StandardParameter
    SweepFixedValues
    SweepValues
+   combine
+   CombinedPar
+
 
    Instrument
    IPInstrument

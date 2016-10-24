@@ -550,7 +550,6 @@ class DataSet(DelegateAttributes):
         replace action_indices tuple with compact string array_ids
         stripping off as much extraneous info as possible
         """
-
         action_indices = [array.action_indices for array in arrays]
         for array in arrays:
             name = array.full_name
