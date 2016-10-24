@@ -182,6 +182,23 @@ After the Loop is run, it returns a dataset_ and the executed loop itself, along
 Loops can fail:
   - If you try to use a (parameter of a) local instrument in a background loop
 
+Measure
+-------
+
+.. Description
+
+If you want to create a dataset_ without running a loop_ - for example, from a single Parameter.get() that returns one or more whole arrays - you can use Measure. Measure works very similarly to Loop, accepting all the same action types. The API for running a Measure is also very similar to Loop, with the difference that Measure does not allow background acquisition.
+
+If any of the actions return scalars, these will be entered in the DataSet as 1D length-1 arrays, along with a similar length-1 setpoint array.
+
+.. responsibilities
+
+All the same as a Loop
+
+.. state
+
+Just like a Loop, you can hold a Measure object, with its list of actions to execute, and reuse it multiple times.
+
 DataSet
 -------
 
