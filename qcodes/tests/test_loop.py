@@ -773,12 +773,17 @@ class TestSignal(TestCase):
         p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10),
                             msg=ActiveLoop.HALT_DEBUG)
         loop = Loop(p1[1:6:1], 0.005).each(p1)
+        # we want to test what's in data, so get it ahead of time
+        # because loop.run will not return.
+        data = loop.get_data_set(location=False)
         p1.set_queue(loop.signal_queue)
 
         with self.assertRaises(_DebugInterrupt):
-            loop.run_temp()
+            # need to use explicit loop.run rather than run_temp
+            # so we can avoid providing location=False twice, which
+            # is an error.
+            loop.run(background=False, data_manager=False, quiet=True)
 
-        data = loop.data_set
         self.check_data(data)
 
     def test_halt_quiet(self):
