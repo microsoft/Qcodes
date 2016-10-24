@@ -5,7 +5,7 @@ notifications:
   slack: qcodes:tNlhSminOHdt2fZf6x6hyT24
 
 python:
-  - "3.4"
+  - "3.5"
   # whitelist
 branches:
   only:
