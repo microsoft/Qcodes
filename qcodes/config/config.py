@@ -101,7 +101,7 @@ class Config():
     def update_config(self):
         """
         Load defaults and validates.
-        A  configuration file must be called config.json
+        A  configuration file must be called qcodesrc.json
         A schema file must be called schema.json
         Configuration files (and their schema) are loaded and updated from the
         default directories in the following order:
@@ -285,7 +285,7 @@ class Config():
             path (string): path of new file(s)
         """
         with open(path, "w") as fp:
-            json.dump(self.current_schema, fp)
+            json.dump(self.current_schema, fp, indent=4)
 
     def save_to_home(self):
         """ Save  files to home dir
