@@ -63,7 +63,8 @@ from qcodes.utils.metadata import Metadatable
 from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
                       BreakIf, _QcodesBreak)
 
-# Switches off multiprocessing by default, cant' be altered after module import.
+# Switches off multiprocessing by default, cant' be altered after module
+# import.
 # TODO(giulioungaretti) use config.
 
 USE_MP = False
@@ -78,7 +79,8 @@ def get_bg(return_first=False):
     Todo:
         RuntimeError message is really hard to understand.
     Args:
-        return_first(bool): if there are multiple loops running return the first anyway.
+        return_first(bool): if there are multiple loops running return the
+        first anyway.
     Raises:
         RuntimeError: if multiple loops are active and return_first is False.
     Returns:
@@ -360,6 +362,7 @@ def _attach_then_actions(loop, actions, overwrite):
 
     return loop
 
+
 def _attach_bg_task(loop, task, min_delay):
     """Inner code for both Loop and ActiveLoop.bg_task"""
     if loop.bg_task is None:
@@ -369,6 +372,7 @@ def _attach_bg_task(loop, task, min_delay):
         raise RuntimeError('Only one background task is allowed per loop')
 
     return loop
+
 
 class ActiveLoop(Metadatable):
     """
@@ -387,11 +391,12 @@ class ActiveLoop(Metadatable):
     signal_period = 1
 
     def __init__(self, sweep_values, delay, *actions, then_actions=(),
-                 station=None, progress_interval=None, bg_task=None, bg_min_delay=None):
+                 station=None, progress_interval=None, bg_task=None,
+                 bg_min_delay=None):
         super().__init__()
         self.sweep_values = sweep_values
         self.delay = delay
-        self.actions = actions
+        self.actions = list(actions)
         self.progress_interval = progress_interval
         self.then_actions = then_actions
         self.station = station
@@ -471,13 +476,19 @@ class ActiveLoop(Metadatable):
         Recursively calls `.containers` on any enclosed actions.
         """
         loop_size = len(self.sweep_values)
+        data_arrays = []
         loop_array = DataArray(parameter=self.sweep_values.parameter,
                                is_setpoint=True)
         loop_array.nest(size=loop_size)
 
         data_arrays = [loop_array]
+        # hack set_data into actions
+        new_actions = self.actions[:]
+        if hasattr(self.sweep_values, "parameters"):
+            for parameter in self.sweep_values.parameters:
+                new_actions.append(parameter)
 
-        for i, action in enumerate(self.actions):
+        for i, action in enumerate(new_actions):
             if hasattr(action, 'containers'):
                 action_arrays = action.containers()
 
@@ -644,11 +655,14 @@ class ActiveLoop(Metadatable):
             else:
                 raise ValueError('unknown signal', signal_)
 
-    def get_data_set(self, data_manager=False, *args, **kwargs):
+    def get_data_set(self, data_manager=USE_MP, *args, **kwargs):
         """
         Return the data set for this loop.
-        If no data set has been created yet, a new one will be created and returned.
-        Note that all arguments are ignored if the data set has already been created.
+
+        If no data set has been created yet, a new one will be created and
+        returned. Note that all arguments can only be provided when the
+        `DataSet` is first created; giving these during `run` when
+        `get_data_set` has already been called on its own is an error.
 
         data_manager: a DataManager instance (omit to use default,
             False to store locally)
@@ -674,13 +688,24 @@ class ActiveLoop(Metadatable):
             if data_manager is False:
                 data_mode = DataMode.LOCAL
             else:
-                warnings.warn("Multiprocessing is in beta, use at own risk", UserWarning)
+                warnings.warn("Multiprocessing is in beta, use at own risk",
+                              UserWarning)
                 data_mode = DataMode.PUSH_TO_SERVER
 
             data_set = new_data(arrays=self.containers(), mode=data_mode,
                                 data_manager=data_manager, *args, **kwargs)
 
             self.data_set = data_set
+
+        else:
+            has_args = len(kwargs) or len(args)
+            uses_data_manager = (self.data_set.mode != DataMode.LOCAL)
+            if has_args or (uses_data_manager != data_manager):
+                raise RuntimeError(
+                    'The DataSet for this loop already exists. '
+                    'You can only provide DataSet attributes, such as '
+                    'data_manager, location, name, formatter, io, '
+                    'write_period, when the DataSet is first created.')
 
         return self.data_set
 
@@ -712,7 +737,11 @@ class ActiveLoop(Metadatable):
             seconds. If provided here, will override any interval provided
             with the Loop definition
 
-        kwargs are passed along to data_set.new_data. The key ones are:
+        kwargs are passed along to data_set.new_data. These can only be
+        provided when the `DataSet` is first created; giving these during `run`
+        when `get_data_set` has already been called on its own is an error.
+        The key ones are:
+
         location: the location of the DataSet, a string whose meaning
             depends on formatter and io, or False to only keep in memory.
             May be a callable to provide automatic locations. If omitted, will
@@ -766,36 +795,46 @@ class ActiveLoop(Metadatable):
             print('...done. Starting ' + (data_set.location or 'new loop'),
                   flush=True)
 
-        if background:
-            warnings.warn("Multiprocessing is in beta, use at own risk", UserWarning)
-            p = QcodesProcess(target=self._run_wrapper, name=MP_NAME)
-            p.is_sweep = True
-            p.signal_queue = self.signal_queue
-            p.start()
-            self.process = p
+        try:
+            if background:
+                warnings.warn("Multiprocessing is in beta, use at own risk",
+                              UserWarning)
+                p = QcodesProcess(target=self._run_wrapper, name=MP_NAME)
+                p.is_sweep = True
+                p.signal_queue = self.signal_queue
+                p.start()
+                self.process = p
 
-            # now that the data_set we created has been put in the loop
-            # process, this copy turns into a reader
-            # if you're not using a DataManager, it just stays local
-            # and sync() reads from disk
-            if self.data_set.mode == DataMode.PUSH_TO_SERVER:
-                self.data_set.mode = DataMode.PULL_FROM_SERVER
-            self.data_set.sync()
-        else:
-            if hasattr(self, 'process'):
-                # in case this ActiveLoop was run before in the background
-                del self.process
-
-            self._run_wrapper()
-
-            if self.data_set.mode != DataMode.LOCAL:
+                # now that the data_set we created has been put in the loop
+                # process, this copy turns into a reader
+                # if you're not using a DataManager, it just stays local
+                # and sync() reads from disk
+                if self.data_set.mode == DataMode.PUSH_TO_SERVER:
+                    self.data_set.mode = DataMode.PULL_FROM_SERVER
                 self.data_set.sync()
+            else:
+                if hasattr(self, 'process'):
+                    # in case this ActiveLoop was run before in the background
+                    del self.process
+
+                self._run_wrapper()
+
+                if self.data_set.mode != DataMode.LOCAL:
+                    self.data_set.sync()
+
+            ds = self.data_set
+
+        finally:
+            # After normal loop execution we clear the data_set so we can run
+            # again. But also if something went wrong during the loop execution
+            # we want to clear the data_set attribute so we don't try to reuse
+            # this one later.
+            self.data_set = None
 
         if not quiet:
             print(repr(self.data_set))
             print(datetime.now().strftime('started at %Y-%m-%d %H:%M:%S'))
-        ds = self.data_set
-        self.data_set = None
+
         return ds
 
     def _compile_actions(self, actions, action_indices=()):
@@ -872,11 +911,26 @@ class ActiveLoop(Metadatable):
                     self.sweep_values.name, i, imax, time.time() - t0),
                     dt=self.progress_interval, tag='outerloop')
 
-            self.sweep_values.set(value)
+            set_val = self.sweep_values.set(value)
+
             new_indices = loop_indices + (i,)
             new_values = current_values + (value,)
-            set_name = self.data_set.action_id_map[action_indices]
-            self.data_set.store(new_indices, {set_name: value})
+            data_to_store = {}
+
+            if hasattr(self.sweep_values, "parameters"):
+                set_name = self.data_set.action_id_map[action_indices]
+                if hasattr(self.sweep_values, 'aggregate'):
+                    value = self.sweep_values.aggregate(*set_val)
+                self.data_set.store(new_indices, {set_name: value})
+                for j, val in enumerate(set_val):
+                    set_index = action_indices + (j+1, )
+                    set_name = (self.data_set.action_id_map[set_index])
+                    data_to_store[set_name] = val
+            else:
+                set_name = self.data_set.action_id_map[action_indices]
+                data_to_store[set_name] = value
+
+            self.data_set.store(new_indices, data_to_store)
 
             if not self._nest_first:
                 # only wait the delay time if an inner loop will not inherit it

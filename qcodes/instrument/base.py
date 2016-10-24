@@ -10,10 +10,11 @@ from qcodes.utils.nested_attrs import NestedAttrAccess
 from qcodes.utils.validators import Anything
 from .parameter import StandardParameter
 from .function import Function
-from .remote import RemoteInstrument
+from .metaclass import InstrumentMetaclass
 
 
-class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
+class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
+                 metaclass=InstrumentMetaclass):
 
     """
     Base class for all QCodes instruments.
@@ -39,6 +40,9 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
             instantiated on the server, and the object you get in the main
             process is actually a ``RemoteInstrument`` that proxies all method
             calls, ``Parameters``, and ``Functions`` to the server.
+
+            The metaclass ``InstrumentMetaclass`` handles making either the
+            requested class or its RemoteInstrument proxy.
 
         metadata (Optional[Dict]): additional static metadata to add to this
             instrument's JSON snapshot.
@@ -76,15 +80,6 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
 
     _all_instruments = {}
 
-    def __new__(cls, *args, server_name=None, **kwargs):
-        """Figure out whether to create a base instrument or proxy."""
-        if server_name is None:
-            return super().__new__(cls)
-        else:
-            warnings.warn("Multiprocessing is in beta, use at own risk", UserWarning)
-            return RemoteInstrument(*args, instrument_class=cls,
-                                    server_name=server_name, **kwargs)
-
     def __init__(self, name, server_name=None, **kwargs):
         self._t0 = time.time()
         super().__init__(**kwargs)
@@ -99,8 +94,6 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
         self._meta_attrs = ['name']
 
         self._no_proxy_methods = {'__getstate__'}
-
-        self.record_instance(self)
 
     def get_idn(self):
         """
