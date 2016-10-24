@@ -395,7 +395,6 @@ class ActiveLoop(Metadatable):
         self.sweep_values = sweep_values
         self.delay = delay
         self.actions = list(actions)
-        self._new_actions = []
         self.progress_interval = progress_interval
         self.then_actions = then_actions
         self.station = station
@@ -482,12 +481,12 @@ class ActiveLoop(Metadatable):
 
         data_arrays = [loop_array]
         # hack set_data into actions
-        self._new_actions.extend(self.actions)
+        new_actions = self.actions[:]
         if hasattr(self.sweep_values, "parameters"):
             for parameter in self.sweep_values.parameters:
-                self._new_actions.append(parameter)
+                new_actions.append(parameter)
 
-        for i, action in enumerate(self._new_actions):
+        for i, action in enumerate(new_actions):
             if hasattr(action, 'containers'):
                 action_arrays = action.containers()
 
@@ -795,37 +794,46 @@ class ActiveLoop(Metadatable):
             print('...done. Starting ' + (data_set.location or 'new loop'),
                   flush=True)
 
-        if background:
-            warnings.warn("Multiprocessing is in beta, use at own risk",
-                          UserWarning)
-            p = QcodesProcess(target=self._run_wrapper, name=MP_NAME)
-            p.is_sweep = True
-            p.signal_queue = self.signal_queue
-            p.start()
-            self.process = p
+        try:
+            if background:
+                warnings.warn("Multiprocessing is in beta, use at own risk",
+                              UserWarning)
+                p = QcodesProcess(target=self._run_wrapper, name=MP_NAME)
+                p.is_sweep = True
+                p.signal_queue = self.signal_queue
+                p.start()
+                self.process = p
 
-            # now that the data_set we created has been put in the loop
-            # process, this copy turns into a reader
-            # if you're not using a DataManager, it just stays local
-            # and sync() reads from disk
-            if self.data_set.mode == DataMode.PUSH_TO_SERVER:
-                self.data_set.mode = DataMode.PULL_FROM_SERVER
-            self.data_set.sync()
-        else:
-            if hasattr(self, 'process'):
-                # in case this ActiveLoop was run before in the background
-                del self.process
-
-            self._run_wrapper()
-
-            if self.data_set.mode != DataMode.LOCAL:
+                # now that the data_set we created has been put in the loop
+                # process, this copy turns into a reader
+                # if you're not using a DataManager, it just stays local
+                # and sync() reads from disk
+                if self.data_set.mode == DataMode.PUSH_TO_SERVER:
+                    self.data_set.mode = DataMode.PULL_FROM_SERVER
                 self.data_set.sync()
+            else:
+                if hasattr(self, 'process'):
+                    # in case this ActiveLoop was run before in the background
+                    del self.process
+
+                self._run_wrapper()
+
+                if self.data_set.mode != DataMode.LOCAL:
+                    self.data_set.sync()
+
+            ds = self.data_set
+
+        finally:
+            # After normal loop execution we clear the data_set so we can run
+            # again. But also if something went wrong during the loop execution
+            # we want to clear the data_set attribute so we don't try to reuse
+            # this one later.
+            self.data_set = None
 
         if not quiet:
             print(repr(self.data_set))
             print(datetime.now().strftime('started at %Y-%m-%d %H:%M:%S'))
-        ds = self.data_set
-        self.data_set = None
+
         return ds
 
     def _compile_actions(self, actions, action_indices=()):

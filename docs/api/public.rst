@@ -42,6 +42,13 @@ Loops
    halt_bg
    Loop
 
+Measure
+~~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+   measure.Measure
 
 Actions
 ~~~~~~~

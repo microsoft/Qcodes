@@ -38,6 +38,7 @@ if in_notebook():  # pragma: no cover
 
 from qcodes.station import Station
 from qcodes.loops import get_bg, halt_bg, Loop
+from qcodes.measure import Measure
 from qcodes.actions import Task, Wait, BreakIf
 
 from qcodes.data.manager import get_data_manager
