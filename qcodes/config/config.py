@@ -55,7 +55,7 @@ class Config():
     """
 
     config_file_name = "qcodesrc.json"
-    schema_file_name = "schema.json"
+    schema_file_name = "qcodesrc_schema.json"
 
     # get abs path of packge config file
     default_file_name = pkgr.resource_filename(__name__, config_file_name)
