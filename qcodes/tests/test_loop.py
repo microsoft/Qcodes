@@ -298,6 +298,42 @@ class TestLoop(TestCase):
         self.assertEqual(data.p2.tolist(), [[[3, 3], [4, 4]]] * 2)
         self.assertEqual(data.p3.tolist(), [[[5, 6]] * 2] * 2)
 
+    def test_nesting_2(self):
+        loop = Loop(self.p1[1:3:1]).each(
+            self.p1,
+            Loop(self.p2[3:5:1]).each(
+                self.p1,
+                self.p2,
+                Loop(self.p3[5:7:1]).each(
+                    self.p1,
+                    self.p2,
+                    self.p3)))
+
+        data = loop.run_temp()
+        keys = set(data.arrays.keys())
+
+        self.assertEqual(data.p1_set.tolist(), [1, 2])
+        self.assertEqual(data.p2_set.tolist(), [[3, 4]] * 2)
+        self.assertEqual(data.p3_set.tolist(), [[[5, 6]] * 2] * 2)
+
+        self.assertEqual(data.p1_0.tolist(), [1, 2])
+
+        # TODO(alexcjohnson): these names are extra confusing...
+        # perhaps we should say something like always include *all* indices
+        # unless you can get rid of them all (ie that param only shows up
+        # once, but separately for set and measured)
+        self.assertEqual(data.p1_1_0.tolist(), [[1, 1], [2, 2]])
+        self.assertEqual(data.p2_1.tolist(), [[3, 4]] * 2)
+
+        self.assertEqual(data.p1_1_2_0.tolist(), [[[1, 1]] * 2, [[2, 2]] * 2])
+        self.assertEqual(data.p2_2_1.tolist(), [[[3, 3], [4, 4]]] * 2)
+        self.assertEqual(data.p3.tolist(), [[[5, 6]] * 2] * 2)
+
+        # make sure rerunning this doesn't cause any problems
+        data2 = loop.run_temp()
+        keys2 = set(data.arrays.keys())
+        self.assertEqual(keys, keys2)
+
     def test_repr(self):
         loop2 = Loop(self.p2[3:5:1], 0.001).each(self.p2)
         loop = Loop(self.p1[1:3:1], 0.001).each(self.p3,

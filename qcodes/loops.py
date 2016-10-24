@@ -397,7 +397,6 @@ class ActiveLoop(Metadatable):
         self.sweep_values = sweep_values
         self.delay = delay
         self.actions = list(actions)
-        self._new_actions = []
         self.progress_interval = progress_interval
         self.then_actions = then_actions
         self.station = station
@@ -484,12 +483,12 @@ class ActiveLoop(Metadatable):
 
         data_arrays = [loop_array]
         # hack set_data into actions
-        self._new_actions.extend(self.actions)
+        new_actions = self.actions[:]
         if hasattr(self.sweep_values, "parameters"):
             for parameter in self.sweep_values.parameters:
-                self._new_actions.append(parameter)
+                new_actions.append(parameter)
 
-        for i, action in enumerate(self._new_actions):
+        for i, action in enumerate(new_actions):
             if hasattr(action, 'containers'):
                 action_arrays = action.containers()
 
