@@ -27,8 +27,8 @@ class TestMeasure(TestCase):
         self.assertFalse(meta['use_data_manager'])
         self.assertFalse(meta['use_threads'])
 
-        ts_start = datetime.strptime('%Y-%m-%d %H:%M:%S', meta['ts_start'])
-        ts_end = datetime.strptime('%Y-%m-%d %H:%M:%S', meta['ts_end'])
+        ts_start = datetime.strptime(meta['ts_start'], '%Y-%m-%d %H:%M:%S')
+        ts_end = datetime.strptime(meta['ts_end'], '%Y-%m-%d %H:%M:%S')
         self.assertGreaterEqual(ts_end, ts_start)
 
     def test_simple_array(self):
