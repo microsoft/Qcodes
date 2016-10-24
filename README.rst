@@ -9,7 +9,7 @@ be used anywhere a system with many degrees of freedom is controllable
 by computer.
 
 To get  a feeling of qcodes browse the Jupyter notebooks in `docs/examples
-<docs/examples>`__ .
+<docs/examples/Tutorial.ipynb>`__ .
 
 QCoDeS is compatible with Python 3.5+. It is primarily intended for use
 from Jupyter notebooks, but can be used from traditional terminal-based
@@ -17,7 +17,7 @@ shells and in stand-alone scripts as well. Although some feature at the
 moment are b0rken outside the notebook.
 
 Status
-~~~~~~
+------
 QCoDeS is still in development, more documentation and features will be coming!
 The team behind this project just expanded.  There are still rough edges, and
 gray areas but QCoDeS has been running without major issue in two long running
@@ -29,16 +29,17 @@ The most important features in the roadmap are:
   - a more flexible and faster data storage solution
 
 Install
--------
+=======
 
 PyPi
-~~~~
-..code:: bash 
+----
+.. code:: bash
+
     pip install qcodes
 
 
 Developer-pyenv
-~~~~~~~~~~~~~~~
+---------------
 
 Core developers use virtualenv and pyenv to make sure all the system are the same,
 this rules out issues and the usual "it works on my machine". Install pyenv
@@ -47,6 +48,7 @@ on your OS `see this https://github.com/yyuu/pyenv`__ .
 $QCODES_INSTALL_DIR is the folder where you want to have the source code.
 
 .. code:: bash
+
     git clone https://github.com/QCoDeS/Qcodes.git $QCODES_INSTALL_DIR
     cd $QCODES_INSTALL_DIR
     pyenv install 3.5.2
@@ -55,15 +57,12 @@ $QCODES_INSTALL_DIR is the folder where you want to have the source code.
     pip install -e .
     python qcodes/test.py -f
 
-If the tests pass you are ready to hack! Note that sometimes the test
-suite because there is a bug somewhere in the mulitprocessing
-architecture.
-
+If the tests pass you are ready to hack!
 This is the reference setup one needs to have to contribute, otherwise
 too many non-reproducible environments will show up.
 
 Plotting Requirements
-^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
 
 Because these can sometimes be tricky to install (and not everyone will
 want all of them), the plotting packages are not set as required
@@ -76,7 +75,8 @@ install them with ``pip``:
 If all of this sounds too complicated, use anaconda!
 
 Anaconda
-~~~~~~~~
+--------
+
 One can also use anaconda:
 
 -  First clone the repo
@@ -107,24 +107,30 @@ and after if you want qtplot
 -  Then type ``pip install -e .``
 
 Updating QCoDeS
-~~~~~~~~~~~~~~~
+===============
 
-PyPi
-~~~~
-..code:: bash 
+from PyPi
+---------
+
+.. code:: bash
+
     pip install  --upgrade qcodes
 
 
 Developer-pyenv/anaconda
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
-.. code:: bash cd $QCODES_INSTALL_DIR  && git pull
+.. code:: bash
+
+   cd $QCODES_INSTALL_DIR  && git pull
+
 
 or if using GUIs, just pull the repo!
 
 
 Docs
-----
+====
+
 Read it `here <http://qcodes.github.io/Qcodes>`__ .
 Documentation is updated and deployed on every successful build in master.
 
@@ -142,7 +148,7 @@ This generate a webpage, index.html, in ``docs/_build/html`` with the
 rendered html. 
 
 Contributing
-------------
+============
 
 See `Contributing <CONTRIBUTING.rst>`__ for information about bug/issue
 reports, contributing code, style, and testing
@@ -150,7 +156,7 @@ reports, contributing code, style, and testing
 
 
 License
--------
+=======
 
 See `License <LICENSE.md>`__.
 
