@@ -153,9 +153,11 @@ class Parameter(Metadatable, DeferredOperations):
                  units=None,
                  shape=None, shapes=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
-                 vals=None, docstring=None, snapshot_get=True, **kwargs):
+                 vals=None, docstring=None, snapshot_get=True,
+                 snapshot_value=True, **kwargs):
         super().__init__(**kwargs)
         self._snapshot_get = snapshot_get
+        self._snapshot_value = snapshot_value
 
         self.has_get = hasattr(self, 'get')
         self.has_set = hasattr(self, 'set')
@@ -309,11 +311,15 @@ class Parameter(Metadatable, DeferredOperations):
             dict: base snapshot
         """
 
-        if self.has_get and self._snapshot_get and update:
+        if self.has_get and self._snapshot_get and self._snapshot_value and \
+                update:
             self.get()
 
         state = self._latest()
         state['__class__'] = full_class(self)
+
+        if not self._snapshot_value:
+            state.pop('value')
 
         if isinstance(state['ts'], datetime):
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
