@@ -614,13 +614,13 @@ class AlazarTech_ATS(Instrument):
         print("completed AlazarPostAsyncBuffer")
 
         # -----start capture here-----
-        acquisition_controller.pre_start_capture(self)
+        acquisition_controller.pre_start_capture()
         start = time.clock() # Keep track of when acquisition started
         # call the startcapture method
         self._call_dll('AlazarStartCapture', self._handle)
         print("Capturing %d buffers." % buffers_per_acquisition)
 
-        acquisition_controller.pre_acquire(self)
+        acquisition_controller.pre_acquire()
 
         # buffer handling from acquisition
         buffers_completed = 0
