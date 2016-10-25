@@ -5,7 +5,7 @@ Hi, thanks for your interest in the project! We welcome pull requests
 from developers of all skill levels.
 
 Alex Johnson (alexcjohnson) & and Giulio Ungaretti
-(giulio.ungaretti@gmail.com) are the creators and current maintainers of
+(unga@nbi.ku.dk) are the creators and current maintainers of
 Qcodes (aka core developers), along with a group of talented and smart
 volunteers. Please don't hesitate to reach out if you have any
 questions, or just need a little help getting started.

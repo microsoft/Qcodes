@@ -11,6 +11,9 @@ by computer.
 To get  a feeling of qcodes browse the Jupyter notebooks in `docs/examples
 <https://github.com/QCoDeS/Qcodes/tree/master/docs/examples>`__ .
 
+If you <3 and want to use it straight after, jump to `here <http://qcodes.github.io/Qcodes>`__  !
+
+
 QCoDeS is compatible with Python 3.5+. It is primarily intended for use
 from Jupyter notebooks, but can be used from traditional terminal-based
 shells and in stand-alone scripts as well. Although some feature at the
@@ -31,12 +34,17 @@ The most important features in the roadmap are:
 Install
 =======
 
+This is mostly for tech-y scientist, in general refer to `here <http://qcodes.github.io/Qcodes/start/index.html#installation>`__ 
+for installation.
+
 PyPi
 ----
 .. code:: bash
 
     pip install qcodes
-    
+
+And see if you miss any dependencies.
+
 Plotting Requirements
 ^^^^^^^^^^^^^^^^^^^^^^
 
