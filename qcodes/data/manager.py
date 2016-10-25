@@ -43,9 +43,9 @@ class DataManager(ServerManager):
     Written using multiprocessing Queue's, but should be easily
     extensible to other messaging systems
     """
-    def __init__(self):
+    def __init__(self, server_name='DataServer'):
         type(self).default = self
-        super().__init__(name='DataServer', server_class=DataServer)
+        super().__init__(name=server_name, server_class=DataServer)
 
     def restart(self, force=False):
         """
