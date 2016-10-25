@@ -64,8 +64,10 @@ setup(name='qcodes',
           'ipywidgets>=4.1',
           'h5py>=2.6'
       ],
+
       test_suite='qcodes.tests',
       extras_require=extras_require,
+
       # I think the only part of qcodes that would care about zip_safe
       # is utils.helpers.reload_code; users of a zip-installed package
       # shouldn't be needing to do this anyway, but we should test first.

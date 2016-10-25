@@ -18,21 +18,29 @@ moment are b0rken outside the notebook.
 
 Status
 ~~~~~~
+QCoDeS is still in development, more documentation and features will be coming!
+The team behind this project just expanded.  There are still rough edges, and
+gray areas but QCoDeS has been running without major issue in two long running
+experiments.
 
+The most important features in the roadmap are:
 
+  - a robust architecture that uses the full potential of your harwdare
+  - a more flexible and faster data storage solution
 
 Install
 -------
 
 PyPi
 ~~~~
-..code:: bash pip install qcodes
+..code:: bash 
+    pip install qcodes
 
 
 Developer-pyenv
 ~~~~~~~~~~~~~~~
 
-We use virtualenv and pyenv to make sure all the system are the same,
+Core developers use virtualenv and pyenv to make sure all the system are the same,
 this rules out issues and the usual "it works on my machine". Install pyenv
 on your OS `see this https://github.com/yyuu/pyenv`__ .
 
@@ -103,7 +111,8 @@ Updating QCoDeS
 
 PyPi
 ~~~~
-..code:: bash pip install  --upgrade qcodes
+..code:: bash 
+    pip install  --upgrade qcodes
 
 
 Developer-pyenv/anaconda
@@ -112,8 +121,6 @@ Developer-pyenv/anaconda
 .. code:: bash cd $QCODES_INSTALL_DIR  && git pull
 
 or if using GUIs, just pull the repo!
-
-
 
 
 Docs
