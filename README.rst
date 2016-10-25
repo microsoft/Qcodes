@@ -36,7 +36,17 @@ PyPi
 .. code:: bash
 
     pip install qcodes
+    
+Plotting Requirements
+^^^^^^^^^^^^^^^^^^^^^^
 
+Because these can sometimes be tricky to install (and not everyone will
+want all of them), the plotting packages are not set as required
+dependencies, so setup.py will not automatically install them. You can
+install them with ``pip``:
+
+-  For ``qcodes.MatPlot``: matplotlib version 1.5 or higher
+-  For ``qcodes.QtPlot``: pyqtgraph version 0.9.10 or higher
 
 Developer-pyenv
 ---------------
@@ -60,17 +70,6 @@ $QCODES_INSTALL_DIR is the folder where you want to have the source code.
 If the tests pass you are ready to hack!
 This is the reference setup one needs to have to contribute, otherwise
 too many non-reproducible environments will show up.
-
-Plotting Requirements
-^^^^^^^^^^^^^^^^^^^^^^
-
-Because these can sometimes be tricky to install (and not everyone will
-want all of them), the plotting packages are not set as required
-dependencies, so setup.py will not automatically install them. You can
-install them with ``pip``:
-
--  For ``qcodes.MatPlot``: matplotlib version 1.5 or higher
--  For ``qcodes.QtPlot``: pyqtgraph version 0.9.10 or higher
 
 If all of this sounds too complicated, use anaconda!
 
