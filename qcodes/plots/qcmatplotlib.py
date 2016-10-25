@@ -13,6 +13,8 @@ from .base import BasePlot
 
 
 class MatPlot(BasePlot):
+    plot_1D_kwargs = {}
+    plot_2D_kwargs = {}
     """
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with MatPlot.add()
@@ -168,23 +170,98 @@ class MatPlot(BasePlot):
         # didn't want to strip it out of kwargs earlier because it should stay
         # part of trace['config'].
         args = [arg for arg in [x, y, fmt] if arg is not None]
-        line, = ax.plot(*args, **kwargs)
+
+        full_kwargs = {**self.plot_1D_kwargs, **kwargs}
+        line, = ax.plot(*args, **full_kwargs)
         return line
 
-    def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1, **kwargs):
+    def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1,
+                         nticks=None, use_offset=False, **kwargs):
+        """
+        Draws a 2D color plot
+
+        Args:
+            ax (Axis): Matplotlib axis object to plot in
+            z: 2D array of data values
+            x (Array, Optional): Array of values along x-axis. Dimensions should
+                be either same as z, or equal to length along x-axis.
+            y (Array, Optional): Array of values along y-axis. Dimensions should
+                be either same as z, or equal to length along y-axis.
+            subplot (int, Optional): Deprecated, see alexj notes below
+            nticks (int, Optional): preferred number of ticks along axes
+            use_offset (bool, Optional): Whether or not axes can have an offset
+            **kwargs: Optional list of kwargs to be passed on to pcolormesh.
+                These will overwrite any of the default kwargs in plot_kwargs.
+        """
+
         # NOTE(alexj)stripping out subplot because which subplot we're in is already
         # described by ax, and it's not a kwarg to matplotlib's ax.plot. But I
         # didn't want to strip it out of kwargs earlier because it should stay
         # part of trace['config'].
-        args = [masked_invalid(arg) for arg in [x, y, z]
-                if arg is not None]
+        args_masked = [masked_invalid(arg) for arg in [x, y, z]
+                      if arg is not None]
 
-        for arg in args:
-            if np.all(getmask(arg)):
-                # if any entire array is masked, don't draw at all
-                # there's nothing to draw, and anyway it throws a warning
-                return False
-        pc = ax.pcolormesh(*args, **kwargs)
+        if np.any([np.all(getmask(arg)) for arg in args_masked]):
+            # if the z array is masked, don't draw at all
+            # there's nothing to draw, and anyway it throws a warning
+            # pcolormesh does not accept masked x and y axes, so we do not need
+            # to check for them.
+            return False
+
+        if x is not None and y is not None:
+            # If x and y are provided, modify the arrays such that they
+            # correspond to grid corners instead of grid centers.
+            # This is to ensure that pcolormesh centers correctly and
+            # does not ignore edge points.
+            args = []
+            for k, arr in enumerate(args_masked[:-1]):
+                # If a two-dimensional array is provided, only consider the
+                # first row/column, depending on the axis
+                if arr.ndim > 1:
+                    arr = arr[0] if k == 0 else arr[:,0]
+
+                if np.ma.is_masked(arr[1]):
+                    # Only the first element is not nan, in this case pad with
+                    # a value, and separate their values by 1
+                    arr_pad = np.pad(arr, (1, 0), mode='symmetric')
+                    arr_pad[:2] += [-0.5, 0.5]
+                else:
+                    # Add padding on both sides equal to endpoints
+                    arr_pad = np.pad(arr, (1, 1), mode='symmetric')
+                    # Add differences to edgepoints (may be nan)
+                    arr_pad[0] += arr_pad[1] - arr_pad[2]
+                    arr_pad[-1] += arr_pad[-2] - arr_pad[-3]
+
+                    diff = np.ma.diff(arr_pad) / 2
+                    # Insert value at beginning and end of diff to ensure same
+                    # length
+                    diff = np.insert(diff, 0, diff[0])
+
+                    arr_pad += diff
+                    # Ignore final value
+                    arr_pad = arr_pad[:-1]
+                args.append(masked_invalid(arr_pad))
+            args.append(args_masked[-1])
+        else:
+            # Only the masked value of z is used as a mask
+            args = args_masked[-1:]
+
+        # Include default plotting kwargs, which can be overwritten by given
+        # kwargs
+        full_kwargs = {**self.plot_2D_kwargs, **kwargs}
+        pc = ax.pcolormesh(*args, **full_kwargs)
+
+        # Set x and y limits if arrays are provided
+        if x is not None and y is not None:
+            ax.set_xlim(np.nanmin(args[0]), np.nanmax(args[0]))
+            ax.set_ylim(np.nanmin(args[1]), np.nanmax(args[1]))
+
+        # Specify preferred number of ticks with labels
+        if nticks:
+            ax.locator_params(nbins=nticks)
+
+        # Specify if axes can have offset or not
+        ax.ticklabel_format(useOffset=use_offset)
 
         if getattr(ax, 'qcodes_colorbar', None):
             # update_normal doesn't seem to work...
@@ -202,5 +279,10 @@ class MatPlot(BasePlot):
             # and just give it a dummy mappable to start, so we could
             # put this where it belongs.
             ax.qcodes_colorbar.set_label(self.get_label(z))
+
+        # Scale colors if z has elements
+        cmin = np.nanmin(args_masked[-1])
+        cmax = np.nanmax(args_masked[-1])
+        ax.qcodes_colorbar.set_clim(cmin, cmax)
 
         return pc
