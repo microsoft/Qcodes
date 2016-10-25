@@ -2,6 +2,7 @@ import ctypes
 import logging
 import numpy as np
 import os
+import inspect
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
@@ -231,6 +232,10 @@ class AlazarTech_ATS(Instrument):
 
         self.buffer_list = []
 
+        # Some ATS models do not support a bwlimit. This flag defines if the
+        # ATS supports a bwlimit or not. True by default.
+        self._bwlimit_support = True
+
     def get_idn(self):
         """
         This methods gets the most relevant information of this instrument
@@ -386,13 +391,14 @@ class AlazarTech_ATS(Instrument):
 
         for i in range(1, self.channels + 1):
             self._call_dll('AlazarInputControl',
-                           self._handle, i,
+                           self._handle, 2**(i-1), # Channel in binary format
                            self.parameters['coupling' + str(i)],
                            self.parameters['channel_range' + str(i)],
                            self.parameters['impedance' + str(i)])
-            self._call_dll('AlazarSetBWLimit',
-                           self._handle, i,
-                           self.parameters['bwlimit' + str(i)])
+            if self._bwlimit_support:
+                self._call_dll('AlazarSetBWLimit',
+                               self._handle, i,
+                               self.parameters['bwlimit' + str(i)])
 
         self._call_dll('AlazarSetTriggerOperation',
                        self._handle, self.trigger_operation,
@@ -483,8 +489,9 @@ class AlazarTech_ATS(Instrument):
 
         # get channel info
         max_s, bps = self._get_channel_info(self._handle)
-        if bps != 8:
-            raise Exception('Only 8 bits per sample supported at this moment')
+        # if bps != 8:
+        #     raise Exception('Only 8 bits per sample supported at this moment.'+
+        #                     'Number of bits: {}'.format(bps))
 
         # Set record size for NPT mode
         if mode == 'NPT':
@@ -495,10 +502,11 @@ class AlazarTech_ATS(Instrument):
                            post_trigger_size)
 
         # set acquisition parameters here for NPT, TS mode
-        if self.channel_selection._get_byte() == 3:
-            number_of_channels = 2
-        else:
-            number_of_channels = 1
+        # if self.channel_selection._get_byte() == 3:
+        #     number_of_channels = 2
+        # else:
+        #     number_of_channels = 1
+        number_of_channels = len(self.channel_selection._latest_value)
         samples_per_buffer = 0
         buffers_per_acquisition = self.buffers_per_acquisition._get_byte()
         samples_per_record = self.samples_per_record._get_byte()
@@ -640,8 +648,12 @@ class AlazarTech_ATS(Instrument):
 
     def _set_list_if_present(self, param_base, value):
         if value is not None:
+            # Create list of identical values if a single value is given
+            if not isinstance(value, list):
+                value = [value] * self.channels
             for i, v in enumerate(value):
-                self.parameters[param_base + str(i + 1)]._set(v)
+                if param_base + str(i+1) in self.parameters.keys():
+                    self.parameters[param_base + str(i + 1)]._set(v)
 
     def _call_dll(self, func_name, *args):
         """
@@ -846,18 +858,25 @@ class Buffer:
     """
     def __init__(self, bits_per_sample, samples_per_buffer,
                  number_of_channels):
-        if bits_per_sample != 8:
-            raise Exception("Buffer: only 8 bit per sample supported")
+        print('number of channels: {}'.format(number_of_channels))
+        # if bits_per_sample != 8:
+        #     raise Exception("Buffer: only 8 bit per sample supported")
         if os.name != 'nt':
             raise Exception("Buffer: only Windows supported at this moment")
         self._allocated = True
+
+        bytes_per_sample = int((bits_per_sample + 7)//8)
+        np_sample_type = {1: np.uint8,
+                          2: np.uint16}[bytes_per_sample]
 
         # try to allocate memory
         mem_commit = 0x1000
         page_readwrite = 0x4
 
-        self.size_bytes = samples_per_buffer * number_of_channels
-
+        self.size_bytes = bytes_per_sample * samples_per_buffer * \
+                          number_of_channels
+        # self.size_bytes = 3200
+        print('size_bytes: {}'.format(self.size_bytes))
         # for documentation please see:
         # https://msdn.microsoft.com/en-us/library/windows/desktop/aa366887(v=vs.85).aspx
         ctypes.windll.kernel32.VirtualAlloc.argtypes = [
@@ -872,7 +891,7 @@ class Buffer:
 
         ctypes_array = (ctypes.c_uint8 *
                         self.size_bytes).from_address(self.addr)
-        self.buffer = np.frombuffer(ctypes_array, dtype=np.uint8)
+        self.buffer = np.frombuffer(ctypes_array, dtype=np_sample_type)
         pointer, read_only_flag = self.buffer.__array_interface__['data']
 
     def free_mem(self):
@@ -944,6 +963,43 @@ class AcquisitionController(Instrument):
         :return: reference to the Alazar instrument
         """
         return self._alazar
+
+    def get_acquisitionkwarg(self, kwarg):
+        """
+        Obtain an acquisitionkwarg for the ATS.
+        It first checks if the kwarg is an actual ATS acquisitionkwarg,
+        and raises an error otherwise.
+        It then checks if the kwarg is in ATS_controller._acquisitionkwargs.
+        If not, it will retrieve the ATS latest parameter value
+
+        Args:
+            kwarg: acquisitionkwarg to look for
+
+        Returns:
+            Value of the acquisitionkwarg
+        """
+        assert kwarg in self._acquisitionkwargs_names, \
+            "Kwarg {} is not a valid ATS acquisitionkwarg".format(kwarg)
+        if kwarg in self._acquisition_kwargs.keys():
+            return self._acquisition_kwargs[kwarg]
+        else:
+            # Must get latest value, since it will not be updated in ATS
+            return self.alazar.parameters[kwarg].get_latest()
+
+    def update_acquisitionkwargs(self, **kwargs):
+        """
+        Update the ATS_controller acquisitionkwargs, but only if all kwargs are
+        actually valid kwargs in the function ATS.acquire()
+        Args:
+            kwargs: Updated ATS acquisition kwargs
+        Returns:
+            None
+        """
+        kwargs_valid = all(map(
+            lambda kwarg: kwarg in self._acquisitionkwargs_names,
+            kwargs.keys()))
+        assert kwargs_valid, 'Not all kwargs are valid ATS acquisitionkwargs'
+        self._acquisitionkwargs.update(**kwargs)
 
     def pre_start_capture(self):
         """
