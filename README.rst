@@ -9,7 +9,7 @@ be used anywhere a system with many degrees of freedom is controllable
 by computer.
 
 To get  a feeling of qcodes browse the Jupyter notebooks in `docs/examples
-<docs/examples/Tutorial.ipynb>`__ .
+<https://github.com/QCoDeS/Qcodes/tree/master/docs/examples>`__ .
 
 QCoDeS is compatible with Python 3.5+. It is primarily intended for use
 from Jupyter notebooks, but can be used from traditional terminal-based
@@ -149,7 +149,7 @@ rendered html.
 Contributing
 ============
 
-See `Contributing <CONTRIBUTING.rst>`__ for information about bug/issue
+See `Contributing <https://github.com/QCoDeS/Qcodes/tree/master/CONTRIBUTING.rst>`__ for information about bug/issue
 reports, contributing code, style, and testing
 
 
@@ -157,7 +157,7 @@ reports, contributing code, style, and testing
 License
 =======
 
-See `License <LICENSE.md>`__.
+See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.md>`__.
 
 .. |Build Status| image:: https://travis-ci.com/QCoDeS/Qcodes.svg?token=H7MjHi74teZgv8JHTYhx&branch=master
    :target: https://travis-c
