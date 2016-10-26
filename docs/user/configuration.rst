@@ -48,6 +48,7 @@ Values can be retrieved by dotted keys:
 True
 
 Values can be described:
+
 >>> qcodes.defaults.describe("gui")
 "controls gui of qcodes.\n Current value: {'notebook': True, 'plotlib': 'matplotlib'}. Type: object. Default: Not defined."
 
@@ -58,22 +59,28 @@ Updating a value
 qcodes.defaults lets you insert a new value which gets stuffed in the "user" part of the config
 
 >>> qcodes.defaults.add("foo", "bar")
+
 >>> qcodes.defaults["user.foo"]
 'bar'
 
 And also pass a type validator  and a description:
+
 >>> qcodes.defaults.add("foo", "bar", "string", "finds majorana")
+
 >>> qcodes.defaults.describe("user.foo")
-'finds majorana.\n Current value: bar. Type: string. Default: Not defined.'
+'finds majorana.
+Current value: bar. Type: string. Default: Not defined.'
 
 Saving
 ~~~~~~
 
 If you made modifications you may want also to save them.
 F.ex. this
+
 >>> qcodes.defaults.save_to_home()
+
 Will do what you think, i.e. saving to your home directory.
-There is the possibility to save to env varialbe, and current working directory.
+There is the possibility to save to env variable, and current working directory.
 
 More
 ~~~~
