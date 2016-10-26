@@ -33,8 +33,8 @@ class InstrumentMetaclass(type):
         if server_name is None:
             instrument = super().__call__(*args, **kwargs)
         else:
-            warnings.warn('Multiprocessing is in beta, use at own risk',
-                          UserWarning)
+            # warnings.warn('Multiprocessing is in beta, use at own risk',
+            #               UserWarning)
             instrument = RemoteInstrument(*args, instrument_class=cls,
                                           server_name=server_name, **kwargs)
 
