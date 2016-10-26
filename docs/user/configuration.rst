@@ -1,5 +1,6 @@
-Configuration
-=============
+Configuring QCoDeS
+==================
+
 
 QCoDeS uses a JSON based configuration system.
 The configuration is modeled after the module structure plus some higher level switches.
@@ -24,7 +25,7 @@ Default config
 --------------
 The following  table explains the default configuration of qcodes.
 
-.. jsonschema:: qcodes/config/qcodesrc.json
+.. jsonschema:: ../qcodes/config/qcodesrc_schema.json
 
 
 Using the config
