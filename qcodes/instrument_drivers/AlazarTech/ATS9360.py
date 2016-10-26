@@ -163,7 +163,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            label='Samples per Record',
                            unit=None,
                            value=1024,
-                           vals=Multiples(divisor=64, min_value=256))
+                           vals=validators.Multiples(divisor=64, min_value=256))
         # TODO (M) figure out if this also has to be a multiple of something,
         # I could not find this in the documentation but somehow I have the
         # feeling it still should be a multiple of something
