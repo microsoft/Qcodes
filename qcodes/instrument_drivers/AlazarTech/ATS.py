@@ -467,7 +467,7 @@ class AlazarTech_ATS(Instrument):
         self._set_if_present('samples_per_record', samples_per_record)
         self._set_if_present('records_per_buffer', records_per_buffer)
         self._set_if_present('buffers_per_acquisition',
-                             buffers_per_acquisition),
+                             buffers_per_acquisition)
         self._set_if_present('channel_selection', channel_selection)
         self._set_if_present('transfer_offset', transfer_offset)
         self._set_if_present('external_startcapture', external_startcapture)
@@ -500,6 +500,10 @@ class AlazarTech_ATS(Instrument):
                            post_trigger_size)
 
         # set acquisition parameters here for NPT, TS mode
+        if self.channel_selection._get_byte() == 3:
+            number_of_channels = 2
+        else:
+            number_of_channels = 1
         samples_per_buffer = 0
         buffers_per_acquisition = self.buffers_per_acquisition._get_byte()
         samples_per_record = self.samples_per_record._get_byte()
@@ -513,7 +517,8 @@ class AlazarTech_ATS(Instrument):
 
         if mode == 'NPT':
             records_per_buffer = self.records_per_buffer._get_byte()
-            records_per_acquisition = records_per_buffer * buffers_per_acquisition
+            records_per_acquisition = (
+                records_per_buffer * buffers_per_acquisition)
             samples_per_buffer = samples_per_record * records_per_buffer
 
             self._call_dll('AlazarBeforeAsyncRead',
@@ -555,8 +560,7 @@ class AlazarTech_ATS(Instrument):
         self.get_processed_data._set_updated()
 
         # bytes per sample
-        handle = self._handle
-        max_s, bps = self._get_channel_info(handle)
+        max_s, bps = self._get_channel_info(self._handle)
         bytes_per_sample = (bps + 7) // 8
         print("bytes per sample "+str(bytes_per_sample))
 
@@ -614,13 +618,13 @@ class AlazarTech_ATS(Instrument):
         print("completed AlazarPostAsyncBuffer")
 
         # -----start capture here-----
-        acquisition_controller.pre_start_capture(self)
+        acquisition_controller.pre_start_capture()
         start = time.clock() # Keep track of when acquisition started
         # call the startcapture method
         self._call_dll('AlazarStartCapture', self._handle)
         print("Capturing %d buffers." % buffers_per_acquisition)
 
-        acquisition_controller.pre_acquire(self)
+        acquisition_controller.pre_acquire()
 
         # buffer handling from acquisition
         buffers_completed = 0
