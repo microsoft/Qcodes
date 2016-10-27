@@ -27,7 +27,7 @@ class ATS9440(AlazarTech_ATS):
                            parameter_class=AlazarParameter,
                            label='Sample Rate',
                            unit='S/s',
-                           value=125000000,
+                           value=100000,
                            byte_to_value_dict={
                                0x1: 1000, 0x2: 2000, 0x4: 5000, 0x8: 10000,
                                0xA: 20000, 0xC: 50000, 0xE: 100000,

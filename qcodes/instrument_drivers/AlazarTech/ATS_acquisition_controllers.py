@@ -3,7 +3,6 @@ import math
 import numpy as np
 from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils import validators as vals
-import inspect
 
 
 class Basic_AcquisitionController(AcquisitionController):
@@ -11,83 +10,90 @@ class Basic_AcquisitionController(AcquisitionController):
     returns unprocessed data averaged by record with 2 channels
     """
     def __init__(self, name, alazar_name, **kwargs):
+        super().__init__(name, alazar_name, **kwargs)
         self.samples_per_record = None
         self.records_per_buffer = None
         self.buffers_per_acquisition = None
         self.buffer = None
-        super().__init__(name, alazar_name, **kwargs)
-        self.alazar = self._get_alazar()
+        self.buffer_idx = 0
 
-        self.acquisitionkwargs = {}
-        # Obtain a list of all valid ATS acquisition kwargs
-        self._acquisitionkwargs_names = inspect.signature(self.alazar.acquire).parameters.keys()
+        self._acquisition_settings = {}
 
         self.add_parameter(name='average_mode',
                            parameter_class=ManualParameter,
                            initial_value='trace',
                            vals=vals.Enum('none', 'trace', 'point'))
-        # Names and shapes must have initial value, even through they will be overwritten in set_acquisitionkwargs.
-        # If we don't do this, the remoteInstrument will not recognize that it returns multiple values.
+        # Names and shapes must have initial value, even through they will be
+        # overwritten in set_acquisition_settings. If we don't do this, the
+        # remoteInstrument will not recognize that it returns multiple values.
         self.add_parameter(name="acquisition",
                            names=['channel_signal'],
                            get_cmd=self.do_acquisition,
                            shapes=((),),
                            snapshot_value=False)
 
-    def get_acquisition_kwarg(self, kwarg):
+    def get_acquisition_setting(self, setting):
         """
-        Obtain an acquisition kwarg for the ATS.
-        It first checks if the kwarg is an actual ATS acquisition kwarg, and raises an error otherwise.
-        It then checks if the kwarg is in ATS_controller._acquisitionkwargs.
+        Obtain an acquisition setting for the ATS.
+        It checks if the setting is in ATS_controller._acquisition_settings
         If not, it will retrieve the ATS latest parameter value
 
         Args:
-            kwarg: acquisition kwarg to look for
+            setting: acquisition setting to look for
 
         Returns:
-            Value of the acquisition kwarg
+            Value of the acquisition setting
         """
-        assert kwarg in self._acquisitionkwargs_names, \
-            "Kwarg {} is not a valid ATS acquisition kwarg".format(kwarg)
-        if kwarg in self.acquisitionkwargs.keys():
-            return self.acquisitionkwargs[kwarg]
+        if setting in self._acquisition_settings.keys():
+            return self._acquisition_settings[setting]
         else:
             # Must get latest value, since it may not be updated in ATS
-            return self.alazar.parameters[kwarg].get_latest()
+            return self.alazar.parameters[setting].get_latest()
 
-    def update_acquisitionkwargs(self, **kwargs):
-        self.acquisitionkwargs.update(**kwargs)
+    def update_acquisition_settings(self, **kwargs):
+        self._acquisition_settings.update(**kwargs)
 
+    def setup(self):
+        """
+        Setup the ATS controller by updating most current ATS values and setting
+        the acquisition parameter metadata
+
+        Returns:
+            None
+        """
         # Update acquisition parameter values. These depend on the average mode
-        channel_selection = self.get_acquisition_kwarg('channel_selection')
-        samples_per_record = self.get_acquisition_kwarg('samples_per_record')
-        records_per_buffer = self.get_acquisition_kwarg('records_per_buffer')
-        buffers_per_acquisition = self.get_acquisition_kwarg('buffers_per_acquisition')
-        self.acquisition.names = tuple(['Channel_{}_signal'.format(ch) for ch in
-                                        self.get_acquisition_kwarg('channel_selection')])
+        for attr in ['channel_selection', 'samples_per_record',
+                     'records_per_buffer', 'buffers_per_acquisition']:
+            setattr(self, attr, self.get_acquisition_setting(attr))
+        self.number_of_channels = len(self.channel_selection)
+        self.records_per_acquisition = self.buffers_per_acquisition * \
+                                       self.records_per_buffer
 
+        # Set acquisition parameter metadata
+        self.acquisition.names = tuple(['Channel_{}_signal'.format(ch) for ch in
+                                        self.channel_selection])
         self.acquisition.labels = self.acquisition.names
-        self.acquisition.units = ['V'*len(channel_selection)]
+        self.acquisition.units = ['V' * self.number_of_channels]
 
         if self.average_mode() == 'point':
-            self.acquisition.shapes = tuple([()]*len(channel_selection))
+            self.acquisition.shapes = tuple([()] * self.number_of_channels)
         elif self.average_mode() == 'trace':
-            shape = (samples_per_record,)
-            self.acquisition.shapes = tuple([shape] * len(channel_selection))
+            shape = (self.samples_per_record,)
+            self.acquisition.shapes = tuple([shape] * self.number_of_channels)
         else:
-            shape = (records_per_buffer * buffers_per_acquisition, samples_per_record)
-            self.acquisition.shapes = tuple([shape] * len(channel_selection))
+            shape = (self.records_per_buffer * self.buffers_per_acquisition,
+                     self.samples_per_record)
+            self.acquisition.shapes = tuple([shape] * self.number_of_channels)
 
     def pre_start_capture(self):
-        self.samples_per_record = self.alazar.samples_per_record()
-        self.records_per_buffer = self.alazar.records_per_buffer()
-        self.buffers_per_acquisition = self.alazar.buffers_per_acquisition()
-        self.number_of_channels = len(self.alazar.channel_selection())
+        """
+        Initializes buffers before capturing
+        """
         self.buffer_idx = 0
         if self.average_mode() in ['point', 'trace']:
             self.buffer = np.zeros(self.samples_per_record *
-                                  self.records_per_buffer *
-                                  self.number_of_channels)
+                                   self.records_per_buffer *
+                                   self.number_of_channels)
         else:
             self.buffer = np.zeros((self.buffers_per_acquisition,
                                     self.samples_per_record *
@@ -104,15 +110,14 @@ class Basic_AcquisitionController(AcquisitionController):
         return records
 
     def handle_buffer(self, data):
-        print('ADDING BUFFER')
         if self.buffer_idx < self.buffers_per_acquisition:
             if self.average_mode() in ['point', 'trace']:
                 self.buffer += data
             else:
-                    self.buffer[self.buffer_idx] = data
+                self.buffer[self.buffer_idx] = data
         else:
+            print('*'*20+'\nIgnoring extra ATS buffer')
             pass
-            # print('*'*20+'\nIgnoring extra ATS buffer')
         self.buffer_idx += 1
 
     def post_acquire(self):
@@ -120,31 +125,37 @@ class Basic_AcquisitionController(AcquisitionController):
         # for ATS9360 samples are arranged in the buffer as follows:
         # S0A, S0B, ..., S1A, S1B, ...
         # with SXY the sample number X of channel Y.
-        records_per_acquisition = self.buffers_per_acquisition * self.records_per_buffer
-        channel_offset = lambda channel: channel * self.samples_per_record * self.records_per_buffer
+
+        ch_offset = lambda ch: ch * self.samples_per_record * \
+                               self.records_per_buffer
 
         if self.average_mode() == 'none':
-            records = [self.buffer[:, channel_offset(ch):channel_offset(ch+1)
-                                  ].reshape((records_per_acquisition,
-                                             self.samples_per_record))
+            records = [self.buffer[:, ch_offset(ch):ch_offset(ch+1)].reshape(
+                (self.records_per_acquisition, self.samples_per_record))
                        for ch in range(self.number_of_channels)]
-        elif self.average_mode() == 'trace':
-            records = [np.zeros(self.samples_per_record) for k in range(self.number_of_channels)]
 
-            for channel in range(self.number_of_channels):
+        elif self.average_mode() == 'trace':
+            records = [np.zeros(self.samples_per_record)
+                       for _ in range(self.number_of_channels)]
+
+            for ch in range(self.number_of_chs):
                 for i in range(self.records_per_buffer):
-                    i0 = channel_offset(channel) + i * self.samples_per_record
+                    i0 = ch_offset(ch) + i * self.samples_per_record
                     i1 = i0 + self.samples_per_record
-                    records[channel] += self.buffer[i0:i1] / records_per_acquisition
+                    records[ch] += self.buffer[i0:i1]
+                records[ch] /= self.records_per_acquisition
+
         elif self.average_mode() == 'point':
             trace_length = self.samples_per_record * self.records_per_buffer
-            records = [np.mean(self.buffer[i*trace_length:(i+1)*trace_length])/ records_per_acquisition
+            records = [np.mean(self.buffer[i*trace_length:(i+1)*trace_length])
+                       / self.records_per_acquisition
                        for i in range(self.number_of_channels)]
 
-        # Scale datapoints
-        for i, record in enumerate(records):
-            channel_range = eval('self.alazar.channel_range{}()'.format(i + 1))
-            records[i] = 2 * (record / 2 ** 16 - 0.5) * channel_range
+        # Convert data points from an uint8 to volts
+        for ch, record in enumerate(records):
+            ch_idx = self.channel_selection[ch]
+            ch_range = self.alazar.parameters['channel_range'+ch_idx]()
+            records[i] = (record - 127.5) / 127.5 * ch_range
         return records
 
 
