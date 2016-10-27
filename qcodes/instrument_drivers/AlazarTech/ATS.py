@@ -858,7 +858,6 @@ class Buffer:
     """
     def __init__(self, bits_per_sample, samples_per_buffer,
                  number_of_channels):
-        print('number of channels: {}'.format(number_of_channels))
         # if bits_per_sample != 8:
         #     raise Exception("Buffer: only 8 bit per sample supported")
         if os.name != 'nt':
@@ -876,7 +875,6 @@ class Buffer:
         self.size_bytes = bytes_per_sample * samples_per_buffer * \
                           number_of_channels
         # self.size_bytes = 3200
-        print('size_bytes: {}'.format(self.size_bytes))
         # for documentation please see:
         # https://msdn.microsoft.com/en-us/library/windows/desktop/aa366887(v=vs.85).aspx
         ctypes.windll.kernel32.VirtualAlloc.argtypes = [
