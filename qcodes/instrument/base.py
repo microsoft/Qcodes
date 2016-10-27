@@ -628,3 +628,12 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
             'were trying to use a local instrument (defined with '
             'server_name=None) in a background Loop. Local instruments can '
             'only be used in Loops with background=False.')
+
+    def validate_status(self, verbose=0):
+        """ Validate the values of all gettable parameters """
+        for k, p in self.parameters.items():
+            if p.has_get and p.has_set:
+                value = p.get()
+                if verbose:
+                    print('validate_status: param %s: %s' % (k, value))
+                p.validate(value)

@@ -53,7 +53,8 @@ class TestInstrument(TestCase):
 
         cls.gates = MockGates(model=cls.model, server_name='')
         cls.source = MockSource(model=cls.model, server_name='')
-        cls.meter = MockMeter(model=cls.model, keep_history=False, server_name='')
+        cls.meter = MockMeter(
+            model=cls.model, keep_history=False, server_name='')
 
     def setUp(self):
         # reset the model state via the gates function
@@ -963,6 +964,14 @@ class TestInstrument2(TestCase):
         # TODO (giulioungaretti) remove ( does nothing ?)
         pass
 
+    def test_validate_function(self):
+        instrument = self.instrument
+        instrument.validate_status()  # test the instrument has valid values
+
+        instrument.dac1._save_val(1000)  # overrule the validator
+        with self.assertRaises(Exception):
+            instrument.validate_status()
+
     def test_attr_access(self):
         instrument = self.instrument
 
@@ -975,7 +984,7 @@ class TestInstrument2(TestCase):
         instrument.close()
 
         # make sure we can still print the instrument
-        s = instrument.__repr__()
+        _ = instrument.__repr__()
 
         # make sure the gate is removed
         self.assertEqual(hasattr(instrument, 'dac1'), False)
