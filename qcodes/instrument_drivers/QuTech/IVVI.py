@@ -72,10 +72,18 @@ class IVVI(VisaInstrument):
                            label='Check setpoints',
                            vals=Bool())
 
+        # Time to wait before sending a set DAC command to the IVVI
         self.add_parameter('dac_set_sleep',
                            parameter_class=ManualParameter,
                            initial_value=0.05,
                            label='DAC set sleep',
+                           vals=Numbers(0))
+
+        # Minimum time to wait before the read buffer contains data
+        self.add_parameter('dac_read_buffer_sleep',
+                           parameter_class=ManualParameter,
+                           initial_value=0.025,
+                           label='DAC read buffer sleep',
                            vals=Numbers(0))
 
         self.add_parameter('dac voltages',
@@ -223,7 +231,8 @@ class IVVI(VisaInstrument):
             byte_val = self._mvoltage_to_bytes(polarity_corrected)
             message = bytes([2, 1, channel]) + byte_val
 
-            time.sleep(self.dac_set_sleep())
+            if self.dac_set_sleep() > 0.0:
+                time.sleep(self.dac_set_sleep())
 
             reply = self.ask(message)
             self._time_last_update = 0  # ensures get command will update
@@ -338,7 +347,10 @@ class IVVI(VisaInstrument):
 
         while bytes_in_buffer < message_len:
             t1 = time.time()
-            time.sleep(.025)
+
+            if self.dac_read_buffer_sleep() > 0.0:
+                time.sleep(self.dac_read_buffer_sleep())
+
             bytes_in_buffer = self.visa_handle.bytes_in_buffer
             if t1-t0 > timeout:
                 raise TimeoutError()
