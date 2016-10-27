@@ -389,16 +389,16 @@ class AlazarTech_ATS(Instrument):
                        self._handle, self.clock_source, self.sample_rate,
                        self.clock_edge, self.decimation)
 
-        for i in range(1, self.channels + 1):
+        for i, ch in enumerate(self.channels):
             self._call_dll('AlazarInputControl',
-                           self._handle, 2**(i-1), # Channel in binary format
-                           self.parameters['coupling' + str(i)],
-                           self.parameters['channel_range' + str(i)],
-                           self.parameters['impedance' + str(i)])
+                           self._handle, 2**i, # Channel in binary format
+                           self.parameters['coupling' + ch],
+                           self.parameters['channel_range' + ch],
+                           self.parameters['impedance' + ch])
             if self._bwlimit_support:
                 self._call_dll('AlazarSetBWLimit',
-                               self._handle, i,
-                               self.parameters['bwlimit' + str(i)])
+                               self._handle, i - 1,
+                               self.parameters['bwlimit' + ch])
 
         self._call_dll('AlazarSetTriggerOperation',
                        self._handle, self.trigger_operation,
@@ -650,7 +650,7 @@ class AlazarTech_ATS(Instrument):
         if value is not None:
             # Create list of identical values if a single value is given
             if not isinstance(value, list):
-                value = [value] * self.channels
+                value = [value] * len(self.channels)
             for i, v in enumerate(value):
                 if param_base + str(i+1) in self.parameters.keys():
                     self.parameters[param_base + str(i + 1)]._set(v)
@@ -963,43 +963,6 @@ class AcquisitionController(Instrument):
         :return: reference to the Alazar instrument
         """
         return self._alazar
-
-    def get_acquisitionkwarg(self, kwarg):
-        """
-        Obtain an acquisitionkwarg for the ATS.
-        It first checks if the kwarg is an actual ATS acquisitionkwarg,
-        and raises an error otherwise.
-        It then checks if the kwarg is in ATS_controller._acquisitionkwargs.
-        If not, it will retrieve the ATS latest parameter value
-
-        Args:
-            kwarg: acquisitionkwarg to look for
-
-        Returns:
-            Value of the acquisitionkwarg
-        """
-        assert kwarg in self._acquisitionkwargs_names, \
-            "Kwarg {} is not a valid ATS acquisitionkwarg".format(kwarg)
-        if kwarg in self._acquisition_kwargs.keys():
-            return self._acquisition_kwargs[kwarg]
-        else:
-            # Must get latest value, since it will not be updated in ATS
-            return self.alazar.parameters[kwarg].get_latest()
-
-    def update_acquisitionkwargs(self, **kwargs):
-        """
-        Update the ATS_controller acquisitionkwargs, but only if all kwargs are
-        actually valid kwargs in the function ATS.acquire()
-        Args:
-            kwargs: Updated ATS acquisition kwargs
-        Returns:
-            None
-        """
-        kwargs_valid = all(map(
-            lambda kwarg: kwarg in self._acquisitionkwargs_names,
-            kwargs.keys()))
-        assert kwargs_valid, 'Not all kwargs are valid ATS acquisitionkwargs'
-        self._acquisitionkwargs.update(**kwargs)
 
     def pre_start_capture(self):
         """

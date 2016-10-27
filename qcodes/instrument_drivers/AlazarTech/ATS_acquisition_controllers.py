@@ -48,7 +48,7 @@ class Basic_AcquisitionController(AcquisitionController):
             return self._acquisition_settings[setting]
         else:
             # Must get latest value, since it may not be updated in ATS
-            return self.alazar.parameters[setting].get_latest()
+            return self._alazar.parameters[setting].get_latest()
 
     def update_acquisition_settings(self, **kwargs):
         self._acquisition_settings.update(**kwargs)
@@ -105,8 +105,8 @@ class Basic_AcquisitionController(AcquisitionController):
         pass
 
     def do_acquisition(self):
-        records = self.alazar.acquire(acquisition_controller=self,
-                                      **self.acquisitionkwargs)
+        records = self._alazar.acquire(acquisition_controller=self,
+                                       **self._acquisition_settings)
         return records
 
     def handle_buffer(self, data):
@@ -154,8 +154,8 @@ class Basic_AcquisitionController(AcquisitionController):
         # Convert data points from an uint8 to volts
         for ch, record in enumerate(records):
             ch_idx = self.channel_selection[ch]
-            ch_range = self.alazar.parameters['channel_range'+ch_idx]()
-            records[i] = (record - 127.5) / 127.5 * ch_range
+            ch_range = self._alazar.parameters['channel_range'+ch_idx]()
+            records[ch] = (record - 127.5) / 127.5 * ch_range
         return records
 
 

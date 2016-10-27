@@ -26,7 +26,7 @@ class ATS9440(AlazarTech_ATS):
                            parameter_class=AlazarParameter,
                            label='Sample Rate',
                            unit='S/s',
-                           value=125000000,
+                           value=100000,
                            byte_to_value_dict={
                                0x1: 1000, 0x2: 2000, 0x4: 5000, 0x8: 10000,
                                0xA: 20000, 0xC: 50000, 0xE: 100000,
@@ -99,7 +99,7 @@ class ATS9440(AlazarTech_ATS):
                                parameter_class=AlazarParameter,
                                label='Trigger Source ' + i,
                                unit=None,
-                               value='DISABLE',
+                               value='disable',
                                byte_to_value_dict={0: 'A',
                                                    1: 'B',
                                                    2: 'trig_in',
@@ -210,7 +210,7 @@ class ATS9440(AlazarTech_ATS):
                            parameter_class=AlazarParameter,
                            label='External Startcapture',
                            unit=None,
-                           value='ENABLED',
+                           value='enabled',
                            byte_to_value_dict={0x0: 'disabled',
                                                0x1: 'enabled'})
         self.add_parameter(name='enable_record_headers',
@@ -232,8 +232,8 @@ class ATS9440(AlazarTech_ATS):
                            label='Fifo Only Streaming',
                            unit=None,
                            value='disabled',
-                           byte_to_value_dict={0x0: 'DISABLED',
-                                               0x800: 'ENABLED'})
+                           byte_to_value_dict={0x0: 'disabled',
+                                               0x800: 'enabled'})
         self.add_parameter(name='interleave_samples',
                            parameter_class=AlazarParameter,
                            label='Interleave Samples',
