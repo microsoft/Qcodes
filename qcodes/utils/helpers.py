@@ -1,23 +1,23 @@
-from collections import Iterator, Sequence, Mapping
-from copy import deepcopy
-import time
+import io
+import json
 import logging
 import math
-import sys
-import io
-import numpy as np
-import json
 import numbers
+import sys
+import time
+
+from collections import Iterator, Sequence, Mapping
+from copy import deepcopy
+
+import numpy as np
 
 _tprint_times = {}
 
 
 class NumpyJSONEncoder(json.JSONEncoder):
-
     """Return numpy types as standard types."""
     # http://stackoverflow.com/questions/27050108/convert-numpy-type-to-python
     # http://stackoverflow.com/questions/9452775/converting-numpy-dtypes-to-native-python-types/11389998#11389998
-
     def default(self, obj):
         if isinstance(obj, np.integer):
             return int(obj)
@@ -25,8 +25,13 @@ class NumpyJSONEncoder(json.JSONEncoder):
             return float(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
-        elif isinstance(obj, numbers.Complex) and not isinstance(obj, numbers.Real):
-            return {'__dtype__': 'complex', 're': float(obj.real), 'im': float(obj.imag)}
+        elif (isinstance(obj, numbers.Complex) and
+              not isinstance(obj, numbers.Real)):
+            return {
+                '__dtype__': 'complex',
+                're': float(obj.real),
+                'im': float(obj.imag)
+            }
         else:
             return super(NumpyJSONEncoder, self).default(obj)
 
@@ -121,7 +126,7 @@ def deep_update(dest, update):
 # a) we don't want to require that as a dep so low level
 # b) I'd like to be more flexible with the sign of step
 def permissive_range(start, stop, step):
-    '''
+    """
     returns range (as a list of values) with floating point step
 
     inputs:
@@ -129,7 +134,7 @@ def permissive_range(start, stop, step):
 
     always starts at start and moves toward stop,
     regardless of the sign of step
-    '''
+    """
     signed_step = abs(step) * (1 if stop > start else -1)
     # take off a tiny bit for rounding errors
     step_count = math.ceil((stop - start) / signed_step - 1e-10)
@@ -189,11 +194,11 @@ def make_sweep(start, stop, step=None, num=None):
 
 
 def wait_secs(finish_clock):
-    '''
+    """
     calculate the number of seconds until a given clock time
     The clock time should be the result of time.perf_counter()
     Does NOT wait for this time.
-    '''
+    """
     delay = finish_clock - time.perf_counter()
     if delay < 0:
         logging.warning('negative delay {:.6f} sec'.format(delay))
@@ -203,7 +208,7 @@ def wait_secs(finish_clock):
 
 class LogCapture():
 
-    '''
+    """
     context manager to grab all log messages, optionally
     from a specific logger
 
@@ -212,7 +217,7 @@ class LogCapture():
     with LogCapture() as logs:
         code_that_makes_logs(...)
     log_str = logs.value
-    '''
+    """
 
     def __init__(self, logger=logging.getLogger()):
         self.logger = logger
@@ -231,10 +236,10 @@ class LogCapture():
 
 
 def make_unique(s, existing):
-    '''
+    """
     make string s unique, able to be added to a sequence `existing` of
     existing names without duplication, by appending _<int> to it if needed
-    '''
+    """
     n = 1
     s_out = s
     existing = set(existing)
@@ -247,7 +252,6 @@ def make_unique(s, existing):
 
 
 class DelegateAttributes:
-
     """
     Mixin class to create attributes of this object by
     delegating them to one or more dicts and/or objects
@@ -256,15 +260,15 @@ class DelegateAttributes:
     in dir() and autocomplete
 
 
-   Attributes:
-        delegate_attr_dicts (list): a list of names (strings) of dictionaries which are
-            (or will be) attributes of self, whose keys should be treated as
-            attributes of self
-        delegate_attr_objects (list): a list of names (strings) of objects which are
-            (or will be) attributes of self, whose attributes should be passed
-            through to self
-        omit_delegate_attrs (list): a list of attribute names (strings) to *not* delegate
-            to any other dict or object
+    Attributes:
+        delegate_attr_dicts (list): a list of names (strings) of dictionaries
+            which are (or will be) attributes of self, whose keys should
+            be treated as attributes of self
+        delegate_attr_objects (list): a list of names (strings) of objects
+            which are (or will be) attributes of self, whose attributes
+            should be passed through to self
+        omit_delegate_attrs (list): a list of attribute names (strings)
+            to *not* delegate to any other dict or object
 
     any `None` entry is ignored
 
@@ -342,7 +346,72 @@ def strip_attrs(obj, whitelist=()):
         for key in lst:
             try:
                 del obj.__dict__[key]
+            # TODO (giulioungaretti) fix bare-except
             except:
                 pass
+        # TODO (giulioungaretti) fix bare-except
     except:
         pass
+
+
+def compare_dictionaries(dict_1, dict_2,
+                         dict_1_name='d1',
+                         dict_2_name='d2', path=""):
+    """
+    Compare two dictionaries recursively to find non matching elements
+
+    Args:
+        dict_1: dictionary 1
+        dict_2: dictionary 2
+        dict_1_name: optional name used in the differences string
+        dict_2_name: ''
+    Returns:
+        dicts_equal:      Boolean
+        dict_differences: formatted string containing the differences
+
+    """
+    err = ''
+    key_err = ''
+    value_err = ''
+    old_path = path
+    for k in dict_1.keys():
+        path = old_path + "[%s]" % k
+        if k not in dict_2.keys():
+            key_err += "Key {}{} not in {}\n".format(
+                dict_1_name, path, dict_2_name)
+        else:
+            if isinstance(dict_1[k], dict) and isinstance(dict_2[k], dict):
+                err += compare_dictionaries(dict_1[k], dict_2[k],
+                                            dict_1_name, dict_2_name, path)[1]
+            else:
+                match = (dict_1[k] == dict_2[k])
+
+                # if values are equal-length numpy arrays, the result of
+                # "==" is a bool array, so we need to 'all' it.
+                # In any other case "==" returns a bool
+                # TODO(alexcjohnson): actually, if *one* is a numpy array
+                # and the other is another sequence with the same entries,
+                # this will compare them as equal. Do we want this, or should
+                # we require exact type match?
+                if hasattr(match, 'all'):
+                    match = match.all()
+
+                if not match:
+                    value_err += (
+                        'Value of "{}{}" ("{}", type"{}") not same as\n'
+                        '  "{}{}" ("{}", type"{}")\n\n').format(
+                        dict_1_name, path, dict_1[k], type(dict_1[k]),
+                        dict_2_name, path, dict_2[k], type(dict_2[k]))
+
+    for k in dict_2.keys():
+        path = old_path + "[{}]".format(k)
+        if k not in dict_1.keys():
+            key_err += "Key {}{} not in {}\n".format(
+                dict_2_name, path, dict_1_name)
+
+    dict_differences = key_err + value_err + err
+    if len(dict_differences) == 0:
+        dicts_equal = True
+    else:
+        dicts_equal = False
+    return dicts_equal, dict_differences

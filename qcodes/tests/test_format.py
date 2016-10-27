@@ -3,10 +3,10 @@ import os
 
 from qcodes.data.format import Formatter
 from qcodes.data.gnuplot_format import GNUPlotFormat
+
 from qcodes.data.data_array import DataArray
 from qcodes.data.data_set import DataSet, new_data, load_data
 from qcodes.utils.helpers import LogCapture
-
 from .data_mocks import DataSet1D, file_1d, DataSetCombined, files_combined
 
 

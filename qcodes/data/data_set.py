@@ -27,7 +27,9 @@ SERVER_MODES = set((DataMode.PULL_FROM_SERVER, DataMode.PUSH_TO_SERVER))
 
 
 def new_data(location=None, loc_record=None, name=None, overwrite=False,
-             io=None, data_manager=None, mode=DataMode.LOCAL, **kwargs):
+             io=None, data_manager=False, mode=DataMode.LOCAL, **kwargs):
+    # NOTE(giulioungaretti): leave this docstrings as it is, because
+    # documenting the types is silly in this case.
     """
     Create a new DataSet.
 
@@ -57,11 +59,11 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
             says the root data directory is the current working directory, ie
             where you started the python session.
 
-        data_manager (DataManager or False, optional): manager for the
-            ``DataServer`` that offloads storage and syncing of this
-            ``DataSet``. Usually omitted (default None) to use the default
-            from ``get_data_manager()``. If ``False``, this ``DataSet`` will
-            store itself.
+        data_manager (Optional[bool]): use a manager for the
+            ``DataServer`` that offloads storage and syncing of this Defaults
+            to  ``False`` i.e. this ``DataSet`` will store itself without extra
+            processes. Set to ``True`` to use the default from
+            ``get_data_manager()``.
 
         mode (DataMode, optional): connection type to the ``DataServer``.
             ``DataMode.LOCAL``: this DataSet doesn't communicate across
@@ -73,8 +75,8 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
                 and when it stops being the live measurement.
             Default ``DataMode.LOCAL``.
 
-        arrays (dict, optional): dict of ``array_id: DataArray``, can also be
-            added later with ``self.add_array(array)``.
+        arrays (Optional[List[qcodes.DataArray]): arrays to add to the DataSet.
+                Can be added later with ``self.add_array(array)``.
 
         formatter (Formatter, optional): sets the file format/structure to
             write (and read) with. Default ``DataSet.default_formatter`` which
@@ -105,11 +107,11 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
     if location and (not overwrite) and io.list(location):
         raise FileExistsError('"' + location + '" already has data')
 
-    if data_manager is False:
+    if data_manager is True:
+        data_manager = get_data_manager()
+    else:
         if mode != DataMode.LOCAL:
             raise ValueError('DataSets without a data_manager must be local')
-    elif data_manager is None:
-        data_manager = get_data_manager()
 
     return DataSet(location=location, io=io, data_manager=data_manager,
                    mode=mode, **kwargs)
@@ -206,11 +208,11 @@ class DataSet(DelegateAttributes):
             says the root data directory is the current working directory, ie
             where you started the python session.
 
-        data_manager (DataManager or False, optional): manager for the
-            ``DataServer`` that offloads storage and syncing of this
-            ``DataSet``. Usually omitted (default None) to use the default
-            from ``get_data_manager()``. If ``False``, this ``DataSet`` will
-            store itself.
+        data_manager (Optional[bool]): use a manager for the
+            ``DataServer`` that offloads storage and syncing of this Defaults
+            to  ``False`` i.e. this ``DataSet`` will store itself without extra
+            processes.  Set to ``True`` to use the default from
+            ``get_data_manager()``.
 
         mode (DataMode, optional): connection type to the ``DataServer``.
             ``DataMode.LOCAL``: this DataSet doesn't communicate across
@@ -222,8 +224,8 @@ class DataSet(DelegateAttributes):
                 and when it stops being the live measurement.
             Default ``DataMode.LOCAL``.
 
-        arrays (dict, optional): dict of ``array_id: DataArray``, can also be
-            added later with ``self.add_array(array)``.
+        arrays (Optional[List[qcodes.DataArray]): arrays to add to the DataSet.
+                Can be added later with ``self.add_array(array)``.
 
         formatter (Formatter, optional): sets the file format/structure to
             write (and read) with. Default ``DataSet.default_formatter`` which
@@ -258,7 +260,7 @@ class DataSet(DelegateAttributes):
     background_functions = OrderedDict()
 
     def __init__(self, location=None, mode=DataMode.LOCAL, arrays=None,
-                 data_manager=None, formatter=None, io=None, write_period=5):
+                 data_manager=False, formatter=None, io=None, write_period=5):
         if location is False or isinstance(location, str):
             self.location = location
         else:
@@ -271,6 +273,7 @@ class DataSet(DelegateAttributes):
 
         self.write_period = write_period
         self.last_write = 0
+        self.last_store = -1
 
         self.metadata = {}
 
@@ -280,7 +283,7 @@ class DataSet(DelegateAttributes):
             for array in arrays:
                 self.add_array(array)
 
-        if data_manager is None and mode in SERVER_MODES:
+        if data_manager is True and mode in SERVER_MODES:
             data_manager = get_data_manager()
 
         if mode == DataMode.LOCAL:
@@ -384,7 +387,9 @@ class DataSet(DelegateAttributes):
         # version on the DataServer from the main copy)
         if not self.is_live_mode:
             # LOCAL DataSet - just read it in
-            # TODO: compare timestamps to know if we need to read?
+            # Compare timestamps to avoid overwriting unsaved data
+            if self.last_store > self.last_write:
+                return True
             try:
                 self.read()
             except IOError:
@@ -457,18 +462,17 @@ class DataSet(DelegateAttributes):
 
         failing = {key: False for key in self.background_functions}
 
-        nloops = 0
         completed = False
-        while not completed:
+        while True:
             logging.info('DataSet: {:.0f}% complete'.format(
                 self.fraction_complete() * 100))
 
-            time.sleep(delay)
-            nloops += 1
-
+            # first check if we're done
             if self.sync() is False:
                 completed = True
 
+            # then even if we *are* done, execute the background functions
+            # because we want things like live plotting to get the final data
             for key, fn in list(self.background_functions.items()):
                 try:
                     logging.debug('calling {}: {}'.format(key, repr(fn)))
@@ -482,6 +486,12 @@ class DataSet(DelegateAttributes):
                             'removing it'.format(key))
                         del self.background_functions[key]
                     failing[key] = True
+
+            if completed:
+                break
+
+            # but only sleep if we're not already finished
+            time.sleep(delay)
 
         logging.info('DataSet <{}> is complete'.format(self.location))
 
@@ -540,7 +550,6 @@ class DataSet(DelegateAttributes):
         replace action_indices tuple with compact string array_ids
         stripping off as much extraneous info as possible
         """
-
         action_indices = [array.action_indices for array in arrays]
         for array in arrays:
             name = array.full_name
@@ -588,14 +597,22 @@ class DataSet(DelegateAttributes):
                 to insert into that array.
          """
         if self.mode == DataMode.PUSH_TO_SERVER:
+            # Defers to the copy on the dataserver to call this identical
+            # function
             self.data_manager.write('store_data', loop_indices, ids_values)
-        else:
+        elif self.mode == DataMode.LOCAL:
+            # You will always end up in this block, either in the copy
+            # on the server (if you hit the if statement above) or else here
             for array_id, value in ids_values.items():
                 self.arrays[array_id][loop_indices] = value
+            self.last_store = time.time()
             if (self.write_period is not None and
                     time.time() > self.last_write + self.write_period):
                 self.write()
                 self.last_write = time.time()
+        else: # in PULL_FROM_SERVER mode; store() isn't legal
+            raise RuntimeError('This object is pulling from a DataServer, '
+                               'so data insertion is not allowed.')
 
     def read(self):
         """Read the whole DataSet from storage, overwriting the local data."""
@@ -610,13 +627,18 @@ class DataSet(DelegateAttributes):
         self.formatter.read_metadata(self)
 
     def write(self):
-        """Write updates to the DataSet to storage."""
+        """
+        Writes updates to the DataSet to storage.
+        N.B. it is recommended to call data_set.finalize() when a DataSet is
+        no longer expected to change to ensure files get closed
+        """
         if self.mode != DataMode.LOCAL:
             raise RuntimeError('This object is connected to a DataServer, '
                                'which handles writing automatically.')
 
         if self.location is False:
             return
+
         self.formatter.write(self, self.io, self.location)
 
     def write_copy(self, path=None, io_manager=None, location=None):
@@ -692,11 +714,23 @@ class DataSet(DelegateAttributes):
             self.formatter.write_metadata(self, self.io, self.location)
 
     def finalize(self):
-        """Mark the DataSet complete and write any remaining modifications."""
+        """
+        Mark the DataSet complete and write any remaining modifications.
+
+        Also closes the data file(s), if the ``Formatter`` we're using
+        supports that.
+        """
         if self.mode == DataMode.PUSH_TO_SERVER:
-            self.data_manager.ask('end_data')
+            # Just like .store, if this DataSet is on the DataServer,
+            # we defer to the copy there and execute this same method.
+            self.data_manager.ask('finalize_data')
         elif self.mode == DataMode.LOCAL:
+            # You will always end up in this block, either in the copy
+            # on the server (if you hit the if statement above) or else here
             self.write()
+
+            if hasattr(self.formatter, 'close_file'):
+                self.formatter.close_file(self)
         else:
             raise RuntimeError('This mode does not allow finalizing',
                                self.mode)

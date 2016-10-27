@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 
+# .pyenv file
+.python-version
+
 # ipython extras
 .ipynb_checkpoints/
 
@@ -64,6 +67,7 @@ target/
 *.data
 *.dat
 *.hdf5
+*.json
 
 # Temporary files
 *.md~

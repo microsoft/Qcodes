@@ -35,6 +35,7 @@ extensions = [
         'sphinx.ext.autodoc',
         'sphinx.ext.autosummary',
         'sphinx.ext.napoleon',
+        'sphinxcontrib.jsonschema',
         'sphinx.ext.doctest',
         'sphinx.ext.intersphinx',
         'sphinx.ext.todo',
@@ -350,7 +351,6 @@ intersphinx_mapping = {
     'matplotlib': ('http://matplotlib.org/', None),
     'python': ('http://docs.python.org/3', None),
     'numpy': ('http://docs.scipy.org/doc/numpy', None),
-    'scipy': ('http://docs.scipy.org/doc/scipy', None),
     'py': ('http://pylib.readthedocs.org/en/latest/', None)
 }
 # theming
@@ -376,8 +376,11 @@ if any([re.match("\s*api\s*",l) for l in index_rst_lines]):
 
 autodoc_default_flags = []
 # we have to do this, do avoid sideeffects when importing matplotlib
-import matplotlib
-matplotlib.use('PS')
-autodoc_mock_imports = [ 'matplotlib']
+try:
+    import matplotlib
+    matplotlib.use('PS')
+    autodoc_mock_imports = [ 'matplotlib']
+except ImportError as e:
+        print(e)
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['../_templates']

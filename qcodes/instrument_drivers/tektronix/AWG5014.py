@@ -263,11 +263,11 @@ class Tektronix_AWG5014(VisaInstrument):
                                set_cmd=state_cmd + ' {}',
                                vals=vals.Ints(0, 1))
             self.add_parameter('ch{}_amp'.format(i),
-                               label='Amplitude channel {} (V)'.format(i),
-                               units='V',
+                               label='Amplitude channel {} (Vpp)'.format(i),
+                               units='Vpp',
                                get_cmd=amp_cmd + '?',
                                set_cmd=amp_cmd + ' {:.6f}',
-                               vals=vals.Numbers(0.02, 1.5),
+                               vals=vals.Numbers(0.02, 4.5),
                                get_parser=float)
             self.add_parameter('ch{}_offset'.format(i),
                                label='Offset channel {} (V)'.format(i),
