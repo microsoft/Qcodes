@@ -34,6 +34,7 @@ if in_notebook():  # pragma: no cover
               'try "from qcodes.plots.pyqtgraph import QtPlot" '
               'to see the full error')
 
+if config['gui']['notebook']:
     from qcodes.widgets.widgets import show_subprocess_widget
 
 from qcodes.station import Station
