@@ -70,10 +70,10 @@ class Basic_AcquisitionController(AcquisitionController):
                                        self.records_per_buffer
 
         # Set acquisition parameter metadata
-        self.acquisition.names = tuple(['Channel_{}_signal'.format(ch) for ch in
+        self.acquisition.names = tuple(['ch{}_signal'.format(ch) for ch in
                                         self.channel_selection])
         self.acquisition.labels = self.acquisition.names
-        self.acquisition.units = ['V' * self.number_of_channels]
+        self.acquisition.units = ['V'] * self.number_of_channels
 
         if self.average_mode() == 'point':
             self.acquisition.shapes = tuple([()] * self.number_of_channels)
