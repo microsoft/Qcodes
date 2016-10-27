@@ -3,9 +3,9 @@ from qcodes.utils import validators
 
 
 class AlazarTech_ATS9360(AlazarTech_ATS):
-    def __init__(self, name, server_name=None):
+    def __init__(self, name, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
-        super().__init__(name, dll_path=dll_path)
+        super().__init__(name, dll_path=dll_path, **kwargs)
 
         # add parameters
 
@@ -88,7 +88,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                                parameter_class=AlazarParameter,
                                label='Trigger Engine ' + i,
                                unit=None,
-                               value='TRIG_ENGINE_J',
+                               value='TRIG_ENGINE_' + ('J' if i == 0 else 'K'),
                                byte_to_value_dict={0: 'TRIG_ENGINE_J',
                                                    1: 'TRIG_ENGINE_K'})
             self.add_parameter(name='trigger_source' + i,
@@ -163,7 +163,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            label='Samples per Record',
                            unit=None,
                            value=1024,
-                           vals=Multiples(divisor=16, min_value=0))
+                           vals=validators.Multiples(divisor=64, min_value=256))
         # TODO (M) figure out if this also has to be a multiple of something,
         # I could not find this in the documentation but somehow I have the
         # feeling it still should be a multiple of something
@@ -254,30 +254,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            value=1000,
                            vals=validators.Ints(min_value=0))
 
-        # TODO (M) make parameter for board type
-
-        # TODO (M) check board kind
-
-
-class Multiples(validators.Ints):
-    '''
-    requires an integer
-    optional parameters min_value and max_value enforce
-    min_value <= value <= max_value
-    divisor enforces that value % divisor == 0
-    '''
-
-    def __init__(self, divisor=1, **kwargs):
-        super().__init__(**kwargs)
-        if not isinstance(divisor, int):
-            raise TypeError('divisor must be an integer')
-        self._divisor = divisor
-
-    def validate(self, value, context=''):
-        super().validate(value=value, context=context)
-        if not value % self._divisor == 0:
-            raise TypeError('{} is not a multiple of {}; {}'.format(
-                repr(value), repr(self._divisor), context))
-
-    def __repr__(self):
-        return super().__repr__()[:-1] + ', Multiples of {}>'.format(self._divisor)
+        model = self.get_idn()['model']
+        if model != 'ATS9360':
+            raise Exception("The Alazar board kind is not 'ATS9360',"
+                            " found '" + str(model) + "' instead.")
