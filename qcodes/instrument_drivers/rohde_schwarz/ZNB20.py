@@ -3,7 +3,7 @@ from qcodes.utils import validators as vals
 from cmath import phase
 import numpy as np
 from qcodes import MultiParameter, Parameter
-
+import time
 
 class FrequencySweep(MultiParameter):
     """
@@ -111,6 +111,19 @@ class ZNB20(VisaInstrument):
                            stop=self.stop(),
                            npts=self.npts(),
                            parameter_class=FrequencySweep)
+                           
+        self.add_parameter(name='spec_state',
+                           set_cmd=self._set_spec_state)
+                           
+        # TODO(nataliejpg) add center frequency as parameter
+
+        self.add_parameter(name='cav_freq',
+                           get_cmd=self._get_cav_freq,
+                           set_cmd=self._set_cav_freq)
+                           
+        self.add_parameter(name='cav_pow',
+                           get_cmd=self._get_cav_pow,
+                           set_cmd=self._set_cav_pow)
 
         self.add_function('reset', call_cmd='*RST')
         self.add_function('tooltip_on', call_cmd='SYST:ERR:DISP ON')
@@ -125,7 +138,49 @@ class ZNB20(VisaInstrument):
 
         self.initialise()
         self.connect_message()
+        
+    def _set_spec_state(self, val):
+        if val == 1:
+            freq = self.ask('SENS:FREQ:CENT?')
+            pow = self.power()
+            self.write('SOUR:POW3:STAT 1')
+            time.sleep(0.2)
+            self.write('SOUR:POW1:PERM 1')
+            time.sleep(0.2)
+            self.write('SOUR:POW3:PERM 1')
+            time.sleep(0.2)
+            self.cav_freq(freq)
+            self.cav_pow(pow)   
+        else:
+            self.write('SOUR:FREQ1:CONV:ARB:IFR 1, 1, 0, SWE')
+            self.write('SOUR:FREQ2:CONV:ARB:IFR 1, 1, 0, SWE')
+            self.write('SOUR:POW1:OFFS 0, CPAD')
+            self.write('SOUR:POW2:OFFS 0, CPAD')
+            self.write('SOUR:POW3:STAT 0')
+            self.write('SOUR:POW1:PERM 0')
+            self.write('SOUR:POW3:PERM 0')          
+       
 
+    # do these two smarter?
+       
+    def _get_cav_freq(self):
+        ret = self.ask('SOUR:FREQ1:CONV:ARB:IFR?').split(',')
+        return int(ret[2])
+        
+    def _set_cav_freq(self, freq):
+        self.write('SOUR:FREQ1:CONV:ARB:IFR 0, 1, {:.6f}, CW'.format(freq))
+        # add pause?
+        self.write('SOUR:FREQ2:CONV:ARB:IFR 0, 1, {:.6f}, CW'.format(freq))
+        
+    def _get_cav_pow(self):
+        ret = self.ask('SOUR:POW1:OFFS?').split(',')
+        return int(ret[0])
+        
+    def _set_cav_pow(self, pow):
+        self.write('SOUR:POW1:OFFS {:.3f}, ONLY'.format(pow))
+        # add pause?
+        self.write('SOUR:POW2:OFFS {:.3f}, ONLY'.format(pow))
+    
     def _set_start(self, val):
         self.write('SENS:FREQ:START {:.4f}'.format(val))
         # update setpoints for FrequencySweep param
