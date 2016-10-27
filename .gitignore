@@ -64,6 +64,7 @@ target/
 *.data
 *.dat
 *.hdf5
+*.json
 
 # Temporary files
 *.md~

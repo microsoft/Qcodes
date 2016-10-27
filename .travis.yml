@@ -18,16 +18,14 @@ install:
     - python setup.py develop
 # command to run tests
 script: 
-    - python  qcodes/test.py --skip-coverage
-    - python  qcodes/test.py --mp-spawn
+    - python  qcodes/test.py --skip-coverage -f
+    - python  qcodes/test.py --mp-spawn -f
 after_success:
-    # codecov
+    # install codacy coverage plugin only on traivs
+    - pip install codacy-coverage
     - cd qcodes
     - coverage xml
     - python-codacy-coverage -r coverage.xml
-    # codecvo
-    - bash <(curl -s https://codecov.io/bash) -t c3b231db-2db3-4560-a477-6edcf4cf5ad1
-    #
     # build the docs, one dir up
     - cd ../ 
     - make -f docs/Makefile gh-pages
