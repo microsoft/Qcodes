@@ -91,7 +91,7 @@ Instrument
    SweepFixedValues
    SweepValues
    combine
-   CombinedPar
+   CombinedParameter
 
 
    Instrument
