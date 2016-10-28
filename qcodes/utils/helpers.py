@@ -32,6 +32,8 @@ class NumpyJSONEncoder(json.JSONEncoder):
                 're': float(obj.real),
                 'im': float(obj.imag)
             }
+        elif hasattr(obj, '_JSONEncoder'):
+            return obj._JSONEncoder()
         else:
             return super(NumpyJSONEncoder, self).default(obj)
 
