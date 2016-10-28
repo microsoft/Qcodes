@@ -113,6 +113,7 @@ class ZNB20(VisaInstrument):
                            parameter_class=FrequencySweep)
                            
         self.add_parameter(name='spec_state',
+                            # make gett cmd to get latest
                            set_cmd=self._set_spec_state)
                            
         # TODO(nataliejpg) add center frequency as parameter
@@ -141,7 +142,8 @@ class ZNB20(VisaInstrument):
         
     def _set_spec_state(self, val):
         if val == 1:
-            freq = self.ask('SENS:FREQ:CENT?')
+            self.write('CALC1:PAR:MEAS "Trc1", "b2"')
+            freq = float(self.ask('SENS:FREQ:CENT?'))
             pow = self.power()
             self.write('SOUR:POW3:STAT 1')
             time.sleep(0.2)
@@ -158,7 +160,8 @@ class ZNB20(VisaInstrument):
             self.write('SOUR:POW2:OFFS 0, CPAD')
             self.write('SOUR:POW3:STAT 0')
             self.write('SOUR:POW1:PERM 0')
-            self.write('SOUR:POW3:PERM 0')          
+            self.write('SOUR:POW3:PERM 0')
+            self.write('CALC1:PAR:MEAS "Trc1", "S21"')            
        
 
     # do these two smarter?
