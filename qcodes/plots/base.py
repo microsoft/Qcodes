@@ -3,6 +3,7 @@ Live plotting in Jupyter notebooks
 """
 from IPython.display import display
 
+from qcodes import config
 from qcodes.widgets.widgets import HiddenUpdateWidget
 
 
@@ -25,9 +26,10 @@ class BasePlot:
         self.data_keys = data_keys
         self.traces = []
         self.data_updaters = set()
-
+        # only import in name space if the gui is set to noebook
+        # and there is multiprocessing
         self.interval = interval
-        if interval:
+        if config['gui']['notebook'] and config['core']['legacy_mp']:
             self.update_widget = HiddenUpdateWidget(self.update, interval)
             display(self.update_widget)
 

@@ -51,9 +51,10 @@ class TestInstrument(TestCase):
     def setUpClass(cls):
         cls.model = AMockModel()
 
-        cls.gates = MockGates(model=cls.model)
-        cls.source = MockSource(model=cls.model)
-        cls.meter = MockMeter(model=cls.model, keep_history=False)
+        cls.gates = MockGates(model=cls.model, server_name='')
+        cls.source = MockSource(model=cls.model, server_name='')
+        cls.meter = MockMeter(
+            model=cls.model, keep_history=False, server_name='')
 
     def setUp(self):
         # reset the model state via the gates function
@@ -192,9 +193,28 @@ class TestInstrument(TestCase):
         with self.assertRaises(KeyError):
             Instrument.find_instrument('gates')
 
-        type(self).gates = MockGates(model=self.model)
+        type(self).gates = MockGates(model=self.model, server_name="")
         self.assertEqual(self.gates.instances(), [self.gates])
         self.assertEqual(Instrument.find_instrument('gates'), self.gates)
+
+    def test_creation_failure(self):
+        # this we already know should fail (see test_max_delay_errors)
+        name = 'gatesFailing'
+        with self.assertRaises(ValueError):
+            GatesBadDelayValue(model=self.model, name=name, server_name='')
+
+        # this instrument should not be in the instance list
+        with self.assertRaises(KeyError):
+            Instrument.find_instrument(name)
+
+        # now do the same with a local instrument
+        name = 'gatesFailing2'
+        with self.assertRaises(ValueError):
+            GatesBadDelayValue(model=self.model, name=name, server_name=None)
+
+        # this instrument should not be in the instance list
+        with self.assertRaises(KeyError):
+            Instrument.find_instrument(name)
 
     def test_mock_instrument(self):
         gates, source, meter = self.gates, self.source, self.meter
@@ -941,8 +961,16 @@ class TestInstrument2(TestCase):
             name='testdummy', gates=['dac1', 'dac2', 'dac3'], server_name=None)
 
     def tearDown(self):
-        #TODO (giulioungaretti) remove ( does nothing ?)
+        # TODO (giulioungaretti) remove ( does nothing ?)
         pass
+
+    def test_validate_function(self):
+        instrument = self.instrument
+        instrument.validate_status()  # test the instrument has valid values
+
+        instrument.dac1._save_val(1000)  # overrule the validator
+        with self.assertRaises(Exception):
+            instrument.validate_status()
 
     def test_attr_access(self):
         instrument = self.instrument
@@ -956,7 +984,7 @@ class TestInstrument2(TestCase):
         instrument.close()
 
         # make sure we can still print the instrument
-        s = instrument.__repr__()
+        _ = instrument.__repr__()
 
         # make sure the gate is removed
         self.assertEqual(hasattr(instrument, 'dac1'), False)

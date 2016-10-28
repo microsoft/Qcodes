@@ -43,7 +43,6 @@ class RemoteInstrument(DelegateAttributes):
 
     def __init__(self, *args, instrument_class=None, server_name='',
                  **kwargs):
-
         if server_name == '':
             server_name = instrument_class.default_server_name(**kwargs)
 
@@ -63,9 +62,6 @@ class RemoteInstrument(DelegateAttributes):
         self._kwargs = kwargs
 
         self.connect()
-
-        # must come after connect() because that sets self.name
-        instrument_class.record_instance(self)
 
     def connect(self):
         """Create the instrument on the server and replicate its API here."""

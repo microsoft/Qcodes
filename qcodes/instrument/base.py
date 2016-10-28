@@ -1,7 +1,8 @@
 """Instrument base class."""
-import weakref
-import time
 import logging
+import time
+import warnings
+import weakref
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
@@ -9,10 +10,11 @@ from qcodes.utils.nested_attrs import NestedAttrAccess
 from qcodes.utils.validators import Anything
 from .parameter import StandardParameter
 from .function import Function
-from .remote import RemoteInstrument
+from .metaclass import InstrumentMetaclass
 
 
-class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
+class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
+                 metaclass=InstrumentMetaclass):
 
     """
     Base class for all QCodes instruments.
@@ -38,6 +40,9 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
             instantiated on the server, and the object you get in the main
             process is actually a ``RemoteInstrument`` that proxies all method
             calls, ``Parameters``, and ``Functions`` to the server.
+
+            The metaclass ``InstrumentMetaclass`` handles making either the
+            requested class or its RemoteInstrument proxy.
 
         metadata (Optional[Dict]): additional static metadata to add to this
             instrument's JSON snapshot.
@@ -75,14 +80,6 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
 
     _all_instruments = {}
 
-    def __new__(cls, *args, server_name='', **kwargs):
-        """Figure out whether to create a base instrument or proxy."""
-        if server_name is None:
-            return super().__new__(cls)
-        else:
-            return RemoteInstrument(*args, instrument_class=cls,
-                                    server_name=server_name, **kwargs)
-
     def __init__(self, name, server_name=None, **kwargs):
         self._t0 = time.time()
         super().__init__(**kwargs)
@@ -97,8 +94,6 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
         self._meta_attrs = ['name']
 
         self._no_proxy_methods = {'__getstate__'}
-
-        self.record_instance(self)
 
     def get_idn(self):
         """
@@ -633,3 +628,20 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess):
             'were trying to use a local instrument (defined with '
             'server_name=None) in a background Loop. Local instruments can '
             'only be used in Loops with background=False.')
+
+    def validate_status(self, verbose=False):
+        """ Validate the values of all gettable parameters
+
+        The validation is done for all parameters that have both a get and
+        set method.
+
+        Arguments:
+            verbose (bool): If True, then information about the parameters that are being check is printed.
+
+        """
+        for k, p in self.parameters.items():
+            if p.has_get and p.has_set:
+                value = p.get()
+                if verbose:
+                    print('validate_status: param %s: %s' % (k, value))
+                p.validate(value)

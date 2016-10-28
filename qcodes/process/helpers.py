@@ -2,6 +2,7 @@
 
 import multiprocessing as mp
 import time
+import warnings
 
 MP_ERR = 'context has already been set'
 
@@ -23,6 +24,7 @@ def set_mp_method(method, force=False):
         with the *same* method raises an error, but here we only
         raise the error if you *don't* force *and* the context changes
     """
+    warnings.warn("Multiprocessing is in beta, use at own risk", UserWarning)
     try:
         mp.set_start_method(method, force=force)
     except RuntimeError as err:

@@ -449,14 +449,14 @@ class TestDataSet(TestCase):
         mock_dm.live_data = MockLive()
 
         # wrong location or False location - converts to local
-        data = DataSet(location='Jupiter', mode=DataMode.PULL_FROM_SERVER)
+        data = DataSet(location='Jupiter', data_manager=True, mode=DataMode.PULL_FROM_SERVER)
         self.assertEqual(data.mode, DataMode.LOCAL)
 
-        data = DataSet(location=False, mode=DataMode.PULL_FROM_SERVER)
+        data = DataSet(location=False,  data_manager=True, mode=DataMode.PULL_FROM_SERVER)
         self.assertEqual(data.mode, DataMode.LOCAL)
 
         # location matching server - stays in server mode
-        data = DataSet(location='Mars', mode=DataMode.PULL_FROM_SERVER,
+        data = DataSet(location='Mars',  data_manager=True, mode=DataMode.PULL_FROM_SERVER,
                        formatter=MockFormatter())
         self.assertEqual(data.mode, DataMode.PULL_FROM_SERVER)
         self.assertEqual(data.arrays, MockLive.arrays)
@@ -495,7 +495,7 @@ class TestDataSet(TestCase):
         mock_dm.needs_restart = True
         gdm_mock.return_value = mock_dm
 
-        data = DataSet(location='Venus', mode=DataMode.PUSH_TO_SERVER)
+        data = DataSet(location='Venus', data_manager=True, mode=DataMode.PUSH_TO_SERVER)
         self.assertEqual(mock_dm.needs_restart, False, data)
         self.assertEqual(mock_dm.data_set, data)
         self.assertEqual(data.data_manager, mock_dm)
