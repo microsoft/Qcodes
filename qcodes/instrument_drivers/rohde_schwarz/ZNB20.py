@@ -77,16 +77,6 @@ class ZNB20(VisaInstrument):
 
 
 
-        self.add_parameter(name='avg',
-                           label='Averages',
-                           units='',
-                           get_cmd='AVER:COUN?',
-                           set_cmd='AVER:COUN {:.4f}',
-                           get_parser=VISA_str_to_int,
-                           vals=vals.Numbers(1, 5000))
-
-
-
         # self.add_parameter(name='trace',
         #                    start=self.start(),
         #                    stop=self.stop(),
@@ -103,6 +93,7 @@ class ZNB20(VisaInstrument):
         self.add_function('update_display_off', call_cmd='SYST:DISP:UPD OFF')
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
         self.add_function('rf_on', call_cmd='OUTP1 ON')
+
 
 
         ###################
@@ -123,6 +114,14 @@ class ZNB20(VisaInstrument):
                                           'smit', 'ism', 'gdel', 'real', 'imag',
                                           'swr'))
 
+
+        ####################
+        # DISPLAY commands #
+        ####################
+        # Commands to select and present data on screen
+        self.add_function('autoscale_trace', call_cmd='DISP:TRAC:Y:AUTO ONCE')
+
+
         #####################
         # INITIATE commands #
         #####################
@@ -139,6 +138,27 @@ class ZNB20(VisaInstrument):
         # SENSE commands #
         ##################
         # commands affecting the receiver settings
+        self.add_function('clear_avg', call_cmd='SENS:AVER:CLEAR')
+
+        self.add_parameter(name='avg',
+                           label='Averages',
+                           units='',
+                           get_cmd='SENS:AVER:COUN?',
+                           set_cmd='SENS:AVER:COUN {:.4f}',
+                           get_parser=VISA_str_to_int,
+                           vals=vals.Numbers(1, 1000))
+
+        self.add_parameter(name='average_mode',
+                           get_cmd='SENS:AVER:MODE?',
+                           set_cmd='SENS:AVER:MODE {:s}',
+                           get_parser=VISA_str_to_int,
+                           vals=vals.Enum('auto', 'flatten', 'reduce', 'moving'))
+
+        self.add_parameter(name='average_state',
+                           get_cmd='SENS:AVER:STAT?',
+                           set_cmd='SENS:AVER:STAT {:s}',
+                           vals=vals.OnOff())
+
         self.add_parameter(name='bandwidth',
                            label='Bandwidth',
                            units='Hz',
@@ -188,12 +208,6 @@ class ZNB20(VisaInstrument):
                            vals=vals.OnOff())
 
 
-# need to be fixed
-        self.add_parameter(name='data',
-                           units=('', ''),
-                           get_cmd=self.get_real_imaginary_data)
-
-
         #####################
         #  TRIGGER commands #
         #####################
@@ -206,6 +220,16 @@ class ZNB20(VisaInstrument):
 
         self.reset()
         self.connect_message()
+
+
+    def get_stimulus(self):
+        '''
+        get the frequncies used in the sweep
+        '''
+        stimulus_str = self.ask('CALC:DATA:STIM?')
+        stimulus_double = np.array(stimulus_str.split(','), dtype=np.double)
+
+        return stimulus_double
 
 
     def get_real_imaginary_data(self):
