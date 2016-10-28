@@ -61,7 +61,7 @@ Developer-pyenv
 
 Core developers use virtualenv and pyenv to make sure all the system are the same,
 this rules out issues and the usual "it works on my machine". Install pyenv
-on your OS `see this https://github.com/yyuu/pyenv`__ .
+on your OS `see this <https://github.com/yyuu/pyenv>`__ .
 
 $QCODES_INSTALL_DIR is the folder where you want to have the source code.
 
