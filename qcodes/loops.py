@@ -99,7 +99,7 @@ def get_bg(return_first=False):
     return None
 
 
-def halt_bg(timeout=5, traceback=True):
+def halt_bg(timeout=30, traceback=True):
     """
     Stop the active background measurement process, if any.
 
