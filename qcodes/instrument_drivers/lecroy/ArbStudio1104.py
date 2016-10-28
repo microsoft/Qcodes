@@ -51,6 +51,9 @@ class ArbStudio1104(Instrument):
         # sampling_rate_prescaler
         self.sampling_rate = 250e6 #Hz
 
+        self.add_parameter('waveforms',
+                           get_cmd=lambda: self._waveforms)
+
         for ch in range(1,5):
             self.add_parameter('ch{}_trigger_mode'.format(ch),
                                label='Channel {} trigger mode'.format(ch),
@@ -68,6 +71,7 @@ class ArbStudio1104(Instrument):
                                get_cmd=partial(self._get_sampling_rate_prescaler, ch), #Typo is intentional
                                set_cmd=partial(self._set_sampling_rate_prescaler, ch),
                                vals=vals.MultiType(Multiples(2), vals.Enum(1)))
+
 
             self.add_parameter('ch{}_sequence'.format(ch),
                                parameter_class=ManualParameter,
