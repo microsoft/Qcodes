@@ -823,15 +823,16 @@ class ActiveLoop(Metadatable):
             ds = self.data_set
 
         finally:
+            if not quiet:
+                print(repr(self.data_set))
+                print(datetime.now().strftime('started at %Y-%m-%d %H:%M:%S'))
+
             # After normal loop execution we clear the data_set so we can run
             # again. But also if something went wrong during the loop execution
             # we want to clear the data_set attribute so we don't try to reuse
             # this one later.
             self.data_set = None
 
-        if not quiet:
-            print(repr(self.data_set))
-            print(datetime.now().strftime('started at %Y-%m-%d %H:%M:%S'))
 
         return ds
 

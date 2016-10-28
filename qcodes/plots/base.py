@@ -3,6 +3,7 @@ Live plotting in Jupyter notebooks
 """
 from IPython.display import display
 
+from qcodes import config
 from qcodes.widgets.widgets import HiddenUpdateWidget
 
 
