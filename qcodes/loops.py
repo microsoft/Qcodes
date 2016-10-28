@@ -65,7 +65,7 @@ from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
                       BreakIf, _QcodesBreak)
 
 # Switches off multiprocessing by default, cant' be altered after module
-USE_MP = config.core.legacy_mp
+USE_MP = True # config.core.legacy_mp
 MP_NAME = 'Measurement'
 
 
@@ -686,8 +686,8 @@ class ActiveLoop(Metadatable):
             if data_manager is False:
                 data_mode = DataMode.LOCAL
             else:
-                warnings.warn("Multiprocessing is in beta, use at own risk",
-                              UserWarning)
+                # warnings.warn("Multiprocessing is in beta, use at own risk",
+                #               UserWarning)
                 data_mode = DataMode.PUSH_TO_SERVER
 
             data_set = new_data(arrays=self.containers(), mode=data_mode,
@@ -757,7 +757,6 @@ class ActiveLoop(Metadatable):
         returns:
             a DataSet object that we can use to plot
         """
-        print(USE_MP)
         if progress_interval is not False:
             self.progress_interval = progress_interval
 
@@ -796,8 +795,8 @@ class ActiveLoop(Metadatable):
 
         try:
             if background:
-                warnings.warn("Multiprocessing is in beta, use at own risk",
-                              UserWarning)
+                # warnings.warn("Multiprocessing is in beta, use at own risk",
+                #               UserWarning)
                 p = QcodesProcess(target=self._run_wrapper, name=MP_NAME)
                 p.is_sweep = True
                 p.signal_queue = self.signal_queue
