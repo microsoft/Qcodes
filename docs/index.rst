@@ -70,4 +70,4 @@ Indices and tables
 License
 =======
 
-.. include:: ../LICENSE.md
+.. include:: ../LICENSE
