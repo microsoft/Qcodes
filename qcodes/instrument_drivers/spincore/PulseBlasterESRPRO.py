@@ -2,12 +2,12 @@ import qcodes as qc
 import ctypes
 
 from qcodes import Instrument
-from qcodes.utils.validators import Numbers, Ints, Enum, Strings
+import qcodes.utils.validators as vals
 from qcodes.instrument.parameter import ManualParameter
 
 from qcodes.instrument_drivers.spincore import spinapi as api
 
-class PulseBlaster(Instrument):
+class PulseBlasterESRPRO(Instrument):
     """
     This is the qcodes driver for the PulseBlaster ESR-PRO.
     The driver communicates with the underlying python wrapper spinapi.py,
@@ -21,15 +21,16 @@ class PulseBlaster(Instrument):
     Note that only a single instance can communicate with the PulseBlaster.
     To avoid a locked instrument, always close connection with the Pulseblaster.
     """
-    instructions = {'CONTINUE': 0,  #inst_data=Not used
-                    'STOP': 1,      #inst_data=Not used
-                    'LOOP': 2,      #inst_data=Number of desired loops
-                    'END_LOOP': 3,  #inst_data=Address of instruction originating loop
-                    'JSR': 4,       #inst_data=Address of first instruction in subroutine
-                    'RTS': 5,       #inst_data=Not Used
-                    'BRANCH': 6,    #inst_data=Address of instruction to branch to
-                    'LONG_DELAY': 7,#inst_data=Number of desired repetitions
-                    'WAIT': 8}      #inst_data=Not used
+    program_instructions_map = {
+        'CONTINUE': 0,  #inst_data=Not used
+        'STOP': 1,      #inst_data=Not used
+        'LOOP': 2,      #inst_data=Number of desired loops
+        'END_LOOP': 3,  #inst_data=Address of instruction originating loop
+        'JSR': 4,       #inst_data=Address of first instruction in subroutine
+        'RTS': 5,       #inst_data=Not Used
+        'BRANCH': 6,    #inst_data=Address of instruction to branch to
+        'LONG_DELAY': 7,#inst_data=Number of desired repetitions
+        'WAIT': 8}      #inst_data=Not used
 
     def __init__(self, name, api_path, **kwargs):
         super().__init__(name, **kwargs)
@@ -41,7 +42,7 @@ class PulseBlaster(Instrument):
                            label='Core clock',
                            units='MHz',
                            set_cmd=api.pb_core_clock,
-                           vals=Numbers(0, 500))
+                           vals=vals.Numbers(0, 500))
 
         self.add_function('initialize',
                           call_cmd=self.initialize)
@@ -51,14 +52,15 @@ class PulseBlaster(Instrument):
 
         self.add_function('select_board',
                           call_cmd=api.pb_select_board,
-                          args=[Enum(0, 1, 2, 3, 4)])
+                          args=[vals.Enum(0, 1, 2, 3, 4)])
 
         self.add_function('start_programming',
                           call_cmd=self.start_programming)
 
         self.add_function('send_instruction',
                           call_cmd=self.send_instruction,
-                          args=[Ints(), Strings(), Ints(), Ints()])
+                          args=[vals.Ints(), vals.Strings(),
+                                vals.Ints(), vals.Ints()])
 
         self.add_function('stop_programming',
                           call_cmd=self.stop_programming)
@@ -74,6 +76,11 @@ class PulseBlaster(Instrument):
 
         self.add_function('get_error',
                           call_cmd=api.pb_get_error)
+
+        self.add_parameter('instructions',
+                           parameter_class = ManualParameter,
+                           initial_value=[],
+                           vals=vals.Anything())
 
         self.initialize()
 
@@ -109,7 +116,10 @@ class PulseBlaster(Instrument):
             return_msg
         '''
 
-        # Needs constant PULSE_PROGRAM, which is set to equal 0 in the api
+        # Reset instructions
+        self.instructions([])
+
+        # Needs constant PULSE_PROGRAM, which is set to equal 0 in the api)
         return_msg = api.pb_start_programming(api.PULSE_PROGRAM)
         assert return_msg == 0, 'Error starting programming: {}'.format(api.pb_get_error())
         return return_msg
@@ -133,7 +143,12 @@ class PulseBlaster(Instrument):
         Returns:
             return_msg, which contains instruction address
         '''
-        instruction_int = self.instructions[instruction.upper()]
+
+        # Add instruction to log
+        self.instructions(self.instructions() +
+                          [(flags, instruction, inst_args, length)])
+
+        instruction_int = self.program_instructions_map[instruction.upper()]
         #Need to call underlying spinapi because function does not exist in wrapper
         return_msg = api.spinapi.pb_inst_pbonly(ctypes.c_uint64(flags),
                                                 ctypes.c_int(instruction_int),
@@ -164,7 +179,13 @@ class PulseBlaster(Instrument):
             return_msg
         '''
         return_msg = api.pb_start()
-        assert return_msg == 0, 'Error starting: {}'.format(api.pb_get_error())
+        try:
+            assert return_msg == 0, 'Error starting: {}'.format(api.pb_get_error())
+        except AssertionError:
+            api.pb_stop()
+            api.pb_start()
+            assert return_msg == 0, 'Error starting: {}'.format(
+                api.pb_get_error())
         return return_msg
 
     def stop(self):
