@@ -31,6 +31,8 @@ class Basic_AcquisitionController(AcquisitionController):
                            get_cmd=self.do_acquisition,
                            shapes=((),),
                            snapshot_value=False)
+        self.add_parameter(name="acquisition_settings",
+                           get_cmd=lambda: self._acquisition_settings)
 
     def get_acquisition_setting(self, setting):
         """
@@ -52,6 +54,9 @@ class Basic_AcquisitionController(AcquisitionController):
 
     def update_acquisition_settings(self, **kwargs):
         self._acquisition_settings.update(**kwargs)
+
+    def set_acquisition_settings(self, **kwargs):
+        self._acquisition_settings = kwargs
 
     def setup(self):
         """
@@ -138,7 +143,7 @@ class Basic_AcquisitionController(AcquisitionController):
             records = [np.zeros(self.samples_per_record)
                        for _ in range(self.number_of_channels)]
 
-            for ch in range(self.number_of_chs):
+            for ch in range(self.number_of_channels):
                 for i in range(self.records_per_buffer):
                     i0 = ch_offset(ch) + i * self.samples_per_record
                     i1 = i0 + self.samples_per_record
@@ -151,11 +156,11 @@ class Basic_AcquisitionController(AcquisitionController):
                        / self.records_per_acquisition
                        for i in range(self.number_of_channels)]
 
-        # Convert data points from an uint8 to volts
-        for ch, record in enumerate(records):
+        # Convert data points from an uint16 to volts
+        for ch, record  in enumerate(records):
             ch_idx = self.channel_selection[ch]
             ch_range = self._alazar.parameters['channel_range'+ch_idx]()
-            records[ch] = (record - 127.5) / 127.5 * ch_range
+            records[ch] = (record - 2**15) / 2**15 * ch_range
         return records
 
 

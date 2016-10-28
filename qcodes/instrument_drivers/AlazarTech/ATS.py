@@ -646,14 +646,14 @@ class AlazarTech_ATS(Instrument):
         if value is not None:
             self.parameters[param_name]._set(value)
 
-    def _set_list_if_present(self, param_base, value):
-        if value is not None:
+    def _set_list_if_present(self, param_base, values):
+        if values is not None:
             # Create list of identical values if a single value is given
-            if not isinstance(value, list):
-                value = [value] * len(self.channels)
-            for i, v in enumerate(value):
-                if param_base + str(i+1) in self.parameters.keys():
-                    self.parameters[param_base + str(i + 1)]._set(v)
+            if not isinstance(values, list):
+                values = [values] * len(self.channels)
+            for val, ch in zip(values, self.channels):
+                if param_base + ch in self.parameters.keys():
+                    self.parameters[param_base + ch]._set(val)
 
     def _call_dll(self, func_name, *args):
         """
