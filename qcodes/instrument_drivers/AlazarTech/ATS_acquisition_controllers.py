@@ -1,8 +1,10 @@
-from .ATS import AcquisitionController
 import math
 import numpy as np
+import logging
+
 from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils import validators as vals
+from .ATS import AcquisitionController
 
 
 class Basic_AcquisitionController(AcquisitionController):
@@ -17,46 +19,10 @@ class Basic_AcquisitionController(AcquisitionController):
         self.buffer = None
         self.buffer_idx = 0
 
-        self._acquisition_settings = {}
-
         self.add_parameter(name='average_mode',
                            parameter_class=ManualParameter,
                            initial_value='trace',
                            vals=vals.Enum('none', 'trace', 'point'))
-        # Names and shapes must have initial value, even through they will be
-        # overwritten in set_acquisition_settings. If we don't do this, the
-        # remoteInstrument will not recognize that it returns multiple values.
-        self.add_parameter(name="acquisition",
-                           names=['channel_signal'],
-                           get_cmd=self.do_acquisition,
-                           shapes=((),),
-                           snapshot_value=False)
-        self.add_parameter(name="acquisition_settings",
-                           get_cmd=lambda: self._acquisition_settings)
-
-    def get_acquisition_setting(self, setting):
-        """
-        Obtain an acquisition setting for the ATS.
-        It checks if the setting is in ATS_controller._acquisition_settings
-        If not, it will retrieve the ATS latest parameter value
-
-        Args:
-            setting: acquisition setting to look for
-
-        Returns:
-            Value of the acquisition setting
-        """
-        if setting in self._acquisition_settings.keys():
-            return self._acquisition_settings[setting]
-        else:
-            # Must get latest value, since it may not be updated in ATS
-            return self._alazar.parameters[setting].get_latest()
-
-    def update_acquisition_settings(self, **kwargs):
-        self._acquisition_settings.update(**kwargs)
-
-    def set_acquisition_settings(self, **kwargs):
-        self._acquisition_settings = kwargs
 
     def setup(self):
         """
@@ -109,11 +75,6 @@ class Basic_AcquisitionController(AcquisitionController):
         # gets called after 'AlazarStartCapture'
         pass
 
-    def do_acquisition(self):
-        records = self._alazar.acquire(acquisition_controller=self,
-                                       **self._acquisition_settings)
-        return records
-
     def handle_buffer(self, data):
         if self.buffer_idx < self.buffers_per_acquisition:
             if self.average_mode() in ['point', 'trace']:
@@ -162,6 +123,25 @@ class Basic_AcquisitionController(AcquisitionController):
             ch_range = self._alazar.parameters['channel_range'+ch_idx]()
             records[ch] = (record - 2**15) / 2**15 * ch_range
         return records
+
+
+class Continuous_AcquisitionController(AcquisitionController):
+    def __init__(self, name, alazar_name, **kwargs):
+        super().__init__(name, alazar_name, **kwargs)
+
+        # For continuous streaming, buffers_per_acquisition=0x7FFFFFFF
+        self._fixed_acquisition_settings = {
+            'buffers_per_acquisition': 0x7FFFFFFF,
+            'records_per_buffer': 1}
+        self._acquisition_settings = self._fixed_acquisition_settings
+
+        self.add_parameter(name='average_mode',
+                           parameter_class=ManualParameter,
+                           initial_value='trace',
+                           vals=vals.Enum('none', 'trace', 'point'))
+
+    def setup(self):
+        pass
 
 
 # DFT AcquisitionController

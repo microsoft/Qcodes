@@ -161,24 +161,16 @@ class ATS9440(AlazarTech_ATS):
                            label='Acquisition mode',
                            unit=None,
                            value='NPT',
-                           byte_to_value_dict={0x200: 'NPT', 0x400: 'TS'})
+                           byte_to_value_dict={0x100: 'CS', 0x200: 'NPT',
+                                               0x400: 'TS'})
 
-        # samples_per_record must be a multiple of 16!
+        # samples_per_record must be a multiple of 32, and 256 minimum!
         self.add_parameter(name='samples_per_record',
                            parameter_class=AlazarParameter,
                            label='Samples per Record',
                            unit=None,
                            value=1024,
-                           vals=Multiples(divisor=16, min_value=0))
-        # TODO (M) figure out if this also has to be a multiple of something,
-        # I could not find this in the documentation but somehow I have the
-        # feeling it still should be a multiple of something
-        # NOTE by ramiro: At least in previous python implementations
-        # (PycQED delft), this is an artifact for compatibility with AWG
-        # sequencing, not particular to any ATS architecture.
-        # ==> this is a construction imposed by the memory strategy implemented
-        # on the python driver we are writing, not limited by any actual ATS
-        # feature.
+                           vals=Multiples(divisor=32, min_value=256))
 
         self.add_parameter(name='records_per_buffer',
                            parameter_class=AlazarParameter,

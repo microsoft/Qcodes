@@ -478,8 +478,8 @@ class AlazarTech_ATS(Instrument):
         # endregion
         self.mode._set_updated()
         mode = self.mode.get()
-        if mode not in ('TS', 'NPT'):
-            raise Exception("Only the 'TS' and 'NPT' modes are implemented "
+        if mode not in ('TS', 'NPT', 'CS'):
+            raise Exception("Only the 'TS', 'CS', 'NPT' modes are implemented "
                             "at this point")
 
         # -----set final configurations-----
@@ -494,7 +494,7 @@ class AlazarTech_ATS(Instrument):
         #                     'Number of bits: {}'.format(bps))
 
         # Set record size for NPT mode
-        if mode == 'NPT':
+        if mode in ['CS' or 'NPT']:
             pretriggersize = 0  # pretriggersize is 0 for NPT always
             post_trigger_size = self.samples_per_record._get_byte()
             self._call_dll('AlazarSetRecordSize',
@@ -543,6 +543,17 @@ class AlazarTech_ATS(Instrument):
                                 'defauling to 1')
                 self.records_per_buffer._set(1)
             records_per_buffer = self.records_per_buffer._get_byte()
+
+            self._call_dll('AlazarBeforeAsyncRead',
+                           self._handle, self.channel_selection,
+                           self.transfer_offset, samples_per_buffer,
+                           self.records_per_buffer, buffers_per_acquisition,
+                           acquire_flags)
+        elif mode == 'CS':
+            if self.records_per_buffer._get_byte() != 1:
+                logging.warning('records_per_buffer should be 1 in TS mode, '
+                                'defauling to 1')
+                self.records_per_buffer._set(1)
 
             self._call_dll('AlazarBeforeAsyncRead',
                            self._handle, self.channel_selection,
@@ -954,6 +965,20 @@ class AcquisitionController(Instrument):
         self._alazar = self.find_instrument(alazar_name,
                                             instrument_class=AlazarTech_ATS)
 
+        self._acquisition_settings = {}
+        self._fixed_acquisition_settings = {}
+        self.add_parameter(name="acquisition_settings",
+                           get_cmd=lambda: self._acquisition_settings)
+
+        # Names and shapes must have initial value, even through they will be
+        # overwritten in set_acquisition_settings. If we don't do this, the
+        # remoteInstrument will not recognize that it returns multiple values.
+        self.add_parameter(name="acquisition",
+                           names=['channel_signal'],
+                           get_cmd=self.do_acquisition,
+                           shapes=((),),
+                           snapshot_value=False)
+
     def _get_alazar(self):
         """
         returns a reference to the alazar instrument. A call to self._alazar is
@@ -961,6 +986,53 @@ class AcquisitionController(Instrument):
         :return: reference to the Alazar instrument
         """
         return self._alazar
+
+    def verify_acquisition_settings(self, **kwargs):
+        """
+        Ensure that none of the fixed acquisition settings are overwritten
+        Args:
+            **kwargs: List of acquisition settings
+
+        Returns:
+            acquisition settings wwith fixed settings
+        """
+        for key, val in self._fixed_acquisition_settings.items():
+            if kwargs.get(key, val) != val:
+                logging.warning('Cannot set {} to {}. Defaulting to {}'.format(
+                    key, kwargs[key], val))
+            kwargs[key] = val
+        return kwargs
+
+    def get_acquisition_setting(self, setting):
+        """
+        Obtain an acquisition setting for the ATS.
+        It checks if the setting is in ATS_controller._acquisition_settings
+        If not, it will retrieve the ATS latest parameter value
+
+        Args:
+            setting: acquisition setting to look for
+
+        Returns:
+            Value of the acquisition setting
+        """
+        if setting in self._acquisition_settings.keys():
+            return self._acquisition_settings[setting]
+        else:
+            # Must get latest value, since it may not be updated in ATS
+            return self._alazar.parameters[setting].get_latest()
+
+    def update_acquisition_settings(self, **kwargs):
+        kwargs = self.verify_acquisition_settings(**kwargs)
+        self._acquisition_settings.update(**kwargs)
+
+    def set_acquisition_settings(self, **kwargs):
+        kwargs = self.verify_acquisition_settings(**kwargs)
+        self._acquisition_settings = kwargs
+
+    def do_acquisition(self):
+        records = self._alazar.acquire(acquisition_controller=self,
+                                       **self._acquisition_settings)
+        return records
 
     def pre_start_capture(self):
         """
