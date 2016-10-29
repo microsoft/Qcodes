@@ -40,6 +40,10 @@ class Basic_AcquisitionController(AcquisitionController):
         self.traces_per_acquisition = self.buffers_per_acquisition * \
                                        self.records_per_buffer
 
+        if self.samples_per_record % 16:
+            raise SyntaxError('Samples per record {} is not multiple of '
+                              '16'.format(self.samples_per_record))
+
         # Set acquisition parameter metadata
         self.acquisition.names = tuple(['ch{}_signal'.format(ch) for ch in
                                         self.channel_selection])
@@ -139,7 +143,7 @@ class Continuous_AcquisitionController(AcquisitionController):
                            vals=vals.Enum('none', 'trace', 'point'))
         self.add_parameter(name='samples_per_trace',
                            parameter_class=ManualParameter,
-                           vals=vals.Ints())
+                           vals=vals.Multiples(divisor=16))
         self.add_parameter(name='traces_per_acquisition',
                            parameter_class=ManualParameter,
                            vals=vals.Ints())
@@ -152,10 +156,17 @@ class Continuous_AcquisitionController(AcquisitionController):
         Returns:
             None
         """
+
         # Update acquisition parameter values. These depend on the average mode
         for attr in ['channel_selection', 'samples_per_record']:
             setattr(self, attr, self.get_acquisition_setting(attr))
         self.number_of_channels = len(self.channel_selection)
+        self.buffers_per_trace = round(self.samples_per_trace() / \
+                                       self.samples_per_record)
+
+        if self.samples_per_record % 16:
+            raise SyntaxError('Samples per record {} is not multiple of '
+                              '16'.format(self.samples_per_record))
 
         # Set acquisition parameter metadata
         self.acquisition.names = tuple(['ch{}_signal'.format(ch) for ch in
@@ -176,29 +187,28 @@ class Continuous_AcquisitionController(AcquisitionController):
         Initializes buffers before capturing
         """
         self.buffer_idx = 0
-        if self.average_mode() in ['point', 'trace']:
-            self.buffer = np.zeros(self.samples_per_record *
-                                   self.records_per_buffer *
-                                   self.number_of_channels)
-        else:
-            self.buffer = np.zeros((self.buffers_per_acquisition,
-                                    self.samples_per_record *
-                                    self.records_per_buffer *
-                                    self.number_of_channels))
+        self.buffers = [np.zeros((self.traces_per_acquisition,
+                                  self.samples_per_record))
+                        for ch in self.channel_selection]
 
     def pre_acquire(self):
         # gets called after 'AlazarStartCapture'
         pass
 
     def handle_buffer(self, data):
-        if self.buffer_idx < self.buffers_per_acquisition:
-            if self.average_mode() in ['point', 'trace']:
-                self.buffer += data
-            else:
-                self.buffer[self.buffer_idx] = data
+        if self.buffer_idx < self.buffers_per_trace * \
+                             self.traces_per_acquisition():
+            # Determine index of the buffer in the trace and in the dataset
+            trace_buffer = self.buffer_idx % self.buffers_per_trace
+            idx = (self.buffer_idx // self.buffers_per_trace,
+                   slice(trace_buffer, trace_buffer + self.samples_per_record))
+
+            # Save buffer components into each channel dataset
+            for ch in range(self.number_of_channels):
+                self.buffers[ch][idx] = data[ch * self.samples_per_record,
+                                             (ch + 1) * self.samples_per_record]
         else:
-            print('*'*20+'\nIgnoring extra ATS buffer')
-            pass
+            print('Ignoring extra ATS buffer {}'.format(self.buffer_idx))
         self.buffer_idx += 1
 
     def post_acquire(self):
@@ -207,40 +217,19 @@ class Continuous_AcquisitionController(AcquisitionController):
         # S0A, S0B, ..., S1A, S1B, ...
         # with SXY the sample number X of channel Y.
 
-        ch_offset = lambda ch: ch * self.samples_per_record * \
-                               self.records_per_buffer
-
         if self.average_mode() == 'none':
-            records = [self.buffer[:, ch_offset(ch):ch_offset(ch+1)].reshape(
-                (self.traces_per_acquisition, self.samples_per_record))
-                       for ch in range(self.number_of_channels)]
-
+            data = self.buffers
         elif self.average_mode() == 'trace':
-            records = [np.zeros(self.samples_per_record)
-                       for _ in range(self.number_of_channels)]
-
-            for ch in range(self.number_of_channels):
-                for i in range(self.records_per_buffer):
-                    i0 = ch_offset(ch) + i * self.samples_per_record
-                    i1 = i0 + self.samples_per_record
-                    records[ch] += self.buffer[i0:i1]
-                records[ch] /= self.traces_per_acquisition
-
+            data = [np.mean(buffer, axis=0) for buffer in self.buffers]
         elif self.average_mode() == 'point':
-            trace_length = self.samples_per_record * self.records_per_buffer
-            records = [np.mean(self.buffer[i*trace_length:(i+1)*trace_length])
-                       / self.traces_per_acquisition
-                       for i in range(self.number_of_channels)]
+            data = [np.mean(buffer) for buffer in self.buffers]
 
         # Convert data points from an uint16 to volts
-        for ch, record  in enumerate(records):
+        for ch, ch_data in enumerate(data):
             ch_idx = self.channel_selection[ch]
             ch_range = self._alazar.parameters['channel_range'+ch_idx]()
-            records[ch] = (record - 2**15) / 2**15 * ch_range
-        return records
-
-
-
+            data[ch] = (ch_data - 2**15) / 2**15 * ch_range
+        return data
 
 
 # DFT AcquisitionController
