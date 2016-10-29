@@ -37,7 +37,7 @@ class Basic_AcquisitionController(AcquisitionController):
                      'records_per_buffer', 'buffers_per_acquisition']:
             setattr(self, attr, self.get_acquisition_setting(attr))
         self.number_of_channels = len(self.channel_selection)
-        self.records_per_acquisition = self.buffers_per_acquisition * \
+        self.traces_per_acquisition = self.buffers_per_acquisition * \
                                        self.records_per_buffer
 
         # Set acquisition parameter metadata
@@ -47,14 +47,12 @@ class Basic_AcquisitionController(AcquisitionController):
         self.acquisition.units = ['V'] * self.number_of_channels
 
         if self.average_mode() == 'point':
-            self.acquisition.shapes = tuple([()] * self.number_of_channels)
+            shape = ()
         elif self.average_mode() == 'trace':
             shape = (self.samples_per_record,)
-            self.acquisition.shapes = tuple([shape] * self.number_of_channels)
         else:
-            shape = (self.records_per_buffer * self.buffers_per_acquisition,
-                     self.samples_per_record)
-            self.acquisition.shapes = tuple([shape] * self.number_of_channels)
+            shape = (self.traces_per_acquisition, self.samples_per_record)
+        self.acquisition.shapes = tuple([shape] * self.number_of_channels)
 
     def pre_start_capture(self):
         """
@@ -97,7 +95,7 @@ class Basic_AcquisitionController(AcquisitionController):
 
         if self.average_mode() == 'none':
             records = [self.buffer[:, ch_offset(ch):ch_offset(ch+1)].reshape(
-                (self.records_per_acquisition, self.samples_per_record))
+                (self.traces_per_acquisition, self.samples_per_record))
                        for ch in range(self.number_of_channels)]
 
         elif self.average_mode() == 'trace':
@@ -109,12 +107,12 @@ class Basic_AcquisitionController(AcquisitionController):
                     i0 = ch_offset(ch) + i * self.samples_per_record
                     i1 = i0 + self.samples_per_record
                     records[ch] += self.buffer[i0:i1]
-                records[ch] /= self.records_per_acquisition
+                records[ch] /= self.traces_per_acquisition
 
         elif self.average_mode() == 'point':
             trace_length = self.samples_per_record * self.records_per_buffer
             records = [np.mean(self.buffer[i*trace_length:(i+1)*trace_length])
-                       / self.records_per_acquisition
+                       / self.traces_per_acquisition
                        for i in range(self.number_of_channels)]
 
         # Convert data points from an uint16 to volts
@@ -139,9 +137,110 @@ class Continuous_AcquisitionController(AcquisitionController):
                            parameter_class=ManualParameter,
                            initial_value='trace',
                            vals=vals.Enum('none', 'trace', 'point'))
+        self.add_parameter(name='samples_per_trace',
+                           parameter_class=ManualParameter,
+                           vals=vals.Ints())
+        self.add_parameter(name='traces_per_acquisition',
+                           parameter_class=ManualParameter,
+                           vals=vals.Ints())
 
     def setup(self):
+        """
+        Setup the ATS controller by updating most current ATS values and setting
+        the acquisition parameter metadata
+
+        Returns:
+            None
+        """
+        # Update acquisition parameter values. These depend on the average mode
+        for attr in ['channel_selection', 'samples_per_record']:
+            setattr(self, attr, self.get_acquisition_setting(attr))
+        self.number_of_channels = len(self.channel_selection)
+
+        # Set acquisition parameter metadata
+        self.acquisition.names = tuple(['ch{}_signal'.format(ch) for ch in
+                                        self.channel_selection])
+        self.acquisition.labels = self.acquisition.names
+        self.acquisition.units = ['V'] * self.number_of_channels
+
+        if self.average_mode() == 'point':
+            shape = ()
+        elif self.average_mode() == 'trace':
+            shape = (self.samples_per_trace(),)
+        else:
+            shape = (self.traces_per_acquisition(), self.samples_per_record)
+        self.acquisition.shapes = tuple([shape] * self.number_of_channels)
+
+    def pre_start_capture(self):
+        """
+        Initializes buffers before capturing
+        """
+        self.buffer_idx = 0
+        if self.average_mode() in ['point', 'trace']:
+            self.buffer = np.zeros(self.samples_per_record *
+                                   self.records_per_buffer *
+                                   self.number_of_channels)
+        else:
+            self.buffer = np.zeros((self.buffers_per_acquisition,
+                                    self.samples_per_record *
+                                    self.records_per_buffer *
+                                    self.number_of_channels))
+
+    def pre_acquire(self):
+        # gets called after 'AlazarStartCapture'
         pass
+
+    def handle_buffer(self, data):
+        if self.buffer_idx < self.buffers_per_acquisition:
+            if self.average_mode() in ['point', 'trace']:
+                self.buffer += data
+            else:
+                self.buffer[self.buffer_idx] = data
+        else:
+            print('*'*20+'\nIgnoring extra ATS buffer')
+            pass
+        self.buffer_idx += 1
+
+    def post_acquire(self):
+        # average over records in buffer:
+        # for ATS9360 samples are arranged in the buffer as follows:
+        # S0A, S0B, ..., S1A, S1B, ...
+        # with SXY the sample number X of channel Y.
+
+        ch_offset = lambda ch: ch * self.samples_per_record * \
+                               self.records_per_buffer
+
+        if self.average_mode() == 'none':
+            records = [self.buffer[:, ch_offset(ch):ch_offset(ch+1)].reshape(
+                (self.traces_per_acquisition, self.samples_per_record))
+                       for ch in range(self.number_of_channels)]
+
+        elif self.average_mode() == 'trace':
+            records = [np.zeros(self.samples_per_record)
+                       for _ in range(self.number_of_channels)]
+
+            for ch in range(self.number_of_channels):
+                for i in range(self.records_per_buffer):
+                    i0 = ch_offset(ch) + i * self.samples_per_record
+                    i1 = i0 + self.samples_per_record
+                    records[ch] += self.buffer[i0:i1]
+                records[ch] /= self.traces_per_acquisition
+
+        elif self.average_mode() == 'point':
+            trace_length = self.samples_per_record * self.records_per_buffer
+            records = [np.mean(self.buffer[i*trace_length:(i+1)*trace_length])
+                       / self.traces_per_acquisition
+                       for i in range(self.number_of_channels)]
+
+        # Convert data points from an uint16 to volts
+        for ch, record  in enumerate(records):
+            ch_idx = self.channel_selection[ch]
+            ch_range = self._alazar.parameters['channel_range'+ch_idx]()
+            records[ch] = (record - 2**15) / 2**15 * ch_range
+        return records
+
+
+
 
 
 # DFT AcquisitionController
