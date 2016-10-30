@@ -194,12 +194,6 @@ class Continuous_AcquisitionController(AcquisitionController):
 
     def _requires_buffer(self):
         trace_idx = self.buffer_idx // self.buffers_per_trace
-        print('self.buffer_idx: {}'.format(self.buffer_idx))
-
-        print('self.buffers_per_trace: {}'.format(self.buffers_per_trace))
-        print('trace_idx: {}'.format(trace_idx))
-        print('self.traces_per_acquisition(): {}'.format(self.traces_per_acquisition()))
-
         return trace_idx < self.traces_per_acquisition()
 
     def pre_start_capture(self):
@@ -218,8 +212,9 @@ class Continuous_AcquisitionController(AcquisitionController):
     def handle_buffer(self, data):
         if self.buffer_idx < self.buffers_per_trace * \
                              self.traces_per_acquisition():
-            # Determine index of the buffer in the trace and in the dataset
+            # Determine index of the trace and in the dataset
             trace_idx = self.buffer_idx // self.buffers_per_trace
+            # Determine the buffer idx offset in the trace
             trace_offset = self.samples_per_record * \
                            (self.buffer_idx % self.buffers_per_trace)
             idx = (trace_idx,
@@ -227,17 +222,11 @@ class Continuous_AcquisitionController(AcquisitionController):
 
             # Save buffer components into each channel dataset
             for ch in range(self.number_of_channels):
-                # buffer = self.buffers[ch]
-                # data_segment = data[ch * self.samples_per_record,
-                #                              (ch + 1) * self.samples_per_record]
-                # buffer_segment = buffer[idx]
                 self.buffers[ch][idx] = data[ch * self.samples_per_record:
                                              (ch + 1) * self.samples_per_record]
         else:
             print('Ignoring extra ATS buffer {}'.format(self.buffer_idx))
         self.buffer_idx += 1
-
-        print('here self.buffer_idx: {}'.format(self.buffer_idx))
 
     def post_acquire(self):
         # average over records in buffer:

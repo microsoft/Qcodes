@@ -171,7 +171,7 @@ class ATS9440(AlazarTech_ATS):
                            label='Samples per Record',
                            unit=None,
                            value=1024,
-                           vals=validators.Multiples(divisor=16, min_value=256))
+                           vals=validators.Multiples(divisor=16, min_value=16))
 
         self.add_parameter(name='records_per_buffer',
                            parameter_class=AlazarParameter,
