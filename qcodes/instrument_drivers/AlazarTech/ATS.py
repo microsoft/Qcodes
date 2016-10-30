@@ -495,17 +495,12 @@ class AlazarTech_ATS(Instrument):
 
         # Set record size for NPT mode
         if mode in ['CS' or 'NPT']:
-            pretriggersize = 0  # pretriggersize is 0 for NPT always
+            pretriggersize = 0  # pretriggersize is 0 for NPT and CS always
             post_trigger_size = self.samples_per_record._get_byte()
             self._call_dll('AlazarSetRecordSize',
                            self._handle, pretriggersize,
                            post_trigger_size)
 
-        # set acquisition parameters here for NPT, TS mode
-        # if self.channel_selection._get_byte() == 3:
-        #     number_of_channels = 2
-        # else:
-        #     number_of_channels = 1
         number_of_channels = len(self.channel_selection._latest_value)
         samples_per_buffer = 0
         buffers_per_acquisition = self.buffers_per_acquisition._get_byte()
@@ -518,6 +513,7 @@ class AlazarTech_ATS(Instrument):
                          self.interleave_samples._get_byte() |
                          self.get_processed_data._get_byte())
 
+        # set acquisition parameters here for NPT, TS, CS mode
         if mode == 'NPT':
             records_per_buffer = self.records_per_buffer._get_byte()
             records_per_acquisition = (
@@ -549,6 +545,7 @@ class AlazarTech_ATS(Instrument):
                            self.transfer_offset, samples_per_buffer,
                            self.records_per_buffer, buffers_per_acquisition,
                            acquire_flags)
+
         elif mode == 'CS':
             if self.records_per_buffer._get_byte() != 1:
                 logging.warning('records_per_buffer should be 1 in TS mode, '
@@ -575,12 +572,15 @@ class AlazarTech_ATS(Instrument):
 
         # create buffers for acquisition
         self.clear_buffers()
-        # make sure that allocated_buffers <= buffers_per_acquisition
-        if (self.allocated_buffers._get_byte() >
-                self.buffers_per_acquisition._get_byte()):
-            print("'allocated_buffers' should be smaller than or equal to"
-                  "'buffers_per_acquisition'. Defaulting 'allocated_buffers' to"
-                  "" + str(self.buffers_per_acquisition._get_byte()))
+        # make sure that allocated_buffers <= buffers_per_acquisition and
+        # buffer acquisition is not in acquire indefinite mode (0x7FFFFFFF)
+        if (not self.buffers_per_acquisition._get_byte() == 0x7FFFFFFF) and \
+                (self.allocated_buffers._get_byte() >
+                     self.buffers_per_acquisition._get_byte()):
+            logging.warning(
+                "'allocated_buffers' should be smaller than or equal to"
+                "'buffers_per_acquisition'. Defaulting 'allocated_buffers' to'"
+                "" + str(self.buffers_per_acquisition._get_byte()))
             self.allocated_buffers._set(
                 self.buffers_per_acquisition._get_byte())
 
@@ -611,10 +611,12 @@ class AlazarTech_ATS(Instrument):
         buffer_timeout = self.buffer_timeout._get_byte()
         self.buffer_timeout._set_updated()
 
-        buffer_recycling = (self.buffers_per_acquisition._get_byte() >
-                            self.allocated_buffers._get_byte())
+        buffer_recycling = \
+            (not self.buffers_per_acquisition._get_byte() == 0x7FFFFFFF) and \
+            (self.buffers_per_acquisition._get_byte() >
+             self.allocated_buffers._get_byte())
 
-        while buffers_completed < self.buffers_per_acquisition._get_byte():
+        while acquisition_controller.requires_buffer():
             buf = self.buffer_list[buffers_completed % allocated_buffers]
 
             self._call_dll('AlazarWaitAsyncBufferComplete',
@@ -979,6 +981,9 @@ class AcquisitionController(Instrument):
                            shapes=((),),
                            snapshot_value=False)
 
+        self.add_parameter(name="requires_buffer",
+                           get_cmd=self._requires_buffer)
+
     def _get_alazar(self):
         """
         returns a reference to the alazar instrument. A call to self._alazar is
@@ -1033,6 +1038,16 @@ class AcquisitionController(Instrument):
         records = self._alazar.acquire(acquisition_controller=self,
                                        **self._acquisition_settings)
         return records
+
+    def _requires_buffer(self):
+        """
+        Check if enough buffers are acquired
+        Returns:
+
+        """
+        raise NotImplementedError(
+            'This method should be implemented in a subclass')
+
 
     def pre_start_capture(self):
         """

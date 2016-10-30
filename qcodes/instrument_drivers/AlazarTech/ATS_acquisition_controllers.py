@@ -58,6 +58,9 @@ class Basic_AcquisitionController(AcquisitionController):
             shape = (self.traces_per_acquisition, self.samples_per_record)
         self.acquisition.shapes = tuple([shape] * self.number_of_channels)
 
+    def _requires_buffer(self):
+        return self.buffer_idx < self.buffers_per_acquisition
+
     def pre_start_capture(self):
         """
         Initializes buffers before capturing
@@ -131,7 +134,9 @@ class Continuous_AcquisitionController(AcquisitionController):
     def __init__(self, name, alazar_name, **kwargs):
         super().__init__(name, alazar_name, **kwargs)
 
-        # For continuous streaming, buffers_per_acquisition=0x7FFFFFFF
+        # buffers_per_acquisition=0x7FFFFFFF results in buffers being collected
+        # indefinitely until aborted.
+        # Records_per_buffer must equal 1 for CS or TS
         self._fixed_acquisition_settings = {
             'buffers_per_acquisition': 0x7FFFFFFF,
             'records_per_buffer': 1}
@@ -182,6 +187,10 @@ class Continuous_AcquisitionController(AcquisitionController):
             shape = (self.traces_per_acquisition(), self.samples_per_record)
         self.acquisition.shapes = tuple([shape] * self.number_of_channels)
 
+    def _requires_buffer(self):
+        trace_idx = self.buffer_idx // self.buffers_per_trace
+        return trace_idx < self.traces_per_acquisition()
+
     def pre_start_capture(self):
         """
         Initializes buffers before capturing
@@ -199,8 +208,9 @@ class Continuous_AcquisitionController(AcquisitionController):
         if self.buffer_idx < self.buffers_per_trace * \
                              self.traces_per_acquisition():
             # Determine index of the buffer in the trace and in the dataset
+            trace_idx = self.buffer_idx // self.buffers_per_trace
             trace_buffer = self.buffer_idx % self.buffers_per_trace
-            idx = (self.buffer_idx // self.buffers_per_trace,
+            idx = (trace_idx,
                    slice(trace_buffer, trace_buffer + self.samples_per_record))
 
             # Save buffer components into each channel dataset
