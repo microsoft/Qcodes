@@ -18,23 +18,17 @@ class MatPlot(BasePlot):
     """
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with MatPlot.add()
-
     Args:
         *args: shortcut to provide the x/y/z data. See BasePlot.add
-
         figsize (Tuple[Float, Float]): (width, height) tuple in inches to pass to plt.figure
             default (8, 5)
-
         interval: period in seconds between update checks
-
         subplots: either a sequence (args) or mapping (kwargs) to pass to
             plt.subplots. default is a single simple subplot (1, 1)
             you can use this to pass kwargs to the plt.figure constructor
-
         num: integer or None
             specifies the index of the matplotlib figure window to use. If None
             then open a new window
-
         **kwargs: passed along to MatPlot.add() to add the first data trace
     """
     def __init__(self, *args, figsize=None, interval=1, subplots=None, num=None,
@@ -59,8 +53,13 @@ class MatPlot(BasePlot):
         else:
             self.fig, self.subplots = plt.subplots(*subplots, num=num,
                                                    figsize=figsize)
-        if not hasattr(self.subplots, '__len__'):
-            self.subplots = (self.subplots,)
+
+        # Test if subplots is actually a single axis
+        if not isinstance(self.subplots, np.ndarray):
+            self.subplots = np.array([self.subplots])
+
+        # Flatten subplots in case it is a 2D array
+        self.subplots = np.ndarray.flatten(self.subplots)
 
         self.title = self.fig.suptitle('')
 
@@ -76,20 +75,16 @@ class MatPlot(BasePlot):
     def add_to_plot(self, **kwargs):
         """
         adds one trace to this MatPlot.
-
         kwargs: with the following exceptions (mostly the data!), these are
             passed directly to the matplotlib plotting routine.
-
             `subplot`: the 1-based axes number to append to (default 1)
-
             if kwargs include `z`, we will draw a heatmap (ax.pcolormesh):
                 `x`, `y`, and `z` are passed as positional args to pcolormesh
-
             without `z` we draw a scatter/lines plot (ax.plot):
                 `x`, `y`, and `fmt` (if present) are passed as positional args
         """
         # TODO some way to specify overlaid axes?
-        ax = self._get_axes(kwargs)
+        ax = self._get_axes(**kwargs)
         if 'z' in kwargs:
             plot_object = self._draw_pcolormesh(ax, **kwargs)
         else:
@@ -107,8 +102,8 @@ class MatPlot(BasePlot):
             # in case the user has updated title, don't change it anymore
             self.title.set_text(self.get_default_title())
 
-    def _get_axes(self, config):
-        return self.subplots[config.get('subplot', 1) - 1]
+    def _get_axes(self, subplot=1, **kwargs):
+        return self.subplots[subplot - 1]
 
     def _update_labels(self, ax, config):
         if 'x' in config and not ax.get_xlabel():
@@ -134,7 +129,7 @@ class MatPlot(BasePlot):
                 if plot_object:
                     plot_object.remove()
 
-                ax = self._get_axes(config)
+                ax = self._get_axes(**config)
                 plot_object = self._draw_pcolormesh(ax, **config)
                 trace['plot_object'] = plot_object
 
@@ -179,7 +174,6 @@ class MatPlot(BasePlot):
                          nticks=None, use_offset=False, **kwargs):
         """
         Draws a 2D color plot
-
         Args:
             ax (Axis): Matplotlib axis object to plot in
             z: 2D array of data values
