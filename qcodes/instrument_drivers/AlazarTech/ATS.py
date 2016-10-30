@@ -552,6 +552,8 @@ class AlazarTech_ATS(Instrument):
                                 'defauling to 1')
                 self.records_per_buffer._set(1)
 
+            samples_per_buffer = samples_per_record
+
             self._call_dll('AlazarBeforeAsyncRead',
                            self._handle, self.channel_selection,
                            self.transfer_offset, samples_per_buffer,
@@ -612,12 +614,15 @@ class AlazarTech_ATS(Instrument):
         self.buffer_timeout._set_updated()
 
         buffer_recycling = \
-            (not self.buffers_per_acquisition._get_byte() == 0x7FFFFFFF) and \
+            (self.buffers_per_acquisition._get_byte() == 0x7FFFFFFF) or \
             (self.buffers_per_acquisition._get_byte() >
              self.allocated_buffers._get_byte())
+        print('buffer_recycling: {}'.format(buffer_recycling))
 
         while acquisition_controller.requires_buffer():
             buf = self.buffer_list[buffers_completed % allocated_buffers]
+            print('buffers_completed % allocated_buffers: {}'.format(buffers_completed % allocated_buffers))
+
 
             self._call_dll('AlazarWaitAsyncBufferComplete',
                            self._handle, buf.addr, buffer_timeout)

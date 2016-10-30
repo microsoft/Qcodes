@@ -19,6 +19,10 @@ class Basic_AcquisitionController(AcquisitionController):
         self.buffer = None
         self.buffer_idx = 0
 
+        self._fixed_acquisition_settings = {
+            'mode': 'NPT'
+        }
+
         self.add_parameter(name='average_mode',
                            parameter_class=ManualParameter,
                            initial_value='trace',
@@ -138,9 +142,10 @@ class Continuous_AcquisitionController(AcquisitionController):
         # indefinitely until aborted.
         # Records_per_buffer must equal 1 for CS or TS
         self._fixed_acquisition_settings = {
+            'mode': 'CS',
             'buffers_per_acquisition': 0x7FFFFFFF,
             'records_per_buffer': 1}
-        self._acquisition_settings = self._fixed_acquisition_settings
+        self._acquisition_settings = self._fixed_acquisition_settings.copy()
 
         self.add_parameter(name='average_mode',
                            parameter_class=ManualParameter,
@@ -189,6 +194,12 @@ class Continuous_AcquisitionController(AcquisitionController):
 
     def _requires_buffer(self):
         trace_idx = self.buffer_idx // self.buffers_per_trace
+        print('self.buffer_idx: {}'.format(self.buffer_idx))
+
+        print('self.buffers_per_trace: {}'.format(self.buffers_per_trace))
+        print('trace_idx: {}'.format(trace_idx))
+        print('self.traces_per_acquisition(): {}'.format(self.traces_per_acquisition()))
+
         return trace_idx < self.traces_per_acquisition()
 
     def pre_start_capture(self):
@@ -196,8 +207,8 @@ class Continuous_AcquisitionController(AcquisitionController):
         Initializes buffers before capturing
         """
         self.buffer_idx = 0
-        self.buffers = [np.zeros((self.traces_per_acquisition,
-                                  self.samples_per_record))
+        self.buffers = [np.zeros((self.traces_per_acquisition(),
+                                  self.samples_per_trace()))
                         for ch in self.channel_selection]
 
     def pre_acquire(self):
@@ -209,17 +220,24 @@ class Continuous_AcquisitionController(AcquisitionController):
                              self.traces_per_acquisition():
             # Determine index of the buffer in the trace and in the dataset
             trace_idx = self.buffer_idx // self.buffers_per_trace
-            trace_buffer = self.buffer_idx % self.buffers_per_trace
+            trace_offset = self.samples_per_record * \
+                           (self.buffer_idx % self.buffers_per_trace)
             idx = (trace_idx,
-                   slice(trace_buffer, trace_buffer + self.samples_per_record))
+                   slice(trace_offset, trace_offset + self.samples_per_record))
 
             # Save buffer components into each channel dataset
             for ch in range(self.number_of_channels):
-                self.buffers[ch][idx] = data[ch * self.samples_per_record,
+                # buffer = self.buffers[ch]
+                # data_segment = data[ch * self.samples_per_record,
+                #                              (ch + 1) * self.samples_per_record]
+                # buffer_segment = buffer[idx]
+                self.buffers[ch][idx] = data[ch * self.samples_per_record:
                                              (ch + 1) * self.samples_per_record]
         else:
             print('Ignoring extra ATS buffer {}'.format(self.buffer_idx))
         self.buffer_idx += 1
+
+        print('here self.buffer_idx: {}'.format(self.buffer_idx))
 
     def post_acquire(self):
         # average over records in buffer:
