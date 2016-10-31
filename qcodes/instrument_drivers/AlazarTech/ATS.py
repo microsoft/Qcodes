@@ -617,12 +617,9 @@ class AlazarTech_ATS(Instrument):
             (self.buffers_per_acquisition._get_byte() == 0x7FFFFFFF) or \
             (self.buffers_per_acquisition._get_byte() >
              self.allocated_buffers._get_byte())
-        print('buffer_recycling: {}'.format(buffer_recycling))
 
         while acquisition_controller.requires_buffer():
             buf = self.buffer_list[buffers_completed % allocated_buffers]
-            print('buffers_completed % allocated_buffers: {}'.format(buffers_completed % allocated_buffers))
-
 
             self._call_dll('AlazarWaitAsyncBufferComplete',
                            self._handle, buf.addr, buffer_timeout)
@@ -635,20 +632,14 @@ class AlazarTech_ATS(Instrument):
             # if buffers must be recycled, extract data and repost them
             # otherwise continue to next buffer
 
+            acquisition_controller.handle_buffer(buf.buffer)
             if buffer_recycling:
-                acquisition_controller.handle_buffer(buf.buffer)
                 self._call_dll('AlazarPostAsyncBuffer',
                                self._handle, buf.addr, buf.size_bytes)
             buffers_completed += 1
 
         # stop measurement here
         self._call_dll('AlazarAbortAsyncRead', self._handle)
-
-        # -----cleanup here-----
-        # extract data if not yet done
-        if not buffer_recycling:
-            for buf in self.buffer_list:
-                acquisition_controller.handle_buffer(buf.buffer)
 
         # free up memory
         self.clear_buffers()

@@ -40,6 +40,8 @@ class Basic_AcquisitionController(AcquisitionController):
         for attr in ['channel_selection', 'samples_per_record',
                      'records_per_buffer', 'buffers_per_acquisition']:
             setattr(self, attr, self.get_acquisition_setting(attr))
+        self.samples_per_buffer = self.samples_per_record * \
+                                  self.records_per_buffer
         self.number_of_channels = len(self.channel_selection)
         self.traces_per_acquisition = self.buffers_per_acquisition * \
                                        self.records_per_buffer
@@ -70,15 +72,9 @@ class Basic_AcquisitionController(AcquisitionController):
         Initializes buffers before capturing
         """
         self.buffer_idx = 0
-        if self.average_mode() in ['point', 'trace']:
-            self.buffer = np.zeros(self.samples_per_record *
-                                   self.records_per_buffer *
-                                   self.number_of_channels)
-        else:
-            self.buffer = np.zeros((self.buffers_per_acquisition,
-                                    self.samples_per_record *
-                                    self.records_per_buffer *
-                                    self.number_of_channels))
+        self.buffers = [np.zeros((self.traces_per_acquisition,
+                                  self.samples_per_record))
+                        for ch in self.channel_selection]
 
     def pre_acquire(self):
         # gets called after 'AlazarStartCapture'
@@ -86,10 +82,15 @@ class Basic_AcquisitionController(AcquisitionController):
 
     def handle_buffer(self, data):
         if self.buffer_idx < self.buffers_per_acquisition:
-            if self.average_mode() in ['point', 'trace']:
-                self.buffer += data
-            else:
-                self.buffer[self.buffer_idx] = data
+            # Save buffer components into each channel dataset
+            for ch in range(self.number_of_channels):
+                buffer_slice = slice(
+                    self.buffer_idx * self.records_per_buffer,
+                    (self.buffer_idx + 1) * self.records_per_buffer)
+
+                data_slice = slice(ch * self.samples_per_buffer,
+                                     (ch + 1) * self.samples_per_buffer)
+                self.buffers[ch][buffer_slice] = data[data_slice]
         else:
             print('*'*20+'\nIgnoring extra ATS buffer')
             pass
@@ -101,38 +102,20 @@ class Basic_AcquisitionController(AcquisitionController):
         # S0A, S0B, ..., S1A, S1B, ...
         # with SXY the sample number X of channel Y.
 
-        ch_offset = lambda ch: ch * self.samples_per_record * \
-                               self.records_per_buffer
-
         if self.average_mode() == 'none':
-            records = [self.buffer[:, ch_offset(ch):ch_offset(ch+1)].reshape(
-                (self.traces_per_acquisition, self.samples_per_record))
-                       for ch in range(self.number_of_channels)]
-
+            data = self.buffers
         elif self.average_mode() == 'trace':
-            records = [np.zeros(self.samples_per_record)
-                       for _ in range(self.number_of_channels)]
-
-            for ch in range(self.number_of_channels):
-                for i in range(self.records_per_buffer):
-                    i0 = ch_offset(ch) + i * self.samples_per_record
-                    i1 = i0 + self.samples_per_record
-                    records[ch] += self.buffer[i0:i1]
-                records[ch] /= self.traces_per_acquisition
-
+            data = [np.mean(buffer, axis=0) for buffer in self.buffers]
         elif self.average_mode() == 'point':
-            trace_length = self.samples_per_record * self.records_per_buffer
-            records = [np.mean(self.buffer[i*trace_length:(i+1)*trace_length])
-                       / self.traces_per_acquisition
-                       for i in range(self.number_of_channels)]
+            data = [np.mean(buffer) for buffer in self.buffers]
 
         # Convert data points from an uint16 to volts
-        for ch, record  in enumerate(records):
+        for ch, ch_data in enumerate(data):
             ch_idx = self.channel_selection[ch]
             ch_range = self._alazar.parameters['channel_range'+ch_idx]()
-            records[ch] = (record - 2**15) / 2**15 * ch_range
-        return records
+            data[ch] = (ch_data - 2**15) / 2**15 * ch_range
 
+        return data
 
 class Continuous_AcquisitionController(AcquisitionController):
     def __init__(self, name, alazar_name, **kwargs):
