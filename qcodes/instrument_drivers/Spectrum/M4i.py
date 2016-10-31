@@ -52,8 +52,8 @@ def szTypeToName(lCardType):
 
 class M4i(Instrument):
 
-    '''
-    example usage for acquisition with channel 2 using an external trigger that triggers multiple times with trigger mode HIGH:
+    """example usage for acquisition with channel 2 using an external trigger
+    that triggers multiple times with trigger mode HIGH:
 
     m4 = M4i(name='M4i', server_name=None)
     m4.enable_channels(pyspcm.CHANNEL2)
@@ -61,10 +61,10 @@ class M4i(Instrument):
     m4.set_ext0_OR_trigger_settings(pyspcm.SPC_TM_HIGH,termination,coupling,level0)
     calc = m4.multiple_trigger_acquisition(mV_range,memsize,seg_size,posttrigger_size)
 
-    '''
+    """
 
     def __init__(self, name, cardid='spcm0', **kwargs):
-        """ Driver for the Spectrum M4i.44xx-x8 cards """
+        """Driver for the Spectrum M4i.44xx-x8 cards."""
         super().__init__(name, **kwargs)
 
         self.hCard = pyspcm.spcm_hOpen(cardid)
@@ -443,7 +443,7 @@ class M4i(Instrument):
                            docstring='executes a command for the card or data transfer')
 
     def convert_to_voltage(self, data, input_range):
-        """ convert an array of numbers to an array of voltages  """
+        """convert an array of numbers to an array of voltages."""
         resolution = self.ADC_to_voltage()
         return data * input_range / resolution
 
@@ -468,9 +468,8 @@ class M4i(Instrument):
 
     # Note: the levels need to be set in bits, not voltages! (between -8191 to 8191 for 14 bits)
     def set_channel_OR_trigger_settings(self, i, trig_mode, bitlevel0, bitlevel1=None):
-        '''
-        When a channel is used for triggering it must be enabled during the acquisition
-        '''
+        """When a channel is used for triggering it must be enabled during the
+        acquisition."""
         self.trigger_or_mask(0)
         self.channel_or_mask(getattr(pyspcm, 'SPC_TMASK0_CH{}'.format(i)))
         getattr(self, 'trigger_channel_{}_level_0'.format(i))(bitlevel0)
@@ -549,10 +548,10 @@ class M4i(Instrument):
         return voltages
 
     def gated_trigger_acquisition(self, mV_range, memsize, pretrigger_size, posttrigger_size):
-        '''
-        doesn't work completely as expected, it triggers even when the trigger level is set outside of the signal range
-        it also seems to additionally acquire some wrong parts of the wave, but this also exists in SBench6, so it is not a problem caused by this code
-        '''
+        """doesn't work completely as expected, it triggers even when the
+        trigger level is set outside of the signal range it also seems to
+        additionally acquire some wrong parts of the wave, but this also exists
+        in SBench6, so it is not a problem caused by this code."""
 
         self.card_mode(pyspcm.SPC_REC_STD_GATE)  # gated
 
@@ -613,14 +612,14 @@ class M4i(Instrument):
         return voltages
 
     def close(self):
-        """ Close handle to the card """
+        """Close handle to the card."""
         if self.hCard is not None:
             pyspcm.spcm_vClose(self.hCard)
             self.hCard = None
         super().close()
 
     def get_card_type(self, verbose=0):
-        """ Read card type """
+        """Read card type."""
         # read type, function and sn and check for D/A card
         lCardType = pyspcm.int32(0)
         pyspcm.spcm_dwGetParam_i32(self.hCard, pyspcm.SPC_PCITYP, pyspcm.byref(lCardType))
@@ -630,7 +629,7 @@ class M4i(Instrument):
 
     # only works if the error was not caused by running the entire program (and therefore making a new M4i object)
     def get_error_info32bit(self):
-        """ Read an error from the error register """
+        """Read an error from the error register."""
         dwErrorReg = pyspcm.uint32(0)
         lErrorValue = pyspcm.int32(0)
 
@@ -638,31 +637,31 @@ class M4i(Instrument):
         return (dwErrorReg.value, lErrorValue.value)
 
     def _param64bit(self, param):
-        """ Read a 64-bit parameter from the device """
+        """Read a 64-bit parameter from the device."""
         data = pyspcm.int64(0)
         pyspcm.spcm_dwGetParam_i64(self.hCard, param, pyspcm.byref(data))
         return (data.value)
 
     def _param32bit(self, param):
-        """ Read a 32-bit parameter from the device """
+        """Read a 32-bit parameter from the device."""
         data = pyspcm.int32(0)
         pyspcm.spcm_dwGetParam_i32(self.hCard, param, pyspcm.byref(data))
         return (data.value)
 
     def _set_param32bit(self, param, value):
-        """ Read a 32-bit parameter from the device """
+        """Read a 32-bit parameter from the device."""
         pyspcm.spcm_dwSetParam_i32(self.hCard, param, value)
 
     def _invalidate_buf(self, buf_type):
-        """ Invalidate device buffer """
+        """Invalidate device buffer."""
         pyspcm.spcm_dwInvalidateBuf(self.hCard, buf_type)
 
     def _def_transfer64bit(self, buffer_type, direction, bytes_till_event, data_pointer, offset, buffer_length):
-        """ Define a 64-bit transer between the device and the computer """
+        """Define a 64-bit transer between the device and the computer."""
         pyspcm.spcm_dwDefTransfer_i64(self.hCard, buffer_type, direction, bytes_till_event, data_pointer, offset, buffer_length)
 
     def get_max_sample_rate(self, verbose=0):
-        """ Return max sample rate """
+        """Return max sample rate."""
         # read type, function and sn and check for D/A card
         value = self._param32bit(pyspcm.SPC_PCISAMPLERATE)
         if verbose:
