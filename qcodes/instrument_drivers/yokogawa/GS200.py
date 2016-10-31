@@ -3,11 +3,19 @@ from qcodes.utils.validators import Numbers
 
 
 class GS200(VisaInstrument):
+    """
+    This is the qcodes driver for the Yokogawa GS200 voltage and current source
 
+    Usage: Initialize with
+    <name> =  GS200(<name>, address='<GPIB address>', reset=<bool>)
+
+            
+    TODO:(nataliejpg)
+    - add current functionality (mode settings)
+    """
     def __init__(self, name, address, reset=False, **kwargs):
         super().__init__(name, address, **kwargs)
 
-        # Add parameters to wrapper
         self.add_parameter('voltage',
 						   label='Voltage',
                            units='V',
@@ -15,12 +23,14 @@ class GS200(VisaInstrument):
                            set_cmd=':SOURce:LEVel:AUTO {:.4f}',
                            get_parser=float,
                            vals=Numbers(-10, 10))
-                           
+         
+        self.add_function('reset', call_cmd='*RST')
+        
         self.initialise()
         self.connect_message()
         
     def initialise(self):
-        self.write('*RST')
+        self.reset()
         self.write(':SYST:DISP ON')
         self.write(':SOUR:FUNC VOLT')
         self.write(':SOUR:PROT:CURR MIN')
