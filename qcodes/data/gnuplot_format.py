@@ -62,6 +62,7 @@ class GNUPlotFormat(Formatter):
     use 2 blank lines sometimes, to denote a whole new dataset, which sort
     of corresponds to our situation.)
     """
+
     def __init__(self, extension='dat', terminator='\n', separator='\t',
                  comment='# ', number_format='g', metadata_file=None):
         self.metadata_file = metadata_file or 'snapshot.json'
@@ -234,7 +235,7 @@ class GNUPlotFormat(Formatter):
             parts = re.split('"\s+"', labelstr[1:-1])
             return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
 
-    def write(self, data_set, io_manager, location, force_write=False):
+    def write(self, data_set, io_manager, location, force_write=False, write_metadata=True):
         """
         Write updates in this DataSet to storage.
 
@@ -298,7 +299,9 @@ class GNUPlotFormat(Formatter):
             for array in group.data + (group.set_arrays[-1],):
                 array.mark_saved(save_range[1])
 
-        self.write_metadata(data_set, io_manager=io_manager, location=location)
+        if write_metadata:
+            self.write_metadata(
+                data_set, io_manager=io_manager, location=location)
 
     def write_metadata(self, data_set, io_manager, location, read_first=True):
         """
