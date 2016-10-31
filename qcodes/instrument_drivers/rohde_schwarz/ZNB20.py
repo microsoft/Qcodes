@@ -1,13 +1,16 @@
+import time
+import logging
+import numpy as np
+
 from qcodes import VisaInstrument
 from qcodes.utils import validators as vals
 from cmath import phase
-import numpy as np
 from qcodes import Parameter
-import time
+
 
 class FrequencySweep(Parameter):
     """
-    Hardware controlled parameter class for Rohde Schwarz RSZNB20 trace.
+    Hardware controlled parameter class for Rohde Schwarz RSZNB20/8 trace.
 
     Instrument returns an list of transmission data in the form of a list of
     complex numbers taken from a frequency sweep.
@@ -52,16 +55,23 @@ class FrequencySweep(Parameter):
         self._instrument.cont_meas_on()
         return mag_array, phase_array
 
+        
+def parsemode(v):
+    if v.upper() in 'S11':
+        return 0
+    elif v.upper() in 'b2':
+        return 1
+    else:
+        logging.error('invalid mode %s' % v)
+        print('invalid mode %s' % v)
+        return None        
 
 class ZNB20(VisaInstrument):
     """
-    qcodes driver for the Rohde & Schwarz ZNB20 virtual network analyser
+    This is the qcodes driver for the Rohde & Schwarz ZNB20 and ZNB8 virtual network analysers
 
     Requires FrequencySweep parameter for taking a trace
 
-    TODO:
-    - centre/span settable for frequwncy sweep
-    - check initialisation settings and test functions
     """
     def __init__(self, name, address, **kwargs):
 
@@ -100,6 +110,10 @@ class ZNB20(VisaInstrument):
                            get_cmd='SENS:FREQ:STOP?',
                            set_cmd=self._set_stop,
                            get_parser=int)
+                           
+        self.add_parameter(name='center',
+                           get_cmd='SENS:FREQ:CENT?',
+                           get_parser=int)
 
         self.add_parameter(name='npts',
                            get_cmd='SENS:SWE:POIN?',
@@ -111,20 +125,24 @@ class ZNB20(VisaInstrument):
                            stop=self.stop(),
                            npts=self.npts(),
                            parameter_class=FrequencySweep)
-                           
-        self.add_parameter(name='spec_state',
-                            # make gett cmd to get latest
-                           set_cmd=self._set_spec_state)
-                           
-        # TODO(nataliejpg) add center frequency as parameter
+          
+        # Spectroscopy mode settings:
 
-        self.add_parameter(name='cav_freq',
-                           get_cmd=self._get_cav_freq,
-                           set_cmd=self._set_cav_freq)
+        self.add_parameter(name='spec_mode',
+                           get_cmd='CALC1:PAR:MEAS? "Trc1"'
+                           set_cmd=self._set_spec_mode,
+                           get_parser=self.parsemode)
+
+        self.add_parameter(name='fixed_freq',
+                           get_cmd=self._get_fixed_freq,
+                           set_cmd=self._set_fixed_freq,
+                           get_parser=int)
                            
-        self.add_parameter(name='cav_pow',
-                           get_cmd=self._get_cav_pow,
-                           set_cmd=self._set_cav_pow)
+        self.add_parameter(name='fixed_pow',
+                           get_cmd=self._get_fixed_pow,
+                           set_cmd=self._set_fixed_pow,
+                           get_parser=int,
+                           vals=vals.Numbers(-150, 25))
 
         self.add_function('reset', call_cmd='*RST')
         self.add_function('tooltip_on', call_cmd='SYST:ERR:DISP ON')
@@ -140,50 +158,19 @@ class ZNB20(VisaInstrument):
         self.initialise()
         self.connect_message()
         
-    def _set_spec_state(self, val):
-        if val == 1:
-            self.write('CALC1:PAR:MEAS "Trc1", "b2"')
-            freq = float(self.ask('SENS:FREQ:CENT?'))
-            pow = self.power()
-            self.write('SOUR:POW3:STAT 1')
-            time.sleep(0.2)
-            self.write('SOUR:POW1:PERM 1')
-            time.sleep(0.2)
-            self.write('SOUR:POW3:PERM 1')
-            time.sleep(0.2)
-            self.cav_freq(freq)
-            self.cav_pow(pow)   
-        else:
-            self.write('SOUR:FREQ1:CONV:ARB:IFR 1, 1, 0, SWE')
-            self.write('SOUR:FREQ2:CONV:ARB:IFR 1, 1, 0, SWE')
-            self.write('SOUR:POW1:OFFS 0, CPAD')
-            self.write('SOUR:POW2:OFFS 0, CPAD')
-            self.write('SOUR:POW3:STAT 0')
-            self.write('SOUR:POW1:PERM 0')
-            self.write('SOUR:POW3:PERM 0')
-            self.write('CALC1:PAR:MEAS "Trc1", "S21"')            
-       
-
-    # do these two smarter?
-       
-    def _get_cav_freq(self):
-        ret = self.ask('SOUR:FREQ1:CONV:ARB:IFR?').split(',')
-        return int(ret[2])
-        
-    def _set_cav_freq(self, freq):
-        self.write('SOUR:FREQ1:CONV:ARB:IFR 0, 1, {:.6f}, CW'.format(freq))
-        # add pause?
-        self.write('SOUR:FREQ2:CONV:ARB:IFR 0, 1, {:.6f}, CW'.format(freq))
-        
-    def _get_cav_pow(self):
-        ret = self.ask('SOUR:POW1:OFFS?').split(',')
-        return int(ret[0])
-        
-    def _set_cav_pow(self, pow):
-        self.write('SOUR:POW1:OFFS {:.3f}, ONLY'.format(pow))
-        # add pause?
-        self.write('SOUR:POW2:OFFS {:.3f}, ONLY'.format(pow))
-    
+    def initialise(self):
+        self.write('*RST')
+        self.write('SENS1:SWE:TYPE LIN')
+        self.write('SENS1:SWE:TIME:AUTO ON')
+        self.write('TRIG1:SEQ:SOUR IMM')
+        self.write('SENS1:AVER:STAT ON')
+        self.update_display_on()
+        self.spec_mode(0)
+        self.start(1e6)
+        self.stop(2e6)
+        self.npts(10)
+        self.power(-50)
+     
     def _set_start(self, val):
         self.write('SENS:FREQ:START {:.4f}'.format(val))
         # update setpoints for FrequencySweep param
@@ -198,15 +185,52 @@ class ZNB20(VisaInstrument):
         self.write('SENS:SWE:POIN {:.4f}'.format(val))
         # update setpoints for FrequencySweep param
         self.trace.set_sweep(self.start(), self.stop(), val)
+    
 
-    def initialise(self):
-        self.write('*RST')
-        self.write('SENS1:SWE:TYPE LIN')
-        self.write('SENS1:SWE:TIME:AUTO ON')
-        self.write('TRIG1:SEQ:SOUR IMM')
-        self.write('SENS1:AVER:STAT ON')
-        self.update_display_on()
-        self.start(1e6)
-        self.stop(2e6)
-        self.npts(10)
-        self.power(-50)
+    # Spectroscopy state settings: for use with ZNB8
+    def _set_spec_mode(self, val):
+        if val == 1:
+            self.write('CALC1:PAR:MEAS "Trc1", "b2"')
+            freq = self.center()
+            pow = self.power()
+            self.write('SOUR:POW3:STAT 1')
+            time.sleep(0.2)
+            self.write('SOUR:POW1:PERM 1')
+            time.sleep(0.2)
+            self.write('SOUR:POW3:PERM 1')
+            time.sleep(0.2)
+            self.fixed_freq(freq)
+            self.fixed_pow(pow)   
+        elif val == 0:
+            self.write('SOUR:FREQ1:CONV:ARB:IFR 1, 1, 0, SWE')
+            self.write('SOUR:FREQ2:CONV:ARB:IFR 1, 1, 0, SWE')
+            self.write('SOUR:POW1:OFFS 0, CPAD')
+            self.write('SOUR:POW2:OFFS 0, CPAD')
+            self.write('SOUR:POW3:STAT 0')
+            self.write('SOUR:POW1:PERM 0')
+            self.write('SOUR:POW3:PERM 0')
+            self.write('CALC1:PAR:MEAS "Trc1", "S21"')
+        else:
+            logging.error('invalid mode %s' % v)
+            print('invalid mode %s' % v)
+    
+    # TODO(nataliejpg): make parsers for these
+    def _get_fixed_freq(self):
+        ret = self.ask('SOUR:FREQ1:CONV:ARB:IFR?').split(',')
+        return int(ret[2])
+        
+    def _set_fixed_freq(self, freq):
+        self.write('SOUR:FREQ1:CONV:ARB:IFR 0, 1, {:.6f}, CW'.format(freq))
+        self.write('SOUR:FREQ2:CONV:ARB:IFR 0, 1, {:.6f}, CW'.format(freq))
+        
+    def _get_fixed_pow(self):
+        ret = self.ask('SOUR:POW1:OFFS?').split(',')
+        return int(ret[0])
+        
+    def _set_fixed_pow(self, pow):
+        self.write('SOUR:POW1:OFFS {:.3f}, ONLY'.format(pow))
+        self.write('SOUR:POW2:OFFS {:.3f}, ONLY'.format(pow))
+    
+
+
+
