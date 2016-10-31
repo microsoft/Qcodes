@@ -64,7 +64,10 @@ class M4i(Instrument):
     """
 
     def __init__(self, name, cardid='spcm0', **kwargs):
-        """Driver for the Spectrum M4i.44xx-x8 cards."""
+        """Driver for the Spectrum M4i.44xx-x8 cards.
+
+	For more information see: http://spectrum-instrumentation.com/en/m4i-platform-overview
+	"""
         super().__init__(name, **kwargs)
 
         self.hCard = pyspcm.spcm_hOpen(cardid)
