@@ -168,10 +168,10 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
         # I could not find this in the documentation but somehow I have the
         # feeling it still should be a multiple of something
         # NOTE by ramiro: At least in previous python implementations(PycQED delft),
-        # this is an artifact for compatibility with AWG sequencing, 
+        # this is an artifact for compatibility with AWG sequencing,
         # not particular to any ATS architecture.
-        #   ==> this is a construction imposed by the memory strategy 
-        # implemented on the python driver 
+        #   ==> this is a construction imposed by the memory strategy
+        # implemented on the python driver
         # we are writing, not limited by any actual ATS feature.
 
         self.add_parameter(name='records_per_buffer',
