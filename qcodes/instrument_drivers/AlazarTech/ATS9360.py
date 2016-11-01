@@ -18,21 +18,25 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            byte_to_value_dict={1: 'INTERNAL_CLOCK',
                                                4: 'SLOW_EXTERNAL_CLOCK',
                                                5: 'EXTERNAL_CLOCK_AC',
-                                               7: 'EXTERNAL_CLOCK_10_MHz_REF'})
+                                               7: 'EXTERNAL_CLOCK_10MHz_REF'})
+                                               
+        # TODO(nataliejpg) add more options for the sample rate set using 10MHz ref
         self.add_parameter(name='sample_rate',
                            parameter_class=AlazarParameter,
                            label='Sample Rate',
                            unit='S/s',
-                           value=500000000,
+                           value='10MHZ_REF_500MSPS',
                            byte_to_value_dict={
-                               0x1: 1000, 0x2: 2000, 0x4: 5000, 0x8: 10000,
-                               0xA: 20000, 0xC: 50000, 0xE: 100000,
-                               0x10: 200000, 0x12: 500000, 0x14: 1000000,
-                               0x18: 2000000, 0x1A: 5000000, 0x1C: 10000000,
-                               0x1E: 20000000, 0x22: 50000000, 0x24: 100000000,
-                               0x2B: 250000000, 0x30: 500000000,
-                               0x35: 1000000000, 0x40: 'EXTERNAL_CLOCK',
-                               1000000000: '1GHz_REFERENCE_CLOCK'})
+                               0x1: '1KSPS', 0x2: '2KSPS', 0x4: '5KSPS', 0x8: '10KSPS',
+                               0xA: '20KSPS', 0xC: '50KSPS', 0xE: '100KSPS',
+                               0x10: '200KSPS', 0x12: '500KSPS', 0x14: '1MSPS',
+                               0x18: '2MSPS', 0x1A: '5MSPS', 0x1C: '10MSPS',
+                               0x1E: '20MSPS', 0x22: '50MSPS', 0x24: '100MSPS',
+                               0x25: '125MSPS', 0x2B: '250MSPS', 0x30: '500MSPS',
+                               0x32: '800MSPS', 0x35: '1000MSPS', 0x37: '1200MSPS',
+                               0x3A: '1500MSPS', 0x3D: '1800MSPS', 
+                               0x40: 'EXTERNAL_CLOCK',
+                               500000000: '10MHZ_REF_500MSPS'})
         self.add_parameter(name='clock_edge',
                            parameter_class=AlazarParameter,
                            label='Clock Edge',
@@ -45,7 +49,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            parameter_class=AlazarParameter,
                            label='Decimation',
                            unit=None,
-                           value=0,
+                           value=1,
                            vals=validators.Ints(0, 100000))
 
         for i in ['1', '2']:
@@ -60,15 +64,13 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                                label='Range channel ' + i,
                                unit='V',
                                value=0.4,
-                               byte_to_value_dict={
-                                   2: 0.04, 5: 0.1, 6: 0.2, 7: 0.4,
-                                   10: 1., 11: 2., 12: 4.})
+                               byte_to_value_dict={7: 0.4})
             self.add_parameter(name='impedance' + i,
                                parameter_class=AlazarParameter,
                                label='Impedance channel ' + i,
                                unit='Ohm',
                                value=50,
-                               byte_to_value_dict={1: 1000000, 2: 50})
+                               byte_to_value_dict={2: 50})
 
         self.add_parameter(name='trigger_operation',
                            parameter_class=AlazarParameter,
@@ -111,21 +113,22 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                                parameter_class=AlazarParameter,
                                label='Trigger Level ' + i,
                                unit=None,
-                               value=150,
+                               value=140,
                                vals=validators.Ints(0, 255))
 
         self.add_parameter(name='external_trigger_coupling',
                            parameter_class=AlazarParameter,
                            label='External Trigger Coupling',
                            unit=None,
-                           value='AC',
+                           value='DC',
                            byte_to_value_dict={1: 'AC', 2: 'DC'})
         self.add_parameter(name='external_trigger_range',
                            parameter_class=AlazarParameter,
                            label='External Trigger Range',
                            unit=None,
-                           value='ETR_5V',
-                           byte_to_value_dict={0: 'ETR_5V', 1: 'ETR_1V'})
+                           value='ETR_2V5',
+                           byte_to_value_dict={0: 'ETR_5V', 1: 'ETR_1V',
+                                               2: 'ETR_TTL', 3: 'ETR_2V5'})
         self.add_parameter(name='trigger_delay',
                            parameter_class=AlazarParameter,
                            label='Trigger Delay',

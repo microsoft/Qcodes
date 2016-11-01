@@ -84,31 +84,16 @@ class Basic_Acquisition_Controller(AcquisitionController):
         See AcquisitionController
         :return:
         """
-        # average all records in a buffer
         records_per_acquisition = (1. * self.buffers_per_acquisition *
                                    self.records_per_buffer)
         if records_per_acquisition != 1:
             raise ValueError(
                 'records per acquisition and buffers per acquisition should be set to 1 for this acquisition controller')
-        # one of these two...
-        # expects S00A, S01A, ...S0B, S1B,...
-        recordA = np.zeros(self.samples_per_record)
-        for i in range(self.records_per_buffer):
-            i0 = i * self.samples_per_record
-            i1 = i0 + self.samples_per_record
-            recordA += self.buffer[i0:i1] / records_per_acquisition
-
-        recordB = np.zeros(self.samples_per_record)
-        for i in range(self.records_per_buffer):
-            i0 = i * self.samples_per_record + len(self.buffer) // 2
-            i1 = i0 + self.samples_per_record
-            recordB += self.buffer[i0:i1] / records_per_acquisition
-
-        # 1
-        # average over records in buffer:
         # for ATS9360 samples are arranged in the buffer as follows:
-        # S00A, S00B, S01A, S01B ..., S10A, S10B, ...
+        # S00A, S01A, ...S0B, S1B,...
         # where SXYZ is record X, sample Y, channel Z.
+        
+        # breaks buffer up into records, averages over them and returns samples
         records_per_acquisition = (self.buffers_per_acquisition *
                                    self.records_per_buffer)
         recordA = np.zeros(self.samples_per_record)
