@@ -71,7 +71,7 @@ def parsemode(v):
 
 class ZNB20(VisaInstrument):
     """
-    This is the qcodes driver for the Rohde & Schwarz ZNB20 and ZNB8 
+    This is the qcodes driver for the Rohde & Schwarz ZNB20 and ZNB8
     virtual network analysers
 
     Requires FrequencySweep parameter for taking a trace
