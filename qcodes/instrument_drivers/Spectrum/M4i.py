@@ -445,6 +445,9 @@ class M4i(Instrument):
                            set_cmd=partial(self._set_param32bit, pyspcm.SPC_M2CMD),
                            docstring='executes a command for the card or data transfer')
 
+    def get_idn(self):
+        return dict(zip(('vendor', 'model', 'serial', 'firmware'), ('Spectrum_GMBH', szTypeToName(self.get_card_type()), self.serial_number(), ' ')))
+
     def convert_to_voltage(self, data, input_range):
         """convert an array of numbers to an array of voltages."""
         resolution = self.ADC_to_voltage()
