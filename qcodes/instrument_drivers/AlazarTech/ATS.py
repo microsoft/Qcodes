@@ -790,6 +790,7 @@ class AlazarTech_ATS(Instrument):
         rate = self.sample_rate.get()
         if rate == '1GHz_REFERENCE_CLOCK':
             rate = 1e9
+        # TODO(nataliejpg) this breaks for ATS9360 because of changes to rate 
 
         decimation = self.decimation.get()
         if decimation > 0:
