@@ -14,23 +14,28 @@ class SampleSweep(Parameter):
         super().__init__(name)
         self._instrument = instrument
         #self.npts = npts
+        self.acquisitionkwargs = {}
         self.names = ('A', 'B')
         self.units = ('', '')
         self.setpoint_names = (('sample_num',), ('sample_num',))
-
-    def set_sweep(self, npts):
-        # needed to update config of the software parameter on sweep chage
-        # freq setpoints tuple as needs to be hashable for look up
-        f = tuple(np.arange(npts))
-        #self.npts = 
-        self.setpoints = ((f,), (f,))
-        self.shapes = ((npts,), (npts,))
+        self.setpoints = ((1,), (1,))
+        self.shapes = ((1,), (1,))
+        
+    def update_acquisition_kwargs(self, **kwargs):
+        if 'samples_per_record' in kwargs:
+            npts = kwargs['samples_per_record']
+            n = tuple(np.arange(npts))
+            self.setpoints = ((n,), (n,))
+            self.shapes = ((npts,), (npts,))
+        else:
+            raise ValueError('samples_per_record not in kwargs at time of update')
+        self.acquisitionkwargs.update(**kwargs)
 
     def get(self):
         recordA, recordB = self._instrument._get_alazar().acquire(
-            acquisition_controller=self,
+            acquisition_controller = self._instrument,
             **self.acquisitionkwargs)
-
+#        recordA, recordB = self._instrument.do_acquisition()
         return recordA, recordB
 
 
@@ -48,7 +53,7 @@ class Basic_Acquisition_Controller(AcquisitionController):
     """
 
     def __init__(self, name, alazar_name, **kwargs):
-        self.acquisitionkwargs = {}
+        #self.acquisitionkwargs = {}
         self.samples_per_record = None
         self.bits_per_sample = None
         self.records_per_buffer = None
@@ -62,7 +67,6 @@ class Basic_Acquisition_Controller(AcquisitionController):
         super().__init__(name, alazar_name, **kwargs)
 
         self.add_parameter(name='acquisition',
-                           npts=self.samples_per_record,
                            parameter_class=SampleSweep)
 
     def update_acquisitionkwargs(self, **kwargs):
@@ -72,8 +76,7 @@ class Basic_Acquisition_Controller(AcquisitionController):
         :param kwargs:
         :return:
         """
-        self.acquisition.set_sweep(kwargs['samples_per_record'])
-        self.acquisitionkwargs.update(**kwargs)
+        self.acquisition.update_acquisition_kwargs(**kwargs)
 
     def do_acquisition(self):
         """
@@ -81,9 +84,9 @@ class Basic_Acquisition_Controller(AcquisitionController):
         acquisiion parameter of this instrument
         :return:
         """
-        value = self._get_alazar().acquire(acquisition_controller=self,
+        valueA, valueB = self._get_alazar().acquire(acquisition_controller=self,
                                            **self.acquisitionkwargs)
-        return value
+        return valueA, valueB
 
     def pre_start_capture(self):
         """
@@ -94,7 +97,6 @@ class Basic_Acquisition_Controller(AcquisitionController):
         self.samples_per_record = alazar.samples_per_record.get()
         self.records_per_buffer = alazar.records_per_buffer.get()
         self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
-        # TODO(nataliejpg) move update SamplesSweep here?
         self.buffer = np.zeros(self.samples_per_record *
                                self.records_per_buffer *
                                self.number_of_channels)
