@@ -1,5 +1,37 @@
 from .ATS import AcquisitionController
 import numpy as np
+from qcodes import Parameter
+
+
+class SampleSweep(Parameter):
+    """
+    Hardware controlled parameter class for Rohde Schwarz RSZNB20 trace.
+
+    Instrument returns an list of transmission data in the form of a list of
+    complex numbers taken from a frequency sweep.
+    """
+    def __init__(self, name, instrument):
+        super().__init__(name)
+        self._instrument = instrument
+        #self.npts = npts
+        self.names = ('A', 'B')
+        self.units = ('', '')
+        self.setpoint_names = (('sample_num',), ('sample_num',))
+
+    def set_sweep(self, npts):
+        # needed to update config of the software parameter on sweep chage
+        # freq setpoints tuple as needs to be hashable for look up
+        f = tuple(np.arange(npts))
+        #self.npts = 
+        self.setpoints = ((f,), (f,))
+        self.shapes = ((npts,), (npts,))
+
+    def get(self):
+        recordA, recordB = self._instrument._get_alazar().acquire(
+            acquisition_controller=self,
+            **self.acquisitionkwargs)
+
+        return recordA, recordB
 
 
 class Basic_Acquisition_Controller(AcquisitionController):
@@ -21,14 +53,17 @@ class Basic_Acquisition_Controller(AcquisitionController):
         self.bits_per_sample = None
         self.records_per_buffer = None
         self.buffers_per_acquisition = None
-        self.allocated_buffers = None # needed??
+        self.allocated_buffers = None  # needed??
         # TODO(damazter) (S) this is not very general:
         self.number_of_channels = 2
         self.buffer = None
-        # make a call to the parent class and by extension, create the parameter
-        # structure of this class
+        # make a call to the parent class and by extension,
+        # create the parameter structure of this class
         super().__init__(name, alazar_name, **kwargs)
-        self.add_parameter("acquisition", get_cmd=self.do_acquisition)
+
+        self.add_parameter(name='acquisition',
+                           npts=self.samples_per_record,
+                           parameter_class=SampleSweep)
 
     def update_acquisitionkwargs(self, **kwargs):
         """
@@ -37,6 +72,7 @@ class Basic_Acquisition_Controller(AcquisitionController):
         :param kwargs:
         :return:
         """
+        self.acquisition.set_sweep(kwargs['samples_per_record'])
         self.acquisitionkwargs.update(**kwargs)
 
     def do_acquisition(self):
@@ -58,9 +94,10 @@ class Basic_Acquisition_Controller(AcquisitionController):
         self.samples_per_record = alazar.samples_per_record.get()
         self.records_per_buffer = alazar.records_per_buffer.get()
         self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
+        # TODO(nataliejpg) move update SamplesSweep here?
         self.buffer = np.zeros(self.samples_per_record *
-                       self.records_per_buffer *
-                       self.number_of_channels)
+                               self.records_per_buffer *
+                               self.number_of_channels)
 
     def pre_acquire(self):
         """
@@ -88,11 +125,11 @@ class Basic_Acquisition_Controller(AcquisitionController):
                                    self.records_per_buffer)
         if records_per_acquisition != 1:
             raise ValueError(
-                'records per acquisition and buffers per acquisition should be set to 1 for this acquisition controller')
+                'records and buffers should be set to 1 for this acquisition controller')
         # for ATS9360 samples are arranged in the buffer as follows:
         # S00A, S01A, ...S0B, S1B,...
         # where SXYZ is record X, sample Y, channel Z.
-        
+
         # breaks buffer up into records, averages over them and returns samples
         records_per_acquisition = (self.buffers_per_acquisition *
                                    self.records_per_buffer)
