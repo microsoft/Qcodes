@@ -55,13 +55,9 @@ from qcodes import Parameter
 
 class ZNB20(VisaInstrument):
     """
-    qcodes driver for the Rohde & Schwarz ZNB20 virtual network analyser
+    qcodes driver for the Rohde & Schwarz ZNB20
 
-    Requires FrequencySweep parameter for taking a trace
-
-    TODO:
-    - centre/span settable for frequwncy sweep
-    - check initialisation settings and test functions
+    Author: Stefano Poletto (QuTech)
     """
     def __init__(self, name, address, **kwargs):
 
@@ -131,7 +127,7 @@ class ZNB20(VisaInstrument):
                            set_cmd='INIT:CONT {:s}',
                            vals=vals.OnOff())
 
-        self.add_function('start_single_sweep_all', call_cmd='INITIATE:IMMEDIATE:ALL')
+        self.add_function('start_sweep_all', call_cmd='INITIATE:IMMEDIATE:ALL')
 
 
         ##################
@@ -195,6 +191,12 @@ class ZNB20(VisaInstrument):
                            get_parser=VISA_str_to_int,
                            vals=vals.Numbers(100e3, 20e9))
 
+        self.add_function('delete_all_segments', call_cmd='SENS:SEGM:DEL:ALL')
+
+        self.add_parameter(name='number_sweeps_all',
+                           set_cmd='SENS:SWE:COUN:ALL {:.4f}',
+                           vals=vals.Ints(1,100000))
+
         self.add_parameter(name='npts',
                            get_cmd='SENS:SWE:POIN?',
                            set_cmd='SENS:SWE:POIN {:.4f}',
@@ -206,6 +208,13 @@ class ZNB20(VisaInstrument):
                            set_cmd='SENS:SWE:TIME:AUTO {:s}',
                            get_parser=VISA_str_to_int,
                            vals=vals.OnOff())
+
+        self.add_parameter(name='sweep_type',
+                           get_cmd='SENS:SWE:TYPE?',
+                           set_cmd='SENS:SWE:TYPE {:s}',
+                           get_parser=str,
+                           vals=vals.Enum('lin', 'linear', 'log', 'logarithmic', 'pow', 'power',
+                                          'cw', 'poin', 'point', 'segm', 'segment'))
 
 
         #####################
@@ -224,7 +233,7 @@ class ZNB20(VisaInstrument):
 
     def get_stimulus(self):
         '''
-        get the frequncies used in the sweep
+        get the frequencies used in the sweep
         '''
         stimulus_str = self.ask('CALC:DATA:STIM?')
         stimulus_double = np.array(stimulus_str.split(','), dtype=np.double)
