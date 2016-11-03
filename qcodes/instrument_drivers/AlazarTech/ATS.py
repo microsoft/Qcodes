@@ -137,6 +137,24 @@ class AlazarTech_ATS(Instrument):
               'single channel mode.')
     }
 
+    # Parameters that can be set and/or get via
+    # AlazarSetParameter/AlazarGetParameter
+    _parameters = {
+        'DATA_WIDTH': 0x10000009,
+        'SETGET_ASYNC_BUFFSIZE_BYTES': 0x10000039,
+        'SETGET_ASYNC_BUFFCOUNT': 0x10000040,
+        'GET_DATA_FORMAT': 0x10000042,
+        'GET_SAMPLES_PER_TIMESTAMP_CLOCK': 0x10000044,
+        'GET_RECORDS_CAPTURED': 0x10000045,
+        'GET_ASYNC_BUFFERS_PENDING': 0x10000050,
+        'GET_ASYNC_BUFFERS_PENDING_FULL': 0x10000051,
+        'GET_ASYNC_BUFFERS_PENDING_EMPTY': 0x10000052,
+        'ECC_MODE': 0x10000048,
+        'GET_AUX_INPUT_LEVEL': 0x10000049,
+        'EXT_TRIGGER_COUPLING': 0x1000001A,
+        'EXT_TRIGGER_ATTENUATOR_RELAY': 0x1000001C
+    }
+
     _board_names = {
         1: 'ATS850',
         2: 'ATS310',
@@ -235,21 +253,6 @@ class AlazarTech_ATS(Instrument):
         # Some ATS models do not support a bwlimit. This flag defines if the
         # ATS supports a bwlimit or not. True by default.
         self._bwlimit_support = True
-
-    def reset(self):
-        system_id = 1
-        board_id = 1
-        print('old handle: {}'.format(self._handle))
-        # Abort any previous measurement
-        self._call_dll('AlazarAbortAsyncRead', self._handle)
-        self._ATS_dll.AlazarClose(self._handle)
-
-        self._handle = self._ATS_dll.AlazarGetBoardBySystemID(system_id,
-                                                              board_id)
-        print('new handle: {}'.format(self._handle))
-        self._handle = self._ATS_dll.AlazarOpen("ATS9440-0")
-
-        print('newest handle: {}'.format(self._handle))
 
     def get_idn(self):
         """
@@ -509,7 +512,7 @@ class AlazarTech_ATS(Instrument):
         #                     'Number of bits: {}'.format(bps))
 
         # Set record size for NPT mode
-        if mode in ['CS' or 'NPT']:
+        if mode in ['CS', 'NPT']:
             pretriggersize = 0  # pretriggersize is 0 for NPT and CS always
             post_trigger_size = self.samples_per_record._get_byte()
             self._call_dll('AlazarSetRecordSize',
@@ -534,7 +537,6 @@ class AlazarTech_ATS(Instrument):
             records_per_acquisition = (
                 records_per_buffer * buffers_per_acquisition)
             samples_per_buffer = samples_per_record * records_per_buffer
-            print('records_per_acquisition: {}'.format(records_per_acquisition))
 
             self._call_dll('AlazarBeforeAsyncRead',
                            self._handle, self.channel_selection,
@@ -647,11 +649,9 @@ class AlazarTech_ATS(Instrument):
 
             # if buffers must be recycled, extract data and repost them
             # otherwise continue to next buffer
-            print('received buffer')
             acquisition_controller.handle_buffer(buf.buffer)
             # if buffer_recycling:
             if True:
-                print('recycling buffers')
                 self._call_dll('AlazarPostAsyncBuffer',
                                self._handle, buf.addr, buf.size_bytes)
             buffers_completed += 1
@@ -677,25 +677,15 @@ class AlazarTech_ATS(Instrument):
         return self._call_dll('AlazarGetStatus', self._handle,
                               error_check=False)
 
-
     def get_parameter(self, parameter, channel=0):
-        parameters = {
-            'DATA_WIDTH': 0x10000009,
-            'SETGET_ASYNC_BUFFSIZE_BYTES': 0x10000039,
-            'SETGET_ASYNC_BUFFCOUNT': 0x10000040,
-            'GET_DATA_FORMAT': 0x10000042,
-            'GET_SAMPLES_PER_TIMESTAMP_CLOCK': 0x10000044,
-            'GET_RECORDS_CAPTURED': 0x10000045,
-            'GET_ASYNC_BUFFERS_PENDING': 0x10000050,
-            'GET_ASYNC_BUFFERS_PENDING_FULL': 0x10000051,
-            'GET_ASYNC_BUFFERS_PENDING_EMPTY': 0x10000052,
-            'ECC_MODE': 0x10000048,
-            'GET_AUX_INPUT_LEVEL': 0x10000049
-        }
         value = np.array([0], dtype=np.long)  # bps bits per sample
-        self._call_dll('AlazarGetParameter', self._handle, channel,
-                       parameters[parameter], value.ctypes.data)
+        self._call_dll('AlazarGetParameterUL', self._handle, channel,
+                       self._parameters[parameter], value.ctypes.data)
         return value
+
+    def set_parameter(self, parameter, value, channel=0):
+        self._call_dll('AlazarSetParameterUL', self._handle, channel,
+                       self._parameters[parameter], value)
 
     def _set_if_present(self, param_name, value):
         if value is not None:
