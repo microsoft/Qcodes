@@ -236,6 +236,21 @@ class AlazarTech_ATS(Instrument):
         # ATS supports a bwlimit or not. True by default.
         self._bwlimit_support = True
 
+    def reset(self):
+        system_id = 1
+        board_id = 1
+        print('old handle: {}'.format(self._handle))
+        # Abort any previous measurement
+        self._call_dll('AlazarAbortAsyncRead', self._handle)
+        self._ATS_dll.AlazarClose(self._handle)
+
+        self._handle = self._ATS_dll.AlazarGetBoardBySystemID(system_id,
+                                                              board_id)
+        print('new handle: {}'.format(self._handle))
+        self._handle = self._ATS_dll.AlazarOpen("ATS9440-0")
+
+        print('newest handle: {}'.format(self._handle))
+
     def get_idn(self):
         """
         This methods gets the most relevant information of this instrument
@@ -519,6 +534,7 @@ class AlazarTech_ATS(Instrument):
             records_per_acquisition = (
                 records_per_buffer * buffers_per_acquisition)
             samples_per_buffer = samples_per_record * records_per_buffer
+            print('records_per_acquisition: {}'.format(records_per_acquisition))
 
             self._call_dll('AlazarBeforeAsyncRead',
                            self._handle, self.channel_selection,
@@ -631,9 +647,11 @@ class AlazarTech_ATS(Instrument):
 
             # if buffers must be recycled, extract data and repost them
             # otherwise continue to next buffer
-
+            print('received buffer')
             acquisition_controller.handle_buffer(buf.buffer)
-            if buffer_recycling:
+            # if buffer_recycling:
+            if True:
+                print('recycling buffers')
                 self._call_dll('AlazarPostAsyncBuffer',
                                self._handle, buf.addr, buf.size_bytes)
             buffers_completed += 1
@@ -651,6 +669,34 @@ class AlazarTech_ATS(Instrument):
         # return result
         return acquisition_controller.post_acquire()
 
+    def triggered(self):
+        return self._call_dll('AlazarTriggered', self._handle,
+                              error_check=False)
+
+    def get_status(self):
+        return self._call_dll('AlazarGetStatus', self._handle,
+                              error_check=False)
+
+
+    def get_parameter(self, parameter, channel=0):
+        parameters = {
+            'DATA_WIDTH': 0x10000009,
+            'SETGET_ASYNC_BUFFSIZE_BYTES': 0x10000039,
+            'SETGET_ASYNC_BUFFCOUNT': 0x10000040,
+            'GET_DATA_FORMAT': 0x10000042,
+            'GET_SAMPLES_PER_TIMESTAMP_CLOCK': 0x10000044,
+            'GET_RECORDS_CAPTURED': 0x10000045,
+            'GET_ASYNC_BUFFERS_PENDING': 0x10000050,
+            'GET_ASYNC_BUFFERS_PENDING_FULL': 0x10000051,
+            'GET_ASYNC_BUFFERS_PENDING_EMPTY': 0x10000052,
+            'ECC_MODE': 0x10000048,
+            'GET_AUX_INPUT_LEVEL': 0x10000049
+        }
+        value = np.array([0], dtype=np.long)  # bps bits per sample
+        self._call_dll('AlazarGetParameter', self._handle, channel,
+                       parameters[parameter], value.ctypes.data)
+        return value
+
     def _set_if_present(self, param_name, value):
         if value is not None:
             self.parameters[param_name]._set(value)
@@ -664,7 +710,7 @@ class AlazarTech_ATS(Instrument):
                 if param_base + ch in self.parameters.keys():
                     self.parameters[param_base + ch]._set(val)
 
-    def _call_dll(self, func_name, *args):
+    def _call_dll(self, func_name, *args, error_check=True):
         """
         Execute a dll function `func_name`, passing it the given arguments
 
@@ -690,7 +736,7 @@ class AlazarTech_ATS(Instrument):
         return_code = func(*args_out)
 
         # check for errors
-        if (return_code != self._success) and (return_code !=518):
+        if error_check and (return_code not in [self._success, 518]):
             # TODO(damazter) (C) log error
 
             argrepr = repr(args_out)
@@ -705,10 +751,14 @@ class AlazarTech_ATS(Instrument):
                 'error {}: {} from function {} with args: {}'.format(
                     return_code, self._error_codes[return_code], func_name,
                     argrepr))
+        elif not error_check:
+            return return_code
 
         # mark parameters updated (only after we've checked for errors)
         for param in update_params:
             param._set_updated()
+
+
 
     def clear_buffers(self):
         """
