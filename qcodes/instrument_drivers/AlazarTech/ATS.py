@@ -748,8 +748,6 @@ class AlazarTech_ATS(Instrument):
         for param in update_params:
             param._set_updated()
 
-
-
     def clear_buffers(self):
         """
         This method uncommits all buffers that were committed by the driver.
