@@ -234,7 +234,7 @@ class HDF5Format(Formatter):
 
         return dset
 
-    def write_metadata(self, data_set, io=None, location=None):
+    def write_metadata(self, data_set, io_manager=None, location=None):
         """
         Writes metadata of dataset to file using write_dict_to_hdf5 method
 
