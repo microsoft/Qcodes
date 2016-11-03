@@ -267,8 +267,6 @@ class SR830(VisaInstrument):
 
         self.add_function('disable_front_panel', call_cmd='OVRM 0')
         self.add_function('enable_front_panel', call_cmd='OVRM 1')
-        
-        self.add_function('id', call_cmd='*IDN?')
 
         # Initialize the proper units of the outputs and sensitivities
         self.input_config()
