@@ -20,7 +20,7 @@ class Keysight_E8267D(VisaInstrument):
                            set_cmd='SOURce:FREQuency:CW' + ' {:.4f}',
                            get_parser=float,
                            set_parser=float,
-                           vals=vals.Numbers(1e5, 20e9))
+                           vals=vals.Numbers(1e5, 44e9))
         self.add_parameter(name='phase',
                            label='Phase',
                            units='deg',
@@ -91,6 +91,14 @@ class Keysight_E8267D(VisaInstrument):
                            # .upper val for Enum or string
                            vals=vals.Enum('on', 'On', 'ON',
                                           'off', 'Off', 'OFF'))
+        #TODO
+        self.add_parameter('frequency_deviation',
+                           get_cmd='FM:DEV?',
+                           set_cmd='FM:DEV {}',
+                           get_parser=self.parse_on_off,
+                           # Only listed most common spellings idealy want a
+                           # .upper val for Enum or string
+                           vals=vals.Numbers(0, 80e6))
         self.add_parameter('amplitude_modulation',
                            get_cmd='AM:STAT?',
                            set_cmd='AM:STAT {}',
