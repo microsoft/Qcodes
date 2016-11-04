@@ -1,7 +1,7 @@
 Welcome to QCoDeS's documentation!
 ==================================
 
-Release v\ |version| (:ref:`Installation <install>`)
+Release v\ |version| 
 
 Qcodes is a Python-based data acquisition framework developed by the Copenhagen / Delft / Sydney / Microsoft quantum computing consortium. 
 
@@ -43,25 +43,18 @@ See how easy it is to run for yourself:
 
 
 
-Source codes lives on GitHub. Pull requests are always welcome!
-Also, please remember to star the project if it makes you happy.
-Did we mention we love pull requests? :)
-
-Features
---------
-- Supports Python 3.4 and 3.5
-- goal: 100% code coverage with a comprehensive test suite (v1.0)
-
-
 Documentation
 -------------
 
 .. toctree::
    :maxdepth: 2
 
+   start/index 
+   help
    user/index
    community/index
    api/index
+   auto/qcodes.instrument_drivers
    roadmap
    changes/index
 
@@ -77,4 +70,4 @@ Indices and tables
 License
 =======
 
-.. include:: ../LICENSE.md
+.. include:: ../LICENSE

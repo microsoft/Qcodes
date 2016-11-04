@@ -6,6 +6,12 @@
 # separately import multiprocessing
 from multiprocessing import active_children
 
+# config
+
+from qcodes.config import Config
+
+config = Config()
+
 from qcodes.version import __version__
 from qcodes.process.helpers import set_mp_method
 from qcodes.utils.helpers import in_notebook
@@ -28,10 +34,14 @@ if in_notebook():  # pragma: no cover
               'try "from qcodes.plots.pyqtgraph import QtPlot" '
               'to see the full error')
 
+# only import in name space if the gui is set to noebook
+# and there is multiprocessing
+if config['gui']['notebook'] and config['core']['legacy_mp']:
     from qcodes.widgets.widgets import show_subprocess_widget
 
 from qcodes.station import Station
 from qcodes.loops import get_bg, halt_bg, Loop
+from qcodes.measure import Measure
 from qcodes.actions import Task, Wait, BreakIf
 
 from qcodes.data.manager import get_data_manager

@@ -211,7 +211,7 @@ class SR830(VisaInstrument):
                            get_parser=parse_offset_get)
 
         # Aux input/output
-        for i in [0, 1, 2, 3]:
+        for i in [1, 2, 3, 4]:
             self.add_parameter('aux_in{}'.format(i),
                                label='Aux input {}'.format(i),
                                get_cmd='OAUX? {}'.format(i),
@@ -239,7 +239,7 @@ class SR830(VisaInstrument):
         self.add_function('auto_gain', call_cmd='AGAN')
         self.add_function('auto_reserve', call_cmd='ARSV')
         self.add_function('auto_phase', call_cmd='APHS')
-        self.add_function('auto_offset', call_cmd='AOFF {0}', args=[Enum(1, 2, 3, 4)])
+        self.add_function('auto_offset', call_cmd='AOFF {0}', args=[Enum(1, 2, 3)])
 
         # Data transfer
         self.add_parameter('X',

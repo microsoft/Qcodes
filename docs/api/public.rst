@@ -13,6 +13,17 @@ This page lists the entrypoints to the plubic qcodes API.
 .. toctree::
    :maxdepth: 4
 
+
+.. _config_label:
+
+Config
+~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+   Config
+
 Station
 ~~~~~~~
 
@@ -31,6 +42,13 @@ Loops
    halt_bg
    Loop
 
+Measure
+~~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+   measure.Measure
 
 Actions
 ~~~~~~~
@@ -73,7 +91,7 @@ Instrument
    SweepFixedValues
    SweepValues
    combine
-   CombinedPar
+   CombinedParameter
 
 
    Instrument
