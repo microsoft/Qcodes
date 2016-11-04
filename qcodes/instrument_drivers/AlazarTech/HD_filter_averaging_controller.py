@@ -4,53 +4,19 @@ from qcodes import Parameter
 from scipy import signal
 
 
-class SampleSweep(Parameter):
+class HD_Averaging_Acquisition_Controller(AcquisitionController):
     """
-    Hardware controlled parameter class for Rohde Schwarz RSZNB20 trace.
-
-    Instrument returns an list of transmission data in the form of a list of
-    complex numbers taken from a frequency sweep.
-
-    TODO(nataliejpg) tidy up samples_per_record etc initialisation etc
-    """
-    def __init__(self, name, instrument):
-        super().__init__(name)
-        self._instrument = instrument
-        self.acquisitionkwargs = {}
-        self.names = ('magnitude', 'phase')
-        self.units = ('', '')
-        self.setpoint_names = (('sample_num',), ('sample_num',))
-        self.setpoints = ((1,), (1,))
-        self.shapes = ((1,), (1,))
-
-    def update_acquisition_kwargs(self, **kwargs):
-        if 'samples_per_record' in kwargs:
-            npts = kwargs['samples_per_record']
-            n = tuple(np.arange(npts))
-            self.setpoints = ((n,), (n,))
-            self.shapes = ((npts,), (npts,))
-        else:
-            raise ValueError('samples_per_record not in kwargs at time of update')
-        self.acquisitionkwargs.update(**kwargs)
-
-    def get(self):
-        mag, phase = self._instrument._get_alazar().acquire(
-            acquisition_controller=self._instrument,
-            **self.acquisitionkwargs)
-        return mag, phase
-
-
-class HD_Acquisition_Controller(AcquisitionController):
-    """
-    seq 0 - samples
+    seq 0
 
     TODO(nataliejpg) fix sample rate problem
     TODO(nataliejpg) add filter options
     TODO(nataliejpg) test mag phase logic
+    TODO(nataliejpg) record A record B thinking
     """
 
     def __init__(self, name, alazar_name, demod_freq, samp_rate, **kwargs):
         self.demodulation_frequency = demod_freq
+        self.acquisitionkwargs = {}
         self.sample_speed = samp_rate
         self.samples_per_record = 0
         self.records_per_buffer = 0
@@ -65,7 +31,10 @@ class HD_Acquisition_Controller(AcquisitionController):
         super().__init__(name, alazar_name, **kwargs)
 
         self.add_parameter(name='acquisition',
-                           parameter_class=SampleSweep)
+                           names=('magnitude', 'phase'),
+                           units=('', ''),
+                           shapes=((1,), (1,)),
+                           get_cmd=self.do_acquisition)
 
     def update_acquisitionkwargs(self, **kwargs):
         """
@@ -74,7 +43,17 @@ class HD_Acquisition_Controller(AcquisitionController):
         :param kwargs:
         :return:
         """
-        self.acquisition.update_acquisition_kwargs(**kwargs)
+        self.acquisitionkwargs.update(**kwargs)
+
+    def do_acquisition(self):
+        """
+        this method performs an acquisition, which is the get_cmd for the
+        acquisiion parameter of this instrument
+        :return:
+        """
+        value = self._get_alazar().acquire(acquisition_controller=self,
+                                           **self.acquisitionkwargs)
+        return value
 
     def pre_start_capture(self):
         """
@@ -158,14 +137,16 @@ class HD_Acquisition_Controller(AcquisitionController):
             ImPart = self.filter(im_wave, numtaps, cutoff)
 
             complex_num = RePart + ImPart * 1j
-            mag = 2 * abs(complex_num)
-            phase = np.angle(complex_num, deg=True)
+            mag = np.mean(2 * abs(complex_num))
+            phase = np.mean(np.angle(complex_num, deg=True))
 
             return mag, phase
 
         def filter(self, rec, numtaps, cutoff):
             sample_rate = self.sample_rate
             nyq_rate = sample_rate / 2.
-            fir_coef = signal.firwin(numtaps, cutoff / nyq_rate, window="hamming")
+            fir_coef = signal.firwin(numtaps,
+                                     cutoff / nyq_rate,
+                                     window="hamming")
             filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
             return filtered_rec

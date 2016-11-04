@@ -9,18 +9,19 @@ class SampleSweep(Parameter):
 
     Instrument returns an list of transmission data in the form of a list of
     complex numbers taken from a frequency sweep.
+
+    TODO(nataliejpg) tidy up samples_per_record etc initialisation etc
     """
     def __init__(self, name, instrument):
         super().__init__(name)
         self._instrument = instrument
-        #self.npts = npts
         self.acquisitionkwargs = {}
         self.names = ('A', 'B')
         self.units = ('', '')
         self.setpoint_names = (('sample_num',), ('sample_num',))
         self.setpoints = ((1,), (1,))
         self.shapes = ((1,), (1,))
-        
+
     def update_acquisition_kwargs(self, **kwargs):
         if 'samples_per_record' in kwargs:
             npts = kwargs['samples_per_record']
@@ -33,7 +34,7 @@ class SampleSweep(Parameter):
 
     def get(self):
         recordA, recordB = self._instrument._get_alazar().acquire(
-            acquisition_controller = self._instrument,
+            acquisition_controller=self._instrument,
             **self.acquisitionkwargs)
 #        recordA, recordB = self._instrument.do_acquisition()
         return recordA, recordB
@@ -50,15 +51,21 @@ class Basic_Acquisition_Controller(AcquisitionController):
     alazar_name: the name of the alazar instrument such that this controller
         can communicate with the Alazar
     **kwargs: kwargs are forwarded to the Instrument base class
+
+    TODO(nataliejpg) tidy up samples_per_record etc initialisation etc
+    TODO(nataliejpg) decide whole 1 record 1 buffer thing
+    TODO(nataliejpg) checko none vs 0 in init for samples, records etc
     """
 
     def __init__(self, name, alazar_name, **kwargs):
-        #self.acquisitionkwargs = {}
-        self.samples_per_record = None
-        self.bits_per_sample = None
-        self.records_per_buffer = None
-        self.buffers_per_acquisition = None
-        self.allocated_buffers = None  # needed??
+        self.samples_per_record = 0
+        self.records_per_buffer = 0
+        self.buffers_per_acquisition = 0
+        # self.samples_per_record = None
+        # self.bits_per_sample = None
+        # self.records_per_buffer = None
+        # self.buffers_per_acquisition = None
+        # self.allocated_buffers = None  # needed??
         # TODO(damazter) (S) this is not very general:
         self.number_of_channels = 2
         self.buffer = None
@@ -78,15 +85,15 @@ class Basic_Acquisition_Controller(AcquisitionController):
         """
         self.acquisition.update_acquisition_kwargs(**kwargs)
 
-    def do_acquisition(self):
-        """
-        this method performs an acquisition, which is the get_cmd for the
-        acquisiion parameter of this instrument
-        :return:
-        """
-        valueA, valueB = self._get_alazar().acquire(acquisition_controller=self,
-                                           **self.acquisitionkwargs)
-        return valueA, valueB
+    # def do_acquisition(self):
+    #     """
+    #     this method performs an acquisition, which is the get_cmd for the
+    #     acquisiion parameter of this instrument
+    #     :return:
+    #     """
+    #     valueA, valueB = self._get_alazar().acquire(acquisition_controller=self,
+    #                                        **self.acquisitionkwargs)
+    #     return valueA, valueB
 
     def pre_start_capture(self):
         """
