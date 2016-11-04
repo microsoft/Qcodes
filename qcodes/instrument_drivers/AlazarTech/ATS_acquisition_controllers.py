@@ -7,7 +7,7 @@ from qcodes.utils import validators as vals
 from .ATS import AcquisitionController
 
 
-class Basic_AcquisitionController(AcquisitionController):
+class Triggered_AcquisitionController(AcquisitionController):
     """Basic AcquisitionController tested on ATS9360
     returns unprocessed data averaged by record with 2 channels
     """
