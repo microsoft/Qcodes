@@ -70,21 +70,34 @@ class IVVI(VisaInstrument):
                            parameter_class=ManualParameter,
                            initial_value=False,
                            label='Check setpoints',
-                           vals=Bool())
+                           vals=Bool(),
+                           docstring=('Whether to check if the setpoint is the'
+                                      ' same as the current DAC value to '
+                                      'prevent an unnecessary set command.'))
 
         # Time to wait before sending a set DAC command to the IVVI
         self.add_parameter('dac_set_sleep',
                            parameter_class=ManualParameter,
                            initial_value=0.05,
                            label='DAC set sleep',
-                           vals=Numbers(0))
+                           units='s',
+                           vals=Numbers(0),
+                           docstring=('When check_setpoints is set to True, '
+                                      'this is the waiting time between the'
+                                      'command that checks the current DAC '
+                                      'values and the final set DAC command'))
 
         # Minimum time to wait before the read buffer contains data
         self.add_parameter('dac_read_buffer_sleep',
                            parameter_class=ManualParameter,
                            initial_value=0.025,
                            label='DAC read buffer sleep',
-                           vals=Numbers(0))
+                           units='s',
+                           vals=Numbers(0),
+                           docstring=('While recieving bytes from the IVVI, '
+                                      'sleeping is done in multiples of this '
+                                      'value. Change to a lower value for '
+                                      'a shorter minimum time to wait.'))
 
         self.add_parameter('dac voltages',
                            label='Dac voltages',
@@ -224,15 +237,15 @@ class IVVI(VisaInstrument):
                     mvoltage < (cur_val - byte_res / 2 - eps)):
                 proceed = True
 
+            if self.dac_set_sleep() > 0.0:
+                time.sleep(self.dac_set_sleep())
+
         # only update the value if it is different from the previous one
         # this saves time in setting values, set cmd takes ~650ms
         if proceed:
             polarity_corrected = mvoltage - self.pol_num[channel - 1]
             byte_val = self._mvoltage_to_bytes(polarity_corrected)
             message = bytes([2, 1, channel]) + byte_val
-
-            if self.dac_set_sleep() > 0.0:
-                time.sleep(self.dac_set_sleep())
 
             reply = self.ask(message)
             self._time_last_update = 0  # ensures get command will update
