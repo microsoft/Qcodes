@@ -222,12 +222,6 @@ class M4i(Instrument):
                            get_cmd=partial(self._param32bit, pyspcm.SPC_OVERSAMPLINGFACTOR),
                            docstring='Reads the oversampling factor')
 
-        # Option star-hub and block averaging
-        self.add_parameter('starhub_count',
-                           label='starhub count',
-                           get_cmd=partial(self._param32bit, pyspcm.SPC_SYNC_READ_SYNCCOUNT),
-                           docstring='number of cards that are connected to star hub')
-
         # add parameters for setting and getting (read/write direction registers)
 
         self.add_parameter('enable_channels',
@@ -283,8 +277,8 @@ class M4i(Instrument):
             # AC/DC offset compensation
             self.add_parameter('ACDC_offs_compensation_{}'.format(i),
                                label='ACDC offs compensation {}'.format(i),
-                               get_cmd=partial(self._param32bit, getattr(pyspcm, 'SPC_ACDC_OFFS_COMPENSATION{}'.format(i))),
-                               set_cmd=partial(self._set_param32bit, getattr(pyspcm, 'SPC_ACDC_OFFS_COMPENSATION{}'.format(i))),
+                               get_cmd=partial(self._get_compensation,i),
+                               set_cmd=partial(self._set_compensation,i),
                                vals=Enum(0, 1),
                                docstring='if 1 enables compensation, if 0 disables compensation for channel {}'.format(i))
 
@@ -444,6 +438,21 @@ class M4i(Instrument):
                            label='general command',
                            set_cmd=partial(self._set_param32bit, pyspcm.SPC_M2CMD),
                            docstring='executes a command for the card or data transfer')
+
+    #checks if requirements for the compensation get and set functions are met
+    def _get_compensation(self,i):
+        #if HF enabled
+        if(getattr(self,'input_path_{}'.format(i))() == 1):
+            self._param32bit(getattr(pyspcm,'SPC_ACDC_OFFS_COMPENSATION{}'.format(i)))
+        else:
+            logging.warning("M4i: HF path not set, ignoring ACDC offset compensation get\n")
+            
+    def _set_compensation(self,i,value):
+        #if HF enabled
+        if(getattr(self,'input_path_{}'.format(i))() == 1):
+            self._set_param32bit(getattr(pyspcm,'SPC_ACDC_OFFS_COMPENSATION{}'.format(i)), value)
+        else:
+            logging.warning("M4i: HF path not set, ignoring ACDC offset compensation set\n")
 
     def get_idn(self):
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), ('Spectrum_GMBH', szTypeToName(self.get_card_type()), self.serial_number(), ' ')))
