@@ -1,6 +1,5 @@
 from .ATS import AcquisitionController
 import numpy as np
-from qcodes import Parameter
 from scipy import signal
 
 

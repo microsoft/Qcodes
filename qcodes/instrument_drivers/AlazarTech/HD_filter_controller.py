@@ -49,7 +49,9 @@ class HD_Acquisition_Controller(AcquisitionController):
     TODO(nataliejpg) test mag phase logic
     """
 
-    def __init__(self, name, alazar_name, demod_freq, samp_rate, **kwargs):
+    def __init__(self, name, alazar_name, demod_freq, samp_rate=500e6, filt='win', **kwargs):
+        filter_dict = {'win': 0, 'hamming': 1, 'ls': 2}
+        self.filter = filter_dict[filt]
         self.demodulation_frequency = demod_freq
         self.sample_speed = samp_rate
         self.samples_per_record = 0
@@ -154,8 +156,16 @@ class HD_Acquisition_Controller(AcquisitionController):
             im_wave = np.multiply(rec, self.sin_list)
             cutoff = self.demodulation_frequency
             numtaps = 30
-            RePart = self.filter(re_wave, numtaps, cutoff)
-            ImPart = self.filter(im_wave, numtaps, cutoff)
+
+            if self.filter == 0:
+                RePart = self.filter_win(re_wave, numtaps, cutoff)
+                ImPart = self.filter_win(im_wave, numtaps, cutoff)
+            elif self.filter == 1:
+                RePart = self.filter_hamming(re_wave, numtaps, cutoff)
+                ImPart = self.filter_hamming(im_wave, numtaps, cutoff)
+            elif self.filter == 2:
+                RePart = self.filter_ls(re_wave, numtaps, cutoff)
+                ImPart = self.filter_ls(im_wave, numtaps, cutoff)
 
             complex_num = RePart + ImPart * 1j
             mag = 2 * abs(complex_num)
@@ -163,9 +173,31 @@ class HD_Acquisition_Controller(AcquisitionController):
 
             return mag, phase
 
-        def filter(self, rec, numtaps, cutoff):
+        def filter_hamming(self, rec, numtaps, cutoff):
             sample_rate = self.sample_rate
             nyq_rate = sample_rate / 2.
-            fir_coef = signal.firwin(numtaps, cutoff / nyq_rate, window="hamming")
+            fir_coef = signal.firwin(numtaps,
+                                     cutoff / nyq_rate,
+                                     window="hamming")
+            filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
+            return filtered_rec
+
+        def filter_win(self, rec, numtaps, cutoff):
+            sample_rate = self.sample_rate
+            nyq_rate = sample_rate / 2.
+            fir_coef = signal.firwin(numtaps,
+                                     cutoff / nyq_rate)
+            filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
+            return filtered_rec
+
+        def filter_ls(self, rec, numtaps, cutoff):
+            sample_rate = self.sample_rate
+            nyq_rate = sample_rate / 2.
+            bands = [0, cutoff / nyq_rate, cutoff / nyq_rate, 1]
+            desired = [1, 1, 0, 0]
+            fir_coef = signal.firls(numtaps,
+                                    bands,
+                                    desired,
+                                    nyq=nyq_rate)
             filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
             return filtered_rec
