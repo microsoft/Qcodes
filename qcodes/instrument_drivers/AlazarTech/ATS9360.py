@@ -3,6 +3,8 @@ from qcodes.utils import validators
 
 
 class AlazarTech_ATS9360(AlazarTech_ATS):
+    # TODO(nataliejpg) add more options for the sample rate set using 10MHz ref
+    # including so that the 'get sample rate' function in ATS.py works
     def __init__(self, name, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
         super().__init__(name, dll_path=dll_path, **kwargs)
@@ -14,27 +16,29 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            parameter_class=AlazarParameter,
                            label='Clock Source',
                            unit=None,
-                           value='INTERNAL_CLOCK',
+                           value='EXTERNAL_CLOCK_10MHz_REF',
                            byte_to_value_dict={1: 'INTERNAL_CLOCK',
                                                4: 'SLOW_EXTERNAL_CLOCK',
                                                5: 'EXTERNAL_CLOCK_AC',
                                                7: 'EXTERNAL_CLOCK_10MHz_REF'})
-                                               
-        # TODO(nataliejpg) add more options for the sample rate set using 10MHz ref
         self.add_parameter(name='sample_rate',
                            parameter_class=AlazarParameter,
                            label='Sample Rate',
                            unit='S/s',
                            value='10MHZ_REF_500MSPS',
                            byte_to_value_dict={
-                               0x1: '1KSPS', 0x2: '2KSPS', 0x4: '5KSPS', 0x8: '10KSPS',
-                               0xA: '20KSPS', 0xC: '50KSPS', 0xE: '100KSPS',
-                               0x10: '200KSPS', 0x12: '500KSPS', 0x14: '1MSPS',
-                               0x18: '2MSPS', 0x1A: '5MSPS', 0x1C: '10MSPS',
-                               0x1E: '20MSPS', 0x22: '50MSPS', 0x24: '100MSPS',
-                               0x25: '125MSPS', 0x2B: '250MSPS', 0x30: '500MSPS',
-                               0x32: '800MSPS', 0x35: '1000MSPS', 0x37: '1200MSPS',
-                               0x3A: '1500MSPS', 0x3D: '1800MSPS', 
+                               0x1: '1KSPS', 0x2: '2KSPS',
+                               0x4: '5KSPS', 0x8: '10KSPS',
+                               0xA: '20KSPS', 0xC: '50KSPS',
+                               0xE: '100KSPS', 0x10: '200KSPS',
+                               0x12: '500KSPS', 0x14: '1MSPS',
+                               0x18: '2MSPS', 0x1A: '5MSPS',
+                               0x1C: '10MSPS', 0x1E: '20MSPS',
+                               0x22: '50MSPS', 0x24: '100MSPS',
+                               0x25: '125MSPS', 0x2B: '250MSPS',
+                               0x30: '500MSPS', 0x32: '800MSPS',
+                               0x35: '1000MSPS', 0x37: '1200MSPS',
+                               0x3A: '1500MSPS', 0x3D: '1800MSPS',
                                0x40: 'EXTERNAL_CLOCK',
                                500000000: '10MHZ_REF_500MSPS'})
         self.add_parameter(name='clock_edge',
@@ -44,7 +48,6 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            value='CLOCK_EDGE_RISING',
                            byte_to_value_dict={0: 'CLOCK_EDGE_RISING',
                                                1: 'CLOCK_EDGE_FALLING'})
-
         self.add_parameter(name='decimation',
                            parameter_class=AlazarParameter,
                            label='Decimation',
@@ -152,6 +155,23 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            value=0,
                            vals=validators.Ints(min_value=0))
 
+        self.add_parameter(name='aux_io_mode',
+                           parameter_class=AlazarParameter,
+                           label='AUX I/O Mode',
+                           unit=None,
+                           value='AUX_IN_AUXILIARY',
+                           byte_to_value_dict={0: 'AUX_OUT_TRIGGER',
+                                               1: 'AUX_IN_TRIGGER_ENABLE',
+                                               13: 'AUX_IN_AUXILIARY'})
+
+        self.add_parameter(name='aux_io_param',
+                           parameter_class=AlazarParameter,
+                           unit=None,
+                           value='NONE',
+                           byte_to_value_dict={0: 'NONE',
+                                               1: 'TRIG_SLOPE_POSITIVE',
+                                               2: 'TRIG_SLOPE_NEGATIVE'})
+
         # ----- Parameters for the acquire function -----
         self.add_parameter(name='mode',
                            parameter_class=AlazarParameter,
@@ -159,24 +179,13 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            unit=None,
                            value='NPT',
                            byte_to_value_dict={0x200: 'NPT', 0x400: 'TS'})
-
-        # samples_per_record must be a multiple of 16!
         self.add_parameter(name='samples_per_record',
                            parameter_class=AlazarParameter,
                            label='Samples per Record',
                            unit=None,
                            value=1024,
-                           vals=validators.Multiples(divisor=64, min_value=256))
-        # TODO (M) figure out if this also has to be a multiple of something,
-        # I could not find this in the documentation but somehow I have the
-        # feeling it still should be a multiple of something
-        # NOTE by ramiro: At least in previous python implementations(PycQED delft),
-        # this is an artifact for compatibility with AWG sequencing,
-        # not particular to any ATS architecture.
-        #   ==> this is a construction imposed by the memory strategy
-        # implemented on the python driver
-        # we are writing, not limited by any actual ATS feature.
-
+                           vals=validators.Multiples(
+                                divisor=64, min_value=256))
         self.add_parameter(name='records_per_buffer',
                            parameter_class=AlazarParameter,
                            label='Records per Buffer',

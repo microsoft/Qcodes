@@ -329,7 +329,8 @@ class AlazarTech_ATS(Instrument):
                trigger_engine2=None, trigger_source2=None,
                trigger_slope2=None, trigger_level2=None,
                external_trigger_coupling=None, external_trigger_range=None,
-               trigger_delay=None, timeout_ticks=None):
+               trigger_delay=None, timeout_ticks=None, aux_io_mode=None,
+               aux_io_param=None):
         """
         configure the ATS board and set the corresponding parameters to the
         appropriate values.
@@ -387,6 +388,8 @@ class AlazarTech_ATS(Instrument):
                              external_trigger_range)
         self._set_if_present('trigger_delay', trigger_delay)
         self._set_if_present('timeout_ticks', timeout_ticks)
+        self._set_if_present('aux_io_mode', aux_io_mode)
+        self._set_if_present('aux_io_param'. aux_io_param)
         # endregion
 
         self._call_dll('AlazarSetCaptureClock',
@@ -420,6 +423,11 @@ class AlazarTech_ATS(Instrument):
 
         self._call_dll('AlazarSetTriggerTimeOut',
                        self._handle, self.timeout_ticks)
+
+        if aux_io_mode is not None:
+            self._call_dll('AlazarConfigureAuxIO',
+                           self._handle, self.aux_io_mode,
+                           self.aux_io_param)
 
         # TODO(damazter) (W) config AUXIO
 
