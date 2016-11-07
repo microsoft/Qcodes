@@ -167,5 +167,5 @@ License
 
 See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.md>`__.
 
-.. |Build Status| image:: https://travis-ci.com/QCoDeS/Qcodes.svg?token=H7MjHi74teZgv8JHTYhx&branch=master
-   :target: https://travis-c
+.. |Build Status| image:: https://travis-ci.org/QCoDeS/Qcodes.svg?branch=master
+    :target: https://travis-ci.org/QCoDeS/Qcodes
