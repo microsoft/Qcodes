@@ -4,8 +4,9 @@ Live plotting using pyqtgraph
 
 import numpy as np
 
-from PyQt4 import QtCore, QtGui
-from PyQt4.Qt import QBuffer, QIODevice, QByteArray
+from qtpy import QtCore, QtGui, QtWidgets
+from qtpy.QtWidgets import QWidget, QShortcut, QHBoxLayout
+from qtpy.QtCore import QBuffer, QIODevice, QByteArray
 
 import pyqtgraph as pg
 from pyqtgraph import dockarea
@@ -76,8 +77,10 @@ class Dock(dockarea.Dock):
         Create a png representation of the current Dock.
         """
 
-        QtGui.QApplication.processEvents()
-
+        QtWidgets.QApplication.processEvents()
+        
+        # TODO (giulioungaretti)
+        # http://doc.qt.io/qt-5/qpixmap-obsolete.html#grabWidget
         image = QtGui.QPixmap.grabWidget(self)
 
         byte_array = QByteArray()
@@ -91,7 +94,7 @@ class Dock(dockarea.Dock):
 TransformState = namedtuple('TransformState', 'translate scale revisit')
 
 
-class QtPlot(QtGui.QWidget, BasePlot):
+class QtPlot(QWidget, BasePlot):
 
     """
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
@@ -122,13 +125,12 @@ class QtPlot(QtGui.QWidget, BasePlot):
     def __init__(self, *args, figsize=(1000, 600), figposition=None,
                  interval=0.25, windowtitle=None, theme=((60, 60, 60), 'w'),
                  show_window=True, parent=None, **kwargs):
-
-        QtGui.QWidget.__init__(self, parent=parent)
+        QWidget.__init__(self, parent=parent)
         # Set base interval to None to disable that JS update-widget thingy
         BasePlot.__init__(self, interval=None)
 
-        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+W"), self, self.close)
-        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+Q"), self, self.close)
+        QShortcut(QtGui.QKeySequence("Ctrl+W"), self, self.close)
+        QShortcut(QtGui.QKeySequence("Ctrl+Q"), self, self.close)
 
         self.traces = []
         self.subplots = []
@@ -144,7 +146,7 @@ class QtPlot(QtGui.QWidget, BasePlot):
         self.theme = theme
         self.area = dockarea.DockArea()
 
-        layout = QtGui.QHBoxLayout()
+        layout = QHBoxLayout()
         layout.setContentsMargins(2, 2, 2, 2)
         layout.addWidget(self.area)
         self.setLayout(layout)
@@ -159,7 +161,7 @@ class QtPlot(QtGui.QWidget, BasePlot):
         if args or kwargs:
             self.add(*args, **kwargs)
 
-        QtGui.QApplication.processEvents()
+        QtWidgets.QApplication.processEvents()
 
         if self.interval:
             self.auto_update()
@@ -193,7 +195,7 @@ class QtPlot(QtGui.QWidget, BasePlot):
         # update_data also calls self.update_plot()
         self.update_data()
 
-        QtGui.QApplication.processEvents()
+        QtWidgets.QApplication.processEvents()
 
         if self.auto_updating:
             # We use the singleShot to avoid update queues in case the plotting
@@ -211,8 +213,10 @@ class QtPlot(QtGui.QWidget, BasePlot):
         Create a png representation of the current window.
         """
 
-        QtGui.QApplication.processEvents()
+        QtWidgets.QApplication.processEvents()
 
+        # TODO (giulioungaretti)
+        # http://doc.qt.io/qt-5/qpixmap-obsolete.html#grabWidget
         image = QtGui.QPixmap.grabWidget(self.area)
 
         byte_array = QByteArray()
