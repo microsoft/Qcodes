@@ -382,3 +382,19 @@ class QtPlot(BasePlot):
             values, colors = scale
 
         return self.rpg.ColorMap(values, colors)
+
+    def _repr_png_(self):
+        """
+        Create a png representation of the current window.
+        """
+        image = self.win.grab()
+        byte_array = self.rpg.QtCore.QByteArray()
+        buffer = self.rpg.QtCore.QBuffer(byte_array)
+        buffer.open(self.rpg.QtCore.QIODevice.ReadWrite)
+        image.save(buffer, 'PNG')
+        buffer.close()
+        return bytes(byte_array._getValue())
+    
+    def save(self, filename=""):
+        image = self.win.grab()
+        image.save(filename, "PNG", 0)
