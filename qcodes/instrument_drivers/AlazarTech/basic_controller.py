@@ -117,7 +117,7 @@ class Basic_Acquisition_Controller(AcquisitionController):
         records_per_acquisition = (1. * self.buffers_per_acquisition *
                                    self.records_per_buffer)
         # for ATS9360 samples are arranged in the buffer as follows:
-        # S00A, S01A, ...S0B, S1B,...
+        # S00A, S00B, S01A, S01B...S10A, S10B, S11A, S11B...
         # where SXYZ is record X, sample Y, channel Z.
 
         # breaks buffer up into records, averages over them and returns samples
