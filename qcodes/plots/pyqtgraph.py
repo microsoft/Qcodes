@@ -79,10 +79,7 @@ class Dock(dockarea.Dock):
 
         QtWidgets.QApplication.processEvents()
         
-        # TODO (giulioungaretti)
-        # http://doc.qt.io/qt-5/qpixmap-obsolete.html#grabWidget
-        image = QtGui.QPixmap.grabWidget(self)
-
+        image = self.grab()
         byte_array = QByteArray()
         buffer = QBuffer(byte_array)
         buffer.open(QIODevice.ReadWrite)
@@ -215,9 +212,7 @@ class QtPlot(QWidget, BasePlot):
 
         QtWidgets.QApplication.processEvents()
 
-        # TODO (giulioungaretti)
-        # http://doc.qt.io/qt-5/qpixmap-obsolete.html#grabWidget
-        image = QtGui.QPixmap.grabWidget(self.area)
+        image = self.grab(self.area.contentsRect())
 
         byte_array = QByteArray()
         buffer = QBuffer(byte_array)
