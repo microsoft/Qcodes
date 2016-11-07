@@ -3,7 +3,7 @@ import numpy as np
 from scipy import signal
 
 
-class HD_Averaging_Acquisition_Controller(AcquisitionController):
+class HD_Controller(AcquisitionController):
     """
     seq 0
 
@@ -16,7 +16,7 @@ class HD_Averaging_Acquisition_Controller(AcquisitionController):
     def __init__(self, name, alazar_name, demod_freq, samp_rate, **kwargs):
         self.demodulation_frequency = demod_freq
         self.acquisitionkwargs = {}
-        self.sample_speed = samp_rate
+        self.sample_rate = samp_rate
         self.samples_per_record = 0
         self.records_per_buffer = 0
         self.buffers_per_acquisition = 0
@@ -123,29 +123,29 @@ class HD_Averaging_Acquisition_Controller(AcquisitionController):
 
         return mag, phase
 
-        def fit(self, rec):
-            # center rec around 0
-            rec = rec - np.mean(rec)
+    def fit(self, rec):
+        # center rec around 0
+        rec = rec - np.mean(rec)
 
-            # multiply with software wave
-            re_wave = np.multiply(rec, self.cos_list)
-            im_wave = np.multiply(rec, self.sin_list)
-            cutoff = self.demodulation_frequency
-            numtaps = 30
-            RePart = self.filter(re_wave, numtaps, cutoff)
-            ImPart = self.filter(im_wave, numtaps, cutoff)
+        # multiply with software wave
+        re_wave = np.multiply(rec, self.cos_list)
+        im_wave = np.multiply(rec, self.sin_list)
+        cutoff = self.demodulation_frequency
+        numtaps = 30
+        RePart = self.filter(re_wave, numtaps, cutoff)
+        ImPart = self.filter(im_wave, numtaps, cutoff)
 
-            complex_num = RePart + ImPart * 1j
-            mag = np.mean(2 * abs(complex_num))
-            phase = np.mean(np.angle(complex_num, deg=True))
+        complex_num = RePart + ImPart * 1j
+        mag = np.mean(2 * abs(complex_num))
+        phase = np.mean(np.angle(complex_num, deg=True))
 
-            return mag, phase
+        return mag, phase
 
-        def filter(self, rec, numtaps, cutoff):
-            sample_rate = self.sample_rate
-            nyq_rate = sample_rate / 2.
-            fir_coef = signal.firwin(numtaps,
-                                     cutoff / nyq_rate,
-                                     window="hamming")
-            filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
-            return filtered_rec
+    def filter(self, rec, numtaps, cutoff):
+        sample_rate = self.sample_rate
+        nyq_rate = sample_rate / 2.
+        fir_coef = signal.firwin(numtaps,
+                                 cutoff / nyq_rate,
+                                 window="hamming")
+        filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
+        return filtered_rec

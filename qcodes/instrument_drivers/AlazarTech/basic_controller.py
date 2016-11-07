@@ -5,12 +5,11 @@ from qcodes import Parameter
 
 class SampleSweep(Parameter):
     """
-    Hardware controlled parameter class for Rohde Schwarz RSZNB20 trace.
+    Hardware controlled parameter class for Alazar acquisition. To be used with
+    Acquisition Controller (tested with ATS9360 board)
 
-    Instrument returns an list of transmission data in the form of a list of
-    complex numbers taken from a frequency sweep.
-
-    TODO(nataliejpg) tidy up samples_per_record etc initialisation etc
+    Instrument returns an buffer of data (channels * samples * records) which
+    is processed by the post_acquire function of the Acquidiyion Controller
     """
     def __init__(self, name, instrument):
         super().__init__(name)
@@ -23,28 +22,30 @@ class SampleSweep(Parameter):
         self.shapes = ((1,), (1,))
 
     def update_acquisition_kwargs(self, **kwargs):
+        # needed to update config of the software parameter on sweep change
+        # freq setpoints tuple as needs to be hashable for look up
         if 'samples_per_record' in kwargs:
             npts = kwargs['samples_per_record']
             n = tuple(np.arange(npts))
             self.setpoints = ((n,), (n,))
             self.shapes = ((npts,), (npts,))
         else:
-            raise ValueError('samples_per_record not in kwargs at time of update')
+            raise ValueError('samples_per_record must be specified')
+        # updates dict to be used in acquisition get call
         self.acquisitionkwargs.update(**kwargs)
 
     def get(self):
         recordA, recordB = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
             **self.acquisitionkwargs)
-#        recordA, recordB = self._instrument.do_acquisition()
         return recordA, recordB
 
 
 class Basic_Acquisition_Controller(AcquisitionController):
     """
     This class represents an acquisition controller. It is designed to be used
-    primarily to check the function of the Alazar driver and should be used
-    with one buffer and one record to return each of the samples unprocessed
+    primarily to check the function of the Alazar driver and returns the
+    samples on channel A and channel B, averaging over recoirds and buffers
 
     args:
     name: name for this acquisition_conroller as an instrument
@@ -52,20 +53,13 @@ class Basic_Acquisition_Controller(AcquisitionController):
         can communicate with the Alazar
     **kwargs: kwargs are forwarded to the Instrument base class
 
-    TODO(nataliejpg) tidy up samples_per_record etc initialisation etc
-    TODO(nataliejpg) decide whole 1 record 1 buffer thing
-    TODO(nataliejpg) checko none vs 0 in init for samples, records etc
+    TODO(nataliejpg) num of channels
     """
 
     def __init__(self, name, alazar_name, **kwargs):
         self.samples_per_record = 0
         self.records_per_buffer = 0
         self.buffers_per_acquisition = 0
-        # self.samples_per_record = None
-        # self.bits_per_sample = None
-        # self.records_per_buffer = None
-        # self.buffers_per_acquisition = None
-        # self.allocated_buffers = None  # needed??
         # TODO(damazter) (S) this is not very general:
         self.number_of_channels = 2
         self.buffer = None
@@ -84,16 +78,6 @@ class Basic_Acquisition_Controller(AcquisitionController):
         :return:
         """
         self.acquisition.update_acquisition_kwargs(**kwargs)
-
-    # def do_acquisition(self):
-    #     """
-    #     this method performs an acquisition, which is the get_cmd for the
-    #     acquisiion parameter of this instrument
-    #     :return:
-    #     """
-    #     valueA, valueB = self._get_alazar().acquire(acquisition_controller=self,
-    #                                        **self.acquisitionkwargs)
-    #     return valueA, valueB
 
     def pre_start_capture(self):
         """
@@ -132,9 +116,6 @@ class Basic_Acquisition_Controller(AcquisitionController):
         """
         records_per_acquisition = (1. * self.buffers_per_acquisition *
                                    self.records_per_buffer)
-        if records_per_acquisition != 1:
-            raise ValueError(
-                'records and buffers should be set to 1 for this acquisition controller')
         # for ATS9360 samples are arranged in the buffer as follows:
         # S00A, S01A, ...S0B, S1B,...
         # where SXYZ is record X, sample Y, channel Z.

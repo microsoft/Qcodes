@@ -6,12 +6,11 @@ from scipy import signal
 
 class SampleSweep(Parameter):
     """
-    Hardware controlled parameter class for Rohde Schwarz RSZNB20 trace.
+    Hardware controlled parameter class for Alazar acquisition. To be used with
+    Acquisition Controller (tested with ATS9360 board)
 
-    Instrument returns an list of transmission data in the form of a list of
-    complex numbers taken from a frequency sweep.
-
-    TODO(nataliejpg) tidy up samples_per_record etc initialisation etc
+    Instrument returns an buffer of data (channels * samples * records) which
+    is processed by the post_acquire function of the Acquidiyion Controller
     """
     def __init__(self, name, instrument):
         super().__init__(name)
@@ -24,6 +23,8 @@ class SampleSweep(Parameter):
         self.shapes = ((1,), (1,))
 
     def update_acquisition_kwargs(self, **kwargs):
+        # needed to update config of the software parameter on sweep change
+        # freq setpoints tuple as needs to be hashable for look up
         if 'samples_per_record' in kwargs:
             npts = kwargs['samples_per_record']
             n = tuple(np.arange(npts))
@@ -31,6 +32,7 @@ class SampleSweep(Parameter):
             self.shapes = ((npts,), (npts,))
         else:
             raise ValueError('samples_per_record not in kwargs at time of update')
+        # updates dict to be used in acquisition get call
         self.acquisitionkwargs.update(**kwargs)
 
     def get(self):
@@ -40,24 +42,37 @@ class SampleSweep(Parameter):
         return mag, phase
 
 
-class HD_Acquisition_Controller(AcquisitionController):
+class Samples_HD_Controller(AcquisitionController):
     """
-    seq 0 - samples
+    This is the Acquisition Controller class which works with the ATS9360,
+    averaging over buffers and records and demodulating with a software
+    reference signal, returning the  samples.
+    args:
+    name: name for this acquisition_conroller as an instrument
+    alazar_name: the name of the alazar instrument such that this controller
+        can communicate with the Alazar
+    demod_freq: the frequency of the software wave to be created
+    samp_rate: the rate of sampling
+    filt: the filter to be used to filter out double freq component
+    chan_b: whether there is also a second channel of data to be processed
+        and returned
+    **kwargs: kwargs are forwarded to the Instrument base class
 
     TODO(nataliejpg) fix sample rate problem
     TODO(nataliejpg) add filter options
     TODO(nataliejpg) test mag phase logic
+    TODO(nataliejpg) chan stuff
     """
 
-    def __init__(self, name, alazar_name, demod_freq, samp_rate=500e6, filt='win', **kwargs):
+    def __init__(self, name, alazar_name, demod_freq, samp_rate=500e6,
+                 filt='win', chan_b=False, **kwargs):
         filter_dict = {'win': 0, 'hamming': 1, 'ls': 2}
         self.filter = filter_dict[filt]
         self.demodulation_frequency = demod_freq
-        self.sample_speed = samp_rate
+        self.sample_rate = samp_rate
         self.samples_per_record = 0
         self.records_per_buffer = 0
         self.buffers_per_acquisition = 0
-        self.number_of_channels = 2
         self.number_of_channels = 2
         self.cos_list = None
         self.sin_list = None
@@ -136,68 +151,70 @@ class HD_Acquisition_Controller(AcquisitionController):
             recordA += (self.buffer[i0:i1:self.number_of_channels] /
                         records_per_acquisition)
 
-        recordB = np.zeros(self.samples_per_record)
-        for i in range(self.records_per_buffer):
-            i0 = (i * self.samples_per_record * self.number_of_channels + 1)
-            i1 = (i0 + self.samples_per_record * self.number_of_channels)
-            recordB += (self.buffer[i0:i1:self.number_of_channels] /
-                        records_per_acquisition)
+        magA, phaseA = self.fit(recordA)
 
-        mag, phase = self.fit(recordA)
+        if self.chan_b:
+            recordB = np.zeros(self.samples_per_record)
+            for i in range(self.records_per_buffer):
+                i0 = (i * self.samples_per_record * self.number_of_channels + 1)
+                i1 = (i0 + self.samples_per_record * self.number_of_channels)
+                recordB += (self.buffer[i0:i1:self.number_of_channels] /
+                            records_per_acquisition)
+            magB, phaseB = self.fit(recordB)
 
         return mag, phase
 
-        def fit(self, rec):
-            # center rec around 0
-            rec = rec - np.mean(rec)
+    def fit(self, rec):
+        # center rec around 0
+        rec = rec - np.mean(rec)
 
-            # multiply with software wave
-            re_wave = np.multiply(rec, self.cos_list)
-            im_wave = np.multiply(rec, self.sin_list)
-            cutoff = self.demodulation_frequency
-            numtaps = 30
+        # multiply with software wave
+        re_wave = np.multiply(rec, self.cos_list)
+        im_wave = np.multiply(rec, self.sin_list)
+        cutoff = self.demodulation_frequency
+        numtaps = 30
 
-            if self.filter == 0:
-                RePart = self.filter_win(re_wave, numtaps, cutoff)
-                ImPart = self.filter_win(im_wave, numtaps, cutoff)
-            elif self.filter == 1:
-                RePart = self.filter_hamming(re_wave, numtaps, cutoff)
-                ImPart = self.filter_hamming(im_wave, numtaps, cutoff)
-            elif self.filter == 2:
-                RePart = self.filter_ls(re_wave, numtaps, cutoff)
-                ImPart = self.filter_ls(im_wave, numtaps, cutoff)
+        if self.filter == 0:
+            RePart = self.filter_win(re_wave, numtaps, cutoff)
+            ImPart = self.filter_win(im_wave, numtaps, cutoff)
+        elif self.filter == 1:
+            RePart = self.filter_hamming(re_wave, numtaps, cutoff)
+            ImPart = self.filter_hamming(im_wave, numtaps, cutoff)
+        elif self.filter == 2:
+            RePart = self.filter_ls(re_wave, numtaps, cutoff)
+            ImPart = self.filter_ls(im_wave, numtaps, cutoff)
 
-            complex_num = RePart + ImPart * 1j
-            mag = 2 * abs(complex_num)
-            phase = np.angle(complex_num, deg=True)
+        complex_num = RePart + ImPart * 1j
+        mag = 2 * abs(complex_num)
+        phase = np.angle(complex_num, deg=True)
 
-            return mag, phase
+        return mag, phase
 
-        def filter_hamming(self, rec, numtaps, cutoff):
-            sample_rate = self.sample_rate
-            nyq_rate = sample_rate / 2.
-            fir_coef = signal.firwin(numtaps,
-                                     cutoff / nyq_rate,
-                                     window="hamming")
-            filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
-            return filtered_rec
+    def filter_hamming(self, rec, numtaps, cutoff):
+        sample_rate = self.sample_rate
+        nyq_rate = sample_rate / 2.
+        fir_coef = signal.firwin(numtaps,
+                                 cutoff / nyq_rate,
+                                 window="hamming")
+        filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
+        return filtered_rec
 
-        def filter_win(self, rec, numtaps, cutoff):
-            sample_rate = self.sample_rate
-            nyq_rate = sample_rate / 2.
-            fir_coef = signal.firwin(numtaps,
-                                     cutoff / nyq_rate)
-            filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
-            return filtered_rec
+    def filter_win(self, rec, numtaps, cutoff):
+        sample_rate = self.sample_rate
+        nyq_rate = sample_rate / 2.
+        fir_coef = signal.firwin(numtaps,
+                                 cutoff / nyq_rate)
+        filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
+        return filtered_rec
 
-        def filter_ls(self, rec, numtaps, cutoff):
-            sample_rate = self.sample_rate
-            nyq_rate = sample_rate / 2.
-            bands = [0, cutoff / nyq_rate, cutoff / nyq_rate, 1]
-            desired = [1, 1, 0, 0]
-            fir_coef = signal.firls(numtaps,
-                                    bands,
-                                    desired,
-                                    nyq=nyq_rate)
-            filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
-            return filtered_rec
+    def filter_ls(self, rec, numtaps, cutoff):
+        sample_rate = self.sample_rate
+        nyq_rate = sample_rate / 2.
+        bands = [0, cutoff / nyq_rate, cutoff / nyq_rate, 1]
+        desired = [1, 1, 0, 0]
+        fir_coef = signal.firls(numtaps,
+                                bands,
+                                desired,
+                                nyq=nyq_rate)
+        filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
+        return filtered_rec
