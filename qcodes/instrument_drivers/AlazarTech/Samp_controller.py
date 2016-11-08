@@ -114,6 +114,9 @@ class HD_Samples_Controller(AcquisitionController):
 
         self.cos_list = np.cos(angle_list)
         self.sin_list = np.sin(angle_list)
+        
+        numtaps = round(self.samples_per_record/20) * 2 + 1
+        delay = numtaps - 1
 
     def pre_acquire(self):
         """
@@ -226,3 +229,8 @@ class HD_Samples_Controller(AcquisitionController):
                                 nyq=nyq_rate)
         filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
         return filtered_rec
+        
+    def filter(self, rec, numtaps, delay):
+        fir_coef = signal.firwin(numtaps, 0.01)
+        filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
+        return fir_coef, filtered_rec[delay:]
