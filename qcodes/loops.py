@@ -252,7 +252,7 @@ class Loop(Metadatable):
                           progress_interval=self.progress_interval,
                           bg_task=self.bg_task, end_task=self.end_task, bg_min_delay=self.bg_min_delay)
 
-    def with_bg_task(self, task, end_task=None, min_delay=1):
+    def with_bg_task(self, task, end_task=None, min_delay=0.01):
         """
         Attaches a background task to this loop.
 
@@ -263,7 +263,7 @@ class Loop(Metadatable):
             end_task: A callable object with no parameters. This object will be
                 invoked at the end  of the measurement loop.
 
-            min_delay (default 1): The minimum number of seconds to wait
+            min_delay (default 0.01): The minimum number of seconds to wait
                 between task invocations. Note that the actual time between
                 task invocations may be much longer than this, as the task is
                 only run between passes through the loop.
@@ -449,7 +449,7 @@ class ActiveLoop(Metadatable):
                           then_actions=self.then_actions, station=self.station)
         return _attach_then_actions(loop, actions, overwrite)
 
-    def with_bg_task(self, task, end_task=None, min_delay=1):
+    def with_bg_task(self, task, end_task=None, min_delay=0.01):
         """
         Attaches a background task to this loop.
 
