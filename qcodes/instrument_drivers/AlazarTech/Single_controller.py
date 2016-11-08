@@ -49,7 +49,6 @@ class HD_Controller(AcquisitionController):
         self.add_parameter(name='acquisition',
                            names=('magnitude', 'phase'),
                            units=('', ''),
-                           shapes=((1,), (1,)),
                            get_cmd=self.do_acquisition)
 
     def update_acquisitionkwargs(self, **kwargs):
