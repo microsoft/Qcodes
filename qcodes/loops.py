@@ -180,6 +180,7 @@ class Loop(Metadatable):
         self.actions = None
         self.then_actions = ()
         self.bg_task = None
+        self.end_task = None
         self.bg_min_delay = None
         self.progress_interval = progress_interval
 
@@ -249,9 +250,9 @@ class Loop(Metadatable):
         return ActiveLoop(self.sweep_values, self.delay, *actions,
                           then_actions=self.then_actions, station=self.station,
                           progress_interval=self.progress_interval,
-                          bg_task=self.bg_task, bg_min_delay=self.bg_min_delay)
+                          bg_task=self.bg_task, end_task=self.end_task, bg_min_delay=self.bg_min_delay)
 
-    def with_bg_task(self, task, min_delay=1):
+    def with_bg_task(self, task, end_task=None, min_delay=1):
         """
         Attaches a background task to this loop.
 
@@ -259,12 +260,15 @@ class Loop(Metadatable):
             task: A callable object with no parameters. This object will be
                 invoked periodically during the measurement loop.
 
+            end_task: A callable object with no parameters. This object will be
+                invoked at the end  of the measurement loop.
+
             min_delay (default 1): The minimum number of seconds to wait
                 between task invocations. Note that the actual time between
                 task invocations may be much longer than this, as the task is
                 only run between passes through the loop.
         """
-        return _attach_bg_task(self, task, min_delay)
+        return _attach_bg_task(self, task, end_task, min_delay)
 
     @staticmethod
     def validate_actions(*actions):
@@ -361,13 +365,16 @@ def _attach_then_actions(loop, actions, overwrite):
     return loop
 
 
-def _attach_bg_task(loop, task, min_delay):
+def _attach_bg_task(loop, task, end_task, min_delay):
     """Inner code for both Loop and ActiveLoop.bg_task"""
     if loop.bg_task is None:
         loop.bg_task = task
         loop.bg_min_delay = min_delay
     else:
         raise RuntimeError('Only one background task is allowed per loop')
+
+    if end_task:
+        loop.end_task = end_task
 
     return loop
 
@@ -390,7 +397,7 @@ class ActiveLoop(Metadatable):
 
     def __init__(self, sweep_values, delay, *actions, then_actions=(),
                  station=None, progress_interval=None, bg_task=None,
-                 bg_min_delay=None):
+                 end_task=None, bg_min_delay=None):
         super().__init__()
         self.sweep_values = sweep_values
         self.delay = delay
@@ -399,6 +406,7 @@ class ActiveLoop(Metadatable):
         self.then_actions = then_actions
         self.station = station
         self.bg_task = bg_task
+        self.end_task = end_task
         self.bg_min_delay = bg_min_delay
         self.data_set = None
 
@@ -441,7 +449,7 @@ class ActiveLoop(Metadatable):
                           then_actions=self.then_actions, station=self.station)
         return _attach_then_actions(loop, actions, overwrite)
 
-    def with_bg_task(self, task, min_delay=1):
+    def with_bg_task(self, task, end_task=None, min_delay=1):
         """
         Attaches a background task to this loop.
 
@@ -449,12 +457,15 @@ class ActiveLoop(Metadatable):
             task: A callable object with no parameters. This object will be
                 invoked periodically during the measurement loop.
 
+            end_task: A callable object with no parameters. This object will be
+                invoked at the end  of the measurement loop.
+
             min_delay (default 1): The minimum number of seconds to wait
                 between task invocations. Note that the actual time between
                 task invocations may be much longer than this, as the task is
                 only run between passes through the loop.
         """
-        return _attach_bg_task(self, task, min_delay)
+        return _attach_bg_task(self, task, end_task, min_delay)
 
     def snapshot_base(self, update=False):
         """Snapshot of this ActiveLoop's definition."""
@@ -980,6 +991,12 @@ class ActiveLoop(Metadatable):
         # the loop is finished - run the .then actions
         for f in self._compile_actions(self.then_actions, ()):
             f()
+
+        # run the end_task from the bg_task:
+        if self.end_task is not None:
+            self.end_task()
+
+
 
     def _wait(self, delay):
         if delay:
