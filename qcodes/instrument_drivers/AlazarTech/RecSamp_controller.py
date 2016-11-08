@@ -9,6 +9,9 @@ class RecSampParam(Parameter):
     Hardware controlled parameter class for Alazar acquisition. To be used with
     HD_Samples_Controller (tested with ATS9360 board) for return of an array of
     sample data from the Alazar, averaged over records and buffers.
+    
+    TODO(nataliejpg) fix setpoints/shapes horriblenesss
+    TODO(nataliejpg) make it actually work...
     """
     def __init__(self, name, instrument):
         super().__init__(name)
