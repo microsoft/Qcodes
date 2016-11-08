@@ -111,7 +111,7 @@ class HD_RecSamp_Controller(AcquisitionController):
 
         integer_list = np.arange(self.samples_per_record)
         angle_list = (2 * np.pi * self.demodulation_frequency /
-                      self.sample_speed * integer_list)
+                      self.sample_rate * integer_list)
 
         cos_list = np.cos(angle_list)
         sin_list = np.sin(angle_list)
