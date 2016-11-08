@@ -69,8 +69,7 @@ class HD_Records_Controller(AcquisitionController):
         self.demodulation_frequency = demod_freq
         self.sample_rate = samp_rate
         self.filter = filter_dict[filt]
-        # self.chan_b = chan_b
-        self.acquisitionkwargs = {}
+        #self.chan_b = chan_b
         self.sample_rate = samp_rate
         self.samples_per_record = 0
         self.records_per_buffer = 0
@@ -93,17 +92,7 @@ class HD_Records_Controller(AcquisitionController):
         :param kwargs:
         :return:
         """
-        self.acquisitionkwargs.update(**kwargs)
-
-    def do_acquisition(self):
-        """
-        this method performs an acquisition, which is the get_cmd for the
-        acquisiion parameter of this instrument
-        :return:
-        """
-        value = self._get_alazar().acquire(acquisition_controller=self,
-                                           **self.acquisitionkwargs)
-        return value
+        self.acquisition.update_acquisition_kwargs(**kwargs)
 
     def pre_start_capture(self):
         """
@@ -122,8 +111,8 @@ class HD_Records_Controller(AcquisitionController):
         angle_list = (2 * np.pi * self.demodulation_frequency /
                       self.sample_rate * integer_list)
 
-        cos_list = np.cos(angle_list)
-        sin_list = np.sin(angle_list)
+        cos_list = np.cos(angle_list).reshape(self.samples_per_record, 1)
+        sin_list = np.sin(angle_list).reshape(self.samples_per_record, 1)
         self.cos_mat = np.kron(np.ones((1, self.records_per_buffer)), cos_list)
         self.sin_mat = np.kron(np.ones((1, self.records_per_buffer)), sin_list)
 
@@ -154,20 +143,18 @@ class HD_Records_Controller(AcquisitionController):
         # S00A, S00B, S01A, S01B...S10A, S10B, S11A, S11B...
         # where SXYZ is record X, sample Y, channel Z.
 
-        full_rec_length = self.number_of_channels * self.samples_per_record
-        step = self.number_of_channels
-        buffers = self.buffers_per_acquisition
-
         # reshapes date to be (samples * records)
         recordA = np.zeros((self.samples_per_record, self.records_per_buffer))
-        # recordB = np.zeros((self.samples_per_record, self.records_per_buffer))
+        # recordB = np.zeros((self.samples_per_record, self.records_per_buffer))\
         for i in range(self.records_per_buffer):
-            recordA[:, i] = self.buffer[0:full_rec_length:step] / buffers
+            i0 = i * self.number_of_channels * self.samples_per_record
+            i1 = i0 + self.number_of_channels * self.samples_per_record
+            recordA[:, i] = (self.buffer[i0:i1:self.number_of_channels] /
+                             self.buffers_per_acquisition)
             # recordB[:, i] = self.buffer[1:full_rec_length:step] / buffers
-
         # return averaged chan A data (records)
         magA, phaseA = self.fit(recordA)
-
+        
         return magA, phaseA
 
     def fit(self, rec):
@@ -196,7 +183,7 @@ class HD_Records_Controller(AcquisitionController):
         # data returned is (records)
         complex_mat = RePart + ImPart * 1j
         mag = np.mean(2 * abs(complex_mat), axis=0)
-        phase = np.mean(np.angle(complex_mat, axis=0, deg=True))
+        phase = np.mean(np.angle(complex_mat, deg=True), axis=0)
 
         return mag, phase
 

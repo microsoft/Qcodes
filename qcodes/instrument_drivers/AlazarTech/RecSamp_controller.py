@@ -28,7 +28,7 @@ class RecSampParam(Parameter):
             rpts = kwargs['records_per_buffer']
             s = tuple(np.arange(spts))
             r = tuple(np.arange(rpts))
-            self.setpoints = ((r, s), (r, s))
+            self.setpoints = ((s, r), (s, r))
             self.shapes = ((spts, rpts), (spts, rpts))
         else:
             raise ValueError(
@@ -113,10 +113,10 @@ class HD_RecSamp_Controller(AcquisitionController):
         angle_list = (2 * np.pi * self.demodulation_frequency /
                       self.sample_rate * integer_list)
 
-        cos_list = np.cos(angle_list)
-        sin_list = np.sin(angle_list)
-        self.cos_mat = np.kron(np.ones((self.records_per_buffer, 1)), cos_list)
-        self.sin_mat = np.kron(np.ones((self.records_per_buffer, 1)), sin_list)
+        cos_list = np.cos(angle_list).reshape(self.samples_per_record, 1)
+        sin_list = np.sin(angle_list).reshape(self.samples_per_record, 1)
+        self.cos_mat = np.kron(np.ones((1, self.records_per_buffer)), cos_list)
+        self.sin_mat = np.kron(np.ones((1, self.records_per_buffer)), sin_list)
 
     def pre_acquire(self):
         """
@@ -149,20 +149,24 @@ class HD_RecSamp_Controller(AcquisitionController):
         step = self.number_of_channels
         averaging = self.buffers_per_acquisition
 
-        # reshapes data to be (samples * records)
-        recordA = np.zeros((self.records_per_buffer, self.samples_per_record))
-        for i in self.records_per_buffer:
-            recordA[i, :] = self.buffer[0:full_rec_length:step] / averaging
-
-        # do fit to get data (samples * records)
+        # reshapes date to be (samples * records)
+        recordA = np.zeros((self.samples_per_record, self.records_per_buffer))
+        # recordB = np.zeros((self.samples_per_record, self.records_per_buffer))\
+        for i in range(self.records_per_buffer):
+            i0 = i * self.number_of_channels * self.samples_per_record
+            i1 = i0 + self.number_of_channels * self.samples_per_record
+            recordA[:, i] = (self.buffer[i0:i1:self.number_of_channels] /
+                             self.buffers_per_acquisition)
+            # recordB[:, i] = self.buffer[1:full_rec_length:step] / buffers
+        # return averaged chan A data (records)
         magA, phaseA = self.fit(recordA)
 
         # same for B
-        if self.chan_b:
-            recordB = np.zeros((self.samples_per_record, self.records_per_buffer))
-            for i in self.records_per_buffer:
-                recordB[i, :] = self.buffer[1:full_rec_length:step] / averaging
-            magB, phaseB = self.fit(recordB)
+        # if self.chan_b:
+            # recordB = np.zeros((self.samples_per_record, self.records_per_buffer))
+            # for i in self.records_per_buffer:
+                # recordB[i, :] = self.buffer[1:full_rec_length:step] / averaging
+            # magB, phaseB = self.fit(recordB)
 
         # return data (samples * records)
         return magA, phaseA
