@@ -9,17 +9,19 @@ class RecSampParam(Parameter):
     Hardware controlled parameter class for Alazar acquisition. To be used with
     HD_Samples_Controller (tested with ATS9360 board) for return of an array of
     sample data from the Alazar, averaged over records and buffers.
-    
+
     TODO(nataliejpg) fix setpoints/shapes horriblenesss
     TODO(nataliejpg) make it actually work...
     """
+
     def __init__(self, name, instrument):
         super().__init__(name)
         self._instrument = instrument
         self.acquisitionkwargs = {}
         self.names = ('magnitude', 'phase')
         self.units = ('', '')
-        self.setpoint_names = (('rec_num', 'samp_num'), ('rec_num', 'samp_num'))
+        self.setpoint_names = (('rec_num', 'samp_num'),
+                               ('rec_num', 'samp_num'))
         self.setpoints = ((1, 1), (1, 1))
         self.shapes = ((1, 1), (1, 1))
 
@@ -148,28 +150,25 @@ class HD_RecSamp_Controller(AcquisitionController):
         # for ATS9360 samples are arranged in the buffer as follows:
         # S00A, S00B, S01A, S01B...S10A, S10B, S11A, S11B...
         # where SXYZ is record X, sample Y, channel Z.
-        full_rec_length = self.number_of_channels * self.samples_per_record
-        step = self.number_of_channels
-        averaging = self.buffers_per_acquisition
 
         # reshapes date to be (samples * records)
         recordA = np.zeros((self.samples_per_record, self.records_per_buffer))
-        # recordB = np.zeros((self.samples_per_record, self.records_per_buffer))\
         for i in range(self.records_per_buffer):
             i0 = i * self.number_of_channels * self.samples_per_record
             i1 = i0 + self.number_of_channels * self.samples_per_record
             recordA[:, i] = (self.buffer[i0:i1:self.number_of_channels] /
                              self.buffers_per_acquisition)
-            # recordB[:, i] = self.buffer[1:full_rec_length:step] / buffers
+
         # return averaged chan A data (records)
         magA, phaseA = self.fit(recordA)
 
         # same for B
         # if self.chan_b:
-            # recordB = np.zeros((self.samples_per_record, self.records_per_buffer))
-            # for i in self.records_per_buffer:
-                # recordB[i, :] = self.buffer[1:full_rec_length:step] / averaging
-            # magB, phaseB = self.fit(recordB)
+        # recordB = np.zeros(
+        #        (self.samples_per_record, self.records_per_buffer))
+        # for i in self.records_per_buffer:
+        # recordB[i, :] = self.buffer[1:full_rec_length:step] / averaging
+        # magB, phaseB = self.fit(recordB)
 
         # return data (samples * records)
         return magA, phaseA

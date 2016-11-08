@@ -11,6 +11,7 @@ class SampleSweep(Parameter):
     Instrument returns an buffer of data (channels * samples * records) which
     is processed by the post_acquire function of the Acquidiyion Controller
     """
+
     def __init__(self, name, instrument):
         super().__init__(name)
         self._instrument = instrument
@@ -116,28 +117,28 @@ class Basic_Acquisition_Controller(AcquisitionController):
         See AcquisitionController
         :return:
         """
-        
+
         # for ATS9360 samples are arranged in the buffer as follows:
         # S00A, S00B, S01A, S01B...S10A, S10B, S11A, S11B...
         # where SXYZ is record X, sample Y, channel Z.
 
         # break buffer up into records, averages over them and returns samples
         records_per_acquisition = (self.buffers_per_acquisition *
-                                   self.records_per_buffer)                          
+                                   self.records_per_buffer)
         recordA = np.zeros(self.samples_per_record, dtype=np.uint16)
         for i in range(self.records_per_buffer):
             i0 = (i * self.samples_per_record * self.number_of_channels)
             i1 = (i0 + self.samples_per_record * self.number_of_channels)
             recordA += np.uint16(self.buffer[i0:i1:self.number_of_channels] /
-                        records_per_acquisition)
+                                 records_per_acquisition)
 
         recordB = np.zeros(self.samples_per_record, dtype=np.uint16)
         for i in range(self.records_per_buffer):
             i0 = (i * self.samples_per_record * self.number_of_channels + 1)
             i1 = (i0 + self.samples_per_record * self.number_of_channels)
             recordB += np.uint16(self.buffer[i0:i1:self.number_of_channels] /
-                        records_per_acquisition)
-        
+                                 records_per_acquisition)
+
         volt_rec_A = self.sample_to_volt(recordA)
         volt_rec_B = self.sample_to_volt(recordB)
 
@@ -145,15 +146,16 @@ class Basic_Acquisition_Controller(AcquisitionController):
 
     def sample_to_volt(self, raw_samples):
         # right_shift 16-bit sample by 4 to get 12 bit sample
-        shifted_samples = np.right_shift(raw_samples,4)
-        
+        shifted_samples = np.right_shift(raw_samples, 4)
+
         # Alazar calibration
         bps = 12
         input_range_volts = 0.8
         code_zero = (1 << (bps - 1)) - 0.5
         code_range = (1 << (bps - 1)) - 0.5
-        
+
         # Convert to volts
-        volt_samples = input_range_volts * (shifted_samples - code_zero) / code_range
-        
+        volt_samples = input_range_volts * \
+            (shifted_samples - code_zero) / code_range
+
         return volt_samples

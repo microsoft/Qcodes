@@ -10,6 +10,7 @@ class RecBufParam(Parameter):
     HD_Samples_Controller (tested with ATS9360 board) for return of an array of
     sample data from the Alazar, averaged over records and buffers.
     """
+
     def __init__(self, name, instrument):
         super().__init__(name)
         self._instrument = instrument
