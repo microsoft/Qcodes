@@ -395,6 +395,16 @@ class QtPlot(BasePlot):
         buffer.close()
         return bytes(byte_array._getValue())
     
-    def save(self, filename=""):
+    def save(self, filename=None):
+        """
+        Save current plot to filename, by default
+        to the location corresponding to the default 
+        title.
+
+        Args:
+            filename (Optional[str]): Location of the file
+        """
+        default = "{}.png".format(self.get_default_title())
+        filename = filename or default
         image = self.win.grab()
         image.save(filename, "PNG", 0)
