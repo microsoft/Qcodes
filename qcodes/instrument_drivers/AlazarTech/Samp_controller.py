@@ -1,7 +1,7 @@
 from .ATS import AcquisitionController
 import numpy as np
 from qcodes import Parameter
-from scipy import signal
+import acquistion_tools as tools
 
 
 class SamplesParam(Parameter):
@@ -12,6 +12,7 @@ class SamplesParam(Parameter):
 
     TODO(nataliejpg) fix setpoints/shapes horriblenesss
     """
+
     def __init__(self, name, instrument):
         super().__init__(name)
         self._instrument = instrument
@@ -62,23 +63,29 @@ class HD_Samples_Controller(AcquisitionController):
     TODO(nataliejpg) test filter options
     TODO(nataliejpg) test mag phase logic
     TODO(nataliejpg) finish implementation of channel b option
-    TODO(nataliejpg) make filter settings not hard coded
+    TODO(nataliejpg) update docstrings :P
     """
 
     def __init__(self, name, alazar_name, demod_freq, samp_rate=500e6,
-                 filt='win', chan_b=False, **kwargs):
+                 int_delay=None, int_time=None, filt='win',
+                 numtaps=101, chan_b=False, **kwargs):
         filter_dict = {'win': 0, 'hamming': 1, 'ls': 2}
         self.demodulation_frequency = demod_freq
         self.sample_rate = samp_rate
         self.filter = filter_dict[filt]
+        self.int_time = int_time
+        self.int_delay = int_delay
+        self.numtaps = numtaps
         self.chan_b = chan_b
         self.samples_per_record = 0
         self.records_per_buffer = 0
         self.buffers_per_acquisition = 0
         self.number_of_channels = 2
+        self.samples_delay = None
         self.cos_list = None
         self.sin_list = None
         self.buffer = None
+        self.board_info = None
         # make a call to the parent class and by extension,
         # create the parameter structure of this class
         super().__init__(name, alazar_name, **kwargs)
@@ -104,6 +111,7 @@ class HD_Samples_Controller(AcquisitionController):
         self.samples_per_record = alazar.samples_per_record.get()
         self.records_per_buffer = alazar.records_per_buffer.get()
         self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
+        self.board_info = alazar.get_board_info(alazar.dll_path)
         self.buffer = np.zeros(self.samples_per_record *
                                self.records_per_buffer *
                                self.number_of_channels)
@@ -114,9 +122,16 @@ class HD_Samples_Controller(AcquisitionController):
 
         self.cos_list = np.cos(angle_list)
         self.sin_list = np.sin(angle_list)
-        
-        numtaps = round(self.samples_per_record/20) * 2 + 1
-        delay = numtaps - 1
+
+        if self.int_delay:
+            self.samples_delay = self.int_delay * self.sample_rate
+            if self.samples_delay < (self.numtaps - 1):
+                expected_delay = (self.numtaps - 1) / self.sample_rate
+                Warning(
+                    'delay is less than recommended for filter choice: '
+                    '(expect delay >= {}'.format(expected_delay))
+        else:
+            self.samples_delay = self.numtaps - 1
 
     def pre_acquire(self):
         """
@@ -147,8 +162,7 @@ class HD_Samples_Controller(AcquisitionController):
         # S00A, S00B, S01A, S01B...S10A, S10B, S11A, S11B...
         # where SXYZ is record X, sample Y, channel Z.
 
-        # breaks buffer up into records and averages over them
-        # leaving data in form (samples)
+        # break buffer up into records and averages over them
         records_per_acquisition = (self.buffers_per_acquisition *
                                    self.records_per_buffer)
         recordA = np.zeros(self.samples_per_record)
@@ -158,13 +172,15 @@ class HD_Samples_Controller(AcquisitionController):
             recordA += (self.buffer[i0:i1:self.number_of_channels] /
                         records_per_acquisition)
 
-        # demodulate record, data returned (samples)
+        # do demodulation
         magA, phaseA = self.fit(recordA)
 
+        # same for chan b
         if self.chan_b:
             recordB = np.zeros(self.samples_per_record)
             for i in range(self.records_per_buffer):
-                i0 = (i * self.samples_per_record * self.number_of_channels + 1)
+                i0 = (i * self.samples_per_record *
+                      self.number_of_channels + 1)
                 i1 = (i0 + self.samples_per_record * self.number_of_channels)
                 recordB += (self.buffer[i0:i1:self.number_of_channels] /
                             records_per_acquisition)
@@ -173,64 +189,46 @@ class HD_Samples_Controller(AcquisitionController):
         return magA, phaseA
 
     def fit(self, rec):
-        # center rec around 0
-        rec = rec - np.mean(rec)
+        # convert rec to volts
+        if self.board_info['bits_per_sample'] == 12:
+            volt_rec = tools.sample_to_volt_u12(rec)
+        else:
+            Warning(
+                'sample to volt conversion does not exist for '
+                'bps != 12, raw samples centered and returned')
+            volt_rec = rec - np.mean(rec)
 
         # multiply with software wave
-        re_wave = np.multiply(rec, self.cos_list)
-        im_wave = np.multiply(rec, self.sin_list)
-        cutoff = self.demodulation_frequency
-        numtaps = 30
+        re_wave = np.multiply(volt_rec, self.cos_list)
+        im_wave = np.multiply(volt_rec, self.sin_list)
+        cutoff = self.demodulation_frequency / 2
 
         # filter out higher freq component
         if self.filter == 0:
-            RePart = self.filter_win(re_wave, numtaps, cutoff)
-            ImPart = self.filter_win(im_wave, numtaps, cutoff)
+            re_filtered = tools.filter_win(re_wave, cutoff,
+                                           self.samp_rate, self.numtaps)
+            im_filtered = tools.filter_win(re_wave, cutoff,
+                                           self.samp_rate, self.numtaps)
         elif self.filter == 1:
-            RePart = self.filter_hamming(re_wave, numtaps, cutoff)
-            ImPart = self.filter_hamming(im_wave, numtaps, cutoff)
+            re_filtered = tools.filter_ham(re_wave, cutoff,
+                                           self.samp_rate, self.numtaps)
+            im_filtered = tools.filter_ham(im_wave, cutoff,
+                                           self.samp_rate, self.numtaps)
         elif self.filter == 2:
-            RePart = self.filter_ls(re_wave, numtaps, cutoff)
-            ImPart = self.filter_ls(im_wave, numtaps, cutoff)
+            re_filtered = tools.filter_ls(re_wave, cutoff,
+                                          self.samp_rate, self.numtaps)
+            im_filtered = tools.filter_ls(im_wave, cutoff,
+                                          self.samp_rate, self.numtaps)
+
+        # apply int limits
+        start = self.samples_delay
+        end = self.int_time * self.samp_rate + start
+        re_limited = re_filtered[start:end]
+        im_limited = im_filtered[start:end]
 
         # convert to magnitude and phase
-        # data returnded (samples)
-        complex_num = RePart + ImPart * 1j
-        mag = 2 * abs(complex_num)
+        complex_num = re_limited + im_limited * 1j
+        mag = abs(complex_num)
         phase = np.angle(complex_num, deg=True)
 
         return mag, phase
-
-    def filter_hamming(self, rec, numtaps, cutoff):
-        sample_rate = self.sample_rate
-        nyq_rate = sample_rate / 2.
-        fir_coef = signal.firwin(numtaps,
-                                 cutoff / nyq_rate,
-                                 window="hamming")
-        filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
-        return filtered_rec
-
-    def filter_win(self, rec, numtaps, cutoff):
-        sample_rate = self.sample_rate
-        nyq_rate = sample_rate / 2.
-        fir_coef = signal.firwin(numtaps,
-                                 cutoff / nyq_rate)
-        filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
-        return filtered_rec
-
-    def filter_ls(self, rec, numtaps, cutoff):
-        sample_rate = self.sample_rate
-        nyq_rate = sample_rate / 2.
-        bands = [0, cutoff / nyq_rate, cutoff / nyq_rate, 1]
-        desired = [1, 1, 0, 0]
-        fir_coef = signal.firls(numtaps,
-                                bands,
-                                desired,
-                                nyq=nyq_rate)
-        filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
-        return filtered_rec
-        
-    def filter(self, rec, numtaps, delay):
-        fir_coef = signal.firwin(numtaps, 0.01)
-        filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
-        return fir_coef, filtered_rec[delay:]

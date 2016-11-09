@@ -1,6 +1,7 @@
 from .ATS import AcquisitionController
 import numpy as np
 from qcodes import Parameter
+import acquistion_tools
 
 
 class SampleSweep(Parameter):
@@ -65,6 +66,7 @@ class Basic_Acquisition_Controller(AcquisitionController):
         # TODO(damazter) (S) this is not very general:
         self.number_of_channels = 2
         self.buffer = None
+        self.board_info = None
         # make a call to the parent class and by extension,
         # create the parameter structure of this class
         super().__init__(name, alazar_name, **kwargs)
@@ -90,6 +92,7 @@ class Basic_Acquisition_Controller(AcquisitionController):
         self.samples_per_record = alazar.samples_per_record.get()
         self.records_per_buffer = alazar.records_per_buffer.get()
         self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
+        self.board_info = alazar.get_board_info(alazar.dll_path)
         self.buffer = np.zeros(self.samples_per_record *
                                self.records_per_buffer *
                                self.number_of_channels,
@@ -139,23 +142,12 @@ class Basic_Acquisition_Controller(AcquisitionController):
             recordB += np.uint16(self.buffer[i0:i1:self.number_of_channels] /
                                  records_per_acquisition)
 
-        volt_rec_A = self.sample_to_volt(recordA)
-        volt_rec_B = self.sample_to_volt(recordB)
+        if self.board_info['bits_per_sample'] == 12:
+            volt_rec_A = acquistion_tools.sample_to_volt_u12(recordA)
+            volt_rec_B = acquistion_tools.sample_to_volt_u12(recordB)
+        else:
+            Warning('sample to volt conversion does not exist for bps != 12, raw samples returned')
+            volt_rec_A = recordA
+            volt_rec_B = recordB
 
         return volt_rec_A, volt_rec_B
-
-    def sample_to_volt(self, raw_samples):
-        # right_shift 16-bit sample by 4 to get 12 bit sample
-        shifted_samples = np.right_shift(raw_samples, 4)
-
-        # Alazar calibration
-        bps = 12
-        input_range_volts = 0.8
-        code_zero = (1 << (bps - 1)) - 0.5
-        code_range = (1 << (bps - 1)) - 0.5
-
-        # Convert to volts
-        volt_samples = input_range_volts * \
-            (shifted_samples - code_zero) / code_range
-
-        return volt_samples
