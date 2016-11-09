@@ -1,7 +1,7 @@
 from .ATS import AcquisitionController
 import numpy as np
 from qcodes import Parameter
-import acquistion_tools
+#from.acquistion_tools import sample_to_volt_u12
 
 
 class SampleSweep(Parameter):
@@ -92,7 +92,7 @@ class Basic_Acquisition_Controller(AcquisitionController):
         self.samples_per_record = alazar.samples_per_record.get()
         self.records_per_buffer = alazar.records_per_buffer.get()
         self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
-        self.board_info = alazar.get_board_info(alazar.dll_path)
+        self.board_info = alazar.get_idn()
         self.buffer = np.zeros(self.samples_per_record *
                                self.records_per_buffer *
                                self.number_of_channels,
@@ -142,12 +142,29 @@ class Basic_Acquisition_Controller(AcquisitionController):
             recordB += np.uint16(self.buffer[i0:i1:self.number_of_channels] /
                                  records_per_acquisition)
 
-        if self.board_info['bits_per_sample'] == 12:
-            volt_rec_A = acquistion_tools.sample_to_volt_u12(recordA)
-            volt_rec_B = acquistion_tools.sample_to_volt_u12(recordB)
+        bps = self.board_info['bits_per_sample']
+        if bps == 12:
+            volt_rec_A = sample_to_volt_u12(recordA, bps)
+            volt_rec_B = sample_to_volt_u12(recordA, bps)
         else:
             Warning('sample to volt conversion does not exist for bps != 12, raw samples returned')
-            volt_rec_A = recordA
-            volt_rec_B = recordB
+            volt_rec_A = recordA - np.mean(recordA)
+            volt_rec_B = recordB - np.mean(recordB)
 
         return volt_rec_A, volt_rec_B
+
+def sample_to_volt_u12(raw_samples, bps):
+    # right_shift 16-bit sample by 4 to get 12 bit sample
+    shifted_samples = np.right_shift(raw_samples, 4)
+
+    # Alazar calibration
+    code_zero = (1 << (bps - 1)) - 0.5
+    code_range = (1 << (bps - 1)) - 0.5
+
+    # TODO(nataliejpg) make this not hard coded 
+    input_range_volts = 1
+    # Convert to volts
+    volt_samples = np.float64(input_range_volts *
+                    (shifted_samples - code_zero) / code_range)
+                    
+    return volt_samples

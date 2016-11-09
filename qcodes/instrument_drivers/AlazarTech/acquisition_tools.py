@@ -2,13 +2,11 @@ import numpy as np
 from scipy import signal
 
 
-def sample_to_volt_u12(self, raw_samples, input_range_volts, bps):
+def sample_to_volt_u12(raw_samples, input_range_volts, bps):
     # right_shift 16-bit sample by 4 to get 12 bit sample
     shifted_samples = np.right_shift(raw_samples, 4)
 
     # Alazar calibration
-    bps = 12
-    input_range_volts = 0.8
     code_zero = (1 << (bps - 1)) - 0.5
     code_range = (1 << (bps - 1)) - 0.5
 

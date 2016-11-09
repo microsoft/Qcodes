@@ -189,8 +189,9 @@ class AlazarTech_ATS(Instrument):
                 boards.append(cls.get_board_info(dll, system_id, board_id))
         return boards
 
+        # TODO(nataliejpg) this needs fixing..., dll can't be a string
     @classmethod
-    def get_board_info(cls, dll, system_id=1, board_id=1):
+    def get_board_info(cls, dll, system_id, board_id):
         """
         Get the information from a connected Alazar board
 
@@ -260,6 +261,8 @@ class AlazarTech_ATS(Instrument):
         board_kind = self._board_names[
             self._ATS_dll.AlazarGetBoardKind(self._handle)]
 
+        max_s, bps = self._get_channel_info(self._handle)
+        
         major = np.array([0], dtype=np.uint8)
         minor = np.array([0], dtype=np.uint8)
         revision = np.array([0], dtype=np.uint8)
@@ -309,6 +312,8 @@ class AlazarTech_ATS(Instrument):
 
         return {'firmware': None,
                 'model': board_kind,
+                'max_samples': max_s,
+                'bits_per_sample': bps,
                 'serial': serial,
                 'vendor': 'AlazarTech',
                 'CPLD_version': cpld_ver,

@@ -1,7 +1,9 @@
 from .ATS import AcquisitionController
 import numpy as np
 from qcodes import Parameter
-import acquistion_tools as tools
+from scipy import signal
+
+#import acquistion_tools as tools
 
 
 class SamplesParam(Parameter):
@@ -23,19 +25,24 @@ class SamplesParam(Parameter):
         self.setpoints = ((1,), (1,))
         self.shapes = ((1,), (1,))
 
-    def update_acquisition_kwargs(self, **kwargs):
+    def update_acquisition_kwargs(self, samp_time=None, **kwargs):
         # needed to update config of the software parameter on sweep change
         # freq setpoints tuple as needs to be hashable for look up
-        if 'samples_per_record' in kwargs:
+        if samp_time:
+            npts = samp_time
+            n = tuple(np.arange(npts))
+            self.setpoints = ((n,), (n,))
+            self.shapes = ((npts,), (npts,))
+        elif 'samples_per_record' in kwargs:
             npts = kwargs['samples_per_record']
             n = tuple(np.arange(npts))
             self.setpoints = ((n,), (n,))
             self.shapes = ((npts,), (npts,))
         else:
-            raise ValueError('samples_per_record must be specified')
+            raise ValueError('samples_per_record or sample_num must be specified')
         # updates dict to be used in acquisition get call
         self.acquisitionkwargs.update(**kwargs)
-
+    
     def get(self):
         mag, phase = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
@@ -66,15 +73,13 @@ class HD_Samples_Controller(AcquisitionController):
     TODO(nataliejpg) update docstrings :P
     """
 
-    def __init__(self, name, alazar_name, demod_freq, samp_rate=500e6,
-                 int_delay=None, int_time=None, filt='win',
+    def __init__(self, name, alazar_name, demod_freq, samp_rate=500e6, filt='win',
                  numtaps=101, chan_b=False, **kwargs):
         filter_dict = {'win': 0, 'hamming': 1, 'ls': 2}
         self.demodulation_frequency = demod_freq
         self.sample_rate = samp_rate
         self.filter = filter_dict[filt]
-        self.int_time = int_time
-        self.int_delay = int_delay
+        self.int_time = None
         self.numtaps = numtaps
         self.chan_b = chan_b
         self.samples_per_record = 0
@@ -82,6 +87,7 @@ class HD_Samples_Controller(AcquisitionController):
         self.buffers_per_acquisition = 0
         self.number_of_channels = 2
         self.samples_delay = None
+        self.samples_time = None
         self.cos_list = None
         self.sin_list = None
         self.buffer = None
@@ -100,7 +106,46 @@ class HD_Samples_Controller(AcquisitionController):
         :param kwargs:
         :return:
         """
-        self.acquisition.update_acquisition_kwargs(**kwargs)
+        samples_per_record = kwargs['samples_per_record']
+        sample_rate = self.sample_rate
+        
+        if 'int_delay' in kwargs:
+            int_delay = kwargs['int_delay']
+            samp_delay = int_delay * sample_rate
+            samples_delay_min = (self.numtaps - 1)
+            if samp_delay < samples_delay_min:
+                int_delay_min = samples_delay_min / sample_rate
+                Warning(
+                    'delay is less than recommended for filter choice: '
+                    '(expect delay >= {}'.format(int_delay_min))
+        else:
+            samp_delay = self.numtaps - 1
+        
+        if 'int_time' in kwargs:
+            int_time = kwargs['int_time']
+            samp_time = int_time * sample_rate
+            samples_time_max = (samples_per_record - samp_delay)
+            oscilations_measured = int_time / self.demodulation_frequency
+            oversampling = sample_rate / (2 * self.demodulation_frequency)
+            if samp_time > samples_time_max:
+                int_time_max = samples_time_max / sample_rate
+                Warning(
+                    'int_time {} is longer than total_time - delay ({})'.format(int_time, int_time_max))
+            elif oscilations_measured < 10:
+                Warning(
+                    '{} oscilations measured, recommend at least 10: '
+                    'decrease sampling rate, take more samples or increase demodulation freq'.format(oscilations_measured))
+            elif oversampling < 1:
+                Warning('oversampling rate is {}, recommend > 1: '
+                    'increase sampling rate or decrease demodulation frequency'.format(oversampling))
+        else:
+            samp_time = samples_per_record - samp_delay
+        
+        
+        self.samples_time = samp_time
+        self.samples_delay = samp_delay
+        
+        self.acquisition.update_acquisition_kwargs(samp_time, **kwargs)
 
     def pre_start_capture(self):
         """
@@ -111,27 +156,18 @@ class HD_Samples_Controller(AcquisitionController):
         self.samples_per_record = alazar.samples_per_record.get()
         self.records_per_buffer = alazar.records_per_buffer.get()
         self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
-        self.board_info = alazar.get_board_info(alazar.dll_path)
+        self.board_info = alazar.get_idn()
         self.buffer = np.zeros(self.samples_per_record *
                                self.records_per_buffer *
-                               self.number_of_channels)
+                               self.number_of_channels,
+                               dtype=np.uint16)
 
-        integer_list = np.arange(self.samples_per_record)
+        integer_list = np.arange(self.samples_per_record, dtype=np.uint16)
         angle_list = (2 * np.pi * self.demodulation_frequency /
                       self.sample_rate * integer_list)
 
         self.cos_list = np.cos(angle_list)
         self.sin_list = np.sin(angle_list)
-
-        if self.int_delay:
-            self.samples_delay = self.int_delay * self.sample_rate
-            if self.samples_delay < (self.numtaps - 1):
-                expected_delay = (self.numtaps - 1) / self.sample_rate
-                Warning(
-                    'delay is less than recommended for filter choice: '
-                    '(expect delay >= {}'.format(expected_delay))
-        else:
-            self.samples_delay = self.numtaps - 1
 
     def pre_acquire(self):
         """
@@ -165,11 +201,11 @@ class HD_Samples_Controller(AcquisitionController):
         # break buffer up into records and averages over them
         records_per_acquisition = (self.buffers_per_acquisition *
                                    self.records_per_buffer)
-        recordA = np.zeros(self.samples_per_record)
+        recordA = np.zeros(self.samples_per_record, dtype=np.uint16)
         for i in range(self.records_per_buffer):
             i0 = (i * self.samples_per_record * self.number_of_channels)
             i1 = (i0 + self.samples_per_record * self.number_of_channels)
-            recordA += (self.buffer[i0:i1:self.number_of_channels] /
+            recordA += np.uint16(self.buffer[i0:i1:self.number_of_channels] /
                         records_per_acquisition)
 
         # do demodulation
@@ -177,12 +213,12 @@ class HD_Samples_Controller(AcquisitionController):
 
         # same for chan b
         if self.chan_b:
-            recordB = np.zeros(self.samples_per_record)
+            recordB = np.zeros(self.samples_per_record, dtype=np.uint16)
             for i in range(self.records_per_buffer):
                 i0 = (i * self.samples_per_record *
                       self.number_of_channels + 1)
                 i1 = (i0 + self.samples_per_record * self.number_of_channels)
-                recordB += (self.buffer[i0:i1:self.number_of_channels] /
+                recordB += np.uint16(self.buffer[i0:i1:self.number_of_channels] /
                             records_per_acquisition)
             magB, phaseB = self.fit(recordB)
 
@@ -190,12 +226,12 @@ class HD_Samples_Controller(AcquisitionController):
 
     def fit(self, rec):
         # convert rec to volts
-        if self.board_info['bits_per_sample'] == 12:
-            volt_rec = tools.sample_to_volt_u12(rec)
+        bps = self.board_info['bits_per_sample']
+        if bps == 12:
+            volt_rec = sample_to_volt_u12(rec, bps)
         else:
-            Warning(
-                'sample to volt conversion does not exist for '
-                'bps != 12, raw samples centered and returned')
+            Warning('sample to volt conversion does not exist for'
+                    ' bps != 12, centered raw samples returned')
             volt_rec = rec - np.mean(rec)
 
         # multiply with software wave
@@ -205,24 +241,27 @@ class HD_Samples_Controller(AcquisitionController):
 
         # filter out higher freq component
         if self.filter == 0:
-            re_filtered = tools.filter_win(re_wave, cutoff,
-                                           self.samp_rate, self.numtaps)
-            im_filtered = tools.filter_win(re_wave, cutoff,
-                                           self.samp_rate, self.numtaps)
+            re_filtered = filter_win(re_wave, cutoff,
+                                           self.sample_rate, self.numtaps)
+            im_filtered = filter_win(re_wave, cutoff,
+                                           self.sample_rate, self.numtaps)
         elif self.filter == 1:
-            re_filtered = tools.filter_ham(re_wave, cutoff,
-                                           self.samp_rate, self.numtaps)
-            im_filtered = tools.filter_ham(im_wave, cutoff,
-                                           self.samp_rate, self.numtaps)
+            re_filtered = filter_ham(re_wave, cutoff,
+                                           self.sample_rate, self.numtaps)
+            im_filtered = filter_ham(im_wave, cutoff,
+                                           self.sample_rate, self.numtaps)
         elif self.filter == 2:
-            re_filtered = tools.filter_ls(re_wave, cutoff,
-                                          self.samp_rate, self.numtaps)
-            im_filtered = tools.filter_ls(im_wave, cutoff,
-                                          self.samp_rate, self.numtaps)
+            re_filtered = filter_ls(re_wave, cutoff,
+                                          self.sample_rate, self.numtaps)
+            im_filtered = filter_ls(im_wave, cutoff,
+                                          self.sample_rate, self.numtaps)
 
         # apply int limits
         start = self.samples_delay
-        end = self.int_time * self.samp_rate + start
+        if self.int_time:
+            end = self.int_time * self.sample_rate + start
+        else:
+            end = None
         re_limited = re_filtered[start:end]
         im_limited = im_filtered[start:end]
 
@@ -232,3 +271,25 @@ class HD_Samples_Controller(AcquisitionController):
         phase = np.angle(complex_num, deg=True)
 
         return mag, phase
+        
+def filter_win(rec, cutoff, sample_rate, numtaps):
+    nyq_rate = sample_rate / 2.
+    fir_coef = signal.firwin(numtaps, cutoff / nyq_rate)
+    filtered_rec = signal.lfilter(fir_coef, 1.0, rec)
+    return filtered_rec
+
+def sample_to_volt_u12(raw_samples, bps):
+    # right_shift 16-bit sample by 4 to get 12 bit sample
+    shifted_samples = np.right_shift(raw_samples, 4)
+
+    # Alazar calibration
+    code_zero = (1 << (bps - 1)) - 0.5
+    code_range = (1 << (bps - 1)) - 0.5
+
+    # TODO(nataliejpg) make this not hard coded 
+    input_range_volts = 1
+    # Convert to volts
+    volt_samples = np.float64(input_range_volts *
+                    (shifted_samples - code_zero) / code_range)
+                    
+    return volt_samples
