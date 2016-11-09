@@ -190,7 +190,7 @@ class AlazarTech_ATS(Instrument):
         return boards
 
     @classmethod
-    def get_board_info(cls, dll, system_id, board_id):
+    def get_board_info(cls, dll, system_id=1, board_id=1):
         """
         Get the information from a connected Alazar board
 
@@ -204,7 +204,6 @@ class AlazarTech_ATS(Instrument):
             max_samples
             bits_per_sample
         """
-
         # make a temporary instrument for this board, to make it easier
         # to get its info
         board = cls('temp', system_id=system_id, board_id=board_id,
@@ -427,8 +426,6 @@ class AlazarTech_ATS(Instrument):
         self._call_dll('AlazarConfigureAuxIO',
                        self._handle, self.aux_io_mode,
                        self.aux_io_param)
-
-        # TODO(damazter) (W) config AUXIO
 
     def _get_channel_info(self, handle):
         bps = np.array([0], dtype=np.uint8)  # bps bits per sample
