@@ -209,6 +209,12 @@ class ZNB20(VisaInstrument):
                            get_parser=VISA_str_to_int,
                            vals=vals.OnOff())
 
+        self.add_parameter(name='sweep_time',
+                           get_cmd='SENS:SWE:TIME?',
+                           set_cmd='SENS:SWE:TIME {:.4f}',
+                           get_parser=VISA_str_to_float,
+                           vals=vals.Numbers(0, 1e5))
+
         self.add_parameter(name='sweep_type',
                            get_cmd='SENS:SWE:TYPE?',
                            set_cmd='SENS:SWE:TYPE {:s}',
@@ -258,3 +264,6 @@ class ZNB20(VisaInstrument):
 
 def VISA_str_to_int(message):
     return int(float(message.strip('\\n')))
+
+def VISA_str_to_float(message):
+    return float(message.strip('\\n'))
