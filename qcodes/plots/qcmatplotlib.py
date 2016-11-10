@@ -72,9 +72,10 @@ class MatPlot(BasePlot):
         self.fig.clf()
         self._init_plot(subplots, figsize, num=self.fig.number)
 
-    def add_to_plot(self, **kwargs):
+    def add_to_plot(self, use_offset=False, **kwargs):
         """
         adds one trace to this MatPlot.
+        use_offset (bool, Optional): Whether or not axes can have an offset
         kwargs: with the following exceptions (mostly the data!), these are
             passed directly to the matplotlib plotting routine.
             `subplot`: the 1-based axes number to append to (default 1)
@@ -89,6 +90,9 @@ class MatPlot(BasePlot):
             plot_object = self._draw_pcolormesh(ax, **kwargs)
         else:
             plot_object = self._draw_plot(ax, **kwargs)
+
+        # Specify if axes can have offset or not
+        ax.ticklabel_format(useOffset=use_offset)
 
         self._update_labels(ax, kwargs)
         prev_default_title = self.get_default_title()
@@ -171,7 +175,7 @@ class MatPlot(BasePlot):
         return line
 
     def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1,
-                         nticks=None, use_offset=False, **kwargs):
+                         nticks=None, **kwargs):
         """
         Draws a 2D color plot
         Args:
@@ -183,7 +187,6 @@ class MatPlot(BasePlot):
                 be either same as z, or equal to length along y-axis.
             subplot (int, Optional): Deprecated, see alexj notes below
             nticks (int, Optional): preferred number of ticks along axes
-            use_offset (bool, Optional): Whether or not axes can have an offset
             **kwargs: Optional list of kwargs to be passed on to pcolormesh.
                 These will overwrite any of the default kwargs in plot_kwargs.
         """
@@ -253,9 +256,6 @@ class MatPlot(BasePlot):
         # Specify preferred number of ticks with labels
         if nticks:
             ax.locator_params(nbins=nticks)
-
-        # Specify if axes can have offset or not
-        ax.ticklabel_format(useOffset=use_offset)
 
         if getattr(ax, 'qcodes_colorbar', None):
             # update_normal doesn't seem to work...
