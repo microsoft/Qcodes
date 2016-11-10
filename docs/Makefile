@@ -7,7 +7,7 @@ SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = _build
 # this is to to autmagic gh-pages
-GH_PAGES_SOURCES = docs qcodes CONTRIBUTING.rst LICENSE.rst
+GH_PAGES_SOURCES = docs qcodes CONTRIBUTING.rst LICENSE
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
