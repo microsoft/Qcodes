@@ -145,7 +145,7 @@ class Basic_Acquisition_Controller(AcquisitionController):
         bps = self.board_info['bits_per_sample']
         if bps == 12:
             volt_rec_A = sample_to_volt_u12(recordA, bps)
-            volt_rec_B = sample_to_volt_u12(recordA, bps)
+            volt_rec_B = sample_to_volt_u12(recordB, bps)
         else:
             Warning('sample to volt conversion does not exist for bps != 12, raw samples returned')
             volt_rec_A = recordA - np.mean(recordA)

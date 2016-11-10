@@ -71,6 +71,7 @@ class HD_Samples_Controller(AcquisitionController):
     TODO(nataliejpg) test mag phase logic
     TODO(nataliejpg) finish implementation of channel b option
     TODO(nataliejpg) update docstrings :P
+    TODO(nataliejpg) make demodulation freq a param
     """
 
     def __init__(self, name, alazar_name, demod_freq, samp_rate=500e6, filt='win',
@@ -237,13 +238,13 @@ class HD_Samples_Controller(AcquisitionController):
         # multiply with software wave
         re_wave = np.multiply(volt_rec, self.cos_list)
         im_wave = np.multiply(volt_rec, self.sin_list)
-        cutoff = self.demodulation_frequency / 2
+        cutoff = self.demodulation_frequency / 10
 
         # filter out higher freq component
         if self.filter == 0:
             re_filtered = filter_win(re_wave, cutoff,
                                            self.sample_rate, self.numtaps)
-            im_filtered = filter_win(re_wave, cutoff,
+            im_filtered = filter_win(im_wave, cutoff,
                                            self.sample_rate, self.numtaps)
         elif self.filter == 1:
             re_filtered = filter_ham(re_wave, cutoff,
