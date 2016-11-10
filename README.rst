@@ -1,17 +1,16 @@
-QCoDeS |Build Status|
-=====================
+QCoDeS |Build Status| |DOCS|
+============================
 
 QCoDeS is a Python-based data acquisition framework developed by the
 Copenhagen / Delft / Sydney / Microsoft quantum computing consortium.
 While it has been developed to serve the needs of nanoelectronic device
 experiments, it is not inherently limited to such experiments, and can
 be used anywhere a system with many degrees of freedom is controllable
-by computer.
+by computer. 
+To learn more about QCoDeS, browse our `homepage <http://qcodes.github.io/Qcodes>`_ .
 
 To get  a feeling of qcodes browse the Jupyter notebooks in `docs/examples
 <https://github.com/QCoDeS/Qcodes/tree/master/docs/examples>`__ .
-
-If you <3 and want to use it straight after, jump to `here <http://qcodes.github.io/Qcodes>`__  !
 
 
 QCoDeS is compatible with Python 3.5+. It is primarily intended for use
@@ -169,3 +168,6 @@ See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.md>`__.
 
 .. |Build Status| image:: https://travis-ci.org/QCoDeS/Qcodes.svg?branch=master
     :target: https://travis-ci.org/QCoDeS/Qcodes
+.. |DOCS| image:: https://img.shields.io/badge/read%20-thedocs-ff66b4.svg
+   :target: http://qcodes.github.io/Qcodes
+

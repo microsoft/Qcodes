@@ -1,9 +1,19 @@
-Welcome to QCoDeS's documentation!
-==================================
+.. figure:: ./logos/qcodes_logo.png
+   :scale: 50 %
+   :alt: qcodes logo 
 
-Release v\ |version| 
+
+.. image:: https://badge.fury.io/py/qcodes.svg
+    :target: https://badge.fury.io/py/qcodes
+
+.. image:: https://img.shields.io/badge/source-github-ff69b4.svg
+   :target: https://github.com/QCoDeS/Qcodes
+
+
+
 
 Qcodes is a Python-based data acquisition framework developed by the Copenhagen / Delft / Sydney / Microsoft quantum computing consortium. 
+
 
 The goal is a common framework for physics experiments, so:
 
