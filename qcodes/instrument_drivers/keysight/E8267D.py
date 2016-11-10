@@ -37,92 +37,69 @@ class Keysight_E8267D(VisaInstrument):
                            get_parser=float,
                            set_parser=float,
                            vals=vals.Numbers(-150, 10))
-        self.add_parameter('status',
+        self.add_parameter('RF_output',
                            get_cmd=':OUTP?',
                            set_cmd='OUTP {}',
                            get_parser=self.parse_on_off,
-                           # Only listed most common spellings idealy want a
-                           # .upper val for Enum or string
-                           vals=vals.Enum('on', 'On', 'ON',
-                                          'off', 'Off', 'OFF'))
+                           vals=EnumLower('on', 'off'))
         self.add_parameter('phase_modulation',
                            get_cmd=':PM:STAT?',
                            set_cmd='PM:STAT {}',
                            get_parser=self.parse_on_off,
-                           # Only listed most common spellings idealy want a
-                           # .upper val for Enum or string
-                           vals=vals.Enum('on', 'On', 'ON',
-                                          'off', 'Off', 'OFF'))
+                           vals=EnumLower('on', 'off'))
         self.add_parameter('output_modulation',
                            get_cmd='OUTPut:MOD?',
                            set_cmd='OUTPut:MOD {}',
                            get_parser=self.parse_on_off,
-                           # Only listed most common spellings idealy want a
-                           # .upper val for Enum or string
-                           vals=vals.Enum('on', 'On', 'ON',
-                                          'off', 'Off', 'OFF'))
+                           vals=EnumLower('on', 'off'))
         self.add_parameter('pulse_modulation',
                            get_cmd='PULM:STAT?',
                            set_cmd='PULM:STAT {}',
                            get_parser=self.parse_on_off,
-                           # Only listed most common spellings idealy want a
-                           # .upper val for Enum or string
-                           vals=vals.Enum('on', 'On', 'ON',
-                                          'off', 'Off', 'OFF'))
+                           vals=EnumLower('on', 'off'))
         self.add_parameter('pulse_modulation_source',
                            get_cmd='PULM:SOURce?',
                            set_cmd='PULM:SOURce {}',
-                           vals=vals.Enum('INT', 'internal',
-                                          'EXT', 'external',
-                                          'scalar', 'SCAL',))
+                           vals=EnumLower('int', 'internal',
+                                          'ext', 'external',
+                                          'scal', 'scalar'))
         self.add_parameter('automatic_leveling_control',
                            get_cmd='POW:ALC?',
                            set_cmd='POW:ALC {}',
                            get_parser=self.parse_on_off,
-                           # Only listed most common spellings idealy want a
-                           # .upper val for Enum or string
-                           vals=vals.Enum('on', 'On', 'ON',
-                                          'off', 'Off', 'OFF'))
+                           vals=EnumLower('on', 'off'))
         self.add_parameter('frequency_modulation',
                            get_cmd='FM:STAT?',
                            set_cmd='FM:STAT {}',
                            get_parser=self.parse_on_off,
-                           # Only listed most common spellings idealy want a
-                           # .upper val for Enum or string
-                           vals=vals.Enum('on', 'On', 'ON',
-                                          'off', 'Off', 'OFF'))
+                           vals=EnumLower('on', 'off'))
+        self.add_parameter('frequency_modulation_source',
+                           get_cmd='FM:SOUR?',
+                           set_cmd='FM:SOUR {}',
+                           get_parser=self.parse_on_off,
+                           vals=EnumLower('int', 'int1', 'int2',
+                                          'ext1', 'ext2'))
         #TODO
         self.add_parameter('frequency_deviation',
                            get_cmd='FM:DEV?',
                            set_cmd='FM:DEV {}',
                            get_parser=self.parse_on_off,
-                           # Only listed most common spellings idealy want a
-                           # .upper val for Enum or string
                            vals=vals.Numbers(0, 80e6))
         self.add_parameter('amplitude_modulation',
                            get_cmd='AM:STAT?',
                            set_cmd='AM:STAT {}',
                            get_parser=self.parse_on_off,
-                           # Only listed most common spellings idealy want a
-                           # .upper val for Enum or string
-                           vals=vals.Enum('on', 'On', 'ON',
-                                          'off', 'Off', 'OFF'))
+                           vals=EnumLower('on', 'off'))
         self.add_parameter('internal_IQ_modulation',
                            get_cmd='SOURce:DM:STATe?',
                            set_cmd='SOURce:DM:STATe {}',
                            get_parser=self.parse_on_off,
-                           # Only listed most common spellings idealy want a
-                           # .upper val for Enum or string
-                           vals=vals.Enum('on', 'On', 'ON',
-                                          'off', 'Off', 'OFF'))
+                           vals=EnumLower('on', 'off'))
         self.add_parameter('internal_arb_system',
                            get_cmd='SOURce:RADio:ARB:STATe?',
                            set_cmd='SOURce:RADio:ARB:STATe {}',
                            get_parser=self.parse_on_off,
-                           # Only listed most common spellings idealy want a
-                           # .upper val for Enum or string
-                           vals=vals.Enum('on', 'On', 'ON',
-                                          'off', 'Off', 'OFF'))
+                           vals=EnumLower('on', 'off'))
 
 
 
@@ -147,7 +124,16 @@ class Keysight_E8267D(VisaInstrument):
         return stat
 
     def on(self):
-        self.set('status', 'on')
+        self.set('RF_output', 'on')
 
     def off(self):
-        self.set('status', 'off')
+        self.set('RF_output', 'off')
+
+
+class EnumLower(vals.Enum):
+    """
+    Tests if lowercase version of string is equal to an element in enumeration.
+    """
+    def validate(self, value, context=''):
+        value = value.lower()
+        super().validate(value, context)
