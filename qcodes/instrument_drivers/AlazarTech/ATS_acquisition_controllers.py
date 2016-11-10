@@ -192,9 +192,19 @@ class Continuous_AcquisitionController(AcquisitionController):
         # gets called after 'AlazarStartCapture'
         pass
 
-    def handle_buffer(self, data):
+    def segment_buffer(self, buffer):
+        segmented_buffer = {
+            ch_name: buffer[ch * self.samples_per_record:
+                            (ch + 1) * self.samples_per_record]
+            for ch, ch_name in enumerate(self.channel_selection)}
+        return segmented_buffer
+
+    def handle_buffer(self, buffer):
         if self.buffer_idx < self.buffers_per_trace * \
                              self.traces_per_acquisition():
+            # Segment the buffer into buffers for each channel
+            segmented_buffer = self.segment_buffer(buffer)
+
             # Determine index of the trace and in the dataset
             trace_idx = self.buffer_idx // self.buffers_per_trace
             # Determine the buffer idx offset in the trace
@@ -204,9 +214,8 @@ class Continuous_AcquisitionController(AcquisitionController):
                    slice(trace_offset, trace_offset + self.samples_per_record))
 
             # Save buffer components into each channel dataset
-            for ch in range(self.number_of_channels):
-                self.buffers[ch][idx] = data[ch * self.samples_per_record:
-                                             (ch + 1) * self.samples_per_record]
+            for ch, ch_name in enumerate(self.channel_selection):
+                self.buffers[ch][idx] = segmented_buffer[ch_name]
         else:
             print('Ignoring extra ATS buffer {}'.format(self.buffer_idx))
         self.buffer_idx += 1
@@ -231,14 +240,18 @@ class Continuous_AcquisitionController(AcquisitionController):
             data[ch] = (ch_data - 2**15) / 2**15 * ch_range
         return data
 
+
 class SteeredInitialization_AcquisitionController(Continuous_AcquisitionController):
-    def __init__(self, name, alazar_name, **kwargs):
+    shared_kwargs = ['target_instrument']
+    def __init__(self, name, alazar_name, target_instrument, **kwargs):
         super().__init__(name, alazar_name, **kwargs)
+
+        self._target_instrument = target_instrument
 
         self.add_parameter(name='t_no_blip',
                            parameter_class=ManualParameter,
                            units='ms',
-                           initial_value=20)
+                           initial_value=40)
         self.add_parameter(name='t_max_wait',
                            parameter_class=ManualParameter,
                            units='ms',
@@ -249,96 +262,64 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                            initial_value='start',
                            vals=vals.Enum('start', 'error'))
 
-    def setup(self):
-        """
-        Setup the ATS controller by updating most current ATS values and setting
-        the acquisition parameter metadata
+        # Parameters for the target instrument and command after initialization
+        self.add_parameter(name='target_instrument',
+                           get_cmd=lambda: self._target_instrument.name)
+        self.add_parameter(name='target_command',
+                           parameter_class=ManualParameter,
+                           initial_value='start',
+                           vals=vals.Strings())
 
-        Returns:
-            None
-        """
+        self.add_parameer(name='stage',
+                          parameter_class=ManualParameter,
+                          vals=vals.Enum('initialization', 'active', 'read'))
 
-        # Update acquisition parameter values. These depend on the average mode
-        for attr in ['channel_selection', 'samples_per_record']:
-            setattr(self, attr, self.get_acquisition_setting(attr))
-        self.number_of_channels = len(self.channel_selection)
-        self.buffers_per_trace = round(self.samples_per_trace() / \
-                                       self.samples_per_record)
+        self.add_parameter(name='readout_channel',
+                           parameter_class=ManualParameter,
+                           vals=vals.Enum('A', 'B', 'C', 'D'))
+        self.add_parameter(name='trigger_channel',
+                           parameter_class=ManualParameter,
+                           vals=vals.Enum('A', 'B', 'C', 'D'))
+        self.add_parameter(name='trigger_threshold_voltage',
+                           parameter_class=ManualParameter)
+        self.add_parameter(name='readout_threshold_voltage',
+                           parameter_class=ManualParameter)
 
-        if self.samples_per_record % 16:
-            raise SyntaxError('Samples per record {} is not multiple of '
-                              '16'.format(self.samples_per_record))
+        self.stage = None
 
-        # Set acquisition parameter metadata
-        self.acquisition.names = tuple(['ch{}_signal'.format(ch) for ch in
-                                        self.channel_selection])
-        self.acquisition.labels = self.acquisition.names
-        self.acquisition.units = ['V'] * self.number_of_channels
-
-        if self.average_mode() == 'point':
-            shape = ()
-        elif self.average_mode() == 'trace':
-            shape = (self.samples_per_trace(),)
-        else:
-            shape = (self.traces_per_acquisition(), self.samples_per_record)
-        self.acquisition.shapes = tuple([shape] * self.number_of_channels)
-
-    def _requires_buffer(self):
-        trace_idx = self.buffer_idx // self.buffers_per_trace
-        return trace_idx < self.traces_per_acquisition()
+    def setup(self, trigger_threshold_voltage, readout_threshold_voltage):
+        self.trigger_threshold_voltage(trigger_threshold_voltage)
+        self.readout_threshold_voltage(readout_threshold_voltage)
+        super().setup()
 
     def pre_start_capture(self):
         """
         Initializes buffers before capturing
         """
-        self.buffer_idx = 0
-        self.buffers = [np.zeros((self.traces_per_acquisition(),
-                                  self.samples_per_trace()))
-                        for ch in self.channel_selection]
+        super().pre_start_capture()
+        self.stage('initialization')
+        # TODO set max wait number of buffers
+        # TODO set number of buffers without blips
 
-    def pre_acquire(self):
-        # gets called after 'AlazarStartCapture'
-        pass
-
-    def handle_buffer(self, data):
-        if self.buffer_idx < self.buffers_per_trace * \
-                self.traces_per_acquisition():
-            # Determine index of the trace and in the dataset
-            trace_idx = self.buffer_idx // self.buffers_per_trace
-            # Determine the buffer idx offset in the trace
-            trace_offset = self.samples_per_record * \
-                           (self.buffer_idx % self.buffers_per_trace)
-            idx = (trace_idx,
-                   slice(trace_offset,
-                         trace_offset + self.samples_per_record))
-
-            # Save buffer components into each channel dataset
-            for ch in range(self.number_of_channels):
-                self.buffers[ch][idx] = data[ch * self.samples_per_record:
-                (ch + 1) * self.samples_per_record]
+    def handle_buffer(self, buffer):
+        if self.stage() == 'initialization':
+            segmented_buffers = self.segment_buffer(buffer)
+            readout_buffer = segmented_buffers[self.readout_channel()]
+            if any(readout_buffer < self.readout_threshold_voltage()):
+                self.stage('active')
+        elif self.stage() == 'active':
+            segmented_buffers = self.segment_buffer(buffer)
+            trigger_buffer = segmented_buffers[self.trigger_channel()]
+            if any(trigger_buffer < self.trigger_threshold_voltage()):
+                self.stage('read')
+        elif self.stage() == 'read':
+            # TODO add offset_idx
+            super().handle_buffer(buffer)
+            if self.buffer_idx == max: # TODO
+                self.stage('initialization')
+                self.buffer_idx = 0
         else:
-            print('Ignoring extra ATS buffer {}'.format(self.buffer_idx))
-        self.buffer_idx += 1
-
-    def post_acquire(self):
-        # average over records in buffer:
-        # for ATS9360 samples are arranged in the buffer as follows:
-        # S0A, S0B, ..., S1A, S1B, ...
-        # with SXY the sample number X of channel Y.
-
-        if self.average_mode() == 'none':
-            data = self.buffers
-        elif self.average_mode() == 'trace':
-            data = [np.mean(buffer, axis=0) for buffer in self.buffers]
-        elif self.average_mode() == 'point':
-            data = [np.mean(buffer) for buffer in self.buffers]
-
-        # Convert data points from an uint16 to volts
-        for ch, ch_data in enumerate(data):
-            ch_idx = self.channel_selection[ch]
-            ch_range = self._alazar.parameters['channel_range' + ch_idx]()
-            data[ch] = (ch_data - 2 ** 15) / 2 ** 15 * ch_range
-        return data
+            raise ValueError('Acquisition stage {} unknown'.format(self.stage))
 
 
 # DFT AcquisitionController
