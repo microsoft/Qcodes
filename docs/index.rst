@@ -81,3 +81,9 @@ License
 =======
 
 .. include:: ../LICENSE
+
+
+Contributions
+=============
+
+QCoDeS logo contributed by `Guenevere E D K Prawiroatmodjo <bqv662@alumni.ku.dk>`_
