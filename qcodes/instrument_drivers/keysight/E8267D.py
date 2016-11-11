@@ -100,9 +100,6 @@ class Keysight_E8267D(VisaInstrument):
                            get_parser=self.parse_on_off,
                            vals=EnumLower('on', 'off'))
 
-
-
-
         self.connect_message()
 
     # Note it would be useful to have functions like this in some module instead

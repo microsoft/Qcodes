@@ -262,6 +262,11 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                            initial_value='start',
                            vals=vals.Enum('start', 'error'))
 
+        self.add_parameter(name='silent',
+                           parameter_class=ManualParameter,
+                           initial_value=True,
+                           vals=vals.Bool())
+
         # Parameters for the target instrument and command after initialization
         self.add_parameter(name='target_instrument',
                            get_cmd=lambda: self._target_instrument.name)
@@ -292,32 +297,69 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
         self.readout_threshold_voltage(readout_threshold_voltage)
         super().setup()
 
+        sample_rate = self._alazar.get_sample_rate()
+        samples_per_ms = sample_rate * 1e-3
+        buffers_per_ms = samples_per_ms / self.samples_per_record
+        self.number_of_buffers_max_wait = self.t_max_wait() * buffers_per_ms
+        self.number_of_buffers_no_blip = self.t_no_blip() * buffers_per_ms
+
+        self._target_command = getattr(self._target_instrument,
+                                       self.target_command())
+
     def pre_start_capture(self):
         """
         Initializes buffers before capturing
         """
         super().pre_start_capture()
         self.stage('initialization')
-        # TODO set max wait number of buffers
-        # TODO set number of buffers without blips
+        self.buffer_no_blip_idx = 0
 
     def handle_buffer(self, buffer):
         if self.stage() == 'initialization':
+            self.buffer_idx += 1
             segmented_buffers = self.segment_buffer(buffer)
             readout_buffer = segmented_buffers[self.readout_channel()]
-            if any(readout_buffer < self.readout_threshold_voltage()):
-                self.stage('active')
+            if max(readout_buffer) > self.readout_threshold_voltage():
+                # A blip occurred, reset counter for buffers without blips
+                self.buffer_no_blip_idx = 0
+            else:
+                # No blips in buffer
+                self.buffer_no_blip_idx += 1
+                if self.buffer_no_blip_idx >= self.number_of_buffers_no_blip:
+                    self.stage('active')
+                elif self.buffer_idx >= self.number_of_buffers_max_wait:
+                    # Max waiting time has been reached, but no sufficient
+                    # period of time without blips occurred
+                    if self.max_wait_action() == 'start':
+                        self.stage('active')
+                        # Start target instrument
+                        self._target_command()
+
+                        if not self.silent():
+                            logging.warning('Max wait time reached, but no '
+                                            'period without blips occurred, '
+                                            'starting')
+                    else: # self.max_wait_action() == 'error':
+                        raise RuntimeError('Max wait time reached but no period'
+                                           ' without blips occurred, stopping')
+
         elif self.stage() == 'active':
             segmented_buffers = self.segment_buffer(buffer)
             trigger_buffer = segmented_buffers[self.trigger_channel()]
             if any(trigger_buffer < self.trigger_threshold_voltage()):
                 self.stage('read')
+                # TODO add segment of the buffer after the trigger,
+                # since this is technically also part of readout
         elif self.stage() == 'read':
-            # TODO add offset_idx
+            # TODO add offset_idx from buffer segment after trigger
+            # Add buffer to data
             super().handle_buffer(buffer)
-            if self.buffer_idx == max: # TODO
+            if not self.buffer_idx % self.buffers_per_trace:
+                # Trace filled, go back to initialization
                 self.stage('initialization')
+                # Reset buffer idx
                 self.buffer_idx = 0
+                self.buffer_no_blip_idx = 0
         else:
             raise ValueError('Acquisition stage {} unknown'.format(self.stage))
 
