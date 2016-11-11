@@ -1,6 +1,7 @@
 import os
 import clr  # Import pythonnet to talk to dll
 from System import Array
+import numbers
 from time import sleep
 from functools import partial
 from qcodes import Instrument
@@ -109,6 +110,7 @@ class ArbStudio1104(Instrument):
                            initial_value='start',
                            label='Trigger action',
                            vals=vals.Enum('start', 'stop', 'ignore'))
+
     def initialize(self):
         # Create empty array of four channels.
         # These are only necessary for initialization
@@ -195,7 +197,8 @@ class ArbStudio1104(Instrument):
             sequence = Array.CreateInstance(self._api.GenerationSequenceStruct,len(channel_sequence))
             for k, subsequence_info in enumerate(channel_sequence):
                 subsequence = self._api.GenerationSequenceStruct()
-                if isinstance(subsequence_info, int):
+                # Must compare with Integral since np.int32 is not an int
+                if isinstance(subsequence_info, numbers.Integral):
                     subsequence.WaveformIndex = subsequence_info
                     # Set repetitions to 1 (default) if subsequence info is an int
                     subsequence.Repetitions = 1

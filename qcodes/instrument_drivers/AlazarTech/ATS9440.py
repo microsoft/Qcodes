@@ -161,24 +161,17 @@ class ATS9440(AlazarTech_ATS):
                            label='Acquisition mode',
                            unit=None,
                            value='NPT',
-                           byte_to_value_dict={0x200: 'NPT', 0x400: 'TS'})
+                           byte_to_value_dict={0x100: 'CS', 0x200: 'NPT',
+                                               0x400: 'TS'})
 
-        # samples_per_record must be a multiple of 16!
+        # samples_per_record must be a multiple of 32, and 256 minimum!
+        # TODO check if it is 32 or 16, manual is unclear
         self.add_parameter(name='samples_per_record',
                            parameter_class=AlazarParameter,
                            label='Samples per Record',
                            unit=None,
                            value=1024,
-                           vals=Multiples(divisor=16, min_value=0))
-        # TODO (M) figure out if this also has to be a multiple of something,
-        # I could not find this in the documentation but somehow I have the
-        # feeling it still should be a multiple of something
-        # NOTE by ramiro: At least in previous python implementations
-        # (PycQED delft), this is an artifact for compatibility with AWG
-        # sequencing, not particular to any ATS architecture.
-        # ==> this is a construction imposed by the memory strategy implemented
-        # on the python driver we are writing, not limited by any actual ATS
-        # feature.
+                           vals=validators.Multiples(divisor=16, min_value=16))
 
         self.add_parameter(name='records_per_buffer',
                            parameter_class=AlazarParameter,
@@ -265,26 +258,3 @@ class ATS9440(AlazarTech_ATS):
         # TODO (M) make parameter for board type
 
         # TODO (M) check board kind
-
-class Multiples(validators.Ints):
-    '''
-    requires an integer
-    optional parameters min_value and max_value enforce
-    min_value <= value <= max_value
-    divisor enforces that value % divisor == 0
-    '''
-
-    def __init__(self, divisor=1, **kwargs):
-        super().__init__(**kwargs)
-        if not isinstance(divisor, int):
-            raise TypeError('divisor must be an integer')
-        self._divisor = divisor
-
-    def validate(self, value, context=''):
-        super().validate(value=value, context=context)
-        if not value % self._divisor == 0:
-            raise TypeError('{} is not a multiple of {}; {}'.format(
-                repr(value), repr(self._divisor), context))
-
-    def __repr__(self):
-        return super().__repr__()[:-1] + ', Multiples of {}>'.format(self._divisor)

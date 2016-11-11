@@ -137,6 +137,24 @@ class AlazarTech_ATS(Instrument):
               'single channel mode.')
     }
 
+    # Parameters that can be set and/or get via
+    # AlazarSetParameter/AlazarGetParameter
+    _parameters = {
+        'DATA_WIDTH': 0x10000009,
+        'SETGET_ASYNC_BUFFSIZE_BYTES': 0x10000039,
+        'SETGET_ASYNC_BUFFCOUNT': 0x10000040,
+        'GET_DATA_FORMAT': 0x10000042,
+        'GET_SAMPLES_PER_TIMESTAMP_CLOCK': 0x10000044,
+        'GET_RECORDS_CAPTURED': 0x10000045,
+        'GET_ASYNC_BUFFERS_PENDING': 0x10000050,
+        'GET_ASYNC_BUFFERS_PENDING_FULL': 0x10000051,
+        'GET_ASYNC_BUFFERS_PENDING_EMPTY': 0x10000052,
+        'ECC_MODE': 0x10000048,
+        'GET_AUX_INPUT_LEVEL': 0x10000049,
+        'EXT_TRIGGER_COUPLING': 0x1000001A,
+        'EXT_TRIGGER_ATTENUATOR_RELAY': 0x1000001C
+    }
+
     _board_names = {
         1: 'ATS850',
         2: 'ATS310',
@@ -478,8 +496,8 @@ class AlazarTech_ATS(Instrument):
         # endregion
         self.mode._set_updated()
         mode = self.mode.get()
-        if mode not in ('TS', 'NPT'):
-            raise Exception("Only the 'TS' and 'NPT' modes are implemented "
+        if mode not in ('TS', 'NPT', 'CS'):
+            raise Exception("Only the 'TS', 'CS', 'NPT' modes are implemented "
                             "at this point")
 
         # -----set final configurations-----
@@ -494,18 +512,13 @@ class AlazarTech_ATS(Instrument):
         #                     'Number of bits: {}'.format(bps))
 
         # Set record size for NPT mode
-        if mode == 'NPT':
-            pretriggersize = 0  # pretriggersize is 0 for NPT always
+        if mode in ['CS', 'NPT']:
+            pretriggersize = 0  # pretriggersize is 0 for NPT and CS always
             post_trigger_size = self.samples_per_record._get_byte()
             self._call_dll('AlazarSetRecordSize',
                            self._handle, pretriggersize,
                            post_trigger_size)
 
-        # set acquisition parameters here for NPT, TS mode
-        # if self.channel_selection._get_byte() == 3:
-        #     number_of_channels = 2
-        # else:
-        #     number_of_channels = 1
         number_of_channels = len(self.channel_selection._latest_value)
         samples_per_buffer = 0
         buffers_per_acquisition = self.buffers_per_acquisition._get_byte()
@@ -518,6 +531,7 @@ class AlazarTech_ATS(Instrument):
                          self.interleave_samples._get_byte() |
                          self.get_processed_data._get_byte())
 
+        # set acquisition parameters here for NPT, TS, CS mode
         if mode == 'NPT':
             records_per_buffer = self.records_per_buffer._get_byte()
             records_per_acquisition = (
@@ -550,6 +564,20 @@ class AlazarTech_ATS(Instrument):
                            self.records_per_buffer, buffers_per_acquisition,
                            acquire_flags)
 
+        elif mode == 'CS':
+            if self.records_per_buffer._get_byte() != 1:
+                logging.warning('records_per_buffer should be 1 in TS mode, '
+                                'defauling to 1')
+                self.records_per_buffer._set(1)
+
+            samples_per_buffer = samples_per_record
+
+            self._call_dll('AlazarBeforeAsyncRead',
+                           self._handle, self.channel_selection,
+                           self.transfer_offset, samples_per_buffer,
+                           self.records_per_buffer, buffers_per_acquisition,
+                           acquire_flags)
+
         self.samples_per_record._set_updated()
         self.records_per_buffer._set_updated()
         self.buffers_per_acquisition._set_updated()
@@ -564,12 +592,15 @@ class AlazarTech_ATS(Instrument):
 
         # create buffers for acquisition
         self.clear_buffers()
-        # make sure that allocated_buffers <= buffers_per_acquisition
-        if (self.allocated_buffers._get_byte() >
-                self.buffers_per_acquisition._get_byte()):
-            print("'allocated_buffers' should be smaller than or equal to"
-                  "'buffers_per_acquisition'. Defaulting 'allocated_buffers' to"
-                  "" + str(self.buffers_per_acquisition._get_byte()))
+        # make sure that allocated_buffers <= buffers_per_acquisition and
+        # buffer acquisition is not in acquire indefinite mode (0x7FFFFFFF)
+        if (not self.buffers_per_acquisition._get_byte() == 0x7FFFFFFF) and \
+                (self.allocated_buffers._get_byte() >
+                     self.buffers_per_acquisition._get_byte()):
+            logging.warning(
+                "'allocated_buffers' should be smaller than or equal to"
+                "'buffers_per_acquisition'. Defaulting 'allocated_buffers' to'"
+                "" + str(self.buffers_per_acquisition._get_byte()))
             self.allocated_buffers._set(
                 self.buffers_per_acquisition._get_byte())
 
@@ -600,10 +631,12 @@ class AlazarTech_ATS(Instrument):
         buffer_timeout = self.buffer_timeout._get_byte()
         self.buffer_timeout._set_updated()
 
-        buffer_recycling = (self.buffers_per_acquisition._get_byte() >
-                            self.allocated_buffers._get_byte())
+        buffer_recycling = \
+            (self.buffers_per_acquisition._get_byte() == 0x7FFFFFFF) or \
+            (self.buffers_per_acquisition._get_byte() >
+             self.allocated_buffers._get_byte())
 
-        while buffers_completed < self.buffers_per_acquisition._get_byte():
+        while acquisition_controller.requires_buffer():
             buf = self.buffer_list[buffers_completed % allocated_buffers]
 
             self._call_dll('AlazarWaitAsyncBufferComplete',
@@ -616,21 +649,15 @@ class AlazarTech_ATS(Instrument):
 
             # if buffers must be recycled, extract data and repost them
             # otherwise continue to next buffer
-
-            if buffer_recycling:
-                acquisition_controller.handle_buffer(buf.buffer)
+            acquisition_controller.handle_buffer(buf.buffer)
+            # if buffer_recycling:
+            if True:
                 self._call_dll('AlazarPostAsyncBuffer',
                                self._handle, buf.addr, buf.size_bytes)
             buffers_completed += 1
 
         # stop measurement here
         self._call_dll('AlazarAbortAsyncRead', self._handle)
-
-        # -----cleanup here-----
-        # extract data if not yet done
-        if not buffer_recycling:
-            for buf in self.buffer_list:
-                acquisition_controller.handle_buffer(buf.buffer)
 
         # free up memory
         self.clear_buffers()
@@ -641,6 +668,24 @@ class AlazarTech_ATS(Instrument):
 
         # return result
         return acquisition_controller.post_acquire()
+
+    def triggered(self):
+        return self._call_dll('AlazarTriggered', self._handle,
+                              error_check=False)
+
+    def get_status(self):
+        return self._call_dll('AlazarGetStatus', self._handle,
+                              error_check=False)
+
+    def get_parameter(self, parameter, channel=0):
+        value = np.array([0], dtype=np.long)  # bps bits per sample
+        self._call_dll('AlazarGetParameterUL', self._handle, channel,
+                       self._parameters[parameter], value.ctypes.data)
+        return value
+
+    def set_parameter(self, parameter, value, channel=0):
+        self._call_dll('AlazarSetParameterUL', self._handle, channel,
+                       self._parameters[parameter], value)
 
     def _set_if_present(self, param_name, value):
         if value is not None:
@@ -655,7 +700,7 @@ class AlazarTech_ATS(Instrument):
                 if param_base + ch in self.parameters.keys():
                     self.parameters[param_base + ch]._set(val)
 
-    def _call_dll(self, func_name, *args):
+    def _call_dll(self, func_name, *args, error_check=True):
         """
         Execute a dll function `func_name`, passing it the given arguments
 
@@ -681,7 +726,7 @@ class AlazarTech_ATS(Instrument):
         return_code = func(*args_out)
 
         # check for errors
-        if (return_code != self._success) and (return_code !=518):
+        if error_check and (return_code not in [self._success, 518]):
             # TODO(damazter) (C) log error
 
             argrepr = repr(args_out)
@@ -696,6 +741,8 @@ class AlazarTech_ATS(Instrument):
                 'error {}: {} from function {} with args: {}'.format(
                     return_code, self._error_codes[return_code], func_name,
                     argrepr))
+        elif not error_check:
+            return return_code
 
         # mark parameters updated (only after we've checked for errors)
         for param in update_params:
@@ -954,6 +1001,23 @@ class AcquisitionController(Instrument):
         self._alazar = self.find_instrument(alazar_name,
                                             instrument_class=AlazarTech_ATS)
 
+        self._acquisition_settings = {}
+        self._fixed_acquisition_settings = {}
+        self.add_parameter(name="acquisition_settings",
+                           get_cmd=lambda: self._acquisition_settings)
+
+        # Names and shapes must have initial value, even through they will be
+        # overwritten in set_acquisition_settings. If we don't do this, the
+        # remoteInstrument will not recognize that it returns multiple values.
+        self.add_parameter(name="acquisition",
+                           names=['channel_signal'],
+                           get_cmd=self.do_acquisition,
+                           shapes=((),),
+                           snapshot_value=False)
+
+        self.add_parameter(name="requires_buffer",
+                           get_cmd=self._requires_buffer)
+
     def _get_alazar(self):
         """
         returns a reference to the alazar instrument. A call to self._alazar is
@@ -961,6 +1025,63 @@ class AcquisitionController(Instrument):
         :return: reference to the Alazar instrument
         """
         return self._alazar
+
+    def verify_acquisition_settings(self, **kwargs):
+        """
+        Ensure that none of the fixed acquisition settings are overwritten
+        Args:
+            **kwargs: List of acquisition settings
+
+        Returns:
+            acquisition settings wwith fixed settings
+        """
+        for key, val in self._fixed_acquisition_settings.items():
+            if kwargs.get(key, val) != val:
+                logging.warning('Cannot set {} to {}. Defaulting to {}'.format(
+                    key, kwargs[key], val))
+            kwargs[key] = val
+        return kwargs
+
+    def get_acquisition_setting(self, setting):
+        """
+        Obtain an acquisition setting for the ATS.
+        It checks if the setting is in ATS_controller._acquisition_settings
+        If not, it will retrieve the ATS latest parameter value
+
+        Args:
+            setting: acquisition setting to look for
+
+        Returns:
+            Value of the acquisition setting
+        """
+        if setting in self._acquisition_settings.keys():
+            return self._acquisition_settings[setting]
+        else:
+            # Must get latest value, since it may not be updated in ATS
+            return self._alazar.parameters[setting].get_latest()
+
+    def update_acquisition_settings(self, **kwargs):
+        kwargs = self.verify_acquisition_settings(**kwargs)
+        self._acquisition_settings.update(**kwargs)
+
+    def set_acquisition_settings(self, **kwargs):
+        kwargs = self.verify_acquisition_settings(**kwargs)
+        self._acquisition_settings = kwargs
+
+    def do_acquisition(self):
+        records = self._alazar.acquire(acquisition_controller=self,
+                                       **self._acquisition_settings)
+        return records
+
+    def _requires_buffer(self):
+        """
+        Check if enough buffers are acquired
+        Returns:
+
+        """
+        raise NotImplementedError(
+            'This method should be implemented in a subclass')
+
 
     def pre_start_capture(self):
         """
