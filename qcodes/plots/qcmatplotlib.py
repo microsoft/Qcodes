@@ -254,7 +254,7 @@ class MatPlot(BasePlot):
             ax.set_ylim(np.nanmin(args[1]), np.nanmax(args[1]))
 
         # Specify preferred number of ticks with labels
-        if nticks:
+        if nticks and ax.get_xscale() != 'log' and ax.get_yscale != 'log':
             ax.locator_params(nbins=nticks)
 
         if getattr(ax, 'qcodes_colorbar', None):
