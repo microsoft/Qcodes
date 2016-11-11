@@ -20,7 +20,7 @@ class Keysight_E8267D(VisaInstrument):
                            set_cmd='SOURce:FREQuency:CW' + ' {:.4f}',
                            get_parser=float,
                            set_parser=float,
-                           vals=vals.Numbers(1e5, 20e9))
+                           vals=vals.Numbers(250e3, 44e9))
         self.add_parameter(name='phase',
                            label='Phase',
                            units='deg',
