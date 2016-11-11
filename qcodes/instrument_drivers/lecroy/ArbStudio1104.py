@@ -68,7 +68,7 @@ class ArbStudio1104(Instrument):
 
             self.add_parameter('ch{}_sampling_rate_prescaler'.format(ch),
                                label='Channel {} sampling rate prescaler'.format(ch),
-                               get_cmd=partial(self._get_sampling_rate_prescaler, ch), #Typo is intentional
+                               get_cmd=partial(self._get_sampling_rate_prescaler, ch),
                                set_cmd=partial(self._set_sampling_rate_prescaler, ch),
                                vals=vals.MultiType(Multiples(2), vals.Enum(1)))
 
@@ -125,10 +125,11 @@ class ArbStudio1104(Instrument):
             "Error initializing Arb: {}".format(return_msg.ErrorDescription)
 
     def _get_sampling_rate_prescaler(self, ch):
-        return self._channels[ch - 1].SampligRatePrescaler
+        return self._channels[ch - 1].SampligRatePrescaler #Typo is intentional
 
     def _set_sampling_rate_prescaler(self, ch, prescaler):
         self._channels[ch - 1].SampligRatePrescaler = prescaler
+        #Typo is intentional
 
     def _set_trigger_mode(self, ch, trigger_mode_string):
         #Create dictionary with possible TriggerMode objects
