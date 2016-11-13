@@ -193,10 +193,18 @@ class Continuous_AcquisitionController(AcquisitionController):
         pass
 
     def segment_buffer(self, buffer):
+        """
+        Segments buffers into the distinct channels
+        Args:
+            buffer: 1D buffer array containing all channels
+
+        Returns:
+            segmented_buffer: Dictionary with items channel_idx: channel_buffer
+        """
         segmented_buffer = {
-            ch_name: buffer[ch * self.samples_per_record:
+            ch_idx: buffer[ch * self.samples_per_record:
                             (ch + 1) * self.samples_per_record]
-            for ch, ch_name in enumerate(self.channel_selection)}
+            for ch, ch_idx in enumerate(self.channel_selection)}
         return segmented_buffer
 
     def handle_buffer(self, buffer):
@@ -290,6 +298,11 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
         self.add_parameter(name='readout_threshold_voltage',
                            parameter_class=ManualParameter)
 
+        self.number_of_buffers_no_blip = None
+        self.number_of_buffers_max_wait = None
+        self._target_command = None
+        self.buffer_no_blip_idx = None
+
     def setup(self, readout_threshold_voltage, trigger_threshold_voltage):
         self.readout_threshold_voltage(readout_threshold_voltage)
         self.trigger_threshold_voltage(trigger_threshold_voltage)
@@ -317,36 +330,43 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
     def handle_buffer(self, buffer):
         if self.stage() == 'initialization':
             self.buffer_idx += 1
+            # increase no_blip_idx, if there was a blip it will be reset
+            self.buffer_no_blip_idx += 1
+
             segmented_buffers = self.segment_buffer(buffer)
             readout_buffer = segmented_buffers[self.readout_channel()]
+
             if max(readout_buffer) > self.readout_threshold_voltage():
                 # A blip occurred, reset counter for buffers without blips
                 self.buffer_no_blip_idx = 0
-            else:
-                # No blips in buffer
-                self.buffer_no_blip_idx += 1
-                if self.buffer_no_blip_idx >= self.number_of_buffers_no_blip:
-                    self.stage('active')
-                elif self.buffer_idx >= self.number_of_buffers_max_wait:
-                    # Max waiting time has been reached, but no sufficient
-                    # period of time without blips occurred
-                    if self.max_wait_action() == 'start':
-                        self.stage('active')
-                        # Start target instrument
-                        self._target_command()
 
-                        if not self.silent():
-                            logging.warning('Max wait time reached, but no '
-                                            'period without blips occurred, '
-                                            'starting')
-                    else: # self.max_wait_action() == 'error':
-                        raise RuntimeError('Max wait time reached but no period'
-                                           ' without blips occurred, stopping')
+            if self.buffer_no_blip_idx >= self.number_of_buffers_no_blip:
+                # Sufficient successive buffers without blips, starting
+                self.stage('active')
+                # Perform target command (e.g. starting an instrument)
+                self._target_command()
+                self.buffer_idx = 0
+            elif self.buffer_idx >= self.number_of_buffers_max_wait:
+                # Max waiting time has been reached, but no sufficient
+                # period of time without blips occurred
+                if self.max_wait_action() == 'start':
+                    self.stage('active')
+                    self._target_command()
+                    self.buffer_idx = 0
+
+                    if not self.silent():
+                        logging.warning('Max wait time reached, but no '
+                                        'period without blips occurred, '
+                                        'starting')
+                else: # self.max_wait_action() == 'error':
+                    raise RuntimeError('Max wait time reached but no period'
+                                       ' without blips occurred, stopping')
 
         elif self.stage() == 'active':
             segmented_buffers = self.segment_buffer(buffer)
             trigger_buffer = segmented_buffers[self.trigger_channel()]
             if max(trigger_buffer) > self.trigger_threshold_voltage():
+                # Acquisition trigger measured
                 self.stage('read')
                 # TODO add segment of the buffer after the trigger,
                 # since this is technically also part of readout
