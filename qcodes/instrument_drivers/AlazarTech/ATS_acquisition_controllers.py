@@ -274,6 +274,13 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                            parameter_class=ManualParameter,
                            initial_value=True,
                            vals=vals.Bool())
+        self.add_parameer(name='stage',
+                          parameter_class=ManualParameter,
+                          vals=vals.Enum('initialization', 'active', 'read'))
+        self.add_parameter(name='record_initialization_traces',
+                           parameter_class=ManualParameter,
+                           initial_value=False,
+                           vals=vals.Bool())
 
         # Parameters for the target instrument and command after initialization
         self.add_parameter(name='target_instrument',
@@ -283,9 +290,6 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                            initial_value='start',
                            vals=vals.Strings())
 
-        self.add_parameer(name='stage',
-                          parameter_class=ManualParameter,
-                          vals=vals.Enum('initialization', 'active', 'read'))
 
         self.add_parameter(name='readout_channel',
                            parameter_class=ManualParameter,
@@ -302,6 +306,8 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
         self.number_of_buffers_max_wait = None
         self._target_command = None
         self.buffer_no_blip_idx = None
+        self.trace_idx = None
+        self.t_start_list = None
 
     def setup(self, readout_threshold_voltage, trigger_threshold_voltage):
         self.readout_threshold_voltage(readout_threshold_voltage)
@@ -312,12 +318,19 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
         sample_rate = self._alazar.get_sample_rate()
         samples_per_ms = sample_rate * 1e-3
         buffers_per_ms = samples_per_ms / self.samples_per_record
+        self.ms_per_buffer = 1 / buffers_per_ms
         self.number_of_buffers_max_wait = self.t_max_wait() * buffers_per_ms
         self.number_of_buffers_no_blip = self.t_no_blip() * buffers_per_ms
 
         # Setup target command when t_no_blip is reached
         self._target_command = getattr(self._target_instrument,
                                        self.target_command())
+
+        self.t_start_list = np.zeros(self.traces_per_acquisition)
+        if self.record_initialization_traces():
+            self.initialization_traces = np.zeros(
+                (self.traces_per_acquisition(),
+                 samples_per_ms * self.t_max_wait()))
 
     def pre_start_capture(self):
         """
@@ -326,6 +339,7 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
         super().pre_start_capture()
         self.stage('initialization')
         self.buffer_no_blip_idx = 0
+        self.trace_idx = 0
 
     def handle_buffer(self, buffer):
         if self.stage() == 'initialization':
@@ -335,6 +349,14 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
 
             segmented_buffers = self.segment_buffer(buffer)
             readout_buffer = segmented_buffers[self.readout_channel()]
+
+            if self.record_initialization_traces():
+                # Store buffer into initialization trace
+                buffer_slice = (
+                    self.trace_idx, slice(
+                        self.buffer_idx * self.samples_per_record,
+                        (self.buffer_idx+1) * self.samples_per_record))
+                self.initialization_traces[buffer_slice] = readout_buffer
 
             if max(readout_buffer) > self.readout_threshold_voltage():
                 # A blip occurred, reset counter for buffers without blips
@@ -346,13 +368,17 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                 # Perform target command (e.g. starting an instrument)
                 self._target_command()
                 self.buffer_idx = 0
+                self.t_start_list[self.trace_idx] = self.buffer_idx * \
+                                                    self.ms_per_buffer
             elif self.buffer_idx >= self.number_of_buffers_max_wait:
                 # Max waiting time has been reached, but no sufficient
-                # period of time without blips occurred
+                # period of time without blips occurred. Either start or error
                 if self.max_wait_action() == 'start':
                     self.stage('active')
                     self._target_command()
                     self.buffer_idx = 0
+                    self.t_start_list[self.trace_idx] = self.buffer_idx * \
+                                                        self.ms_per_buffer
 
                     if not self.silent():
                         logging.warning('Max wait time reached, but no '
@@ -377,6 +403,7 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
             if not self.buffer_idx % self.buffers_per_trace:
                 # Trace filled, go back to initialization
                 self.stage('initialization')
+                self.trace_idx += 1
                 # Reset buffer idx
                 self.buffer_idx = 0
                 self.buffer_no_blip_idx = 0
