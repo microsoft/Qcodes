@@ -290,19 +290,19 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
         self.add_parameter(name='readout_threshold_voltage',
                            parameter_class=ManualParameter)
 
-        self.stage = None
-
-    def setup(self, trigger_threshold_voltage, readout_threshold_voltage):
-        self.trigger_threshold_voltage(trigger_threshold_voltage)
+    def setup(self, readout_threshold_voltage, trigger_threshold_voltage):
         self.readout_threshold_voltage(readout_threshold_voltage)
+        self.trigger_threshold_voltage(trigger_threshold_voltage)
         super().setup()
 
+        # Convert t_no_blip and t_max_wait to equivalent number of buffers
         sample_rate = self._alazar.get_sample_rate()
         samples_per_ms = sample_rate * 1e-3
         buffers_per_ms = samples_per_ms / self.samples_per_record
         self.number_of_buffers_max_wait = self.t_max_wait() * buffers_per_ms
         self.number_of_buffers_no_blip = self.t_no_blip() * buffers_per_ms
 
+        # Setup target command when t_no_blip is reached
         self._target_command = getattr(self._target_instrument,
                                        self.target_command())
 
@@ -346,12 +346,12 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
         elif self.stage() == 'active':
             segmented_buffers = self.segment_buffer(buffer)
             trigger_buffer = segmented_buffers[self.trigger_channel()]
-            if any(trigger_buffer < self.trigger_threshold_voltage()):
+            if max(trigger_buffer) > self.trigger_threshold_voltage():
                 self.stage('read')
                 # TODO add segment of the buffer after the trigger,
                 # since this is technically also part of readout
         elif self.stage() == 'read':
-            # TODO add offset_idx from buffer segment after trigger
+            # TODO add offset_idx from buffer segment after trigger (see above)
             # Add buffer to data
             super().handle_buffer(buffer)
             if not self.buffer_idx % self.buffers_per_trace:
