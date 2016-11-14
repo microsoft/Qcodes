@@ -2,12 +2,13 @@
 #
 # Written by Takafumi Fujita (t.fujita@tudelft.nl)
 # This program is based on RS_SMR40.py in QTlab
-# 
+#
 
 import logging
 
 from qcodes import VisaInstrument
 from qcodes import validators as vals
+
 
 class RohdeSchwarz_SMR40(VisaInstrument):
     '''
@@ -21,8 +22,9 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     This driver does not contain all commands available for the SMR40 but
     only the ones most commonly used.
     '''
+
     def __init__(self, name, address, verbose=1, reset=False, **kwargs):
-        self.verbose=verbose
+        self.verbose = verbose
         logging.debug(__name__ + ' : Initializing instrument')
         super().__init__(name, address, **kwargs)
 
@@ -39,13 +41,13 @@ class RohdeSchwarz_SMR40(VisaInstrument):
                            label='Power',
                            get_cmd=self.do_get_power,
                            set_cmd=self.do_set_power,
-                           vals=vals.Numbers(-30,25),
+                           vals=vals.Numbers(-30, 25),
                            units='dBm')
         self.add_parameter('status',
                            get_cmd=self.do_get_status,
                            set_cmd=self.do_set_status,
                            vals=vals.Strings())
-        
+
         # TODO(TF): check how to fix the get functions
         self.add_parameter('status_of_modulation',
                            get_cmd=self.do_get_status_of_modulation,
@@ -58,7 +60,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
         self.add_parameter('pulse_delay',
                            get_cmd=self.do_get_pulse_delay,
                            set_cmd=self.do_set_pulse_delay)
-                           
+
         # TODO(TF): check the way of defining this type of functions, where logging is added
         # self.add_function('reset')
         # self.add_function('get_all')
@@ -69,7 +71,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             self.get_all()
 
         self.connect_message()
-  
+
     # Functions
     def reset(self):
         '''
@@ -107,10 +109,10 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def do_get_frequency(self):
         '''
         Get frequency from device
-        
+
         Input:
             None
-            
+
         Output:
             frequency (float) : frequency in Hz
         '''
@@ -120,55 +122,55 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def do_set_frequency(self, frequency):
         '''
         Set frequency of device
-        
+
         Input:
             frequency (float) : frequency in Hz
-            
+
         Output:
             None
         '''
         logging.debug(__name__ + ' : setting frequency to %s GHz' % frequency)
         self.write('SOUR:FREQ %e' % frequency)
-        
+
     def do_get_power(self):
         '''
         Get output power from device
-        
+
         Input:
             None
-            
+
         Output:
             power (float) : output power in dBm
         '''
         logging.debug(__name__ + ' : reading power from instrument')
         return float(self.ask('SOUR:POW?'))
 
-    def do_set_power(self,power):
+    def do_set_power(self, power):
         '''
         Set output power of device
-        
+
         Input:
             power (float) : output power in dBm
-            
+
         Output:
             None
         '''
         logging.debug(__name__ + ' : setting power to %s dBm' % power)
         self.write('SOUR:POW %e' % power)
-        
+
     def do_get_status(self):
         '''
         Get status from instrument
-        
+
         Input:
             None
-            
+
         Output:
             status (string) : 'on or 'off'
         '''
         logging.debug(__name__ + ' : reading status from instrument')
         stat = self.ask(':OUTP:STAT?')
-        
+
         # TODO: fix
         if stat == '1\n':
             return 'ON'
@@ -177,13 +179,13 @@ class RohdeSchwarz_SMR40(VisaInstrument):
         else:
             raise ValueError('Output status not specified : %s' % stat)
 
-    def do_set_status(self,status):
+    def do_set_status(self, status):
         '''
         Set status of instrument
-        
+
         Input:
             status (string) : 'on or 'off'
-            
+
         Output:
             None
         '''
@@ -209,9 +211,9 @@ class RohdeSchwarz_SMR40(VisaInstrument):
 
         # TODO: fix
         # if stat == '1':
-            # return 'ON'
+        # return 'ON'
         # elif stat == '0':
-            # return 'OFF'
+        # return 'OFF'
         if stat == '1\n':
             return 'ON'
         elif stat == '0\n':
@@ -219,13 +221,13 @@ class RohdeSchwarz_SMR40(VisaInstrument):
         else:
             raise ValueError('Output status not specified : %s' % stat)
 
-    def do_set_status_of_modulation(self,status):
+    def do_set_status_of_modulation(self, status):
         '''
         Set status of modulation
-        
+
         Input:
             status (string) : 'on' or 'off'
-            
+
         Output:
             None
         '''
@@ -251,9 +253,9 @@ class RohdeSchwarz_SMR40(VisaInstrument):
 
         # TODO: fix
         # if stat == '1':
-            # return 'ON'
+        # return 'ON'
         # elif stat == '0':
-            # return 'OFF'
+        # return 'OFF'
         if stat == '1\n':
             return 'ON'
         elif stat == '0\n':
@@ -261,7 +263,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
         else:
             raise ValueError('Output status not specified : %s' % stat)
 
-    def do_set_status_of_ALC(self,status):
+    def do_set_status_of_ALC(self, status):
         '''
         Set status of instrument
 
@@ -276,8 +278,8 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             status = status.upper()
         else:
             raise ValueError('set_status(): can only set on or off')
-        self.write(':SOUR:POW:ALC %s' % status)        
-        
+        self.write(':SOUR:POW:ALC %s' % status)
+
     def do_get_pulse_delay(self):
         '''
         Get output power from device
@@ -291,7 +293,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
         logging.debug(__name__ + ' : reading pulse delay from instrument')
         return float(self.ask('SOUR:PULS:DEL?'))
 
-    def do_set_pulse_delay(self,delay):
+    def do_set_pulse_delay(self, delay):
         '''
         Set output power of device
 
@@ -301,9 +303,9 @@ class RohdeSchwarz_SMR40(VisaInstrument):
         Output:
             None
         '''
-        logging.debug(__name__ + ' : setting pulse delay to %s seconds' % str(delay))
-        self.write('SOUR:PULS:DEL 1us')        
-        
+        logging.debug(
+            __name__ + ' : setting pulse delay to %s seconds' % str(delay))
+        self.write('SOUR:PULS:DEL 1us')
 
     # Shortcuts
     def off(self):
@@ -352,8 +354,8 @@ class RohdeSchwarz_SMR40(VisaInstrument):
         Output:
             None
         '''
-        self.set_status_of_modulation('on')        
-        
+        self.set_status_of_modulation('on')
+
     def set_ext_trig(self):
         '''
         Set to the external trigger mode
@@ -365,16 +367,4 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             None
         '''
         logging.debug(__name__ + ' : setting to the external trigger mode')
-        self.write('TRIG:PULS:SOUR EXT_TRIG')      
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        self.write('TRIG:PULS:SOUR EXT_TRIG')
