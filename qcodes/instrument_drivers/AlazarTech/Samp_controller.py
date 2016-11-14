@@ -110,7 +110,7 @@ class HD_Samples_Controller(AcquisitionController):
         sample_rate = self.sample_rate
 
         if 'int_delay' in kwargs:
-            int_delay = kwargs['int_delay']
+            int_delay = kwargs.pop('int_delay')
             samp_delay = int_delay * sample_rate
             samples_delay_min = (self.numtaps - 1)
             if samp_delay < samples_delay_min:
@@ -122,7 +122,7 @@ class HD_Samples_Controller(AcquisitionController):
             samp_delay = self.numtaps - 1
 
         if 'int_time' in kwargs:
-            int_time = kwargs['int_time']
+            int_time = kwargs.pop('int_time')
             samp_time = int_time * sample_rate
             samples_time_max = (samples_per_record - samp_delay)
             oscilations_measured = int_time / self.demodulation_frequency
@@ -145,7 +145,8 @@ class HD_Samples_Controller(AcquisitionController):
 
         self.samples_time = samp_time
         self.samples_delay = samp_delay
-
+        
+        
         self.acquisition.update_acquisition_kwargs(samp_time, **kwargs)
 
     def pre_start_capture(self):
@@ -254,8 +255,8 @@ class HD_Samples_Controller(AcquisitionController):
 
         # apply int limits
         start = self.samples_delay
-        if self.int_time:
-            end = self.int_time * self.sample_rate + start
+        if self.samples_time:
+            end = self.samples_time * self.sample_rate + start
         else:
             end = None
         re_limited = re_filtered[start:end]
