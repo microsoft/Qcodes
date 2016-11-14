@@ -81,17 +81,17 @@ class Triggered_AcquisitionController(AcquisitionController):
         # gets called after 'AlazarStartCapture'
         pass
 
-    def handle_buffer(self, data):
+    def handle_buffer(self, buffer):
         if self.buffer_idx < self.buffers_per_acquisition:
+            # Segment the buffer into buffers for each channel
+            segmented_buffer = self.segment_buffer(buffer, scale_voltages=True)
+
             # Save buffer components into each channel dataset
-            for ch in range(self.number_of_channels):
+            for ch, ch_name in enumerate(self.channel_selection):
                 buffer_slice = slice(
                     self.buffer_idx * self.records_per_buffer,
                     (self.buffer_idx + 1) * self.records_per_buffer)
-
-                data_slice = slice(ch * self.samples_per_buffer,
-                                     (ch + 1) * self.samples_per_buffer)
-                self.buffers[ch][buffer_slice] = data[data_slice]
+                self.buffers[ch][buffer_slice] = segmented_buffer[ch_name]
         else:
             print('*'*20+'\nIgnoring extra ATS buffer')
             pass
@@ -190,31 +190,6 @@ class Continuous_AcquisitionController(AcquisitionController):
     def pre_acquire(self):
         # gets called after 'AlazarStartCapture'
         pass
-
-    def segment_buffer(self, buffer, scale_voltages=True):
-        """
-        Segments buffers into the distinct channels
-        Args:
-            buffer: 1D buffer array containing all channels
-            scale_voltages: Whether or not to scale data to actual volts
-        Returns:
-            buffer_segments: Dictionary with items channel_idx: channel_buffer
-        """
-
-        buffer_segments = {}
-        for ch, ch_idx in enumerate(self.channel_selection):
-            buffer_slice = slice(ch * self.samples_per_record,
-                            (ch + 1) * self.samples_per_record)
-            # TODO int16 conversion necessary but shouldbe done earlier
-            buffer_segment = buffer[buffer_slice]
-
-            if scale_voltages:
-                # Convert data points from an uint16 to volts
-                ch_range = self._alazar.parameters['channel_range'+ch_idx]()
-                buffer_segment = (buffer_segment - 2.**15) / 2**15 * ch_range
-
-            buffer_segments[ch_idx] = buffer_segment
-        return buffer_segments
 
     def handle_buffer(self, buffer):
         if self.buffer_idx < self.buffers_per_trace * \
@@ -343,9 +318,6 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                 (self.traces_per_acquisition(),
                  self.samples_per_record * self.number_of_buffers_max_wait))
 
-        print('controller allocated buffers: {}'.format(
-            self.get_acquisition_setting('allocated_buffers')))
-
     def pre_start_capture(self):
         """
         Initializes buffers before capturing
@@ -369,8 +341,8 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                 # Store buffer into initialization trace
                 buffer_slice = (
                     self.trace_idx, slice(
-                        self.buffer_idx * self.samples_per_record,
-                        (self.buffer_idx+1) * self.samples_per_record))
+                        (self.buffer_idx-1) * self.samples_per_record,
+                        self.buffer_idx * self.samples_per_record))
                 self.initialization_traces[buffer_slice] = readout_buffer
 
             if max(readout_buffer) > self.readout_threshold_voltage():
@@ -419,9 +391,12 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                 self.buffer_idx = 0
                 # TODO add segment of the buffer after the trigger,
                 # since this is technically also part of readout
+
         elif self.stage() == 'read':
             # TODO add offset_idx from buffer segment after trigger (see above)
             # Add buffer to data
+            # Reduce buffer_idx since it is increased in super().handle_buffer
+            self.buffer_idx -= 1
             super().handle_buffer(buffer)
             if not self.buffer_idx % self.buffers_per_trace:
                 print('finished trace after {:.2f} s'.format(time.time()-self.t0))
@@ -431,6 +406,7 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                 # Reset buffer idx
                 self.buffer_idx = 0
                 self.buffer_no_blip_idx = 0
+
         else:
             raise ValueError('Acquisition stage {} unknown'.format(self.stage))
 

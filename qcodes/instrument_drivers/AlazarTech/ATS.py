@@ -1081,6 +1081,30 @@ class AcquisitionController(Instrument):
         raise NotImplementedError(
             'This method should be implemented in a subclass')
 
+    def segment_buffer(self, buffer, scale_voltages=True):
+        """
+        Segments buffers into the distinct channels
+        Args:
+            buffer: 1D buffer array containing all channels
+            scale_voltages: Whether or not to scale data to actual volts
+        Returns:
+            buffer_segments: Dictionary with items channel_idx: channel_buffer
+        """
+
+        buffer_segments = {}
+        for ch, ch_idx in enumerate(self.channel_selection):
+            buffer_slice = slice(ch * self.samples_per_record,
+                            (ch + 1) * self.samples_per_record)
+            # TODO int16 conversion necessary but shouldbe done earlier
+            buffer_segment = buffer[buffer_slice]
+
+            if scale_voltages:
+                # Convert data points from an uint16 to volts
+                ch_range = self._alazar.parameters['channel_range'+ch_idx]()
+                buffer_segment = (buffer_segment - 2.**15) / 2**15 * ch_range
+
+            buffer_segments[ch_idx] = buffer_segment
+        return buffer_segments
 
     def pre_start_capture(self):
         """
