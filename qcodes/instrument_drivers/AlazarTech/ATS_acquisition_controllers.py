@@ -139,6 +139,7 @@ class Continuous_AcquisitionController(AcquisitionController):
 
         self.buffer_idx = None
         self.trace_idx = None
+        self.buffer_start_idx = None
 
     def setup(self):
         """
@@ -183,6 +184,7 @@ class Continuous_AcquisitionController(AcquisitionController):
         """
         self.buffer_idx = 0
         self.trace_idx = 0
+        self.buffer_start_idx = 0
         self.buffers = [np.zeros((self.traces_per_acquisition(),
                                   self.samples_per_trace()))
                         for ch in self.channel_selection]
@@ -191,7 +193,7 @@ class Continuous_AcquisitionController(AcquisitionController):
         # gets called after 'AlazarStartCapture'
         pass
 
-    def handle_buffer(self, buffer, buffer_start_idx=0):
+    def handle_buffer(self, buffer):
 
         if self.buffer_idx >= self.buffers_per_trace * \
                              self.traces_per_acquisition():
@@ -207,14 +209,15 @@ class Continuous_AcquisitionController(AcquisitionController):
         if self.buffer_idx == -1:
             # This is the first (incomplete) buffer, whose starting idx is
             # buffer_start_idx, add it to the beginning of the segmented buffer
-            buffer_slice = slice(None,
-                                 self.samples_per_record - buffer_start_idx)
+            buffer_slice = slice(None, self.samples_per_record -
+                                 self.buffer_start_idx)
             for ch_name, buffer_segment in segmented_buffer.items():
                 # Shorten each of the segments to start from buffer_start_idx
-                segmented_buffer[ch_name] = buffer_segment[buffer_start_idx:]
+                segmented_buffer[ch_name] = \
+                    buffer_segment[self.buffer_start_idx:]
         else:
             # Determine the buffer idx offset in the trace
-            trace_offset = buffer_start_idx + self.samples_per_record * \
+            trace_offset = self.buffer_start_idx + self.samples_per_record * \
                            (self.buffer_idx % self.buffers_per_trace)
 
             if trace_offset+self.samples_per_record > self.samples_per_trace():
@@ -354,8 +357,8 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
         self.buffer_no_blip_idx = 0
 
     def handle_buffer(self, buffer):
-        self.buffer_idx += 1
         if self.stage() == 'initialization':
+            self.buffer_idx += 1
             # increase no_blip_idx, if there was a blip it will be reset
             self.buffer_no_blip_idx += 1
 
@@ -403,25 +406,26 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                                        ' without blips occurred, stopping')
 
         elif self.stage() == 'active':
+            # Keep acquiring buffers until acquisition trigger is measured
+            self.buffer_idx += 1
             segmented_buffers = self.segment_buffer(buffer, scale_voltages=True)
             trigger_buffer = segmented_buffers[self.trigger_channel()]
-            # print('min {}\tmax {}\tmean {}\tstd {}'.format(
-            #     min(trigger_buffer), max(trigger_buffer),
-            #     np.mean(trigger_buffer), np.std(trigger_buffer)))
             if max(trigger_buffer) > self.trigger_threshold_voltage():
                 # Acquisition trigger measured
                 self.stage('read')
+
+                # Find first index of acquisition trigger
+                self.buffer_idx = -1
+                self.buffer_start_idx = \
+                    np.argmax(trigger_buffer > self.trigger_threshold_voltage())
+                # Add first (partial) segment to traces
+                super().handle_buffer(buffer)
+
                 print('starting readout after {:.2f} s, buffers {}'.format(
                     time.time()-self.t0, self.buffer_idx))
-                self.buffer_idx = -1
-                # TODO add segment of the buffer after the trigger,
-                # since this is technically also part of readout
 
         elif self.stage() == 'read':
-            # TODO add offset_idx from buffer segment after trigger (see above)
             # Add buffer to data
-            # Reduce buffer_idx since it is increased in super().handle_buffer
-            self.buffer_idx -= 1
             super().handle_buffer(buffer)
             if not self.buffer_idx % self.buffers_per_trace:
                 print('finished trace after {:.2f} s'.format(time.time()-self.t0))
@@ -430,6 +434,7 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                 self.stage('initialization')
                 # Reset buffer idx
                 self.buffer_idx = 0
+                self.buffer_start_idx
                 self.buffer_no_blip_idx = 0
 
         else:
