@@ -191,25 +191,50 @@ class Continuous_AcquisitionController(AcquisitionController):
         # gets called after 'AlazarStartCapture'
         pass
 
-    def handle_buffer(self, buffer):
-        if self.buffer_idx < self.buffers_per_trace * \
+    def handle_buffer(self, buffer, buffer_start_idx=0):
+
+        if self.buffer_idx >= self.buffers_per_trace * \
                              self.traces_per_acquisition():
-            # Segment the buffer into buffers for each channel
-            segmented_buffer = self.segment_buffer(buffer, scale_voltages=True)
-
-            # Determine the buffer idx offset in the trace
-            trace_offset = self.samples_per_record * \
-                           (self.buffer_idx % self.buffers_per_trace)
-            idx = (self.trace_idx,
-                   slice(trace_offset, trace_offset + self.samples_per_record))
-
-            # Save buffer components into each channel dataset
-            for ch, ch_name in enumerate(self.channel_selection):
-                self.buffers[ch][idx] = segmented_buffer[ch_name]
-        else:
             print('Ignoring extra ATS buffer {}'.format(self.buffer_idx))
+            return None
+
+        # Segment the buffer into buffers for each channel
+        segmented_buffer = self.segment_buffer(buffer, scale_voltages=True)
+
+        # Determine the slice where the buffer segments should go in the traces,
+        # and possibly cut the segments if they start at nonzero idx,
+        # or if they don't fit completely in a trace
+        if self.buffer_idx == -1:
+            # This is the first (incomplete) buffer, whose starting idx is
+            # buffer_start_idx, add it to the beginning of the segmented buffer
+            buffer_slice = slice(None,
+                                 self.samples_per_record - buffer_start_idx)
+            for ch_name, buffer_segment in segmented_buffer.items():
+                # Shorten each of the segments to start from buffer_start_idx
+                segmented_buffer[ch_name] = buffer_segment[buffer_start_idx:]
+        else:
+            # Determine the buffer idx offset in the trace
+            trace_offset = buffer_start_idx + self.samples_per_record * \
+                           (self.buffer_idx % self.buffers_per_trace)
+
+            if trace_offset+self.samples_per_record > self.samples_per_trace():
+                # Buffer does not fit completely in a trace, cutting buffer
+                buffer_slice = slice(trace_offset, self.samples_per_trace())
+                for ch_name, buffer_segment in segmented_buffer.items():
+                    # Shorten each of the segments to stop at samples_per_trace
+                    max_idx = self.samples_per_trace() - trace_offset
+                    segmented_buffer[ch_name] = buffer_segment[:max_idx]
+            else:
+               buffer_slice = slice(trace_offset,
+                                    trace_offset + self.samples_per_record)
+
+        # Save buffer components into each channel dataset
+        for ch, ch_name in enumerate(self.channel_selection):
+            self.buffers[ch][self.trace_idx, buffer_slice] = \
+                segmented_buffer[ch_name]
+
         self.buffer_idx += 1
-        if not self.buffer_idx % self.buffers_per_trace:
+        if self.buffer_idx and not self.buffer_idx % self.buffers_per_trace:
             # Filled a trace
             self.trace_idx += 1
 
@@ -388,7 +413,7 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                 self.stage('read')
                 print('starting readout after {:.2f} s, buffers {}'.format(
                     time.time()-self.t0, self.buffer_idx))
-                self.buffer_idx = 0
+                self.buffer_idx = -1
                 # TODO add segment of the buffer after the trigger,
                 # since this is technically also part of readout
 
