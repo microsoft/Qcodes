@@ -20,7 +20,7 @@ The goal is a common framework for physics experiments, so:
 - code can and should contributed back to the framework
 - the process of moving between teams or labs, and of setting up
   a new experiment is streamlined
-- physics experiment can take advantage of modern software and best practices 
+- physics experiments can take advantage of modern software and best practices 
 
 
 See how easy it is to run for yourself:
