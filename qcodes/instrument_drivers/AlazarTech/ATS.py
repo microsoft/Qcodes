@@ -2,7 +2,6 @@ import ctypes
 import logging
 import numpy as np
 import os
-import inspect
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
