@@ -115,7 +115,7 @@ class HD_Samples_Controller(AcquisitionController):
             samples_delay_min = (self.numtaps - 1)
             if samp_delay < samples_delay_min:
                 int_delay_min = samples_delay_min / sample_rate
-                Warning(
+                logging.warning(
                     'delay is less than recommended for filter choice: '
                     '(expect delay >= {}'.format(int_delay_min))
         else:
@@ -125,7 +125,7 @@ class HD_Samples_Controller(AcquisitionController):
             int_time = kwargs.pop('int_time')
             samp_time = int_time * sample_rate
             samples_time_max = (samples_per_record - samp_delay)
-            oscilations_measured = int_time / self.demodulation_frequency
+            oscilations_measured = int_time * self.demodulation_frequency
             oversampling = sample_rate / (2 * self.demodulation_frequency)
             if samp_time > samples_time_max:
                 int_time_max = samples_time_max / sample_rate
@@ -143,11 +143,11 @@ class HD_Samples_Controller(AcquisitionController):
         else:
             samp_time = samples_per_record - samp_delay
 
-        self.samples_time = samp_time
-        self.samples_delay = samp_delay
+        self.samples_time = int(samp_time)
+        self.samples_delay = int(samp_delay)
         
         
-        self.acquisition.update_acquisition_kwargs(samp_time, **kwargs)
+        self.acquisition.update_acquisition_kwargs(self.samples_time, **kwargs)
 
     def pre_start_capture(self):
         """
@@ -253,10 +253,10 @@ class HD_Samples_Controller(AcquisitionController):
             im_filtered = helpers.filter_ls(im_wave, cutoff,
                                             self.sample_rate, self.numtaps)
 
-        # apply int limits
+        # apply integration limits
         start = self.samples_delay
         if self.samples_time:
-            end = self.samples_time * self.sample_rate + start
+            end = int(self.samples_time * self.sample_rate) + start
         else:
             end = None
         re_limited = re_filtered[start:end]
