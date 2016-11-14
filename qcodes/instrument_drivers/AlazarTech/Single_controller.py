@@ -1,6 +1,7 @@
+import logging
 from .ATS import AcquisitionController
 import numpy as np
-from scipy import signal
+import qcodes.utils.helpers as helpers
 
 
 class HD_Controller(AcquisitionController):
@@ -26,9 +27,9 @@ class HD_Controller(AcquisitionController):
     TODO(nataliejpg) make filter settings not hard coded
     """
 
-    def __init__(self, name, alazar_name, demod_freq, samp_rate=500e6,
-                 filt='win', chan_b=False, **kwargs):
-        filter_dict = {'win': 0, 'hamming': 1, 'ls': 2}
+    def __init__(self, name, alazar_name, demod_freq, samp_rate=5e8, filt='win',
+             numtaps=101, chan_b=False, **kwargs):
+        filter_dict = {'win': 0, 'ls': 1, 'dot': 2}
         self.demodulation_frequency = demod_freq
         self.sample_rate = samp_rate
         self.filter = filter_dict[filt]
@@ -39,6 +40,8 @@ class HD_Controller(AcquisitionController):
         self.records_per_buffer = 0
         self.buffers_per_acquisition = 0
         self.number_of_channels = 2
+        self.samples_delay = None
+        self.samples_time = None
         self.cos_list = None
         self.sin_list = None
         self.buffer = None
@@ -58,6 +61,45 @@ class HD_Controller(AcquisitionController):
         :param kwargs:
         :return:
         """
+        samples_per_record = kwargs['samples_per_record']
+        sample_rate = self.sample_rate
+
+        if 'int_delay' in kwargs:
+            int_delay = kwargs['int_delay']
+            samp_delay = int_delay * sample_rate
+            samples_delay_min = (self.numtaps - 1)
+            if samp_delay < samples_delay_min:
+                int_delay_min = samples_delay_min / sample_rate
+                Warning(
+                    'delay is less than recommended for filter choice: '
+                    '(expect delay >= {}'.format(int_delay_min))
+        else:
+            samp_delay = self.numtaps - 1
+
+        if 'int_time' in kwargs:
+            int_time = kwargs['int_time']
+            samp_time = int_time * sample_rate
+            samples_time_max = (samples_per_record - samp_delay)
+            oscilations_measured = int_time / self.demodulation_frequency
+            oversampling = sample_rate / (2 * self.demodulation_frequency)
+            if samp_time > samples_time_max:
+                int_time_max = samples_time_max / sample_rate
+                raise ValueError('int_time {} is longer than total_time - '
+                                 'delay ({})'.format(int_time, int_time_max))
+            elif oscilations_measured < 10:
+                logging.warning('{} oscilations measured, recommend at '
+                                'least 10: decrease sampling rate, take '
+                                'more samples or increase demodulation '
+                                'freq'.format(oscilations_measured))
+            elif oversampling < 1:
+                logging.warning('oversampling rate is {}, recommend > 1: '
+                                'increase sampling rate or decrease '
+                                'demodulation frequency'.format(oversampling))
+        else:
+            samp_time = samples_per_record - samp_delay
+
+        self.samples_time = samp_time
+        self.samples_delay = samp_delay
         self.acquisitionkwargs.update(**kwargs)
 
     def do_acquisition(self):

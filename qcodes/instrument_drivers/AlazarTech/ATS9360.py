@@ -266,6 +266,8 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            value=1000,
                            vals=validators.Ints(min_value=0))
 
+        
+
         model = self.get_idn()['model']
         if model != 'ATS9360':
             raise Exception("The Alazar board kind is not 'ATS9360',"

@@ -540,7 +540,7 @@ class AlazarTech_ATS(Instrument):
             if (samples_per_record % buffers_per_acquisition != 0):
                 logging.warning('buffers_per_acquisition is not a divisor of '
                                 'samples per record which it should be in '
-                                'TS mode, rounding down in samples per buffer '
+                                's mode, rounding down in samples per buffer '
                                 'calculation')
             samples_per_buffer = int(samples_per_record /
                                      buffers_per_acquisition)
