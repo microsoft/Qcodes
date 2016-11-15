@@ -120,7 +120,7 @@ class QtPlot(QWidget, BasePlot):
     """
 
     def __init__(self, *args, figsize=(1000, 600), figposition=None,
-                 interval=0.25, windowtitle=None, theme=((60, 60, 60), 'w'),
+                 interval=0.25, window_title=None, theme=((60, 60, 60), 'w'),
                  show_window=True, parent=None, **kwargs):
         QWidget.__init__(self, parent=parent)
         # Set base interval to None to disable that JS update-widget thingy
@@ -134,7 +134,7 @@ class QtPlot(QWidget, BasePlot):
         self.interval = interval
         self.auto_updating = False
 
-        self.setWindowTitle(windowtitle or 'Plotwindow')
+        self.setWindowTitle(window_title or 'Plotwindow')
         if figposition:
             self.setGeometry(*figposition, *figsize)
         else:
