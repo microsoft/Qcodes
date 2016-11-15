@@ -151,7 +151,7 @@ class HD_Samples_Controller(AcquisitionController):
     def pre_start_capture(self):
         """
         Called before capture start to update Acquisition Controller with
-        alazar acuisition params and set up software wave for demodulation.
+        alazar acquisition params and set up software wave for demodulation.
         :return:
         """
         alazar = self._get_alazar()
@@ -192,15 +192,13 @@ class HD_Samples_Controller(AcquisitionController):
         nb: currently only channel A
         :return: samples_magnitude_array, samples_phase_array
         """
-        records_per_acquisition = (1. * self.buffers_per_acquisition *
+        records_per_acquisition = (self.buffers_per_acquisition *
                                    self.records_per_buffer)
         # for ATS9360 samples are arranged in the buffer as follows:
         # S00A, S00B, S01A, S01B...S10A, S10B, S11A, S11B...
         # where SXYZ is record X, sample Y, channel Z.
 
         # break buffer up into records and averages over them
-        records_per_acquisition = (self.buffers_per_acquisition *
-                                   self.records_per_buffer)
         recordA = np.zeros(self.samples_per_record, dtype=np.uint16)
         for i in range(self.records_per_buffer):
             i0 = (i * self.samples_per_record * self.number_of_channels)
@@ -213,14 +211,15 @@ class HD_Samples_Controller(AcquisitionController):
 
         # same for chan b
         if self.chan_b:
-            recordB = np.zeros(self.samples_per_record, dtype=np.uint16)
-            for i in range(self.records_per_buffer):
-                i0 = (i * self.samples_per_record *
-                      self.number_of_channels + 1)
-                i1 = (i0 + self.samples_per_record * self.number_of_channels)
-                recordB += np.uint16(self.buffer[i0:i1:self.number_of_channels] /
-                                     records_per_acquisition)
-            magB, phaseB = self.fit(recordB)
+            raise NotImplementedError('chan b code not complete')
+            # recordB = np.zeros(self.samples_per_record, dtype=np.uint16)
+            # for i in range(self.records_per_buffer):
+            #     i0 = (i * self.samples_per_record *
+            #           self.number_of_channels + 1)
+            #     i1 = (i0 + self.samples_per_record * self.number_of_channels)
+            #     recordB += np.uint16(self.buffer[i0:i1:self.number_of_channels] /
+            #                          records_per_acquisition)
+            # magB, phaseB = self.fit(recordB)
 
         return magA, phaseA
 
