@@ -197,8 +197,6 @@ class HD_Records_Controller(AcquisitionController):
         :return: samples_magnitude_array, samples_phase_array
         """
 
-        records_per_acquisition = (self.buffers_per_acquisition *
-                                   self.records_per_buffer)
         # for ATS9360 samples are arranged in the buffer as follows:
         # S00A, S00B, S01A, S01B...S10A, S10B, S11A, S11B...
         # where SXYZ is record X, sample Y, channel Z.
@@ -209,8 +207,6 @@ class HD_Records_Controller(AcquisitionController):
         for i in range(self.records_per_buffer):
             i0 = (i * self.samples_per_record * self.number_of_channels)
             i1 = (i0 + self.samples_per_record * self.number_of_channels)
-            recordA += np.uint16(self.buffer[i0:i1:self.number_of_channels] /
-                                 records_per_acquisition)
             recordA[:, i] = np.uint16(
                 self.buffer[i0:i1:self.number_of_channels] /
                 self.buffers_per_acquisition)

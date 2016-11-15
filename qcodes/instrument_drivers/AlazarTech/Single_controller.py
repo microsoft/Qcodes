@@ -168,12 +168,12 @@ class HD_Controller(AcquisitionController):
         # where SXYZ is record X, sample Y, channel Z.
 
         # break buffer up into records and averages over them
-        recordA = np.zeros(self.samples_per_record, dtype=np.uint16)
+        recA = np.zeros(self.samples_per_record)
         for i in range(self.records_per_buffer):
             i0 = (i * self.samples_per_record * self.number_of_channels)
             i1 = (i0 + self.samples_per_record * self.number_of_channels)
-            recordA += np.uint16(self.buffer[i0:i1:self.number_of_channels] /
-                                 records_per_acquisition)
+            recA += self.buffer[i0:i1:self.number_of_channels]
+        recordA = np.uint16(recA / records_per_acquisition)
 
         # do demodulation
         magA, phaseA = self.fit(recordA)

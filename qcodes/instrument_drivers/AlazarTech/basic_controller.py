@@ -128,19 +128,19 @@ class Basic_Acquisition_Controller(AcquisitionController):
         # break buffer up into records, averages over them and returns samples
         records_per_acquisition = (self.buffers_per_acquisition *
                                    self.records_per_buffer)
-        recordA = np.zeros(self.samples_per_record, dtype=np.uint16)
+        recA = np.zeros(self.samples_per_record)
         for i in range(self.records_per_buffer):
             i0 = (i * self.samples_per_record * self.number_of_channels)
             i1 = (i0 + self.samples_per_record * self.number_of_channels)
-            recordA += np.uint16(self.buffer[i0:i1:self.number_of_channels] /
-                                 records_per_acquisition)
+            recA += self.buffer[i0:i1:self.number_of_channels]
+        recordA = np.uint16(recA / records_per_acquisition)
 
-        recordB = np.zeros(self.samples_per_record, dtype=np.uint16)
+        recB = np.zeros(self.samples_per_record)
         for i in range(self.records_per_buffer):
             i0 = (i * self.samples_per_record * self.number_of_channels + 1)
             i1 = (i0 + self.samples_per_record * self.number_of_channels)
-            recordB += np.uint16(self.buffer[i0:i1:self.number_of_channels] /
-                                 records_per_acquisition)
+            recB += self.buffer[i0:i1:self.number_of_channels]
+        recordB = np.uint16(recB / records_per_acquisition)
 
         bps = self.board_info['bits_per_sample']
         if bps == 12:
