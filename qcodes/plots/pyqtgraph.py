@@ -3,6 +3,7 @@ Live plotting using pyqtgraph
 """
 
 import numpy as np
+import itertools
 
 from qtpy import QtCore, QtGui, QtWidgets
 from qtpy.QtWidgets import QWidget, QShortcut, QHBoxLayout
@@ -136,7 +137,8 @@ class QtPlot(QWidget, BasePlot):
 
         self.setWindowTitle(window_title or 'Plotwindow')
         if figposition:
-            self.setGeometry(*figposition, *figsize)
+            geometry_settings = itertools.chain(figposition,figsize)
+            self.setGeometry(*geometry_settings)
         else:
             self.resize(*figsize)
 
