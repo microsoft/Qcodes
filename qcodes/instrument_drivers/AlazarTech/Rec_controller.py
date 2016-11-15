@@ -2,7 +2,7 @@ import logging
 from .ATS import AcquisitionController
 import numpy as np
 from qcodes import Parameter
-import qcodes.utils.helpers as helpers
+from qcodes.utils.helpers import filter_win, filter_ls
 
 
 class RecordsParam(Parameter):
@@ -211,8 +211,9 @@ class HD_Records_Controller(AcquisitionController):
             i1 = (i0 + self.samples_per_record * self.number_of_channels)
             recordA += np.uint16(self.buffer[i0:i1:self.number_of_channels] /
                                  records_per_acquisition)
-            recordA[:, i] = np.uint16((self.buffer[i0:i1:self.number_of_channels] /
-                                       self.buffers_per_acquisition))
+            recordA[:, i] = np.uint16(
+                self.buffer[i0:i1:self.number_of_channels] /
+                self.buffers_per_acquisition)
 
         # do demodulation
         magA, phaseA = self.fit(recordA)
@@ -247,20 +248,18 @@ class HD_Records_Controller(AcquisitionController):
 
         # filter out higher freq component
         if self.filter == 0:
-            re_filtered = helpers.filter_win(re_wave, cutoff, self.sample_rate,
-                                             self.numtaps, axis=ax)
-            im_filtered = helpers.filter_win(im_wave, cutoff, self.sample_rate,
-                                             self.numtaps, axis=ax)
+            re_filtered = filter_win(re_wave, cutoff, self.sample_rate,
+                                     self.numtaps, axis=ax)
+            im_filtered = filter_win(im_wave, cutoff, self.sample_rate,
+                                     self.numtaps, axis=ax)
         elif self.filter == 1:
-            re_filtered = helpers.filter_ls(re_wave, cutoff, self.sample_rate,
-                                            self.numtaps, axis=ax)
-            im_filtered = helpers.filter_ls(im_wave, cutoff, self.sample_rate,
-                                            self.numtaps, axis=ax)
+            re_filtered = filter_ls(re_wave, cutoff, self.sample_rate,
+                                    self.numtaps, axis=ax)
+            im_filtered = filter_ls(im_wave, cutoff, self.sample_rate,
+                                    self.numtaps, axis=ax)
         elif self.filter == 2:
-            re_filtered = helpers.filter_dot(re_wave, cutoff, self.sample_rate,
-                                             self.numtaps, axis=ax)
-            im_filtered = helpers.filter_dot(im_wave, cutoff, self.sample_rate,
-                                             self.numtaps, axis=ax)
+            re_filtered = re_wave
+            im_filtered = im_wave
 
         # apply integration limits
         start = self.samples_delay

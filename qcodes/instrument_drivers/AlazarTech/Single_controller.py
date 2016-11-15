@@ -225,10 +225,8 @@ class HD_Controller(AcquisitionController):
             im_filtered = helpers.filter_ls(im_wave, cutoff,
                                             self.sample_rate, self.numtaps)
         elif self.filter == 2:
-            re_filtered = helpers.filter_dot(re_wave, cutoff,
-                                             self.sample_rate, self.numtaps)
-            im_filtered = helpers.filter_dot(im_wave, cutoff,
-                                             self.sample_rate, self.numtaps)
+            re_filtered = re_wave
+            im_filtered = im_wave
 
         # apply integration limits
         start = self.samples_delay

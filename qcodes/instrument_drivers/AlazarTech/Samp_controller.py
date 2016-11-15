@@ -2,7 +2,7 @@ import logging
 from .ATS import AcquisitionController
 import numpy as np
 from qcodes import Parameter
-import qcodes.utils.helpers as helpers
+from qcodes.utils.helpers import filter_win, filter_ls
 
 
 class SamplesParam(Parameter):
@@ -246,15 +246,15 @@ class HD_Samples_Controller(AcquisitionController):
 
         # filter out higher freq component
         if self.filter == 0:
-            re_filtered = helpers.filter_win(re_wave, cutoff,
-                                             self.sample_rate, self.numtaps)
-            im_filtered = helpers.filter_win(im_wave, cutoff,
-                                             self.sample_rate, self.numtaps)
+            re_filtered = filter_win(re_wave, cutoff,
+                                     self.sample_rate, self.numtaps)
+            im_filtered = filter_win(im_wave, cutoff,
+                                     self.sample_rate, self.numtaps)
         elif self.filter == 1:
-            re_filtered = helpers.filter_ls(re_wave, cutoff,
-                                            self.sample_rate, self.numtaps)
-            im_filtered = helpers.filter_ls(im_wave, cutoff,
-                                            self.sample_rate, self.numtaps)
+            re_filtered = filter_ls(re_wave, cutoff,
+                                    self.sample_rate, self.numtaps)
+            im_filtered = filter_ls(im_wave, cutoff,
+                                    self.sample_rate, self.numtaps)
 
         # apply integration limits
         start = self.samples_delay
