@@ -24,7 +24,7 @@ class SamplesParam(Parameter):
         self.setpoints = ((1,), (1,))
         self.shapes = ((1,), (1,))
 
-    def update_acquisition_kwargs(self, samp_time=None, **kwargs):
+    def update_acquisition_kwargs(self, samp_time, **kwargs):
         # needed to update config of the software parameter on sweep change
         # freq setpoints tuple as needs to be hashable for look up
         if samp_time:
@@ -32,14 +32,14 @@ class SamplesParam(Parameter):
             n = tuple(np.arange(npts))
             self.setpoints = ((n,), (n,))
             self.shapes = ((npts,), (npts,))
-        elif 'samples_per_record' in kwargs:
-            npts = kwargs['samples_per_record']
-            n = tuple(np.arange(npts))
-            self.setpoints = ((n,), (n,))
-            self.shapes = ((npts,), (npts,))
+        # elif 'samples_per_record' in kwargs:
+            # npts = kwargs['samples_per_record']
+            # n = tuple(np.arange(npts))
+            # self.setpoints = ((n,), (n,))
+            # self.shapes = ((npts,), (npts,))
         else:
             raise ValueError(
-                'samples_per_record or sample_num must be specified')
+                'samp_time not specified')
         # updates dict to be used in acquisition get call
         self.acquisitionkwargs.update(**kwargs)
 
@@ -82,9 +82,9 @@ class HD_Samples_Controller(AcquisitionController):
         self.filter = filter_dict[filt]
         self.numtaps = numtaps
         self.chan_b = chan_b
-        self.samples_per_record = 0
-        self.records_per_buffer = 0
-        self.buffers_per_acquisition = 0
+        self.samples_per_record = None
+        self.records_per_buffer = None
+        self.buffers_per_acquisition = None
         self.number_of_channels = 2
         self.samples_delay = None
         self.samples_time = None
@@ -130,7 +130,7 @@ class HD_Samples_Controller(AcquisitionController):
             if samp_time > samples_time_max:
                 int_time_max = samples_time_max / sample_rate
                 raise ValueError('int_time {} is longer than total_time - '
-                                 'delay ({})'.format(int_time, int_time_max))
+                                 'delay: {}'.format(int_time, int_time_max))
             elif oscilations_measured < 10:
                 logging.warning('{} oscilations measured, recommend at '
                                 'least 10: decrease sampling rate, take '
@@ -255,10 +255,8 @@ class HD_Samples_Controller(AcquisitionController):
 
         # apply integration limits
         start = self.samples_delay
-        if self.samples_time:
-            end = int(self.samples_time * self.sample_rate) + start
-        else:
-            end = None
+        end = start + self.samples_time
+        
         re_limited = re_filtered[start:end]
         im_limited = im_filtered[start:end]
 
