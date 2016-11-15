@@ -11,7 +11,7 @@ class SamplesParam(Parameter):
     HD_Samples_Controller (tested with ATS9360 board) for return of an array of
     sample data from the Alazar, averaged over records and buffers.
 
-    TODO(nataliejpg) fix setpoints/shapes horriblenesss
+    TODO(nataliejpg) refactor setpoints/shapes horriblenesss
     """
 
     def __init__(self, name, instrument):
@@ -32,11 +32,6 @@ class SamplesParam(Parameter):
             n = tuple(np.arange(npts))
             self.setpoints = ((n,), (n,))
             self.shapes = ((npts,), (npts,))
-        # elif 'samples_per_record' in kwargs:
-            # npts = kwargs['samples_per_record']
-            # n = tuple(np.arange(npts))
-            # self.setpoints = ((n,), (n,))
-            # self.shapes = ((npts,), (npts,))
         else:
             raise ValueError(
                 'samp_time not specified')
@@ -61,16 +56,15 @@ class HD_Samples_Controller(AcquisitionController):
         can communicate with the Alazar
     demod_freq: the frequency of the software wave to be created
     samp_rate: the rate of sampling
-    filt: the filter to be used to filter out double freq component
+    filt: the filter to be used to filter out double freq component (win or ls)
+    numtaps: number of freq components used in the filter
     chan_b: whether there is also a second channel of data to be processed
         and returned
     **kwargs: kwargs are forwarded to the Instrument base class
 
     TODO(nataliejpg) fix sample rate problem
     TODO(nataliejpg) test filter options
-    TODO(nataliejpg) test mag phase logic
     TODO(nataliejpg) finish implementation of channel b option
-    TODO(nataliejpg) update docstrings :P
     TODO(nataliejpg) make demodulation freq a param
     """
 
@@ -101,8 +95,14 @@ class HD_Samples_Controller(AcquisitionController):
 
     def update_acquisitionkwargs(self, **kwargs):
         """
-        This method must be used to update the kwargs used for the acquisition
-        with the alazar_driver.acquire
+        Updates the kwargs to be used when
+        alazar_driver.acquire is called via a get call of the
+        acquisition SamplesParam.
+
+        It is also used to set the limits on the selection of
+        samples returned (bounded by delay and integration time)
+        and update this information in the Samples Parameter.
+
         :param kwargs:
         :return:
         """
@@ -145,13 +145,13 @@ class HD_Samples_Controller(AcquisitionController):
 
         self.samples_time = int(samp_time)
         self.samples_delay = int(samp_delay)
-        
-        
+
         self.acquisition.update_acquisition_kwargs(self.samples_time, **kwargs)
 
     def pre_start_capture(self):
         """
-        See AcquisitionController
+        Called before capture start to update Acquisition Controller with
+        alazar acuisition params and set up software wave for demodulation.
         :return:
         """
         alazar = self._get_alazar()
@@ -176,23 +176,21 @@ class HD_Samples_Controller(AcquisitionController):
         See AcquisitionController
         :return:
         """
-        # this could be used to start an Arbitrary Waveform Generator, etc...
-        # using this method ensures that the contents are executed AFTER the
-        # Alazar card starts listening for a trigger pulse
         pass
 
     def handle_buffer(self, data):
         """
-        See AcquisitionController
+        Adds data from alazar to buffer (effectively averaging)
         :return:
         """
-        # average over buffers
         self.buffer += data
 
     def post_acquire(self):
         """
-        See AcquisitionController
-        :return:
+        Processes the data according to ATS9360 settings, splitting into
+        records and averaging over them, then applying demodulation fit
+        nb: currently only channel A
+        :return: samples_magnitude_array, samples_phase_array
         """
         records_per_acquisition = (1. * self.buffers_per_acquisition *
                                    self.records_per_buffer)
@@ -227,13 +225,19 @@ class HD_Samples_Controller(AcquisitionController):
         return magA, phaseA
 
     def fit(self, rec):
+        """
+        Applies volts conversion, demodulation fit, low bandpass filter
+        and integration limits to samples array
+        :return: samples_magnitude_array, samples_phase_array
+        """
+
         # convert rec to volts
         bps = self.board_info['bits_per_sample']
         if bps == 12:
             volt_rec = sample_to_volt_u12(rec, bps)
         else:
-            Warning('sample to volt conversion does not exist for'
-                    ' bps != 12, centered raw samples returned')
+            logging.warning('sample to volt conversion does not exist for'
+                            ' bps != 12, centered raw samples returned')
             volt_rec = rec - np.mean(rec)
 
         # multiply with software wave
@@ -256,7 +260,7 @@ class HD_Samples_Controller(AcquisitionController):
         # apply integration limits
         start = self.samples_delay
         end = start + self.samples_time
-        
+
         re_limited = re_filtered[start:end]
         im_limited = im_filtered[start:end]
 
@@ -269,6 +273,12 @@ class HD_Samples_Controller(AcquisitionController):
 
 
 def sample_to_volt_u12(raw_samples, bps):
+    """
+    Applies volts conversion for 12 bit sample data stored
+    in 2 bytes
+    :return: samples_magnitude_array, samples_phase_array
+    """
+
     # right_shift 16-bit sample by 4 to get 12 bit sample
     shifted_samples = np.right_shift(raw_samples, 4)
 

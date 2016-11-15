@@ -1,7 +1,7 @@
+import logging
 from .ATS import AcquisitionController
 import numpy as np
 from qcodes import Parameter
-#from.acquistion_tools import sample_to_volt_u12
 
 
 class SampleSweep(Parameter):
@@ -147,11 +147,13 @@ class Basic_Acquisition_Controller(AcquisitionController):
             volt_rec_A = sample_to_volt_u12(recordA, bps)
             volt_rec_B = sample_to_volt_u12(recordB, bps)
         else:
-            Warning('sample to volt conversion does not exist for bps != 12, raw samples returned')
+            logging.warning('sample to volt conversion does not exist for bps '
+                            '!= 12, raw samples centered on 0 returned')
             volt_rec_A = recordA - np.mean(recordA)
             volt_rec_B = recordB - np.mean(recordB)
 
         return volt_rec_A, volt_rec_B
+
 
 def sample_to_volt_u12(raw_samples, bps):
     # right_shift 16-bit sample by 4 to get 12 bit sample
@@ -161,10 +163,10 @@ def sample_to_volt_u12(raw_samples, bps):
     code_zero = (1 << (bps - 1)) - 0.5
     code_range = (1 << (bps - 1)) - 0.5
 
-    # TODO(nataliejpg) make this not hard coded 
+    # TODO(nataliejpg) make this not hard coded
     input_range_volts = 1
     # Convert to volts
     volt_samples = np.float64(input_range_volts *
-                    (shifted_samples - code_zero) / code_range)
-                    
+                              (shifted_samples - code_zero) / code_range)
+
     return volt_samples
