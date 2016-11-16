@@ -636,6 +636,17 @@ class QtPlot(QWidget, BasePlot):
                 units = self.get_units(config[axletter])
                 ax.setLabel(label, units)
 
+    def update(self):
+        """
+        Update the data in this plot, using the updaters given with
+        MatPlot.add() or in the included DataSets, then include this in
+        the plot.
+        This is a wrapper routine that the update widget calls,
+        inside this we call self.update() which should be subclassed
+        """
+        BasePlot.update(self)
+        QWidget.update(self)
+        
     def update_plot(self):
         for trace in self.traces:
             config = trace['config']
