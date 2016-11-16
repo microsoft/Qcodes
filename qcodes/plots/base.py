@@ -324,3 +324,12 @@ class BasePlot:
         """
         if hasattr(self, 'update_widget'):
             self.update_widget.halt()
+
+    def save(self, filename=None):
+        """
+        Save current plot to filename
+
+        Args:
+            filename (Optional[str]): Location of the file
+        """
+        raise NotImplementedError
