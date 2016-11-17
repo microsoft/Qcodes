@@ -164,7 +164,7 @@ reports, contributing code, style, and testing
 License
 =======
 
-See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.md>`__.
+See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.rst>`__.
 
 .. |Build Status| image:: https://travis-ci.org/QCoDeS/Qcodes.svg?branch=master
     :target: https://travis-ci.org/QCoDeS/Qcodes
