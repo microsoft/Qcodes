@@ -18,8 +18,11 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            unit=None,
                            value='EXTERNAL_CLOCK_10MHz_REF',
                            byte_to_value_dict={1: 'INTERNAL_CLOCK',
+                                               2: 'EXTERNAL_CLOCK',
+                                               3: 'MEDIUM_EXTERNAL_CLOCK',
                                                4: 'SLOW_EXTERNAL_CLOCK',
                                                5: 'EXTERNAL_CLOCK_AC',
+                                               6: 'EXTERNAL_CLOCK_DC',
                                                7: 'EXTERNAL_CLOCK_10MHz_REF'})
         self.add_parameter(name='sample_rate',
                            parameter_class=AlazarParameter,
@@ -100,7 +103,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                                parameter_class=AlazarParameter,
                                label='Trigger Source ' + i,
                                unit=None,
-                               value='DISABLE',
+                               value='EXTERNAL',
                                byte_to_value_dict={0: 'CHANNEL_A',
                                                    1: 'CHANNEL_B',
                                                    2: 'EXTERNAL',
@@ -252,12 +255,11 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            value='DISABLED',
                            byte_to_value_dict={0x0: 'DISABLED',
                                                0x2000: 'ENABLED'})
-
         self.add_parameter(name='allocated_buffers',
                            parameter_class=AlazarParameter,
                            label='Allocated Buffers',
                            unit=None,
-                           value=2,
+                           value=4,
                            vals=validators.Ints(min_value=0))
         self.add_parameter(name='buffer_timeout',
                            parameter_class=AlazarParameter,

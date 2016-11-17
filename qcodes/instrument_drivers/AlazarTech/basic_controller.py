@@ -63,7 +63,6 @@ class Basic_Acquisition_Controller(AcquisitionController):
         self.samples_per_record = 0
         self.records_per_buffer = 0
         self.buffers_per_acquisition = 0
-        # TODO(damazter) (S) this is not very general:
         self.number_of_channels = 2
         self.buffer = None
         self.board_info = None
@@ -95,8 +94,7 @@ class Basic_Acquisition_Controller(AcquisitionController):
         self.board_info = alazar.get_idn()
         self.buffer = np.zeros(self.samples_per_record *
                                self.records_per_buffer *
-                               self.number_of_channels,
-                               dtype=np.uint16)
+                               self.number_of_channels)
 
     def pre_acquire(self):
         """

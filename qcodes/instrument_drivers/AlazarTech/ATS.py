@@ -571,12 +571,12 @@ class AlazarTech_ATS(Instrument):
         # bytes per sample
         max_s, bps = self._get_channel_info(self._handle)
         bytes_per_sample = (bps + 7) // 8
-        print("bytes per sample "+str(bytes_per_sample))
+        #print("bytes per sample "+str(bytes_per_sample))
 
         # bytes per record
         bytes_per_record = bytes_per_sample * samples_per_record
-        print("samples_per_record is "+str(samples_per_record))
-        print("bytes per record is "+str(bytes_per_record))
+        #print("samples_per_record is "+str(samples_per_record))
+        #print("bytes per record is "+str(bytes_per_record))
 
         # channels
         if self.channel_selection._get_byte() == 3:
@@ -594,9 +594,9 @@ class AlazarTech_ATS(Instrument):
             sample_type = ctypes.c_uint16
 
         # TODO(nataliejpg) get rid of all of thes print statements
-        print("samples_per_buffer is "+str(samples_per_buffer))
-        print("bytes_per_buffer  is "+str(bytes_per_buffer))
-        print("records_per_buffer is "+str(records_per_buffer))
+        #print("samples_per_buffer is "+str(samples_per_buffer))
+        #print("bytes_per_buffer  is "+str(bytes_per_buffer))
+        #print("records_per_buffer is "+str(records_per_buffer))
 
         self.clear_buffers()
         # make sure that allocated_buffers <= buffers_per_acquisition
@@ -624,7 +624,7 @@ class AlazarTech_ATS(Instrument):
             self._call_dll('AlazarPostAsyncBuffer',
                            self._handle, buf.addr, buf.size_bytes)
         self.allocated_buffers._set_updated()
-        print("completed AlazarPostAsyncBuffer")
+        #print("completed AlazarPostAsyncBuffer")
 
         # -----start capture here-----
         acquisition_controller.pre_start_capture()
@@ -682,9 +682,6 @@ class AlazarTech_ATS(Instrument):
         for p in self.parameters.values():
             p.get()
 
-        # return result
-        return acquisition_controller.post_acquire()
-
         # Compute the total transfer time, and display performance information.
         transfer_time_sec = time.clock() - start
         print("Capture completed in %f sec" % transfer_time_sec)
@@ -701,6 +698,9 @@ class AlazarTech_ATS(Instrument):
               (records_per_buffer * buffers_completed, records_per_sec))
         print("Transferred %d bytes (%f bytes per sec)" %
               (bytes_transferred, bytes_per_sec))
+              
+        # return result
+        return acquisition_controller.post_acquire()
 
     def _set_if_present(self, param_name, value):
         if value is not None:

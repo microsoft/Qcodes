@@ -161,8 +161,7 @@ class HD_Samples_Controller(AcquisitionController):
         self.board_info = alazar.get_idn()
         self.buffer = np.zeros(self.samples_per_record *
                                self.records_per_buffer *
-                               self.number_of_channels,
-                               dtype=np.uint16)
+                               self.number_of_channels)
 
         integer_list = np.arange(self.samples_per_record, dtype=np.uint16)
         angle_list = (2 * np.pi * self.demodulation_frequency /
@@ -205,7 +204,7 @@ class HD_Samples_Controller(AcquisitionController):
             i1 = (i0 + self.samples_per_record * self.number_of_channels)
             recA += self.buffer[i0:i1:self.number_of_channels]
         recordA = np.uint16(recA / records_per_acquisition)
-
+        
         # do demodulation
         magA, phaseA = self.fit(recordA)
 
