@@ -631,7 +631,9 @@ class QtPlot(QWidget, BasePlot):
         inside this we call self.update() which should be subclassed
         """
         BasePlot.update(self)
+
         QWidget.update(self)
+        QtWidgets.QApplication.processEvents()
 
     def update_plot(self):
         for trace in self.traces:
@@ -673,9 +675,11 @@ class QtPlot(QWidget, BasePlot):
 
         QtWidgets.QApplication.processEvents()
 
+        image = self.grab(self.area.contentsRect())
+
         app = pg.mkQApp()
         clipboard = app.clipboard()
-        clipboard.setPixmap(self.grab())
+        clipboard.setPixmap(image)
 
     def _repr_png_(self):
         """
@@ -703,10 +707,11 @@ class QtPlot(QWidget, BasePlot):
             filename (Optional[str]): Location of the file
         """
 
-        QtWidgets.QApplication.processEvents()
-
         default = "{}.png".format(self.get_default_title())
         filename = filename or default
-        image = self.win.grab()
+
+        QtWidgets.QApplication.processEvents()
+
+        image = self.grab(self.area.contentsRect())
         image.save(filename, "PNG", 0)
 
