@@ -668,8 +668,10 @@ class QtPlot(QWidget, BasePlot):
 
     def copy_to_clipboard(self):
         """
-        Copy the current image to a the system clipboard
+        Copy a screenshot of the current window to the system clipboard.
         """
+
+        QtWidgets.QApplication.processEvents()
 
         app = pg.mkQApp()
         clipboard = app.clipboard()
@@ -700,6 +702,9 @@ class QtPlot(QWidget, BasePlot):
         Args:
             filename (Optional[str]): Location of the file
         """
+
+        QtWidgets.QApplication.processEvents()
+
         default = "{}.png".format(self.get_default_title())
         filename = filename or default
         image = self.win.grab()
