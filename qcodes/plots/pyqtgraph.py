@@ -79,7 +79,7 @@ class Dock(dockarea.Dock):
         """
 
         QtWidgets.QApplication.processEvents()
-        
+
         image = self.grab()
         byte_array = QByteArray()
         buffer = QBuffer(byte_array)
@@ -206,22 +206,6 @@ class QtPlot(QWidget, BasePlot):
         Stop automatic updates to this plot, by disabling its update timer
         """
         self.auto_updating = False
-
-    def _repr_png_(self):
-        """
-        Create a png representation of the current window.
-        """
-
-        QtWidgets.QApplication.processEvents()
-
-        image = self.grab(self.area.contentsRect())
-
-        byte_array = QByteArray()
-        buffer = QBuffer(byte_array)
-        buffer.open(QIODevice.ReadWrite)
-        image.save(buffer, 'PNG')
-        buffer.close()
-        return bytes(byte_array)
 
     def clear(self):
         """
@@ -648,7 +632,7 @@ class QtPlot(QWidget, BasePlot):
         """
         BasePlot.update(self)
         QWidget.update(self)
-        
+
     def update_plot(self):
         for trace in self.traces:
             config = trace['config']
@@ -682,8 +666,42 @@ class QtPlot(QWidget, BasePlot):
 
         return pg.ColorMap(values, colors)
 
-    def copyToClipboard(self):
-        ''' Copy the current image to a the system clipboard '''
+    def copy_to_clipboard(self):
+        """
+        Copy the current image to a the system clipboard
+        """
+
         app = pg.mkQApp()
         clipboard = app.clipboard()
-        clipboard.setPixmap(QtGui.QPixmap.grabWidget(self))
+        clipboard.setPixmap(self.grab())
+
+    def _repr_png_(self):
+        """
+        Create a png representation of the current window.
+        """
+
+        QtWidgets.QApplication.processEvents()
+
+        image = self.grab(self.area.contentsRect())
+
+        byte_array = QByteArray()
+        buffer = QBuffer(byte_array)
+        buffer.open(QIODevice.ReadWrite)
+        image.save(buffer, 'PNG')
+        buffer.close()
+        return bytes(byte_array)
+
+    def save(self, filename=None):
+        """
+        Save current plot to filename, by default
+        to the location corresponding to the default
+        title.
+
+        Args:
+            filename (Optional[str]): Location of the file
+        """
+        default = "{}.png".format(self.get_default_title())
+        filename = filename or default
+        image = self.win.grab()
+        image.save(filename, "PNG", 0)
+
