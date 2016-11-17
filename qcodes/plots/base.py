@@ -279,6 +279,16 @@ class BasePlot:
                 if axletter not in kwargs:
                     kwargs[axletter] = set_array
 
+    def update(self):
+        """
+        Update the data in this plot, using the updaters given with
+        MatPlot.add() or in the included DataSets, then include this in
+        the plot.
+        This is a wrapper routine that the update widget calls,
+        inside this we call self.update() which should be subclassed
+        """
+        self.update_data()
+        
     def update_data(self):
         """
         Update the data in this plot, using the updaters given with
