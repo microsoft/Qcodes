@@ -449,17 +449,3 @@ def filter_ls(rec, cutoff, sample_rate, numtaps, axis=-1):
         axis of record to apply filter along
     """
     raise NotImplementedError
-
-def filter_dot(rec, cutoff, sample_rate, numtaps, axis=-1):
-    """
-    low pass filter, returns filtered signal using FIR
-    least squared filter
-
-    inputs:
-        record to filter
-        cutoff frequency
-        sampling rate
-        number of frequency comppnents to use in the filer
-        axis of record to apply filter along
-    """
-    raise NotImplementedError
