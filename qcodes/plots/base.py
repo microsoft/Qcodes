@@ -3,8 +3,7 @@ Live plotting in Jupyter notebooks
 """
 from IPython.display import display
 
-from qcodes.widgets.widgets import HiddenUpdateWidget
-
+from qcodes import config
 
 class BasePlot:
 
@@ -25,9 +24,11 @@ class BasePlot:
         self.data_keys = data_keys
         self.traces = []
         self.data_updaters = set()
-
+        # only import in name space if the gui is set to noebook
+        # and there is multiprocessing
         self.interval = interval
-        if interval:
+        if config['gui']['notebook'] and config['core']['legacy_mp']:
+            from qcodes.widgets.widgets import HiddenUpdateWidget
             self.update_widget = HiddenUpdateWidget(self.update, interval)
             display(self.update_widget)
 
@@ -278,3 +279,12 @@ class BasePlot:
         """
         if hasattr(self, 'update_widget'):
             self.update_widget.halt()
+
+    def save(self, filename=None):
+        """
+        Save current plot to filename
+
+        Args:
+            filename (Optional[str]): Location of the file
+        """
+        raise NotImplementedError

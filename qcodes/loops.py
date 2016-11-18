@@ -52,6 +52,7 @@ import time
 import numpy as np
 import warnings
 
+from qcodes import config
 from qcodes.station import Station
 from qcodes.data.data_set import new_data, DataMode
 from qcodes.data.data_array import DataArray
@@ -63,10 +64,8 @@ from qcodes.utils.metadata import Metadatable
 from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
                       BreakIf, _QcodesBreak)
 
-# Switches off multiprocessing by default, cant' be altered after module import.
-# TODO(giulioungaretti) use config.
-
-USE_MP = False
+# Switches off multiprocessing by default, cant' be altered after module
+USE_MP = config.core.legacy_mp
 MP_NAME = 'Measurement'
 
 
@@ -78,7 +77,8 @@ def get_bg(return_first=False):
     Todo:
         RuntimeError message is really hard to understand.
     Args:
-        return_first(bool): if there are multiple loops running return the first anyway.
+        return_first(bool): if there are multiple loops running return the
+                            first anyway.
     Raises:
         RuntimeError: if multiple loops are active and return_first is False.
     Returns:
@@ -180,6 +180,7 @@ class Loop(Metadatable):
         self.actions = None
         self.then_actions = ()
         self.bg_task = None
+        self.bg_final_task = None
         self.bg_min_delay = None
         self.progress_interval = progress_interval
 
@@ -249,9 +250,9 @@ class Loop(Metadatable):
         return ActiveLoop(self.sweep_values, self.delay, *actions,
                           then_actions=self.then_actions, station=self.station,
                           progress_interval=self.progress_interval,
-                          bg_task=self.bg_task, bg_min_delay=self.bg_min_delay)
+                          bg_task=self.bg_task, bg_final_task=self.bg_final_task, bg_min_delay=self.bg_min_delay)
 
-    def with_bg_task(self, task, min_delay=1):
+    def with_bg_task(self, task, bg_final_task=None, min_delay=0.01):
         """
         Attaches a background task to this loop.
 
@@ -259,12 +260,19 @@ class Loop(Metadatable):
             task: A callable object with no parameters. This object will be
                 invoked periodically during the measurement loop.
 
-            min_delay (default 1): The minimum number of seconds to wait
-                between task invocations. Note that the actual time between
-                task invocations may be much longer than this, as the task is
-                only run between passes through the loop.
+            bg_final_task: A callable object with no parameters. This object will be
+                invoked to clean up after or otherwise finish the background
+                task work.
+
+            min_delay (default 0.01): The minimum number of seconds to wait
+                between task invocations.
+                Note that if a task is doing a lot of processing it is recommended
+                to increase min_delay.
+                Note that the actual time between task invocations may be much
+                longer than this, as the task is only run between passes
+                through the loop.
         """
-        return _attach_bg_task(self, task, min_delay)
+        return _attach_bg_task(self, task, bg_final_task, min_delay)
 
     @staticmethod
     def validate_actions(*actions):
@@ -360,7 +368,8 @@ def _attach_then_actions(loop, actions, overwrite):
 
     return loop
 
-def _attach_bg_task(loop, task, min_delay):
+
+def _attach_bg_task(loop, task, bg_final_task, min_delay):
     """Inner code for both Loop and ActiveLoop.bg_task"""
     if loop.bg_task is None:
         loop.bg_task = task
@@ -368,7 +377,11 @@ def _attach_bg_task(loop, task, min_delay):
     else:
         raise RuntimeError('Only one background task is allowed per loop')
 
+    if bg_final_task:
+        loop.bg_final_task = bg_final_task
+
     return loop
+
 
 class ActiveLoop(Metadatable):
     """
@@ -387,15 +400,17 @@ class ActiveLoop(Metadatable):
     signal_period = 1
 
     def __init__(self, sweep_values, delay, *actions, then_actions=(),
-                 station=None, progress_interval=None, bg_task=None, bg_min_delay=None):
+                 station=None, progress_interval=None, bg_task=None,
+                 bg_final_task=None, bg_min_delay=None):
         super().__init__()
         self.sweep_values = sweep_values
         self.delay = delay
-        self.actions = actions
+        self.actions = list(actions)
         self.progress_interval = progress_interval
         self.then_actions = then_actions
         self.station = station
         self.bg_task = bg_task
+        self.bg_final_task = bg_final_task
         self.bg_min_delay = bg_min_delay
         self.data_set = None
 
@@ -438,7 +453,7 @@ class ActiveLoop(Metadatable):
                           then_actions=self.then_actions, station=self.station)
         return _attach_then_actions(loop, actions, overwrite)
 
-    def with_bg_task(self, task, min_delay=1):
+    def with_bg_task(self, task, bg_final_task=None, min_delay=0.01):
         """
         Attaches a background task to this loop.
 
@@ -446,12 +461,16 @@ class ActiveLoop(Metadatable):
             task: A callable object with no parameters. This object will be
                 invoked periodically during the measurement loop.
 
+            bg_final_task: A callable object with no parameters. This object will be
+                invoked to clean up after or otherwise finish the background
+                task work.
+
             min_delay (default 1): The minimum number of seconds to wait
                 between task invocations. Note that the actual time between
                 task invocations may be much longer than this, as the task is
                 only run between passes through the loop.
         """
-        return _attach_bg_task(self, task, min_delay)
+        return _attach_bg_task(self, task, bg_final_task, min_delay)
 
     def snapshot_base(self, update=False):
         """Snapshot of this ActiveLoop's definition."""
@@ -471,13 +490,19 @@ class ActiveLoop(Metadatable):
         Recursively calls `.containers` on any enclosed actions.
         """
         loop_size = len(self.sweep_values)
+        data_arrays = []
         loop_array = DataArray(parameter=self.sweep_values.parameter,
                                is_setpoint=True)
         loop_array.nest(size=loop_size)
 
         data_arrays = [loop_array]
+        # hack set_data into actions
+        new_actions = self.actions[:]
+        if hasattr(self.sweep_values, "parameters"):
+            for parameter in self.sweep_values.parameters:
+                new_actions.append(parameter)
 
-        for i, action in enumerate(self.actions):
+        for i, action in enumerate(new_actions):
             if hasattr(action, 'containers'):
                 action_arrays = action.containers()
 
@@ -784,36 +809,47 @@ class ActiveLoop(Metadatable):
             print('...done. Starting ' + (data_set.location or 'new loop'),
                   flush=True)
 
-        if background:
-            warnings.warn("Multiprocessing is in beta, use at own risk", UserWarning)
-            p = QcodesProcess(target=self._run_wrapper, name=MP_NAME)
-            p.is_sweep = True
-            p.signal_queue = self.signal_queue
-            p.start()
-            self.process = p
+        try:
+            if background:
+                warnings.warn("Multiprocessing is in beta, use at own risk",
+                              UserWarning)
+                p = QcodesProcess(target=self._run_wrapper, name=MP_NAME)
+                p.is_sweep = True
+                p.signal_queue = self.signal_queue
+                p.start()
+                self.process = p
 
-            # now that the data_set we created has been put in the loop
-            # process, this copy turns into a reader
-            # if you're not using a DataManager, it just stays local
-            # and sync() reads from disk
-            if self.data_set.mode == DataMode.PUSH_TO_SERVER:
-                self.data_set.mode = DataMode.PULL_FROM_SERVER
-            self.data_set.sync()
-        else:
-            if hasattr(self, 'process'):
-                # in case this ActiveLoop was run before in the background
-                del self.process
-
-            self._run_wrapper()
-
-            if self.data_set.mode != DataMode.LOCAL:
+                # now that the data_set we created has been put in the loop
+                # process, this copy turns into a reader
+                # if you're not using a DataManager, it just stays local
+                # and sync() reads from disk
+                if self.data_set.mode == DataMode.PUSH_TO_SERVER:
+                    self.data_set.mode = DataMode.PULL_FROM_SERVER
                 self.data_set.sync()
+            else:
+                if hasattr(self, 'process'):
+                    # in case this ActiveLoop was run before in the background
+                    del self.process
 
-        if not quiet:
-            print(repr(self.data_set))
-            print(datetime.now().strftime('started at %Y-%m-%d %H:%M:%S'))
-        ds = self.data_set
-        self.data_set = None
+                self._run_wrapper()
+
+                if self.data_set.mode != DataMode.LOCAL:
+                    self.data_set.sync()
+
+            ds = self.data_set
+
+        finally:
+            if not quiet:
+                print(repr(self.data_set))
+                print(datetime.now().strftime('started at %Y-%m-%d %H:%M:%S'))
+
+            # After normal loop execution we clear the data_set so we can run
+            # again. But also if something went wrong during the loop execution
+            # we want to clear the data_set attribute so we don't try to reuse
+            # this one later.
+            self.data_set = None
+
+
         return ds
 
     def _compile_actions(self, actions, action_indices=()):
@@ -890,11 +926,26 @@ class ActiveLoop(Metadatable):
                     self.sweep_values.name, i, imax, time.time() - t0),
                     dt=self.progress_interval, tag='outerloop')
 
-            self.sweep_values.set(value)
+            set_val = self.sweep_values.set(value)
+
             new_indices = loop_indices + (i,)
             new_values = current_values + (value,)
-            set_name = self.data_set.action_id_map[action_indices]
-            self.data_set.store(new_indices, {set_name: value})
+            data_to_store = {}
+
+            if hasattr(self.sweep_values, "parameters"):
+                set_name = self.data_set.action_id_map[action_indices]
+                if hasattr(self.sweep_values, 'aggregate'):
+                    value = self.sweep_values.aggregate(*set_val)
+                self.data_set.store(new_indices, {set_name: value})
+                for j, val in enumerate(set_val):
+                    set_index = action_indices + (j+1, )
+                    set_name = (self.data_set.action_id_map[set_index])
+                    data_to_store[set_name] = val
+            else:
+                set_name = self.data_set.action_id_map[action_indices]
+                data_to_store[set_name] = value
+
+            self.data_set.store(new_indices, data_to_store)
 
             if not self._nest_first:
                 # only wait the delay time if an inner loop will not inherit it
@@ -945,6 +996,12 @@ class ActiveLoop(Metadatable):
         # the loop is finished - run the .then actions
         for f in self._compile_actions(self.then_actions, ()):
             f()
+
+        # run the bg_final_task from the bg_task:
+        if self.bg_final_task is not None:
+            self.bg_final_task()
+
+
 
     def _wait(self, delay):
         if delay:
