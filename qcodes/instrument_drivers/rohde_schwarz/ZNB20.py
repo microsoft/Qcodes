@@ -16,8 +16,7 @@ class FrequencySweep(MultiParameter):
     Instrument returns an list of transmission data in the form of a list of
     complex numbers taken from a frequency sweep.
 
-    TODO:
-      - ability to choose for abs or db in magnitude return
+    TODO(nataliejpg): ability to choose for abs or db in magnitude return
     """
 
     def __init__(self, name, instrument, start, stop, npts):
@@ -62,7 +61,7 @@ class ZNB20(VisaInstrument):
     """
     This is the qcodes driver for the Rohde & Schwarz ZNB20 and ZNB8
     virtual network analysers
-    
+
     Spectroscopy mode is available for the 4 port ZNB8 where the drive 
     frequency from port 1 is fixed and instead frequency sweep on port 3
     is carried out. The same quentity is measured (ie S21)
@@ -126,13 +125,13 @@ class ZNB20(VisaInstrument):
 
         # Spectroscopy mode parameters
 
-        # query spec mode via power stat: PERManent for spec mode on
+        # query spec mode via power state: PERManent for spec mode on
         self.add_parameter(name='spec_mode',
                            get_cmd='SOUR:POW1:PERM?',
                            set_cmd=self._set_spec_mode,
                            get_parser=int,
-                           val_mapping={'on':1,
-                                        'off':0})
+                           val_mapping={'on': 1,
+                                        'off': 0})
 
         self.add_parameter(name='fixed_freq',
                            get_cmd=self._get_fixed_freq,
@@ -161,7 +160,7 @@ class ZNB20(VisaInstrument):
         """
         Initialise instrument to sweep linearly, automatically calculate and
         sweep in minimum time, not require a trigger, do averaging if avg set.
-        
+
         Spectrocopy mode is set to be off
         """
         self.write('SENS1:SWE:TYPE LIN')
@@ -201,10 +200,9 @@ class ZNB20(VisaInstrument):
             - resets port 1 and 2 to be sweep ports
             - sets power offset of ports 1 and 2 back to 0
             - sets permanent drives off and turns off port 3 drive
-            
-        args: 
+
+        args:
             val (0 or 1 for mode off or on)
-       
         """
         self.write('CALC1:PAR:MEAS "Trc1", "b2/a1"')
         if val == 1:
@@ -237,7 +235,6 @@ class ZNB20(VisaInstrument):
     def _set_fixed_freq(self, freq):
         self.write('SOUR:FREQ1:CONV:ARB:IFR 0, 1, {:.6f}, CW'.format(freq))
         self.write('SOUR:FREQ2:CONV:ARB:IFR 0, 1, {:.6f}, CW'.format(freq))
-
 
     def _get_fixed_pow(self):
         ret = self.ask('SOUR:POW1:OFFS?').split(',')
