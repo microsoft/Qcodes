@@ -9,26 +9,27 @@ class GS200(VisaInstrument):
     Usage: Initialize with
     <name> =  GS200(<name>, address='<GPIB address>', reset=<bool>)
 
-            
+
     TODO:(nataliejpg)
     - add current functionality (mode settings)
     """
+
     def __init__(self, name, address, reset=False, **kwargs):
         super().__init__(name, address, **kwargs)
 
         self.add_parameter('voltage',
-						   label='Voltage',
+                           label='Voltage',
                            units='V',
                            get_cmd=':SOURce:LEVel?',
                            set_cmd=':SOURce:LEVel:AUTO {:.4f}',
                            get_parser=float,
                            vals=Numbers(-10, 10))
-         
+
         self.add_function('reset', call_cmd='*RST')
-        
+
         self.initialise()
         self.connect_message()
-        
+
     def initialise(self):
         self.write(':SYST:DISP ON')
         self.write(':SOUR:FUNC VOLT')
