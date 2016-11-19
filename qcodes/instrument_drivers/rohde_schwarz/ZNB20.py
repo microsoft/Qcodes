@@ -58,21 +58,14 @@ class FrequencySweep(MultiParameter):
         return mag_array, phase_array
 
 
-def parsemode(v):
-    if v.upper() in 'S21':
-        return 0
-    elif v.upper() in 'b2':
-        return 1
-    else:
-        logging.error('invalid mode detected: %s' % v)
-        print('invalid mode %s: set to valid spec_mode with 0 or 1' % v)
-        return None
-
-
 class ZNB20(VisaInstrument):
     """
     This is the qcodes driver for the Rohde & Schwarz ZNB20 and ZNB8
     virtual network analysers
+    
+    Spectroscopy mode is available for the 4 port ZNB8 where the drive 
+    frequency from port 1 is fixed and instead frequency sweep on port 3
+    is carried out. The same quentity is measured (ie S21)
 
     Requires FrequencySweep parameter for taking a trace
 
@@ -131,22 +124,23 @@ class ZNB20(VisaInstrument):
                            npts=self.npts(),
                            parameter_class=FrequencySweep)
 
-        # Spectroscopy mode settings:
+        # Spectroscopy mode parameters
 
+        # query spec mode via power stat: PERManent for spec mode on
         self.add_parameter(name='spec_mode',
-                           get_cmd='CALC1:PAR:MEAS? "Trc1"',
+                           get_cmd='SOUR:POW1:PERM?',
                            set_cmd=self._set_spec_mode,
-                           get_parser=self.parsemode)
+                           get_parser=int,
+                           val_mapping={'on':1,
+                                        'off':0})
 
         self.add_parameter(name='fixed_freq',
                            get_cmd=self._get_fixed_freq,
-                           set_cmd=self._set_fixed_freq,
-                           get_parser=int)
+                           set_cmd=self._set_fixed_freq)
 
         self.add_parameter(name='fixed_pow',
                            get_cmd=self._get_fixed_pow,
                            set_cmd=self._set_fixed_pow,
-                           get_parser=int,
                            vals=vals.Numbers(-150, 25))
 
         self.add_function('reset', call_cmd='*RST')
@@ -164,17 +158,19 @@ class ZNB20(VisaInstrument):
         self.connect_message()
 
     def initialise(self):
-        self.write('*RST')
+        """
+        Initialise instrument to sweep linearly, automatically calculate and
+        sweep in minimum time, not require a trigger, do averaging if avg set.
+        
+        Spectrocopy mode is set to be off
+        """
         self.write('SENS1:SWE:TYPE LIN')
         self.write('SENS1:SWE:TIME:AUTO ON')
         self.write('TRIG1:SEQ:SOUR IMM')
         self.write('SENS1:AVER:STAT ON')
         self.update_display_on()
-        self.spec_mode(0)
-        self.start(1e6)
-        self.stop(2e6)
-        self.npts(10)
-        self.power(-50)
+        self.spec_mode('off')
+        self.trace.set_sweep(self.start(), self.stop(), self.npts())
 
     def _set_start(self, val):
         self.write('SENS:FREQ:START {:.4f}'.format(val))
@@ -191,10 +187,27 @@ class ZNB20(VisaInstrument):
         # update setpoints for FrequencySweep param
         self.trace.set_sweep(self.start(), self.stop(), val)
 
-    # Spectroscopy state settings: for use with ZNB8
+    # Spectrocopy mode settings
+
     def _set_spec_mode(self, val):
+        """
+        Set the spectroscopy mode to off or on:
+        for on:
+            - turns on port 3 and sets ports 1 and 3 to permanent drive
+            - sets port port 1 to drive at the previous central frequency
+              and port 2 to measure at the same frequency
+            - sets port 1 power to be same as previous power (by way of offset)
+        for off:
+            - resets port 1 and 2 to be sweep ports
+            - sets power offset of ports 1 and 2 back to 0
+            - sets permanent drives off and turns off port 3 drive
+            
+        args: 
+            val (0 or 1 for mode off or on)
+       
+        """
+        self.write('CALC1:PAR:MEAS "Trc1", "b2/a1"')
         if val == 1:
-            self.write('CALC1:PAR:MEAS "Trc1", "b2"')
             freq = self.center()
             pow = self.power()
             self.write('SOUR:POW3:STAT 1')
@@ -210,15 +223,13 @@ class ZNB20(VisaInstrument):
             self.write('SOUR:FREQ2:CONV:ARB:IFR 1, 1, 0, SWE')
             self.write('SOUR:POW1:OFFS 0, CPAD')
             self.write('SOUR:POW2:OFFS 0, CPAD')
-            self.write('SOUR:POW3:STAT 0')
             self.write('SOUR:POW1:PERM 0')
             self.write('SOUR:POW3:PERM 0')
-            self.write('CALC1:PAR:MEAS "Trc1", "S21"')
+            self.write('SOUR:POW3:STAT 0')
         else:
             logging.error('cannot set mode %s' % val)
             print('cannot set mode %s' % val)
 
-    # TODO(nataliejpg): make parsers for these
     def _get_fixed_freq(self):
         ret = self.ask('SOUR:FREQ1:CONV:ARB:IFR?').split(',')
         return int(ret[2])
@@ -226,6 +237,7 @@ class ZNB20(VisaInstrument):
     def _set_fixed_freq(self, freq):
         self.write('SOUR:FREQ1:CONV:ARB:IFR 0, 1, {:.6f}, CW'.format(freq))
         self.write('SOUR:FREQ2:CONV:ARB:IFR 0, 1, {:.6f}, CW'.format(freq))
+
 
     def _get_fixed_pow(self):
         ret = self.ask('SOUR:POW1:OFFS?').split(',')
