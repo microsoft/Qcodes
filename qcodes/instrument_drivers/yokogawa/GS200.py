@@ -30,9 +30,7 @@ class GS200(VisaInstrument):
         self.connect_message()
         
     def initialise(self):
-        self.reset()
         self.write(':SYST:DISP ON')
         self.write(':SOUR:FUNC VOLT')
         self.write(':SOUR:PROT:CURR MIN')
         self.write(':OUTP:STAT ON')
-        self.voltage.set(0)
