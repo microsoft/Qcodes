@@ -19,7 +19,8 @@ from qcodes.process.qcodes_process import QcodesProcess
 from qcodes.utils.validators import Numbers
 from qcodes.utils.helpers import LogCapture
 
-from .instrument_mocks import AMockModel, MockGates, MockSource, MockMeter
+from .instrument_mocks import (AMockModel, MockGates, MockSource, MockMeter,
+                               MultiGetter)
 
 
 class TestMockInstLoop(TestCase):
@@ -256,22 +257,6 @@ class FakeMonitor:
         self.delay_array.append(finish_by - time.perf_counter())
 
 
-class MultiGetter(Parameter):
-    def __init__(self, **kwargs):
-        if len(kwargs) == 1:
-            name, self._return = list(kwargs.items())[0]
-            super().__init__(name=name)
-            self.shape = np.shape(self._return)
-        else:
-            names = tuple(sorted(kwargs.keys()))
-            super().__init__(names=names)
-            self._return = tuple(kwargs[k] for k in names)
-            self.shapes = tuple(np.shape(v) for v in self._return)
-
-    def get(self):
-        return self._return
-
-
 class TestLoop(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -297,6 +282,42 @@ class TestLoop(TestCase):
         self.assertEqual(data.p1.tolist(), [[[1, 1]] * 2, [[2, 2]] * 2])
         self.assertEqual(data.p2.tolist(), [[[3, 3], [4, 4]]] * 2)
         self.assertEqual(data.p3.tolist(), [[[5, 6]] * 2] * 2)
+
+    def test_nesting_2(self):
+        loop = Loop(self.p1[1:3:1]).each(
+            self.p1,
+            Loop(self.p2[3:5:1]).each(
+                self.p1,
+                self.p2,
+                Loop(self.p3[5:7:1]).each(
+                    self.p1,
+                    self.p2,
+                    self.p3)))
+
+        data = loop.run_temp()
+        keys = set(data.arrays.keys())
+
+        self.assertEqual(data.p1_set.tolist(), [1, 2])
+        self.assertEqual(data.p2_set.tolist(), [[3, 4]] * 2)
+        self.assertEqual(data.p3_set.tolist(), [[[5, 6]] * 2] * 2)
+
+        self.assertEqual(data.p1_0.tolist(), [1, 2])
+
+        # TODO(alexcjohnson): these names are extra confusing...
+        # perhaps we should say something like always include *all* indices
+        # unless you can get rid of them all (ie that param only shows up
+        # once, but separately for set and measured)
+        self.assertEqual(data.p1_1_0.tolist(), [[1, 1], [2, 2]])
+        self.assertEqual(data.p2_1.tolist(), [[3, 4]] * 2)
+
+        self.assertEqual(data.p1_1_2_0.tolist(), [[[1, 1]] * 2, [[2, 2]] * 2])
+        self.assertEqual(data.p2_2_1.tolist(), [[[3, 3], [4, 4]]] * 2)
+        self.assertEqual(data.p3.tolist(), [[[5, 6]] * 2] * 2)
+
+        # make sure rerunning this doesn't cause any problems
+        data2 = loop.run_temp()
+        keys2 = set(data.arrays.keys())
+        self.assertEqual(keys, keys2)
 
     def test_repr(self):
         loop2 = Loop(self.p2[3:5:1], 0.001).each(self.p2)
@@ -737,12 +758,17 @@ class TestSignal(TestCase):
         p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10),
                             msg=ActiveLoop.HALT_DEBUG)
         loop = Loop(p1[1:6:1], 0.005).each(p1)
+        # we want to test what's in data, so get it ahead of time
+        # because loop.run will not return.
+        data = loop.get_data_set(location=False)
         p1.set_queue(loop.signal_queue)
 
         with self.assertRaises(_DebugInterrupt):
-            loop.run_temp()
+            # need to use explicit loop.run rather than run_temp
+            # so we can avoid providing location=False twice, which
+            # is an error.
+            loop.run(background=False, data_manager=False, quiet=True)
 
-        data = loop.data_set
         self.check_data(data)
 
     def test_halt_quiet(self):
