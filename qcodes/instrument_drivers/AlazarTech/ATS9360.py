@@ -3,8 +3,14 @@ from qcodes.utils import validators
 
 
 class AlazarTech_ATS9360(AlazarTech_ATS):
-    # TODO(nataliejpg) add more options for the sample rate set using 10MHz ref
-    # including so that the 'get sample rate' function in ATS.py works
+    """
+    This class is the driver for the ATS9360 board
+    it inherits from the ATS base class
+
+    TODO(nataliejpg):
+        -   add more options for the sample rate set using 10MHz ref
+            including so that the 'get sample rate' function in ATS.py works
+    """
     def __init__(self, name, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
         super().__init__(name, dll_path=dll_path, **kwargs)

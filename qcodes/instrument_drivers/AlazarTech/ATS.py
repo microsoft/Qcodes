@@ -11,14 +11,13 @@ from qcodes.utils import validators
 # TODO(damazter) (C) logging
 
 # these items are important for generalizing this code to multiple alazar cards
-# TODO(damazter) (W) remove 8 bits per sample requirement
 # TODO(damazter) (W) some alazar cards have a different number of channels :(
 
 # TODO(damazter) (S) tests to do:
 # acquisition that would overflow the board if measurement is not stopped
 # quickly enough. can this be solved by not reposting the buffers?
 
-# TODO(nataliejpg) test!!
+# TODO(nataliejpg) fix get_damples function which I have broken for ATS9360
 
 
 class AlazarTech_ATS(Instrument):
