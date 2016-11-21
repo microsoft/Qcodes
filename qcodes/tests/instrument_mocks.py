@@ -1,11 +1,10 @@
 import time
+import numpy as np
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument, MockModel
-from qcodes.instrument.base import Instrument
 from qcodes.utils.validators import Numbers
-from qcodes.instrument.parameter import ManualParameter
-import numpy as np
+from qcodes.instrument.parameter import Parameter, ManualParameter
 
 
 class AMockModel(MockModel):
@@ -49,8 +48,7 @@ class AMockModel(MockModel):
         if parameter == 'ampl':
             try:
                 self._excitation = float(value)
-            # TODO(giulioungaretti)  fix bare-except
-            except:
+            except ValueError:
                 # "Off" as in the MultiType sweep step test
                 self._excitation = None
         else:
@@ -301,3 +299,29 @@ class DummyInstrument(Instrument):
                                initial_value=0,
                                label='Gate {} (arb. units)'.format(g),
                                vals=Numbers(-800, 400))
+
+
+class MultiGetter(Parameter):
+    """
+    Test parameters with complicated return values
+    instantiate with kwargs:
+        MultiGetter(name1=return_val1, name2=return_val2)
+    to set the names and (constant) return values of the
+    pieces returned. Each return_val can be any array-like
+    object
+    eg:
+        MultiGetter(one=1, onetwo=(1, 2))
+    """
+    def __init__(self, **kwargs):
+        if len(kwargs) == 1:
+            name, self._return = list(kwargs.items())[0]
+            super().__init__(name=name)
+            self.shape = np.shape(self._return)
+        else:
+            names = tuple(sorted(kwargs.keys()))
+            super().__init__(names=names)
+            self._return = tuple(kwargs[k] for k in names)
+            self.shapes = tuple(np.shape(v) for v in self._return)
+
+    def get(self):
+        return self._return
