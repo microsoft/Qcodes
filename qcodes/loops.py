@@ -785,6 +785,12 @@ class ActiveLoop(Metadatable):
 
         data_set = self.get_data_set(data_manager, *args, **kwargs)
 
+        if background and not getattr(data_set, 'data_manager', None):
+            warnings.warn(
+                'With background=True you must also set data_manager=True '
+                'or you will not be able to sync your DataSet.',
+                UserWarning)
+
         self.set_common_attrs(data_set=data_set, use_threads=use_threads,
                               signal_queue=self.signal_queue)
 
