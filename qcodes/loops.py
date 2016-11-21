@@ -716,8 +716,9 @@ class ActiveLoop(Metadatable):
                               UserWarning)
                 data_mode = DataMode.PUSH_TO_SERVER
 
-            data_set = new_data(arrays=self.containers(), mode=data_mode,
-                                data_manager=data_manager, *args, **kwargs)
+            data_set = new_data(*args, arrays=self.containers(),
+                                mode=data_mode,
+                                data_manager=data_manager, **kwargs)
 
             self.data_set = data_set
 
@@ -801,8 +802,8 @@ class ActiveLoop(Metadatable):
         if progress_interval is not False:
             self.progress_interval = progress_interval
 
-        data_set = self.get_data_set(data_manager, *args, quiet=quiet,
-                                     **kwargs)
+        data_set = self.get_data_set(*args, data_manager=data_manager,
+                                     quiet=quiet, **kwargs)
         data_manager = getattr(data_set, 'data_manager', False)
 
         if background and not data_manager:
