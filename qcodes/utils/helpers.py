@@ -40,8 +40,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
             except TypeError:
                 # we cannot convert the object to JSON, just take a string
                 s = str(obj)
-            finally:
-                return s
+            return s
 
 
 def tprint(string, dt=1, tag='default'):
