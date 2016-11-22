@@ -36,7 +36,6 @@ class NumpyJSONEncoder(json.JSONEncoder):
         else:
             try:
                 s = super(NumpyJSONEncoder, self).default(obj)
-                return s
             except TypeError:
                 # we cannot convert the object to JSON, just take a string
                 s = str(obj)
