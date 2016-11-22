@@ -9,7 +9,7 @@ from qcodes.utils.helpers import (is_sequence, permissive_range, wait_secs,
                                   make_unique, DelegateAttributes,
                                   LogCapture, strip_attrs, full_class,
                                   named_repr, make_sweep, is_sequence_of,
-                                  compare_dictionaries)
+                                  compare_dictionaries, NumpyJSONEncoder)
 from qcodes.utils.deferred_operations import is_function
 
 
@@ -550,6 +550,28 @@ class TestIsSequenceOf(TestCase):
             with self.subTest(args=args):
                 self.assertFalse(is_sequence_of(*args))
 
+# tests related to JSON encoding 
+class TestJSON(TestCase):
+
+        def testNumpyJSONEncoder(self):
+            e = NumpyJSONEncoder()
+            
+            # test basic python types
+            testinput=[10, float(10.), 'hello', {'a': 0, 'b': 1}]
+            testoutput=['10', '10.0', '"hello"',  '{"a": 0, "b": 1}']
+            # int
+            for d, r in zip(testinput, testoutput):
+                v=e.encode(d)
+                print(v==r)
+            
+            # test numpy array
+            x=np.array([1,0,0])
+            v=e.encode(x)
+            
+            # test class
+            class dummy(object):
+                pass
+            v=e.encode(dummy())
 
 class TestCompareDictionaries(TestCase):
     def test_same(self):
