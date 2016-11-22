@@ -29,7 +29,7 @@ class Triggered_AcquisitionController(AcquisitionController):
                            initial_value='trace',
                            vals=vals.Enum('none', 'trace', 'point'))
 
-    def setup(self):
+    def setup(self, **kwargs):
         """
         Setup the ATS controller by updating most current ATS values and setting
         the acquisition parameter metadata
@@ -141,7 +141,7 @@ class Continuous_AcquisitionController(AcquisitionController):
         self.trace_idx = None
         self.buffer_start_idx = None
 
-    def setup(self):
+    def setup(self, **kwargs):
         """
         Setup the ATS controller by updating most current ATS values and setting
         the acquisition parameter metadata
@@ -217,12 +217,13 @@ class Continuous_AcquisitionController(AcquisitionController):
                     buffer_segment[self.buffer_start_idx:]
         else:
             # Determine the buffer idx offset in the trace
-            trace_offset = self.buffer_start_idx + self.samples_per_record * \
+            trace_offset = self.samples_per_record - self.buffer_start_idx + \
+                           self.samples_per_record * \
                            (self.buffer_idx % self.buffers_per_trace)
 
             if trace_offset+self.samples_per_record > self.samples_per_trace():
                 # Buffer does not fit completely in a trace, cutting buffer
-                buffer_slice = slice(trace_offset, self.samples_per_trace())
+                buffer_slice = slice(trace_offset, None)
                 for ch_name, buffer_segment in segmented_buffer.items():
                     # Shorten each of the segments to stop at samples_per_trace
                     max_idx = self.samples_per_trace() - trace_offset
@@ -311,6 +312,11 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
         self.add_parameter(name='readout_threshold_voltage',
                            parameter_class=ManualParameter)
 
+        self.add_parameter(name='initialization_traces',
+                           get_cmd=lambda: self._initialization_traces)
+        self.add_parameter(name='post_initialization_traces',
+                           get_cmd=lambda: self._post_initialization_traces)
+
         self.number_of_buffers_no_blip = None
         self.number_of_buffers_max_wait = None
         self._target_command = None
@@ -319,7 +325,7 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
         self.t_start_list = None
 
     def setup(self, readout_threshold_voltage=None,
-              trigger_threshold_voltage=None):
+              trigger_threshold_voltage=None, **kwargs):
         if readout_threshold_voltage is not None:
             self.readout_threshold_voltage(readout_threshold_voltage)
         if trigger_threshold_voltage is not None:
@@ -341,10 +347,15 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                                        self.target_command())
 
         self.t_start_list = np.zeros(self.traces_per_acquisition())
+
         if self.record_initialization_traces():
-            self.initialization_traces = np.zeros(
+            self._initialization_traces = np.zeros(
                 (self.traces_per_acquisition(),
                  self.samples_per_record * self.number_of_buffers_max_wait))
+            self._post_initialization_traces = {
+                ch_idx: np.zeros((self.traces_per_acquisition(),
+                                  self.samples_per_record))
+                for ch_idx in self.channel_selection}
 
     def pre_start_capture(self):
         """
@@ -371,7 +382,7 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                     self.trace_idx, slice(
                         (self.buffer_idx-1) * self.samples_per_record,
                         self.buffer_idx * self.samples_per_record))
-                self.initialization_traces[buffer_slice] = readout_buffer
+                self._initialization_traces[buffer_slice] = readout_buffer
 
             if max(readout_buffer) > self.readout_threshold_voltage():
                 # A blip occurred, reset counter for buffers without blips
@@ -384,7 +395,9 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                 self._target_command()
                 self.t_start_list[self.trace_idx] = self.buffer_idx * \
                                                     self.ms_per_buffer
-                print('Starting active {:.2f} s'.format(time.time() - self.t0))
+                if not self.silent():
+                    print('Starting active {:.2f} s'.format(
+                        time.time() - self.t0))
                 self.buffer_idx = 0
             elif self.buffer_idx >= self.number_of_buffers_max_wait:
                 # Max waiting time has been reached, but no sufficient
@@ -407,8 +420,14 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
 
         elif self.stage() == 'active':
             # Keep acquiring buffers until acquisition trigger is measured
-            self.buffer_idx += 1
             segmented_buffers = self.segment_buffer(buffer, scale_voltages=True)
+
+            if self.buffer_idx == 0 and self.record_initialization_traces():
+                # Store first stage after initialization
+                for ch_idx in self.channel_selection:
+                    self._post_initialization_traces[ch_idx][self.trace_idx] = \
+                        segmented_buffers[ch_idx]
+
             trigger_buffer = segmented_buffers[self.trigger_channel()]
             if max(trigger_buffer) > self.trigger_threshold_voltage():
                 # Acquisition trigger measured
@@ -418,17 +437,25 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                 self.buffer_idx = -1
                 self.buffer_start_idx = \
                     np.argmax(trigger_buffer > self.trigger_threshold_voltage())
+
                 # Add first (partial) segment to traces
                 super().handle_buffer(buffer)
 
-                print('starting readout after {:.2f} s, buffers {}'.format(
-                    time.time()-self.t0, self.buffer_idx))
+                if not self.silent():
+                    print('starting readout after {:.2f} s, buffers {}'.format(
+                        time.time()-self.t0, self.buffer_idx))
+            else:
+                self.buffer_idx += 1
+
 
         elif self.stage() == 'read':
             # Add buffer to data
             super().handle_buffer(buffer)
             if not self.buffer_idx % self.buffers_per_trace:
-                print('finished trace after {:.2f} s'.format(time.time()-self.t0))
+
+                if not self.silent():
+                    print('finished trace after {:.2f} s'.format(
+                        time.time()-self.t0))
                 self.t0 = time.time()
                 # Trace filled, go back to initialization
                 self.stage('initialization')

@@ -27,7 +27,7 @@ SERVER_MODES = set((DataMode.PULL_FROM_SERVER, DataMode.PUSH_TO_SERVER))
 
 
 def new_data(location=None, loc_record=None, name=None, overwrite=False,
-             io=None, data_manager=False, mode=DataMode.LOCAL, **kwargs):
+             io=None, data_manager=None, mode=DataMode.LOCAL, **kwargs):
     # NOTE(giulioungaretti): leave this docstrings as it is, because
     # documenting the types is silly in this case.
     """
@@ -109,7 +109,7 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
 
     if data_manager is True:
         data_manager = get_data_manager()
-    else:
+    elif data_manager is None:
         if mode != DataMode.LOCAL:
             raise ValueError('DataSets without a data_manager must be local')
 

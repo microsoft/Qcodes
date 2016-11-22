@@ -6,8 +6,7 @@ from qcodes.utils import validators as vals
 from time import sleep
 
 
-def cmdbase(channel): return "TERM LF\nFLSH\nFLOQ\nSNDT {:d} ,".format(channel)
-
+cmdbase = "TERM LF\nFLSH\nFLOQ\n"
 
 class SIM928(StandardParameter):
     """
@@ -23,15 +22,20 @@ class SIM928(StandardParameter):
     def __init__(self, channel, name=None, max_voltage=20, **kwargs):
         if not name:
             name = 'channel_{}'.format(channel)
+
+        self.send_cmd = cmdbase + "SNDT {:d} ,".format(channel)
+
         super().__init__(name=name,
                          units='V',
                          get_cmd=self.get_voltage,
-                         set_cmd=cmdbase(channel) + '"VOLT {:.4f}"',
+                         set_cmd=self.send_cmd + '"VOLT {:.4f}"',
                          step=0.005,
                          delay=0.025,
                          vals=vals.Numbers(0, max_voltage),
                          **kwargs)
         self.channel = channel
+
+        self._meta_attrs.extend(['reset'])
 
     def get_voltage(self):
         """
@@ -42,7 +46,7 @@ class SIM928(StandardParameter):
             Channel voltage
         """
         # Two commands must be sent to the instrument to retrieve the channel voltage
-        self._instrument.write(cmdbase(self.channel) + '"VOLT?"')
+        self._instrument.write(self.send_cmd + '"VOLT?"')
         # A small wait is needed before the actual voltage can be retrieved
         sleep(0.05)
         return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
@@ -102,3 +106,7 @@ class SIM900(VisaInstrument):
         channels = self.channels()
         channels[channel] = name
         self.channels(channels)
+
+    def reset_slot(self, channel):
+        self.write(cmdbase + 'SRST {}'.format(channel))
+
