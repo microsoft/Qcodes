@@ -1,6 +1,7 @@
-from qcodes.instrument.visa import VisaInstrument
+import logging
 from time import sleep
 from functools import partial
+from qcodes.instrument.visa import VisaInstrument
 
 
 class Decadac(VisaInstrument):
@@ -123,6 +124,8 @@ class Decadac(VisaInstrument):
             try:
                 self.visa_handle.read()
             except UnicodeDecodeError:
+                logging.warning(" Decadac returned nothing and did nothing. " +
+                                "Please re-run the command")
                 pass
 
         if self.ramp_state:
@@ -204,7 +207,7 @@ class Decadac(VisaInstrument):
         Args:
             voltage (float): The physical voltage.
 
-            channel (int): The relevant channel.            
+            channel (int): The relevant channel.
 
         Returns:
             code (str): The corresponding voltage code.
@@ -212,5 +215,6 @@ class Decadac(VisaInstrument):
         translationdict = {1: lambda x: 2**16/20*(x-2**-16+10),
                            2: lambda x: 2**16/10*(x-2**-16),
                            3: lambda x: 2**16/10*(x-2**-16+10)}
-        return str(int(translationdict[self.voltranges[channel]](voltage)))
+        voltage_float = translationdict[self.voltranges[channel]](voltage)
+        return str(int(voltage_float))
 
