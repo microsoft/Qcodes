@@ -35,7 +35,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            label='Sample Rate',
                            unit='S/s',
                            value='10MHZ_REF_500MSPS',
-                           byte_to_value_dict={
+                           byte_to_value_dict=(None if self.clock_source() != 'EXTERNAL_CLOCK_10MHz_REF' else {
                                0x1: '1KSPS', 0x2: '2KSPS',
                                0x4: '5KSPS', 0x8: '10KSPS',
                                0xA: '20KSPS', 0xC: '50KSPS',
@@ -48,8 +48,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                                0x30: '500MSPS', 0x32: '800MSPS',
                                0x35: '1000MSPS', 0x37: '1200MSPS',
                                0x3A: '1500MSPS', 0x3D: '1800MSPS',
-                               0x40: 'EXTERNAL_CLOCK',
-                               500000000: '10MHZ_REF_500MSPS'})
+                               0x40: 'EXTERNAL_CLOCK'}))
         self.add_parameter(name='clock_edge',
                            parameter_class=AlazarParameter,
                            label='Clock Edge',
