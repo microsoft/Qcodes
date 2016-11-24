@@ -129,6 +129,7 @@ class ZNB20(VisaInstrument):
                            get_cmd='SOUR:POW1:PERM?',
                            set_cmd=self._set_spec_mode,
                            get_parser=int,
+                           vals=vals.OnOff(),
                            val_mapping={'on': 1,
                                         'off': 0})
 
