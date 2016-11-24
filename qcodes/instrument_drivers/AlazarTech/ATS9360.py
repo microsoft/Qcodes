@@ -8,8 +8,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
     it inherits from the ATS base class
 
     TODO(nataliejpg):
-        -   add more options for the sample rate set using 10MHz ref
-            including so that the 'get sample rate' function in ATS.py works
+        -   add clock source options and sample rate options
     """
     def __init__(self, name, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
@@ -23,32 +22,12 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            label='Clock Source',
                            unit=None,
                            value='EXTERNAL_CLOCK_10MHz_REF',
-                           byte_to_value_dict={1: 'INTERNAL_CLOCK',
-                                               2: 'EXTERNAL_CLOCK',
-                                               3: 'MEDIUM_EXTERNAL_CLOCK',
-                                               4: 'SLOW_EXTERNAL_CLOCK',
-                                               5: 'EXTERNAL_CLOCK_AC',
-                                               6: 'EXTERNAL_CLOCK_DC',
-                                               7: 'EXTERNAL_CLOCK_10MHz_REF'})
+                           byte_to_value_dict={7: 'EXTERNAL_CLOCK_10MHz_REF'})
         self.add_parameter(name='sample_rate',
                            parameter_class=AlazarParameter,
                            label='Sample Rate',
                            unit='S/s',
-                           value='10MHZ_REF_500MSPS',
-                           byte_to_value_dict=(None if self.clock_source() != 'EXTERNAL_CLOCK_10MHz_REF' else {
-                               0x1: '1KSPS', 0x2: '2KSPS',
-                               0x4: '5KSPS', 0x8: '10KSPS',
-                               0xA: '20KSPS', 0xC: '50KSPS',
-                               0xE: '100KSPS', 0x10: '200KSPS',
-                               0x12: '500KSPS', 0x14: '1MSPS',
-                               0x18: '2MSPS', 0x1A: '5MSPS',
-                               0x1C: '10MSPS', 0x1E: '20MSPS',
-                               0x22: '50MSPS', 0x24: '100MSPS',
-                               0x25: '125MSPS', 0x2B: '250MSPS',
-                               0x30: '500MSPS', 0x32: '800MSPS',
-                               0x35: '1000MSPS', 0x37: '1200MSPS',
-                               0x3A: '1500MSPS', 0x3D: '1800MSPS',
-                               0x40: 'EXTERNAL_CLOCK'}))
+                           value=500000000)
         self.add_parameter(name='clock_edge',
                            parameter_class=AlazarParameter,
                            label='Clock Edge',
