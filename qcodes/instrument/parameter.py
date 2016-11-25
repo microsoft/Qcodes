@@ -37,10 +37,13 @@ Measured parameters should have .get() which can return:
 """
 
 from datetime import datetime, timedelta
+from copy import copy
 import time
 import logging
 import os
 import collections
+
+import numpy
 
 from qcodes.utils.deferred_operations import DeferredOperations
 from qcodes.utils.helpers import (permissive_range, wait_secs, is_sequence_of,
@@ -298,8 +301,9 @@ class Parameter(Metadatable, DeferredOperations):
         State of the parameter as a JSON-compatible dict.
 
         Args:
-            update (bool): If True, update the state by calling parameter.get().
-             If False, just use the latest values in memory.
+            update (bool): If True, update the state by calling
+                    parameter.get().
+                    If False, just use the latest values in memory.
 
         Returns:
             dict: base snapshot
@@ -845,3 +849,153 @@ class GetLatest(DelegateAttributes, DeferredOperations):
 
     def __call__(self):
         return self.get()
+
+
+def combine(*parameters, name, label=None, units=None, aggregator=None):
+    """Combine parameters into one swepable parameter
+
+    Args:
+        *paramters (qcodes.Parameter): the parameters to combine
+        name (str): the name of the paramter
+        label (Optional[str]): the label of the combined parameter
+        unit (Optional[str]): the unit of the combined parameter
+        aggregator (Optional[Callable[list[any]]]): a function to aggregate
+            the set values into one
+
+    A combined parameter sets all the combined parameters at every point of the
+    sweep.
+    The sets are called in the same order the parameters are, and
+    sequantially.
+    """
+    parameters = list(parameters)
+    multi_par = CombinedParameter(parameters, name, label, units, aggregator)
+    return multi_par
+
+
+class CombinedParameter(Metadatable):
+    """ A combined parameter
+
+    Args:
+        *paramters (qcodes.Parameter): the parameters to combine
+        name (str): the name of the paramter
+        label (Optional[str]): the label of the combined parameter
+        unit (Optional[str]): the unit of the combined parameter
+        aggregator (Optional[Callable[list[any]]]): a function to aggregate
+            the set values into one
+
+    A combined parameter sets all the combined parameters at every point of the
+    sweep.
+    The sets are called in the same order the parameters are, and
+    sequantially.
+    """
+
+    def __init__(self, parameters, name, label=None,
+                 units=None, aggregator=None):
+        super().__init__()
+        # TODO(giulioungaretti)temporary hack
+        # starthack
+        # this is a dummy parameter
+        # that mimicks the api that a normal parameter has
+        self.parameter = lambda: None
+        self.parameter.full_name = name
+        self.parameter.name = name
+        self.parameter.label = label
+        self.parameter.units = units
+        # endhack
+        self.parameters = parameters
+        self.sets = [parameter.set for parameter in self.parameters]
+        self.dimensionality = len(self.sets)
+
+        if aggregator:
+            self.f = aggregator
+            setattr(self, 'aggregate', self._aggregate)
+
+    def set(self, index: int):
+        """
+        Set multiple parameters.
+
+        Args:
+            index (int): the index of the setpoints one wants to set
+        Returns:
+            list: values that where actually set
+        """
+        values = self.setpoints[index]
+        for setFunction, value in zip(self.sets, values):
+            setFunction(value)
+        return values
+
+    def sweep(self, *array: numpy.ndarray):
+        """
+        Creates a new combined parameter to be iterated over.
+        One can sweep over either:
+             - n array of lenght m
+             - one nxm array
+
+        where n is the number of combined parameters
+        and m is the number of setpoints
+
+        Args:
+            *array(numpy.ndarray): array(s) of setopoints
+
+        Returns:
+            MultiPar: combined parameter
+        """
+        # if it's a list of arrays, convert to one array
+        if len(array) > 1:
+            dim = set([len(a) for a in array])
+            if len(dim) != 1:
+                raise ValueError("Arrays have different number of setpoints")
+            array = numpy.array(array).transpose()
+        else:
+            # cast to array in case users
+            # decide to not read docstring
+            # and pass a 2d list
+            array = numpy.array(array[0])
+        new = copy(self)
+        _error_msg = """ Dimensionality of array does not match\
+                        the number of parameter combined. Expected a \
+                        {} dimensional array, got a {} dimensional array. \
+                        """
+        try:
+            if array.shape[1] != self.dimensionality:
+                raise ValueError(_error_msg.format(self.dimensionality,
+                                                   array.shape[1]))
+        except KeyError:
+            # this means the array is 1d
+            raise ValueError(_error_msg.format(self.dimensionality, 1))
+
+        new.setpoints = array.tolist()
+        return new
+
+    def _aggregate(self, *vals):
+        # check f args
+        return self.f(*vals)
+
+    def __iter__(self):
+        return iter(range(len(self.setpoints)))
+
+    def __len__(self):
+        # dimension of the sweep_values
+        # i.e. how many setpoint
+        return numpy.shape(self.setpoints)[0]
+
+    def snapshot_base(self, update=False):
+        """
+        State of the combined parameter as a JSON-compatible dict.
+
+        Args:
+            update (bool):
+
+        Returns:
+            dict: base snapshot
+        """
+        meta_data = collections.OrderedDict()
+        meta_data['__class__'] = full_class(self)
+        meta_data["units"] = self.parameter.units
+        meta_data["label"] = self.parameter.label
+        meta_data["full_name"] = self.parameter.full_name
+        meta_data["aggreagator"] = repr(getattr(self, 'f', None))
+        for param in self.parameters:
+            meta_data[param.full_name] = param.snapshot()
+
+        return meta_data

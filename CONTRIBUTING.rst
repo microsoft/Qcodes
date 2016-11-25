@@ -5,7 +5,7 @@ Hi, thanks for your interest in the project! We welcome pull requests
 from developers of all skill levels.
 
 Alex Johnson (alexcjohnson) & and Giulio Ungaretti
-(giulio.ungaretti@gmail.com) are the creators and current maintainers of
+(unga@nbi.ku.dk) are the creators and current maintainers of
 Qcodes (aka core developers), along with a group of talented and smart
 volunteers. Please don't hesitate to reach out if you have any
 questions, or just need a little help getting started.
@@ -19,31 +19,21 @@ Bugs reports and feature requests
 ---------------------------------
 
 We use github's `issues <https://github.com/qdev-dk/Qcodes/issues>`__.
-Search for existing and closed issues. If your problem or idea is not
-yet addressed, `please open a new
-issue <https://github.com/qdev-dk/Qcodes/issues/new>`__
-
-Choose a label for your issue - please try to use an existing one rather
-than making a new label. If it involves new functionality, it's an
-``enhancement``. If it should work but it doesn't, it's a ``bug``. Bug
-reports must be accompanied by a reproducible example.
+Search for existing and closed issues. If your problem or idea is not yet
+addressed, `please open a new issue
+<https://github.com/qdev-dk/Qcodes/issues/new>`__
 
 The github GUI will show you a template both for bugs and features.
 Delete the wrong part and try to follow the template. Writing a good
-issue helps you in the first place.
+issue helps you in the first place.Bug reports must be accompanied by a
+reproducible example.
 
 Have an idea about future directions to go with Qcodes? Visions of
 data-utopia that would take more than a few weeks to add or might change
-some core ideas in the package? We can use issues for this too. Pick the
-``long-term`` or ``discussion`` labels, but maybe ping on slack before
-doing so!
+some core ideas in the package? We can use issues for this too. We will pick the
+``long-term`` or ``discussion`` labels.
 
-Please do not assign issues, but instead mention a core developer. If
-somebody is assigned to an issue it means that somebody is working on
-it.
-
-Use p1, p2, p3 to suggest a priority, but do not be surprised if the
-core team changes it.
+ If somebody is assigned to an issue it means that somebody is working on it.
 
 Clever usage
 ------------
@@ -207,9 +197,8 @@ before your fix, so we can be sure the bug does not reappear later!
 
 New code and testing
 ~~~~~~~~~~~~~~~~~~~~
-
--  Make a branch within this repo, rather than making your own fork
-   (unless you know what you are doing).
+-  Fork the repo into your github account
+-  Make a branch within this repo
 -  branch naming matters:
 
    -  always select a prefix:
@@ -417,7 +406,7 @@ Pull requests
 ~~~~~~~~~~~~~
 
 -  Push your branch back to github and make a pull request (PR). If you
-   visit the repo `home page <https://github.com/qdev-dk/Qcodes>`__ soon
+   visit the repo `home page <ht://github.com/qdev-dk/Qcodes>`__ soon
    after pushing to a branch, github will automatically ask you if you
    want to make a PR and help you with it.
 
@@ -445,10 +434,6 @@ Pull requests
    github conversations. The most important one is :dancer: which means
    "approved" - typically one of the core contributors should give the
    dancer. Ideally this person was also tagged when you opened the PR.
-
--  You, the initiator of the pull request, should do the actual merge
-   into master after receiving the :dancer: because you will know best
-   if there is anything left you want to add.
 
 -  Delete your branch once you have merged (using the helpful button
    provided by github after the merge) to keep the repository clean.

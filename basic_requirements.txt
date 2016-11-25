@@ -11,3 +11,4 @@ numpy==1.10.4
 python-dateutil==2.4.2
 PyVISA==1.8
 coverage==4.1
+h5py==2.6.0
