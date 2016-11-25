@@ -41,7 +41,7 @@ Now you are ready to install QCoDeS, type in the terminal.
 
     conda install h5py
     conda install matplotlib
-    conda install pyqtgraph
+    pip install pyqtgraph
     pip install qcodes
 
 
