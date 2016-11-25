@@ -4,8 +4,6 @@ Live plotting in Jupyter notebooks
 from IPython.display import display
 
 from qcodes import config
-from qcodes.widgets.widgets import HiddenUpdateWidget
-
 
 class BasePlot:
 
@@ -30,6 +28,7 @@ class BasePlot:
         # and there is multiprocessing
         self.interval = interval
         if config['gui']['notebook'] and config['core']['legacy_mp']:
+            from qcodes.widgets.widgets import HiddenUpdateWidget
             self.update_widget = HiddenUpdateWidget(self.update, interval)
             display(self.update_widget)
 
@@ -280,3 +279,12 @@ class BasePlot:
         """
         if hasattr(self, 'update_widget'):
             self.update_widget.halt()
+
+    def save(self, filename=None):
+        """
+        Save current plot to filename
+
+        Args:
+            filename (Optional[str]): Location of the file
+        """
+        raise NotImplementedError
