@@ -8,6 +8,8 @@
 .. image:: https://img.shields.io/badge/source-github-ff69b4.svg
    :target: https://github.com/QCoDeS/Qcodes
 
+.. image:: https://zenodo.org/badge/37137879.svg
+   :target: https://zenodo.org/badge/latestdoi/37137879
 
 Qcodes is a Python-based data acquisition framework developed by the Copenhagen / Delft / Sydney / Microsoft quantum computing consortium. 
 
@@ -20,7 +22,7 @@ The goal is a common framework for physics experiments, so:
 - code can and should contributed back to the framework
 - the process of moving between teams or labs, and of setting up
   a new experiment is streamlined
-- physics experiment can take advantage of modern software and best practices 
+- physics experiments can take advantage of modern software and best practices 
 
 
 See how easy it is to run for yourself:
