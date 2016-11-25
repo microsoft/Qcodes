@@ -8,6 +8,8 @@
 .. image:: https://img.shields.io/badge/source-github-ff69b4.svg
    :target: https://github.com/QCoDeS/Qcodes
 
+.. image:: https://zenodo.org/badge/37137879.svg
+   :target: https://zenodo.org/badge/latestdoi/37137879
 
 Qcodes is a Python-based data acquisition framework developed by the Copenhagen / Delft / Sydney / Microsoft quantum computing consortium. 
 
