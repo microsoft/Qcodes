@@ -115,6 +115,7 @@ class TestParamConstructor(TestCase):
         p._instrument = self.named_instrument
         self.assertEqual(p.full_names, ['astro_penn', 'astro_teller'])
 
+
 class TestManualParameter(TestCase):
 
     def test_bare_function(self):
@@ -131,9 +132,10 @@ class TestManualParameter(TestCase):
         with self.assertRaises(ValueError):
             f(20)
 
+
 class TestStandardParam(TestCase):
 
-     def test_param_cmd_with_parsing(self):
+    def test_param_cmd_with_parsing(self):
         def set_p(val):
             self._p = val
 
