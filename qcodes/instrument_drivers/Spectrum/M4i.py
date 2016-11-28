@@ -25,10 +25,12 @@ except ImportError:
 
 #%% Helper functions
 
-# This function is taken from an example provided by Spectrum GmbH
-
 
 def szTypeToName(lCardType):
+    """ Convert card type to string
+
+    This function is taken from an example provided by Spectrum GmbH
+    """
     sName = ''
     lVersion = (lCardType & pyspcm.TYP_VERSIONMASK)
     if (lCardType & pyspcm.TYP_SERIESMASK) == pyspcm.TYP_M2ISERIES:
@@ -47,9 +49,6 @@ def szTypeToName(lCardType):
 
 #%% Main driver class
 
-# TODO: whenever an error occurs (including validation errors) the python
-# console needs to be restarted
-
 
 class M4i(Instrument):
 
@@ -61,6 +60,9 @@ class M4i(Instrument):
     m4.set_channel_settings(2,mV_range, input_path, termination, coupling, compensation)
     m4.set_ext0_OR_trigger_settings(pyspcm.SPC_TM_HIGH,termination,coupling,level0)
     calc = m4.multiple_trigger_acquisition(mV_range,memsize,seg_size,posttrigger_size)
+
+    TODO: whenever an error occurs (including validation errors) the python
+          console needs to be restarted
 
     """
 
