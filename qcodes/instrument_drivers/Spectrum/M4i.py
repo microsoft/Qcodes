@@ -68,7 +68,8 @@ class M4i(Instrument):
                 m4.set_ext0_OR_trigger_settings(pyspcm.SPC_TM_HIGH,termination,coupling,level0)
                 calc = m4.multiple_trigger_acquisition(mV_range,memsize,seg_size,posttrigger_size)
 
-        Todo: whenever an error occurs (including validation errors) the python
+        Todo:
+          Whenever an error occurs (including validation errors) the python
           console needs to be restarted
 
 
