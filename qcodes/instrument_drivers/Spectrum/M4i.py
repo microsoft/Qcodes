@@ -52,24 +52,27 @@ def szTypeToName(lCardType):
 
 class M4i(Instrument):
 
-    """example usage for acquisition with channel 2 using an external trigger
-    that triggers multiple times with trigger mode HIGH:
-
-    m4 = M4i(name='M4i', server_name=None)
-    m4.enable_channels(pyspcm.CHANNEL2)
-    m4.set_channel_settings(2,mV_range, input_path, termination, coupling, compensation)
-    m4.set_ext0_OR_trigger_settings(pyspcm.SPC_TM_HIGH,termination,coupling,level0)
-    calc = m4.multiple_trigger_acquisition(mV_range,memsize,seg_size,posttrigger_size)
-
-    TODO: whenever an error occurs (including validation errors) the python
-          console needs to be restarted
-
-    """
 
     def __init__(self, name, cardid='spcm0', **kwargs):
         """Driver for the Spectrum M4i.44xx-x8 cards.
 
         For more information see: http://spectrum-instrumentation.com/en/m4i-platform-overview
+        
+        Example:
+        
+        Example usage for acquisition with channel 2 using an external trigger
+        that triggers multiple times with trigger mode HIGH::
+
+            m4 = M4i(name='M4i', server_name=None)
+            m4.enable_channels(pyspcm.CHANNEL2)
+            m4.set_channel_settings(2,mV_range, input_path, termination, coupling, compensation)
+            m4.set_ext0_OR_trigger_settings(pyspcm.SPC_TM_HIGH,termination,coupling,level0)
+            calc = m4.multiple_trigger_acquisition(mV_range,memsize,seg_size,posttrigger_size)
+
+        Todo: whenever an error occurs (including validation errors) the python
+          console needs to be restarted
+        
+        
         """
         super().__init__(name, **kwargs)
 
