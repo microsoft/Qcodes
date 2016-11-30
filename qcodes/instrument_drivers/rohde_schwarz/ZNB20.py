@@ -15,6 +15,21 @@ class FrequencySweep(Parameter):
     Instrument returns an list of transmission data in the form of a list of
     complex numbers taken from a frequency sweep.
 
+    Args:
+      name: parameter name
+      instrument: instrument the parameter belongs to
+      start: starting frequency of sweep
+      stop: ending frequency of sweep
+      npts: numper of points in frequency sweep
+
+     Methods:
+        set_sweep(start, stop, npts): sets the shapes and
+            setpoint arrays of the parameter to correspond with the sweep
+        get(): executes a sweep and returns magnitude and phase arrays
+
+        get_ramping: Queries the value of self.ramp_state and
+            self.ramp_time. Returns a string.
+
     TODO(nataliejpg): ability to choose for abs or db in magnitude return
     """
 
@@ -61,7 +76,7 @@ class ZNB20(VisaInstrument):
     This is the qcodes driver for the Rohde & Schwarz ZNB20 and ZNB8
     virtual network analysers
 
-    Spectroscopy mode is available for the 4 port ZNB8 where the drive 
+    Spectroscopy mode is available for the 4 port ZNB8 where the drive
     frequency from port 1 is fixed and instead frequency sweep on port 3
     is carried out. The same quentity is measured (ie S21)
 
@@ -161,7 +176,7 @@ class ZNB20(VisaInstrument):
         Initialise instrument to sweep linearly, automatically calculate and
         sweep in minimum time, not require a trigger, do averaging if avg set.
 
-        Spectrocopy mode is set to be off
+        Spectroscopy mode initialised off
         """
         self.write('SENS1:SWE:TYPE LIN')
         self.write('SENS1:SWE:TIME:AUTO ON')
@@ -226,7 +241,6 @@ class ZNB20(VisaInstrument):
             self.write('SOUR:POW3:STAT 0')
         else:
             logging.error('cannot set mode %s' % val)
-            print('cannot set mode %s' % val)
 
     def _get_fixed_freq(self):
         ret = self.ask('SOUR:FREQ1:CONV:ARB:IFR?').split(',')
