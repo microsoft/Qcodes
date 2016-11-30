@@ -6,18 +6,16 @@ class GS200(VisaInstrument):
     """
     This is the qcodes driver for the Yokogawa GS200 voltage and current source
 
+    Args:
+      name (str): What this instrument is called locally.
+      address (str): The GPIB address of this instrument
+      kwargs (dict): kwargs to be passed to VisaInstrument class
 
     TODO:(nataliejpg)
     - add current functionality (mode settings)
     """
 
     def __init__(self, name, address, reset=False, **kwargs):
-        """
-        Args:
-            name (str): What this instrument is called locally.
-            address (str): The GPIB address of this instrument
-            kwargs (dict): kwargs to be passed to VisaInstrument class
-        """
         super().__init__(name, address, **kwargs)
 
         self.add_parameter('voltage',
