@@ -4,7 +4,7 @@ import numpy as np
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument, MockModel
 from qcodes.utils.validators import Numbers
-from qcodes.instrument.parameter import Parameter, ManualParameter
+from qcodes.instrument.parameter import MultiParameter, ManualParameter
 
 
 class AMockModel(MockModel):
@@ -301,7 +301,7 @@ class DummyInstrument(Instrument):
                                vals=Numbers(-800, 400))
 
 
-class MultiGetter(Parameter):
+class MultiGetter(MultiParameter):
     """
     Test parameters with complicated return values
     instantiate with kwargs:
@@ -313,15 +313,10 @@ class MultiGetter(Parameter):
         MultiGetter(one=1, onetwo=(1, 2))
     """
     def __init__(self, **kwargs):
-        if len(kwargs) == 1:
-            name, self._return = list(kwargs.items())[0]
-            super().__init__(name=name)
-            self.shape = np.shape(self._return)
-        else:
-            names = tuple(sorted(kwargs.keys()))
-            super().__init__(names=names)
-            self._return = tuple(kwargs[k] for k in names)
-            self.shapes = tuple(np.shape(v) for v in self._return)
+        names = tuple(sorted(kwargs.keys()))
+        self._return = tuple(kwargs[k] for k in names)
+        shapes = tuple(np.shape(v) for v in self._return)
+        super().__init__(name='multigetter', names=names, shapes=shapes)
 
     def get(self):
         return self._return

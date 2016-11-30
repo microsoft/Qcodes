@@ -445,7 +445,7 @@ class TestLoop(TestCase):
         mg = MultiGetter(one=1, onetwo=(1, 2))
         self.assertTrue(hasattr(mg, 'names'))
         self.assertTrue(hasattr(mg, 'shapes'))
-        self.assertEqual(mg.name, 'None')
+        self.assertEqual(mg.name, 'multigetter')
         self.assertFalse(hasattr(mg, 'shape'))
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
         data = loop.run_temp()
@@ -497,12 +497,12 @@ class TestLoop(TestCase):
         with self.assertRaises(ValueError):
             loop.run_temp()
 
-        # this one has name and shape
+        # this one still has names and shapes
         mg = MultiGetter(arr=(4, 5, 6))
         self.assertTrue(hasattr(mg, 'name'))
-        self.assertTrue(hasattr(mg, 'shape'))
-        self.assertFalse(hasattr(mg, 'names'))
-        self.assertFalse(hasattr(mg, 'shapes'))
+        self.assertFalse(hasattr(mg, 'shape'))
+        self.assertTrue(hasattr(mg, 'names'))
+        self.assertTrue(hasattr(mg, 'shapes'))
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
         data = loop.run_temp()
 

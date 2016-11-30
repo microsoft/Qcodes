@@ -568,7 +568,8 @@ class TestInstrument(TestCase):
                     'name': 'IDN',
                     'ts': None,
                     'units': '',
-                    'value': None
+                    'value': None,
+                    'vals': '<Anything>'
                 },
                 'amplitude': {
                     '__class__': (
@@ -579,7 +580,8 @@ class TestInstrument(TestCase):
                     'name': 'amplitude',
                     'ts': None,
                     'units': '',
-                    'value': None
+                    'value': None,
+                    'vals': '<Numbers>'
                 }
             },
             'functions': {'echo': {}}
@@ -606,7 +608,8 @@ class TestInstrument(TestCase):
             'name': 'noise',
             'ts': None,
             'units': '',
-            'value': None
+            'value': None,
+            'vals': '<Numbers>'
         })
 
         noise.set(100)
