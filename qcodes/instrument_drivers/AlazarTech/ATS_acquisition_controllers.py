@@ -91,10 +91,10 @@ class Triggered_AcquisitionController(AcquisitionController):
                 buffer_slice = slice(
                     self.buffer_idx * self.records_per_buffer,
                     (self.buffer_idx + 1) * self.records_per_buffer)
-                self.buffers[ch][buffer_slice] = segmented_buffer[ch_name]
+                self.buffers[ch][buffer_slice] = segmented_buffer.pop(ch_name)
         else:
-            print('*'*20+'\nIgnoring extra ATS buffer')
-            pass
+            logging.warning('Ignoring extra ATS buffer')
+
         self.buffer_idx += 1
 
     def post_acquire(self):
@@ -353,7 +353,7 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                 (self.traces_per_acquisition(),
                  self.samples_per_record * self.number_of_buffers_max_wait))
             self._post_initialization_traces = {
-                ch_idx: np.zeros((self.traces_per_acquisition(),
+                'ch' + str(ch_idx): np.zeros((self.traces_per_acquisition(),
                                   self.samples_per_record))
                 for ch_idx in self.channel_selection}
 
@@ -407,7 +407,9 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                     self._target_command()
                     self.t_start_list[self.trace_idx] = self.buffer_idx * \
                                                         self.ms_per_buffer
-                    print('Starting active {:.2f} s'.format(time.time()-self.t0))
+                    if not self.silent():
+                        print('Starting active {:.2f} s'.format(
+                            time.time()-self.t0))
                     self.buffer_idx = 0
 
                     if not self.silent():
@@ -425,7 +427,8 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
             if self.buffer_idx == 0 and self.record_initialization_traces():
                 # Store first stage after initialization
                 for ch_idx in self.channel_selection:
-                    self._post_initialization_traces[ch_idx][self.trace_idx] = \
+                    ch_name = 'ch{}'.format(ch_idx)
+                    self._post_initialization_traces[ch_name][self.trace_idx] = \
                         segmented_buffers[ch_idx]
 
             trigger_buffer = segmented_buffers[self.trigger_channel()]
