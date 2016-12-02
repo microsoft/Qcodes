@@ -630,6 +630,8 @@ class AlazarTech_ATS(Instrument):
         buffer_timeout = self.buffer_timeout._get_byte()
         self.buffer_timeout._set_updated()
 
+        # Recycle buffers either if using continuous streaming mode or if
+        # more buffers are needed than the number of allocated buffers
         buffer_recycling = \
             (self.buffers_per_acquisition._get_byte() == 0x7FFFFFFF) or \
             (self.buffers_per_acquisition._get_byte() >
@@ -649,8 +651,7 @@ class AlazarTech_ATS(Instrument):
             # if buffers must be recycled, extract data and repost them
             # otherwise continue to next buffer
             acquisition_controller.handle_buffer(buf.buffer)
-            # if buffer_recycling:
-            if True:
+            if buffer_recycling:
                 self._call_dll('AlazarPostAsyncBuffer',
                                self._handle, buf.addr, buf.size_bytes)
             buffers_completed += 1
