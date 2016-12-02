@@ -264,10 +264,12 @@ class AlazarTech_ATS(Instrument):
                        minor.ctypes.data)
         cpld_ver = str(major[0])+"."+str(minor[0])
 
+        # Use error_check=False, because in some cases the driver version
+        # cannot be obtained.
         self._call_dll('AlazarGetDriverVersion',
                        major.ctypes.data,
                        minor.ctypes.data,
-                       revision.ctypes.data)
+                       revision.ctypes.data, error_check=False)
         driver_ver = str(major[0])+"."+str(minor[0])+"."+str(revision[0])
 
         self._call_dll('AlazarGetSDKVersion',
