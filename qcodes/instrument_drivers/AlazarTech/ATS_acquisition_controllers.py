@@ -225,7 +225,20 @@ class Continuous_AcquisitionController(AcquisitionController):
         pass
 
     def handle_buffer(self, buffer):
+        """
+        Adds buffers to fill up the data traces.
+        Because a trace can consist of multiple buffers, the 'trace_idx' and
+        'buffer_idx' determine the relevant trace/buffer within a trace,
+        respectively.
+        Note that 'buffer_start_idx' set to nonzero if the first buffer should
+        be added from a nonzero starting idx. In this case, the first buffer
+        must have 'buffer_idx = -1'.
+        Args:
+            buffer: Buffer to add to trace
 
+        Returns:
+            None
+        """
         if self.buffer_idx >= self.buffers_per_trace * \
                              self.traces_per_acquisition():
             print('Ignoring extra ATS buffer {}'.format(self.buffer_idx))
