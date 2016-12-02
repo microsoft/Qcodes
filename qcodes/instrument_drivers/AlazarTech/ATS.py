@@ -136,24 +136,6 @@ class AlazarTech_ATS(Instrument):
               'single channel mode.')
     }
 
-    # Parameters that can be set and/or get via
-    # AlazarSetParameter/AlazarGetParameter
-    _parameters = {
-        'DATA_WIDTH': 0x10000009,
-        'SETGET_ASYNC_BUFFSIZE_BYTES': 0x10000039,
-        'SETGET_ASYNC_BUFFCOUNT': 0x10000040,
-        'GET_DATA_FORMAT': 0x10000042,
-        'GET_SAMPLES_PER_TIMESTAMP_CLOCK': 0x10000044,
-        'GET_RECORDS_CAPTURED': 0x10000045,
-        'GET_ASYNC_BUFFERS_PENDING': 0x10000050,
-        'GET_ASYNC_BUFFERS_PENDING_FULL': 0x10000051,
-        'GET_ASYNC_BUFFERS_PENDING_EMPTY': 0x10000052,
-        'ECC_MODE': 0x10000048,
-        'GET_AUX_INPUT_LEVEL': 0x10000049,
-        'EXT_TRIGGER_COUPLING': 0x1000001A,
-        'EXT_TRIGGER_ATTENUATOR_RELAY': 0x1000001C
-    }
-
     _board_names = {
         1: 'ATS850',
         2: 'ATS310',
@@ -506,9 +488,6 @@ class AlazarTech_ATS(Instrument):
 
         # get channel info
         max_s, bps = self._get_channel_info(self._handle)
-        # if bps != 8:
-        #     raise Exception('Only 8 bits per sample supported at this moment.'+
-        #                     'Number of bits: {}'.format(bps))
 
         # Set record size for NPT mode
         if mode in ['CS', 'NPT']:
@@ -650,14 +629,20 @@ class AlazarTech_ATS(Instrument):
 
             # if buffers must be recycled, extract data and repost them
             # otherwise continue to next buffer
-            acquisition_controller.handle_buffer(buf.buffer)
             if buffer_recycling:
+                acquisition_controller.handle_buffer(buf.buffer)
                 self._call_dll('AlazarPostAsyncBuffer',
                                self._handle, buf.addr, buf.size_bytes)
             buffers_completed += 1
 
         # stop measurement here
         self._call_dll('AlazarAbortAsyncRead', self._handle)
+
+        # -----cleanup here-----
+        # extract data if not yet done
+        if not buffer_recycling:
+            for buf in self.buffer_list:
+                acquisition_controller.handle_buffer(buf.buffer)
 
         # free up memory
         self.clear_buffers()
@@ -676,16 +661,6 @@ class AlazarTech_ATS(Instrument):
     def get_status(self):
         return self._call_dll('AlazarGetStatus', self._handle,
                               error_check=False)
-
-    def get_parameter(self, parameter, channel=0):
-        value = np.array([0], dtype=np.long)  # bps bits per sample
-        self._call_dll('AlazarGetParameterUL', self._handle, channel,
-                       self._parameters[parameter], value.ctypes.data)
-        return value
-
-    def set_parameter(self, parameter, value, channel=0):
-        self._call_dll('AlazarSetParameterUL', self._handle, channel,
-                       self._parameters[parameter], value)
 
     def _set_if_present(self, param_name, value):
         if value is not None:
@@ -905,8 +880,6 @@ class Buffer:
     """
     def __init__(self, bits_per_sample, samples_per_buffer,
                  number_of_channels):
-        # if bits_per_sample != 8:
-        #     raise Exception("Buffer: only 8 bit per sample supported")
         if os.name != 'nt':
             raise Exception("Buffer: only Windows supported at this moment")
         self._allocated = True
@@ -921,7 +894,7 @@ class Buffer:
 
         self.size_bytes = bytes_per_sample * samples_per_buffer * \
                           number_of_channels
-        # self.size_bytes = 3200
+
         # for documentation please see:
         # https://msdn.microsoft.com/en-us/library/windows/desktop/aa366887(v=vs.85).aspx
         ctypes.windll.kernel32.VirtualAlloc.argtypes = [
@@ -1015,9 +988,6 @@ class AcquisitionController(Instrument):
                            shapes=((),),
                            snapshot_value=False)
 
-        self.add_parameter(name="requires_buffer",
-                           get_cmd=self._requires_buffer)
-
     def _get_alazar(self):
         """
         returns a reference to the alazar instrument. A call to self._alazar is
@@ -1061,19 +1031,46 @@ class AcquisitionController(Instrument):
             return self._alazar.parameters[setting].get_latest()
 
     def update_acquisition_settings(self, **kwargs):
+        """
+        Updates acquisition settings after first verifying that none of the
+        fixed acquisition settings are overwritten. Any pre-existing settings
+        that are not overwritten remain.
+
+        Args:
+            **kwargs: acquisition settings
+
+        Returns:
+            None
+        """
         kwargs = self.verify_acquisition_settings(**kwargs)
         self._acquisition_settings.update(**kwargs)
 
     def set_acquisition_settings(self, **kwargs):
+        """
+        Sets acquisition settings after first verifying that none of the
+        fixed acquisition settings are overwritten. Any pre-existing settings
+        that are not overwritten are removed.
+
+        Args:
+            **kwargs: acquisition settings
+
+        Returns:
+            None
+        """
         kwargs = self.verify_acquisition_settings(**kwargs)
         self._acquisition_settings = kwargs
 
     def do_acquisition(self):
+        """
+        Performs an acquisition using the acquisition settings
+        Returns:
+            None
+        """
         records = self._alazar.acquire(acquisition_controller=self,
                                        **self._acquisition_settings)
         return records
 
-    def _requires_buffer(self):
+    def requires_buffer(self):
         """
         Check if enough buffers are acquired
         Returns:
@@ -1096,7 +1093,7 @@ class AcquisitionController(Instrument):
         for ch, ch_idx in enumerate(self.channel_selection):
             buffer_slice = slice(ch * self.samples_per_record,
                             (ch + 1) * self.samples_per_record)
-            # TODO int16 conversion necessary but shouldbe done earlier
+            # TODO int16 conversion necessary but should be done earlier
             buffer_segment = buffer[buffer_slice]
 
             if scale_voltages:
