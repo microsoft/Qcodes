@@ -7,7 +7,7 @@ SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = _build
 # this is to to autmagic gh-pages
-GH_PAGES_SOURCES = docs qcodes CONTRIBUTING.rst LICENSE.md
+GH_PAGES_SOURCES = docs qcodes CONTRIBUTING.rst LICENSE
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
@@ -226,10 +226,14 @@ dummy:
 	@echo
 	@echo "Build finished. Dummy builder generates no files."
 
+html-api:
+	sphinx-apidoc  -o  docs/auto  qcodes -d 10
+	cd docs && make html
+
 gh-pages:
 	git config --global user.email "bot@travics.com"
 	git config --global user.name "Documentation Bot"
-	git remote add upstream https://${GITHUB_API_KEY}@github.com/qdev-dk/Qcodes.git
+	git remote add upstream https://${GITHUB_API_KEY}@github.com/QCoDeS/Qcodes.git
 	git fetch upstream
 	git checkout gh-pages
 	rm -rf ./*
@@ -241,4 +245,4 @@ gh-pages:
 	rm -rf $(GH_PAGES_SOURCES) build
 	git add -A
 	git commit -m "Generated gh-pages for `git log master -1 --pretty=short \
-	--abbrev-commit`" && git push origin gh-pages ; git checkout master
+	--abbrev-commit`" && git push https://${GITHUB_API_KEY}@github.com/QCoDeS/Qcodes.git gh-pages ; git checkout master

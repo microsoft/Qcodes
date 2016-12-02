@@ -18,6 +18,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
     """Return numpy types as standard types."""
     # http://stackoverflow.com/questions/27050108/convert-numpy-type-to-python
     # http://stackoverflow.com/questions/9452775/converting-numpy-dtypes-to-native-python-types/11389998#11389998
+
     def default(self, obj):
         if isinstance(obj, np.integer):
             return int(obj)
@@ -35,7 +36,12 @@ class NumpyJSONEncoder(json.JSONEncoder):
         elif hasattr(obj, '_JSONEncoder'):
             return obj._JSONEncoder()
         else:
-            return super(NumpyJSONEncoder, self).default(obj)
+            try:
+                s = super(NumpyJSONEncoder, self).default(obj)
+            except TypeError:
+                # we cannot convert the object to JSON, just take a string
+                s = str(obj)
+            return s
 
 
 def tprint(string, dt=1, tag='default'):

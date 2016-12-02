@@ -280,3 +280,16 @@ class MatPlot(BasePlot):
         ax.qcodes_colorbar.set_clim(cmin, cmax)
 
         return pc
+
+    def save(self, filename=None):
+        """
+        Save current plot to filename, by default
+        to the location corresponding to the default 
+        title.
+
+        Args:
+            filename (Optional[str]): Location of the file
+        """
+        default = "{}.png".format(self.get_default_title())
+        filename = filename or default
+        self.fig.savefig(filename)
