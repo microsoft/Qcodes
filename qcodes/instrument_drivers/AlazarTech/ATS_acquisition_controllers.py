@@ -450,7 +450,6 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
             else:
                 self.buffer_idx += 1
 
-
         elif self.stage() == 'read':
             # Add buffer to data
             super().handle_buffer(buffer)
@@ -470,6 +469,23 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
         else:
             raise ValueError('Acquisition stage {} unknown'.format(self.stage))
 
+
+class TestContinuous_AcquisitionController(Continuous_AcquisitionController):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.add_parameter(name='max_buffers',
+                           initial_value=100000,
+                           parameter_class=ManualParameter)
+
+    def _requires_buffer(self):
+        return self.buffer_idx <= self.max_buffers()
+
+    def handle_buffer(self, buffer):
+        self.buffer_idx += 1
+
+    def post_acquire(self):
+        print('successfully acquired all {} buffers'.format(self.buffer_idx))
 
 # DFT AcquisitionController
 class Demodulation_AcquisitionController(AcquisitionController):
