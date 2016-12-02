@@ -1,3 +1,4 @@
+from .ATS import AcquisitionController
 import math
 import numpy as np
 import logging
@@ -9,8 +10,20 @@ from .ATS import AcquisitionController
 
 
 class Triggered_AcquisitionController(AcquisitionController):
-    """Basic AcquisitionController tested on ATS9360
-    returns unprocessed data averaged by record with 2 channels
+    """
+    Acquisition controller that acquires a record after each trigger.
+
+    The resulting data is a list, where each element corresponds to an ATS
+    acquisition channel, and whose shape depends on post-processing.
+    The parameter average_mode sets the data averaging during post-processing.
+    Possible modes are:
+        'none': Return full traces, each output data element has shape
+                    (records_per_buffer * buffers_per_acquisition,
+                     samples_per_record)
+        'trace': Average over all traces (records), with data element shape
+                    (samples_per_record)
+        'point': Average over all traces and over time, returning the average
+                 signal as a single value.
     """
     def __init__(self, name, alazar_name, **kwargs):
         super().__init__(name, alazar_name, **kwargs)
@@ -65,7 +78,7 @@ class Triggered_AcquisitionController(AcquisitionController):
             shape = (self.traces_per_acquisition, self.samples_per_record)
         self.acquisition.shapes = tuple([shape] * self.number_of_channels)
 
-    def _requires_buffer(self):
+    def requires_buffer(self):
         return self.buffer_idx < self.buffers_per_acquisition
 
     def pre_start_capture(self):
@@ -114,6 +127,25 @@ class Triggered_AcquisitionController(AcquisitionController):
 
 
 class Continuous_AcquisitionController(AcquisitionController):
+    """
+    Acquisition controller that continuously acquires data without needing a
+    trigger. In contrast to triggered mode, here a trace may be composed of
+    multiple buffers. Therefore, the acquisition settings 'records_per_buffer'
+    and 'buffers_per_acquisition' are fixed, and instead the parameters
+    'samples_per_trace' and 'traces_per_acquisition' must be set.
+
+    The resulting data is a list, where each element corresponds to an ATS
+    acquisition channel, and whose shape depends on post-processing.
+    The parameter average_mode sets the data averaging during post-processing.
+    Possible modes are:
+        'none': Return full traces, each output data element has shape
+                    (traces_per_acquisition,
+                     samples_per_trace)
+        'trace': Average over all traces (records), with data element shape
+                    (samples_per_trace)
+        'point': Average over all traces and over time, returning the average
+                 signal as a single value.
+    """
     def __init__(self, name, alazar_name, **kwargs):
         super().__init__(name, alazar_name, **kwargs)
 
@@ -175,7 +207,7 @@ class Continuous_AcquisitionController(AcquisitionController):
             shape = (self.traces_per_acquisition(), self.samples_per_record)
         self.acquisition.shapes = tuple([shape] * self.number_of_channels)
 
-    def _requires_buffer(self):
+    def requires_buffer(self):
         return self.trace_idx < self.traces_per_acquisition()
 
     def pre_start_capture(self):
@@ -194,7 +226,20 @@ class Continuous_AcquisitionController(AcquisitionController):
         pass
 
     def handle_buffer(self, buffer):
+        """
+        Adds buffers to fill up the data traces.
+        Because a trace can consist of multiple buffers, the 'trace_idx' and
+        'buffer_idx' determine the relevant trace/buffer within a trace,
+        respectively.
+        Note that 'buffer_start_idx' set to nonzero if the first buffer should
+        be added from a nonzero starting idx. In this case, the first buffer
+        must have 'buffer_idx = -1'.
+        Args:
+            buffer: Buffer to add to trace
 
+        Returns:
+            None
+        """
         if self.buffer_idx >= self.buffers_per_trace * \
                              self.traces_per_acquisition():
             print('Ignoring extra ATS buffer {}'.format(self.buffer_idx))
@@ -258,7 +303,8 @@ class Continuous_AcquisitionController(AcquisitionController):
         return data
 
 
-class SteeredInitialization_AcquisitionController(Continuous_AcquisitionController):
+class SteeredInitialization_AcquisitionController(
+    Continuous_AcquisitionController):
     shared_kwargs = ['target_instrument']
 
     def __init__(self, name, alazar_name, target_instrument, **kwargs):
@@ -286,7 +332,8 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                            vals=vals.Bool())
         self.add_parameter(name='stage',
                            parameter_class=ManualParameter,
-                           vals=vals.Enum('initialization', 'active', 'read'))
+                           vals=vals.Enum('initialization', 'active',
+                                          'read'))
         self.add_parameter(name='record_initialization_traces',
                            parameter_class=ManualParameter,
                            initial_value=False,
@@ -299,7 +346,6 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                            parameter_class=ManualParameter,
                            initial_value='start',
                            vals=vals.Strings())
-
 
         self.add_parameter(name='readout_channel',
                            parameter_class=ManualParameter,
@@ -354,7 +400,7 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                  self.samples_per_record * self.number_of_buffers_max_wait))
             self._post_initialization_traces = {
                 'ch' + str(ch_idx): np.zeros((self.traces_per_acquisition(),
-                                  self.samples_per_record))
+                                              self.samples_per_record))
                 for ch_idx in self.channel_selection}
 
     def pre_start_capture(self):
@@ -373,14 +419,15 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
             # increase no_blip_idx, if there was a blip it will be reset
             self.buffer_no_blip_idx += 1
 
-            segmented_buffers = self.segment_buffer(buffer, scale_voltages=True)
+            segmented_buffers = self.segment_buffer(buffer,
+                                                    scale_voltages=True)
             readout_buffer = segmented_buffers[self.readout_channel()]
 
             if self.record_initialization_traces():
                 # Store buffer into initialization trace
                 buffer_slice = (
                     self.trace_idx, slice(
-                        (self.buffer_idx-1) * self.samples_per_record,
+                        (self.buffer_idx - 1) * self.samples_per_record,
                         self.buffer_idx * self.samples_per_record))
                 self._initialization_traces[buffer_slice] = readout_buffer
 
@@ -409,26 +456,28 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                                                         self.ms_per_buffer
                     if not self.silent():
                         print('Starting active {:.2f} s'.format(
-                            time.time()-self.t0))
+                            time.time() - self.t0))
                     self.buffer_idx = 0
 
                     if not self.silent():
                         logging.warning('Max wait time reached, but no '
                                         'period without blips occurred, '
                                         'starting')
-                else: # self.max_wait_action() == 'error':
+                else:  # self.max_wait_action() == 'error':
                     raise RuntimeError('Max wait time reached but no period'
                                        ' without blips occurred, stopping')
 
         elif self.stage() == 'active':
             # Keep acquiring buffers until acquisition trigger is measured
-            segmented_buffers = self.segment_buffer(buffer, scale_voltages=True)
+            segmented_buffers = self.segment_buffer(buffer,
+                                                    scale_voltages=True)
 
             if self.buffer_idx == 0 and self.record_initialization_traces():
                 # Store first stage after initialization
                 for ch_idx in self.channel_selection:
                     ch_name = 'ch{}'.format(ch_idx)
-                    self._post_initialization_traces[ch_name][self.trace_idx] = \
+                    self._post_initialization_traces[ch_name][
+                        self.trace_idx] = \
                         segmented_buffers[ch_idx]
 
             trigger_buffer = segmented_buffers[self.trigger_channel()]
@@ -439,14 +488,16 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                 # Find first index of acquisition trigger
                 self.buffer_idx = -1
                 self.buffer_start_idx = \
-                    np.argmax(trigger_buffer > self.trigger_threshold_voltage())
+                    np.argmax(
+                        trigger_buffer > self.trigger_threshold_voltage())
 
                 # Add first (partial) segment to traces
                 super().handle_buffer(buffer)
 
                 if not self.silent():
-                    print('starting readout after {:.2f} s, buffers {}'.format(
-                        time.time()-self.t0, self.buffer_idx))
+                    print(
+                        'starting readout after {:.2f} s, buffers {}'.format(
+                            time.time() - self.t0, self.buffer_idx))
             else:
                 self.buffer_idx += 1
 
@@ -457,7 +508,7 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
 
                 if not self.silent():
                     print('finished trace after {:.2f} s'.format(
-                        time.time()-self.t0))
+                        time.time() - self.t0))
                 self.t0 = time.time()
                 # Trace filled, go back to initialization
                 self.stage('initialization')
@@ -467,10 +518,12 @@ class SteeredInitialization_AcquisitionController(Continuous_AcquisitionControll
                 self.buffer_no_blip_idx = 0
 
         else:
-            raise ValueError('Acquisition stage {} unknown'.format(self.stage))
+            raise ValueError(
+                'Acquisition stage {} unknown'.format(self.stage))
 
 
-class TestContinuous_AcquisitionController(Continuous_AcquisitionController):
+class TestContinuous_AcquisitionController(
+    Continuous_AcquisitionController):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -485,7 +538,9 @@ class TestContinuous_AcquisitionController(Continuous_AcquisitionController):
         self.buffer_idx += 1
 
     def post_acquire(self):
-        print('successfully acquired all {} buffers'.format(self.buffer_idx))
+        print(
+            'successfully acquired all {} buffers'.format(self.buffer_idx))
+
 
 # DFT AcquisitionController
 class Demodulation_AcquisitionController(AcquisitionController):

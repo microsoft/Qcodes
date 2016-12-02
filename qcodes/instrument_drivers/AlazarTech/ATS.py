@@ -6,6 +6,7 @@ import os
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
 from qcodes.utils import validators
+from qcodes.instrument.parameter import ManualParameter
 
 # TODO(damazter) (C) logging
 
@@ -234,6 +235,18 @@ class AlazarTech_ATS(Instrument):
         # Some ATS models do not support a bwlimit. This flag defines if the
         # ATS supports a bwlimit or not. True by default.
         self._bwlimit_support = True
+
+        # get channel info
+        max_s, bps = self._get_channel_info(self._handle)
+        self.add_parameter(name='bits_per_sample',
+                           parameter_class=ManualParameter,
+                           initial_value=bps)
+        self.add_parameter(name='bytes_per_sample',
+                           parameter_class=ManualParameter,
+                           initial_value=int((bps + 7)//8))
+        self.add_parameter(name='maximum_samples',
+                           parameter_class=ManualParameter,
+                           initial_value=max_s)
 
     def get_idn(self):
         """
@@ -488,9 +501,6 @@ class AlazarTech_ATS(Instrument):
         # Abort any previous measurement
         self._call_dll('AlazarAbortAsyncRead', self._handle)
 
-        # get channel info
-        max_s, bps = self._get_channel_info(self._handle)
-
         # Set record size for NPT mode
         if mode in ['CS', 'NPT']:
             pretriggersize = 0  # pretriggersize is 0 for NPT and CS always
@@ -588,7 +598,8 @@ class AlazarTech_ATS(Instrument):
 
         for k in range(allocated_buffers):
             try:
-                self.buffer_list.append(Buffer(bps, samples_per_buffer,
+                self.buffer_list.append(Buffer(self.bits_per_sample(),
+                                               samples_per_buffer,
                                                number_of_channels))
             except:
                 self.clear_buffers()
@@ -657,10 +668,20 @@ class AlazarTech_ATS(Instrument):
         return acquisition_controller.post_acquire()
 
     def triggered(self):
+        """
+        Checks if the ATS has received at least one trigger.
+        Returns:
+            1 if there has been a trigger, 0 otherwise
+        """
         return self._call_dll('AlazarTriggered', self._handle,
                               error_check=False)
 
     def get_status(self):
+        """
+        Returns t
+        Returns:
+
+        """
         return self._call_dll('AlazarGetStatus', self._handle,
                               error_check=False)
 
@@ -990,6 +1011,9 @@ class AcquisitionController(Instrument):
                            shapes=((),),
                            snapshot_value=False)
 
+        # Save bytes_per_sample received from ATS digitizer
+        self._bytes_per_sample = self._alazar.bytes_per_sample() * 8
+
     def _get_alazar(self):
         """
         returns a reference to the alazar instrument. A call to self._alazar is
@@ -1076,7 +1100,7 @@ class AcquisitionController(Instrument):
         """
         Check if enough buffers are acquired
         Returns:
-
+            True if more buffers are needed, False otherwise
         """
         raise NotImplementedError(
             'This method should be implemented in a subclass')
@@ -1101,7 +1125,9 @@ class AcquisitionController(Instrument):
             if scale_voltages:
                 # Convert data points from an uint16 to volts
                 ch_range = self._alazar.parameters['channel_range'+ch_idx]()
-                buffer_segment = (buffer_segment - 2.**15) / 2**15 * ch_range
+                # Determine value corresponding to zero for unsigned int
+                mid_val = 2.**(self._bytes_per_sample-1)
+                buffer_segment = (buffer_segment - mid_val) / mid_val * ch_range
 
             buffer_segments[ch_idx] = buffer_segment
         return buffer_segments

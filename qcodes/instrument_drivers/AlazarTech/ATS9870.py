@@ -12,7 +12,9 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
     def __init__(self, name, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
         super().__init__(name, dll_path=dll_path, **kwargs)
+
         # add parameters
+        self.channels = ['A', 'B', 'C', 'D']
 
         # ----- Parameters for the configuration of the board -----
         self.add_parameter(name='clock_source',
@@ -53,30 +55,30 @@ class AlazarTech_ATS9870(AlazarTech_ATS):
                            value=0,
                            vals=validators.Ints(0, 100000))
 
-        for i in ['1', '2']:
-            self.add_parameter(name='coupling' + i,
+        for ch in self.channels:
+            self.add_parameter(name='coupling' + ch,
                                parameter_class=AlazarParameter,
-                               label='Coupling channel ' + i,
+                               label='Coupling channel ' + ch,
                                unit=None,
                                value='AC',
                                byte_to_value_dict={1: 'AC', 2: 'DC'})
-            self.add_parameter(name='channel_range' + i,
+            self.add_parameter(name='channel_range' + ch,
                                parameter_class=AlazarParameter,
-                               label='Range channel ' + i,
+                               label='Range channel ' + ch,
                                unit='V',
                                value=4,
                                byte_to_value_dict={
                                    2: 0.04, 5: 0.1, 6: 0.2, 7: 0.4,
                                    10: 1., 11: 2., 12: 4.})
-            self.add_parameter(name='impedance' + i,
+            self.add_parameter(name='impedance' + ch,
                                parameter_class=AlazarParameter,
-                               label='Impedance channel ' + i,
+                               label='Impedance channel ' + ch,
                                unit='Ohm',
                                value=50,
                                byte_to_value_dict={1: 1000000, 2: 50})
-            self.add_parameter(name='bwlimit' + i,
+            self.add_parameter(name='bwlimit' + ch,
                                parameter_class=AlazarParameter,
-                               label='Bandwidth limit channel ' + i,
+                               label='Bandwidth limit channel ' + ch,
                                unit=None,
                                value='DISABLED',
                                byte_to_value_dict={0: 'DISABLED',
