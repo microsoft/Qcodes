@@ -9,8 +9,20 @@ from .ATS import AcquisitionController
 
 
 class Triggered_AcquisitionController(AcquisitionController):
-    """Basic AcquisitionController tested on ATS9360
-    returns unprocessed data averaged by record with 2 channels
+    """
+    Acquisition controller that acquires a record after each trigger.
+
+    The resulting data is a list, where each element corresponds to an ATS
+    acquisition channel, and whose shape depends on post-processing.
+    The parameter average_mode sets the data averaging during post-processing.
+    Possible modes are:
+        'none': Return full traces, each output data element has shape
+                    (records_per_buffer * buffers_per_acquisition,
+                     samples_per_record)
+        'trace': Average over all traces (records), with data element shape
+                    (samples_per_record)
+        'point': Average over all traces and over time, returning the average
+                 signal as a single value.
     """
     def __init__(self, name, alazar_name, **kwargs):
         super().__init__(name, alazar_name, **kwargs)
@@ -114,6 +126,25 @@ class Triggered_AcquisitionController(AcquisitionController):
 
 
 class Continuous_AcquisitionController(AcquisitionController):
+    """
+    Acquisition controller that continuously acquires data without needing a
+    trigger. In contrast to triggered mode, here a trace may be composed of
+    multiple buffers. Therefore, the acquisition settings 'records_per_buffer'
+    and 'buffers_per_acquisition' are fixed, and instead the parameters
+    'samples_per_trace' and 'traces_per_acquisition' must be set.
+
+    The resulting data is a list, where each element corresponds to an ATS
+    acquisition channel, and whose shape depends on post-processing.
+    The parameter average_mode sets the data averaging during post-processing.
+    Possible modes are:
+        'none': Return full traces, each output data element has shape
+                    (traces_per_acquisition,
+                     samples_per_trace)
+        'trace': Average over all traces (records), with data element shape
+                    (samples_per_trace)
+        'point': Average over all traces and over time, returning the average
+                 signal as a single value.
+    """
     def __init__(self, name, alazar_name, **kwargs):
         super().__init__(name, alazar_name, **kwargs)
 
@@ -256,219 +287,6 @@ class Continuous_AcquisitionController(AcquisitionController):
             data = [np.mean(buffer) for buffer in self.buffers]
 
         return data
-
-
-class SteeredInitialization_AcquisitionController(Continuous_AcquisitionController):
-    shared_kwargs = ['target_instrument']
-
-    def __init__(self, name, alazar_name, target_instrument, **kwargs):
-        super().__init__(name, alazar_name, **kwargs)
-
-        self._target_instrument = target_instrument
-
-        self.add_parameter(name='t_no_blip',
-                           parameter_class=ManualParameter,
-                           units='ms',
-                           initial_value=40)
-        self.add_parameter(name='t_max_wait',
-                           parameter_class=ManualParameter,
-                           units='ms',
-                           initial_value=500)
-        self.add_parameter(name='max_wait_action',
-                           parameter_class=ManualParameter,
-                           units='ms',
-                           initial_value='start',
-                           vals=vals.Enum('start', 'error'))
-
-        self.add_parameter(name='silent',
-                           parameter_class=ManualParameter,
-                           initial_value=True,
-                           vals=vals.Bool())
-        self.add_parameter(name='stage',
-                           parameter_class=ManualParameter,
-                           vals=vals.Enum('initialization', 'active', 'read'))
-        self.add_parameter(name='record_initialization_traces',
-                           parameter_class=ManualParameter,
-                           initial_value=False,
-                           vals=vals.Bool())
-
-        # Parameters for the target instrument and command after initialization
-        self.add_parameter(name='target_instrument',
-                           get_cmd=lambda: self._target_instrument.name)
-        self.add_parameter(name='target_command',
-                           parameter_class=ManualParameter,
-                           initial_value='start',
-                           vals=vals.Strings())
-
-
-        self.add_parameter(name='readout_channel',
-                           parameter_class=ManualParameter,
-                           vals=vals.Enum('A', 'B', 'C', 'D'))
-        self.add_parameter(name='trigger_channel',
-                           parameter_class=ManualParameter,
-                           vals=vals.Enum('A', 'B', 'C', 'D'))
-        self.add_parameter(name='trigger_threshold_voltage',
-                           parameter_class=ManualParameter)
-        self.add_parameter(name='readout_threshold_voltage',
-                           parameter_class=ManualParameter)
-
-        self.add_parameter(name='initialization_traces',
-                           get_cmd=lambda: self._initialization_traces)
-        self.add_parameter(name='post_initialization_traces',
-                           get_cmd=lambda: self._post_initialization_traces)
-
-        self.number_of_buffers_no_blip = None
-        self.number_of_buffers_max_wait = None
-        self._target_command = None
-        self.buffer_no_blip_idx = None
-        self.trace_idx = None
-        self.t_start_list = None
-
-    def setup(self, readout_threshold_voltage=None,
-              trigger_threshold_voltage=None, **kwargs):
-        if readout_threshold_voltage is not None:
-            self.readout_threshold_voltage(readout_threshold_voltage)
-        if trigger_threshold_voltage is not None:
-            self.trigger_threshold_voltage(trigger_threshold_voltage)
-        super().setup()
-
-        # Convert t_no_blip and t_max_wait to equivalent number of buffers
-        sample_rate = self._alazar.get_sample_rate()
-        samples_per_ms = sample_rate * 1e-3
-        buffers_per_ms = samples_per_ms / self.samples_per_record
-        self.ms_per_buffer = 1 / buffers_per_ms
-        self.number_of_buffers_max_wait = \
-            int(np.ceil(self.t_max_wait() * buffers_per_ms))
-        self.number_of_buffers_no_blip = \
-            int(np.ceil(self.t_no_blip() * buffers_per_ms))
-
-        # Setup target command when t_no_blip is reached
-        self._target_command = getattr(self._target_instrument,
-                                       self.target_command())
-
-        self.t_start_list = np.zeros(self.traces_per_acquisition())
-
-        if self.record_initialization_traces():
-            self._initialization_traces = np.zeros(
-                (self.traces_per_acquisition(),
-                 self.samples_per_record * self.number_of_buffers_max_wait))
-            self._post_initialization_traces = {
-                'ch' + str(ch_idx): np.zeros((self.traces_per_acquisition(),
-                                  self.samples_per_record))
-                for ch_idx in self.channel_selection}
-
-    def pre_start_capture(self):
-        """
-        Initializes buffers before capturing
-        """
-        self.t0 = time.time()
-
-        super().pre_start_capture()
-        self.stage('initialization')
-        self.buffer_no_blip_idx = 0
-
-    def handle_buffer(self, buffer):
-        if self.stage() == 'initialization':
-            self.buffer_idx += 1
-            # increase no_blip_idx, if there was a blip it will be reset
-            self.buffer_no_blip_idx += 1
-
-            segmented_buffers = self.segment_buffer(buffer, scale_voltages=True)
-            readout_buffer = segmented_buffers[self.readout_channel()]
-
-            if self.record_initialization_traces():
-                # Store buffer into initialization trace
-                buffer_slice = (
-                    self.trace_idx, slice(
-                        (self.buffer_idx-1) * self.samples_per_record,
-                        self.buffer_idx * self.samples_per_record))
-                self._initialization_traces[buffer_slice] = readout_buffer
-
-            if max(readout_buffer) > self.readout_threshold_voltage():
-                # A blip occurred, reset counter for buffers without blips
-                self.buffer_no_blip_idx = 0
-
-            if self.buffer_no_blip_idx >= self.number_of_buffers_no_blip:
-                # Sufficient successive buffers without blips, starting
-                self.stage('active')
-                # Perform target command (e.g. starting an instrument)
-                self._target_command()
-                self.t_start_list[self.trace_idx] = self.buffer_idx * \
-                                                    self.ms_per_buffer
-                if not self.silent():
-                    print('Starting active {:.2f} s'.format(
-                        time.time() - self.t0))
-                self.buffer_idx = 0
-            elif self.buffer_idx >= self.number_of_buffers_max_wait:
-                # Max waiting time has been reached, but no sufficient
-                # period of time without blips occurred. Either start or error
-                if self.max_wait_action() == 'start':
-                    self.stage('active')
-                    self._target_command()
-                    self.t_start_list[self.trace_idx] = self.buffer_idx * \
-                                                        self.ms_per_buffer
-                    if not self.silent():
-                        print('Starting active {:.2f} s'.format(
-                            time.time()-self.t0))
-                    self.buffer_idx = 0
-
-                    if not self.silent():
-                        logging.warning('Max wait time reached, but no '
-                                        'period without blips occurred, '
-                                        'starting')
-                else: # self.max_wait_action() == 'error':
-                    raise RuntimeError('Max wait time reached but no period'
-                                       ' without blips occurred, stopping')
-
-        elif self.stage() == 'active':
-            # Keep acquiring buffers until acquisition trigger is measured
-            segmented_buffers = self.segment_buffer(buffer, scale_voltages=True)
-
-            if self.buffer_idx == 0 and self.record_initialization_traces():
-                # Store first stage after initialization
-                for ch_idx in self.channel_selection:
-                    ch_name = 'ch{}'.format(ch_idx)
-                    self._post_initialization_traces[ch_name][self.trace_idx] = \
-                        segmented_buffers[ch_idx]
-
-            trigger_buffer = segmented_buffers[self.trigger_channel()]
-            if max(trigger_buffer) > self.trigger_threshold_voltage():
-                # Acquisition trigger measured
-                self.stage('read')
-
-                # Find first index of acquisition trigger
-                self.buffer_idx = -1
-                self.buffer_start_idx = \
-                    np.argmax(trigger_buffer > self.trigger_threshold_voltage())
-
-                # Add first (partial) segment to traces
-                super().handle_buffer(buffer)
-
-                if not self.silent():
-                    print('starting readout after {:.2f} s, buffers {}'.format(
-                        time.time()-self.t0, self.buffer_idx))
-            else:
-                self.buffer_idx += 1
-
-
-        elif self.stage() == 'read':
-            # Add buffer to data
-            super().handle_buffer(buffer)
-            if not self.buffer_idx % self.buffers_per_trace:
-
-                if not self.silent():
-                    print('finished trace after {:.2f} s'.format(
-                        time.time()-self.t0))
-                self.t0 = time.time()
-                # Trace filled, go back to initialization
-                self.stage('initialization')
-                # Reset buffer idx
-                self.buffer_idx = 0
-                self.buffer_start_idx
-                self.buffer_no_blip_idx = 0
-
-        else:
-            raise ValueError('Acquisition stage {} unknown'.format(self.stage))
 
 
 # DFT AcquisitionController
