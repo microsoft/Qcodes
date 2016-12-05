@@ -78,8 +78,10 @@ class Triggered_AcquisitionController(AcquisitionController):
             shape = (self.traces_per_acquisition, self.samples_per_record)
         self.acquisition.shapes = tuple([shape] * self.number_of_channels)
 
-    def requires_buffer(self):
-        return self.buffer_idx < self.buffers_per_acquisition
+    def requires_buffer(self, buffers_completed):
+        # Check buffers_completed instead of self.buffer_idx since buffers
+        # may be analysed after all buffers are acquired
+        return buffers_completed < self.buffers_per_acquisition
 
     def pre_start_capture(self):
         """
@@ -207,7 +209,7 @@ class Continuous_AcquisitionController(AcquisitionController):
             shape = (self.traces_per_acquisition(), self.samples_per_record)
         self.acquisition.shapes = tuple([shape] * self.number_of_channels)
 
-    def requires_buffer(self):
+    def requires_buffer(self, buffers_completed):
         return self.trace_idx < self.traces_per_acquisition()
 
     def pre_start_capture(self):
@@ -522,8 +524,7 @@ class SteeredInitialization_AcquisitionController(
                 'Acquisition stage {} unknown'.format(self.stage))
 
 
-class TestContinuous_AcquisitionController(
-    Continuous_AcquisitionController):
+class TestContinuous_AcquisitionController(Continuous_AcquisitionController):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -531,8 +532,8 @@ class TestContinuous_AcquisitionController(
                            initial_value=100000,
                            parameter_class=ManualParameter)
 
-    def _requires_buffer(self):
-        return self.buffer_idx <= self.max_buffers()
+    def _requires_buffer(self, buffers_completed):
+        return buffers_completed <= self.max_buffers()
 
     def handle_buffer(self, buffer):
         self.buffer_idx += 1
