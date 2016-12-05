@@ -627,7 +627,7 @@ class AlazarTech_ATS(Instrument):
             (self.buffers_per_acquisition._get_byte() >
              self.allocated_buffers._get_byte())
 
-        while acquisition_controller.requires_buffer():
+        while acquisition_controller.requires_buffer(buffers_completed):
             buf = self.buffer_list[buffers_completed % allocated_buffers]
 
             self._call_dll('AlazarWaitAsyncBufferComplete',

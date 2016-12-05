@@ -77,8 +77,10 @@ class Triggered_AcquisitionController(AcquisitionController):
             shape = (self.traces_per_acquisition, self.samples_per_record)
         self.acquisition.shapes = tuple([shape] * self.number_of_channels)
 
-    def requires_buffer(self):
-        return self.buffer_idx < self.buffers_per_acquisition
+    def requires_buffer(self, buffers_completed):
+        # Using buffers_completed instead of self.buffer_idx because the
+        # buffers may all be passed on to handle_buffer after all are filled
+        return buffers_completed < self.buffers_per_acquisition
 
     def pre_start_capture(self):
         """
@@ -206,7 +208,7 @@ class Continuous_AcquisitionController(AcquisitionController):
             shape = (self.traces_per_acquisition(), self.samples_per_record)
         self.acquisition.shapes = tuple([shape] * self.number_of_channels)
 
-    def requires_buffer(self):
+    def requires_buffer(self, buffers_completed):
         return self.trace_idx < self.traces_per_acquisition()
 
     def pre_start_capture(self):
