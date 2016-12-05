@@ -183,7 +183,7 @@ class Parameter(Metadatable, DeferredOperations):
 
             self.set_validator(vals or Anything())
             self.__doc__ = os.linesep.join((
-                'Parameter class:',
+                'Parameter class:' + os.linesep,
                 '* `names` %s' % ', '.join(self.names),
                 '* `labels` %s' % ', '.join(self.labels),
                 '* `units` %s' % ', '.join(self.units)))
@@ -198,7 +198,7 @@ class Parameter(Metadatable, DeferredOperations):
 
             # generate default docstring
             self.__doc__ = os.linesep.join((
-                'Parameter class:',
+                'Parameter class:' + os.linesep,
                 '* `name` %s' % self.name,
                 '* `label` %s' % self.label,
                 # TODO is this unit s a typo? shouldnt that be unit?
@@ -253,7 +253,7 @@ class Parameter(Metadatable, DeferredOperations):
         self._latest_ts = None
 
         if docstring is not None:
-            self.__doc__ = docstring + os.linesep + self.__doc__
+            self.__doc__ = docstring + os.linesep + os.linesep + self.__doc__
 
         self.get_latest = GetLatest(self)
 
