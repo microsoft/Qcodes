@@ -23,8 +23,10 @@ class Demodulation_AcquisitionController(AcquisitionController):
         self.demodulation_frequency = demodulation_frequency
         self.acquisitionkwargs = {}
         self.samples_per_record = None
+        self.bits_per_sample = None
         self.records_per_buffer = None
         self.buffers_per_acquisition = None
+        self.allocated_buffers = None
         # TODO(damazter) (S) this is not very general:
         self.number_of_channels = 2
         self.cos_list = None

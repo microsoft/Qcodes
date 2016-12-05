@@ -74,4 +74,13 @@ target/
 *.py~
 tmp/
 
+# DS-store
+*.DS_Store
+
+# Sublime text automation
+*.sublime-project
+*.sublime-workspace
+
+venv/
+
 docs/examples/data/*
