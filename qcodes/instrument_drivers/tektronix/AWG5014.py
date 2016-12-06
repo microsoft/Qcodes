@@ -243,12 +243,9 @@ class Tektronix_AWG5014(VisaInstrument):
                            get_cmd=self._do_get_numpoints,
                            set_cmd=self._do_set_numpoints,
                            vals=vals.Ints(100, int(1e9)))
+
         self.add_parameter('setup_filename',
                            get_cmd='AWGC:SNAM?')
-                           # set_cmd=self.do_set_setup_filename,
-                           # vals=vals.Strings())
-                           # set function has optional args and therefore
-                           # does not work with QCodes
 
         # Channel parameters #
         for i in range(1, 5):
@@ -369,27 +366,30 @@ class Tektronix_AWG5014(VisaInstrument):
     def set_current_folder_name(self, file_path):
         return self.write('mmem:cdir "%s"' % file_path)
 
-    def change_folder(self, dir):
-        return self.write('mmem:cdir "\%s"' % dir)
+    def change_folder(self, folder):
+        return self.write('mmem:cdir "\%s"' % folder)
 
     def goto_root(self):
         return self.write('mmem:cdir "c:\\.."')
 
-    def create_and_goto_dir(self, dir):
+    def create_and_goto_dir(self, folder):
         '''
         Creates (if not yet present) and sets the current directory to <dir>
         and displays the contents
 
         '''
 
-        dircheck = '%s, DIR' % dir
+        dircheck = '%s, DIR' % folder
         if dircheck in self.get_folder_contents():
-            self.change_folder(dir)
-            logging.debug(__name__ + ' :Directory already exists')
-            print('Directory already exists, changed path to %s' % dir)
-            print('Contents of folder is %s' % self.ask('mmem:cat?'))
+            self.change_folder(folder)
+            logging.debug(__name__ + ': Directory already exists')
+            logging.warning(__name__ +
+                            (': Directory already exists, ' +
+                             'changed path to {}').format(folder))
+            logging.info(__name__ +
+                         ': Contents of folder is %s' % self.ask('mmem:cat?'))
         elif self.get_current_folder_name() == '"\\%s"' % dir:
-            print('Directory already set to %s' % dir)
+            logging.info(__name__ + ': -Directory already set to %s' % dir)
         else:
             self.write('mmem:mdir "\%s"' % dir)
             self.write('mmem:cdir "\%s"' % dir)
@@ -444,9 +444,9 @@ class Tektronix_AWG5014(VisaInstrument):
         '''
         self.write('AWGC:CLOC:SOUR INT')
 
-    ##############
-    # Parameters #
-    ##############
+    ###############################
+    # Parameter set/get functions #
+    ###############################
 
     def _do_get_numpoints(self):
         '''
@@ -476,8 +476,8 @@ class Tektronix_AWG5014(VisaInstrument):
         warn_string = ' : changing numpoints. This will clear all waveforms!'
         if numpts != self._numpoints:
             logging.warning(__name__ + warn_string)
+        # Extra print because logging.warning might not be displayed
         print(__name__ + warn_string)
-        # Extra print cause logging.warning does not print
         response = input('type "yes" to continue')
         if response == 'yes':
             logging.debug(__name__ + ' : Setting numpoints to %s' % numpts)
@@ -553,8 +553,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
     #################################
     # Transmon version file loading #
-    ################
-    #################
+    #################################
 
     def load_and_set_sequence(self, wfname_l, nrep_l, wait_l, goto_l,
                               logic_jump_l):
@@ -576,7 +575,7 @@ class Tektronix_AWG5014(VisaInstrument):
         load sequence not using sequence file
         '''
         self.set_sq_length(0)  # delete prev seq
-        # print wfname_l
+
         len_sq = len(nrep_l)
         self.set_sq_length(len_sq)
         n_ch = len(wfname_l)
@@ -645,6 +644,7 @@ class Tektronix_AWG5014(VisaInstrument):
             sleep(0.01)
             i = i + 1
         return
+
     ######################
     # AWG file functions #
     ######################
@@ -835,12 +835,12 @@ class Tektronix_AWG5014(VisaInstrument):
 
     def load_awg_file(self, filename):
         s = 'AWGCONTROL:SRESTORE "%s"' % filename
-        # print s
+        logging.debug(__name__ + ': Loading awg file using {}'.format(s))
         self.visa_handle.write_raw(s)
-        
+
     def get_error(self):
         # print self.visa_handle.ask('AWGControl:SNAMe?')
-        print(self.ask('SYSTEM:ERROR:NEXT?'))
+        return self.ask('SYSTEM:ERROR:NEXT?')
         # self.visa_handle.write('*CLS')
 
     def pack_waveform(self, wf, m1, m2):
@@ -850,17 +850,16 @@ class Tektronix_AWG5014(VisaInstrument):
         '''
         wflen = len(wf)
         packed_wf = np.zeros(wflen, dtype=np.uint16)
-        packed_wf += np.uint16(np.round(wf * 8191) + 8191 + np.round(16384 * m1) +
+        packed_wf += np.uint16(np.round(wf * 8191) + 8191 +
+                               np.round(16384 * m1) +
                                np.round(32768 * m2))
         if len(np.where(packed_wf == -1)[0]) > 0:
             print(np.where(packed_wf == -1))
         return packed_wf
 
-    # END AWG file functions
     ###########################
     # Waveform file functions #
     ###########################
-
 
     def _file_dict(self, w, m1, m2, clock):
         return {
@@ -876,7 +875,6 @@ class Tektronix_AWG5014(VisaInstrument):
 
     # Ask for string with filenames
     def get_filenames(self):
-        # logging.debug(__name__ + ' : Read filenames from instrument')
         return self.ask('MMEM:CAT?')
 
     def set_DC_out(self, DC_channel_number, Voltage):
@@ -889,7 +887,7 @@ class Tektronix_AWG5014(VisaInstrument):
     def send_DC_pulse(self, DC_channel_number, Amplitude, length):
         '''
         sends a (slow) pulse on the DC channel specified
-        Ampliude: voltage level
+        Amplitude: voltage level
         length: seconds
         '''
         restore = self.get_DC_out(DC_channel_number)
@@ -931,10 +929,9 @@ class Tektronix_AWG5014(VisaInstrument):
     def parse_int_int_ext(self, val):
         return ['INT', 'EXT'][val]
 
-    def send_waveform_to_list(self, w, m1, m2, wfmname, silent=False):
+    def send_waveform_to_list(self, w, m1, m2, wfmname):
         '''
         Sends a complete waveform directly to the "User defined" waveform list. All parameters need to be specified.
-        See also: resend_waveform()
 
         Input:
             w (float[numpoints]) : waveform (must be a numpy array)
@@ -961,14 +958,11 @@ class Tektronix_AWG5014(VisaInstrument):
         s = 'WLIS:WAV:DEL "%s"' % wfmname
         self.write(s)
 
-        if not silent:
-            print("Sending the waveform %s" % wfmname)
-
         # create the waveform
         s = 'WLIS:WAV:NEW "%s",%i,INTEGER' % (wfmname, dim)
         self.write(s)
         # Prepare the data block
-
+        # (WilliamHPNielsen) The following line is incorrect. Cf. pack_waveform
         number = (2**13 + 2**13 * w + 2**14 *
                   np.array(m1) + 2**15 * np.array(m2))
         number = number.astype('int')
