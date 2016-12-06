@@ -310,19 +310,6 @@ class Tektronix_AWG5014(VisaInstrument):
                     vals=vals.Numbers(-2.7, 2.7),
                     get_parser=float)
 
-        # # Add functions
-
-        # self.add_function('get_state')
-        # self.add_function('set_event_jump_timing')
-        # self.add_function('get_event_jump_timing')
-        # self.add_function('generate_awg_file')
-        # self.add_function('send_awg_file')
-        # self.add_function('load_awg_file')
-        # self.add_function('get_error')
-        # self.add_function('pack_waveform')
-        # self.add_function('clear_visa')
-        # self.add_function('initialize_dc_waveforms')
-
         # # Setup filepaths
         self.waveform_folder = "Waveforms"
         self._rem_file_path = "Z:\\Waveforms\\"
@@ -566,7 +553,8 @@ class Tektronix_AWG5014(VisaInstrument):
 
     #################################
     # Transmon version file loading #
-    #################################
+    ################
+    #################
 
     def load_and_set_sequence(self, wfname_l, nrep_l, wait_l, goto_l,
                               logic_jump_l):
@@ -873,55 +861,6 @@ class Tektronix_AWG5014(VisaInstrument):
     # Waveform file functions #
     ###########################
 
-    def send_waveform(self, w, m1, m2, filename, clock=None):
-        '''
-        Sends a complete waveform. All parameters need to be specified.
-        See also: resend_waveform()
-
-        Input:
-            w (float[numpoints]) : waveform
-            m1 (int[numpoints])  : marker1
-            m2 (int[numpoints])  : marker2
-            filename (string)    : filename
-            clock (int)          : frequency (Hz)
-
-        Output:
-            None
-        '''
-        # logging.debug(__name__ + ' : Sending waveform %s to instrument' %
-        #               filename)
-        # Check for errors
-
-        if (not((len(w) == len(m1)) and ((len(m1) == len(m2))))):
-            return 'error'
-
-        self._values['files'][filename] = self._file_dict(w, m1, m2, clock)
-
-        m = m1 + np.multiply(m2, 2)
-        ws = b''
-        # this is probalbly verry slow and memmory consuming!
-        for i in range(0, len(w)):
-            ws = ws + struct.pack('<fB', w[i], int(np.round(m[i], 0)))
-
-        # (WilliamHPNielsen): python 3 incompatible code found below
-        # Python 3 compatible version:
-        # s1 = 'MMEM:DATA "{:s}",'.format(filename).encode('utf-8')
-        s1 = b'MMEM:DATA "%s",' % filename
-        s3 = b'MAGIC 1000\n'
-        s5 = ws
-        if clock is not None:
-            s6 = b'CLOCK %.10e\n' % clock
-        else:
-            s6 = b''
-
-        s4 = '#' + str(len(str(len(s5)))) + str(len(s5))
-        s4 = s4.encode('UTF-8')
-        lenlen = str(len(str(len(s6) + len(s5) + len(s4) + len(s3))))
-        s2 = '#' + lenlen + str(len(s6) + len(s5) + len(s4) + len(s3))
-        s2 = s2.encode('UTF-8')
-        mes = s1 + s2 + s3 + s4 + s5 + s6
-
-        self.visa_handle.write_raw(mes)
 
     def _file_dict(self, w, m1, m2, clock):
         return {
@@ -931,43 +870,6 @@ class Tektronix_AWG5014(VisaInstrument):
             'clock_freq': clock,
             'numpoints': len(w)
         }
-
-    def resend_waveform(self, channel, w=[], m1=[], m2=[], clock=[]):
-        '''
-        Resends the last sent waveform for the designated channel
-        Overwrites only the parameters specified
-
-        Input: (mandatory)
-            channel (int) : 1 to 4, the number of the designated channel
-
-        Input: (optional)
-            w (float[numpoints]) : waveform
-            m1 (int[numpoints])  : marker1
-            m2 (int[numpoints])  : marker2
-            clock (int) : frequency
-
-        Output:
-            None
-        '''
-        filename = self._values['recent_channel_%s' % channel]['filename']
-        # logging.debug(__name__ + ' : Resending %s to channel %s' %
-        #               (filename, channel))
-
-        if (w == []):
-            w = self._values['recent_channel_%s' % channel]['w']
-        if (m1 == []):
-            m1 = self._values['recent_channel_%s' % channel]['m1']
-        if (m2 == []):
-            m2 = self._values['recent_channel_%s' % channel]['m2']
-        if (clock == []):
-            clock = self._values['recent_channel_%s' % channel]['clock_freq']
-
-        # if not ((len(w) == self._numpoints) and (len(m1) == self._numpoints)
-        #         and (len(m2) == self._numpoints)):
-        #     logging.error(__name__ + ' : one (or more) lengths of waveforms do not match with numpoints')
-
-        self.send_waveform(w, m1, m2, filename, clock)
-        self.set_filename(filename, channel)
 
     def set_filename(self, name, channel):
         '''
@@ -997,7 +899,7 @@ class Tektronix_AWG5014(VisaInstrument):
             # logging.debug(__name__  + ' : File does not exist in memory, \
             # reading from instrument')
             lijst = self.visa_handle.ask('MMEM:CAT? "MAIN"')
-            bool = False
+            bool = False  # (WilliamHPNielsen) overwriting a built-in type!!!
             bestand = ""
             for i in range(len(lijst)):
                 if (lijst[i] == '"'):
@@ -1086,69 +988,6 @@ class Tektronix_AWG5014(VisaInstrument):
 
     def get_DC_state(self):
         return self.ask('AWGControl:DC:state?')
-
-    # Send waveform to the device (from transmon driver)
-
-    def upload_awg_file(self, fname, fcontents):
-        t0 = time()
-        self._rem_file_path
-        floc = self._rem_file_path
-        f = open(floc + '\\' + fname, 'wb')
-        f.write(fcontents)
-        f.close()
-        t1 = time() - t0
-        print('upload time: ', t1)
-        self.get_state()
-        print('setting time: ', time() - t1 - t0)
-
-    def _set_setup_filename(self, fname):
-        folder_name = 'C:/' + self._setup_folder + '/' + fname
-        self.set_current_folder_name(folder_name)
-        set_folder_name = self.get_current_folder_name()
-        if not os.path.split(folder_name)[1] == os.path.split(set_folder_name)[1][:-1]:
-            print('Warning, unsuccesfully set AWG file', folder_name)
-        print('Current AWG file set to: ', self.get_current_folder_name())
-        self.write('AWGC:SRES "%s.awg"' % fname)
-
-    def set_setup_filename(self, fname, force_load=False):
-        '''
-        sets the .awg file to a .awg file that already exists in the memory of
-        the AWG.
-
-        fname (string) : file to be set.
-        force_load (bool): if True, sets the file even if it is already loaded
-
-        After setting the file it resets all the instrument settings to what
-        it is set in the qtlab memory.
-        '''
-        cfname = self.get_setup_filename()
-        if cfname.find(fname) != -1 and not force_load:
-            print('file: %s already loaded' % fname)
-        else:
-            pars = self.get_parameters()
-            self._set_setup_filename(fname)
-            # self.visa_handle.ask('*OPC?')
-            parkeys = list(pars.keys())
-            parkeys.remove('setup_filename')
-            parkeys.remove('AWG_model')
-            parkeys.remove('numpoints')
-            # not reset because this removes all loaded waveforms
-            parkeys.remove('trigger_mode')
-            # Removed trigger_mode because duplicate of run mode
-            comm = False
-            for key in parkeys:
-                try:
-                    # print 'setting: %s' % key
-                    exec('self.set_%s(pars[key]["value"])' % key)
-                    comm = True
-                except Exception as e:
-                    print(key + ' not set!')
-                    comm = False
-
-                # Sped up by factor 10, VISA protocol should take care of wait
-                if comm:
-                    self.ask('*OPC?')
-        self.get('setup_filename')  # ensures the setup filename gets updated
 
     def is_awg_ready(self):
         try:
