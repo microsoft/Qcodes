@@ -755,7 +755,7 @@ class Tektronix_AWG5014(VisaInstrument):
                      its default value (even overwriting current settings)
 
         for info on filestructure and valid record names, see AWG Help,
-        File and Record Format
+        File and Record Format (Under 'Record Name List' in Help)
         '''
         wfname_l
         timetuple = tuple(np.array(localtime())[[0, 1, 8, 2, 3, 4, 5, 6, 7]])
@@ -849,7 +849,7 @@ class Tektronix_AWG5014(VisaInstrument):
         s = 'AWGCONTROL:SRESTORE "%s"' % filename
         # print s
         self.visa_handle.write_raw(s)
-
+        
     def get_error(self):
         # print self.visa_handle.ask('AWGControl:SNAMe?')
         print(self.ask('SYSTEM:ERROR:NEXT?'))
@@ -903,6 +903,9 @@ class Tektronix_AWG5014(VisaInstrument):
         for i in range(0, len(w)):
             ws = ws + struct.pack('<fB', w[i], int(np.round(m[i], 0)))
 
+        # (WilliamHPNielsen): python 3 incompatible code found below
+        # Python 3 compatible version:
+        # s1 = 'MMEM:DATA "{:s}",'.format(filename).encode('utf-8')
         s1 = b'MMEM:DATA "%s",' % filename
         s3 = b'MAGIC 1000\n'
         s5 = ws
@@ -1175,7 +1178,7 @@ class Tektronix_AWG5014(VisaInstrument):
     def parse_int_int_ext(self, val):
         return ['INT', 'EXT'][val]
 
-    def send_waveform_to_list(self, w, m1, m2, wfmname):
+    def send_waveform_to_list(self, w, m1, m2, wfmname, silent=False):
         '''
         Sends a complete waveform directly to the "User defined" waveform list. All parameters need to be specified.
         See also: resend_waveform()
@@ -1205,7 +1208,8 @@ class Tektronix_AWG5014(VisaInstrument):
         s = 'WLIS:WAV:DEL "%s"' % wfmname
         self.write(s)
 
-        print("Sending the waveform %s" % wfmname)
+        if not silent:
+            print("Sending the waveform %s" % wfmname)
 
         # create the waveform
         s = 'WLIS:WAV:NEW "%s",%i,INTEGER' % (wfmname, dim)
