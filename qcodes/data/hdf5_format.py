@@ -178,7 +178,7 @@ class HDF5Format(Formatter):
             # allow resizing extracted data, here so it gets written for
             # incremental writes aswell
             dset.attrs['shape'] = x.shape
-        self.write_metadata(data_set)
+        self.write_metadata(data_set, io_manager=io_manager, location=location)
 
         # flush ensures buffers are written to disk
         # (useful for ensuring openable by other files)
