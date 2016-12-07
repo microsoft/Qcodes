@@ -33,7 +33,7 @@ class MockFormatter:
     def read(self, data_set):
         data_set.has_read_data = True
 
-    def write(self, data_set, io_manager, location):
+    def write(self, data_set, io_manager, location, write_metadata=False):
         data_set.has_written_data = True
 
     def read_metadata(self, data_set):
