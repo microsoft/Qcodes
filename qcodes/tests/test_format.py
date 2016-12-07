@@ -346,7 +346,7 @@ class TestGNUPlotFormat(TestCase):
 
         with open(path, 'r') as f:
             self.assertEqual(f.read(), starred_file)
-        self.assertEqual(self.stars_before_write, 0)
+        self.assertEqual(self.stars_before_write, 1)
 
     def test_constructor_errors(self):
         with self.assertRaises(AttributeError):
