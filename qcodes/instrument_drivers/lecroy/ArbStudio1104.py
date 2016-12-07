@@ -44,6 +44,8 @@ class ArbStudio1104(Instrument):
 
         self.initialize()
         self._channels = [self._device.GetChannel(k) for k in range(4)]
+        self._channel_pairs = {'left': self._device.PairLeft,
+                               'right': self._device.PairRight}
 
         # Initialize waveforms and sequences
         self._waveforms = [[] for k in range(4)]
@@ -86,6 +88,13 @@ class ArbStudio1104(Instrument):
 
             self.add_function('ch{}_clear_waveforms'.format(ch),
                               call_cmd=self._waveforms[ch-1].clear)
+
+        for ch_pair_name in ['left', 'right']:
+            ch_pair = self._channel_pairs[ch_pair_name]
+
+            self.add_parameter('{}_frequency_interpolation'.format(ch_pair_name),
+                               set_cmd=ch_pair.SetFrequencyInterpolation,
+                               vals=vals.Enum(1,2,4))
 
         self.add_parameter('max_voltage',
                            parameter_class=ManualParameter,
