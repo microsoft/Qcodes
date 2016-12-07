@@ -13,6 +13,7 @@ class HDF5Format(Formatter):
 
     Capable of storing (write) and recovering (read) qcodes datasets.
     """
+
     def close_file(self, data_set):
         """
         Closes the hdf5 file open in the dataset.
@@ -118,7 +119,7 @@ class HDF5Format(Formatter):
         return data_set._h5_base_group
 
     def write(self, data_set, io_manager=None, location=None,
-              force_write=False, flush=True):
+              force_write=False, flush=True, write_metadata=True):
         """
         Writes a data_set to an hdf5 file.
         Input arguments:
@@ -172,13 +173,15 @@ class HDF5Format(Formatter):
             new_datasetshape = (new_dlen,
                                 datasetshape[1])
             dset.resize(new_datasetshape)
-            new_data_shape = (new_dlen-old_dlen, datasetshape[1])
+            new_data_shape = (new_dlen - old_dlen, datasetshape[1])
             dset[old_dlen:new_dlen] = x[old_dlen:new_dlen].reshape(
                 new_data_shape)
             # allow resizing extracted data, here so it gets written for
             # incremental writes aswell
             dset.attrs['shape'] = x.shape
-        self.write_metadata(data_set)
+        if write_metadata:
+            self.write_metadata(
+                data_set, io_manager=io_manager, location=location)
 
         # flush ensures buffers are written to disk
         # (useful for ensuring openable by other files)
@@ -231,7 +234,7 @@ class HDF5Format(Formatter):
 
         return dset
 
-    def write_metadata(self, data_set, io=None, location=None):
+    def write_metadata(self, data_set, io_manager=None, location=None):
         """
         Writes metadata of dataset to file using write_dict_to_hdf5 method
 

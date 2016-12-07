@@ -12,7 +12,7 @@ class Formatter:
 
     Each Formatter is expected to implement writing methods:
     - ``write``: to write the ``DataArray``s
-    - ``write_metadata``: to write the metadata JSON structure
+    - ``write_metadata``: to write the metadata structure
 
     Optionally, if this Formatter keeps the data file(s) open
     between write calls, it may implement:
@@ -42,7 +42,7 @@ class Formatter:
     """
     ArrayGroup = namedtuple('ArrayGroup', 'shape set_arrays data name')
 
-    def write(self, data_set, io_manager, location):
+    def write(self, data_set, io_manager, location, write_metadata=True):
         """
         Write the DataSet to storage.
 
@@ -55,6 +55,7 @@ class Formatter:
             data_set (DataSet): the data we are writing.
             io_manager (io_manager): base physical location to write to.
             location (str): the file location within the io_manager.
+            write_metadata (bool): if True, then the metadata is written to disk
         """
         raise NotImplementedError
 
