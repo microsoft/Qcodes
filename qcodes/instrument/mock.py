@@ -12,7 +12,7 @@ class MockInstrument(Instrument):
     """
     Create a software instrument, mostly for testing purposes.
 
-    Also works for simulatoins, but usually this will be simpler, easier to
+    Also works for simulations, but usually this will be simpler, easier to
     use, and faster if made as a single ``Instrument`` subclass.
 
     ``MockInstrument``s have extra overhead as they serialize all commands
