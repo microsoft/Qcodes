@@ -610,16 +610,16 @@ class DataSet(DelegateAttributes):
                     time.time() > self.last_write + self.write_period):
                 self.write()
                 self.last_write = time.time()
-        else: # in PULL_FROM_SERVER mode; store() isn't legal
+        else:  # in PULL_FROM_SERVER mode; store() isn't legal
             raise RuntimeError('This object is pulling from a DataServer, '
                                'so data insertion is not allowed.')
 
     def default_parameter_name(self, paramname='amplitude'):
         """ Return name of default parameter for plotting
 
-        The default parameter is determined by looking into metdata['default_parameter_name'].
-        If this variable is not present, then the closest match to the argument
-        paramname is tried.
+        The default parameter is determined by looking into
+        metdata['default_parameter_name'].  If this variable is not present,
+        then the closest match to the argument paramname is tried.
 
         Args:
             paramname (str): Name to match to parameter name
@@ -660,7 +660,8 @@ class DataSet(DelegateAttributes):
         """ Return default parameter array
 
         Args:
-            paramname (str): Name to match to parameter name. Defaults to 'amplitude'
+            paramname (str): Name to match to parameter name.
+                 Defaults to 'amplitude'
 
         Returns:
             array (DataArray): array corresponding to the default parameter
@@ -684,11 +685,14 @@ class DataSet(DelegateAttributes):
             return
         self.formatter.read_metadata(self)
 
-    def write(self):
+    def write(self, write_metadata=False):
         """
         Writes updates to the DataSet to storage.
         N.B. it is recommended to call data_set.finalize() when a DataSet is
         no longer expected to change to ensure files get closed
+
+        Args:
+            write_metadata (bool): write the metadata to disk
         """
         if self.mode != DataMode.LOCAL:
             raise RuntimeError('This object is connected to a DataServer, '
@@ -697,7 +701,10 @@ class DataSet(DelegateAttributes):
         if self.location is False:
             return
 
-        self.formatter.write(self, self.io, self.location)
+        self.formatter.write(self,
+                             self.io,
+                             self.location,
+                             write_metadata=False)
 
     def write_copy(self, path=None, io_manager=None, location=None):
         """
