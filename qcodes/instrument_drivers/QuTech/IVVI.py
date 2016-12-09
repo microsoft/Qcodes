@@ -124,6 +124,12 @@ class IVVI(VisaInstrument):
 
         t1 = time.time()
 
+        # make sure we igonore termination characters
+        # http://www.ni.com/tutorial/4256/en/#toc2 on Termination Character
+        # Enabled
+        v.set_visa_attribute(visa.constants.VI_ATTR_TERMCHAR_EN, 0)
+        v.set_visa_attribute(visa.constants.VI_ATTR_ASRL_END_IN, 0)
+
         # basic test to confirm we are properly connected
         try:
             self.get_all()
@@ -133,11 +139,6 @@ class IVVI(VisaInstrument):
 
         v = self.visa_handle
 
-        # make sure we igonore termination characters
-        # http://www.ni.com/tutorial/4256/en/#toc2 on Termination Character
-        # Enabled
-        v.set_visa_attribute(visa.constants.VI_ATTR_TERMCHAR_EN, 0)
-        v.set_visa_attribute(visa.constants.VI_ATTR_ASRL_END_IN, 0)
 
         print('Initialized IVVI-rack in %.2fs' % (t1-t0))
 
