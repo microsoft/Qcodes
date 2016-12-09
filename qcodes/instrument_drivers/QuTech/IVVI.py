@@ -127,6 +127,7 @@ class IVVI(VisaInstrument):
         # make sure we igonore termination characters
         # http://www.ni.com/tutorial/4256/en/#toc2 on Termination Character
         # Enabled
+        v = self.visa_handle
         v.set_visa_attribute(visa.constants.VI_ATTR_TERMCHAR_EN, 0)
         v.set_visa_attribute(visa.constants.VI_ATTR_ASRL_END_IN, 0)
 
@@ -137,7 +138,6 @@ class IVVI(VisaInstrument):
             print('IVVI: get_all() failed, maybe connected to wrong port?')
             print(traceback.format_exc())
 
-        v = self.visa_handle
 
 
         print('Initialized IVVI-rack in %.2fs' % (t1-t0))
