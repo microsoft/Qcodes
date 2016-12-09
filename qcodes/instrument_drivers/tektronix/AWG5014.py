@@ -333,8 +333,8 @@ class Tektronix_AWG5014(VisaInstrument):
         elif state.startswith('2'):
             return 'Running'
         else:
-            raise ValueError(__name__ + ' : AWG in undefined state "%s"' %
-                             state)
+            raise ValueError(__name__ + (' : AWG in undefined ' +
+                                         'state "{}"').format(state))
 
     def start(self):
         """Convenience function, identical to self.run()"""
@@ -411,11 +411,11 @@ class Tektronix_AWG5014(VisaInstrument):
                 int: The number of bytes written,
                 enum 'Statuscode': whether the write was succesful
         """
-        return self.visa_handle.write('MMEMory:CDIRectory "%s"' % file_path)
+        return self.visa_handle.write('MMEMory:CDIRectory "{}"'.format(file_path))
 
     def change_folder(self, folder):
         """Duplicate of self.set_current_folder_name"""
-        return self.visa_handle.write('MMEMory:CDIRectory "\%s"' % folder)
+        return self.visa_handle.write('MMEMory:CDIRectory "\{}"'.format(folder))
 
     def goto_root(self):
         """
@@ -446,9 +446,11 @@ class Tektronix_AWG5014(VisaInstrument):
                             (': Directory already exists, ' +
                              'changed path to {}').format(folder))
             logging.info(__name__ +
-                         ': Contents of folder is %s' % self.ask('MMEMory:cat?'))
-        elif self.get_current_folder_name() == '"\\%s"' % folder:
-            logging.info(__name__ + ': Directory already set to %s' % folder)
+                         ': Contents of folder is ' +
+                         '{}'.format(self.ask('MMEMory:cat?')))
+        elif self.get_current_folder_name() == '"\\{}"'.format(folder):
+            logging.info(__name__ + ': Directory already set to ' +
+                         '{}'.format(folder))
         else:
             self.write('MMEMory:MDIRectory "\%s"' % folder)
             self.write('MMEMory:CDIRectory "\%s"' % folder)
@@ -591,7 +593,7 @@ class Tektronix_AWG5014(VisaInstrument):
         # TODO (WilliamHPNielsen): such a function already exists;
         # set_sqel_event_jump_type. Therefore, this function should go.
         # MarkedForDeletion
-        self.write('SEQuence:ELEMent%s:JTARGet:TYPE NEXT' % element_no)
+        self.write('SEQuence:ELEMent{}:JTARGet:TYPE NEXT'.format(element_no))
 
     def set_sqel_event_target_index(self, element_no, index):
         """
@@ -604,7 +606,8 @@ class Tektronix_AWG5014(VisaInstrument):
             element_no (int): The sequence element number
             index (int): The index to set the target to
         """
-        self.write('SEQuence:ELEMent%s:JTARGet:INDex %s' % (element_no, index))
+        self.write('SEQuence:' +
+                   'ELEMent{}:JTARGet:INDex {}'.format(element_no, index))
 
     def set_sqel_goto_target_index(self, element_no, goto_to_index_no):
         """
@@ -624,7 +627,9 @@ class Tektronix_AWG5014(VisaInstrument):
             goto_to_index_no (int) The target index number
 
         """
-        self.write('SEQuence:ELEMent%s:GOTO:INDex  %s' % (element_no, goto_to_index_no))
+        self.write('SEQuence:' +
+                   'ELEMent{}:GOTO:INDex {}'.format(element_no,
+                                                    goto_to_index_no))
 
     def set_sqel_goto_state(self, element_no, goto_state):
         """
@@ -641,8 +646,8 @@ class Tektronix_AWG5014(VisaInstrument):
             logging.warning((__name__ + ': {} not recognized as a valid goto' +
                              ' state. Setting to 0 (OFF).').format(goto_state))
             goto_state = 0
-        self.write('SEQuence:ELEMent%s:GOTO:STATe %s' % (
-            element_no, int(goto_state)))
+        self.write('SEQuence:ELEMent{}:GOTO:STATe {}'.format(element_no,
+                                                             int(goto_state)))
 
     def set_sqel_loopcnt_to_inf(self, element_no, state=1):
         """
@@ -662,7 +667,8 @@ class Tektronix_AWG5014(VisaInstrument):
                              '  state. Setting to 0 (OFF).').format(state))
             state = 0
 
-        self.write('seq:elem%s:loop:inf %s' % (element_no, int(state)))
+        self.write('SEQuence:ELEMent{}:LOOP:INFinite {}'.format(element_no,
+                                                                int(state)))
 
     def get_sqel_loopcnt(self, element_no=1):
         """
@@ -673,7 +679,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Args:
             element_no (int): The sequence element number. Default: 1.
         """
-        return self.ask('SEQuence:ELEMent%s:LOOP:COUNt?' % element_no)
+        return self.ask('SEQuence:ELEMent{}:LOOP:COUNt?'.format(element_no))
 
     def set_sqel_loopcnt(self, loopcount, element_no=1):
         """
@@ -685,7 +691,8 @@ class Tektronix_AWG5014(VisaInstrument):
                 The maximal possible number is 65536, beyond that: infinity.
             element_no (int): The sequence element number. Default: 1.
         """
-        self.write('SEQuence:ELEMent%s:LOOP:COUNt %s' % (element_no, loopcount))
+        self.write('SEQuence:ELEMent{}:LOOP:COUNt {}'.format(element_no,
+                                                             loopcount))
 
     def set_sqel_waveform(self, waveform_name, channel, element_no=1):
         """
@@ -698,8 +705,9 @@ class Tektronix_AWG5014(VisaInstrument):
             channel (int): The output channel (1-4)
             element_no (int): The sequence element number. Default: 1.
         """
-        self.write('SEQuence:ELEMent%s:WAVeform%s "%s"' % (
-            element_no, channel, waveform_name))
+        self.write('SEQuence:ELEMent{}:WAVeform{} "{}"'.format(element_no,
+                                                               channel,
+                                                               waveform_name))
 
     def get_sqel_waveform(self, channel, element_no=1):
         """
@@ -713,7 +721,8 @@ class Tektronix_AWG5014(VisaInstrument):
         Returns:
             str: The name of the waveform, ""-encapsulated and \n-terminated.
         """
-        return self.ask('SEQuence:ELEMent%s:WAVeform%s?' % (element_no, channel))
+        return self.ask('SEQuence:ELEMent{}:WAVeform{}?'.format(element_no,
+                                                                channel))
 
     def set_sqel_trigger_wait(self, element_no, state=1):
         """
@@ -732,7 +741,7 @@ class Tektronix_AWG5014(VisaInstrument):
             str: The current state (after setting it).
 
         """
-        self.write('SEQuence:ELEMent%s:TWAit %s' % (element_no, state))
+        self.write('SEQuence:ELEMent{}:TWAit {}'.format(element_no, state))
         return self.get_sqel_trigger_wait(element_no)
 
     def get_sqel_trigger_wait(self, element_no):
@@ -749,7 +758,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Returns:
             str: The current state. Example: '1\n'.
         """
-        return self.ask('SEQuence:ELEMent%s:TWAit?' % element_no)
+        return self.ask('SEQuence:ELEMent{}:TWAit?'.format(element_no))
 
     def get_sq_length(self):
         """
@@ -777,11 +786,12 @@ class Tektronix_AWG5014(VisaInstrument):
             seq_length (int): The desired sequence length.
         """
 
-        self.write('SEQuence:LENGth %s' % seq_length)
+        self.write('SEQuence:LENGth {}'.format(seq_length))
 
     def set_sqel_event_jump_target_index(self, element_no, jtar_index_no):
         """Duplicate of set_sqel_event_target_index"""
-        self.write('SEQuence:ELEMent%s:JTARget:INDex %s' % (element_no, jtar_index_no))
+        self.write('SEQuence:ELEMent{}:JTARget:INDex {}'.format(element_no,
+                                                                jtar_index_no))
 
     def set_sqel_event_jump_type(self, element_no, jtar_state):
         """
@@ -799,8 +809,8 @@ class Tektronix_AWG5014(VisaInstrument):
             jtar_state (str): The jump target type. Must be either 'INDEX',
                 'NEXT', or 'OFF'.
         """
-        self.write('SEQuence:ELEMent%s:JTARget:TYPE %s' %
-                   (element_no, jtar_state))
+        self.write('SEQuence:ELEMent{}:JTARget:TYPE {}'.format(element_no,
+                                                               jtar_state))
 
     def get_sq_mode(self):
         """
@@ -834,7 +844,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Args:
             jump_index_no (int): The target index to jump to.
         """
-        self.write('SEQuence:JUMP:IMMediate %s' % jump_index_no)
+        self.write('SEQuence:JUMP:IMMediate {}'.format(jump_index_no))
 
     #################################
     # Transmon version file loading #
@@ -928,8 +938,9 @@ class Tektronix_AWG5014(VisaInstrument):
                 TXT10, TXT14, WFM, PAT, TFW, IQT, TIQ. Default: WFM.
 
         """
-        self.write('MMEMory:IMPort "%s","%s",%s' % (
-            waveform_listname, waveform_filename, filetype))
+        self.write('MMEMory:IMPort "{}","{}",{}'.format(waveform_listname,
+                                                        waveform_filename,
+                                                        filetype))
 
     def import_and_load_waveform_file_to_channel(self, channel_no,
                                                  waveform_listname,
@@ -960,9 +971,10 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         Helper function called by import_and_load_waveform_file_to_channel
         """
-        self.write('MMEMory:IMPort "%s","%s",%s' % (
-            waveform_listname, waveform_filename, filetype))
-        self.write('sour%s:wav "%s"' % (channel_no, waveform_listname))
+        self.write('MMEMory:IMPort "{}","{}",{}'.format(waveform_listname,
+                                                        waveform_filename,
+                                                        filetype))
+        self.write('sour{}:wav "{}"'.format(channel_no, waveform_listname))
         # (WilliamHPNielsen): What is the point of the following loop?
         # Keep asking if the waveform was really set? Infinite loop
         # if not. And the counter i is not used for anything...
@@ -1138,42 +1150,43 @@ class Tektronix_AWG5014(VisaInstrument):
         for wf in wlist:
             wfdat = packed_waveforms[wf]
             lenwfdat = len(wfdat)
-            # print 'WAVEFORM_NAME_%s: '%ii, wf, 'len: ',len(wfdat)
+
             wf_record_str.write(
-                self._pack_record('WAVEFORM_NAME_%s' % ii, wf + '\x00',
-                                  '%ss' % len(wf + '\x00')) +
-                self._pack_record('WAVEFORM_TYPE_%s' % ii, 1, 'h') +
-                self._pack_record('WAVEFORM_LENGTH_%s' % ii, lenwfdat, 'l') +
-                self._pack_record('WAVEFORM_TIMESTAMP_%s' % ii,
+                self._pack_record('WAVEFORM_NAME_{}'.format(ii), wf + '\x00',
+                                  '{}s'.format(len(wf + '\x00'))) +
+                self._pack_record('WAVEFORM_TYPE_{}'.format(ii), 1, 'h') +
+                self._pack_record('WAVEFORM_LENGTH_{}'.format(ii),
+                                  lenwfdat, 'l') +
+                self._pack_record('WAVEFORM_TIMESTAMP_{}'.format(ii),
                                   timetuple[:-1], '8H') +
-                self._pack_record('WAVEFORM_DATA_%s' % ii, wfdat, '%sH'
-                                  % lenwfdat))
+                self._pack_record('WAVEFORM_DATA_{}'.format(ii), wfdat,
+                                  '{}H'.format(lenwfdat)))
             ii += 1
         # sequence
         kk = 1
         seq_record_str = BytesIO()
         for segment in wfname_l.transpose():
             seq_record_str.write(
-                self._pack_record('SEQUENCE_WAIT_%s' % kk, trig_wait[kk - 1],
-                                  'h') +
-                self._pack_record('SEQUENCE_LOOP_%s' % kk, int(nrep[kk - 1]),
-                                  'l') +
-                self._pack_record('SEQUENCE_JUMP_%s' % kk, jump_to[kk - 1],
-                                  'h') +
-                self._pack_record('SEQUENCE_GOTO_%s' % kk, goto_state[kk - 1],
-                                  'h'))
+                self._pack_record('SEQUENCE_WAIT_{}'.format(kk),
+                                  trig_wait[kk - 1], 'h') +
+                self._pack_record('SEQUENCE_LOOP_{}'.format(kk),
+                                  int(nrep[kk - 1]), 'l') +
+                self._pack_record('SEQUENCE_JUMP_{}'.format(kk),
+                                  jump_to[kk - 1], 'h') +
+                self._pack_record('SEQUENCE_GOTO_{}'.format(kk),
+                                  goto_state[kk - 1], 'h'))
             for wfname in segment:
                 if wfname is not None:
                     ch = wfname[-1]
                     # print wfname,'SEQUENCE_WAVEFORM_NAME_CH_'+ch+'_%s'%kk
                     seq_record_str.write(
                         self._pack_record('SEQUENCE_WAVEFORM_NAME_CH_' + ch
-                                          + '_%s' % kk, wfname + '\x00',
-                                          '%ss' % len(wfname + '\x00')))
+                                          + '_{}'.format(kk), wfname + '\x00',
+                                          '{}s'.format(len(wfname + '\x00'))))
             kk += 1
 
-        awg_file = head_str.getvalue() + ch_record_str.getvalue() + \
-            wf_record_str.getvalue() + seq_record_str.getvalue()
+        awg_file = (head_str.getvalue() + ch_record_str.getvalue() +
+                    wf_record_str.getvalue() + seq_record_str.getvalue())
         return awg_file
 
     def send_awg_file(self, filename, awg_file, verbose=False):
@@ -1187,14 +1200,14 @@ class Tektronix_AWG5014(VisaInstrument):
             awg_file (bytes): A byte sequence containing the awg_file.
                 Usually the output of self.generate_awg_file.
             verbose (bool): A boolean to allow/suppress printing of messages
-                about the status of the filw writing.
+                about the status of the filw writing. Default: False.
         """
         if verbose:
             print('Writing to:',
                   self.ask('MMEMory:CDIRectory?').replace('\n', '\ '),
                   filename)
         # Header indicating the name and size of the file being send
-        name_str = ('MMEMory:DATA "%s",' % filename).encode('ASCII')
+        name_str = 'MMEMory:DATA "{}",'.format(filename).encode('ASCII')
         size_str = ('#' + str(len(str(len(awg_file)))) +
                     str(len(awg_file))).encode('ASCII')
         mes = name_str + size_str + awg_file
@@ -1209,7 +1222,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Args:
             filename (str): The filename of the .awg-file to load.
         """
-        s = 'AWGControl:SREStore "%s"' % filename
+        s = 'AWGControl:SREStore "{}"'.format(filename)
         logging.debug(__name__ + ': Loading awg file using {}'.format(s))
         self.visa_handle.write_raw(s)
 
@@ -1311,8 +1324,8 @@ class Tektronix_AWG5014(VisaInstrument):
             DC_channel_number (int): The channel number (1-4).
             Voltage (float): The voltage to set to (V).
         """
-        self.write('AWGControl:DC%s:VOLTage:OFFSet %sV' %
-                   (DC_channel_number, Voltage))
+        self.write('AWGControl:DC' +
+                   '{}:VOLTage:OFFSet {}V'.format(DC_channel_number, Voltage))
 
     def get_DC_out(self, DC_channel_number):
         """
@@ -1324,7 +1337,8 @@ class Tektronix_AWG5014(VisaInstrument):
         Returns:
             str: The DC offset level in V in exponent notation.
         """
-        return self.ask('AWGControl:DC%s:VOLTage:OFFSet?' % DC_channel_number)
+        return self.ask('AWGControl:' +
+                        'DC{}:VOLTage:OFFSet?'.format(DC_channel_number))
 
     def send_DC_pulse(self, DC_channel_number, set_level, length):
         """
@@ -1350,7 +1364,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Args:
             state (bool): False (OFF) or True (ON). Default: False.
         """
-        self.write('AWGControl:DC:STATe %s' % (int(state)))
+        self.write('AWGControl:DC:STATe {}'.format(int(state)))
 
     def get_DC_state(self):
         """
@@ -1421,7 +1435,7 @@ class Tektronix_AWG5014(VisaInstrument):
             wfmname (str): waveform name
         """
         logging.debug(
-            __name__ + ' : Sending waveform %s to instrument' % wfmname)
+            __name__ + ' : Sending waveform {} to instrument'.format(wfmname))
         # Check for errors
         # TODO (WilliamHPNielsen): Round off the markers to be only 1 and 0.
         dim = len(w)
@@ -1435,11 +1449,11 @@ class Tektronix_AWG5014(VisaInstrument):
         # it will not get over written
         # Delete the possibly existing file (will do nothing if the file
         # doesn't exist
-        s = 'WLISt:WAVeform:DEL "%s"' % wfmname
+        s = 'WLISt:WAVeform:DEL "{}"'.format(wfmname)
         self.write(s)
 
         # create the waveform
-        s = 'WLISt:WAVeform:NEW "%s",%i,INTEGER' % (wfmname, dim)
+        s = 'WLISt:WAVeform:NEW "{}",{:d},INTEGER'.format(wfmname, dim)
         self.write(s)
         # Prepare the data block
         # (WilliamHPNielsen) The following line is incorrect. Cf. pack_waveform
@@ -1449,7 +1463,7 @@ class Tektronix_AWG5014(VisaInstrument):
         ws = arr.array('H', number)
 
         ws = ws.tobytes()
-        s1 = 'WLISt:WAVeform:DATA "%s",' % wfmname
+        s1 = 'WLISt:WAVeform:DATA "{}",'.format(wfmname)
         s1 = s1.encode('UTF-8')
         s3 = ws
         s2 = '#' + str(len(str(len(s3)))) + str(len(s3))
