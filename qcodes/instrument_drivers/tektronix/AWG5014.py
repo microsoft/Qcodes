@@ -14,11 +14,9 @@ def parsestr(v):
 
 
 class Tektronix_AWG5014(VisaInstrument):
-    '''
-    This is the python driver for the Tektronix AWG5014
+    """
+    This is the QCoDeS driver for the Tektronix AWG5014
     Arbitrary Waveform Generator
-
-    think about:    clock, waveform length
 
     TODO:
     - Not all functionality is available in the driver
@@ -30,17 +28,7 @@ class Tektronix_AWG5014(VisaInstrument):
     * Sequence element (SQEL) parameter functions exist but no corresponding
       parameters
 
-
-    CHANGES:
-    26-11-2008 by Gijs: Copied this plugin from the 520 and added support for
-        2 more channels, added set get marker delay functions and increased max
-        sampling freq to 1.2 	GS/s
-    28-11-2008 ''  '' : Added some functionality to manipulate and manoeuvre
-        through the folders on the AWG
-    8-8-2015 by Adriaan : Merging the now diverged versions of this driver from
-        the Diamond and Transmon groups @ TUD
-    7-1-2016 Converted to use with QCodes
-    '''
+    """
     AWG_FILE_FORMAT_HEAD = {
         'SAMPLING_RATE': 'd',    # d
         'REPETITION_RATE': 'd',    # # NAME?
@@ -127,13 +115,13 @@ class Tektronix_AWG5014(VisaInstrument):
 
     def __init__(self, name, setup_folder, address, reset=False,
                  clock=1e9, numpoints=1000, timeout=180, **kwargs):
-        '''
+        """
         Initializes the AWG5014.
 
         Args:
             name (string): name of the instrument
             setup_folder (string): folder on the AWG where externally
-                generated sequences are stored
+                generated sequences are stored (WilliamHPNielsen): no, it's not. MarkedForDeletion
             address (string): GPIB or ethernet address as used by VISA
             reset (bool): resets to default values, default=false (WilliamHPNielsen): this is not used!
             numpoints (int): sets the number of datapoints #(WilliamHPNielsen): MarkedForDeletion
@@ -142,7 +130,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
         Returns:
             None
-        '''
+        """
         super().__init__(name, address, timeout=timeout, **kwargs)
 
         self._address = address
@@ -157,67 +145,67 @@ class Tektronix_AWG5014(VisaInstrument):
         self.add_parameter('state',
                            get_cmd=self.get_state)
         self.add_parameter('run_mode',
-                           get_cmd='AWGC:RMOD?',
-                           set_cmd='AWGC:RMOD ' + '{}',
+                           get_cmd='AWGControl:RMODe?',
+                           set_cmd='AWGControl:RMODe ' + '{}',
                            vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'))
 
         # Trigger parameters #
         # Warning: `trigger_mode` is the same as `run_mode`, do not use! exists
         # solely for legacy purposes
         self.add_parameter('trigger_mode',
-                           get_cmd='AWGC:RMOD?',
-                           set_cmd='AWGC:RMOD ' + '{}',
+                           get_cmd='AWGControl:RMODe?',
+                           set_cmd='AWGControl:RMODe ' + '{}',
                            vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'))
         self.add_parameter('trigger_impedance',
                            label='Trigger impedance (Ohm)',
                            units='Ohm',
-                           get_cmd='TRIG:IMP?',
-                           set_cmd='TRIG:IMP ' + '{}',
+                           get_cmd='TRIGger:IMPedance?',
+                           set_cmd='TRIGger:IMPedance ' + '{}',
                            vals=vals.Enum(50, 1000),
                            get_parser=float)
         self.add_parameter('trigger_level',
                            units='V',
                            label='Trigger level (V)',
-                           get_cmd='TRIG:LEV?',
-                           set_cmd='TRIG:LEV ' + '{:.3f}',
+                           get_cmd='TRIGger:LEVel?',
+                           set_cmd='TRIGger:LEVel ' + '{:.3f}',
                            vals=vals.Numbers(-5, 5),
                            get_parser=float)
         self.add_parameter('trigger_slope',
-                           get_cmd='TRIG:SLOP?',
-                           set_cmd='TRIG:SLOP ' + '{}',
+                           get_cmd='TRIGger:SLOPe?',
+                           set_cmd='TRIGger:SLOPe ' + '{}',
                            vals=vals.Enum('POS', 'NEG'))  # ,
         # get_parser=self.parse_int_pos_neg)
         self.add_parameter('trigger_source',
-                           get_cmd='TRIG:source?',
-                           set_cmd='TRIG:source ' + '{}',
+                           get_cmd='TRIGger:SOURce?',
+                           set_cmd='TRIGger:SOURce ' + '{}',
                            vals=vals.Enum('INT', 'EXT'))
 
-        # Event parameters #
+        # Event parameters
         self.add_parameter('event_polarity',
-                           get_cmd='EVEN:POL?',
-                           set_cmd='EVEN:POL ' + '{}',
+                           get_cmd='EVENt:POL?',
+                           set_cmd='EVENt:POL ' + '{}',
                            vals=vals.Enum('POS', 'NEG'))
         self.add_parameter('event_impedance',
                            label='Event impedance (Ohm)',
-                           get_cmd='EVEN:IMP?',
-                           set_cmd='EVEN:IMP ' + '{}',
+                           get_cmd='EVENt:IMPedance?',
+                           set_cmd='EVENt:IMPedance ' + '{}',
                            vals=vals.Enum(50, 1000),
                            get_parser=float)
         self.add_parameter('event_level',
                            label='Event level (V)',
-                           get_cmd='EVEN:LEV?',
-                           set_cmd='EVEN:LEV ' + '{:.3f}',
+                           get_cmd='EVENt:LEVel?',
+                           set_cmd='EVENt:LEVel ' + '{:.3f}',
                            vals=vals.Numbers(-5, 5),
                            get_parser=float)
         self.add_parameter('event_jump_timing',
-                           get_cmd='EVEN:JTIM?',
-                           set_cmd='EVEN:JTIM {}',
+                           get_cmd='EVENt:JTIMing?',
+                           set_cmd='EVENt:JTIMing {}',
                            vals=vals.Enum('SYNC', 'ASYNC'))
 
         self.add_parameter('clock_freq',
                            label='Clock frequency (Hz)',
-                           get_cmd='SOUR:FREQ?',
-                           set_cmd='SOUR:FREQ ' + '{}',
+                           get_cmd='SOURce:FREQuency?',
+                           set_cmd='SOURce:FREQuency ' + '{}',
                            vals=vals.Numbers(1e6, 1.2e9),
                            get_parser=float)
 
@@ -229,14 +217,14 @@ class Tektronix_AWG5014(VisaInstrument):
                            vals=vals.Ints(100, int(1e9)))
 
         self.add_parameter('setup_filename',
-                           get_cmd='AWGC:SNAM?')
+                           get_cmd='AWGControl:SNAMe?')
 
         # Channel parameters #
         for i in range(1, 5):
-            amp_cmd = 'SOUR{}:VOLT:LEV:IMM:AMPL'.format(i)
-            offset_cmd = 'SOUR{}:VOLT:LEV:IMM:OFFS'.format(i)
+            amp_cmd = 'SOURce{}:VOLTage:LEVel:IMMediate:AMPLitude'.format(i)
+            offset_cmd = 'SOURce{}:VOLTage:LEVel:IMMediate:OFFS'.format(i)
             state_cmd = 'OUTPUT{}:STATE'.format(i)
-            waveform_cmd = 'SOUR{}:WAV'.format(i)
+            waveform_cmd = 'SOURce{}:WAVeform'.format(i)
             # Set channel first to ensure sensible sorting of pars
             self.add_parameter('ch{}_state'.format(i),
                                label='Status channel {}'.format(i),
@@ -265,9 +253,11 @@ class Tektronix_AWG5014(VisaInstrument):
                                get_parser=parsestr)
             # Marker channels
             for j in range(1, 3):
-                m_del_cmd = 'SOUR{}:MARK{}:DEL'.format(i, j)
-                m_high_cmd = 'SOUR{}:MARK{}:VOLT:LEV:IMM:HIGH'.format(i, j)
-                m_low_cmd = 'SOUR{}:MARK{}:VOLT:LEV:IMM:LOW'.format(i, j)
+                m_del_cmd = 'SOURce{}:MARKer{}:DEL'.format(i, j)
+                m_high_cmd = ('SOURce{}:MARKer{}:VOLTage:' +
+                              'LEVel:IMMediate:HIGH').format(i, j)
+                m_low_cmd = ('SOURce{}:MARKer{}:VOLTage:' +
+                             'LEVel:IMMediate:LOW').format(i, j)
 
                 self.add_parameter(
                     'ch{}_m{}_del'.format(i, j),
@@ -335,7 +325,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Raises:
             ValueError: if none of the three states above apply.
         """
-        state = self.ask('AWGC:RSTATE?')
+        state = self.ask('AWGControl:RSTATe?')
         if state.startswith('0'):
             return 'Idle'
         elif state.startswith('1'):
@@ -360,12 +350,12 @@ class Tektronix_AWG5014(VisaInstrument):
         Returns:
             The output of self.get_state()
         """
-        self.write('AWGC:RUN')
+        self.write('AWGControl:RUN')
         return self.get_state()
 
     def stop(self):
         """This command stops the output of a waveform or a sequence."""
-        self.write('AWGC:STOP')
+        self.write('AWGControl:STOP')
 
     def force_trigger(self):
         """
@@ -388,10 +378,10 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         if print_contents:
             print('Current folder:', self.get_current_folder_name())
-            print(self.ask('MMEM:CAT?')
+            print(self.ask('MMEMory:CATalog?')
                   .replace(',"$', '\n$').replace('","', '\n')
                   .replace(',', '\t'))
-        return self.ask('mmem:cat?')
+        return self.ask('MMEMory:CATalog?')
 
     def get_current_folder_name(self):
         """
@@ -404,7 +394,7 @@ class Tektronix_AWG5014(VisaInstrument):
             str: A ""-encapsulated \n-terminated string with the full path
                 of the current folder.
         """
-        return self.ask('mmem:cdir?')
+        return self.ask('MMEMory:CDIRectory?')
 
     def set_current_folder_name(self, file_path):
         """
@@ -421,21 +411,21 @@ class Tektronix_AWG5014(VisaInstrument):
                 int: The number of bytes written,
                 enum 'Statuscode': whether the write was succesful
         """
-        return self.visa_handle.write('mmem:cdir "%s"' % file_path)
+        return self.visa_handle.write('MMEMory:CDIRectory "%s"' % file_path)
 
     def change_folder(self, folder):
         """Duplicate of self.set_current_folder_name"""
-        return self.visa_handle.write('mmem:cdir "\%s"' % folder)
+        return self.visa_handle.write('MMEMory:CDIRectory "\%s"' % folder)
 
     def goto_root(self):
         """
         Set the current directory of the file system on the arbitrary
         waveform generator to C: (the 'root' location in Windows).
         """
-        self.write('mmem:cdir "c:\\.."')
+        self.write('MMEMory:CDIRectory "c:\\.."')
 
     def create_and_goto_dir(self, folder):
-        '''
+        """
         Set the current directory of the file system on the arbitrary
         waveform generator. Creates the directory if if doesn't exist.
         Queries the resulting folder for its contents.
@@ -446,7 +436,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
         Returns:
             str: A comma-seperated string of the folder contents.
-        '''
+        """
 
         dircheck = '%s, DIR' % folder
         if dircheck in self.get_folder_contents():
@@ -456,12 +446,12 @@ class Tektronix_AWG5014(VisaInstrument):
                             (': Directory already exists, ' +
                              'changed path to {}').format(folder))
             logging.info(__name__ +
-                         ': Contents of folder is %s' % self.ask('mmem:cat?'))
+                         ': Contents of folder is %s' % self.ask('MMEMory:cat?'))
         elif self.get_current_folder_name() == '"\\%s"' % folder:
             logging.info(__name__ + ': Directory already set to %s' % folder)
         else:
-            self.write('mmem:mdir "\%s"' % folder)
-            self.write('mmem:cdir "\%s"' % folder)
+            self.write('MMEMory:MDIRectory "\%s"' % folder)
+            self.write('MMEMory:CDIRectory "\%s"' % folder)
 
         return self.get_folder_contents()
 
@@ -504,7 +494,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Returns:
             str: 'INT' or 'EXT'
         """
-        return self.ask('AWGC:CLOC:SOUR?')
+        return self.ask('AWGControl:CLOCk:SOURce?')
 
     def set_refclock_ext(self):
         """
@@ -513,7 +503,7 @@ class Tektronix_AWG5014(VisaInstrument):
         the clock signal. If the clock source is external, the clock signal
         from an external oscillator is used.
         """
-        self.write('AWGC:CLOC:SOUR EXT')
+        self.write('AWGControl:CLOCk:SOURce EXT')
 
     def set_refclock_int(self):
         """
@@ -522,7 +512,7 @@ class Tektronix_AWG5014(VisaInstrument):
         the clock signal. If the clock source is external, the clock signal
         from an external oscillator is used.
         """
-        self.write('AWGC:CLOC:SOUR INT')
+        self.write('AWGControl:CLOCk:SOURce INT')
 
     ###############################
     # Parameter set/get functions #
@@ -568,8 +558,11 @@ class Tektronix_AWG5014(VisaInstrument):
     #####################
 
     def force_trigger_event(self):
-        """This command generates a trigger event. Equivalent to self.force_trigger."""
-        self.write('TRIG:IMM')
+        """
+        This command generates a trigger event. Equivalent to
+        self.force_trigger.
+        """
+        self.write('TRIGger:IMMediate')
 
     def force_event(self):
         """
@@ -578,7 +571,7 @@ class Tektronix_AWG5014(VisaInstrument):
         equivalent to pressing the Force Event button on the front panel of the
         instrument.
         """
-        self.write('EVEN:IMM')
+        self.write('EVENt:IMMediate')
 
     def set_sqel_event_target_index_next(self, element_no):
         """
@@ -598,7 +591,7 @@ class Tektronix_AWG5014(VisaInstrument):
         # TODO (WilliamHPNielsen): such a function already exists;
         # set_sqel_event_jump_type. Therefore, this function should go.
         # MarkedForDeletion
-        self.write('SEQ:ELEM%s:JTARGET:TYPE NEXT' % element_no)
+        self.write('SEQuence:ELEMent%s:JTARGet:TYPE NEXT' % element_no)
 
     def set_sqel_event_target_index(self, element_no, index):
         """
@@ -611,7 +604,7 @@ class Tektronix_AWG5014(VisaInstrument):
             element_no (int): The sequence element number
             index (int): The index to set the target to
         """
-        self.write('SEQ:ELEM%s:JTARGET:INDEX %s' % (element_no, index))
+        self.write('SEQuence:ELEMent%s:JTARGet:INDex %s' % (element_no, index))
 
     def set_sqel_goto_target_index(self, element_no, goto_to_index_no):
         """
@@ -631,7 +624,7 @@ class Tektronix_AWG5014(VisaInstrument):
             goto_to_index_no (int) The target index number
 
         """
-        self.write('SEQ:ELEM%s:GOTO:IND  %s' % (element_no, goto_to_index_no))
+        self.write('SEQuence:ELEMent%s:GOTO:INDex  %s' % (element_no, goto_to_index_no))
 
     def set_sqel_goto_state(self, element_no, goto_state):
         """
@@ -680,7 +673,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Args:
             element_no (int): The sequence element number. Default: 1.
         """
-        return self.ask('SEQ:ELEM%s:LOOP:COUN?' % element_no)
+        return self.ask('SEQuence:ELEMent%s:LOOP:COUNt?' % element_no)
 
     def set_sqel_loopcnt(self, loopcount, element_no=1):
         """
@@ -692,7 +685,7 @@ class Tektronix_AWG5014(VisaInstrument):
                 The maximal possible number is 65536, beyond that: infinity.
             element_no (int): The sequence element number. Default: 1.
         """
-        self.write('SEQ:ELEM%s:LOOP:COUN %s' % (element_no, loopcount))
+        self.write('SEQuence:ELEMent%s:LOOP:COUNt %s' % (element_no, loopcount))
 
     def set_sqel_waveform(self, waveform_name, channel, element_no=1):
         """
@@ -705,7 +698,7 @@ class Tektronix_AWG5014(VisaInstrument):
             channel (int): The output channel (1-4)
             element_no (int): The sequence element number. Default: 1.
         """
-        self.write('SEQ:ELEM%s:WAV%s "%s"' % (
+        self.write('SEQuence:ELEMent%s:WAVeform%s "%s"' % (
             element_no, channel, waveform_name))
 
     def get_sqel_waveform(self, channel, element_no=1):
@@ -720,7 +713,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Returns:
             str: The name of the waveform, ""-encapsulated and \n-terminated.
         """
-        return self.ask('SEQ:ELEM%s:WAV%s?' % (element_no, channel))
+        return self.ask('SEQuence:ELEMent%s:WAVeform%s?' % (element_no, channel))
 
     def set_sqel_trigger_wait(self, element_no, state=1):
         """
@@ -739,7 +732,7 @@ class Tektronix_AWG5014(VisaInstrument):
             str: The current state (after setting it).
 
         """
-        self.write('SEQ:ELEM%s:TWA %s' % (element_no, state))
+        self.write('SEQuence:ELEMent%s:TWAit %s' % (element_no, state))
         return self.get_sqel_trigger_wait(element_no)
 
     def get_sqel_trigger_wait(self, element_no):
@@ -756,7 +749,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Returns:
             str: The current state. Example: '1\n'.
         """
-        return self.ask('SEQ:ELEM%s:TWA?' % element_no)
+        return self.ask('SEQuence:ELEMent%s:TWAit?' % element_no)
 
     def get_sq_length(self):
         """
@@ -765,7 +758,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Returns:
             str: The length of the sequence. Example: '41\n'.
         """
-        return self.ask('SEQ:LENG?')
+        return self.ask('SEQuence:LENGth?')
 
     def set_sq_length(self, seq_length):
         """
@@ -784,11 +777,11 @@ class Tektronix_AWG5014(VisaInstrument):
             seq_length (int): The desired sequence length.
         """
 
-        self.write('SEQ:LENG %s' % seq_length)
+        self.write('SEQuence:LENGth %s' % seq_length)
 
     def set_sqel_event_jump_target_index(self, element_no, jtar_index_no):
         """Duplicate of set_sqel_event_target_index"""
-        self.write('SEQ:ELEM%s:JTAR:INDex %s' % (element_no, jtar_index_no))
+        self.write('SEQuence:ELEMent%s:JTARget:INDex %s' % (element_no, jtar_index_no))
 
     def set_sqel_event_jump_type(self, element_no, jtar_state):
         """
@@ -806,7 +799,7 @@ class Tektronix_AWG5014(VisaInstrument):
             jtar_state (str): The jump target type. Must be either 'INDEX',
                 'NEXT', or 'OFF'.
         """
-        self.write('SEQuence:ELEMent%s:JTAR:TYPE %s' %
+        self.write('SEQuence:ELEMent%s:JTARget:TYPE %s' %
                    (element_no, jtar_state))
 
     def get_sq_mode(self):
@@ -819,7 +812,7 @@ class Tektronix_AWG5014(VisaInstrument):
             str: Either 'HARD' or 'SOFT' indicating that the instrument is in
                 either hardware or software sequencer mode.
         """
-        return self.ask('AWGC:SEQ:TYPE?')
+        return self.ask('AWGControl:SEQuence:TYPE?')
 
     def get_sq_position(self):
         """
@@ -829,7 +822,7 @@ class Tektronix_AWG5014(VisaInstrument):
             str: The current sequencer position.
 
         """
-        return self.ask('AWGC:SEQ:POS?')
+        return self.ask('AWGControl:SEQuence:POSition?')
 
     def sq_forced_jump(self, jump_index_no):
         """
@@ -841,7 +834,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Args:
             jump_index_no (int): The target index to jump to.
         """
-        self.write('SEQ:JUMP:IMM %s' % jump_index_no)
+        self.write('SEQuence:JUMP:IMMediate %s' % jump_index_no)
 
     #################################
     # Transmon version file loading #
@@ -906,7 +899,7 @@ class Tektronix_AWG5014(VisaInstrument):
                 self.set_sqel_event_target_index(k + 1, logic_jump_l[k])
 
     def _load_old_style(self, wfs, rep, wait, goto, logic_jump, filename):
-        '''
+        """
         Sends a sequence file (for the moment only for ch1
         Inputs (mandatory):
 
@@ -915,7 +908,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Output:
             None
         This needs to be written so that awg files are loaded, will be much faster!
-        '''
+        """
         # (WilliamHPNielsen) MarkedForDeletion
         pass
 
@@ -935,7 +928,7 @@ class Tektronix_AWG5014(VisaInstrument):
                 TXT10, TXT14, WFM, PAT, TFW, IQT, TIQ. Default: WFM.
 
         """
-        self.write('mmem:imp "%s","%s",%s' % (
+        self.write('MMEMory:IMPort "%s","%s",%s' % (
             waveform_listname, waveform_filename, filetype))
 
     def import_and_load_waveform_file_to_channel(self, channel_no,
@@ -967,7 +960,7 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         Helper function called by import_and_load_waveform_file_to_channel
         """
-        self.write('mmem:imp "%s","%s",%s' % (
+        self.write('MMEMory:IMPort "%s","%s",%s' % (
             waveform_listname, waveform_filename, filetype))
         self.write('sour%s:wav "%s"' % (channel_no, waveform_listname))
         # (WilliamHPNielsen): What is the point of the following loop?
@@ -1034,20 +1027,20 @@ class Tektronix_AWG5014(VisaInstrument):
 
         AWG_sequence_cfg = {
             'SAMPLING_RATE': self.get('clock_freq'),
-            'CLOCK_SOURCE': (1 if self.ask('AWGC:CLOCK:SOUR?').startswith('INT')
+            'CLOCK_SOURCE': (1 if self.ask('AWGControl:CLOCk:SOURce?').startswith('INT')
                              else 2),  # Internal | External
             'REFERENCE_SOURCE':   2,  # Internal | External
             'EXTERNAL_REFERENCE_TYPE':   1,  # Fixed | Variable
             'REFERENCE_CLOCK_FREQUENCY_SELECTION': 1,
             # 10 MHz | 20 MHz | 100 MHz
             'TRIGGER_SOURCE':   1 if
-            self.get('trigger_source').startswith('EXT') else 2,
+            self.get('trigger_source150').startswith('EXT') else 2,
             # External | Internal
             'TRIGGER_INPUT_IMPEDANCE': (1 if self.get('trigger_impedance') ==
                                         50. else 2),  # 50 ohm | 1 kohm
             'TRIGGER_INPUT_SLOPE': (1 if self.get('trigger_slope').startswith(
                                     'POS') else 2),  # Positive | Negative
-            'TRIGGER_INPUT_POLARITY': (1 if self.ask('TRIG:POL?').startswith(
+            'TRIGGER_INPUT_POLARITY': (1 if self.ask('TRIGger:POLarity?').startswith(
                                        'POS') else 2),  # Positive | Negative
             'TRIGGER_INPUT_THRESHOLD':  self.get('trigger_level'),  # V
             'EVENT_INPUT_IMPEDANCE':   (1 if self.get('event_impedance') ==
@@ -1201,7 +1194,7 @@ class Tektronix_AWG5014(VisaInstrument):
                   self.ask('MMEMory:CDIRectory?').replace('\n', '\ '),
                   filename)
         # Header indicating the name and size of the file being send
-        name_str = ('MMEM:DATA "%s",' % filename).encode('ASCII')
+        name_str = ('MMEMory:DATA "%s",' % filename).encode('ASCII')
         size_str = ('#' + str(len(str(len(awg_file)))) +
                     str(len(awg_file))).encode('ASCII')
         mes = name_str + size_str + awg_file
@@ -1216,7 +1209,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Args:
             filename (str): The filename of the .awg-file to load.
         """
-        s = 'AWGCONTROL:SRESTORE "%s"' % filename
+        s = 'AWGControl:SREStore "%s"' % filename
         logging.debug(__name__ + ': Loading awg file using {}'.format(s))
         self.visa_handle.write_raw(s)
 
@@ -1229,7 +1222,7 @@ class Tektronix_AWG5014(VisaInstrument):
             str: String containing the error/event number, the error/event
                 description.
         """
-        return self.ask('SYSTEM:ERROR:NEXT?')
+        return self.ask('SYSTEM:ERRor:NEXT?')
 
     def pack_waveform(self, wf, m1, m2):
         """
@@ -1308,7 +1301,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
     def get_filenames(self):
         """Duplicate of self.get_folder_contents"""
-        return self.ask('MMEM:CAT?')
+        return self.ask('MMEMory:CATalog?')
 
     def set_DC_out(self, DC_channel_number, Voltage):
         """
@@ -1334,7 +1327,7 @@ class Tektronix_AWG5014(VisaInstrument):
         return self.ask('AWGControl:DC%s:VOLTage:OFFSet?' % DC_channel_number)
 
     def send_DC_pulse(self, DC_channel_number, set_level, length):
-        '''
+        """
         Sets the DC level on the specified channel, waits a while and then
         resets it to what it was before.
 
@@ -1344,7 +1337,7 @@ class Tektronix_AWG5014(VisaInstrument):
             DC_channel_number (int): The channel number (1-4).
             set_level (float): The voltage level to set to (V).
             length (flaot): The time to wait before resetting (s).
-        '''
+        """
         restore = self.get_DC_out(DC_channel_number)
         self.set_DC_out(DC_channel_number, set_level)
         sleep(length)
@@ -1357,7 +1350,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Args:
             state (bool): False (OFF) or True (ON). Default: False.
         """
-        self.write('AWGControl:DC:state %s' % (int(state)))
+        self.write('AWGControl:DC:STATe %s' % (int(state)))
 
     def get_DC_state(self):
         """
@@ -1366,7 +1359,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Returns:
             str: '1' for ON, '0' for OFF.
         """
-        return self.ask('AWGControl:DC:state?')
+        return self.ask('AWGControl:DC:STATe?')
 
     def is_awg_ready(self):
         """
@@ -1391,10 +1384,10 @@ class Tektronix_AWG5014(VisaInstrument):
         # (WilliamHPNielsen) MarkedForDeletion. Calls set_runmode, which
         # doesn't exist.
         self.set_runmode('CONT')
-        self.write('SOUR1:WAV "*DC"')
-        self.write('SOUR2:WAV "*DC"')
-        self.write('SOUR3:WAV "*DC"')
-        self.write('SOUR4:WAV "*DC"')
+        self.write('SOURce1:WAVeform "*DC"')
+        self.write('SOURce2:WAVeform "*DC"')
+        self.write('SOURce3:WAVeform "*DC"')
+        self.write('SOURce4:WAVeform "*DC"')
         self.set_ch1_status('on')
         self.set_ch2_status('on')
         self.set_ch3_status('on')
@@ -1442,11 +1435,11 @@ class Tektronix_AWG5014(VisaInstrument):
         # it will not get over written
         # Delete the possibly existing file (will do nothing if the file
         # doesn't exist
-        s = 'WLIS:WAV:DEL "%s"' % wfmname
+        s = 'WLISt:WAVeform:DEL "%s"' % wfmname
         self.write(s)
 
         # create the waveform
-        s = 'WLIS:WAV:NEW "%s",%i,INTEGER' % (wfmname, dim)
+        s = 'WLISt:WAVeform:NEW "%s",%i,INTEGER' % (wfmname, dim)
         self.write(s)
         # Prepare the data block
         # (WilliamHPNielsen) The following line is incorrect. Cf. pack_waveform
@@ -1456,7 +1449,7 @@ class Tektronix_AWG5014(VisaInstrument):
         ws = arr.array('H', number)
 
         ws = ws.tobytes()
-        s1 = 'WLIS:WAV:DATA "%s",' % wfmname
+        s1 = 'WLISt:WAVeform:DATA "%s",' % wfmname
         s1 = s1.encode('UTF-8')
         s3 = ws
         s2 = '#' + str(len(str(len(s3)))) + str(len(s3))
