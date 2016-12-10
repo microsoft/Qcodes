@@ -16,24 +16,15 @@ class Decadac(VisaInstrument):
     that self.visa_handle.ask(XXX) will return the answer to XXX and not
     some previous event.
 
-    The class comes with the following methods and attributes:
-
-    Methods:
-
-        set_ramping(state:bool, time:float): a shortcut to set
-            self.ramp_state and self.ramp_time
-
-        get_ramping: Queries the value of self.ramp_state and
-            self.ramp_time. Returns a string.
 
     Attributes:
 
         ramp_state (bool): If True, ramp state is ON. Default False.
 
-        ramp_time (num): The ramp time in ms. Default 100 ms.
+        ramp_time (int): The ramp time in ms. Default 100 ms.
 
         voltranges (list): The voltranges for each channel. Can be read and
-        set (using a screwdriver) on the front of the physical instrument.
+            set (using a screwdriver) on the front of the physical instrument.
     """
 
     def __init__(self, name, port, slot, timeout=2, baudrate=9600,
@@ -160,6 +151,7 @@ class Decadac(VisaInstrument):
                 self.visa_handle.write('U 65535;')
                 self.visa_handle.read()
 
+
     def set_ramping(self, state, time=None):
         """
         Function to set ramp_state and ramp_time.
@@ -167,14 +159,19 @@ class Decadac(VisaInstrument):
         Args:
             state (bool): True sets ramping ON.
 
-            time (int): the ramp time in ms
+            time (Optiona[int]): the ramp time in ms
         """
         self.ramp_state = state
         if time is not None:
             self.ramp_time = time
 
     def get_ramping(self):
-        """Returns a string with ramp state information"""
+        """
+        Queries the value of self.ramp_state and self.ramp_time. 
+
+        Returns:
+            str: ramp state information
+        """
         switch = {True: 'ON',
                   False: 'OFF'}
         mssg = 'Ramp state: ' + switch[self.ramp_state]

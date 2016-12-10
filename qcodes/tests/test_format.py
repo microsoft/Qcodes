@@ -282,10 +282,18 @@ class TestGNUPlotFormat(TestCase):
             self.assertEqual(f.read(), odd_format)
 
     def add_star(self, path):
-        try:
+        """
+        Args:
+            path(str): path to gnu plot data file
+
+        Write a start to file at path if exists.  Else record that the file
+        does not exist, in the obscure counter self.stars_before_write, starts
+        are written only if a file exists, i.e. "after_write"
+        """
+        if os.path.isfile(path):
             with open(path, 'a') as f:
                 f.write('*')
-        except FileNotFoundError:
+        else:
             self.stars_before_write += 1
 
     def test_incremental_write(self):
