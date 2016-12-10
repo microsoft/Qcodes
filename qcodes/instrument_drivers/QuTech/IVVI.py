@@ -124,6 +124,13 @@ class IVVI(VisaInstrument):
 
         t1 = time.time()
 
+        # make sure we igonore termination characters
+        # http://www.ni.com/tutorial/4256/en/#toc2 on Termination Character
+        # Enabled
+        v = self.visa_handle
+        v.set_visa_attribute(visa.constants.VI_ATTR_TERMCHAR_EN, 0)
+        v.set_visa_attribute(visa.constants.VI_ATTR_ASRL_END_IN, 0)
+
         # basic test to confirm we are properly connected
         try:
             self.get_all()
@@ -131,15 +138,7 @@ class IVVI(VisaInstrument):
             print('IVVI: get_all() failed, maybe connected to wrong port?')
             print(traceback.format_exc())
 
-        v = self.visa_handle
-
-        # make sure we igonore termination characters
-        # http://www.ni.com/tutorial/4256/en/#toc2 on Termination Character
-        # Enabled
-        v.set_visa_attribute(visa.constants.VI_ATTR_TERMCHAR_EN, 0)
-        v.set_visa_attribute(visa.constants.VI_ATTR_ASRL_END_IN, 0)
-
-        print('Initialized IVVI-rack in %.2fs' % (t1-t0))
+        print('Initialized IVVI-rack in %.2fs' % (t1 - t0))
 
     def get_idn(self):
         """
@@ -179,7 +178,7 @@ class IVVI(VisaInstrument):
         Output:
             (dataH, dataL) (int, int) : The high and low value byte equivalent
         '''
-        bytevalue = int(round(mvoltage / self.Fullrange*65535))
+        bytevalue = int(round(mvoltage / self.Fullrange * 65535))
         return bytevalue.to_bytes(length=2, byteorder='big')
 
     def _bytes_to_mvoltages(self, byte_mess):
@@ -265,7 +264,7 @@ class IVVI(VisaInstrument):
         get dacs command takes ~450ms according to ipython timeit
         '''
         if (time.time() - self._time_last_update) > self._update_time:
-            message = bytes([self._numdacs*2+2, 2])
+            message = bytes([self._numdacs * 2 + 2, 2])
             # workaround for an error in the readout that occurs sometimes
             max_tries = 10
             for i in range(max_tries):
@@ -365,7 +364,7 @@ class IVVI(VisaInstrument):
                 time.sleep(self.dac_read_buffer_sleep())
 
             bytes_in_buffer = self.visa_handle.bytes_in_buffer
-            if t1-t0 > timeout:
+            if t1 - t0 > timeout:
                 raise TimeoutError()
         # a workaround for a timeout error in the pyvsia read_raw() function
         mes = self._read_raw_bytes_multiple(bytes_in_buffer)
