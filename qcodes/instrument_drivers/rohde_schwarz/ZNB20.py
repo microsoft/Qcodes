@@ -89,7 +89,6 @@ class ZNB20(VisaInstrument):
 
         super().__init__(name=name, address=address, **kwargs)
 
-        self.external_generator = None
         self.add_parameter(name='power',
                            label='Power',
                            units='dBm',
@@ -202,52 +201,59 @@ class ZNB20(VisaInstrument):
         self.write('SENS:SWE:POIN {:.4f}'.format(val))
         # update setpoints for FrequencySweep param
         self.trace.set_sweep(self.start(), self.stop(), val)
-        
+
     # external generator settings
 
     def count_external_generators(self):
         num = self.ask('SYST:COMM:RDEV:GEN:COUN?').strip()
         return int(num)
-        
+
     def get_external_generator_setup(self, num=1):
-        setup = self.ask('SYSTem:COMMunicate:RDEVice:GEN{:.0f}:DEF?'.format(num)).strip()
+        setup = self.ask(
+            'SYSTem:COMMunicate:RDEVice:GEN{:.0f}:DEF?'.format(num)).strip()
         return setup
-    
-    def set_external_generator(self,  address, gen=1, gen_name="ext gen 1", driver="SGS100A", interface="VXI-11"):
-        self.write('SYST:COMM:RDEV:GEN{:.0f}:DEF "{}", "{}", "{}",  "{}"'.format(gen,gen_name,driver,interface,address))
-        self.external_generator = gen_name
-        
+
+    def set_external_generator(self, address, gen=1, gen_name="ext gen 1",
+                               driver="SGS100A", interface="VXI-11"):
+        self.write('SYST:COMM:RDEV:GEN{:.0f}:DEF "{}", "{}", "{}",  "{}"'.format(
+            gen, gen_name, driver, interface, address))
+
     def clear_external_generator(self, num=1):
         self.write('SYST:COMM:RDEV:GEN{:.0f}:DEL'.format(num))
-        
+
     def get_external_generator_numbers(self):
         cat = self.ask('SYST:COMM:RDEV:GEN1:CAT?').strip()
         return cat
-    
-    
+
     # Spectrocopy mode settings
 
     def _set_spec_mode(self, val):
         """
         Set the spectroscopy mode to off or on:
-        for on:
+          on:
+            4 port:
             - turns on port 3 and sets ports 1 and 3 to permanent drive
-            - sets port port 1 to drive at the previous central frequency
+            - sets  port 1 to drive at the previous central frequency
               and port 2 to measure at the same frequency
             - sets port 1 power to be same as previous power (by way of offset)
-        for off:
+            - measure b2/a1 with source port 1
+            2 port:
+            on:
+            - turns on generator and sets ports 1 and generator to permanent
+            - sets port 1 to drive at the previous central frequency
+              and port 2 to measure at the same frequency
+            - turns off port 2 drive
+            - measure b2 with source generator
+          off (both):
             - resets port 1 and 2 to be sweep ports
             - sets power offset of ports 1 and 2 back to 0
-            - sets permanent drives off and turns off port 3 drive
+            - sets permanent drives off and turns off port 3 (/generator) drive
+            - measure b2/a1 with source port 1
 
         args:
             val (0 or 1 for mode off or on)
         """
 
-        if val == 1 and self.ports == 2 and self.external_generator is None:
-            logging.error('no external generator set up, cannot switch on spectroscopy mode')
-            return
-        
         if val == 0 and self.ports == 4:
             self.write('CALC1:PAR:MEAS "Trc1", "B2D1/A1D1SAM"')
             self.write('SOUR:FREQ1:CONV:ARB:IFR 1, 1, 0, SWE')
@@ -279,7 +285,6 @@ class ZNB20(VisaInstrument):
             self.write('SOUR:POW:GEN1:PERM OFF')
             self.write('SOUR:POW:GEN1:STAT OFF')
             self.write('SOUR:POW2:STAT ON')
-            self.write('SOUR:POW1:STAT ON')
         elif val == 1 and self.ports == 2:
             self.write('CALC1:PAR:MEAS "Trc1", "B2G1SAM"')
             freq = self.center()
@@ -299,7 +304,8 @@ class ZNB20(VisaInstrument):
 
     def _get_fixed_freq(self):
         if self.spec_mode() != 'on':
-            logging.warning('cannot get fixed frequency if spec mode is not on')
+            logging.warning(
+                'cannot get fixed frequency if spec mode is not on')
         if self.ports == 4:
             ret = self.ask('SOUR:FREQ1:CONV:ARB:IFR?').split(',')[2]
         elif self.ports == 2:
@@ -308,30 +314,31 @@ class ZNB20(VisaInstrument):
 
     def _set_fixed_freq(self, freq):
         if self.spec_mode() != 'on':
-            logging.warning('cannot set fixed frequency if spec mode is not on')
+            logging.warning(
+                'cannot set fixed frequency if spec mode is not on')
         if self.ports == 4:
             self.write('SOUR:FREQ1:CONV:ARB:IFR 0, 1, {:.6f}, CW'.format(freq))
             self.write('SOUR:FREQ2:CONV:ARB:IFR 0, 1, {:.6f}, CW'.format(freq))
         elif self.ports == 2:
-            self.write('SOUR:FREQ:CONV:ARB:EFR1 ON, 0, 1, {:.6f}, CW'.format(freq))
-            self.write('SOUR:FREQ2:CONV:ARB:IFR 0, 1, {:.6f}, CW'.format(freq))        
+            self.write(
+                'SOUR:FREQ:CONV:ARB:EFR1 ON, 0, 1, {:.6f}, CW'.format(freq))
+            self.write('SOUR:FREQ2:CONV:ARB:IFR 0, 1, {:.6f}, CW'.format(freq))
 
     def _get_fixed_pow(self):
         if self.spec_mode() != 'on':
             logging.warning('cannot get fixed power if spec mode is not on')
-        if self.ports == 4:   
+        if self.ports == 4:
             ret = self.ask('SOUR:POW1:OFFS?').split(',')[0]
         if self.ports == 2:
-            ret = self.ask('SOUR:POW:GEN1:OFFS?').split(',')[0]        
+            ret = self.ask('SOUR:POW:GEN1:OFFS?').split(',')[0]
         return int(ret)
 
     def _set_fixed_pow(self, pow):
         if self.spec_mode() != 'on':
             logging.error('cannot set fixed power if spec mode is not on')
-        if self.ports == 4:   
+        if self.ports == 4:
             self.write('SOUR:POW1:OFFS {:.3f}, ONLY'.format(pow))
             self.write('SOUR:POW2:OFFS {:.3f}, ONLY'.format(pow))
         if self.ports == 2:
             self.write('SOUR:POW:GEN1:OFFS {:.3f}, ONLY'.format(pow))
             self.write('SOUR:POW2:OFFS {:.3f}, ONLY'.format(pow))
-
