@@ -226,6 +226,10 @@ dummy:
 	@echo
 	@echo "Build finished. Dummy builder generates no files."
 
+html-api:
+	sphinx-apidoc  -o  docs/auto  qcodes -d 10
+	cd docs && make html
+
 gh-pages:
 	git config --global user.email "bot@travics.com"
 	git config --global user.name "Documentation Bot"
