@@ -2,8 +2,7 @@ from qcodes import VisaInstrument, validators as vals
 
 
 class RohdeSchwarz_SGS100A(VisaInstrument):
-
-    '''
+    """
     This is the qcodes driver for the Rohde & Schwarz SGS100A signal generator
 
     Status: beta-version.
@@ -20,7 +19,7 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
             - RS_SMB100A
     This driver does not contain all commands available for the RS_SGS100A but
     only the ones most commonly used.
-    '''
+    """
 
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, **kwargs)
