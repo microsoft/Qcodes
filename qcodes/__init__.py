@@ -13,6 +13,35 @@ from qcodes.config import Config
 config = Config()
 
 from qcodes.version import __version__
+
+# load config system
+import qcodes.config
+from qcodes.config import (is_int, is_bool, is_text, is_float,
+                           is_instance_factory, is_one_of_factory,
+                           get_default_val)
+from qcodes.config import (get_option, set_option, reset_option,
+                           describe_option, option_context, options)
+
+# create various options
+usezmq_doc = """
+: bool
+    If set to True the framework will install a hook to send logging data
+    to a ZMQ socket.
+"""
+
+with config.config_prefix('display'):
+    config.register_option(
+        'frontend', 1, 'frontend that is used (1: notebook, 0: unknown, 2: spyder', validator=is_int)
+with config.config_prefix('logging'):
+    config.register_option('usezmq', 1, usezmq_doc, validator=is_int)
+
+
+# load config file
+path = qcodes.config.qcodes_fname()
+if path is not None:
+    qcodes.config.from_file(path)
+
+
 from qcodes.process.helpers import set_mp_method
 from qcodes.utils.helpers import in_notebook
 
