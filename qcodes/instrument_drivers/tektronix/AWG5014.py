@@ -145,6 +145,42 @@ class Tektronix_AWG5014(VisaInstrument):
                            get_cmd='AWGControl:RMODe?',
                            set_cmd='AWGControl:RMODe ' + '{}',
                            vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'))
+        self.add_parameter('ref_clock_source',
+                           label='Reference clock source',
+                           get_cmd='AWGControl:CLOCk:SOURce?',
+                           set_cmd='AWGControl:CLOCk:SOURce ' + '{}',
+                           vals=vals.Enum('INT', 'EXT'))
+        self.add_parameter('DC_output',
+                           label='DC Output (ON/OFF)',
+                           get_cmd='AWGControl:DC:STATe?',
+                           set_cmd='AWGControl:DC:STATe {}',
+                           vals=vals.Ints(0, 1),
+                           get_parser=int)
+
+        # sequence parameter(s)
+        self.add_parameter('sequence_length',
+                           label='Sequence length',
+                           get_cmd='SEQuence:LENGth?',
+                           set_cmd='SEQuence:LENGth ' + '{}',
+                           get_parser=int,
+                           vals=vals.Ints(0, 8000),
+                           docstring=('This command sets the sequence length' +
+                                      '. Use this command to create an ' +
+                                      'uninitialized sequence. You can also ' +
+                                      'use the command to clear all sequence' +
+                                      ' elements in a single action by ' +
+                                      'passing 0 as the parameter. However, ' +
+                                      'this action cannot be undone so ' +
+                                      'exercise necessary caution. Also note' +
+                                      ' that passing a value less than the ' +
+                                      'sequence’s current length will cause ' +
+                                      'some sequence elements to be deleted ' +
+                                      'at the end of the sequence. For ' +
+                                      'example if self.get_sq_length returns' +
+                                      ' 200 and you subsequently set ' +
+                                      'sequence_length to 21, all sequence ' +
+                                      'elements except the first 20 will be' +
+                                      ' deleted.'))
 
         # Trigger parameters #
         # Warning: `trigger_mode` is the same as `run_mode`, do not use! exists
@@ -218,6 +254,7 @@ class Tektronix_AWG5014(VisaInstrument):
             directoutput_cmd = 'AWGControl:DOUTput{}:STATE'.format(i)
             filter_cmd = 'OUTPut{}:FILTer:FREQuency'.format(i)
             add_input_cmd = 'SOURce{}:COMBine:FEED'.format(i)
+            dc_out_cmd = 'AWGControl:DC{}:VOLTage:OFFSet'.format(i)
 
             # Set channel first to ensure sensible sorting of pars
             self.add_parameter('ch{}_state'.format(i),
@@ -262,6 +299,13 @@ class Tektronix_AWG5014(VisaInstrument):
                                set_cmd=filter_cmd + ' {}',
                                vals=vals.Enum(20e6, 100e6, 9.9e37,
                                               'INF', 'INFinity'))
+            self.add_parameter('ch{}_DC_out'.format(i),
+                               label='DC output level channel {}'.format(i),
+                               units='V',
+                               get_cmd=dc_out_cmd + '?',
+                               set_cmd=dc_out_cmd + ' {}',
+                               vals=vals.Numbers(-3, 5),
+                               get_parser=float)
 
             # Marker channels
             for j in range(1, 3):
@@ -471,52 +515,6 @@ class Tektronix_AWG5014(VisaInstrument):
         for i in range(1, 5):
             self.set('ch{}_state'.format(i), 0)
 
-    def clear_waveforms(self, channels=[1, 2, 3, 4]):
-        """
-        Clears the waveform on the specified channels.
-
-        Args:
-            channels (list): A list of integers specifying which channels to
-                clear. Default: [1, 2, 3, 4] (clearing all channels)
-
-        """
-        for channel in channels:
-            self.write('SOURce{:d}:WAVeform ""'.format(channel))
-
-    def get_sequence_length(self):
-        """Duplicate of self.get_sq_length"""
-        return float(self.ask('SEQuence:LENGth?'))
-
-    def get_refclock(self):
-        """
-        Query the clock source. When the clock source is internal, the
-        arbitrary waveform generator's internal clock is used to generate the
-        clock signal. If the clock source is external, the clock signal from an
-        external oscillator is used.
-
-        Returns:
-            str: 'INT' or 'EXT'
-        """
-        return self.ask('AWGControl:CLOCk:SOURce?')
-
-    def set_refclock_ext(self):
-        """
-        Set the clock source to be EXTERNAL. When the clock source is internal,
-        the arbitrary waveform generator's internal clock is used to generate
-        the clock signal. If the clock source is external, the clock signal
-        from an external oscillator is used.
-        """
-        self.write('AWGControl:CLOCk:SOURce EXT')
-
-    def set_refclock_int(self):
-        """
-        Set the clock source to be INTERNAL. When the clock source is internal,
-        the arbitrary waveform generator's internal clock is used to generate
-        the clock signal. If the clock source is external, the clock signal
-        from an external oscillator is used.
-        """
-        self.write('AWGControl:CLOCk:SOURce INT')
-
     #####################
     # Sequences section #
     #####################
@@ -702,34 +700,6 @@ class Tektronix_AWG5014(VisaInstrument):
             str: The current state. Example: '1\n'.
         """
         return self.ask('SEQuence:ELEMent{}:TWAit?'.format(element_no))
-
-    def get_sq_length(self):
-        """
-        This query returns the sequence length.
-
-        Returns:
-            str: The length of the sequence. Example: '41\n'.
-        """
-        return self.ask('SEQuence:LENGth?')
-
-    def set_sq_length(self, seq_length):
-        """
-        This command sets the sequence length. Use this command to
-        create an uninitialized sequence. You can also use the command
-        to clear all sequence elements in a single action by passing 0
-        as the parameter. However, this action cannot be undone so
-        exercise necessary caution. Also note that passing a value
-        less than the sequence’s current length will cause some
-        sequence elements to be deleted at the end of the
-        sequence. For example if self.get_sq_length returns 200 and
-        you subsequently issue self.set_sq_length 21, all sequence
-        elements except the first 20 will be deleted.
-
-        Args:
-            seq_length (int): The desired sequence length.
-        """
-
-        self.write('SEQuence:LENGth {}'.format(seq_length))
 
     def set_sqel_event_jump_target_index(self, element_no, jtar_index_no):
         """Duplicate of set_sqel_event_target_index"""
@@ -1113,7 +1083,7 @@ class Tektronix_AWG5014(VisaInstrument):
         seq_record_str = BytesIO()
 
         for segment in wfname_l.transpose():
-            
+
             seq_record_str.write(
                 self._pack_record('SEQUENCE_WAIT_{}'.format(kk),
                                   trig_wait[kk - 1], 'h') +
@@ -1175,6 +1145,8 @@ class Tektronix_AWG5014(VisaInstrument):
         s = 'AWGControl:SREStore "{}"'.format(filename)
         logging.debug(__name__ + ': Loading awg file using {}'.format(s))
         self.visa_handle.write_raw(s)
+        # we must update the appropriate parameter(s) for the sequence
+        self.sequence_length.set(self.sequence_length.get())
 
     def make_send_and_load_awg_file(self, waveforms, m1s, m2s,
                                     nreps, trig_waits,
@@ -1190,14 +1162,18 @@ class Tektronix_AWG5014(VisaInstrument):
             waveforms (list): A list of the waveforms to upload. The list
             should be filled like so:
             [[wfm1ch1, wfm2ch1, ...], [wfm1ch2, wfm2ch2], ...]
+            Each waveform should be a numpy array with values in the range
+            -1 to 1 (inclusive)
 
             m1s (list): A list of marker 1's. The list should be filled
             like so:
             [[elem1m1ch1, elem2m1ch1, ...], [elem1m1ch2, elem2m1ch2], ...]
+            Each marker should be anumpy array containing only 0's and 1's
 
             m2s (list): A list of marker 2's. The list should be filled
             like so:
             [[elem1m2ch1, elem2m2ch1, ...], [elem1m2ch2, elem2m2ch2], ...]
+            Each marker should be anumpy array containing only 0's and 1's
 
             nreps (list): List of integers specifying the no. of
                 repetions per sequence element.  Allowed values: 1 to
@@ -1227,7 +1203,7 @@ class Tektronix_AWG5014(VisaInstrument):
         # by default, an unusable directory is targeted on the AWG
         self.visa_handle.write('MMEMory:CDIRectory ' +
                                '"C:\\Users\\OEM\\Documents"')
-
+        
         # waveform names and the dictionary of packed waveforms
         packed_wfs = {}
         waveform_names = []
@@ -1292,10 +1268,25 @@ class Tektronix_AWG5014(VisaInstrument):
 
         Returns:
             numpy.ndarray: An array of unsigned 16 bit integers.
+
+        Raises:
+            Exception: if the lengths of w, m1, and m2 don't match
+            TypeError: if the waveform contains values outside (-1, 1)
+            TypeError: if the markers contain values that are not 0 or 1
         """
-        # TODO (WilliamHPNielsen): add input validation; check that the lengths
-        # of the inputs are the same, round off the markers prior to packing,
-        # ensure that the waveform is from -1 to 1 (at most).
+
+        # Input validation
+        if (not((len(wf) == len(m1)) and ((len(m1) == len(m2))))):
+            raise Exception('error: sizes of the waveforms do not match')
+        if min(wf) < -1 or max(wf) > 1:
+            raise TypeError('Waveform values out of bonds.' +
+                            ' Allowed values: -1 to 1 (inclusive)')
+        if (list(m1).count(0)+list(m1).count(1)) != len(m1):
+            raise TypeError('Marker 1 contains invalid values.' +
+                            ' Only 0 and 1 are allowed')
+        if (list(m2).count(0)+list(m2).count(1)) != len(m2):
+            raise TypeError('Marker 2 contains invalid values.' +
+                            ' Only 0 and 1 are allowed')
 
         wflen = len(wf)
         packed_wf = np.zeros(wflen, dtype=np.uint16)
@@ -1354,30 +1345,6 @@ class Tektronix_AWG5014(VisaInstrument):
         """Duplicate of self.get_folder_contents"""
         return self.ask('MMEMory:CATalog?')
 
-    def set_DC_out(self, DC_channel_number, Voltage):
-        """
-        Set the DC output level on the specified channel.
-
-        Args:
-            DC_channel_number (int): The channel number (1-4).
-            Voltage (float): The voltage to set to (V).
-        """
-        self.write('AWGControl:DC' +
-                   '{}:VOLTage:OFFSet {}V'.format(DC_channel_number, Voltage))
-
-    def get_DC_out(self, DC_channel_number):
-        """
-        Query the DC output level on the specified channel.
-
-        Args:
-            DC_channel_number (int): The channel number (1-4).
-
-        Returns:
-            str: The DC offset level in V in exponent notation.
-        """
-        return self.ask('AWGControl:' +
-                        'DC{}:VOLTage:OFFSet?'.format(DC_channel_number))
-
     def send_DC_pulse(self, DC_channel_number, set_level, length):
         """
         Sets the DC level on the specified channel, waits a while and then
@@ -1390,28 +1357,14 @@ class Tektronix_AWG5014(VisaInstrument):
             set_level (float): The voltage level to set to (V).
             length (flaot): The time to wait before resetting (s).
         """
-        restore = self.get_DC_out(DC_channel_number)
-        self.set_DC_out(DC_channel_number, set_level)
+        DC_channel_number -= 1
+        chandcs = [self.ch1_DC_out, self.ch2_DC_out, self.ch3_DC_out,
+                   self.ch4_DC_out]
+
+        restore = self.chandcs[DC_channel_number].get()
+        self.chandcs[DC_channel_number].set(set_level)
         sleep(length)
-        self.set_DC_out(DC_channel_number, restore)
-
-    def set_DC_state(self, state=False):
-        """
-        Set the DC output state.
-
-        Args:
-            state (bool): False (OFF) or True (ON). Default: False.
-        """
-        self.write('AWGControl:DC:STATe {}'.format(int(state)))
-
-    def get_DC_state(self):
-        """
-        Query the DC output state.
-
-        Returns:
-            str: '1' for ON, '0' for OFF.
-        """
-        return self.ask('AWGControl:DC:STATe?')
+        self.chandcs[DC_channel_number].set(restore)
 
     def is_awg_ready(self):
         """
@@ -1433,7 +1386,7 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         Send a single complete waveform directly to the "User defined"
         waveform list (prepend it). The data type of the input arrays
-        is unimportant, but the marker arrays should contain only 1's
+        is unimportant, but the marker arrays must contain only 1's
         and 0's.
 
         Args:
@@ -1441,6 +1394,11 @@ class Tektronix_AWG5014(VisaInstrument):
             m1 (numpy.ndarray): Marker1
             m2 (numpy.ndarray): Marker2
             wfmname (str): waveform name
+
+        Raises:
+            Exception: if the lengths of w, m1, and m2 don't match
+            TypeError: if the waveform contains values outside (-1, 1)
+            TypeError: if the markers contain values that are not 0 or 1
         """
         logging.debug(
             __name__ + ' : Sending waveform {} to instrument'.format(wfmname))
@@ -1448,8 +1406,18 @@ class Tektronix_AWG5014(VisaInstrument):
         # TODO (WilliamHPNielsen): Round off the markers to be only 1 and 0.
         dim = len(w)
 
+        # Input validation
         if (not((len(w) == len(m1)) and ((len(m1) == len(m2))))):
             raise Exception('error: sizes of the waveforms do not match')
+        if min(w) < -1 or max(w) > 1:
+            raise TypeError('Waveform values out of bonds.' +
+                            ' Allowed values: -1 to 1 (inclusive)')
+        if (list(m1).count(0)+list(m1).count(1)) != len(m1):
+            raise TypeError('Marker 1 contains invalid values.' +
+                            ' Only 0 and 1 are allowed')
+        if (list(m2).count(0)+list(m2).count(1)) != len(m2):
+            raise TypeError('Marker 2 contains invalid values.' +
+                            ' Only 0 and 1 are allowed')
 
         self._values['files'][wfmname] = self._file_dict(w, m1, m2, None)
 
