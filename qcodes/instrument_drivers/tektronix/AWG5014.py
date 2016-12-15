@@ -117,18 +117,13 @@ class Tektronix_AWG5014(VisaInstrument):
         'DC_OUTPUT_LEVEL_N': 'd',  # V
     }
 
-    def __init__(self, name, setup_folder, address, reset=False,
-                 clock=1e9, numpoints=1000, timeout=180, **kwargs):
+    def __init__(self, name, address, timeout=180, **kwargs):
         """
         Initializes the AWG5014.
 
         Args:
             name (string): name of the instrument
-            setup_folder (string): folder on the AWG where externally
-                generated sequences are stored (WilliamHPNielsen): no, it's not. MarkedForDeletion
             address (string): GPIB or ethernet address as used by VISA
-            reset (bool): resets to default values, default=false (WilliamHPNielsen): this is not used!
-            numpoints (int): sets the number of datapoints #(WilliamHPNielsen): MarkedForDeletion
             timeout (float): visa timeout, in secs. long default (180)
                 to accommodate large waveforms
 
@@ -141,8 +136,6 @@ class Tektronix_AWG5014(VisaInstrument):
 
         self._values = {}
         self._values['files'] = {}
-        self._clock = clock
-        self._numpoints = numpoints  #(WilliamHPNielsen): MarkedForDeletion
 
         self.add_function('reset', call_cmd='*RST')
 
@@ -177,8 +170,8 @@ class Tektronix_AWG5014(VisaInstrument):
         self.add_parameter('trigger_slope',
                            get_cmd='TRIGger:SLOPe?',
                            set_cmd='TRIGger:SLOPe ' + '{}',
-                           vals=vals.Enum('POS', 'NEG'))  # ,
-        # get_parser=self.parse_int_pos_neg)
+                           vals=vals.Enum('POS', 'NEG'))
+
         self.add_parameter('trigger_source',
                            get_cmd='TRIGger:SOURce?',
                            set_cmd='TRIGger:SOURce ' + '{}',
@@ -212,13 +205,6 @@ class Tektronix_AWG5014(VisaInstrument):
                            set_cmd='SOURce:FREQuency ' + '{}',
                            vals=vals.Numbers(1e6, 1.2e9),
                            get_parser=float)
-
-        #(WilliamHPNielsen): MarkedForDeletion
-        self.add_parameter('numpoints',
-                           label='Number of datapoints per wave',
-                           get_cmd=self._do_get_numpoints,
-                           set_cmd=self._do_set_numpoints,
-                           vals=vals.Ints(100, int(1e9)))
 
         self.add_parameter('setup_filename',
                            get_cmd='AWGControl:SNAMe?')
@@ -306,17 +292,6 @@ class Tektronix_AWG5014(VisaInstrument):
                     set_cmd=m_low_cmd + ' {:.3f}',
                     vals=vals.Numbers(-2.7, 2.7),
                     get_parser=float)
-
-        # # Setup filepaths
-        self.waveform_folder = "Waveforms"
-        self._rem_file_path = "Z:\\Waveforms\\"
-
-        # NOTE! this directory has to exist on the AWG!!
-        # (WilliamHPNielsen): Then make the dir or at least log the problem
-        self._setup_folder = setup_folder
-
-        self.goto_root()
-        self.change_folder(self.waveform_folder)
 
         self.set('trigger_impedance', 50)
         if self.get('clock_freq') != 1e9:
@@ -542,45 +517,6 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         self.write('AWGControl:CLOCk:SOURce INT')
 
-    ###############################
-    # Parameter set/get functions #
-    ###############################
-
-    def _do_get_numpoints(self):
-        """
-        Returns the number of datapoints in each wave
-
-        Returns:
-            numpoints (int) : Number of datapoints in each wave
-        """
-        # (WilliamHPNielsen): MarkedForDeletion
-        return self._numpoints
-
-    def _do_set_numpoints(self, numpts):
-        """
-        Sets the number of datapoints in each wave.
-        This acts on both channels.
-
-        Args:
-            numpts (int) : The number of datapoints in each wave
-
-        """
-        # (WilliamHPNielsen): MarkedForDeletion
-        logging.debug(__name__ + ' : Trying to set numpoints to %s' % numpts)
-
-        warn_string = ' : changing numpoints. This will clear all waveforms!'
-        if numpts != self._numpoints:
-            logging.warning(__name__ + warn_string)
-        # Extra print because logging.warning might not be displayed
-        print(__name__ + warn_string)
-        response = input('type "yes" to continue')
-        if response == 'yes':
-            logging.debug(__name__ + ' : Setting numpoints to %s' % numpts)
-            self._numpoints = numpts
-            self.clear_waveforms()
-        else:
-            print('aborted')
-
     #####################
     # Sequences section #
     #####################
@@ -600,26 +536,6 @@ class Tektronix_AWG5014(VisaInstrument):
         instrument.
         """
         self.write('EVENt:IMMediate')
-
-    def set_sqel_event_target_index_next(self, element_no):
-        """
-        This command sets the event jump target type for the jump to
-        NEXT for the specified sequence element.  Generate an event in
-        one of the following ways:
-        * By connecting an external cable to instrument rear panel
-          for external event.
-        * By pressing the Force Event button on the
-          front panel.
-        *By using self.force_event
-
-        Args:
-            element_no (int): The sequence element number
-        """
-        # TODO (WilliamHPNielsen): make the jump type an argument (NEXT, INDEX, OFF)
-        # TODO (WilliamHPNielsen): such a function already exists;
-        # set_sqel_event_jump_type. Therefore, this function should go.
-        # MarkedForDeletion
-        self.write('SEQuence:ELEMent{}:JTARGet:TYPE NEXT'.format(element_no))
 
     def set_sqel_event_target_index(self, element_no, index):
         """
@@ -647,6 +563,7 @@ class Tektronix_AWG5014(VisaInstrument):
         work, the goto state of the squencer must be ON and the
         sequence element must exist.
         Note that the first element of a sequence is taken to be 1 not 0.
+
 
         Args:
             element_no (int): The sequence element number
@@ -872,145 +789,6 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         self.write('SEQuence:JUMP:IMMediate {}'.format(jump_index_no))
 
-    #################################
-    # Transmon version file loading #
-    #################################
-
-    def load_and_set_sequence(self, wfname_l, nrep_l, wait_l, goto_l,
-                              logic_jump_l):
-        """
-        Sets the AWG in sequence mode and loads waveforms into the sequence.
-
-        Args:
-            wfname_l (list): list of waveform names
-                [[wf1_ch1,wf2_ch1..],[wf1_ch2,wf2_ch2..],...],
-                the waveform names must be in the waveform
-                list (either User Defined or Predefined).
-
-            nrep_l (list): list of ints specifying the number of reps for each
-                seq element
-
-            wait_l (list): list of ints (0 or 1) for wait_trigger_state
-                (OFF or ON)
-
-            goto_l (list): list of ints for goto_state (goto is the element
-                where it hops to in case the element is finished)
-
-            logic_jump_l (list): list of ints for event_jump_to (event or
-                logic jump is the element where it hops in case of an event)
-
-        """
-        self._load_new_style(wfname_l, nrep_l, wait_l, goto_l, logic_jump_l)
-
-    def _load_new_style(self, wfname_l, nrep_l, wait_l, goto_l, logic_jump_l):
-        """
-        Helper function called by self.load_and_set_sequence
-        """
-        self.set_sq_length(0)  # delete prev seq
-
-        len_sq = len(nrep_l)
-        self.set_sq_length(len_sq)
-        n_ch = len(wfname_l)
-        for k in range(len_sq):
-            # wfname_l[k]
-            # print k
-            for n in range(n_ch):
-                # print n
-                # print wfname_l[n][k]
-                if wfname_l[n][k] is not None:
-
-                    self.set_sqel_waveform(wfname_l[n][k], n + 1, k + 1)
-            self.set_sqel_trigger_wait(k + 1, int(wait_l[k] != 0))
-            self.set_sqel_loopcnt_to_inf(k + 1, False)
-            self.set_sqel_loopcnt(nrep_l[k], k + 1)
-            qt.msleep()
-            if goto_l[k] == 0:
-                self.set_sqel_goto_state(k + 1, False)
-            else:
-                self.set_sqel_goto_state(k + 1, True)
-                self.set_sqel_goto_target_index(k + 1, goto_l[k])
-            if logic_jump_l[k] == -1:
-                self.set_sqel_event_target_index_next(k + 1)
-            else:
-                self.set_sqel_event_target_index(k + 1, logic_jump_l[k])
-
-    def _load_old_style(self, wfs, rep, wait, goto, logic_jump, filename):
-        """
-        Sends a sequence file (for the moment only for ch1
-        Inputs (mandatory):
-
-           wfs:  list of filenames
-
-        Output:
-            None
-        This needs to be written so that awg files are loaded, will be much faster!
-        """
-        # (WilliamHPNielsen) MarkedForDeletion
-        pass
-
-    ##################################################################
-
-    def import_waveform_file(self, waveform_listname, waveform_filename,
-                             filetype='WFM'):
-        """
-        This command imports a file into the arbitrary waveform generator’s
-        setup as a waveform.
-
-        Args:
-            waveform_listname (str): Name of the waveform in the waveform list
-            waveform_filename (str): Name of the waveform file. Must be
-                present on the AWG.
-            filetype (str): The file type. Accepted types: ISF, TDS, TXT, TXT8,
-                TXT10, TXT14, WFM, PAT, TFW, IQT, TIQ. Default: WFM.
-
-        """
-        self.write('MMEMory:IMPort "{}","{}",{}'.format(waveform_listname,
-                                                        waveform_filename,
-                                                        filetype))
-
-    def import_and_load_waveform_file_to_channel(self, channel_no,
-                                                 waveform_listname,
-                                                 waveform_filename,
-                                                 filetype='wfm'):
-        """
-        This command imports a file into the arbitrary waveform generator’s
-        setup as a waveform, and then loads said waveform into the sequence
-        on the specified channel.
-
-        Args:
-            channel_no (int): The channel number (1-4)
-            waveform_listname (str): Name of the waveform in the waveform list
-            waveform_filename (str): Name of the waveform file. Must be
-                present on the AWG.
-            filetype (str): The file type. Accepted types: ISF, TDS, TXT, TXT8,
-                TXT10, TXT14, WFM, PAT, TFW, IQT, TIQ. Default: WFM.
-        """
-        self._import_and_load_waveform_file_to_channel(channel_no,
-                                                       waveform_listname,
-                                                       waveform_filename,
-                                                       filetype=filetype)
-
-    def _import_and_load_waveform_file_to_channel(self, channel_no,
-                                                  waveform_listname,
-                                                  waveform_filename,
-                                                  filetype='wfm'):
-        """
-        Helper function called by import_and_load_waveform_file_to_channel
-        """
-        self.write('MMEMory:IMPort "{}","{}",{}'.format(waveform_listname,
-                                                        waveform_filename,
-                                                        filetype))
-        self.write('sour{}:wav "{}"'.format(channel_no, waveform_listname))
-        # (WilliamHPNielsen): What is the point of the following loop?
-        # Keep asking if the waveform was really set? Infinite loop
-        # if not. And the counter i is not used for anything...
-        i = 0
-        while not (self.visa_handle.ask("sour%s:wav?" % channel_no)
-                   == '"%s"' % waveform_listname):
-            sleep(0.01)
-            i = i + 1
-        return
-
     ######################
     # AWG file functions #
     ######################
@@ -1220,7 +998,7 @@ class Tektronix_AWG5014(VisaInstrument):
                 AWG_channel_cfg.update({'EXTERNAL_ADD_{}'.format(chan):
                                         addinputs[chan-1]})
 
-         return AWG_channel_cfg
+        return AWG_channel_cfg
 
     def generate_awg_file(self,
                           packed_waveforms, wfname_l, nrep, trig_wait,
@@ -1405,7 +1183,7 @@ class Tektronix_AWG5014(VisaInstrument):
                                     preservechannelsettings=True):
         """
         Makes an .awg-file, sends it to the AWG and loads it. The .awg-file
-        is uploaded to C:\Users\OEM\Documents. The waveforms appear in the 
+        is uploaded to C:\\Users\\OEM\\Documents. The waveforms appear in the
         user defined waveform list with names wfm001ch1, wfm002ch1, ...
 
         Args:
@@ -1429,9 +1207,9 @@ class Tektronix_AWG5014(VisaInstrument):
                 trigger wait state of each sequence element.
                 Allowed values: 0 (OFF) or 1 (ON).
 
-            goto_states (list): List of len(segments) of integers specifying the
-                goto state of each sequence element. Allowed values: 0 to 65536
-                (0 means next)
+            goto_states (list): List of len(segments) of integers
+                specifying the goto state of each sequence
+                element. Allowed values: 0 to 65536 (0 means next)
 
             jump_tos (list): List of len(segments) of integers specifying
                 the logic jump state for each sequence element. Allowed values:
@@ -1469,7 +1247,6 @@ class Tektronix_AWG5014(VisaInstrument):
             waveform_names.append(namelist)
 
         wavenamearray = np.array(waveform_names, dtype='str')
-
 
         channel_cfg = {}
 
@@ -1652,36 +1429,6 @@ class Tektronix_AWG5014(VisaInstrument):
             self.visa_handle.read()
         return True
 
-    def initialize_dc_waveforms(self):
-        """
-        Broken method. Do not call.
-        """
-        # (WilliamHPNielsen) MarkedForDeletion. Calls set_runmode, which
-        # doesn't exist.
-        self.set_runmode('CONT')
-        self.write('SOURce1:WAVeform "*DC"')
-        self.write('SOURce2:WAVeform "*DC"')
-        self.write('SOURce3:WAVeform "*DC"')
-        self.write('SOURce4:WAVeform "*DC"')
-        self.set_ch1_status('on')
-        self.set_ch2_status('on')
-        self.set_ch3_status('on')
-        self.set_ch4_status('on')
-
-    # QCodes specific parse_functions
-    # (WilliamHPNielsen) MarkedForDeletion
-    def parse_int_pos_neg(self, val):
-        """
-        Function not used for anything.
-        """
-        return ['POS', 'NEG'][val]
-
-    def parse_int_int_ext(self, val):
-        """
-        Function not used for anything.
-        """
-        return ['INT', 'EXT'][val]
-
     def send_waveform_to_list(self, w, m1, m2, wfmname):
         """
         Send a single complete waveform directly to the "User defined"
@@ -1717,8 +1464,7 @@ class Tektronix_AWG5014(VisaInstrument):
         s = 'WLISt:WAVeform:NEW "{}",{:d},INTEGER'.format(wfmname, dim)
         self.write(s)
         # Prepare the data block
-        # (WilliamHPNielsen) The following line is incorrect. Cf. pack_waveform
-        number = (2**13 + 2**13 * w + 2**14 *
+        number = ((2**13-1) + (2**13-1) * w + 2**14 *
                   np.array(m1) + 2**15 * np.array(m2))
         number = number.astype('int')
         ws = arr.array('H', number)
@@ -1754,5 +1500,3 @@ class Tektronix_AWG5014(VisaInstrument):
                 gotexception = True
         self.visa_handle.timeout = original_timeout
 
-
-        
