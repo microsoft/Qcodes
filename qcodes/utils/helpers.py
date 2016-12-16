@@ -253,6 +253,10 @@ class LogCapture():
     def __init__(self, logger=logging.getLogger()):
         self.logger = logger
 
+        self.stashed_handlers = self.logger.handlers[:]
+        for handler in self.stashed_handlers:
+            self.logger.removeHandler(handler)
+
     def __enter__(self):
         self.log_capture = io.StringIO()
         self.string_handler = logging.StreamHandler(self.log_capture)
@@ -264,6 +268,9 @@ class LogCapture():
         self.logger.removeHandler(self.string_handler)
         self.value = self.log_capture.getvalue()
         self.log_capture.close()
+
+        for handler in self.stashed_handlers:
+            self.logger.addHandler(handler)
 
 
 def make_unique(s, existing):
