@@ -1,12 +1,14 @@
 """Set up the main qcodes namespace."""
-
 # flake8: noqa (we don't need the "<...> imported but unused" error)
-
-# config
-
 from qcodes.config import Config
-
 config = Config()
+
+from qcodes.utils.zmqlogger import QPUBHandler
+# now create qcodes logger using addres in the config
+import logging.config
+logging.config.fileConfig("./config/logging.conf")
+
+
 
 from qcodes.version import __version__
 from qcodes.utils.helpers import in_notebook
