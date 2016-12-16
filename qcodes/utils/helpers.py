@@ -453,3 +453,8 @@ def compare_dictionaries(dict_1, dict_2,
     else:
         dicts_equal = False
     return dicts_equal, dict_differences
+
+
+def warn_units(class_name, instance):
+    logging.warning('`units` is deprecated for the `' + class_name +
+                    '` class, use `unit` instead. ' + repr(instance))

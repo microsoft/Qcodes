@@ -49,7 +49,7 @@ class VisaInstrument(Instrument):
         self.add_parameter('timeout',
                            get_cmd=self._get_visa_timeout,
                            set_cmd=self._set_visa_timeout,
-                           units='s',
+                           unit='s',
                            vals=vals.MultiType(vals.Numbers(min_value=0),
                                                vals.Enum(None)))
 

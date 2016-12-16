@@ -219,18 +219,18 @@ class MockParabola(Instrument):
 
         # Instrument parameters
         for parname in ['x', 'y', 'z']:
-            self.add_parameter(parname, units='a.u.',
+            self.add_parameter(parname, unit='a.u.',
                                parameter_class=ManualParameter,
                                vals=Numbers(), initial_value=0)
 
-        self.add_parameter('noise', units='a.u.',
+        self.add_parameter('noise', unit='a.u.',
                            label='white noise amplitude',
                            parameter_class=ManualParameter,
                            vals=Numbers(), initial_value=0)
 
-        self.add_parameter('parabola', units='a.u.',
+        self.add_parameter('parabola', unit='a.u.',
                            get_cmd=self._measure_parabola)
-        self.add_parameter('skewed_parabola', units='a.u.',
+        self.add_parameter('skewed_parabola', unit='a.u.',
                            get_cmd=self._measure_skewed_parabola)
 
     def _measure_parabola(self):
@@ -258,15 +258,15 @@ class MockMetaParabola(Instrument):
 
         # Instrument parameters
         for parname in ['x', 'y', 'z']:
-            self.add_parameter(parname, units='a.u.',
+            self.add_parameter(parname, unit='a.u.',
                                parameter_class=ManualParameter,
                                vals=Numbers(), initial_value=0)
         self.add_parameter('gain', parameter_class=ManualParameter,
                            initial_value=1)
 
-        self.add_parameter('parabola', units='a.u.',
+        self.add_parameter('parabola', unit='a.u.',
                            get_cmd=self._get_parabola)
-        self.add_parameter('skewed_parabola', units='a.u.',
+        self.add_parameter('skewed_parabola', unit='a.u.',
                            get_cmd=self._get_skew_parabola)
 
     def _get_parabola(self):
