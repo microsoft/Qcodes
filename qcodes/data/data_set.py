@@ -277,7 +277,7 @@ class DataSet(DelegateAttributes):
 
         self.metadata = {}
 
-        self.arrays = {}
+        self.arrays = _PrettyPrintDict()
         if arrays:
             self.action_id_map = self._clean_array_ids(arrays)
             for array in arrays:
@@ -866,3 +866,18 @@ class DataSet(DelegateAttributes):
             out += out_template.format(info=arr_info_i, lens=column_lengths)
 
         return out
+
+
+class _PrettyPrintDict(dict):
+    """
+    simple wrapper for a dict to repr its items on separate lines
+    with a bit of indentation
+    """
+    def __repr__(self):
+        body = '\n  '.join([repr(k) + ': ' + self._indent(repr(v))
+                            for k, v in self.items()])
+        return '{\n  ' + body + '\n}'
+
+    def _indent(self, s):
+        lines = s.split('\n')
+        return '\n    '.join(lines)
