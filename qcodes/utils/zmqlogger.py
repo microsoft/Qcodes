@@ -5,13 +5,13 @@ from zmq.utils.strtypes import bytes, unicode, cast_bytes
 
 # TODO(giulioungaretti)
 # What you don’t want to collect 	How to avoid collecting it
-# Information about where calls were made from. 	Set
-# logging._srcfile to None. This avoids calling sys._getframe(), which
+# Information about where calls were made from.
+# Set logging._srcfile to None. This avoids calling sys._getframe(), which
 # may help to speed up your code in environments like PyPy (which can’t
 # speed up code that uses sys._getframe()), if and when PyPy
 # supports Python 3.x.
+# TODO(giulioungaretti) review formatters
 
-# QPUBHandler = PUBHandler
 
 DEBUGF = "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)d] %(message)s"
 DATEFMT = "%H:%M:%S"
@@ -25,8 +25,6 @@ class QPUBHandler(logging.Handler):
     Takes an interface to connect to.
 
         handler = PUBHandler('inproc://loc')
-
-    These are equivalent.
 
     Log messages handled by this handler are broadcast with ZMQ topics
     ``this.root_topic`` comes first, followed by the log level
@@ -58,7 +56,10 @@ class QPUBHandler(logging.Handler):
         return self.formatters[record.levelno].format(record)
 
     def emit(self, record):
-        """Emit a log message on my socket."""
+        """Emit a record message
+        Args:
+            record (logging.record): record to shovel on the socket
+        """
         try:
             topic, record.msg = record.msg.split(TOPIC_DELIM,1)
         except Exception:
@@ -82,3 +83,42 @@ class QPUBHandler(logging.Handler):
         btopic = b'.'.join(cast_bytes(t) for t in topic_list)
 
         self.socket.send_multipart([btopic, bmsg])
+
+def broker(frontend_addres="tcp://*:8888", backend_address="tcp://*:5560"):
+    """
+    Simple XPUB/XSUB broker.
+    Listens for messages on the frontend and transparently pushes them to a
+    backend.
+    This allows to have centralized logging, from multiple processes
+    and to multiple consumers.
+    Messages sent but never forward (f.e.x if there aren't subscribers)
+    are quietly dropped.
+
+    Args:
+        frontend_addres (str): Interface to which the frontend is bound
+        backend_address (str): Interface to which the backend is bound
+
+    """
+    context = zmq.Context()
+    # Socket facing clients
+    frontend = context.socket(zmq.XSUB)
+    try:
+        frontend.bind(frontend_addres)
+        logging.info("XSUB listening at {}".format(frontend_addres))
+    except zmq.error.ZMQError:
+        logging.debug("Exiting. Broker is already running")
+        return 
+
+    # Socket facing services
+    backend = context.socket(zmq.XPUB)
+    try:
+        backend.bind(backend_address)
+        logging.info("XPUB publishing at {}".format(backend_address))
+    except zmq.error.ZMQError:
+        logging.debug("Exiting. Broker is already running")
+        return 
+
+    zmq.proxy(frontend, backend)
+    frontend.close()
+    backend.close()
+    context.term()
