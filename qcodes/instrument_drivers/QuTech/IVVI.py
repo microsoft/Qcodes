@@ -124,12 +124,14 @@ class IVVI(VisaInstrument):
 
         t1 = time.time()
 
-        # make sure we igonore termination characters
-        # http://www.ni.com/tutorial/4256/en/#toc2 on Termination Character
+        # make sure we ignore termination characters
+        # See http://www.ni.com/tutorial/4256/en/#toc2 on Termination Character
         # Enabled
         v = self.visa_handle
         v.set_visa_attribute(visa.constants.VI_ATTR_TERMCHAR_EN, 0)
         v.set_visa_attribute(visa.constants.VI_ATTR_ASRL_END_IN, 0)
+        v.set_visa_attribute(visa.constants.VI_ATTR_ASRL_END_OUT, 0)
+        v.set_visa_attribute(visa.constants.VI_ATTR_SEND_END_EN, 0)
 
         # basic test to confirm we are properly connected
         try:
@@ -153,9 +155,12 @@ class IVVI(VisaInstrument):
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
     def _get_version(self):
-        mes = self.ask(bytes([3, 4]))
-        v = mes[2]
-        return v
+        return -1
+        # one can ask for the version of more recent modules with the following
+        # code:
+        # mes = self.ask(bytes([3, 4]))
+        # ver = mes[2]
+        # older modules cannot handle this command
 
     def get_all(self):
         return self.snapshot(update=True)
