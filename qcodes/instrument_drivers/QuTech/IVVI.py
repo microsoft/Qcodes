@@ -312,9 +312,10 @@ class IVVI(VisaInstrument):
     def _read_raw_bytes_direct(self, size):
         """ Read raw data using the visa lib """
         with(self.visa_handle.ignore_warning(visa.constants.VI_SUCCESS_MAX_CNT)):
-            mes = self.visa_handle.visalib.read(self.visa_handle.session, size)
+            data, statuscode = self.visa_handle.visalib.read(
+                self.visa_handle.session, size)
 
-        return mes[0]
+        return data
 
     def _read_raw_bytes_multiple(self, size, maxread=512, verbose=0):
         """ Read raw data in blocks using the visa lib
@@ -393,7 +394,8 @@ class IVVI(VisaInstrument):
         val = flagmap[flag.upper()]
         for ch in channels:
             self.pol_num[ch - 1] = val
-            # self.set_parameter_bounds('dac%d' % (i+1), val, val + self.Fullrange.0)
+            # self.set_parameter_bounds('dac%d' % (i+1), val, val +
+            # self.Fullrange.0)
 
         if get_all:
             self.get_all()
