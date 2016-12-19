@@ -1,4 +1,5 @@
 import logging
+logging.basicConfig(level="DEBUG")
 
 import zmq
 from zmq.utils.strtypes import bytes, unicode, cast_bytes
@@ -84,7 +85,7 @@ class QPUBHandler(logging.Handler):
 
         self.socket.send_multipart([btopic, bmsg])
 
-def broker(frontend_addres="tcp://*:8888", backend_address="tcp://*:5560"):
+def broker(frontend_addres="tcp://*:5559", backend_address="tcp://*:5560"):
     """
     Simple XPUB/XSUB broker.
     Listens for messages on the frontend and transparently pushes them to a
@@ -118,7 +119,50 @@ def broker(frontend_addres="tcp://*:8888", backend_address="tcp://*:5560"):
         logging.debug("Exiting. Broker is already running")
         return 
 
-    zmq.proxy(frontend, backend)
+    try:
+        a = zmq.proxy(frontend, backend)
+    except KeyboardInterrupt:
+        frontend.close()
+        backend.close()
+        context.term()
+        logging.debug("Exiting. Broker got <C-c>")
+        return
+
+def check_broker(frontend_addres="tcp://*:5559", backend_address="tcp://*:5560"):
+    """
+    Simple XPUB/XSUB broker.
+    Listens for messages on the frontend and transparently pushes them to a
+    backend.
+    This allows to have centralized logging, from multiple processes
+    and to multiple consumers.
+    Messages sent but never forward (f.e.x if there aren't subscribers)
+    are quietly dropped.
+
+    Args:
+        frontend_addres (str): Interface to which the frontend is bound
+        backend_address (str): Interface to which the backend is bound
+
+    """
+    context = zmq.Context()
+    # Socket facing clients
+    frontend = context.socket(zmq.XSUB)
+    f = True
+    b = True
+    try:
+        frontend.bind(frontend_addres)
+        f = False
+    except zmq.error.ZMQError:
+        pass
+
+    # Socket facing services
+    backend = context.socket(zmq.XPUB)
+    try:
+        backend.bind(backend_address)
+        b = False
+    except zmq.error.ZMQError:
+        pass
+
     frontend.close()
     backend.close()
     context.term()
+    return f and b
