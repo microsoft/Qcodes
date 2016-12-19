@@ -77,6 +77,9 @@ class _BaseParameter(Metadatable, DeferredOperations):
             be referenced from that parent, ie ``instrument.name`` or
             ``instrument.parameters[name]``
 
+        instrument (Optional[Instrument]): the instrument this parameter
+            belongs to, if any
+
         snapshot_get (Optional[bool]): False prevents any update to the
             parameter during a snapshot, even if the snapshot was called with
             ``update=True``, for example if it takes too long to update.
@@ -85,10 +88,11 @@ class _BaseParameter(Metadatable, DeferredOperations):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
-    def __init__(self, name, snapshot_get, metadata):
+    def __init__(self, name, instrument, snapshot_get, metadata):
         super().__init__(metadata)
         self._snapshot_get = snapshot_get
         self.name = str(name)
+        self._instrument = instrument
 
         self.has_get = hasattr(self, 'get')
         self.has_set = hasattr(self, 'set')
@@ -103,6 +107,10 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self._latest_value = None
         self._latest_ts = None
         self.get_latest = GetLatest(self)
+
+        # subclasses should extend this list with extra attributes they
+        # want automatically included in the snapshot
+        self._meta_attrs = ['name', 'instrument']
 
     def __repr__(self):
         return named_repr(self)
@@ -175,7 +183,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
 
         for attr in set(self._meta_attrs):
-            if attr == 'instrument' and getattr(self, '_instrument', None):
+            if attr == 'instrument' and self._instrument:
                 state.update({
                     'instrument': full_class(self._instrument),
                     'instrument_name': self._instrument.name
@@ -232,6 +240,9 @@ class Parameter(_BaseParameter):
             referenced from that parent, ie ``instrument.name`` or
             ``instrument.parameters[name]``
 
+        instrument (Optional[Instrument]): the instrument this parameter
+            belongs to, if any
+
         label (Optional[str]): Normally used as the axis label when this
             parameter is graphed, along with ``unit``.
 
@@ -254,11 +265,12 @@ class Parameter(_BaseParameter):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
-    def __init__(self, name, label=None, unit=None, units=None, vals=None,
-                 docstring=None, snapshot_get=True, metadata=None):
-        super().__init__(name, snapshot_get, metadata)
+    def __init__(self, name, instrument=None, label=None,
+                 unit=None, units=None, vals=None, docstring=None,
+                 snapshot_get=True, metadata=None):
+        super().__init__(name, instrument, snapshot_get, metadata)
 
-        self._meta_attrs = ['name', 'label', 'unit', '_vals']
+        self._meta_attrs.extend(['label', 'unit', '_vals'])
 
         self.label = name if label is None else label
 
@@ -303,7 +315,7 @@ class Parameter(_BaseParameter):
             value (any): value to validate
 
         """
-        if hasattr(self, '_instrument'):
+        if self._instrument:
             context = (getattr(self._instrument, 'name', '') or
                        str(self._instrument.__class__)) + '.' + self.name
         else:
@@ -380,6 +392,9 @@ class ArrayParameter(_BaseParameter):
             to expect. Scalars should be denoted by (), 1D arrays as (n,),
             2D arrays as (n, m), etc.
 
+        instrument (Optional[Instrument]): the instrument this parameter
+            belongs to, if any
+
         label (Optional[str]): Normally used as the axis label when this
             parameter is graphed, along with ``unit``.
 
@@ -417,18 +432,18 @@ class ArrayParameter(_BaseParameter):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
-    def __init__(self, name, shape,
+    def __init__(self, name, shape, instrument=None,
                  label=None, unit=None, units=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
                  docstring=None, snapshot_get=True, metadata=None):
-        super().__init__(name, snapshot_get, metadata)
+        super().__init__(name, instrument, snapshot_get, metadata)
 
         if self.has_set:  # TODO (alexcjohnson): can we support, ala Combine?
             raise AttributeError('ArrayParameters do not support set '
                                  'at this time.')
 
-        self._meta_attrs = ['setpoint_names', 'setpoint_labels',
-                            'name', 'label', 'unit']
+        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
+                                 'label', 'unit'])
 
         self.label = name if label is None else label
 
@@ -532,6 +547,9 @@ class MultiParameter(_BaseParameter):
             each item. Scalars should be denoted by (), 1D arrays as (n,),
             2D arrays as (n, m), etc.
 
+        instrument (Optional[Instrument]): the instrument this parameter
+            belongs to, if any
+
         labels (Optional[Tuple[str]]): A label for each item. Normally used
             as the axis label when a component is graphed, along with the
             matching entry from ``units``.
@@ -566,18 +584,18 @@ class MultiParameter(_BaseParameter):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
-    def __init__(self, name, names, shapes,
+    def __init__(self, name, names, shapes, instrument=None,
                  labels=None, units=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
                  docstring=None, snapshot_get=True, metadata=None):
-        super().__init__(name, snapshot_get, metadata)
+        super().__init__(name, instrument, snapshot_get, metadata)
 
         if self.has_set:  # TODO (alexcjohnson): can we support, ala Combine?
             raise AttributeError('MultiParameters do not support set '
                                  'at this time.')
 
-        self._meta_attrs = ['setpoint_names', 'setpoint_labels',
-                            'name', 'names', 'labels', 'units']
+        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
+                                 'names', 'labels', 'units'])
 
         if not is_sequence_of(names, str):
             raise ValueError('names must be a tuple of strings, not' +
@@ -651,8 +669,9 @@ class StandardParameter(Parameter):
 
     Args:
         name (str): the local name of this parameter
-        instrument (Optional[Instrument]): an instrument that handles this
-            function. Default None.
+
+        instrument (Optional[Instrument]): the instrument this parameter
+            belongs to, if any
 
         get_cmd (Optional[Union[str, function]]): a string or function to
             get this parameter. You can only use a string if an instrument is
@@ -744,12 +763,10 @@ class StandardParameter(Parameter):
         if get_parser is not None and not isinstance(get_cmd, str):
             logging.warning('get_parser is set, but will not be used ' +
                             '(name %s)' % name)
-        super().__init__(name=name, vals=vals, **kwargs)
+        super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
 
-        self._instrument = instrument
-
-        self._meta_attrs.extend(['instrument', 'sweep_step', 'sweep_delay',
-                                'max_sweep_delay'])
+        self._meta_attrs.extend(['sweep_step', 'sweep_delay',
+                                 'max_sweep_delay'])
 
         # stored value from last .set() or .get()
         # normally only used by set with a sweep, to avoid
@@ -1014,9 +1031,8 @@ class ManualParameter(Parameter):
         **kwargs: Passed to Parameter parent class
     """
     def __init__(self, name, instrument=None, initial_value=None, **kwargs):
-        super().__init__(name=name, **kwargs)
-        self._instrument = instrument
-        self._meta_attrs.extend(['instrument', 'initial_value'])
+        super().__init__(name=name, instrument=instrument, **kwargs)
+        self._meta_attrs.extend(['initial_value'])
 
         if initial_value is not None:
             self.validate(initial_value)
