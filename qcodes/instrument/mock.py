@@ -15,14 +15,16 @@ class MockInstrument(Instrument):
     Also works for simulations, but usually this will be simpler, easier to
     use, and faster if made as a single ``Instrument`` subclass.
 
-    ``MockInstrument``s have extra overhead as they serialize all commands
+    ``MockInstrument``\s have extra overhead as they serialize all commands
     (to mimic a network communication channel) and use at least two processes
     (instrument server and model server) both of which must be involved in any
     given query.
 
     parameters to pass to model should be declared with:
-        get_cmd = param_name + '?'
-        set_cmd = param_name + ':{:.3f}' (specify the format & precision)
+
+        - get_cmd = param_name + '?'
+        - set_cmd = param_name + ':{:.3f}' (specify the format & precision)
+
     alternatively independent set/get functions may still be provided.
 
     Args:
@@ -56,7 +58,7 @@ class MockInstrument(Instrument):
 
         history (List[tuple]): All commands and responses while keep_history is
             enabled, as tuples:
-                (timestamp, 'ask' or 'write', param_name[, value])
+            (timestamp, 'ask' or 'write', param_name[, value])
     """
 
     shared_kwargs = ['model']
@@ -175,9 +177,9 @@ class MockModel(ServerManager, BaseServer):  # pragma: no cover
             the server's uuid.
 
     for every instrument that connects to this model, create two methods:
-        ``<instrument>_set(param, value)``: set a parameter on the model
-        ``<instrument>_get(param)``: returns the value of a parameter
-    ``param`` and the set/return values should all be strings
+        - ``<instrument>_set(param, value)``: set a parameter on the model
+        - ``<instrument>_get(param)``: returns the value of a parameter
+          ``param`` and the set/return values should all be strings
 
     If ``param`` and/or ``value`` is not recognized, the method should raise
     an error.
