@@ -9,6 +9,7 @@ import logging
 from qcodes import VisaInstrument
 from qcodes import validators as vals
 
+log = logging.getLogger(__name__)
 
 class RohdeSchwarz_SMR40(VisaInstrument):
     """This is the qcodes driver for the Rohde & Schwarz SMR40 signal generator
@@ -25,7 +26,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
 
     def __init__(self, name, address, verbose=1, reset=False, **kwargs):
         self.verbose = verbose
-        logging.debug(__name__ + ' : Initializing instrument')
+        log.debug(__name__ + ' : Initializing instrument')
         super().__init__(name, address, **kwargs)
 
         # TODO(TF): check what parser parameters can do
@@ -83,7 +84,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             None
 
         """
-        logging.info(__name__ + ' : Resetting instrument')
+        log.info(__name__ + ' : Resetting instrument')
         self.write('*RST')
         # TODO: make it printable
         self.get_all()
@@ -99,7 +100,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             None
 
         """
-        logging.info(__name__ + ' : reading all settings from instrument')
+        log.info(__name__ + ' : reading all settings from instrument')
         # TODO: make it printable
         self.frequency.get()
         self.power.get()
@@ -116,7 +117,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             frequency (float) : frequency in Hz
 
         """
-        logging.debug(__name__ + ' : reading frequency from instrument')
+        log.debug(__name__ + ' : reading frequency from instrument')
         return float(self.ask('SOUR:FREQ?'))
 
     def do_set_frequency(self, frequency):
@@ -129,7 +130,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             None
 
         """
-        logging.debug(__name__ + ' : setting frequency to %s GHz' % frequency)
+        log.debug(__name__ + ' : setting frequency to %s GHz' % frequency)
         self.write('SOUR:FREQ %e' % frequency)
 
     def do_get_power(self):
@@ -142,7 +143,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             power (float) : output power in dBm
 
         """
-        logging.debug(__name__ + ' : reading power from instrument')
+        log.debug(__name__ + ' : reading power from instrument')
         return float(self.ask('SOUR:POW?'))
 
     def do_set_power(self, power):
@@ -155,7 +156,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             None
 
         """
-        logging.debug(__name__ + ' : setting power to %s dBm' % power)
+        log.debug(__name__ + ' : setting power to %s dBm' % power)
         self.write('SOUR:POW %e' % power)
 
     def do_get_status(self):
@@ -168,7 +169,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             status (string) : 'on or 'off'
 
         """
-        logging.debug(__name__ + ' : reading status from instrument')
+        log.debug(__name__ + ' : reading status from instrument')
         stat = self.ask(':OUTP:STAT?')
 
         # TODO: fix
@@ -189,7 +190,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             None
 
         """
-        logging.debug(__name__ + ' : setting status to "%s"' % status)
+        log.debug(__name__ + ' : setting status to "%s"' % status)
         if status.upper() in ('ON', 'OFF'):
             status = status.upper()
         else:
@@ -206,7 +207,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             status (string) : 'on' or 'off'
 
         """
-        logging.debug(__name__ + ' : reading status from instrument')
+        log.debug(__name__ + ' : reading status from instrument')
         stat = self.ask(':SOUR:PULM:STAT?')
 
         # TODO: fix
@@ -231,7 +232,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             None
 
         """
-        logging.debug(__name__ + ' : setting status to "%s"' % status)
+        log.debug(__name__ + ' : setting status to "%s"' % status)
         if status.upper() in ('ON', 'OFF'):
             status = status.upper()
         else:
@@ -248,7 +249,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             status (string) : 'on or 'off'
 
         """
-        logging.debug(__name__ + ' : reading ALC status from instrument')
+        log.debug(__name__ + ' : reading ALC status from instrument')
         stat = self.ask(':SOUR:POW:ALC?')
 
         # TODO: fix
@@ -273,7 +274,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             None
 
         """
-        logging.debug(__name__ + ' : setting ALC status to "%s"' % status)
+        log.debug(__name__ + ' : setting ALC status to "%s"' % status)
         if status.upper() in ('ON', 'OFF'):
             status = status.upper()
         else:
@@ -290,7 +291,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             power (float) : output power in dBm
 
         """
-        logging.debug(__name__ + ' : reading pulse delay from instrument')
+        log.debug(__name__ + ' : reading pulse delay from instrument')
         return float(self.ask('SOUR:PULS:DEL?'))
 
     def do_set_pulse_delay(self, delay):
@@ -303,7 +304,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             None
 
         """
-        logging.debug(
+        log.debug(
             __name__ + ' : setting pulse delay to %s seconds' % str(delay))
         self.write('SOUR:PULS:DEL 1us')
 
@@ -366,5 +367,5 @@ class RohdeSchwarz_SMR40(VisaInstrument):
             None
 
         """
-        logging.debug(__name__ + ' : setting to the external trigger mode')
+        log.debug(__name__ + ' : setting to the external trigger mode')
         self.write('TRIG:PULS:SOUR EXT_TRIG')
