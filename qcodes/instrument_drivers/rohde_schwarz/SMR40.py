@@ -77,7 +77,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def reset(self):
         """Resets the instrument to default values.
 
-        Input:
+        Args:
             None
 
         Output:
@@ -93,7 +93,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
         """Reads all implemented parameters from the instrument, and updates
         the wrapper.
 
-        Input:
+        Args:
             None
 
         Output:
@@ -110,7 +110,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def do_get_frequency(self):
         """Get frequency from device.
 
-        Input:
+        Args:
             None
 
         Output:
@@ -123,7 +123,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def do_set_frequency(self, frequency):
         """Set frequency of device.
 
-        Input:
+        Args:
             frequency (float) : frequency in Hz
 
         Output:
@@ -136,7 +136,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def do_get_power(self):
         """Get output power from device.
 
-        Input:
+        Args:
             None
 
         Output:
@@ -149,7 +149,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def do_set_power(self, power):
         """Set output power of device.
 
-        Input:
+        Args:
             power (float) : output power in dBm
 
         Output:
@@ -162,7 +162,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def do_get_status(self):
         """Get status from instrument.
 
-        Input:
+        Args:
             None
 
         Output:
@@ -183,7 +183,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def do_set_status(self, status):
         """Set status of instrument.
 
-        Input:
+        Args:
             status (string) : 'on or 'off'
 
         Output:
@@ -200,7 +200,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def do_get_status_of_modulation(self):
         """Get status from instrument.
 
-        Input:
+        Args:
             None
 
         Output:
@@ -225,7 +225,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def do_set_status_of_modulation(self, status):
         """Set status of modulation.
 
-        Input:
+        Args:
             status (string) : 'on' or 'off'
 
         Output:
@@ -242,7 +242,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def do_get_status_of_ALC(self):
         """Get status from instrument.
 
-        Input:
+        Args:
             None
 
         Output:
@@ -267,7 +267,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def do_set_status_of_ALC(self, status):
         """Set status of instrument.
 
-        Input:
+        Args:
             status (string) : 'on or 'off'
 
         Output:
@@ -284,7 +284,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def do_get_pulse_delay(self):
         """Get output power from device.
 
-        Input:
+        Args:
             None
 
         Output:
@@ -297,7 +297,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def do_set_pulse_delay(self, delay):
         """Set output power of device.
 
-        Input:
+        Args:
             power (float) : output power in dBm
 
         Output:
@@ -312,7 +312,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def off(self):
         """Set status to 'off'.
 
-        Input:
+        Args:
             None
 
         Output:
@@ -324,7 +324,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def on(self):
         """Set status to 'on'.
 
-        Input:
+        Args:
             None
 
         Output:
@@ -336,7 +336,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def off_modulation(self):
         """Set status of modulation to 'off'.
 
-        Input:
+        Args:
             None
 
         Output:
@@ -348,7 +348,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def on_modulation(self):
         """Set status of modulation to 'on'.
 
-        Input:
+        Args:
             None
 
         Output:
@@ -360,7 +360,7 @@ class RohdeSchwarz_SMR40(VisaInstrument):
     def set_ext_trig(self):
         """Set to the external trigger mode.
 
-        Input:
+        Args:
             None
 
         Output:
