@@ -392,15 +392,7 @@ class DataSet(DelegateAttributes):
         # could find a robust and intuitive way to make modifications to the
         # version on the DataServer from the main copy)
         if not self.is_live_mode:
-            # LOCAL DataSet - just read it in
-            # Compare timestamps to avoid overwriting unsaved data
-            if self.last_store > self.last_write:
-                return True
-            try:
-                self.read()
-            except IOError:
-                # if no files exist, they probably haven't been created yet.
-                pass
+            # LOCAL DataSet - no need to sync just use local data
             return False
             # TODO - for remote live plotting, maybe set some timestamp
             # threshold and call it static after it's been dormant a long time?
