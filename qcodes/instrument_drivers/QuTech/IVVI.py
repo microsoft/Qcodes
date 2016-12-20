@@ -31,7 +31,7 @@ class IVVI(VisaInstrument):
     Halfrange = Fullrange / 2
 
     def __init__(self, name, address, reset=False, numdacs=16, dac_step=10,
-                 dac_delay=.1, dac_max_delay=0.2, **kwargs):
+                 dac_delay=.1, dac_max_delay=0.2, safe_version=True, **kwargs):
                  # polarity=['BIP', 'BIP', 'BIP', 'BIP']):
                  # commented because still on the todo list
         '''
@@ -47,9 +47,13 @@ class IVVI(VisaInstrument):
             dac_step (float)         : max step size for dac parameter
             dac_delay (float)        : delay (in seconds) for dac
             dac_max_delay (float)    : maximum delay before emitting a warning
+            safe_version (bool)    : if True then do not send version commands
+                                     to the IVVI controller
         '''
         t0 = time.time()
         super().__init__(name, address, **kwargs)
+
+        self.safe_version = safe_version
 
         if numdacs % 4 == 0 and numdacs > 0:
             self._numdacs = int(numdacs)
@@ -124,12 +128,14 @@ class IVVI(VisaInstrument):
 
         t1 = time.time()
 
-        # make sure we igonore termination characters
-        # http://www.ni.com/tutorial/4256/en/#toc2 on Termination Character
+        # make sure we ignore termination characters
+        # See http://www.ni.com/tutorial/4256/en/#toc2 on Termination Character
         # Enabled
         v = self.visa_handle
         v.set_visa_attribute(visa.constants.VI_ATTR_TERMCHAR_EN, 0)
         v.set_visa_attribute(visa.constants.VI_ATTR_ASRL_END_IN, 0)
+        v.set_visa_attribute(visa.constants.VI_ATTR_ASRL_END_OUT, 0)
+        v.set_visa_attribute(visa.constants.VI_ATTR_SEND_END_EN, 0)
 
         # basic test to confirm we are properly connected
         try:
@@ -153,9 +159,14 @@ class IVVI(VisaInstrument):
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
     def _get_version(self):
-        mes = self.ask(bytes([3, 4]))
-        v = mes[2]
-        return v
+        if self.safe_version:
+            return -1
+        else:
+            # ask for the version of more recent modules
+            # some of the older modules cannot handle this command
+            mes = self.ask(bytes([3, 4]))
+            ver = mes[2]
+            return ver
 
     def get_all(self):
         return self.snapshot(update=True)
@@ -312,9 +323,10 @@ class IVVI(VisaInstrument):
     def _read_raw_bytes_direct(self, size):
         """ Read raw data using the visa lib """
         with(self.visa_handle.ignore_warning(visa.constants.VI_SUCCESS_MAX_CNT)):
-            mes = self.visa_handle.visalib.read(self.visa_handle.session, size)
+            data, statuscode = self.visa_handle.visalib.read(
+                self.visa_handle.session, size)
 
-        return mes[0]
+        return data
 
     def _read_raw_bytes_multiple(self, size, maxread=512, verbose=0):
         """ Read raw data in blocks using the visa lib
@@ -393,7 +405,8 @@ class IVVI(VisaInstrument):
         val = flagmap[flag.upper()]
         for ch in channels:
             self.pol_num[ch - 1] = val
-            # self.set_parameter_bounds('dac%d' % (i+1), val, val + self.Fullrange.0)
+            # self.set_parameter_bounds('dac%d' % (i+1), val, val +
+            # self.Fullrange.0)
 
         if get_all:
             self.get_all()
