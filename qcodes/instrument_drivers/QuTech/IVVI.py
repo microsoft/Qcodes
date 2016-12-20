@@ -31,7 +31,7 @@ class IVVI(VisaInstrument):
     Halfrange = Fullrange / 2
 
     def __init__(self, name, address, reset=False, numdacs=16, dac_step=10,
-                 dac_delay=.1, dac_max_delay=0.2, **kwargs):
+                 dac_delay=.1, dac_max_delay=0.2, safe_version=True, **kwargs):
                  # polarity=['BIP', 'BIP', 'BIP', 'BIP']):
                  # commented because still on the todo list
         '''
@@ -47,9 +47,13 @@ class IVVI(VisaInstrument):
             dac_step (float)         : max step size for dac parameter
             dac_delay (float)        : delay (in seconds) for dac
             dac_max_delay (float)    : maximum delay before emitting a warning
+            safe_version (bool)    : if True then do not send version commands
+                                     to the IVVI controller
         '''
         t0 = time.time()
         super().__init__(name, address, **kwargs)
+
+        self.safe_version = safe_version
 
         if numdacs % 4 == 0 and numdacs > 0:
             self._numdacs = int(numdacs)
@@ -155,12 +159,14 @@ class IVVI(VisaInstrument):
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
     def _get_version(self):
-        return -1
-        # one can ask for the version of more recent modules with the following
-        # code:
-        # mes = self.ask(bytes([3, 4]))
-        # ver = mes[2]
-        # older modules cannot handle this command
+        if self.safe_version:
+            return -1
+        else:
+            # ask for the version of more recent modules
+            # some of the older modules cannot handle this command
+            mes = self.ask(bytes([3, 4]))
+            ver = mes[2]
+            return ver
 
     def get_all(self):
         return self.snapshot(update=True)
