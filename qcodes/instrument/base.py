@@ -434,6 +434,15 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
                 snap[attr] = getattr(self, attr)
         return snap
 
+    def print_readable_snapshot(self, update=False):
+        snapshot = self.snapshot(update=update)
+        print('{0:23} {1} \t ({2})'.format('\t parameter ', 'value', 'units'))
+        print('-'*80)
+        for par in sorted(snapshot['parameters']):
+            print('{0:25}: \t{1}\t ({2})'.format(
+                  snapshot['parameters'][par]['name'],
+                  snapshot['parameters'][par]['value'],
+                  snapshot['parameters'][par]['units']))
     #
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #
