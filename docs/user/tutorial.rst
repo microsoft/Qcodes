@@ -13,10 +13,10 @@ Writing a Driver
 
 Write a simple driver example
 with commented code
-  - add parameter
-  - add validator
-  - add custom stuff
-  - add doccstrings f.ex
+- add parameter
+- add validator
+- add custom stuff
+- add doccstrings f.ex
 
 .. todo::  missing
 
@@ -36,7 +36,7 @@ Explain the mock mock
 
 
 Combined Parameters Sweep
-------------------------
+-------------------------
 
 If you want to sweep multiple parameters at once qcodes offers the combine function.
 You can combine any number of any kind paramter. 
