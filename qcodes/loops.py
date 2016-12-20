@@ -148,23 +148,26 @@ class Loop(Metadatable):
     """
     The entry point for creating measurement loops
 
-    sweep_values - a SweepValues or compatible object describing what
-        parameter to set in the loop and over what values
-    delay - a number of seconds to wait after setting a value before
-        continuing. 0 (default) means no waiting and no warnings. > 0
-        means to wait, potentially filling the delay time with monitoring,
-        and give an error if you wait longer than expected.
-    progress_interval - should progress of the loop every x seconds. Default
-        is None (no output)
+    Args:
+        sweep_values: a SweepValues or compatible object describing what
+            parameter to set in the loop and over what values
+        delay: a number of seconds to wait after setting a value before
+            continuing. 0 (default) means no waiting and no warnings. > 0
+            means to wait, potentially filling the delay time with monitoring,
+            and give an error if you wait longer than expected.
+        progress_interval: should progress of the loop every x seconds. Default
+            is None (no output)
 
-    After creating a Loop, you attach `action`s to it, making an `ActiveLoop`
-    TODO: how? Maybe obvious but not specified!
-    that you can `.run()`, or you can `.run()` a `Loop` directly, in which
-    case it takes the default `action`s from the default `Station`
+    After creating a Loop, you attach ``action``\s to it, making an ``ActiveLoop``
 
-    `actions` are a sequence of things to do at each `Loop` step: they can be
-    `Parameter`s to measure, `Task`s to do (any callable that does not yield
-    data), `Wait` times, or other `ActiveLoop`s or `Loop`s to nest inside
+    TODO:
+        how? Maybe obvious but not specified! that you can ``.run()``,
+        or you can ``.run()`` a ``Loop`` directly, in which
+        case it takes the default ``action``\s from the default ``Station``
+
+    ``actions`` are a sequence of things to do at each ``Loop`` step: they can be
+    ``Parameter``\s to measure, ``Task``\s to do (any callable that does not yield
+    data), ``Wait`` times, or other ``ActiveLoop``\s or ``Loop``\s to nest inside
     this one.
     """
     def __init__(self, sweep_values, delay=0, station=None,
@@ -228,10 +231,12 @@ class Loop(Metadatable):
             *actions (Any): actions to perform at each setting of the loop
 
         Each action can be:
+
         - a Parameter to measure
         - a Task to execute
         - a Wait
         - another Loop or ActiveLoop
+
         """
         actions = list(actions)
 
