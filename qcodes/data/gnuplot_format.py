@@ -100,12 +100,13 @@ class GNUPlotFormat(Formatter):
         a DataSet. Setpoint data may be duplicated across multiple files,
         but each measured DataArray must only map to one file.
 
-        data_set: the DataSet we are reading into
-        f: a file-like object to read from
-        ids_read: a `set` of array_ids that we have already read.
-            when you read an array, check that it's not in this set (except
-            setpoints, which can be in several files with different inner loop)
-            then add it to the set so other files know not to read it again
+        args:
+            data_set: the DataSet we are reading into
+            f: a file-like object to read from
+            ids_read: a `set` of array_ids that we have already read.
+                when you read an array, check that it's not in this set (except
+                setpoints, which can be in several files with different inner loop)
+                then add it to the set so other files know not to read it again
         """
         if not f.name.endswith(self.extension):
             return
