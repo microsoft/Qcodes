@@ -171,7 +171,7 @@ class SubprocessWidget(UpdateWidget):
     instance = None
 
     # max seconds to wait for a measurement to abort
-    abort_timeout = 30
+    abort_timeout = 600
 
     def __init__(self, interval=0.5, state='docked'):
         if self.instance is not None:
