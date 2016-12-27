@@ -265,6 +265,8 @@ class DataSet(DelegateAttributes):
 
     background_functions = OrderedDict()
 
+    latest_dataset = None
+
     def __init__(self, location=None, mode=DataMode.LOCAL, arrays=None,
                  data_manager=False, formatter=None, io=None, write_period=5):
         if location is False or isinstance(location, str):
@@ -300,6 +302,7 @@ class DataSet(DelegateAttributes):
             self._init_live(data_manager)
         else:
             raise ValueError('unrecognized DataSet mode', mode)
+        DataSet.latest_dataset = self
 
     def _init_local(self):
         self.mode = DataMode.LOCAL
