@@ -41,12 +41,14 @@ class MatPlot(BasePlot):
         if args or kwargs:
             self.add(*args, **kwargs)
 
+        self.tight_layout()
+
     def __getitem__(self, key):
         return self.subplots[key]
 
     def _init_plot(self, subplots=None, figsize=None, num=None):
         if figsize is None:
-            figsize = (8, 5)
+            figsize = (6, 4)
 
         if subplots is None:
             subplots = (1, 1)
@@ -299,3 +301,6 @@ class MatPlot(BasePlot):
         default = "{}.png".format(self.get_default_title())
         filename = filename or default
         self.fig.savefig(filename)
+
+    def tight_layout(self):
+        self.fig.tight_layout(rect=[0, 0, 1, 0.95])
