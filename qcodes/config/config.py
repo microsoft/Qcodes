@@ -365,7 +365,7 @@ class DotDict(dict):
                 self.__setitem__(key, value[key])
 
     def __setitem__(self, key, value):
-        if '.' in key:
+        if type(key)==str and '.' in key:
             myKey, restOfKey = key.split('.', 1)
             target = self.setdefault(myKey, DotDict())
             target[restOfKey] = value
@@ -375,7 +375,7 @@ class DotDict(dict):
             dict.__setitem__(self, key, value)
 
     def __getitem__(self, key):
-        if '.' not in key:
+        if type(key) != str or '.' not in key:
             return dict.__getitem__(self, key)
         myKey, restOfKey = key.split('.', 1)
         target = dict.__getitem__(self, myKey)
