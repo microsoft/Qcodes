@@ -7,7 +7,7 @@ from slacker import Slacker
 
 from qcodes.plots.base import BasePlot
 from qcodes.data.data_set import DataSet
-from qcodes import config
+from qcodes import config as qc_config
 
 
 class Slack:
@@ -58,7 +58,7 @@ class Slack:
         if config is not None:
             self.config = config
         else:
-            self.config = config['user']['slack']
+            self.config = qc_config['user']['slack']
 
         self.slack = Slacker(self.config['token'])
         self.bot_id = self.slack.users.get_user_id(self.config['bot_name'])
@@ -73,7 +73,7 @@ class Slack:
         self.task_commands = {'finished': self.check_msmt_finished}
 
         self.interval = interval
-        if config['gui']['notebook'] and config['core']['legacy_mp']:
+        if qc_config['gui']['notebook'] and qc_config['core']['legacy_mp']:
             from qcodes.widgets.widgets import HiddenUpdateWidget
             self.update_widget = HiddenUpdateWidget(self.update, interval)
             display(self.update_widget)
@@ -128,12 +128,12 @@ class Slack:
         response = self.slack.im.list()
         user_ids = {user: users[user]['id'] for user in users}
         im_ids = {im['user']: im['id'] for im in response.body['ims']}
-        for user, user_id in user_ids.items():
+        for username, user_id in user_ids.items():
             if user_id in im_ids:
-                users[user]['im_id'] = im_ids[user_id]
+                users[username]['im_id'] = im_ids[user_id]
                 # update last ts
-                users[user]['last_ts'] = float(
-                    self.get_im_messages(user, count=1)[0]['ts'])
+                users[username]['last_ts'] = float(
+                    self.get_im_messages(username=username, count=1)[0]['ts'])
 
     def get_im_messages(self, username, **kwargs):
         """
@@ -159,7 +159,8 @@ class Slack:
         im_messages = {}
         for username, user in self.users.items():
             last_ts = user.get('last_ts', None)
-            new_messages = self.get_im_messages(name=username, oldest=last_ts)
+            new_messages = self.get_im_messages(username=username,
+                                                oldest=last_ts)
             # Kwarg 'oldest' sometimes also returns message with ts==last_ts
             new_messages = [m for m in new_messages if
                             float(m['ts']) != last_ts]
@@ -192,7 +193,8 @@ class Slack:
         """
         for user, user_messages in messages.items():
             for message in user_messages:
-                if message.get('subtype', None) == 'bot_message':
+                if message.get('user', None) != self.users[user]['id']:
+                    # Filter out bot messages
                     continue
                 channel = self.users[user]['im_id']
                 # Extract command (first word) and possible args
@@ -220,15 +222,15 @@ class Slack:
         Returns:
             None
         """
-        if command in self.notification_commands:
+        if command in self.task_commands:
             self.slack.chat.post_message(
-                text='Added notification "{}"'.format(command),
+                text='Added task "{}"'.format(command),
                 channel=channel)
-            func = self.notification_commands[command]
+            func = self.task_commands[command]
             self.tasks.append(partial(func, *args, channel=channel, **kwargs))
         else:
             self.slack.chat.post_message(
-                text='Notification command {} not understood'.format(command),
+                text='Task command {} not understood'.format(command),
                 channel=channel)
 
     def upload_latest_plot(self, channel, **kwargs):
