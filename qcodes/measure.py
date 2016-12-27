@@ -84,12 +84,15 @@ class Measure(Metadatable):
 
         # run the measurement as if it were a Loop
         self._dummyLoop.run(background=background, use_threads=use_threads,
-                            station=station, quiet=True)
+                            station=station, quiet=True,
+                            data_manager=data_manager)
+
+        data_set.sync()
 
         # look for arrays that are unnecessarily nested, and un-nest them
         all_unnested = True
         for array in data_set.arrays.values():
-            if array.ndim == 1:
+            if not hasattr(array, 'ndim') or array.ndim == 1:
                 if array.is_setpoint:
                     dummy_setpoint = array
                 else:
