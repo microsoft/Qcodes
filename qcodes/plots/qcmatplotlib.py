@@ -11,10 +11,11 @@ from numpy.ma import masked_invalid, getmask
 
 from .base import BasePlot
 
+from qcodes import config
+
+matplot_config = config['user'].get('matplot', {})
 
 class MatPlot(BasePlot):
-    plot_1D_kwargs = {}
-    plot_2D_kwargs = {}
     """
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with MatPlot.add()
@@ -170,8 +171,9 @@ class MatPlot(BasePlot):
         # part of trace['config'].
         args = [arg for arg in [x, y, fmt] if arg is not None]
 
-        full_kwargs = {**self.plot_1D_kwargs, **kwargs}
-        line, = ax.plot(*args, **full_kwargs)
+        config_settings = matplot_config.get('1D_settings', {})
+        settings = {**kwargs, **config_settings}
+        line, = ax.plot(*args, **settings)
         return line
 
     def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1,
@@ -245,8 +247,9 @@ class MatPlot(BasePlot):
 
         # Include default plotting kwargs, which can be overwritten by given
         # kwargs
-        full_kwargs = {**self.plot_2D_kwargs, **kwargs}
-        pc = ax.pcolormesh(*args, **full_kwargs)
+        config_settings = matplot_config.get('2D_settings', {})
+        settings = {**kwargs, **config_settings}
+        pc = ax.pcolormesh(*args, **settings)
 
         # Set x and y limits if arrays are provided
         if x is not None and y is not None:
