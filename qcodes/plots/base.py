@@ -6,7 +6,7 @@ from IPython.display import display
 from qcodes import config
 
 class BasePlot:
-
+    latest_plot = None
     """
     Auto-updating plot connected to a Jupyter notebook
 
@@ -21,6 +21,7 @@ class BasePlot:
     """
 
     def __init__(self, interval=1, data_keys='xyz'):
+        BasePlot.latest_plot = self
         self.data_keys = data_keys
         self.traces = []
         self.data_updaters = set()
