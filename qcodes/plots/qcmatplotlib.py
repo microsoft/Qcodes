@@ -41,6 +41,9 @@ class MatPlot(BasePlot):
         if args or kwargs:
             self.add(*args, **kwargs)
 
+    def __getitem__(self, key):
+        return self.subplots[key]
+
     def _init_plot(self, subplots=None, figsize=None, num=None):
         if figsize is None:
             figsize = (8, 5)
@@ -107,8 +110,8 @@ class MatPlot(BasePlot):
             # in case the user has updated title, don't change it anymore
             self.title.set_text(self.get_default_title())
 
-    def _get_axes(self, subplot=1, **kwargs):
-        return self.subplots[subplot - 1]
+    def _get_axes(self, subplot=0, **kwargs):
+        return self.subplots[subplot]
 
     def _update_labels(self, ax, config):
         if 'x' in config and not ax.get_xlabel():
