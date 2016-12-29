@@ -47,16 +47,20 @@ class MatPlot(BasePlot):
         return self.subplots[key]
 
     def _init_plot(self, subplots=None, figsize=None, num=None):
-        if figsize is None:
-            figsize = (6, 4)
-
-        if subplots is None:
-            subplots = (1, 1)
-
         if isinstance(subplots, Mapping):
+            if figsize is None:
+                figsize = (6, 4)
             self.fig, self.subplots = plt.subplots(figsize=figsize, num=num,
                                                    **subplots)
         else:
+            if subplots is None:
+                subplots = (1, 1)
+            elif isinstance(subplots, int):
+                subplots = (1, subplots)
+
+            if figsize is None:
+                figsize = (min(3 + 3 * subplots[1], 12), 1 + 3 * subplots[0])
+
             self.fig, self.subplots = plt.subplots(*subplots, num=num,
                                                    figsize=figsize)
 
@@ -111,6 +115,8 @@ class MatPlot(BasePlot):
         if prev_default_title == self.title.get_text():
             # in case the user has updated title, don't change it anymore
             self.title.set_text(self.get_default_title())
+
+        self.tight_layout()
 
     def _get_axes(self, subplot=0, **kwargs):
         return self.subplots[subplot]
