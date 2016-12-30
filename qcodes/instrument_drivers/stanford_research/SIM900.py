@@ -35,7 +35,14 @@ class SIM928(StandardParameter):
                          **kwargs)
         self.channel = channel
 
-        self._meta_attrs.extend(['reset'])
+        self._meta_attrs.extend(['reset', 'charge_cycles'])
+
+    @property
+    def charge_cycles(self):
+        self._instrument.write(self.send_cmd + '"BIDN? CYCLES"')
+        sleep(0.05)
+        return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
+        return  int(return_str.rstrip()[5:])
 
     def get_voltage(self):
         """
@@ -51,6 +58,7 @@ class SIM928(StandardParameter):
         sleep(0.05)
         return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
         return float(return_str[5:-3])
+
 
 class SIM900(VisaInstrument):
     """
