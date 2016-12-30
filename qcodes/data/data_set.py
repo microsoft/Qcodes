@@ -832,8 +832,8 @@ class DataSet(DelegateAttributes):
         out = type(self).__name__ + ':'
 
         attrs = [['mode', self.mode],
-                 ['location', repr(self.location)]]
-        attr_template = '\n   {:8} = {}'
+                 ['data', "qc.load_data('{}')".format(self.location)]]
+        attr_template = '\n   {:4} = {}'
         for var, val in attrs:
             out += attr_template.format(var, val)
 
