@@ -1,5 +1,7 @@
 
 from functools import partial
+import logging
+
 from qcodes import VisaInstrument
 from qcodes.instrument.parameter import StandardParameter, ManualParameter
 from qcodes.utils import validators as vals
@@ -40,9 +42,13 @@ class SIM928(StandardParameter):
     @property
     def charge_cycles(self):
         self._instrument.write(self.send_cmd + '"BIDN? CYCLES"')
-        sleep(0.05)
+        sleep(0.08)
         return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
-        return  int(return_str.rstrip()[5:])
+        try:
+            return int(return_str.rstrip()[5:])
+        except:
+            logging.warning('Return string not understood: ' + return_str)
+            return -1
 
     def get_voltage(self):
         """
