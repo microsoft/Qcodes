@@ -114,7 +114,6 @@ def halt_bg(timeout=300, traceback=True):
     if not loop:
         print('No loop running')
         return
-    print('Attempting to halt background measurement without termination')
     if traceback:
         signal_ = ActiveLoop.HALT_DEBUG
     else:
