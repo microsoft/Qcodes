@@ -2,13 +2,49 @@ import os
 import tempfile
 from functools import partial
 from IPython.display import display
-
+import inspect
 from slacker import Slacker
 
 from qcodes.plots.base import BasePlot
 from qcodes.data.data_set import DataSet
 from qcodes import config as qc_config
+from qcodes.instrument.parameter import Parameter
+def convert_command(text):
+    def try_convert_str(string):
+        try:
+            val = int(string)
+            return val
+        except:
+            pass
+        try:
+            val = float(string)
+            return val
+        except:
+            pass
 
+        return string
+
+
+    # Format text to lowercase, and remove trailing whitespaces
+    text = text.lower().rstrip(' ')
+    command, *args_str = text.split(' ')
+
+    # Convert string args to floats/kwargs
+    args = []
+    kwargs = {}
+    for arg in args_str:
+        if '=' in arg:
+            # arg is a kwarg
+            key, val = arg.split('=')
+            # Try to convert into a float
+            val = try_convert_str(val)
+            kwargs[key] = val
+        else:
+            # arg is not a kwarg
+            # Try to convert into a float
+            val = try_convert_str(arg)
+            args.append(val)
+    return command, args, kwargs
 
 class Slack:
     """
@@ -198,13 +234,26 @@ class Slack:
                     continue
                 channel = self.users[user]['im_id']
                 # Extract command (first word) and possible args
-                text = message['text']
-                # Format text to lowercase, and remove trailing whitespaces
-                text = text.lower().rstrip(' ')
-                command, *args = text.split(' ')
+                command, args, kwargs = convert_command(message['text'])
                 if command in self.commands:
+                    msg = 'Executing {}'.format(command)
+                    if args:
+                        msg += ' {}'.format(args)
+                    if kwargs:
+                        msg += ' {}'.format(kwargs)
+                    self.slack.chat.post_message(text=msg, channel=channel)
+
                     func = self.commands[command]
-                    func(*args, channel=channel, slack=self)
+                    if isinstance(func, Parameter):
+                        func(*args, **kwargs)
+                    else:
+                        # Only add channel and Slack if they are explicit kwargs
+                        func_sig = inspect.signature(func)
+                        if 'channel' in func_sig.parameters:
+                            kwargs['channel'] = channel
+                        if 'slack' in func_sig.parameters:
+                            kwargs['slack'] = self
+                        func(*args, **kwargs)
                 else:
                     self.slack.chat.post_message(
                         text='Command {} not understood'.format(command),
