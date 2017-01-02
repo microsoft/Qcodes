@@ -3,6 +3,7 @@ Live plotting in Jupyter notebooks
 using the nbagg backend and matplotlib
 """
 from collections import Mapping
+from functools import partial
 
 import matplotlib.pyplot as plt
 from matplotlib.transforms import Bbox
@@ -70,6 +71,9 @@ class MatPlot(BasePlot):
 
         # Flatten subplots in case it is a 2D array
         self.subplots = np.ndarray.flatten(self.subplots)
+        for k, subplot in enumerate(self.subplots):
+            subplot.add = partial(self.add, subplot=k)
+
 
         self.title = self.fig.suptitle('')
 
