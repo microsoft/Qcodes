@@ -7,5 +7,7 @@
         "notebook": true,
         "plotlib": "matplotlib"
     },
-    "user": {}
+    "user": {
+		"nvDataDir": "C:/Users/Laurens/Documents/Qtech/qtechData"
+	}
 }
