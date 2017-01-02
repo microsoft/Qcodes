@@ -1,11 +1,11 @@
-import numpy as np
 import struct
-from time import sleep, time, localtime
-from io import BytesIO
-import os
 import logging
+
+import numpy as np
 import array as arr
 
+from time import sleep, localtime
+from io import BytesIO
 from qcodes import VisaInstrument, validators as vals
 
 
@@ -16,21 +16,24 @@ def parsestr(v):
 class Tektronix_AWG5014(VisaInstrument):
     """
     This is the QCoDeS driver for the Tektronix AWG5014
-    Arbitrary Waveform Generator
+    Arbitrary Waveform Generator.
 
     The driver makes some assumptions on the settings of the instrument:
+
         - The output channels are always in Amplitude/Offset mode
         - The output markers are always in High/Low mode
 
     TODO:
-    - Not all functionality is available in the driver
-    - There is some double functionality
-    - There are some inconsistensies between the name of a parameter and the
-      name of the same variable in the tektronix manual
+        - Not all functionality is available in the driver
+        - There is some double functionality
+        - There are some inconsistensies between the name of a parameter and
+          the name of the same variable in the tektronix manual
 
-    * Remove test_send??
-    * Sequence element (SQEL) parameter functions exist but no corresponding
-      parameters
+    In the future, we should consider the following:
+
+        * Removing test_send??
+        * That sequence element (SQEL) parameter functions exist but no
+          corresponding parameters.
 
     """
     AWG_FILE_FORMAT_HEAD = {
@@ -164,23 +167,25 @@ class Tektronix_AWG5014(VisaInstrument):
                            set_cmd='SEQuence:LENGth ' + '{}',
                            get_parser=int,
                            vals=vals.Ints(0, 8000),
-                           docstring=('This command sets the sequence length' +
-                                      '. Use this command to create an ' +
-                                      'uninitialized sequence. You can also ' +
-                                      'use the command to clear all sequence' +
-                                      ' elements in a single action by ' +
-                                      'passing 0 as the parameter. However, ' +
-                                      'this action cannot be undone so ' +
-                                      'exercise necessary caution. Also note' +
-                                      ' that passing a value less than the ' +
-                                      'sequence’s current length will cause ' +
-                                      'some sequence elements to be deleted ' +
-                                      'at the end of the sequence. For ' +
-                                      'example if self.get_sq_length returns' +
-                                      ' 200 and you subsequently set ' +
-                                      'sequence_length to 21, all sequence ' +
-                                      'elements except the first 20 will be' +
-                                      ' deleted.'))
+                           docstring=(
+                               """
+                               This command sets the sequence length.
+                               Use this command to create an
+                               uninitialized sequence. You can also
+                               use the command to clear all sequence
+                               elements in a single action by passing
+                               0 as the parameter. However, this
+                               action cannot be undone so exercise
+                               necessary caution. Also note that
+                               passing a value less than the
+                               sequence’s current length will cause
+                               some sequence elements to be deleted at
+                               the end of the sequence. For example if
+                               self.get_sq_length returns 200 and you
+                               subsequently set sequence_length to 21,
+                               all sequence elements except the first
+                               20 will be deleted.
+                               """))
 
         # Trigger parameters #
         # Warning: `trigger_mode` is the same as `run_mode`, do not use! exists
@@ -346,6 +351,8 @@ class Tektronix_AWG5014(VisaInstrument):
     # Functions
     def get_all(self, update=True):
         """
+        Deprecated function. Please don't use.
+
         Function to get a snapshot of the state of all parameters and
         functions of the instrument.
         Note: methods of the Tektronix_AWG5014 class are not included.
@@ -356,7 +363,11 @@ class Tektronix_AWG5014(VisaInstrument):
         Returns:
 
             dict: a JSON-serialisable dict with all information.
+
+        Raises:
+            DeprecationWarning
         """
+        raise DeprecationWarning("Use snapshot(update=update) directly")
         return self.snapshot(update=update)
 
     def get_state(self):
@@ -421,12 +432,13 @@ class Tektronix_AWG5014(VisaInstrument):
         Returns:
             str: A comma-seperated string of the folder contents.
         """
+        contents = self.ask('MMEMory:CATalog?')
         if print_contents:
             print('Current folder:', self.get_current_folder_name())
-            print(self.ask('MMEMory:CATalog?')
+            print(contents
                   .replace(',"$', '\n$').replace('","', '\n')
                   .replace(',', '\t'))
-        return self.ask('MMEMory:CATalog?')
+        return contents
 
     def get_current_folder_name(self):
         """
@@ -436,8 +448,7 @@ class Tektronix_AWG5014(VisaInstrument):
         directory in the Windows Explorer on the instrument.
 
         Returns:
-            str: A ""-encapsulated \n-terminated string with the full path
-                of the current folder.
+            str: A string with the full path of the current folder.
         """
         return self.ask('MMEMory:CDIRectory?')
 
@@ -453,8 +464,8 @@ class Tektronix_AWG5014(VisaInstrument):
 
         Returns:
             tuple: tuple containing:
-                int: The number of bytes written,
-                enum 'Statuscode': whether the write was succesful
+              - int: The number of bytes written,
+              - enum 'Statuscode': whether the write was succesful
         """
         return self.visa_handle.write('MMEMory:CDIRectory "{}"'.format(file_path))
 
@@ -660,7 +671,7 @@ class Tektronix_AWG5014(VisaInstrument):
             element_no (int): The sequence element number. Default: 1.
 
         Returns:
-            str: The name of the waveform, ""-encapsulated and \n-terminated.
+            str: The name of the waveform.
         """
         return self.ask('SEQuence:ELEMent{}:WAVeform{}?'.format(element_no,
                                                                 channel))
@@ -697,7 +708,7 @@ class Tektronix_AWG5014(VisaInstrument):
             element_no (int): The sequence element number.
 
         Returns:
-            str: The current state. Example: '1\n'.
+            str: The current state. Example: '1'.
         """
         return self.ask('SEQuence:ELEMent{}:TWAit?'.format(element_no))
 
@@ -711,6 +722,7 @@ class Tektronix_AWG5014(VisaInstrument):
         This command sets the event jump target type for the jump for
         the specified sequence element.  Generate an event in one of
         the following ways:
+
         * By connecting an external cable to instrument rear panel
           for external event.
         * By pressing the Force Event button on the
@@ -732,8 +744,8 @@ class Tektronix_AWG5014(VisaInstrument):
         hardware sequencer whenever possible.
 
         Returns:
-            str: Either 'HARD' or 'SOFT' indicating that the instrument is in
-                either hardware or software sequencer mode.
+            str: Either 'HARD' or 'SOFT' indicating that the instrument is in\
+              either hardware or software sequencer mode.
         """
         return self.ask('AWGControl:SEQuence:TYPE?')
 
@@ -858,8 +870,8 @@ class Tektronix_AWG5014(VisaInstrument):
 
         Returns:
             dict: A dict with the current setting for each entry in
-                AWG_FILE_FORMAT_HEAD iff this entry applies to the
-                AWG5014 AND has been changed from its default value.
+            AWG_FILE_FORMAT_HEAD iff this entry applies to the
+            AWG5014 AND has been changed from its default value.
         """
         logging.info(__name__ + 'Getting channel configurations.')
 
@@ -1155,25 +1167,25 @@ class Tektronix_AWG5014(VisaInstrument):
                                     preservechannelsettings=True):
         """
         Makes an .awg-file, sends it to the AWG and loads it. The .awg-file
-        is uploaded to C:\\Users\\OEM\\Documents. The waveforms appear in the
-        user defined waveform list with names wfm001ch1, wfm002ch1, ...
+        is uploaded to C:\\\\Users\\\\OEM\\\\Documents. The waveforms appear in
+        the user defined waveform list with names wfm001ch1, wfm002ch1, ...
 
         Args:
             waveforms (list): A list of the waveforms to upload. The list
-            should be filled like so:
-            [[wfm1ch1, wfm2ch1, ...], [wfm1ch2, wfm2ch2], ...]
-            Each waveform should be a numpy array with values in the range
-            -1 to 1 (inclusive)
+                should be filled like so:
+                [[wfm1ch1, wfm2ch1, ...], [wfm1ch2, wfm2ch2], ...]
+                Each waveform should be a numpy array with values in the range
+                -1 to 1 (inclusive)
 
             m1s (list): A list of marker 1's. The list should be filled
-            like so:
-            [[elem1m1ch1, elem2m1ch1, ...], [elem1m1ch2, elem2m1ch2], ...]
-            Each marker should be anumpy array containing only 0's and 1's
+                like so:
+                [[elem1m1ch1, elem2m1ch1, ...], [elem1m1ch2, elem2m1ch2], ...]
+                Each marker should be a numpy array containing only 0's and 1's
 
             m2s (list): A list of marker 2's. The list should be filled
-            like so:
-            [[elem1m2ch1, elem2m2ch1, ...], [elem1m2ch2, elem2m2ch2], ...]
-            Each marker should be anumpy array containing only 0's and 1's
+                like so:
+                [[elem1m2ch1, elem2m2ch1, ...], [elem1m2ch2, elem2m2ch2], ...]
+                Each marker should be a numpy array containing only 0's and 1's
 
             nreps (list): List of integers specifying the no. of
                 repetions per sequence element.  Allowed values: 1 to
@@ -1245,7 +1257,7 @@ class Tektronix_AWG5014(VisaInstrument):
         event queues.
 
         Returns:
-            str: String containing the error/event number, the error/event
+            str: String containing the error/event number, the error/event\
                 description.
         """
         return self.ask('SYSTEM:ERRor:NEXT?')
@@ -1333,7 +1345,6 @@ class Tektronix_AWG5014(VisaInstrument):
         action. Note that there is no “UNDO” action once the waveforms
         are deleted. Use caution before issuing this command.
 
-        
         If the deleted waveform(s) is (are) currently loaded into
         waveform memory, it (they) is (are) unloaded. If the RUN state
         of the instrument is ON, the state is turned OFF. If the
@@ -1355,7 +1366,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Args:
             DC_channel_number (int): The channel number (1-4).
             set_level (float): The voltage level to set to (V).
-            length (flaot): The time to wait before resetting (s).
+            length (float): The time to wait before resetting (s).
         """
         DC_channel_number -= 1
         chandcs = [self.ch1_DC_out, self.ch2_DC_out, self.ch3_DC_out,
@@ -1464,7 +1475,7 @@ class Tektronix_AWG5014(VisaInstrument):
                 message = self.visa_handle.read()
                 if verbose:
                     print(message)
-            except:
+            except VisaIOError:
                 gotexception = True
         self.visa_handle.timeout = original_timeout
 
