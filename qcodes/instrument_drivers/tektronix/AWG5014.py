@@ -10,6 +10,8 @@ from qcodes import VisaInstrument, validators as vals
 from pyvisa.errors import VisaIOError
 
 
+log = logging.getLogger(__name__)
+
 def parsestr(v):
     return v.strip().strip('"')
 
@@ -345,7 +347,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
         self.set('trigger_impedance', 50)
         if self.get('clock_freq') != 1e9:
-            logging.warning('AWG clock freq not set to 1GHz')
+            log.warning('AWG clock freq not set to 1GHz')
 
         self.connect_message()
 
@@ -498,16 +500,14 @@ class Tektronix_AWG5014(VisaInstrument):
         dircheck = '%s, DIR' % folder
         if dircheck in self.get_folder_contents():
             self.change_folder(folder)
-            logging.debug(__name__ + ': Directory already exists')
-            logging.warning(__name__ +
-                            (': Directory already exists, ' +
-                             'changed path to {}').format(folder))
-            logging.info(__name__ +
-                         ': Contents of folder is ' +
-                         '{}'.format(self.ask('MMEMory:cat?')))
+            log.debug('Directory already exists')
+            log.warning(('Directory already exists, ' +
+                         'changed path to {}').format(folder))
+            log.info('Contents of folder is ' +
+                     '{}'.format(self.ask('MMEMory:cat?')))
         elif self.get_current_folder_name() == '"\\{}"'.format(folder):
-            logging.info(__name__ + ': Directory already set to ' +
-                         '{}'.format(folder))
+            log.info('Directory already set to ' +
+                     '{}'.format(folder))
         else:
             self.write('MMEMory:MDIRectory "\%s"' % folder)
             self.write('MMEMory:CDIRectory "\%s"' % folder)
@@ -596,8 +596,8 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         allowed_states = [0, 1]
         if goto_state not in allowed_states:
-            logging.warning((__name__ + ': {} not recognized as a valid goto' +
-                             ' state. Setting to 0 (OFF).').format(goto_state))
+            log.warning(('{} not recognized as a valid goto' +
+                         ' state. Setting to 0 (OFF).').format(goto_state))
             goto_state = 0
         self.write('SEQuence:ELEMent{}:GOTO:STATe {}'.format(element_no,
                                                              int(goto_state)))
@@ -616,8 +616,8 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         allowed_states = [0, 1]
         if state not in allowed_states:
-            logging.warning((__name__ + ': {} not recognized as a valid loop' +
-                             '  state. Setting to 0 (OFF).').format(state))
+            log.warning(('{} not recognized as a valid loop' +
+                         '  state. Setting to 0 (OFF).').format(state))
             state = 0
 
         self.write('SEQuence:ELEMent{}:LOOP:INFinite {}'.format(element_no,
@@ -822,7 +822,7 @@ class Tektronix_AWG5014(VisaInstrument):
         generating sequence files, from existing settings in the awg.
         Querying the AWG for these settings takes ~0.7 seconds
         """
-        logging.info('Generating sequence_cfg')
+        log.info('Generating sequence_cfg')
 
         AWG_sequence_cfg = {
             'SAMPLING_RATE': self.get('clock_freq'),
@@ -874,7 +874,7 @@ class Tektronix_AWG5014(VisaInstrument):
             AWG_FILE_FORMAT_HEAD iff this entry applies to the
             AWG5014 AND has been changed from its default value.
         """
-        logging.info(__name__ + 'Getting channel configurations.')
+        log.info('Getting channel configurations.')
 
         dirouts = [self.ch1_direct_output.get_latest(),
                    self.ch2_direct_output.get_latest(),
@@ -1056,8 +1056,8 @@ class Tektronix_AWG5014(VisaInstrument):
                 head_str.write(self._pack_record(k, sequence_cfg[k],
                                                  self.AWG_FILE_FORMAT_HEAD[k]))
             else:
-                logging.warning('AWG: ' + k +
-                                ' not recognized as valid AWG setting')
+                log.warning('AWG: ' + k +
+                            ' not recognized as valid AWG setting')
         # channel settings
         ch_record_str = BytesIO()
         for k in list(channel_cfg.keys()):
@@ -1066,8 +1066,8 @@ class Tektronix_AWG5014(VisaInstrument):
                 ch_record_str.write(self._pack_record(k, channel_cfg[k],
                                                       self.AWG_FILE_FORMAT_CHANNEL[ch_k]))
             else:
-                logging.warning('AWG: ' + k +
-                                ' not recognized as valid AWG channel setting')
+                log.warning('AWG: ' + k +
+                            ' not recognized as valid AWG channel setting')
 
         # waveforms
         ii = 21
@@ -1156,7 +1156,7 @@ class Tektronix_AWG5014(VisaInstrument):
             filename (str): The filename of the .awg-file to load.
         """
         s = 'AWGControl:SREStore "{}"'.format(filename)
-        logging.debug(__name__ + ': Loading awg file using {}'.format(s))
+        log.debug('Loading awg file using {}'.format(s))
         self.visa_handle.write_raw(s)
         # we must update the appropriate parameter(s) for the sequence
         self.sequence_length.set(self.sequence_length.get())
@@ -1397,8 +1397,8 @@ class Tektronix_AWG5014(VisaInstrument):
             self.ask('*OPC?')
         # makes the awg read again if there is a timeout
         except Exception as e:
-            logging.warning(e)
-            logging.warning('AWG is not ready')
+            log.warning(e)
+            log.warning('AWG is not ready')
             self.visa_handle.read()
         return True
 
@@ -1420,10 +1420,8 @@ class Tektronix_AWG5014(VisaInstrument):
             TypeError: if the waveform contains values outside (-1, 1)
             TypeError: if the markers contain values that are not 0 or 1
         """
-        logging.debug(
-            __name__ + ' : Sending waveform {} to instrument'.format(wfmname))
+        log.debug('Sending waveform {} to instrument'.format(wfmname))
         # Check for errors
-        # TODO (WilliamHPNielsen): Round off the markers to be only 1 and 0.
         dim = len(w)
 
         # Input validation
