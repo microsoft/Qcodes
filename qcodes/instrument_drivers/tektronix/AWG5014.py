@@ -7,6 +7,7 @@ import array as arr
 from time import sleep, localtime
 from io import BytesIO
 from qcodes import VisaInstrument, validators as vals
+from pyvisa.errors import VisaIOError
 
 
 def parsestr(v):
@@ -1163,6 +1164,7 @@ class Tektronix_AWG5014(VisaInstrument):
     def make_send_and_load_awg_file(self, waveforms, m1s, m2s,
                                     nreps, trig_waits,
                                     goto_states, jump_tos,
+                                    channels=None,
                                     filename='customawgfile.awg',
                                     preservechannelsettings=True):
         """
@@ -1175,7 +1177,8 @@ class Tektronix_AWG5014(VisaInstrument):
                 should be filled like so:
                 [[wfm1ch1, wfm2ch1, ...], [wfm1ch2, wfm2ch2], ...]
                 Each waveform should be a numpy array with values in the range
-                -1 to 1 (inclusive)
+                -1 to 1 (inclusive). If you do not wish to send waveforms to
+                channels 1 and 2, use the channels parameter.
 
             m1s (list): A list of marker 1's. The list should be filled
                 like so:
@@ -1203,6 +1206,9 @@ class Tektronix_AWG5014(VisaInstrument):
                 the logic jump state for each sequence element. Allowed values:
                 0 (OFF) or 1 (ON).
 
+            channels (list): List of channels to send the waveforms to.
+                Example: [1, 3, 2]
+
             filename (str): The name of the .awg-file. Should end with the .awg
                 extension. Default: 'customawgfile.awg'
 
@@ -1226,7 +1232,10 @@ class Tektronix_AWG5014(VisaInstrument):
         for ii in range(len(waveforms)):
             namelist = []
             for jj in range(len(waveforms[ii])):
-                thisname = 'wfm{:03d}ch{}'.format(jj+1, ii+1)
+                if channels is None:
+                    thisname = 'wfm{:03d}ch{}'.format(jj+1, ii+1)
+                else:
+                    thisname = 'wfm{:03d}ch{}'.format(jj+1, channels[ii])
                 namelist.append(thisname)
                 package = self.pack_waveform(waveforms[ii][jj],
                                              m1s[ii][jj],
