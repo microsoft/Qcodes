@@ -28,7 +28,7 @@ script:
 
 after_success:
     # install codacy coverage plugin only on traivs
-    - pip install codacy-coverage
+    - pip install codacy-coverage sphinx
     - cd qcodes
     - coverage xml
     - python-codacy-coverage -r coverage.xml
