@@ -13,7 +13,7 @@ branches:
   only:
     - master
 
-# singal that we are on travis
+# signal that we are on travis
 # to disable things that expect an
 # X Display
 #
