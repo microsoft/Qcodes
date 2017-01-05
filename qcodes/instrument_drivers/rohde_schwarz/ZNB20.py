@@ -185,7 +185,6 @@ class ZNB20(VisaInstrument):
         self.write('TRIG1:SEQ:SOUR IMM')
         self.write('SENS1:AVER:STAT ON')
         self.update_display_on()
-        self.spec_mode('off')
         self.trace.set_sweep(self.start(), self.stop(), self.npts())
 
     def _set_start(self, val):
