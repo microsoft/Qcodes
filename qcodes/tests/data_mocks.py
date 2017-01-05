@@ -30,6 +30,7 @@ class MockDataManager:
 
 
 class MockFormatter:
+
     def read(self, data_set):
         data_set.has_read_data = True
 
@@ -44,6 +45,7 @@ class MockFormatter:
 
 
 class RecordingMockFormatter:
+
     def __init__(self):
         self.write_calls = []
         self.modified_ranges = []
@@ -69,6 +71,7 @@ class RecordingMockFormatter:
 
 
 class MatchIO:
+
     def __init__(self, existing_matches, fmt=None):
         self.existing_matches = existing_matches
         self.fmt = fmt or '{}{}.something'
@@ -107,7 +110,7 @@ def DataSet1D(location=None, name=None):
 def DataSet2D(location=None, name=None):
     # DataSet with one 2D array with 4 x 6 points
     yy, xx = numpy.meshgrid(range(4), range(6))
-    zz = xx**2+yy**2
+    zz = xx**2 + yy**2
     # outer setpoint should be 1D
     xx = xx[:, 0]
     x = DataArray(name='x', label='X', preset_data=xx, is_setpoint=True)
@@ -115,6 +118,40 @@ def DataSet2D(location=None, name=None):
                   is_setpoint=True)
     z = DataArray(name='z', label='Z', preset_data=zz, set_arrays=(x, y))
     return new_data(arrays=(x, y, z), location=location, name=name)
+
+
+def makeDataSet2D(p1, p2, mname='measured', location=None, preset_data=None):
+    """ Make DataSet with one 2D array and two setpoint arrays 
+
+    Args:
+        p1 (array): first setpoint array of data
+        p2 (array): second setpoint array of data
+        mname (str): name of measured array
+        location (str or None): location for the DataSet
+        preset_data (array or None): optional array to fill the DataSet
+
+    Returns:
+        dd (DataSet)
+    """
+    xx = np.array(p1)
+    yy0 = np.array(p2)
+    yy = np.tile(yy0, [xx.size, 1])
+    zz = np.NaN * np.ones((xx.size, yy0.size))
+    x = DataArray(name=p1.name, array_id=p1.name,
+                  label=p1.parameter.label, preset_data=xx, is_setpoint=True)
+    y = DataArray(name=p2.name, array_id=p2.name, label=p2.parameter.label,
+                  preset_data=yy, set_arrays=(x,), is_setpoint=True)
+    z = DataArray(name=mname, array_id=mname, label=mname,
+                  preset_data=zz, set_arrays=(x, y))
+    dd = new_data(arrays=(), location=location)
+    dd.add_array(z)
+    dd.add_array(x)
+    dd.add_array(y)
+
+    if preset_data is not None:
+        dd.measured.ndarray = np.array(preset_data)
+
+    return dd
 
 
 def file_1d():
