@@ -19,6 +19,7 @@
 #
 import os
 import sys
+import re
 sys.path.insert(0, os.path.abspath('..'))
 
 # -- General configuration ------------------------------------------------
@@ -34,6 +35,7 @@ extensions = [
         'sphinx.ext.autodoc',
         'sphinx.ext.autosummary',
         'sphinx.ext.napoleon',
+        'sphinxcontrib.jsonschema',
         'sphinx.ext.doctest',
         'sphinx.ext.intersphinx',
         'sphinx.ext.todo',
@@ -349,7 +351,6 @@ intersphinx_mapping = {
     'matplotlib': ('http://matplotlib.org/', None),
     'python': ('http://docs.python.org/3', None),
     'numpy': ('http://docs.scipy.org/doc/numpy', None),
-    'scipy': ('http://docs.scipy.org/doc/scipy', None),
     'py': ('http://pylib.readthedocs.org/en/latest/', None)
 }
 # theming
@@ -359,10 +360,27 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # add todo exteions
 extensions.append('sphinx.ext.todo')
 todo_include_todos=True
-# Add any paths that contain templates here, relative to this directory.
-autoclass_content = "class" # classes should include both the class' and the __init__ method's docstring
-autodoc_default_flags = [ 'members', 'undoc-members', 'inherited-members', 'show-inheritance' ]
 
-# auto genrate summary
-autosummary_generate = True
+# basically hack to avoid having __init__() when we want just 
+autoclass_content = "init"
+# try to limit  auto sumamry and extensive auto doc only to the api part of the docs
+with open("index.rst") as f:
+    index_rst_lines = f.readlines()
+
+autosummary_generate = False
+
+if any([re.match("\s*api\s*",l) for l in index_rst_lines]):
+    autoclass_content = "class" # classes should include both the class' and the __init__ method's docstring
+    autosummary_generate = True
+    autodoc_default_flags = [ 'members', 'undoc-members', 'inherited-members', 'show-inheritance' ]
+
+autodoc_default_flags = []
+# we have to do this, do avoid sideeffects when importing matplotlib
+try:
+    import matplotlib
+    matplotlib.use('PS')
+    autodoc_mock_imports = [ 'matplotlib']
+except ImportError as e:
+        print(e)
+# Add any paths that contain templates here, relative to this directory.
 templates_path = ['../_templates']

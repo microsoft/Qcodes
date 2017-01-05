@@ -13,6 +13,17 @@ This page lists the entrypoints to the plubic qcodes API.
 .. toctree::
    :maxdepth: 4
 
+
+.. _config_label:
+
+Config
+~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+   Config
+
 Station
 ~~~~~~~
 
@@ -31,6 +42,13 @@ Loops
    halt_bg
    Loop
 
+Measure
+~~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+   measure.Measure
 
 Actions
 ~~~~~~~
@@ -72,12 +90,26 @@ Instrument
    StandardParameter
    SweepFixedValues
    SweepValues
+   combine
+   CombinedParameter
+
 
    Instrument
    IPInstrument
    VisaInstrument
    MockInstrument
    MockModel
+
+
+Plot
+~~~~
+Note that the plotting modules may not be available if their dependencies were not met during installation of the package.
+
+.. autosummary::
+   :toctree: generated/
+
+    qcodes.plots.qcmatplotlib.MatPlot
+    qcodes.plots.pyqtgraph.QtPlot
 
 Utils & misc
 ~~~~~~~~~~~~

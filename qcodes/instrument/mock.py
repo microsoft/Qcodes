@@ -4,6 +4,7 @@ from datetime import datetime
 
 from .base import Instrument
 from qcodes.process.server import ServerManager, BaseServer
+from qcodes.utils.nested_attrs import _NoDefault
 
 
 class MockInstrument(Instrument):
@@ -11,17 +12,19 @@ class MockInstrument(Instrument):
     """
     Create a software instrument, mostly for testing purposes.
 
-    Also works for simulatoins, but usually this will be simpler, easier to
+    Also works for simulations, but usually this will be simpler, easier to
     use, and faster if made as a single ``Instrument`` subclass.
 
-    ``MockInstrument``s have extra overhead as they serialize all commands
+    ``MockInstrument``\s have extra overhead as they serialize all commands
     (to mimic a network communication channel) and use at least two processes
     (instrument server and model server) both of which must be involved in any
     given query.
 
     parameters to pass to model should be declared with:
-        get_cmd = param_name + '?'
-        set_cmd = param_name + ':{:.3f}' (specify the format & precision)
+
+        - get_cmd = param_name + '?'
+        - set_cmd = param_name + ':{:.3f}' (specify the format & precision)
+
     alternatively independent set/get functions may still be provided.
 
     Args:
@@ -55,7 +58,7 @@ class MockInstrument(Instrument):
 
         history (List[tuple]): All commands and responses while keep_history is
             enabled, as tuples:
-                (timestamp, 'ask' or 'write', param_name[, value])
+            (timestamp, 'ask' or 'write', param_name[, value])
     """
 
     shared_kwargs = ['model']
@@ -93,6 +96,15 @@ class MockInstrument(Instrument):
         if model:
             return model.name.replace('Model', 'MockInsts')
         return 'MockInstruments'
+
+    def get_idn(self):
+        """Shim for IDN parameter."""
+        return {
+            'vendor': None,
+            'model': type(self).__name__,
+            'serial': self.name,
+            'firmware': None
+        }
 
     def write_raw(self, cmd):
         """
@@ -165,9 +177,9 @@ class MockModel(ServerManager, BaseServer):  # pragma: no cover
             the server's uuid.
 
     for every instrument that connects to this model, create two methods:
-        ``<instrument>_set(param, value)``: set a parameter on the model
-        ``<instrument>_get(param)``: returns the value of a parameter
-    ``param`` and the set/return values should all be strings
+        - ``<instrument>_set(param, value)``: set a parameter on the model
+        - ``<instrument>_get(param)``: returns the value of a parameter
+          ``param`` and the set/return values should all be strings
 
     If ``param`` and/or ``value`` is not recognized, the method should raise
     an error.
@@ -178,10 +190,23 @@ class MockModel(ServerManager, BaseServer):  # pragma: no cover
     methods you shouldn't call: the extras (<instrument>_(set|get)) should
     only be called on the server copy. Normally this should only be called via
     the attached instruments anyway.
+
+    The model supports ``NestedAttrAccess`` calls ``getattr``, ``setattr``,
+    ``callattr``, and ``delattr`` Because the manager and server are the same
+    object, we override these methods with proxy methods after the server has
+    been started.
     """
 
     def __init__(self, name='Model-{:.7s}'):
         super().__init__(name, server_class=None)
+
+        # now that the server has started, we can remap attribute access
+        # from the private methods (_getattr) to the public ones (getattr)
+        # but the server copy will still have the NestedAttrAccess ones
+        self.getattr = self._getattr
+        self.setattr = self._setattr
+        self.callattr = self._callattr
+        self.delattr = self._delattr
 
     def _run_server(self):
         self.run_event_loop()
@@ -221,3 +246,35 @@ class MockModel(ServerManager, BaseServer):  # pragma: no cover
 
         else:
             raise ValueError()
+
+    def _getattr(self, attr, default=_NoDefault):
+        """
+        Get a (possibly nested) attribute of this model on its server.
+
+        See NestedAttrAccess for details.
+        """
+        return self.ask('method_call', 'getattr', attr, default)
+
+    def _setattr(self, attr, value):
+        """
+        Set a (possibly nested) attribute of this model on its server.
+
+        See NestedAttrAccess for details.
+        """
+        self.ask('method_call', 'setattr', attr, value)
+
+    def _callattr(self, attr, *args, **kwargs):
+        """
+        Call a (possibly nested) method of this model on its server.
+
+        See NestedAttrAccess for details.
+        """
+        return self.ask('method_call', 'callattr', attr, *args, **kwargs)
+
+    def _delattr(self, attr):
+        """
+        Delete a (possibly nested) attribute of this model on its server.
+
+        See NestedAttrAccess for details.
+        """
+        self.ask('method_call', 'delattr', attr)

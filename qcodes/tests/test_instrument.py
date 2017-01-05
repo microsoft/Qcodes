@@ -1,12 +1,13 @@
-from unittest import TestCase
+"""
+Test suite for  instument.*
+"""
 from datetime import datetime, timedelta
+from unittest import TestCase
 import time
-from collections import namedtuple
 
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument
-from qcodes.instrument.parameter import Parameter, ManualParameter
-from qcodes.instrument.function import Function
+from qcodes.instrument.parameter import ManualParameter
 from qcodes.instrument.server import get_instrument_server_manager
 
 from qcodes.utils.validators import Numbers, Ints, Strings, MultiType, Enum
@@ -15,117 +16,13 @@ from qcodes.utils.helpers import LogCapture
 from qcodes.process.helpers import kill_processes
 
 from .instrument_mocks import (AMockModel, MockInstTester,
-                               MockGates, MockSource, MockMeter)
+                               MockGates, MockSource, MockMeter,
+                               DummyInstrument)
 from .common import strip_qc
 
 
-class TestParamConstructor(TestCase):
-    def test_name_s(self):
-        p = Parameter('simple')
-        self.assertEqual(p.name, 'simple')
-
-        with self.assertRaises(ValueError):
-            # you need a name of some sort
-            Parameter()
-
-        # or names
-        names = ['H1', 'L1']
-        p = Parameter(names=names)
-        self.assertEqual(p.names, names)
-        self.assertFalse(hasattr(p, 'name'))
-
-        # or both, that's OK too.
-        names = ['Peter', 'Paul', 'Mary']
-        p = Parameter(name='complex', names=names)
-        self.assertEqual(p.names, names)
-        # TODO: below seems wrong actually - we should let a parameter have
-        # a simple name even if it has a names array. But then we need to
-        # check everywhere this is used, and make sure everyone who cares
-        # about it looks for names first.
-        self.assertFalse(hasattr(p, 'name'))
-
-        shape = (10,)
-        setpoints = (range(10),)
-        setpoint_names = ('my_sp',)
-        setpoint_labels = ('A label!',)
-        p = Parameter('makes_array', shape=shape, setpoints=setpoints,
-                      setpoint_names=setpoint_names,
-                      setpoint_labels=setpoint_labels)
-        self.assertEqual(p.shape, shape)
-        self.assertFalse(hasattr(p, 'shapes'))
-        self.assertEqual(p.setpoints, setpoints)
-        self.assertEqual(p.setpoint_names, setpoint_names)
-        self.assertEqual(p.setpoint_labels, setpoint_labels)
-
-        shapes = ((2,), (3,))
-        setpoints = ((range(2),), (range(3),))
-        setpoint_names = (('sp1',), ('sp2',))
-        setpoint_labels = (('first label',), ('second label',))
-        p = Parameter('makes arrays', shapes=shapes, setpoints=setpoints,
-                      setpoint_names=setpoint_names,
-                      setpoint_labels=setpoint_labels)
-        self.assertEqual(p.shapes, shapes)
-        self.assertFalse(hasattr(p, 'shape'))
-        self.assertEqual(p.setpoints, setpoints)
-        self.assertEqual(p.setpoint_names, setpoint_names)
-        self.assertEqual(p.setpoint_labels, setpoint_labels)
-
-    def test_repr(self):
-        for i in [0, "foo", "", "fåil"]:
-            with self.subTest(i=i):
-                param = Parameter(name=i)
-                s = param.__repr__()
-                st = '<{}.{}: {} at {}>'.format(
-                    param.__module__, param.__class__.__name__,
-                    param.name, id(param))
-                self.assertEqual(s, st)
-
-    blank_instruments = (
-        None,  # no instrument at all
-        namedtuple('noname', '')(),  # no .name
-        namedtuple('blank', 'name')('')  # blank .name
-        )
-    named_instrument = namedtuple('yesname', 'name')('astro')
-
-    def test_full_name(self):
-        # three cases where only name gets used for full_name
-        for instrument in self.blank_instruments:
-            p = Parameter(name='fred')
-            p._instrument = instrument
-            self.assertEqual(p.full_name, 'fred')
-
-            p.name = None
-            self.assertEqual(p.full_name, None)
-
-        # and finally an instrument that really has a name
-        p = Parameter(name='wilma')
-        p._instrument = self.named_instrument
-        self.assertEqual(p.full_name, 'astro_wilma')
-
-        p.name = None
-        self.assertEqual(p.full_name, None)
-
-    def test_full_names(self):
-        for instrument in self.blank_instruments:
-            # no instrument
-            p = Parameter(name='simple')
-            p._instrument = instrument
-            self.assertEqual(p.full_names, None)
-
-            p = Parameter(names=['a', 'b'])
-            p._instrument = instrument
-            self.assertEqual(p.full_names, ['a', 'b'])
-
-        p = Parameter(name='simple')
-        p._instrument = self.named_instrument
-        self.assertEqual(p.full_names, None)
-
-        p = Parameter(names=['penn', 'teller'])
-        p._instrument = self.named_instrument
-        self.assertEqual(p.full_names, ['astro_penn', 'astro_teller'])
-
-
 class GatesBadDelayType(MockGates):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.add_parameter('chan0bad', get_cmd='c0?',
@@ -137,6 +34,7 @@ class GatesBadDelayType(MockGates):
 
 
 class GatesBadDelayValue(MockGates):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.add_parameter('chan0bad', get_cmd='c0?',
@@ -148,13 +46,15 @@ class GatesBadDelayValue(MockGates):
 
 
 class TestInstrument(TestCase):
+
     @classmethod
     def setUpClass(cls):
         cls.model = AMockModel()
 
-        cls.gates = MockGates(model=cls.model)
-        cls.source = MockSource(model=cls.model)
-        cls.meter = MockMeter(model=cls.model, keep_history=False)
+        cls.gates = MockGates(model=cls.model, server_name='')
+        cls.source = MockSource(model=cls.model, server_name='')
+        cls.meter = MockMeter(
+            model=cls.model, keep_history=False, server_name='')
 
     def setUp(self):
         # reset the model state via the gates function
@@ -196,7 +96,8 @@ class TestInstrument(TestCase):
 
     def test_slow_set(self):
         # at least for now, need a local instrument to test logging
-        gatesLocal = MockGates(model=self.model, server_name=None)
+        gatesLocal = MockGates(model=self.model, server_name=None,
+                               name='gateslocal')
         for param, logcount in (('chan0slow', 2), ('chan0slow2', 2),
                                 ('chan0slow3', 0), ('chan0slow4', 1),
                                 ('chan0slow5', 0)):
@@ -225,10 +126,10 @@ class TestInstrument(TestCase):
             # need to talk to the hardware, so these need to be included
             # from the beginning when the instrument is created on the
             # server.
-            GatesBadDelayType(model=self.model)
+            GatesBadDelayType(model=self.model, name='gatesBDT')
 
         with self.assertRaises(ValueError):
-            GatesBadDelayValue(model=self.model)
+            GatesBadDelayValue(model=self.model, name='gatesBDV')
 
     def check_ts(self, ts_str):
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -239,10 +140,41 @@ class TestInstrument(TestCase):
         for instrument in instruments:
             for other_instrument in instruments:
                 instances = instrument.instances()
+                # check that each instrument is in only its own
+                # instances list
+                # also test type checking in find_instrument,
+                # but we need to use find_component so it executes
+                # on the server
                 if other_instrument is instrument:
                     self.assertIn(instrument, instances)
+
+                    name2 = other_instrument.find_component(
+                        instrument.name + '.name',
+                        other_instrument._instrument_class)
+                    self.assertEqual(name2, instrument.name)
                 else:
                     self.assertNotIn(other_instrument, instances)
+
+                    with self.assertRaises(TypeError):
+                        other_instrument.find_component(
+                            instrument.name + '.name',
+                            other_instrument._instrument_class)
+
+                # check that we can find each instrument from any other
+                # find_instrument is explicitly mapped in RemoteInstrument
+                # so this call gets executed in the main process
+                self.assertEqual(
+                    instrument,
+                    other_instrument.find_instrument(instrument.name))
+
+                # but find_component is not, so it executes on the server
+                self.assertEqual(
+                    instrument.name,
+                    other_instrument.find_component(instrument.name + '.name'))
+
+            # check that we can find this instrument from the base class
+            self.assertEqual(instrument,
+                             Instrument.find_instrument(instrument.name))
 
         # somehow instances never go away... there are always 3
         # extra references to every instrument object, so del doesn't
@@ -250,6 +182,39 @@ class TestInstrument(TestCase):
         # the *last* instance to test.
         # so we can't test that the list of defined instruments is actually
         # *only* what we want to see defined.
+
+    def test_instance_name_uniqueness(self):
+        with self.assertRaises(KeyError):
+            MockGates(model=self.model)
+
+    def test_remove_instance(self):
+        self.gates.close()
+        self.assertEqual(self.gates.instances(), [])
+        with self.assertRaises(KeyError):
+            Instrument.find_instrument('gates')
+
+        type(self).gates = MockGates(model=self.model, server_name="")
+        self.assertEqual(self.gates.instances(), [self.gates])
+        self.assertEqual(Instrument.find_instrument('gates'), self.gates)
+
+    def test_creation_failure(self):
+        # this we already know should fail (see test_max_delay_errors)
+        name = 'gatesFailing'
+        with self.assertRaises(ValueError):
+            GatesBadDelayValue(model=self.model, name=name, server_name='')
+
+        # this instrument should not be in the instance list
+        with self.assertRaises(KeyError):
+            Instrument.find_instrument(name)
+
+        # now do the same with a local instrument
+        name = 'gatesFailing2'
+        with self.assertRaises(ValueError):
+            GatesBadDelayValue(model=self.model, name=name, server_name=None)
+
+        # this instrument should not be in the instance list
+        with self.assertRaises(KeyError):
+            Instrument.find_instrument(name)
 
     def test_mock_instrument(self):
         gates, source, meter = self.gates, self.source, self.meter
@@ -342,6 +307,14 @@ class TestInstrument(TestCase):
         gates.call('reset')
         self.assertEqual(gates.get('chan0'), 0)
 
+    def test_mock_idn(self):
+        self.assertEqual(self.gates.IDN(), {
+            'vendor': None,
+            'model': 'MockGates',
+            'serial': 'gates',
+            'firmware': None
+        })
+
     def test_mock_set_sweep(self):
         gates = self.gates
         gates.set('chan0step', 0.5)
@@ -362,9 +335,11 @@ class TestInstrument(TestCase):
             gates.ask('ampl?')
 
         with self.assertRaises(TypeError):
-            MockInstrument('', delay='forever')
+            MockInstrument('mockbaddelay1', delay='forever')
         with self.assertRaises(TypeError):
-            MockInstrument('', delay=-1)
+            # TODO: since this instrument didn't work, it should be OK
+            # to use the same name again... how do we allow that?
+            MockInstrument('mockbaddelay2', delay=-1)
 
         # TODO: when an error occurs during constructing an instrument,
         # we don't have the instrument but its server doesn't know to stop.
@@ -408,7 +383,8 @@ class TestInstrument(TestCase):
         # but we should handle it
         # at least for now, need a local instrument to check logging
         source = self.sourceLocal = MockSource(model=self.model,
-                                               server_name=None)
+                                               server_name=None,
+                                               name='sourcelocal')
         source.add_parameter('amplitude2', get_cmd='ampl?',
                              set_cmd='ampl:{}', get_parser=float,
                              vals=MultiType(Numbers(0, 1), Strings()),
@@ -538,19 +514,39 @@ class TestInstrument(TestCase):
         with self.assertRaises(ValueError):
             gates.moderaw.set('DC')
 
-    def test_bare_function(self):
-        # not a use case we want to promote, but it's there...
-        p = ManualParameter('test')
+    def test_val_mapping_parsers(self):
+        gates = self.gates
 
-        def doubler(x):
-            p.set(x * 2)
+        gates.add_parameter('moderaw', set_cmd='mem0:{}', get_cmd='mem0?',
+                            vals=Enum('0', '1'))
 
-        f = Function('f', call_cmd=doubler, args=[Numbers(-10, 10)])
+        with self.assertRaises(TypeError):
+            # set_parser is not allowed with val_mapping
+            gates.add_parameter('modecoded', set_cmd='mem0:{}',
+                                get_cmd='mem0?',
+                                val_mapping={'DC': 0, 'AC': 1},
+                                set_parser=float)
 
-        f(4)
-        self.assertEqual(p.get(), 8)
+        gates.add_parameter('modecoded', set_cmd='mem0:{:.0f}',
+                            get_cmd='mem0?',
+                            val_mapping={'DC': 0.0, 'AC': 1.0},
+                            get_parser=float)
+
+        gates.modecoded.set('AC')
+        self.assertEqual(gates.moderaw.get(), '1')
+        self.assertEqual(gates.modecoded.get(), 'AC')
+        self.assertEqual(self.getmem(0), '1')
+
+        gates.moderaw.set('0')
+        self.assertEqual(gates.modecoded.get(), 'DC')
+        self.assertEqual(gates.moderaw.get(), '0')
+        self.assertEqual(self.getmem(0), '0')
+
         with self.assertRaises(ValueError):
-            f(20)
+            gates.modecoded.set(0)
+
+        with self.assertRaises(ValueError):
+            gates.modecoded.set('0')
 
     def test_standard_snapshot(self):
         self.maxDiff = None
@@ -874,16 +870,19 @@ class TestInstrument(TestCase):
 
 
 class TestLocalMock(TestCase):
-    def setUp(self):
-        self.model = AMockModel()
 
-        self.gates = MockGates(self.model, server_name=None)
-        self.source = MockSource(self.model, server_name=None)
-        self.meter = MockMeter(self.model, server_name=None)
+    @classmethod
+    def setUpClass(cls):
+        cls.model = AMockModel()
 
-    def tearDown(self):
-        self.model.close()
-        for instrument in [self.gates, self.source, self.meter]:
+        cls.gates = MockGates(model=cls.model, server_name=None)
+        cls.source = MockSource(model=cls.model, server_name=None)
+        cls.meter = MockMeter(model=cls.model, server_name=None)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.model.close()
+        for instrument in [cls.gates, cls.source, cls.meter]:
             instrument.close()
 
     def test_local(self):
@@ -895,3 +894,97 @@ class TestLocalMock(TestCase):
 
         with self.assertRaises(ValueError):
             self.gates.ask('knock knock? Oh never mind.')
+
+    def test_instances(self):
+        # copied from the main (server-based) version
+        # make sure it all works the same here
+        instruments = [self.gates, self.source, self.meter]
+        for instrument in instruments:
+            for other_instrument in instruments:
+                instances = instrument.instances()
+                # check that each instrument is in only its own
+                # instances list
+                if other_instrument is instrument:
+                    self.assertIn(instrument, instances)
+                else:
+                    self.assertNotIn(other_instrument, instances)
+
+                # check that we can find each instrument from any other
+                # use find_component here to test that it rolls over to
+                # find_instrument if only a name is given
+                self.assertEqual(
+                    instrument,
+                    other_instrument.find_component(instrument.name))
+
+                self.assertEqual(
+                    instrument.name,
+                    other_instrument.find_component(instrument.name + '.name'))
+
+            # check that we can find this instrument from the base class
+            self.assertEqual(instrument,
+                             Instrument.find_instrument(instrument.name))
+
+
+class TestModelAttrAccess(TestCase):
+
+    def setUp(self):
+        self.model = AMockModel()
+
+    def tearDown(self):
+        self.model.close()
+
+    def test_attr_access(self):
+        model = self.model
+
+        model.a = 'local'
+        with self.assertRaises(AttributeError):
+            model.getattr('a')
+
+        self.assertEqual(model.getattr('a', 'dflt'), 'dflt')
+
+        model.setattr('a', 'remote')
+        self.assertEqual(model.a, 'local')
+        self.assertEqual(model.getattr('a'), 'remote')
+
+        model.delattr('a')
+        self.assertEqual(model.getattr('a', 'dflt'), 'dflt')
+
+        model.fmt = 'local override of a remote method'
+        self.assertEqual(model.callattr('fmt', 42), '42.000')
+        self.assertEqual(model.callattr('fmt', value=12.4), '12.400')
+
+
+class TestInstrument2(TestCase):
+
+    def setUp(self):
+        self.instrument = DummyInstrument(
+            name='testdummy', gates=['dac1', 'dac2', 'dac3'], server_name=None)
+
+    def tearDown(self):
+        # TODO (giulioungaretti) remove ( does nothing ?)
+        pass
+
+    def test_validate_function(self):
+        instrument = self.instrument
+        instrument.validate_status()  # test the instrument has valid values
+
+        instrument.dac1._save_val(1000)  # overrule the validator
+        with self.assertRaises(Exception):
+            instrument.validate_status()
+
+    def test_attr_access(self):
+        instrument = self.instrument
+
+        # test the instrument works
+        instrument.dac1.set(10)
+        val = instrument.dac1.get()
+        self.assertEqual(val, 10)
+
+        # close the instrument
+        instrument.close()
+
+        # make sure we can still print the instrument
+        _ = instrument.__repr__()
+
+        # make sure the gate is removed
+        self.assertEqual(hasattr(instrument, 'dac1'), False)

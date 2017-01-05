@@ -1,7 +1,6 @@
 Object Hierarchy
 ================
 
-
 .. todo:: make sure it is updated and easy to read.
 
 Rough linkages:
@@ -41,18 +40,24 @@ Read more about :doc:`station`.
 
 .. todo:: is this how we want it ? or like the one below ?
 
+.. _instrument :
+
 Instrument
 ----------
 
 A representation of one particular piece of hardware.
 
-Lists all ``Parameter``\ s and ``Function``\ s this hardware is capable
-of, and handles the underlying communication with the hardware.
-``Instrument`` sets the common structure but real instruments will
-generally derive from its subclasses, such as ``IPInstrument`` and
-``VisaInstrument``. There is also ``MockInstrument`` for making
-simulated instruments, connected to a ``Model`` that mimics a serialized
-communication channel with an apparatus.
+Lists all ``Parameter``\ s and ``Function``\ s this hardware is
+capable of, and handles the underlying communication with the
+hardware.  ``Instrument`` sets the common structure but real
+instruments will generally derive from its subclasses, such as
+``IPInstrument`` and ``VisaInstrument``. There is also
+``MockInstrument`` for making simulated instruments, connected to a
+``Model`` that mimics a serialized communication channel with an
+apparatus.
+
+
+.. todo:: add all the things from the  github issue
 
 Parameter
 ---------

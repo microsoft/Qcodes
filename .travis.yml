@@ -5,22 +5,31 @@ notifications:
   slack: qcodes:tNlhSminOHdt2fZf6x6hyT24
 
 python:
-  - "3.4"
+  - "3.5"
   # whitelist
 branches:
   only:
     - master
+
+# singal that we are on travis
+# to disable things that expect an
+# X Display
+#
+env:
+    - TRAVISCI=true
 # command to install dependencies
 install:
     - pip install --upgrade pip
-    - pip install ipython
-    - pip install -r develop_requirements.txt
+    - pip install -r requirements.txt
+    - pip install coverage
     - python setup.py develop
 # command to run tests
 script: 
-    - python  qcodes/test.py -c
+    - python  qcodes/test.py
+
 after_success:
-    # codecov
+    # install codacy coverage plugin only on traivs
+    - pip install codacy-coverage sphinx sphinx_rtd_theme jsonschema sphinxcontrib-jsonschema
     - cd qcodes
     - coverage xml
     - python-codacy-coverage -r coverage.xml
