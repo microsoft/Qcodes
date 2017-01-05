@@ -13,6 +13,7 @@ from qcodes.process.helpers import kill_processes
 from qcodes.utils.helpers import LogCapture
 from qcodes import active_children
 
+from .instrument_mocks import DummyInstrument
 from .data_mocks import (MockDataManager, MockFormatter, MatchIO,
                          MockLive, MockArray, DataSet2D, DataSet1D,
                          DataSetCombined, RecordingMockFormatter,

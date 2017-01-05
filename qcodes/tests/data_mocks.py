@@ -133,10 +133,10 @@ def makeDataSet2D(p1, p2, mname='measured', location=None, preset_data=None):
     Returns:
         dd (DataSet)
     """
-    xx = np.array(p1)
-    yy0 = np.array(p2)
-    yy = np.tile(yy0, [xx.size, 1])
-    zz = np.NaN * np.ones((xx.size, yy0.size))
+    xx = numpy.array(p1)
+    yy0 = numpy.array(p2)
+    yy = numpy.tile(yy0, [xx.size, 1])
+    zz = numpy.NaN * numpy.ones((xx.size, yy0.size))
     x = DataArray(name=p1.name, array_id=p1.name,
                   label=p1.parameter.label, preset_data=xx, is_setpoint=True)
     y = DataArray(name=p2.name, array_id=p2.name, label=p2.parameter.label,
