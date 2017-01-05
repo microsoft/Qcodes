@@ -121,7 +121,7 @@ def DataSet2D(location=None, name=None):
 
 
 def makeDataSet2D(p1, p2, mname='measured', location=None, preset_data=None):
-    """ Make DataSet with one 2D array and two setpoint arrays 
+    """ Make DataSet with one 2D array and two setpoint arrays
 
     Args:
         p1 (array): first setpoint array of data
@@ -149,7 +149,7 @@ def makeDataSet2D(p1, p2, mname='measured', location=None, preset_data=None):
     dd.add_array(y)
 
     if preset_data is not None:
-        dd.measured.ndarray = np.array(preset_data)
+        dd.measured.ndarray = numpy.array(preset_data)
 
     return dd
 
