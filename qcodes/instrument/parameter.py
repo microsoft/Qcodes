@@ -91,6 +91,7 @@ class Parameter(Metadatable, DeferredOperations):
     Parameters have a .get_latest method that simply returns the most recent
     set or measured value. This can either be called ( param.get_latest() )
     or used in a Loop as if it were a (gettable-only) parameter itself:
+
         Loop(...).each(param.get_latest)
 
 
@@ -121,7 +122,7 @@ class Parameter(Metadatable, DeferredOperations):
 
         setpoints: (3,4,5) the setpoints for the returned array of values.
             3&4 - a tuple of arrays. The first array is be 1D, the second 2D,
-                etc.
+            etc.
             5 - a tuple of tuples of arrays
             Defaults to integers from zero in each respective direction
             Each may be either a DataArray, a numpy array, or a sequence
@@ -448,6 +449,7 @@ class StandardParameter(Parameter):
 
         set_cmd (Optional[Union[string, function]]): command to set this
             parameter, either:
+
             - a string (containing one field to .format, like "{}" etc)
               you can only use a string if an instrument is provided,
               this string will be passed to instrument.write

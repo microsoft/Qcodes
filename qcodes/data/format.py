@@ -11,16 +11,19 @@ class Formatter:
     Formatters translate between DataSets and data files.
 
     Each Formatter is expected to implement writing methods:
-    - ``write``: to write the ``DataArray``s
+
+    - ``write``: to write the ``DataArray``\s
     - ``write_metadata``: to write the metadata structure
 
     Optionally, if this Formatter keeps the data file(s) open
     between write calls, it may implement:
+
     - ``close_file``: to perform any final cleanup and release the
       file and any other resources.
 
     and reading methods:
-    - ``read`` or ``read_one_file`` to reconstruct the ``DataArray``s, either
+
+    - ``read`` or ``read_one_file`` to reconstruct the ``DataArray``\s, either
       all at once (``read``) or one file at a time, supplied by the base class
       ``read`` method that loops over all data files at the correct location.
 
@@ -31,14 +34,16 @@ class Formatter:
     All of these methods accept a ``data_set`` argument, which should be a
     ``DataSet`` object. Even if you are loading a new data set from disk, this
     object should already have attributes:
-        io: an IO manager (see qcodes.data.io)
-        location: a string, like a file path, that identifies the DataSet and
-            tells the IO manager where to store it
-        arrays: a dict of ``{array_id:DataArray}`` to read into.
-            - read will create entries that don't yet exist.
-            - write will write ALL DataArrays in the DataSet, using
-              last_saved_index and modified_range, as well as whether or not
-              it found the specified file, to determine how much to write.
+
+        - io: an IO manager (see qcodes.data.io)
+          location: a string, like a file path, that identifies the DataSet and
+          tells the IO manager where to store it
+        - arrays: a dict of ``{array_id:DataArray}`` to read into.
+
+    - read will create entries that don't yet exist.
+    - write will write ALL DataArrays in the DataSet, using
+      last_saved_index and modified_range, as well as whether or not
+      it found the specified file, to determine how much to write.
     """
     ArrayGroup = namedtuple('ArrayGroup', 'shape set_arrays data name')
 
