@@ -669,7 +669,7 @@ class ActiveLoop(Metadatable):
             else:
                 raise ValueError('unknown signal', signal_)
 
-    def get_data_set(self, data_manager=USE_MP, *args, **kwargs):
+    def get_data_set(self, *args, data_manager=None, quiet=False, **kwargs):
         """
         Return the data set for this loop.
 
@@ -680,6 +680,7 @@ class ActiveLoop(Metadatable):
 
         data_manager: a DataManager instance (omit to use default,
             False to store locally)
+        quiet (bool): True to hide some messages. Default False.
 
         kwargs are passed along to data_set.new_data. The key ones are:
         location: the location of the DataSet, a string whose meaning
@@ -699,6 +700,15 @@ class ActiveLoop(Metadatable):
             a DataSet object that we can use to plot
         """
         if self.data_set is None:
+            # Before we make a new DataSet, ensure that there is no background
+            # loop running. This is only strictly necessary if we are using
+            # a DataManager, but if we're NOT we shouldn't have to worry about
+            # background loops anyway so lets keep it simple.
+            self.wait_for_bg(quiet)
+
+            if data_manager is None:
+                data_manager = USE_MP
+
             if data_manager is False:
                 data_mode = DataMode.LOCAL
             else:
@@ -706,15 +716,17 @@ class ActiveLoop(Metadatable):
                               UserWarning)
                 data_mode = DataMode.PUSH_TO_SERVER
 
-            data_set = new_data(arrays=self.containers(), mode=data_mode,
-                                data_manager=data_manager, *args, **kwargs)
+            data_set = new_data(*args, arrays=self.containers(),
+                                mode=data_mode,
+                                data_manager=data_manager, **kwargs)
 
             self.data_set = data_set
 
         else:
             has_args = len(kwargs) or len(args)
             uses_data_manager = (self.data_set.mode != DataMode.LOCAL)
-            if has_args or (uses_data_manager != data_manager):
+            if has_args or ((uses_data_manager != data_manager) and
+                            (data_manager is not None)):
                 raise RuntimeError(
                     'The DataSet for this loop already exists. '
                     'You can only provide DataSet attributes, such as '
@@ -722,6 +734,18 @@ class ActiveLoop(Metadatable):
                     'write_period, when the DataSet is first created.')
 
         return self.data_set
+
+    def wait_for_bg(self, quiet):
+        prev_loop = get_bg()
+        if prev_loop:
+            if not quiet:
+                print('Waiting for the previous background Loop to finish...',
+                      flush=True)
+            prev_loop.join()
+
+        if prev_loop and not quiet:
+            print('...done. Starting ' + (data_set.location or 'new loop'),
+                  flush=True)
 
     def run_temp(self, **kwargs):
         """
@@ -733,7 +757,7 @@ class ActiveLoop(Metadatable):
                         data_manager=False, location=False, **kwargs)
 
     def run(self, background=USE_MP, use_threads=False, quiet=False,
-            data_manager=USE_MP, station=None, progress_interval=False,
+            data_manager=None, station=None, progress_interval=False,
             *args, **kwargs):
         """
         Execute this loop.
@@ -745,6 +769,8 @@ class ActiveLoop(Metadatable):
             parallel (as long as they don't block each other)
         quiet: (default False): set True to not print anything except errors
         data_manager: set to True to use a DataManager. Default to False.
+            If you previously set a data_manager in ``get_data_set``, you can
+            omit it here to use the setting provided previously.
         station: a Station instance for snapshots (omit to use a previously
             provided Station, or the default Station)
         progress_interval (default None): show progress of the loop every x
@@ -776,16 +802,11 @@ class ActiveLoop(Metadatable):
         if progress_interval is not False:
             self.progress_interval = progress_interval
 
-        prev_loop = get_bg()
-        if prev_loop:
-            if not quiet:
-                print('Waiting for the previous background Loop to finish...',
-                      flush=True)
-            prev_loop.join()
+        data_set = self.get_data_set(*args, data_manager=data_manager,
+                                     quiet=quiet, **kwargs)
+        data_manager = getattr(data_set, 'data_manager', False)
 
-        data_set = self.get_data_set(data_manager, *args, **kwargs)
-
-        if background and not getattr(data_set, 'data_manager', None):
+        if background and not data_manager:
             warnings.warn(
                 'With background=True you must also set data_manager=True '
                 'or you will not be able to sync your DataSet.',
@@ -810,10 +831,6 @@ class ActiveLoop(Metadatable):
         }})
 
         data_set.save_metadata()
-
-        if prev_loop and not quiet:
-            print('...done. Starting ' + (data_set.location or 'new loop'),
-                  flush=True)
 
         try:
             if background:
@@ -854,7 +871,6 @@ class ActiveLoop(Metadatable):
             # we want to clear the data_set attribute so we don't try to reuse
             # this one later.
             self.data_set = None
-
 
         return ds
 
