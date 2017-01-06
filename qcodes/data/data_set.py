@@ -710,7 +710,7 @@ class DataSet(DelegateAttributes):
         self.formatter.write(self,
                              self.io,
                              self.location,
-                             write_metadata=False)
+                             write_metadata=write_metadata)
 
     def write_copy(self, path=None, io_manager=None, location=None):
         """
