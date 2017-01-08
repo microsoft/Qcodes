@@ -87,17 +87,14 @@ class QPUBHandler(logging.Handler):
 
 def check_broker(frontend_addres="tcp://*:5559", backend_address="tcp://*:5560"):
     """
-    Simple XPUB/XSUB broker.
-    Listens for messages on the frontend and transparently pushes them to a
-    backend.
-    This allows to have centralized logging, from multiple processes
-    and to multiple consumers.
-    Messages sent but never forward (f.e.x if there aren't subscribers)
-    are quietly dropped.
+    Simple and dumb check to see if  a  XPUB/XSUB broker exists.
 
     Args:
         frontend_addres (str): Interface to which the frontend is bound
         backend_address (str): Interface to which the backend is bound
+
+    Returns:
+        bool: Broker server exists
 
     """
     context = zmq.Context()
