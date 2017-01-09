@@ -27,7 +27,7 @@ install:
     - pip install -e .
 # command to run tests
 script: 
-    - pytest --cov=qcodes
+    - py.test --cov=qcodes --cov-report xml
 
 after_success:
     # install codacy coverage plugin only on traivs
