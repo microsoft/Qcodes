@@ -843,9 +843,8 @@ class DataSet(DelegateAttributes):
     def __repr__(self):
         """Rich information about the DataSet and contained arrays."""
         out = type(self).__name__ + ':'
-
-        attrs = [['mode', self.mode],
-                 ['data', "qc.load_data('{}')".format(self.location)]]
+        out += "\ndata = qc.load_data('{}')".format(self.location)
+        attrs = [['mode', self.mode]]
         attr_template = '\n   {:4} = {}'
         for var, val in attrs:
             out += attr_template.format(var, val)

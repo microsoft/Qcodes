@@ -100,7 +100,7 @@ class ArbStudio1104(Instrument):
                            parameter_class=ManualParameter,
                            label='Maximum waveform voltage',
                            units='V',
-                           initial_value=2.5,
+                           initial_value=6,
                            vals=vals.Numbers())  # Can we test
 
         # TODO Need to implement frequency interpolation for channel pairs
@@ -176,7 +176,8 @@ class ArbStudio1104(Instrument):
     def _add_waveform(self, channel, waveform):
         assert len(waveform)%2 == 0, 'Waveform must have an even number of points'
         assert len(waveform)> 2, 'Waveform must have at least four points'
-        assert max(waveform) <= self.max_voltage(), 'Waveform may not exceed {} V'.format(self.max_voltage())
+        assert max(abs(waveform)) <= self.max_voltage(), \
+            'Waveform may not exceed {} V'.format(self.max_voltage())
         self._waveforms[channel - 1].append(waveform)
 
     def load_waveforms(self, channels=[1, 2, 3, 4]):
