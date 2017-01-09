@@ -624,10 +624,10 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
     def __getstate__(self):
         """Prevent pickling instruments, and give a nice error message."""
         raise RuntimeError(
-            'qcodes Instruments should not be pickled. Likely this means you '
+            'Pickling %s. qcodes Instruments should not be pickled. Likely this means you '
             'were trying to use a local instrument (defined with '
             'server_name=None) in a background Loop. Local instruments can '
-            'only be used in Loops with background=False.')
+            'only be used in Loops with background=False.' % self.name)
 
     def validate_status(self, verbose=False):
         """ Validate the values of all gettable parameters
