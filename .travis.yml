@@ -23,7 +23,7 @@ env:
 install:
     - pip install --upgrade pip
     - pip install -r requirements.txt
-    - pip install coverage pytest-cov pytest
+    - pip install coverage pytest-cov pytest --upgrade
     - pip install -e .
 # command to run tests
 script: 
