@@ -21,9 +21,9 @@ class Decadac(VisaInstrument):
 
     Attributes:
 
-        ramp_state (bool): If True, ramp state is ON. Default False.
+        _ramp_state (bool): If True, ramp state is ON. Default False.
 
-        ramp_time (int): The ramp time in ms. Default 100 ms.
+        _ramp_time (int): The ramp time in ms. Default 100 ms.
     """
 
     def __init__(self, name, port, slot, timeout=2, baudrate=9600,
@@ -139,7 +139,7 @@ class Decadac(VisaInstrument):
 
     def _setvoltage(self, voltage, channel):
         """
-        Function to set the voltage. Depending on whether self.ramp_state is
+        Function to set the voltage. Depending on whether self._ramp_state is
         True or False, this function either ramps from the current voltage to
         the specified voltage or directly makes the voltage jump there.
 
@@ -152,7 +152,7 @@ class Decadac(VisaInstrument):
 
         mssg = 'B {:d}; C {:d};'.format(self.slot, channel)
 
-        if not self.ramp_state:
+        if not self._ramp_state:
             mssg += 'D ' + code + ';'
 
             self.visa_handle.write(mssg)
@@ -162,15 +162,15 @@ class Decadac(VisaInstrument):
             try:
                 self.visa_handle.read()
             except UnicodeDecodeError:
-                log.warning(" Decadac returned nothing and did nothing. " +
+                log.warning(" Decadac returned nothing and possibly did nothing. " +
                             "Please re-run the command")
                 pass
 
-        if self.ramp_state:
+        if self._ramp_state:
             currentcode = self._voltage2code(self._getvoltage(channel),
                                              channel)
             slope = int((float(code)-float(currentcode)) /
-                        (10*self.ramp_time)*2**16)
+                        (10*self._ramp_time)*2**16)
             if slope < 0:
                 limit = 'L'
             else:
@@ -187,7 +187,7 @@ class Decadac(VisaInstrument):
             runcmd = 'X 1;'
             mssg += ''.join(script) + runcmd
             self.visa_handle.write(mssg)
-            sleep(0.0015*self.ramp_time)  # Required sleep.
+            sleep(0.0015*self._ramp_time)  # Required sleep.
             self.visa_handle.read()
 
             # reset channel voltage ranges
@@ -200,7 +200,7 @@ class Decadac(VisaInstrument):
 
     def set_ramping(self, state, time=None):
         """
-        Function to set ramp_state and ramp_time.
+        Function to set _ramp_state and _ramp_time.
 
         Args:
             state (bool): True sets ramping ON.
@@ -213,7 +213,7 @@ class Decadac(VisaInstrument):
 
     def get_ramping(self):
         """
-        Queries the value of self.ramp_state and self.ramp_time.
+        Queries the value of self._ramp_state and self._ramp_time.
 
         Returns:
             str: ramp state information
