@@ -27,11 +27,13 @@ install:
     - pip install -e .
 # command to run tests
 script:
-    - py.test --cov=qcodes --cov-report xml
+    - cd qcodes
+    - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
 
 after_success:
     # install codacy coverage plugin and sphinx only on traivs
     - pip install codacy-coverage sphinx sphinx_rtd_theme jsonschema sphinxcontrib-jsonschema
     - python-codacy-coverage -r coverage.xml
+    - cd ..
     # build the docs
     - make -f docs/Makefile gh-pages
