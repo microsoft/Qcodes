@@ -113,7 +113,6 @@ Note that the plotting modules may not be available if their dependencies were n
 
 Utils & misc
 ~~~~~~~~~~~~
-.. automodule::
 
 .. autosummary::
    :toctree: generated/
