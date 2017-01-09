@@ -3,6 +3,7 @@ from distutils.version import StrictVersion
 from importlib import import_module
 import re
 
+
 def get_version(verbose=1):
     """ Extract version information from source code """
 
@@ -23,6 +24,7 @@ def get_version(verbose=1):
 def readme():
     with open('README.rst') as f:
         return f.read()
+
 
 extras = {
     'MatPlot': ('matplotlib', '2.0.2'),
@@ -55,7 +57,7 @@ setup(name='qcodes',
       # packages=find_packages(exclude=["*.tests", "tests"]),
       packages=find_packages(),
       package_data={'qcodes': ['widgets/*.js', 'widgets/*.css', 'config/*.json']},
-      install_requires= [
+      install_requires=[
           'numpy>=1.10',
           'pyvisa>=1.8',
           'ipython>=4.1.0',
@@ -63,7 +65,9 @@ setup(name='qcodes',
           'jupyter>=1.0.0',
           'h5py>=2.6'
       ],
-
+      # scripts to include
+      # broker for logging
+      scripts=['bin/qcodes_logger_server'],
       test_suite='qcodes.tests',
       extras_require=extras_require,
 
