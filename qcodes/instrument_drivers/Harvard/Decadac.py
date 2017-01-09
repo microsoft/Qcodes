@@ -60,11 +60,6 @@ class Decadac(VisaInstrument):
         self._voltranges = [1, 1, 1, 1]
         self._offsets = [0, 0, 0, 0]
 
-        self.add_parameter('mode',
-                           label='Output mode',
-                           set_cmd='B {}; M {};'.format(self.slot, '{}'),
-                           vals=vals.Enum(0, 1))
-
         # channels
         for channelno in range(4):
             self.add_parameter('ch{}_voltage'.format(channelno),
