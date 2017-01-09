@@ -79,7 +79,7 @@ class TestMockInstLoop(TestCase):
         # you can only do in-memory loops if you set data_manager=False
         # TODO: this is the one place we don't do quiet=True - test that we
         # really print stuff?
-        data = self.loop.run(location=self.location, background=True)
+        data = self.loop.run(location=self.location, background=True, data_manager=True)
         self.check_empty_data(data)
 
         # wait for process to finish (ensures that this was run in the bg,
