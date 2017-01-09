@@ -118,6 +118,9 @@ class TestMockInstLoop(TestCase):
         self.check_loop_data(data)
 
     def test_background_no_datamanager(self):
+        # We don't support syncing data from a background process
+        # if not using a datamanager. See warning in ActiveLoop.run()
+        # So we expect the data to be empty even after running.
         data = self.loop.run(location=self.location,
                              background=True,
                              data_manager=False,
@@ -127,7 +130,7 @@ class TestMockInstLoop(TestCase):
         self.loop.process.join()
 
         data.sync()
-        self.check_loop_data(data)
+        self.check_empty_data(data)
 
     def test_foreground_and_datamanager(self):
         data = self.loop.run(location=self.location, background=False,
