@@ -1,6 +1,7 @@
 """
 Tests for plotting system.
 Legacy in many ways:
+
     - assume X server running
     - just test "window creation"
 """

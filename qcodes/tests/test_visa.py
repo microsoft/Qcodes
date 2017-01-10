@@ -20,13 +20,13 @@ class MockVisa(VisaInstrument):
 class MockVisaHandle:
     '''
     mock the API needed for a visa handle that throws lots of errors:
+
     - any write command sets a single "state" variable to a float
       after the last : in the command
-      - a negative number results in an error raised here
-      - 0 results in a return code for visa timeout
-
+    - a negative number results in an error raised here
+    - 0 results in a return code for visa timeout
     - any ask command returns the state
-      - a state > 10 throws an error
+    - a state > 10 throws an error
     '''
     def __init__(self):
         self.state = 0

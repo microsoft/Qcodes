@@ -166,8 +166,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         Args:
             update (bool): If True, update the state by calling
-                    parameter.get().
-                    If False, just use the latest values in memory.
+                parameter.get().
+                If False, just use the latest values in memory.
 
         Returns:
             dict: base snapshot
@@ -227,6 +227,7 @@ class Parameter(_BaseParameter):
     Parameters have a ``.get_latest`` method that simply returns the most
     recent set or measured value. This can be called ( ``param.get_latest()`` )
     or used in a ``Loop`` as if it were a (gettable-only) parameter itself:
+
         ``Loop(...).each(param.get_latest)``
 
     Note: If you want ``.get`` or ``.set`` to save the measurement for
@@ -285,13 +286,17 @@ class Parameter(_BaseParameter):
         # generate default docstring
         self.__doc__ = os.linesep.join((
             'Parameter class:',
+            '',
             '* `name` %s' % self.name,
             '* `label` %s' % self.label,
             '* `unit` %s' % self.unit,
             '* `vals` %s' % repr(self._vals)))
 
         if docstring is not None:
-            self.__doc__ = docstring + os.linesep + self.__doc__
+            self.__doc__ = os.linesep.join((
+                docstring,
+                '',
+                self.__doc__))
 
     def set_validator(self, vals):
         """
@@ -420,7 +425,7 @@ class ArrayParameter(_BaseParameter):
             per setpoint array. Ignored if a setpoint is a DataArray, which
             already has a label.
 
-            TODO (alexchjohnson) we need setpoint_units (and in MultiParameter)
+            TODO (alexcjohnson) we need setpoint_units (and in MultiParameter)
 
         docstring (Optional[str]): documentation string for the __doc__
             field of the object. The __doc__ field of the instance is used by
@@ -482,13 +487,17 @@ class ArrayParameter(_BaseParameter):
 
         self.__doc__ = os.linesep.join((
             'Parameter class:',
+            '',
             '* `name` %s' % self.name,
             '* `label` %s' % self.label,
             '* `unit` %s' % self.unit,
             '* `shape` %s' % repr(self.shape)))
 
         if docstring is not None:
-            self.__doc__ = docstring + os.linesep + self.__doc__
+            self.__doc__ = os.linesep.join((
+                docstring,
+                '',
+                self.__doc__))
 
     @property
     def units(self):
@@ -632,13 +641,17 @@ class MultiParameter(_BaseParameter):
 
         self.__doc__ = os.linesep.join((
             'MultiParameter class:',
+            '',
             '* `name` %s' % self.name,
             '* `names` %s' % ', '.join(self.names),
             '* `labels` %s' % ', '.join(self.labels),
             '* `units` %s' % ', '.join(self.units)))
 
         if docstring is not None:
-            self.__doc__ = docstring + os.linesep + self.__doc__
+            self.__doc__ = os.linesep.join((
+                docstring,
+                '',
+                self.__doc__))
 
     @property
     def full_names(self):
@@ -683,6 +696,7 @@ class StandardParameter(Parameter):
 
         set_cmd (Optional[Union[str, function]]): command to set this
             parameter, either:
+
             - a string (containing one field to .format, like "{}" etc)
               you can only use a string if an instrument is provided,
               this string will be passed to instrument.write
@@ -1041,6 +1055,7 @@ class ManualParameter(Parameter):
     def set(self, value):
         """
         Validate and saves value
+
         Args:
             value (any): value to validate and save
         """
@@ -1108,8 +1123,8 @@ class CombinedParameter(Metadatable):
     """ A combined parameter
 
     Args:
-        *paramters (qcodes.Parameter): the parameters to combine
-        name (str): the name of the paramter
+        *parameters (qcodes.Parameter): the parameters to combine
+        name (str): the name of the parameter
         label (Optional[str]): the label of the combined parameter
         unit (Optional[str]): the unit of the combined parameter
         aggregator (Optional[Callable[list[any]]]): a function to aggregate
@@ -1118,7 +1133,7 @@ class CombinedParameter(Metadatable):
     A combined parameter sets all the combined parameters at every point of the
     sweep.
     The sets are called in the same order the parameters are, and
-    sequantially.
+    sequentially.
     """
 
     def __init__(self, parameters, name, label=None,
@@ -1153,6 +1168,7 @@ class CombinedParameter(Metadatable):
 
         Args:
             index (int): the index of the setpoints one wants to set
+
         Returns:
             list: values that where actually set
         """
@@ -1165,8 +1181,9 @@ class CombinedParameter(Metadatable):
         """
         Creates a new combined parameter to be iterated over.
         One can sweep over either:
-             - n array of lenght m
-             - one nxm array
+
+         - n array of lenght m
+         - one nxm array
 
         where n is the number of combined parameters
         and m is the number of setpoints

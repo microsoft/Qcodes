@@ -243,11 +243,12 @@ class LogCapture():
     context manager to grab all log messages, optionally
     from a specific logger
 
-    usage:
+    usage::
 
-    with LogCapture() as logs:
-        code_that_makes_logs(...)
-    log_str = logs.value
+        with LogCapture() as logs:
+            code_that_makes_logs(...)
+        log_str = logs.value
+
     """
 
     def __init__(self, logger=logging.getLogger()):

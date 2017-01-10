@@ -6,39 +6,43 @@ in an interface mimicking the built-in <open> context manager, with
 some restrictions to minimize the overhead in creating new IO managers.
 
 The main thing these managers need to implement is the open context manager:
+
 - Only the context manager needs to be implemented, not separate
   open function and close methods.
 
 - open takes the standard parameters:
-    filename: (string)
-    mode: (string) only 'r' (read), 'w' (write), and 'a' (append) are
-        expected to be implemented. As with normal file objects, the only
-        difference between write and append is that write empties the file
-        before adding new data, and append leaves the existing contents in
-        place but starts writing at the end.
-    encoding: If a special output encoding is desired. i.e. 'utf8
+
+    - filename: (string)
+    - mode: (string) only 'r' (read), 'w' (write), and 'a' (append) are
+      expected to be implemented. As with normal file objects, the only
+      difference between write and append is that write empties the file
+      before adding new data, and append leaves the existing contents in
+      place but starts writing at the end.
+    - encoding: If a special output encoding is desired. i.e. 'utf8
 
 - the file-like object returned should implement a minimal set of operations.
 
   In read mode:
-    read([size]): read to the end or at most size bytes into a string
-    readline([size]): read until a newline or up to size bytes, into a string
-    iter(): usually return self, but can be any iterator over lines
-    next(): assuming iter() returns self, this yields the next line.
+    - read([size]): read to the end or at most size bytes into a string
+    - readline([size]): read until a newline or up to size bytes, into a string
+    - iter(): usually return self, but can be any iterator over lines
+    - next(): assuming iter() returns self, this yields the next line.
+
     (note: iter and next can be constructed automatically by FileWrapper
-     if you implement readline.)
+    if you implement readline.)
 
   In write or append mode:
-    write(s): add string s to the end of the file.
-    writelines(seq): add a sequence of strings (can be constructed
-        automatically if you use FileWrapper)
+    - write(s): add string s to the end of the file.
+    - writelines(seq): add a sequence of strings (can be constructed
+      automatically if you use FileWrapper)
 
 IO managers should also implement:
-- a join method, ala os.path.join(*args).
+
+- a join method, ala os.path.join(\*args).
 - a list method, that returns all objects matching location
 - a remove method, ala os.remove(path) except that it will remove directories
-    as well as files, since we're allowing "locations" to be directories
-    or files.
+  as well as files, since we're allowing "locations" to be directories
+  or files.
 """
 
 from contextlib import contextmanager
