@@ -826,7 +826,7 @@ class StandardParameter(Parameter):
             val = int(val)
             return self._get_mapping[val]
         except (ValueError, KeyError):
-            raise KeyError("Unmapped value from instrument: {!r}".format(val))
+            raise KeyError('Unmapped value from instrument: {!r}'.format(val))
 
     def _valmapping_with_preparser(self, val):
         return self._valmapping_get_parser(self._get_preparser(val))
@@ -1198,7 +1198,7 @@ class CombinedParameter(Metadatable):
         if len(array) > 1:
             dim = set([len(a) for a in array])
             if len(dim) != 1:
-                raise ValueError("Arrays have different number of setpoints")
+                raise ValueError('Arrays have different number of setpoints')
             array = numpy.array(array).transpose()
         else:
             # cast to array in case users
@@ -1245,10 +1245,10 @@ class CombinedParameter(Metadatable):
         """
         meta_data = collections.OrderedDict()
         meta_data['__class__'] = full_class(self)
-        meta_data["unit"] = self.parameter.unit
-        meta_data["label"] = self.parameter.label
-        meta_data["full_name"] = self.parameter.full_name
-        meta_data["aggreagator"] = repr(getattr(self, 'f', None))
+        meta_data['unit'] = self.parameter.unit
+        meta_data['label'] = self.parameter.label
+        meta_data['full_name'] = self.parameter.full_name
+        meta_data['aggreagator'] = repr(getattr(self, 'f', None))
         for param in self.parameters:
             meta_data[param.full_name] = param.snapshot()
 
