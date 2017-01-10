@@ -118,7 +118,8 @@ but there can be differences due to rounding, clipping, feedback loops, etc.
 Note that setting a Parameter of a :ref:`metainstrument` may involve setting several lower-level Parameters of the underlying Instruments, 
 or even getting the values of other Parameters to inform the value(s) to set.
 
-A Parameter that is only gettable typically represents a single measurement command or sequence. 
+A Parameter that is only gettable typically represents a single measurement command or sequence.
+
 The value of such a Parameter may be of many types:
   - A single numeric value, such as a voltage measurement
   - A string that represents a discrete instrument setting, such as the orientation of a vector

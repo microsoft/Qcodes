@@ -304,13 +304,17 @@ class DummyInstrument(Instrument):
 class MultiGetter(Parameter):
     """
     Test parameters with complicated return values
-    instantiate with kwargs:
+    instantiate with kwargs::
+
         MultiGetter(name1=return_val1, name2=return_val2)
+
     to set the names and (constant) return values of the
     pieces returned. Each return_val can be any array-like
     object
-    eg:
+    eg::
+
         MultiGetter(one=1, onetwo=(1, 2))
+
     """
     def __init__(self, **kwargs):
         if len(kwargs) == 1:

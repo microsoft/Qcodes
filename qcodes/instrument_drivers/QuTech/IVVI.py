@@ -149,7 +149,7 @@ class IVVI(VisaInstrument):
     def get_idn(self):
         """
         Overwrites the get_idn function using constants as the hardware
-        does not have a proper *IDN function.
+        does not have a proper \*IDN function.
         """
         # not all IVVI racks support the version command, so return a dummy
         return -1

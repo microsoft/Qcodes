@@ -65,8 +65,9 @@ class Keithley_2700(VisaInstrument):
     '''
     This is the qcodes driver for the Keithley_2700 Multimeter
 
-    Usage: Initialize with
-    <name> =  = Keithley_2700(<name>, address='<GPIB address>', reset=<bool>,
+    Usage: Initialize with::
+
+        <name> =  = Keithley_2700(<name>, address='<GPIB address>', reset=<bool>,
             change_display=<bool>, change_autozero=<bool>)
 
     Status: beta-version.
