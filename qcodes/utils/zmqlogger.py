@@ -1,9 +1,8 @@
+import re
 import logging
 logging.basicConfig(level="DEBUG")
 
 import zmq
-from zmq.utils.strtypes import bytes, unicode, cast_bytes
-
 # TODO(giulioungaretti)
 # What you don’t want to collect 	How to avoid collecting it
 # Information about where calls were made from.
@@ -14,11 +13,9 @@ from zmq.utils.strtypes import bytes, unicode, cast_bytes
 # TODO(giulioungaretti) review formatters
 
 
-DEBUGF = "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)d] %(message)s"
+DEBUGF = "%(levelname)s:%(name)s:%(lineno)d:%(asctime)s%(message)s"
 DATEFMT = "%H:%M:%S"
 
-# for k in PUBHandler.formatters:
-    # QPUBHandler.formatters[k] = logging.Formatter(f, datefmt=)
 
 class QPUBHandler(logging.Handler):
     """A basic logging handler that emits log messages through a PUB socket.
@@ -38,13 +35,13 @@ class QPUBHandler(logging.Handler):
     # add more info to debug it's not cheap but more informative
     formatters = {
         logging.DEBUG: logging.Formatter(DEBUGF, datefmt=DATEFMT),
-        logging.INFO: logging.Formatter("%(name)s:%(message)s\n", datefmt=DATEFMT),
+        logging.INFO: logging.Formatter("%(levelname)s:%(name)s:%(message)s\n", datefmt=DATEFMT),
         logging.WARN: logging.Formatter(
-            "%(levelname)s %(filename)s:%(name)s:%(lineno)d - %(message)s\n", datefmt=DATEFMT),
+            "%(levelname)s:%(filename)s:%(name)s:%(lineno)d - %(message)s\n", datefmt=DATEFMT),
         logging.ERROR: logging.Formatter(
-            "%(levelname)s %(filename)s:%(name)s:%(lineno)d - %(message)s - %(exc_info)s\n", datefmt=DATEFMT),
+            "%(levelname)s:%(filename)s:%(name)s:%(lineno)d - %(message)s - %(exc_info)s\n", datefmt=DATEFMT),
         logging.CRITICAL: logging.Formatter(
-        "%(levelname)s %(filename)s:%(lineno)d - %(message)s\n",  datefmt=DATEFMT)}
+        "%(levelname)s:%(filename)s:%(lineno)d - %(message)s\n",  datefmt=DATEFMT)}
 
     def __init__(self, interface_or_socket, context=None):
         logging.Handler.__init__(self)
@@ -52,38 +49,28 @@ class QPUBHandler(logging.Handler):
         self.socket = self.ctx.socket(zmq.PUB)
         self.socket.connect(interface_or_socket)
 
-    def format(self,record):
+    def format(self, record):
         """Format a record."""
-        return self.formatters[record.levelno].format(record)
+        values = parse(self.formatters[record.levelno]._fmt)
+        json_out = {}
+        for key in values:
+            json_out[key] = getattr(record, key)
+        return json_out
+
 
     def emit(self, record):
         """Emit a record message
         Args:
             record (logging.record): record to shovel on the socket
         """
-        try:
-            topic, record.msg = record.msg.split(TOPIC_DELIM,1)
-        except Exception:
-            topic = ""
-        try:
-            bmsg = cast_bytes(self.format(record))
-        except Exception:
-            self.handleError(record)
-            return
+        self.socket.send_json(self.format(record))
 
-        topic_list = []
 
-        if self.root_topic:
-            topic_list.append(self.root_topic)
+def parse(string):
+    """Parses format string looking for substitutions"""
+    standard_formatters = re.compile(r'\((.+?)\)', re.IGNORECASE)
+    return standard_formatters.findall(string)
 
-        topic_list.append(record.levelname)
-
-        if topic:
-            topic_list.append(topic)
-
-        btopic = b'.'.join(cast_bytes(t) for t in topic_list)
-
-        self.socket.send_multipart([btopic, bmsg])
 
 def check_broker(frontend_addres="tcp://*:5559", backend_address="tcp://*:5560"):
     """

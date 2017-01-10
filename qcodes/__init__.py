@@ -2,8 +2,6 @@
 # flake8: noqa (we don't need the "<...> imported but unused" error)
 # config and logging
 import logging
-# TODO(giulioungaretti) remove this import
-from multiprocessing import active_children
 
 from qcodes.config import Config
 config = Config()
