@@ -226,7 +226,7 @@ class TestBG(TestCase):
         bg1 = get_bg(return_first=True)
         self.assertIn(bg1, [p1, p2])
 
-        halt_bg(timeout=0.01)
+        halt_bg(timeout=0.05)
         bg2 = get_bg()
         self.assertIn(bg2, [p1, p2])
         # is this robust? requires that active_children always returns the same
@@ -235,7 +235,7 @@ class TestBG(TestCase):
 
         self.assertEqual(len(mp.active_children()), 1)
 
-        halt_bg(timeout=0.01)
+        halt_bg(timeout=0.05)
         self.assertIsNone(get_bg())
 
         self.assertEqual(len(mp.active_children()), 0)
