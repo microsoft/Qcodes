@@ -12,13 +12,21 @@ if everyone is happy to use these classes.
 
 This file defines four classes of parameters:
 
-``Parameter`` and ``MultiParameter`` must be subclassed:
+``Parameter``, ``ArrayParameter``, and ``MultiParameter`` must be subclassed:
 
 - ``Parameter`` is the base class for scalar-valued parameters, if you have
     custom code to read or write a single value. Provides ``sweep`` and
     ``__getitem__`` (slice notation) methods to use a settable parameter as
     the swept variable in a ``Loop``. To use, fill in ``super().__init__``,
     and provide a ``get`` method, a ``set`` method, or both.
+
+- ``ArrayParameter`` is a base class for array-valued parameters, ie anything
+    for which each ``get`` call returns an array of values that all have the
+    same type and meaning. Currently not settable, only gettable. Can be used
+    in ``Measure``, or in ``Loop`` - in which case these arrays are nested
+    inside the loop's setpoint array. To use, provide a ``get`` method that
+    returns an array or regularly-shaped sequence, and describe that array in
+    ``super().__init__``.
 
 - ``MultiParameter`` is the base class for multi-valued parameters. Currently
     not settable, only gettable, but can return an arbitrary collection of
