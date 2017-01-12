@@ -227,8 +227,10 @@ dummy:
 	@echo "Build finished. Dummy builder generates no files."
 
 html-api:
-	sphinx-apidoc  -o  docs/auto  qcodes -d 10
-	cd docs && make html
+	sphinx-apidoc  -o  _auto  -d 10 ../qcodes/
+	mkdir -p api/generated/
+	cp _auto/qcodes.instrument_drivers.* api/generated/
+	make html
 
 gh-pages:
 	git config --global user.email "bot@travics.com"
