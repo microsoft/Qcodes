@@ -146,10 +146,19 @@ class AMI430(VisaInstrument):
 
         return False
 
-    def _set_field(self, value):
-        """ Blocking method to ramp to a certain field """
+    def _set_field(self, value, *, perform_safety_check=True):
+        """
+        Blocking method to ramp to a certain field
+
+        Args:
+            perform_safety_check (bool): Whether to set the field via a parent
+                driver (if present), which might perform additional safety
+                checks.
+        """
         # If part of a parent driver, set the value using that driver
-        if self._parent_instrument is not None:
+        check = kwargs.get('perform_safety_check', True)
+
+        if self._parent_instrument is not None and check:
             self._parent_instrument._request_field_change(self, value)
 
             return
@@ -552,23 +561,23 @@ class AMI430_3D(Instrument):
 
         # First ramp the coils that are decreasing in field strength
         if np.abs(self._x) < np.abs(x):
-            self._magnet_x.field(x)
+            self._magnet_x.field(x, perform_safety_check=False)
             swept_x = True
 
         if np.abs(self._y) < np.abs(y):
-            self._magnet_y.field(y)
+            self._magnet_y.field(y, perform_safety_check=False)
             swept_y = True
 
         if np.abs(self._z) < np.abs(z):
-            self._magnet_z.field(z)
+            self._magnet_z.field(z, perform_safety_check=False)
             swept_z = True
 
         # Finally, ramp up the coils that are increasing
         if not swept_x:
-            self._magnet_x.field(x)
+            self._magnet_x.field(x, perform_safety_check=False)
 
         if not swept_y:
-            self._magnet_y.field(y)
+            self._magnet_y.field(y, perform_safety_check=False)
 
         if not swept_z:
-            self._magnet_z.field(z)
+            self._magnet_z.field(z, perform_safety_check=False)
