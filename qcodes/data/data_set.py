@@ -36,10 +36,12 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
     Args:
         location (str or callable or False, optional): If you provide a string,
             it must be an unused location in the io manager. Can also be:
+
             - a callable ``location provider`` with one required parameter
               (the io manager), and one optional (``record`` dict),
               which returns a location string when called
             - ``False`` - denotes an only-in-memory temporary DataSet.
+
             Note that the full path to or physical location of the data is a
             combination of io + location. the default ``DiskIO`` sets the base
             directory, which this location is a relative path inside.
@@ -66,13 +68,15 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
             ``get_data_manager()``.
 
         mode (DataMode, optional): connection type to the ``DataServer``.
-            ``DataMode.LOCAL``: this DataSet doesn't communicate across
-                processes.
-            ``DataMode.PUSH_TO_SERVER``: no local copy of data, just pushes
-                each measurement to a ``DataServer``.
-            ``DataMode.PULL_FROM_SERVER``: pulls changes from the
-                ``DataServer`` on calling ``self.sync()``. Reverts to local if
-                and when it stops being the live measurement.
+
+            - ``DataMode.LOCAL``: this DataSet doesn't communicate across
+              processes.
+            - ``DataMode.PUSH_TO_SERVER``: no local copy of data, just pushes
+              each measurement to a ``DataServer``.
+            - ``DataMode.PULL_FROM_SERVER``: pulls changes from the
+              ``DataServer`` on calling ``self.sync()``. Reverts to local if
+              and when it stops being the live measurement.
+
             Default ``DataMode.LOCAL``.
 
         arrays (Optional[List[qcodes.DataArray]): arrays to add to the DataSet.
@@ -215,14 +219,16 @@ class DataSet(DelegateAttributes):
             ``get_data_manager()``.
 
         mode (DataMode, optional): connection type to the ``DataServer``.
-            ``DataMode.LOCAL``: this DataSet doesn't communicate across
-                processes.
-            ``DataMode.PUSH_TO_SERVER``: no local copy of data, just pushes
-                each measurement to a ``DataServer``.
-            ``DataMode.PULL_FROM_SERVER``: pulls changes from the
-                ``DataServer`` on calling ``self.sync()``. Reverts to local if
-                and when it stops being the live measurement.
-            Default ``DataMode.LOCAL``.
+
+            - ``DataMode.LOCAL``: this DataSet doesn't communicate across
+              processes.
+            - ``DataMode.PUSH_TO_SERVER``: no local copy of data, just pushes
+              each measurement to a ``DataServer``.
+            - ``DataMode.PULL_FROM_SERVER``: pulls changes from the
+              ``DataServer`` on calling ``self.sync()``. Reverts to local if
+              and when it stops being the live measurement.
+
+            Default to ``DataMode.LOCAL``.
 
         arrays (Optional[List[qcodes.DataArray]): arrays to add to the DataSet.
                 Can be added later with ``self.add_array(array)``.
@@ -696,7 +702,7 @@ class DataSet(DelegateAttributes):
         self.formatter.write(self,
                              self.io,
                              self.location,
-                             write_metadata=False)
+                             write_metadata=write_metadata)
 
     def write_copy(self, path=None, io_manager=None, location=None):
         """
