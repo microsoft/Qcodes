@@ -28,6 +28,14 @@ class AMI430(VisaInstrument):
     three magnets simultaniously to set field vectors, first instantiate the
     individual magnets using this class and then pass them as arguments to
     either the AMI430_2D or AMI430_3D virtual instrument classes.
+
+    Args:
+        name (string): a name for the instrument
+        address (string): IP address of the power supply programmer
+        coil_constant (float): coil constant in Tesla per ampere
+        current_rating (float): maximum current rating in ampere
+        current_ramp_limit (float): current ramp limit in ampere per second
+        persistent_switch (bool): whether this magnet has a persistent switch
     """
     def __init__(self, name, address, coil_constant, current_rating,
                  current_ramp_limit, persistent_switch=True,
@@ -202,6 +210,12 @@ class AMI430(VisaInstrument):
 
             return
 
+        if np.abs(value) > self._ramp_rating:
+            msg = ': Aborted _ramp_to because setpoint higher than maximum'
+            logging.error(__name__ + msg)
+
+            return
+
         if self._can_start_ramping():
             self.pause()
 
@@ -256,6 +270,11 @@ class AMI430_2D(Instrument):
     """
     Virtual driver for a system of two AMI430 magnet power supplies.
     This driver provides methods that simplify setting fields as vectors.
+
+    Args:
+        name (string): a name for the instrument
+        magnet_x (AMI430): magnet for the x component
+        magnet_y (AMI430): magnet for the y component
     """
     def __init__(self, name, magnet_x, magnet_y, **kwargs):
         super().__init__(name, **kwargs)
@@ -359,6 +378,12 @@ class AMI430_3D(Instrument):
         AMI430('AMI430_X', '192.168.2.3', 0.0146, 68.53, 0.2),
         AMI430('AMI430_Y', '192.168.2.2', 0.0426, 70.45, 0.05),
         AMI430('AMI430_Z', '192.168.2.1', 0.1107, 81.33, 0.08))
+
+    Args:
+        name (string): a name for the instrument
+        magnet_x (AMI430): magnet driver for the x component
+        magnet_y (AMI430): magnet driver for the y component
+        magnet_z (AMI430): magnet driver for the z component
     """
     def __init__(self, name, magnet_x, magnet_y, magnet_z, field_limit,
                  **kwargs):
