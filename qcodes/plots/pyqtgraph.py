@@ -408,3 +408,7 @@ class QtPlot(BasePlot):
         filename = filename or default
         image = self.win.grab()
         image.save(filename, "PNG", 0)
+
+    def setGeometry(self, x, y, w, h):
+        """ Set geometry of the plotting window """
+        self.win.setGeometry(x, y, w, h)
