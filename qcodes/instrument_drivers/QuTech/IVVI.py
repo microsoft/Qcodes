@@ -3,6 +3,7 @@ import logging
 import numpy as np
 import visa  # used for the parity constant
 import traceback
+import threading
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes.instrument.parameter import ManualParameter
@@ -51,6 +52,7 @@ class IVVI(VisaInstrument):
         '''
         t0 = time.time()
         super().__init__(name, address, **kwargs)
+        self.lock = threading.Lock()
 
         self.safe_version = safe_version
 
@@ -319,9 +321,25 @@ class IVVI(VisaInstrument):
         Raises an error if one occurred
         Returns a list of bytes
         '''
+        '''
+        Send <message> to the device and read answer.
+        Raises an error if one occurred
+        Returns a list of bytes
+        '''
         # Protocol knows about the expected length of the answer
+        max_tries = 10
+        for i in range(max_tries):
+            if self.lock.acquire(timeout=.05):
+                break
+            else:
+                logging.warning('IVVI: cannot acquire the lock')
+        if i + 1 == max_tries:
+            raise('IVVI: lock is stuck')
         message_len = self.write(message, raw=raw)
-        return self.read(message_len=message_len)
+        reply = self.read(message_len=message_len)
+        self.lock.release()
+
+        return reply
 
     def _read_raw_bytes_direct(self, size):
         """ Read raw data using the visa lib """
