@@ -5,9 +5,7 @@ import qcodes
 from qcodes.data.hdf5_format import HDF5Format, HDF5FormatMetadata
 from qcodes.data.gnuplot_format import GNUPlotFormat
 
-from qcodes.data.data_set import new_data, load_data, DataSet
-from qcodes.data.data_array import DataArray
-from qcodes.tests.data_mocks import DataSet1D, DataSet2D
+from qcodes.tests.data_mocks import DataSet2D
 
 
 #%%
@@ -27,10 +25,6 @@ class TestFormatters(TestCase):
             dataset.add_metadata(self.metadata)
             dataset.write(write_metadata=True)
 
-            try:
-                dataset.formatter.close_file(dataset)
-            except:
-                pass
             dataset2 = qcodes.load_data(dataset.location, formatter=f())
             self.assertEqual(list(dataset.arrays.keys()),
                              list(dataset2.arrays.keys()))
