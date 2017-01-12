@@ -1,7 +1,7 @@
 """Modifications to multiprocessing.Process common to all Qcodes processes."""
 
 import multiprocessing as mp
-from traceback import print_exc
+from traceback import print_exception
 import signal
 
 from qcodes.utils.helpers import in_notebook
@@ -58,7 +58,7 @@ class QcodesProcess(mp.Process):
         except:
             # if we let the system print the exception by itself, sometimes
             # it disconnects the stream partway through printing.
-            print_exc()
+            print_exception()
         finally:
             if (self.stream_queue and
                     self.stream_queue.initial_streams is not None):
