@@ -2,9 +2,9 @@ import logging
 from .ATS import AcquisitionController
 import numpy as np
 from qcodes import Parameter
-from qcodes.utils.helpers import filter_win, filter_ls
+from qcodes.instrument_drivers.AlazarTech.acq_helpers import filter_win, filter_ls
 from qcodes.instrument.parameter import ManualParameter
-from qcodes.utils import validators
+# from qcodes.utils import validators
 
 
 class SamplesParam(Parameter):
@@ -26,12 +26,12 @@ class SamplesParam(Parameter):
         self.setpoint_names = (('acq_time (s)',), ('acq_time (s)',))
         self.setpoints = ((1,), (1,))
         self.shapes = ((1,), (1,))
-    
+
     def update_sweep(self, start, stop, npts):
         n = tuple(np.linspace(start, stop, num=npts))
         self.setpoints = ((n,), (n,))
         self.shapes = ((npts,), (npts,))
-    
+
     def get(self):
         mag, phase = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
@@ -112,20 +112,20 @@ class HD_Samples_Controller(AcquisitionController):
         self.samples_per_record = kwargs['samples_per_record']
         self.sample_rate = alazar.get_sample_rate()
         time_available = self.samples_per_record / self.sample_rate
-            
+
         if self.int_delay() is None:
             samp_delay = self.numtaps - 1
             self.int_delay(samp_delay / self.sample_rate)
         else:
             self.check_delay(time_available)
-        
+
         time_available -= self.int_delay()
-        
+
         if self.int_time() is None:
             self.int_time(time_available)
         else:
             self.check_time(time_available)
-        
+
         start = self.int_delay()
         stop = self.int_delay() + self.int_time()
         npts = int(self.int_time() * self.sample_rate)

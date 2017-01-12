@@ -18,23 +18,27 @@ class SampleSweep(Parameter):
         self._instrument = instrument
         self.acquisitionkwargs = {}
         self.names = ('A', 'B')
-        self.units = ('', '')
-        self.setpoint_names = (('sample_num',), ('sample_num',))
-        self.setpoints = ((1,), (1,))
-        self.shapes = ((1,), (1,))
+        # self.units = ('', '')
+        # self.setpoint_names = (('sample_num',), ('sample_num',))
+        # self.setpoints = ((1,), (1,))
+        # self.shapes = ((1,), (1,))
 
-    def update_acquisition_kwargs(self, **kwargs):
-        # needed to update config of the software parameter on sweep change
-        # freq setpoints tuple as needs to be hashable for look up
-        if 'samples_per_record' in kwargs:
-            npts = kwargs['samples_per_record']
-            n = tuple(np.arange(npts))
-            self.setpoints = ((n,), (n,))
-            self.shapes = ((npts,), (npts,))
-        else:
-            raise ValueError('samples_per_record must be specified')
-        # updates dict to be used in acquisition get call
-        self.acquisitionkwargs.update(**kwargs)
+    # def update_acquisition_kwargs(self, **kwargs):
+    #     npts = kwargs['samples_per_record']
+    #     self.shapes = ((npts,), (npts,))
+    #     self.acquisitionkwargs.update(**kwargs)
+
+        # # needed to update config of the software parameter on sweep change
+        # # freq setpoints tuple as needs to be hashable for look up
+        # if 'samples_per_record' in kwargs:
+        #     npts = kwargs['samples_per_record']
+        #     # n = tuple(np.arange(npts))
+        #     # self.setpoints = ((n,), (n,))
+        #     self.shapes = ((npts,), (npts,))
+        # else:
+        #     raise ValueError('samples_per_record must be specified')
+        # # updates dict to be used in acquisition get call
+        # self.acquisitionkwargs.update(**kwargs)
 
     def get(self):
         recordA, recordB = self._instrument._get_alazar().acquire(
@@ -55,7 +59,6 @@ class Basic_Acquisition_Controller(AcquisitionController):
         can communicate with the Alazar
     **kwargs: kwargs are forwarded to the Instrument base class
 
-    TODO(nataliejpg) num of channels
     TODO(nataliejpg) make dtype general or get from alazar
     """
 
@@ -64,8 +67,8 @@ class Basic_Acquisition_Controller(AcquisitionController):
         self.records_per_buffer = 0
         self.buffers_per_acquisition = 0
         self.number_of_channels = 2
-        self.buffer = None
         self.board_info = None
+        self.buffer = None
         # make a call to the parent class and by extension,
         # create the parameter structure of this class
         super().__init__(name, alazar_name, **kwargs)
@@ -73,14 +76,16 @@ class Basic_Acquisition_Controller(AcquisitionController):
         self.add_parameter(name='acquisition',
                            parameter_class=SampleSweep)
 
-    def update_acquisitionkwargs(self, **kwargs):
+    def update_acquisition_kwargs(self, **kwargs):
         """
         This method must be used to update the kwargs used for the acquisition
         with the alazar_driver.acquire
         :param kwargs:
         :return:
         """
-        self.acquisition.update_acquisition_kwargs(**kwargs)
+        npts = kwargs['samples_per_record']
+        self.acquisition.shapes = ((npts,), (npts,))
+        self.acquisition.acquisition_kwargs.update(**kwargs)
 
     def pre_start_capture(self):
         """
@@ -126,6 +131,7 @@ class Basic_Acquisition_Controller(AcquisitionController):
         # break buffer up into records, averages over them and returns samples
         records_per_acquisition = (self.buffers_per_acquisition *
                                    self.records_per_buffer)
+
         recA = np.zeros(self.samples_per_record)
         for i in range(self.records_per_buffer):
             i0 = (i * self.samples_per_record * self.number_of_channels)
@@ -146,7 +152,7 @@ class Basic_Acquisition_Controller(AcquisitionController):
             volt_rec_B = sample_to_volt_u12(recordB, bps)
         else:
             logging.warning('sample to volt conversion does not exist for bps '
-                            '!= 12, raw samples centered on 0 returned')
+                            '!= 12, raw samples centered on 0 and returned')
             volt_rec_A = recordA - np.mean(recordA)
             volt_rec_B = recordB - np.mean(recordB)
 

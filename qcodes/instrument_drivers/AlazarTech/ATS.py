@@ -17,8 +17,6 @@ from qcodes.utils import validators
 # acquisition that would overflow the board if measurement is not stopped
 # quickly enough. can this be solved by not reposting the buffers?
 
-# TODO(nataliejpg) fix get_damples function which I have broken for ATS9360
-
 
 class AlazarTech_ATS(Instrument):
     """
@@ -261,7 +259,7 @@ class AlazarTech_ATS(Instrument):
             self._ATS_dll.AlazarGetBoardKind(self._handle)]
 
         max_s, bps = self._get_channel_info(self._handle)
-        
+
         major = np.array([0], dtype=np.uint8)
         minor = np.array([0], dtype=np.uint8)
         revision = np.array([0], dtype=np.uint8)
@@ -269,7 +267,7 @@ class AlazarTech_ATS(Instrument):
                        self._handle,
                        major.ctypes.data,
                        minor.ctypes.data)
-        cpld_ver = str(major[0])+"."+str(minor[0])
+        cpld_ver = str(major[0]) + "." + str(minor[0])
 
         self._call_dll('AlazarGetDriverVersion',
                        major.ctypes.data,
@@ -304,7 +302,7 @@ class AlazarTech_ATS(Instrument):
         # about the encoding of the link speed
         self._call_dll('AlazarQueryCapability',
                        self._handle, 0x10000030, 0, value.ctypes.data)
-        pcie_link_speed = str(value[0]*2.5/10)+"GB/s"
+        pcie_link_speed = str(value[0] * 2.5 / 10) + "GB/s"
         self._call_dll('AlazarQueryCapability',
                        self._handle, 0x10000031, 0, value.ctypes.data)
         pcie_link_width = str(value[0])
@@ -570,12 +568,9 @@ class AlazarTech_ATS(Instrument):
         # bytes per sample
         max_s, bps = self._get_channel_info(self._handle)
         bytes_per_sample = (bps + 7) // 8
-        #print("bytes per sample "+str(bytes_per_sample))
 
         # bytes per record
         bytes_per_record = bytes_per_sample * samples_per_record
-        #print("samples_per_record is "+str(samples_per_record))
-        #print("bytes per record is "+str(bytes_per_record))
 
         # channels
         if self.channel_selection._get_byte() == 3:
@@ -584,7 +579,8 @@ class AlazarTech_ATS(Instrument):
             number_of_channels = 1
 
         # bytes per buffer
-        bytes_per_buffer = bytes_per_record * records_per_buffer * number_of_channels
+        bytes_per_buffer = (bytes_per_record *
+                            records_per_buffer * number_of_channels)
 
         # create buffers for acquisition
         # TODO(nataliejpg) should this be > 1 (as intuitive) or > 8 as in alazar sample code?
@@ -592,18 +588,13 @@ class AlazarTech_ATS(Instrument):
         if bytes_per_sample > 1:
             sample_type = ctypes.c_uint16
 
-        # TODO(nataliejpg) get rid of all of thes print statements
-        #print("samples_per_buffer is "+str(samples_per_buffer))
-        #print("bytes_per_buffer  is "+str(bytes_per_buffer))
-        #print("records_per_buffer is "+str(records_per_buffer))
-
         self.clear_buffers()
         # make sure that allocated_buffers <= buffers_per_acquisition
         if (self.allocated_buffers._get_byte() >
                 self.buffers_per_acquisition._get_byte()):
-            print("'allocated_buffers' should be smaller than or equal to"
-                  "'buffers_per_acquisition'. Defaulting 'allocated_buffers' to"
-                  "" + str(self.buffers_per_acquisition._get_byte()))
+            logging.warn("'allocated_buffers' should be <= "
+                         "'buffers_per_acquisition'. Defaulting 'allocated_buffers'"
+                         " to " + str(self.buffers_per_acquisition._get_byte()))
             self.allocated_buffers._set(
                 self.buffers_per_acquisition._get_byte())
 
@@ -617,13 +608,12 @@ class AlazarTech_ATS(Instrument):
                 raise
 
         # post buffers to Alazar
-        print("made buffer list length "+str(len(self.buffer_list)))
+        print("made buffer list length " + str(len(self.buffer_list)))
         for buf in self.buffer_list:
             self._ATS_dll.AlazarPostAsyncBuffer.argtypes = [ctypes.c_uint32, ctypes.c_void_p, ctypes.c_uint32]
             self._call_dll('AlazarPostAsyncBuffer',
                            self._handle, buf.addr, buf.size_bytes)
         self.allocated_buffers._set_updated()
-        #print("completed AlazarPostAsyncBuffer")
 
         # -----start capture here-----
         acquisition_controller.pre_start_capture()
@@ -690,14 +680,17 @@ class AlazarTech_ATS(Instrument):
         if transfer_time_sec > 0:
             buffers_per_sec = buffers_completed / transfer_time_sec
             bytes_per_sec = bytes_transferred / transfer_time_sec
-            records_per_sec = records_per_buffer * buffers_completed / transfer_time_sec
-        print("Captured %d buffers (%f buffers per sec)" %
-              (buffers_completed, buffers_per_sec))
-        print("Captured %d records (%f records per sec)" %
-              (records_per_buffer * buffers_completed, records_per_sec))
-        print("Transferred %d bytes (%f bytes per sec)" %
-              (bytes_transferred, bytes_per_sec))
-              
+            records_per_sec = (records_per_buffer * 
+                               buffers_completed / transfer_time_sec)
+        logging.info("Captured %d buffers (%f buffers per sec)" %
+                    (buffers_completed, buffers_per_sec))
+        logging.info("Captured %d records (%f records per sec)" %
+                    (records_per_buffer * buffers_completed, records_per_sec))
+        logging.info("Transferred %d bytes (%f bytes per sec)" %
+                    (bytes_transferred, bytes_per_sec))
+
+
+
         # return result
         return acquisition_controller.post_acquire()
 
@@ -798,7 +791,6 @@ class AlazarTech_ATS(Instrument):
         rate = self.sample_rate.get()
         if rate == '1GHz_REFERENCE_CLOCK':
             rate = 1e9
-        # TODO(nataliejpg) this breaks for ATS9360 because of changes to rate 
 
         decimation = self.decimation.get()
         if decimation > 0:

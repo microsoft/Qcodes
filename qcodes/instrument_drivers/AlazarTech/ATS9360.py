@@ -245,6 +245,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            unit=None,
                            value=4,
                            vals=validators.Ints(min_value=0))
+
         self.add_parameter(name='buffer_timeout',
                            parameter_class=AlazarParameter,
                            label='Buffer Timeout',
