@@ -24,6 +24,8 @@ Config
 
    Config
 
+.. _station:
+
 Station
 ~~~~~~~
 
@@ -31,6 +33,8 @@ Station
    :toctree: generated/
 
    station.Station
+
+.. _loops:
 
 Loops
 ~~~~~
