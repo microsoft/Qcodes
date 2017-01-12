@@ -156,9 +156,7 @@ class AMI430(VisaInstrument):
                 checks.
         """
         # If part of a parent driver, set the value using that driver
-        check = kwargs.get('perform_safety_check', True)
-
-        if self._parent_instrument is not None and check:
+        if self._parent_instrument is not None and perform_safety_check:
             self._parent_instrument._request_field_change(self, value)
 
             return
