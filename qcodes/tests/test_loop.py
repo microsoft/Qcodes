@@ -13,6 +13,7 @@ from qcodes.station import Station
 from qcodes.data.io import DiskIO
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager
+from qcodes.instrument.mock import ArrayGetter
 from qcodes.instrument.parameter import Parameter, ManualParameter
 from qcodes.process.helpers import kill_processes
 from qcodes.process.qcodes_process import QcodesProcess
@@ -205,6 +206,16 @@ class TestMockInstLoop(TestCase):
         loop.run_temp()
         self.assertFalse(hasattr(loop, 'process'))
 
+    def test_sync_no_overwrite(self):
+        # Test fix for 380, this tests that the setpoints are not incorrectly
+        # overwritten by data_set.sync() for this to happen with the original code
+        # the delay must be larger than the write period otherwise sync is a no opt.
+
+        loop = Loop(self.gates.chan1.sweep(0, 1, 1), delay=0.1).each(ArrayGetter(self.meter.amplitude,
+                                                                                 self.gates.chan2[0:1:1], 0.000001))
+        data = loop.get_data_set(name='testsweep', write_period=0.01)
+        _ = loop.with_bg_task(data.sync).run()
+        assert not np.isnan(data.chan2).any()
 
 def sleeper(t):
     time.sleep(t)
