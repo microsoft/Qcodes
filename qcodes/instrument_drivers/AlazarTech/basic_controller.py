@@ -42,12 +42,7 @@ class Basic_Acquisition_Controller(AcquisitionController):
     """
 
     def __init__(self, name, alazar_name, **kwargs):
-        self.samples_per_record = 0
-        self.records_per_buffer = 0
-        self.buffers_per_acquisition = 0
         self.number_of_channels = 2
-        self.board_info = None
-        self.buffer = None
         # make a call to the parent class and by extension,
         # create the parameter structure of this class
         super().__init__(name, alazar_name, **kwargs)
@@ -62,8 +57,8 @@ class Basic_Acquisition_Controller(AcquisitionController):
         :param kwargs:
         :return:
         """
-        npts = kwargs['samples_per_record']
-        self.acquisition.shapes = ((npts,), (npts,))
+        self.samples_per_record = kwargs['samples_per_record']
+        self.acquisition.shapes = ((self.samples_per_record,), (self.samples_per_record,))
         self.acquisition.acquisition_kwargs.update(**kwargs)
 
     def pre_start_capture(self):
@@ -72,7 +67,9 @@ class Basic_Acquisition_Controller(AcquisitionController):
         :return:
         """
         alazar = self._get_alazar()
-        self.samples_per_record = alazar.samples_per_record.get()
+        if self.samples_per_record != alazar.samples_per_record.get():
+            raise Exception('Instrument samples_per_record settings does not match acq controller value, '
+            'most likely need to call update_acquisition_settings')
         self.records_per_buffer = alazar.records_per_buffer.get()
         self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
         self.board_info = alazar.get_idn()

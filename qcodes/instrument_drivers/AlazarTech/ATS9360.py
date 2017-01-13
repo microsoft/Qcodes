@@ -10,6 +10,8 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
     TODO(nataliejpg):
         -   add clock source options and sample rate options
     """
+    samples_divisor = 32
+    
     def __init__(self, name, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
         super().__init__(name, dll_path=dll_path, **kwargs)
@@ -172,7 +174,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            unit=None,
                            value=1024,
                            vals=validators.Multiples(
-                                divisor=64, min_value=256))
+                                divisor=self.samples_divisor, min_value=256))
         self.add_parameter(name='records_per_buffer',
                            parameter_class=AlazarParameter,
                            label='Records per Buffer',
