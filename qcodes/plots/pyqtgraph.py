@@ -42,6 +42,11 @@ class QtPlot(BasePlot):
                  window_title='', theme=((60, 60, 60), 'w'), show_window=True, remote=True, **kwargs):
         super().__init__(interval)
 
+        if 'windowTitle' in kwargs.keys():
+            warnings.warn("windowTitle argument has been changed to window_title. Please update your call to QtPlot")
+            temp_wt = kwargs.pop('windowTitle')
+            if not window_title:
+                window_title = temp_wt
         self.theme = theme
 
         if remote:
