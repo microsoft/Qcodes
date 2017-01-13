@@ -49,6 +49,7 @@ help:
 .PHONY: clean
 clean:
 	rm -rf $(BUILDDIR)/*
+	rm -rf _auto
 
 .PHONY: html
 html:
@@ -241,8 +242,7 @@ gh-pages:
 	rm -rf ./*
 	git checkout master $(GH_PAGES_SOURCES)
 	git reset HEAD
-	sphinx-apidoc  -o  docs/auto  qcodes -d 10
-	cd docs && make html && \
+	cd docs && make html-api && \
 	mv -fv $(BUILDDIR)/html/* ../
 	rm -rf $(GH_PAGES_SOURCES) build
 	git add -A
