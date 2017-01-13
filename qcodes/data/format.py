@@ -47,7 +47,8 @@ class Formatter:
     """
     ArrayGroup = namedtuple('ArrayGroup', 'shape set_arrays data name')
 
-    def write(self, data_set, io_manager, location, write_metadata=True):
+    def write(self, data_set, io_manager, location, write_metadata=True,
+              force_write=False):
         """
         Write the DataSet to storage.
 
@@ -61,6 +62,7 @@ class Formatter:
             io_manager (io_manager): base physical location to write to.
             location (str): the file location within the io_manager.
             write_metadata (bool): if True, then the metadata is written to disk
+            force_write (bool): if True, then the data is written to disk
         """
         raise NotImplementedError
 
