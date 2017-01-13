@@ -122,30 +122,31 @@ class HDF5Format(Formatter):
               force_write=False, flush=True, write_metadata=True):
         """
         Writes a data_set to an hdf5 file.
-        Input arguments:
-            data_set        qcodes data_set to write to hdf5 file
-            io_manager      io_manger used for providing path
-            location:       location can be used to specify custom location
+
+        Args:
+            data_set: qcodes data_set to write to hdf5 file
+            io_manager: io_manger used for providing path
+            location: location can be used to specify custom location
             force_write (bool): if True creates a new file to write to
-            flush (bool) :  whether to flush after writing, can be disabled
-                            for testing or performance reasons
+            flush (bool) : whether to flush after writing, can be disabled
+                for testing or performance reasons
 
         N.B. It is recommended to close the file after writing, this can be
-        done by calling
-            'HDF5Format.close_file(data_set)' or
-            'data_set.finalize()'
-        if the data_set formatter is set to an hdf5 formatter. Note that this
-        is not required if the dataset is created from a Loop as this
+        done by calling ``HDF5Format.close_file(data_set)`` or
+        ``data_set.finalize()`` if the data_set formatter is set to an hdf5 formatter.
+        Note that this is not required if the dataset is created from a Loop as this
         includes a data_set.finalize() statement.
 
         The write function consists of two parts, writing DataArrays and
         writing metadata.
-            The main part of write consists of writing and resizing arrays,
-            the resizing providing support for incremental writes.
 
-            write_metadata is called at the end of write and dumps a
-            dictionary to an hdf5 file. If there already is metadata it will
-            delete this and overwrite it with current metadata.
+            - The main part of write consists of writing and resizing arrays,
+              the resizing providing support for incremental writes.
+
+            - write_metadata is called at the end of write and dumps a
+              dictionary to an hdf5 file. If there already is metadata it will
+              delete this and overwrite it with current metadata.
+
         """
         if not hasattr(data_set, '_h5_base_group') or force_write:
             data_set._h5_base_group = self._create_data_object(
@@ -234,7 +235,7 @@ class HDF5Format(Formatter):
 
         return dset
 
-    def write_metadata(self, data_set, io_manager=None, location=None):
+    def write_metadata(self, data_set, io_manager=None, location=None, read_first=True):
         """
         Writes metadata of dataset to file using write_dict_to_hdf5 method
 
@@ -242,6 +243,7 @@ class HDF5Format(Formatter):
         of backwards compatibility with the loop.
         This formatter uses io and location as specified for the main
         dataset.
+        The read_first argument is ignored.
         """
         if not hasattr(data_set, '_h5_base_group'):
             # added here because loop writes metadata before data itself

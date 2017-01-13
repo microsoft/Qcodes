@@ -217,17 +217,18 @@ class MockModel(ServerManager, BaseServer):  # pragma: no cover
 
         Args:
             cmd (str): Can take several forms:
-                '<instrument>:<parameter>?':
-                    calls ``self.<instrument>_get(<parameter>)`` and forwards
-                    the return value.
-                '<instrument>:<parameter>:<value>':
-                    calls ``self.<instrument>_set(<parameter>, <value>)``
-                '<instrument>:<parameter>'.
-                    calls ``self.<instrument>_set(<parameter>, None)``
+
+                - '<instrument>:<parameter>?':
+                  calls ``self.<instrument>_get(<parameter>)`` and forwards
+                  the return value.
+                - '<instrument>:<parameter>:<value>':
+                  calls ``self.<instrument>_set(<parameter>, <value>)``
+                - '<instrument>:<parameter>'.
+                  calls ``self.<instrument>_set(<parameter>, None)``
 
         Returns:
             Union(str, None): The parameter value, if ``cmd`` has the form
-                '<instrument>:<parameter>?', otherwise no return.
+            '<instrument>:<parameter>?', otherwise no return.
 
         Raises:
             ValueError: if cmd does not match one of the patterns above.

@@ -6,17 +6,23 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
     This is the qcodes driver for the Rohde & Schwarz SGS100A signal generator
 
     Status: beta-version.
-        TODO:
+
+    .. todo::
+
         - Add all parameters that are in the manual
         - Add test suite
         - See if there can be a common driver for RS mw sources from which
           different models inherit
+
     This driver will most likely work for multiple Rohde & Schwarz sources.
     it would be a good idea to group all similar RS drivers together in one
     module.
-        Tested working with
-            - RS_SGS100A
-            - RS_SMB100A
+
+    Tested working with
+
+    - RS_SGS100A
+    - RS_SMB100A
+
     This driver does not contain all commands available for the RS_SGS100A but
     only the ones most commonly used.
     """
