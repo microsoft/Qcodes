@@ -16,7 +16,7 @@ class SampleSweep(Parameter):
     def __init__(self, name, instrument):
         super().__init__(name)
         self._instrument = instrument
-        self.acquisitionkwargs = {}
+        self.acquisition_kwargs = {}
         self.names = ('A', 'B')
         # self.units = ('', '')
         # self.setpoint_names = (('sample_num',), ('sample_num',))
@@ -43,7 +43,7 @@ class SampleSweep(Parameter):
     def get(self):
         recordA, recordB = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
-            **self.acquisitionkwargs)
+            **self.acquisition_kwargs)
         return recordA, recordB
 
 
@@ -117,6 +117,7 @@ class Basic_Acquisition_Controller(AcquisitionController):
         :return:
         """
         self.buffer += data
+        print('buffer handled')
 
     def post_acquire(self):
         """
@@ -156,6 +157,7 @@ class Basic_Acquisition_Controller(AcquisitionController):
             volt_rec_A = recordA - np.mean(recordA)
             volt_rec_B = recordB - np.mean(recordB)
 
+        print('post_acquire')
         return volt_rec_A, volt_rec_B
 
 
