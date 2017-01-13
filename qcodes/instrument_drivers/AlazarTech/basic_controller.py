@@ -18,27 +18,6 @@ class SampleSweep(Parameter):
         self._instrument = instrument
         self.acquisition_kwargs = {}
         self.names = ('A', 'B')
-        # self.units = ('', '')
-        # self.setpoint_names = (('sample_num',), ('sample_num',))
-        # self.setpoints = ((1,), (1,))
-        # self.shapes = ((1,), (1,))
-
-    # def update_acquisition_kwargs(self, **kwargs):
-    #     npts = kwargs['samples_per_record']
-    #     self.shapes = ((npts,), (npts,))
-    #     self.acquisitionkwargs.update(**kwargs)
-
-        # # needed to update config of the software parameter on sweep change
-        # # freq setpoints tuple as needs to be hashable for look up
-        # if 'samples_per_record' in kwargs:
-        #     npts = kwargs['samples_per_record']
-        #     # n = tuple(np.arange(npts))
-        #     # self.setpoints = ((n,), (n,))
-        #     self.shapes = ((npts,), (npts,))
-        # else:
-        #     raise ValueError('samples_per_record must be specified')
-        # # updates dict to be used in acquisition get call
-        # self.acquisitionkwargs.update(**kwargs)
 
     def get(self):
         recordA, recordB = self._instrument._get_alazar().acquire(
@@ -117,7 +96,6 @@ class Basic_Acquisition_Controller(AcquisitionController):
         :return:
         """
         self.buffer += data
-        print('buffer handled')
 
     def post_acquire(self):
         """
@@ -157,7 +135,6 @@ class Basic_Acquisition_Controller(AcquisitionController):
             volt_rec_A = recordA - np.mean(recordA)
             volt_rec_B = recordB - np.mean(recordB)
 
-        print('post_acquire')
         return volt_rec_A, volt_rec_B
 
 

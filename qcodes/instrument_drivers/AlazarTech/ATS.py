@@ -17,6 +17,8 @@ from qcodes.utils import validators
 # acquisition that would overflow the board if measurement is not stopped
 # quickly enough. can this be solved by not reposting the buffers?
 
+# TODO (natalie) make logging vs print vs nothing decisions
+
 
 class AlazarTech_ATS(Instrument):
     """
@@ -628,7 +630,7 @@ class AlazarTech_ATS(Instrument):
                 raise
 
         # post buffers to Alazar
-        print("made buffer list length " + str(len(self.buffer_list)))
+        # print("made buffer list length " + str(len(self.buffer_list)))
         for buf in self.buffer_list:
             self._ATS_dll.AlazarPostAsyncBuffer.argtypes = [ctypes.c_uint32, ctypes.c_void_p, ctypes.c_uint32]
             self._call_dll('AlazarPostAsyncBuffer',
@@ -640,7 +642,7 @@ class AlazarTech_ATS(Instrument):
         start = time.clock() # Keep track of when acquisition started
         # call the startcapture method
         self._call_dll('AlazarStartCapture', self._handle)
-        print("Capturing %d buffers." % buffers_per_acquisition)
+        logging.info("Capturing %d buffers." % buffers_per_acquisition)
 
         acquisition_controller.pre_acquire()
 
@@ -693,7 +695,7 @@ class AlazarTech_ATS(Instrument):
 
         # Compute the total transfer time, and display performance information.
         transfer_time_sec = time.clock() - start
-        print("Capture completed in %f sec" % transfer_time_sec)
+        # print("Capture completed in %f sec" % transfer_time_sec)
         buffers_per_sec = 0
         bytes_per_sec = 0
         records_per_sec = 0
@@ -749,7 +751,8 @@ class AlazarTech_ATS(Instrument):
         try:
             return_code = func(*args_out)
         except Exception as e:
-            print(e)
+            #print(e)
+            logging.error(e)
             raise
 
         # check for errors
@@ -782,7 +785,7 @@ class AlazarTech_ATS(Instrument):
         """
         for b in self.buffer_list:
             b.free_mem()
-        print("buffers cleared")
+        logging.info("buffers cleared")
         self.buffer_list = []
 
     def signal_to_volt(self, channel, signal):
