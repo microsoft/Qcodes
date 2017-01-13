@@ -71,6 +71,7 @@ Data
    :toctree: generated/
 
     get_data_manager
+    qcodes.data.manager.DataManager
     DataMode
     DataSet
     new_data
