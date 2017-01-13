@@ -39,9 +39,14 @@ class QtPlot(BasePlot):
     rpg = None
 
     def __init__(self, *args, figsize=(1000, 600), interval=0.25,
-                 windowTitle='', theme=((60, 60, 60), 'w'), show_window=True, remote=True, **kwargs):
+                 window_title='', theme=((60, 60, 60), 'w'), show_window=True, remote=True, **kwargs):
         super().__init__(interval)
 
+        if 'windowTitle' in kwargs.keys():
+            warnings.warn("windowTitle argument has been changed to window_title. Please update your call to QtPlot")
+            temp_wt = kwargs.pop('windowTitle')
+            if not window_title:
+                window_title = temp_wt
         self.theme = theme
 
         if remote:
@@ -50,7 +55,7 @@ class QtPlot(BasePlot):
         else:
             # overrule the remote pyqtgraph class
             self.rpg = pg
-        self.win = self.rpg.GraphicsWindow(title=windowTitle)
+        self.win = self.rpg.GraphicsWindow(title=window_title)
         self.win.setBackground(theme[1])
         self.win.resize(*figsize)
         self.subplots = [self.add_subplot()]
@@ -408,3 +413,7 @@ class QtPlot(BasePlot):
         filename = filename or default
         image = self.win.grab()
         image.save(filename, "PNG", 0)
+
+    def setGeometry(self, x, y, w, h):
+        """ Set geometry of the plotting window """
+        self.win.setGeometry(x, y, w, h)
