@@ -281,6 +281,7 @@ class HDF5Format(Formatter):
                         elif isinstance(item[0], str):
                             dt = h5py.special_dtype(vlen=str)
                             data = np.array(item)
+                            data = data.reshape( (-1,1))
                             ds = entry_point.create_dataset(
                                 key, (len(data), 1), dtype=dt)
                             ds[:] = data
