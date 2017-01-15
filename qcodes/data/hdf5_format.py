@@ -280,7 +280,7 @@ class HDF5Format(Formatter):
                         elif isinstance(item[0], str):
                             dt = h5py.special_dtype(vlen=str)
                             data = np.array(item)
-                            data = data.reshape( (-1,1))
+                            data = data.reshape((-1, 1))
                             ds = entry_point.create_dataset(
                                 key, (len(data), 1), dtype=dt)
                             ds[:] = data
@@ -417,7 +417,7 @@ class HDF5FormatMetadata(HDF5Format):
         # this statement is here to make the linter happy
         if io_manager is None or location is None:
             raise Exception('please set io_manager and location arguments ')
-            
+
         if read_first:
             # In case the saved file has more metadata than we have here,
             # read it in first. But any changes to the in-memory copy should
