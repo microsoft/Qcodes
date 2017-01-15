@@ -18,7 +18,7 @@ class Station(Metadatable, DelegateAttributes):
     """
     A representation of the entire physical setup.
 
-    Lists all the connected `Components`s and the current default
+    Lists all the connected `Component`\s and the current default
     measurement (a list of actions). Contains a convenience method
     `.measure()` to measure these defaults right now, but this is separate
     from the code used by `Loop`.
@@ -110,8 +110,8 @@ class Station(Metadatable, DelegateAttributes):
                 of each component as it is added to the Station, default true
 
         Returns:
-            str: the name assigned this component, which may have been changed to
-             make it unique among previously added components.
+            str: The name assigned this component, which may have been changed to
+            make it unique among previously added components.
 
         """
         try:
@@ -127,7 +127,7 @@ class Station(Metadatable, DelegateAttributes):
 
     def set_measurement(self, *actions):
         """
-        Save a set *actions as the default measurement for this Station.
+        Save a set \*actions as the default measurement for this Station.
 
         These actions will be executed by default by a Loop if this is the
         default Station, and any measurements among them can be done once

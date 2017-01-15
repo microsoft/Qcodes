@@ -6,9 +6,10 @@ subclasses of Instrument) but elsewhere in Qcodes we can use anything
 as a parameter if it has the right attributes:
 
 To use Parameters in data acquisition loops, they should have:
-    .name - like a variable name, ie no spaces or weird characters
-    .label - string to use as an axis label (optional, defaults to .name)
-    (except for composite measurements, see below)
+
+    - .name - like a variable name, ie no spaces or weird characters
+    - .label - string to use as an axis label (optional, defaults to .name)
+      (except for composite measurements, see below)
 
 Controlled parameters should have a .set(value) method, which takes a single
 value to apply to this parameter. To use this parameter for sweeping, also
@@ -17,23 +18,28 @@ connect its __getitem__ to SweepFixedValues as below.
 Measured parameters should have .get() which can return:
 
 - a single value:
-    parameter should have .name and optional .label as above
+
+    - parameter should have .name and optional .label as above
 
 - several values of different meaning (raw and measured, I and Q,
   a set of fit parameters, that sort of thing, that all get measured/calculated
   at once):
-    parameter should have .names and optional .labels, each a sequence with
-    the same length as returned by .get()
+
+    - parameter should have .names and optional .labels, each a sequence with
+      the same length as returned by .get()
 
 - an array of values of one type:
-    parameter should have .name and optional .label as above, but also
-    .shape attribute, which is an integer (or tuple of integers) describing
-    the shape of the returned array (which must be fixed)
-    optionally also .setpoints, array(s) of setpoint values for this data
-    otherwise we will use integers from 0 in each direction as the setpoints
+
+    - parameter should have .name and optional .label as above, but also
+      .shape attribute, which is an integer (or tuple of integers) describing
+      the shape of the returned array (which must be fixed)
+      optionally also .setpoints, array(s) of setpoint values for this data
+      otherwise we will use integers from 0 in each direction as the setpoints
 
 - several arrays of values (all the same shape):
-    define .names (and .labels) AND .shape (and .setpoints)
+
+    -  define .names (and .labels) AND .shape (and .setpoints)
+
 """
 
 from datetime import datetime, timedelta
@@ -91,6 +97,7 @@ class Parameter(Metadatable, DeferredOperations):
     Parameters have a .get_latest method that simply returns the most recent
     set or measured value. This can either be called ( param.get_latest() )
     or used in a Loop as if it were a (gettable-only) parameter itself:
+
         Loop(...).each(param.get_latest)
 
 
@@ -121,7 +128,7 @@ class Parameter(Metadatable, DeferredOperations):
 
         setpoints: (3,4,5) the setpoints for the returned array of values.
             3&4 - a tuple of arrays. The first array is be 1D, the second 2D,
-                etc.
+            etc.
             5 - a tuple of tuples of arrays
             Defaults to integers from zero in each respective direction
             Each may be either a DataArray, a numpy array, or a sequence
@@ -176,7 +183,7 @@ class Parameter(Metadatable, DeferredOperations):
 
             self.set_validator(vals or Anything())
             self.__doc__ = os.linesep.join((
-                'Parameter class:',
+                'Parameter class:' + os.linesep,
                 '* `names` %s' % ', '.join(self.names),
                 '* `labels` %s' % ', '.join(self.labels),
                 '* `units` %s' % ', '.join(self.units)))
@@ -191,7 +198,7 @@ class Parameter(Metadatable, DeferredOperations):
 
             # generate default docstring
             self.__doc__ = os.linesep.join((
-                'Parameter class:',
+                'Parameter class:' + os.linesep,
                 '* `name` %s' % self.name,
                 '* `label` %s' % self.label,
                 # TODO is this unit s a typo? shouldnt that be unit?
@@ -246,7 +253,7 @@ class Parameter(Metadatable, DeferredOperations):
         self._latest_ts = None
 
         if docstring is not None:
-            self.__doc__ = docstring + os.linesep + self.__doc__
+            self.__doc__ = docstring + os.linesep + os.linesep + self.__doc__
 
         self.get_latest = GetLatest(self)
 
@@ -448,6 +455,7 @@ class StandardParameter(Parameter):
 
         set_cmd (Optional[Union[string, function]]): command to set this
             parameter, either:
+
             - a string (containing one field to .format, like "{}" etc)
               you can only use a string if an instrument is provided,
               this string will be passed to instrument.write
@@ -928,8 +936,9 @@ class CombinedParameter(Metadatable):
         """
         Creates a new combined parameter to be iterated over.
         One can sweep over either:
-             - n array of lenght m
-             - one nxm array
+
+         - n array of lenght m
+         - one nxm array
 
         where n is the number of combined parameters
         and m is the number of setpoints

@@ -26,7 +26,7 @@ def readme():
 
 extras = {
     'MatPlot': ('matplotlib', '1.5'),
-    'QtPlot': ('pyqtgraph', '0.9.11'),
+    'QtPlot': ('pyqtgraph', '0.10.0'),
     'coverage tests': ('coverage', '4.0')
 }
 extras_require = {k: '>='.join(v) for k, v in extras.items()}
@@ -59,7 +59,6 @@ setup(name='qcodes',
           'pyvisa>=1.8',
           'ipython>=4.1.0',
           'jupyter>=1.0.0',
-          'ipywidgets>=4.1',
           'h5py>=2.6'
       ],
 

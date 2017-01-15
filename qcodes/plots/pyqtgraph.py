@@ -98,7 +98,7 @@ class QtPlot(QWidget, BasePlot):
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with QtPlot.add().
 
-    For information on how x/y/z *args are handled see add() in the base
+    For information on how x/y/z \*args are handled see add() in the base
     plotting class.
 
     Args:
@@ -121,11 +121,17 @@ class QtPlot(QWidget, BasePlot):
     """
 
     def __init__(self, *args, figsize=(1000, 600), figposition=None,
-                 interval=0.25, window_title=None, theme=((60, 60, 60), 'w'),
-                 show_window=True, parent=None, **kwargs):
+                 window_title=None, theme=((60, 60, 60), 'w'), show_window=True,
+                 interval=0.25, parent=None, **kwargs):
         QWidget.__init__(self, parent=parent)
         # Set base interval to None to disable that JS update-widget thingy
         BasePlot.__init__(self, interval=None)
+
+        if 'windowTitle' in kwargs.keys():
+            warnings.warn("windowTitle argument has been changed to window_title. Please update your call to QtPlot")
+            temp_wt = kwargs.pop('windowTitle')
+            if not window_title:
+                window_title = temp_wt
 
         QShortcut(QtGui.QKeySequence("Ctrl+W"), self, self.close)
         QShortcut(QtGui.QKeySequence("Ctrl+Q"), self, self.close)
@@ -137,7 +143,7 @@ class QtPlot(QWidget, BasePlot):
 
         self.setWindowTitle(window_title or 'Plotwindow')
         if figposition:
-            geometry_settings = itertools.chain(figposition,figsize)
+            geometry_settings = itertools.chain(figposition, figsize)
             self.setGeometry(*geometry_settings)
         else:
             self.resize(*figsize)
@@ -715,3 +721,6 @@ class QtPlot(QWidget, BasePlot):
         image = self.grab(self.area.contentsRect())
         image.save(filename, "PNG", 0)
 
+    def setGeometry(self, x, y, w, h):
+        """ Set geometry of the plotting window """
+        self.win.setGeometry(x, y, w, h)

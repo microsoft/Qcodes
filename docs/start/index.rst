@@ -17,7 +17,7 @@ Make sure to download the latest version with python 3.5.
 
 Once you download, install anaconda according to the instructions on screen.
 
-If you use *nix, you really should use the source.
+If you use \*nix, you really should use the source.
 
 The next section will guide you through the installation of qcodes
 on windows, although most of the things also work for osx and Linux.
@@ -41,7 +41,7 @@ Now you are ready to install QCoDeS, type in the terminal.
 
     conda install h5py
     conda install matplotlib
-    conda install pyqtgraph
+    pip install pyqtgraph
     pip install qcodes
 
 

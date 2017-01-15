@@ -11,16 +11,19 @@ class Formatter:
     Formatters translate between DataSets and data files.
 
     Each Formatter is expected to implement writing methods:
-    - ``write``: to write the ``DataArray``s
-    - ``write_metadata``: to write the metadata JSON structure
+
+    - ``write``: to write the ``DataArray``\s
+    - ``write_metadata``: to write the metadata structure
 
     Optionally, if this Formatter keeps the data file(s) open
     between write calls, it may implement:
+
     - ``close_file``: to perform any final cleanup and release the
       file and any other resources.
 
     and reading methods:
-    - ``read`` or ``read_one_file`` to reconstruct the ``DataArray``s, either
+
+    - ``read`` or ``read_one_file`` to reconstruct the ``DataArray``\s, either
       all at once (``read``) or one file at a time, supplied by the base class
       ``read`` method that loops over all data files at the correct location.
 
@@ -31,18 +34,21 @@ class Formatter:
     All of these methods accept a ``data_set`` argument, which should be a
     ``DataSet`` object. Even if you are loading a new data set from disk, this
     object should already have attributes:
-        io: an IO manager (see qcodes.data.io)
-        location: a string, like a file path, that identifies the DataSet and
-            tells the IO manager where to store it
-        arrays: a dict of ``{array_id:DataArray}`` to read into.
-            - read will create entries that don't yet exist.
-            - write will write ALL DataArrays in the DataSet, using
-              last_saved_index and modified_range, as well as whether or not
-              it found the specified file, to determine how much to write.
+
+        - io: an IO manager (see qcodes.data.io)
+          location: a string, like a file path, that identifies the DataSet and
+          tells the IO manager where to store it
+        - arrays: a dict of ``{array_id:DataArray}`` to read into.
+
+    - read will create entries that don't yet exist.
+    - write will write ALL DataArrays in the DataSet, using
+      last_saved_index and modified_range, as well as whether or not
+      it found the specified file, to determine how much to write.
     """
     ArrayGroup = namedtuple('ArrayGroup', 'shape set_arrays data name')
 
-    def write(self, data_set, io_manager, location):
+    def write(self, data_set, io_manager, location, write_metadata=True,
+              force_write=False):
         """
         Write the DataSet to storage.
 
@@ -55,6 +61,8 @@ class Formatter:
             data_set (DataSet): the data we are writing.
             io_manager (io_manager): base physical location to write to.
             location (str): the file location within the io_manager.
+            write_metadata (bool): if True, then the metadata is written to disk
+            force_write (bool): if True, then the data is written to disk
         """
         raise NotImplementedError
 
@@ -139,7 +147,7 @@ class Formatter:
             f (file-like): a file-like object to read from, as provided by
                 ``io_manager.open``.
 
-            ids_read (set): ``array_id``s that we have already read.
+            ids_read (set): ``array_id``\s that we have already read.
                 When you read an array, check that it's not in this set (except
                 setpoints, which can be in several files with different inner
                 loops) then add it to the set so other files know it should not
@@ -267,11 +275,12 @@ class Formatter:
 
         Returns:
             List[Formatter.ArrayGroup]: namedtuples giving:
-                shape (Tuple[int]): dimensions as in numpy
-                set_arrays (Tuple[DataArray]): the setpoints of this group
-                data (Tuple[DataArray]): measured arrays in this group
-                name (str): a unique name of this group, obtained by joining
-                    the setpoint array ids.
+
+            - shape (Tuple[int]): dimensions as in numpy
+            - set_arrays (Tuple[DataArray]): the setpoints of this group
+            - data (Tuple[DataArray]): measured arrays in this group
+            - name (str): a unique name of this group, obtained by joining
+              the setpoint array ids.
         """
 
         set_array_sets = tuple(set(array.set_arrays

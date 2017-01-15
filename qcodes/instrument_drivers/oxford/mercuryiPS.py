@@ -21,7 +21,9 @@ class MercuryiPS(IPInstrument):
             instrument what axes it supports.
 
     Status: beta-version.
-        TODO:
+
+    .. todo::
+
         - SAFETY!! we need to make sure the magnet is only ramped at certain
           conditions!
         - make ATOB a parameter, and move all possible to use
@@ -30,8 +32,10 @@ class MercuryiPS(IPInstrument):
 
     The driver is written as an IPInstrument, but it can likely be converted to
     ``VisaInstrument`` by removing the ``port`` arg and defining methods:
-        ``def _send(self, msg): self.visa_handle.write(msg)``
-        ``def _recv(self): return self.visa_handle.read()``
+
+        - ``def _send(self, msg): self.visa_handle.write(msg)``
+        - ``def _recv(self): return self.visa_handle.read()``
+
     """
     # def __init__(self, name, axes=None, **kwargs):
     #     super().__init__(name, terminator='\n', **kwargs)
