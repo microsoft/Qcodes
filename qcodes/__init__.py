@@ -29,6 +29,8 @@ if in_notebook():  # pragma: no cover
               'try "from qcodes.plots.pyqtgraph import QtPlot" '
               'to see the full error')
 
+from qcodes.utils.wrappers import  do1d, do2d, do1dDiagonal, show_num, init
+
 from qcodes.station import Station
 from qcodes.loops import Loop
 from qcodes.measure import Measure
