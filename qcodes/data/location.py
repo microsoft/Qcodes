@@ -84,6 +84,7 @@ class FormatLocation:
 
     default_fmt = '{date}/{time}'
 
+
     def __init__(self, fmt=None, fmt_date=None, fmt_time=None,
                  fmt_counter=None, record=None):
         self.fmt = fmt or self.default_fmt
@@ -92,7 +93,7 @@ class FormatLocation:
         self.fmt_counter = fmt_counter or '{:03}'
         self.base_record = record
         self.formatter = SafeFormatter()
-
+        self.counter = 0
         for testval in (1, 23, 456, 7890):
             if self._findint(self.fmt_counter.format(testval)) != testval:
                 raise ValueError('fmt_counter must produce a correct integer '
@@ -160,7 +161,8 @@ class FormatLocation:
             cnt = self._findint(f[len(head):])
             existing_count = max(existing_count, cnt)
 
-        format_record['counter'] = self.fmt_counter.format(existing_count + 1)
+        self.counter = existing_count +1
+        format_record['counter'] = self.fmt_counter.format(self.counter)
         location = self.formatter.format(loc_fmt, **format_record)
 
         return location
