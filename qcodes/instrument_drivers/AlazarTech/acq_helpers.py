@@ -34,7 +34,7 @@ def filter_ls(rec, cutoff, sample_rate, numtaps, axis=-1):
     """
     raise NotImplementedError
 
-    
+
 def sample_to_volt_u12(raw_samples, bps):
     """
     Applies volts conversion for 12 bit sample data stored
@@ -56,6 +56,8 @@ def sample_to_volt_u12(raw_samples, bps):
                               (shifted_samples - code_zero) / code_range)
 
     return volt_samples
-    
+
+
 def roundup(num, to_nearest):
-    return num if num % to_nearest == 0 else num + to_nearest - num % to_nearest
+    remainder = num % to_nearest
+    return num if remainder == 0 else num + to_nearest - remainder

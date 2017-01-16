@@ -639,7 +639,7 @@ class AlazarTech_ATS(Instrument):
 
         # -----start capture here-----
         acquisition_controller.pre_start_capture()
-        start = time.clock() # Keep track of when acquisition started
+        start = time.clock()  # Keep track of when acquisition started
         # call the startcapture method
         self._call_dll('AlazarStartCapture', self._handle)
         logging.info("Capturing %d buffers." % buffers_per_acquisition)
@@ -702,16 +702,14 @@ class AlazarTech_ATS(Instrument):
         if transfer_time_sec > 0:
             buffers_per_sec = buffers_completed / transfer_time_sec
             bytes_per_sec = bytes_transferred / transfer_time_sec
-            records_per_sec = (records_per_buffer * 
+            records_per_sec = (records_per_buffer *
                                buffers_completed / transfer_time_sec)
         logging.info("Captured %d buffers (%f buffers per sec)" %
-                    (buffers_completed, buffers_per_sec))
+                     (buffers_completed, buffers_per_sec))
         logging.info("Captured %d records (%f records per sec)" %
-                    (records_per_buffer * buffers_completed, records_per_sec))
+                     (records_per_buffer * buffers_completed, records_per_sec))
         logging.info("Transferred %d bytes (%f bytes per sec)" %
-                    (bytes_transferred, bytes_per_sec))
-
-
+                     (bytes_transferred, bytes_per_sec))
 
         # return result
         return acquisition_controller.post_acquire()
@@ -751,7 +749,6 @@ class AlazarTech_ATS(Instrument):
         try:
             return_code = func(*args_out)
         except Exception as e:
-            #print(e)
             logging.error(e)
             raise
 

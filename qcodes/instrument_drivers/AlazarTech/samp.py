@@ -7,6 +7,7 @@ from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils.validators import Validator, Numbers, Ints, Enum, Anything
 # from qcodes.utils import validators
 
+
 class SamplesParam(Parameter):
     """
     Hardware controlled parameter class for Alazar acquisition. To be used with
@@ -22,10 +23,7 @@ class SamplesParam(Parameter):
         self._instrument = instrument
         self.acquisition_kwargs = {}
         self.names = ('magnitude', 'phase')
-        #self.units = ('', '')
         self.setpoint_names = (('acq_time (s)',), ('acq_time (s)',))
-        #self.setpoints = ((1,), (1,))
-        #self.shapes = ((1,), (1,))
 
     def update_sweep(self, start, stop, npts):
         n = tuple(np.linspace(start, stop, num=npts))
@@ -44,20 +42,17 @@ class HD_Samples_Controller(AcquisitionController):
     This is the Acquisition Controller class which works with the ATS9360,
     averaging over buffers and records and demodulating with a software
     reference signal, returning the  samples.
-    
+
+    TODO (nataliejpg) docstrings
+
     Args:
         name: name for this acquisition_conroller as an instrument
         alazar_name: the name of the alazar instrument such that this controller
             can communicate with the Alazar
-        demod_freq: the frequency of the software wave to be created
-        filt: the filter to be used to filter out double freq component (win or ls)
-        numtaps: number of freq components used in the filter
-        chan_b: whether there is also a second channel of data to be processed
-            and returned
         **kwargs: kwargs are forwarded to the Instrument base class
-        
+
     Returns:
-        
+
 
     TODO(nataliejpg) test filter options
     TODO(nataliejpg) finish implementation of channel b option
@@ -65,7 +60,7 @@ class HD_Samples_Controller(AcquisitionController):
     TODO(compare _get_alazar vs _alazar)
     """
     filter_dict = {'win': 0, 'ls': 1}
-    
+
     def __init__(self, name, alazar_name, filter='win', numtaps=101, chan_b=False, **kwargs):
         self.filter_settings = {'filter': self.filter_dict[filter],
                                 'numtaps': numtaps}
@@ -86,9 +81,11 @@ class HD_Samples_Controller(AcquisitionController):
                            units='s',
                            vals=Anything(),
                            parameter_class=ManualParameter)
-    
-        
+
     def check_time_values(self):
+        if not (self.int_time() or self.int_delay()):
+            raise ValueError('int_time or int_delay are not set, set these '
+                             'parameters or updats kwargs')
         oscilations_measured = self.int_time() * self.demodulation_frequency()
         total_time = self.samples_per_record / self.sample_rate
         time_used = self.int_time() + self.int_delay()
@@ -96,16 +93,17 @@ class HD_Samples_Controller(AcquisitionController):
         oversampling = self.sample_rate / (2 * self.demodulation_frequency())
         samples_delay_min = self.filter_settings['numtaps'] - 1
         int_delay_min = samples_delay_min / self.sample_rate
-        
+
         if time_used > total_time:
-           raise ValueError('int_delay and int_time sum to {} which is more than '
-           ' the total time available: {} . '
-           'Increase samples_per_record, decrease '
-           'sampling rate'.format(time_used, total_time))
+            raise ValueError('int_delay and int_time sum to {} which is more '
+                             'than  the total time available: {} . '
+                             'Increase samples_per_record, decrease '
+                             'sampling rate'.format(time_used, total_time))
         elif samples_used < self.samples_per_record - 32:
-            logging.info('{} samples used of {}, consider lowering the number of '
-                         'samples per record to '
-                         '{}'.format(samples_used, self.samples_per_record, np.ceil(samples_used / 32)))
+            logging.info('{} samples used of {}, consider lowering the '
+                         'number of samples per record to '
+                         '{}'.format(samples_used, self.samples_per_record,
+                                     np.ceil(samples_used / 32)))
 
         if self.int_time() == 0:
             raise ValueError('int_time is set to 0')
@@ -117,23 +115,22 @@ class HD_Samples_Controller(AcquisitionController):
         if oversampling < 1:
             logging.warning('oversampling rate is {}, recommend > 1: '
                             'increase sampling rate or decrease '
-                            'demodulation frequency'.format(oversampling))   
+                            'demodulation frequency'.format(oversampling))
         if self.int_delay() < int_delay_min:
             logging.warning(
                 'delay is less than recommended for filter choice: '
                 '(expect delay >= {}'.format(int_delay_min))
-                            
-    
+
     def update_filter_settings(self, filter, numtaps):
         """
         Updates the settings of the filter for filtering out
         double frwuency component for demodulation.
-        
+
         Args:
             filter (str): filter type ('win' or 'ls')
             numtaps (int): numtaps for filter
         """
-        self.filter_settings.update({'filter': filter_dict[filter],
+        self.filter_settings.update({'filter': self.filter_dict[filter],
                                      'numtaps': numtaps})
 
     def update_acquisition_kwargs(self, **kwargs):
@@ -149,7 +146,8 @@ class HD_Samples_Controller(AcquisitionController):
         alazar = self._get_alazar()
         self.sample_rate = alazar.get_sample_rate()
         if 'samples_per_record' in kwargs:
-            self.samples_per_record = roundup(kwargs['samples_per_record'], alazar.samples_divisor)
+            self.samples_per_record = roundup(
+                kwargs['samples_per_record'], alazar.samples_divisor)
             time_available = self.samples_per_record / self.sample_rate
             if self.int_delay() is None:
                 samp_delay = self.filter_settings['numtaps'] - 1
@@ -163,10 +161,13 @@ class HD_Samples_Controller(AcquisitionController):
                 self.int_delay(samp_delay / self.sample_rate)
             time_used = self.int_time() + self.int_delay()
             samples_used = int(time_used * self.sample_rate)
-            self.samples_per_record = roundup(samples_used, alazar.samples_divisor)
+            self.samples_per_record = roundup(
+                samples_used, alazar.samples_divisor)
             kwargs['samples_per_record'] = self.samples_per_record
         else:
-            raise ValueError('Either an integration time or samples_per_record must be specified')
+            raise ValueError(
+                'Either an integration time or samples_per_record '
+                'must be specified')
 
         self.check_time_values()
 
@@ -185,14 +186,15 @@ class HD_Samples_Controller(AcquisitionController):
         """
         alazar = self._get_alazar()
         if self.samples_per_record != alazar.samples_per_record.get():
-            raise Exception('Instrument samples_per_record settings does not match acq controller value, '
-                    'most likely need to call update_acquisition_settings')
+            raise Exception('Instrument samples_per_record settings does '
+                            'not match acq controller value, most likely '
+                            'need to call update_acquisition_settings')
         if self.sample_rate != alazar.get_sample_rate():
-            raise Exception('acq controller sample rate does not match instrument'
-                            'value, most likely need to call update_acquisition_settings' )   
-        if 
+            raise Exception('acq controller sample rate does not match '
+                            'instrument value, most likely need to call '
+                            'update_acquisition_settings')
         self.check_time_values()
-        
+
         self.records_per_buffer = alazar.records_per_buffer.get()
         self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
 
@@ -242,7 +244,7 @@ class HD_Samples_Controller(AcquisitionController):
             i1 = (i0 + self.samples_per_record * self.number_of_channels)
             recA += self.buffer[i0:i1:self.number_of_channels]
         recordA = np.uint16(recA / records_per_acquisition)
-        
+
         # do demodulation
         magA, phaseA = self.fit(recordA)
 
@@ -275,24 +277,28 @@ class HD_Samples_Controller(AcquisitionController):
             logging.warning('sample to volt conversion does not exist for'
                             ' bps != 12, centered raw samples returned')
             volt_rec = rec - np.mean(rec)
-            
+
         # multiply with software wave
         re_wave = np.multiply(volt_rec, self.cos_list)
         im_wave = np.multiply(volt_rec, self.sin_list)
         cutoff = self.demodulation_frequency() / 10
-        
+
         # filter out higher freq component
         if self.filter_settings['filter'] == 0:
             re_filtered = filter_win(re_wave, cutoff,
-                                     self.sample_rate, self.filter_settings['numtaps'])
+                                     self.sample_rate,
+                                     self.filter_settings['numtaps'])
             im_filtered = filter_win(im_wave, cutoff,
-                                     self.sample_rate, self.filter_settings['numtaps'])
+                                     self.sample_rate,
+                                     self.filter_settings['numtaps'])
         elif self.filter_settings['filter'] == 1:
             re_filtered = filter_ls(re_wave, cutoff,
-                                    self.sample_rate, self.filter_settings['numtaps'])
+                                    self.sample_rate,
+                                    self.filter_settings['numtaps'])
             im_filtered = filter_ls(im_wave, cutoff,
-                                    self.sample_rate, self.filter_settings['numtaps'])
-        
+                                    self.sample_rate,
+                                    self.filter_settings['numtaps'])
+
         # apply integration limits
         beginning = int(self.int_delay() * self.sample_rate)
         end = beginning + int(self.int_time() * self.sample_rate)
@@ -304,5 +310,5 @@ class HD_Samples_Controller(AcquisitionController):
         complex_num = re_limited + im_limited * 1j
         mag = abs(complex_num)
         phase = np.angle(complex_num, deg=True)
-        
+
         return mag, phase
