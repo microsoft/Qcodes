@@ -759,7 +759,7 @@ class DataSet(DelegateAttributes):
             array.modified_range = (0, array.ndarray.size - 1)
 
         try:
-            self.formatter.write(self, io_manager, location)
+            self.formatter.write(self, io_manager, location, force_write=True)
             self.snapshot()
             self.formatter.write_metadata(self, io_manager, location,
                                           read_first=False)

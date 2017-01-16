@@ -235,7 +235,7 @@ class HDF5Format(Formatter):
 
         return dset
 
-    def write_metadata(self, data_set, io_manager=None, location=None):
+    def write_metadata(self, data_set, io_manager=None, location=None, read_first=True):
         """
         Writes metadata of dataset to file using write_dict_to_hdf5 method
 
@@ -243,6 +243,7 @@ class HDF5Format(Formatter):
         of backwards compatibility with the loop.
         This formatter uses io and location as specified for the main
         dataset.
+        The read_first argument is ignored.
         """
         if not hasattr(data_set, '_h5_base_group'):
             # added here because loop writes metadata before data itself
@@ -280,6 +281,7 @@ class HDF5Format(Formatter):
                         elif isinstance(item[0], str):
                             dt = h5py.special_dtype(vlen=str)
                             data = np.array(item)
+                            data = data.reshape( (-1,1))
                             ds = entry_point.create_dataset(
                                 key, (len(data), 1), dtype=dt)
                             ds[:] = data
