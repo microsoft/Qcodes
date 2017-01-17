@@ -50,20 +50,20 @@ class SamplesParam(Parameter):
         self.acquisition_kwargs = {}
         self.names = ('magnitude', 'phase')
         self.units = ('', '')
-        self.setpoint_names = (('acq_time (s)',), ('acq_time (s)',))
+        self.setpoint_names = (('resonator index', 'acq_time (s)'), ('resonator index', 'acq_time (s)'))
         self.setpoints = ((1,), (1,))
         self.shapes = ((1,), (1,))
 
-    def update_sweep(self, start, stop, npts):
+    def update_sweep(self, start, stop, npts, res_length):
         n = tuple(np.linspace(start, stop, num=npts))
-        self.setpoints = ((n,), (n,))
-        self.shapes = ((npts,), (npts,))
+        wave_index = tuple(i for i in range(res_length))
+        self.setpoints = ((wave_index, n), (wave_index, n))
+        self.shapes = ((res_length, npts), (res_length, npts))
 
     def get(self):
         mag, phase = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
             **self.acquisition_kwargs)
-        print(mag)
         return mag, phase
 
 
@@ -92,14 +92,15 @@ class HD_Samples_Controller(AcquisitionController):
     """
     filter_dict = {'win': 0, 'ls': 1}
 
-    def __init__(self, name, alazar_name, filter='win', numtaps=101, chan_b=False, **kwargs):
+    def __init__(self, name, alazar_name, demod_freqs=[20e6],filter='win', numtaps=101, chan_b=False, **kwargs):
         self.filter_settings = {'filter': self.filter_dict[filter],
                                 'numtaps': numtaps}
         self.chan_b = chan_b
+        self.res_length = len(demod_freqs)
         # self.samples_per_record = 0
         # self.records_per_buffer = 0
         # self.buffers_per_acquisition = 0
-        # self.number_of_channels = 2
+        self.number_of_channels = 2
         # self.samples_delay = 0
         # self.samples_time = 0
         self.cos_list = None
@@ -111,11 +112,11 @@ class HD_Samples_Controller(AcquisitionController):
 
         self.add_parameter(name='acquisition',
                            parameter_class=SamplesParam)
-        self.add_parameter(name='demodulation_frequency',
-                           initial_value=[20e6],
-                           parameter_class=ManualParameter)
+        for i, res in enumerate(demod_freqs):
+            self.add_parameter(name='demod_freq_{}'.format(i),
+                               initial_value=res,
+                               parameter_class=ManualParameter)
         self.add_parameter(name='int_time',
-                           unit='s',
                            initial_value=None,
                            parameter_class=ManualParameter)
         self.add_parameter(name='int_delay',
@@ -209,7 +210,7 @@ class HD_Samples_Controller(AcquisitionController):
         time_available = self.samples_per_record / self.sample_rate
 
         if self.int_delay() is None:
-            samp_delay = self.numtaps - 1
+            samp_delay = self.filter_settings['numtaps'] - 1
             self.int_delay(samp_delay / self.sample_rate)
         else:
             self.check_delay(time_available)
@@ -226,7 +227,7 @@ class HD_Samples_Controller(AcquisitionController):
         npts = int(self.int_time() * self.sample_rate)
 
         self.acquisition.acquisition_kwargs.update(**kwargs)
-        self.acquisition.update_sweep(start, stop, npts)
+        self.acquisition.update_sweep(start, stop, npts, self.res_length)
 
     def pre_start_capture(self):
         """
@@ -250,12 +251,12 @@ class HD_Samples_Controller(AcquisitionController):
                                self.records_per_buffer *
                                self.number_of_channels)
 
-        integer_list = np.arange(self.samples_per_record, dtype=np.uint16)
-        angle_list = (2 * np.pi * self.demodulation_frequency() /
-                      self.sample_rate * integer_list)
-
-        self.cos_list = np.cos(angle_list)
-        self.sin_list = np.sin(angle_list)
+        demod_list = np.array([getattr(self, 'demod_freq_{}'.format(n)) for n in range(self.res_length)])
+        demod_mat = np.kron(demod_list, np.ones(self.samples_per_record)).reshape(self.res_length, self.samples_per_record)
+        integer_mat = np.kron(np.ones(self.res_length), np.arange(self.samples_per_record)).reshape((self.res_length, self.samples_per_record))
+        angle_mat = np.divide(np.multiply(2 * np.pi * integer_mat, demod_mat), self.sample_rate)
+        self.cos_mat = np.cos(angle_mat)
+        self.sin_mat = np.sin(angle_mat)
 
     def pre_acquire(self):
         pass
@@ -306,7 +307,7 @@ class HD_Samples_Controller(AcquisitionController):
         return magA, phaseA
 
     def check_delay(self, time_available):
-        samples_delay_min = (self.numtaps - 1)
+        samples_delay_min = (self.filter_settings['numtaps'] - 1)
         int_delay_min = samples_delay_min / self.sample_rate
         if self.int_delay() > time_available:
             raise ValueError('int_delay {} is longer than total_time '
@@ -317,8 +318,9 @@ class HD_Samples_Controller(AcquisitionController):
                 '(expect delay >= {}'.format(int_delay_min))
 
     def check_time(self, time_available):
-        oscilations_measured = self.int_time() * self.demodulation_frequency()
-        oversampling = self.sample_rate / (2 * self.demodulation_frequency())
+        max_demod = max([getattr(self, 'demod_freq_{}'.format(count)) for count in range(self.res_length)])
+        oscilations_measured = self.int_time() * max_demod
+        oversampling = self.sample_rate / (2 * max_demod)
         if self.int_time() > time_available:
             raise ValueError('int_time {} is longer than total_time - delay'
                              ' = {}'.format(self.int_time(), time_available))
@@ -347,36 +349,87 @@ class HD_Samples_Controller(AcquisitionController):
                             ' bps != 12, centered raw samples returned')
             volt_rec = rec - np.mean(rec)
 
-        # multiply with software wave
-        re_wave = np.multiply(volt_rec, self.cos_list)
-        im_wave = np.multiply(volt_rec, self.sin_list)
-        cutoff = self.demodulation_frequency() / 10
+        fitted_mag = np.empty((self.res_length, self.samples_per_record))
+        fitted_phase = np.empty((self.res_length, self.samples_per_record))
+        
+        volt_rec_mat = np.kron(np.ones(self.res_length), volt_rec).reshape((self.res_length, len(volt_rec))
+        re_mat = np.multiply(volt_rec_mat, self.cos_mat)
+        im_mat = np.multiply(volt_rec_mat, self.sin_mat)
+        cutoff_arr = np.array([getattr(self, 'demod_freq_{}'.format(i)) / 10 for i in range(self.res_length)])
 
         # filter out higher freq component
-        if self.filter == 0:
-            re_filtered = filter_win(re_wave, cutoff,
-                                     self.sample_rate, self.numtaps)
-            im_filtered = filter_win(im_wave, cutoff,
-                                     self.sample_rate, self.numtaps)
-        elif self.filter == 1:
-            re_filtered = filter_ls(re_wave, cutoff,
-                                    self.sample_rate, self.numtaps)
-            im_filtered = filter_ls(im_wave, cutoff,
-                                    self.sample_rate, self.numtaps)
+        if self.filter_settings['filter'] == 0:
+            re_filtered = filter_win(re_mat, cutoff,
+                                    self.sample_rate,
+                                    self.filter_settings['numtaps'],
+                                    axis=0)
+            im_filtered = filter_win(im_mat, cutoff,
+                                     self.sample_rate,
+                                     self.filter_settings['numtaps'],
+                                     axis=0)
+        elif self.filter_settings['filter'] == 1:
+            re_filtered = filter_ls(re_mat, cutoff,
+                                    self.sample_rate,
+                                    self.filter_settings['numtaps'],
+                                    axis=0)
+            im_filtered = filter_ls(im_mat, cutoff,
+                                    self.sample_rate,
+                                    self.filter_settings['numtaps'],
+                                    axis=0)
 
-        # # apply integration limits
+        # apply integration limits
         beginning = int(self.int_delay() * self.sample_rate)
         end = beginning + int(self.int_time() * self.sample_rate)
 
-        re_limited = re_filtered[beginning:end]
-        im_limited = im_filtered[beginning:end]
+        re_limited = re_filtered[:, beginning:end]
+        im_limited = im_filtered[:, beginning:end]
 
-        # convert to magnitude and phase
+            # convert to magnitude and phase
         complex_num = re_limited + im_limited * 1j
         mag = abs(complex_num)
         phase = np.angle(complex_num, deg=True)
-
+        
         return mag, phase
+        
+        
+        # # multiply with software wave
+        # for i in range(self.res_length):
+            # re_wave = np.multiply(volt_rec, self.cos_list[i])
+            # im_wave = np.multiply(volt_rec, self.sin_list[i])
+            # cutoff = getattr(self, 'demod_freq_{}'.format(i)) / 10
+
+            # # filter out higher freq component
+            # if self.filter_settings['filter'] == 0:
+                # re_filtered = filter_win(re_wave, cutoff,
+                                         # self.sample_rate,
+                                         # self.filter_settings['numtaps'])
+                # im_filtered = filter_win(im_wave, cutoff,
+                                         # self.sample_rate,
+                                         # self.filter_settings['numtaps'])
+            # elif self.filter_settings['filter'] == 1:
+                # re_filtered = filter_ls(re_wave, cutoff,
+                                        # self.sample_rate,
+                                        # self.filter_settings['numtaps'])
+                # im_filtered = filter_ls(im_wave, cutoff,
+                                        # self.sample_rate,
+                                        # self.filter_settings['numtaps'])
+
+            # # # apply integration limits
+            # beginning = int(self.int_delay() * self.sample_rate)
+            # end = beginning + int(self.int_time() * self.sample_rate)
+
+            # re_limited = re_filtered[beginning:end]
+            # im_limited = im_filtered[beginning:end]
+
+            # # convert to magnitude and phase
+            # complex_num = re_limited + im_limited * 1j
+            # mag = abs(complex_num)
+            # phase = np.angle(complex_num, deg=True)
+            
+            # fitted_mag[i] = mag
+            # fitted_phase[i] = phase
+
+        # return fitted_mag, fitted_phase
 
     def get_max_total_sample_time(self):
         time_available = self.samples_per_record / self.sample_rate
