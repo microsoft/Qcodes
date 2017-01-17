@@ -123,14 +123,15 @@ class HD_Samples_Controller(AcquisitionController):
                            initial_value=None,
                            parameter_class=ManualParameter)
 
-    # def set_int_time(self, value):
-        # alazar = self._get_alazar()
-        # sample_rate = alazar.get_sample_rate()
-        # samples_per_record = alazar.samples_per_record.get()
-        # time_available = samples_per_record / sample_rate
-    # def get_int_time(self, value):
-        # raise NotImplementedError
-
+    def set_int_time(self, value):
+        alazar = self._get_alazar()
+        sample_rate = alazar.get_sample_rate()
+        samples_per_record = alazar.samples_per_record.get()
+        time_available = samples_per_record / sample_rate
+    def get_int_time(self, value):
+        raise NotImplementedError    
+        
+        
     # def int_time_validate(self, value):
     #     oscilations_measured = value * self.demodulation_frequency()
     #     alazar = self._get_alazar()
@@ -251,10 +252,10 @@ class HD_Samples_Controller(AcquisitionController):
                                self.records_per_buffer *
                                self.number_of_channels)
 
-        demod_list = np.array([getattr(self, 'demod_freq_{}'.format(n)) for n in range(self.res_length)])
+        demod_list = np.array([getattr(self, 'demod_freq_{}'.format(n))() for n in range(self.res_length)])
         demod_mat = np.kron(demod_list, np.ones(self.samples_per_record)).reshape(self.res_length, self.samples_per_record)
         integer_mat = np.kron(np.ones(self.res_length), np.arange(self.samples_per_record)).reshape((self.res_length, self.samples_per_record))
-        angle_mat = np.divide(np.multiply(2 * np.pi * integer_mat, demod_mat), self.sample_rate)
+        angle_mat = np.multiply(2 * np.pi * integer_mat, demod_mat) / self.sample_rate
         self.cos_mat = np.cos(angle_mat)
         self.sin_mat = np.sin(angle_mat)
 
@@ -318,7 +319,7 @@ class HD_Samples_Controller(AcquisitionController):
                 '(expect delay >= {}'.format(int_delay_min))
 
     def check_time(self, time_available):
-        max_demod = max([getattr(self, 'demod_freq_{}'.format(count)) for count in range(self.res_length)])
+        max_demod = max([getattr(self, 'demod_freq_{}'.format(count))() for count in range(self.res_length)])
         oscilations_measured = self.int_time() * max_demod
         oversampling = self.sample_rate / (2 * max_demod)
         if self.int_time() > time_available:
@@ -352,10 +353,10 @@ class HD_Samples_Controller(AcquisitionController):
         fitted_mag = np.empty((self.res_length, self.samples_per_record))
         fitted_phase = np.empty((self.res_length, self.samples_per_record))
         
-        volt_rec_mat = np.kron(np.ones(self.res_length), volt_rec).reshape((self.res_length, len(volt_rec))
+        volt_rec_mat = np.kron(np.ones(self.res_length), volt_rec).reshape((self.res_length, len(volt_rec)))
         re_mat = np.multiply(volt_rec_mat, self.cos_mat)
         im_mat = np.multiply(volt_rec_mat, self.sin_mat)
-        cutoff_arr = np.array([getattr(self, 'demod_freq_{}'.format(i)) / 10 for i in range(self.res_length)])
+        cutoff_arr = np.array([getattr(self, 'demod_freq_{}'.format(i))() / 10 for i in range(self.res_length)])
 
         # filter out higher freq component
         if self.filter_settings['filter'] == 0:
