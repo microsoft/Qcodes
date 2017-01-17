@@ -164,6 +164,12 @@ class AMI430(VisaInstrument):
                 checks.
         """
         # If part of a parent driver, set the value using that driver
+        if np.abs(value) > self._field_rating:
+            msg = ': Aborted _set_field; {} is higher than limit of {}'
+            logging.error(__name__ + msg.format(value, self._field_rating))
+
+            return
+
         if self._parent_instrument is not None and perform_safety_check:
             self._parent_instrument._request_field_change(self, value)
 
@@ -201,6 +207,12 @@ class AMI430(VisaInstrument):
 
     def _ramp_to(self, value):
         """ Non-blocking method to ramp to a certain field """
+        if np.abs(value) > self._field_rating:
+            msg = ': Aborted _set_field; {} is higher than limit of {}'
+            logging.error(__name__ + msg.format(value, self._field_rating))
+
+            return
+
         if self._parent_instrument is not None:
             msg = (": Initiating a blocking instead of non-blocking "
                    " function because this magnet belongs to a parent driver")
