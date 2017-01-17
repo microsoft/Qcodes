@@ -13,6 +13,7 @@ from qcodes.station import Station
 from qcodes.data.io import DiskIO
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager
+from qcodes.instrument.mock import ArrayGetter
 from qcodes.instrument.parameter import Parameter, ManualParameter
 from qcodes.process.helpers import kill_processes
 from qcodes.process.qcodes_process import QcodesProcess
@@ -79,7 +80,7 @@ class TestMockInstLoop(TestCase):
         # you can only do in-memory loops if you set data_manager=False
         # TODO: this is the one place we don't do quiet=True - test that we
         # really print stuff?
-        data = self.loop.run(location=self.location, background=True)
+        data = self.loop.run(location=self.location, background=True, data_manager=True)
         self.check_empty_data(data)
 
         # wait for process to finish (ensures that this was run in the bg,
@@ -118,6 +119,9 @@ class TestMockInstLoop(TestCase):
         self.check_loop_data(data)
 
     def test_background_no_datamanager(self):
+        # We don't support syncing data from a background process
+        # if not using a datamanager. See warning in ActiveLoop.run()
+        # So we expect the data to be empty even after running.
         data = self.loop.run(location=self.location,
                              background=True,
                              data_manager=False,
@@ -127,7 +131,7 @@ class TestMockInstLoop(TestCase):
         self.loop.process.join()
 
         data.sync()
-        self.check_loop_data(data)
+        self.check_empty_data(data)
 
     def test_foreground_and_datamanager(self):
         data = self.loop.run(location=self.location, background=False,
@@ -202,6 +206,16 @@ class TestMockInstLoop(TestCase):
         loop.run_temp()
         self.assertFalse(hasattr(loop, 'process'))
 
+    def test_sync_no_overwrite(self):
+        # Test fix for 380, this tests that the setpoints are not incorrectly
+        # overwritten by data_set.sync() for this to happen with the original code
+        # the delay must be larger than the write period otherwise sync is a no opt.
+
+        loop = Loop(self.gates.chan1.sweep(0, 1, 1), delay=0.1).each(ArrayGetter(self.meter.amplitude,
+                                                                                 self.gates.chan2[0:1:1], 0.000001))
+        data = loop.get_data_set(name='testsweep', write_period=0.01)
+        _ = loop.with_bg_task(data.sync).run()
+        assert not np.isnan(data.chan2).any()
 
 def sleeper(t):
     time.sleep(t)

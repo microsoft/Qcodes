@@ -1,7 +1,8 @@
 import logging
 from time import sleep
 from functools import partial
-from qcodes.instrument.visa import VisaInstrument, validators as vals
+from qcodes.instrument.visa import VisaInstrument
+from qcodes.utils import validators as vals
 
 log = logging.getLogger(__name__)
 

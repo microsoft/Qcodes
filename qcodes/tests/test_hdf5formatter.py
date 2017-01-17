@@ -331,3 +331,9 @@ class TestHDF5_Format(TestCase):
         F['weird_dict'].attrs['list_type'] = 'unsuported_list_type'
         with self.assertRaises(NotImplementedError):
             self.formatter.read_dict_from_hdf5(new_dict, F)
+
+    def test_writing_metadata(self):
+        # test for issue reported in 442
+        data = DataSet2D(location=self.loc_provider, name='MetaDataTest')
+        data.metadata = {'a': ['hi', 'there']}
+        self.formatter.write(data, write_metadata=True)
