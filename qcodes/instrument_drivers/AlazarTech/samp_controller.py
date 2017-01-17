@@ -49,15 +49,13 @@ class SamplesParam(Parameter):
         self._instrument = instrument
         self.acquisition_kwargs = {}
         self.names = ('magnitude', 'phase')
-        self.units = ('', '')
-        self.setpoint_names = (('resonator index', 'acq_time (s)'), ('resonator index', 'acq_time (s)'))
-        self.setpoints = ((1,), (1,))
-        self.shapes = ((1,), (1,))
+        #self.setpoint_names = (('resonator index', 'acq_time (s)'), ('resonator index', 'acq_time (s)'))
+        #self.setpoint_names = (('acq_time (s)',), ('acq_time (s)',))
 
     def update_sweep(self, start, stop, npts, res_length):
         n = tuple(np.linspace(start, stop, num=npts))
         wave_index = tuple(i for i in range(res_length))
-        self.setpoints = ((wave_index, n), (wave_index, n))
+        #self.setpoints = ((wave_index, n), (wave_index, n))
         self.shapes = ((res_length, npts), (res_length, npts))
 
     def get(self):
@@ -97,16 +95,7 @@ class HD_Samples_Controller(AcquisitionController):
                                 'numtaps': numtaps}
         self.chan_b = chan_b
         self.res_length = len(demod_freqs)
-        # self.samples_per_record = 0
-        # self.records_per_buffer = 0
-        # self.buffers_per_acquisition = 0
         self.number_of_channels = 2
-        # self.samples_delay = 0
-        # self.samples_time = 0
-        self.cos_list = None
-        self.sin_list = None
-        self.buffer = None
-        self.board_info = None
 
         super().__init__(name, alazar_name, **kwargs)
 
@@ -123,13 +112,13 @@ class HD_Samples_Controller(AcquisitionController):
                            initial_value=None,
                            parameter_class=ManualParameter)
 
-    def set_int_time(self, value):
-        alazar = self._get_alazar()
-        sample_rate = alazar.get_sample_rate()
-        samples_per_record = alazar.samples_per_record.get()
-        time_available = samples_per_record / sample_rate
-    def get_int_time(self, value):
-        raise NotImplementedError    
+    # def set_int_time(self, value):
+        # alazar = self._get_alazar()
+        # sample_rate = alazar.get_sample_rate()
+        # samples_per_record = alazar.samples_per_record.get()
+        # time_available = samples_per_record / sample_rate
+    # def get_int_time(self, value):
+        # raise NotImplementedError    
         
         
     # def int_time_validate(self, value):
@@ -356,8 +345,9 @@ class HD_Samples_Controller(AcquisitionController):
         volt_rec_mat = np.kron(np.ones(self.res_length), volt_rec).reshape((self.res_length, len(volt_rec)))
         re_mat = np.multiply(volt_rec_mat, self.cos_mat)
         im_mat = np.multiply(volt_rec_mat, self.sin_mat)
-        cutoff_arr = np.array([getattr(self, 'demod_freq_{}'.format(i))() / 10 for i in range(self.res_length)])
-
+        #cutoff_arr = np.array([getattr(self, 'demod_freq_{}'.format(i))() / 10 for i in range(self.res_length)])
+        cutoff = max([getattr(self, 'demod_freq_{}'.format(count))() for count in range(self.res_length)]) / 10
+        
         # filter out higher freq component
         if self.filter_settings['filter'] == 0:
             re_filtered = filter_win(re_mat, cutoff,
