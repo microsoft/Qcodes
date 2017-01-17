@@ -220,7 +220,8 @@ class Tektronix_AWG5014(VisaInstrument):
         self.add_parameter('trigger_source',
                            get_cmd='TRIGger:SOURce?',
                            set_cmd='TRIGger:SOURce ' + '{}',
-                           vals=vals.Enum('INT', 'EXT'))
+                           vals=vals.Enum('INT', 'EXT'),
+                           get_parser=self.newlinestripper)
 
         # Event parameters
         self.add_parameter('event_polarity',
@@ -253,7 +254,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
         self.add_parameter('setup_filename',
                            get_cmd='AWGControl:SNAMe?')
-
+        
         # Channel parameters #
         for i in range(1, 5):
             amp_cmd = 'SOURce{}:VOLTage:LEVel:IMMediate:AMPLitude'.format(i)
@@ -351,6 +352,13 @@ class Tektronix_AWG5014(VisaInstrument):
             log.warning('AWG clock freq not set to 1GHz')
 
         self.connect_message()
+
+    # Convenience parser
+    def newlinestripper(self, string):
+            if string.endswith('\n'):
+                return string[:-1]
+            else:
+                return string
 
     # Functions
     def get_all(self, update=True):
