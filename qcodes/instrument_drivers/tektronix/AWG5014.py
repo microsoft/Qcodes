@@ -151,12 +151,15 @@ class Tektronix_AWG5014(VisaInstrument):
         self.add_parameter('run_mode',
                            get_cmd='AWGControl:RMODe?',
                            set_cmd='AWGControl:RMODe ' + '{}',
-                           vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'))
+                           vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'),
+                           get_parser=self.newlinestripper
+                          )
         self.add_parameter('ref_clock_source',
                            label='Reference clock source',
                            get_cmd='AWGControl:CLOCk:SOURce?',
                            set_cmd='AWGControl:CLOCk:SOURce ' + '{}',
-                           vals=vals.Enum('INT', 'EXT'))
+                           vals=vals.Enum('INT', 'EXT'),
+                           get_parser=self.newlinestripper)
         self.add_parameter('DC_output',
                            label='DC Output (ON/OFF)',
                            get_cmd='AWGControl:DC:STATe?',
@@ -197,7 +200,8 @@ class Tektronix_AWG5014(VisaInstrument):
         self.add_parameter('trigger_mode',
                            get_cmd='AWGControl:RMODe?',
                            set_cmd='AWGControl:RMODe ' + '{}',
-                           vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'))
+                           vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'),
+                           get_parser=self.newlinestripper)
         self.add_parameter('trigger_impedance',
                            label='Trigger impedance (Ohm)',
                            units='Ohm',
@@ -215,7 +219,8 @@ class Tektronix_AWG5014(VisaInstrument):
         self.add_parameter('trigger_slope',
                            get_cmd='TRIGger:SLOPe?',
                            set_cmd='TRIGger:SLOPe ' + '{}',
-                           vals=vals.Enum('POS', 'NEG'))
+                           vals=vals.Enum('POS', 'NEG'),
+                           get_parser=self.newlinestripper)
 
         self.add_parameter('trigger_source',
                            get_cmd='TRIGger:SOURce?',
@@ -227,7 +232,8 @@ class Tektronix_AWG5014(VisaInstrument):
         self.add_parameter('event_polarity',
                            get_cmd='EVENt:POL?',
                            set_cmd='EVENt:POL ' + '{}',
-                           vals=vals.Enum('POS', 'NEG'))
+                           vals=vals.Enum('POS', 'NEG'),
+                           get_parser=self.newlinestripper)
         self.add_parameter('event_impedance',
                            label='Event impedance (Ohm)',
                            get_cmd='EVENt:IMPedance?',
@@ -243,7 +249,8 @@ class Tektronix_AWG5014(VisaInstrument):
         self.add_parameter('event_jump_timing',
                            get_cmd='EVENt:JTIMing?',
                            set_cmd='EVENt:JTIMing {}',
-                           vals=vals.Enum('SYNC', 'ASYNC'))
+                           vals=vals.Enum('SYNC', 'ASYNC'),
+                           get_parser=self.newlinestripper)
 
         self.add_parameter('clock_freq',
                            label='Clock frequency (Hz)',
@@ -271,7 +278,8 @@ class Tektronix_AWG5014(VisaInstrument):
                                label='Status channel {}'.format(i),
                                get_cmd=state_cmd + '?',
                                set_cmd=state_cmd + ' {}',
-                               vals=vals.Ints(0, 1))
+                               vals=vals.Ints(0, 1),
+                               get_parser=int)
             self.add_parameter('ch{}_amp'.format(i),
                                label='Amplitude channel {} (Vpp)'.format(i),
                                units='Vpp',
@@ -301,14 +309,16 @@ class Tektronix_AWG5014(VisaInstrument):
                                label='Add input channel {}',
                                get_cmd=add_input_cmd + '?',
                                set_cmd=add_input_cmd + ' {}',
-                               vals=vals.Enum('"ESIG"', '"ESIGnal"', '""'))
+                               vals=vals.Enum('"ESIG"', '"ESIGnal"', '""'),
+                               get_parser=self.newlinestripper)
             self.add_parameter('ch{}_filter'.format(i),
                                label='Low pass filter channel {}'.format(i),
                                units='Hz',
                                get_cmd=filter_cmd + '?',
                                set_cmd=filter_cmd + ' {}',
                                vals=vals.Enum(20e6, 100e6, 9.9e37,
-                                              'INF', 'INFinity'))
+                                              'INF', 'INFinity'),
+                               get_parser=float)
             self.add_parameter('ch{}_DC_out'.format(i),
                                label='DC output level channel {}'.format(i),
                                units='V',
