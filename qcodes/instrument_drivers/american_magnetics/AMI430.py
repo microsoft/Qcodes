@@ -208,7 +208,7 @@ class AMI430(VisaInstrument):
     def _ramp_to(self, value):
         """ Non-blocking method to ramp to a certain field """
         if np.abs(value) > self._field_rating:
-            msg = ': Aborted _set_field; {} is higher than limit of {}'
+            msg = ': Aborted _ramp_to; {} is higher than limit of {}'
             logging.error(__name__ + msg.format(value, self._field_rating))
 
             return
