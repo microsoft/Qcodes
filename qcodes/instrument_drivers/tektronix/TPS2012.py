@@ -5,8 +5,149 @@ import numpy as np
 from pyvisa.errors import VisaIOError
 from functools import partial
 from qcodes import VisaInstrument, validators as vals
+from qcodes import ArrayParameter
 
 log = logging.getLogger(__name__)
+
+class ScopeArray(ArrayParameter):
+    def __init__(self, name, instrument, channel):
+        super().__init__('scope_measurement', shape=(2500,),
+                         label='Voltage',
+                         unit='V ',
+                         # first setpoint array is 1D, second is 2D, etc...
+                         setpoint_names=('Time', ),
+                         setpoint_labels=('Time', ),
+                         docstring='holds an array from scope')
+        self.channel = channel
+        self._instrument = instrument
+
+    def calc_set_points(self):
+        message = self._instrument.ask('WAVFrm?')
+        self._instrument.write('*WAI')
+        preamble = self._preambleparser(message)
+        xstart = preamble['x_zero']
+        xinc = preamble['x_incr']
+        no_of_points = preamble['no_of_points']
+        xdata = np.linspace(xstart, no_of_points * xinc + xstart, no_of_points)
+        return xdata, no_of_points
+
+
+    def set_set_points(self):
+        xdata, no_of_points = self.calc_set_points()
+        self.setpoints = (tuple(xdata), )
+        self.shape = (no_of_points, )
+
+    def get(self):
+        message = self._curveasker(self.channel)
+        xdata, ydata, npoints = self._curveparameterparser(message)
+        # Due to the limitations in the current api the below solution
+        # to change setpoints does nothing
+        # self.setpoints = (tuple(xdata),)
+        # self.shape = (npoints,)
+        return ydata
+
+    def _curveasker(self, ch):
+        self._instrument.write('DATa:SOURce CH{}'.format(ch))
+        message = self._instrument.ask('WAVFrm?')
+        self._instrument.write('*WAI')
+        return message
+
+    @staticmethod
+    def _binaryparser(curve):
+        """
+        Helper function for parsing the curve data
+
+        Args:
+            curve (str): the return value of 'CURVe?' when
+            DATa:ENCdg is set to RPBinary.
+            Note: The header and final newline character
+            must be removed.
+
+        Returns:
+            nparray: the curve in units where the digitisation range
+            is mapped to (-32768, 32767).
+        """
+        # TODO: Add support for data width = 1 mode?
+        output = np.zeros(int(len(curve)/2))  # data width 2
+        # output = np.zeros(int(len(curve)))  # data width 1
+        for ii in range(len(output)):
+            # casting FTWs
+            temp = curve[2*ii:2*ii+1].encode('latin-1')  # data width 2
+            temp = binascii.b2a_hex(temp)
+            temp = (int(temp, 16)-128)*256  # data width 2 (1)
+            output[ii] = temp
+        return output
+
+    @staticmethod
+    def _preambleparser(response):
+        """
+        Parser function for the curve preamble
+
+        Args:
+            response (str): The response of WFMPre?
+
+        Returns:
+            dict: a dictionary containing the following keys:
+              no_of_bytes, no_of_bits, encoding, binary_format,
+              byte_order, no_of_points, waveform_ID, point_format,
+              x_incr, x_zero, x_unit, y_multiplier, y_zero, y_offset, y_unit
+        """
+        response = response.split(';')
+        outdict = {}
+        outdict['no_of_bytes'] = int(response[0])
+        outdict['no_of_bits'] = int(response[1])
+        outdict['encoding'] = response[2]
+        outdict['binary_format'] = response[3]
+        outdict['byte_order'] = response[4]
+        outdict['no_of_points'] = int(response[5])
+        outdict['waveform_ID'] = response[6]
+        outdict['point_format'] = response[7]
+        outdict['x_incr'] = float(response[8])
+        # outdict['point_offset'] = response[9]  # Always zero
+        outdict['x_zero'] = float(response[10])
+        outdict['x_unit'] = response[11]
+        outdict['y_multiplier'] = float(response[12])
+        outdict['y_zero'] = float(response[13])
+        outdict['y_offset'] = float(response[14])
+        outdict['y_unit'] = response[15]
+
+        return outdict
+
+    def _curveparameterparser(self, waveform):
+        """
+        The parser for the curve parameter. Note that WAVFrm? is equivalent
+        to WFMPre?; CURVe?
+
+        Args:
+            waveform (str): The return value of WAVFrm?
+
+        Returns:
+            (np.array, np.array): Two numpy arrays with the time axis in units
+            of s and curve values in units of V; (time, voltages)
+        """
+        fulldata = waveform.split(';')
+        preamblestr = ';'.join(fulldata[:16])
+        curvestr = ';'.join(fulldata[16:])
+
+        preamble = self._preambleparser(preamblestr)
+        # the raw curve data starts with a header containing the char #
+        # followed by on digit giving the number of digits in the len of the array in bytes
+        # and the length of the array. I.e. the string #45000 is 5000 bytes represented by 4 digits.
+        # raw_data_offset = 2+len(preamble['no_of_bytes']) * len(preamble['no_of_points'])
+        total_number_of_bytes = preamble['no_of_bytes']*preamble['no_of_points']
+        raw_data_offset = 2 + len(str(total_number_of_bytes))
+        curvestr = curvestr[raw_data_offset:-1]
+        rawcurve = self._binaryparser(curvestr)
+
+        yoff = preamble['y_offset']
+        yoff -= 2**15  # data width 2
+        ymult = preamble['y_multiplier']
+        ydata = ymult*(rawcurve-yoff)
+        assert len(ydata) == preamble['no_of_points']
+        xstart = preamble['x_zero']
+        xinc = preamble['x_incr']
+        xdata = np.linspace(xstart, len(ydata)*xinc+xstart, len(ydata))
+        return xdata, ydata, preamble['no_of_points']
 
 
 class TPS2012(VisaInstrument):
@@ -61,7 +202,7 @@ class TPS2012(VisaInstrument):
                            )
         self.add_parameter('trigger_level',
                            label='Trigger level',
-                           units='V',
+                           unit='V',
                            get_cmd='TRIGger:MAIn:LEVel?',
                            set_cmd='TRIGger:MAIn:LEVel {}',
                            vals=vals.Numbers()
@@ -69,7 +210,7 @@ class TPS2012(VisaInstrument):
 
         self.add_parameter('horizontal_scale',
                            label='Horizontal scale',
-                           units='s',
+                           unit='s',
                            get_cmd='HORizontal:SCAle?',
                            set_cmd='HORizontal:SCAle {}',
                            get_parser=float,
@@ -92,7 +233,7 @@ class TPS2012(VisaInstrument):
 
             self.add_parameter('ch{}_scale'.format(ch),
                                label='Channel {} Scale'.format(ch),
-                               units='V/div',
+                               unit='V/div',
                                get_cmd='CH{}:SCAle?'.format(ch),
                                set_cmd='CH{}:SCAle {}'.format(ch, '{}'),
                                get_parser=float
@@ -100,16 +241,15 @@ class TPS2012(VisaInstrument):
 
             self.add_parameter('ch{}_position'.format(ch),
                                label='Channel {} Position'.format(ch),
-                               units='div',
+                               unit='div',
                                get_cmd='CH{}:POSition?'.format(ch),
                                set_cmd='CH{}:POSition {}'.format(ch, '{}'),
                                get_parser=float)
 
             self.add_parameter('ch{}_curvedata'.format(ch),
-                               label='Curve data',
-                               units='V',
-                               get_cmd=partial(curveasker, ch),
-                               get_parser=self._curveparameterparser)
+                               channel=ch,
+                               parameter_class=ScopeArray,
+                               )
 
         # Necessary settings for parsing the binary curve data
         self.visa_handle.encoding = 'latin-1'
@@ -123,99 +263,6 @@ class TPS2012(VisaInstrument):
         # significantly to transfer times. The maximal length
         # of an array in one transfer is 2500 points.
 
-    ##################################################
-    # HELPFUL PARSER FUNCTIONS                       #
-    ##################################################
-
-    def _binaryparser(self, curve):
-        """
-        Helper function for parsing the curve data
-
-        Args:
-            curve (str): the return value of 'CURVe?' when
-            DATa:ENCdg is set to RPBinary.
-            Note: The header and findal newline character
-            must be removed.
-
-        Returns:
-            nparray: the curve in units where the digitisation range
-            is mapped to (-32768, 32767).
-        """
-        # TODO: Add support for data width = 1 mode?
-        output = np.zeros(int(len(curve)/2))  # data width 2
-        # output = np.zeros(int(len(curve)))  # data width 1
-        for ii in range(len(output)):
-            # casting FTW
-            temp = curve[2*ii:2*ii+1].encode('latin-1')  # data width 2
-            temp = binascii.b2a_hex(temp)
-            temp = (int(temp, 16)-128)*256  # data width 2 (1)
-            output[ii] = temp
-        return output
-
-    def _preambleparser(self, response):
-        """
-        Parser function for the curve preamble
-
-        Args:
-            preamble (str): The reponse of WFMPre?
-
-        Returns:
-            dict: a dictionary containing the following keys:
-              no_of_bytes, no_of_bits, encoding, binary_format,
-              byte_order, no_of_points, waveform_ID, point_format,
-              x_incr, x_zero, x_unit, y_multiplier, y_zero, y_offset, y_unit
-        """
-        response = response.split(';')
-        outdict = {}
-        outdict['no_of_bytes'] = response[0]
-        outdict['no_of_bits'] = response[1]
-        outdict['encoding'] = response[2]
-        outdict['binary_format'] = response[3]
-        outdict['byte_order'] = response[4]
-        outdict['no_of_points'] = response[5]
-        outdict['waveform_ID'] = response[6]
-        outdict['point_format'] = response[7]
-        outdict['x_incr'] = response[8]
-        # outdict['point_offset'] = response[9]  # Always zero
-        outdict['x_zero'] = response[10]
-        outdict['x_unit'] = response[11]
-        outdict['y_multiplier'] = response[12]
-        outdict['y_zero'] = response[13]
-        outdict['y_offset'] = response[14]
-        outdict['y_unit'] = response[15]
-
-        return outdict
-
-    def _curveparameterparser(self, waveform):
-        """
-        The parser for the curve parameter. Note that WAVFrm? is equivalent
-        to WFMPre?; CURVe?
-
-        Args:
-            waveform (str): The return value of WAVFrm?
-
-        Returns:
-            (np.array, np.array): Two numpy arrays with the time axis in units
-            of s and curve values in units of V; (time, voltages)
-        """
-        fulldata = waveform.split(';')
-        preamblestr = ';'.join(fulldata[:16])
-        curvestr = ';'.join(fulldata[16:])
-
-        preamble = self._preambleparser(preamblestr)
-        curvestr = curvestr[2+len(preamble['no_of_bytes']) *
-                            len(preamble['no_of_points']):-1]
-        rawcurve = self._binaryparser(curvestr)
-
-        yoff = float(preamble['y_offset'])
-        yoff -= 2**15  # data width 2
-        ymult = float(preamble['y_multiplier'])
-        ydata = ymult*(rawcurve-yoff)
-
-        xstart = float(preamble['x_zero'])
-        xinc = float(preamble['x_incr'])
-        xdata = np.linspace(xstart, len(ydata)*xinc+xstart, len(ydata))
-        return (xdata, ydata)
 
     ##################################################
     # METHODS FOR THE USER                           #
