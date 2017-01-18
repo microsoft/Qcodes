@@ -617,6 +617,23 @@ class TestInstrument(TestCase):
         self.assertLessEqual(noise_ts, datetime.now())
         self.assertGreater(noise_ts, datetime.now() - timedelta(seconds=1.1))
 
+    def test_snapshot_value(self):
+        self.source.add_parameter('has_snapshot_value',
+                            parameter_class=ManualParameter,
+                            initial_value=42,
+                            snapshot_value=True)
+        self.source.add_parameter('no_snapshot_value',
+                            parameter_class=ManualParameter,
+                            initial_value=42,
+                            snapshot_value=False)
+
+        snapshot = self.source.snapshot()
+
+        self.assertIn('value', snapshot['parameters']['has_snapshot_value'])
+        self.assertEquals(42,
+                          snapshot['parameters']['has_snapshot_value']['value'])
+        self.assertNotIn('value', snapshot['parameters']['no_snapshot_value'])
+
     def tests_get_latest(self):
         self.source.add_parameter('noise', parameter_class=ManualParameter)
         noise = self.source.noise
