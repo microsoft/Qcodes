@@ -422,3 +422,4 @@ def compare_dictionaries(dict_1, dict_2,
     else:
         dicts_equal = False
     return dicts_equal, dict_differences
+
