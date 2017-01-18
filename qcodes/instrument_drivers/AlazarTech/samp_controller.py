@@ -1,6 +1,7 @@
 import logging
 from .ATS import AcquisitionController
 import numpy as np
+import pdb
 from qcodes import Parameter
 from qcodes.instrument_drivers.AlazarTech.acq_helpers import filter_win, filter_ls, sample_to_volt_u12
 from qcodes.instrument.parameter import ManualParameter
@@ -88,9 +89,9 @@ class HD_Samples_Controller(AcquisitionController):
     TODO(nataliejpg) finish implementation of channel b option
     TODO(nataliejpg) validators for int_time and int_delay
     """
-    filter_dict = {'win': 0, 'ls': 1}
+    filter_dict = {'win': 0, 'ls': 1, 'through':2}
 
-    def __init__(self, name, alazar_name, demod_freqs=[20e6],filter='win', numtaps=101, chan_b=False, **kwargs):
+    def __init__(self, name, alazar_name, demod_freqs=[20e6],filter='through', numtaps=101, chan_b=False, **kwargs):
         self.filter_settings = {'filter': self.filter_dict[filter],
                                 'numtaps': numtaps}
         self.chan_b = chan_b
@@ -242,9 +243,10 @@ class HD_Samples_Controller(AcquisitionController):
                                self.number_of_channels)
 
         demod_list = np.array([getattr(self, 'demod_freq_{}'.format(n))() for n in range(self.res_length)])
-        demod_mat = np.kron(demod_list, np.ones(self.samples_per_record)).reshape(self.res_length, self.samples_per_record)
-        integer_mat = np.kron(np.ones(self.res_length), np.arange(self.samples_per_record)).reshape((self.res_length, self.samples_per_record))
-        angle_mat = np.multiply(2 * np.pi * integer_mat, demod_mat) / self.sample_rate
+        integer_list = np.arange(self.samples_per_record)
+        #demod_mat = np.kron(demod_list, np.ones(self.samples_per_record)).reshape(self.res_length, self.samples_per_record)
+        #integer_mat = np.kron(np.ones(self.res_length), np.arange(self.samples_per_record)).reshape((self.res_length, self.samples_per_record))
+        angle_mat = 2 * np.pi * np.outer(demod_list, integer_list) / self.sample_rate
         self.cos_mat = np.cos(angle_mat)
         self.sin_mat = np.sin(angle_mat)
 
@@ -342,10 +344,11 @@ class HD_Samples_Controller(AcquisitionController):
         fitted_mag = np.empty((self.res_length, self.samples_per_record))
         fitted_phase = np.empty((self.res_length, self.samples_per_record))
         
-        volt_rec_mat = np.kron(np.ones(self.res_length), volt_rec).reshape((self.res_length, len(volt_rec)))
+        volt_rec_mat = np.outer(np.ones(self.res_length), volt_rec)
         re_mat = np.multiply(volt_rec_mat, self.cos_mat)
         im_mat = np.multiply(volt_rec_mat, self.sin_mat)
-        #cutoff_arr = np.array([getattr(self, 'demod_freq_{}'.format(i))() / 10 for i in range(self.res_length)])
+        #pdb.set_trace()
+        # cutoff_arr = np.array([getattr(self, 'demod_freq_{}'.format(i))() / 10 for i in range(self.res_length)])
         cutoff = max([getattr(self, 'demod_freq_{}'.format(count))() for count in range(self.res_length)]) / 10
         
         # filter out higher freq component
@@ -353,34 +356,41 @@ class HD_Samples_Controller(AcquisitionController):
             re_filtered = filter_win(re_mat, cutoff,
                                     self.sample_rate,
                                     self.filter_settings['numtaps'],
-                                    axis=0)
+                                    axis=1)
             im_filtered = filter_win(im_mat, cutoff,
                                      self.sample_rate,
                                      self.filter_settings['numtaps'],
-                                     axis=0)
+                                     axis=1)
         elif self.filter_settings['filter'] == 1:
             re_filtered = filter_ls(re_mat, cutoff,
                                     self.sample_rate,
                                     self.filter_settings['numtaps'],
-                                    axis=0)
+                                    axis=1)
             im_filtered = filter_ls(im_mat, cutoff,
                                     self.sample_rate,
                                     self.filter_settings['numtaps'],
-                                    axis=0)
+                                    axis=1)
+        elif self.filter_settings['filter'] == 2:
+            re_filtered = re_mat
+            im_filtered = im_mat
 
         # apply integration limits
         beginning = int(self.int_delay() * self.sample_rate)
         end = beginning + int(self.int_time() * self.sample_rate)
-
+        
         re_limited = re_filtered[:, beginning:end]
         im_limited = im_filtered[:, beginning:end]
 
-            # convert to magnitude and phase
-        complex_num = re_limited + im_limited * 1j
-        mag = abs(complex_num)
-        phase = np.angle(complex_num, deg=True)
+        # convert to magnitude and phase
+        complex_mat = re_limited + im_limited * 1j
+        print(np.mean(complex_mat, axis=1))
+        magnitude = abs(complex_mat) 
+        phase = np.angle(complex_mat, deg=True)
+        print(np.mean(magnitude, axis=1))
+        print(np.mean(phase, axis=1))
+        pdb.set_trace()
         
-        return mag, phase
+        return magnitude, volt_rec_mat
         
         
         # # multiply with software wave
