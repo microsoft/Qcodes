@@ -211,11 +211,14 @@ class TestMockInstLoop(TestCase):
         # overwritten by data_set.sync() for this to happen with the original code
         # the delay must be larger than the write period otherwise sync is a no opt.
 
-        loop = Loop(self.gates.chan1.sweep(0, 1, 1), delay=0.1).each(ArrayGetter(self.meter.amplitude,
-                                                                                 self.gates.chan2[0:1:1], 0.000001))
+        loop = Loop(self.gates.chan1.sweep(0, 2, 1), delay=0.1).each(ArrayGetter(self.meter.amplitude,
+                                                                                 self.gates.chan2[8,9], 0.000001))
         data = loop.get_data_set(name='testsweep', write_period=0.01)
         _ = loop.with_bg_task(data.sync).run()
         assert not np.isnan(data.chan2).any()
+        assert data.chan2.shape == (3,2)
+        assert data.gates_chan1_set.shape == (3,)
+        assert data.meter_amplitude.shape == (3,2)
 
 def sleeper(t):
     time.sleep(t)

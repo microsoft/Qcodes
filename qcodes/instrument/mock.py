@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 
 from .base import Instrument
-from .parameter import Parameter
+from .parameter import ArrayParameter
 from qcodes import Loop
 from qcodes.data.data_array import DataArray
 from qcodes.process.server import ServerManager, BaseServer
@@ -283,7 +283,7 @@ class MockModel(ServerManager, BaseServer):  # pragma: no cover
         """
         self.ask('method_call', 'delattr', attr)
 
-class ArrayGetter(Parameter):
+class ArrayGetter(ArrayParameter):
     """
     Example parameter that just returns a single array
 
@@ -298,15 +298,16 @@ class ArrayGetter(Parameter):
     """
     def __init__(self, measured_param, sweep_values, delay):
         name = measured_param.name
-        super().__init__(names=(name,))
+        super().__init__(name=name,
+                         shape=(len(sweep_values), )
+                         )
         self._instrument = getattr(measured_param, '_instrument', None)
         self.measured_param = measured_param
         self.sweep_values = sweep_values
         self.delay = delay
-        self.shapes = ((len(sweep_values),),)
         set_array = DataArray(parameter=sweep_values.parameter,
                               preset_data=sweep_values)
-        self.setpoints = ((set_array,),)
+        self.setpoints = (set_array,)
         if hasattr(measured_param, 'label'):
             self.labels = (measured_param.label,)
 
@@ -314,4 +315,4 @@ class ArrayGetter(Parameter):
         loop = Loop(self.sweep_values, self.delay).each(self.measured_param)
         data = loop.run_temp()
         array = data.arrays[self.measured_param.full_name]
-        return (array,)
+        return array
