@@ -83,16 +83,16 @@ class SR560(Instrument):
 
         self.add_parameter('cutoff_lo',
                            parameter_class=ManualParameter,
-                           initial_value='DC',
+                           initial_value=0.03,
                            label='High pass',
-                           units='Hz',
+                           unit='Hz',
                            vals=Enum(*cutoffs))
 
         self.add_parameter('cutoff_hi',
                            parameter_class=ManualParameter,
-                           initial_value='1e6',
+                           initial_value=1e6,
                            label='Low pass',
-                           units='Hz',
+                           unit='Hz',
                            vals=Enum(*cutoffs))
 
         self.add_parameter('invert',
@@ -105,7 +105,7 @@ class SR560(Instrument):
                            parameter_class=ManualParameter,
                            initial_value=10,
                            label='Gain',
-                           units=None,
+                           unit=None,
                            vals=Enum(*gains))
 
     def get_idn(self):
