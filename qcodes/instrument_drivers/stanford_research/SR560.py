@@ -76,7 +76,7 @@ class SR560(Instrument):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
 
-        cutoffs = [0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300, 1000,
+        cutoffs = ['DC', 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300, 1000,
                    3000, 10000, 30000, 100000, 300000, 1000000]
 
         gains = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000,
@@ -84,7 +84,7 @@ class SR560(Instrument):
 
         self.add_parameter('cutoff_lo',
                            parameter_class=ManualParameter,
-                           initial_value=0.03,
+                           initial_value='DC',
                            label='High pass',
                            unit='Hz',
                            vals=Enum(*cutoffs))
