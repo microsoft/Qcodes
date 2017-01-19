@@ -1,10 +1,10 @@
 from qcodes import Instrument
-from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.parameter import MultiParameter
 from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils.validators import Enum, Bool
 
 
-class CurrentParameter(Parameter):
+class CurrentParameter(MultiParameter):
     """
     Current measurement via an Ithaco preamp and a measured voltage.
 
@@ -31,13 +31,13 @@ class CurrentParameter(Parameter):
     def __init__(self, measured_param, c_amp_ins, name='curr'):
         p_name = measured_param.name
 
-        super().__init__(name=name, names=(p_name+'_raw', name))
+        super().__init__(name=name, names=(p_name+'_raw', name), shapes=((), ()))
 
         self._measured_param = measured_param
         self._instrument = c_amp_ins
 
         p_label = getattr(measured_param, 'label', None)
-        p_unit = getattr(measured_param, 'units', None)
+        p_unit = getattr(measured_param, 'unit', None)
 
         self.labels = (p_label, 'Current')
         self.units = (p_unit, 'A')
