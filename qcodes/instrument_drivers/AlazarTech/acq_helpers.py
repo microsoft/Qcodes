@@ -39,7 +39,9 @@ def sample_to_volt_u12(raw_samples, bps):
     """
     Applies volts conversion for 12 bit sample data stored
     in 2 bytes
-    :return: samples_magnitude_array, samples_phase_array
+    return: 
+        samples_magnitude_array
+        samples_phase_array
     """
 
     # right_shift 16-bit sample by 4 to get 12 bit sample
@@ -59,5 +61,14 @@ def sample_to_volt_u12(raw_samples, bps):
 
 
 def roundup(num, to_nearest):
+    """
+    Rounds up the 'num' to the nearest multiple of 'to_nearest', all int
+    
+    inputs:
+        num to be rounded up
+        to_nearest value to be rounded to int multiple of
+    return:
+        rounded up value
+    """
     remainder = num % to_nearest
-    return num if remainder == 0 else num + to_nearest - remainder
+    return int(num if remainder == 0 else num + to_nearest - remainder)
