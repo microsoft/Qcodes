@@ -9,29 +9,29 @@ from qcodes.instrument_drivers.AlazarTech.acq_helpers import filter_win, filter_
 from qcodes.instrument.parameter import ManualParameter
 
 class AcqParameter(Parameter):
-    def __init__(self, name, instrument, initial_value, validation_fn, default_fn):
+    def __init__(self, name, instrument, initial_value, check_and_update_fn, default_fn):
         super().__init__(name)
         self._instrument = instrument
         self._save_val(initial_value)
-        setattr(self, '_check_val', validation_fn)
+        setattr(self, '_check_and_update_instr', check_and_update_fn)
         setattr(self, '_get_default', default_fn)
 
     def set(self, value):
-        self._check_val(value)
+        self._check_and_update_instr(value)
         self._save_val(value)
 
     def get(self):
         return self._latest()['value']
     
-    def check(self):
-        val = self._latest()['value']
-        if val is None:
-            raise ValueError('{} set to None'.format(self.name))
-        self._check_val(val)
+#    def check(self):
+#        val = self._latest()['value']
+#        if val is None:
+#            raise ValueError('{} set to None'.format(self.name))
+#        self._check_and_update_instr(val)
         
-    def set_to_default(self):
+    def to_default(self):
         default = self._get_default()
-        self._save_val(default)
+        self.set(default)
         
 
 class SamplesParam(Parameter):
@@ -40,7 +40,7 @@ class SamplesParam(Parameter):
     HD_Samples_Controller (tested with ATS9360 board) for return of an array of
     sample data from the Alazar, averaged over records and buffers.
 
-    TODO(nataliejpg) refactor setpoints/shapes horriblenesss
+    TODO(nataliejpg) setpoints (including names and units)
     TODO(nataliejpg) setpoint units
     """
 
@@ -49,22 +49,18 @@ class SamplesParam(Parameter):
         self._instrument = instrument
         self.acquisition_kwargs = {}
         self.names = ('magnitude', 'phase')
-        self.setpoint_names = (('acq_time (s)',), ('acq_time (s)',), ('d',))
         
     def update_sweep(self, start, stop, npts):
         demod_length = self._instrument.demod_length
         n = tuple(np.linspace(start, stop, num=npts))
         wave_index = tuple(range(demod_length))
-        # self.setpoints = ((wave_index, n), (wave_index, n))
         self.shapes = ((demod_length, npts), (demod_length, npts))
-        # TODO(natalie): change below for setpoints 
-        self.hacked_setpoints = np.linspace(start, stop, num=npts)
 
     def get(self):
         mag, phase = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
             **self.acquisition_kwargs)
-        return mag, phase, self.hacked_setpoints
+        return mag, phase
 
 
 class HD_Samples_Controller(AcquisitionController):
@@ -84,12 +80,8 @@ class HD_Samples_Controller(AcquisitionController):
             and returned
         **kwargs: kwargs are forwarded to the Instrument base class
 
-    Returns:
-
     TODO(nataliejpg) test filter options
     TODO(nataliejpg) finish implementation of channel b option
-    TODO(nataliejpg) validators for int_time and int_delay
-    TODO(nataliejpg) docstrings
     """
     filter_dict = {'win': 0, 'ls': 1}
     samples_divisor = AlazarTech_ATS9360.samples_divisor
@@ -113,16 +105,16 @@ class HD_Samples_Controller(AcquisitionController):
                                parameter_class=ManualParameter)
         self.add_parameter(name='int_time',
                            initial_value=None,
-                           validation_fn=self.int_time_validate,
-                           default_fn=self.int_time_default,
+                           check_and_update_fn=self._update_int_time,
+                           default_fn=self._int_time_default,
                            parameter_class=AcqParameter)
         self.add_parameter(name='int_delay',
                            initial_value=None,
-                           validation_fn=self.int_delay_validate,
-                           default_fn=self.int_delay_default,
+                           check_and_update_fn=self._update_int_delay,
+                           default_fn=self._int_delay_default,
                            parameter_class=AcqParameter)
         
-    def int_time_validate(instr, value):
+    def _update_int_time(instr, value):
         """
         Function to validate value for int_time before setting parameter
         value
@@ -130,9 +122,9 @@ class HD_Samples_Controller(AcquisitionController):
                 acq knows sample_rate (doesn't check with alazar for accuracy)
                 number of oscilation measured in this time
                 oversampling rate
-        Sets: int_delay to default if None set
-              samples_per_record or acq controller and acquisition param to 
-              rounded up int_time + int_delay
+        Sets: samples_per_record of acq controller
+              acquisition_kwarg['samples_per_record'] of acquisition param
+              shape of acquisition param
         """
         if value is None or not (0 <= value <= 0.1):
             raise ValueError('int_time must be 0 <= value <= 1')
@@ -150,7 +142,7 @@ class HD_Samples_Controller(AcquisitionController):
                             'increase sampling rate or decrease '
                             'demodulation frequency'.format(oversampling))
         if instr.int_delay() is None:
-            instr.int_delay.set_to_default()
+            instr.int_delay.to_default()
             
         # update acquisition parameter shapes
         start = instr.int_delay()
@@ -164,15 +156,16 @@ class HD_Samples_Controller(AcquisitionController):
         instr.samples_per_record = roundup(samples_needed, instr.samples_divisor)
         instr.acquisition.acquisition_kwargs.update(samples_per_record=instr.samples_per_record)
     
-    def int_delay_validate(instr, value):
+    def _update_int_delay(instr, value):
         """
         Function to validate value for int_delay before setting parameter
         value
         Checks: limit between 0 and 1s
                 acq knows sample_rate (doesn't check with alazar for accuracy)
                 number of samples discarded >= numtaps
-        Sets: samples_per_record or acq controller and acquisition param to 
-              rounded up int_time (0 if none set) + int_delay
+        Sets: samples_per_record of acq controller
+              acquisition_kwarg['samples_per_record'] of acquisition param
+              shape of acquisition param
         """
         if value is None or not (0 <= value <= 0.1):
             raise ValueError('int_delay must be 0 <= value <= 1')
@@ -183,7 +176,7 @@ class HD_Samples_Controller(AcquisitionController):
         if value < int_delay_min:
             logging.warning(
                 'delay is less than recommended for filter choice: '
-                '(expect delay >= {}'.format(int_delay_min))
+                '(expect delay >= {})'.format(int_delay_min))
                 
         # update acquisition parameter shapes
         start = value
@@ -197,7 +190,7 @@ class HD_Samples_Controller(AcquisitionController):
         instr.samples_per_record = roundup(samples_needed, instr.samples_divisor)
         instr.acquisition.acquisition_kwargs.update(samples_per_record=instr.samples_per_record)
                 
-    def int_delay_default(instr):
+    def _int_delay_default(instr):
         """
         Returns minimum int_delay recommended for (numtaps - 1)
         samples to be discarded as recommended for filter
@@ -207,7 +200,7 @@ class HD_Samples_Controller(AcquisitionController):
         samp_delay = instr.filter_settings['numtaps'] - 1
         return samp_delay / instr.sample_rate
         
-    def int_time_default(instr):
+    def _int_time_default(instr):
         """
         Returns max total time for integration based on samples_per_record,
         sample_rate and int_delay 
@@ -299,9 +292,9 @@ class HD_Samples_Controller(AcquisitionController):
         records and averaging over them, then applying demodulation fit
         nb: currently only channel A
         
-        Return
-            samples_magnitude_array
-            samples_phase_array
+        Returns:
+            magnitude (numpy array): shape = (demod_length, samples_used)
+            phase (numpy array): shape = (demod_length, samples_used)
         """
         records_per_acquisition = (self.buffers_per_acquisition *
                                    self.records_per_buffer)
@@ -318,7 +311,7 @@ class HD_Samples_Controller(AcquisitionController):
         recordA = np.uint16(recA / records_per_acquisition)
 
         # do demodulation
-        magA, phaseA = self.fit(recordA)
+        magA, phaseA = self._fit(recordA)
 
         # same for chan b
         if self.chan_b:
@@ -334,7 +327,7 @@ class HD_Samples_Controller(AcquisitionController):
 
         return magA, phaseA
 
-    def fit(self, rec):
+    def _fit(self, rec):
         """
         Applies volts conversion, demodulation fit, low bandpass filter
         and integration limits to samples array
@@ -345,8 +338,8 @@ class HD_Samples_Controller(AcquisitionController):
                                shape = (samples_taken, )
         
         Returns:
-            magnitude (numpy array): shape = (demod_lenghth, samples_used)
-            phase (numpy array): shape = (demod_lenghth, samples_used)
+            magnitude (numpy array): shape = (demod_length, samples_used)
+            phase (numpy array): shape = (demod_length, samples_used)
         """
         # convert rec to volts
         bps = self.board_info['bits_per_sample']
@@ -357,13 +350,13 @@ class HD_Samples_Controller(AcquisitionController):
                             ' bps != 12, centered raw samples returned')
             volt_rec = rec - np.mean(rec)
 
-        # TODO
+        # volt_rec to matrix and multiply with demodulation signal matrices
         volt_rec_mat = np.outer(np.ones(self.demod_length), volt_rec)
         re_mat = np.multiply(volt_rec_mat, self.cos_mat)
         im_mat = np.multiply(volt_rec_mat, self.sin_mat)
-        cutoff = self.get_max_demod_freq() / 10
         
         # filter out higher freq component
+        cutoff = self.get_max_demod_freq() / 10
         if self.filter_settings['filter'] == 0:
             re_filtered = filter_win(re_mat, cutoff,
                                     self.sample_rate,
