@@ -84,7 +84,7 @@ class IVVI(VisaInstrument):
                            parameter_class=ManualParameter,
                            initial_value=0.05,
                            label='DAC set sleep',
-                           units='s',
+                           unit='s',
                            vals=Numbers(0),
                            docstring=('When check_setpoints is set to True, '
                                       'this is the waiting time between the'
@@ -96,9 +96,9 @@ class IVVI(VisaInstrument):
                            parameter_class=ManualParameter,
                            initial_value=0.025,
                            label='DAC read buffer sleep',
-                           units='s',
+                           unit='s',
                            vals=Numbers(0),
-                           docstring=('While recieving bytes from the IVVI, '
+                           docstring=('While receiving bytes from the IVVI, '
                                       'sleeping is done in multiples of this '
                                       'value. Change to a lower value for '
                                       'a shorter minimum time to wait.'))
@@ -111,7 +111,7 @@ class IVVI(VisaInstrument):
             self.add_parameter(
                 'dac{}'.format(i),
                 label='Dac {} (mV)'.format(i),
-                units='mV',
+                unit='mV',
                 get_cmd=self._gen_ch_get_func(self._get_dac, i),
                 set_cmd=self._gen_ch_set_func(self._set_dac, i),
                 vals=vals.Numbers(-2000, 2000),
