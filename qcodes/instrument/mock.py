@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 
 from .base import Instrument
-from .parameter import Parameter
+from .parameter import MultiParameter
 from qcodes import Loop
 from qcodes.data.data_array import DataArray
 from qcodes.process.server import ServerManager, BaseServer
@@ -283,22 +283,21 @@ class MockModel(ServerManager, BaseServer):  # pragma: no cover
         """
         self.ask('method_call', 'delattr', attr)
 
-class ArrayGetter(Parameter):
+class ArrayGetter(MultiParameter):
     """
     Example parameter that just returns a single array
 
-    TODO: in theory you can make this same Parameter with
+    TODO: in theory you can make this an ArrayParameter with
     name, label & shape (instead of names, labels & shapes) and altered
     setpoints (not wrapped in an extra tuple) and this mostly works,
     but when run in a loop it doesn't propagate setpoints to the
-    DataSet. We could track down this bug, but perhaps a better solution
-    would be to only support the simplest and the most complex Parameter
-    forms (ie cases 1 and 5 in the Parameter docstring) and do away with
-    the intermediate forms that make everything more confusing.
+    DataSet. This is a bug
     """
     def __init__(self, measured_param, sweep_values, delay):
         name = measured_param.name
-        super().__init__(names=(name,))
+        super().__init__(names=(name,),
+                         shapes=((len(sweep_values),),),
+                         name=name)
         self._instrument = getattr(measured_param, '_instrument', None)
         self.measured_param = measured_param
         self.sweep_values = sweep_values
