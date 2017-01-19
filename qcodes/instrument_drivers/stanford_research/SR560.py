@@ -1,11 +1,12 @@
 from qcodes import Instrument
 from qcodes.instrument.parameter import ManualParameter
+from qcodes.instrument.parameter import MultiParameter
 from qcodes.utils.validators import Bool, Enum
 
-from qcodes.instrument.parameter import Parameter
 
 
-class VoltageParameter(Parameter):
+
+class VoltageParameter(MultiParameter):
     """
     Amplified voltage measurement via an SR560 preamp and a measured voltage.
 
@@ -32,13 +33,13 @@ class VoltageParameter(Parameter):
     def __init__(self, measured_param, v_amp_ins, name='volt'):
         p_name = measured_param.name
 
-        super().__init__(name=name, names=(p_name+'_raw', name))
+        super().__init__(name=name, names=(p_name+'_raw', name), shapes=((), ()))
 
         self._measured_param = measured_param
         self._instrument = v_amp_ins
 
         p_label = getattr(measured_param, 'label', None)
-        p_unit = getattr(measured_param, 'units', None)
+        p_unit = getattr(measured_param, 'unit', None)
 
         self.labels = (p_label, 'Voltage')
         self.units = (p_unit, 'V')
