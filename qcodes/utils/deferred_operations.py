@@ -5,8 +5,8 @@ from inspect import signature
 
 def is_function(f, arg_count, coroutine=False):
     """
-    Check and require a function that can accept the specified number of positional
-    arguments, which either is or is not a coroutine
+    Check and require a function that can accept the specified number of
+    positional arguments, which either is or is not a coroutine
     type casting "functions" are allowed, but only in the 1-argument form
 
     Args:
@@ -76,7 +76,7 @@ class DeferredOperations:
         >>> (d*5)()
         210
         >>> (d>10)()
-        rue
+        True
         >>> ((84/d) + (d*d))()
         1766
 
@@ -92,10 +92,13 @@ class DeferredOperations:
         self.args = args
         self.call_parts = call_parts
 
-    def __call__(self):
-        return self.call_func(*self.args)
+        # only bind self.get if we explicitly initialize the object as a
+        # DeferredOperations, so that an object without a `get` method
+        # that simply inherits DeferredOperations behavior will not
+        # accidentally look gettable.
+        self.get = self.__call__
 
-    def get(self):
+    def __call__(self):
         return self.call_func(*self.args)
 
     def __bool__(self):

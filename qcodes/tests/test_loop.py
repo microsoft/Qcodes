@@ -240,7 +240,7 @@ class TestBG(TestCase):
         bg1 = get_bg(return_first=True)
         self.assertIn(bg1, [p1, p2])
 
-        halt_bg(timeout=0.01)
+        halt_bg(timeout=0.05)
         bg2 = get_bg()
         self.assertIn(bg2, [p1, p2])
         # is this robust? requires that active_children always returns the same
@@ -249,7 +249,7 @@ class TestBG(TestCase):
 
         self.assertEqual(len(mp.active_children()), 1)
 
-        halt_bg(timeout=0.01)
+        halt_bg(timeout=0.05)
         self.assertIsNone(get_bg())
 
         self.assertEqual(len(mp.active_children()), 0)
@@ -459,7 +459,7 @@ class TestLoop(TestCase):
         mg = MultiGetter(one=1, onetwo=(1, 2))
         self.assertTrue(hasattr(mg, 'names'))
         self.assertTrue(hasattr(mg, 'shapes'))
-        self.assertEqual(mg.name, 'None')
+        self.assertEqual(mg.name, 'multigetter')
         self.assertFalse(hasattr(mg, 'shape'))
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
         data = loop.run_temp()
@@ -511,12 +511,12 @@ class TestLoop(TestCase):
         with self.assertRaises(ValueError):
             loop.run_temp()
 
-        # this one has name and shape
+        # this one still has names and shapes
         mg = MultiGetter(arr=(4, 5, 6))
         self.assertTrue(hasattr(mg, 'name'))
-        self.assertTrue(hasattr(mg, 'shape'))
-        self.assertFalse(hasattr(mg, 'names'))
-        self.assertFalse(hasattr(mg, 'shapes'))
+        self.assertFalse(hasattr(mg, 'shape'))
+        self.assertTrue(hasattr(mg, 'names'))
+        self.assertTrue(hasattr(mg, 'shapes'))
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
         data = loop.run_temp()
 
