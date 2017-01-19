@@ -25,14 +25,17 @@ class AlazarTech_ATS(Instrument):
     This is the qcodes driver for Alazar data acquisition cards
 
     status: beta-version
-        this driver is written with the ATS9870 in mind
-        updates might/will be necessary for other versions of Alazar cards
 
-    Args for constructor:
-    name: name ffor this instrument, passed to the base instrument
-    system_id: target system id for this instrument
-    board_id: target board id within the system for this instrument
-    dll_path: string contianing the path of the ATS driver dll
+    this driver is written with the ATS9870 in mind
+    updates might/will be necessary for other versions of Alazar cards
+
+    Args:
+
+        name: name for this instrument, passed to the base instrument
+        system_id: target system id for this instrument
+        board_id: target board id within the system for this instrument
+        dll_path: string contianing the path of the ATS driver dll
+
     """
     # override dll_path in your init script or in the board constructor
     # if you have it somewhere else
@@ -175,8 +178,11 @@ class AlazarTech_ATS(Instrument):
         """
         Find Alazar boards connected
 
-        :param dll_path: (string) path of the Alazar driver dll
-        :return: (list) list of board info for each connected board
+        Args:
+            dll_path: (string) path of the Alazar driver dll
+
+        Returns:
+            list: list of board info for each connected board
         """
         dll = ctypes.cdll.LoadLibrary(dll_path or cls.dll_path)
 
@@ -193,15 +199,20 @@ class AlazarTech_ATS(Instrument):
         """
         Get the information from a connected Alazar board
 
-        :param dll: (string) path of the Alazar driver dll
-        :param system_id: id of the Alazar system
-        :param board_id: id of the board within the alazar system
-        :return: dictionary containing the
-            system_id
-            board_id
-            board_kind (as string)
-            max_samples
-            bits_per_sample
+        Args:
+            dll (string): path of the Alazar driver dll
+            system_id: id of the Alazar system
+            board_id: id of the board within the alazar system
+
+        Return:
+
+            Dictionary containing
+
+                - system_id
+                - board_id
+                - board_kind (as string)
+                - max_samples
+                - bits_per_sample
         """
 
         # make a temporary instrument for this board, to make it easier
@@ -251,19 +262,23 @@ class AlazarTech_ATS(Instrument):
     def get_idn(self):
         """
         This methods gets the most relevant information of this instrument
-        :return: a dictionary containing:
-            'firmware': None
-            'model': as string
-            'serial': board serial number
-            'vendor': 'AlazarTech',
-            'CPLD_version': version of the CPLD
-            'driver_version': version of the driver dll
-            'SDK_version': version of the SDK
-            'latest_cal_date': date of the latest calibration (as string)
-            'memory_size': size of the memory in samples,
-            'asopc_type': type of asopc (as decimal number),
-            'pcie_link_speed': the speed of a single pcie link (in GB/s),
-            'pcie_link_width': number of pcie links
+
+        Returns:
+
+            Dictionary containing
+
+                - 'firmware': None
+                - 'model': as string
+                - 'serial': board serial number
+                - 'vendor': 'AlazarTech',
+                - 'CPLD_version': version of the CPLD
+                - 'driver_version': version of the driver dll
+                - 'SDK_version': version of the SDK
+                - 'latest_cal_date': date of the latest calibration (as string)
+                - 'memory_size': size of the memory in samples,
+                - 'asopc_type': type of asopc (as decimal number),
+                - 'pcie_link_speed': the speed of a single pcie link (in GB/s),
+                - 'pcie_link_width': number of pcie links
         """
         board_kind = self._board_names[
             self._ATS_dll.AlazarGetBoardKind(self._handle)]
@@ -344,29 +359,32 @@ class AlazarTech_ATS(Instrument):
         configure the ATS board and set the corresponding parameters to the
         appropriate values.
         For documentation of the parameters, see ATS-SDK programmer's guide
-        :param clock_source:
-        :param sample_rate:
-        :param clock_edge:
-        :param decimation:
-        :param coupling:
-        :param channel_range:
-        :param impedance:
-        :param bwlimit:
-        :param trigger_operation:
-        :param trigger_engine1:
-        :param trigger_source1:
-        :param trigger_slope1:
-        :param trigger_level1:
-        :param trigger_engine2:
-        :param trigger_source2:
-        :param trigger_slope2:
-        :param trigger_level2:
-        :param external_trigger_coupling:
-        :param external_trigger_range:
-        :param trigger_delay:
-        :param timeout_ticks:
 
-        :return: None
+        Args:
+            clock_source:
+            sample_rate:
+            clock_edge:
+            decimation:
+            coupling:
+            channel_range:
+            impedance:
+            bwlimit:
+            trigger_operation:
+            trigger_engine1:
+            trigger_source1:
+            trigger_slope1:
+            trigger_level1:
+            trigger_engine2:
+            trigger_source2:
+            trigger_slope2:
+            trigger_level2:
+            external_trigger_coupling:
+            external_trigger_range:
+            trigger_delay:
+            timeout_ticks:
+
+        Returns:
+            None
         """
         # region set parameters from args
 
@@ -452,25 +470,27 @@ class AlazarTech_ATS(Instrument):
         perform a single acquisition with the Alazar board, and set certain
         parameters to the appropriate values
         for the parameters, see the ATS-SDK programmer's guide
-        :param mode:
-        :param samples_per_record:
-        :param records_per_buffer:
-        :param buffers_per_acquisition:
-        :param channel_selection:
-        :param transfer_offset:
-        :param external_startcapture:
-        :param enable_record_headers:
-        :param alloc_buffers:
-        :param fifo_only_streaming:
-        :param interleave_samples:
-        :param get_processed_data:
-        :param allocated_buffers:
-        :param buffer_timeout:
 
-        :param acquisition_controller: An instance of an acquisition controller
-            that handles the dataflow of an acquisition
+        Args:
+            mode:
+            samples_per_record:
+            records_per_buffer:
+            buffers_per_acquisition:
+            channel_selection:
+            transfer_offset:
+            external_startcapture:
+            enable_record_headers:
+            alloc_buffers:
+            fifo_only_streaming:
+            interleave_samples:
+            get_processed_data:
+            allocated_buffers:
+            buffer_timeout:
+            acquisition_controller: An instance of an acquisition controller
+                that handles the dataflow of an acquisition
 
-        :return: whatever is given by acquisition_controller.post_acquire method
+        Returns:
+            Whatever is given by acquisition_controller.post_acquire method
         """
         # region set parameters from args
         self._set_if_present('mode', mode)
@@ -761,9 +781,13 @@ class AlazarTech_ATS(Instrument):
         """
         convert a value from a buffer to an actual value in volts based on the
         ranges of the channel
-        :param channel: number of the channel where the signal value came from
-        :param signal: the value that needs to be converted
-        :return: the corresponding value in volts
+
+        Args:
+            channel: number of the channel where the signal value came from
+            signal: the value that needs to be converted
+
+        Returns:
+             the corresponding value in volts
         """
         # TODO(damazter) (S) check this
         # TODO(damazter) (M) use byte value if range{channel}
@@ -774,7 +798,9 @@ class AlazarTech_ATS(Instrument):
         """
         Obtain the effective sampling rate of the acquisition
         based on clock speed and decimation
-        :return: the number of samples (per channel) per second
+
+        Returns:
+            the number of samples (per channel) per second
         """
         if self.sample_rate.get() == 'EXTERNAL_CLOCK':
             raise Exception('External clock is used, alazar driver '
@@ -973,17 +999,17 @@ class AcquisitionController(Instrument):
     choices.
 
     The basic structure of an acquisition is:
-    call to AlazarTech_ATS.acquire
-        internal configuration
-        call to acquisitioncontroller.pre_start_capture
-        Call to the start capture of the Alazar board
-        call to acquisitioncontroller.pre_acquire
-        loop over all buffers that need to be acquired
-            dump each buffer to acquisitioncontroller.handle_buffer
-            (only if buffers need to be recycled to finish the acquisiton)
-        dump remaining buffers to acquisitioncontroller.handle_buffer
-        alazar internals
-        return acquisitioncontroller.post_acquire
+
+        - call to AlazarTech_ATS.acquire internal configuration
+        - call to acquisitioncontroller.pre_start_capture
+        - Call to the start capture of the Alazar board
+        - call to acquisitioncontroller.pre_acquire
+        - loop over all buffers that need to be acquired
+          dump each buffer to acquisitioncontroller.handle_buffer
+          (only if buffers need to be recycled to finish the acquisiton)
+        - dump remaining buffers to acquisitioncontroller.handle_buffer
+          alazar internals
+        - return acquisitioncontroller.post_acquire
 
     Attributes:
         _alazar: a reference to the alazar instrument driver
@@ -1137,7 +1163,6 @@ class AcquisitionController(Instrument):
         Use this method to prepare yourself for the data acquisition
         The Alazar instrument will call this method right before
         'AlazarStartCapture' is called
-        :return:
         """
         raise NotImplementedError(
             'This method should be implemented in a subclass')
@@ -1145,7 +1170,6 @@ class AcquisitionController(Instrument):
     def pre_acquire(self):
         """
         This method is called immediately after 'AlazarStartCapture' is called
-        :return: nothing
         """
         raise NotImplementedError(
             'This method should be implemented in a subclass')
@@ -1154,8 +1178,12 @@ class AcquisitionController(Instrument):
         """
         This method should store or process the information that is contained
         in the buffers obtained during the acquisition.
-        :param buffer: np.array with the data from the Alazar card
-        :return: something, it is ignored in any case
+
+        Args:
+            buffer: np.array with the data from the Alazar card
+
+        Returns:
+            something, it is ignored in any case
         """
         raise NotImplementedError(
             'This method should be implemented in a subclass')
@@ -1165,7 +1193,9 @@ class AcquisitionController(Instrument):
         This method should return any information you want to save from this
         acquisition. The acquisition method from the Alazar driver will use
         this data as its own return value
-        :return: this function should return all relevant data that you want
+
+        Returns:
+            this function should return all relevant data that you want
             to get form the acquisition
         """
         raise NotImplementedError(

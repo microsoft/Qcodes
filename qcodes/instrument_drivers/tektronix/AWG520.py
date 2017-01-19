@@ -31,13 +31,16 @@ class Tektronix_AWG520(VisaInstrument):
     This is the python driver for the Tektronix AWG520
     Arbitrary Waveform Generator
 
-    TODO:
-    1) Get All
-    2) Remove test_send??
-    3) Add docstrings
+    .. todo::
 
-    TODO: use inheritance for common use with 520, currently contains
-          a lot of repetition
+        1) Get All
+        2) Remove test_send??
+        3) Add docstrings
+
+    .. todo::
+
+        use inheritance for common use with 520, currently contains
+        a lot of repetition
     '''
 
     def __init__(self, name, address, reset=False, clock=1e9, numpoints=1000,
@@ -572,11 +575,13 @@ class Tektronix_AWG520(VisaInstrument):
     def send_sequence(self, wfs, rep, wait, goto, logic_jump, filename):
         '''
         Sends a sequence file (for the moment only for ch1)
-        Inputs (mandatory):
+
+        Args:
 
            wfs:  list of filenames
 
-        Output:
+        Returs:
+
             None
         '''
         logging.debug(__name__ + ' : Sending sequence %s to instrument' % filename)
@@ -610,7 +615,8 @@ class Tektronix_AWG520(VisaInstrument):
     def send_sequence2(self,wfs1,wfs2,rep,wait,goto,logic_jump,filename):
         '''
         Sends a sequence file
-        Inputs (mandatory):
+
+        Args:
             wfs1:  list of filenames for ch1 (all must end with .pat)
             wfs2: list of filenames for ch2 (all must end with .pat)
             rep: list
@@ -618,7 +624,8 @@ class Tektronix_AWG520(VisaInstrument):
             goto: list
             logic_jump: list
             filename: name of output file (must end with .seq)
-        Output:
+
+        Returns:
             None
         '''
         logging.debug(__name__ + ' : Sending sequence %s to instrument' % filename)
