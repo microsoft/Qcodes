@@ -13,10 +13,10 @@ Writing a Driver
 
 Write a simple driver example
 with commented code
-  - add parameter
-  - add validator
-  - add custom stuff
-  - add doccstrings f.ex
+- add parameter
+- add validator
+- add custom stuff
+- add doccstrings f.ex
 
 .. todo::  missing
 
@@ -33,6 +33,108 @@ Simulation
 Explain the mock mock
 
 .. todo::  missing
+
+
+Combined Parameters Sweep
+-------------------------
+
+If you want to sweep multiple parameters at once qcodes offers the combine function.
+You can combine any number of any kind paramter. 
+We'll use a ManualParameter for this example.
+One can use both an array, or a set of arrays to pass the setpoint.
+We'll cover both cases in this example.
+
+
+.. code:: python
+
+    import numpy as np
+
+    from qcodes.instrument.parameter import ManualParameter
+    from qcodes.utils.validators import Numbers
+
+    gate = ManualParameter('gate', vals=Numbers(-10, 10))
+    frequency = ManualParameter('frequency', vals=Numbers(-10, 10))
+    amplitude = ManualParameter('amplitude', vals=Numbers(-10, 10))
+    # a manual parameter returns a value that has been set
+    # so fix it to a value for this example
+    amplitude.set(-1)
+
+    combined = qc.combine(gate, frequency, name="gate_frequency")
+
+
+A name is required, and the combined parameter can now be swept
+over, but we have to pass a list of values.
+
+.. code:: python
+
+    # use an array with number_of_parameters x number of setpoints 
+    sweep_vals = np.array([[1, 1], [1, 1]])
+
+    loop = qc.Loop(combined.sweep(sweep_vals), delay=0.001).each(amplitude)
+
+
+.. note:: the set operations are done sequentially, in this case first gate and then frequency is set.
+         If the operations are blocking, then the set will block.
+         Delay is counted for a step, not for a set. In this case set gate, set frequency and wait 0.0001
+
+This will return this data:
+
+DataSet:
+   mode     = DataMode.LOCAL
+   location = '2016-10-19/23-05-10'
+
+ +----------+--------------------+----------------+--------------+
+ | <Type>   | <array_id>         | <array.name>   | <array.shape>|
+ +==========+====================+================+==============+
+ | Setpoint | gate_frequency_set | gate_frequency | (2,)         |
+ +----------+--------------------+----------------+--------------+
+ | Measured | amplitude          | amplitude      | (2,)         |
+ +----------+--------------------+----------------+--------------+
+ | Measured | gate               | gate           | (2,)         |
+ +----------+--------------------+----------------+--------------+
+ | Measured | frequency          | frequency      | (2,)         |
+ +----------+--------------------+----------------+--------------+
+
+Where  gate_frequency_set contains just the sweep indices and the, perhaps confusingly 
+named measured gate and frequency contain the set data.
+
+One can decide to save an aggregated version of the set values, instead of the setpoints 
+indices.
+To do so one must define an aggregator. In the next example we sweep over x,y,z
+and we save the sum of them.
+
+.. code:: python
+
+    x = ManualParameter('x', vals=Numbers(-10, 10))
+    y = ManualParameter('y', vals=Numbers(-10, 10))
+    z = ManualParameter('z', vals=Numbers(-10, 10))
+    p4 = ManualParameter('p4', vals=Numbers(-10, 10))
+    # set so we can get a value back
+    p4.set(-1)
+
+
+    def linear(x,y,z):
+        return x+y+z
+
+    magnet = qc.combine(x, y, z,
+                         name="myvector",
+                         units="T",
+                         label="magnetic field",
+                         aggregator=linear)
+
+    # use number_of_parameters arrays with a length of number of setpoints 
+    # note that it will error if the length of the arrays are different
+    x_vals = np.linspace(1, 2, 2)
+    y_vals = np.linspace(1, 2, 2)
+    z_vals = np.linspace(1, 2, 2)
+
+    loop = qc.Loop(magnet.sweep(x_vals, y_vals, z_vals), delay=0.001).each(p4)
+    data =loop.run()
+
+
+
+   data.myvector_set
+   >>> array([ 3.,  6.])
 
 
 .. __metainstrument :
@@ -126,7 +228,7 @@ Let's put these babies on servers:
     meta = Meta(name='meta', server_name=meta_server_name,
                       instruments=[base1, base2])
 
-.. notes:: Meta instruments go on a different server from the
+.. note:: Meta instruments go on a different server from the
     low-level instruments it references, because reasons.
 
 

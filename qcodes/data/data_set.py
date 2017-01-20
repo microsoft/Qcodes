@@ -36,10 +36,12 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
     Args:
         location (str or callable or False, optional): If you provide a string,
             it must be an unused location in the io manager. Can also be:
+
             - a callable ``location provider`` with one required parameter
               (the io manager), and one optional (``record`` dict),
               which returns a location string when called
             - ``False`` - denotes an only-in-memory temporary DataSet.
+
             Note that the full path to or physical location of the data is a
             combination of io + location. the default ``DiskIO`` sets the base
             directory, which this location is a relative path inside.
@@ -66,13 +68,15 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
             ``get_data_manager()``.
 
         mode (DataMode, optional): connection type to the ``DataServer``.
-            ``DataMode.LOCAL``: this DataSet doesn't communicate across
-                processes.
-            ``DataMode.PUSH_TO_SERVER``: no local copy of data, just pushes
-                each measurement to a ``DataServer``.
-            ``DataMode.PULL_FROM_SERVER``: pulls changes from the
-                ``DataServer`` on calling ``self.sync()``. Reverts to local if
-                and when it stops being the live measurement.
+
+            - ``DataMode.LOCAL``: this DataSet doesn't communicate across
+              processes.
+            - ``DataMode.PUSH_TO_SERVER``: no local copy of data, just pushes
+              each measurement to a ``DataServer``.
+            - ``DataMode.PULL_FROM_SERVER``: pulls changes from the
+              ``DataServer`` on calling ``self.sync()``. Reverts to local if
+              and when it stops being the live measurement.
+
             Default ``DataMode.LOCAL``.
 
         arrays (Optional[List[qcodes.DataArray]): arrays to add to the DataSet.
@@ -215,14 +219,16 @@ class DataSet(DelegateAttributes):
             ``get_data_manager()``.
 
         mode (DataMode, optional): connection type to the ``DataServer``.
-            ``DataMode.LOCAL``: this DataSet doesn't communicate across
-                processes.
-            ``DataMode.PUSH_TO_SERVER``: no local copy of data, just pushes
-                each measurement to a ``DataServer``.
-            ``DataMode.PULL_FROM_SERVER``: pulls changes from the
-                ``DataServer`` on calling ``self.sync()``. Reverts to local if
-                and when it stops being the live measurement.
-            Default ``DataMode.LOCAL``.
+
+            - ``DataMode.LOCAL``: this DataSet doesn't communicate across
+              processes.
+            - ``DataMode.PUSH_TO_SERVER``: no local copy of data, just pushes
+              each measurement to a ``DataServer``.
+            - ``DataMode.PULL_FROM_SERVER``: pulls changes from the
+              ``DataServer`` on calling ``self.sync()``. Reverts to local if
+              and when it stops being the live measurement.
+
+            Default to ``DataMode.LOCAL``.
 
         arrays (Optional[List[qcodes.DataArray]): arrays to add to the DataSet.
                 Can be added later with ``self.add_array(array)``.
@@ -550,7 +556,6 @@ class DataSet(DelegateAttributes):
         replace action_indices tuple with compact string array_ids
         stripping off as much extraneous info as possible
         """
-
         action_indices = [array.action_indices for array in arrays]
         for array in arrays:
             name = array.full_name
@@ -611,9 +616,68 @@ class DataSet(DelegateAttributes):
                     time.time() > self.last_write + self.write_period):
                 self.write()
                 self.last_write = time.time()
-        else: # in PULL_FROM_SERVER mode; store() isn't legal
+        else:  # in PULL_FROM_SERVER mode; store() isn't legal
             raise RuntimeError('This object is pulling from a DataServer, '
                                'so data insertion is not allowed.')
+
+    def default_parameter_name(self, paramname='amplitude'):
+        """ Return name of default parameter for plotting
+
+        The default parameter is determined by looking into
+        metdata['default_parameter_name'].  If this variable is not present,
+        then the closest match to the argument paramname is tried.
+
+        Args:
+            paramname (str): Name to match to parameter name
+
+        Returns:
+            name ( Union[str, None] ): name of the default parameter
+        """
+
+        arraynames = self.arrays.keys()
+
+        # overrule parameter name from the metadata
+        if self.metadata.get('default_parameter_name', False):
+            paramname = self.metadata['default_parameter_name']
+
+        # try to return the exact name
+        if paramname in arraynames:
+            return paramname
+
+        # try find something similar
+        vv = [v for v in arraynames if v.endswith(paramname)]
+        if (len(vv) > 0):
+            return vv[0]
+
+        # try to get the first non-setpoint array
+        vv = [v for v in arraynames if not self.arrays[v].is_setpoint]
+        if (len(vv) > 0):
+            return sorted(vv)[0]
+
+        # fallback: any array found
+        try:
+            name = sorted((list(arraynames)))[0]
+            return name
+        except IndexError:
+            pass
+        return None
+
+    def default_parameter_array(self, paramname='amplitude'):
+        """ Return default parameter array
+
+        Args:
+            paramname (str): Name to match to parameter name.
+                 Defaults to 'amplitude'
+
+        Returns:
+            array (DataArray): array corresponding to the default parameter
+
+        See also:
+            default_parameter_name
+
+        """
+        paramname = self.default_parameter_name(paramname=paramname)
+        return getattr(self, paramname, None)
 
     def read(self):
         """Read the whole DataSet from storage, overwriting the local data."""
@@ -627,11 +691,14 @@ class DataSet(DelegateAttributes):
             return
         self.formatter.read_metadata(self)
 
-    def write(self):
+    def write(self, write_metadata=False):
         """
         Writes updates to the DataSet to storage.
         N.B. it is recommended to call data_set.finalize() when a DataSet is
         no longer expected to change to ensure files get closed
+
+        Args:
+            write_metadata (bool): write the metadata to disk
         """
         if self.mode != DataMode.LOCAL:
             raise RuntimeError('This object is connected to a DataServer, '
@@ -640,7 +707,10 @@ class DataSet(DelegateAttributes):
         if self.location is False:
             return
 
-        self.formatter.write(self, self.io, self.location)
+        self.formatter.write(self,
+                             self.io,
+                             self.location,
+                             write_metadata=False)
 
     def write_copy(self, path=None, io_manager=None, location=None):
         """
