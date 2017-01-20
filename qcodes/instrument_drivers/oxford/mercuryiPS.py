@@ -3,8 +3,33 @@ import re
 import time
 import numpy as np
 
-from qcodes import IPInstrument
-from qcodes.utils.validators import Enum, Anything
+from qcodes import IPInstrument, MultiParameter
+from qcodes.utils.validators import Enum
+
+class MercuryiPSArray(MultiParameter):
+    """
+    This parameter holds the MercuryiPS's 3 dimensional parameters
+
+    """
+    def __init__(self, name, instrument, names, units, get_cmd, set_cmd, **kwargs):
+        shapes = tuple(() for i in names)
+        super().__init__(name, names, shapes, **kwargs)
+        self._get = get_cmd
+        self._set = set_cmd
+        self._instrument = instrument
+        self.units = units
+
+    def get(self):
+        try:
+            value = self._get()
+            self._save_val(value)
+            return value
+        except Exception as e:
+            e.args = e.args + ('getting {}'.format(self.full_name),)
+            raise e
+
+    def set(self, setpoint):
+        return self._set(setpoint)
 
 
 class MercuryiPS(IPInstrument):
@@ -54,54 +79,46 @@ class MercuryiPS(IPInstrument):
         self._determine_current_to_field()
 
         self.add_parameter('setpoint',
-                           names=['B'+ax.lower()+'_setpoint'
-                                  for ax in self.axes],
+                           names=tuple('B' + ax.lower() + '_setpoint' for ax in axes),
+                           units=tuple('T' for ax in axes),
                            get_cmd=partial(self._get_fld, self.axes, 'FSET'),
-                           set_cmd=partial(self._ramp_to_setpoint,
-                                           self.axes, 'FSET'),
-                           units=['T'for ax in self.axes],
-                           vals=Anything())
+                           set_cmd=partial(self._ramp_to_setpoint, self.axes, 'FSET'),
+                           parameter_class=MercuryiPSArray)
 
         self.add_parameter('rate',
-                           names=['rate_B'+ax.lower() for ax in self.axes],
+                           names=tuple('rate_B' + ax.lower() for ax in axes),
+                           units=tuple('T/m' for ax in axes),
                            get_cmd=partial(self._get_fld, self.axes, 'RFST'),
-                           set_cmd=partial(self._ramp_to_setpoint,
-                                           self.axes, 'RFST'),
-                           units=['T/m'for ax in self.axes],
-                           vals=Anything())
+                           set_cmd=partial(self._ramp_to_setpoint, self.axes, 'RFST'),
+                           parameter_class=MercuryiPSArray)
 
         self.add_parameter('fld',
-                           names=['B'+ax.lower() for ax in self.axes],
+                           names=tuple('B'+ax.lower() for ax in self.axes),
+                           units=tuple('T'for ax in self.axes),
                            get_cmd=partial(self._get_fld, self.axes, 'FLD'),
-                           set_cmd=partial(self._ramp_to_setpoint,
-                                           self.axes, 'FSET'),
-                           units=['T'for ax in self.axes],
-                           vals=Anything())
+                           set_cmd=partial(self._ramp_to_setpoint, self.axes, 'FSET'),
+                           parameter_class=MercuryiPSArray)
 
         self.add_parameter('fldC',
                            names=['B'+ax.lower() for ax in self.axes],
-                           get_cmd=partial(self._get_fld,
-                                           self.axes, 'CURR'),
-                           set_cmd=partial(self._ramp_to_setpoint,
-                                           self.axes, 'CSET'),
-                           units=['T'for ax in self.axes],
-                           vals=Anything())
+                           units=['T' for ax in self.axes],
+                           get_cmd=partial(self._get_fld, self.axes, 'CURR'),
+                           set_cmd=partial(self._ramp_to_setpoint, self.axes, 'CSET'),
+                           parameter_class=MercuryiPSArray)
 
         self.add_parameter('rtp',
                            names=['radius', 'theta', 'phi'],
-                           get_cmd=partial(self._get_rtp,
-                                           self.axes, 'FLD'),
-                           set_cmd=partial(self._set_rtp, self.axes, 'FSET'),
                            units=['|B|', 'rad', 'rad'],
-                           vals=Anything())
+                           get_cmd=partial(self._get_rtp, self.axes, 'FLD'),
+                           set_cmd=partial(self._set_rtp, self.axes, 'FSET'),
+                           parameter_class=MercuryiPSArray)
 
         self.add_parameter('rtpC',
                            names=['radius', 'theta', 'phi'],
-                           get_cmd=partial(self._get_rtp,
-                                           self.axes, 'CURR'),
-                           set_cmd=partial(self._set_rtp, self.axes, 'CSET'),
                            units=['|B|', 'rad', 'rad'],
-                           vals=Anything())
+                           get_cmd=partial(self._get_rtp, self.axes, 'CURR'),
+                           set_cmd=partial(self._set_rtp, self.axes, 'CSET'),
+                           parameter_class=MercuryiPSArray)
 
         # so we have radius, theta and phi in buffer
         self.rtp.get()
