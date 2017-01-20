@@ -26,16 +26,10 @@ class AcqVariablesParam(Parameter):
     def to_default(self):
         default = self._get_default()
         self.set(default)
-      
-    def check(self):
-        val = self._latest()['value']
-        self._check_and_update_instr(value)
-        return True
         
-
-class SamplesAcqParam(Parameter):
+class AveAcqParam(Parameter):
     """
-    Hardware controlled parameter class for Alazar acquisition. To be used with
+    Software controlled parameter class for Alazar acquisition. To be used with
     HD_Samples_Controller (tested with ATS9360 board) for return of an array of
     sample data from the Alazar, averaged over records and buffers.
 
@@ -43,48 +37,42 @@ class SamplesAcqParam(Parameter):
     TODO(nataliejpg) setpoint units
     """
 
-    def __init__(self, name, instrument):
+    def __init__(self, name, instrument, demod_length):
         super().__init__(name)
         self._instrument = instrument
         self.acquisition_kwargs = {}
         self.names = ('magnitude', 'phase')
-        
-    def update_sweep(self, start, stop, npts):
-        demod_length = self._instrument._demod_length
-        n = tuple(np.linspace(start, stop, num=npts))
-        wave_index = tuple(range(demod_length))
-        self.shapes = ((demod_length, npts), (demod_length, npts))
+        self.shapes = ((demod_length, ), (demod_length, ))
 
     def get(self):
-        self._instr.int_time.check()
-        self._instr.int_delay.check()
         mag, phase = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
             **self.acquisition_kwargs)
         return mag, phase
 
-
-class HD_Samples_Controller(AcquisitionController):
+class HD_Ave_Controller(AcquisitionController):
     """
     This is the Acquisition Controller class which works with the ATS9360,
-    averaging over buffers and records and demodulating with a software
-    reference signal, returning the  samples.
-
-    Args:
-        name: name for this acquisition_conroller as an instrument
-        alazar_name: the name of the alazar instrument such that this controller
-            can communicate with the Alazar
-        demod_freqs: the frequencies of the software wave to be created
-        filt: the filter to be used to filter out double freq component (win or ls)
-        numtaps: number of freq components used in the filter
-        chan_b: whether there is also a second channel of data to be processed
-            and returned
-        **kwargs: kwargs are forwarded to the Instrument base class
+    averaging over buffers and records, demodulating with a software
+    reference signal, averaging over the  samples.
+    args:
+    name: name for this acquisition_conroller as an instrument
+    alazar_name: the name of the alazar instrument such that this controller
+        can communicate with the Alazar
+    demod_freqs: the frequency of the software wave to be created
+    samp_rate: the rate of sampling
+    filt: the filter to be used to filter out double freq component
+    chan_b: whether there is also a second channel of data to be processed
+        and returned
+    **kwargs: kwargs are forwarded to the Instrument base class
 
     TODO(nataliejpg) test filter options
     TODO(nataliejpg) finish implementation of channel b option
+    TODO(nataliejpg) what should be private?
+    TODO(nataliejpg) where should filter_dict live?
     """
-    filter_dict = {'win': 0, 'ls': 1}
+
+    filter_dict = {'win': 0, 'ls': 1, 'ave': 2}
     samples_divisor = AlazarTech_ATS9360.samples_divisor
 
     def __init__(self, name, alazar_name, demod_freqs=[20e6], filter='win',
@@ -99,7 +87,8 @@ class HD_Samples_Controller(AcquisitionController):
         super().__init__(name, alazar_name, **kwargs)
 
         self.add_parameter(name='acquisition',
-                           parameter_class=SamplesAcqParam)
+                           demod_length = self._demod_length,
+                           parameter_class=AveAcqParam)
         for i, res in enumerate(demod_freqs):
             self.add_parameter(name='demod_freq_{}'.format(i),
                                initial_value=res,
@@ -114,7 +103,7 @@ class HD_Samples_Controller(AcquisitionController):
                            check_and_update_fn=self._update_int_delay,
                            default_fn=self._int_delay_default,
                            parameter_class=AcqVariablesParam)
-        
+                           
     def _update_int_time(instr, value):
         """
         Function to validate value for int_time before setting parameter
@@ -379,6 +368,10 @@ class HD_Samples_Controller(AcquisitionController):
                                     self.sample_rate,
                                     self.filter_settings['numtaps'],
                                     axis=1)
+        elif self.filter_settings['filter'] == 2:
+            re_filtered = re_mat
+            im_filtered = im_mat
+
 
         # apply integration limits
         beginning = int(self.int_delay() * self.sample_rate)
@@ -389,8 +382,7 @@ class HD_Samples_Controller(AcquisitionController):
 
         # convert to magnitude and phase
         complex_mat = re_limited + im_limited * 1j
-        magnitude = abs(complex_mat) 
-        phase = np.angle(complex_mat, deg=True)
+        magnitude = np.mean(abs(complex_mat) , axis=1)
+        phase = np.mean(np.angle(complex_mat, deg=True), axis=1)
         
         return magnitude, phase
-
