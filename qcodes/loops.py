@@ -579,7 +579,6 @@ class ActiveLoop(Metadatable):
         for name, full_name, label, shape, i, sp_vi, sp_ni, sp_li in zip(
                 names, full_names, labels, shapes, action_indices,
                 sp_vals, sp_names, sp_labels):
-
             if shape is None or shape == ():
                 shape, sp_vi, sp_ni, sp_li = (), (), (), ()
             else:
@@ -610,7 +609,9 @@ class ActiveLoop(Metadatable):
         elif len(inputs) == len(blanks):
             return inputs
         else:
-            raise ValueError('Wrong number of inputs supplied')
+            raise ValueError(
+                'Wrong number of inputs supplied:\n'
+                'Inputs: {}\nBlanks: {}'.format(inputs, blanks))
 
     def _make_setpoint_array(self, shape, i, prev_setpoints, vals, name,
                              label):
