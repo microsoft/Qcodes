@@ -14,7 +14,6 @@ class ScopeArray(ArrayParameter):
         super().__init__('scope_measurement', shape=(2500,),
                          label='Voltage',
                          unit='V ',
-                         # first setpoint array is 1D, second is 2D, etc...
                          setpoint_names=('Time', ),
                          setpoint_labels=('Time', ),
                          docstring='holds an array from scope')
@@ -41,7 +40,9 @@ class ScopeArray(ArrayParameter):
         message = self._curveasker(self.channel)
         xdata, ydata, npoints = self._curveparameterparser(message)
         # Due to the limitations in the current api the below solution
-        # to change setpoints does nothing
+        # to change setpoints does nothing because the setpoints have
+        # already been copied to the dataset when get is called.
+
         # self.setpoints = (tuple(xdata),)
         # self.shape = (npoints,)
         return ydata
@@ -133,7 +134,6 @@ class ScopeArray(ArrayParameter):
         # the raw curve data starts with a header containing the char #
         # followed by on digit giving the number of digits in the len of the array in bytes
         # and the length of the array. I.e. the string #45000 is 5000 bytes represented by 4 digits.
-        # raw_data_offset = 2+len(preamble['no_of_bytes']) * len(preamble['no_of_points'])
         total_number_of_bytes = preamble['no_of_bytes']*preamble['no_of_points']
         raw_data_offset = 2 + len(str(total_number_of_bytes))
         curvestr = curvestr[raw_data_offset:-1]
