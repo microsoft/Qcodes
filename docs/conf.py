@@ -93,7 +93,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '_templates', '_auto']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -383,4 +383,8 @@ try:
 except ImportError as e:
         print(e)
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['../_templates']
+templates_path = []
+
+# we are using non local images for badges. These will change so we dont
+# want to store them locally.
+suppress_warnings = ['image.nonlocal_uri']

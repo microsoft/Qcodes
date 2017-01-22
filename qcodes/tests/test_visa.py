@@ -20,13 +20,13 @@ class MockVisa(VisaInstrument):
 class MockVisaHandle:
     '''
     mock the API needed for a visa handle that throws lots of errors:
+
     - any write command sets a single "state" variable to a float
       after the last : in the command
-      - a negative number results in an error raised here
-      - 0 results in a return code for visa timeout
-
+    - a negative number results in an error raised here
+    - 0 results in a return code for visa timeout
     - any ask command returns the state
-      - a state > 10 throws an error
+    - a state > 10 throws an error
     '''
     def __init__(self):
         self.state = 0
@@ -70,20 +70,20 @@ class TestVisaInstrument(TestCase):
     args1 = [
         'be more positive!',
         "writing 'STAT:-10.000' to <MockVisa: Joe>",
-        'setting Joe:state to -10'
+        'setting Joe_state to -10'
     ]
 
     # error args for set(0)
     args2 = [
         "writing 'STAT:0.000' to <MockVisa: Joe>",
-        'setting Joe:state to 0'
+        'setting Joe_state to 0'
     ]
 
     # error args for get -> 15
     args3 = [
         "I'm out of fingers",
         "asking 'STAT?' to <MockVisa: Joe>",
-        'getting Joe:state'
+        'getting Joe_state'
     ]
 
     def test_ask_write_local(self):

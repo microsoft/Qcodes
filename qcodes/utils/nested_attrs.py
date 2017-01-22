@@ -44,8 +44,6 @@ class NestedAttrAccess:
         """
         parts = self._split_attr(attr)
 
-        # import pdb; pdb.set_trace()
-
         try:
             return self._follow_parts(parts)
 

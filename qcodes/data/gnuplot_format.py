@@ -13,25 +13,25 @@ class GNUPlotFormat(Formatter):
     Saves data in one or more gnuplot-format files. We make one file for
     each set of matching dependent variables in the loop.
 
-    options:
+    Args:
 
-    extension (default 'dat'): file extension for data files
+        extension (default 'dat'): file extension for data files
 
-    terminator (default '\\n'): newline character(s) to use on write
-        not used for reading, we will read any combination of \\r and \\n
+        terminator (default '\\\\n'): newline character(s) to use on write
+            not used for reading, we will read any combination of '\\\\r' and '\\\\n'
 
-    separator (default '\\t'): field (column) separator, must be whitespace.
-        Only used for writing, we will read with any whitespace separation.
+        separator (default '\\\\t'): field (column) separator, must be whitespace.
+            Only used for writing, we will read with any whitespace separation.
 
-    comment (default '# '): lines starting with this are not data
-        Comments are written with this full string, and identified on read
-        by just the string after stripping whitespace.
+        comment (default '# '): lines starting with this are not data
+            Comments are written with this full string, and identified on read
+            by just the string after stripping whitespace.
 
-    number_format (default 'g'): from the format mini-language, how to
-        format numeric data into a string
+        number_format (default 'g'): from the format mini-language, how to
+            format numeric data into a string
 
-    always_nest (default True): whether to always make a folder for files
-        or just make a single data file if all data has the same setpoints
+        always_nest (default True): whether to always make a folder for files
+            or just make a single data file if all data has the same setpoints
 
     These files are basically tab-separated values, but any quantity of
     any whitespace characters is accepted.
@@ -42,16 +42,19 @@ class GNUPlotFormat(Formatter):
 
     The data is preceded by comment lines (starting with #).
     We use three:
+
     - one for the variable name
     - the (longer) axis label, in quotes so a label can contain whitespace.
     - for each dependent var, the (max) number of points in that dimension
-        (this also tells us how many dependent vars we have in this file)
+      (this also tells us how many dependent vars we have in this file)
 
-    # id1\tid2\t\id3...
-    # "label1"\t"label2"\t"label3"...
-    # 100\t250
-    1\t2\t3...
-    2\t3\t4...
+    ::
+
+        # id1\tid2\tid3...
+        # "label1"\t"label2"\t"label3"...
+        # 100\t250
+        1\t2\t3...
+        2\t3\t4...
 
     For data of 2 dependent variables, gnuplot puts each inner loop into one
     block, then increments the outer loop in the next block, separated by a
@@ -62,6 +65,7 @@ class GNUPlotFormat(Formatter):
     use 2 blank lines sometimes, to denote a whole new dataset, which sort
     of corresponds to our situation.)
     """
+
     def __init__(self, extension='dat', terminator='\n', separator='\t',
                  comment='# ', number_format='g', metadata_file=None):
         self.metadata_file = metadata_file or 'snapshot.json'
@@ -96,12 +100,13 @@ class GNUPlotFormat(Formatter):
         a DataSet. Setpoint data may be duplicated across multiple files,
         but each measured DataArray must only map to one file.
 
-        data_set: the DataSet we are reading into
-        f: a file-like object to read from
-        ids_read: a `set` of array_ids that we have already read.
-            when you read an array, check that it's not in this set (except
-            setpoints, which can be in several files with different inner loop)
-            then add it to the set so other files know not to read it again
+        args:
+            data_set: the DataSet we are reading into
+            f: a file-like object to read from
+            ids_read: a `set` of array_ids that we have already read.
+                when you read an array, check that it's not in this set (except
+                setpoints, which can be in several files with different inner loop)
+                then add it to the set so other files know not to read it again
         """
         if not f.name.endswith(self.extension):
             return
@@ -234,7 +239,7 @@ class GNUPlotFormat(Formatter):
             parts = re.split('"\s+"', labelstr[1:-1])
             return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
 
-    def write(self, data_set, io_manager, location, force_write=False):
+    def write(self, data_set, io_manager, location, force_write=False, write_metadata=True):
         """
         Write updates in this DataSet to storage.
 
@@ -297,6 +302,10 @@ class GNUPlotFormat(Formatter):
             # modified_range, we just assume it's got the values we need.
             for array in group.data + (group.set_arrays[-1],):
                 array.mark_saved(save_range[1])
+
+        if write_metadata:
+            self.write_metadata(
+                data_set, io_manager=io_manager, location=location)
 
     def write_metadata(self, data_set, io_manager, location, read_first=True):
         """
