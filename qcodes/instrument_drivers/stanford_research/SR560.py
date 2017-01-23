@@ -1,11 +1,12 @@
 from qcodes import Instrument
 from qcodes.instrument.parameter import ManualParameter
+from qcodes.instrument.parameter import MultiParameter
 from qcodes.utils.validators import Bool, Enum
 
-from qcodes.instrument.parameter import Parameter
 
 
-class VoltageParameter(Parameter):
+
+class VoltageParameter(MultiParameter):
     """
     Amplified voltage measurement via an SR560 preamp and a measured voltage.
 
@@ -32,13 +33,13 @@ class VoltageParameter(Parameter):
     def __init__(self, measured_param, v_amp_ins, name='volt'):
         p_name = measured_param.name
 
-        super().__init__(name=name, names=(p_name+'_raw', name))
+        super().__init__(name=name, names=(p_name+'_raw', name), shapes=((), ()))
 
         self._measured_param = measured_param
         self._instrument = v_amp_ins
 
         p_label = getattr(measured_param, 'label', None)
-        p_unit = getattr(measured_param, 'units', None)
+        p_unit = getattr(measured_param, 'unit', None)
 
         self.labels = (p_label, 'Voltage')
         self.units = (p_unit, 'V')
@@ -75,7 +76,7 @@ class SR560(Instrument):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
 
-        cutoffs = [0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300, 1000,
+        cutoffs = ['DC', 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300, 1000,
                    3000, 10000, 30000, 100000, 300000, 1000000]
 
         gains = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000,
@@ -85,14 +86,14 @@ class SR560(Instrument):
                            parameter_class=ManualParameter,
                            initial_value='DC',
                            label='High pass',
-                           units='Hz',
+                           unit='Hz',
                            vals=Enum(*cutoffs))
 
         self.add_parameter('cutoff_hi',
                            parameter_class=ManualParameter,
-                           initial_value='1e6',
+                           initial_value=1e6,
                            label='Low pass',
-                           units='Hz',
+                           unit='Hz',
                            vals=Enum(*cutoffs))
 
         self.add_parameter('invert',
@@ -105,7 +106,7 @@ class SR560(Instrument):
                            parameter_class=ManualParameter,
                            initial_value=10,
                            label='Gain',
-                           units=None,
+                           unit=None,
                            vals=Enum(*gains))
 
     def get_idn(self):
