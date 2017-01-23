@@ -57,8 +57,8 @@ class SamplesAcqParam(Parameter):
         self.shapes = ((demod_length, npts), (demod_length, npts))
 
     def get(self):
-        self._instr.int_time.check()
-        self._instr.int_delay.check()
+        self._instrument.int_time.check()
+        self._instrument.int_delay.check()
         mag, phase = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
             **self.acquisition_kwargs)
