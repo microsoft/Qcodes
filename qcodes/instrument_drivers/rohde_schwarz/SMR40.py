@@ -40,13 +40,13 @@ class RohdeSchwarz_SMR40(VisaInstrument):
                            get_cmd=self.do_get_frequency,
                            set_cmd=self.do_set_frequency,
                            vals=vals.Numbers(10e6, 40e9),
-                           units='Hz')
+                           unit='Hz')
         self.add_parameter('power',
                            label='Power',
                            get_cmd=self.do_get_power,
                            set_cmd=self.do_set_power,
                            vals=vals.Numbers(-30, 25),
-                           units='dBm')
+                           unit='dBm')
         self.add_parameter('status',
                            get_cmd=self.do_get_status,
                            set_cmd=self.do_set_status,

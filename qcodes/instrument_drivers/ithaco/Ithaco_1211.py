@@ -68,7 +68,7 @@ class Ithaco_1211(Instrument):
                            parameter_class=ManualParameter,
                            initial_value=1e-8,
                            label='Sensitivity',
-                           units='A/V',
+                           unit='A/V',
                            vals=Enum(1e-11, 1e-10, 1e-09, 1e-08, 1e-07,
                                      1e-06, 1e-05, 1e-4, 1e-3))
 
@@ -82,14 +82,14 @@ class Ithaco_1211(Instrument):
                            parameter_class=ManualParameter,
                            initial_value=1,
                            label='Sensitivity factor',
-                           units=None,
+                           unit=None,
                            vals=Enum(0.1, 1, 10))
 
         self.add_parameter('suppression',
                            parameter_class=ManualParameter,
                            initial_value=1e-7,
                            label='Suppression',
-                           units='A',
+                           unit='A',
                            vals=Enum(1e-10, 1e-09, 1e-08, 1e-07, 1e-06,
                                      1e-05, 1e-4, 1e-3))
 
@@ -97,7 +97,7 @@ class Ithaco_1211(Instrument):
                            parameter_class=ManualParameter,
                            initial_value=0.3,
                            label='Rise Time',
-                           units='msec',
+                           unit='msec',
                            vals=Enum(0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30,
                                      100, 300, 1000))
 

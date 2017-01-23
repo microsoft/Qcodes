@@ -69,7 +69,7 @@ class Decadac(VisaInstrument):
                                set_cmd=partial(self._setvoltage,
                                                channel=channelno),
                                label='Voltage',
-                               units='V')
+                               unit='V')
 
             self.add_parameter('ch{}_voltrange'.format(channelno),
                                get_cmd=partial(self._getvoltrange, channelno),
@@ -80,7 +80,7 @@ class Decadac(VisaInstrument):
                                get_cmd=partial(self._getoffset, channelno),
                                set_cmd=partial(self._setoffset, channelno),
                                label='Channel {} offset'.format(channelno),
-                               units='V',
+                               unit='V',
                                docstring="""
                                          The offset is applied to the channel.
                                          E.g. if ch1_offset = 1 and ch_voltage
