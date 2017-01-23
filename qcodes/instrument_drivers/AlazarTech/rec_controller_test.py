@@ -28,15 +28,16 @@ class AcqVariablesParam(Parameter):
         self.set(default)
 
 
-class AveragedAcqParam(Parameter):
+class RecordsAcqParam(Parameter):
     """
     Software controlled parameter class for Alazar acquisition. To be used with
-    HD_Averaging_Controller (tested with ATS9360 board) for return of
-    averaged magnitude and phase data from the Alazar.
+    HD_Records_Controller (tested with ATS9360 board) for return of an array of
+    records data from the Alazar, averaged over and buffers.
 
     TODO(nataliejpg) setpoints (including names and units)
     TODO(nataliejpg) setpoint units
     TODO(nataliejpg) convert demod_index setpoint into actual frequency
+    TODO(nataliejpg) convert records setpoint into actual frequency
     """
 
     def __init__(self, name, instrument, demod_length):
@@ -46,6 +47,12 @@ class AveragedAcqParam(Parameter):
         self.names = ('magnitude', 'phase')
         self.shapes = ((demod_length, ), (demod_length, ))
 
+    def update_sweep(self, npts, start=None, stop=None):
+        demod_length = self._instrument._demod_length
+        # rec_list = tuple(np.linspace(start, stop, num=npts))
+        # demod_index = tuple(range(demod_length))
+        self.shapes = ((demod_length, npts), (demod_length, npts))
+
     def get(self):
         mag, phase = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
@@ -53,11 +60,11 @@ class AveragedAcqParam(Parameter):
         return mag, phase
 
 
-class HD_Averaging_Controller(AcquisitionController):
+class HD_Records_Controller(AcquisitionController):
     """
     This is the Acquisition Controller class which works with the ATS9360,
-    averaging over samples, buffers and records, demodulating with a software
-    reference signal.
+    averaging over buffers and samples, demodulating with software
+    reference signals.
 
     Args:
         name: name for this acquisition_conroller as an instrument
@@ -77,6 +84,7 @@ class HD_Averaging_Controller(AcquisitionController):
     TODO(nataliejpg) where should filter_dict live?
     TODO(nataliejpg) demod_freq should be changeable number: maybe channels
     TODO(nataliejpg) try using fit from helpers
+    TODO(nataliejpg) make records a parameter or similar (MultiParam?)
     TODO(nataliejpg) check docstrings
     """
 
@@ -91,12 +99,13 @@ class HD_Averaging_Controller(AcquisitionController):
         self._demod_length = len(demod_freqs)
         self.number_of_channels = 2
         self.samples_per_record = None
+        self.records_per_buffer = None
         self.sample_rate = None
         super().__init__(name, alazar_name, **kwargs)
 
         self.add_parameter(name='acquisition',
                            demod_length=self._demod_length,
-                           parameter_class=AveragedAcqParam)
+                           parameter_class=RecordsAcqParam)
         for i, res in enumerate(demod_freqs):
             self.add_parameter(name='demod_freq_{}'.format(i),
                                initial_value=res,
@@ -230,7 +239,7 @@ class HD_Averaging_Controller(AcquisitionController):
         """
         Updates the kwargs to be used when
         alazar_driver.acquisition() is called via a get call of the
-        acquisition SamplesParam. Should be used by the user for
+        acquisition SamplesParam. Should be used by the user for 
         updating averaging settings since the 'samples_per_record'
         kwarg is updated via the int_time and int_delay parameters
 
@@ -244,6 +253,9 @@ class HD_Averaging_Controller(AcquisitionController):
                              'samples_per_record cannot be set manually '
                              'via update_acquisition_kwargs and should instead'
                              ' be set by setting int_time and int_delay')
+        if 'records_per_buffer' in kwargs:
+            self.acquisition.update_sweep(kwargs['records_per_buffer'])
+            self.records_per_buffer = kwargs['records_per_buffer']
         self.acquisition.acquisition_kwargs.update(**kwargs)
 
     def pre_start_capture(self):
@@ -260,18 +272,24 @@ class HD_Averaging_Controller(AcquisitionController):
             raise Exception('acq controller sample rate does not match '
                             'instrument value, most likely need '
                             'to set and check int_time and int_delay')
-        self.records_per_buffer = alazar.records_per_buffer.get()
+        if self.records_per_buffer != alazar.records_per_buffer.get():
+            raise Exception('acq controller records per buffer does not match '
+                            'instrument value, most likely need '
+                            'to call update_acquisition_kwargs with'
+                            'records_per_buffer as a param')
         self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
         self.board_info = alazar.get_idn()
         self.buffer = np.zeros(self.samples_per_record *
                                self.records_per_buffer *
                                self.number_of_channels)
 
+        mat_shape = (self._demod_length, self.records_per_buffer, self.samples_per_record)
         demod_list = np.array([getattr(self, 'demod_freq_{}'.format(n))()
                                for n in range(self._demod_length)])
         integer_list = np.arange(self.samples_per_record)
+        integer_mat = np.outer(np.ones(self.records_per_buffer), integer_list)
         angle_mat = 2 * np.pi * \
-            np.outer(demod_list, integer_list) / self.sample_rate
+            np.outer(demod_list, integer_mat).reshape(mat_shape) / self.sample_rate
         self.cos_mat = np.cos(angle_mat)
         self.sin_mat = np.sin(angle_mat)
 
@@ -287,29 +305,29 @@ class HD_Averaging_Controller(AcquisitionController):
     def post_acquire(self):
         """
         Processes the data according to ATS9360 settings, splitting into
-        records and averaging over them, then applying demodulation fit
+        records and then applying demodulation fit
         nb: currently only channel A
 
         Returns:
-            magnitude (numpy array): shape = (demod_length, samples_used)
-            phase (numpy array): shape = (demod_length, samples_used)
+            magnitude (numpy array): shape = (demod_length, records_per_buffer)
+            phase (numpy array): shape = (demod_length, records_per_buffer
         """
-        records_per_acquisition = (self.buffers_per_acquisition *
-                                   self.records_per_buffer)
         # for ATS9360 samples are arranged in the buffer as follows:
         # S00A, S00B, S01A, S01B...S10A, S10B, S11A, S11B...
         # where SXYZ is record X, sample Y, channel Z.
 
-        # break buffer up into records and averages over them
-        recA = np.zeros(self.samples_per_record)
+        # break buffer up into records and shapes to be (records, samples)
+        recordsA = np.empty((self.records_per_buffer, self.samples_per_record),
+                            dtype=np.uint16)
         for i in range(self.records_per_buffer):
             i0 = (i * self.samples_per_record * self.number_of_channels)
             i1 = (i0 + self.samples_per_record * self.number_of_channels)
-            recA += self.buffer[i0:i1:self.number_of_channels]
-        recordA = np.uint16(recA / records_per_acquisition)
+            recordsA[i, :] = np.uint16(
+                self.buffer[i0:i1:self.number_of_channels] /
+                self.buffers_per_acquisition)
 
         # do demodulation
-        magA, phaseA = self._fit(recordA)
+        magA, phaseA = self._fit(recordsA)
 
         # same for chan b
         if self.chan_b:
@@ -328,8 +346,8 @@ class HD_Averaging_Controller(AcquisitionController):
                                to integration limits shape = (samples_taken, )
 
         Returns:
-            magnitude (numpy array): shape = (demod_length, )
-            phase (numpy array): shape = (demod_length, )
+            magnitude (numpy array): shape = (demod_length, records_per_buffer)
+            phase (numpy array): shape = (demod_length, records_per_buffer)
         """
         # convert rec to volts
         bps = self.board_info['bits_per_sample']
@@ -338,10 +356,11 @@ class HD_Averaging_Controller(AcquisitionController):
         else:
             logging.warning('sample to volt conversion does not exist for'
                             ' bps != 12, centered raw samples returned')
-            volt_rec = rec - np.mean(rec)
+            volt_rec = rec - np.mean(rec, axis=1)
 
         # volt_rec to matrix and multiply with demodulation signal matrices
-        volt_rec_mat = np.outer(np.ones(self._demod_length), volt_rec)
+        mat_shape = (self._demod_length, self.records_per_buffer, self.samples_per_record)
+        volt_rec_mat = np.outer(np.ones(self._demod_length), volt_rec).reshape(mat_shape)
         re_mat = np.multiply(volt_rec_mat, self.cos_mat)
         im_mat = np.multiply(volt_rec_mat, self.sin_mat)
 
@@ -351,20 +370,20 @@ class HD_Averaging_Controller(AcquisitionController):
             re_filtered = helpers.filter_win(re_mat, cutoff,
                                              self.sample_rate,
                                              self.filter_settings['numtaps'],
-                                             axis=1)
+                                             axis=2)
             im_filtered = helpers.filter_win(im_mat, cutoff,
                                              self.sample_rate,
                                              self.filter_settings['numtaps'],
-                                             axis=1)
+                                             axis=2)
         elif self.filter_settings['filter'] == 1:
             re_filtered = helpers.filter_ls(re_mat, cutoff,
                                             self.sample_rate,
                                             self.filter_settings['numtaps'],
-                                            axis=1)
+                                            axis=2)
             im_filtered = helpers.filter_ls(im_mat, cutoff,
                                             self.sample_rate,
                                             self.filter_settings['numtaps'],
-                                            axis=1)
+                                            axis=2)
         elif self.filter_settings['filter'] == 2:
             re_filtered = re_mat
             im_filtered = im_mat
@@ -373,12 +392,12 @@ class HD_Averaging_Controller(AcquisitionController):
         beginning = int(self.int_delay() * self.sample_rate)
         end = beginning + int(self.int_time() * self.sample_rate)
 
-        re_limited = re_filtered[:, beginning:end]
-        im_limited = im_filtered[:, beginning:end]
+        re_limited = re_filtered[:, :, beginning:end]
+        im_limited = im_filtered[:, :, beginning:end]
 
         # convert to magnitude and phase
         complex_mat = re_limited + im_limited * 1j
-        magnitude = np.mean(abs(complex_mat), axis=1)
-        phase = np.mean(np.angle(complex_mat, deg=True), axis=1)
+        magnitude = np.mean(abs(complex_mat), axis=2)
+        phase = np.mean(np.angle(complex_mat, deg=True), axis=2)
 
         return magnitude, phase

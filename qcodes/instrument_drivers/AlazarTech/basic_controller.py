@@ -68,8 +68,9 @@ class Basic_Acquisition_Controller(AcquisitionController):
         """
         alazar = self._get_alazar()
         if self.samples_per_record != alazar.samples_per_record.get():
-            raise Exception('Instrument samples_per_record settings does not match acq controller value, '
-            'most likely need to call update_acquisition_settings')
+            raise Exception('Instrument samples_per_record settings does '
+                            'not match acq controller value, most likely '
+                            'need to call update_acquisition_settings')
         self.records_per_buffer = alazar.records_per_buffer.get()
         self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
         self.board_info = alazar.get_idn()
