@@ -97,12 +97,12 @@ class HD_Samples_Controller(AcquisitionController):
     filter_dict = {'win': 0, 'ls': 1}
     samples_divisor = AlazarTech_ATS9360.samples_divisor
 
-    def __init__(self, name, alazar_name, demod_freqs=[20e6], filter='win',
+    def __init__(self, name, alazar_name, demod_length=1, filter='win',
                  numtaps=101, chan_b=False, **kwargs):
         self.filter_settings = {'filter': self.filter_dict[filter],
                                 'numtaps': numtaps}
         self.chan_b = chan_b
-        self._demod_length = len(demod_freqs)
+        self._demod_length = demod_length
         self.number_of_channels = 2
         self.samples_per_record = None
         self.sample_rate = None
@@ -110,9 +110,8 @@ class HD_Samples_Controller(AcquisitionController):
 
         self.add_parameter(name='acquisition',
                            parameter_class=SamplesAcqParam)
-        for i, res in enumerate(demod_freqs):
+        for i in range(demod_length):
             self.add_parameter(name='demod_freq_{}'.format(i),
-                               initial_value=res,
                                parameter_class=ManualParameter)
         self.add_parameter(name='int_time',
                            initial_value=None,
