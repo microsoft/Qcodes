@@ -44,7 +44,10 @@ class AveragedAcqParam(Parameter):
         self._instrument = instrument
         self.acquisition_kwargs = {}
         self.names = ('magnitude', 'phase')
-        self.shapes = ((demod_length, ), (demod_length, ))
+        if demod_length > 1:
+            self.shapes = ((demod_length, ), (demod_length, ))
+        else:
+            self.shapes = ((), ())
 
     def get(self):
         mag, phase = self._instrument._get_alazar().acquire(

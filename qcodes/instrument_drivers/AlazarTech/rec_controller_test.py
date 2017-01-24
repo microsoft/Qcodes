@@ -51,7 +51,10 @@ class RecordsAcqParam(Parameter):
         demod_length = self._instrument._demod_length
         # rec_list = tuple(np.linspace(start, stop, num=npts))
         # demod_index = tuple(range(demod_length))
-        self.shapes = ((demod_length, npts), (demod_length, npts))
+        if demod_length > 1:
+            self.shapes = ((demod_length, npts), (demod_length, npts))
+        else:
+            self.shapes = ((npts,), (npts,))
 
     def get(self):
         mag, phase = self._instrument._get_alazar().acquire(

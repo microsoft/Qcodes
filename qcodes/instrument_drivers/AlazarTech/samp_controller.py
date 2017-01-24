@@ -54,11 +54,14 @@ class SamplesAcqParam(Parameter):
         demod_length = self._instrument._demod_length
         # freq = tuple(np.linspace(start, stop, num=npts))
         # demod_index = tuple(range(demod_length))
-        self.shapes = ((demod_length, npts), (demod_length, npts))
+        if demod_length > 1:
+            self.shapes = ((demod_length, npts), (demod_length, npts))
+        else:
+            self.shapes = ((npts,), (npts,))
 
     def get(self):
-        self._instrument.int_time.check()
-        self._instrument.int_delay.check()
+        # self._instrument.int_time.check()
+        # self._instrument.int_delay.check()
         mag, phase = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
             **self.acquisition_kwargs)
@@ -315,7 +318,7 @@ class HD_Samples_Controller(AcquisitionController):
         Returns:
             magnitude (numpy array): shape = (demod_length, samples_used)
             phase (numpy array): shape = (demod_length, samples_used)
-        """
+        """ 
         records_per_acquisition = (self.buffers_per_acquisition *
                                    self.records_per_buffer)
         # for ATS9360 samples are arranged in the buffer as follows:
@@ -375,9 +378,9 @@ class HD_Samples_Controller(AcquisitionController):
         volt_rec_mat = np.outer(np.ones(self._demod_length), volt_rec)
         re_mat = np.multiply(volt_rec_mat, self.cos_mat)
         im_mat = np.multiply(volt_rec_mat, self.sin_mat)
-
+        
         # filter out higher freq component
-        cutoff = self.get_max_demod_freq() / 10
+        cutoff = self.get_max_demod_freq() / 20
         if self.filter_settings['filter'] == 0:
             re_filtered = helpers.filter_win(re_mat, cutoff,
                                              self.sample_rate,
@@ -403,7 +406,8 @@ class HD_Samples_Controller(AcquisitionController):
 
         re_limited = re_filtered[:, beginning:end]
         im_limited = im_filtered[:, beginning:end]
-
+        #return re_limited, volt_rec_mat[:, beginning:end]
+        
         # convert to magnitude and phase
         complex_mat = re_limited + im_limited * 1j
         magnitude = abs(complex_mat)

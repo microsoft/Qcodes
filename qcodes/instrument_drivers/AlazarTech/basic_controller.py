@@ -1,6 +1,7 @@
 import logging
 from .ATS import AcquisitionController
 import numpy as np
+import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
 from qcodes import Parameter
 
 
@@ -125,8 +126,8 @@ class Basic_Acquisition_Controller(AcquisitionController):
 
         bps = self.board_info['bits_per_sample']
         if bps == 12:
-            volt_rec_A = sample_to_volt_u12(recordA, bps)
-            volt_rec_B = sample_to_volt_u12(recordB, bps)
+            volt_rec_A = helpers.sample_to_volt_u12(recordA, bps)
+            volt_rec_B = helpers.sample_to_volt_u12(recordB, bps)
         else:
             logging.warning('sample to volt conversion does not exist for bps '
                             '!= 12, raw samples centered on 0 and returned')
@@ -135,7 +136,7 @@ class Basic_Acquisition_Controller(AcquisitionController):
 
         return volt_rec_A, volt_rec_B
 
-
+"""
 def sample_to_volt_u12(raw_samples, bps):
     # right_shift 16-bit sample by 4 to get 12 bit sample
     shifted_samples = np.right_shift(raw_samples, 4)
@@ -151,3 +152,4 @@ def sample_to_volt_u12(raw_samples, bps):
                               (shifted_samples - code_zero) / code_range)
 
     return volt_samples
+"""

@@ -10,7 +10,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
     TODO(nataliejpg):
         -   add clock source options and sample rate options
     """
-    samples_divisor = 32
+    samples_divisor = 128
 
     def __init__(self, name, **kwargs):
         dll_path = 'C:\\WINDOWS\\System32\\ATSApi.dll'
