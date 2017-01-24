@@ -215,7 +215,13 @@ class HD_Averaging_Controller(AcquisitionController):
         nb: really hacky and we should have channels in qcodes but we don't
         (at time of writing)
         """
-        return max([getattr(self, 'demod_freq_{}'.format(c))() for c in range(self._demod_length)])
+        freqs = list(filter(None, [getattr(self, 'demod_freq_{}'.format(c))() 
+                    for c in range(self._demod_length)]))
+        if len(freqs) > 0:
+            return max(freqs)
+        else:
+        return None
+
 
     def update_filter_settings(self, filter, numtaps):
         """
