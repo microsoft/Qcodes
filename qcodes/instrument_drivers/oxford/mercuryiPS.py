@@ -109,15 +109,15 @@ class MercuryiPS(IPInstrument):
         self.add_parameter('radius',
                            get_cmd=self._get_r,
                            set_cmd=self._set_r,
-                           units='|B|')
+                           unit='|B|')
         self.add_parameter('theta',
                            get_cmd=self._get_theta,
                            set_cmd=self._set_theta,
-                           units='rad')
+                           unit='rad')
         self.add_parameter('phi',
                            get_cmd=self._get_phi,
                            set_cmd=self._set_phi,
-                           units='rad')
+                           unit='rad')
 
         for ax in self.axes:
             self.add_parameter(ax.lower()+'_fld',
@@ -125,21 +125,21 @@ class MercuryiPS(IPInstrument):
                                set_cmd=partial(self._ramp_to_setpoint,
                                                ax, 'FSET'),
                                label='B'+ax.lower(),
-                               units='T')
+                               unit='T')
             self.add_parameter(ax.lower()+'_fldC',
                                get_cmd=partial(self._get_fld,
                                                ax, 'CURR'),
                                set_cmd=partial(self._ramp_to_setpoint,
                                                ax, 'CSET'),
                                label='B'+ax.lower(),
-                               units='T')
+                               unit='T')
             self.add_parameter(ax.lower()+'_fld_wait',
                                get_cmd=partial(self._get_fld,
                                                ax, 'CURR'),
                                set_cmd=partial(self._ramp_to_setpoint_and_wait,
                                                ax, 'CSET'),
                                label='B'+ax.lower(),
-                               units='T')
+                               unit='T')
             self.add_parameter(ax.lower()+'_ACTN',
                                get_cmd=partial(
                                    self._get_cmd,
@@ -149,19 +149,19 @@ class MercuryiPS(IPInstrument):
             self.add_parameter(ax.lower()+'_setpoint',
                                get_cmd=partial(self._get_fld, ax, 'FSET'),
                                set_cmd=partial(self._set_fld, ax, 'FSET'),
-                               units='T')
+                               unit='T')
             self.add_parameter(ax.lower()+'_setpointC',
                                get_cmd=partial(self._get_fld, ax, 'CSET'),
                                set_cmd=partial(self._set_fld, ax, 'CSET'),
-                               units='T')
+                               unit='T')
             self.add_parameter(ax.lower()+'_rate',
                                get_cmd=partial(self._get_fld, ax, 'RFST'),
                                set_cmd=partial(self._set_fld, ax, 'RFST'),
-                               units='T/m')
+                               unit='T/m')
             self.add_parameter(ax.lower()+'_rateC',
                                get_cmd=partial(self._get_fld, ax, 'RCST'),
                                set_cmd=partial(self._set_fld, ax, 'RCST'),
-                               units='T/m')
+                               unit='T/m')
 
             self.connect_message()
 

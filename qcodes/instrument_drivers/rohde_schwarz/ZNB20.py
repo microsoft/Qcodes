@@ -2,10 +2,10 @@ from qcodes import VisaInstrument
 from qcodes.utils import validators as vals
 from cmath import phase
 import numpy as np
-from qcodes import Parameter
+from qcodes import MultiParameter, Parameter
 
 
-class FrequencySweep(Parameter):
+class FrequencySweep(MultiParameter):
     """
     Hardware controlled parameter class for Rohde Schwarz RSZNB20 trace.
 
@@ -69,7 +69,7 @@ class ZNB20(VisaInstrument):
 
         self.add_parameter(name='power',
                            label='Power',
-                           units='dBm',
+                           unit='dBm',
                            get_cmd='SOUR:POW?',
                            set_cmd='SOUR:POW {:.4f}',
                            get_parser=int,
@@ -77,7 +77,7 @@ class ZNB20(VisaInstrument):
 
         self.add_parameter(name='bandwidth',
                            label='Bandwidth',
-                           units='Hz',
+                           unit='Hz',
                            get_cmd='SENS:BAND?',
                            set_cmd='SENS:BAND {:.4f}',
                            get_parser=int,
@@ -85,7 +85,7 @@ class ZNB20(VisaInstrument):
 
         self.add_parameter(name='avg',
                            label='Averages',
-                           units='',
+                           unit='',
                            get_cmd='AVER:COUN?',
                            set_cmd='AVER:COUN {:.4f}',
                            get_parser=int,

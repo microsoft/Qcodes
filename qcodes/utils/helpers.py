@@ -73,25 +73,50 @@ def is_sequence(obj):
             not isinstance(obj, (str, bytes, io.IOBase)))
 
 
-def is_sequence_of(obj, types, depth=1):
+def is_sequence_of(obj, types=None, depth=None, shape=None):
     """
     Test if object is a sequence of entirely certain class(es).
 
     Args:
         obj (any): the object to test.
-        types (class or tuple of classes): allowed type(s)
-        depth (int, optional): level of nesting, ie if depth=2 we expect
-            a sequence of sequences. Default 1.
+
+        types (Optional[Union[class, Tuple[class]]]): allowed type(s)
+            if omitted, we just test the depth/shape
+
+        depth (Optional[int]): level of nesting, ie if ``depth=2`` we expect
+            a sequence of sequences. Default 1 unless ``shape`` is supplied.
+
+        shape (Optional[Tuple[int]]): the shape of the sequence, ie its
+            length in each dimension. If ``depth`` is omitted, but ``shape``
+            included, we set ``depth = len(shape)``
+
     Returns:
         bool, True if every item in ``obj`` matches ``types``
     """
     if not is_sequence(obj):
         return False
+
+    if shape in (None, ()):
+        next_shape = None
+        if depth is None:
+            depth = 1
+    else:
+        if depth is None:
+            depth = len(shape)
+        elif depth != len(shape):
+            raise ValueError('inconsistent depth and shape')
+
+        if len(obj) != shape[0]:
+            return False
+
+        next_shape = shape[1:]
+
     for item in obj:
         if depth > 1:
-            if not is_sequence_of(item, types, depth=depth - 1):
+            if not is_sequence_of(item, types, depth=depth - 1,
+                                  shape=next_shape):
                 return False
-        elif not isinstance(item, types):
+        elif types is not None and not isinstance(item, types):
             return False
     return True
 
@@ -229,6 +254,10 @@ class LogCapture():
     def __init__(self, logger=logging.getLogger()):
         self.logger = logger
 
+        self.stashed_handlers = self.logger.handlers[:]
+        for handler in self.stashed_handlers:
+            self.logger.removeHandler(handler)
+
     def __enter__(self):
         self.log_capture = io.StringIO()
         self.string_handler = logging.StreamHandler(self.log_capture)
@@ -240,6 +269,9 @@ class LogCapture():
         self.logger.removeHandler(self.string_handler)
         self.value = self.log_capture.getvalue()
         self.log_capture.close()
+
+        for handler in self.stashed_handlers:
+            self.logger.addHandler(handler)
 
 
 def make_unique(s, existing):
@@ -422,3 +454,8 @@ def compare_dictionaries(dict_1, dict_2,
     else:
         dicts_equal = False
     return dicts_equal, dict_differences
+
+
+def warn_units(class_name, instance):
+    logging.warning('`units` is deprecated for the `' + class_name +
+                    '` class, use `unit` instead. ' + repr(instance))

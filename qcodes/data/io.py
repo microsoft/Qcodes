@@ -28,13 +28,9 @@ The main thing these managers need to implement is the open context manager:
     - iter(): usually return self, but can be any iterator over lines
     - next(): assuming iter() returns self, this yields the next line.
 
-    (note: iter and next can be constructed automatically by FileWrapper
-    if you implement readline.)
-
   In write or append mode:
     - write(s): add string s to the end of the file.
-    - writelines(seq): add a sequence of strings (can be constructed
-      automatically if you use FileWrapper)
+    - writelines(seq): add a sequence of strings
 
 IO managers should also implement:
 
@@ -222,7 +218,7 @@ class DiskIO:
     def remove(self, filename):
         """Delete a file or folder and prune the directory tree."""
         path = self.to_path(filename)
-        if(os.path.isdir(path)):
+        if os.path.isdir(path):
             shutil.rmtree(path)
         else:
             os.remove(path)
@@ -242,28 +238,3 @@ class DiskIO:
         """
         for fn in self.list(location):
             self.remove(fn)
-
-
-class FileWrapper:
-    def read(self, size=None):
-        raise NotImplementedError
-
-    def readline(self, size=None):
-        raise NotImplementedError
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        line = self.readline()
-        if line:
-            return line
-        else:
-            raise StopIteration
-
-    def write(self, s):
-        raise NotImplementedError
-
-    def writelines(self, seq):
-        for s in seq:
-            self.write(s)

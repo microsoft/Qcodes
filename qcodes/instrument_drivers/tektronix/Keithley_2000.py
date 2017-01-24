@@ -131,7 +131,7 @@ class Keithley_2000(VisaInstrument):
                            get_cmd='TRIG:DEL?',
                            get_parser=float,
                            set_cmd='TRIG:DEL {}',
-                           units='s',
+                           unit='s',
                            vals=Numbers(min_value=0, max_value=999999.999))
 
         self.add_parameter('trigger_source',
@@ -149,11 +149,11 @@ class Keithley_2000(VisaInstrument):
                            get_cmd='TRIG:TIM?',
                            get_parser=float,
                            set_cmd='TRIG:TIM {}',
-                           units='s',
+                           unit='s',
                            vals=Numbers(min_value=0.001, max_value=999999.999))
 
         self.add_parameter('amplitude',
-                           units='arb.unit',
+                           unit='arb.unit',
                            get_cmd=self._read_next_value)
 
         self.add_function('reset', call_cmd='*RST')

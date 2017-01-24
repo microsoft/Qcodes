@@ -24,6 +24,8 @@ Config
 
    Config
 
+.. _station:
+
 Station
 ~~~~~~~
 
@@ -31,6 +33,8 @@ Station
    :toctree: generated/
 
    station.Station
+
+.. _loops:
 
 Loops
 ~~~~~
@@ -67,6 +71,7 @@ Data
    :toctree: generated/
 
     get_data_manager
+    qcodes.data.manager.DataManager
     DataMode
     DataSet
     new_data
