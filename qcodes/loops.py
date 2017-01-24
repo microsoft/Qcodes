@@ -50,6 +50,8 @@ from datetime import datetime
 import logging
 import time
 import numpy as np
+import warnings
+import logging
 
 from qcodes.station import Station
 from qcodes.data.data_set import new_data
@@ -62,6 +64,18 @@ from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
 
 
 log = logging.getLogger(__name__)
+
+
+def abort_measurements():
+    """ Query wether measurements should be aborted
+
+    Note: the default implementation is a dummy. It is upto different groups
+    to implement a working version of the function.
+
+    Returns
+        a (bool): if True then any loop or measurement function should abort
+    """
+    return False
 
 
 class Loop(Metadatable):
@@ -782,6 +796,10 @@ class ActiveLoop(Metadatable):
                 tprint('loop %s: %d/%d (%.1f [s])' % (
                     self.sweep_values.name, i, imax, time.time() - t0),
                     dt=self.progress_interval, tag='outerloop')
+
+            if abort_measurements():
+                logging.info('measurement loop aborted on user request')
+                break
 
             set_val = self.sweep_values.set(value)
 
