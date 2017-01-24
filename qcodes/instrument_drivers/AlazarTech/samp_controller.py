@@ -140,17 +140,18 @@ class HD_Samples_Controller(AcquisitionController):
             raise ValueError('int_time must be 0 <= value <= 1')
         alazar = instr._get_alazar()
         instr.sample_rate = alazar.get_sample_rate()
-        oscilations_measured = value * instr.get_max_demod_freq()
-        oversampling = instr.sample_rate / (2 * instr.get_max_demod_freq())
-        if oscilations_measured < 10:
-            logging.warning('{} oscilations measured, recommend at '
-                            'least 10: decrease sampling rate, take '
-                            'more samples or increase demodulation '
-                            'freq'.format(oscilations_measured))
-        elif oversampling < 1:
-            logging.warning('oversampling rate is {}, recommend > 1: '
-                            'increase sampling rate or decrease '
-                            'demodulation frequency'.format(oversampling))
+        if instr.get_max_demod_freq() is not None:
+            oscilations_measured = value * instr.get_max_demod_freq()
+            oversampling = instr.sample_rate / (2 * instr.get_max_demod_freq())
+            if oscilations_measured < 10:
+                logging.warning('{} oscilations measured, recommend at '
+                                'least 10: decrease sampling rate, take '
+                                'more samples or increase demodulation '
+                                'freq'.format(oscilations_measured))
+            elif oversampling < 1:
+                logging.warning('oversampling rate is {}, recommend > 1: '
+                                'increase sampling rate or decrease '
+                                'demodulation frequency'.format(oversampling))
         if instr.int_delay() is None:
             instr.int_delay.to_default()
 
@@ -284,6 +285,8 @@ class HD_Samples_Controller(AcquisitionController):
             raise Exception('acq controller sample rate does not match '
                             'instrument value, most likely need '
                             'to call update_acquisition_settings')
+        if self.get_max_demod_freq() is None:
+            raise Exception('no demodulation frequencies set')
         self.records_per_buffer = alazar.records_per_buffer.get()
         self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
         self.board_info = alazar.get_idn()

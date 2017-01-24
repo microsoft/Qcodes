@@ -94,7 +94,7 @@ class HD_Records_Controller(AcquisitionController):
     filter_dict = {'win': 0, 'ls': 1, 'ave': 2}
     samples_divisor = AlazarTech_ATS9360.samples_divisor
 
-    def __init__(self, name, alazar_name, demod_length=1 filter='win',
+    def __init__(self, name, alazar_name, demod_length=1, filter='win',
                  numtaps=101, chan_b=False, **kwargs):
         self.filter_settings = {'filter': self.filter_dict[filter],
                                 'numtaps': numtaps}
@@ -139,17 +139,18 @@ class HD_Records_Controller(AcquisitionController):
             raise ValueError('int_time must be 0 <= value <= 1')
         alazar = instr._get_alazar()
         instr.sample_rate = alazar.get_sample_rate()
-        oscilations_measured = value * instr.get_max_demod_freq()
-        oversampling = instr.sample_rate / (2 * instr.get_max_demod_freq())
-        if oscilations_measured < 10:
-            logging.warning('{} oscilations measured, recommend at '
-                            'least 10: decrease sampling rate, take '
-                            'more samples or increase demodulation '
-                            'freq'.format(oscilations_measured))
-        elif oversampling < 1:
-            logging.warning('oversampling rate is {}, recommend > 1: '
-                            'increase sampling rate or decrease '
-                            'demodulation frequency'.format(oversampling))
+        if instr.get_max_demod_freq() is not None:
+            oscilations_measured = value * instr.get_max_demod_freq()
+            oversampling = instr.sample_rate / (2 * instr.get_max_demod_freq())
+            if oscilations_measured < 10:
+                logging.warning('{} oscilations measured, recommend at '
+                                'least 10: decrease sampling rate, take '
+                                'more samples or increase demodulation '
+                                'freq'.format(oscilations_measured))
+            elif oversampling < 1:
+                logging.warning('oversampling rate is {}, recommend > 1: '
+                                'increase sampling rate or decrease '
+                                'demodulation frequency'.format(oversampling))
         if instr.int_delay() is None:
             instr.int_delay.to_default()
 
@@ -279,6 +280,8 @@ class HD_Records_Controller(AcquisitionController):
                             'instrument value, most likely need '
                             'to call update_acquisition_kwargs with'
                             'records_per_buffer as a param')
+        if self.get_max_demod_freq() is None:
+            raise Exception('no demodulation frequencies set')
         self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
         self.board_info = alazar.get_idn()
         self.buffer = np.zeros(self.samples_per_record *
