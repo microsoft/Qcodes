@@ -412,11 +412,12 @@ class AMI430_3D(Instrument):
         # Make this into a parameter?
         self._field_limit = field_limit
 
+        # Internal coordinates
         self._x, self._y, self._z = 0.0, 0.0, 0.0
-        self._phi = 0.0
-        self._theta = 0.0
-        self._field = 0.0
-        self._rho = 0.0
+        #self._phi = 0.0
+        #self._theta = 0.0
+        #self._field = 0.0
+        #self._rho = 0.0
 
         self.add_parameter('x',
                            get_cmd=self._get_x,
@@ -473,6 +474,25 @@ class AMI430_3D(Instrument):
 
         return x, y, z
 
+    def _cartesian_to_other(self, x, y, z):
+        field = np.sqrt(x**2 + y**2 + z**2)
+        phi = np.arctan2(y, x)
+        # TODO: handle divide by zero?
+        theta = np.arccos(z / field)
+        rho = np.sqrt(x**2 + y**2)
+
+        return field, phi, theta, rho
+
+    def _update_internal_coords(self):
+        field, phi, theta, rho = self._cartesian_to_other(self._x,
+                                                          self._y,
+                                                          self._z)
+
+        self._field = field
+        self._phi = phi
+        self._theta = theta
+        self._rho = rho
+
     def _request_field_change(self, magnet, value):
         if magnet is self._magnet_x:
             self.x(value)
@@ -489,101 +509,96 @@ class AMI430_3D(Instrument):
         Measure the actual (not setpoint) field strengths of all 3 individual
         magnets and calculate the parameters for all 3 coordinate systems.
         """
-        self._x = self._magnet_x.field()
-        self._y = self._magnet_y.field()
-        self._z = self._magnet_z.field()
+        x = self._magnet_x.field()
+        y = self._magnet_y.field()
+        z = self._magnet_z.field()
 
-        self._field = np.sqrt(self._x**2 + self._y**2 + self._z**2)
-        self._phi = np.arctan2(self._y, self._x)
-        # TODO: handle divide by zero?
-        self._theta = np.arccos(self._z / self._field)
-        self._rho = np.sqrt(self._x**2 + self._y**2)
+        field, phi, theta, rho = self._cartesian_to_other(x, y, z)
+
+        coords = {
+            'x': x,
+            'y': y,
+            'z': z,
+            'field': field,
+            'phi': np.degrees(phi),
+            'theta': np.degrees(theta),
+            'rho': rho
+        }
+
+        return coords
 
     def _get_x(self):
-        self._measure()
+        return self._measure()['x']
 
-        return self._x
-
-    def _set_x(self, x):
-        self._measure()
-        self._set_fields(x, self._y, self._z)
+    def _set_x(self, value):
+        self._x = value
+        self._set_fields(self._x, self._y, self._z)
 
     def _get_y(self):
-        self._measure()
+        return self._measure()['y']
 
-        return self._y
-
-    def _set_y(self, y):
-        self._measure()
-        self._set_fields(self._x, y, self._z)
+    def _set_y(self, value):
+        self._y = value
+        self._set_fields(self._x, self._y, self._z)
 
     def _get_z(self):
-        self._measure()
+        return self._measure()['z']
 
-        return self._z
-
-    def _set_z(self, z):
-        self._measure()
-        self._set_fields(self._x, self._y, z)
+    def _set_z(self, value):
+        self._z = value
+        self._set_fields(self._x, self._y, self._z)
 
     def _get_phi(self):
-        self._measure()
+        return self._measure()['phi']
 
-        return np.degrees(self._phi)
+    def _set_phi(self, value):
+        self._update_internal_coords()
+        self._phi = np.radians(value)
 
-    def _set_phi(self, phi):
-        self._measure()
-        self._phi = np.radians(phi)
+        self._x, self._y, self._z = self._spherical_to_cartesian(self._phi,
+                                                                 self._theta,
+                                                                 self._field)
 
-        x, y, z = self._spherical_to_cartesian(self._phi,
-                                               self._theta,
-                                               self._field)
-
-        self._set_fields(x, y, z)
+        self._set_fields(self._x, self._y, self._z)
 
     def _get_theta(self):
-        self._measure()
+        return self._measure()['theta']
 
-        return np.degrees(self._theta)
+    def _set_theta(self, value):
+        self._update_internal_coords()
+        self._theta = np.radians(value)
 
-    def _set_theta(self, theta):
-        self._theta = np.radians(theta)
+        self._x, self._y, self._z = self._spherical_to_cartesian(self._phi,
+                                                                 self._theta,
+                                                                 self._field)
 
-        x, y, z = self._spherical_to_cartesian(self._phi,
-                                               self._theta,
-                                               self._field)
-
-        self._set_fields(x, y, z)
+        self._set_fields(self._x, self._y, self._z)
 
     def _get_field(self):
-        self._measure()
-
-        return self._field
+        return self._measure()['field']
 
     def _set_field(self, field):
-        self._measure()
-        self._field = field
+        self._update_internal_coords()
+        self._field = value
 
-        x, y, z = self._spherical_to_cartesian(self._phi,
-                                               self._theta,
-                                               self._field)
+        self._x, self._y, self._z = self._spherical_to_cartesian(self._phi,
+                                                                 self._theta,
+                                                                 self._field)
 
-        self._set_fields(x, y, z)
+        self._set_fields(self._x, self._y, self._z)
 
     def _get_rho(self):
-        self._measure()
+        return self._measure()['rho']
 
-        return self._rho
+    def _set_rho(self, value):
+        self._update_internal_coords()
+        self._rho = value
 
-    def _set_rho(self, rho):
-        self._measure()
-        self._rho = rho
+        self._x, self._y, self._z = self._cylindrical_to_cartesian(self._phi,
+                                                                   self._rho,
+                                                                   self._z)
 
-        x, y, z = self._cylindrical_to_cartesian(self._phi,
-                                                 self._rho,
-                                                 self._z)
-
-        self._set_fields(x, y, z)
+        self._set_fields(self._x, self._y, self._z)
 
     def _set_fields(self, x, y, z):
         # Check if exceeding the field limit
@@ -595,16 +610,18 @@ class AMI430_3D(Instrument):
 
         swept_x, swept_y, swept_z = False, False, False
 
+        m = self._measure()
+
         # First ramp the coils that are decreasing in field strength
-        if np.abs(self._x) < np.abs(x):
+        if np.abs(m['x']) < np.abs(x):
             self._magnet_x.field(x, perform_safety_check=False)
             swept_x = True
 
-        if np.abs(self._y) < np.abs(y):
+        if np.abs(m['y']) < np.abs(y):
             self._magnet_y.field(y, perform_safety_check=False)
             swept_y = True
 
-        if np.abs(self._z) < np.abs(z):
+        if np.abs(m['z']) < np.abs(z):
             self._magnet_z.field(z, perform_safety_check=False)
             swept_z = True
 
