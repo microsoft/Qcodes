@@ -53,7 +53,7 @@ class AMI430(VisaInstrument):
         self._field_ramp_limit = coil_constant * current_ramp_limit
 
         # Make sure the ramp rate time unit is seconds
-        if self.ask('RAMP:RATE:UNITS') == '1':
+        if self.ask('RAMP:RATE:UNITS?') == '1':
             self.write('CONF:RAMP:RATE:UNITS 0')
 
         # Make sure the field unit is Tesla
@@ -116,7 +116,7 @@ class AMI430(VisaInstrument):
                                'cooling switch': 10,
                            })
 
-        self.add_function('get_error', get_cmd='SYST:ERR?')
+        self.add_function('get_error', call_cmd='SYST:ERR?')
 
         self.add_function('ramp', call_cmd='RAMP')
         self.add_function('pause', call_cmd='PAUSE')
@@ -389,7 +389,8 @@ class AMI430_3D(Instrument):
     magnet = AMI430_3D('AMI430_3D',
         AMI430('AMI430_X', '192.168.2.3', 0.0146, 68.53, 0.2),
         AMI430('AMI430_Y', '192.168.2.2', 0.0426, 70.45, 0.05),
-        AMI430('AMI430_Z', '192.168.2.1', 0.1107, 81.33, 0.08))
+        AMI430('AMI430_Z', '192.168.2.1', 0.1107, 81.33, 0.08),
+        field_limit=1.0)
 
     Args:
         name (string): a name for the instrument
