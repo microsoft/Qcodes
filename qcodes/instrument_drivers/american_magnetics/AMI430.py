@@ -414,10 +414,10 @@ class AMI430_3D(Instrument):
 
         # Internal coordinates
         self._x, self._y, self._z = 0.0, 0.0, 0.0
-        #self._phi = 0.0
-        #self._theta = 0.0
-        #self._field = 0.0
-        #self._rho = 0.0
+        self._phi = 0.0
+        self._theta = 0.0
+        self._field = 0.0
+        self._rho = 0.0
 
         self.add_parameter('x',
                            get_cmd=self._get_x,
