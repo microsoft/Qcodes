@@ -3,35 +3,199 @@ import logging
 import zhinst.utils
 
 import numpy as np
-import zhinst.ziPython as zipy
 
 from functools import partial
-from qcodes.instrument.parameter import Parameter, ManualParameter
+from qcodes.instrument.parameter import ManualParameter
+from qcodes.instrument.parameter import MultiParameter
 from qcodes.instrument.base import Instrument
+
 from qcodes.utils import validators as vals
 
 log = logging.getLogger(__name__)
 
 
-class Sweep(Parameter):
+class Sweep(MultiParameter):
     """
     Parameter class for the ZIUHFLI instrument class for the sweeper.
 
     The get method returns a tuple of arrays, where each array contains the
     values of a signal added to the sweep (e.g. demodulator 4 phase).
     """
-    pass
+    def __init__(self, name, instrument):
+        # The __init__ requires that we supply names and shapes,
+        # but there is no way to know what they could be known at this time.
+        # They are updated via build_sweep.
+        super().__init__(name, names=('',), shapes=((1,),))
+        self._instrument = instrument        
+    
+    def build_sweep(self):
+        """
+        (Note the difference between the sweeper and the Sweep parameter)
 
+        This is a general function for updating the sweeper.
+        Every time a parameter of the sweeper is changed, this function
+        must be called to update the sweeper. Although such behaviour is only
+        strictly necessary for parameters that affect the setpoints of the
+        Sweep parameter, having to call this function for any parameter is
+        deemed more user friendly (easier to remember; when? -always).
+
+        The function sets all (user specified) settings on the sweeper and
+        additionally sets names, units, and setpoints for the Sweep
+        parameter. 
+
+        """
+
+        signals = self._instrument._sweeper_signals
+        sweepdict = self._instrument._sweepdict
+
+        print('This is the sweep builder')
+
+        sigunits = {'X': 'V', 'Y': 'V', 'R': 'Vrms', 'Xrms': 'Vrms',
+                    'Yrms': 'Vrms', 'Rrms': 'Vrms', 'phase': 'degrees'}
+        names = []
+        units = []
+        for sig in signals:
+            name = sig.split('/')[-1]
+            names.append(name)
+            units.append(sigunits[name]) 
+        self.names = tuple(names)
+        self.units = tuple(units)
+
+        # TO-DO: what are good set point names?
+        spnamedict = {'auxouts/0/offset': 'Volts',
+                      'auxouts/1/offset': 'Volts',
+                      'auxouts/2/offset': 'Volts',
+                      'auxouts/3/offset': 'Volts',
+                      'demods/0/phaseshift': 'degrees',
+                      'demods/1/phaseshift': 'degrees',
+                      'demods/2/phaseshift': 'degrees',
+                      'demods/3/phaseshift': 'degrees',
+                      'demods/4/phaseshift': 'degrees',
+                      'demods/5/phaseshift': 'degrees',
+                      'demods/6/phaseshift': 'degrees',
+                      'demods/7/phaseshift': 'degrees',
+                      'oscs/0/freq': 'Hz',
+                      'oscs/1/freq': 'Hz',
+                      'sigouts/0/amplitudes/3': 'Volts',
+                      'sigouts/0/offset': 'Volts',
+                      'sigouts/1/amplitudes/7': 'Volts',
+                      'sigouts/1/offset': 'Volts'
+                      }
+        sp_name = spnamedict[sweepdict['gridnode']]
+
+        self.setpoint_names = ((sp_name,),)*len(signals)
+        start = sweepdict['start']
+        stop = sweepdict['stop']
+        npts = sweepdict['samplecount']
+        # TO-DO: make sure that these setpoints are correct, i.e. actually
+        # matching what the UHFLI does
+        if sweepdict['xmapping'] == 'lin':
+            sw = tuple(np.linspace(start, stop, npts))
+        else:
+            logstart = np.log10(start)
+            logstop = np.log10(stop)
+            sw = tuple(np.logspace(logstart, logstop, npts))
+        self.setpoints = ((sw,),)*len(signals)
+        self.shapes = ((npts,),)*len(signals)
+
+        # Now actually send  the settings to the instrument
+        for (setting, value) in sweepdict.items():
+            setting = 'sweep/' + setting
+            self._instrument.sweeper.set(setting, value)
+
+        self._instrument.sweep_correctly_built = True
+
+    def get(self):
+        """
+        Execute the sweeper and return the data corresponding to the
+        subscribed signals.
+        """
+        daq = self._instrument.daq
+        signals = self._instrument._sweeper_signals
+        sweeper = self._instrument.sweeper
+
+        if signals == []: 
+            raise ValueError('No signals selected! Can not perform sweep.')
+
+        if self._instrument.sweep_correctly_built is False:
+            raise ValueError('The sweep has not been correctly built.' +
+                             ' Please run Sweep.build_sweep.')
+
+        # We must enable the demodulators we use.
+        # After the sweep, they should be returned to their original state
+        streamsettings = []  # This list keeps track of the pre-sweep settings
+        for sigstr in signals:
+            path = '/'.join(sigstr.split('/')[:-1])
+            (_, dev, _, dmnum, _) = path.split('/')
+
+            # If the setting has never changed, it doesn't exist in the UHFLI.
+            # In that case, we assume that it's zero (factory default)
+            try:
+                toget = path.replace('sample', 'enable')
+                # ZI like nesting...
+                setting = daq.get(toget)[dev]['demods'][dmnum]['enable']['value'][0]
+            except KeyError:
+                setting = 0
+            streamsettings.append(setting)
+            daq.setInt(path.replace('sample', 'enable'), 1)
+            
+            # We potentially subscribe several times to the same demodulator,
+            # but that should not be a problem
+            sweeper.subscribe(path)
+
+
+        sweeper.execute()
+        timeout = self._instrument.sweeper_timeout.get()
+        start = time.time()
+        while not sweeper.finished():  # Wait until the sweep is complete, with timeout.
+            time.sleep(0.2)  # Check every 200 ms whether the sweep is done
+            # Here we could read intermediate data via:
+            # data = sweeper.read(True)...
+            # and process it while the sweep is completing.
+            if (time.time() - start) > timeout:
+                # If for some reason the sweep is blocking, force the end of the
+                # measurement.
+                log.error("Sweep still not finished, forcing finish...")
+                # should exit function with error message instead of returning data
+                sweeper.finish()
+
+        return_flat_dict = True
+        data = self.sweeper.read(return_flat_dict)
+
+        sweeper.unsubscribe('*')
+        for (state, sigstr) in zip(streamsettings, signals):
+            path = '/'.join(sigstr.split('/')[:-1])
+            self.daq.setInt(path.replace('sample', 'enable'), int(state))
+
+        return self._parsesweepdata(data)
+
+    def _parsesweepdata(self, sweepresult):
+        """
+        Parse the raw result of a sweep into just the data asked for by the 
+        added sweeper signals. Used by Sweep.get.
+        """
+        trans = {'X': 'x', 'Y': 'y', 'Aux Input 1': 'auxin0',
+                 'Aux Input 2': 'auxin1', 'R': 'r', 'phase': 'phase',
+                 'Xrms': 'xpwr', 'Yrms': 'ypwr', 'Rrms': 'rpwr'}
+        returndata = []
+        print('Sweeper returning:')
+        for signal in self._sweeper_signals:
+            path = '/'.join(signal.split('/')[:-1])
+            attr = signal.split('/')[-1]
+            data = sweepresult[path][0][0][trans[attr]]
+            returndata.append(data)
+            print(trans[attr])
+
+        return tuple(returndata)
 
 class ZIUHFLI(Instrument):
     """
     QCoDeS driver for ZI UHF LI
     """
 
-    def __init__(self, name, device_ID, api_level=5):
-
-        super().__init__(name)
-
+    def __init__(self, name, device_ID, api_level=5, **kwargs):
+        
+        super().__init__(name, **kwargs)
         (self.daq, self.device, self.props) = zhinst.utils.create_api_session(device_ID,
                                                                               api_level)
 
@@ -41,6 +205,19 @@ class ZIUHFLI(Instrument):
 
         self.sweeper = self.daq.sweep()
         self.sweeper.set('sweep/device', self.device)
+
+        # this variable enforces building the sweep before using it
+        self._sweep_cb = False
+        
+        @property
+        def sweep_correctly_built(self):
+            return self._sweep_cd
+
+        @sweep_correctly_built.setter
+        def sweep_correctly_built(self, value):
+            if not isinstance(value, bool):
+                raise ValueError('sweep_correctly_built')
+            self._sweep_cb = value
 
         ########################################
         # INSTRUMENT PARAMETERS
@@ -116,7 +293,7 @@ class ZIUHFLI(Instrument):
 
         self.add_parameter('sweeper_BWmode',
                            label='Sweeper bandwidth control mode',
-                           set_cmd=partial(self.sweeper.set,
+                           set_cmd=partial(self._sweep_setter,
                                            'sweep/bandwidthcontrol'),
                            get_cmd=partial(self._sweep_getter,
                                            'sweep/bandwidthcontrol'),
@@ -133,7 +310,7 @@ class ZIUHFLI(Instrument):
 
         self.add_parameter('sweeper_BW',
                            label='Fixed bandwidth sweeper bandwidth (NEP)',
-                           set_cmd=partial(self.sweeper.set,
+                           set_cmd=partial(self._sweep_setter,
                                            'sweep/bandwidth'),
                            get_cmd=partial(self._sweep_getter,
                                            'sweep/bandwidth'),
@@ -148,7 +325,7 @@ class ZIUHFLI(Instrument):
 
         self.add_parameter('sweeper_start',
                             label='Start value of the sweep',
-                            set_cmd=partial(self.sweeper.set,
+                            set_cmd=partial(self._sweep_setter,
                                             'sweep/start'),
                             get_cmd=partial(self._sweep_getter,
                                             'sweep/start'),
@@ -156,7 +333,7 @@ class ZIUHFLI(Instrument):
 
         self.add_parameter('sweeper_stop',
                             label='Stop value of the sweep',
-                            set_cmd=partial(self.sweeper.set,
+                            set_cmd=partial(self._sweep_setter,
                                             'sweep/stop'),
                             get_cmd=partial(self._sweep_getter,
                                             'sweep/stop'),
@@ -164,7 +341,7 @@ class ZIUHFLI(Instrument):
 
         self.add_parameter('sweeper_samplecount',
                             label='Length of the sweep (pts)',
-                            set_cmd=partial(self.sweeper.set,
+                            set_cmd=partial(self._sweep_setter,
                                             'sweep/samplecount'),
                             get_cmd=partial(self._sweep_getter,
                                             'sweep/samplecount'),
@@ -193,7 +370,7 @@ class ZIUHFLI(Instrument):
 
         self.add_parameter('sweeper_param',
                            label='Parameter to sweep (sweep x-axis)',
-                           set_cmd=partial(self.sweeper.set,
+                           set_cmd=partial(self._sweep_setter,
                                            'sweep/gridnode'),
                            val_mapping=sweepparams,
                            get_cmd=partial(self._sweep_getter,
@@ -234,7 +411,7 @@ class ZIUHFLI(Instrument):
 
         self.add_parameter('sweeper_mode',
                             label='Sweep mode',
-                            set_cmd=partial(self.sweeper.set,
+                            set_cmd=partial(self._sweep_setter,
                                             'sweep/scan'),
                             get_cmd=partial(self._sweep_getter, 'sweep/scan'),
                             val_mapping=sweepmodes,
@@ -243,7 +420,7 @@ class ZIUHFLI(Instrument):
 
         self.add_parameter('sweeper_order',
                            label='Sweeper filter order',
-                           set_cmd=partial(self.sweeper.set,
+                           set_cmd=partial(self._sweep_setter,
                                            'sweep/order'),
                            get_cmd=partial(self._sweep_getter,
                                            'sweep/order'),
@@ -256,7 +433,7 @@ class ZIUHFLI(Instrument):
         self.add_parameter('sweeper_settlingtime',
                            label=('Minimal settling time for the ' +
                                   'sweeper'),
-                           set_cmd=partial(self.sweeper.set,
+                           set_cmd=partial(self._sweep_setter,
                                            'sweep/settling/time'),
                            get_cmd=partial(self._sweep_getter,
                                            'sweep/settling/time'),
@@ -283,7 +460,7 @@ class ZIUHFLI(Instrument):
         self.add_parameter('sweeper_averaging_samples',
                            label=('Minimal no. of samples to average at ' +
                                   'each sweep point'),
-                           set_cmd=partial(self.sweeper.set,
+                           set_cmd=partial(self._sweep_setter,
                                            'sweep/averaging/sample'),
                            get_cmd=partial(self._sweep_getter,
                                            'sweep/averaging/sample'),
@@ -296,7 +473,7 @@ class ZIUHFLI(Instrument):
 
         self.add_parameter('sweeper_averaging_time',
                            label=('Minimal averaging time'),
-                           set_cmd=partial(self.sweeper.set,
+                           set_cmd=partial(self._sweep_setter,
                                            'sweep/averaging/tc'),
                            get_cmd=partial(self._sweep_getter,
                                            'sweep/averaging/tc'),
@@ -307,6 +484,15 @@ class ZIUHFLI(Instrument):
                                         sweeper_averaging_samples."""
                            )
 
+        self.add_parameter('sweeper_xmapping',
+                           label='Sweeper x mapping',
+                           set_cmd=partial(self._sweep_setter,
+                                           'sweep/xmapping'),
+                           get_cmd=partial(self._sweep_getter,
+                                           'sweep/xmapping'),
+                           val_mapping={'lin': 0, 'log': 1}
+                           )
+
         self.add_parameter('sweeper_sweeptime',
                            label='Expected sweep time',
                            unit='s',
@@ -315,17 +501,37 @@ class ZIUHFLI(Instrument):
         self.add_parameter('sweeper_timeout',
                            label='Sweep timeout',
                            unit='s',
-                           initial_value=10,
+                           initial_value=600,
                            parameter_class=ManualParameter)
+
+        ########################################
+        # THE SWEEP ITSELF
+        self.add_parameter('Sweep',
+                           parameter_class=Sweep,
+                           )
 
         # A "manual" parameter: a list of the signals for the sweeper
         # to subscribe to
         self._sweeper_signals = []
 
-        # Set up the sweeper with a minimal number of required settings
-        # (since some of the factory defaults are nonsensical)
-        self.sweeper_BW.set(100)  # anything >0 will do
-        self.sweeper_order.set(1)
+        # this is the dictionary keeping track of the sweeper settings
+        # These are the default settings
+        self._sweepdict = {'start': 1e6,
+                           'stop': 10e6,
+                           'samplecount': 25,
+                           'bandwidthcontrol': 1,  # fixed mode
+                           'bandwidth': 50,
+                           'gridnode': 'oscs/0/freq',
+                           'scan': 0,  # sequential scan
+                           'order': 1,
+                           'settling/time': 1e-6,
+                           'settling/tc': 7,
+                           'averaging/sample': 25,
+                           'averaging/tc': 100e-3,
+                           'xmapping': 0,  # linear
+                          }
+        # Set up the sweeper with the above settings
+        self.Sweep.build_sweep()
 
     def _demod_setter(self, mode, demod, setting, value):
         """
@@ -455,6 +661,18 @@ class ZIUHFLI(Instrument):
         time_est = (settlingtime+averagingtime)*self.sweeper_samplecount.get()
         return time_est
 
+    def _sweep_setter(self, setting, value):
+        """
+        set_cmd for all sweeper parameters. The value and setting are saved in
+        a dictionary which is read by the Sweep parameter's build_sweep method
+        and only then sent to th e instrument.
+        """
+        key = '/'.join(setting.split('/')[1:])
+        self._sweepdict[key] = value
+        self.sweep_correctly_built = False
+        print('Sweep setter here')
+        print('Received: {}, {}'.format(setting, value))
+
     def _sweep_getter(self, setting):
         """
         General get_cmd for sweeper parameters
@@ -466,10 +684,12 @@ class ZIUHFLI(Instrument):
             setting (str): the path used by ZI to describe the setting, 
             e.g. 'sweep/settling/time'
         """
+        # TO-DO: Should this look up in _sweepdict rather than query the 
+        # instrument?
         returndict = self.sweeper.get(setting)  # this is a dict
 
         # The dict may have different 'depths' depending on the parameter.
-        # The depth is encoded in the setting string
+        # The depth is encoded in the setting string (number of '/')
         keys = setting.split('/')[1:]
 
         while keys != []:
@@ -505,7 +725,7 @@ class ZIUHFLI(Instrument):
         """
 
         # TO-DO: implement all returned attributes
-        valid_attributes = ['X', 'Y', 'R', 'phase']
+        valid_attributes = ['X', 'Y', 'R', 'phase', 'Xrms', 'Yrms', 'Rrms']
 
         # Validation
         if demodulator not in range(1, 9):
@@ -576,9 +796,8 @@ class ZIUHFLI(Instrument):
         count = 1
         for signal in self._sweeper_signals:
             (_, _, _, dm, _, attr) = signal.split('/')
-            print('    Signal {}: Demodulator {}: {}'.format(count,
-                                                             int(dm)+1,
-                                                             attr))
+            fmt = (count, int(dm)+1, attr)
+            print('    Signal {}: Demodulator {}: {}'.format(*fmt))
             count += 1
 
         features = ['timeconstant', 'order', 'samplerate']
@@ -598,94 +817,8 @@ class ZIUHFLI(Instrument):
             print('    Expected sweep time: {:.1f} (s)'.format(swptime))
         else:
             print('    Expected sweep time: N/A in auto mode')
-
-    def execute_sweeper(self):
-        """
-        Execute the sweeper aka wrap the ziPython function
-
-        Reads the internal signal list and makes the sweep.
-
-        """
-
-        # self.sweeper.set('sweep/samplecount', self.sweeper.get('sweep/samplecount')['samplecount'][0] )
-        # self.sweeper.set('sweep/samplecount', self.sweeper_samplecount)
-        #path = '/%s/demods/%d/sample' % (self.device, 0)
-
-        if self._sweeper_signals == []:
-            raise ValueError('No signals selected! Can not perform sweep.')
-
-        # we must enable the demodulators we use
-        # after the sweep, they should be returned to their original state
-        streamsettings = []
-        for sigstr in self._sweeper_signals:
-            path = '/'.join(sigstr.split('/')[:-1])
-            (_, dev, _, dmnum, _) = path.split('/')
-
-            # if the setting has never changed, it doesn't exist
-            # then we assume that it's zero (factory default)
-            try:
-                toget = path.replace('sample', 'enable')
-                # ZI like nesting...
-                setting = self.daq.get(toget)[dev]['demods'][dmnum]['enable']['value'][0]
-            except KeyError:
-                setting = 0
-            streamsettings.append(setting)
-            self.daq.setInt(path.replace('sample', 'enable'), 1)
-        
-            self.sweeper.subscribe(path)  # we'll get multiple subscriptions to the same demod... problem?
-
-        self.sweeper.execute()
-
-        start = time.time()
-        timeout = self.sweeper_timeout.get()
-
-        # @William:
-        # The while loop below is taken from the example, I left the print statements for now..not sure 
-        # we need them though. 
-        while not self.sweeper.finished():  # Wait until the sweep is complete, with timeout.
-            time.sleep(0.2)  # Where does this value come from?
-            progress = self.sweeper.progress()
-            #print("Individual sweep progress: {:.2%}.".format(progress[0]), end="\r")
-            # Here we could read intermediate data via:
-            # data = sweeper.read(True)...
-            # and process it while the sweep is completing.
-            # if device in data:
-            # ...
-            if (time.time() - start) > timeout:
-                # If for some reason the sweep is blocking, force the end of the
-                # measurement.
-                print("\nSweep still not finished, forcing finish...")
-                # should exit function with error message instead of returning data
-                self.sweeper.finish()
-        print("")
-        stop = time.time()
-
-        print('Sweep took roughly {} seconds'.format(stop-start))
-        return_flat_dict = True
-        data = self.sweeper.read(return_flat_dict)
-
-        self.sweeper.unsubscribe('*')
-        for (state, sigstr) in zip(streamsettings, self._sweeper_signals):
-            path = '/'.join(sigstr.split('/')[:-1])
-            self.daq.setInt(path.replace('sample', 'enable'), int(state))
-
-        return self._parsesweepdata(data)
-
-    def _parsesweepdata(self, sweepresult):
-        """
-        Parse the raw result of a sweep into just the data asked for by the 
-        added sweeper signals
-        """
-        trans = {'X': 'x', 'Y': 'y', 'Aux Input 1': 'auxin0',
-                 'Aux Input 2': 'auxin1', 'R': 'r', 'phase': 'phase'}
-        returndata = []
-        for signal in self._sweeper_signals:
-            path = '/'.join(signal.split('/')[:-1])
-            attr = signal.split('/')[-1]
-            data = sweepresult[path][0][0][trans[attr]]
-            returndata.append(data)
-
-        return tuple(returndata)
+        print('    Sweep timeout: {} ({})'.format(self.sweeper_timeout.get(),
+                                                  's'))
 
     def close(self):
         """
