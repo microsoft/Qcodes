@@ -579,7 +579,7 @@ class AMI430_3D(Instrument):
 
     def _set_field(self, field):
         self._update_internal_coords()
-        self._field = value
+        self._field = field
 
         self._x, self._y, self._z = self._spherical_to_cartesian(self._phi,
                                                                  self._theta,
@@ -614,23 +614,23 @@ class AMI430_3D(Instrument):
 
         # First ramp the coils that are decreasing in field strength
         if np.abs(m['x']) < np.abs(x):
-            self._magnet_x.field(x, perform_safety_check=False)
+            self._magnet_x._set_field(x, perform_safety_check=False)
             swept_x = True
 
         if np.abs(m['y']) < np.abs(y):
-            self._magnet_y.field(y, perform_safety_check=False)
+            self._magnet_y._set_field(y, perform_safety_check=False)
             swept_y = True
 
         if np.abs(m['z']) < np.abs(z):
-            self._magnet_z.field(z, perform_safety_check=False)
+            self._magnet_z._set_field(z, perform_safety_check=False)
             swept_z = True
 
         # Finally, ramp up the coils that are increasing
         if not swept_x:
-            self._magnet_x.field(x, perform_safety_check=False)
+            self._magnet_x._set_field(x, perform_safety_check=False)
 
         if not swept_y:
-            self._magnet_y.field(y, perform_safety_check=False)
+            self._magnet_y._set_field(y, perform_safety_check=False)
 
         if not swept_z:
-            self._magnet_z.field(z, perform_safety_check=False)
+            self._magnet_z._set_field(z, perform_safety_check=False)
