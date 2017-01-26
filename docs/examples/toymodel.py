@@ -2,11 +2,12 @@
 
 import math
 
-from qcodes import MockInstrument, MockModel, Parameter, Loop, DataArray
+from qcodes import MockInstrument, Parameter, Loop, DataArray
+from qcodes.instrument.mock import SingleMockModel
 from qcodes.utils.validators import Numbers
 from qcodes.instrument.mock import ArrayGetter
 
-class AModel(MockModel):
+class AModel(SingleMockModel):
     def __init__(self):
         self._gates = [0.0, 0.0, 0.0]
         self._excitation = 0.1

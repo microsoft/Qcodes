@@ -1,6 +1,7 @@
 """Mock instruments for testing purposes."""
 import time
 from datetime import datetime
+from uuid import uuid4
 
 from .base import Instrument
 from .parameter import MultiParameter
@@ -282,6 +283,109 @@ class MockModel(ServerManager, BaseServer):  # pragma: no cover
         See NestedAttrAccess for details.
         """
         self.ask('method_call', 'delattr', attr)
+
+
+# Model is purely in service of mock instruments which *are* tested
+# so coverage testing this (by running it locally) would be a waste.
+class SingleMockModel:  # pragma: no cover
+
+    """
+    Base class for models to connect to various MockInstruments.
+
+    Args:
+        name (str): The server name to create for the model.
+            Default 'Model-{:.7s}' uses the first 7 characters of
+            the server's uuid.
+
+    for every instrument that connects to this model, create two methods:
+        - ``<instrument>_set(param, value)``: set a parameter on the model
+        - ``<instrument>_get(param)``: returns the value of a parameter
+          ``param`` and the set/return values should all be strings
+
+    If ``param`` and/or ``value`` is not recognized, the method should raise
+    an error.
+
+    """
+
+    def __init__(self, name='Model-{:.7s}'):
+
+        self.uuid = uuid4().hex
+        self.name = name.format(self.uuid)
+
+    def handle_cmd(self, cmd):
+        """
+        Handler for all model queries.
+
+        Args:
+            cmd (str): Can take several forms:
+
+                - '<instrument>:<parameter>?':
+                  calls ``self.<instrument>_get(<parameter>)`` and forwards
+                  the return value.
+                - '<instrument>:<parameter>:<value>':
+                  calls ``self.<instrument>_set(<parameter>, <value>)``
+                - '<instrument>:<parameter>'.
+                  calls ``self.<instrument>_set(<parameter>, None)``
+
+        Returns:
+            Union(str, None): The parameter value, if ``cmd`` has the form
+            '<instrument>:<parameter>?', otherwise no return.
+
+        Raises:
+            ValueError: if cmd does not match one of the patterns above.
+        """
+        query = cmd.split(':')
+
+        instrument = query[0]
+        param = query[1]
+
+        if param[-1] == '?' and len(query) == 2:
+            return getattr(self, instrument + '_get')(param[:-1])
+
+        elif len(query) <= 3:
+            value = query[2] if len(query) == 3 else None
+            getattr(self, instrument + '_set')(param, value)
+
+        else:
+            raise ValueError()
+
+    def getattr(self, attr, default=_NoDefault):
+        """
+        Get a (possibly nested) attribute of this model on its server.
+
+        See NestedAttrAccess for details.
+        """
+        return self.ask('method_call', 'getattr', attr, default)
+
+    def setattr(self, attr, value):
+        """
+        Set a (possibly nested) attribute of this model on its server.
+
+        See NestedAttrAccess for details.
+        """
+        self.ask('method_call', 'setattr', attr, value)
+
+    def callattr(self, attr, *args, **kwargs):
+        """
+        Call a (possibly nested) method of this model on its server.
+
+        See NestedAttrAccess for details.
+        """
+        return self.ask('method_call', 'callattr', attr, *args, **kwargs)
+
+    def delattr(self, attr):
+        """
+        Delete a (possibly nested) attribute of this model on its server.
+
+        See NestedAttrAccess for details.
+        """
+        self.ask('method_call', 'delattr', attr)
+
+    def ask(self, func_name, *args, **kwargs):
+        return self.handle_cmd(args[0])
+
+    def write(self, func_name, *args, **kwargs):
+        self.handle_cmd(args[0])
 
 class ArrayGetter(MultiParameter):
     """
