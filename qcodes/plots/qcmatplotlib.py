@@ -7,6 +7,8 @@ from collections import Mapping
 import matplotlib.pyplot as plt
 from matplotlib.transforms import Bbox
 from matplotlib.widgets import Cursor
+import mplcursors
+
 
 import numpy as np
 from numpy.ma import masked_invalid, getmask
@@ -241,8 +243,8 @@ class ClickWidget:
         self.ax[0, 1].set_ylabel("y")
         self.ax[0, 1].set_ylim(min(self._data['yaxis']), max(self._data['yaxis']))
         self.ax[0, 1].set_xlim(0, self._data['z'].max() * 1.05)
-        self._xline = None
-        self._yline = None
+        self._lines = []
+        self._datacursor = []
         self._cursor = Cursor(self.ax[0, 0], useblit=True, color='black')
         self.fig.tight_layout()
         self.fig.canvas.mpl_connect('button_press_event', self._click)
@@ -254,10 +256,12 @@ class ClickWidget:
             ypos = (abs(self._data['yaxis'] - event.ydata)).argmin()
             print("X: {} Y: {}".format(event.xdata, event.ydata))
             print("Clicked on number {},{}".format(xpos, ypos))
-            if self._xline:
-                self._xline[0].remove()
-            if self._yline:
-                self._yline[0].remove()
-            self._yline = self.ax[0, 1].plot(self._data['z'][:, xpos], self._data['yaxis'], color='C0', marker='.')
-            self._xline = self.ax[1, 0].plot(self._data['xaxis'], self._data['z'][ypos, :], color='C0', marker='.')
+            for line in self._lines:
+                line.remove()
+            self._lines = []
+            if self._datacursor:
+                self._datacursor.remove()
+            self._lines.append(self.ax[0, 1].plot(self._data['z'][:, xpos], self._data['yaxis'], color='C0', marker='.')[0])
+            self._lines.append(self.ax[1, 0].plot(self._data['xaxis'], self._data['z'][ypos, :], color='C0', marker='.')[0])
+            self._datacursor = mplcursors.cursor(self._lines, multiple=False)
             self.fig.canvas.draw()
