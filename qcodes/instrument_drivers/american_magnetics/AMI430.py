@@ -167,10 +167,9 @@ class AMI430(VisaInstrument):
         """
         # If part of a parent driver, set the value using that driver
         if np.abs(value) > self._field_rating:
-            msg = ': Aborted _set_field; {} is higher than limit of {}'
-            logging.error(__name__ + msg.format(value, self._field_rating))
+            msg = 'Aborted _set_field; {} is higher than limit of {}'
 
-            return
+            raise ValueError(msg.format(value, self._field_rating))
 
         if self._parent_instrument is not None and perform_safety_check:
             self._parent_instrument._request_field_change(self, value)
@@ -204,16 +203,16 @@ class AMI430(VisaInstrument):
             if state == 'holding':
                 self.pause()
             else:
-                msg = ': _set_field({}) failed with state: {}'
-                logging.error(__name__ + msg.format(value, state))
+                msg = '_set_field({}) failed with state: {}'
+
+                raise Exception(msg.format(value, state))
 
     def _ramp_to(self, value):
         """ Non-blocking method to ramp to a certain field """
         if np.abs(value) > self._field_rating:
-            msg = ': Aborted _ramp_to; {} is higher than limit of {}'
-            logging.error(__name__ + msg.format(value, self._field_rating))
+            msg = 'Aborted _ramp_to; {} is higher than limit of {}'
 
-            return
+            raise ValueError(msg.format(value, self._field_rating))
 
         if self._parent_instrument is not None:
             msg = (": Initiating a blocking instead of non-blocking "
@@ -221,12 +220,6 @@ class AMI430(VisaInstrument):
             logging.warning(__name__ + msg)
 
             self._parent_instrument._request_field_change(self, value)
-
-            return
-
-        if np.abs(value) > self._ramp_rating:
-            msg = ': Aborted _ramp_to because setpoint higher than maximum'
-            logging.error(__name__ + msg)
 
             return
 
