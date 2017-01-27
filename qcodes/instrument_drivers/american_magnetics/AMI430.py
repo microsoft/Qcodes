@@ -5,6 +5,8 @@ import time
 from qcodes import Instrument, VisaInstrument
 from qcodes.utils.validators import Numbers
 
+from functools import partial
+
 
 def R_y(theta):
     """ Construct rotation matrix around y-axis. """
@@ -409,16 +411,43 @@ class AMI430_3D(Instrument):
         self._magnet_x = magnet_x
         self._magnet_y = magnet_y
         self._magnet_z = magnet_z
+
         # Make this into a parameter?
         self._field_limit = field_limit
 
-        # Internal coordinates
-        self._x, self._y, self._z = 0.0, 0.0, 0.0
-        self._phi = 0.0
-        self._theta = 0.0
-        self._field = 0.0
-        self._rho = 0.0
+        # Internal magnet field setpoints
+        self.__x, self.__y, self.__z = 0.0, 0.0, 0.0
 
+        # Get-only parameters that return a measured value
+        self.add_parameter('x_measured',
+                           get_cmd=partial(self._measure, 'x'),
+                           units='T')
+
+        self.add_parameter('y_measured',
+                           get_cmd=partial(self._measure, 'y'),
+                           units='T')
+
+        self.add_parameter('z_measured',
+                           get_cmd=partial(self._measure, 'z'),
+                           units='T')
+
+        self.add_parameter('phi_measured',
+                           get_cmd=partial(self._measure, 'phi'),
+                           units='deg')
+
+        self.add_parameter('theta_measured',
+                           get_cmd=partial(self._measure, 'theta'),
+                           units='deg')
+
+        self.add_parameter('field_measured',
+                           get_cmd=partial(self._measure, 'field'),
+                           units='T')
+
+        self.add_parameter('rho_measured',
+                           get_cmd=partial(self._measure, 'rho'),
+                           units='T')
+
+        # Get and set parameters for the setpoints of the coordinates
         self.add_parameter('x',
                            get_cmd=self._get_x,
                            set_cmd=self._set_x,
@@ -461,19 +490,6 @@ class AMI430_3D(Instrument):
                            units='T',
                            vals=Numbers())
 
-    def _spherical_to_cartesian(self, phi, theta, r):
-        x = r * np.sin(theta) * np.cos(phi)
-        y = r * np.sin(theta) * np.sin(phi)
-        z = r * np.cos(theta)
-
-        return x, y, z
-
-    def _cylindrical_to_cartesian(self, phi, rho, z):
-        x = rho * np.cos(phi)
-        y = rho * np.sin(phi)
-
-        return x, y, z
-
     def _cartesian_to_other(self, x, y, z):
         field = np.sqrt(x**2 + y**2 + z**2)
         phi = np.arctan2(y, x)
@@ -481,17 +497,10 @@ class AMI430_3D(Instrument):
         theta = np.arccos(z / field)
         rho = np.sqrt(x**2 + y**2)
 
-        return field, phi, theta, rho
+        return phi, theta, field, rho
 
-    def _update_internal_coords(self):
-        field, phi, theta, rho = self._cartesian_to_other(self._x,
-                                                          self._y,
-                                                          self._z)
-
-        self._field = field
-        self._phi = phi
-        self._theta = theta
-        self._rho = rho
+    def _get_non_cartesian(self):
+        return self._cartesian_to_other(self._x, self._y, self._z)
 
     def _request_field_change(self, magnet, value):
         if magnet is self._magnet_x:
@@ -501,10 +510,24 @@ class AMI430_3D(Instrument):
         elif magnet is self._magnet_z:
             self.z(value)
         else:
-            msg = ': This magnet doesnt belong to its specified parent!'
-            logging.error(__name__ + msg)
+            msg = 'This magnet doesnt belong to its specified parent {}'
 
-    def _measure(self):
+            raise NameError(msg.format(self))
+
+    def _set_fields_spherical(self, phi, theta, field):
+        x = field * np.sin(theta) * np.cos(phi)
+        y = field * np.sin(theta) * np.sin(phi)
+        z = field * np.cos(theta)
+
+        self._set_fields(x, y, z)
+
+    def _set_fields_cylindrical(self, phi, rho, z):
+        x = rho * np.cos(phi)
+        y = rho * np.sin(phi)
+
+        self._set_fields(x, y, z)
+
+    def _measure(self, name):
         """
         Measure the actual (not setpoint) field strengths of all 3 individual
         magnets and calculate the parameters for all 3 coordinate systems.
@@ -513,7 +536,7 @@ class AMI430_3D(Instrument):
         y = self._magnet_y.field()
         z = self._magnet_z.field()
 
-        field, phi, theta, rho = self._cartesian_to_other(x, y, z)
+        phi, theta, field, rho = self._cartesian_to_other(x, y, z)
 
         coords = {
             'x': x,
@@ -525,103 +548,119 @@ class AMI430_3D(Instrument):
             'rho': rho
         }
 
-        return coords
+        return coords[name]
 
     def _get_x(self):
-        return self._measure()['x']
+        return self.__x
 
     def _set_x(self, value):
-        self._x = value
-        self._set_fields(self._x, self._y, self._z)
+        self._set_fields(value, self.__y, self.__z)
 
     def _get_y(self):
-        return self._measure()['y']
+        return self.__y
 
     def _set_y(self, value):
-        self._y = value
-        self._set_fields(self._x, self._y, self._z)
+        self._set_fields(self.__x, value, self.__z)
 
     def _get_z(self):
-        return self._measure()['z']
+        return self.__z
 
     def _set_z(self, value):
-        self._z = value
-        self._set_fields(self._x, self._y, self._z)
+        self._set_fields(self.__x, self.__y, value)
 
     def _get_phi(self):
-        return self._measure()['phi']
+        phi, theta, field, rho = self._get_non_cartesian()
+
+        return np.degrees(phi)
 
     def _set_phi(self, value):
-        self._update_internal_coords()
-        self._phi = np.radians(value)
+        phi, theta, field, rho = self._get_non_cartesian()
 
-        self._x, self._y, self._z = self._spherical_to_cartesian(self._phi,
-                                                                 self._theta,
-                                                                 self._field)
+        phi = np.radians(value)
 
-        self._set_fields(self._x, self._y, self._z)
+        self._set_fields_spherical(phi, theta, field)
 
     def _get_theta(self):
-        return self._measure()['theta']
+        phi, theta, field, rho = self._get_non_cartesian()
+
+        return np.degrees(theta)
 
     def _set_theta(self, value):
-        self._update_internal_coords()
-        self._theta = np.radians(value)
+        phi, theta, field, rho = self._get_non_cartesian()
 
-        self._x, self._y, self._z = self._spherical_to_cartesian(self._phi,
-                                                                 self._theta,
-                                                                 self._field)
+        theta = np.radians(value)
 
-        self._set_fields(self._x, self._y, self._z)
+        self._set_fields_spherical(phi, theta, field)
 
     def _get_field(self):
-        return self._measure()['field']
+        phi, theta, field, rho = self._get_non_cartesian()
+
+        return field
 
     def _set_field(self, field):
-        self._update_internal_coords()
-        self._field = field
+        phi, theta, field, rho = self._get_non_cartesian()
 
-        self._x, self._y, self._z = self._spherical_to_cartesian(self._phi,
-                                                                 self._theta,
-                                                                 self._field)
+        field = value
 
-        self._set_fields(self._x, self._y, self._z)
+        self._set_fields_spherical(phi, theta, field)
 
     def _get_rho(self):
-        return self._measure()['rho']
+        phi, theta, field, rho = self._get_non_cartesian()
+
+        return rho
 
     def _set_rho(self, value):
-        self._update_internal_coords()
-        self._rho = value
+        phi, theta, field, rho = self._get_non_cartesian()
 
-        self._x, self._y, self._z = self._cylindrical_to_cartesian(self._phi,
-                                                                   self._rho,
-                                                                   self._z)
+        rho = value
 
-        self._set_fields(self._x, self._y, self._z)
+        self._set_fields_cylindrical(phi, rho, self.__z)
 
     def _set_fields(self, x, y, z):
-        # Check if exceeding the field limit
-        if np.sqrt(x**2 + y**2 + z**2) > self._field_limit:
-            msg = ' _set_fields refused; field would exceed limit of {}'
-            logging.error(__name__ + msg.format(self._field_limit))
+        # Check if exceeding an individual magnet field limit
+        # These will throw a ValueError on an invalid value
+        self._magnet_x.field.validate(x)
+        self._magnet_y.field.validate(y)
+        self._magnet_z.field.validate(z)
 
-            return
+        # Check if exceeding the global field limit
+        if np.sqrt(x**2 + y**2 + z**2) > self._field_limit:
+            msg = '_set_fields aborted; field would exceed limit of {} T'
+
+            raise ValueError(msg.format(self._field_limit))
+
+        # Check if the individual magnet are not already ramping
+        for m in [self._magnet_x, self._magnet_y, self._magnet_z]:
+            if m.ramping_state() == 'ramping':
+                msg = '_set_fields aborted; magnet {} is already ramping'
+
+                raise ValueError(msg.format(m))
+
+        # Set the new actual setpoints
+        self.__x = x
+        self.__y = y
+        self.__z = z
 
         swept_x, swept_y, swept_z = False, False, False
 
-        m = self._measure()
-
         # First ramp the coils that are decreasing in field strength
-        if np.abs(m['x']) < np.abs(x):
+        # If the new setpoint is practically equal to the current one
+        # then leave it be
+        if np.isclose(self.__x, x):
+            swept_x = True
+        elif np.abs(self._magnet_x.field()) < np.abs(x):
             self._magnet_x._set_field(x, perform_safety_check=False)
             swept_x = True
 
-        if np.abs(m['y']) < np.abs(y):
+        if np.isclose(self.__y, y):
+            swept_y = True
+        elif np.abs(self._magnet_y.field()) < np.abs(y):
             self._magnet_y._set_field(y, perform_safety_check=False)
             swept_y = True
 
-        if np.abs(m['z']) < np.abs(z):
+        if np.isclose(self.__z, z):
+            swept_z = True
+        elif np.abs(self._magnet_z.field()) < np.abs(z):
             self._magnet_z._set_field(z, perform_safety_check=False)
             swept_z = True
 
