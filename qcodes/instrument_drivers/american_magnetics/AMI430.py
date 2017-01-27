@@ -493,7 +493,7 @@ class AMI430_3D(Instrument):
         return phi, theta, field, rho
 
     def _get_non_cartesian(self):
-        return self._cartesian_to_other(self._x, self._y, self._z)
+        return self._cartesian_to_other(self.__x, self.__y, self.__z)
 
     def _request_field_change(self, magnet, value):
         if magnet is self._magnet_x:
