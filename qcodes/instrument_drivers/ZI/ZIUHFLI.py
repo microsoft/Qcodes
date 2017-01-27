@@ -335,6 +335,86 @@ class ZIUHFLI(Instrument):
                                          instrument.
                                          """)
 
+            self.add_parameter('demod{}_phaseshift'.format(demod),
+                               label='Phase shift',
+                               unit='degrees',
+                               get_cmd=partial(self._demod_getter,
+                                               demod-1, 'phaseshift'),
+                               set_cmd=partial(self._demod_setter,
+                                               1, demod-1, 'phaseshift')
+                               )
+
+            # val_mapping for the demodX_signalin parameter
+            dmsigins = {'Sig In 1': 0,
+                        'Sig In 2': 1,
+                        'Trigger 1': 2,
+                        'Trigger 2': 3,
+                        'Aux Out 1': 4,
+                        'Aux Out 2': 5,
+                        'Aux Out 3': 6,
+                        'Aux Out 4': 7,
+                        'Aux In 1': 8,
+                        'Aux In 2': 9,
+                        'Phi Demod 4': 10,
+                        'Phi Demod 8': 11}
+
+            self.add_parameter('demod{}_signalin'.format(demod),
+                               label='Signal input',
+                               get_cmd=partial(self._demod_getter,
+                                               demod-1, 'adcselect'),
+                               set_cmd=partial(self._demod_setter,
+                                               0, demod-1, 'adcselect'),
+                               val_mapping=dmsigins,
+                               vals=vals.Enum(*list(dmsigins.keys()))
+                               )
+
+            self.add_parameter('demod{}_sinc'.format(demod),
+                               label='Sinc filter',
+                               get_cmd=partial(self._demod_getter,
+                                               demod-1, 'sinc'),
+                               set_cmd=partial(self._demod_setter,
+                                               0, demod-1, 'sinc'),
+                               val_mapping={'ON': 1, 'OFF': 0},
+                               vals=vals.Enum('ON', 'OFF')
+                               )
+
+            self.add_parameter('demod{}_streaming'.format(demod),
+                               label='Data streaming',
+                               get_cmd=partial(self._demod_getter,
+                                               demod-1, 'enable'),
+                               set_cmd=partial(self._demod_setter,
+                                               0, demod-1, 'enable'),
+                               val_mapping={'ON': 1, 'OFF': 0},
+                               vals=vals.Enum('ON', 'OFF')
+                               )
+
+            dmtrigs = {'Continuous': 0,
+                       'Trigger in 3 Rise': 1,
+                       'Trigger in 3 Fall': 2,
+                       'Trigger in 3 Both': 3,
+                       'Trigger in 3 High': 32,
+                       'Trigger in 3 Low': 16,
+                       'Trigger in 4 Rise': 4,
+                       'Trigger in 4 Fall': 8,
+                       'Trigger in 4 Both': 12,
+                       'Trigger in 4 High': 128,
+                       'Trigger in 4 Low': 64,
+                       'Trigger in 3|4 Rise': 5,
+                       'Trigger in 3|4': 10,
+                       'Trigger in 3|4': 15,
+                       'Trigger in 3|4': 160,
+                       'Trigger in 3|4': 80}
+
+            self.add_parameter('demod{}_trigger'.format(demod),
+                               label='Trigger',
+                               get_cmd=partial(self._demod_getter,
+                                               demod-1, 'trigger'),
+                               set_cmd=partial(self._demod_setter,
+                                               0, demod-1, 'trigger'),
+                               val_mapping=dmtrigs,
+                               vals=vals.Enum(*list(dmtrigs.keys()))
+                               )
+
         ########################################
         # SWEEPER PARAMETERS
 
@@ -496,6 +576,31 @@ class ZIUHFLI(Instrument):
                                      """
                            )
 
+        self.add_parameter('sweeper_inaccuracy',
+                           label='Demodulator filter settling inaccuracy',
+                           set_cmd=partial(self._sweep_setter,
+                                           'sweep/settling/inaccuracy'),
+                           docstring="""
+                                     Demodulator filter settling inaccuracy
+                                     defining the wait time between a sweep
+                                     parameter change and recording of the
+                                     next sweep point. The settling time is
+                                     calculated as the time required to attain
+                                     the specified remaining proportion [1e-13,
+                                     0.1] of an incoming step function. Typical
+                                     inaccuracy values: 10m for highest sweep
+                                     speed for large signals, 100u for precise
+                                     amplitude measurements, 100n for precise
+                                     noise measurements. Depending on the
+                                     order of the demodulator filter the settling
+                                     inaccuracy will define the number of filter
+                                     time constants the sweeper has to wait. The
+                                     maximum between this value and the settling
+                                     time is taken as wait time until the next
+                                     sweep point is recorded.
+                                     """
+                           )
+
         self.add_parameter('sweeper_settlingtc',
                            label='Sweep filter settling time',
                            get_cmd=partial(self._sweep_getter,
@@ -513,10 +618,12 @@ class ZIUHFLI(Instrument):
                            get_cmd=partial(self._sweep_getter,
                                            'sweep/averaging/sample'),
                            vals=vals.Ints(1),
-                           docstring="""The actual number of samples is the
-                                        maximum of this value and the
-                                        sweeper_averaging_time times the
-                                        relevant sample rate."""
+                           docstring="""
+                                     The actual number of samples is the
+                                     maximum of this value and the
+                                     sweeper_averaging_time times the
+                                     relevant sample rate.
+                                     """
                            )
 
         self.add_parameter('sweeper_averaging_time',
@@ -526,10 +633,11 @@ class ZIUHFLI(Instrument):
                            get_cmd=partial(self._sweep_getter,
                                            'sweep/averaging/tc'),
                            unit='s',
-                           docstring="""The actual number of samples is the
-                                        maximum of this value times the
-                                        relevant sample rate and the
-                                        sweeper_averaging_samples."""
+                           docstring="""
+                                     The actual number of samples is the
+                                     maximum of this value times the
+                                     relevant sample rate and the
+                                     sweeper_averaging_samples."""
                            )
 
         self.add_parameter('sweeper_xmapping',
@@ -553,6 +661,58 @@ class ZIUHFLI(Instrument):
                            parameter_class=ManualParameter)
 
         ########################################
+        # SIGNAL INPUTS
+
+        for sigin in range(1, 3):
+
+            self.add_parameter('signal_input{}_range'.format(sigin),
+                               label='Input range',
+                               set_cmd=partial(self._sigin_setter,
+                                               1, sigin-1, 'range'),
+                               get_cmd=partial(self._sigin_getter,
+                                               sigin-1, 'range'),
+                               unit='V')
+
+            self.add_parameter('signal_input{}_scaling'.format(sigin),
+                               label='Input scaling',
+                               set_cmd=partial(self._sigin_setter,
+                                               1, sigin-1, 'scaling'),
+                               get_cmd=partial(self._sigin_getter,
+                                               sigin-1, 'scaling'),
+                               )
+
+            self.add_parameter('signal_input{}_AC'.format(sigin),
+                               label='AC coupling',
+                               set_cmd=partial(self._sigin_setter,
+                                               0, sigin-1, 'ac'),
+                               get_cmd=partial(self._sigin_getter,
+                                               sigin-1, 'ac'),
+                               val_mapping={'ON': 1, 'OFF': 0},
+                               vals=vals.Enum('ON', 'OFF')
+                               )
+
+            self.add_parameter('signal_input{}_impedance'.format(sigin),
+                               label='Input impedance',
+                               set_cmd=partial(self._sigin_setter,
+                                               0, sigin-1, 'imp50'),
+                               get_cmd=partial(self._sigin_getter,
+                                               sigin-1, 'imp50'),
+                               val_mapping={50: 1, 1000: 0},
+                               vals=vals.Enum(50, 1000)
+                               )
+
+            sigindiffs = {'Off': 0, 'Inverted': 1, 'Input 1 - Input 2': 2,
+                          'Input 2 - Input 1': 3}
+            self.add_parameter('signal_input{}_diff'.format(sigin),
+                               label='Input signal subtraction',
+                               set_cmd=partial(self._sigin_setter,
+                                               0, sigin-1, 'diff'),
+                               get_cmd=partial(self._sigin_getter,
+                                               sigin-1, 'diff'),
+                               val_mapping=sigindiffs,
+                               vals=vals.Enum(*list(sigindiffs.keys())))
+
+        ########################################
         # THE SWEEP ITSELF
         self.add_parameter('Sweep',
                            parameter_class=Sweep,
@@ -573,7 +733,7 @@ class ZIUHFLI(Instrument):
                            'scan': 0,  # sequential scan
                            'order': 1,
                            'settling/time': 1e-6,
-                           'settling/tc': 7,
+                           'settling/inaccuracy': 10e-3,
                            'averaging/sample': 25,
                            'averaging/tc': 100e-3,
                            'xmapping': 0,  # linear
@@ -618,6 +778,52 @@ class ZIUHFLI(Instrument):
         returndict = self.daq.get(querystr)
         demod = str(demod)
         rawvalue = returndict[self.device]['demods'][demod][setting]['value']
+
+        if isinstance(rawvalue, np.ndarray) and len(rawvalue) == 1:
+            value = rawvalue[0]
+        elif isinstance(rawvalue, list) and len(rawvalue) == 1:
+            value = rawvalue[0]
+        else:
+            value = rawvalue
+
+        return value
+
+    def _sigin_setter(self, mode, sigin, setting, value):
+        """
+        General set_cmd for signal input parameters
+
+        This function counts signal inputs in a zero-indexed way.
+
+        Args:
+            mode (int): 0 means 'call setInt', 1 means 'call setDouble'
+            demod (int): The signal input in question (0 or 1)
+            setting (str): The attribute to set, e.g. 'scaling'
+            value (Union[int, float]): The value to set the attribute to
+        """
+        setstr = '/{}/sigins/{}/{}'.format(self.device, sigin, setting)
+
+        if mode == 0:
+            self.daq.setInt(setstr, value)
+        if mode == 1:
+            self.daq.setDouble(setstr, value)
+
+    def _sigin_getter(self, sigin, setting):
+        """
+        General get_cmd for signal input parameters
+
+        The built-in self.daq.get commands returns a dictionary, but we
+        want a single value
+
+        This function counts signal inputs in a zero-indexed way.
+
+        returns:
+            Union[int, float]: In all cases checked so far, a single value
+                is returned.
+        """
+        querystr = '/{}/sigins/{}/{}'.format(self.device, sigin, setting)
+        returndict = self.daq.get(querystr)
+        sigin = str(sigin)
+        rawvalue = returndict[self.device]['sigins'][sigin][setting]['value']
 
         if isinstance(rawvalue, np.ndarray) and len(rawvalue) == 1:
             value = rawvalue[0]
@@ -827,7 +1033,8 @@ class ZIUHFLI(Instrument):
         """
         print('ACQUISITION')
         toprint = ['sweeper_BWmode', 'sweeper_BW', 'sweeper_order',
-                   'sweeper_averaging_samples', 'sweeper_averaging_time']
+                   'sweeper_averaging_samples', 'sweeper_averaging_time',
+                   'sweeper_settlingtime', 'sweeper_settlingtc']
         for paramname in toprint:
             parameter = self.parameters[paramname]
             print('    {}: {} ({})'.format(parameter.label, parameter.get(),
@@ -870,7 +1077,7 @@ class ZIUHFLI(Instrument):
             print('    Expected sweep time: N/A in auto mode')
         print('    Sweep timeout: {} ({})'.format(self.sweeper_timeout.get(),
                                                   's'))
-        ready = self.Sweep.sweep_correctly_built
+        ready = self.sweep_correctly_built
         print('    Sweep built and ready to execute: {}'.format(ready))
 
     def close(self):
