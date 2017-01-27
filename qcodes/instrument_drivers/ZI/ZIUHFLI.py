@@ -400,10 +400,10 @@ class ZIUHFLI(Instrument):
                        'Trigger in 4 High': 128,
                        'Trigger in 4 Low': 64,
                        'Trigger in 3|4 Rise': 5,
-                       'Trigger in 3|4': 10,
-                       'Trigger in 3|4': 15,
-                       'Trigger in 3|4': 160,
-                       'Trigger in 3|4': 80}
+                       'Trigger in 3|4 Fall': 10,
+                       'Trigger in 3|4 Both': 15,
+                       'Trigger in 3|4 High': 160,
+                       'Trigger in 3|4 Low': 80}
 
             self.add_parameter('demod{}_trigger'.format(demod),
                                label='Trigger',
