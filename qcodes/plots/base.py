@@ -174,7 +174,8 @@ class BasePlot:
         return (getattr(data_array, 'label', '') or
                 getattr(data_array, 'name', ''))
 
-    def expand_trace(self, args, kwargs):
+    @staticmethod
+    def expand_trace(args, kwargs):
         """
         Complete the x, y (and possibly z) data definition for a trace.
 
