@@ -629,11 +629,6 @@ class AMI430_3D(Instrument):
 
                 raise ValueError(msg.format(m))
 
-        # Set the new actual setpoints
-        self.__x = x
-        self.__y = y
-        self.__z = z
-
         swept_x, swept_y, swept_z = False, False, False
 
         # First ramp the coils that are decreasing in field strength
@@ -666,3 +661,8 @@ class AMI430_3D(Instrument):
 
         if not swept_z:
             self._magnet_z._set_field(z, perform_safety_check=False)
+
+        # Set the new actual setpoints
+        self.__x = x
+        self.__y = y
+        self.__z = z
