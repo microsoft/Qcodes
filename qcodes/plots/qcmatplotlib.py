@@ -227,20 +227,24 @@ class ClickWidget:
     def __init__(self, dataset):
         self._data = {}
         BasePlot.expand_trace(args=[dataset], kwargs=self._data)
+        xlabel = BasePlot.get_label(self._data['x'])
+        ylabel = BasePlot.get_label(self._data['y'])
+        zlabel = BasePlot.get_label(self._data['z'])
         self.fig, self.ax = plt.subplots(2, 2)
         self.ax[0, 0].pcolormesh(self._data['x'],
                                  self._data['y'],
                                  self._data['z'])
         self._data['xaxis'] = self._data['x'].ndarray[0, :]
         self._data['yaxis'] = self._data['y'].ndarray
-        self.ax[0, 0].set_xlabel("x")
-        self.ax[0, 0].set_ylabel("y")
-        self.ax[1, 0].set_xlabel("x")
-        self.ax[1, 0].set_ylabel("z")
+
+        self.ax[0, 0].set_xlabel(xlabel)
+        self.ax[0, 0].set_ylabel(ylabel)
+        self.ax[1, 0].set_xlabel(xlabel)
+        self.ax[1, 0].set_ylabel(zlabel)
         self.ax[1, 0].set_xlim(min(self._data['xaxis']), max(self._data['xaxis']))
         self.ax[1, 0].set_ylim(0, self._data['z'].max() * 1.05)
-        self.ax[0, 1].set_xlabel("z")
-        self.ax[0, 1].set_ylabel("y")
+        self.ax[0, 1].set_xlabel(zlabel)
+        self.ax[0, 1].set_ylabel(ylabel)
         self.ax[0, 1].set_ylim(min(self._data['yaxis']), max(self._data['yaxis']))
         self.ax[0, 1].set_xlim(0, self._data['z'].max() * 1.05)
         self._lines = []
