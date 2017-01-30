@@ -157,7 +157,8 @@ class BasePlot:
                             title_parts.append(location)
         return ', '.join(title_parts)
 
-    def get_label(self, data_array):
+    @staticmethod
+    def get_label(data_array):
         """
         Look for a label in data_array falling back on name.
 
