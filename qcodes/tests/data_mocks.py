@@ -50,7 +50,7 @@ class RecordingMockFormatter:
         self.last_saved_indices = []
         self.write_metadata_calls = []
 
-    def write(self, data_set, io_manager, location):
+    def write(self, data_set, io_manager, location, force_write=False):
         self.write_calls.append((io_manager.base_location, location))
 
         self.modified_ranges.append({

@@ -48,11 +48,12 @@ class InstrumentServerManager(ServerManager):
     """
     Creates and manages connections to an InstrumentServer
 
-    name: the name of the server to create
-    kwargs: extra items to send to the server on creation (such as
-        additional queues, that can only be shared on creation)
-        These items will be set as attributes of any instrument that
-        connects to the server
+    Args:
+        name: the name of the server to create
+        kwargs: extra items to send to the server on creation (such as
+            additional queues, that can only be shared on creation)
+            These items will be set as attributes of any instrument that
+            connects to the server
     """
     instances = {}
 

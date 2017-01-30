@@ -15,12 +15,12 @@ class VisaInstrument(Instrument):
         name (str): What this instrument is called locally.
 
         address (str): The visa resource name to use to connect.
-             Optionally includes '@<backend>' at the end. For example,
+            Optionally includes '@<backend>' at the end. For example,
             'ASRL2' will open COM2 with the default NI backend, but
             'ASRL2@py' will open COM2 using pyvisa-py. Note that qcodes
             does not install (or even require) ANY backends, it is up to
-            the user to do that.
-            see eg: http://pyvisa.readthedocs.org/en/stable/names.html
+            the user to do that. see eg:
+            http://pyvisa.readthedocs.org/en/stable/names.html
 
         timeout (number): seconds to allow for responses. Default 5.
 
@@ -49,7 +49,7 @@ class VisaInstrument(Instrument):
         self.add_parameter('timeout',
                            get_cmd=self._get_visa_timeout,
                            set_cmd=self._set_visa_timeout,
-                           units='s',
+                           unit='s',
                            vals=vals.MultiType(vals.Numbers(min_value=0),
                                                vals.Enum(None)))
 

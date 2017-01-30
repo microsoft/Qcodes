@@ -31,13 +31,16 @@ class Tektronix_AWG520(VisaInstrument):
     This is the python driver for the Tektronix AWG520
     Arbitrary Waveform Generator
 
-    TODO:
-    1) Get All
-    2) Remove test_send??
-    3) Add docstrings
+    .. todo::
 
-    TODO: use inheritance for common use with 520, currently contains
-          a lot of repetition
+        1) Get All
+        2) Remove test_send??
+        3) Add docstrings
+
+    .. todo::
+
+        use inheritance for common use with 520, currently contains
+        a lot of repetition
     '''
 
     def __init__(self, name, address, reset=False, clock=1e9, numpoints=1000,
@@ -74,14 +77,14 @@ class Tektronix_AWG520(VisaInstrument):
                            set_cmd='AWGC:RMOD ' + '{}',
                            vals=vals.Enum('CONT', 'TRIG', 'ENH', 'GAT'))
         self.add_parameter('trigger_impedance',
-                           units='Ohm',
+                           unit='Ohm',
                            label='Trigger impedance (Ohm)',
                            get_cmd='TRIG:IMP?',
                            set_cmd='TRIG:IMP '+'{}',
                            vals=vals.Enum(50, 1000),
                            get_parser=float)
         self.add_parameter('trigger_level',
-                           units='V',
+                           unit='V',
                            label='Trigger level (V)',
                            get_cmd='TRIG:LEV?',
                            set_cmd='TRIG:LEV '+'{:.3f}',
@@ -110,7 +113,7 @@ class Tektronix_AWG520(VisaInstrument):
                     self._do_set_filename, ch), vals=vals.Anything())
             self.add_parameter('ch{}_amp'.format(ch),
                                label='Amplitude channel {} (V)'.format(ch),
-                               units='V',
+                               unit='V',
                                get_cmd=amp_cmd + '?',
                                set_cmd=amp_cmd + ' {:.6f}',
                                vals=vals.Numbers(0.02, 2.0),
@@ -118,7 +121,7 @@ class Tektronix_AWG520(VisaInstrument):
 
             self.add_parameter('ch{}_offset'.format(ch),
                                label='Offset channel {} (V)'.format(ch),
-                               units='V',
+                               unit='V',
                                get_cmd=offset_cmd + '?',
                                set_cmd=offset_cmd + ' {:.3f}',
                                vals=vals.Numbers(-1.0, 1.0),
@@ -572,11 +575,13 @@ class Tektronix_AWG520(VisaInstrument):
     def send_sequence(self, wfs, rep, wait, goto, logic_jump, filename):
         '''
         Sends a sequence file (for the moment only for ch1)
-        Inputs (mandatory):
+
+        Args:
 
            wfs:  list of filenames
 
-        Output:
+        Returs:
+
             None
         '''
         logging.debug(__name__ + ' : Sending sequence %s to instrument' % filename)
@@ -610,7 +615,8 @@ class Tektronix_AWG520(VisaInstrument):
     def send_sequence2(self,wfs1,wfs2,rep,wait,goto,logic_jump,filename):
         '''
         Sends a sequence file
-        Inputs (mandatory):
+
+        Args:
             wfs1:  list of filenames for ch1 (all must end with .pat)
             wfs2: list of filenames for ch2 (all must end with .pat)
             rep: list
@@ -618,7 +624,8 @@ class Tektronix_AWG520(VisaInstrument):
             goto: list
             logic_jump: list
             filename: name of output file (must end with .seq)
-        Output:
+
+        Returns:
             None
         '''
         logging.debug(__name__ + ' : Sending sequence %s to instrument' % filename)
