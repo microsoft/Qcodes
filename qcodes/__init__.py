@@ -34,6 +34,7 @@ if in_notebook():  # pragma: no cover
               'try "from qcodes.plots.pyqtgraph import QtPlot" '
               'to see the full error')
 
+from qcodes.utils.wrappers import  do1d, do2d, do1dDiagonal, show_num, init
 # only import in name space if the gui is set to noebook
 # and there is multiprocessing
 if config['gui']['notebook'] and config['core']['legacy_mp']:
