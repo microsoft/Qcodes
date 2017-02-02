@@ -47,7 +47,7 @@ class TestFormatLocation(TestCase):
                          _default(datetime.now(), lp, '{0:03d}'.format(start_magic_value+1), name))
 
     def test_fmt_subparts(self):
-        lp = FormatLocation(fmt_date='%d-%b-%Y', fmt_time='%I-%M%p',
+        lp = FormatLocation(fmt='{date}/{time}', fmt_date='%d-%b-%Y', fmt_time='%I-%M%p',
                             fmt_counter='##{:.1f}~')
         fmt = '%d-%b-%Y/%I-%M%p'
 
