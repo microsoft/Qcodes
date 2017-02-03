@@ -275,6 +275,7 @@ class ClickWidget:
         if self._cid:
             self.fig.canvas.mpl_disconnect(self._cid)
         if self.crossbtn.isChecked():
+            self.sumbtn.setEnabled(True)
             self.ax = np.empty((2, 2), dtype='O')
             self.ax[0, 0] = self.fig.add_subplot(2, 2, 1)
             self.ax[0, 1] = self.fig.add_subplot(2, 2, 2)
@@ -284,6 +285,7 @@ class ClickWidget:
             self._cursor = Cursor(self.ax[0, 0], useblit=True, color='black')
             self.toggle_sum()
         else:
+            self.sumbtn.setEnabled(False)
             self.ax = np.empty((1, 1), dtype='O')
             self.ax[0, 0] = self.fig.add_subplot(1, 1, 1)
         self.ax[0, 0].pcolormesh(self._data['x'],
