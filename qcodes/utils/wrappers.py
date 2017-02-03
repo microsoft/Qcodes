@@ -23,7 +23,7 @@ def init(mainfolder:str, sample_name: str):
     CURRENT_EXPERIMENT["mainfolder"]  =  mainfolder
     CURRENT_EXPERIMENT["subfolder"] = sample_name
     CURRENT_EXPERIMENT['init']  = True
-    path_to_experiment_folder = sep.join([mainfolder, sample_name])
+    path_to_experiment_folder = sep.join([mainfolder, sample_name, ""])
     CURRENT_EXPERIMENT["exp_folder"] = path_to_experiment_folder
     logging.info("experiment started at {}".format(path_to_experiment_folder))
     loc_provider = qc.FormatLocation(
