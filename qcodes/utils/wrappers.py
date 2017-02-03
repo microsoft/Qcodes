@@ -27,7 +27,7 @@ def init(mainfolder:str, sample_name: str):
     CURRENT_EXPERIMENT["exp_folder"] = path_to_experiment_folder
     logging.info("experiment started at {}".format(path_to_experiment_folder))
     loc_provider = qc.FormatLocation(
-        fmt= path_to_experiment_folder + '{counter}_{name}')
+        fmt= path_to_experiment_folder + '{counter}')
     qc.data.data_set.DataSet.location_provider = loc_provider
     CURRENT_EXPERIMENT["provider"] = loc_provider
 
@@ -62,14 +62,8 @@ def do1d(inst_set, start, stop, division, delay, *inst_meas):
         plot, data : returns the plot and the dataset
 
     """
-    if not "{name}" in qc.data.data_set.DataSet.location_provider.fmt:
-        raise ValueError("missing name in {}".format(qc.data.data_set.DataSet.location_provider.fmt))
-
-    name = inst_set.label
-    name = name + "".join([i.label for i in inst_meas])
-    name = name.replace(" ", "")
     loop = qc.Loop(inst_set.sweep(start, stop, division), delay).each(*inst_meas)
-    data = loop.get_data_set(name=name)
+    data = loop.get_data_set()
     title = "#{0:03d}".format(data.location_provider.counter)
     plot = QtPlot()
 
@@ -87,7 +81,7 @@ def do1d(inst_set, start, stop, division, delay, *inst_meas):
         else:
             # simple_parameters
             inst_meas_name = "{}_{}".format(i._instrument.name, i.name)
-            plot.add(getattr(data, inst_meas_name), subplot=j + 1, name=name)
+            plot.add(getattr(data, inst_meas_name), subplot=j + 1)
             plot.subplots[j].showGrid(True, True)
             if j == 0:
                 plot.subplots[0].setTitle(title)
@@ -119,20 +113,14 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, division, delay, start2, slop
         plot, data : returns the plot and the dataset
 
     """
-    if not "{name}" in qc.data.data_set.DataSet.location_provider.fmt:
-        raise ValueError("missing  in {}".format(qc.data.data_set.DataSet.location_provider.fmt))
-
-    name = inst_set.label + inst2_set.label
-    name = name + "".join([i.label for i in inst_meas])
-    name = name.replace(" ", "")
     loop = qc.Loop(inst_set.sweep(start, stop, division), delay).each(
         qc.Task(inst2_set, (inst_set) * slope + (slope * start - start2)), *inst_meas, inst2_set)
-    data = loop.get_data_set(name=name)
+    data = loop.get_data_set()
     title = "#{0:03d}".format(data.location_provider.counter)
     plot = QtPlot()
     for j, i in enumerate(inst_meas):
         inst_meas_name = "{}_{}".format(i._instrument.name, i.name)
-        plot.add(getattr(data, inst_meas_name), subplot=j + 1, name=name)
+        plot.add(getattr(data, inst_meas_name), subplot=j + 1 )
         plot.subplots[j].showGrid(True, True)
         if j == 0:
             plot.subplots[0].setTitle(title)
@@ -165,25 +153,18 @@ def do2d(inst_set, start, stop, division, delay, inst_set2, start2, stop2, divis
         plot, data : returns the plot and the dataset
 
     """
-    if not "{name}" in qc.data.data_set.DataSet.location_provider.fmt:
-        raise ValueError("missing name  in {}".format(qc.data.data_set.DataSet.location_provider.fmt))
     for inst in inst_meas:
         if getattr(inst, "names", False):
             raise ValueError("3d plotting is not supported")
 
-    name = inst_set.label + inst_set2.label
-    name = name + "".join([i.label for i in inst_meas])
-    name = name.replace(" ", "")
-
     loop = qc.Loop(inst_set.sweep(start, stop, division), delay).loop(inst_set2.sweep(start2,stop2,division2), delay2).each(
         *inst_meas)
-    data = loop.get_data_set(name=name)
+    data = loop.get_data_set()
     title = "#{0:03d}".format(data.location_provider.counter)
     plot = QtPlot()
-    name = "{}{}".format(data.location_provider.counter, name)
     for j, i in enumerate(inst_meas):
         inst_meas_name = "{}_{}".format(i._instrument.name, i.name)
-        plot.add(getattr(data, inst_meas_name), subplot=j + 1, name=name)
+        plot.add(getattr(data, inst_meas_name), subplot=j + 1)
         plot.subplots[j].showGrid(True, True)
         if j == 0:
             plot.subplots[0].setTitle(title)
@@ -211,17 +192,8 @@ def show_num(id):
 
     str_id = '{0:03d}'.format(id)
 
-    t = qc.DataSet.location_provider.fmt.format(counter=str_id, name="*")
-    try:
-        file = [i for i in qc.DiskIO(CURRENT_EXPERIMENT["mainfolder"]).list(t) if ".dat" in i][0]
-    except IndexError:
-        logging.error("Not able to find the id in experiment {}".format(CURRENT_EXPERIMENT["exp_folder"]))
-        return None, None
-
-    try:
-        data = qc.load_data(file)
-    except Exception as e:
-        print(e)
+    t = qc.DataSet.location_provider.fmt.format(counter=str_id)
+    data = qc.load_data(t)
 
     plots = []
     for value in data.arrays.keys():
