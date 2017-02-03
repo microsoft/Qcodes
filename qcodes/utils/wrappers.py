@@ -70,26 +70,22 @@ def do1d(inst_set, start, stop, division, delay, *inst_meas):
     name = name.replace(" ", "")
     loop = qc.Loop(inst_set.sweep(start, stop, division), delay).each(*inst_meas)
     data = loop.get_data_set(name=name)
-    title = "#{}_{}".format(data.location_provider.counter, inst_set._instrument.name + inst_set.name)
+    title = "#{0:03d}".format(data.location_provider.counter)
     plot = QtPlot()
-    for j, i in enumerate(inst_meas):
-        # concat the names of all the "arrays"
-        if getattr(i, "names", False):
-            name = "_".join(i.names)
-        else:
-            name = i.name
-        title = title + "{}_{}".format(i._instrument.name, name)
+
     for j, i in enumerate(inst_meas):
         if getattr(i, "names", False):
+            # deal with multi dimenstional parameter
             for k, name in enumerate(i.names):
                 inst_meas_name = "{}_{}".format(i._instrument.name, name)
-                plot.add(getattr(data, inst_meas_name), subplot=j + k + 1, name=name)
+                plot.add(getattr(data, inst_meas_name), subplot=j + k + 1)
                 plot.subplots[j].showGrid(True, True)
                 if j == 0:
                     plot.subplots[0].setTitle(title)
                 else:
                     plot.subplots[j].setTitle("")
         else:
+            # simple_parameters
             inst_meas_name = "{}_{}".format(i._instrument.name, i.name)
             plot.add(getattr(data, inst_meas_name), subplot=j + 1, name=name)
             plot.subplots[j].showGrid(True, True)
@@ -132,10 +128,8 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, division, delay, start2, slop
     loop = qc.Loop(inst_set.sweep(start, stop, division), delay).each(
         qc.Task(inst2_set, (inst_set) * slope + (slope * start - start2)), *inst_meas, inst2_set)
     data = loop.get_data_set(name=name)
-    title = "#{}_{}".format(data.location_provider.counter, inst_set._instrument.name + inst_set.name)
+    title = "#{0:03d}".format(data.location_provider.counter)
     plot = QtPlot()
-    for j, i in enumerate(inst_meas):
-        title = title + "{}_{}".format(i._instrument.name, i.name)
     for j, i in enumerate(inst_meas):
         inst_meas_name = "{}_{}".format(i._instrument.name, i.name)
         plot.add(getattr(data, inst_meas_name), subplot=j + 1, name=name)
@@ -184,13 +178,9 @@ def do2d(inst_set, start, stop, division, delay, inst_set2, start2, stop2, divis
     loop = qc.Loop(inst_set.sweep(start, stop, division), delay).loop(inst_set2.sweep(start2,stop2,division2), delay2).each(
         *inst_meas)
     data = loop.get_data_set(name=name)
-    title = "#{}_{}_{}".format(data.location_provider.counter,
-                               inst_set._instrument.name + inst_set.name,
-                               inst_set2._instrument.name + inst_set2.name)
+    title = "#{0:03d}".format(data.location_provider.counter)
     plot = QtPlot()
     name = "{}{}".format(data.location_provider.counter, name)
-    for j, i in enumerate(inst_meas):
-        title = title + "{}_{}".format(i._instrument.name, i.name)
     for j, i in enumerate(inst_meas):
         inst_meas_name = "{}_{}".format(i._instrument.name, i.name)
         plot.add(getattr(data, inst_meas_name), subplot=j + 1, name=name)
