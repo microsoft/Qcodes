@@ -254,8 +254,11 @@ class ClickWidget:
         hbox.addItem(hspace)
 
         vbox = QtWidgets.QVBoxLayout()
-        self.crossbtn = QtWidgets.QCheckBox('Cross')
-        self.sumbtn = QtWidgets.QCheckBox('Show Sum')
+        self.crossbtn = QtWidgets.QCheckBox('Cross section')
+        self.crossbtn.setToolTip("Display extra subplots with selectable cross sections "
+                                 "or sums along axis.")
+        self.sumbtn = QtWidgets.QCheckBox('Sum')
+        self.sumbtn.setToolTip("Display sums or cross sections.")
 
         self.crossbtn.toggled.connect(self.toggle_cross)
         self.sumbtn.toggled.connect(self.toggle_sum)
@@ -267,7 +270,6 @@ class ClickWidget:
         vbox.addWidget(self.sumbtn)
 
         hbox.addLayout(vbox)
-        self.fig.tight_layout(rect=(0, 0, 0.9, 1))
 
     def toggle_cross(self):
         self.remove_plots()
@@ -280,7 +282,6 @@ class ClickWidget:
             self.ax[0, 0] = self.fig.add_subplot(2, 2, 1)
             self.ax[0, 1] = self.fig.add_subplot(2, 2, 2)
             self.ax[1, 0] = self.fig.add_subplot(2, 2, 3)
-            print("Axis")
             self._cid = self.fig.canvas.mpl_connect('button_press_event', self._click)
             self._cursor = Cursor(self.ax[0, 0], useblit=True, color='black')
             self.toggle_sum()
@@ -312,10 +313,12 @@ class ClickWidget:
                                                   self._data['yaxis'],
                                                   color='C0',
                                                   marker='.')[0])
+            self.ax[0, 1].set_title("")
             self._lines.append(self.ax[1, 0].plot(self._data['xaxis'],
                                                   self._data['z'].sum(axis=0),
                                                   color='C0',
                                                   marker='.')[0])
+            self.ax[1, 0].set_title("")
             self._datacursor = mplcursors.cursor(self._lines, multiple=False)
         else:
             self._cursor.set_active(True)
@@ -339,17 +342,19 @@ class ClickWidget:
         if event.inaxes == self.ax[0, 0] and not self.sumbtn.isChecked():
             xpos = (abs(self._data['xaxis'] - event.xdata)).argmin()
             ypos = (abs(self._data['yaxis'] - event.ydata)).argmin()
-            print("X: {} Y: {}".format(event.xdata, event.ydata))
-            print("Clicked on number {},{}".format(xpos, ypos))
             self.remove_plots()
 
             self._lines.append(self.ax[0, 1].plot(self._data['z'][:, xpos],
                                                   self._data['yaxis'],
                                                   color='C0',
                                                   marker='.')[0])
+            self.ax[0,1].set_title("{} = {} ".format(self._data['xlabel'], self._data['xaxis'][xpos]),
+                                   fontsize='small')
             self._lines.append(self.ax[1, 0].plot(self._data['xaxis'],
                                                   self._data['z'][ypos, :],
                                                   color='C0',
                                                   marker='.')[0])
+            self.ax[1, 0].set_title("{} = {} ".format(self._data['ylabel'], self._data['yaxis'][ypos]),
+                                    fontsize='small')
             self._datacursor = mplcursors.cursor(self._lines, multiple=False)
             self.fig.canvas.draw()
