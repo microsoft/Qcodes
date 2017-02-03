@@ -782,9 +782,6 @@ class StandardParameter(Parameter):
                 raise TypeError(
                     'You cannot use set_parser and val_mapping together.')
 
-        if get_parser is not None and not isinstance(get_cmd, str):
-            logging.warning('get_parser is set, but will not be used ' +
-                            '(name %s)' % name)
         super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
 
         self._meta_attrs.extend(['sweep_step', 'sweep_delay',
