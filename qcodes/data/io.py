@@ -91,7 +91,6 @@ class DiskIO:
             raise ValueError('mode {} not allowed in IO managers'.format(mode))
 
         filepath = self.to_path(filename)
-
         # make directories if needed
         dirpath = os.path.dirname(filepath)
         if not os.path.exists(dirpath):
