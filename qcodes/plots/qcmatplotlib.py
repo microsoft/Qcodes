@@ -4,6 +4,8 @@ using the nbagg backend and matplotlib
 """
 from collections import Mapping
 
+from qtpy import QtWidgets
+
 import matplotlib.pyplot as plt
 from matplotlib.transforms import Bbox
 from matplotlib.widgets import Cursor
@@ -227,45 +229,125 @@ class ClickWidget:
     def __init__(self, dataset):
         self._data = {}
         BasePlot.expand_trace(args=[dataset], kwargs=self._data)
-        xlabel = BasePlot.get_label(self._data['x'])
-        ylabel = BasePlot.get_label(self._data['y'])
-        zlabel = BasePlot.get_label(self._data['z'])
-        self.fig, self.ax = plt.subplots(2, 2)
-        self.ax[0, 0].pcolormesh(self._data['x'],
-                                 self._data['y'],
-                                 self._data['z'])
+        self._data['xlabel'] = BasePlot.get_label(self._data['x'])
+        self._data['ylabel'] = BasePlot.get_label(self._data['y'])
+        self._data['zlabel'] = BasePlot.get_label(self._data['z'])
         self._data['xaxis'] = self._data['x'].ndarray[0, :]
         self._data['yaxis'] = self._data['y'].ndarray
 
-        self.ax[0, 0].set_xlabel(xlabel)
-        self.ax[0, 0].set_ylabel(ylabel)
-        self.ax[1, 0].set_xlabel(xlabel)
-        self.ax[1, 0].set_ylabel(zlabel)
-        self.ax[1, 0].set_xlim(min(self._data['xaxis']), max(self._data['xaxis']))
-        self.ax[1, 0].set_ylim(0, self._data['z'].max() * 1.05)
-        self.ax[0, 1].set_xlabel(zlabel)
-        self.ax[0, 1].set_ylabel(ylabel)
-        self.ax[0, 1].set_ylim(min(self._data['yaxis']), max(self._data['yaxis']))
-        self.ax[0, 1].set_xlim(0, self._data['z'].max() * 1.05)
+        self.fig = plt.figure()
+
         self._lines = []
         self._datacursor = []
-        self._cursor = Cursor(self.ax[0, 0], useblit=True, color='black')
-        self.fig.tight_layout()
-        self.fig.canvas.mpl_connect('button_press_event', self._click)
+        self._cid = 0
+
+        hbox = QtWidgets.QHBoxLayout()
+        self.fig.canvas.setLayout(hbox)
+        hspace = QtWidgets.QSpacerItem(0,
+                                       0,
+                                       QtWidgets.QSizePolicy.Expanding,
+                                       QtWidgets.QSizePolicy.Expanding)
+        vspace = QtWidgets.QSpacerItem(0,
+                                       0,
+                                       QtWidgets.QSizePolicy.Minimum,
+                                       QtWidgets.QSizePolicy.Expanding)
+        hbox.addItem(hspace)
+
+        vbox = QtWidgets.QVBoxLayout()
+        self.crossbtn = QtWidgets.QCheckBox('Cross')
+        self.sumbtn = QtWidgets.QCheckBox('Show Sum')
+
+        self.crossbtn.toggled.connect(self.toggle_cross)
+        self.sumbtn.toggled.connect(self.toggle_sum)
+        self.toggle_cross()
+        self.toggle_sum()
+
+        vbox.addItem(vspace)
+        vbox.addWidget(self.crossbtn)
+        vbox.addWidget(self.sumbtn)
+
+        hbox.addLayout(vbox)
+        self.fig.tight_layout(rect=(0, 0, 0.9, 1))
+
+    def toggle_cross(self):
+        self.remove_plots()
+        self.fig.clear()
+        if self._cid:
+            self.fig.canvas.mpl_disconnect(self._cid)
+        if self.crossbtn.isChecked():
+            self.ax = np.empty((2, 2), dtype='O')
+            self.ax[0, 0] = self.fig.add_subplot(2, 2, 1)
+            self.ax[0, 1] = self.fig.add_subplot(2, 2, 2)
+            self.ax[1, 0] = self.fig.add_subplot(2, 2, 3)
+            print("Axis")
+            self._cid = self.fig.canvas.mpl_connect('button_press_event', self._click)
+            self._cursor = Cursor(self.ax[0, 0], useblit=True, color='black')
+            self.toggle_sum()
+        else:
+            self.ax = np.empty((1, 1), dtype='O')
+            self.ax[0, 0] = self.fig.add_subplot(1, 1, 1)
+        self.ax[0, 0].pcolormesh(self._data['x'],
+                                 self._data['y'],
+                                 self._data['z'])
+        self.ax[0, 0].set_xlabel(self._data['xlabel'])
+        self.ax[0, 0].set_ylabel(self._data['ylabel'])
+        self.fig.tight_layout(rect=(0, 0.07, 0.9, 1))
+        self.fig.canvas.draw_idle()
+
+    def toggle_sum(self):
+        self.remove_plots()
+        if not self.crossbtn.isChecked():
+            return
+        if self.sumbtn.isChecked():
+            self._cursor.set_active(False)
+            self.ax[1, 0].set_ylim(0, self._data['z'].sum(axis=0).max() * 1.05)
+            self.ax[0, 1].set_xlim(0, self._data['z'].sum(axis=1).max() * 1.05)
+            self.ax[1, 0].set_xlabel(self._data['xlabel'])
+            self.ax[1, 0].set_ylabel("sum of " + self._data['zlabel'])
+            self.ax[0, 1].set_xlabel("sum of " + self._data['zlabel'])
+            self.ax[0, 1].set_ylabel(self._data['ylabel'])
+            self._lines.append(self.ax[0, 1].plot(self._data['z'].sum(axis=1),
+                                                  self._data['yaxis'],
+                                                  color='C0',
+                                                  marker='.')[0])
+            self._lines.append(self.ax[1, 0].plot(self._data['xaxis'],
+                                                  self._data['z'].sum(axis=0),
+                                                  color='C0',
+                                                  marker='.')[0])
+            self._datacursor = mplcursors.cursor(self._lines, multiple=False)
+        else:
+            self._cursor.set_active(True)
+            self.ax[1, 0].set_xlabel(self._data['xlabel'])
+            self.ax[1, 0].set_ylabel(self._data['zlabel'])
+            self.ax[0, 1].set_xlabel(self._data['zlabel'])
+            self.ax[0, 1].set_ylabel(self._data['ylabel'])
+            self.ax[1, 0].set_ylim(0, self._data['z'].max() * 1.05)
+            self.ax[0, 1].set_xlim(0, self._data['z'].max() * 1.05)
+        self.fig.canvas.draw_idle()
+
+    def remove_plots(self):
+        for line in self._lines:
+            line.remove()
+        self._lines = []
+        if self._datacursor:
+            self._datacursor.remove()
 
     def _click(self, event):
 
-        if event.inaxes == self.ax[0, 0]:
+        if event.inaxes == self.ax[0, 0] and not self.sumbtn.isChecked():
             xpos = (abs(self._data['xaxis'] - event.xdata)).argmin()
             ypos = (abs(self._data['yaxis'] - event.ydata)).argmin()
             print("X: {} Y: {}".format(event.xdata, event.ydata))
             print("Clicked on number {},{}".format(xpos, ypos))
-            for line in self._lines:
-                line.remove()
-            self._lines = []
-            if self._datacursor:
-                self._datacursor.remove()
-            self._lines.append(self.ax[0, 1].plot(self._data['z'][:, xpos], self._data['yaxis'], color='C0', marker='.')[0])
-            self._lines.append(self.ax[1, 0].plot(self._data['xaxis'], self._data['z'][ypos, :], color='C0', marker='.')[0])
+            self.remove_plots()
+
+            self._lines.append(self.ax[0, 1].plot(self._data['z'][:, xpos],
+                                                  self._data['yaxis'],
+                                                  color='C0',
+                                                  marker='.')[0])
+            self._lines.append(self.ax[1, 0].plot(self._data['xaxis'],
+                                                  self._data['z'][ypos, :],
+                                                  color='C0',
+                                                  marker='.')[0])
             self._datacursor = mplcursors.cursor(self._lines, multiple=False)
             self.fig.canvas.draw()
