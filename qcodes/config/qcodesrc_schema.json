@@ -12,6 +12,11 @@
                     "description": "control legacy buggy multiprocess",
                     "default": false
                 },
+                "default_fmt": {
+                    "type" : "string",
+                    "description": "default location formatter",
+                    "default": "data/{date}/#{counter}_{name}_{time}"
+                },
                 "loglevel" :{
                     "type" : "string",
                     "description": "control logging  level",
