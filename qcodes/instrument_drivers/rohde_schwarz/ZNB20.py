@@ -16,7 +16,7 @@ class FrequencySweep(MultiParameter):
       - ability to choose for abs or db in magnitude return
     """
     def __init__(self, name, instrument, start, stop, npts):
-        super().__init__(name)
+        super().__init__(name, names=("", ""), shapes=((), ()))
         self._instrument = instrument
         self.set_sweep(start, stop, npts)
         self.names = ('magnitude', 'phase')
