@@ -104,12 +104,13 @@ class QDac(VisaInstrument):
                                get_cmd=partial(self._get_fungen, i)
                                )
             self.add_parameter(name='ch{:02}_ampl'.format(i),
-                               label=('The channel amplitude used when in ' +
-                                      'func. gen. mode, the value is 0.5*Vpp'),
+                               label=('The channel gain factor used when in ' +
+                                      'func. gen. mode.'),
                                units='V',
                                set_cmd=partial(self._set_ampl, i),
                                get_cmd=partial(self._get_ampl, i),
-                               vals=vals.Numbers(-10, 10))
+                               vals=vals.Numbers(-10, 10)
+                               )
             self.add_parameter(name='ch{:02}_offset'.format(i),
                                label=('The channel offset used when in ' +
                                       'func. gen. mode'),
@@ -144,7 +145,7 @@ class QDac(VisaInstrument):
                                vals=vals.Ints(-1, 2**31-1),
                                set_cmd=partial(self._fg_setter, fg, 'nreps'),
                                get_cmd=partial(self._fg_getter, fg, 'nreps')
-                               )            
+                               )
 
         for board in range(6):
             for sensor in range(3):
@@ -164,6 +165,10 @@ class QDac(VisaInstrument):
                            set_cmd='ver {}',
                            val_mapping={True: 1, False: 0})
 
+        # initialise the instrument
+        for chan in range(1, self.num_chans+1):
+            self.parameters['ch{:02}_fungen'.format(chan)].set(0)
+            self.parameters['ch{:02}_vrange'.format(chan)].set(0)
         self.verbose.set(False)
         self.connect_message()
         print('[*] Querying all channels for voltages and currents...')
@@ -189,14 +194,14 @@ class QDac(VisaInstrument):
             for chan in range(1, self.num_chans):
                 if self._fungens[chan-1] == fg:
                     chanlist.append(chan)
-            print(fg, chanlist)
 
         typedict = {'SINE': 1, 'SQUARE': 2, 'RAMP': 3}
 
         for chan in chanlist:
-            self.write('wav {} {} {} {}'.format(chan, self._fungens[chan-1],
+            chanmssg = 'wav {} {} {} {}'.format(chan, self._fungens[chan-1],
                                                 self._ampls[chan-1],
-                                                self._offsets[chan-1]))
+                                                self._offsets[chan-1])
+            #self.write()
 
             fungen = self._fungens[chan-1]-1
             typeval = typedict[self._fg_types[fungen]]
@@ -204,10 +209,12 @@ class QDac(VisaInstrument):
             # Hz -> ms
             periodval = round(1/self._fg_freqs[fungen]*1e3)
             repval = self._fg_nreps[fungen]
-
-            self.write('fun {} {} {} {} {}'.format(self._fungens[chan-1],
+            funmssg = 'fun {} {} {} {} {}'.format(self._fungens[chan-1],
                                                    typeval, periodval,
-                                                   dutyval, repval))
+                                                   dutyval, repval)
+            self.write(chanmssg)
+            self.write(funmssg)
+
     #########################
     # Channel gets/sets
     #########################
@@ -216,6 +223,10 @@ class QDac(VisaInstrument):
         """
         set_cmd for the chXX_v parameter
         """
+
+        # compensate for the 0.1 multiplier, if it's on
+        if self.parameters['ch{:02}_vrange'.format(chan)].get_latest() == 1:
+            v = v*10
         # set the mode back to DC in case it had been changed
         self.write('wav {} 0 0 0'.format(chan))
         self.write('set {} {:.6f}'.format(chan, v))
@@ -229,8 +240,12 @@ class QDac(VisaInstrument):
         if num not in range(0, 9):
             raise ValueError('Can only bind function generators 1-8' +
                              ' and DC state 0')
+        # Python lists are 0-indexed
         self._fungens[chan-1] = num
-        self.write('wav {} {} 1 0'.format(chan-1, num))
+        # The 'wav' command is 1-indexed
+        offset = self.parameters['ch{:02}_v'.format(chan)].get_latest()
+        mssg = 'wav {} {} 1 {}'.format(chan, num, offset)
+        self.write(mssg)
 
     def _get_fungen(self, chan):
         """
@@ -351,8 +366,11 @@ class QDac(VisaInstrument):
         '''
 
         # Status call
-        
+
         version_line = self.ask('status')
+        print('Nasty debug')
+        print('--')
+        print(version_line)
         if version_line.startswith('Software Version: '):
             self.version = version_line.strip().split(': ')[1]
         else:
@@ -470,4 +488,3 @@ class QDac(VisaInstrument):
                 line += ': {}'.format(returnmap[pp][value])
                 line += '. '
             print(line)
-
