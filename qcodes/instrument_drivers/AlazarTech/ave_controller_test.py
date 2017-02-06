@@ -4,38 +4,71 @@ from .ATS9360 import AlazarTech_ATS9360
 import numpy as np
 from qcodes import Parameter
 import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
-from qcodes.instrument.parameter import ManualParameter
 
 
 class AcqVariablesParam(Parameter):
     """
     Parameter of an AcquisitionController which has a _check_and_update_instr
     function used for validation and to update instrument attributes and a
-    _get_default function which it uses to set the parameter to an instrument
-    caluclated default.
+    _get_default function which it uses to set the AcqVariablesParam to an
+    instrument caluclated default.
+
+    Args:
+        name: name for this parameter
+        instrument: acquisition controller instrument this parameter belongs to
+        check_and_update_fn: instrument function to be used for value
+            validation and updating instrument values
+        default_fn (optional): instrument function to be used to calculate
+            a default value to set parameter to
+        initial_value (optional): initial value for parameter
     """
+
     def __init__(self, name, instrument, check_and_update_fn,
-                 default_fn, initial_value=None):
+                 default_fn=None, initial_value=None):
         super().__init__(name)
         self._instrument = instrument
         self._save_val(initial_value)
         setattr(self, '_check_and_update_instr', check_and_update_fn)
-        setattr(self, '_get_default', default_fn)
+        if default_fn is not None:
+            setattr(self, '_get_default', default_fn)
 
     def set(self, value):
-        self._check_and_update_instr(value)
+        """
+        Function which checks value using validation function and then sets
+        the Parameter value to this value.
+
+        Args:
+            value: value to set the parameter to
+        """
+        self._check_and_update_instr(value, param_name=self.name)
         self._save_val(value)
 
     def get(self):
         return self._latest()['value']
 
     def to_default(self):
-        default = self._get_default()
+        """
+        Function which executes the default_fn specified to calculate the
+        default value based on instrument values and then calls the set
+        function with this value
+        """
+        try:
+            default = self._get_default()
+        except AttributeError as e:
+            raise AttributeError('no default function for {} Parameter '
+                                 '{}'.format(self.name, e))
         self.set(default)
 
     def check(self):
+        """
+        Function which checks the current Parameter value using the specified
+        check_and_update_fn which can also serve to update instrument values.
+
+        Return:
+            True (if no errors raised when check_and_update_fn executed)
+        """
         val = self._latest()['value']
-        self._check_and_update_instr(val)
+        self._check_and_update_instr(val, param_name=self.name)
         return True
 
 
@@ -45,9 +78,15 @@ class AveragedAcqParam(Parameter):
     HD_Averaging_Controller (tested with ATS9360 board) for return of
     averaged magnitude and phase data from the Alazar.
 
+    Args:
+        name: name for this parameter
+        instrument: acquisition controller instrument this parameter belongs to
+        demod_length: numer of demodulation frequencies the acq controller has
+            NB this is currently set in acq controller init but that's really
+            not nice and should be changed when possible
+
     TODO(nataliejpg) setpoints (including names and units)
     TODO(nataliejpg) setpoint units
-    TODO(nataliejpg) convert demod_index setpoint into actual frequency
     """
 
     def __init__(self, name, instrument, demod_length):
@@ -60,7 +99,34 @@ class AveragedAcqParam(Parameter):
         else:
             self.shapes = ((), ())
 
+    def update_demod_setpoints(self, demod_freqs):
+        """
+        Function to update the demodulation frequency setpoints to be called
+        when a demod_freq Parameter of the acq controller is updated
+
+        Args:
+            demod_freqs: numpy array of demodulation frequencies to use as
+                setpoints if length > 1
+        """
+        demod_length = self._instrument._demod_length
+        self._demod_list = demod_freqs
+        if demod_length > 1:
+            self.setpoints = ((self._demod_list, ), (self._demod_list, ))
+        else:
+            pass
+
     def get(self):
+        """
+        Gets the magnitude and phase signal by calling acquire
+        on the alazar (which in turn calls the processing functions of the
+        aqcuisition controller before returning the processed data
+        demodulated at specified frequencies and averaged over samples,
+        records and buffers)
+
+        Returns:
+            mag: numpy array of magnitude, shape (demod_length, )
+            phase: numpy array of magnitude, shape (demod_length, )
+        """
         mag, phase = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
             **self.acquisition_kwargs)
@@ -70,19 +136,19 @@ class AveragedAcqParam(Parameter):
 class HD_Averaging_Controller(AcquisitionController):
     """
     This is the Acquisition Controller class which works with the ATS9360,
-    averaging over samples, buffers and records, demodulating with a software
-    reference signal.
+    averaging over samples (limited by int_time and int_delay values),
+    records and buffers and demodulating with software reference signal(s).
 
     Args:
         name: name for this acquisition_conroller as an instrument
-        alazar_name: the name of the alazar instrument such that this
+        alazar_name: name of the alazar instrument such that this
             controller can communicate with the Alazar
-        demod_freqs: the frequency of the software wave to be created
-        filter: the filter to be used to filter out double freq component
-            ('win' - window, 'ls' - least squared, 'ave' - averaging)
-        numtaps: number of freq components used in filter
-        chan_b: whether there is also a second channel of data to be processed
-            and returned
+        demod_length (default 1): number of demodulation frequencies
+        filter (default 'win'): filter to be used to filter out double freq
+            component ('win' - window, 'ls' - least squared, 'ave' - averaging)
+        numtaps (default 101): number of freq components used in filter
+        chan_b (default False): whether there is also a second channel of data
+            to be processed and returned
         **kwargs: kwargs are forwarded to the Instrument base class
 
     TODO(nataliejpg) test filter options
@@ -91,7 +157,6 @@ class HD_Averaging_Controller(AcquisitionController):
     TODO(nataliejpg) where should filter_dict live?
     TODO(nataliejpg) demod_freq should be changeable number: maybe channels
     TODO(nataliejpg) try using fit from helpers
-    TODO(nataliejpg) check docstrings
     """
 
     filter_dict = {'win': 0, 'ls': 1, 'ave': 2}
@@ -113,7 +178,8 @@ class HD_Averaging_Controller(AcquisitionController):
                            parameter_class=AveragedAcqParam)
         for i in range(demod_length):
             self.add_parameter(name='demod_freq_{}'.format(i),
-                               parameter_class=ManualParameter)
+                               check_and_update_fn=self._update_demod_freq,
+                               parameter_class=AcqVariablesParam)
         self.add_parameter(name='int_time',
                            check_and_update_fn=self._update_int_time,
                            default_fn=self._int_time_default,
@@ -123,30 +189,82 @@ class HD_Averaging_Controller(AcquisitionController):
                            default_fn=self._int_delay_default,
                            parameter_class=AcqVariablesParam)
 
-    def _update_int_time(instr, value):
+    def _update_demod_freq(instr, value, param_name=None):
+        """
+        Function to validate and update acquisiton parameter when
+        a demod_freq_ Parameter is changed
+
+        Args:
+            value to update demodulation frequency to
+
+        Kwargs:
+            param_name: used to update demod_freq list used for updating
+                septionts of acquisition parameter
+
+        Checks:
+            1e6 <= value <= 500e6
+            number of oscilation measured using current int_tiume param value
+                at this demod frequency value
+            oversampling rate for this demodulation frequency
+
+        Sets:
+            sample_rate attr of acq controller to be that of alazar
+            setpoints of acquisiton parameter
+        """
+        if (value is None) or not (1e6 <= value <= 500e6):
+            raise ValueError('demod_freqs must be 1e6 <= value <= 500e6')
+        alazar = instr._get_alazar()
+        instr.sample_rate = alazar.get_sample_rate()
+        min_oscilations_measured = instr.int_time() * value
+        oversampling = instr.sample_rate / (2 * value)
+        if min_oscilations_measured < 10:
+            logging.warning('{} oscilations measured for largest '
+                            'demod freq, recommend at least 10: '
+                            'decrease sampling rate, take '
+                            'more samples or increase demodulation '
+                            'freq'.format(min_oscilations_measured))
+        elif oversampling < 1:
+            logging.warning('oversampling rate is {}, recommend > 1: '
+                            'increase sampling rate or decrease '
+                            'demodulation frequency'.format(oversampling))
+        demod_freqs = instr.get_demod_freqs()
+        current_demod_index = ([int(s) for s in param_name.split()
+                                if s.isdigit()][0])
+        demod_freqs[current_demod_index] = value
+        instr.acquisition.update_demod_setpoints(demod_freqs)
+
+    def _update_int_time(instr, value, **kwargs):
         """
         Function to validate value for int_time before setting parameter
         value
-        Checks: limit between 0 and 0.1s
-                acq knows sample_rate (doesn't check with alazar for accuracy)
-                number of oscilation measured in this time
-                oversampling rate
-        Sets: samples_per_record of acq controller
-              acquisition_kwarg['samples_per_record'] of acquisition param
-              shape of acquisition param
+
+        Args:
+            value to be validated and used for instrument attribute update
+
+        Checks:
+            0 <= value <= 0.1 seconds
+            number of oscilation measured in this time
+            oversampling rate
+
+        Sets:
+            sample_rate attr of acq controller to be that of alazar
+            samples_per_record of acq controller
+            acquisition_kwarg['samples_per_record'] of acquisition param
         """
         if (value is None) or not (0 <= value <= 0.1):
             raise ValueError('int_time must be 0 <= value <= 1')
+
         alazar = instr._get_alazar()
         instr.sample_rate = alazar.get_sample_rate()
         if instr.get_max_demod_freq() is not None:
-            oscilations_measured = value * instr.get_max_demod_freq()
+            min_oscilations_measured = value * instr.get_max_demod_freq()
             oversampling = instr.sample_rate / (2 * instr.get_max_demod_freq())
-            if oscilations_measured < 10:
-                logging.warning('{} oscilations measured, recommend at '
-                                'least 10: decrease sampling rate, take '
+            if min_oscilations_measured < 10:
+                logging.warning('{} oscilations measured for largest '
+                                'demod freq, recommend at least 10: '
+                                'decrease sampling rate, take '
                                 'more samples or increase demodulation '
-                                'freq'.format(oscilations_measured))
+                                'freq'.format(min_oscilations_measured))
             elif oversampling < 1:
                 logging.warning('oversampling rate is {}, recommend > 1: '
                                 'increase sampling rate or decrease '
@@ -162,16 +280,23 @@ class HD_Averaging_Controller(AcquisitionController):
         instr.acquisition.acquisition_kwargs.update(
             samples_per_record=instr.samples_per_record)
 
-    def _update_int_delay(instr, value):
+    def _update_int_delay(instr, value, **kwargs):
         """
         Function to validate value for int_delay before setting parameter
         value
-        Checks: limit between 0 and 1s
-                acq knows sample_rate (doesn't check with alazar for accuracy)
-                number of samples discarded >= numtaps
-        Sets: samples_per_record of acq controller
-              acquisition_kwarg['samples_per_record'] of acquisition param
-              shape of acquisition param
+
+        Args:
+            value to be validated and used for instrument attribute update
+
+        Checks:
+            0 <= value <= 0.1 seconds
+            number of samples discarded >= numtaps
+
+        Sets:
+            sample_rate attr of acq controller to be that of alazar
+            samples_per_record of acq controller
+            acquisition_kwarg['samples_per_record'] of acquisition param
+            setpoints of acquisiton param
         """
         if (value is None) or not (0 <= value <= 0.1):
             raise ValueError('int_delay must be 0 <= value <= 1')
@@ -194,8 +319,11 @@ class HD_Averaging_Controller(AcquisitionController):
 
     def _int_delay_default(instr):
         """
-        Returns minimum int_delay recommended for (numtaps - 1)
-        samples to be discarded as recommended for filter
+        Function to generate default int_delay value
+
+        Returns:
+            minimum int_delay recommended for (numtaps - 1)
+            samples to be discarded as recommended for filter
         """
         alazar = instr._get_alazar()
         instr.sample_rate = alazar.get_sample_rate()
@@ -204,8 +332,11 @@ class HD_Averaging_Controller(AcquisitionController):
 
     def _int_time_default(instr):
         """
-        Returns max total time for integration based on samples_per_record,
-        sample_rate and int_delay
+        Function to generate defult int_time value
+
+        Returns:
+            max total time for integration based on samples_per_record,
+            sample_rate and int_delay
         """
         if instr.samples_per_record is (0 or None):
             raise ValueError('Cannot set int_time to max if acq controller'
@@ -218,14 +349,26 @@ class HD_Averaging_Controller(AcquisitionController):
                       (instr.int_delay() or 0))
         return total_time
 
-    def get_max_demod_freq(self):
+    def get_demod_freqs(self):
         """
-        Returns the largest demodulation frequency
-        nb: really hacky and we should have channels in qcodes but we don't
-        (at time of writing)
+        Function to get all the demod_freq parameter values in a list, v hacky
+
+        Returns:
+            freqs: numpy array of demodulation frequencies
         """
         freqs = list(filter(None, [getattr(self, 'demod_freq_{}'.format(c))()
                                    for c in range(self._demod_length)]))
+        return np.array(freqs)
+
+    def get_max_demod_freq(self):
+        """
+        Returns:
+            the largest demodulation frequency
+
+        nb: really hacky and we should have channels in qcodes but we don't
+        (at time of writing)
+        """
+        freqs = self.get_demod_freqs()
         if len(freqs) > 0:
             return max(freqs)
         else:
@@ -277,8 +420,11 @@ class HD_Averaging_Controller(AcquisitionController):
             raise Exception('acq controller sample rate does not match '
                             'instrument value, most likely need '
                             'to set and check int_time and int_delay')
-        if self.get_max_demod_freq() is None:
-            raise Exception('no demodulation frequencies set')
+
+        demod_list = self.get_demod_freqs()
+        if len(demod_list) == 0:
+            raise Exception('no demod_freqs set')
+
         self.records_per_buffer = alazar.records_per_buffer.get()
         self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
         self.board_info = alazar.get_idn()
@@ -286,8 +432,6 @@ class HD_Averaging_Controller(AcquisitionController):
                                self.records_per_buffer *
                                self.number_of_channels)
 
-        demod_list = np.array([getattr(self, 'demod_freq_{}'.format(n))()
-                               for n in range(self._demod_length)])
         integer_list = np.arange(self.samples_per_record)
         angle_mat = 2 * np.pi * \
             np.outer(demod_list, integer_list) / self.sample_rate

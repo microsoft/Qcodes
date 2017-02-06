@@ -14,6 +14,10 @@ class SampleSweep(Parameter):
     filled (channels * samples * records) which is processed by the
     post_acquire function of the Acquisition Controller and finally the
     processed result is returned when the SampleSweep parameter is called.
+
+    :args:
+    name: name for this parameter
+    instrument: acquisition controller instrument this parameter belongs to
     """
 
     def __init__(self, name, instrument):
@@ -24,9 +28,10 @@ class SampleSweep(Parameter):
 
     def get(self):
         """
-        Gets the averaged samples for channels A and B by calling acquire
+        Gets the samples for channels A and B by calling acquire
         on the alazar (which in turn calls the processing functions of the
-        aqcuisition controller before returning the processed data)
+        aqcuisition controller before returning the reshaped data averaged
+        over records and buffers)
 
         returns:
         recordA: numpy array of channel A acquisition
