@@ -66,7 +66,7 @@ class AMI430(VisaInstrument):
                            get_cmd='FIELD:MAG?',
                            get_parser=float,
                            set_cmd=self._set_field,
-                           units='T',
+                           unit='T',
                            vals=Numbers(-self._field_rating,
                                         self._field_rating))
 
@@ -78,13 +78,13 @@ class AMI430(VisaInstrument):
         self.add_parameter('ramp_rate',
                            get_cmd=self._get_ramp_rate,
                            set_cmd=self._set_ramp_rate,
-                           units='T/s',
+                           unit='T/s',
                            vals=Numbers(0, self._field_ramp_limit))
 
         self.add_parameter('setpoint',
                            get_cmd='FIELD:TARG?',
                            get_parser=float,
-                           units='T')
+                           unit='T')
 
         if persistent_switch:
             self.add_parameter('switch_heater_enabled',
@@ -295,19 +295,19 @@ class AMI430_2D(Instrument):
         self.add_parameter('angle_offset',
                            get_cmd=self._get_angle_offset,
                            set_cmd=self._set_angle_offset,
-                           units='deg',
+                           unit='deg',
                            vals=Numbers())
 
         self.add_parameter('angle',
                            get_cmd=self._get_angle,
                            set_cmd=self._set_angle,
-                           units='deg',
+                           unit='deg',
                            vals=Numbers())
 
         self.add_parameter('field',
                            get_cmd=self._get_field,
                            set_cmd=self._set_field,
-                           units='T',
+                           unit='T',
                            vals=Numbers())
 
     def _get_angle_offset(self):
@@ -412,88 +412,114 @@ class AMI430_3D(Instrument):
         self.__x, self.__y, self.__z = 0.0, 0.0, 0.0
 
         # Get-only parameters that return a measured value
+        self.add_parameter('cartesian_measured',
+                           get_cmd=partial(self._get_measured, 'x', 'y', 'z'),
+                           unit='T')
+
         self.add_parameter('x_measured',
-                           get_cmd=partial(self._measure, 'x'),
-                           units='T')
+                           get_cmd=partial(self._get_measured, 'x'),
+                           unit='T')
 
         self.add_parameter('y_measured',
-                           get_cmd=partial(self._measure, 'y'),
-                           units='T')
+                           get_cmd=partial(self._get_measured, 'y'),
+                           unit='T')
 
         self.add_parameter('z_measured',
-                           get_cmd=partial(self._measure, 'z'),
-                           units='T')
+                           get_cmd=partial(self._get_measured, 'z'),
+                           unit='T')
+
+        self.add_parameter('spherical_measured',
+                           get_cmd=partial(self._get_measured, 'phi',
+                                                               'theta',
+                                                               'field'),
+                           unit='T')
 
         self.add_parameter('phi_measured',
-                           get_cmd=partial(self._measure, 'phi'),
-                           units='deg')
+                           get_cmd=partial(self._get_measured, 'phi'),
+                           unit='deg')
 
         self.add_parameter('theta_measured',
-                           get_cmd=partial(self._measure, 'theta'),
-                           units='deg')
+                           get_cmd=partial(self._get_measured, 'theta'),
+                           unit='deg')
 
         self.add_parameter('field_measured',
-                           get_cmd=partial(self._measure, 'field'),
-                           units='T')
+                           get_cmd=partial(self._get_measured, 'field'),
+                           unit='T')
+
+        self.add_parameter('cylindrical_measured',
+                           get_cmd=partial(self._get_measured, 'phi',
+                                                               'rho',
+                                                               'field'),
+                           unit='T')
 
         self.add_parameter('rho_measured',
-                           get_cmd=partial(self._measure, 'rho'),
-                           units='T')
+                           get_cmd=partial(self._get_measured, 'rho'),
+                           unit='T')
 
         # Get and set parameters for the setpoints of the coordinates
+        self.add_parameter('cartesian',
+                           get_cmd=partial(self._get_setpoints, 'x', 'y', 'z'),
+                           set_cmd=self._set_fields,
+                           unit='T',
+                           vals=Numbers())
+
         self.add_parameter('x',
-                           get_cmd=self._get_x,
+                           get_cmd=partial(self._get_setpoints, 'x'),
                            set_cmd=self._set_x,
-                           units='T',
+                           unit='T',
                            vals=Numbers())
 
         self.add_parameter('y',
-                           get_cmd=self._get_y,
+                           get_cmd=partial(self._get_setpoints, 'y'),
                            set_cmd=self._set_y,
-                           units='T',
+                           unit='T',
                            vals=Numbers())
 
         self.add_parameter('z',
-                           get_cmd=self._get_z,
+                           get_cmd=partial(self._get_setpoints, 'z'),
                            set_cmd=self._set_z,
-                           units='T',
+                           unit='T',
+                           vals=Numbers())
+
+        self.add_parameter('spherical',
+                           get_cmd=partial(self._get_setpoints, 'phi',
+                                                                'theta',
+                                                                'field'),
+                           set_cmd=self._set_spherical,
+                           unit='tuple?',
                            vals=Numbers())
 
         self.add_parameter('phi',
-                           get_cmd=self._get_phi,
+                           get_cmd=partial(self._get_setpoints, 'phi'),
                            set_cmd=self._set_phi,
-                           units='deg',
+                           unit='deg',
                            vals=Numbers())
 
         self.add_parameter('theta',
-                           get_cmd=self._get_theta,
+                           get_cmd=partial(self._get_setpoints, 'theta'),
                            set_cmd=self._set_theta,
-                           units='deg',
+                           unit='deg',
                            vals=Numbers())
 
         self.add_parameter('field',
-                           get_cmd=self._get_field,
+                           get_cmd=partial(self._get_setpoints, 'field'),
                            set_cmd=self._set_field,
-                           units='T',
+                           unit='T',
+                           vals=Numbers())
+
+        self.add_parameter('cylindrical',
+                           get_cmd=partial(self._get_setpoints, 'phi',
+                                                                'rho',
+                                                                'z'),
+                           set_cmd=self._set_cylindrical,
+                           unit='tuple?',
                            vals=Numbers())
 
         self.add_parameter('rho',
-                           get_cmd=self._get_rho,
+                           get_cmd=partial(self._get_setpoints, 'rho'),
                            set_cmd=self._set_rho,
-                           units='T',
+                           unit='T',
                            vals=Numbers())
-
-    def _cartesian_to_other(self, x, y, z):
-        field = np.sqrt(x**2 + y**2 + z**2)
-        phi = np.arctan2(y, x)
-        # TODO: handle divide by zero?
-        theta = np.arccos(z / field)
-        rho = np.sqrt(x**2 + y**2)
-
-        return phi, theta, field, rho
-
-    def _get_non_cartesian(self):
-        return self._cartesian_to_other(self.__x, self.__y, self.__z)
 
     def _request_field_change(self, magnet, value):
         if magnet is self._magnet_x:
@@ -507,28 +533,20 @@ class AMI430_3D(Instrument):
 
             raise NameError(msg.format(self))
 
-    def _set_fields_spherical(self, phi, theta, field):
-        x = field * np.sin(theta) * np.cos(phi)
-        y = field * np.sin(theta) * np.sin(phi)
-        z = field * np.cos(theta)
+    def _cartesian_to_other(self, x, y, z):
+        field = np.sqrt(x**2 + y**2 + z**2)
+        phi = np.arctan2(y, x)
+        # TODO: handle divide by zero?
+        theta = np.arccos(z / field)
+        rho = np.sqrt(x**2 + y**2)
 
-        self._set_fields(x, y, z)
+        return phi, theta, field, rho
 
-    def _set_fields_cylindrical(self, phi, rho, z):
-        x = rho * np.cos(phi)
-        y = rho * np.sin(phi)
-
-        self._set_fields(x, y, z)
-
-    def _measure(self, name):
+    def _from_xyz(self, x, y, z, *names):
         """
-        Measure the actual (not setpoint) field strengths of all 3 individual
-        magnets and calculate the parameters for all 3 coordinate systems.
+        Convert x/y/z values into the other coordinates and return a
+        tuple of the requested values.
         """
-        x = self._magnet_x.field()
-        y = self._magnet_y.field()
-        z = self._magnet_z.field()
-
         phi, theta, field, rho = self._cartesian_to_other(x, y, z)
 
         coords = {
@@ -541,75 +559,84 @@ class AMI430_3D(Instrument):
             'rho': rho
         }
 
-        return coords[name]
+        returned = tuple(coords[name] for name in names)
 
-    def _get_x(self):
-        return self.__x
+        if len(returned) == 1:
+            return returned[0]
+        else:
+            return returned
+
+    def _get_measured(self, *names):
+        x = self._magnet_x.field()
+        y = self._magnet_y.field()
+        z = self._magnet_z.field()
+
+        return self._from_xyz(x, y, z, names)
+
+    def _get_setpoints(self, *names):
+        return self._from_xyz(self.__x, self.__y, self.__z, names)
 
     def _set_x(self, value):
-        self._set_fields(value, self.__y, self.__z)
-
-    def _get_y(self):
-        return self.__y
+        self._set_fields((value, self.__y, self.__z))
 
     def _set_y(self, value):
-        self._set_fields(self.__x, value, self.__z)
-
-    def _get_z(self):
-        return self.__z
+        self._set_fields((self.__x, value, self.__z))
 
     def _set_z(self, value):
-        self._set_fields(self.__x, self.__y, value)
+        self._set_fields((self.__x, self.__y, value))
 
-    def _get_phi(self):
-        phi, theta, field, rho = self._get_non_cartesian()
+    def _set_spherical(self, values):
+        phi, theta, field = values
 
-        return np.degrees(phi)
+        phi, theta = np.radians(phi), np.radians(theta)
+
+        x = field * np.sin(theta) * np.cos(phi)
+        y = field * np.sin(theta) * np.sin(phi)
+        z = field * np.cos(theta)
+
+        self._set_fields((x, y, z))
 
     def _set_phi(self, value):
-        phi, theta, field, rho = self._get_non_cartesian()
+        phi, theta, field = self._get_setpoints('phi', 'theta', 'field')
 
         phi = np.radians(value)
 
-        self._set_fields_spherical(phi, theta, field)
-
-    def _get_theta(self):
-        phi, theta, field, rho = self._get_non_cartesian()
-
-        return np.degrees(theta)
+        self._set_spherical((phi, theta, field))
 
     def _set_theta(self, value):
-        phi, theta, field, rho = self._get_non_cartesian()
+        phi, theta, field = self._get_setpoints('phi', 'theta', 'field')
 
         theta = np.radians(value)
 
-        self._set_fields_spherical(phi, theta, field)
-
-    def _get_field(self):
-        phi, theta, field, rho = self._get_non_cartesian()
-
-        return field
+        self._set_spherical((phi, theta, field))
 
     def _set_field(self, field):
-        phi, theta, field, rho = self._get_non_cartesian()
+        phi, theta, field = self._get_setpoints('phi', 'theta', 'field')
 
         field = value
 
-        self._set_fields_spherical(phi, theta, field)
+        self._set_spherical((phi, theta, field))
 
-    def _get_rho(self):
-        phi, theta, field, rho = self._get_non_cartesian()
+    def _set_cylindrical(self, values):
+        phi, rho, z = values
 
-        return rho
+        phi = np.radians(phi)
+
+        x = rho * np.cos(phi)
+        y = rho * np.sin(phi)
+
+        self._set_fields((x, y, z))
 
     def _set_rho(self, value):
-        phi, theta, field, rho = self._get_non_cartesian()
+        phi, rho = self._get_setpoints('phi', 'rho')
 
         rho = value
 
-        self._set_fields_cylindrical(phi, rho, self.__z)
+        self._set_cylindrical((phi, rho, self.__z))
 
-    def _set_fields(self, x, y, z):
+    def _set_fields(self, values):
+        x, y, z = values
+
         # Check if exceeding an individual magnet field limit
         # These will throw a ValueError on an invalid value
         self._magnet_x.field.validate(x)
