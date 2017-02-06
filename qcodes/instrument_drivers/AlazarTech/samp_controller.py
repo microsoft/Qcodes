@@ -8,8 +8,15 @@ from qcodes.instrument.parameter import ManualParameter
 
 
 class AcqVariablesParam(Parameter):
-    def __init__(self, name, instrument, initial_value,
-                 check_and_update_fn, default_fn):
+    """
+    Parameter of an AcquisitionController which has a _check_and_update_instr
+    function used for validation and to update instrument attributes and a
+    _get_default function which it uses to set the AcqVariablesParam to an
+    instrument caluclated default.
+    """
+
+    def __init__(self, name, instrument, check_and_update_fn,
+                 default_fn, initial_value=None):
         super().__init__(name)
         self._instrument = instrument
         self._save_val(initial_value)
@@ -17,6 +24,13 @@ class AcqVariablesParam(Parameter):
         setattr(self, '_get_default', default_fn)
 
     def set(self, value):
+        """
+        Function which checks value using validation function and then sets
+        the Parameter value to this value.
+
+        Args:
+            value: value to set the parameter to
+        """
         self._check_and_update_instr(value)
         self._save_val(value)
 
@@ -24,10 +38,22 @@ class AcqVariablesParam(Parameter):
         return self._latest()['value']
 
     def to_default(self):
+        """
+        Function which executes the default_fn specified to calculate the
+        default value based on instrument values and then calls the set
+        function with this value
+        """
         default = self._get_default()
         self.set(default)
 
     def check(self):
+        """
+        Function which checks the current Parameter value using the specified
+        check_and_update_fn which can also serve to update instrument values.
+
+        Return:
+            True (if no errors raised when check_and_update_fn executed)
+        """
         val = self._latest()['value']
         self._check_and_update_instr(val)
         return True
@@ -60,8 +86,6 @@ class SamplesAcqParam(Parameter):
             self.shapes = ((npts,), (npts,))
 
     def get(self):
-        # self._instrument.int_time.check()
-        # self._instrument.int_delay.check()
         mag, phase = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
             **self.acquisition_kwargs)
@@ -90,9 +114,7 @@ class HD_Samples_Controller(AcquisitionController):
     TODO(nataliejpg) finish implementation of channel b option
     TODO(nataliejpg) what should be private?
     TODO(nataliejpg) where should filter_dict live?
-    TODO(nataliejpg) demod_freq should be changeable number: maybe channels
-    TODO(nataliejpg) try using fit from helpers
-    TODO(nataliejpg) check docstrings
+    TODO(nataliejpg) demod_freq number should be changeable number: channels?
     """
     filter_dict = {'win': 0, 'ls': 1}
     samples_divisor = AlazarTech_ATS9360.samples_divisor
@@ -114,12 +136,10 @@ class HD_Samples_Controller(AcquisitionController):
             self.add_parameter(name='demod_freq_{}'.format(i),
                                parameter_class=ManualParameter)
         self.add_parameter(name='int_time',
-                           initial_value=None,
                            check_and_update_fn=self._update_int_time,
                            default_fn=self._int_time_default,
                            parameter_class=AcqVariablesParam)
         self.add_parameter(name='int_delay',
-                           initial_value=None,
                            check_and_update_fn=self._update_int_delay,
                            default_fn=self._int_delay_default,
                            parameter_class=AcqVariablesParam)
@@ -128,16 +148,24 @@ class HD_Samples_Controller(AcquisitionController):
         """
         Function to validate value for int_time before setting parameter
         value
-        Checks: limit between 0 and 0.1s
-                acq knows sample_rate (doesn't check with alazar for accuracy)
-                number of oscilation measured in this time
-                oversampling rate
-        Sets: samples_per_record of acq controller
-              acquisition_kwarg['samples_per_record'] of acquisition param
-              shape of acquisition param
+
+        Args:
+            value to be validated and used for instrument attribute update
+
+        Checks:
+            0 <= value <= 0.1 seconds
+            number of oscilation measured in this time
+            oversampling rate
+
+        Sets:
+            sample_rate attribute of instument to be that of alazar
+            samples_per_record of acq controller
+            acquisition_kwarg['samples_per_record'] of acquisition param
+            shape of acquisition param
         """
         if (value is None) or not (0 <= value <= 0.1):
             raise ValueError('int_time must be 0 <= value <= 1')
+
         alazar = instr._get_alazar()
         instr.sample_rate = alazar.get_sample_rate()
         if instr.get_max_demod_freq() is not None:
@@ -237,12 +265,12 @@ class HD_Samples_Controller(AcquisitionController):
         nb: really hacky and we should have channels in qcodes but we don't
         (at time of writing)
         """
-        freqs = list(filter(None, [getattr(self, 'demod_freq_{}'.format(c))() 
-                    for c in range(self._demod_length)]))
+        freqs = list(filter(None, [getattr(self, 'demod_freq_{}'.format(c))()
+                                   for c in range(self._demod_length)]))
         if len(freqs) > 0:
             return max(freqs)
         else:
-        return None
+            return None
 
     def update_filter_settings(self, filter, numtaps):
         """
@@ -273,7 +301,8 @@ class HD_Samples_Controller(AcquisitionController):
             raise ValueError('With HD_Samples_Controller '
                              'samples_per_record cannot be set manually '
                              'via update_acquisition_kwargs and should instead'
-                             'be set by setting int_time and int_delay')
+                             'be set by setting int_time int_delay and alazar '
+                             'sample_rate')
         self.acquisition.acquisition_kwargs.update(**kwargs)
 
     def pre_start_capture(self):
@@ -325,7 +354,7 @@ class HD_Samples_Controller(AcquisitionController):
         Returns:
             magnitude (numpy array): shape = (demod_length, samples_used)
             phase (numpy array): shape = (demod_length, samples_used)
-        """ 
+        """
         records_per_acquisition = (self.buffers_per_acquisition *
                                    self.records_per_buffer)
         # for ATS9360 samples are arranged in the buffer as follows:
@@ -346,14 +375,6 @@ class HD_Samples_Controller(AcquisitionController):
         # same for chan b
         if self.chan_b:
             raise NotImplementedError('chan b code not complete')
-            # recordB = np.zeros(self.samples_per_record, dtype=np.uint16)
-            # for i in range(self.records_per_buffer):
-            #     i0 = (i * self.samples_per_record *
-            #           self.number_of_channels + 1)
-            #     i1 = (i0 + self.samples_per_record * self.number_of_channels)
-            #     recordB += np.uint16(self.buffer[i0:i1:self.number_of_channels] /
-            #                          records_per_acquisition)
-            # magB, phaseB = self.fit(recordB)
 
         return magA, phaseA
 
@@ -385,7 +406,7 @@ class HD_Samples_Controller(AcquisitionController):
         volt_rec_mat = np.outer(np.ones(self._demod_length), volt_rec)
         re_mat = np.multiply(volt_rec_mat, self.cos_mat)
         im_mat = np.multiply(volt_rec_mat, self.sin_mat)
-        
+
         # filter out higher freq component
         cutoff = self.get_max_demod_freq() / 20
         if self.filter_settings['filter'] == 0:
@@ -413,8 +434,8 @@ class HD_Samples_Controller(AcquisitionController):
 
         re_limited = re_filtered[:, beginning:end]
         im_limited = im_filtered[:, beginning:end]
-        #return re_limited, volt_rec_mat[:, beginning:end]
-        
+        # return re_limited, volt_rec_mat[:, beginning:end]
+
         # convert to magnitude and phase
         complex_mat = re_limited + im_limited * 1j
         magnitude = abs(complex_mat)

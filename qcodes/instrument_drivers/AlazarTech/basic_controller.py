@@ -10,8 +10,10 @@ class SampleSweep(Parameter):
     Hardware controlled parameter class for Alazar acquisition. To be used with
     Acquisition Controller (tested with ATS9360 board)
 
-    Instrument returns an buffer of data (channels * samples * records) which
-    is processed by the post_acquire function of the Acquidiyion Controller
+    Alazar Instrument 'acquire' returns a buffer of data each time a buffer is
+    filled (channels * samples * records) which is processed by the
+    post_acquire function of the Acquisition Controller and finally the
+    processed result is returned when the SampleSweep parameter is called.
     """
 
     def __init__(self, name, instrument):
@@ -21,6 +23,15 @@ class SampleSweep(Parameter):
         self.names = ('A', 'B')
 
     def get(self):
+        """
+        Gets the averaged samples for channels A and B by calling acquire
+        on the alazar (which in turn calls the processing functions of the
+        aqcuisition controller before returning the processed data)
+
+        returns:
+        recordA: numpy array of channel A acquisition
+        recordB: numpy array of channel B acquisition
+        """
         recordA, recordB = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
             **self.acquisition_kwargs)
@@ -38,8 +49,6 @@ class Basic_Acquisition_Controller(AcquisitionController):
     alazar_name: the name of the alazar instrument such that this controller
         can communicate with the Alazar
     **kwargs: kwargs are forwarded to the Instrument base class
-
-    TODO(nataliejpg) make dtype general or get from alazar
     """
 
     def __init__(self, name, alazar_name, **kwargs):
@@ -59,7 +68,8 @@ class Basic_Acquisition_Controller(AcquisitionController):
         :return:
         """
         self.samples_per_record = kwargs['samples_per_record']
-        self.acquisition.shapes = ((self.samples_per_record,), (self.samples_per_record,))
+        self.acquisition.shapes = (
+            (self.samples_per_record,), (self.samples_per_record,))
         self.acquisition.acquisition_kwargs.update(**kwargs)
 
     def pre_start_capture(self):
@@ -84,22 +94,28 @@ class Basic_Acquisition_Controller(AcquisitionController):
         See AcquisitionController
         :return:
         """
-        # this could be used to start an Arbitrary Waveform Generator, etc...
-        # using this method ensures that the contents are executed AFTER the
-        # Alazar card starts listening for a trigger pulse
         pass
 
     def handle_buffer(self, data):
         """
-        See AcquisitionController
+        Function which is called during the Alazar acquire each time a buffer
+        is completed. In this acquistion controller these buffers are just
+        added together (ie averaged)
         :return:
         """
         self.buffer += data
 
     def post_acquire(self):
         """
-        See AcquisitionController
-        :return:
+        Function which is called at the end of the Alazar acquire function to
+        signal completion and trigger data processing. This acquisition
+        controller has averaged over the buffers acquired so has one buffer of
+        data which is splits into records and channels, averages over records
+        and returns the samples for each channel.
+
+        return:
+        recordA: numpy array of channel A acquisition
+        recordB: numpy array of channel B acquisition
         """
 
         # for ATS9360 samples are arranged in the buffer as follows:
@@ -124,6 +140,7 @@ class Basic_Acquisition_Controller(AcquisitionController):
             recB += self.buffer[i0:i1:self.number_of_channels]
         recordB = np.uint16(recB / records_per_acquisition)
 
+        # converts to volts if bits per sample is 12 (as ATS9360)
         bps = self.board_info['bits_per_sample']
         if bps == 12:
             volt_rec_A = helpers.sample_to_volt_u12(recordA, bps)
@@ -135,21 +152,3 @@ class Basic_Acquisition_Controller(AcquisitionController):
             volt_rec_B = recordB - np.mean(recordB)
 
         return volt_rec_A, volt_rec_B
-
-"""
-def sample_to_volt_u12(raw_samples, bps):
-    # right_shift 16-bit sample by 4 to get 12 bit sample
-    shifted_samples = np.right_shift(raw_samples, 4)
-
-    # Alazar calibration
-    code_zero = (1 << (bps - 1)) - 0.5
-    code_range = (1 << (bps - 1)) - 0.5
-
-    # TODO(nataliejpg) make this not hard coded
-    input_range_volts = 1
-    # Convert to volts
-    volt_samples = np.float64(input_range_volts *
-                              (shifted_samples - code_zero) / code_range)
-
-    return volt_samples
-"""

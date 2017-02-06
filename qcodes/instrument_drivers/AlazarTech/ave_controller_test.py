@@ -8,8 +8,14 @@ from qcodes.instrument.parameter import ManualParameter
 
 
 class AcqVariablesParam(Parameter):
-    def __init__(self, name, instrument, initial_value,
-                 check_and_update_fn, default_fn):
+    """
+    Parameter of an AcquisitionController which has a _check_and_update_instr
+    function used for validation and to update instrument attributes and a
+    _get_default function which it uses to set the parameter to an instrument
+    caluclated default.
+    """
+    def __init__(self, name, instrument, check_and_update_fn,
+                 default_fn, initial_value=None):
         super().__init__(name)
         self._instrument = instrument
         self._save_val(initial_value)
@@ -26,6 +32,11 @@ class AcqVariablesParam(Parameter):
     def to_default(self):
         default = self._get_default()
         self.set(default)
+
+    def check(self):
+        val = self._latest()['value']
+        self._check_and_update_instr(val)
+        return True
 
 
 class AveragedAcqParam(Parameter):
@@ -104,12 +115,10 @@ class HD_Averaging_Controller(AcquisitionController):
             self.add_parameter(name='demod_freq_{}'.format(i),
                                parameter_class=ManualParameter)
         self.add_parameter(name='int_time',
-                           initial_value=None,
                            check_and_update_fn=self._update_int_time,
                            default_fn=self._int_time_default,
                            parameter_class=AcqVariablesParam)
         self.add_parameter(name='int_delay',
-                           initial_value=None,
                            check_and_update_fn=self._update_int_delay,
                            default_fn=self._int_delay_default,
                            parameter_class=AcqVariablesParam)
@@ -215,13 +224,12 @@ class HD_Averaging_Controller(AcquisitionController):
         nb: really hacky and we should have channels in qcodes but we don't
         (at time of writing)
         """
-        freqs = list(filter(None, [getattr(self, 'demod_freq_{}'.format(c))() 
-                    for c in range(self._demod_length)]))
+        freqs = list(filter(None, [getattr(self, 'demod_freq_{}'.format(c))()
+                                   for c in range(self._demod_length)]))
         if len(freqs) > 0:
             return max(freqs)
         else:
-        return None
-
+            return None
 
     def update_filter_settings(self, filter, numtaps):
         """
