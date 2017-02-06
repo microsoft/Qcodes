@@ -15,6 +15,7 @@ config = Config()
 from qcodes.version import __version__
 from qcodes.process.helpers import set_mp_method
 from qcodes.utils.helpers import in_notebook
+from qcodes.utils.wrappers import  do1d, do2d
 
 # code that should only be imported into the main (notebook) thread
 # in particular, importing matplotlib in the side processes takes a long
@@ -59,7 +60,14 @@ from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument.mock import MockInstrument, MockModel
 
 from qcodes.instrument.function import Function
-from qcodes.instrument.parameter import Parameter, StandardParameter, combine, CombinedParameter
+from qcodes.instrument.parameter import (
+    Parameter,
+    ArrayParameter,
+    MultiParameter,
+    StandardParameter,
+    ManualParameter,
+    combine,
+    CombinedParameter)
 from qcodes.instrument.sweep_values import SweepFixedValues, SweepValues
 
 from qcodes.utils import validators

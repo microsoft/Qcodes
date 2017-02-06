@@ -754,7 +754,7 @@ class ActiveLoop(Metadatable):
         Args:
             background: (default False) run this sweep in a separate process
                 so we can have live plotting and other analysis in the main process
-            use_threads: (default True): whenever there are multiple `get` calls
+            use_threads: (default False): whenever there are multiple `get` calls
                 back-to-back, execute them in separate threads so they run in
                 parallel (as long as they don't block each other)
             quiet: (default False): set True to not print anything except errors

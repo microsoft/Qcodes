@@ -99,14 +99,14 @@ class Keithley_2700(VisaInstrument):
                            get_parser=int,
                            set_cmd=self._mode_par_value('INIT', 'CONT', '{}'),
                            vals=IntsValidator(),
-                           units='#')
+                           unit='#')
         self.add_parameter('trigger_delay',
                            get_cmd=self._mode_par('TRIG', 'DEL'),
                            get_parser=float,
                            set_cmd=self._mode_par_value('TRIG', 'DEL', '{}'),
                            vals=NumbersValidator(min_value=0,
                                                  max_value=999999.999),
-                           units='s')
+                           unit='s')
 
         self.add_parameter('trigger_continuous',
                            get_cmd=self._mode_par('INIT', 'CONT'),
@@ -136,7 +136,7 @@ class Keithley_2700(VisaInstrument):
                                            parser=float),
                            set_cmd=partial(self._current_mode_set, par='NPLC',
                                            mode=None),
-                           units='APER',
+                           unit='APER',
                            docstring=('Get integration time in Number of '
                                       'PowerLine Cycles.\n'
                                       'To get the integrationtime in seconds, '
@@ -146,7 +146,7 @@ class Keithley_2700(VisaInstrument):
                            get_cmd=partial(self._current_mode_get, 'RANG',
                                            parser=float),
                            set_cmd=partial(self._current_mode_set, par='RANG'),
-                           units='RANG',
+                           unit='RANG',
                            docstring=('Sets the measurement range.\n'
                                       'Note that not only a discrete set of '
                                       'ranges can be set (see the manual for '
@@ -157,7 +157,7 @@ class Keithley_2700(VisaInstrument):
                                            parser=float),
                            set_cmd=partial(self._current_mode_set, par='APER',
                                            mode=None),
-                           units='s',
+                           unit='s',
                            vals=NumbersValidator(min_value=2e-4, max_value=1.),
                            docstring=('Get integration time in seconds.\n'
                                       'To get the integrationtime as a Number '
