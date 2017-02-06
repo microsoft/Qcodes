@@ -74,7 +74,7 @@ class QDac(VisaInstrument):
             stri = str(i)
             self.add_parameter(name='ch{:02}_v'.format(i),
                                label='Channel ' + stri,
-                               units='V',
+                               unit='V',
                                # TO-DO: implement max slope for setting
                                set_cmd=partial(self._set_voltage, i),
                                vals=vals.Numbers(-10, 10),
@@ -91,7 +91,7 @@ class QDac(VisaInstrument):
                                )
             self.add_parameter(name='ch{:02}_i'.format(i),
                                label='Current ' + stri,
-                               units='A',
+                               unit='A',
                                get_cmd='get ' + stri,
                                get_parser=self._current_parser
                                )
@@ -107,7 +107,7 @@ class QDac(VisaInstrument):
                 label = 'Board {}, Temperature {}'.format(board, sensor)
                 self.add_parameter(name='temp{}_{}'.format(board, sensor),
                                    label=label,
-                                   units='C',
+                                   unit='C',
                                    get_cmd='tem {} {}'.format(board, sensor),
                                    get_parser=self._num_verbose)
 
@@ -359,9 +359,9 @@ class QDac(VisaInstrument):
         else:
             return 'Inf'
 
-    def printslopes(self):
+    def slopes(self):
         """
-        Print the slopes assigned to each channel
+        unit the slopes assigned to each channel
         """
         for (chan, slope) in self._slopes:
             print('Channel {}, slope: {} (V/s)'.format(chan, slope))
@@ -468,7 +468,7 @@ class QDac(VisaInstrument):
                 param = self.parameters[paramname]
                 line += printdict[pp]
                 line += ': {}'.format(param.get_latest())
-                line += ' ({})'.format(param.units)
+                line += ' ({})'.format(param.unit)
                 line += '. '
             line += '\n    '
             for pp in paramstoget[1]:
