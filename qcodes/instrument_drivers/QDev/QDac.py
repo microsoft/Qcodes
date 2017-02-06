@@ -3,10 +3,12 @@
 import time
 import visa
 import logging
+import numpy as np
 
 from datetime import datetime
 from functools import partial
 from time import sleep
+from operator import xor
 
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
@@ -54,19 +56,15 @@ class QDac(VisaInstrument):
         handle.write_termination = '\n'
         # TODO: do we need a query delay for robust operation?
 
+        if self._get_firmware_version() < 0.170202:
+            raise Warning('Obsolete QDAC Software version detected. ' +
+                          'QCoDeS only supports ' +
+                          'version 0.170202 or newer.')
+
         self.num_chans = num_chans
 
-        # default values for all channels
-        # DC mode, ampl=1V, offset=0V
-        self._fungens = [0]*num_chans
-        self._ampls = [1]*num_chans
-        self._offsets = [0]*num_chans
-
-        # default values for all function generators
-        self._fg_types = ['SINE']*8
-        self._fg_freqs = [1000]*8
-        self._fg_dutys = [100]*8
-        self._fg_nreps = [1]*8
+        # Assigned slopes. Entries will eventually be [chan, slope] (V/s)
+        self._slopes = []
 
         self.chan_range = range(1, 1 + self.num_chans)
         self.channel_validator = vals.Ints(1, self.num_chans)
@@ -83,7 +81,7 @@ class QDac(VisaInstrument):
                                get_cmd=partial(self.read_state, i, 'v')
                                )
             self.add_parameter(name='ch{:02}_vrange'.format(i),
-                               set_cmd='vol ' + stri + ' {}',
+                               set_cmd=partial(self._set_vrange, i),
                                get_cmd=partial(self.read_state, i, 'vrange'),
                                vals=vals.Enum(0, 1)
                                )
@@ -93,58 +91,15 @@ class QDac(VisaInstrument):
                                )
             self.add_parameter(name='ch{:02}_i'.format(i),
                                label='Current ' + stri,
-                               units='muA',
+                               units='A',
                                get_cmd='get ' + stri,
-                               get_parser=self._num_verbose
+                               get_parser=self._current_parser
                                )
-            self.add_parameter(name='ch{:02}_fungen'.format(i),
-                               label=('The number of the function generator ' +
-                                      'to which the channel is bound'),
-                               set_cmd=partial(self._set_fungen, i),
-                               get_cmd=partial(self._get_fungen, i)
-                               )
-            self.add_parameter(name='ch{:02}_ampl'.format(i),
-                               label=('The channel gain factor used when in ' +
-                                      'func. gen. mode.'),
-                               units='V',
-                               set_cmd=partial(self._set_ampl, i),
-                               get_cmd=partial(self._get_ampl, i),
-                               vals=vals.Numbers(-10, 10)
-                               )
-            self.add_parameter(name='ch{:02}_offset'.format(i),
-                               label=('The channel offset used when in ' +
-                                      'func. gen. mode'),
-                               units='V',
-                               vals=vals.Numbers(-10, 10),
-                               set_cmd=partial(self._set_offset, i),
-                               get_cmd=partial(self._get_offset, i))
-
-        for fg in self.fungen_range:
-            self.add_parameter('fungen{}_type'.format(fg),
-                               label='Type of output waveform',
-                               set_cmd=partial(self._fg_setter, fg, 'type'),
-                               get_cmd=partial(self._fg_getter, fg, 'type'),
-                               vals=vals.Enum('SINE', 'SQUARE', 'RAMP')
-                               )
-            self.add_parameter('fungen{}_freq'.format(fg),
-                               label='Frequency of output waveform',
-                               units='Hz',
-                               # TO-DO: add reasonable validation
-                               # (what is a reasonable max freq?)
-                               set_cmd=partial(self._fg_setter, fg, 'freq'),
-                               get_cmd=partial(self._fg_getter, fg, 'freq')
-                               )
-            self.add_parameter('fungen{}_duty'.format(fg),
-                               label='Duty cycle of output waveform',
-                               units='Percent',
-                               set_cmd=partial(self._fg_setter, fg, 'duty'),
-                               get_cmd=partial(self._fg_getter, fg, 'duty')
-                               )
-            self.add_parameter('fungen{}_nreps'.format(fg),
-                               label='No. of repetitions of output waveform',
-                               vals=vals.Ints(-1, 2**31-1),
-                               set_cmd=partial(self._fg_setter, fg, 'nreps'),
-                               get_cmd=partial(self._fg_getter, fg, 'nreps')
+            self.add_parameter(name='ch{:02}_slope'.format(i),
+                               label='Maximum voltage slope',
+                               set_cmd=partial(self._setslope, i),
+                               get_cmd=partial(self._getslope, i),
+                               vals=vals.Anything()
                                )
 
         for board in range(6):
@@ -165,151 +120,80 @@ class QDac(VisaInstrument):
                            set_cmd='ver {}',
                            val_mapping={True: 1, False: 0})
 
-        # initialise the instrument
-        for chan in range(1, self.num_chans+1):
-            self.parameters['ch{:02}_fungen'.format(chan)].set(0)
-            self.parameters['ch{:02}_vrange'.format(chan)].set(0)
+        # Initialise the instrument, all channels DC, no attenuation
+        for chan in self.chan_range:
+            # Note: this call does NOT change the voltage in the channel
+            self.write('wav {} 0 1 0'.format(chan))
+            self.write('vol {} 0'.format(chan))
+
         self.verbose.set(False)
         self.connect_message()
-        print('[*] Querying all channels for voltages and currents...')
+        log.info('[*] Querying all channels for voltages and currents...')
         self._get_status(readcurrents=True)
-        print('[+] Done')
-
-    def run(self, fglist):
-        """
-        Starts outputting the waveform of the function generators in fglist
-
-        Args:
-            fglist (Union[list, int]): The number of the function generators
-              to start outputting
-        """
-
-        # allow for inputting a single value
-        if not isinstance(fglist, list):
-            fglist = [fglist]
-
-        # list of channels with function generators bound to them
-        chanlist = []
-        for fg in fglist:
-            for chan in range(1, self.num_chans):
-                if self._fungens[chan-1] == fg:
-                    chanlist.append(chan)
-
-        typedict = {'SINE': 1, 'SQUARE': 2, 'RAMP': 3}
-
-        for chan in chanlist:
-            chanmssg = 'wav {} {} {} {}'.format(chan, self._fungens[chan-1],
-                                                self._ampls[chan-1],
-                                                self._offsets[chan-1])
-            #self.write()
-
-            fungen = self._fungens[chan-1]-1
-            typeval = typedict[self._fg_types[fungen]]
-            dutyval = self._fg_dutys[fungen]
-            # Hz -> ms
-            periodval = round(1/self._fg_freqs[fungen]*1e3)
-            repval = self._fg_nreps[fungen]
-            funmssg = 'fun {} {} {} {} {}'.format(self._fungens[chan-1],
-                                                   typeval, periodval,
-                                                   dutyval, repval)
-            self.write(chanmssg)
-            self.write(funmssg)
+        log.info('[+] Done')
 
     #########################
     # Channel gets/sets
     #########################
 
-    def _set_voltage(self, chan, v):
+    def _set_voltage(self, chan, v_set):
         """
         set_cmd for the chXX_v parameter
+
+        If a finite slope has been assigned, use a function generator to
+        ramp the voltage.
+        """
+        # validation
+        atten = self.parameters['ch{:02}_vrange'.format(chan)].get_latest()
+        attendict = {0: 10, 1: 1, 10: 10}
+        if abs(v_set) > attendict[atten]:
+            v_set = np.sign(v_set)*attendict[atten]
+            log.warning('Requested voltage outside reachable range.' +
+                        ' Setting voltage on channel ' +
+                        '{} to {} V'.format(chan, v_set))
+
+        slopechans = [sl[0] for sl in self._slopes]
+        if chan in slopechans:
+            slope = [sl[1] for sl in self._slopes if sl[0]==chan][0]
+            fg = self._slopes.index([chan, slope]) + 1
+            v_start = self.parameters['ch{:02}_v'.format(chan)].get_latest()
+            time = abs(v_set-v_start)/slope
+            # Attenuation compensation takes place inside _rampvoltage
+            self._rampvoltage(chan, fg, v_set, time)
+        else:
+            # compensate for the 0.1 multiplier, if it's on
+            if self.parameters['ch{:02}_vrange'.format(chan)].get_latest() == 1:
+                v_set = v_set*10
+            # set the mode back to DC in case it had been changed
+            self.write('wav {} 0 0 0'.format(chan))
+            self.write('set {} {:.6f}'.format(chan, v_set))
+
+    def _set_vrange(self, chan, switchint):
+        """
+        set_cmd for the chXX_vrange parameter
+
+        The switchint is an integer. 1 means attenuation ON.
+
+        Since the vrange is actually a 20 dB attenuator (amplitude factor 0.1)
+        immediately applied to the channel output, we must update the voltage
+        parameter accordingly
         """
 
-        # compensate for the 0.1 multiplier, if it's on
-        if self.parameters['ch{:02}_vrange'.format(chan)].get_latest() == 1:
-            v = v*10
-        # set the mode back to DC in case it had been changed
-        self.write('wav {} 0 0 0'.format(chan))
-        self.write('set {} {:.6f}'.format(chan, v))
+        tdict = {'-10 V to 10 V': 0,
+                 '-1 V to 1 V': 1,
+                 10: 0,
+                 0: 0,
+                 1: 1}
 
-    def _set_fungen(self, chan, num):
-        """
-        set_cmd for the chXX_fungen parameter.
-        """
+        old = tdict[self.parameters['ch{:02}_vrange'.format(chan)].get_latest()]
 
-        # TO-DO: implement support for AWG and pulse generator
-        if num not in range(0, 9):
-            raise ValueError('Can only bind function generators 1-8' +
-                             ' and DC state 0')
-        # Python lists are 0-indexed
-        self._fungens[chan-1] = num
-        # The 'wav' command is 1-indexed
-        offset = self.parameters['ch{:02}_v'.format(chan)].get_latest()
-        mssg = 'wav {} {} 1 {}'.format(chan, num, offset)
-        self.write(mssg)
+        self.write('vol {} {}'.format(chan, switchint))
 
-    def _get_fungen(self, chan):
-        """
-        get_cmd for the chXX_fungen parameter.
-        """
-        return self._fungens[chan-1]
-
-    def _set_ampl(self, chan, ampl):
-        """
-        set_cmd for the chXX_ampl parameter.
-        """
-        if abs(ampl) + abs(self._offsets[chan-1]) > 10:
-            log.warning('Amplitude and offset on channel {:02}'.format(chan) +
-                        ' exceed the voltage range. Output signal will clip.')
-
-        self._ampls[chan-1] = ampl
-
-    def _get_ampl(self, chan):
-        """
-        get_cmd for the chXX_ampl parameter.
-        """
-        return self._ampls[chan-1]
-
-    def _set_offset(self, chan, offset):
-        """
-        set_cmd for the chXX_offset parameter.
-        """
-        if abs(offset) + abs(self._ampls[chan-1]) > 10:
-            log.warning('Amplitude and offset on channel {:02}'.format(chan) +
-                        ' exceed the voltage range. Output signal will clip.')
-
-        self._offsets[chan-1] = offset
-
-    def _get_offset(self, chan):
-        """
-        set_cmd for the chXX_offset parameter.
-        """
-        return self._offsets[chan-1]
-
-    #########################
-    # Function generator gets/sets
-    #########################
-
-    def _fg_setter(self, fungen, argtype, arg):
-        """
-        generalised set_cmd for all the fungenXX_ parameters
-        """
-        argdict = {'type': self._fg_types,
-                   'duty': self._fg_dutys,
-                   'freq': self._fg_freqs,
-                   'nreps': self._fg_nreps}
-
-        argdict[argtype][fungen-1] = arg
-
-    def _fg_getter(self, fungen, argtype):
-        """
-        generalised get_cmd for all the fungenXX_ parameters
-        """
-        argdict = {'type': self._fg_types,
-                   'duty': self._fg_dutys,
-                   'freq': self._fg_freqs,
-                   'nreps': self._fg_nreps}
-
-        return argdict[argtype][fungen-1]
+        if xor(old, switchint):
+            voltageparam = self.parameters['ch{:02}_v'.format(chan)]
+            oldvoltage = voltageparam.get_latest()
+            newvoltage = {0: 10, 1: 0.1}[switchint]*oldvoltage
+            voltageparam._save_val(newvoltage)
 
     def _num_verbose(self, s):
         '''
@@ -320,6 +204,12 @@ class QDac(VisaInstrument):
         if self.verbose.get_latest():
             s = s.split[': '][-1]
         return float(s)
+
+    def _current_parser(self, s):
+        """
+        parser for chXX_i parameter
+        """
+        return 1e-6*self._num_verbose(s)
 
     def read_state(self, chan, param):
         """
@@ -337,7 +227,7 @@ class QDac(VisaInstrument):
         parameter = 'ch{:02}_{}'.format(chan, param)
         value = self.parameters[parameter].get_latest()
 
-        returnmap = {'vrange': {1: '-1 V to 1 V', 10: '-10 V to 10 V'},
+        returnmap = {'vrange': {1: 1, 10: 0},
                      'irange': {0: '1 muA', 1: '100 muA'}}
 
         if 'range' in param:
@@ -368,9 +258,7 @@ class QDac(VisaInstrument):
         # Status call
 
         version_line = self.ask('status')
-        print('Nasty debug')
-        print('--')
-        print(version_line)
+
         if version_line.startswith('Software Version: '):
             self.version = version_line.strip().split(': ')[1]
         else:
@@ -397,18 +285,21 @@ class QDac(VisaInstrument):
             irange_trans = {'hi cur': 1, 'lo cur': 0}
 
             vals_dict = {
-                'v': ('ch{}_v', float(v)),
                 'vrange': ('ch{}_vrange',
                            self.voltage_range_status[vrange.strip()]),
-                'irange': ('ch{}_irange', irange_trans[irange])
+                'irange': ('ch{}_irange', irange_trans[irange]),
+                'v': ('ch{}_v', float(v)),
             }
 
             chans[chan - 1] = vals_dict
             for param in vals_dict:
                 parameter = vals_dict[param][0].format(chanstr)
                 value = vals_dict[param][1]
+                if param == 'vrange':
+                    attenuation = 0.1*value
+                if param == 'v':
+                    value *= attenuation
                 self.parameters[parameter]._save_val(value)
-
             chans_left.remove(chan)
 
         if readcurrents:
@@ -420,6 +311,98 @@ class QDac(VisaInstrument):
         self._status = chans
         self._status_ts = datetime.now()
         return chans
+
+    def _setslope(self, chan, slope):
+        """
+        set_cmd for the chXX_slope parameter, the maximum slope of a channel.
+
+        Args:
+            chan (int): The channel number (1-48)
+            slope (Union[float, str]): The slope in V/s. Write 'Inf' to allow
+              arbitraryly small rise times.
+        """
+        if chan not in range(1, 49):
+            raise ValueError('Channel number must be 1-48.')
+
+        if slope == 'Inf':
+            try:
+                sls = self._slopes
+                to_remove = [sls.index(sl) for sl in sls if sl[0]==chan][0]
+                self._slopes.remove(sls[to_remove])
+            # If the value was already 'Inf', the channel was not
+            # in the list and nothing happens
+            except:
+                ValueError
+            return
+
+        if chan in [sl[0] for sl in self._slopes]:
+            oldslope = [sl[1] for sl in self._slopes if sl[0]==chan][0]
+            self._slopes[self._slopes.index([chan, oldslope])] = [chan, slope]
+            return
+
+        if len(self._slopes) >= 8:
+            rampchans = ', '.join([str(c[0]) for c in self._slopes])
+            raise ValueError('Can not assign finite slope to more than ' +
+                             "8 channels. Assign 'Inf' to at least one of " +
+                             'the following channels: {}'.format(rampchans))
+
+        self._slopes.append([chan, slope])
+        return
+
+    def _getslope(self, chan):
+        """
+        get_cmd of the chXX_slope parameter
+        """
+        if chan in [sl[0] for sl in self._slopes]:
+            slope = [sl[1] for sl in self._slopes if sl[0]==chan][0]
+            return slope
+        else:
+            return 'Inf'
+
+    def printslopes(self):
+        """
+        Print the slopes assigned to each channel
+        """
+        for (chan, slope) in self._slopes:
+            print('Channel {}, slope: {} (V/s)'.format(chan, slope))
+
+    def _rampvoltage(self, chan, fg, setvoltage, ramptime):
+        """
+        Smoothly ramp the voltage of a channel by the means of a function
+        generator. Helper function used by _set_voltage.
+
+        Args:
+            chan (int): The channel number (counting from 1)
+            fg (int): The function generator (counting from 1)
+            setvoltage (float): The voltage to ramp to
+            ramptime (float): The ramp time in seconds.
+        """
+
+        v_start = self.parameters['ch{:02}_v'.format(chan)].get_latest()
+
+        offset = v_start
+        amplitude = setvoltage-v_start
+        if self.parameters['ch{:02}_vrange'.format(chan)].get_latest() == 1:
+            offset *= 10
+            amplitude *= 10
+
+        chanmssg = 'wav {} {} {} {}'.format(chan, fg,
+                                            amplitude,
+                                            offset)
+
+        typedict = {'SINE': 1, 'SQUARE': 2, 'RAMP': 3}
+
+        typeval = typedict['RAMP']
+        dutyval = 100
+        # s -> ms
+        periodval = ramptime*1e3
+        repval = 1
+        funmssg = 'fun {} {} {} {} {}'.format(fg,
+                                              typeval, periodval,
+                                              dutyval, repval)
+        self.write(chanmssg)
+        self.write(funmssg)
+        self.parameters['ch{:02}_v'.format(chan)]._save_val(setvoltage)
 
     def write(self, cmd):
         """
@@ -447,12 +430,20 @@ class QDac(VisaInstrument):
         """
         self.visa_handle.write('status')
 
-        print('Connected to QDac on', self._address+',',
-              self.visa_handle.read())
+        log.info('Connected to QDac on', self._address + ',',
+                 self.visa_handle.read())
 
         # take care of the rest of the output
         for ii in range(50):
             self.visa_handle.read()
+
+    def _get_firmware_version(self):
+        self.write('status')
+        FW_str = self._write_response
+        FW_version = float(FW_str.replace('Software Version: ', ''))
+        for ii in range(50):
+            self.read()
+        return FW_version
 
     def print_overview(self, update_currents=False):
         """
@@ -466,7 +457,7 @@ class QDac(VisaInstrument):
                      'irange': 'Current range'}
 
         returnmap = {'vrange': {1: '-1 V to 1 V', 10: '-10 V to 10 V'},
-                     'irange': {0: '1 muA', 1: '100 muA'}}
+                     'irange': {0: '0 to 1 muA', 1: '0 to 100 muA'}}
 
         # Print the channels
         for ii in range(self.num_chans):
