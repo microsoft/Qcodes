@@ -1,6 +1,5 @@
 import logging
 from .ATS import AcquisitionController
-from .ATS9360 import AlazarTech_ATS9360
 import numpy as np
 from qcodes import Parameter
 import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
@@ -159,7 +158,6 @@ class HD_Averaging_Controller(AcquisitionController):
     """
 
     filter_dict = {'win': 0, 'ls': 1, 'ave': 2}
-    samples_divisor = AlazarTech_ATS9360.samples_divisor
 
     def __init__(self, name, alazar_name, demod_length=1, filter='win',
                  numtaps=101, chan_b=False, **kwargs):
@@ -187,6 +185,8 @@ class HD_Averaging_Controller(AcquisitionController):
                            check_and_update_fn=self._update_int_delay,
                            default_fn=self._int_delay_default,
                            parameter_class=AcqVariablesParam)
+
+        self.samples_divisor = self._get_alazar().samples_divisor
 
     def _update_demod_freq(instr, value, param_name=None):
         """
