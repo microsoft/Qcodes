@@ -156,7 +156,6 @@ class HD_Averaging_Controller(AcquisitionController):
     TODO(nataliejpg) what should be private?
     TODO(nataliejpg) where should filter_dict live?
     TODO(nataliejpg) demod_freq should be changeable number: maybe channels
-    TODO(nataliejpg) try using fit from helpers
     """
 
     filter_dict = {'win': 0, 'ls': 1, 'ave': 2}

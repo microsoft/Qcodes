@@ -175,7 +175,6 @@ class HD_Records_Controller(AcquisitionController):
     TODO(nataliejpg) what should be private?
     TODO(nataliejpg) where should filter_dict live?
     TODO(nataliejpg) demod_freq should be changeable number: maybe channels
-    TODO(nataliejpg) try using fit from helpers
     TODO(nataliejpg) make records a parameter or similar (MultiParam?)
     """
 
