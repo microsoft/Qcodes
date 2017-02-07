@@ -7,7 +7,6 @@ import numpy as np
 
 from datetime import datetime
 from functools import partial
-from time import sleep
 from operator import xor
 
 from qcodes.instrument.visa import VisaInstrument
@@ -21,7 +20,7 @@ class QDac(VisaInstrument):
     Driver for the QDev digital-analog converter QDac
 
     Based on "DAC_commands_v_13.pdf"
-    Tested with Software Version: 0.160915
+    Tested with Software Version: 0.170202
 
     The driver assumes that the instrument is ALWAYS in verbose mode OFF
     """
@@ -57,9 +56,11 @@ class QDac(VisaInstrument):
         # TODO: do we need a query delay for robust operation?
 
         if self._get_firmware_version() < 0.170202:
-            raise Warning('Obsolete QDAC Software version detected. ' +
-                          'QCoDeS only supports ' +
-                          'version 0.170202 or newer.')
+            raise Warning('''
+                          Obsolete QDAC Software version detected.
+                          QCoDeS only supports version 0.170202 or newer.
+                          Contact rikke.lutge@nbi.ku.dk for an update.
+                          ''')
 
         self.num_chans = num_chans
 
@@ -68,7 +69,6 @@ class QDac(VisaInstrument):
 
         self.chan_range = range(1, 1 + self.num_chans)
         self.channel_validator = vals.Ints(1, self.num_chans)
-        self.fungen_range = range(1, 9)
 
         for i in self.chan_range:
             stri = str(i)
@@ -122,7 +122,7 @@ class QDac(VisaInstrument):
 
         # Initialise the instrument, all channels DC, no attenuation
         for chan in self.chan_range:
-            # Note: this call does NOT change the voltage in the channel
+            # Note: this call does NOT change the voltage on the channel
             self.write('wav {} 0 1 0'.format(chan))
             self.write('vol {} 0'.format(chan))
 
@@ -140,7 +140,7 @@ class QDac(VisaInstrument):
         """
         set_cmd for the chXX_v parameter
 
-        If a finite slope has been assigned, use a function generator to
+        If a finite slope has been assigned, we assign a function generator to
         ramp the voltage.
         """
         # validation
@@ -331,8 +331,7 @@ class QDac(VisaInstrument):
                 self._slopes.remove(sls[to_remove])
             # If the value was already 'Inf', the channel was not
             # in the list and nothing happens
-            except:
-                ValueError
+        except ValueError:
             return
 
         if chan in [sl[0] for sl in self._slopes]:
@@ -410,6 +409,10 @@ class QDac(VisaInstrument):
         verbose mode is off, so we'll override write to take this out
         if you want to use this response, we put it in self._write_response
         (but only for the very last write call)
+
+        Note that this procedure makes it very cumbersome to handle the returned
+        messages from concatenated commands, e.g. 'wav 1 1 1 0;fun 2 1 100 1 1'
+        Please don't use concatenated commands
         """
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
@@ -430,8 +433,8 @@ class QDac(VisaInstrument):
         """
         self.visa_handle.write('status')
 
-        log.info('Connected to QDac on', self._address + ',',
-                 self.visa_handle.read())
+        log.info('Connected to QDac on {}, {}'.format(self.address,
+                                                      self.visa_handle.read()))
 
         # take care of the rest of the output
         for ii in range(50):
