@@ -509,13 +509,17 @@ class TestIsSequenceOf(TestCase):
             ([1, 2, 3], int),
             ((1, 2, 3), int),
             ([1, 2.0], (int, float)),
-            ([{}, None], (type(None), dict))
+            ([{}, None], (type(None), dict)),
+            # omit type (or set None) and we don't test type at all
+            ([1, '2', dict],),
+            ([1, '2', dict], None)
         ]
         for args in good:
             with self.subTest(args=args):
                 self.assertTrue(is_sequence_of(*args))
 
         bad = [
+            (1,),
             (1, int),
             ([1, 2.0], int),
             ([1, 2], float),
@@ -525,21 +529,20 @@ class TestIsSequenceOf(TestCase):
             with self.subTest(args=args):
                 self.assertFalse(is_sequence_of(*args))
 
-        # second arg must be a type or tuple of types - failing this doesn't
-        # return False, it raises an error
+        # second arg, if provided, must be a type or tuple of types
+        # failing this doesn't return False, it raises an error
         with self.assertRaises(TypeError):
             is_sequence_of([1], 1)
         with self.assertRaises(TypeError):
             is_sequence_of([1], (1, 2))
-        with self.assertRaises(TypeError):
-            is_sequence_of([1])
 
     def test_depth(self):
         good = [
             ([1, 2], int, 1),
             ([[1, 2], [3, 4]], int, 2),
             ([[1, 2.0], []], (int, float), 2),
-            ([[[1]]], int, 3)
+            ([[[1]]], int, 3),
+            ([[1, 2], [3, 4]], None, 2)
         ]
         for args in good:
             with self.subTest(args=args):
@@ -554,6 +557,44 @@ class TestIsSequenceOf(TestCase):
             with self.subTest(args=args):
                 self.assertFalse(is_sequence_of(*args))
 
+    def test_shape(self):
+        good = [
+            ([1, 2], int, (2,)),
+            ([[1, 2, 3], [4, 5, 6.0]], (int, float), (2, 3)),
+            ([[[1]]], int, (1, 1, 1)),
+            ([[1], [2]], None, (2, 1)),
+            # if you didn't have `list` as a type, the shape of this one
+            # would be (2, 2) - that's tested in bad below
+            ([[1, 2], [3, 4]], list, (2,)),
+            (((0, 1, 2), ((0, 1), (0, 1), (0, 1))), tuple, (2,)),
+            (((0, 1, 2), ((0, 1), (0, 1), (0, 1))), (tuple, int), (2, 3))
+        ]
+        for obj, types, shape in good:
+            with self.subTest(obj=obj):
+                self.assertTrue(is_sequence_of(obj, types, shape=shape))
+
+        bad = [
+            ([1], int, (2,)),
+            ([[1]], int, (1,)),
+            ([[1, 2], [1]], int, (2, 2)),
+            ([[1]], float, (1, 1)),
+            ([[1, 2], [3, 4]], int, (2, )),
+            (((0, 1, 2), ((0, 1), (0, 1))), (tuple, int), (2, 3))
+        ]
+        for obj, types, shape in bad:
+            with self.subTest(obj=obj):
+                self.assertFalse(is_sequence_of(obj, types, shape=shape))
+
+    def test_shape_depth(self):
+        # there's no reason to provide both shape and depth, but
+        # we allow it if they are self-consistent
+        with self.assertRaises(ValueError):
+            is_sequence_of([], int, depth=1, shape=(2, 2))
+
+        self.assertFalse(is_sequence_of([1], int, depth=1, shape=(2,)))
+        self.assertTrue(is_sequence_of([1], int, depth=1, shape=(1,)))
+
+
 # tests related to JSON encoding
 class TestJSONencoder(TestCase):
 
@@ -564,20 +605,19 @@ class TestJSONencoder(TestCase):
             od = OrderedDict()
             od['a'] = 0
             od['b'] = 1
-            testinput=[10, float(10.), 'hello', od]
-            testoutput=['10', '10.0', '"hello"',  '{"a": 0, "b": 1}']
+            testinput = [10, float(10.), 'hello', od]
+            testoutput = ['10', '10.0', '"hello"',  '{"a": 0, "b": 1}']
             # int
             for d, r in zip(testinput, testoutput):
-                v=e.encode(d)
+                v = e.encode(d)
                 if type(d) == dict:
                     self.assertDictEqual(v, r)
                 else:
                     self.assertEqual(v, r)
 
-
             # test numpy array
-            x=np.array([1,0,0])
-            v=e.encode(x)
+            x = np.array([1, 0, 0])
+            v = e.encode(x)
             self.assertEqual(v, '[1, 0, 0]')
 
             # test class
@@ -586,6 +626,7 @@ class TestJSONencoder(TestCase):
             # test that does not raise, do not care about
             # return value
             e.encode(dummy())
+
 
 class TestCompareDictionaries(TestCase):
     def test_same(self):

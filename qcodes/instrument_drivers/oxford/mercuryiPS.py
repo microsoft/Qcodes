@@ -21,7 +21,9 @@ class MercuryiPS(IPInstrument):
             instrument what axes it supports.
 
     Status: beta-version.
-        TODO:
+
+    .. todo::
+
         - SAFETY!! we need to make sure the magnet is only ramped at certain
           conditions!
         - make ATOB a parameter, and move all possible to use
@@ -30,8 +32,10 @@ class MercuryiPS(IPInstrument):
 
     The driver is written as an IPInstrument, but it can likely be converted to
     ``VisaInstrument`` by removing the ``port`` arg and defining methods:
-        ``def _send(self, msg): self.visa_handle.write(msg)``
-        ``def _recv(self): return self.visa_handle.read()``
+
+        - ``def _send(self, msg): self.visa_handle.write(msg)``
+        - ``def _recv(self): return self.visa_handle.read()``
+
     """
     # def __init__(self, name, axes=None, **kwargs):
     #     super().__init__(name, terminator='\n', **kwargs)
@@ -105,15 +109,15 @@ class MercuryiPS(IPInstrument):
         self.add_parameter('radius',
                            get_cmd=self._get_r,
                            set_cmd=self._set_r,
-                           units='|B|')
+                           unit='|B|')
         self.add_parameter('theta',
                            get_cmd=self._get_theta,
                            set_cmd=self._set_theta,
-                           units='rad')
+                           unit='rad')
         self.add_parameter('phi',
                            get_cmd=self._get_phi,
                            set_cmd=self._set_phi,
-                           units='rad')
+                           unit='rad')
 
         for ax in self.axes:
             self.add_parameter(ax.lower()+'_fld',
@@ -121,21 +125,21 @@ class MercuryiPS(IPInstrument):
                                set_cmd=partial(self._ramp_to_setpoint,
                                                ax, 'FSET'),
                                label='B'+ax.lower(),
-                               units='T')
+                               unit='T')
             self.add_parameter(ax.lower()+'_fldC',
                                get_cmd=partial(self._get_fld,
                                                ax, 'CURR'),
                                set_cmd=partial(self._ramp_to_setpoint,
                                                ax, 'CSET'),
                                label='B'+ax.lower(),
-                               units='T')
+                               unit='T')
             self.add_parameter(ax.lower()+'_fld_wait',
                                get_cmd=partial(self._get_fld,
                                                ax, 'CURR'),
                                set_cmd=partial(self._ramp_to_setpoint_and_wait,
                                                ax, 'CSET'),
                                label='B'+ax.lower(),
-                               units='T')
+                               unit='T')
             self.add_parameter(ax.lower()+'_ACTN',
                                get_cmd=partial(
                                    self._get_cmd,
@@ -145,19 +149,19 @@ class MercuryiPS(IPInstrument):
             self.add_parameter(ax.lower()+'_setpoint',
                                get_cmd=partial(self._get_fld, ax, 'FSET'),
                                set_cmd=partial(self._set_fld, ax, 'FSET'),
-                               units='T')
+                               unit='T')
             self.add_parameter(ax.lower()+'_setpointC',
                                get_cmd=partial(self._get_fld, ax, 'CSET'),
                                set_cmd=partial(self._set_fld, ax, 'CSET'),
-                               units='T')
+                               unit='T')
             self.add_parameter(ax.lower()+'_rate',
                                get_cmd=partial(self._get_fld, ax, 'RFST'),
                                set_cmd=partial(self._set_fld, ax, 'RFST'),
-                               units='T/m')
+                               unit='T/m')
             self.add_parameter(ax.lower()+'_rateC',
                                get_cmd=partial(self._get_fld, ax, 'RCST'),
                                set_cmd=partial(self._set_fld, ax, 'RCST'),
-                               units='T/m')
+                               unit='T/m')
 
             self.connect_message()
 

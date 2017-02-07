@@ -47,7 +47,8 @@ class Formatter:
     """
     ArrayGroup = namedtuple('ArrayGroup', 'shape set_arrays data name')
 
-    def write(self, data_set, io_manager, location, write_metadata=True):
+    def write(self, data_set, io_manager, location, write_metadata=True,
+              force_write=False):
         """
         Write the DataSet to storage.
 
@@ -61,6 +62,7 @@ class Formatter:
             io_manager (io_manager): base physical location to write to.
             location (str): the file location within the io_manager.
             write_metadata (bool): if True, then the metadata is written to disk
+            force_write (bool): if True, then the data is written to disk
         """
         raise NotImplementedError
 
@@ -145,7 +147,7 @@ class Formatter:
             f (file-like): a file-like object to read from, as provided by
                 ``io_manager.open``.
 
-            ids_read (set): ``array_id``s that we have already read.
+            ids_read (set): ``array_id``\s that we have already read.
                 When you read an array, check that it's not in this set (except
                 setpoints, which can be in several files with different inner
                 loops) then add it to the set so other files know it should not
@@ -273,11 +275,12 @@ class Formatter:
 
         Returns:
             List[Formatter.ArrayGroup]: namedtuples giving:
-                shape (Tuple[int]): dimensions as in numpy
-                set_arrays (Tuple[DataArray]): the setpoints of this group
-                data (Tuple[DataArray]): measured arrays in this group
-                name (str): a unique name of this group, obtained by joining
-                    the setpoint array ids.
+
+            - shape (Tuple[int]): dimensions as in numpy
+            - set_arrays (Tuple[DataArray]): the setpoints of this group
+            - data (Tuple[DataArray]): measured arrays in this group
+            - name (str): a unique name of this group, obtained by joining
+              the setpoint array ids.
         """
 
         set_array_sets = tuple(set(array.set_arrays
