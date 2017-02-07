@@ -610,7 +610,7 @@ class AMI430_3D(Instrument):
 
         self._set_spherical((phi, theta, field))
 
-    def _set_field(self, field):
+    def _set_field(self, value):
         phi, theta, field = self._get_setpoints('phi', 'theta', 'field')
 
         field = value
@@ -661,19 +661,19 @@ class AMI430_3D(Instrument):
         # First ramp the coils that are decreasing in field strength
         # If the new setpoint is practically equal to the current one
         # then leave it be
-        if np.isclose(self.__x, x):
+        if np.isclose(self.__x, x, rtol=0, atol=1e-8):
             swept_x = True
         elif np.abs(self._magnet_x.field()) < np.abs(x):
             self._magnet_x._set_field(x, perform_safety_check=False)
             swept_x = True
 
-        if np.isclose(self.__y, y):
+        if np.isclose(self.__y, y, rtol=0, atol=1e-8):
             swept_y = True
         elif np.abs(self._magnet_y.field()) < np.abs(y):
             self._magnet_y._set_field(y, perform_safety_check=False)
             swept_y = True
 
-        if np.isclose(self.__z, z):
+        if np.isclose(self.__z, z, rtol=0, atol=1e-8):
             swept_z = True
         elif np.abs(self._magnet_z.field()) < np.abs(z):
             self._magnet_z._set_field(z, perform_safety_check=False)
