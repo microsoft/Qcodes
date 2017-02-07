@@ -376,12 +376,15 @@ if any([re.match("\s*api\s*",l) for l in index_rst_lines]):
 
 autodoc_default_flags = []
 # we have to do this, do avoid sideeffects when importing matplotlib
+autodoc_mock_imports = []
 try:
     import matplotlib
     matplotlib.use('PS')
-    autodoc_mock_imports = [ 'matplotlib']
+    autodoc_mock_imports.append('matplotlib')
 except ImportError as e:
         print(e)
+autodoc_mock_imports.append('pyspcm')
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = []
 
