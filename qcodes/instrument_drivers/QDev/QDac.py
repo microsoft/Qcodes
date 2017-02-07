@@ -58,11 +58,11 @@ class QDac(VisaInstrument):
         self._write_response = ''
 
         if self._get_firmware_version() < 0.170202:
-            raise Warning('''
-                          Obsolete QDAC Software version detected.
-                          QCoDeS only supports version 0.170202 or newer.
-                          Contact rikke.lutge@nbi.ku.dk for an update.
-                          ''')
+            raise RuntimeError('''
+                               Obsolete QDAC Software version detected.
+                               QCoDeS only supports version 0.170202 or newer.
+                               Contact rikke.lutge@nbi.ku.dk for an update.
+                               ''')
 
         self.num_chans = num_chans
 
@@ -286,6 +286,8 @@ class QDac(VisaInstrument):
 
             irange_trans = {'hi cur': 1, 'lo cur': 0}
 
+            # The following dict must be ordered to ensure that vrange comes
+            # before v when iterating through it
             vals_dict = OrderedDict()
             vals_dict.update({'vrange': ('ch{}_vrange',
                               self.voltage_range_status[vrange.strip()])})
