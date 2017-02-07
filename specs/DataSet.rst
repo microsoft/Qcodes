@@ -27,14 +27,9 @@ Result
     A result is the collection of parameter values associated to a single measurement in an experiment.
     Roughly, a result corresponds to a row in a table of experimental data.
     
-Role
-    Parameters may play different roles in a measurement.
-    Specifically, they may be input to the measurement (set-points) or outputs of the measurement (measured or computed values).
-    This distinction is important for plotting and for replicating an experiment.
-    
 DataSet
     A DataSet is a QCoDeS object that stores the results of an experiment.
-    Roughly, a DataSet corresponds to a table of experimental data, along with metadata that describes the data    .
+    Roughly, a DataSet corresponds to a table of experimental data, along with metadata that describes the data.
     Depending on the state of the experiment, a DataSet may be "in progress" or "completed".
 
 ExperimentContainer
@@ -49,25 +44,30 @@ The DataSet class should meet the following requirements:
 Basics
 ---------
 
-#. A DataSet can store data of (reasonably) arbitrary types.
-#. A completed DataSet should be immutable; neither its metadata nor its results may be modified.
+#. A DataSet can store data of (reasonably) arbitrary types and shapes. basically, any type and shape that can fit in a NumPy array should be supported.
+#. The results stored in a completed DataSet should be immutable; no new results may be added to a completed DataSet.
 
 Creation
 ------------
 
 #. It should be possible to create a DataSet without knowing the final item count of the various values it stores. 
    In particular, the number of loop iterations for a sweep should not be required to create the DataSet.
-#. The list of parameters in each result to be stored in a DataSet should be specified at creation time.
+#. The list of parameters in each result to be stored in a DataSet may be specified at creation time.
    This includes the name, role (set-point or output), and type of each parameter.
    Parameters may be marked as optional, in which case they are not required for each result.
+#. It should be possible to add a new parameter to an in-progress DataSet.
 #. It should be possible to define a result parameter that is independent of any QCoDeSParameter or Instrument.
 #. A QCoDeS Parameter should provide sufficient information to define a result parameter.
-#. A DataSet should allow storage of relatively arbitrary metadata describing the run that generated the results and the parameters included in the results.
+#. A DataSet should allow storage of relatively arbitrary metadata describing the run that 
+   generated the results and the parameters included in the results.
+   Essentially, DataSet metadata should be a string-keyed dictionary at the top, 
+   and should allow storage of any JSON-encodable data.
     
 Writing
 ----------
 
 #. It should be possible to add a single result or a sequence of results to an in-progress DataSet.
+#. It should be able to add an array of values for a new parameter to an in-progress DataSet.
 #. A DataSet should maintain the order in which results were added.
 #. An in-progress DataSet may be marked as completed.
 
@@ -75,13 +75,12 @@ Access
 ---------
 
 #. Values in a DataSet should be easily accessible for plotting and analysis, even while the DataSet is in progress.
-   In particular, it should be possible to retrieve results in a NumPy-compatible form.
+   In particular, it should be possible to retrieve full or partial results as a NumPy array.
 #. It should be possible to define a cursor that specifies a location in a specific value set in a DataSet.
    It should be possible to get a cursor that specifies the current end of the DataSet when the DataSet is "in progress".
    It should be possible to read "new data" in a DataSet; that is, to read everything after a cursor.
 #. It should be possible to subscribe to change notifications from a DataSet.
    It is acceptable if such subscriptions must be in-process until QCoDeS multiprocessing is redone.
-   Change notifications should include the results that were added to the DataSet that triggered the notification.
 
 Storage and Persistence
 -----------------------
@@ -101,16 +100,14 @@ ParamSpec
 
 A ParamSpec object specifies a single parameter in a DataSet.
 
-ParamSpec(Parameter p, optional=)
-    Creates a parameter specification from a QCoDeS Parameter.
-    If optional is provided and is true, then the parameter is optional in each result.
-    
-ParamSpec(name, role, type, desc=, optional=)
-    Creates a parameter specification with the given name, role (‘I’ or ‘O’), and type. 
+ParamSpec(name, type, metadata=)
+    Creates a parameter specification with the given name and type. 
     The type should be a NumPy dtype object.
-    If a description is provided, it is included in the metadata of the DataSet.
-    The description can be a simple string or a string-to-string dictionary.
-    If optional is provided and is true, then the parameter is optional in each result.
+    If metadata is provided, it is included in the overall metadata of the DataSet, with the name of the parameter as the top-level tag.
+    The metadata can be any JSON-able object.
+	
+Either the QCoDeS Parameter class should inherit from ParamSpec, or the Parameter class should provide
+a simple way to get a ParamSpec for the Parameter.
 
 DataSet
 ~~~~~~~
@@ -120,25 +117,29 @@ DataSet()
 
 DataSet(specs)
     Creates a DataSet for the provided list of parameter specifications.
-    Each item in the list should either be a QCoDeS Parameter, a tuple of a Parameter and a Boolean, or a ParamSpec object.
-    A Parameter or a Parameter tupled with a false value indicates a required parameter; a Parameter tupled with a true value indicates an optional parameter.
+    Each item in the list should be a ParamSpec object.
+	
+DataSet(specs, values)
+    Creates a DataSet for the provided list of parameter specifications and values.
+    Each item in the specs list should be a ParamSpec object.
+	Each item in the values list should be a NumPy array or a Python list of values for the corresponding ParamSpec.
+	There should be exactly one item in the values list for every item in the specs list.
+	All of the arrays/lists in the values list should have the same length.
+	The values list my intermix NumPy arrays and Python lists.
 
 DataSet.add_parameter(spec)
-    Adds a parameter to an existing DataSet.
-    The spec should either be a QCoDeS Parameter, a tuple of a Parameter and a Boolean, or a ParamSpec object.
-    A Parameter or a Parameter tupled with a false value indicates a required parameter; a Parameter tupled with a true value indicates an optional parameter.
-    It is an error to add a parameter to a non-empty DataSet.
+    Adds a parameter to the DataSet.
+    The spec should be a ParamSpec object.
 
 DataSet.add_parameters(specs)
-    Adds a list of parameters to an existing DataSet.
-    Each item in the list should either be a QCoDeS Parameter, a tuple of a Parameter and a Boolean, or a ParamSpec object.
-    A Parameter or a Parameter tupled with a false value indicates a required parameter; a Parameter tupled with a true value indicates an optional parameter.
-    It is an error to add a parameter to a non-empty DataSet.
+    Adds a list of parameters to the DataSet.
+    Each item in the list should be a ParamSpec object.
 
-DataSet.add_metadata(tag=, info=)
-    Adds metadata to the current DataSet.
+DataSet.add_metadata(tag=, metadata=)
+    Adds metadata to the DataSet.
     The metadata is stored under the provided tag.
-    It is an error to add metadata to a completed DataSet.
+	If there is already metadata under the provided tag, the new metadata replaces the old metadata.
+    The metadata can be any JSON-able object.
 
 Writing
 -------
@@ -147,7 +148,6 @@ DataSet.add_result(**kwargs)
     Adds a result to the DataSet.
     Keyword parameters should have the name of a parameter as the keyword and the value to associate as the value.
     If there is only one positional parameter and it is a dictionary, then it is interpreted as a map from parameter name to parameter value.
-    It is an error for a value for the same parameter to be specified both using a positional parameter or dictionary parameter and using a keyword,
     It is an error to provide a value for a key or keyword that is not the name of a parameter in this DataSet.
     It is an error to add a result to a completed DataSet.
 
@@ -158,7 +158,12 @@ DataSet.add_results(args)
     The order of dictionaries in the sequence will be the same as the order in which they are added to the DataSet.
     It is an error to add results to a completed DataSet.
 
-DataSet.complete()
+DataSet.add_parameter_values(spec, values)
+	Adds a parameter to the DataSet and associates result values with the new parameter.
+	The values must be a NumPy array or a Python list, with each element holding a single result value that matches the parameter's data type.
+	If the DataSet is not empty, then the count of provided values must equal the current count of results in the DataSet, or an error will result.
+	
+DataSet.mark_complete()
     Marks the DataSet as completed.
 
 Access
@@ -171,7 +176,7 @@ DataSet.is_empty
     This attribute will be true if the DataSet is empty (has no results), or false if at least one result has been added to the DataSet.
     It is equivalent to testing if the length is zero.
 
-DataSet.is_completed
+DataSet.is_marked_complete
     This attribute will be true if the DataSet is completed or false if it is in progress.
 
 DataSet.get_data(*params, start=, end=)
@@ -247,7 +252,19 @@ Open Issues
 #. Should DataSets automatically write to persistent store periodically, or should the user be required to call write() in order to flush changes ?
 
 At least for now, it seems useful to maintain the current behavior of the DataSet flushing to disk periodically.
+On the other hand, this really isn't core functionality.
+
+**Decision: No, we will leave persistence under control of higher-level code.**
 
 #. Should there be a DataSet method similar to add_result that automatically adds a new result by calling the get() method on all parameters that are defined by QCoDeS Parameters?
 
 It would be really easy to write a helper method that does this, so it doesn’t seem necessary to have it in the core API.
+
+**Decision: No, we will not add such a method.**
+
+#. Should the persistence methods be part of DataSet, or should they be methods on persistence-specific classes?
+
+One advantage of removing them from this class is that it makes DataSet completely stand-alone.
+The DataSet module would define two classes, ParamSpec and DataSet, and require only NumPy.
+This level of modularity is very desirable.
+
