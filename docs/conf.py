@@ -347,7 +347,6 @@ texinfo_show_urls = 'footnote'
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'statsmodels': ('http://statsmodels.sourceforge.net/devel/', None),
     'matplotlib': ('http://matplotlib.org/', None),
     'python': ('https://docs.python.org/3.5', None),
     'numpy': ('https://docs.scipy.org/doc/numpy', None),
