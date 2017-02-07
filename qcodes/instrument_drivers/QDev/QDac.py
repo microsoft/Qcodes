@@ -8,6 +8,7 @@ import numpy as np
 from datetime import datetime
 from functools import partial
 from operator import xor
+from collections import OrderedDict
 
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
@@ -54,6 +55,7 @@ class QDac(VisaInstrument):
         # TODO: do we want a method for write termination too?
         handle.write_termination = '\n'
         # TODO: do we need a query delay for robust operation?
+        self._write_response = ''
 
         if self._get_firmware_version() < 0.170202:
             raise Warning('''
@@ -196,11 +198,11 @@ class QDac(VisaInstrument):
             voltageparam._save_val(newvoltage)
 
     def _num_verbose(self, s):
-        '''
+        """
         turn a return value from the QDac into a number.
         If the QDac is in verbose mode, this involves stripping off the
         value descriptor.
-        '''
+        """
         if self.verbose.get_latest():
             s = s.split[': '][-1]
         return float(s)
@@ -284,12 +286,11 @@ class QDac(VisaInstrument):
 
             irange_trans = {'hi cur': 1, 'lo cur': 0}
 
-            vals_dict = {
-                'vrange': ('ch{}_vrange',
-                           self.voltage_range_status[vrange.strip()]),
-                'irange': ('ch{}_irange', irange_trans[irange]),
-                'v': ('ch{}_v', float(v)),
-            }
+            vals_dict = OrderedDict()
+            vals_dict.update({'vrange': ('ch{}_vrange',
+                              self.voltage_range_status[vrange.strip()])})
+            vals_dict.update({'irange': ('ch{}_irange', irange_trans[irange])})
+            vals_dict.update({'v': ('ch{}_v', float(v))})
 
             chans[chan - 1] = vals_dict
             for param in vals_dict:
@@ -329,10 +330,11 @@ class QDac(VisaInstrument):
                 sls = self._slopes
                 to_remove = [sls.index(sl) for sl in sls if sl[0]==chan][0]
                 self._slopes.remove(sls[to_remove])
+                return
             # If the value was already 'Inf', the channel was not
             # in the list and nothing happens
-        except ValueError:
-            return
+            except ValueError:
+                return
 
         if chan in [sl[0] for sl in self._slopes]:
             oldslope = [sl[1] for sl in self._slopes if sl[0]==chan][0]
@@ -364,6 +366,13 @@ class QDac(VisaInstrument):
         """
         for (chan, slope) in self._slopes:
             print('Channel {}, slope: {} (V/s)'.format(chan, slope))
+
+    def printslopes(self):
+        """
+        Print the finite slopes assigned to channels
+        """
+        for sl in self._slopes:
+            print('Channel {}, slope: {} (V/s)'.format(sl[0], sl[1]))
 
     def _rampvoltage(self, chan, fg, setvoltage, ramptime):
         """
@@ -433,7 +442,7 @@ class QDac(VisaInstrument):
         """
         self.visa_handle.write('status')
 
-        log.info('Connected to QDac on {}, {}'.format(self.address,
+        log.info('Connected to QDac on {}, {}'.format(self._address,
                                                       self.visa_handle.read()))
 
         # take care of the rest of the output
