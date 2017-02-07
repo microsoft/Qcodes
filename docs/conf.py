@@ -370,7 +370,7 @@ with open("index.rst") as f:
 autosummary_generate = False
 
 if any([re.match("\s*api\s*",l) for l in index_rst_lines]):
-    autoclass_content = "class" # classes should include both the class' and the __init__ method's docstring
+    autoclass_content = "both" # classes should include both the class' and the __init__ method's docstring
     autosummary_generate = True
     autodoc_default_flags = [ 'members', 'undoc-members', 'inherited-members', 'show-inheritance' ]
 
