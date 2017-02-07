@@ -221,6 +221,22 @@ class Sweep(MultiParameter):
 
         return tuple(returndata)
 
+class Sweep(MultiParameter):
+    """
+    Class similar to the Sweeper class
+    """
+
+    __init__():
+        # The __init__ requires that we supply names and shapes,
+        # but there is no way to know what they could be known at this time.
+        # They are updated via build_sweep.
+        super().__init__(name, names=('',), shapes=((1,),), **kwargs)
+        self._instrument = instrument
+
+    def build_scope(self):
+
+    def get(self):
+
 class ZIUHFLI(Instrument):
     """
     QCoDeS driver for ZI UHF-LI.
@@ -274,19 +290,19 @@ class ZIUHFLI(Instrument):
         self.add_parameter('oscillator1_freq',
                            label='Frequency of oscillator 1',
                            unit='Hz',
-                           set_cmd=partial(self.daq.setDouble,
-                                           '/' + device_ID + '/oscs/0/freq'),
-                           get_cmd=partial(self.daq.getDouble,
-                                           '/' + device_ID + '/oscs/0/freq'),
+                           set_cmd=partial(self._setter, 'oscs',
+                                            0, 1, 'freq'),
+                           get_cmd=partial(self._getter, 'oscs',
+                                            0, 1, 'freq'),
                            vals=vals.Numbers(0, 600e6))
 
         self.add_parameter('oscillator2_freq',
                            label='Frequency of oscillator 2',
                            unit='Hz',
-                           set_cmd=partial(self.daq.setDouble,
-                                           '/' + device_ID + '/oscs/1/freq'),
-                           get_cmd=partial(self.daq.getDouble,
-                                           '/' + device_ID + '/oscs/1/freq'),
+                           set_cmd=partial(self._setter, 'oscs',
+                                            1, 1, 'freq'),
+                           get_cmd=partial(self._getter, 'oscs',
+                                            1, 1, 'freq'),
                            vals=vals.Numbers(0, 600e6))
 
         ########################################
@@ -295,38 +311,38 @@ class ZIUHFLI(Instrument):
         for demod in range(1, 9):
             self.add_parameter('demod{}_order'.format(demod),
                                label='Filter order',
-                               get_cmd=partial(self._demod_getter,
-                                               demod-1, 'order'),
-                               set_cmd=partial(self._demod_setter,
-                                               0, demod-1, 'order'),
+                               get_cmd=partial(self._getter, 'demod',
+                                               demod-1, 0, 'order'),
+                               set_cmd=partial(self._setter, 'demod',
+                                               demod-1, 0, 'order'),
                                vals=vals.Ints(1, 8)
                                )
 
             self.add_parameter('demod{}_harmonic'.format(demod),
                                label=('Reference frequency multiplication' +
                                       ' factor'),
-                               get_cmd=partial(self._demod_getter,
-                                               demod-1, 'harmonic'),
-                               set_cmd=partial(self._demod_setter,
-                                               1, demod-1, 'harmonic'),
+                               get_cmd=partial(self._getter, 'demod',
+                                               demod-1, 1, 'harmonic'),
+                               set_cmd=partial(self._setter, 'demod',
+                                               demod-1, 1, 'harmonic'),
                                vals=vals.Ints(1, 999)
                                )
 
             self.add_parameter('demod{}_timeconstant'.format(demod),
                                label='Filter time constant',
-                               get_cmd=partial(self._demod_getter,
-                                               demod-1, 'timeconstant'),
-                               set_cmd=partial(self._demod_setter,
-                                               1, demod-1, 'timeconstant'),
+                               get_cmd=partial(self._getter, 'demod',
+                                               demod-1, 1, 'timeconstant'),
+                               set_cmd=partial(self._setter,
+                                               demod-1, 1, 'timeconstant'),
                                unit='s'
                                )
 
             self.add_parameter('demod{}_samplerate'.format(demod),
                                label='Sample rate',
-                               get_cmd=partial(self._demod_getter,
-                                               demod-1, 'rate'),
-                               set_cmd=partial(self._demod_setter,
-                                               1, demod-1, 'rate'),
+                               get_cmd=partial(self._getter, 'demod',
+                                               demod-1, 1, 'rate'),
+                               set_cmd=partial(self._setter, 'demod',
+                                               demod-1, 1, 'rate'),
                                unit='Sa/s',
                                docstring="""
                                          Note: the value inserted by the user
@@ -338,10 +354,10 @@ class ZIUHFLI(Instrument):
             self.add_parameter('demod{}_phaseshift'.format(demod),
                                label='Phase shift',
                                unit='degrees',
-                               get_cmd=partial(self._demod_getter,
-                                               demod-1, 'phaseshift'),
-                               set_cmd=partial(self._demod_setter,
-                                               1, demod-1, 'phaseshift')
+                               get_cmd=partial(self._getter, 'demod',
+                                               demod-1, 1, 'phaseshift'),
+                               set_cmd=partial(self._setter, 'demod',
+                                               demod-1, 1, 'phaseshift')
                                )
 
             # val_mapping for the demodX_signalin parameter
@@ -360,30 +376,30 @@ class ZIUHFLI(Instrument):
 
             self.add_parameter('demod{}_signalin'.format(demod),
                                label='Signal input',
-                               get_cmd=partial(self._demod_getter,
-                                               demod-1, 'adcselect'),
-                               set_cmd=partial(self._demod_setter,
-                                               0, demod-1, 'adcselect'),
+                               get_cmd=partial(self._getter, 'demod',
+                                               demod-1, 0,'adcselect'),
+                               set_cmd=partial(self._setter, 'demod',
+                                               demod-1, 0, 'adcselect'),
                                val_mapping=dmsigins,
                                vals=vals.Enum(*list(dmsigins.keys()))
                                )
 
             self.add_parameter('demod{}_sinc'.format(demod),
                                label='Sinc filter',
-                               get_cmd=partial(self._demod_getter,
-                                               demod-1, 'sinc'),
-                               set_cmd=partial(self._demod_setter,
-                                               0, demod-1, 'sinc'),
+                               get_cmd=partial(self._getter, 'demod',
+                                               demod-1, 0, 'sinc'),
+                               set_cmd=partial(self._setter, 'demod',
+                                               demod-1, 0, 'sinc'),
                                val_mapping={'ON': 1, 'OFF': 0},
                                vals=vals.Enum('ON', 'OFF')
                                )
 
             self.add_parameter('demod{}_streaming'.format(demod),
                                label='Data streaming',
-                               get_cmd=partial(self._demod_getter,
-                                               demod-1, 'enable'),
-                               set_cmd=partial(self._demod_setter,
-                                               0, demod-1, 'enable'),
+                               get_cmd=partial(self._getter, 'demod',
+                                               demod-1, 0, 'enable'),
+                               set_cmd=partial(self._setter, 'demod',
+                                               demod-1, 0, 'enable'),
                                val_mapping={'ON': 1, 'OFF': 0},
                                vals=vals.Enum('ON', 'OFF')
                                )
@@ -407,10 +423,10 @@ class ZIUHFLI(Instrument):
 
             self.add_parameter('demod{}_trigger'.format(demod),
                                label='Trigger',
-                               get_cmd=partial(self._demod_getter,
-                                               demod-1, 'trigger'),
-                               set_cmd=partial(self._demod_setter,
-                                               0, demod-1, 'trigger'),
+                               get_cmd=partial(self._getter, 'demod',
+                                               demod-1, 0, 'trigger'),
+                               set_cmd=partial(self._setter, 'demod',
+                                               demod-1, 0, 'trigger'),
                                val_mapping=dmtrigs,
                                vals=vals.Enum(*list(dmtrigs.keys()))
                                )
@@ -667,36 +683,36 @@ class ZIUHFLI(Instrument):
 
             self.add_parameter('signal_input{}_range'.format(sigin),
                                label='Input range',
-                               set_cmd=partial(self._sigin_setter,
-                                               1, sigin-1, 'range'),
-                               get_cmd=partial(self._sigin_getter,
-                                               sigin-1, 'range'),
+                               set_cmd=partial(self._setter, 'sigin',
+                                               sigin-1, 1, 'range'),
+                               get_cmd=partial(self._getter, 'sigin'
+                                               sigin-1, 1, 'range'),
                                unit='V')
 
             self.add_parameter('signal_input{}_scaling'.format(sigin),
                                label='Input scaling',
-                               set_cmd=partial(self._sigin_setter,
-                                               1, sigin-1, 'scaling'),
-                               get_cmd=partial(self._sigin_getter,
-                                               sigin-1, 'scaling'),
+                               set_cmd=partial(self._setter, 'sigin',
+                                               sigin-1, 1, 'scaling'),
+                               get_cmd=partial(self._getter, 'sigin',
+                                               sigin-1, 1, 'scaling'),
                                )
 
             self.add_parameter('signal_input{}_AC'.format(sigin),
                                label='AC coupling',
-                               set_cmd=partial(self._sigin_setter,
-                                               0, sigin-1, 'ac'),
-                               get_cmd=partial(self._sigin_getter,
-                                               sigin-1, 'ac'),
+                               set_cmd=partial(self._setter,'sigin',
+                                               sigin-1, 0, 'ac'),
+                               get_cmd=partial(self._getter, 'sigin',
+                                               sigin-1, 0, 'ac'),
                                val_mapping={'ON': 1, 'OFF': 0},
                                vals=vals.Enum('ON', 'OFF')
                                )
 
             self.add_parameter('signal_input{}_impedance'.format(sigin),
                                label='Input impedance',
-                               set_cmd=partial(self._sigin_setter,
-                                               0, sigin-1, 'imp50'),
-                               get_cmd=partial(self._sigin_getter,
-                                               sigin-1, 'imp50'),
+                               set_cmd=partial(self._setter, 'sigin',
+                                                sigin-1, 0, 'imp50'),
+                               get_cmd=partial(self._getter, 'sigin',
+                                               sigin-1, 0, 'imp50'),
                                val_mapping={50: 1, 1000: 0},
                                vals=vals.Enum(50, 1000)
                                )
@@ -705,12 +721,26 @@ class ZIUHFLI(Instrument):
                           'Input 2 - Input 1': 3}
             self.add_parameter('signal_input{}_diff'.format(sigin),
                                label='Input signal subtraction',
-                               set_cmd=partial(self._sigin_setter,
-                                               0, sigin-1, 'diff'),
-                               get_cmd=partial(self._sigin_getter,
-                                               sigin-1, 'diff'),
+                               set_cmd=partial(self._setter, 'sigin',
+                                                sigin-1, 0, 'diff'),
+                               get_cmd=partial(self._getter, sigin, 
+                                               sigin-1, 0, 'diff'),
                                val_mapping=sigindiffs,
                                vals=vals.Enum(*list(sigindiffs.keys())))
+        ########################################
+        # SIGNAL OUTPUTS
+        for sigout in range(1,3)
+            
+            self.add_parameter('signal_output{}_Amplitude'.format(sigout),
+                                label='Signal output amplitude',
+                                set_cmd=partial(self._sigout_setter,
+                                                0,sigout-1,'diff')
+                        )
+
+
+
+
+
 
         ########################################
         # THE SWEEP ITSELF
@@ -741,19 +771,22 @@ class ZIUHFLI(Instrument):
         # Set up the sweeper with the above settings
         self.Sweep.build_sweep()
 
-    def _demod_setter(self, mode, demod, setting, value):
+    def _setter(self, module, number, mode, setting, value):
         """
-        General set_cmd for demodulator parameters
+        General function to set/send settings to the device.
 
-        This function counts demodulators in a zero-indexed way.
+        The module (e.g demodulator, input, output,..) is counted in a zero
+        indexed fashion.
 
         Args:
-            mode (int): 0 means 'call setInt', 1 means 'call setDouble'
-            demod (int): The demodulator in question (0-8)
-            setting (str): The attribute to set, e.g. 'order'
-            value (Union[int, float]): The value to set the attribute to
+            module (str): The module (eg. demodulator, input, output, ..)
+                to set.
+            number (int): Module's index
+            mode (bool): Indicating whether we are asking for an int or double
+            setting (str): The module's setting to set.
+            value (int/double): The value to set.
         """
-        setstr = '/{}/demods/{}/{}'.format(self.device, demod, setting)
+        setstr = '/{}/{}/{}/{}'.format(self.device, module, number, setting)
 
         if mode == 0:
             self.daq.setInt(setstr, value)
@@ -761,78 +794,125 @@ class ZIUHFLI(Instrument):
             self.daq.setDouble(setstr, value)
 
 
-    def _demod_getter(self, demod, setting):
+    def _getter(self, module, number, mode, setting):
         """
-        General get_cmd for demodulator parameters
+        General get function for all parameters (except sweeper parameters).
 
-        The built-in self.daq.get commands returns a dictionary, but we
-        want a single value
-
-        This function counts demodulators in a zero-indexed way.
-
-        returns:
-            Union[int, float]: In all cases checked so far, a single value
-                is returned.
-        """
-        querystr = '/{}/demods/{}/{}'.format(self.device, demod, setting)
-        returndict = self.daq.get(querystr)
-        demod = str(demod)
-        rawvalue = returndict[self.device]['demods'][demod][setting]['value']
-
-        if isinstance(rawvalue, np.ndarray) and len(rawvalue) == 1:
-            value = rawvalue[0]
-        elif isinstance(rawvalue, list) and len(rawvalue) == 1:
-            value = rawvalue[0]
-        else:
-            value = rawvalue
-
-        return value
-
-    def _sigin_setter(self, mode, sigin, setting, value):
-        """
-        General set_cmd for signal input parameters
-
-        This function counts signal inputs in a zero-indexed way.
-
+        The module (e.g demodulator, input, output,..) is counted in a zero
+        indexed fashion. 
+        
         Args:
-            mode (int): 0 means 'call setInt', 1 means 'call setDouble'
-            demod (int): The signal input in question (0 or 1)
-            setting (str): The attribute to set, e.g. 'scaling'
-            value (Union[int, float]): The value to set the attribute to
-        """
-        setstr = '/{}/sigins/{}/{}'.format(self.device, sigin, setting)
-
-        if mode == 0:
-            self.daq.setInt(setstr, value)
-        if mode == 1:
-            self.daq.setDouble(setstr, value)
-
-    def _sigin_getter(self, sigin, setting):
-        """
-        General get_cmd for signal input parameters
-
-        The built-in self.daq.get commands returns a dictionary, but we
-        want a single value
-
-        This function counts signal inputs in a zero-indexed way.
-
+            module (str): The module (eg. demodulator, input, output, ..)
+                we want to know the value of.
+            number (int): Module's index
+            mode (bool): Indicating whether we are asking for an int or double
+            setting (str): The module's setting to set.
         returns:
-            Union[int, float]: In all cases checked so far, a single value
-                is returned.
-        """
-        querystr = '/{}/sigins/{}/{}'.format(self.device, sigin, setting)
-        returndict = self.daq.get(querystr)
-        sigin = str(sigin)
-        rawvalue = returndict[self.device]['sigins'][sigin][setting]['value']
+            inquered value
 
-        if isinstance(rawvalue, np.ndarray) and len(rawvalue) == 1:
-            value = rawvalue[0]
-        elif isinstance(rawvalue, list) and len(rawvalue) == 1:
-            value = rawvalue[0]
-        else:
-            value = rawvalue
+        """
+        querystr = '/{}/{}/{}/{}'.format(self.device, module, number, setting)
+        if mode == 0:
+            value self.daq.getInt(querystr)
+        if mode == 1:
+            value = self.daq.getDouble(querystr)
 
         return value
+
+
+
+    # def _demod_setter(self, mode, demod, setting, value):
+    #     """
+    #     General set_cmd for demodulator parameters
+
+    #     This function counts demodulators in a zero-indexed way.
+
+    #     Args:
+    #         mode (int): 0 means 'call setInt', 1 means 'call setDouble'
+    #         demod (int): The demodulator in question (0-8)
+    #         setting (str): The attribute to set, e.g. 'order'
+    #         value (Union[int, float]): The value to set the attribute to
+    #     """
+    #     setstr = '/{}/demods/{}/{}'.format(self.device, demod, setting)
+
+    #     if mode == 0:
+    #         self.daq.setInt(setstr, value)
+    #     if mode == 1:
+    #         self.daq.setDouble(setstr, value)
+
+
+    # def _demod_getter(self, demod, setting):
+    #     """
+    #     General get_cmd for demodulator parameters
+
+    #     The built-in self.daq.get commands returns a dictionary, but we
+    #     want a single value
+
+    #     This function counts demodulators in a zero-indexed way.
+
+    #     returns:
+    #         Union[int, float]: In all cases checked so far, a single value
+    #             is returned.
+    #     """
+    #     querystr = '/{}/demods/{}/{}'.format(self.device, demod, setting)
+    #     returndict = self.daq.get(querystr)
+    #     demod = str(demod)
+    #     rawvalue = returndict[self.device]['demods'][demod][setting]['value']
+
+    #     if isinstance(rawvalue, np.ndarray) and len(rawvalue) == 1:
+    #         value = rawvalue[0]
+    #     elif isinstance(rawvalue, list) and len(rawvalue) == 1:
+    #         value = rawvalue[0]
+    #     else:
+    #         value = rawvalue
+
+    #     return value
+
+    # def _sigin_setter(self, mode, sigin, setting, value):
+    #     """
+    #     General set_cmd for signal input parameters
+
+    #     This function counts signal inputs in a zero-indexed way.
+
+    #     Args:
+    #         mode (int): 0 means 'call setInt', 1 means 'call setDouble'
+    #         demod (int): The signal input in question (0 or 1)
+    #         setting (str): The attribute to set, e.g. 'scaling'
+    #         value (Union[int, float]): The value to set the attribute to
+    #     """
+    #     setstr = '/{}/sigins/{}/{}'.format(self.device, sigin, setting)
+
+    #     if mode == 0:
+    #         self.daq.setInt(setstr, value)
+    #     if mode == 1:
+    #         self.daq.setDouble(setstr, value)
+
+    # def _sigin_getter(self, sigin, setting):
+    #     """
+    #     General get_cmd for signal input parameters
+
+    #     The built-in self.daq.get commands returns a dictionary, but we
+    #     want a single value
+
+    #     This function counts signal inputs in a zero-indexed way.
+
+    #     returns:
+    #         Union[int, float]: In all cases checked so far, a single value
+    #             is returned.
+    #     """
+    #     querystr = '/{}/sigins/{}/{}'.format(self.device, sigin, setting)
+    #     returndict = self.daq.get(querystr)
+    #     sigin = str(sigin)
+    #     rawvalue = returndict[self.device]['sigins'][sigin][setting]['value']
+
+    #     if isinstance(rawvalue, np.ndarray) and len(rawvalue) == 1:
+    #         value = rawvalue[0]
+    #     elif isinstance(rawvalue, list) and len(rawvalue) == 1:
+    #         value = rawvalue[0]
+    #     else:
+    #         value = rawvalue
+
+    #     return value
 
     @staticmethod
     def NEPBW_to_timeconstant(NEPBW, order):
