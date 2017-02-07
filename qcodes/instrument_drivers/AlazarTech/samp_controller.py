@@ -83,7 +83,6 @@ class SamplesAcqParam(Parameter):
         instrument: acquisition controller instrument this parameter belongs to
 
     TODO(nataliejpg) setpoints (including names and units)
-    TODO(nataliejpg) setpoint units
     """
 
     def __init__(self, name, instrument):
@@ -105,10 +104,9 @@ class SamplesAcqParam(Parameter):
         demod_length = self._instrument._demod_length
         # self._time_list = tuple(np.linspace(start, stop, num=npts))
         if demod_length > 1:
-            # demod_index = tuple(range(demod_length))
-            # self._demod_list = self._instrument.get_demod_freqs()
-            # self.setpoints = ((self._demod_list, self._time_list ), (
-            #           self._demod_list, self._time_list ))
+            # demod_freqs = self._instrument.get_demod_freqs()
+            # self.setpoints = ((demod_freqs, self._time_list),
+            #                   (demod_freqs, self._time_list))
             self.shapes = ((demod_length, npts), (demod_length, npts))
         else:
             self.shapes = ((npts,), (npts,))
@@ -124,10 +122,10 @@ class SamplesAcqParam(Parameter):
                 setpoints if length > 1
         """
         demod_length = self._instrument._demod_length
-        self._demod_list = demod_freqs
         if demod_length > 1:
-            self.setpoints = ((self._demod_list, self._time_list),
-                              (self._demod_list, self._time_list))
+            pass
+            # self.setpoints = ((demod_freqs, self._time_list),
+            #                   (demod_freqs, self._time_list))
         else:
             pass
 
@@ -445,8 +443,8 @@ class HD_Samples_Controller(AcquisitionController):
                             'instrument value, most likely need '
                             'to call update_acquisition_settings')
 
-        demod_list = self.get_demod_freqs()
-        if len(demod_list) == 0:
+        demod_freqs = self.get_demod_freqs()
+        if len(demod_freqs) == 0:
             raise Exception('no demod_freqs set')
 
         self.records_per_buffer = alazar.records_per_buffer.get()
@@ -458,7 +456,7 @@ class HD_Samples_Controller(AcquisitionController):
 
         integer_list = np.arange(self.samples_per_record)
         angle_mat = 2 * np.pi * \
-            np.outer(demod_list, integer_list) / self.sample_rate
+            np.outer(demod_freqs, integer_list) / self.sample_rate
         self.cos_mat = np.cos(angle_mat)
         self.sin_mat = np.sin(angle_mat)
 

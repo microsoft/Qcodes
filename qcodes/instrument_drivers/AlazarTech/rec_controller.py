@@ -86,9 +86,9 @@ class RecordsAcqParam(Parameter):
             not nice and should be changed when possible
 
     TODO(nataliejpg) setpoints (including names and units)
-    TODO(nataliejpg) setpoint units
-    TODO(nataliejpg) convert records setpoint into actual frequency
+    TODO(nataliejpg) convert records setpoint into variable/param
     """
+
     def __init__(self, name, instrument, demod_length):
         super().__init__(name)
         self._instrument = instrument
@@ -107,12 +107,10 @@ class RecordsAcqParam(Parameter):
         """
         demod_length = self._instrument._demod_length
         # self.rec_list = tuple(np.linspace(start, stop, num=npts))
-        # demod_index = tuple(range(demod_length))
         if demod_length > 1:
-            # demod_index = tuple(range(demod_length))
             # demod_freqs = self._instrument.get_demod_freqs()
-            # self.setpoints = ((demod_freqs, self._rec_list), (
-            #           demod_freqs, self._rec_list))
+            # self.setpoints = ((demod_freqs, self._rec_list),
+            #                   (demod_freqs, self._rec_list))
             self.shapes = ((demod_length, npts), (demod_length, npts))
         else:
             self.shapes = ((npts,), (npts,))
@@ -129,8 +127,9 @@ class RecordsAcqParam(Parameter):
         """
         demod_length = self._instrument._demod_length
         if demod_length > 1:
-            self.setpoints = ((demod_freqs, self._rec_list),
-                              (demod_freqs, self._rec_list))
+            pass
+            # self.setpoints = ((demod_freqs, self._rec_list),
+            #                   (demod_freqs, self._rec_list))
         else:
             pass
 
@@ -447,8 +446,8 @@ class HD_Records_Controller(AcquisitionController):
                             'to call update_acquisition_kwargs with'
                             'records_per_buffer as a param')
 
-        demod_list = self.get_demod_freqs()
-        if len(demod_list) == 0:
+        demod_freqs = self.get_demod_freqs()
+        if len(demod_freqs) == 0:
             raise Exception('no demod_freqs set')
 
         self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
@@ -459,12 +458,10 @@ class HD_Records_Controller(AcquisitionController):
 
         mat_shape = (self._demod_length, self.records_per_buffer,
                      self.samples_per_record)
-        demod_list = np.array([getattr(self, 'demod_freq_{}'.format(n))()
-                               for n in range(self._demod_length)])
         integer_list = np.arange(self.samples_per_record)
         integer_mat = np.outer(np.ones(self.records_per_buffer), integer_list)
         angle_mat = 2 * np.pi * \
-            np.outer(demod_list, integer_mat).reshape(
+            np.outer(demod_freqs, integer_mat).reshape(
                 mat_shape) / self.sample_rate
         self.cos_mat = np.cos(angle_mat)
         self.sin_mat = np.sin(angle_mat)

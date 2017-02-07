@@ -109,9 +109,9 @@ class AveragedAcqParam(Parameter):
                 setpoints if length > 1
         """
         demod_length = self._instrument._demod_length
-        self._demod_list = demod_freqs
         if demod_length > 1:
-            self.setpoints = ((self._demod_list, ), (self._demod_list, ))
+            pass
+            # self.setpoints = ((demod_freqs, ), (demod_freqs, ))
         else:
             pass
 
@@ -420,8 +420,8 @@ class HD_Averaging_Controller(AcquisitionController):
                             'instrument value, most likely need '
                             'to set and check int_time and int_delay')
 
-        demod_list = self.get_demod_freqs()
-        if len(demod_list) == 0:
+        demod_freqs = self.get_demod_freqs()
+        if len(demod_freqs) == 0:
             raise Exception('no demod_freqs set')
 
         self.records_per_buffer = alazar.records_per_buffer.get()
@@ -433,7 +433,7 @@ class HD_Averaging_Controller(AcquisitionController):
 
         integer_list = np.arange(self.samples_per_record)
         angle_mat = 2 * np.pi * \
-            np.outer(demod_list, integer_list) / self.sample_rate
+            np.outer(demod_freqs, integer_list) / self.sample_rate
         self.cos_mat = np.cos(angle_mat)
         self.sin_mat = np.sin(angle_mat)
 
