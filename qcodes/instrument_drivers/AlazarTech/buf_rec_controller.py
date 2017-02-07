@@ -71,7 +71,7 @@ class AcqVariablesParam(Parameter):
         return True
 
 
-class RecordsAcqParam(Parameter):
+class BuffersRecordsAcqParam(Parameter):
     """
     Software controlled parameter class for Alazar acquisition. To be used with
     HD_Records_Controller (tested with ATS9360 board) for return of
@@ -90,26 +90,57 @@ class RecordsAcqParam(Parameter):
         self.acquisition_kwargs = {}
         self.names = ('magnitude', 'phase')
 
-    def update_sweep(self, npts, start=None, stop=None):
+    def update_buf_sweep(self, buf_npts, buf_start=None, buf_stop=None):
         """
         Function which updates the shape of the parameter (and it's setpoints
         when this is fixed)
 
         Args:
-            npts: number of records returned
-            start (optional): start value of records returned (if relevant)
-            stop (optional): stop value of records returned (if relevant)
+            buf_npts: number of buffers returned
+            buf_start (optional): start value of buffers returned
+            buf_stop (optional): stop value of records returned
         """
         demod_length = self._instrument._demod_length
-        # self.rec_list = tuple(np.linspace(start, stop, num=npts))
+        # self._buf_list = tuple(np.linspace(buf_start,
+        #                                    buf_stop, num=buf_npts))
+        self._buf_npts = buf_npts
         if demod_length > 1:
             # demod_freqs = self._instrument.get_demod_freqs()
-            # self.setpoints = ((demod_freqs, self._rec_list),
-            #                   (demod_freqs, self._rec_list))
-            self.shapes = ((demod_length, npts), (demod_length, npts))
+            # self.setpoints = ((demod_freqs, self._buf_list, self._rec_list),
+            #                   (demod_freqs, self._buf_list, self._rec_list))
+            self.shapes = ((demod_length, self._buf_npts, self._rec_npts),
+                           (demod_length, self._buf_npts, self._rec_npts))
         else:
-            self.shapes = ((npts,), (npts,))
-            # self.setpoints = ((self._rec_list,), (self._rec_list,))
+            self.shapes = ((self._buf_npts, self._rec_npts),
+                           (self._buf_npts, self._rec_npts))
+            # self.setpoints = ((self._buf_list, self._rec_list),
+            #                   (self._buf_list, self._rec_list))
+
+    def update_rec_sweep(self, rec_npts, rec_start=None, rec_stop=None):
+        """
+        Function which updates the shape of the parameter (and it's setpoints
+        when this is fixed)
+
+        Args:
+            rec_npts: number of records returned after processing
+            rec_start (optional): start value of records returned
+            rec_stop (optional): stop value of records returned
+        """
+        demod_length = self._instrument._demod_length
+        # self._rec_list = tuple(np.linspace(rec_start,
+        #                                    rec_stop, num=rec_npts))
+        self._rec_npts = rec_npts
+        if demod_length > 1:
+            # demod_freqs = self._instrument.get_demod_freqs()
+            # self.setpoints = ((demod_freqs, self._buf_list, self._rec_list),
+            #                   (demod_freqs, self._buf_list, self._rec_list))
+            self.shapes = ((demod_length, self._buf_npts, self._rec_npts),
+                           (demod_length, self._buf_npts, self._rec_npts))
+        else:
+            self.shapes = ((self._buf_npts, self._rec_npts),
+                           (self._buf_npts, self._rec_npts))
+            # self.setpoints = ((self._buf_list, self._rec_list),
+            #                   (self._buf_list, self._rec_list))
 
     def update_demod_setpoints(self, demod_freqs):
         """
@@ -123,8 +154,8 @@ class RecordsAcqParam(Parameter):
         demod_length = self._instrument._demod_length
         if demod_length > 1:
             pass
-            # self.setpoints = ((demod_freqs, self._rec_list),
-            #                   (demod_freqs, self._rec_list))
+            # self.setpoints = ((demod_freqs, self._buf_list, self._rec_list),
+            #                   (demod_freqs, self._buf_list, self._rec_list))
         else:
             pass
 
@@ -146,7 +177,7 @@ class RecordsAcqParam(Parameter):
         return mag, phase
 
 
-class HD_Records_Controller(AcquisitionController):
+class HD_BuffersRecords_Controller(AcquisitionController):
     """
     This is the Acquisition Controller class which works with the ATS9360,
     averaging over samples (limited by int_time and int_delay values) and
@@ -170,6 +201,7 @@ class HD_Records_Controller(AcquisitionController):
     TODO(nataliejpg) where should filter_dict live?
     TODO(nataliejpg) demod_freq should be changeable number: maybe channels
     TODO(nataliejpg) make record param 'start' and 'stop' meaningful
+    TODO(nataliejpg) make buffers param 'start' and 'stop' meaningful
     """
 
     filter_dict = {'win': 0, 'ls': 1, 'ave': 2}
@@ -186,7 +218,7 @@ class HD_Records_Controller(AcquisitionController):
         super().__init__(name, alazar_name, **kwargs)
 
         self.add_parameter(name='acquisition',
-                           parameter_class=RecordsAcqParam)
+                           parameter_class=BuffersRecordsAcqParam)
         for i in range(demod_length):
             self.add_parameter(name='demod_freq_{}'.format(i),
                                check_and_update_fn=self._update_demod_freq,
@@ -201,6 +233,9 @@ class HD_Records_Controller(AcquisitionController):
                            parameter_class=AcqVariablesParam)
         self.add_parameter(name='record_num',
                            check_and_update_fn=self._update_rec_num,
+                           parameter_class=AcqVariablesParam)
+        self.add_parameter(name='buffer_num',
+                           check_and_update_fn=self._update_buf_num,
                            parameter_class=AcqVariablesParam)
 
         self.samples_divisor = self._get_alazar().samples_divisor
@@ -275,6 +310,37 @@ class HD_Records_Controller(AcquisitionController):
         # update acquision kwargs
         instr.acquisition.acquisition_kwargs.update(
             records_per_buffer=value)
+
+    def _update_buffer_num(instr, value, **kwargs):
+        """
+        Function to update the buffer number, and instr attributes. By now
+        I'm just making a parameter because it follows the patter of having a
+        parameter for everything we want to preserve and not average over.
+        At some point this should maybe be done more smartly with having
+        "number of averages" and the driver working out how to allocate
+        records and buffers accordingly depending on what is being averaged
+        over. If you have ideas let me know. nataliejpg
+
+        Args:
+            value to be validated and used for instrument attribute update
+
+        Checks:
+            1 <= value <= 100000
+
+        Sets:
+            acquisition_kwarg['buffers_per_acquisition'] of acquisition param
+            setpoints of acquisiton param
+            shape of acquisition param
+        """
+        if (value is None) or not (1 <= value <= 100000):
+            raise ValueError('int_time must be 1 <= value <= 1000')
+
+        # update acquisition parameter shapes
+        instr.acquisition.update_buf_sweep(value)
+
+        # update acquision kwargs
+        instr.acquisition.acquisition_kwargs.update(
+            buffers_per_acquisition=value)
 
     def _update_int_time(instr, value, **kwargs):
         """
@@ -430,25 +496,29 @@ class HD_Records_Controller(AcquisitionController):
         """
         Updates the kwargs to be used when
         alazar_driver.acquisition() is called via a get call of the
-        acquisition RecordsAcqParam. Should be used by the user for
-        updating averaging settings since the 'samples_per_record'
-        and 'records_per_buffer' kwargs are updated via the int_time,
-        int_delay and record_num parameters
+        acquisition BuffersRecordsAcqParam. Should be used by the user for
+        updating allocated_buffers kwarg since samples_per_record,
+        records_per_buffer and buffers_per_acquisition are updated via the
+        int_time, int_delay, record_num and buffer_num parameters
 
         Kwargs (ints):
-            buffers_per_acquisition
             allocated_buffers
         """
         if 'samples_per_record' in kwargs:
-            raise ValueError('With HD_Records_Controller '
+            raise ValueError('With HD_BuffersRecords_Controller '
                              'samples_per_record cannot be set manually '
                              'via update_acquisition_kwargs and should instead'
                              ' be set by setting int_time and int_delay')
         if 'records_per_buffer' in kwargs:
-            raise ValueError('With HD_Records_Controller '
+            raise ValueError('With HD_BuffersRecords_Controller '
                              'records_per_buffer cannot be set manually '
                              'via update_acquisition_kwargs and should instead'
                              ' be set by setting record_num')
+        if 'records_per_buffer' in kwargs:
+            raise ValueError('With HD_BuffersRecords_Controller '
+                             'records_per_buffer cannot be set manually '
+                             'via update_acquisition_kwargs and should instead'
+                             ' be set by setting buffer_num')
         self.acquisition.acquisition_kwargs.update(**kwargs)
 
     def pre_start_capture(self):
@@ -469,21 +539,31 @@ class HD_Records_Controller(AcquisitionController):
             raise Exception('acq controller record_num does not match '
                             'instrument value, most likely need '
                             'to call set and check record_num')
+        if self.buffer_num() != alazar.buffers_per_acquisition.get():
+            raise Exception('acq controller buffer_num does not match '
+                            'instrument value, most likely need '
+                            'to call set and check buffer_num')
 
         demod_freqs = self.get_demod_freqs()
         if len(demod_freqs) == 0:
             raise Exception('no demod_freqs set')
 
-        self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
         self.board_info = alazar.get_idn()
+        self.buffer_count = 0
+        self.samples_per_buffer = (self.samples_per_record *
+                                   self.record_num() *
+                                   self.buffer_num() *
+                                   self.number_of_channels)
         self.buffer = np.zeros(self.samples_per_record *
+                               self.buffer_num() *
                                self.record_num() *
                                self.number_of_channels)
 
-        mat_shape = (self._demod_length, self.record_num(),
-                     self.samples_per_record)
+        mat_shape = (self._demod_length, self.buffer_num(),
+                     self.record_num(), self.samples_per_record)
         integer_list = np.arange(self.samples_per_record)
-        integer_mat = np.outer(np.ones(self.record_num()), integer_list)
+        integer_mat = (np.outer(np.ones(self.buffer_num()),
+                                np.outer(np.ones(self.record_num()), integer_list)))
         angle_mat = 2 * np.pi * \
             np.outer(demod_freqs, integer_mat).reshape(
                 mat_shape) / self.sample_rate
@@ -497,7 +577,10 @@ class HD_Records_Controller(AcquisitionController):
         """
         Adds data from alazar to buffer (effectively averaging)
         """
-        self.buffer += data
+        i0 = self.buffer_count * self.samples_per_buffer
+        i1 = i0 + self.samples_per_buffer
+        self.buffer[i0:i1] = data
+        self.buf_count += 1
 
     def post_acquire(self):
         """
@@ -514,21 +597,22 @@ class HD_Records_Controller(AcquisitionController):
         # where SXYZ is record X, sample Y, channel Z.
 
         # break buffer up into records and shapes to be (records, samples)
-        recordsA = np.empty((self.record_num(), self.samples_per_record),
-                            dtype=np.uint16)
-        for i in range(self.record_num()):
-            i0 = (i * self.samples_per_record * self.number_of_channels)
-            i1 = (i0 + self.samples_per_record * self.number_of_channels)
-            recordsA[i, :] = np.uint16(
-                self.buffer[i0:i1:self.number_of_channels] /
-                self.buffers_per_acquisition)
+        reshaped_buf = np.uint16(self.buffer.reshape(self.buffer_num(),
+                                                     self.record_num(),
+                                                     self.samples_per_buffer,
+                                                     self.number_of_channels))
 
-        # do demodulation
-        magA, phaseA = self._fit(recordsA)
+        recA = reshaped_buf[:, :, :, 0]
+
+        magA, phaseA = self._fit(recA)
 
         # same for chan b
         if self.chan_b:
+            # recB = reshaped_buf[:, :, :, 1]
+            # magB, phaseB = self, _fit(recB)
             raise NotImplementedError('chan b code not complete')
+
+        self.buf_count = 0
 
         return magA, phaseA
 
@@ -556,7 +640,7 @@ class HD_Records_Controller(AcquisitionController):
             volt_rec = rec - np.mean(rec, axis=1)
 
         # volt_rec to matrix and multiply with demodulation signal matrices
-        mat_shape = (self._demod_length, self.record_num(),
+        mat_shape = (self._demod_length, self.buffer_num(), self.record_num(),
                      self.samples_per_record)
         volt_rec_mat = np.outer(
             np.ones(self._demod_length), volt_rec).reshape(mat_shape)
@@ -569,20 +653,20 @@ class HD_Records_Controller(AcquisitionController):
             re_filtered = helpers.filter_win(re_mat, cutoff,
                                              self.sample_rate,
                                              self.filter_settings['numtaps'],
-                                             axis=2)
+                                             axis=3)
             im_filtered = helpers.filter_win(im_mat, cutoff,
                                              self.sample_rate,
                                              self.filter_settings['numtaps'],
-                                             axis=2)
+                                             axis=3)
         elif self.filter_settings['filter'] == 1:
             re_filtered = helpers.filter_ls(re_mat, cutoff,
                                             self.sample_rate,
                                             self.filter_settings['numtaps'],
-                                            axis=2)
+                                            axis=3)
             im_filtered = helpers.filter_ls(im_mat, cutoff,
                                             self.sample_rate,
                                             self.filter_settings['numtaps'],
-                                            axis=2)
+                                            axis=3)
         elif self.filter_settings['filter'] == 2:
             re_filtered = re_mat
             im_filtered = im_mat
@@ -596,7 +680,7 @@ class HD_Records_Controller(AcquisitionController):
 
         # convert to magnitude and phase
         complex_mat = re_limited + im_limited * 1j
-        magnitude = np.mean(abs(complex_mat), axis=2)
-        phase = np.mean(np.angle(complex_mat, deg=True), axis=2)
+        magnitude = np.mean(abs(complex_mat), axis=3)
+        phase = np.mean(np.angle(complex_mat, deg=True), axis=3)
 
         return magnitude, phase

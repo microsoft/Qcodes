@@ -235,7 +235,7 @@ class HD_Averaging_Controller(AcquisitionController):
     def _update_int_time(instr, value, **kwargs):
         """
         Function to validate value for int_time before setting parameter
-        value
+        value and update instr attributes.
 
         Args:
             value to be validated and used for instrument attribute update
@@ -282,7 +282,7 @@ class HD_Averaging_Controller(AcquisitionController):
     def _update_int_delay(instr, value, **kwargs):
         """
         Function to validate value for int_delay before setting parameter
-        value
+        value and update instr attributes.
 
         Args:
             value to be validated and used for instrument attribute update
@@ -389,7 +389,7 @@ class HD_Averaging_Controller(AcquisitionController):
         """
         Updates the kwargs to be used when
         alazar_driver.acquisition() is called via a get call of the
-        acquisition SamplesParam. Should be used by the user for
+        acquisition AveragedAcqParam. Should be used by the user for
         updating averaging settings since the 'samples_per_record'
         kwarg is updated via the int_time and int_delay parameters
 
@@ -399,7 +399,7 @@ class HD_Averaging_Controller(AcquisitionController):
             allocated_buffers
         """
         if 'samples_per_record' in kwargs:
-            raise ValueError('With HD_Samples_Controller '
+            raise ValueError('With HD_Averaging_Controller '
                              'samples_per_record cannot be set manually '
                              'via update_acquisition_kwargs and should instead'
                              ' be set by setting int_time and int_delay')

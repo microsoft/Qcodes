@@ -247,7 +247,7 @@ class HD_Samples_Controller(AcquisitionController):
     def _update_int_time(instr, value, **kwargs):
         """
         Function to validate value for int_time before setting parameter
-        value
+        value and update instr attributes.
 
         Args:
             value to be validated and used for instrument attribute update
@@ -302,7 +302,7 @@ class HD_Samples_Controller(AcquisitionController):
     def _update_int_delay(instr, value, **kwargs):
         """
         Function to validate value for int_delay before setting parameter
-        value
+        value and update instr attributes.
 
         Args:
             value to be validated and used for instrument attribute update
@@ -345,8 +345,11 @@ class HD_Samples_Controller(AcquisitionController):
 
     def _int_delay_default(instr):
         """
-        Returns minimum int_delay recommended for (numtaps - 1)
-        samples to be discarded as recommended for filter
+        Function to generate default int_delay value
+
+        Returns:
+            minimum int_delay recommended for (numtaps - 1)
+            samples to be discarded as recommended for filter
         """
         alazar = instr._get_alazar()
         instr.sample_rate = alazar.get_sample_rate()
@@ -355,8 +358,11 @@ class HD_Samples_Controller(AcquisitionController):
 
     def _int_time_default(instr):
         """
-        Returns max total time for integration based on samples_per_record,
-        sample_rate and int_delay
+        Function to generate defult int_time value
+
+        Returns:
+            max total time for integration based on samples_per_record,
+            sample_rate and int_delay
         """
         if instr.samples_per_record is (0 or None):
             raise ValueError('Cannot set int_time to max if acq controller'
@@ -410,7 +416,7 @@ class HD_Samples_Controller(AcquisitionController):
         """
         Updates the kwargs to be used when
         alazar_driver.acquisition() is called via a get call of the
-        acquisition SamplesParam. Should be used by the user for updating
+        acquisition SamplesAcqParam. Should be used by the user for updating
         averaging settings since the 'samples_per_record' kwarg is updated
         via the int_time and int_delay parameters
 

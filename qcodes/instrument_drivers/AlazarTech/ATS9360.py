@@ -8,8 +8,13 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
     it inherits from the ATS base class
 
     TODO(nataliejpg):
-        -   add clock source options and sample rate options
+        -  add clock source options and sample rate options
+          (probelem being that byte_to_value_dict of
+          sample_rate relies on value of clock_source)
     """
+
+    # samples divisor is listed in the manual as being 32 but this gave
+    # incorrect data when tested for divisors less than 128
     samples_divisor = 128
 
     def __init__(self, name, **kwargs):
