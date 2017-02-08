@@ -562,16 +562,26 @@ class HD_RecordsSamples_Controller(AcquisitionController):
         # where SXYZ is record X, sample Y, channel Z.
 
         # break buffer up into records and shapes to be (records, samples)
-        recordsA = np.empty((self.record_num(), self.samples_per_record),
-                            dtype=np.uint16)
-        for i in range(self.record_num()):
-            i0 = (i * self.samples_per_record * self.number_of_channels)
-            i1 = (i0 + self.samples_per_record * self.number_of_channels)
-            recordsA[i, :] = np.uint16(
-                self.buffer[i0:i1:self.number_of_channels] /
-                self.buffers_per_acquisition)
+        reshaped_buf = self.buffer.reshape(self.records_per_buffer,
+                                           self.samples_per_record,
+                                           self.number_of_channels)
+        recordsA = np.uint16(reshaped_buf[:, :, 0] /
+                             self.buffers_per_acquisition)
+
+        # TODO(nataliejpg): test above version works on alazar and
+        # compare performance
+        # recordsA = np.empty((self.record_num(), self.samples_per_record),
+        #                     dtype=np.uint16)
+        # for i in range(self.record_num()):
+        #     i0 = (i * self.samples_per_record * self.number_of_channels)
+        #     i1 = (i0 + self.samples_per_record * self.number_of_channels)
+        #     recordsA[i, :] = np.uint16(
+        #         self.buffer[i0:i1:self.number_of_channels] /
+        #         self.buffers_per_acquisitin)
 
         # do demodulation
+        # recordsB = np.uint16(reshaped_buf[:, :, 1] /
+        #                      self.buffers_per_acquisition)
         magA, phaseA = self._fit(recordsA)
 
         # same for chan b
@@ -601,7 +611,8 @@ class HD_RecordsSamples_Controller(AcquisitionController):
         else:
             logging.warning('sample to volt conversion does not exist for'
                             ' bps != 12, centered raw samples returned')
-            volt_rec = rec - np.mean(rec, axis=1)
+            # TODO(nataliejpg): think about this recentering makes sense here
+            volt_rec = rec - np.mean(rec)
 
         # volt_rec to matrix and multiply with demodulation signal matrices
         mat_shape = (self._demod_length, self.record_num,
@@ -617,20 +628,20 @@ class HD_RecordsSamples_Controller(AcquisitionController):
             re_filtered = helpers.filter_win(re_mat, cutoff,
                                              self.sample_rate,
                                              self.filter_settings['numtaps'],
-                                             axis=2)
+                                             axis=-1)
             im_filtered = helpers.filter_win(im_mat, cutoff,
                                              self.sample_rate,
                                              self.filter_settings['numtaps'],
-                                             axis=2)
+                                             axis=-1)
         elif self.filter_settings['filter'] == 1:
             re_filtered = helpers.filter_ls(re_mat, cutoff,
                                             self.sample_rate,
                                             self.filter_settings['numtaps'],
-                                            axis=2)
+                                            axis=-1)
             im_filtered = helpers.filter_ls(im_mat, cutoff,
                                             self.sample_rate,
                                             self.filter_settings['numtaps'],
-                                            axis=2)
+                                            axis=-1)
         elif self.filter_settings['filter'] == 2:
             re_filtered = re_mat
             im_filtered = im_mat

@@ -456,19 +456,29 @@ class HD_Averaging_Controller(AcquisitionController):
             magnitude (numpy array): shape = (demod_length, samples_used)
             phase (numpy array): shape = (demod_length, samples_used)
         """
-        records_per_acquisition = (self.buffers_per_acquisition *
-                                   self.records_per_buffer)
+
         # for ATS9360 samples are arranged in the buffer as follows:
         # S00A, S00B, S01A, S01B...S10A, S10B, S11A, S11B...
         # where SXYZ is record X, sample Y, channel Z.
 
         # break buffer up into records and averages over them
-        recA = np.zeros(self.samples_per_record)
-        for i in range(self.records_per_buffer):
-            i0 = (i * self.samples_per_record * self.number_of_channels)
-            i1 = (i0 + self.samples_per_record * self.number_of_channels)
-            recA += self.buffer[i0:i1:self.number_of_channels]
-        recordA = np.uint16(recA / records_per_acquisition)
+        reshaped_buf = self.buffer.reshape(self.records_per_buffer,
+                                           self.samples_per_record,
+                                           self.number_of_channels)
+        recordA = np.uint16(np.mean(reshaped_buf[:, :, 0], axis=0) /
+                            self.buffers_per_acquisition)
+
+        # TODO(nataliejpg): test above version works on alazar and
+        # compare performance
+
+        # records_per_acquisition = (self.buffers_per_acquisition *
+        #                    self.records_per_buffer)
+        # recA = np.zeros(self.samples_per_record)
+        # for i in range(self.records_per_buffer):
+        #     i0 = (i * self.samples_per_record * self.number_of_channels)
+        #     i1 = (i0 + self.samples_per_record * self.number_of_channels)
+        #     recA += self.buffer[i0:i1:self.number_of_channels]
+        # recordA = np.uint16(recA / records_per_acquisition)
 
         # do demodulation
         magA, phaseA = self._fit(recordA)
@@ -513,20 +523,20 @@ class HD_Averaging_Controller(AcquisitionController):
             re_filtered = helpers.filter_win(re_mat, cutoff,
                                              self.sample_rate,
                                              self.filter_settings['numtaps'],
-                                             axis=1)
+                                             axis=-1)
             im_filtered = helpers.filter_win(im_mat, cutoff,
                                              self.sample_rate,
                                              self.filter_settings['numtaps'],
-                                             axis=1)
+                                             axis=-1)
         elif self.filter_settings['filter'] == 1:
             re_filtered = helpers.filter_ls(re_mat, cutoff,
                                             self.sample_rate,
                                             self.filter_settings['numtaps'],
-                                            axis=1)
+                                            axis=-1)
             im_filtered = helpers.filter_ls(im_mat, cutoff,
                                             self.sample_rate,
                                             self.filter_settings['numtaps'],
-                                            axis=1)
+                                            axis=-1)
         elif self.filter_settings['filter'] == 2:
             re_filtered = re_mat
             im_filtered = im_mat
@@ -540,7 +550,7 @@ class HD_Averaging_Controller(AcquisitionController):
 
         # convert to magnitude and phase
         complex_mat = re_limited + im_limited * 1j
-        magnitude = np.mean(abs(complex_mat), axis=1)
-        phase = np.mean(np.angle(complex_mat, deg=True), axis=1)
+        magnitude = np.mean(abs(complex_mat), axis=-1)
+        phase = np.mean(np.angle(complex_mat, deg=True), axis=-1)
 
         return magnitude, phase

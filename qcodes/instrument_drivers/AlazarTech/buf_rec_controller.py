@@ -563,7 +563,8 @@ class HD_BuffersRecords_Controller(AcquisitionController):
                      self.record_num(), self.samples_per_record)
         integer_list = np.arange(self.samples_per_record)
         integer_mat = (np.outer(np.ones(self.buffer_num()),
-                                np.outer(np.ones(self.record_num()), integer_list)))
+                                np.outer(np.ones(self.record_num()),
+                                         integer_list)))
         angle_mat = 2 * np.pi * \
             np.outer(demod_freqs, integer_mat).reshape(
                 mat_shape) / self.sample_rate
@@ -637,7 +638,8 @@ class HD_BuffersRecords_Controller(AcquisitionController):
         else:
             logging.warning('sample to volt conversion does not exist for'
                             ' bps != 12, centered raw samples returned')
-            volt_rec = rec - np.mean(rec, axis=1)
+            # TODO(nataliejpg): think about this recentering makes sense here
+            volt_rec = rec - np.mean(rec)
 
         # volt_rec to matrix and multiply with demodulation signal matrices
         mat_shape = (self._demod_length, self.buffer_num(), self.record_num(),
@@ -653,20 +655,20 @@ class HD_BuffersRecords_Controller(AcquisitionController):
             re_filtered = helpers.filter_win(re_mat, cutoff,
                                              self.sample_rate,
                                              self.filter_settings['numtaps'],
-                                             axis=3)
+                                             axis=-1)
             im_filtered = helpers.filter_win(im_mat, cutoff,
                                              self.sample_rate,
                                              self.filter_settings['numtaps'],
-                                             axis=3)
+                                             axis=-1)
         elif self.filter_settings['filter'] == 1:
             re_filtered = helpers.filter_ls(re_mat, cutoff,
                                             self.sample_rate,
                                             self.filter_settings['numtaps'],
-                                            axis=3)
+                                            axis=-1)
             im_filtered = helpers.filter_ls(im_mat, cutoff,
                                             self.sample_rate,
                                             self.filter_settings['numtaps'],
-                                            axis=3)
+                                            axis=-1)
         elif self.filter_settings['filter'] == 2:
             re_filtered = re_mat
             im_filtered = im_mat
@@ -680,7 +682,7 @@ class HD_BuffersRecords_Controller(AcquisitionController):
 
         # convert to magnitude and phase
         complex_mat = re_limited + im_limited * 1j
-        magnitude = np.mean(abs(complex_mat), axis=3)
-        phase = np.mean(np.angle(complex_mat, deg=True), axis=3)
+        magnitude = np.mean(abs(complex_mat), axis=-1)
+        phase = np.mean(np.angle(complex_mat, deg=True), axis=-1)
 
         return magnitude, phase
