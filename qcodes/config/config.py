@@ -1,12 +1,13 @@
 import copy
 import json
-import jsonschema
 import logging
 import os
 import pkg_resources as pkgr
 
 from os.path import expanduser
 from pathlib import Path
+
+import jsonschema
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +106,7 @@ class Config():
         A schema file must be called schema.json
         Configuration files (and their schema) are loaded and updated from the
         default directories in the following order:
+
             - default json config file from the repository
             - user json config in user home directory
             - user json config in $QCODES_CONFIG
@@ -189,11 +191,18 @@ class Config():
             >>> defaults.add("trace_color", "blue", "string", "description")
 
         will update the config:
-            `...
+
+        ::
+
+            ...
             "user": { "trace_color": "blue"}
-            ...`
+            ...
+
         and the schema:
-            `...
+
+        ::
+
+            ...
             "user":{
                 "type" : "object",
                 "description": "controls user settings of qcodes"
@@ -204,11 +213,11 @@ class Config():
                             }
                     }
             }
-            ...`
+            ...
 
         Todo:
             - Add enum  support for value_type
-            - finsh _diffing
+            - finish _diffing
         """
         self.current_config["user"].update({key: value})
 

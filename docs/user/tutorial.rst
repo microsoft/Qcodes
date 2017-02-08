@@ -137,7 +137,7 @@ and we save the sum of them.
    >>> array([ 3.,  6.])
 
 
-.. __metainstrument :
+.. _metainstrument :
 
 Meta Instruments
 ---------------------

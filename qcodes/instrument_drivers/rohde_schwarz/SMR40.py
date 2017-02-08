@@ -13,12 +13,15 @@ log = logging.getLogger(__name__)
 
 class RohdeSchwarz_SMR40(VisaInstrument):
     """This is the qcodes driver for the Rohde & Schwarz SMR40 signal generator
-    Status: beta-version. TODO:
+    Status: beta-version.
+
+    .. todo::
 
         - Add all parameters that are in the manual
         - Add test suite
         - See if there can be a common driver for RS mw sources from which
           different models inherit
+
     This driver does not contain all commands available for the SMR40 but
     only the ones most commonly used.
 
@@ -37,13 +40,13 @@ class RohdeSchwarz_SMR40(VisaInstrument):
                            get_cmd=self.do_get_frequency,
                            set_cmd=self.do_set_frequency,
                            vals=vals.Numbers(10e6, 40e9),
-                           units='Hz')
+                           unit='Hz')
         self.add_parameter('power',
                            label='Power',
                            get_cmd=self.do_get_power,
                            set_cmd=self.do_set_power,
                            vals=vals.Numbers(-30, 25),
-                           units='dBm')
+                           unit='dBm')
         self.add_parameter('status',
                            get_cmd=self.do_get_status,
                            set_cmd=self.do_set_status,
