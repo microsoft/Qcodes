@@ -439,7 +439,7 @@ class QDac(VisaInstrument):
     def connect_message(self):
         """
         Override of the standard Instrument class connect_message.
-        Usually, the response to *IDN? is printed. Here, the
+        Usually, the response to `*IDN?` is printed. Here, the
         software version is printed.
         """
         self.visa_handle.write('status')

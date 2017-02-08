@@ -370,18 +370,21 @@ with open("index.rst") as f:
 autosummary_generate = False
 
 if any([re.match("\s*api\s*",l) for l in index_rst_lines]):
-    autoclass_content = "class" # classes should include both the class' and the __init__ method's docstring
+    autoclass_content = "both" # classes should include both the class' and the __init__ method's docstring
     autosummary_generate = True
     autodoc_default_flags = [ 'members', 'undoc-members', 'inherited-members', 'show-inheritance' ]
 
 autodoc_default_flags = []
 # we have to do this, do avoid sideeffects when importing matplotlib
+autodoc_mock_imports = []
 try:
     import matplotlib
     matplotlib.use('PS')
-    autodoc_mock_imports = [ 'matplotlib']
+    autodoc_mock_imports.append('matplotlib')
 except ImportError as e:
         print(e)
+autodoc_mock_imports.append('pyspcm')
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = []
 
