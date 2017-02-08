@@ -36,7 +36,8 @@ class IVVI(VisaInstrument):
                  # commented because still on the todo list
         '''
         Initialzes the IVVI, and communicates with the wrapper
-        Input:
+
+        Args:
             name (string)        : name of the instrument
             address (string)     : ASRL address
             reset (bool)         : resets to default values, default=false

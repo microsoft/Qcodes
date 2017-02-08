@@ -21,26 +21,33 @@ class TestSafeFormatter(TestCase):
                          '{cheese}')
 
 
+def _default(time: datetime, formatter: FormatLocation, counter:str, name: str):
+    date = time.strftime(formatter.fmt_date)
+    time = time.strftime(formatter.fmt_time)
+    fmted = formatter.formatter.format(formatter.default_fmt,
+                                       date=date,
+                                       counter=counter,
+                                       time=time,
+                                       name=name)
+    return fmted
+
+
 class TestFormatLocation(TestCase):
     def test_default(self):
         lp = FormatLocation()
         fmt = '%Y-%m-%d/%H-%M-%S'
 
-        self.assertEqual(lp(MatchIO([])),
-                         datetime.now().strftime(fmt))
-        self.assertEqual(lp(MatchIO([]), {'name': 'who?'}),
-                         datetime.now().strftime(fmt) + '_who?')
+        name = "name"
+        self.assertEqual(lp(MatchIO([]), {'name': name}),
+                         _default(datetime.now(), lp, "001", name))
 
-        # counter starts at 2 if we added it for disambiguation
-        self.assertEqual(lp(MatchIO([''])),
-                         datetime.now().strftime(fmt) + '_002')
-        self.assertEqual(lp(MatchIO(['', '005'])),
-                         datetime.now().strftime(fmt) + '_006')
-        self.assertEqual(lp(MatchIO(['', '888888']), {'name': 'you!'}),
-                         datetime.now().strftime(fmt) + '_you!_888889')
+        # counter starts at +1  using MatchIo undocumented magic argument
+        start_magic_value = 5
+        self.assertEqual(lp(MatchIO(['', '{0:03d}'.format(start_magic_value)]), {'name':name}),
+                         _default(datetime.now(), lp, '{0:03d}'.format(start_magic_value+1), name))
 
     def test_fmt_subparts(self):
-        lp = FormatLocation(fmt_date='%d-%b-%Y', fmt_time='%I-%M%p',
+        lp = FormatLocation(fmt='{date}/{time}', fmt_date='%d-%b-%Y', fmt_time='%I-%M%p',
                             fmt_counter='##{:.1f}~')
         fmt = '%d-%b-%Y/%I-%M%p'
 
