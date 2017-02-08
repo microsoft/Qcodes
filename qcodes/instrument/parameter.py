@@ -847,6 +847,8 @@ class StandardParameter(Parameter):
     def _set_set(self, set_cmd, set_parser):
         # note: this does not set the final setter functions. that's handled
         # in self.set_sweep, when we choose a swept or non-swept setter.
+        # TODO(giulioungaretti) lies! that method does not exis.
+        # probably alexj left it out :(
         exec_str = self._instrument.write if self._instrument else None
         self._set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str,
                             input_parser=set_parser, no_cmd_function=no_setter)
