@@ -213,13 +213,13 @@ class Tektronix_AWG5014(VisaInstrument):
                            get_parser=self.newlinestripper)
         self.add_parameter('trigger_impedance',
                            label='Trigger impedance (Ohm)',
-                           units='Ohm',
+                           unit='Ohm',
                            get_cmd='TRIGger:IMPedance?',
                            set_cmd='TRIGger:IMPedance ' + '{}',
                            vals=vals.Enum(50, 1000),
                            get_parser=float)
         self.add_parameter('trigger_level',
-                           units='V',
+                           unit='V',
                            label='Trigger level (V)',
                            get_cmd='TRIGger:LEVel?',
                            set_cmd='TRIGger:LEVel ' + '{:.3f}',
@@ -291,14 +291,14 @@ class Tektronix_AWG5014(VisaInstrument):
                                get_parser=int)
             self.add_parameter('ch{}_amp'.format(i),
                                label='Amplitude channel {} (Vpp)'.format(i),
-                               units='Vpp',
+                               unit='Vpp',
                                get_cmd=amp_cmd + '?',
                                set_cmd=amp_cmd + ' {:.6f}',
                                vals=vals.Numbers(0.02, 4.5),
                                get_parser=float)
             self.add_parameter('ch{}_offset'.format(i),
                                label='Offset channel {} (V)'.format(i),
-                               units='V',
+                               unit='V',
                                get_cmd=offset_cmd + '?',
                                set_cmd=offset_cmd + ' {:.3f}',
                                vals=vals.Numbers(-.1, .1),
@@ -322,7 +322,7 @@ class Tektronix_AWG5014(VisaInstrument):
                                get_parser=self.newlinestripper)
             self.add_parameter('ch{}_filter'.format(i),
                                label='Low pass filter channel {}'.format(i),
-                               units='Hz',
+                               unit='Hz',
                                get_cmd=filter_cmd + '?',
                                set_cmd=filter_cmd + ' {}',
                                vals=vals.Enum(20e6, 100e6, 9.9e37,
@@ -330,7 +330,7 @@ class Tektronix_AWG5014(VisaInstrument):
                                get_parser=float)
             self.add_parameter('ch{}_DC_out'.format(i),
                                label='DC output level channel {}'.format(i),
-                               units='V',
+                               unit='V',
                                get_cmd=dc_out_cmd + '?',
                                set_cmd=dc_out_cmd + ' {}',
                                vals=vals.Numbers(-3, 5),
