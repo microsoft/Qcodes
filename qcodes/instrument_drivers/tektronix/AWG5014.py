@@ -719,6 +719,7 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         This command sets the wait trigger state for an element. Send
         a trigger signal in one of the following ways:
+
           * By using an external trigger signal.
           * By pressing the “Force Trigger” button on the front panel
           * By using self.force_trigger or self.force_trigger_event
@@ -739,6 +740,7 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         This query returns the wait trigger state for an element. Send
         a trigger signal in one of the following ways:
+
           * By using an external trigger signal.
           * By pressing the “Force Trigger” button on the front panel
           * By using self.force_trigger or self.force_trigger_event
