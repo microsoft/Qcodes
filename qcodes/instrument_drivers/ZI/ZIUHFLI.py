@@ -45,6 +45,8 @@ class Sweep(MultiParameter):
         super().__init__(name, names=('',), shapes=((1,),), **kwargs)
         self._instrument = instrument
 
+        print('We rock out at git!')
+
     def build_sweep(self):
         """
         Build a sweep with the current sweep settings. Must be called
