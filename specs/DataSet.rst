@@ -103,6 +103,7 @@ A ParamSpec object specifies a single parameter in a DataSet.
 ParamSpec(name, type, metadata=)
     Creates a parameter specification with the given name and type. 
     The type should be a NumPy dtype object.
+    
     If metadata is provided, it is included in the overall metadata of the DataSet, with the name of the parameter as the top-level tag.
     The metadata can be any JSON-able object.
 	
@@ -125,15 +126,21 @@ DataSet(specs, values)
 	Each item in the values list should be a NumPy array or a Python list of values for the corresponding ParamSpec.
 	There should be exactly one item in the values list for every item in the specs list.
 	All of the arrays/lists in the values list should have the same length.
-	The values list my intermix NumPy arrays and Python lists.
+	The values list may intermix NumPy arrays and Python lists.
 
 DataSet.add_parameter(spec)
     Adds a parameter to the DataSet.
     The spec should be a ParamSpec object.
+    If the DataSet is not empty, then existing results will have the type-appropriate null value for the new parameter.
+    
+    It is an error to add parameters to a completed DataSet.
 
 DataSet.add_parameters(specs)
     Adds a list of parameters to the DataSet.
     Each item in the list should be a ParamSpec object.
+    If the DataSet is not empty, then existing results will have the type-appropriate null value for the new parameters.
+    
+    It is an error to add parameters to a completed DataSet.
 
 DataSet.add_metadata(tag=, metadata=)
     Adds metadata to the DataSet.
@@ -148,7 +155,9 @@ DataSet.add_result(**kwargs)
     Adds a result to the DataSet.
     Keyword parameters should have the name of a parameter as the keyword and the value to associate as the value.
     If there is only one positional parameter and it is a dictionary, then it is interpreted as a map from parameter name to parameter value.
+    
     It is an error to provide a value for a key or keyword that is not the name of a parameter in this DataSet.
+    
     It is an error to add a result to a completed DataSet.
 
 DataSet.add_results(args)
@@ -156,12 +165,15 @@ DataSet.add_results(args)
     The single argument should be a sequence of dictionaries, where each dictionary provides the values for all of the parameters in that result.
     See the add_result method for a description of such a dictionary.
     The order of dictionaries in the sequence will be the same as the order in which they are added to the DataSet.
+    
     It is an error to add results to a completed DataSet.
 
 DataSet.add_parameter_values(spec, values)
 	Adds a parameter to the DataSet and associates result values with the new parameter.
 	The values must be a NumPy array or a Python list, with each element holding a single result value that matches the parameter's data type.
 	If the DataSet is not empty, then the count of provided values must equal the current count of results in the DataSet, or an error will result.
+    
+    It is an error to add parameters to a completed DataSet.
 	
 DataSet.mark_complete()
     Marks the DataSet as completed.
@@ -177,32 +189,45 @@ DataSet.is_empty
     It is equivalent to testing if the length is zero.
 
 DataSet.is_marked_complete
-    This attribute will be true if the DataSet is completed or false if it is in progress.
+    This attribute will be true if the DataSet has been marked as complete or false if it is in progress.
 
 DataSet.get_data(*params, start=, end=)
     Returns the values stored in the DataSet for the specified parameters.
     The values are returned as a list of parallel NumPy arrays, one array per parameter.
     The data type of each array is based on the data type provided when the DataSet was created.
-    If a parameter is optional and no value was provided for one or more results, the corresponding array entries will be the “null” value for the data type: zero for integers, NaN for floats, “” for strings, None for objects.
+    
     The parameter list may contain a mix of string parameter names, QCoDeS Parameter objects, and ParamSpec objects.
+    
     If provided, the start and end parameters select a range of results by result count (index). 
     Start defaults to 0, and end defaults to the current length.
-    If the range is empty -- that is, if the end is less than or equal to the start – then a list of empty arrays is returned.
+    
+    If the range is empty -- that is, if the end is less than or equal to the start, or if start is after the current end of the DataSet –
+    then a list of empty arrays is returned.
 
 DataSet.get_parameters()
     Returns a list of ParamSpec objects that describe the parameters stored in this DataSet.
 
 DataSet.get_metadata(tag=)
     Returns metadata for this DataSet.
+    
     If a tag string is provided, only metadata stored under that tag is returned.
     Otherwise, all metadata is returned.
+    
+Subscribing
+----------------
 
-DataSet.subscribe(callback, state=)
+DataSet.subscribe(callback, min_wait=, min_count=, state=)
     Subscribes the provided callback function to result additions to the DataSet.
-    Every time one or more results are added to the DataSet, the callback is called.
-    It is passed the DataSet itself, the length of the DataSet before the triggering addition, the length after the addition, and the state object provided when subscribing.
+    As results are added to the DataSet, the subscriber is notified by having the callback invoked.
+    
+    - min_wait is the minimum amount of time between notifications for this subscription, in milliseconds. The default is 100.
+    - min_count is the minimum number of results for which a notification should be sent. The default is 1.
+    
+    When the callback is invoked, it is passed the DataSet itself, the current length of the DataSet, and the state object provided when subscribing.
     If no state object was provided, then the callback gets passed None as the fourth parameter.
-    When the DataSet is completed, the callback gets called with the length of the DataSet as both the before and after lengths.
+    
+    The callback is invoked when the DataSet is completed, regardless of the values of min_wait and min_count.
+    
     This method returns an opaque subscription identifier.
 
 DataSet.unsubscribe(subid)
@@ -215,23 +240,30 @@ Storage
 DataSet.read_from(location, formatter=)
     Reads a DataSet from persistent store.
     Location may be a string file system path, a string URL, or some other string that is meaningful to the formatter specified.
+    
     Formatter is a QCoDeS Formatter object that specifies how data is read and written. 
-    If not provided, the default formatter is used. 
+    If not provided, the correct formatter is determined from the file extension and file format.
+    If the correct formatter cannot be determined, the default formatter is used. 
     The default formatter is currently GNUPlotFormat().
+    
     This is a static method in the DataSet class.
     It returns a new DataSet object.
 
 DataSet.read_updates()
     Updates the DataSet by reading any new results and metadata written since the last read.
+    
     This method returns a tuple of two Booleans indicating whether or not there were new results and whether or not there was new metadata.
 
 DataSet.write(location, formatter=, overwrite=)
     Writes the DataSet to persistent store.
     Location may be a string file system path, a string URL, or some other string that is meaningful to the formatter specified.
+    
     Formatter is a QCoDeS Formatter object that specifies how data is read and written. 
     If not provided, the default formatter is used; currently the default is GNUPlotFormat().
+    
     Overwrite, if true, indicates that any old data found at the specified location should be deleted.
     Otherwise, it is an error to specify a location that is already in use.
+    
     This method can be called even if the DataSet is empty, in order to specify the location and format
 
 DataSet.write_updates()
@@ -241,8 +273,10 @@ DataSet.write_updates()
 DataSet.write_copy(location, formatter=, overwrite=)
     Writes a separate copy of the DataSet to persistent store.
     Location may be a string file system path, a string URL, or some other string that is meaningful to the formatter specified.
+    
     Formatter is a QCoDeS Formatter object that specifies how data is read and written. 
     If not provided, the formatter for the DataSet is used. 
+    
     Overwrite, if true, indicates that any old data found at the specified location should be deleted.
     Otherwise, it is an error to specify a location that is already in use.
 
