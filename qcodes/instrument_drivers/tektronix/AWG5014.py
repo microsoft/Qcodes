@@ -12,6 +12,7 @@ from pyvisa.errors import VisaIOError
 
 log = logging.getLogger(__name__)
 
+
 def parsestr(v):
     return v.strip().strip('"')
 
@@ -27,9 +28,10 @@ class Tektronix_AWG5014(VisaInstrument):
         - The output markers are always in High/Low mode
 
     TODO:
-        - Not all functionality is available in the driver
-        - There is some double functionality
-        - There are some inconsistensies between the name of a parameter and
+        - Implement support for cable transfer function compensation
+        - Implement more instrument functionality in the driver
+        - Remove double functionality
+        - Remove inconsistensies between the name of a parameter and
           the name of the same variable in the tektronix manual
 
     In the future, we should consider the following:
@@ -138,7 +140,6 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         super().__init__(name, address, timeout=timeout, **kwargs)
 
-
         self._address = address
 
         self._values = {}
@@ -153,7 +154,7 @@ class Tektronix_AWG5014(VisaInstrument):
                            set_cmd='AWGControl:RMODe ' + '{}',
                            vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'),
                            get_parser=self.newlinestripper
-                          )
+                           )
         self.add_parameter('ref_clock_source',
                            label='Reference clock source',
                            get_cmd='AWGControl:CLOCk:SOURce?',
@@ -192,7 +193,15 @@ class Tektronix_AWG5014(VisaInstrument):
                                subsequently set sequence_length to 21,
                                all sequence elements except the first
                                20 will be deleted.
-                               """))
+                               """)
+                           )
+
+        self.add_parameter('sequence_pos',
+                           label='Sequence position',
+                           get_cmd='AWGControl:SEQuencer:POSition?',
+                           set_cmd='SEQuence:JUMP:IMMediate {}',
+                           vals=vals.Ints(1)
+                           )
 
         # Trigger parameters #
         # Warning: `trigger_mode` is the same as `run_mode`, do not use! exists
@@ -261,7 +270,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
         self.add_parameter('setup_filename',
                            get_cmd='AWGControl:SNAMe?')
-        
+
         # Channel parameters #
         for i in range(1, 5):
             amp_cmd = 'SOURce{}:VOLTage:LEVel:IMMediate:AMPLitude'.format(i)
@@ -489,11 +498,13 @@ class Tektronix_AWG5014(VisaInstrument):
               - int: The number of bytes written,
               - enum 'Statuscode': whether the write was succesful
         """
-        return self.visa_handle.write('MMEMory:CDIRectory "{}"'.format(file_path))
+        writecmd = 'MMEMory:CDIRectory "{}"'
+        return self.visa_handle.write(writecmd.format(file_path))
 
     def change_folder(self, folder):
         """Duplicate of self.set_current_folder_name"""
-        return self.visa_handle.write('MMEMory:CDIRectory "\{}"'.format(folder))
+        writecmd = 'MMEMory:CDIRectory "\{}"'
+        return self.visa_handle.write(writecmd.format(folder))
 
     def goto_root(self):
         """
@@ -768,28 +779,6 @@ class Tektronix_AWG5014(VisaInstrument):
               either hardware or software sequencer mode.
         """
         return self.ask('AWGControl:SEQuence:TYPE?')
-
-    def get_sq_position(self):
-        """
-        This query returns the current position of the sequencer.
-
-        Returns:
-            str: The current sequencer position.
-
-        """
-        return self.ask('AWGControl:SEQuence:POSition?')
-
-    def sq_forced_jump(self, jump_index_no):
-        """
-        This command forces the sequencer to jump to the specified
-        element index. This is called a Force jump. This command does
-        not require an event for executing the jump. Also, the Jump
-        target specified for event jump is not used here.
-
-        Args:
-            jump_index_no (int): The target index to jump to.
-        """
-        self.write('SEQuence:JUMP:IMMediate {}'.format(jump_index_no))
 
     ######################
     # AWG file functions #
@@ -1082,8 +1071,10 @@ class Tektronix_AWG5014(VisaInstrument):
         for k in list(channel_cfg.keys()):
             ch_k = k[:-1] + 'N'
             if ch_k in self.AWG_FILE_FORMAT_CHANNEL:
-                ch_record_str.write(self._pack_record(k, channel_cfg[k],
-                                                      self.AWG_FILE_FORMAT_CHANNEL[ch_k]))
+                pack = self._pack_record(k, channel_cfg[k],
+                                         self.AWG_FILE_FORMAT_CHANNEL[ch_k])
+                ch_record_str.write(pack)
+
             else:
                 log.warning('AWG: ' + k +
                             ' not recognized as valid AWG channel setting')
@@ -1210,8 +1201,8 @@ class Tektronix_AWG5014(VisaInstrument):
                 Each marker should be a numpy array containing only 0's and 1's
 
             nreps (list): List of integers specifying the no. of
-                repetions per sequence element.  Allowed values: 1 to
-                65536.
+                repetions per sequence element.  Allowed values: 0 to
+                65536. 0 corresponds to Infinite repetions.
 
             trig_waits (list): List of len(segments) of integers specifying the
                 trigger wait state of each sequence element.
@@ -1240,7 +1231,7 @@ class Tektronix_AWG5014(VisaInstrument):
         # by default, an unusable directory is targeted on the AWG
         self.visa_handle.write('MMEMory:CDIRectory ' +
                                '"C:\\Users\\OEM\\Documents"')
-        
+
         # waveform names and the dictionary of packed waveforms
         packed_wfs = {}
         waveform_names = []
@@ -1307,8 +1298,8 @@ class Tektronix_AWG5014(VisaInstrument):
                 Each marker should be a numpy array containing only 0's and 1's
 
             nreps (list): List of integers specifying the no. of
-                repetions per sequence element.  Allowed values: 1 to
-                65536.
+                repetions per sequence element.  Allowed values: 0 to
+                65536. O corresponds to Infinite repetions.
 
             trig_waits (list): List of len(segments) of integers specifying the
                 trigger wait state of each sequence element.
@@ -1489,10 +1480,10 @@ class Tektronix_AWG5014(VisaInstrument):
         chandcs = [self.ch1_DC_out, self.ch2_DC_out, self.ch3_DC_out,
                    self.ch4_DC_out]
 
-        restore = self.chandcs[DC_channel_number].get()
-        self.chandcs[DC_channel_number].set(set_level)
+        restore = chandcs[DC_channel_number].get()
+        chandcs[DC_channel_number].set(set_level)
         sleep(length)
-        self.chandcs[DC_channel_number].set(restore)
+        chandcs[DC_channel_number].set(restore)
 
     def is_awg_ready(self):
         """
@@ -1593,4 +1584,3 @@ class Tektronix_AWG5014(VisaInstrument):
             except VisaIOError:
                 gotexception = True
         self.visa_handle.timeout = original_timeout
-
