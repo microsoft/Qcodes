@@ -1,11 +1,13 @@
 import struct
 import logging
+import warnings
 
 import numpy as np
 import array as arr
 
 from time import sleep, localtime
 from io import BytesIO
+
 from qcodes import VisaInstrument, validators as vals
 from pyvisa.errors import VisaIOError
 
@@ -212,7 +214,7 @@ class Tektronix_AWG5014(VisaInstrument):
                            vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'),
                            get_parser=self.newlinestripper)
         self.add_parameter('trigger_impedance',
-                           label='Trigger impedance (Ohm)',
+                           label='Trigger impedance',
                            unit='Ohm',
                            get_cmd='TRIGger:IMPedance?',
                            set_cmd='TRIGger:IMPedance ' + '{}',
@@ -220,7 +222,7 @@ class Tektronix_AWG5014(VisaInstrument):
                            get_parser=float)
         self.add_parameter('trigger_level',
                            unit='V',
-                           label='Trigger level (V)',
+                           label='Trigger level',
                            get_cmd='TRIGger:LEVel?',
                            set_cmd='TRIGger:LEVel ' + '{:.3f}',
                            vals=vals.Numbers(-5, 5),
@@ -244,13 +246,15 @@ class Tektronix_AWG5014(VisaInstrument):
                            vals=vals.Enum('POS', 'NEG'),
                            get_parser=self.newlinestripper)
         self.add_parameter('event_impedance',
-                           label='Event impedance (Ohm)',
+                           label='Event impedance',
+                           unit='Ohm',
                            get_cmd='EVENt:IMPedance?',
                            set_cmd='EVENt:IMPedance ' + '{}',
                            vals=vals.Enum(50, 1000),
                            get_parser=float)
         self.add_parameter('event_level',
-                           label='Event level (V)',
+                           label='Event level',
+                           unit='V',
                            get_cmd='EVENt:LEVel?',
                            set_cmd='EVENt:LEVel ' + '{:.3f}',
                            vals=vals.Numbers(-5, 5),
@@ -262,7 +266,8 @@ class Tektronix_AWG5014(VisaInstrument):
                            get_parser=self.newlinestripper)
 
         self.add_parameter('clock_freq',
-                           label='Clock frequency (Hz)',
+                           label='Clock frequency',
+                           unit='Hz',
                            get_cmd='SOURce:FREQuency?',
                            set_cmd='SOURce:FREQuency ' + '{}',
                            vals=vals.Numbers(1e6, 1.2e9),
@@ -290,14 +295,14 @@ class Tektronix_AWG5014(VisaInstrument):
                                vals=vals.Ints(0, 1),
                                get_parser=int)
             self.add_parameter('ch{}_amp'.format(i),
-                               label='Amplitude channel {} (Vpp)'.format(i),
+                               label='Amplitude channel {}'.format(i),
                                unit='Vpp',
                                get_cmd=amp_cmd + '?',
                                set_cmd=amp_cmd + ' {:.6f}',
                                vals=vals.Numbers(0.02, 4.5),
                                get_parser=float)
             self.add_parameter('ch{}_offset'.format(i),
-                               label='Offset channel {} (V)'.format(i),
+                               label='Offset channel {}'.format(i),
                                unit='V',
                                get_cmd=offset_cmd + '?',
                                set_cmd=offset_cmd + ' {:.3f}',
@@ -346,21 +351,24 @@ class Tektronix_AWG5014(VisaInstrument):
 
                 self.add_parameter(
                     'ch{}_m{}_del'.format(i, j),
-                    label='Channel {} Marker {} delay (ns)'.format(i, j),
+                    label='Channel {} Marker {} delay'.format(i, j),
+                    units='ns',
                     get_cmd=m_del_cmd + '?',
                     set_cmd=m_del_cmd + ' {:.3f}e-9',
                     vals=vals.Numbers(0, 1),
                     get_parser=float)
                 self.add_parameter(
                     'ch{}_m{}_high'.format(i, j),
-                    label='Channel {} Marker {} high level (V)'.format(i, j),
+                    label='Channel {} Marker {} high level'.format(i, j),
+                    unit='V',
                     get_cmd=m_high_cmd + '?',
                     set_cmd=m_high_cmd + ' {:.3f}',
                     vals=vals.Numbers(-2.7, 2.7),
                     get_parser=float)
                 self.add_parameter(
                     'ch{}_m{}_low'.format(i, j),
-                    label='Channel {} Marker {} low level (V)'.format(i, j),
+                    label='Channel {} Marker {} low level'.format(i, j),
+                    unit='V',
                     get_cmd=m_low_cmd + '?',
                     set_cmd=m_low_cmd + ' {:.3f}',
                     vals=vals.Numbers(-2.7, 2.7),
@@ -398,7 +406,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Raises:
             DeprecationWarning
         """
-        raise DeprecationWarning("Use snapshot(update=update) directly")
+        warnings.warn("Deprecated! Use snapshot(update=update) directly")
         return self.snapshot(update=update)
 
     def get_state(self):
@@ -711,7 +719,6 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         This command sets the wait trigger state for an element. Send
         a trigger signal in one of the following ways:
-
           * By using an external trigger signal.
           * By pressing the “Force Trigger” button on the front panel
           * By using self.force_trigger or self.force_trigger_event
@@ -732,7 +739,6 @@ class Tektronix_AWG5014(VisaInstrument):
         """
         This query returns the wait trigger state for an element. Send
         a trigger signal in one of the following ways:
-
           * By using an external trigger signal.
           * By pressing the “Force Trigger” button on the front panel
           * By using self.force_trigger or self.force_trigger_event
@@ -805,7 +811,7 @@ class Tektronix_AWG5014(VisaInstrument):
         Args:
             name (str): Name of the record (Example: 'MAGIC' or
             'SAMPLING_RATE')
-            value (int): The value of that record.
+            value (Union[int, str]): The value of that record.
             dtype (str): String specifying the data type of the record.
                 Allowed values: 'h', 'd', 's'.
         """
@@ -1010,19 +1016,19 @@ class Tektronix_AWG5014(VisaInstrument):
             wfname_l (numpy.ndarray): array of waveform names, e.g.
                 array([[segm1_ch1,segm2_ch1..], [segm1_ch2,segm2_ch2..],...])
 
-            nrep_l (list): list of len(segments) of integers specifying the
+            nrep (list): list of len(segments) of integers specifying the
                 no. of repetions per sequence element.
                 Allowed values: 1 to 65536.
 
-            wait_l (list): list of len(segments) of integers specifying the
+            trig_wait (list): list of len(segments) of integers specifying the
                 trigger wait state of each sequence element.
                 Allowed values: 0 (OFF) or 1 (ON).
 
-            goto_l (list): list of len(segments) of integers specifying the
+            goto_state (list): list of len(segments) of integers specifying the
                 goto state of each sequence element. Allowed values: 0 to 65536
                 (0 means next)
 
-            logic_jump_l (list): list of len(segments) of integers specifying
+            jump_to (list): list of len(segments) of integers specifying
                 the logic jump state for each sequence element. Allowed values:
                 0 (OFF) or 1 (ON).
 
