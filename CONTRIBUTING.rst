@@ -393,6 +393,7 @@ NOTE(giulioungaretti): is this enough ?
 -  A lot of editors have plugins that will check this for you
    automatically as you type. Sublime Text for example has
    sublimelinter-pep8 and the even more powerful sublimelinter-flake8.
+   For Emacs, the elpy package is strongly recommended (https://github.com/jorgenschaefer/elpy).
 -  BUT: do not change someone else's code to make it pep8-compliant
    unless that code is fully tested.
 -  BUT: remove all trailing spaces.

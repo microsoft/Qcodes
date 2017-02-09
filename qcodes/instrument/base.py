@@ -97,13 +97,13 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
 
     def get_idn(self):
         """
-        Parse a standard VISA '*IDN?' response into an ID dict.
+        Parse a standard VISA '\*IDN?' response into an ID dict.
 
         Even though this is the VISA standard, it applies to various other
         types as well, such as IPInstruments, so it is included here in the
         Instrument base class.
 
-        Override this if your instrument does not support '*IDN?' or
+        Override this if your instrument does not support '\*IDN?' or
         returns a nonstandard IDN string. This string is supposed to be a
         comma-separated list of vendor, model, serial, and firmware, but
         semicolon and colon are also common separators so we accept them here
@@ -382,7 +382,7 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
         for every real function of the instrument.
 
         This functionality is meant for simple cases, principally things that
-        map to simple commands like '*RST' (reset) or those with just a few
+        map to simple commands like '\*RST' (reset) or those with just a few
         arguments. It requires a fixed argument count, and positional args
         only. If your case is more complicated, you're probably better off
         simply making a new method in your ``Instrument`` subclass definition.
@@ -624,10 +624,10 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
     def __getstate__(self):
         """Prevent pickling instruments, and give a nice error message."""
         raise RuntimeError(
-            'qcodes Instruments should not be pickled. Likely this means you '
+            'Pickling %s. qcodes Instruments should not be pickled. Likely this means you '
             'were trying to use a local instrument (defined with '
             'server_name=None) in a background Loop. Local instruments can '
-            'only be used in Loops with background=False.')
+            'only be used in Loops with background=False.' % self.name)
 
     def validate_status(self, verbose=False):
         """ Validate the values of all gettable parameters

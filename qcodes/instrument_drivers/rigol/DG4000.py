@@ -99,7 +99,7 @@ class Rigol_DG4000(VisaInstrument):
         self.add_parameter('counter_gate_time',
                            get_cmd='COUN:GATE?',
                            set_cmd='COUN:GATE {}',
-                           units='s',
+                           unit='s',
                            val_mapping={
                                'auto': 'AUTO',
                                0.001:  'USER1',
@@ -118,14 +118,14 @@ class Rigol_DG4000(VisaInstrument):
         self.add_parameter('counter_impedance',
                            get_cmd='COUN:IMP?',
                            set_cmd='COUN:IMP {}',
-                           units='Ohm',
+                           unit='Ohm',
                            val_mapping={50: '50', 1e6: '1M'})
 
         self.add_parameter('counter_trigger_level',
                            get_cmd='COUN:LEVE?',
                            get_parser=float,
                            set_cmd='COUN:LEVE {}',
-                           units='V',
+                           unit='V',
                            vals=Numbers(min_value=-2.5, max_value=2.5))
 
         self.add_parameter('counter_enabled',
@@ -146,7 +146,7 @@ class Rigol_DG4000(VisaInstrument):
                            get_cmd='COUN:SENS?',
                            get_parser=float,
                            set_cmd='COUN:SENS {}',
-                           units='%',
+                           unit='%',
                            vals=Numbers(min_value=0, max_value=100))
 
         # Output and Source parameters for both channel 1 and 2
@@ -159,7 +159,7 @@ class Rigol_DG4000(VisaInstrument):
                                get_cmd=output + 'IMP?',
                                get_parser=parse_string_output,
                                set_cmd=output + 'IMP {}',
-                               units='Ohm',
+                               unit='Ohm',
                                vals=MultiType(Numbers(min_value=1,
                                                       max_value=10e3),
                                               Enum('infinity',
@@ -170,7 +170,7 @@ class Rigol_DG4000(VisaInstrument):
                                get_cmd=output + 'NOIS:SCAL?',
                                get_parser=float,
                                set_cmd=output + 'NOIS:SCAL',
-                               units='%',
+                               unit='%',
                                vals=Numbers(min_value=0, max_value=50))
 
             self.add_parameter(ch + 'add_noise_enabled',
@@ -272,14 +272,14 @@ class Rigol_DG4000(VisaInstrument):
                                get_cmd=source + 'BURS:INT:PER?',
                                get_parser=float,
                                set_cmd=source + 'BURS:INT:PER {}',
-                               units='s',
+                               unit='s',
                                vals=Numbers(1e-6))
 
             self.add_parameter(ch + 'burst_phase',
                                get_cmd=source + 'BURS:PHAS?',
                                get_parser=float,
                                set_cmd=source + 'BURS:PHAS {}',
-                               units='deg',
+                               unit='deg',
                                vals=Numbers(0, 360))
 
             self.add_parameter(ch + 'burst_trigger_edge',
@@ -309,28 +309,28 @@ class Rigol_DG4000(VisaInstrument):
                                get_cmd=source + 'FREQ:CENT?',
                                get_parser=float,
                                set_cmd=source + 'FREQ:CENT {}',
-                               units='Hz',
+                               unit='Hz',
                                vals=Numbers(1e-6))
 
             self.add_parameter(ch + 'frequency',
                                get_cmd=source + 'FREQ?',
                                get_parser=float,
                                set_cmd=source + 'FREQ {}',
-                               units='Hz',
+                               unit='Hz',
                                vals=Numbers(1e-6))
 
             self.add_parameter(ch + 'frequency_start',
                                get_cmd=source + 'FREQ:STAR?',
                                get_parser=float,
                                set_cmd=source + 'FREQ:STAR {}',
-                               units='Hz',
+                               unit='Hz',
                                vals=Numbers(1e-6))
 
             self.add_parameter(ch + 'frequency_stop',
                                get_cmd=source + 'FREQ:STOP?',
                                get_parser=float,
                                set_cmd=source + 'FREQ:STOP {}',
-                               units='Hz',
+                               unit='Hz',
                                vals=Numbers(1e-6))
 
             # Source Function
@@ -338,14 +338,14 @@ class Rigol_DG4000(VisaInstrument):
                                get_cmd=source + 'FUNC:RAMP:SYMM?',
                                get_parser=float,
                                set_cmd=source + 'FUNC:RAMP:SYMM {}',
-                               units='%',
+                               unit='%',
                                vals=Numbers(0, 100))
 
             self.add_parameter(ch + 'square_duty_cycle',
                                get_cmd=source + 'FUNC:SQU:DCYC?',
                                get_parser=float,
                                set_cmd=source + 'FUNC:SQU:DCYC {}',
-                               units='%',
+                               unit='%',
                                vals=Numbers(20, 80))
 
             # Source Harmonic
@@ -384,7 +384,7 @@ class Rigol_DG4000(VisaInstrument):
                                get_cmd=source + 'MARK:FREQ?',
                                get_parser=float,
                                set_cmd=source + 'HMARK:FREQ {}',
-                               units='Hz',
+                               unit='Hz',
                                vals=Numbers(1e-6))
 
             self.add_parameter(ch + 'marker_enabled',
@@ -401,7 +401,7 @@ class Rigol_DG4000(VisaInstrument):
                                get_cmd=source + 'PHAS?',
                                get_parser=float,
                                set_cmd=source + 'PHAS {}',
-                               units='deg',
+                               unit='deg',
                                vals=Numbers(0, 360))
 
             self.add_function(ch + 'align_phase',
@@ -412,41 +412,41 @@ class Rigol_DG4000(VisaInstrument):
                                get_cmd=source + 'PULS:DCYC?',
                                get_parser=float,
                                set_cmd=source + 'PULS:DCYC {}',
-                               units='%',
+                               unit='%',
                                vals=Numbers(0, 100))
 
             self.add_parameter(ch + 'pulse_delay',
                                get_cmd=source + 'PULS:DEL?',
                                get_parser=float,
                                set_cmd=source + 'PULS:DEL {}',
-                               units='s',
+                               unit='s',
                                vals=Numbers(0))
 
             self.add_parameter(ch + 'pulse_hold',
                                get_cmd=source + 'PULS:HOLD?',
                                set_cmd=source + 'PULS:HOLD {}',
-                               units='s',
+                               unit='s',
                                val_mapping={'width': 'WIDT', 'duty': 'DUTY'})
 
             self.add_parameter(ch + 'pulse_leading_edge',
                                get_cmd=source + 'PULS:TRAN:LEAD?',
                                get_parser=float,
                                set_cmd=source + 'PULS:TRAN:LEAD {}',
-                               units='s',
+                               unit='s',
                                vals=Numbers(0))
 
             self.add_parameter(ch + 'pulse_trailing_edge',
                                get_cmd=source + 'PULS:TRAN:TRA?',
                                get_parser=float,
                                set_cmd=source + 'PULS:TRAN:TRA {}',
-                               units='s',
+                               unit='s',
                                vals=Numbers(0))
 
             self.add_parameter(ch + 'pulse_width',
                                get_cmd=source + 'PULS:WIDT?',
                                get_parser=float,
                                set_cmd=source + 'PULS:WIDT {}',
-                               units='s',
+                               unit='s',
                                vals=Numbers(0))
 
             # Source Sweep
@@ -454,21 +454,21 @@ class Rigol_DG4000(VisaInstrument):
                                get_cmd=source + 'SWE:HTIM:STAR?',
                                get_parser=float,
                                set_cmd=source + 'SWE:HTIM:STAR {}',
-                               units='s',
+                               unit='s',
                                vals=Numbers(0, 300))
 
             self.add_parameter(ch + 'sweep_hold_stop',
                                get_cmd=source + 'SWE:HTIM:STOP?',
                                get_parser=float,
                                set_cmd=source + 'SWE:HTIM:STOP {}',
-                               units='s',
+                               unit='s',
                                vals=Numbers(0, 300))
 
             self.add_parameter(ch + 'sweep_return_time',
                                get_cmd=source + 'SWE:RTIM?',
                                get_parser=float,
                                set_cmd=source + 'SWE:RTIM {}',
-                               units='s',
+                               unit='s',
                                vals=Numbers(0, 300))
 
             self.add_parameter(ch + 'sweep_spacing',
@@ -493,7 +493,7 @@ class Rigol_DG4000(VisaInstrument):
                                get_cmd=source + 'SWE:TIME?',
                                get_parser=float,
                                set_cmd=source + 'SWE:TIME {}',
-                               units='s',
+                               unit='s',
                                vals=Numbers(1e-3, 300))
 
             # Source Voltage
@@ -501,14 +501,14 @@ class Rigol_DG4000(VisaInstrument):
                                get_cmd=source + 'VOLT?',
                                get_parser=float,
                                set_cmd=source + 'VOLT {}',
-                               units='V',
+                               unit='V',
                                vals=Numbers())
 
             self.add_parameter(ch + 'offset',
                                get_cmd=source + 'VOLT:OFFS?',
                                get_parser=float,
                                set_cmd=source + 'VOLT:OFFS {}',
-                               units='V',
+                               unit='V',
                                vals=Numbers())
 
             self.add_parameter(ch + 'unit',

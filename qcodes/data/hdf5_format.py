@@ -13,6 +13,7 @@ class HDF5Format(Formatter):
 
     Capable of storing (write) and recovering (read) qcodes datasets.
     """
+
     def close_file(self, data_set):
         """
         Closes the hdf5 file open in the dataset.
@@ -61,7 +62,13 @@ class HDF5Format(Formatter):
             # write ensures these attributes always exist
             name = dat_arr.attrs['name'].decode()
             label = dat_arr.attrs['label'].decode()
-            units = dat_arr.attrs['units'].decode()
+
+            # get unit from units if no unit field, for backward compatibility
+            if 'unit' in dat_arr.attrs:
+                unit = dat_arr.attrs['unit'].decode()
+            else:
+                unit = dat_arr.attrs['units'].decode()
+
             is_setpoint = str_to_bool(dat_arr.attrs['is_setpoint'].decode())
             # if not is_setpoint:
             set_arrays = dat_arr.attrs['set_arrays']
@@ -74,7 +81,7 @@ class HDF5Format(Formatter):
             if array_id not in data_set.arrays.keys():  # create new array
                 d_array = DataArray(
                     name=name, array_id=array_id, label=label, parameter=None,
-                    units=units,
+                    unit=unit,
                     is_setpoint=is_setpoint, set_arrays=(),
                     preset_data=vals)
                 data_set.add_array(d_array)
@@ -82,7 +89,7 @@ class HDF5Format(Formatter):
                 d_array = data_set.arrays[array_id]
                 d_array.name = name
                 d_array.label = label
-                d_array.units = units
+                d_array.unit = unit
                 d_array.is_setpoint = is_setpoint
                 d_array.ndarray = vals
                 d_array.shape = dat_arr.attrs['shape']
@@ -118,33 +125,34 @@ class HDF5Format(Formatter):
         return data_set._h5_base_group
 
     def write(self, data_set, io_manager=None, location=None,
-              force_write=False, flush=True):
+              force_write=False, flush=True, write_metadata=True):
         """
         Writes a data_set to an hdf5 file.
-        Input arguments:
-            data_set        qcodes data_set to write to hdf5 file
-            io_manager      io_manger used for providing path
-            location:       location can be used to specify custom location
+
+        Args:
+            data_set: qcodes data_set to write to hdf5 file
+            io_manager: io_manger used for providing path
+            location: location can be used to specify custom location
             force_write (bool): if True creates a new file to write to
-            flush (bool) :  whether to flush after writing, can be disabled
-                            for testing or performance reasons
+            flush (bool) : whether to flush after writing, can be disabled
+                for testing or performance reasons
 
         N.B. It is recommended to close the file after writing, this can be
-        done by calling
-            'HDF5Format.close_file(data_set)' or
-            'data_set.finalize()'
-        if the data_set formatter is set to an hdf5 formatter. Note that this
-        is not required if the dataset is created from a Loop as this
+        done by calling ``HDF5Format.close_file(data_set)`` or
+        ``data_set.finalize()`` if the data_set formatter is set to an hdf5 formatter.
+        Note that this is not required if the dataset is created from a Loop as this
         includes a data_set.finalize() statement.
 
         The write function consists of two parts, writing DataArrays and
         writing metadata.
-            The main part of write consists of writing and resizing arrays,
-            the resizing providing support for incremental writes.
 
-            write_metadata is called at the end of write and dumps a
-            dictionary to an hdf5 file. If there already is metadata it will
-            delete this and overwrite it with current metadata.
+            - The main part of write consists of writing and resizing arrays,
+              the resizing providing support for incremental writes.
+
+            - write_metadata is called at the end of write and dumps a
+              dictionary to an hdf5 file. If there already is metadata it will
+              delete this and overwrite it with current metadata.
+
         """
         if not hasattr(data_set, '_h5_base_group') or force_write:
             data_set._h5_base_group = self._create_data_object(
@@ -172,13 +180,15 @@ class HDF5Format(Formatter):
             new_datasetshape = (new_dlen,
                                 datasetshape[1])
             dset.resize(new_datasetshape)
-            new_data_shape = (new_dlen-old_dlen, datasetshape[1])
+            new_data_shape = (new_dlen - old_dlen, datasetshape[1])
             dset[old_dlen:new_dlen] = x[old_dlen:new_dlen].reshape(
                 new_data_shape)
             # allow resizing extracted data, here so it gets written for
             # incremental writes aswell
             dset.attrs['shape'] = x.shape
-        self.write_metadata(data_set)
+        if write_metadata:
+            self.write_metadata(
+                data_set, io_manager=io_manager, location=location)
 
         # flush ensures buffers are written to disk
         # (useful for ensuring openable by other files)
@@ -192,9 +202,6 @@ class HDF5Format(Formatter):
         group:  group in the hdf5 file where the dset will be created
 
         creates a hdf5 datasaset that represents the data array.
-
-        note that the attribute "units" is used for shape determination
-        in the case of tuple-like variables.
         '''
         # Check for empty meta attributes, use array_id if name and/or label
         # is not specified
@@ -202,24 +209,19 @@ class HDF5Format(Formatter):
             label = array.label
         else:
             label = array.array_id
+
         if array.name is not None:
             name = array.name
         else:
             name = array.array_id
-        if array.units is None:
-            array.units = ['']  # used for shape determination
-        units = array.units
+
         # Create the hdf5 dataset
-        if isinstance(units, str):
-            n_cols = 1
-        else:
-            n_cols = len(array.units)
         dset = group.create_dataset(
-            array.array_id, (0, n_cols),
-            maxshape=(None, n_cols))
+            array.array_id, (0, 1),
+            maxshape=(None, 1))
         dset.attrs['label'] = _encode_to_utf8(str(label))
         dset.attrs['name'] = _encode_to_utf8(str(name))
-        dset.attrs['units'] = _encode_to_utf8(str(units))
+        dset.attrs['unit'] = _encode_to_utf8(str(array.unit or ''))
         dset.attrs['is_setpoint'] = _encode_to_utf8(str(array.is_setpoint))
 
         set_arrays = []
@@ -231,7 +233,7 @@ class HDF5Format(Formatter):
 
         return dset
 
-    def write_metadata(self, data_set, io=None, location=None):
+    def write_metadata(self, data_set, io_manager=None, location=None, read_first=True):
         """
         Writes metadata of dataset to file using write_dict_to_hdf5 method
 
@@ -239,6 +241,7 @@ class HDF5Format(Formatter):
         of backwards compatibility with the loop.
         This formatter uses io and location as specified for the main
         dataset.
+        The read_first argument is ignored.
         """
         if not hasattr(data_set, '_h5_base_group'):
             # added here because loop writes metadata before data itself
@@ -276,6 +279,7 @@ class HDF5Format(Formatter):
                         elif isinstance(item[0], str):
                             dt = h5py.special_dtype(vlen=str)
                             data = np.array(item)
+                            data = data.reshape( (-1,1))
                             ds = entry_point.create_dataset(
                                 key, (len(data), 1), dtype=dt)
                             ds[:] = data

@@ -36,10 +36,12 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
     Args:
         location (str or callable or False, optional): If you provide a string,
             it must be an unused location in the io manager. Can also be:
+
             - a callable ``location provider`` with one required parameter
               (the io manager), and one optional (``record`` dict),
               which returns a location string when called
             - ``False`` - denotes an only-in-memory temporary DataSet.
+
             Note that the full path to or physical location of the data is a
             combination of io + location. the default ``DiskIO`` sets the base
             directory, which this location is a relative path inside.
@@ -66,13 +68,15 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
             ``get_data_manager()``.
 
         mode (DataMode, optional): connection type to the ``DataServer``.
-            ``DataMode.LOCAL``: this DataSet doesn't communicate across
-                processes.
-            ``DataMode.PUSH_TO_SERVER``: no local copy of data, just pushes
-                each measurement to a ``DataServer``.
-            ``DataMode.PULL_FROM_SERVER``: pulls changes from the
-                ``DataServer`` on calling ``self.sync()``. Reverts to local if
-                and when it stops being the live measurement.
+
+            - ``DataMode.LOCAL``: this DataSet doesn't communicate across
+              processes.
+            - ``DataMode.PUSH_TO_SERVER``: no local copy of data, just pushes
+              each measurement to a ``DataServer``.
+            - ``DataMode.PULL_FROM_SERVER``: pulls changes from the
+              ``DataServer`` on calling ``self.sync()``. Reverts to local if
+              and when it stops being the live measurement.
+
             Default ``DataMode.LOCAL``.
 
         arrays (Optional[List[qcodes.DataArray]): arrays to add to the DataSet.
@@ -215,14 +219,16 @@ class DataSet(DelegateAttributes):
             ``get_data_manager()``.
 
         mode (DataMode, optional): connection type to the ``DataServer``.
-            ``DataMode.LOCAL``: this DataSet doesn't communicate across
-                processes.
-            ``DataMode.PUSH_TO_SERVER``: no local copy of data, just pushes
-                each measurement to a ``DataServer``.
-            ``DataMode.PULL_FROM_SERVER``: pulls changes from the
-                ``DataServer`` on calling ``self.sync()``. Reverts to local if
-                and when it stops being the live measurement.
-            Default ``DataMode.LOCAL``.
+
+            - ``DataMode.LOCAL``: this DataSet doesn't communicate across
+              processes.
+            - ``DataMode.PUSH_TO_SERVER``: no local copy of data, just pushes
+              each measurement to a ``DataServer``.
+            - ``DataMode.PULL_FROM_SERVER``: pulls changes from the
+              ``DataServer`` on calling ``self.sync()``. Reverts to local if
+              and when it stops being the live measurement.
+
+            Default to ``DataMode.LOCAL``.
 
         arrays (Optional[List[qcodes.DataArray]): arrays to add to the DataSet.
                 Can be added later with ``self.add_array(array)``.
@@ -277,7 +283,7 @@ class DataSet(DelegateAttributes):
 
         self.metadata = {}
 
-        self.arrays = {}
+        self.arrays = _PrettyPrintDict()
         if arrays:
             self.action_id_map = self._clean_array_ids(arrays)
             for array in arrays:
@@ -386,15 +392,7 @@ class DataSet(DelegateAttributes):
         # could find a robust and intuitive way to make modifications to the
         # version on the DataServer from the main copy)
         if not self.is_live_mode:
-            # LOCAL DataSet - just read it in
-            # Compare timestamps to avoid overwriting unsaved data
-            if self.last_store > self.last_write:
-                return True
-            try:
-                self.read()
-            except IOError:
-                # if no files exist, they probably haven't been created yet.
-                pass
+            # LOCAL DataSet - no need to sync just use local data
             return False
             # TODO - for remote live plotting, maybe set some timestamp
             # threshold and call it static after it's been dormant a long time?
@@ -610,16 +608,16 @@ class DataSet(DelegateAttributes):
                     time.time() > self.last_write + self.write_period):
                 self.write()
                 self.last_write = time.time()
-        else: # in PULL_FROM_SERVER mode; store() isn't legal
+        else:  # in PULL_FROM_SERVER mode; store() isn't legal
             raise RuntimeError('This object is pulling from a DataServer, '
                                'so data insertion is not allowed.')
 
     def default_parameter_name(self, paramname='amplitude'):
         """ Return name of default parameter for plotting
 
-        The default parameter is determined by looking into metdata['default_parameter_name'].
-        If this variable is not present, then the closest match to the argument
-        paramname is tried.
+        The default parameter is determined by looking into
+        metdata['default_parameter_name'].  If this variable is not present,
+        then the closest match to the argument paramname is tried.
 
         Args:
             paramname (str): Name to match to parameter name
@@ -660,7 +658,8 @@ class DataSet(DelegateAttributes):
         """ Return default parameter array
 
         Args:
-            paramname (str): Name to match to parameter name. Defaults to 'amplitude'
+            paramname (str): Name to match to parameter name.
+                 Defaults to 'amplitude'
 
         Returns:
             array (DataArray): array corresponding to the default parameter
@@ -684,11 +683,14 @@ class DataSet(DelegateAttributes):
             return
         self.formatter.read_metadata(self)
 
-    def write(self):
+    def write(self, write_metadata=False):
         """
         Writes updates to the DataSet to storage.
         N.B. it is recommended to call data_set.finalize() when a DataSet is
         no longer expected to change to ensure files get closed
+
+        Args:
+            write_metadata (bool): write the metadata to disk
         """
         if self.mode != DataMode.LOCAL:
             raise RuntimeError('This object is connected to a DataServer, '
@@ -697,7 +699,10 @@ class DataSet(DelegateAttributes):
         if self.location is False:
             return
 
-        self.formatter.write(self, self.io, self.location)
+        self.formatter.write(self,
+                             self.io,
+                             self.location,
+                             write_metadata=write_metadata)
 
     def write_copy(self, path=None, io_manager=None, location=None):
         """
@@ -746,7 +751,7 @@ class DataSet(DelegateAttributes):
             array.modified_range = (0, array.ndarray.size - 1)
 
         try:
-            self.formatter.write(self, io_manager, location)
+            self.formatter.write(self, io_manager, location, force_write=True)
             self.snapshot()
             self.formatter.write_metadata(self, io_manager, location,
                                           read_first=False)
@@ -859,3 +864,18 @@ class DataSet(DelegateAttributes):
             out += out_template.format(info=arr_info_i, lens=column_lengths)
 
         return out
+
+
+class _PrettyPrintDict(dict):
+    """
+    simple wrapper for a dict to repr its items on separate lines
+    with a bit of indentation
+    """
+    def __repr__(self):
+        body = '\n  '.join([repr(k) + ': ' + self._indent(repr(v))
+                            for k, v in self.items()])
+        return '{\n  ' + body + '\n}'
+
+    def _indent(self, s):
+        lines = s.split('\n')
+        return '\n    '.join(lines)

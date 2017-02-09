@@ -119,6 +119,7 @@ class Command:
     # by composing them from a smaller set. But this is our hot path
     # during acquisition Loops, so for performance I wanted to minimize
     # overhead from branching or extra function calls and stack frames.
+    # TODO(giulioungaretti) wihtout benchmarks this is "just like your opinion man"
 
     def call_by_str(self, *args):
         """Execute a formatted string."""

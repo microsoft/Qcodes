@@ -192,7 +192,7 @@ class TestHDF5_Format(TestCase):
                         formatter=self.formatter)
         d_array = DataArray(name='dummy',
                             array_id='x_set',  # existing array id in data
-                            label='bla', units='a.u.', is_setpoint=False,
+                            label='bla', unit='a.u.', is_setpoint=False,
                             set_arrays=(), preset_data=np.zeros(5))
         data2.add_array(d_array)
         # test if d_array refers to same as array x_set in dataset
@@ -331,3 +331,9 @@ class TestHDF5_Format(TestCase):
         F['weird_dict'].attrs['list_type'] = 'unsuported_list_type'
         with self.assertRaises(NotImplementedError):
             self.formatter.read_dict_from_hdf5(new_dict, F)
+
+    def test_writing_metadata(self):
+        # test for issue reported in 442
+        data = DataSet2D(location=self.loc_provider, name='MetaDataTest')
+        data.metadata = {'a': ['hi', 'there']}
+        self.formatter.write(data, write_metadata=True)
