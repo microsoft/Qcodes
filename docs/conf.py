@@ -347,11 +347,10 @@ texinfo_show_urls = 'footnote'
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'statsmodels': ('http://statsmodels.sourceforge.net/devel/', None),
     'matplotlib': ('http://matplotlib.org/', None),
-    'python': ('http://docs.python.org/3', None),
-    'numpy': ('http://docs.scipy.org/doc/numpy', None),
-    'py': ('http://pylib.readthedocs.org/en/latest/', None)
+    'python': ('https://docs.python.org/3.5', None),
+    'numpy': ('https://docs.scipy.org/doc/numpy', None),
+    'py': ('http://pylib.readthedocs.io/en/stable/', None)
 }
 # theming
 import sphinx_rtd_theme
