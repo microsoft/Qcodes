@@ -13,9 +13,11 @@ from qcodes.process.helpers import kill_processes
 from qcodes.utils.helpers import LogCapture
 from qcodes import active_children
 
+from .instrument_mocks import DummyInstrument
 from .data_mocks import (MockDataManager, MockFormatter, MatchIO,
                          MockLive, MockArray, DataSet2D, DataSet1D,
-                         DataSetCombined, RecordingMockFormatter)
+                         DataSetCombined, RecordingMockFormatter,
+                         makeDataSet2D)
 from .common import strip_qc
 
 
@@ -267,19 +269,19 @@ class TestDataArray(TestCase):
         # index = 1 * 10 + 7 - add 1 (for index 0) and you get 18
         # each index is 2% of the total, so this is 36%
         data[1, 7] = 1
-        self.assertEqual(data.fraction_complete(), 18/50)
+        self.assertEqual(data.fraction_complete(), 18 / 50)
 
         # add a last_saved_index but modified_range is still bigger
         data.mark_saved(13)
-        self.assertEqual(data.fraction_complete(), 18/50)
+        self.assertEqual(data.fraction_complete(), 18 / 50)
 
         # now last_saved_index wins
         data.mark_saved(19)
-        self.assertEqual(data.fraction_complete(), 20/50)
+        self.assertEqual(data.fraction_complete(), 20 / 50)
 
         # now pretend we get more info from syncing
         data.synced_index = 22
-        self.assertEqual(data.fraction_complete(), 23/50)
+        self.assertEqual(data.fraction_complete(), 23 / 50)
 
 
 class TestLoadData(TestCase):
@@ -449,10 +451,12 @@ class TestDataSet(TestCase):
         mock_dm.live_data = MockLive()
 
         # wrong location or False location - converts to local
-        data = DataSet(location='Jupiter', data_manager=True, mode=DataMode.PULL_FROM_SERVER)
+        data = DataSet(location='Jupiter', data_manager=True,
+                       mode=DataMode.PULL_FROM_SERVER)
         self.assertEqual(data.mode, DataMode.LOCAL)
 
-        data = DataSet(location=False,  data_manager=True, mode=DataMode.PULL_FROM_SERVER)
+        data = DataSet(location=False,  data_manager=True,
+                       mode=DataMode.PULL_FROM_SERVER)
         self.assertEqual(data.mode, DataMode.LOCAL)
 
         # location matching server - stays in server mode
@@ -495,7 +499,8 @@ class TestDataSet(TestCase):
         mock_dm.needs_restart = True
         gdm_mock.return_value = mock_dm
 
-        data = DataSet(location='Venus', data_manager=True, mode=DataMode.PUSH_TO_SERVER)
+        data = DataSet(location='Venus', data_manager=True,
+                       mode=DataMode.PUSH_TO_SERVER)
         self.assertEqual(mock_dm.needs_restart, False, data)
         self.assertEqual(mock_dm.data_set, data)
         self.assertEqual(data.data_manager, mock_dm)
@@ -586,6 +591,31 @@ class TestDataSet(TestCase):
         m = DataSet2D()
         pickle.dumps(m)
 
+    def test_noqcodesloop(self):
+
+        instr = DummyInstrument(name='dummy', gates=['L', 'R'])
+
+        sweepvalues = instr.R[0:10:1]
+        stepvalues = instr.L[0:10:2]
+        alldata = makeDataSet2D(stepvalues, sweepvalues)
+        alldata2 = makeDataSet2D(stepvalues, sweepvalues)
+        nsweep = len(sweepvalues)
+
+        # test loop functionality of DataSet without a qcodes Loop
+        for ix, x in enumerate(stepvalues):
+            stepvalues.set(x)
+
+            for iy, y in enumerate(sweepvalues):
+                sweepvalues.set(y)
+                if iy == 0:
+                    sweepvalues.set(-y)
+                value = instr.R.get()
+                alldata.measured.ndarray[ix, iy] = value
+            alldata2.measured.ndarray[ix] = np.array(np.arange(nsweep)**2)
+
+        self.assertEqual(alldata.default_parameter_name(), 'measured')
+        self.assertEqual(alldata.measured.shape, (5, 10))
+
     def test_default_parameter(self):
         # Test whether the default_array function works
         m = DataSet2D()
@@ -610,9 +640,10 @@ class TestDataSet(TestCase):
         self.assertEqual(name, 'x_set')
 
         # test the fallback: no name matches, no non-setpoint array
-        x = DataArray(name='x', label='X', preset_data=(1., 2., 3., 4., 5.), is_setpoint=True)
-        m= new_data(arrays=(x,), name='onlysetpoint')
-        name=m.default_parameter_name(paramname='dummy')
+        x = DataArray(name='x', label='X', preset_data=(
+            1., 2., 3., 4., 5.), is_setpoint=True)
+        m = new_data(arrays=(x,), name='onlysetpoint')
+        name = m.default_parameter_name(paramname='dummy')
         self.assertEqual(name, 'x_set')
 
     def test_fraction_complete(self):
