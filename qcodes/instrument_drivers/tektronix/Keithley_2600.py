@@ -20,11 +20,11 @@ class Keithley_2600(VisaInstrument):
         self._channel = channel
 
         self.add_parameter('volt', get_cmd='measure.v()',
-                           get_parser=float, set_cmd='source.levelv={:.8f}',
+                           get_parser=float, set_cmd='source.levelv={:.12f}',
                            label='Voltage',
                            unit='V')
         self.add_parameter('curr', get_cmd='measure.i()',
-                           get_parser=float, set_cmd='source.leveli={:.8f}',
+                           get_parser=float, set_cmd='source.leveli={:.12f}',
                            label='Current',
                            unit='A')
         self.add_parameter('mode',
