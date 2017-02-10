@@ -15,7 +15,7 @@ class GS200(VisaInstrument):
     - add current functionality (mode settings)
     """
 
-    def __init__(self, name, address, reset=False, **kwargs):
+    def __init__(self, name, address, **kwargs):
         super().__init__(name, address, **kwargs)
 
         self.add_parameter('voltage',
