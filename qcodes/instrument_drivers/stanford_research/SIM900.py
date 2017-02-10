@@ -32,7 +32,7 @@ class SIM928(StandardParameter):
                          get_cmd=self.get_voltage,
                          set_cmd=self.send_cmd + '"VOLT {:.4f}"',
                          step=0.005,
-                         delay=0.025,
+                         delay=0.035,
                          vals=vals.Numbers(0, max_voltage),
                          **kwargs)
         self.channel = channel
@@ -63,6 +63,10 @@ class SIM928(StandardParameter):
         # A small wait is needed before the actual voltage can be retrieved
         sleep(0.05)
         return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
+        if return_str == '#3000\n':
+            self._instrument.reset_slot(self.channel)
+            sleep(1)
+            return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
         return float(return_str[5:-3])
 
 
