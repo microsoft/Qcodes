@@ -46,6 +46,7 @@ Basics
 
 #. A DataSet can store data of (reasonably) arbitrary types and shapes. basically, any type and shape that can fit in a NumPy array should be supported.
 #. The results stored in a completed DataSet should be immutable; no new results may be added to a completed DataSet.
+#. Each DataSet should have a unique identifying string that can be used to create references to DataSets.
 
 Creation
 ------------
@@ -113,15 +114,21 @@ a simple way to get a ParamSpec for the Parameter.
 DataSet
 ~~~~~~~
 
-DataSet()
-    Creates a DataSet with no parameters.
+Construction
+------------
 
-DataSet(specs)
+DataSet(name)
+    Creates a DataSet with no parameters.
+    The name should be a short string that will be part of the DataSet's identifier.
+
+DataSet(name, specs)
     Creates a DataSet for the provided list of parameter specifications.
+    The name should be a short string that will be part of the DataSet's identifier.
     Each item in the list should be a ParamSpec object.
 	
-DataSet(specs, values)
+DataSet(name, specs, values)
     Creates a DataSet for the provided list of parameter specifications and values.
+    The name should be a short string that will be part of the DataSet's identifier.
     Each item in the specs list should be a ParamSpec object.
 	Each item in the values list should be a NumPy array or a Python list of values for the corresponding ParamSpec.
 	There should be exactly one item in the values list for every item in the specs list.
@@ -180,6 +187,11 @@ DataSet.mark_complete()
 
 Access
 ------
+
+DataSet.id
+    Returns the unique identifying string for this DataSet.
+    This string will include the date and time that the DataSet was created and the name supplied to the constructor,
+    as well as additional content to ensure uniqueness.
 
 DataSet.length
     This attribute holds the current number of results in the DataSet. 
