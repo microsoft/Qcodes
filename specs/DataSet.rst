@@ -63,7 +63,9 @@ Creation
    generated the results and the parameters included in the results.
    Essentially, DataSet metadata should be a string-keyed dictionary at the top, 
    and should allow storage of any JSON-encodable data.
-    
+#. The DataSet identifier should be automatically stored in the DataSet's metadata under the "id" tag.
+
+   
 Writing
 ----------
 
