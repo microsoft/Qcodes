@@ -460,8 +460,7 @@ class AMI430_3D(Instrument):
         self.add_parameter('cartesian',
                            get_cmd=partial(self._get_setpoints, 'x', 'y', 'z'),
                            set_cmd=self._set_fields,
-                           unit='T',
-                           vals=Numbers())
+                           unit='T')
 
         self.add_parameter('x',
                            get_cmd=partial(self._get_setpoints, 'x'),
@@ -486,8 +485,7 @@ class AMI430_3D(Instrument):
                                                                 'theta',
                                                                 'field'),
                            set_cmd=self._set_spherical,
-                           unit='tuple?',
-                           vals=Numbers())
+                           unit='tuple?')
 
         self.add_parameter('phi',
                            get_cmd=partial(self._get_setpoints, 'phi'),
@@ -512,8 +510,7 @@ class AMI430_3D(Instrument):
                                                                 'rho',
                                                                 'z'),
                            set_cmd=self._set_cylindrical,
-                           unit='tuple?',
-                           vals=Numbers())
+                           unit='tuple?')
 
         self.add_parameter('rho',
                            get_cmd=partial(self._get_setpoints, 'rho'),
@@ -538,10 +535,10 @@ class AMI430_3D(Instrument):
         phi = np.arctan2(y, x)
         rho = np.sqrt(x**2 + y**2)
 
+        # Define theta to be 0 for zero field
+        theta = 0.0
         if field > 0.0:
             theta = np.arccos(z / field)
-        else:
-            theta = 0.0
 
         return phi, theta, field, rho
 
