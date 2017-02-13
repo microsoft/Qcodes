@@ -536,9 +536,12 @@ class AMI430_3D(Instrument):
     def _cartesian_to_other(self, x, y, z):
         field = np.sqrt(x**2 + y**2 + z**2)
         phi = np.arctan2(y, x)
-        # TODO: handle divide by zero?
-        theta = np.arccos(z / field)
         rho = np.sqrt(x**2 + y**2)
+
+        if field > 0.0:
+            theta = np.arccos(z / field)
+        else:
+            theta = 0.0
 
         return phi, theta, field, rho
 
