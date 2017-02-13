@@ -71,13 +71,13 @@ class Triton(IPInstrument):
 
         self.add_parameter(name='pid_setpoint',
                            label='PID temperature setpoint',
-                           units='K',
+                           unit='K',
                            get_cmd=partial(self._get_control_param, 'TSET'),
                            set_cmd=partial(self._set_control_param, 'TSET'))
 
         self.add_parameter(name='pid_rate',
                            label='PID ramp rate',
-                           units='K/min',
+                           unit='K/min',
                            get_cmd=partial(self._get_control_param,
                                            'RAMP:RATE'),
                            set_cmd=partial(self._set_control_param,
@@ -87,7 +87,7 @@ class Triton(IPInstrument):
                            label='PID heater range',
                            # TODO: The units in the software are mA, how to
                            # do this correctly?
-                           units='mA',
+                           unit='mA',
                            get_cmd=partial(self._get_control_param, 'RANGE'),
                            set_cmd=partial(self._set_control_param, 'RANGE'),
                            vals=Enum(*self._heater_range_curr))
@@ -158,7 +158,7 @@ class Triton(IPInstrument):
                 alias, chan = rep.split(':')[-2:]
                 self.chan_alias[alias] = chan
                 self.add_parameter(name=alias,
-                                   units='K',
+                                   unit='K',
                                    get_cmd='READ:DEV:%s:TEMP:SIG:TEMP' % chan,
                                    get_parser=self._parse_temp)
 
@@ -166,7 +166,7 @@ class Triton(IPInstrument):
         for i in range(1, 7):
             chan = 'P%d' % i
             self.add_parameter(name=chan,
-                               units='bar',
+                               unit='bar',
                                get_cmd='READ:DEV:%s:PRES:SIG:PRES' % chan,
                                get_parser=self._parse_pres)
 
@@ -184,7 +184,7 @@ class Triton(IPInstrument):
                 name = config.get(section, '"m_lpszname"').strip("\"")
                 self.chan_temps[chan] = {'name': name, 'value': None}
                 self.add_parameter(name=chan,
-                                   units='K',
+                                   unit='K',
                                    get_cmd='READ:DEV:%s:TEMP:SIG:TEMP' % chan,
                                    get_parser=self._parse_temp)
 

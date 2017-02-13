@@ -62,7 +62,13 @@ class HDF5Format(Formatter):
             # write ensures these attributes always exist
             name = dat_arr.attrs['name'].decode()
             label = dat_arr.attrs['label'].decode()
-            units = dat_arr.attrs['units'].decode()
+
+            # get unit from units if no unit field, for backward compatibility
+            if 'unit' in dat_arr.attrs:
+                unit = dat_arr.attrs['unit'].decode()
+            else:
+                unit = dat_arr.attrs['units'].decode()
+
             is_setpoint = str_to_bool(dat_arr.attrs['is_setpoint'].decode())
             # if not is_setpoint:
             set_arrays = dat_arr.attrs['set_arrays']
@@ -75,7 +81,7 @@ class HDF5Format(Formatter):
             if array_id not in data_set.arrays.keys():  # create new array
                 d_array = DataArray(
                     name=name, array_id=array_id, label=label, parameter=None,
-                    units=units,
+                    unit=unit,
                     is_setpoint=is_setpoint, set_arrays=(),
                     preset_data=vals)
                 data_set.add_array(d_array)
@@ -83,7 +89,7 @@ class HDF5Format(Formatter):
                 d_array = data_set.arrays[array_id]
                 d_array.name = name
                 d_array.label = label
-                d_array.units = units
+                d_array.unit = unit
                 d_array.is_setpoint = is_setpoint
                 d_array.ndarray = vals
                 d_array.shape = dat_arr.attrs['shape']
@@ -196,9 +202,6 @@ class HDF5Format(Formatter):
         group:  group in the hdf5 file where the dset will be created
 
         creates a hdf5 datasaset that represents the data array.
-
-        note that the attribute "units" is used for shape determination
-        in the case of tuple-like variables.
         '''
         # Check for empty meta attributes, use array_id if name and/or label
         # is not specified
@@ -206,24 +209,19 @@ class HDF5Format(Formatter):
             label = array.label
         else:
             label = array.array_id
+
         if array.name is not None:
             name = array.name
         else:
             name = array.array_id
-        if array.units is None:
-            array.units = ['']  # used for shape determination
-        units = array.units
+
         # Create the hdf5 dataset
-        if isinstance(units, str):
-            n_cols = 1
-        else:
-            n_cols = len(array.units)
         dset = group.create_dataset(
-            array.array_id, (0, n_cols),
-            maxshape=(None, n_cols))
+            array.array_id, (0, 1),
+            maxshape=(None, 1))
         dset.attrs['label'] = _encode_to_utf8(str(label))
         dset.attrs['name'] = _encode_to_utf8(str(name))
-        dset.attrs['units'] = _encode_to_utf8(str(units))
+        dset.attrs['unit'] = _encode_to_utf8(str(array.unit or ''))
         dset.attrs['is_setpoint'] = _encode_to_utf8(str(array.is_setpoint))
 
         set_arrays = []
@@ -281,6 +279,7 @@ class HDF5Format(Formatter):
                         elif isinstance(item[0], str):
                             dt = h5py.special_dtype(vlen=str)
                             data = np.array(item)
+                            data = data.reshape( (-1,1))
                             ds = entry_point.create_dataset(
                                 key, (len(data), 1), dtype=dt)
                             ds[:] = data

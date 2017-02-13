@@ -48,7 +48,7 @@ class Tektronix_AWG520(VisaInstrument):
         '''
         Initializes the AWG520.
 
-        Input:
+        Args:
             name (string)    : name of the instrument
             address (string) : GPIB address (Note: 520 cannot be controlled
                                via ethernet)
@@ -77,14 +77,14 @@ class Tektronix_AWG520(VisaInstrument):
                            set_cmd='AWGC:RMOD ' + '{}',
                            vals=vals.Enum('CONT', 'TRIG', 'ENH', 'GAT'))
         self.add_parameter('trigger_impedance',
-                           units='Ohm',
+                           unit='Ohm',
                            label='Trigger impedance (Ohm)',
                            get_cmd='TRIG:IMP?',
                            set_cmd='TRIG:IMP '+'{}',
                            vals=vals.Enum(50, 1000),
                            get_parser=float)
         self.add_parameter('trigger_level',
-                           units='V',
+                           unit='V',
                            label='Trigger level (V)',
                            get_cmd='TRIG:LEV?',
                            set_cmd='TRIG:LEV '+'{:.3f}',
@@ -113,7 +113,7 @@ class Tektronix_AWG520(VisaInstrument):
                     self._do_set_filename, ch), vals=vals.Anything())
             self.add_parameter('ch{}_amp'.format(ch),
                                label='Amplitude channel {} (V)'.format(ch),
-                               units='V',
+                               unit='V',
                                get_cmd=amp_cmd + '?',
                                set_cmd=amp_cmd + ' {:.6f}',
                                vals=vals.Numbers(0.02, 2.0),
@@ -121,7 +121,7 @@ class Tektronix_AWG520(VisaInstrument):
 
             self.add_parameter('ch{}_offset'.format(ch),
                                label='Offset channel {} (V)'.format(ch),
-                               units='V',
+                               unit='V',
                                get_cmd=offset_cmd + '?',
                                set_cmd=offset_cmd + ' {:.3f}',
                                vals=vals.Numbers(-1.0, 1.0),
