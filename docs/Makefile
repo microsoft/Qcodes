@@ -49,6 +49,7 @@ help:
 .PHONY: clean
 clean:
 	rm -rf $(BUILDDIR)/*
+	rm -rf _auto
 
 .PHONY: html
 html:
@@ -227,8 +228,10 @@ dummy:
 	@echo "Build finished. Dummy builder generates no files."
 
 html-api:
-	sphinx-apidoc  -o  docs/auto  qcodes -d 10
-	cd docs && make html
+	sphinx-apidoc  -o  _auto  -d 10 ../qcodes/
+	mkdir -p api/generated/
+	cp _auto/qcodes.instrument_drivers.* api/generated/
+	make html
 
 gh-pages:
 	git config --global user.email "bot@travics.com"
@@ -239,8 +242,7 @@ gh-pages:
 	rm -rf ./*
 	git checkout master $(GH_PAGES_SOURCES)
 	git reset HEAD
-	sphinx-apidoc  -o  docs/auto  qcodes -d 10
-	cd docs && make html && \
+	cd docs && make html-api && \
 	mv -fv $(BUILDDIR)/html/* ../
 	rm -rf $(GH_PAGES_SOURCES) build
 	git add -A

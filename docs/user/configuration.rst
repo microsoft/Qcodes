@@ -25,7 +25,7 @@ Default config
 --------------
 The following  table explains the default configuration of qcodes.
 
-.. jsonschema:: ../qcodes/config/qcodesrc_schema.json
+.. jsonschema:: ../../qcodes/config/qcodesrc_schema.json
 
 
 Using the config

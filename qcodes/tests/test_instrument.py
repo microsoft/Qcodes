@@ -567,8 +567,9 @@ class TestInstrument(TestCase):
                     'label': 'IDN',
                     'name': 'IDN',
                     'ts': None,
-                    'units': '',
-                    'value': None
+                    'unit': '',
+                    'value': None,
+                    'vals': '<Anything>'
                 },
                 'amplitude': {
                     '__class__': (
@@ -578,8 +579,9 @@ class TestInstrument(TestCase):
                     'label': 'amplitude',
                     'name': 'amplitude',
                     'ts': None,
-                    'units': '',
-                    'value': None
+                    'unit': '',
+                    'value': None,
+                    'vals': '<Numbers>'
                 }
             },
             'functions': {'echo': {}}
@@ -605,8 +607,9 @@ class TestInstrument(TestCase):
             'label': 'noise',
             'name': 'noise',
             'ts': None,
-            'units': '',
-            'value': None
+            'unit': '',
+            'value': None,
+            'vals': '<Numbers>'
         })
 
         noise.set(100)
@@ -743,32 +746,32 @@ class TestInstrument(TestCase):
         self.assertIn('not the same function as the original method',
                       method.__doc__)
 
-        # units is a remote attribute of parameters
+        # unit is a remote attribute of parameters
         # this one is initially blank
-        self.assertEqual(parameter.units, '')
-        parameter.units = 'Smoots'
-        self.assertEqual(parameter.units, 'Smoots')
-        self.assertNotIn('units', parameter.__dict__)
-        self.assertEqual(instrument.getattr(parameter.name + '.units'),
+        self.assertEqual(parameter.unit, '')
+        parameter.unit = 'Smoots'
+        self.assertEqual(parameter.unit, 'Smoots')
+        self.assertNotIn('unit', parameter.__dict__)
+        self.assertEqual(instrument.getattr(parameter.name + '.unit'),
                          'Smoots')
         # we can delete it remotely, and this is reflected in dir()
-        self.assertIn('units', dir(parameter))
-        del parameter.units
-        self.assertNotIn('units', dir(parameter))
+        self.assertIn('unit', dir(parameter))
+        del parameter.unit
+        self.assertNotIn('unit', dir(parameter))
         with self.assertRaises(AttributeError):
-            parameter.units
+            parameter.unit
 
         # and set it again, it's still remote.
-        parameter.units = 'Furlongs per fortnight'
-        self.assertIn('units', dir(parameter))
-        self.assertEqual(parameter.units, 'Furlongs per fortnight')
-        self.assertNotIn('units', parameter.__dict__)
-        self.assertEqual(instrument.getattr(parameter.name + '.units'),
+        parameter.unit = 'Furlongs per fortnight'
+        self.assertIn('unit', dir(parameter))
+        self.assertEqual(parameter.unit, 'Furlongs per fortnight')
+        self.assertNotIn('unit', parameter.__dict__)
+        self.assertEqual(instrument.getattr(parameter.name + '.unit'),
                          'Furlongs per fortnight')
         # we get the correct result if someone else sets it on the server
-        instrument._write_server('setattr', parameter.name + '.units', 'T')
-        self.assertEqual(parameter.units, 'T')
-        self.assertEqual(parameter.getattr('units'), 'T')
+        instrument._write_server('setattr', parameter.name + '.unit', 'T')
+        self.assertEqual(parameter.unit, 'T')
+        self.assertEqual(parameter.getattr('unit'), 'T')
 
         # attributes not specified as remote are local
         with self.assertRaises(AttributeError):

@@ -70,20 +70,20 @@ class TestVisaInstrument(TestCase):
     args1 = [
         'be more positive!',
         "writing 'STAT:-10.000' to <MockVisa: Joe>",
-        'setting Joe:state to -10'
+        'setting Joe_state to -10'
     ]
 
     # error args for set(0)
     args2 = [
         "writing 'STAT:0.000' to <MockVisa: Joe>",
-        'setting Joe:state to 0'
+        'setting Joe_state to 0'
     ]
 
     # error args for get -> 15
     args3 = [
         "I'm out of fingers",
         "asking 'STAT?' to <MockVisa: Joe>",
-        'getting Joe:state'
+        'getting Joe_state'
     ]
 
     def test_ask_write_local(self):
