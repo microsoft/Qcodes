@@ -36,7 +36,7 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
                            get_cmd='SOUR:FREQ' + '?',
                            set_cmd='SOUR:FREQ' + ' {:.2f}',
                            get_parser=float,
-                           vals=vals.Numbers(1e6, 20e9))
+                           vals=vals.Numbers(1e9, 20e9))
         self.add_parameter(name='phase',
                            label='Phase',
                            units='deg',
