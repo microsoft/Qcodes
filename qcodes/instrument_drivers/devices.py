@@ -14,6 +14,7 @@ class VoltageDivider(Parameter):
     >>> vd = VoltageDivider(dac.chan0, 10)
 
     set the value you want to set your sample at
+
     >>> vd(10)
 
     This will set the dac.cha0 at 10*10, but it will look
@@ -63,6 +64,7 @@ class VoltageDivider(Parameter):
 
     def set(self, value: Union[int, float]) -> None:
         instrument_value = value * self.division_value
+        self._save_val(value)
         self.v1.set(instrument_value)
 
     def get(self) -> Union[int, float]:
@@ -75,7 +77,7 @@ class VoltageDivider(Parameter):
     def get_instrument_value(self) -> Union[int, float]:
         """
         Returns:
-            number: value at which the attached paraemter is (i.e. does not
-                    account for the scaling)
+            number: value at which the attached paraemter is (i.e. does
+            not account for the scaling)
         """
         return self.v1.get()
