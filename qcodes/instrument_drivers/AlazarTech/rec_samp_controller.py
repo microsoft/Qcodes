@@ -1,7 +1,7 @@
 import logging
 from .ATS import AcquisitionController
 import numpy as np
-from qcodes import Parameter
+from qcodes import Parameter, MultiParameter
 import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
 
 
@@ -71,7 +71,7 @@ class AcqVariablesParam(Parameter):
         return True
 
 
-class RecordsSamplesAcqParam(Parameter):
+class RecordsSamplesAcqParam(MultiParameter):
     """
     TODO
 
@@ -87,10 +87,11 @@ class RecordsSamplesAcqParam(Parameter):
     """
 
     def __init__(self, name, instrument):
-        super().__init__(name)
-        self._instrument = instrument
+        names = ('magnitude', 'phase')
+        shapes = ((), ())
+        super().__init__(name, names, shapes, instrument)
         self.acquisition_kwargs = {}
-        self.names = ('magnitude', 'phase')
+
 
     def update_time_sweep(self, time_npts, time_start, time_stop):
         """
