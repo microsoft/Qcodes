@@ -1,7 +1,7 @@
 import logging
 from .ATS import AcquisitionController
 import numpy as np
-from qcodes import Parameter
+from qcodes import Parameter, MultiParameter
 import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
 
 
@@ -71,7 +71,7 @@ class AcqVariablesParam(Parameter):
         return True
 
 
-class SamplesAcqParam(Parameter):
+class SamplesAcqParam(MultiParameter):
     """
     Hardware controlled parameter class for Alazar acquisition. To be used with
     HD_Samples_Controller (tested with ATS9360 board) for return of an array of
@@ -85,10 +85,10 @@ class SamplesAcqParam(Parameter):
     """
 
     def __init__(self, name, instrument):
-        super().__init__(name)
-        self._instrument = instrument
+        names = ('magnitude', 'phase')
+        super().__init__(name, names, shapes=((),()), instrument=instrument)
         self.acquisition_kwargs = {}
-        self.names = ('magnitude', 'phase')
+
 
     def update_sweep(self, start, stop, npts):
         """
