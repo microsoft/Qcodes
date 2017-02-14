@@ -137,8 +137,8 @@ class SamplesAcqParam(Parameter):
         and buffers)
 
         Returns:
-            mag: numpy array of magnitude, shape (demod_length, samples)
-            phase: numpy array of magnitude, shape (demod_length, samples)
+            mag a numpy array of magnitude, shape (demod_length, samples)
+            phase a numpy array of magnitude, shape (demod_length, samples)
         """
         mag, phase = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
@@ -380,7 +380,7 @@ class HD_Samples_Controller(AcquisitionController):
         Function to get all the demod_freq parameter values in a list, v hacky
 
         Returns:
-            freqs: numpy array of demodulation frequencies
+            freqs a numpy array of demodulation frequencies
         """
         freqs = list(filter(None, [getattr(self, 'demod_freq_{}'.format(c))()
                                    for c in range(self._demod_length)]))
@@ -481,8 +481,8 @@ class HD_Samples_Controller(AcquisitionController):
         nb: currently only channel A
 
         Returns:
-            magnitude (numpy array): shape = (demod_length, samples_used)
-            phase (numpy array): shape = (demod_length, samples_used)
+            - magnitude a numpy array of shape (demod_length, samples_used)
+            - phase a numpy array of shape (demod_length, samples_used)
         """
 
         # for ATS9360 samples are arranged in the buffer as follows:

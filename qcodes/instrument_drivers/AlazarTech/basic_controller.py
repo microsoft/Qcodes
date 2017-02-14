@@ -34,8 +34,8 @@ class SampleSweep(Parameter):
         over records and buffers)
 
         returns:
-            recordA: numpy array of channel A acquisition
-            recordB: numpy array of channel B acquisition
+            - recordA a numpy array of channel A acquisition
+            - recordB a numpy array of channel B acquisition
         """
         recordA, recordB = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
@@ -69,8 +69,10 @@ class Basic_Acquisition_Controller(AcquisitionController):
         """
         This method must be used to update the kwargs used for the acquisition
         with the alazar_driver.acquire
-        :param kwargs:
-        :return:
+
+        Args:
+            **kwargs:
+
         """
         self.samples_per_record = kwargs['samples_per_record']
         self.acquisition.shapes = (
@@ -80,7 +82,6 @@ class Basic_Acquisition_Controller(AcquisitionController):
     def pre_start_capture(self):
         """
         See AcquisitionController
-        :return:
         """
         alazar = self._get_alazar()
         if self.samples_per_record != alazar.samples_per_record.get():
@@ -97,7 +98,6 @@ class Basic_Acquisition_Controller(AcquisitionController):
     def pre_acquire(self):
         """
         See AcquisitionController
-        :return:
         """
         pass
 
@@ -106,7 +106,6 @@ class Basic_Acquisition_Controller(AcquisitionController):
         Function which is called during the Alazar acquire each time a buffer
         is completed. In this acquistion controller these buffers are just
         added together (ie averaged)
-        :return:
         """
         self.buffer += data
 
@@ -118,9 +117,9 @@ class Basic_Acquisition_Controller(AcquisitionController):
         data which is splits into records and channels, averages over records
         and returns the samples for each channel.
 
-        return:
-        recordA: numpy array of channel A acquisition
-        recordB: numpy array of channel B acquisition
+        Returns:
+            - recordA a numpy array of channel A acquisition
+            - recordB a numpy array of channel B acquisition
         """
 
         # for ATS9360 samples are arranged in the buffer as follows:

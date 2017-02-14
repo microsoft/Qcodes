@@ -45,8 +45,9 @@ class Demodulation_AcquisitionController(AcquisitionController):
         """
         This method must be used to update the kwargs used for the acquisition
         with the alazar_driver.acquire
-        :param kwargs:
-        :return:
+
+        Args:
+            **kwargs: New kwargs for the acquisition
         """
         self.acquisitionkwargs.update(**kwargs)
 
@@ -54,7 +55,6 @@ class Demodulation_AcquisitionController(AcquisitionController):
         """
         this method performs an acquisition, which is the get_cmd for the
         acquisiion parameter of this instrument
-        :return:
         """
         value = self._get_alazar().acquire(acquisition_controller=self,
                                            **self.acquisitionkwargs)
@@ -63,7 +63,6 @@ class Demodulation_AcquisitionController(AcquisitionController):
     def pre_start_capture(self):
         """
         See AcquisitionController
-        :return:
         """
         alazar = self._get_alazar()
         self.samples_per_record = alazar.samples_per_record.get()
@@ -83,7 +82,6 @@ class Demodulation_AcquisitionController(AcquisitionController):
     def pre_acquire(self):
         """
         See AcquisitionController
-        :return:
         """
         # this could be used to start an Arbitrary Waveform Generator, etc...
         # using this method ensures that the contents are executed AFTER the
@@ -93,14 +91,12 @@ class Demodulation_AcquisitionController(AcquisitionController):
     def handle_buffer(self, data):
         """
         See AcquisitionController
-        :return:
         """
         self.buffer += data
 
     def post_acquire(self):
         """
         See AcquisitionController
-        :return:
         """
         alazar = self._get_alazar()
         # average all records in a buffer

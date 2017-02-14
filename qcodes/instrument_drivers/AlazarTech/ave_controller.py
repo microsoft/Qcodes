@@ -123,8 +123,8 @@ class AveragedAcqParam(Parameter):
         records and buffers)
 
         Returns:
-            mag: numpy array of magnitude, shape (demod_length, )
-            phase: numpy array of magnitude, shape (demod_length, )
+            - numpy array of magnitude, shape (demod_length, )
+            - numpy array of phase, shape (demod_length, )
         """
         mag, phase = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
@@ -353,7 +353,7 @@ class HD_Averaging_Controller(AcquisitionController):
         Function to get all the demod_freq parameter values in a list, v hacky
 
         Returns:
-            freqs: numpy array of demodulation frequencies
+            numpy array of demodulation frequencies
         """
         freqs = list(filter(None, [getattr(self, 'demod_freq_{}'.format(c))()
                                    for c in range(self._demod_length)]))
@@ -394,9 +394,9 @@ class HD_Averaging_Controller(AcquisitionController):
         kwarg is updated via the int_time and int_delay parameters
 
         Kwargs (ints):
-            records_per_buffer
-            buffers_per_acquisition
-            allocated_buffers
+            - records_per_buffer
+            - buffers_per_acquisition
+            - allocated_buffers
         """
         if 'samples_per_record' in kwargs:
             raise ValueError('With HD_Averaging_Controller '
@@ -453,8 +453,8 @@ class HD_Averaging_Controller(AcquisitionController):
         nb: currently only channel A
 
         Returns:
-            magnitude (numpy array): shape = (demod_length, samples_used)
-            phase (numpy array): shape = (demod_length, samples_used)
+            - magnitude numpy array of shape  (demod_length, samples_used)
+            - phase numpy array of shape (demod_length, samples_used)
         """
 
         # for ATS9360 samples are arranged in the buffer as follows:
