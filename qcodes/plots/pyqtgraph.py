@@ -346,18 +346,20 @@ class QtPlot(BasePlot):
         """
         for axletter, side in (('x', 'bottom'), ('y', 'left')):
             ax = subplot_object.getAxis(side)
+            unit = config[axletter].unit
+
             # pyqtgraph doesn't seem able to get labels, only set
             # so we'll store it in the axis object and hope the user
             # doesn't set it separately before adding all traces
             if axletter+'label' in config and not ax._qcodes_label:
                 label = config[axletter+'label']
                 ax._qcodes_label = label
-                ax.setLabel(label)
+                ax.setLabel(label, unit)
             if axletter in config and not ax._qcodes_label:
                 label = self.get_label(config[axletter])
                 if label:
                     ax._qcodes_label = label
-                    ax.setLabel(label)
+                    ax.setLabel(label, unit)
 
     def update_plot(self):
         for trace in self.traces:
