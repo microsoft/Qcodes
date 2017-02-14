@@ -1,7 +1,7 @@
 import logging
 from .ATS import AcquisitionController
 import numpy as np
-from qcodes import Parameter
+from qcodes import Parameter, MultiParameter
 import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
 
 
@@ -71,7 +71,7 @@ class AcqVariablesParam(Parameter):
         return True
 
 
-class AveragedAcqParam(Parameter):
+class AveragedAcqParam(MultiParameter):
     """
     Software controlled parameter class for Alazar acquisition. To be used with
     HD_Averaging_Controller (tested with ATS9360 board) for return of
@@ -89,14 +89,13 @@ class AveragedAcqParam(Parameter):
     """
 
     def __init__(self, name, instrument, demod_length):
-        super().__init__(name)
-        self._instrument = instrument
-        self.acquisition_kwargs = {}
-        self.names = ('magnitude', 'phase')
+        names = ('magnitude', 'phase')
         if demod_length > 1:
-            self.shapes = ((demod_length, ), (demod_length, ))
+            shapes = ((demod_length, ), (demod_length, ))
         else:
-            self.shapes = ((), ())
+            shapes = ((), ())
+        super().__init__(name, names, shapes, instrument)
+        self.acquisition_kwargs = {}
 
     def update_demod_setpoints(self, demod_freqs):
         """
