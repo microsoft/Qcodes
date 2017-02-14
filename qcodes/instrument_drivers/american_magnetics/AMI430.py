@@ -3,7 +3,7 @@ import numpy as np
 import time
 
 from qcodes import Instrument, VisaInstrument
-from qcodes.utils.validators import Numbers
+from qcodes.utils.validators import Numbers, Anything
 
 from functools import partial
 
@@ -460,7 +460,8 @@ class AMI430_3D(Instrument):
         self.add_parameter('cartesian',
                            get_cmd=partial(self._get_setpoints, 'x', 'y', 'z'),
                            set_cmd=self._set_fields,
-                           unit='T')
+                           unit='T',
+                           vals=Anything())
 
         self.add_parameter('x',
                            get_cmd=partial(self._get_setpoints, 'x'),
@@ -485,7 +486,8 @@ class AMI430_3D(Instrument):
                                                                 'theta',
                                                                 'field'),
                            set_cmd=self._set_spherical,
-                           unit='tuple?')
+                           unit='tuple?',
+                           vals=Anything())
 
         self.add_parameter('phi',
                            get_cmd=partial(self._get_setpoints, 'phi'),
@@ -510,7 +512,8 @@ class AMI430_3D(Instrument):
                                                                 'rho',
                                                                 'z'),
                            set_cmd=self._set_cylindrical,
-                           unit='tuple?')
+                           unit='tuple?',
+                           vals=Anything())
 
         self.add_parameter('rho',
                            get_cmd=partial(self._get_setpoints, 'rho'),
