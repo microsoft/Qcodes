@@ -15,9 +15,9 @@ class SampleSweep(Parameter):
     post_acquire function of the Acquisition Controller and finally the
     processed result is returned when the SampleSweep parameter is called.
 
-    :args:
-    name: name for this parameter
-    instrument: acquisition controller instrument this parameter belongs to
+    Args:
+        name: name for this parameter
+        instrument: acquisition controller instrument this parameter belongs to
     """
 
     def __init__(self, name, instrument):
@@ -34,8 +34,8 @@ class SampleSweep(Parameter):
         over records and buffers)
 
         returns:
-        recordA: numpy array of channel A acquisition
-        recordB: numpy array of channel B acquisition
+            recordA: numpy array of channel A acquisition
+            recordB: numpy array of channel B acquisition
         """
         recordA, recordB = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
@@ -50,10 +50,10 @@ class Basic_Acquisition_Controller(AcquisitionController):
     samples on channel A and channel B, averaging over recoirds and buffers
 
     args:
-    name: name for this acquisition_conroller as an instrument
-    alazar_name: the name of the alazar instrument such that this controller
-        can communicate with the Alazar
-    **kwargs: kwargs are forwarded to the Instrument base class
+        name: name for this acquisition_conroller as an instrument
+        alazar_name: the name of the alazar instrument such that this controller
+            can communicate with the Alazar
+        **kwargs: kwargs are forwarded to the Instrument base class
     """
 
     def __init__(self, name, alazar_name, **kwargs):
