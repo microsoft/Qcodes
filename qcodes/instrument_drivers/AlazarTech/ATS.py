@@ -778,7 +778,10 @@ class AlazarTech_ATS(Instrument):
         This method uncommits all buffers that were committed by the driver.
         This method only has to be called when the acquistion crashes, otherwise
         the driver will uncommit the buffers itself
-        :return: None
+
+        Returns:
+            None
+
         """
         for b in self.buffer_list:
             b.free_mem()
@@ -877,7 +880,10 @@ class AlazarParameter(Parameter):
     def get(self):
         """
         This method returns the name of the value set for this parameter
-        :return: value
+
+        Returns:
+            value
+
         """
         # TODO(damazter) (S) test this exception
         if self._uptodate_flag is False:
@@ -893,7 +899,10 @@ class AlazarParameter(Parameter):
     def _get_byte(self):
         """
         this method gets the byte representation of the value of the parameter
-        :return: byte representation
+
+        Returns:
+            byte representation
+
         """
         return self._byte
 
@@ -902,8 +911,12 @@ class AlazarParameter(Parameter):
         This method sets the value of this parameter
         This method is private to ensure that all values in the instruments
         are up to date always
-        :param value: the new value (e.g. 'NPT', 0.5, ...)
-        :return: None
+
+        Args:
+            value: the new value (e.g. 'NPT', 0.5, ...)
+        Returns:
+            None
+
         """
 
         # TODO(damazter) (S) test this validation
@@ -920,7 +933,9 @@ class AlazarParameter(Parameter):
         can go wrong.
 
         Do not use this function if you do not know what you are doing
-        :return: None
+
+        Returns:
+            None
         """
         self._uptodate_flag = True
 
@@ -981,7 +996,6 @@ class Buffer:
     def free_mem(self):
         """
         uncommit memory allocated with this buffer object
-        :return: None
         """
 
         self._allocated = False
@@ -1000,7 +1014,6 @@ class Buffer:
         is the last chance to uncommit the memory to prevent a memory leak.
         This method is not very reliable so users should not rely on this
         functionality
-        :return:
         """
         if self._allocated:
             self.free_mem()
@@ -1017,24 +1030,24 @@ class AcquisitionController(Instrument):
 
     The basic structure of an acquisition is:
 
-        - call to AlazarTech_ATS.acquire internal configuration
-        - call to acquisitioncontroller.pre_start_capture
+        - Call to AlazarTech_ATS.acquire internal configuration
+        - Call to acquisitioncontroller.pre_start_capture
         - Call to the start capture of the Alazar board
-        - call to acquisitioncontroller.pre_acquire
-        - loop over all buffers that need to be acquired
+        - Call to acquisitioncontroller.pre_acquire
+        - Loop over all buffers that need to be acquired
           dump each buffer to acquisitioncontroller.handle_buffer
           (only if buffers need to be recycled to finish the acquisiton)
-        - dump remaining buffers to acquisitioncontroller.handle_buffer
+        - Dump remaining buffers to acquisitioncontroller.handle_buffer
           alazar internals
-        - return acquisitioncontroller.post_acquire
+        - Return acquisitioncontroller.post_acquire
 
     Attributes:
         _alazar: a reference to the alazar instrument driver
     """
     def __init__(self, name, alazar_name, **kwargs):
         """
-        :param alazar_name: The name of the alazar instrument on the server
-        :return: nothing
+        Args:
+            alazar_name: The name of the alazar instrument on the server
         """
         super().__init__(name, **kwargs)
         self._alazar = self.find_instrument(alazar_name,
