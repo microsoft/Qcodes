@@ -34,7 +34,7 @@ class AlazarTech_ATS(Instrument):
         name: name for this instrument, passed to the base instrument
         system_id: target system id for this instrument
         board_id: target board id within the system for this instrument
-        dll_path: string contianing the path of the ATS driver dll
+        dll_path: string containing the path of the ATS driver dll
 
     """
     # override dll_path in your init script or in the board constructor
@@ -614,9 +614,9 @@ class AlazarTech_ATS(Instrument):
         # make sure that allocated_buffers <= buffers_per_acquisition
         if (self.allocated_buffers._get_byte() >
                 self.buffers_per_acquisition._get_byte()):
-            logging.warn("'allocated_buffers' should be <= "
-                         "'buffers_per_acquisition'. Defaulting 'allocated_buffers'"
-                         " to " + str(self.buffers_per_acquisition._get_byte()))
+            logging.warning("'allocated_buffers' should be <= "
+                            "'buffers_per_acquisition'. Defaulting 'allocated_buffers'"
+                            " to " + str(self.buffers_per_acquisition._get_byte()))
             self.allocated_buffers._set(
                 self.buffers_per_acquisition._get_byte())
 

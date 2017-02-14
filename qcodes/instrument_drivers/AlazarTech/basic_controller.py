@@ -28,7 +28,7 @@ class SampleSweep(MultiParameter):
         """
         Gets the samples for channels A and B by calling acquire
         on the alazar (which in turn calls the processing functions of the
-        aqcuisition controller before returning the reshaped data averaged
+        acquisition controller before returning the reshaped data averaged
         over records and buffers)
 
         returns:
@@ -45,10 +45,10 @@ class Basic_Acquisition_Controller(AcquisitionController):
     """
     This class represents an acquisition controller. It is designed to be used
     primarily to check the function of the Alazar driver and returns the
-    samples on channel A and channel B, averaging over recoirds and buffers
+    samples on channel A and channel B, averaging over records and buffers
 
     args:
-        name: name for this acquisition_conroller as an instrument
+        name: name for this acquisition_controller as an instrument
         alazar_name: the name of the alazar instrument such that this controller
             can communicate with the Alazar
         **kwargs: kwargs are forwarded to the Instrument base class
@@ -102,7 +102,7 @@ class Basic_Acquisition_Controller(AcquisitionController):
     def handle_buffer(self, data):
         """
         Function which is called during the Alazar acquire each time a buffer
-        is completed. In this acquistion controller these buffers are just
+        is completed. In this acquisition controller these buffers are just
         added together (ie averaged)
         """
         self.buffer += data

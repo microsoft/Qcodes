@@ -9,7 +9,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
 
     TODO(nataliejpg):
         -  add clock source options and sample rate options
-           (probelem being that byte_to_value_dict of
+           (problem being that byte_to_value_dict of
            sample_rate relies on value of clock_source)
 
     """
