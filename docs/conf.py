@@ -383,6 +383,7 @@ try:
 except ImportError as e:
         print(e)
 autodoc_mock_imports.append('pyspcm')
+autodoc_mock_imports.append('scipy')
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = []
