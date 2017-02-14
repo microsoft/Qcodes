@@ -9,8 +9,9 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
 
     TODO(nataliejpg):
         -  add clock source options and sample rate options
-          (probelem being that byte_to_value_dict of
-          sample_rate relies on value of clock_source)
+           (probelem being that byte_to_value_dict of
+           sample_rate relies on value of clock_source)
+
     """
 
     # samples divisor is listed in the manual as being 32 but this gave
