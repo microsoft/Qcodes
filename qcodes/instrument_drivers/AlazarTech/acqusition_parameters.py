@@ -1,5 +1,6 @@
 from qcodes import Parameter, MultiParameter
 
+
 class AcqVariablesParam(Parameter):
     """
     Parameter of an AcquisitionController which has a _check_and_update_instr
@@ -117,10 +118,10 @@ class AlazarMultiArray(MultiParameter):
             - A a numpy array of Alazar data
             - B a numpy array of Alazar data
         """
-        A, B = self._instrument._get_alazar().acquire(
+        a, b = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
             **self.acquisition_kwargs)
-        return A, B
+        return a, b
 
 
 class AlazarMultiArray2D(AlazarMultiArray):
