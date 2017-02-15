@@ -3,6 +3,7 @@ import logging
 import time
 import warnings
 import weakref
+import numpy as np
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
@@ -435,15 +436,34 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
         return snap
 
     def print_readable_snapshot(self, update=False):
+        """
+        Prints a readable version of the snapshot.
+        The readable snapshot includes the name, value and unit of each
+        parameter.
+        A convenience function to quickly get an overview of the status of an instrument.
+
+        Args:
+            update (bool): If True, update the state by querying the
+                instrument. If False, just use the latest values in memory.
+                This argument gets passed to the snapshot function.
+        """
+        floating_types = (float, np.integer, np.floating)
         snapshot = self.snapshot(update=update)
-        print('{0:23} {1} \t ({2})'.format('\t parameter ', 'value', 'units'))
+        print(self.name + ':')
+        print('{: >21}'.format('parameter ') + '\tvalue')
         print('-'*80)
         for par in sorted(snapshot['parameters']):
-            print('{0:25}: \t{1}\t ({2})'.format(
-                  snapshot['parameters'][par]['name'],
-                  snapshot['parameters'][par]['value'],
-                  snapshot['parameters'][par]['unit']))
-    #
+            msg = '{: >21}:'.format(snapshot['parameters'][par]['name'])
+            val = snapshot['parameters'][par]['value']
+            unit = snapshot['parameters'][par]['unit']
+            if isinstance(val, floating_types):
+                msg += '\t{:.5g} '.format(val)
+            else:
+                msg += '\t{} '.format(val)
+            if unit is not '':  # corresponds to no unit
+                msg += '({})'.format(unit)
+            print(msg)
+
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #
     #
