@@ -2,43 +2,7 @@ import logging
 from .ATS import AcquisitionController
 import numpy as np
 import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
-from qcodes import MultiParameter
-
-
-class SampleSweep(MultiParameter):
-    """
-    Hardware controlled parameter class for Alazar acquisition. To be used with
-    Acquisition Controller (tested with ATS9360 board)
-
-    Alazar Instrument 'acquire' returns a buffer of data each time a buffer is
-    filled (channels * samples * records) which is processed by the
-    post_acquire function of the Acquisition Controller and finally the
-    processed result is returned when the SampleSweep parameter is called.
-
-    Args:
-        name: name for this parameter
-        instrument: acquisition controller instrument this parameter belongs to
-    """
-
-    def __init__(self, name, instrument):
-        super().__init__(name, names=("A", "B"), shapes=((), ()), instrument=instrument)
-        self.acquisition_kwargs = {}
-
-    def get(self):
-        """
-        Gets the samples for channels A and B by calling acquire
-        on the alazar (which in turn calls the processing functions of the
-        acquisition controller before returning the reshaped data averaged
-        over records and buffers)
-
-        returns:
-            - recordA a numpy array of channel A acquisition
-            - recordB a numpy array of channel B acquisition
-        """
-        recordA, recordB = self._instrument._get_alazar().acquire(
-            acquisition_controller=self._instrument,
-            **self.acquisition_kwargs)
-        return recordA, recordB
+from .acqusition_parameters import AlazarMultiArray
 
 
 class Basic_Acquisition_Controller(AcquisitionController):
@@ -61,7 +25,8 @@ class Basic_Acquisition_Controller(AcquisitionController):
         super().__init__(name, alazar_name, **kwargs)
 
         self.add_parameter(name='acquisition',
-                           parameter_class=SampleSweep)
+                           parameter_class=AlazarMultiArray,
+                           names=('A', 'B'))
 
     def update_acquisition_kwargs(self, **kwargs):
         """

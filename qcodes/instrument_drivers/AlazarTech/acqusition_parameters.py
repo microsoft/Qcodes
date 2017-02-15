@@ -1,4 +1,4 @@
-from qcodes import Parameter
+from qcodes import Parameter, MultiParameter
 
 class AcqVariablesParam(Parameter):
     """
@@ -64,3 +64,137 @@ class AcqVariablesParam(Parameter):
         val = self._latest()['value']
         self._check_and_update_instr(val, param_name=self.name)
         return True
+
+class AlazarMultiArray(MultiParameter):
+    """
+    Hardware controlled parameter class for Alazar acquisition. To be used with
+    Acquisition Controller (tested with ATS9360 board)
+
+    Alazar Instrument 'acquire' returns a buffer of data each time a buffer is
+    filled (channels * samples * records) which is processed by the
+    post_acquire function of the Acquisition Controller and finally the
+    processed result is returned when the AlazarMultiArray parameter is called.
+
+    Args:
+        name: name for this parameter
+        names: names of the two arrays returned from get
+        instrument: acquisition controller instrument this parameter belongs to
+        demod_lenght (int): number of demodulators. Default 1
+    """
+
+    def __init__(self, name, instrument, names=("A","B"), demod_length=1):
+        if demod_length > 1:
+            shapes = ((demod_length, ), (demod_length, ))
+        else:
+            shapes = ((), ())
+        super().__init__(name, names=names, shapes=shapes, instrument=instrument)
+        self.acquisition_kwargs = {}
+
+    def update_demod_setpoints(self, demod_freqs):
+        """
+        Function to update the demodulation frequency setpoints to be called
+        when a demod_freq Parameter of the acq controller is updated
+
+        Args:
+            demod_freqs: numpy array of demodulation frequencies to use as
+                setpoints if length > 1
+        """
+        demod_length = self._instrument._demod_length
+        if demod_length > 1:
+            pass
+            # self.setpoints = ((demod_freqs, ), (demod_freqs, ))
+        else:
+            pass
+
+    def get(self):
+        """
+        Gets the output by calling acquire on the alazar (which in turn calls the
+        processing functions of the acquisition controller before returning the reshaped data.
+        The exact data will depend on the AcquisitionController used
+
+        returns:
+            - A a numpy array of Alazar data
+            - B a numpy array of Alazar data
+        """
+        A, B = self._instrument._get_alazar().acquire(
+            acquisition_controller=self._instrument,
+            **self.acquisition_kwargs)
+        return A, B
+
+
+class AlazarMultiArray2D(AlazarMultiArray):
+
+    def update_sweep(self, start, stop, npts):
+        """
+        Function which updates the shape of the parameter (and it's setpoints
+        when this is fixed)
+
+        Args:
+            start: start time of samples returned after processing
+            stop: stop time of samples returned after processing
+            npts: number of samples returned after processing
+        """
+        demod_length = self._instrument._demod_length
+        # self._time_list = tuple(np.linspace(start, stop, num=npts)
+        if demod_length > 1:
+            # demod_freqs = self._instrument.get_demod_freqs()
+            # self.setpoints = ((demod_freqs, self._time_list),
+            #                   (demod_freqs, self._time_list))
+            self.shapes = ((demod_length, npts), (demod_length, npts))
+        else:
+            self.shapes = ((npts,), (npts,))
+            # self.setpoints = ((self._time_list,), (self._time_list,))
+
+class AlazarMultiArray3D(AlazarMultiArray):
+
+    def update_buf_sweep(self, buf_npts, buf_start=None, buf_stop=None):
+        """
+        Function which updates the shape of the parameter (and it's setpoints
+        when this is fixed)
+
+        Args:
+            buf_npts: number of buffers returned
+            buf_start (optional): start value of buffers returned
+            buf_stop (optional): stop value of records returned
+        """
+        demod_length = self._instrument._demod_length
+        # self._buf_list = tuple(np.linspace(buf_start,
+        #                                    buf_stop, num=buf_npts))
+        self._buf_npts = buf_npts
+        if demod_length > 1:
+            # demod_freqs = self._instrument.get_demod_freqs()
+            # self.setpoints = ((demod_freqs, self._buf_list, self._rec_list),
+            #                   (demod_freqs, self._buf_list, self._rec_list))
+            self.shapes = ((demod_length, self._buf_npts, self._rec_npts),
+                           (demod_length, self._buf_npts, self._rec_npts))
+        else:
+            self.shapes = ((self._buf_npts, self._rec_npts),
+                           (self._buf_npts, self._rec_npts))
+            # self.setpoints = ((self._buf_list, self._rec_list),
+            #                   (self._buf_list, self._rec_list))
+
+    def update_rec_sweep(self, rec_npts, rec_start=None, rec_stop=None):
+        """
+        Function which updates the shape of the parameter (and it's setpoints
+        when this is fixed)
+
+        Args:
+            rec_npts: number of records returned after processing
+            rec_start (optional): start value of records returned
+            rec_stop (optional): stop value of records returned
+        """
+        demod_length = self._instrument._demod_length
+        # self._rec_list = tuple(np.linspace(rec_start,
+        #                                    rec_stop, num=rec_npts))
+        self._rec_npts = rec_npts
+        if demod_length > 1:
+            # demod_freqs = self._instrument.get_demod_freqs()
+            # self.setpoints = ((demod_freqs, self._buf_list, self._rec_list),
+            #                   (demod_freqs, self._buf_list, self._rec_list))
+            self.shapes = ((demod_length, self._buf_npts, self._rec_npts),
+                           (demod_length, self._buf_npts, self._rec_npts))
+        else:
+            self.shapes = ((self._buf_npts, self._rec_npts),
+                           (self._buf_npts, self._rec_npts))
+            # self.setpoints = ((self._buf_list, self._rec_list),
+            #                   (self._buf_list, self._rec_list))
