@@ -22,9 +22,9 @@ class AcqVariablesParam(Parameter):
         super().__init__(name)
         self._instrument = instrument
         self._save_val(initial_value)
-        setattr(self, '_check_and_update_instr', check_and_update_fn)
+        self._check_and_update_instr = check_and_update_fn
         if default_fn is not None:
-            setattr(self, '_get_default', default_fn)
+            self._get_default = default_fn
 
     def set(self, value):
         """
