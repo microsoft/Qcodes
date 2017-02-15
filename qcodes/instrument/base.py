@@ -442,7 +442,7 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
             print('{0:25}: \t{1}\t ({2})'.format(
                   snapshot['parameters'][par]['name'],
                   snapshot['parameters'][par]['value'],
-                  snapshot['parameters'][par]['units']))
+                  snapshot['parameters'][par]['unit']))
     #
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #
