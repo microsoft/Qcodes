@@ -1,31 +1,18 @@
-# Tektronix_AWG5014.py class, to perform the communication between the Wrapper
-# and the device
-# Pieter de Groot <pieterdegroot@gmail.com>, 2008
-# Martijn Schaafsma <mcschaafsma@gmail.com>, 2008
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+import struct
+import logging
+import warnings
 
 import numpy as np
-import struct
-from time import sleep, time, localtime
-from io import BytesIO
-import os
-import logging
 import array as arr
 
+from time import sleep, localtime
+from io import BytesIO
+
 from qcodes import VisaInstrument, validators as vals
+from pyvisa.errors import VisaIOError
+
+
+log = logging.getLogger(__name__)
 
 
 def parsestr(v):
@@ -33,33 +20,29 @@ def parsestr(v):
 
 
 class Tektronix_AWG5014(VisaInstrument):
-    '''
-    This is the python driver for the Tektronix AWG5014
-    Arbitrary Waveform Generator
+    """
+    This is the QCoDeS driver for the Tektronix AWG5014
+    Arbitrary Waveform Generator.
 
-    think about:    clock, waveform length
+    The driver makes some assumptions on the settings of the instrument:
+
+        - The output channels are always in Amplitude/Offset mode
+        - The output markers are always in High/Low mode
 
     TODO:
-    - Not all functionality is available in the driver
-    - There is some double functionality
-    - There are some inconsistensies between the name of a parameter and the
-      name of the same variable in the tektronix manual
+        - Implement support for cable transfer function compensation
+        - Implement more instrument functionality in the driver
+        - Remove double functionality
+        - Remove inconsistensies between the name of a parameter and
+          the name of the same variable in the tektronix manual
 
-    * Remove test_send??
-    * Sequence element (SQEL) parameter functions exist but no corresponding
-      parameters
+    In the future, we should consider the following:
 
+        * Removing test_send??
+        * That sequence element (SQEL) parameter functions exist but no
+          corresponding parameters.
 
-    CHANGES:
-    26-11-2008 by Gijs: Copied this plugin from the 520 and added support for
-        2 more channels, added set get marker delay functions and increased max
-        sampling freq to 1.2 	GS/s
-    28-11-2008 ''  '' : Added some functionality to manipulate and manoeuvre
-        through the folders on the AWG
-    8-8-2015 by Adriaan : Merging the now diverged versions of this driver from
-        the Diamond and Transmon groups @ TUD
-    7-1-2016 Converted to use with QCodes
-    '''
+    """
     AWG_FILE_FORMAT_HEAD = {
         'SAMPLING_RATE': 'd',    # d
         'REPETITION_RATE': 'd',    # # NAME?
@@ -144,134 +127,183 @@ class Tektronix_AWG5014(VisaInstrument):
         'DC_OUTPUT_LEVEL_N': 'd',  # V
     }
 
-    def __init__(self, name, setup_folder, address, reset=False,
-                 clock=1e9, numpoints=1000, timeout=180, **kwargs):
-        '''
+    def __init__(self, name, address, timeout=180, **kwargs):
+        """
         Initializes the AWG5014.
 
-        Input:
-            name (string)           : name of the instrument
-            setup_folder (string)   : folder where externally generate seqs
-                                        are stored
-            address (string)        : GPIB or ethernet address
-            reset (bool)            : resets to default values, default=false
-            numpoints (int)         : sets the number of datapoints
-            timeout (float)         : visa timeout, in secs. long default (180)
-                                        to accommodate large waveforms
+        Args:
+            name (string): name of the instrument
+            address (string): GPIB or ethernet address as used by VISA
+            timeout (float): visa timeout, in secs. long default (180)
+                to accommodate large waveforms
 
-        Output:
+        Returns:
             None
-        '''
+        """
         super().__init__(name, address, timeout=timeout, **kwargs)
 
         self._address = address
 
         self._values = {}
         self._values['files'] = {}
-        self._clock = clock
-        self._numpoints = numpoints
 
         self.add_function('reset', call_cmd='*RST')
 
         self.add_parameter('state',
                            get_cmd=self.get_state)
         self.add_parameter('run_mode',
-                           get_cmd='AWGC:RMOD?',
-                           set_cmd='AWGC:RMOD ' + '{}',
-                           vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'))
+                           get_cmd='AWGControl:RMODe?',
+                           set_cmd='AWGControl:RMODe ' + '{}',
+                           vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'),
+                           get_parser=self.newlinestripper
+                           )
+        self.add_parameter('ref_clock_source',
+                           label='Reference clock source',
+                           get_cmd='AWGControl:CLOCk:SOURce?',
+                           set_cmd='AWGControl:CLOCk:SOURce ' + '{}',
+                           vals=vals.Enum('INT', 'EXT'),
+                           get_parser=self.newlinestripper)
+        self.add_parameter('DC_output',
+                           label='DC Output (ON/OFF)',
+                           get_cmd='AWGControl:DC:STATe?',
+                           set_cmd='AWGControl:DC:STATe {}',
+                           vals=vals.Ints(0, 1),
+                           get_parser=int)
+
+        # sequence parameter(s)
+        self.add_parameter('sequence_length',
+                           label='Sequence length',
+                           get_cmd='SEQuence:LENGth?',
+                           set_cmd='SEQuence:LENGth ' + '{}',
+                           get_parser=int,
+                           vals=vals.Ints(0, 8000),
+                           docstring=(
+                               """
+                               This command sets the sequence length.
+                               Use this command to create an
+                               uninitialized sequence. You can also
+                               use the command to clear all sequence
+                               elements in a single action by passing
+                               0 as the parameter. However, this
+                               action cannot be undone so exercise
+                               necessary caution. Also note that
+                               passing a value less than the
+                               sequence’s current length will cause
+                               some sequence elements to be deleted at
+                               the end of the sequence. For example if
+                               self.get_sq_length returns 200 and you
+                               subsequently set sequence_length to 21,
+                               all sequence elements except the first
+                               20 will be deleted.
+                               """)
+                           )
+
+        self.add_parameter('sequence_pos',
+                           label='Sequence position',
+                           get_cmd='AWGControl:SEQuencer:POSition?',
+                           set_cmd='SEQuence:JUMP:IMMediate {}',
+                           vals=vals.Ints(1)
+                           )
+
         # Trigger parameters #
-        # ! Warning this is the same as run mode, do not use! exists
-        # Solely for legacy purposes
+        # Warning: `trigger_mode` is the same as `run_mode`, do not use! exists
+        # solely for legacy purposes
         self.add_parameter('trigger_mode',
-                           get_cmd='AWGC:RMOD?',
-                           set_cmd='AWGC:RMOD ' + '{}',
-                           vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'))
+                           get_cmd='AWGControl:RMODe?',
+                           set_cmd='AWGControl:RMODe ' + '{}',
+                           vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'),
+                           get_parser=self.newlinestripper)
         self.add_parameter('trigger_impedance',
-                           label='Trigger impedance (Ohm)',
-                           units='Ohm',
-                           get_cmd='TRIG:IMP?',
-                           set_cmd='TRIG:IMP ' + '{}',
+                           label='Trigger impedance',
+                           unit='Ohm',
+                           get_cmd='TRIGger:IMPedance?',
+                           set_cmd='TRIGger:IMPedance ' + '{}',
                            vals=vals.Enum(50, 1000),
                            get_parser=float)
         self.add_parameter('trigger_level',
-                           units='V',
-                           label='Trigger level (V)',
-                           get_cmd='TRIG:LEV?',
-                           set_cmd='TRIG:LEV ' + '{:.3f}',
+                           unit='V',
+                           label='Trigger level',
+                           get_cmd='TRIGger:LEVel?',
+                           set_cmd='TRIGger:LEVel ' + '{:.3f}',
                            vals=vals.Numbers(-5, 5),
                            get_parser=float)
         self.add_parameter('trigger_slope',
-                           get_cmd='TRIG:SLOP?',
-                           set_cmd='TRIG:SLOP ' + '{}',
-                           vals=vals.Enum('POS', 'NEG'))  # ,
-                           # get_parser=self.parse_int_pos_neg)
+                           get_cmd='TRIGger:SLOPe?',
+                           set_cmd='TRIGger:SLOPe ' + '{}',
+                           vals=vals.Enum('POS', 'NEG'),
+                           get_parser=self.newlinestripper)
+
         self.add_parameter('trigger_source',
-                           get_cmd='TRIG:source?',
-                           set_cmd='TRIG:source ' + '{}',
-                           vals=vals.Enum('INT', 'EXT'))
-        # Event parameters #
+                           get_cmd='TRIGger:SOURce?',
+                           set_cmd='TRIGger:SOURce ' + '{}',
+                           vals=vals.Enum('INT', 'EXT'),
+                           get_parser=self.newlinestripper)
+
+        # Event parameters
         self.add_parameter('event_polarity',
-                           get_cmd='EVEN:POL?',
-                           set_cmd='EVEN:POL ' + '{}',
-                           vals=vals.Enum('POS', 'NEG'))
+                           get_cmd='EVENt:POL?',
+                           set_cmd='EVENt:POL ' + '{}',
+                           vals=vals.Enum('POS', 'NEG'),
+                           get_parser=self.newlinestripper)
         self.add_parameter('event_impedance',
-                           label='Event impedance (Ohm)',
-                           get_cmd='EVEN:IMP?',
-                           set_cmd='EVEN:IMP ' + '{}',
+                           label='Event impedance',
+                           unit='Ohm',
+                           get_cmd='EVENt:IMPedance?',
+                           set_cmd='EVENt:IMPedance ' + '{}',
                            vals=vals.Enum(50, 1000),
                            get_parser=float)
         self.add_parameter('event_level',
-                           label='Event level (V)',
-                           get_cmd='EVEN:LEV?',
-                           set_cmd='EVEN:LEV ' + '{:.3f}',
+                           label='Event level',
+                           unit='V',
+                           get_cmd='EVENt:LEVel?',
+                           set_cmd='EVENt:LEVel ' + '{:.3f}',
                            vals=vals.Numbers(-5, 5),
                            get_parser=float)
         self.add_parameter('event_jump_timing',
-                           get_cmd='EVEN:JTIM?',
-                           set_cmd='EVEN:JTIM {}',
-                           vals=vals.Enum('SYNC', 'ASYNC'))
+                           get_cmd='EVENt:JTIMing?',
+                           set_cmd='EVENt:JTIMing {}',
+                           vals=vals.Enum('SYNC', 'ASYNC'),
+                           get_parser=self.newlinestripper)
 
         self.add_parameter('clock_freq',
-                           label='Clock frequency (Hz)',
-                           get_cmd='SOUR:FREQ?',
-                           set_cmd='SOUR:FREQ ' + '{}',
+                           label='Clock frequency',
+                           unit='Hz',
+                           get_cmd='SOURce:FREQuency?',
+                           set_cmd='SOURce:FREQuency ' + '{}',
                            vals=vals.Numbers(1e6, 1.2e9),
                            get_parser=float)
 
-        self.add_parameter('numpoints',
-                           label='Number of datapoints per wave',
-                           get_cmd=self._do_get_numpoints,
-                           set_cmd=self._do_set_numpoints,
-                           vals=vals.Ints(100, int(1e9)))
         self.add_parameter('setup_filename',
-                           get_cmd='AWGC:SNAM?')
-                           # set_cmd=self.do_set_setup_filename,
-                           # vals=vals.Strings())
-                           # set function has optional args and therefore
-                           # does not work with QCodes
+                           get_cmd='AWGControl:SNAMe?')
 
         # Channel parameters #
         for i in range(1, 5):
-            amp_cmd = 'SOUR{}:VOLT:LEV:IMM:AMPL'.format(i)
-            offset_cmd = 'SOUR{}:VOLT:LEV:IMM:OFFS'.format(i)
+            amp_cmd = 'SOURce{}:VOLTage:LEVel:IMMediate:AMPLitude'.format(i)
+            offset_cmd = 'SOURce{}:VOLTage:LEVel:IMMediate:OFFS'.format(i)
             state_cmd = 'OUTPUT{}:STATE'.format(i)
-            waveform_cmd = 'SOUR{}:WAV'.format(i)
+            waveform_cmd = 'SOURce{}:WAVeform'.format(i)
+            directoutput_cmd = 'AWGControl:DOUTput{}:STATE'.format(i)
+            filter_cmd = 'OUTPut{}:FILTer:FREQuency'.format(i)
+            add_input_cmd = 'SOURce{}:COMBine:FEED'.format(i)
+            dc_out_cmd = 'AWGControl:DC{}:VOLTage:OFFSet'.format(i)
+
             # Set channel first to ensure sensible sorting of pars
             self.add_parameter('ch{}_state'.format(i),
                                label='Status channel {}'.format(i),
                                get_cmd=state_cmd + '?',
                                set_cmd=state_cmd + ' {}',
-                               vals=vals.Ints(0, 1))
+                               vals=vals.Ints(0, 1),
+                               get_parser=int)
             self.add_parameter('ch{}_amp'.format(i),
-                               label='Amplitude channel {} (V)'.format(i),
-                               units='V',
+                               label='Amplitude channel {}'.format(i),
+                               unit='Vpp',
                                get_cmd=amp_cmd + '?',
                                set_cmd=amp_cmd + ' {:.6f}',
-                               vals=vals.Numbers(0.02, 1.5),
+                               vals=vals.Numbers(0.02, 4.5),
                                get_parser=float)
             self.add_parameter('ch{}_offset'.format(i),
-                               label='Offset channel {} (V)'.format(i),
-                               units='V',
+                               label='Offset channel {}'.format(i),
+                               unit='V',
                                get_cmd=offset_cmd + '?',
                                set_cmd=offset_cmd + ' {:.3f}',
                                vals=vals.Numbers(-.1, .1),
@@ -282,69 +314,113 @@ class Tektronix_AWG5014(VisaInstrument):
                                set_cmd=waveform_cmd + ' "{}"',
                                vals=vals.Strings(),
                                get_parser=parsestr)
+            self.add_parameter('ch{}_direct_output'.format(i),
+                               label='Direct output channel {}'.format(i),
+                               get_cmd=directoutput_cmd + '?',
+                               set_cmd=directoutput_cmd + ' {}',
+                               vals=vals.Ints(0, 1))
+            self.add_parameter('ch{}_add_input'.format(i),
+                               label='Add input channel {}',
+                               get_cmd=add_input_cmd + '?',
+                               set_cmd=add_input_cmd + ' {}',
+                               vals=vals.Enum('"ESIG"', '"ESIGnal"', '""'),
+                               get_parser=self.newlinestripper)
+            self.add_parameter('ch{}_filter'.format(i),
+                               label='Low pass filter channel {}'.format(i),
+                               unit='Hz',
+                               get_cmd=filter_cmd + '?',
+                               set_cmd=filter_cmd + ' {}',
+                               vals=vals.Enum(20e6, 100e6, 9.9e37,
+                                              'INF', 'INFinity'),
+                               get_parser=float)
+            self.add_parameter('ch{}_DC_out'.format(i),
+                               label='DC output level channel {}'.format(i),
+                               unit='V',
+                               get_cmd=dc_out_cmd + '?',
+                               set_cmd=dc_out_cmd + ' {}',
+                               vals=vals.Numbers(-3, 5),
+                               get_parser=float)
+
             # Marker channels
             for j in range(1, 3):
-                m_del_cmd = 'SOUR{}:MARK{}:DEL'.format(i, j)
-                m_high_cmd = 'SOUR{}:MARK{}:VOLT:LEV:IMM:HIGH'.format(i, j)
-                m_low_cmd = 'SOUR{}:MARK{}:VOLT:LEV:IMM:LOW'.format(i, j)
+                m_del_cmd = 'SOURce{}:MARKer{}:DELay'.format(i, j)
+                m_high_cmd = ('SOURce{}:MARKer{}:VOLTage:' +
+                              'LEVel:IMMediate:HIGH').format(i, j)
+                m_low_cmd = ('SOURce{}:MARKer{}:VOLTage:' +
+                             'LEVel:IMMediate:LOW').format(i, j)
 
                 self.add_parameter(
                     'ch{}_m{}_del'.format(i, j),
-                    label='Channel {} Marker {} delay (ns)'.format(i, j),
+                    label='Channel {} Marker {} delay'.format(i, j),
+                    units='ns',
                     get_cmd=m_del_cmd + '?',
                     set_cmd=m_del_cmd + ' {:.3f}e-9',
                     vals=vals.Numbers(0, 1),
                     get_parser=float)
                 self.add_parameter(
                     'ch{}_m{}_high'.format(i, j),
-                    label='Channel {} Marker {} high level (V)'.format(i, j),
+                    label='Channel {} Marker {} high level'.format(i, j),
+                    unit='V',
                     get_cmd=m_high_cmd + '?',
                     set_cmd=m_high_cmd + ' {:.3f}',
                     vals=vals.Numbers(-2.7, 2.7),
                     get_parser=float)
                 self.add_parameter(
                     'ch{}_m{}_low'.format(i, j),
-                    label='Channel {} Marker {} low level (V)'.format(i, j),
+                    label='Channel {} Marker {} low level'.format(i, j),
+                    unit='V',
                     get_cmd=m_low_cmd + '?',
                     set_cmd=m_low_cmd + ' {:.3f}',
                     vals=vals.Numbers(-2.7, 2.7),
                     get_parser=float)
 
-        # # Add functions
-
-        # self.add_function('get_state')
-        # self.add_function('set_event_jump_timing')
-        # self.add_function('get_event_jump_timing')
-        # self.add_function('generate_awg_file')
-        # self.add_function('send_awg_file')
-        # self.add_function('load_awg_file')
-        # self.add_function('get_error')
-        # self.add_function('pack_waveform')
-        # self.add_function('clear_visa')
-        # self.add_function('initialize_dc_waveforms')
-
-        # # Setup filepaths
-        self.waveform_folder = "Waveforms"
-        self._rem_file_path = "Z:\\Waveforms\\"
-
-        # NOTE! this directory has to exist on the AWG!!
-        self._setup_folder = setup_folder
-
-        self.goto_root()
-        self.change_folder(self.waveform_folder)
-
         self.set('trigger_impedance', 50)
         if self.get('clock_freq') != 1e9:
-            logging.warning('AWG clock freq not set to 1GHz')
+            log.warning('AWG clock freq not set to 1GHz')
 
         self.connect_message()
 
+    # Convenience parser
+    def newlinestripper(self, string):
+            if string.endswith('\n'):
+                return string[:-1]
+            else:
+                return string
+
     # Functions
     def get_all(self, update=True):
+        """
+        Deprecated function. Please don't use.
+
+        Function to get a snapshot of the state of all parameters and
+        functions of the instrument.
+        Note: methods of the Tektronix_AWG5014 class are not included.
+
+        Args:
+            update (bool): whether to return an updated state. Default: True
+
+        Returns:
+
+            dict: a JSON-serialisable dict with all information.
+
+        Raises:
+            DeprecationWarning
+        """
+        warnings.warn("Deprecated! Use snapshot(update=update) directly")
         return self.snapshot(update=update)
 
     def get_state(self):
-        state = self.ask('AWGC:RSTATE?')
+        """
+        This query returns the run state of the arbitrary waveform
+        generator or the sequencer.
+
+        Returns:
+            str: either 'Idle', 'Waiting for trigger', or 'Running'.
+
+        Raises:
+            ValueError: if none of the three states above apply.
+        """
+        state = self.ask('AWGControl:RSTATe?')
         if state.startswith('0'):
             return 'Idle'
         elif state.startswith('1'):
@@ -352,317 +428,374 @@ class Tektronix_AWG5014(VisaInstrument):
         elif state.startswith('2'):
             return 'Running'
         else:
-            raise ValueError(__name__ + ' : AWG in undefined state "%s"' %
-                             state)
+            raise ValueError(__name__ + (' : AWG in undefined ' +
+                                         'state "{}"').format(state))
 
     def start(self):
-        '''
-        Convenience function, identical to run()
-        '''
+        """Convenience function, identical to self.run()"""
         return self.run()
 
     def run(self):
-        self.write('AWGC:RUN')
+        """
+        This command initiates the output of a waveform or a sequence.
+        This is equivalent to pressing Run/Stop button on the front panel.
+        The instrument can be put in the run state only when output waveforms
+        are assigned to channels.
+
+        Returns:
+            The output of self.get_state()
+        """
+        self.write('AWGControl:RUN')
         return self.get_state()
 
     def stop(self):
-        self.write('AWGC:STOP')
+        """This command stops the output of a waveform or a sequence."""
+        self.write('AWGControl:STOP')
+
+    def force_trigger(self):
+        """
+        This command generates a trigger event. This is equivalent to
+        pressing the Force Trigger button on front panel.
+        """
+        self.write('*TRG')
 
     def get_folder_contents(self, print_contents=True):
+        """
+        This query returns the current contents and state of the mass storage
+        media (on the AWG Windows machine).
+
+        Args:
+            print_contents (bool): If True, the folder name and the query
+                output are printed. Default: True.
+
+        Returns:
+            str: A comma-seperated string of the folder contents.
+        """
+        contents = self.ask('MMEMory:CATalog?')
         if print_contents:
             print('Current folder:', self.get_current_folder_name())
-            print(self.ask('MMEM:CAT?')
+            print(contents
                   .replace(',"$', '\n$').replace('","', '\n')
                   .replace(',', '\t'))
-        return self.ask('mmem:cat?')
+        return contents
 
     def get_current_folder_name(self):
-        return self.ask('mmem:cdir?')
+        """
+        This query returns the current directory of the file system on the
+        arbitrary waveform generator. The current directory for the
+        programmatic interface is different from the currently selected
+        directory in the Windows Explorer on the instrument.
+
+        Returns:
+            str: A string with the full path of the current folder.
+        """
+        return self.ask('MMEMory:CDIRectory?')
 
     def set_current_folder_name(self, file_path):
-        return self.write('mmem:cdir "%s"' % file_path)
+        """
+        Set the current directory of the file system on the arbitrary
+        waveform generator. The current directory for the programmatic
+        interface is different from the currently selected directory in the
+        Windows Explorer on the instrument.
 
-    def change_folder(self, dir):
-        return self.write('mmem:cdir "\%s"' % dir)
+        Args:
+            file_path (str): The full path.
+
+        Returns:
+            tuple: tuple containing:
+              - int: The number of bytes written,
+              - enum 'Statuscode': whether the write was succesful
+        """
+        writecmd = 'MMEMory:CDIRectory "{}"'
+        return self.visa_handle.write(writecmd.format(file_path))
+
+    def change_folder(self, folder):
+        """Duplicate of self.set_current_folder_name"""
+        writecmd = 'MMEMory:CDIRectory "\{}"'
+        return self.visa_handle.write(writecmd.format(folder))
 
     def goto_root(self):
-        return self.write('mmem:cdir "c:\\.."')
+        """
+        Set the current directory of the file system on the arbitrary
+        waveform generator to C: (the 'root' location in Windows).
+        """
+        self.write('MMEMory:CDIRectory "c:\\.."')
 
-    def create_and_goto_dir(self, dir):
-        '''
-        Creates (if not yet present) and sets the current directory to <dir>
-        and displays the contents
+    def create_and_goto_dir(self, folder):
+        """
+        Set the current directory of the file system on the arbitrary
+        waveform generator. Creates the directory if if doesn't exist.
+        Queries the resulting folder for its contents.
 
-        '''
+        Args:
+            folder (str): The path of the directory to set as current.
+                Note: this function expects only root level directories.
 
-        dircheck = '%s, DIR' % dir
+        Returns:
+            str: A comma-seperated string of the folder contents.
+        """
+
+        dircheck = '%s, DIR' % folder
         if dircheck in self.get_folder_contents():
-            self.change_folder(dir)
-            logging.debug(__name__ + ' :Directory already exists')
-            print('Directory already exists, changed path to %s' % dir)
-            print('Contents of folder is %s' % self.ask('mmem:cat?'))
-        elif self.get_current_folder_name() == '"\\%s"' % dir:
-            print('Directory already set to %s' % dir)
+            self.change_folder(folder)
+            log.debug('Directory already exists')
+            log.warning(('Directory already exists, ' +
+                         'changed path to {}').format(folder))
+            log.info('Contents of folder is ' +
+                     '{}'.format(self.ask('MMEMory:cat?')))
+        elif self.get_current_folder_name() == '"\\{}"'.format(folder):
+            log.info('Directory already set to ' +
+                     '{}'.format(folder))
         else:
-            self.write('mmem:mdir "\%s"' % dir)
-            self.write('mmem:cdir "\%s"' % dir)
-            return self.get_folder_contents()
+            self.write('MMEMory:MDIRectory "\%s"' % folder)
+            self.write('MMEMory:CDIRectory "\%s"' % folder)
+
+        return self.get_folder_contents()
 
     def all_channels_on(self):
+        """
+        Set the state of all channels to be ON. Note: only channels with
+        defined waveforms can be ON.
+        """
         for i in range(1, 5):
             self.set('ch{}_state'.format(i), 1)
 
     def all_channels_off(self):
+        """Set the state of all channels to be OFF."""
         for i in range(1, 5):
             self.set('ch{}_state'.format(i), 0)
 
-    def clear_waveforms(self):
-        '''
-        Clears the waveform on all channels.
+    #####################
+    # Sequences section #
+    #####################
 
-        Input:
-            None
-        Output:
-            None
-        '''
-        self.write('SOUR1:FUNC:USER ""')
-        self.write('SOUR2:FUNC:USER ""')
-        self.write('SOUR3:FUNC:USER ""')
-        self.write('SOUR4:FUNC:USER ""')
-
-    def get_sequence_length(self):
-        return float(self.ask('SEQuence:LENGth?'))
-
-    def get_refclock(self):
-        '''
-        Asks AWG whether the 10 MHz reference is set to the
-        internal source or an external one.
-        Input:
-            None
-
-        Output:
-            'INT' or 'EXT'
-        '''
-        return self.ask('AWGC:CLOC:SOUR?')
-
-    def set_refclock_ext(self):
-        '''
-        Sets the reference clock to internal or external.
-        '''
-        self.write('AWGC:CLOC:SOUR EXT')
-
-    def set_refclock_int(self):
-        '''
-        Sets the reference clock to internal or external
-        '''
-        self.write('AWGC:CLOC:SOUR INT')
-
-    ##############
-    # Parameters #
-    ##############
-
-    def _do_get_numpoints(self):
-        '''
-        Returns the number of datapoints in each wave
-
-        Input:
-            None
-
-        Output:
-            numpoints (int) : Number of datapoints in each wave
-        '''
-        return self._numpoints
-
-    def _do_set_numpoints(self, numpts):
-        '''
-        Sets the number of datapoints in each wave.
-        This acts on both channels.
-
-        Input:
-            numpts (int) : The number of datapoints in each wave
-
-        Output:
-            None
-        '''
-        logging.debug(__name__ + ' : Trying to set numpoints to %s' % numpts)
-
-        warn_string = ' : changing numpoints. This will clear all waveforms!'
-        if numpts != self._numpoints:
-            logging.warning(__name__ + warn_string)
-        print(__name__ + warn_string)
-        # Extra print cause logging.warning does not print
-        response = input('type "yes" to continue')
-        if response == 'yes':
-            logging.debug(__name__ + ' : Setting numpoints to %s' % numpts)
-            self._numpoints = numpts
-            self.clear_waveforms()
-        else:
-            print('aborted')
-
-    # Sequences section
     def force_trigger_event(self):
-        self.write('TRIG:IMM')
+        """
+        This command generates a trigger event. Equivalent to
+        self.force_trigger.
+        """
+        self.write('TRIGger:IMMediate')
 
     def force_event(self):
-        self.write('EVEN:IMM')
-
-    def set_sqel_event_target_index_next(self, element_no):
-        self.write('SEQ:ELEM%s:JTARGET:TYPE NEXT' % element_no)
+        """
+        This command generates a forced event. This is used to generate the
+        event when the sequence is waiting for an event jump. This is
+        equivalent to pressing the Force Event button on the front panel of the
+        instrument.
+        """
+        self.write('EVENt:IMMediate')
 
     def set_sqel_event_target_index(self, element_no, index):
-        self.write('SEQ:ELEM%s:JTARGET:INDEX %s' % (element_no, index))
+        """
+        This command sets the target index for
+        the sequencer’s event jump operation. Note that this will take
+        effect only when the event jump target type is set to
+        INDEX.
+
+        Args:
+            element_no (int): The sequence element number
+            index (int): The index to set the target to
+        """
+        self.write('SEQuence:' +
+                   'ELEMent{}:JTARGet:INDex {}'.format(element_no, index))
 
     def set_sqel_goto_target_index(self, element_no, goto_to_index_no):
-        self.write('SEQ:ELEM%s:GOTO:IND  %s' % (element_no, goto_to_index_no))
+        """
+        This command sets the target index for the GOTO command of the
+        sequencer.  After generating the waveform specified in a
+        sequence element, the sequencer jumps to the element specified
+        as GOTO target. This is an unconditional jump. If GOTO target
+        is not specified, the sequencer simply moves on to the next
+        element. If the Loop Count is Infinite, the GOTO target which
+        is specified in the element is not used. For this command to
+        work, the goto state of the squencer must be ON and the
+        sequence element must exist.
+        Note that the first element of a sequence is taken to be 1 not 0.
+
+
+        Args:
+            element_no (int): The sequence element number
+            goto_to_index_no (int) The target index number
+
+        """
+        self.write('SEQuence:' +
+                   'ELEMent{}:GOTO:INDex {}'.format(element_no,
+                                                    goto_to_index_no))
 
     def set_sqel_goto_state(self, element_no, goto_state):
-        self.write('SEQuence:ELEMent%s:GOTO:STATe %s' % (
-            element_no, int(goto_state)))
+        """
+        This command sets the GOTO state of the sequencer for the specified
+        sequence element.
 
-    def set_sqel_loopcnt_to_inf(self, element_no, state=True):
-        self.write('seq:elem%s:loop:inf %s' % (element_no, int(state)))
+        Args:
+            element_no (int): The sequence element number
+            goto_state (int): The GOTO state of the sequencer. Must be either
+                0 (OFF) or 1 (ON).
+        """
+        allowed_states = [0, 1]
+        if goto_state not in allowed_states:
+            log.warning(('{} not recognized as a valid goto' +
+                         ' state. Setting to 0 (OFF).').format(goto_state))
+            goto_state = 0
+        self.write('SEQuence:ELEMent{}:GOTO:STATe {}'.format(element_no,
+                                                             int(goto_state)))
+
+    def set_sqel_loopcnt_to_inf(self, element_no, state=1):
+        """
+        This command sets the infinite looping state for a sequence
+        element. When an infinite loop is set on an element, the
+        sequencer continuously executes that element. To break the
+        infinite loop, issue self.stop()
+
+        Args:
+            element_no (int): The sequence element number
+            state (int): The infinite loop state. Must be either 0 (OFF) or
+                1 (ON).
+        """
+        allowed_states = [0, 1]
+        if state not in allowed_states:
+            log.warning(('{} not recognized as a valid loop' +
+                         '  state. Setting to 0 (OFF).').format(state))
+            state = 0
+
+        self.write('SEQuence:ELEMent{}:LOOP:INFinite {}'.format(element_no,
+                                                                int(state)))
 
     def get_sqel_loopcnt(self, element_no=1):
-        return self.ask('SEQ:ELEM%s:LOOP:COUN?' % element_no)
+        """
+        This query returns the loop count (number of repetitions) of a
+        sequence element. Loop count setting for an element is ignored
+        if the infinite looping state is set to ON.
+
+        Args:
+            element_no (int): The sequence element number. Default: 1.
+        """
+        return self.ask('SEQuence:ELEMent{}:LOOP:COUNt?'.format(element_no))
 
     def set_sqel_loopcnt(self, loopcount, element_no=1):
-        self.write('SEQ:ELEM%s:LOOP:COUN %s' % (element_no, loopcount))
+        """
+        This command sets the loop count. Loop count setting for an
+        element is ignored if the infinite looping state is set to ON.
+
+        Args:
+            loopcount (int): The number of times the sequence is being output.
+                The maximal possible number is 65536, beyond that: infinity.
+            element_no (int): The sequence element number. Default: 1.
+        """
+        self.write('SEQuence:ELEMent{}:LOOP:COUNt {}'.format(element_no,
+                                                             loopcount))
 
     def set_sqel_waveform(self, waveform_name, channel, element_no=1):
-        self.write('SEQ:ELEM%s:WAV%s "%s"' % (
-            element_no, channel, waveform_name))
+        """
+        This command sets the waveform for a sequence element on the specified
+        channel.
+
+        Args:
+            waveform_name (str): Name of the waveform. Must be in the waveform
+                list (either User Defined or Predefined).
+            channel (int): The output channel (1-4)
+            element_no (int): The sequence element number. Default: 1.
+        """
+        self.write('SEQuence:ELEMent{}:WAVeform{} "{}"'.format(element_no,
+                                                               channel,
+                                                               waveform_name))
 
     def get_sqel_waveform(self, channel, element_no=1):
-        return self.ask('SEQ:ELEM%s:WAV%s?' % (element_no, channel))
+        """
+        This query returns the waveform for a sequence element on the
+        specified channel.
+
+        Args:
+            channel (int): The output channel (1-4)
+            element_no (int): The sequence element number. Default: 1.
+
+        Returns:
+            str: The name of the waveform.
+        """
+        return self.ask('SEQuence:ELEMent{}:WAVeform{}?'.format(element_no,
+                                                                channel))
 
     def set_sqel_trigger_wait(self, element_no, state=1):
-        self.write('SEQ:ELEM%s:TWA %s' % (element_no, state))
+        """
+        This command sets the wait trigger state for an element. Send
+        a trigger signal in one of the following ways:
+
+          * By using an external trigger signal.
+          * By pressing the “Force Trigger” button on the front panel
+          * By using self.force_trigger or self.force_trigger_event
+
+        Args:
+            element_no (int): The sequence element number.
+            state (int): The wait trigger state. Must be either 0 (OFF)
+                or 1 (ON). Default: 1.
+
+        Returns:
+            str: The current state (after setting it).
+
+        """
+        self.write('SEQuence:ELEMent{}:TWAit {}'.format(element_no, state))
         return self.get_sqel_trigger_wait(element_no)
 
     def get_sqel_trigger_wait(self, element_no):
-        return self.ask('SEQ:ELEM%s:TWA?' % element_no)
+        """
+        This query returns the wait trigger state for an element. Send
+        a trigger signal in one of the following ways:
 
-    def get_sq_length(self):
-        return self.ask('SEQ:LENG?')
+          * By using an external trigger signal.
+          * By pressing the “Force Trigger” button on the front panel
+          * By using self.force_trigger or self.force_trigger_event
 
-    def set_sq_length(self, seq_length):
-        self.write('SEQ:LENG %s' % seq_length)
+        Args:
+            element_no (int): The sequence element number.
+
+        Returns:
+            str: The current state. Example: '1'.
+        """
+        return self.ask('SEQuence:ELEMent{}:TWAit?'.format(element_no))
 
     def set_sqel_event_jump_target_index(self, element_no, jtar_index_no):
-        self.write('SEQ:ELEM%s:JTAR:INDex %s' % (element_no, jtar_index_no))
+        """Duplicate of set_sqel_event_target_index"""
+        self.write('SEQuence:ELEMent{}:JTARget:INDex {}'.format(element_no,
+                                                                jtar_index_no))
 
     def set_sqel_event_jump_type(self, element_no, jtar_state):
-        self.write('SEQuence:ELEMent%s:JTAR:TYPE %s' %
-                   (element_no, jtar_state))
+        """
+        This command sets the event jump target type for the jump for
+        the specified sequence element.  Generate an event in one of
+        the following ways:
+
+        * By connecting an external cable to instrument rear panel
+          for external event.
+        * By pressing the Force Event button on the
+          front panel.
+        * By using self.force_event
+
+        Args:
+            element_no (int): The sequence element number
+            jtar_state (str): The jump target type. Must be either 'INDEX',
+                'NEXT', or 'OFF'.
+        """
+        self.write('SEQuence:ELEMent{}:JTARget:TYPE {}'.format(element_no,
+                                                               jtar_state))
 
     def get_sq_mode(self):
-        return self.ask('AWGC:SEQ:TYPE?')
+        """
+        This query returns the type of the arbitrary waveform
+        generator's sequencer. The sequence is executed by the
+        hardware sequencer whenever possible.
 
-    def get_sq_position(self):
-        return self.ask('AWGC:SEQ:POS?')
+        Returns:
+            str: Either 'HARD' or 'SOFT' indicating that the instrument is in\
+              either hardware or software sequencer mode.
+        """
+        return self.ask('AWGControl:SEQuence:TYPE?')
 
-    def sq_forced_jump(self, jump_index_no):
-        self.write('SEQ:JUMP:IMM %s' % jump_index_no)
-
-    #################################
-    # Transmon version file loading #
-    #################################
-
-    def load_and_set_sequence(self, wfname_l, nrep_l, wait_l, goto_l,
-                              logic_jump_l):
-        '''
-        sets the AWG in sequence mode and loads waveforms into the sequence.
-        wfname_l = list of waveform names [[wf1_ch1,wf2_ch1..],[wf1_ch2,wf2_ch2..],...],
-                    waveforms are assumed to be already present and imported in AWG (see send_waveform and
-                    import_waveform_file)
-        nrep_l = list specifying the number of reps for each seq element
-        wait_l = idem for wait_trigger_state
-        goto_l = idem for goto_state (goto is the element where it hops to in case the element is finished)
-        logic_jump_l = idem for event_jump_to (event or logic jump is the element where it hops in case of an event)
-
-        '''
-        self._load_new_style(wfname_l, nrep_l, wait_l, goto_l, logic_jump_l)
-
-    def _load_new_style(self, wfname_l, nrep_l, wait_l, goto_l, logic_jump_l):
-        '''
-        load sequence not using sequence file
-        '''
-        self.set_sq_length(0)  # delete prev seq
-        # print wfname_l
-        len_sq = len(nrep_l)
-        self.set_sq_length(len_sq)
-        n_ch = len(wfname_l)
-        for k in range(len_sq):
-            # wfname_l[k]
-            # print k
-            for n in range(n_ch):
-                # print n
-                # print wfname_l[n][k]
-                if wfname_l[n][k] is not None:
-
-                    self.set_sqel_waveform(wfname_l[n][k], n + 1, k + 1)
-            self.set_sqel_trigger_wait(k + 1, int(wait_l[k] != 0))
-            self.set_sqel_loopcnt_to_inf(k + 1, False)
-            self.set_sqel_loopcnt(nrep_l[k], k + 1)
-            qt.msleep()
-            if goto_l[k] == 0:
-                self.set_sqel_goto_state(k + 1, False)
-            else:
-                self.set_sqel_goto_state(k + 1, True)
-                self.set_sqel_goto_target_index(k + 1, goto_l[k])
-            if logic_jump_l[k] == -1:
-                self.set_sqel_event_target_index_next(k + 1)
-            else:
-                self.set_sqel_event_target_index(k + 1, logic_jump_l[k])
-
-    def _load_old_style(self, wfs, rep, wait, goto, logic_jump, filename):
-        '''
-        Sends a sequence file (for the moment only for ch1
-        Inputs (mandatory):
-
-           wfs:  list of filenames
-
-        Output:
-            None
-        This needs to be written so that awg files are loaded, will be much faster!
-        '''
-        pass
-
-    ##################################################################
-
-    def import_waveform_file(self, waveform_listname, waveform_filename,
-                             type='wfm'):
-        return self.write('mmem:imp "%s","%s",%s' % (
-            waveform_listname, waveform_filename, type))
-
-    def import_and_load_waveform_file_to_channel(self, channel_no,
-                                                 waveform_listname,
-                                                 waveform_filename,
-                                                 type='wfm'):
-        self._import_and_load_waveform_file_to_channel(channel_no,
-                                                       waveform_listname,
-                                                       waveform_filename,
-                                                       type=type)
-
-    def _import_and_load_waveform_file_to_channel(self, channel_no,
-                                                  waveform_listname,
-                                                  waveform_filename,
-                                                  type='wfm'):
-        self.write('mmem:imp "%s","%s",%s' % (
-            waveform_listname, waveform_filename, type))
-        self.write('sour%s:wav "%s"' % (channel_no, waveform_listname))
-        i = 0
-        while not (self.visa_handle.ask("sour%s:wav?" % channel_no)
-                   == '"%s"' % waveform_listname):
-            sleep(0.01)
-            i = i + 1
-        return
     ######################
     # AWG file functions #
     ######################
 
     def _pack_record(self, name, value, dtype):
-        '''
+        """
         packs awg_file record into a struct in the folowing way:
             struct.pack(fmtstring, namesize, datasize, name, data)
         where fmtstring = '<IIs"dtype"'
@@ -674,9 +807,16 @@ class Tektronix_AWG5014(VisaInstrument):
         Record Data
         For details see "File and Record Format" in the AWG help
 
-           < denotes little-endian encoding, I and other dtypes are format
-           characters denoted in the documentation of the struct package
-        '''
+        < denotes little-endian encoding, I and other dtypes are format
+        characters denoted in the documentation of the struct package
+
+        Args:
+            name (str): Name of the record (Example: 'MAGIC' or
+            'SAMPLING_RATE')
+            value (Union[int, str]): The value of that record.
+            dtype (str): String specifying the data type of the record.
+                Allowed values: 'h', 'd', 's'.
+        """
         if len(dtype) == 1:
             record_data = struct.pack('<' + dtype, value)
         else:
@@ -695,18 +835,21 @@ class Tektronix_AWG5014(VisaInstrument):
         return packed_record
 
     def generate_sequence_cfg(self):
-        '''
+        """
         This function is used to generate a config file, that is used when
         generating sequence files, from existing settings in the awg.
         Querying the AWG for these settings takes ~0.7 seconds
-        '''
-        logging.info('Generating sequence_cfg')
+        """
+        log.info('Generating sequence_cfg')
 
         AWG_sequence_cfg = {
             'SAMPLING_RATE': self.get('clock_freq'),
-            'CLOCK_SOURCE': (1 if self.ask('AWGC:CLOCK:SOUR?').startswith('INT')
+            'CLOCK_SOURCE': (1 if self.ask('AWGControl:CLOCk:' +
+                                           'SOURce?').startswith('INT')
                              else 2),  # Internal | External
-            'REFERENCE_SOURCE':   2,  # Internal | External
+            'REFERENCE_SOURCE': (1 if self.ask('SOURce1:ROSCillator:' +
+                                               'SOURce?').startswith('INT')
+                                 else 2),  # Internal | External
             'EXTERNAL_REFERENCE_TYPE':   1,  # Fixed | Variable
             'REFERENCE_CLOCK_FREQUENCY_SELECTION': 1,
             # 10 MHz | 20 MHz | 100 MHz
@@ -717,7 +860,8 @@ class Tektronix_AWG5014(VisaInstrument):
                                         50. else 2),  # 50 ohm | 1 kohm
             'TRIGGER_INPUT_SLOPE': (1 if self.get('trigger_slope').startswith(
                                     'POS') else 2),  # Positive | Negative
-            'TRIGGER_INPUT_POLARITY': (1 if self.ask('TRIG:POL?').startswith(
+            'TRIGGER_INPUT_POLARITY': (1 if self.ask('TRIGger:' +
+                                                     'POLarity?').startswith(
                                        'POS') else 2),  # Positive | Negative
             'TRIGGER_INPUT_THRESHOLD':  self.get('trigger_level'),  # V
             'EVENT_INPUT_IMPEDANCE':   (1 if self.get('event_impedance') ==
@@ -733,31 +877,186 @@ class Tektronix_AWG5014(VisaInstrument):
         }
         return AWG_sequence_cfg
 
+    def generate_channel_cfg(self):
+        """
+        Function to query if the current channel settings that have
+        been changed from their default value and put them in a
+        dictionary that can easily be written into an awg file, so as
+        to prevent said awg file from falling back to default values.
+        (See self.generate_awg_file and self.AWG_FILE_FORMAT_CHANNEL)
+        NOTE: This only works for settings changed via the corresponding
+        QCoDeS parameter.
+
+        Returns:
+            dict: A dict with the current setting for each entry in
+            AWG_FILE_FORMAT_HEAD iff this entry applies to the
+            AWG5014 AND has been changed from its default value.
+        """
+        log.info('Getting channel configurations.')
+
+        dirouts = [self.ch1_direct_output.get_latest(),
+                   self.ch2_direct_output.get_latest(),
+                   self.ch3_direct_output.get_latest(),
+                   self.ch4_direct_output.get_latest()]
+
+        # the return value of the parameter is different from what goes
+        # into the .awg file, so we translate it
+        filtertrans = {20e6: 1, 100e6: 3, 9.9e37: 10,
+                       'INF': 10, 'INFinity': 10, None: None}
+        filters = [filtertrans[self.ch1_filter.get_latest()],
+                   filtertrans[self.ch2_filter.get_latest()],
+                   filtertrans[self.ch3_filter.get_latest()],
+                   filtertrans[self.ch4_filter.get_latest()]]
+
+        amps = [self.ch1_amp.get_latest(),
+                self.ch2_amp.get_latest(),
+                self.ch3_amp.get_latest(),
+                self.ch4_amp.get_latest()]
+
+        offsets = [self.ch1_offset.get_latest(),
+                   self.ch2_offset.get_latest(),
+                   self.ch3_offset.get_latest(),
+                   self.ch4_offset.get_latest()]
+
+        mrk1highs = [self.ch1_m1_high.get_latest(),
+                     self.ch2_m1_high.get_latest(),
+                     self.ch3_m1_high.get_latest(),
+                     self.ch4_m1_high.get_latest()]
+
+        mrk1lows = [self.ch1_m1_low.get_latest(),
+                    self.ch2_m1_low.get_latest(),
+                    self.ch3_m1_low.get_latest(),
+                    self.ch4_m1_low.get_latest()]
+
+        mrk2highs = [self.ch1_m2_high.get_latest(),
+                     self.ch2_m2_high.get_latest(),
+                     self.ch3_m2_high.get_latest(),
+                     self.ch4_m2_high.get_latest()]
+
+        mrk2lows = [self.ch1_m2_low.get_latest(),
+                    self.ch2_m2_low.get_latest(),
+                    self.ch3_m2_low.get_latest(),
+                    self.ch4_m2_low.get_latest()]
+
+        # the return value of the parameter is different from what goes
+        # into the .awg file, so we translate it
+        addinptrans = {'"ESIG"': 1, '""': 0, None: None}
+        addinputs = [addinptrans[self.ch1_add_input.get_latest()],
+                     addinptrans[self.ch2_add_input.get_latest()],
+                     addinptrans[self.ch3_add_input.get_latest()],
+                     addinptrans[self.ch4_add_input.get_latest()]]
+
+        # the return value of the parameter is different from what goes
+        # into the .awg file, so we translate it
+        def mrkdeltrans(x):
+            if x is None:
+                return None
+            else:
+                return x*1e-9
+        mrk1delays = [mrkdeltrans(self.ch1_m1_del.get_latest()),
+                      mrkdeltrans(self.ch2_m1_del.get_latest()),
+                      mrkdeltrans(self.ch3_m1_del.get_latest()),
+                      mrkdeltrans(self.ch4_m1_del.get_latest())]
+        mrk2delays = [mrkdeltrans(self.ch1_m2_del.get_latest()),
+                      mrkdeltrans(self.ch2_m2_del.get_latest()),
+                      mrkdeltrans(self.ch3_m2_del.get_latest()),
+                      mrkdeltrans(self.ch4_m2_del.get_latest())]
+
+        AWG_channel_cfg = {}
+
+        for chan in range(1, 5):
+            if dirouts[chan-1] is not None:
+                AWG_channel_cfg.update({'ANALOG_DIRECT_OUTPUT_{}'.format(chan):
+                                        int(dirouts[chan-1])})
+            if filters[chan-1] is not None:
+                AWG_channel_cfg.update({'ANALOG_FILTER_{}'.format(chan):
+                                        filters[chan-1]})
+            if amps[chan-1] is not None:
+                AWG_channel_cfg.update({'ANALOG_AMPLITUDE_{}'.format(chan):
+                                        amps[chan-1]})
+            if offsets[chan-1] is not None:
+                AWG_channel_cfg.update({'ANALOG_OFFSET_{}'.format(chan):
+                                        offsets[chan-1]})
+            if mrk1highs[chan-1] is not None:
+                AWG_channel_cfg.update({'MARKER1_HIGH_{}'.format(chan):
+                                        mrk1highs[chan-1]})
+            if mrk1lows[chan-1] is not None:
+                AWG_channel_cfg.update({'MARKER1_LOW_{}'.format(chan):
+                                        mrk1lows[chan-1]})
+            if mrk2highs[chan-1] is not None:
+                AWG_channel_cfg.update({'MARKER2_HIGH_{}'.format(chan):
+                                        mrk2highs[chan-1]})
+            if mrk2lows[chan-1] is not None:
+                AWG_channel_cfg.update({'MARKER2_LOW_{}'.format(chan):
+                                        mrk2lows[chan-1]})
+            if mrk1delays[chan-1] is not None:
+                AWG_channel_cfg.update({'MARKER1_SKEW_{}'.format(chan):
+                                        mrk1delays[chan-1]})
+            if mrk2delays[chan-1] is not None:
+                AWG_channel_cfg.update({'MARKER2_SKEW_{}'.format(chan):
+                                        mrk2delays[chan-1]})
+            if addinputs[chan-1] is not None:
+                AWG_channel_cfg.update({'EXTERNAL_ADD_{}'.format(chan):
+                                        addinputs[chan-1]})
+
+        return AWG_channel_cfg
+
     def generate_awg_file(self,
                           packed_waveforms, wfname_l, nrep, trig_wait,
-                          goto_state, jump_to, channel_cfg, sequence_cfg=None):
-        '''
-        packed_waveforms: dictionary containing packed waveforms with keys
-                            wfname_l and delay_labs
-        wfname_l: array of waveform names array([[segm1_ch1,segm2_ch1..],
-                                                [segm1_ch2,segm2_ch2..],...])
-        nrep_l: list of len(segments) specifying the no of
-                    reps per segment (0,65536)
-        wait_l: list of len(segments) specifying triger wait state (0,1)
-        goto_l: list of len(segments) specifying goto state (0, 65536),
-                    0 means next)
-        logic_jump_l: list of len(segments) specifying logic jump (0 = off)
-        channel_cfg: dictionary of valid channel configuration records
-        sequence_cfg: dictionary of valid head configuration records
-                     (see AWG_FILE_FORMAT_HEAD)
+                          goto_state, jump_to, channel_cfg,
+                          sequence_cfg=None,
+                          preservechannelsettings=False):
+        """
+        This function generates an .awg-file for uploading to the AWG.
+        The .awg-file contains a waveform list, full sequencing information
+        and instrument configuration settings.
+
+        Args:
+            packed_waveforms (dict): dictionary containing packed waveforms
+            with keys wfname_l
+
+            wfname_l (numpy.ndarray): array of waveform names, e.g.
+                array([[segm1_ch1,segm2_ch1..], [segm1_ch2,segm2_ch2..],...])
+
+            nrep (list): list of len(segments) of integers specifying the
+                no. of repetions per sequence element.
+                Allowed values: 1 to 65536.
+
+            trig_wait (list): list of len(segments) of integers specifying the
+                trigger wait state of each sequence element.
+                Allowed values: 0 (OFF) or 1 (ON).
+
+            goto_state (list): list of len(segments) of integers specifying the
+                goto state of each sequence element. Allowed values: 0 to 65536
+                (0 means next)
+
+            jump_to (list): list of len(segments) of integers specifying
+                the logic jump state for each sequence element. Allowed values:
+                0 (OFF) or 1 (ON).
+
+            channel_cfg (dict): dictionary of valid channel configuration
+                records. See self.AWG_FILE_FORMAT_CHANNEL for a complete
+                overview of valid configuration parameters.
+
+            preservechannelsettings (bool): If True, the current channel
+                settings are queried from the instrument and added to
+                channel_cfg (does not overwrite). Default: False.
+
+            sequence_cfg (dict): dictionary of valid head configuration records
+                     (see self.AWG_FILE_FORMAT_HEAD)
                      When an awg file is uploaded these settings will be set
-                     onto the AWG, any paramter not specified will be set to
+                     onto the AWG, any parameter not specified will be set to
                      its default value (even overwriting current settings)
 
         for info on filestructure and valid record names, see AWG Help,
-        File and Record Format
-        '''
-        wfname_l
+        File and Record Format (Under 'Record Name List' in Help)
+        """
+        if preservechannelsettings:
+            channel_settings = self.generate_channel_cfg()
+            for setting in channel_settings:
+                if setting not in channel_cfg:
+                    channel_cfg.update({setting: channel_settings[setting]})
+
         timetuple = tuple(np.array(localtime())[[0, 1, 8, 2, 3, 4, 5, 6, 7]])
 
         # general settings
@@ -775,450 +1074,498 @@ class Tektronix_AWG5014(VisaInstrument):
                 head_str.write(self._pack_record(k, sequence_cfg[k],
                                                  self.AWG_FILE_FORMAT_HEAD[k]))
             else:
-                logging.warning('AWG: ' + k +
-                                ' not recognized as valid AWG setting')
+                log.warning('AWG: ' + k +
+                            ' not recognized as valid AWG setting')
         # channel settings
         ch_record_str = BytesIO()
         for k in list(channel_cfg.keys()):
             ch_k = k[:-1] + 'N'
             if ch_k in self.AWG_FILE_FORMAT_CHANNEL:
-                ch_record_str.write(self._pack_record(k, channel_cfg[k],
-                                                      self.AWG_FILE_FORMAT_CHANNEL[ch_k]))
+                pack = self._pack_record(k, channel_cfg[k],
+                                         self.AWG_FILE_FORMAT_CHANNEL[ch_k])
+                ch_record_str.write(pack)
+
             else:
-                logging.warning('AWG: ' + k +
-                                ' not recognized as valid AWG channel setting')
+                log.warning('AWG: ' + k +
+                            ' not recognized as valid AWG channel setting')
+
         # waveforms
         ii = 21
+
         wf_record_str = BytesIO()
         wlist = list(packed_waveforms.keys())
         wlist.sort()
         for wf in wlist:
             wfdat = packed_waveforms[wf]
             lenwfdat = len(wfdat)
-            # print 'WAVEFORM_NAME_%s: '%ii, wf, 'len: ',len(wfdat)
+
             wf_record_str.write(
-                self._pack_record('WAVEFORM_NAME_%s' % ii, wf + '\x00',
-                                  '%ss' % len(wf + '\x00')) +
-                self._pack_record('WAVEFORM_TYPE_%s' % ii, 1, 'h') +
-                self._pack_record('WAVEFORM_LENGTH_%s' % ii, lenwfdat, 'l') +
-                self._pack_record('WAVEFORM_TIMESTAMP_%s' % ii,
+                self._pack_record('WAVEFORM_NAME_{}'.format(ii), wf + '\x00',
+                                  '{}s'.format(len(wf + '\x00'))) +
+                self._pack_record('WAVEFORM_TYPE_{}'.format(ii), 1, 'h') +
+                self._pack_record('WAVEFORM_LENGTH_{}'.format(ii),
+                                  lenwfdat, 'l') +
+                self._pack_record('WAVEFORM_TIMESTAMP_{}'.format(ii),
                                   timetuple[:-1], '8H') +
-                self._pack_record('WAVEFORM_DATA_%s' % ii, wfdat, '%sH'
-                                  % lenwfdat))
+                self._pack_record('WAVEFORM_DATA_{}'.format(ii), wfdat,
+                                  '{}H'.format(lenwfdat)))
             ii += 1
+
         # sequence
         kk = 1
         seq_record_str = BytesIO()
+
         for segment in wfname_l.transpose():
+
             seq_record_str.write(
-                self._pack_record('SEQUENCE_WAIT_%s' % kk, trig_wait[kk - 1],
-                                  'h') +
-                self._pack_record('SEQUENCE_LOOP_%s' % kk, int(nrep[kk - 1]),
-                                  'l') +
-                self._pack_record('SEQUENCE_JUMP_%s' % kk, jump_to[kk - 1],
-                                  'h') +
-                self._pack_record('SEQUENCE_GOTO_%s' % kk, goto_state[kk - 1],
-                                  'h'))
+                self._pack_record('SEQUENCE_WAIT_{}'.format(kk),
+                                  trig_wait[kk - 1], 'h') +
+                self._pack_record('SEQUENCE_LOOP_{}'.format(kk),
+                                  int(nrep[kk - 1]), 'l') +
+                self._pack_record('SEQUENCE_JUMP_{}'.format(kk),
+                                  jump_to[kk - 1], 'h') +
+                self._pack_record('SEQUENCE_GOTO_{}'.format(kk),
+                                  goto_state[kk - 1], 'h'))
             for wfname in segment:
                 if wfname is not None:
+                    # TODO (WilliamHPNielsen): maybe infer ch automatically
+                    # from the data size?
                     ch = wfname[-1]
-                    # print wfname,'SEQUENCE_WAVEFORM_NAME_CH_'+ch+'_%s'%kk
                     seq_record_str.write(
                         self._pack_record('SEQUENCE_WAVEFORM_NAME_CH_' + ch
-                                          + '_%s' % kk, wfname + '\x00',
-                                          '%ss' % len(wfname + '\x00')))
+                                          + '_{}'.format(kk), wfname + '\x00',
+                                          '{}s'.format(len(wfname + '\x00')))
+                    )
             kk += 1
 
-        awg_file = head_str.getvalue() + ch_record_str.getvalue() + \
-            wf_record_str.getvalue() + seq_record_str.getvalue()
+        awg_file = (head_str.getvalue() + ch_record_str.getvalue() +
+                    wf_record_str.getvalue() + seq_record_str.getvalue())
         return awg_file
 
     def send_awg_file(self, filename, awg_file, verbose=False):
+        """
+        Writes an .awg-file onto the disk of the AWG.
+        Overwrites existing files.
+
+        Args:
+            filename (str): The name that the file will get on
+                the AWG.
+            awg_file (bytes): A byte sequence containing the awg_file.
+                Usually the output of self.generate_awg_file.
+            verbose (bool): A boolean to allow/suppress printing of messages
+                about the status of the filw writing. Default: False.
+        """
         if verbose:
             print('Writing to:',
                   self.ask('MMEMory:CDIRectory?').replace('\n', '\ '),
                   filename)
         # Header indicating the name and size of the file being send
-        name_str = ('MMEM:DATA "%s",' % filename).encode('ASCII')
+        name_str = 'MMEMory:DATA "{}",'.format(filename).encode('ASCII')
         size_str = ('#' + str(len(str(len(awg_file)))) +
                     str(len(awg_file))).encode('ASCII')
         mes = name_str + size_str + awg_file
         self.visa_handle.write_raw(mes)
 
     def load_awg_file(self, filename):
-        s = 'AWGCONTROL:SRESTORE "%s"' % filename
-        # print s
+        """
+        Loads an .awg-file from the disc of the AWG into the AWG memory.
+        This may overwrite all instrument settings, the waveform list, and the
+        sequence in the sequencer.
+
+        Args:
+            filename (str): The filename of the .awg-file to load.
+        """
+        s = 'AWGControl:SREStore "{}"'.format(filename)
+        log.debug('Loading awg file using {}'.format(s))
         self.visa_handle.write_raw(s)
+        # we must update the appropriate parameter(s) for the sequence
+        self.sequence_length.set(self.sequence_length.get())
+
+    def make_send_and_load_awg_file(self, waveforms, m1s, m2s,
+                                    nreps, trig_waits,
+                                    goto_states, jump_tos,
+                                    channels=None,
+                                    filename='customawgfile.awg',
+                                    preservechannelsettings=True):
+        """
+        Makes an .awg-file, sends it to the AWG and loads it. The .awg-file
+        is uploaded to C:\\\\Users\\\\OEM\\\\Documents. The waveforms appear in
+        the user defined waveform list with names wfm001ch1, wfm002ch1, ...
+
+        Args:
+            waveforms (list): A list of the waveforms to upload. The list
+                should be filled like so:
+                [[wfm1ch1, wfm2ch1, ...], [wfm1ch2, wfm2ch2], ...]
+                Each waveform should be a numpy array with values in the range
+                -1 to 1 (inclusive). If you do not wish to send waveforms to
+                channels 1 and 2, use the channels parameter.
+
+            m1s (list): A list of marker 1's. The list should be filled
+                like so:
+                [[elem1m1ch1, elem2m1ch1, ...], [elem1m1ch2, elem2m1ch2], ...]
+                Each marker should be a numpy array containing only 0's and 1's
+
+            m2s (list): A list of marker 2's. The list should be filled
+                like so:
+                [[elem1m2ch1, elem2m2ch1, ...], [elem1m2ch2, elem2m2ch2], ...]
+                Each marker should be a numpy array containing only 0's and 1's
+
+            nreps (list): List of integers specifying the no. of
+                repetions per sequence element.  Allowed values: 0 to
+                65536. 0 corresponds to Infinite repetions.
+
+            trig_waits (list): List of len(segments) of integers specifying the
+                trigger wait state of each sequence element.
+                Allowed values: 0 (OFF) or 1 (ON).
+
+            goto_states (list): List of len(segments) of integers
+                specifying the goto state of each sequence
+                element. Allowed values: 0 to 65536 (0 means next)
+
+            jump_tos (list): List of len(segments) of integers specifying
+                the logic jump state for each sequence element. Allowed values:
+                0 (OFF) or 1 (ON).
+
+            channels (list): List of channels to send the waveforms to.
+                Example: [1, 3, 2]
+
+            filename (str): The name of the .awg-file. Should end with the .awg
+                extension. Default: 'customawgfile.awg'
+
+            preservechannelsettings (bool): If True, the current channel
+                settings are found from the parameter history and added to
+                the .awg file. Else, channel settings are reset to the factory
+                default values. Default: True.
+        """
+
+        # by default, an unusable directory is targeted on the AWG
+        self.visa_handle.write('MMEMory:CDIRectory ' +
+                               '"C:\\Users\\OEM\\Documents"')
+
+        # waveform names and the dictionary of packed waveforms
+        packed_wfs = {}
+        waveform_names = []
+        if not isinstance(waveforms[0], list):
+            waveforms = [waveforms]
+            m1s = [m1s]
+            m2s = [m2s]
+        for ii in range(len(waveforms)):
+            namelist = []
+            for jj in range(len(waveforms[ii])):
+                if channels is None:
+                    thisname = 'wfm{:03d}ch{}'.format(jj+1, ii+1)
+                else:
+                    thisname = 'wfm{:03d}ch{}'.format(jj+1, channels[ii])
+                namelist.append(thisname)
+                package = self.pack_waveform(waveforms[ii][jj],
+                                             m1s[ii][jj],
+                                             m2s[ii][jj])
+                packed_wfs[thisname] = package
+            waveform_names.append(namelist)
+
+        wavenamearray = np.array(waveform_names, dtype='str')
+
+        channel_cfg = {}
+
+        awg_file = self.generate_awg_file(packed_wfs,
+                                          wavenamearray,
+                                          nreps, trig_waits, goto_states,
+                                          jump_tos, channel_cfg,
+                                          preservechannelsettings=preservechannelsettings)
+
+        self.send_awg_file(filename, awg_file)
+        currentdir = self.visa_handle.query('MMEMory:CDIRectory?')
+        currentdir = currentdir.replace('"', '')
+        currentdir = currentdir.replace('\n', '\\')
+        loadfrom = '{}{}'.format(currentdir, filename)
+        self.load_awg_file(loadfrom)
+
+    def make_and_save_awg_file(self, waveforms, m1s, m2s,
+                               nreps, trig_waits,
+                               goto_states, jump_tos,
+                               channels=None,
+                               filename='customawgfile.awg',
+                               preservechannelsettings=True):
+        """
+        Makes an .awg-file and saves it locally.
+
+        Args:
+            waveforms (list): A list of the waveforms to upload. The list
+                should be filled like so:
+                [[wfm1ch1, wfm2ch1, ...], [wfm1ch2, wfm2ch2], ...]
+                Each waveform should be a numpy array with values in the range
+                -1 to 1 (inclusive). If you do not wish to send waveforms to
+                channels 1 and 2, use the channels parameter.
+
+            m1s (list): A list of marker 1's. The list should be filled
+                like so:
+                [[elem1m1ch1, elem2m1ch1, ...], [elem1m1ch2, elem2m1ch2], ...]
+                Each marker should be a numpy array containing only 0's and 1's
+
+            m2s (list): A list of marker 2's. The list should be filled
+                like so:
+                [[elem1m2ch1, elem2m2ch1, ...], [elem1m2ch2, elem2m2ch2], ...]
+                Each marker should be a numpy array containing only 0's and 1's
+
+            nreps (list): List of integers specifying the no. of
+                repetions per sequence element.  Allowed values: 0 to
+                65536. O corresponds to Infinite repetions.
+
+            trig_waits (list): List of len(segments) of integers specifying the
+                trigger wait state of each sequence element.
+                Allowed values: 0 (OFF) or 1 (ON).
+
+            goto_states (list): List of len(segments) of integers
+                specifying the goto state of each sequence
+                element. Allowed values: 0 to 65536 (0 means next)
+
+            jump_tos (list): List of len(segments) of integers specifying
+                the logic jump state for each sequence element. Allowed values:
+                0 (OFF) or 1 (ON).
+
+            channels (list): List of channels to send the waveforms to.
+                Example: [1, 3, 2]
+
+            filename (str): The full path of the .awg-file. Should end with the
+                .awg extension. Default: 'customawgfile.awg'
+
+            preservechannelsettings (bool): If True, the current channel
+                settings are found from the parameter history and added to
+                the .awg file. Else, channel settings are not written in the
+                file and will be reset to factory default when the file is
+                loaded. Default: True.
+        """
+
+        packed_wfs = {}
+        waveform_names = []
+        if not isinstance(waveforms[0], list):
+            waveforms = [waveforms]
+            m1s = [m1s]
+            m2s = [m2s]
+        for ii in range(len(waveforms)):
+            namelist = []
+            for jj in range(len(waveforms[ii])):
+                if channels is None:
+                    thisname = 'wfm{:03d}ch{}'.format(jj+1, ii+1)
+                else:
+                    thisname = 'wfm{:03d}ch{}'.format(jj+1, channels[ii])
+                namelist.append(thisname)
+                package = self.pack_waveform(waveforms[ii][jj],
+                                             m1s[ii][jj],
+                                             m2s[ii][jj])
+                packed_wfs[thisname] = package
+            waveform_names.append(namelist)
+
+        wavenamearray = np.array(waveform_names, dtype='str')
+
+        channel_cfg = {}
+
+        awg_file = self.generate_awg_file(packed_wfs,
+                                          wavenamearray,
+                                          nreps, trig_waits, goto_states,
+                                          jump_tos, channel_cfg,
+                                          preservechannelsettings=preservechannelsettings)
+
+        with open(filename, 'wb') as fid:
+            fid.write(awg_file)
 
     def get_error(self):
-        # print self.visa_handle.ask('AWGControl:SNAMe?')
-        print(self.ask('SYSTEM:ERROR:NEXT?'))
-        # self.visa_handle.write('*CLS')
+        """
+        This function retrieves and returns data from the error and
+        event queues.
+
+        Returns:
+            str: String containing the error/event number, the error/event\
+                description.
+        """
+        return self.ask('SYSTEM:ERRor:NEXT?')
 
     def pack_waveform(self, wf, m1, m2):
-        '''
-        packs analog waveform in 14 bit integer, and two bits for m1 and m2
-        in a single 16 bit integer
-        '''
+        """
+        Converts/packs a waveform and two markers into a 16-bit format
+        according to the AWG Integer format specification.
+        The waveform occupies 14 bits and the markers one bit each.
+        See Table 2-25 in the Programmer's manual for more information
+
+        Since markers can only be in one of two states, the marker input
+        arrays should consist only of 0's and 1's.
+
+        Args:
+            wf (numpy.ndarray): A numpy array containing the waveform. The
+                data type of wf is unimportant.
+            m1 (numpy.ndarray): A numpy array containing the first marker.
+            m2 (numpy.ndarray): A numpy array containing the second marker.
+
+        Returns:
+            numpy.ndarray: An array of unsigned 16 bit integers.
+
+        Raises:
+            Exception: if the lengths of w, m1, and m2 don't match
+            TypeError: if the waveform contains values outside (-1, 1)
+            TypeError: if the markers contain values that are not 0 or 1
+        """
+
+        # Input validation
+        if (not((len(wf) == len(m1)) and ((len(m1) == len(m2))))):
+            raise Exception('error: sizes of the waveforms do not match')
+        if min(wf) < -1 or max(wf) > 1:
+            raise TypeError('Waveform values out of bonds.' +
+                            ' Allowed values: -1 to 1 (inclusive)')
+        if (list(m1).count(0)+list(m1).count(1)) != len(m1):
+            raise TypeError('Marker 1 contains invalid values.' +
+                            ' Only 0 and 1 are allowed')
+        if (list(m2).count(0)+list(m2).count(1)) != len(m2):
+            raise TypeError('Marker 2 contains invalid values.' +
+                            ' Only 0 and 1 are allowed')
+
         wflen = len(wf)
         packed_wf = np.zeros(wflen, dtype=np.uint16)
-        packed_wf += np.uint16(np.round(wf * 8191) + 8191 + np.round(16384 * m1) +
+        packed_wf += np.uint16(np.round(wf * 8191) + 8191 +
+                               np.round(16384 * m1) +
                                np.round(32768 * m2))
         if len(np.where(packed_wf == -1)[0]) > 0:
             print(np.where(packed_wf == -1))
         return packed_wf
 
-    # END AWG file functions
     ###########################
     # Waveform file functions #
     ###########################
 
-    def send_waveform(self, w, m1, m2, filename, clock=None):
-        '''
-        Sends a complete waveform. All parameters need to be specified.
-        See also: resend_waveform()
+    def _file_dict(self, wf, m1, m2, clock):
+        """
+        Make a file dictionary as used by self.send_waveform_to_list
 
-        Input:
-            w (float[numpoints]) : waveform
-            m1 (int[numpoints])  : marker1
-            m2 (int[numpoints])  : marker2
-            filename (string)    : filename
-            clock (int)          : frequency (Hz)
+        Args:
+            wf (numpy.ndarray): A numpy array containing the waveform. The
+                data type of wf is unimportant.
+            m1 (numpy.ndarray): A numpy array containing the first marker.
+            m2 (numpy.ndarray): A numpy array containing the second marker.
+            clock (float): The desired clock frequency
 
-        Output:
-            None
-        '''
-        # logging.debug(__name__ + ' : Sending waveform %s to instrument' %
-        #               filename)
-        # Check for errors
+        Returns:
+            dict: A dictionary with keys 'w', 'm1', 'm2', 'clock_freq', and
+                'numpoints' and corresponding values.
+        """
 
-        if (not((len(w) == len(m1)) and ((len(m1) == len(m2))))):
-            return 'error'
-
-        self._values['files'][filename] = self._file_dict(w, m1, m2, clock)
-
-        m = m1 + np.multiply(m2, 2)
-        ws = b''
-        # this is probalbly verry slow and memmory consuming!
-        for i in range(0, len(w)):
-            ws = ws + struct.pack('<fB', w[i], int(np.round(m[i], 0)))
-
-        s1 = b'MMEM:DATA "%s",' % filename
-        s3 = b'MAGIC 1000\n'
-        s5 = ws
-        if clock is not None:
-            s6 = b'CLOCK %.10e\n' % clock
-        else:
-            s6 = b''
-
-        s4 = '#' + str(len(str(len(s5)))) + str(len(s5))
-        s4 = s4.encode('UTF-8')
-        lenlen = str(len(str(len(s6) + len(s5) + len(s4) + len(s3))))
-        s2 = '#' + lenlen + str(len(s6) + len(s5) + len(s4) + len(s3))
-        s2 = s2.encode('UTF-8')
-        mes = s1 + s2 + s3 + s4 + s5 + s6
-
-        self.visa_handle.write_raw(mes)
-
-    def _file_dict(self, w, m1, m2, clock):
-        return {
-            'w': w,
+        outdict = {
+            'w': wf,
             'm1': m1,
             'm2': m2,
             'clock_freq': clock,
-            'numpoints': len(w)
+            'numpoints': len(wf)
         }
 
-    def resend_waveform(self, channel, w=[], m1=[], m2=[], clock=[]):
-        '''
-        Resends the last sent waveform for the designated channel
-        Overwrites only the parameters specified
-
-        Input: (mandatory)
-            channel (int) : 1 to 4, the number of the designated channel
-
-        Input: (optional)
-            w (float[numpoints]) : waveform
-            m1 (int[numpoints])  : marker1
-            m2 (int[numpoints])  : marker2
-            clock (int) : frequency
-
-        Output:
-            None
-        '''
-        filename = self._values['recent_channel_%s' % channel]['filename']
-        # logging.debug(__name__ + ' : Resending %s to channel %s' %
-        #               (filename, channel))
-
-        if (w == []):
-            w = self._values['recent_channel_%s' % channel]['w']
-        if (m1 == []):
-            m1 = self._values['recent_channel_%s' % channel]['m1']
-        if (m2 == []):
-            m2 = self._values['recent_channel_%s' % channel]['m2']
-        if (clock == []):
-            clock = self._values['recent_channel_%s' % channel]['clock_freq']
-
-        # if not ((len(w) == self._numpoints) and (len(m1) == self._numpoints)
-        #         and (len(m2) == self._numpoints)):
-        #     logging.error(__name__ + ' : one (or more) lengths of waveforms do not match with numpoints')
-
-        self.send_waveform(w, m1, m2, filename, clock)
-        self.set_filename(filename, channel)
-
-    def set_filename(self, name, channel):
-        '''
-        Specifies which file has to be set on which channel
-        Make sure the file exists, and the numpoints and clock of the file
-        matches the instrument settings.
-
-        If file doesn't exist an error is raised, if the numpoints doesn't match
-        the command is neglected
-
-        Input:
-            name (string) : filename of uploaded file
-            channel (int) : 1 to 4, the number of the designated channel
-
-        Output:
-            None
-        '''
-        # logging.debug(__name__  + ' : Try to set %s on channel %s' %(name, channel))
-        exists = False
-        if name in self._values['files']:
-            exists = True
-            # logging.debug(__name__  + ' : File exists in local memory')
-            self._values['recent_channel_%s' % channel] = \
-                self._values['files'][name]
-            self._values['recent_channel_%s' % channel]['filename'] = name
-        else:
-            # logging.debug(__name__  + ' : File does not exist in memory, \
-            # reading from instrument')
-            lijst = self.visa_handle.ask('MMEM:CAT? "MAIN"')
-            bool = False
-            bestand = ""
-            for i in range(len(lijst)):
-                if (lijst[i] == '"'):
-                    bool = True
-                elif (lijst[i] == ','):
-                    bool = False
-                    if (bestand == name):
-                        exists = True
-                    bestand = ""
-                elif bool:
-                    bestand = bestand + lijst[i]
-        if exists:
-            data = self.visa_handle.ask('MMEM:DATA? "%s"' % name)
-
-            # logging.debug(__name__  + ' : File exists on instrument, loading \
-            #         into local memory')
-            self._import_waveform_file(name, name)
-            # string alsvolgt opgebouwd: '#' <lenlen1> <len> 'MAGIC 1000\r\n'
-            # '#' <len waveform> 'CLOCK ' <clockvalue>
-            len1 = int(data[1])
-            len2 = int(data[2:2 + len1])
-            i = len1
-            tekst = ""
-            while (tekst != '#'):
-                tekst = data[i]
-                i = i + 1
-            len3 = int(data[i])
-            len4 = int(data[i + 1:i + 1 + len3])
-            w = []
-            m1 = []
-            m2 = []
-
-            for q in range(i + 1 + len3, i + 1 + len3 + len4, 5):
-                j = int(q)
-                c, d = struct.unpack('<fB', data[j:5 + j])
-                w.append(c)
-                m2.append(int(d / 2))
-                m1.append(d - 2 * int(d / 2))
-
-            clock = float(data[i + 1 + len3 + len4 + 5:len(data)])
-
-            self._values['files'][name] = self._file_dict(w, m1, m2, clock)
-
-            self._values['recent_channel_%s' % channel] = \
-                self._values['files'][name]
-            self._values['recent_channel_%s' % channel]['filename'] = name
-        # else:
-            # logging.error(__name__  + ' : Invalid filename specified %s' %name)
-
-        if (self._numpoints == self._values['files'][name]['numpoints']):
-            # logging.warning(__name__  + ' : Set file %s on channel %s' % (name, channel))
-            self.write('SOUR%s:WAV "%s"' % (channel, name))
-        else:
-            pass
-            # logging.warning(__name__  + ' : Verkeerde lengte %s ipv %s'
-            #     %(self._values['files'][name]['numpoints'], self._numpoints))
+        return outdict
 
     def delete_all_waveforms_from_list(self):
+        """
+        Delete all user-defined waveforms in the list in a single
+        action. Note that there is no “UNDO” action once the waveforms
+        are deleted. Use caution before issuing this command.
+
+        If the deleted waveform(s) is (are) currently loaded into
+        waveform memory, it (they) is (are) unloaded. If the RUN state
+        of the instrument is ON, the state is turned OFF. If the
+        channel is on, it will be switched off.
+        """
         self.write('WLISt:WAVeform:DELete ALL')
 
-    # Ask for string with filenames
     def get_filenames(self):
-        # logging.debug(__name__ + ' : Read filenames from instrument')
-        return self.ask('MMEM:CAT?')
+        """Duplicate of self.get_folder_contents"""
+        return self.ask('MMEMory:CATalog?')
 
-    def set_DC_out(self, DC_channel_number, Voltage):
-        self.write('AWGControl:DC%s:VOLTage:OFFSet %sV' %
-                   (DC_channel_number, Voltage))
+    def send_DC_pulse(self, DC_channel_number, set_level, length):
+        """
+        Sets the DC level on the specified channel, waits a while and then
+        resets it to what it was before.
 
-    def get_DC_out(self, DC_channel_number):
-        return self.ask('AWGControl:DC%s:VOLTage:OFFSet?' % DC_channel_number)
+        Note: Make sure that the output DC state is ON.
 
-    def send_DC_pulse(self, DC_channel_number, Amplitude, length):
-        '''
-        sends a (slow) pulse on the DC channel specified
-        Ampliude: voltage level
-        length: seconds
-        '''
-        restore = self.get_DC_out(DC_channel_number)
-        self.set_DC_out(DC_channel_number, Amplitude)
+        Args:
+            DC_channel_number (int): The channel number (1-4).
+            set_level (float): The voltage level to set to (V).
+            length (float): The time to wait before resetting (s).
+        """
+        DC_channel_number -= 1
+        chandcs = [self.ch1_DC_out, self.ch2_DC_out, self.ch3_DC_out,
+                   self.ch4_DC_out]
+
+        restore = chandcs[DC_channel_number].get()
+        chandcs[DC_channel_number].set(set_level)
         sleep(length)
-        self.set_DC_out(DC_channel_number, restore)
-
-    def set_DC_state(self, state=False):
-        self.write('AWGControl:DC:state %s' % (int(state)))
-
-    def get_DC_state(self):
-        return self.ask('AWGControl:DC:state?')
-
-    # Send waveform to the device (from transmon driver)
-
-    def upload_awg_file(self, fname, fcontents):
-        t0 = time()
-        self._rem_file_path
-        floc = self._rem_file_path
-        f = open(floc + '\\' + fname, 'wb')
-        f.write(fcontents)
-        f.close()
-        t1 = time() - t0
-        print('upload time: ', t1)
-        self.get_state()
-        print('setting time: ', time() - t1 - t0)
-
-    def _set_setup_filename(self, fname):
-        folder_name = 'C:/' + self._setup_folder + '/' + fname
-        self.set_current_folder_name(folder_name)
-        set_folder_name = self.get_current_folder_name()
-        if not os.path.split(folder_name)[1] == os.path.split(set_folder_name)[1][:-1]:
-            print('Warning, unsuccesfully set AWG file', folder_name)
-        print('Current AWG file set to: ', self.get_current_folder_name())
-        self.write('AWGC:SRES "%s.awg"' % fname)
-
-    def set_setup_filename(self, fname, force_load=False):
-        '''
-        sets the .awg file to a .awg file that already exists in the memory of
-        the AWG.
-
-        fname (string) : file to be set.
-        force_load (bool): if True, sets the file even if it is already loaded
-
-        After setting the file it resets all the instrument settings to what
-        it is set in the qtlab memory.
-        '''
-        cfname = self.get_setup_filename()
-        if cfname.find(fname) != -1 and not force_load:
-            print('file: %s already loaded' % fname)
-        else:
-            pars = self.get_parameters()
-            self._set_setup_filename(fname)
-            # self.visa_handle.ask('*OPC?')
-            parkeys = list(pars.keys())
-            parkeys.remove('setup_filename')
-            parkeys.remove('AWG_model')
-            parkeys.remove('numpoints')
-            # not reset because this removes all loaded waveforms
-            parkeys.remove('trigger_mode')
-            # Removed trigger_mode because duplicate of run mode
-            comm = False
-            for key in parkeys:
-                try:
-                    # print 'setting: %s' % key
-                    exec('self.set_%s(pars[key]["value"])' % key)
-                    comm = True
-                except Exception as e:
-                    print(key + ' not set!')
-                    comm = False
-
-                # Sped up by factor 10, VISA protocol should take care of wait
-                if comm:
-                    self.ask('*OPC?')
-        self.get('setup_filename')  # ensures the setup filename gets updated
+        chandcs[DC_channel_number].set(restore)
 
     def is_awg_ready(self):
+        """
+        Assert if the AWG is ready.
+
+        Returns:
+            bool: True, irrespective of anything.
+        """
         try:
             self.ask('*OPC?')
         # makes the awg read again if there is a timeout
         except Exception as e:
-            logging.warning(e)
-            logging.warning('AWG is not ready')
+            log.warning(e)
+            log.warning('AWG is not ready')
             self.visa_handle.read()
         return True
 
-    def initialize_dc_waveforms(self):
-        self.set_runmode('CONT')
-        self.write('SOUR1:WAV "*DC"')
-        self.write('SOUR2:WAV "*DC"')
-        self.write('SOUR3:WAV "*DC"')
-        self.write('SOUR4:WAV "*DC"')
-        self.set_ch1_status('on')
-        self.set_ch2_status('on')
-        self.set_ch3_status('on')
-        self.set_ch4_status('on')
-
-    # QCodes specific parse_functions
-    def parse_int_pos_neg(self, val):
-        return ['POS', 'NEG'][val]
-
-    def parse_int_int_ext(self, val):
-        return ['INT', 'EXT'][val]
-
     def send_waveform_to_list(self, w, m1, m2, wfmname):
-        '''
-        Sends a complete waveform directly to the "User defined" waveform list. All parameters need to be specified.
-        See also: resend_waveform()
+        """
+        Send a single complete waveform directly to the "User defined"
+        waveform list (prepend it). The data type of the input arrays
+        is unimportant, but the marker arrays must contain only 1's
+        and 0's.
 
-        Input:
-            w (float[numpoints]) : waveform (must be a numpy array)
-            m1 (int[numpoints])  : marker1  (must be a numpy array)
-            m2 (int[numpoints])  : marker2  (must be a numpy array)
-            wfmname (string)    : waveform name
-            format (string):    'int' or 'real' (int has same awg output precision but much faster to transfer)
-        Output:
-            None
-        '''
-        logging.debug(
-            __name__ + ' : Sending waveform %s to instrument' % wfmname)
+        Args:
+            w (numpy.ndarray): The waveform
+            m1 (numpy.ndarray): Marker1
+            m2 (numpy.ndarray): Marker2
+            wfmname (str): waveform name
+
+        Raises:
+            Exception: if the lengths of w, m1, and m2 don't match
+            TypeError: if the waveform contains values outside (-1, 1)
+            TypeError: if the markers contain values that are not 0 or 1
+        """
+        log.debug('Sending waveform {} to instrument'.format(wfmname))
         # Check for errors
         dim = len(w)
 
+        # Input validation
         if (not((len(w) == len(m1)) and ((len(m1) == len(m2))))):
             raise Exception('error: sizes of the waveforms do not match')
+        if min(w) < -1 or max(w) > 1:
+            raise TypeError('Waveform values out of bonds.' +
+                            ' Allowed values: -1 to 1 (inclusive)')
+        if (list(m1).count(0)+list(m1).count(1)) != len(m1):
+            raise TypeError('Marker 1 contains invalid values.' +
+                            ' Only 0 and 1 are allowed')
+        if (list(m2).count(0)+list(m2).count(1)) != len(m2):
+            raise TypeError('Marker 2 contains invalid values.' +
+                            ' Only 0 and 1 are allowed')
 
         self._values['files'][wfmname] = self._file_dict(w, m1, m2, None)
 
-        # if we create a waveform with the same name but different size, it will not get over written
+        # if we create a waveform with the same name but different size,
+        # it will not get over written
         # Delete the possibly existing file (will do nothing if the file
         # doesn't exist
-        s = 'WLIS:WAV:DEL "%s"' % wfmname
+        s = 'WLISt:WAVeform:DEL "{}"'.format(wfmname)
         self.write(s)
-
-        print("Sending the waveform %s" % wfmname)
 
         # create the waveform
-        s = 'WLIS:WAV:NEW "%s",%i,INTEGER' % (wfmname, dim)
+        s = 'WLISt:WAVeform:NEW "{}",{:d},INTEGER'.format(wfmname, dim)
         self.write(s)
         # Prepare the data block
-
-        number = (2**13 + 2**13 * w + 2**14 *
+        number = ((2**13-1) + (2**13-1) * w + 2**14 *
                   np.array(m1) + 2**15 * np.array(m2))
         number = number.astype('int')
         ws = arr.array('H', number)
 
-        ws = ws.tostring()
-        s1 = 'WLIS:WAV:DATA "%s",' % wfmname
+        ws = ws.tobytes()
+        s1 = 'WLISt:WAVeform:DATA "{}",'.format(wfmname)
         s1 = s1.encode('UTF-8')
         s3 = ws
         s2 = '#' + str(len(str(len(s3)))) + str(len(s3))
@@ -1226,3 +1573,24 @@ class Tektronix_AWG5014(VisaInstrument):
 
         mes = s1 + s2 + s3
         self.visa_handle.write_raw(mes)
+
+    def clear_message_queue(self, verbose=False):
+        """
+        Function to clear up (flush) the VISA message queue of the AWG
+        instrument. Reads all messages in the the queue.
+
+        Args:
+            verbose (Bool): If True, the read messages are printed.
+                Default: False.
+        """
+        original_timeout = self.visa_handle.timeout
+        self.visa_handle.timeout = 1000  # 1 second as VISA counts in ms
+        gotexception = False
+        while not gotexception:
+            try:
+                message = self.visa_handle.read()
+                if verbose:
+                    print(message)
+            except VisaIOError:
+                gotexception = True
+        self.visa_handle.timeout = original_timeout

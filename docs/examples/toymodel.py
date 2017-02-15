@@ -4,7 +4,7 @@ import math
 
 from qcodes import MockInstrument, MockModel, Parameter, Loop, DataArray
 from qcodes.utils.validators import Numbers
-
+from qcodes.instrument.mock import ArrayGetter
 
 class AModel(MockModel):
     def __init__(self):
@@ -146,3 +146,4 @@ class AverageAndRaw(Parameter):
         data = loop.run_temp()
         array = data.arrays[self.measured_param.full_name]
         return (array, array.mean())
+

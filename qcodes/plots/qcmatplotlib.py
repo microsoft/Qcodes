@@ -1,44 +1,46 @@
-'''
+"""
 Live plotting in Jupyter notebooks
 using the nbagg backend and matplotlib
-'''
+"""
+from collections import Mapping
+
 import matplotlib.pyplot as plt
 from matplotlib.transforms import Bbox
 import numpy as np
 from numpy.ma import masked_invalid, getmask
-from collections import Mapping
 
 from .base import BasePlot
 
 
 class MatPlot(BasePlot):
-    '''
+    """
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with MatPlot.add()
 
-    args: shortcut to provide the x/y/z data. See BasePlot.add
+    Args:
+        *args: shortcut to provide the x/y/z data. See BasePlot.add
 
-    figsize: (width, height) tuple in inches to pass to plt.figure
-        default (8, 5)
-    interval: period in seconds between update checks
+        figsize (Tuple[Float, Float]): (width, height) tuple in inches to pass to plt.figure
+            default (8, 5)
 
-    subplots: either a sequence (args) or mapping (kwargs) to pass to
-        plt.subplots. default is a single simple subplot (1, 1)
-        you can use this to pass kwargs to the plt.figure constructor
+        interval: period in seconds between update checks
 
-    num: integer or None
-        specifies the index of the matplotlib figure window to use. If None
-        then open a new window
+        subplots: either a sequence (args) or mapping (kwargs) to pass to
+            plt.subplots. default is a single simple subplot (1, 1)
+            you can use this to pass kwargs to the plt.figure constructor
 
-    kwargs: passed along to MatPlot.add() to add the first data trace
-    '''
+        num: integer or None
+            specifies the index of the matplotlib figure window to use. If None
+            then open a new window
+
+        **kwargs: passed along to MatPlot.add() to add the first data trace
+    """
     def __init__(self, *args, figsize=None, interval=1, subplots=None, num=None,
                  **kwargs):
 
         super().__init__(interval)
 
         self._init_plot(subplots, figsize, num=num)
-
         if args or kwargs:
             self.add(*args, **kwargs)
 
@@ -61,16 +63,16 @@ class MatPlot(BasePlot):
         self.title = self.fig.suptitle('')
 
     def clear(self, subplots=None, figsize=None):
-        '''
+        """
         Clears the plot window and removes all subplots and traces
         so that the window can be reused.
-        '''
+        """
         self.traces = []
         self.fig.clf()
         self._init_plot(subplots, figsize, num=self.fig.number)
 
     def add_to_plot(self, **kwargs):
-        '''
+        """
         adds one trace to this MatPlot.
 
         kwargs: with the following exceptions (mostly the data!), these are
@@ -83,9 +85,8 @@ class MatPlot(BasePlot):
 
             without `z` we draw a scatter/lines plot (ax.plot):
                 `x`, `y`, and `fmt` (if present) are passed as positional args
-        '''
+        """
         # TODO some way to specify overlaid axes?
-
         ax = self._get_axes(kwargs)
         if 'z' in kwargs:
             plot_object = self._draw_pcolormesh(ax, **kwargs)
@@ -114,10 +115,10 @@ class MatPlot(BasePlot):
             ax.set_ylabel(self.get_label(config['y']))
 
     def update_plot(self):
-        '''
+        """
         update the plot. The DataSets themselves have already been updated
         in update, here we just push the changes to the plot.
-        '''
+        """
         # matplotlib doesn't know how to autoscale to a pcolormesh after the
         # first draw (relim ignores it...) so we have to do this ourselves
         bboxes = dict(zip(self.subplots, [[] for p in self.subplots]))
@@ -162,11 +163,19 @@ class MatPlot(BasePlot):
         self.fig.canvas.draw()
 
     def _draw_plot(self, ax, y, x=None, fmt=None, subplot=1, **kwargs):
-        # subplot=1 is just there to strip this out of kwargs
+        # NOTE(alexj)stripping out subplot because which subplot we're in is already
+        # described by ax, and it's not a kwarg to matplotlib's ax.plot. But I
+        # didn't want to strip it out of kwargs earlier because it should stay
+        # part of trace['config'].
         args = [arg for arg in [x, y, fmt] if arg is not None]
-        return ax.plot(*args, **kwargs)[0]
+        line, = ax.plot(*args, **kwargs)
+        return line
 
     def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1, **kwargs):
+        # NOTE(alexj)stripping out subplot because which subplot we're in is already
+        # described by ax, and it's not a kwarg to matplotlib's ax.plot. But I
+        # didn't want to strip it out of kwargs earlier because it should stay
+        # part of trace['config'].
         args = [masked_invalid(arg) for arg in [x, y, z]
                 if arg is not None]
 
@@ -175,7 +184,6 @@ class MatPlot(BasePlot):
                 # if any entire array is masked, don't draw at all
                 # there's nothing to draw, and anyway it throws a warning
                 return False
-
         pc = ax.pcolormesh(*args, **kwargs)
 
         if getattr(ax, 'qcodes_colorbar', None):
@@ -196,3 +204,16 @@ class MatPlot(BasePlot):
             ax.qcodes_colorbar.set_label(self.get_label(z))
 
         return pc
+
+    def save(self, filename=None):
+        """
+        Save current plot to filename, by default
+        to the location corresponding to the default 
+        title.
+
+        Args:
+            filename (Optional[str]): Location of the file
+        """
+        default = "{}.png".format(self.get_default_title())
+        filename = filename or default
+        self.fig.savefig(filename)

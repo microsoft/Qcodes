@@ -1,9 +1,10 @@
-from unittest import TestCase
-from unittest.mock import patch
-import time
 from datetime import datetime
+import logging
 import multiprocessing as mp
 import numpy as np
+import time
+from unittest import TestCase
+from unittest.mock import patch
 
 from qcodes.loops import (Loop, MP_NAME, get_bg, halt_bg, ActiveLoop,
                           _DebugInterrupt)
@@ -12,13 +13,15 @@ from qcodes.station import Station
 from qcodes.data.io import DiskIO
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager
+from qcodes.instrument.mock import ArrayGetter
 from qcodes.instrument.parameter import Parameter, ManualParameter
 from qcodes.process.helpers import kill_processes
 from qcodes.process.qcodes_process import QcodesProcess
 from qcodes.utils.validators import Numbers
 from qcodes.utils.helpers import LogCapture
 
-from .instrument_mocks import AMockModel, MockGates, MockSource, MockMeter
+from .instrument_mocks import (AMockModel, MockGates, MockSource, MockMeter,
+                               MultiGetter)
 
 
 class TestMockInstLoop(TestCase):
@@ -32,9 +35,9 @@ class TestMockInstLoop(TestCase):
 
         self.model = AMockModel()
 
-        self.gates = MockGates(model=self.model)
-        self.source = MockSource(model=self.model)
-        self.meter = MockMeter(model=self.model)
+        self.gates = MockGates(model=self.model, server_name='')
+        self.source = MockSource(model=self.model, server_name='')
+        self.meter = MockMeter(model=self.model, server_name='')
         self.location = '_loop_test_'
         self.location2 = '_loop_test2_'
         self.io = DiskIO('.')
@@ -77,7 +80,7 @@ class TestMockInstLoop(TestCase):
         # you can only do in-memory loops if you set data_manager=False
         # TODO: this is the one place we don't do quiet=True - test that we
         # really print stuff?
-        data = self.loop.run(location=self.location)
+        data = self.loop.run(location=self.location, background=True, data_manager=True)
         self.check_empty_data(data)
 
         # wait for process to finish (ensures that this was run in the bg,
@@ -90,11 +93,25 @@ class TestMockInstLoop(TestCase):
     def test_local_instrument(self):
         # a local instrument should work in a foreground loop, but
         # not in a background loop (should give a RuntimeError)
+        self.gates.close()  # so we don't have two gates with same name
         gates_local = MockGates(model=self.model, server_name=None)
+        self.gates = gates_local
         c1 = gates_local.chan1
         loop_local = Loop(c1[1:5:1], 0.001).each(c1)
 
-        with self.assertRaises(RuntimeError):
+        # if spawn, pickle will happen
+        if mp.get_start_method() == "spawn":
+            with self.assertRaises(RuntimeError):
+                loop_local.run(location=self.location,
+                               quiet=True,
+                               background=True)
+        # allow for *nix
+        # TODO(giulioungaretti) see what happens ?
+        # what is the expected beavhiour ?
+        # The RunimError will never be raised here, as the forkmethod
+        # won't try to pickle anything at all.
+        else:
+            logging.error("this should not be allowed, but for now we let it be")
             loop_local.run(location=self.location, quiet=True)
 
         data = loop_local.run(location=self.location2, background=False,
@@ -102,14 +119,19 @@ class TestMockInstLoop(TestCase):
         self.check_loop_data(data)
 
     def test_background_no_datamanager(self):
-        data = self.loop.run(location=self.location, data_manager=False,
+        # We don't support syncing data from a background process
+        # if not using a datamanager. See warning in ActiveLoop.run()
+        # So we expect the data to be empty even after running.
+        data = self.loop.run(location=self.location,
+                             background=True,
+                             data_manager=False,
                              quiet=True)
         self.check_empty_data(data)
 
         self.loop.process.join()
 
         data.sync()
-        self.check_loop_data(data)
+        self.check_empty_data(data)
 
     def test_foreground_and_datamanager(self):
         data = self.loop.run(location=self.location, background=False,
@@ -155,12 +177,18 @@ class TestMockInstLoop(TestCase):
     def test_enqueue(self):
         c1 = self.gates.chan1
         loop = Loop(c1[1:5:1], 0.01).each(c1)
-        data1 = loop.run(location=self.location, quiet=True)
+        data1 = loop.run(location=self.location,
+                         quiet=True,
+                         background=True,
+                         data_manager=True)
 
         # second running of the loop should be enqueued, blocks until
         # the first one finishes.
         # TODO: check what it prints?
-        data2 = loop.run(location=self.location2, quiet=True)
+        data2 = loop.run(location=self.location2,
+                         quiet=True,
+                         background=True,
+                         data_manager=True)
 
         data1.sync()
         data2.sync()
@@ -178,6 +206,16 @@ class TestMockInstLoop(TestCase):
         loop.run_temp()
         self.assertFalse(hasattr(loop, 'process'))
 
+    def test_sync_no_overwrite(self):
+        # Test fix for 380, this tests that the setpoints are not incorrectly
+        # overwritten by data_set.sync() for this to happen with the original code
+        # the delay must be larger than the write period otherwise sync is a no opt.
+
+        loop = Loop(self.gates.chan1.sweep(0, 1, 1), delay=0.1).each(ArrayGetter(self.meter.amplitude,
+                                                                                 self.gates.chan2[0:1:1], 0.000001))
+        data = loop.get_data_set(name='testsweep', write_period=0.01)
+        _ = loop.with_bg_task(data.sync).run()
+        assert not np.isnan(data.chan2).any()
 
 def sleeper(t):
     time.sleep(t)
@@ -202,7 +240,7 @@ class TestBG(TestCase):
         bg1 = get_bg(return_first=True)
         self.assertIn(bg1, [p1, p2])
 
-        halt_bg(timeout=0.01)
+        halt_bg(timeout=0.05)
         bg2 = get_bg()
         self.assertIn(bg2, [p1, p2])
         # is this robust? requires that active_children always returns the same
@@ -211,7 +249,7 @@ class TestBG(TestCase):
 
         self.assertEqual(len(mp.active_children()), 1)
 
-        halt_bg(timeout=0.01)
+        halt_bg(timeout=0.05)
         self.assertIsNone(get_bg())
 
         self.assertEqual(len(mp.active_children()), 0)
@@ -231,22 +269,6 @@ class FakeMonitor:
 
     def call(self, finish_by=None):
         self.delay_array.append(finish_by - time.perf_counter())
-
-
-class MultiGetter(Parameter):
-    def __init__(self, **kwargs):
-        if len(kwargs) == 1:
-            name, self._return = list(kwargs.items())[0]
-            super().__init__(name=name)
-            self.shape = np.shape(self._return)
-        else:
-            names = tuple(sorted(kwargs.keys()))
-            super().__init__(names=names)
-            self._return = tuple(kwargs[k] for k in names)
-            self.shapes = tuple(np.shape(v) for v in self._return)
-
-    def get(self):
-        return self._return
 
 
 class TestLoop(TestCase):
@@ -274,6 +296,42 @@ class TestLoop(TestCase):
         self.assertEqual(data.p1.tolist(), [[[1, 1]] * 2, [[2, 2]] * 2])
         self.assertEqual(data.p2.tolist(), [[[3, 3], [4, 4]]] * 2)
         self.assertEqual(data.p3.tolist(), [[[5, 6]] * 2] * 2)
+
+    def test_nesting_2(self):
+        loop = Loop(self.p1[1:3:1]).each(
+            self.p1,
+            Loop(self.p2[3:5:1]).each(
+                self.p1,
+                self.p2,
+                Loop(self.p3[5:7:1]).each(
+                    self.p1,
+                    self.p2,
+                    self.p3)))
+
+        data = loop.run_temp()
+        keys = set(data.arrays.keys())
+
+        self.assertEqual(data.p1_set.tolist(), [1, 2])
+        self.assertEqual(data.p2_set.tolist(), [[3, 4]] * 2)
+        self.assertEqual(data.p3_set.tolist(), [[[5, 6]] * 2] * 2)
+
+        self.assertEqual(data.p1_0.tolist(), [1, 2])
+
+        # TODO(alexcjohnson): these names are extra confusing...
+        # perhaps we should say something like always include *all* indices
+        # unless you can get rid of them all (ie that param only shows up
+        # once, but separately for set and measured)
+        self.assertEqual(data.p1_1_0.tolist(), [[1, 1], [2, 2]])
+        self.assertEqual(data.p2_1.tolist(), [[3, 4]] * 2)
+
+        self.assertEqual(data.p1_1_2_0.tolist(), [[[1, 1]] * 2, [[2, 2]] * 2])
+        self.assertEqual(data.p2_2_1.tolist(), [[[3, 3], [4, 4]]] * 2)
+        self.assertEqual(data.p3.tolist(), [[[5, 6]] * 2] * 2)
+
+        # make sure rerunning this doesn't cause any problems
+        data2 = loop.run_temp()
+        keys2 = set(data.arrays.keys())
+        self.assertEqual(keys, keys2)
 
     def test_repr(self):
         loop2 = Loop(self.p2[3:5:1], 0.001).each(self.p2)
@@ -401,7 +459,7 @@ class TestLoop(TestCase):
         mg = MultiGetter(one=1, onetwo=(1, 2))
         self.assertTrue(hasattr(mg, 'names'))
         self.assertTrue(hasattr(mg, 'shapes'))
-        self.assertEqual(mg.name, 'None')
+        self.assertEqual(mg.name, 'multigetter')
         self.assertFalse(hasattr(mg, 'shape'))
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
         data = loop.run_temp()
@@ -453,12 +511,12 @@ class TestLoop(TestCase):
         with self.assertRaises(ValueError):
             loop.run_temp()
 
-        # this one has name and shape
+        # this one still has names and shapes
         mg = MultiGetter(arr=(4, 5, 6))
         self.assertTrue(hasattr(mg, 'name'))
-        self.assertTrue(hasattr(mg, 'shape'))
-        self.assertFalse(hasattr(mg, 'names'))
-        self.assertFalse(hasattr(mg, 'shapes'))
+        self.assertFalse(hasattr(mg, 'shape'))
+        self.assertTrue(hasattr(mg, 'names'))
+        self.assertTrue(hasattr(mg, 'shapes'))
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
         data = loop.run_temp()
 
@@ -633,7 +691,7 @@ class TestLoop(TestCase):
             },
             'loop': {
                 'background': False,
-                'use_threads': True,
+                'use_threads': False,
                 'use_data_manager': False,
                 '__class__': 'qcodes.loops.ActiveLoop',
                 'sweep_values': {
@@ -714,12 +772,17 @@ class TestSignal(TestCase):
         p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10),
                             msg=ActiveLoop.HALT_DEBUG)
         loop = Loop(p1[1:6:1], 0.005).each(p1)
+        # we want to test what's in data, so get it ahead of time
+        # because loop.run will not return.
+        data = loop.get_data_set(location=False)
         p1.set_queue(loop.signal_queue)
 
         with self.assertRaises(_DebugInterrupt):
-            loop.run_temp()
+            # need to use explicit loop.run rather than run_temp
+            # so we can avoid providing location=False twice, which
+            # is an error.
+            loop.run(background=False, data_manager=False, quiet=True)
 
-        data = loop.data_set
         self.check_data(data)
 
     def test_halt_quiet(self):

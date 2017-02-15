@@ -10,11 +10,12 @@ from qcodes.utils.helpers import LogCapture
 
 
 def schedule(queries, query_queue):
-    '''
-    queries is a sequence of (delay, args)
-    query_queue is a queue to push these queries to, with each one waiting
-        its delay after sending the previous one
-    '''
+    """
+    Args:
+        queries: is a sequence of (delay, args)
+        query_queue: is a queue to push these queries to, with each one waiting
+            its delay after sending the previous one
+    """
     for delay, args in queries:
         time.sleep(delay)
         query_queue.put(args)
@@ -123,7 +124,7 @@ class TestInstrumentServer(TestCase):
             with LogCapture() as logs:
                 TimedInstrumentServer(self.query_queue, self.response_queue,
                                       extras)
-        except:
+        except TypeError:
             from traceback import format_exc
             print(format_exc())
 

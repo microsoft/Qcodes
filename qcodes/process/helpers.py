@@ -2,6 +2,7 @@
 
 import multiprocessing as mp
 import time
+import warnings
 
 MP_ERR = 'context has already been set'
 
@@ -14,15 +15,19 @@ def set_mp_method(method, force=False):
     on a Mac or Linux: set_mp_method('spawn')
     args are the same:
 
-    method: one of:
-        'fork' (default on unix/mac)
-        'spawn' (default, and only option, on windows)
-        'forkserver'
-    force: allow changing context? default False
-        in the original function, even calling the function again
-        with the *same* method raises an error, but here we only
-        raise the error if you *don't* force *and* the context changes
+    Args:
+        method (string): one of the following
+
+            - 'fork' (default on unix/mac)
+            - 'spawn' (default, and only option, on windows)
+            - 'forkserver'
+
+        force (bool): allow changing context? default False
+            in the original function, even calling the function again
+            with the *same* method raises an error, but here we only
+            raise the error if you *don't* force *and* the context changes
     """
+    warnings.warn("Multiprocessing is in beta, use at own risk", UserWarning)
     try:
         mp.set_start_method(method, force=force)
     except RuntimeError as err:

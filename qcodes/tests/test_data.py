@@ -449,14 +449,14 @@ class TestDataSet(TestCase):
         mock_dm.live_data = MockLive()
 
         # wrong location or False location - converts to local
-        data = DataSet(location='Jupiter', mode=DataMode.PULL_FROM_SERVER)
+        data = DataSet(location='Jupiter', data_manager=True, mode=DataMode.PULL_FROM_SERVER)
         self.assertEqual(data.mode, DataMode.LOCAL)
 
-        data = DataSet(location=False, mode=DataMode.PULL_FROM_SERVER)
+        data = DataSet(location=False,  data_manager=True, mode=DataMode.PULL_FROM_SERVER)
         self.assertEqual(data.mode, DataMode.LOCAL)
 
         # location matching server - stays in server mode
-        data = DataSet(location='Mars', mode=DataMode.PULL_FROM_SERVER,
+        data = DataSet(location='Mars',  data_manager=True, mode=DataMode.PULL_FROM_SERVER,
                        formatter=MockFormatter())
         self.assertEqual(data.mode, DataMode.PULL_FROM_SERVER)
         self.assertEqual(data.arrays, MockLive.arrays)
@@ -495,7 +495,7 @@ class TestDataSet(TestCase):
         mock_dm.needs_restart = True
         gdm_mock.return_value = mock_dm
 
-        data = DataSet(location='Venus', mode=DataMode.PUSH_TO_SERVER)
+        data = DataSet(location='Venus', data_manager=True, mode=DataMode.PUSH_TO_SERVER)
         self.assertEqual(mock_dm.needs_restart, False, data)
         self.assertEqual(mock_dm.data_set, data)
         self.assertEqual(data.data_manager, mock_dm)
@@ -586,6 +586,35 @@ class TestDataSet(TestCase):
         m = DataSet2D()
         pickle.dumps(m)
 
+    def test_default_parameter(self):
+        # Test whether the default_array function works
+        m = DataSet2D()
+
+        # test we can run with default arguments
+        name = m.default_parameter_name()
+
+        # test with paramname
+        name = m.default_parameter_name(paramname='z')
+        self.assertEqual(name, 'z')
+        # test we can get the array instead of the name
+        array = m.default_parameter_array(paramname='z')
+        self.assertEqual(array, m.z)
+
+        # first non-setpoint array
+        array = m.default_parameter_array()
+        self.assertEqual(array, m.z)
+
+        # test with metadata
+        m.metadata = dict({'default_parameter_name': 'x_set'})
+        name = m.default_parameter_name()
+        self.assertEqual(name, 'x_set')
+
+        # test the fallback: no name matches, no non-setpoint array
+        x = DataArray(name='x', label='X', preset_data=(1., 2., 3., 4., 5.), is_setpoint=True)
+        m= new_data(arrays=(x,), name='onlysetpoint')
+        name=m.default_parameter_name(paramname='dummy')
+        self.assertEqual(name, 'x_set')
+
     def test_fraction_complete(self):
         empty_data = new_data(arrays=(), location=False)
         self.assertEqual(empty_data.fraction_complete(), 0.0)
@@ -607,7 +636,6 @@ class TestDataSet(TestCase):
         self.assertEqual(data.fraction_complete(), 0.75)
 
     def mock_sync(self):
-        # import pdb; pdb.set_trace()
         i = self.sync_index
         self.syncing_array[i] = i
         self.sync_index = i + 1
@@ -658,7 +686,11 @@ class TestDataSet(TestCase):
         log_index = 0
         for line in expected_logs:
             self.assertIn(line, logs, logs)
-            log_index = logs.index(line, log_index)
-            self.assertTrue(log_index >= 0, logs)
-            log_index += len(line) + 1  # +1 for \n
+            try:
+                log_index_new = logs.index(line, log_index)
+            except ValueError:
+                raise ValueError('line {} not found after {} in: \n {}'.format(
+                    line, log_index, logs))
+            self.assertTrue(log_index_new >= log_index, logs)
+            log_index = log_index_new + len(line) + 1  # +1 for \n
         self.assertEqual(log_index, len(logs), logs)

@@ -11,6 +11,7 @@ QUERY_ASK = 'ASK'
 RESPONSE_OK = 'OK'
 RESPONSE_ERROR = 'ERROR'
 
+from qcodes.utils.nested_attrs import NestedAttrAccess
 from .qcodes_process import QcodesProcess
 from .helpers import kill_queue
 
@@ -20,14 +21,16 @@ class ServerManager:
     """
     Creates and communicates with a separate server process.
 
-    Starts a `QcodesProcess`, and on that process it constructs a server
-    object of type `server_class`, which should normally be a subclass of
+    Starts a *QcodesProcess*, and on that process it constructs a server
+    object of type *server_class*, which should normally be a subclass of
     `BaseServer`. Client processes query the server via:
-    `manager.ask(func_name, *args, **kwargs)`: if they want a response or want
-        to wait for confirmation that the query has completed
-    `manager.write(func_name, *args, **kwargs)`: if they want to continue
-        immediately without blocking for the query.
-    The server communicates with this manager via two multiprocessing `Queue`s.
+
+    - ``manager.ask(func_name, *args, **kwargs)``: if they want a response or want
+      to wait for confirmation that the query has completed
+    - ``manager.write(func_name, *args, **kwargs)``: if they want to continue
+      immediately without blocking for the query.
+
+    The server communicates with this manager via two multiprocessing *Queue*\s.
     """
 
     def __init__(self, name, server_class, shared_attrs=None,
@@ -35,18 +38,19 @@ class ServerManager:
         """
         Construct the ServerManager and start its server.
 
-        name: the name of the server. Can include .format specs to insert
-            all or part of the uuid
-        server_class: the class to create within the new process.
-            the constructor will be passed arguments:
-                query_queue, response_queue, shared_attrs
-            and should start an infinite loop watching query_queue and posting
-            responses to response_queue.
-        shared_attrs: any objects that need to be passed to the server on
-            startup, generally objects like Queues that are picklable only for
-            inheritance by a new process.
-        query_timeout: (default None) the default max time to wait for
-            responses
+        Args:
+            name: the name of the server. Can include .format specs to insert
+                all or part of the uuid
+            server_class: the class to create within the new process.
+                the constructor will be passed arguments:
+                    query_queue, response_queue, shared_attrs
+                and should start an infinite loop watching query_queue and posting
+                responses to response_queue.
+            shared_attrs: any objects that need to be passed to the server on
+                startup, generally objects like Queues that are picklable only for
+                inheritance by a new process.
+            query_timeout: (default None) the default max time to wait for
+                responses
         """
         self._query_queue = mp.Queue()
         self._response_queue = mp.Queue()
@@ -204,7 +208,7 @@ class ServerManager:
             del self.query_lock
 
 
-class BaseServer:
+class BaseServer(NestedAttrAccess):
 
     """
     Base class for servers to run in separate processes.
@@ -234,12 +238,14 @@ class BaseServer:
     - `QUERY_WRITE` (from `server_manager.write`): will NEVER send a response,
       return values are ignored and errors go to the logging framework.
 
-    Two handlers are predefined:
+    Three handlers are predefined:
 
     - `handle_halt` (but override it if your event loop does not use
       self.running=False to stop)
 
     - `handle_get_handlers` (lists all available handler methods)
+
+    - `handle_method_call` (call an arbitrary method on the server)
     """
 
     # just for testing - how long to allow it to wait on a queue.get
@@ -274,6 +280,7 @@ class BaseServer:
 
         Override this method if you need to do more than just process queries
         repeatedly, but make sure your event loop:
+
         - calls `self.process_query` to ensure robust error handling
         - provides a way to halt the server (and override `handle_halt` if
           it's not by setting `self.running = False`)
@@ -372,3 +379,21 @@ class BaseServer:
             if name.startswith('handle_') and callable(getattr(self, name)):
                 handlers.append(name[len('handle_'):])
         return handlers
+
+    def handle_method_call(self, method_name, *args, **kwargs):
+        """
+        Pass through arbitrary method calls to the server.
+
+        Args:
+            method_name (str): the method name to call.
+                Primarily intended for NestedAttrAccess, ie:
+                ``getattr``, ``setattr``, ``callattr``, ``delattr``.
+
+            *args (Any): passed to the method
+
+            **kwargs (Any): passed to the method
+
+        Returns:
+            Any: the return value of the method
+        """
+        return getattr(self, method_name)(*args, **kwargs)

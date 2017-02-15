@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 
+# .pyenv file
+.python-version
+
 # ipython extras
 .ipynb_checkpoints/
 
@@ -55,6 +58,8 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+docs/api/generated/
+docs/_auto
 
 # PyBuilder
 target/
@@ -64,6 +69,7 @@ target/
 *.data
 *.dat
 *.hdf5
+*.json
 
 # Temporary files
 *.md~

@@ -48,11 +48,12 @@ class InstrumentServerManager(ServerManager):
     """
     Creates and manages connections to an InstrumentServer
 
-    name: the name of the server to create
-    kwargs: extra items to send to the server on creation (such as
-        additional queues, that can only be shared on creation)
-        These items will be set as attributes of any instrument that
-        connects to the server
+    Args:
+        name: the name of the server to create
+        kwargs: extra items to send to the server on creation (such as
+            additional queues, that can only be shared on creation)
+            These items will be set as attributes of any instrument that
+            connects to the server
     """
     instances = {}
 
@@ -112,6 +113,13 @@ class InstrumentServer(BaseServer):
 
         self.instruments = {}
         self.next_id = 0
+
+        # Ensure no references of instruments defined in the main process
+        # are copied to the server process. With the spawn multiprocessing
+        # method this is not an issue, as the class is reimported in the
+        # new process, but with fork it can be a problem ironically.
+        from qcodes.instrument.base import Instrument
+        Instrument._all_instruments = {}
 
         self.run_event_loop()
 

@@ -1,0 +1,12 @@
+{
+    "core":{
+        "legacy_mp": false,
+        "loglevel": "DEBUG",
+        "default_fmt": "data/{date}/#{counter}_{name}_{time}"
+    },
+    "gui" :{
+        "notebook": true,
+        "plotlib": "matplotlib"
+    },
+    "user": {}
+}
