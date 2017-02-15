@@ -65,6 +65,7 @@ class AcqVariablesParam(Parameter):
         self._check_and_update_instr(val, param_name=self.name)
         return True
 
+
 class AlazarMultiArray(MultiParameter):
     """
     Hardware controlled parameter class for Alazar acquisition. To be used with
@@ -79,10 +80,10 @@ class AlazarMultiArray(MultiParameter):
         name: name for this parameter
         names: names of the two arrays returned from get
         instrument: acquisition controller instrument this parameter belongs to
-        demod_lenght (int): number of demodulators. Default 1
+        demod_length (int): number of demodulators. Default 1
     """
 
-    def __init__(self, name, instrument, names=("A","B"), demod_length=1):
+    def __init__(self, name, instrument, names=("A", "B"), demod_length=1):
         if demod_length > 1:
             shapes = ((demod_length, ), (demod_length, ))
         else:
@@ -144,6 +145,7 @@ class AlazarMultiArray2D(AlazarMultiArray):
         else:
             self.shapes = ((npts,), (npts,))
             # self.setpoints = ((self._time_list,), (self._time_list,))
+
 
 class AlazarMultiArray3D(AlazarMultiArray):
 
