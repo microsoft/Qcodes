@@ -1,84 +1,8 @@
 import logging
 from .ATS import AcquisitionController
 import numpy as np
-from qcodes import Parameter, MultiParameter
 import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
-from .acqusition_parameters import AcqVariablesParam
-
-
-class SamplesAcqParam(MultiParameter):
-    """
-    Hardware controlled parameter class for Alazar acquisition. To be used with
-    HD_Samples_Controller (tested with ATS9360 board) for return of an array of
-    sample data from the Alazar, averaged over records and buffers.
-
-    Args:
-        name: name for this parameter
-        instrument: acquisition controller instrument this parameter belongs to
-
-    TODO(nataliejpg) setpoints (including names and units)
-    """
-
-    def __init__(self, name, instrument):
-        names = ('magnitude', 'phase')
-        super().__init__(name, names, shapes=((),()), instrument=instrument)
-        self.acquisition_kwargs = {}
-
-
-    def update_sweep(self, start, stop, npts):
-        """
-        Function which updates the shape of the parameter (and it's setpoints
-        when this is fixed)
-
-        Args:
-            start: start time of samples returned after processing
-            stop: stop time of samples returned after processing
-            npts: number of samples returned after processing
-        """
-        demod_length = self._instrument._demod_length
-        # self._time_list = tuple(np.linspace(start, stop, num=npts))
-        if demod_length > 1:
-            # demod_freqs = self._instrument.get_demod_freqs()
-            # self.setpoints = ((demod_freqs, self._time_list),
-            #                   (demod_freqs, self._time_list))
-            self.shapes = ((demod_length, npts), (demod_length, npts))
-        else:
-            self.shapes = ((npts,), (npts,))
-            # self.setpoints = ((self._time_list,), (self._time_list,))
-
-    def update_demod_setpoints(self, demod_freqs):
-        """
-        Function to update the demodulation frequency setpoints to be called
-        when a demod_freq Parameter of the acq controller is updated
-
-        Args:
-            demod_freqs: numpy array of demodulation frequencies to use as
-                setpoints if length > 1
-        """
-        demod_length = self._instrument._demod_length
-        if demod_length > 1:
-            pass
-            # self.setpoints = ((demod_freqs, self._time_list),
-            #                   (demod_freqs, self._time_list))
-        else:
-            pass
-
-    def get(self):
-        """
-        Gets the magnitude and phase signal by calling acquire
-        on the alazar (which in turn calls the processing functions of the
-        aqcuisition controller before returning the processed data
-        demodulated at specified frequencies and averaged over records
-        and buffers)
-
-        Returns:
-            mag a numpy array of magnitude, shape (demod_length, samples)
-            phase a numpy array of magnitude, shape (demod_length, samples)
-        """
-        mag, phase = self._instrument._get_alazar().acquire(
-            acquisition_controller=self._instrument,
-            **self.acquisition_kwargs)
-        return mag, phase
+from .acqusition_parameters import AcqVariablesParam, AlazarMultiArray2D
 
 
 class HD_Samples_Controller(AcquisitionController):
@@ -120,7 +44,8 @@ class HD_Samples_Controller(AcquisitionController):
         super().__init__(name, alazar_name, **kwargs)
 
         self.add_parameter(name='acquisition',
-                           parameter_class=SamplesAcqParam)
+                           parameter_class=AlazarMultiArray2D,
+                           names=('mag','phase'))
         for i in range(demod_length):
             self.add_parameter(name='demod_freq_{}'.format(i),
                                check_and_update_fn=self._update_demod_freq,
@@ -351,7 +276,7 @@ class HD_Samples_Controller(AcquisitionController):
         """
         Updates the kwargs to be used when
         alazar_driver.acquisition() is called via a get call of the
-        acquisition SamplesAcqParam. Should be used by the user for updating
+        acquisition AlazarMultiArray2D. Should be used by the user for updating
         averaging settings since the 'samples_per_record' kwarg is updated
         via the int_time and int_delay parameters
 

@@ -1,115 +1,8 @@
 import logging
 from .ATS import AcquisitionController
 import numpy as np
-from qcodes import Parameter, MultiParameter
 import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
-from .acqusition_parameters import AcqVariablesParam
-
-
-class BuffersRecordsAcqParam(MultiParameter):
-    """
-    Software controlled parameter class for Alazar acquisition. To be used with
-    HD_Records_Controller (tested with ATS9360 board) for return of
-    averaged magnitude and phase data from the Alazar.
-
-    Args:
-        name: name for this parameter
-        instrument: acquisition controller instrument this parameter belongs to
-
-    TODO(nataliejpg) setpoints (including names and units)
-    """
-
-    def __init__(self, name, instrument):
-        shapes = ((),())
-        names = ('magnitude', 'phase')
-        super().__init__(name, names, shapes, instrument)
-        self.acquisition_kwargs = {}
-
-    def update_buf_sweep(self, buf_npts, buf_start=None, buf_stop=None):
-        """
-        Function which updates the shape of the parameter (and it's setpoints
-        when this is fixed)
-
-        Args:
-            buf_npts: number of buffers returned
-            buf_start (optional): start value of buffers returned
-            buf_stop (optional): stop value of records returned
-        """
-        demod_length = self._instrument._demod_length
-        # self._buf_list = tuple(np.linspace(buf_start,
-        #                                    buf_stop, num=buf_npts))
-        self._buf_npts = buf_npts
-        if demod_length > 1:
-            # demod_freqs = self._instrument.get_demod_freqs()
-            # self.setpoints = ((demod_freqs, self._buf_list, self._rec_list),
-            #                   (demod_freqs, self._buf_list, self._rec_list))
-            self.shapes = ((demod_length, self._buf_npts, self._rec_npts),
-                           (demod_length, self._buf_npts, self._rec_npts))
-        else:
-            self.shapes = ((self._buf_npts, self._rec_npts),
-                           (self._buf_npts, self._rec_npts))
-            # self.setpoints = ((self._buf_list, self._rec_list),
-            #                   (self._buf_list, self._rec_list))
-
-    def update_rec_sweep(self, rec_npts, rec_start=None, rec_stop=None):
-        """
-        Function which updates the shape of the parameter (and it's setpoints
-        when this is fixed)
-
-        Args:
-            rec_npts: number of records returned after processing
-            rec_start (optional): start value of records returned
-            rec_stop (optional): stop value of records returned
-        """
-        demod_length = self._instrument._demod_length
-        # self._rec_list = tuple(np.linspace(rec_start,
-        #                                    rec_stop, num=rec_npts))
-        self._rec_npts = rec_npts
-        if demod_length > 1:
-            # demod_freqs = self._instrument.get_demod_freqs()
-            # self.setpoints = ((demod_freqs, self._buf_list, self._rec_list),
-            #                   (demod_freqs, self._buf_list, self._rec_list))
-            self.shapes = ((demod_length, self._buf_npts, self._rec_npts),
-                           (demod_length, self._buf_npts, self._rec_npts))
-        else:
-            self.shapes = ((self._buf_npts, self._rec_npts),
-                           (self._buf_npts, self._rec_npts))
-            # self.setpoints = ((self._buf_list, self._rec_list),
-            #                   (self._buf_list, self._rec_list))
-
-    def update_demod_setpoints(self, demod_freqs):
-        """
-        Function to update the demodulation frequency setpoints to be called
-        when a demod_freq Parameter of the acq controller is updated
-
-        Args:
-            demod_freqs: numpy array of demodulation frequencies to use as
-                setpoints if length > 1
-        """
-        demod_length = self._instrument._demod_length
-        if demod_length > 1:
-            pass
-            # self.setpoints = ((demod_freqs, self._buf_list, self._rec_list),
-            #                   (demod_freqs, self._buf_list, self._rec_list))
-        else:
-            pass
-
-    def get(self):
-        """
-        Gets the magnitude and phase signal by calling acquire
-        on the alazar (which in turn calls the processing functions of the
-        aqcuisition controller before returning the processed data
-        demodulated at specified frequencies and averaged over samples
-        and buffers)
-
-        Returns:
-            - mag a numpy array of magnitude, shape (demod_length, records)
-            - phase a numpy array of magnitude, shape (demod_length, records)
-        """
-        mag, phase = self._instrument._get_alazar().acquire(
-            acquisition_controller=self._instrument,
-            **self.acquisition_kwargs)
-        return mag, phase
+from .acqusition_parameters import AcqVariablesParam, AlazarMultiArray3D
 
 
 class HD_BuffersRecords_Controller(AcquisitionController):
@@ -153,7 +46,8 @@ class HD_BuffersRecords_Controller(AcquisitionController):
         super().__init__(name, alazar_name, **kwargs)
 
         self.add_parameter(name='acquisition',
-                           parameter_class=BuffersRecordsAcqParam)
+                           parameter_class=AlazarMultiArray3D,
+                           names=('mag','phase'))
         for i in range(demod_length):
             self.add_parameter(name='demod_freq_{}'.format(i),
                                check_and_update_fn=self._update_demod_freq,
@@ -431,7 +325,7 @@ class HD_BuffersRecords_Controller(AcquisitionController):
         """
         Updates the kwargs to be used when
         alazar_driver.acquisition() is called via a get call of the
-        acquisition BuffersRecordsAcqParam. Should be used by the user for
+        acquisition AlazarMultiArray3D. Should be used by the user for
         updating allocated_buffers kwarg since samples_per_record,
         records_per_buffer and buffers_per_acquisition are updated via the
         int_time, int_delay, record_num and buffer_num parameters

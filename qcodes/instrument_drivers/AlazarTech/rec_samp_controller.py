@@ -1,117 +1,8 @@
 import logging
 from .ATS import AcquisitionController
 import numpy as np
-from qcodes import Parameter, MultiParameter
 import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
-from .acqusition_parameters import AcqVariablesParam
-
-
-class RecordsSamplesAcqParam(MultiParameter):
-    """
-    TODO
-
-    Args:
-        name: name for this parameter
-        instrument: acquisition controller instrument this parameter belongs to
-        demod_length: numer of demodulation frequencies the acq controller has
-            NB this is currently set in acq controller init but that's really
-            not nice and should be changed when possible
-
-    TODO(nataliejpg) setpoints (including names and units)
-    TODO(nataliejpg) convert records setpoint into actual frequency
-    """
-
-    def __init__(self, name, instrument):
-        names = ('magnitude', 'phase')
-        shapes = ((), ())
-        super().__init__(name, names, shapes, instrument)
-        self.acquisition_kwargs = {}
-
-
-    def update_time_sweep(self, time_npts, time_start, time_stop):
-        """
-        Function which updates the shape of the parameter (and it's setpoints
-        when this is fixed)
-
-        Args:
-            time_npts: number of samples returned after processing
-            time_start: start time of samples returned after processing
-            time_stop: stop time of samples returned after processing
-        """
-        demod_length = self._instrument._demod_length
-        # self._time_list = tuple(np.linspace(time_start,
-        #                                     time_stop, num=time_npts))
-        self._time_npts = time_npts
-        if demod_length > 1:
-            # demod_freqs = self._instrument.get_demod_freqs()
-            # self.setpoints = ((demod_freqs, self._rec_list, self._time_list),
-            #                   (demod_freqs, self._rec_list, self._time_list))
-            self.shapes = ((demod_length, self._rec_npts, self._time_npts),
-                           (demod_length, self._rec_npts, self._time_npts))
-        else:
-            self.shapes = ((self._rec_npts, self._time_npts),
-                           (self._rec_npts, self._time_npts))
-            # self.setpoints = ((self._rec_list, self._time_list),
-            #                   (self._rec_list, self._time_list))
-
-    def update_rec_sweep(self, rec_npts, rec_start=None, rec_stop=None):
-        """
-        Function which updates the shape of the parameter (and it's setpoints
-        when this is fixed)
-
-        Args:
-            rec_npts: number of records returned
-            rec_start (optional): start value of records returned
-            rec_stop (optional): stop value of records returned
-        """
-        demod_length = self._instrument._demod_length
-        # self._rec_list = tuple(np.linspace(rec_start,
-        #                                    rec_stop, num=rec_npts))
-        self._rec_npts = rec_npts
-        if demod_length > 1:
-            # demod_freqs = self._instrument.get_demod_freqs()
-            # self.setpoints = ((demod_freqs, self._rec_list, self._time_list),
-            #                   (demod_freqs, self._rec_list, self._time_list))
-            self.shapes = ((demod_length, self._rec_npts, self._time_npts),
-                           (demod_length, self._rec_npts, self._time_npts))
-        else:
-            self.shapes = ((self._rec_npts, self._time_npts),
-                           (self._rec_npts, self._time_npts))
-            # self.setpoints = ((self._rec_list, self._time_list),
-            #                   (self._rec_list, self._time_list))
-
-    def update_demod_setpoints(self, demod_freqs):
-        """
-        Function to update the demodulation frequency setpoints to be called
-        when a demod_freq Parameter of the acq controller is updated
-
-        Args:
-            demod_freqs: numpy array of demodulation frequencies to use as
-                setpoints if length > 1
-        """
-        demod_length = self._instrument._demod_length
-        if demod_length > 1:
-            pass
-            # self.setpoints = ((demod_freqs, self._rec_list, self._time_list),
-            #                   (demod_freqs, self._rec_list, self._time_list))
-        else:
-            pass
-
-    def get(self):
-        """
-        Gets the magnitude and phase signal by calling acquire
-        on the alazar (which in turn calls the processing functions of the
-        aqcuisition controller before returning the processed data
-        demodulated at specified frequencies and averaged over buffers)
-
-        Returns:
-            mag a numpy array of magnitude, shape (demod_length, records)
-            phase a numpy array of phase, shape (demod_length, records)
-        """
-        mag, phase = self._instrument._get_alazar().acquire(
-            acquisition_controller=self._instrument,
-            **self.acquisition_kwargs)
-        return mag, phase
+from .acqusition_parameters import AcqVariablesParam, AlazarMultiArray2D
 
 
 class HD_RecordsSamples_Controller(AcquisitionController):
@@ -153,7 +44,8 @@ class HD_RecordsSamples_Controller(AcquisitionController):
         super().__init__(name, alazar_name, **kwargs)
 
         self.add_parameter(name='acquisition',
-                           parameter_class=RecordsSamplesAcqParam)
+                           parameter_class=AlazarMultiArray2D,
+                           names=('mag', 'phase'))
         for i in range(demod_length):
             self.add_parameter(name='demod_freq_{}'.format(i),
                                check_and_update_fn=self._update_demod_freq,
@@ -413,7 +305,7 @@ class HD_RecordsSamples_Controller(AcquisitionController):
         """
         Updates the kwargs to be used when
         alazar_driver.acquisition() is called via a get call of the
-        acquisition RecordsSamplesAcqParam. Should be used by the user for
+        acquisition AlazarMultiArray2D. Should be used by the user for
         updating averaging settings since the 'samples_per_record'
         and 'records_per_buffer' kwargs are updated via the int_time,
         int_delay and record_num parameters

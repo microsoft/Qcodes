@@ -1,7 +1,6 @@
 import logging
 from .ATS import AcquisitionController
 import numpy as np
-from qcodes import Parameter, MultiParameter
 import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
 from .acqusition_parameters import AcqVariablesParam, AlazarMultiArray
 
