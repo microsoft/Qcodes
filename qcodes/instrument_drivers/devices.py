@@ -72,7 +72,9 @@ class VoltageDivider(Parameter):
         Returns:
             number: value at which was set at the sample
         """
-        return self.v1.get() / self.division_value
+        value = self.v1.get() / self.division_value
+        self._save_val(value)
+        return value
 
     def get_instrument_value(self) -> Union[int, float]:
         """
