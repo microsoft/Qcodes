@@ -17,6 +17,13 @@ As long as a DataSet is used for data storage, users can freely select the QCoDe
 Terminology
 ================
 
+Metadata
+    Many items in this spec have metadata associated with them.
+    In all cases, we expect metadata to be represented as a dictionary with string keys.
+    While the values are arbitrary and up to the user, in many cases we expect metadata to be nested, string-keyed dictionaries
+    with scalars (strings or numbers) as the final values.
+    In some cases, we specify particular keys or paths in the metadata that other QCoDeS components may rely on.
+
 Parameter
     A logically-single value input to or produced by a measurement.
     A parameter need not be a scalar, but can be an array or a tuple or an array of tuples, etc.
@@ -88,6 +95,10 @@ Access
 Storage and Persistence
 -----------------------
 
+#. Storage and persistence should be defined outside of the DataSet class.
+
+The following items are no longer applicable:
+
 #. A DataSet object should allow writing to and reading from storage in a variety of formats.
 #. Users should be able to define new persistence formats.
 #. Users should be able to specify where a DataSet is written.
@@ -107,9 +118,19 @@ ParamSpec(name, type, metadata=)
     Creates a parameter specification with the given name and type. 
     The type should be a NumPy dtype object.
     
-    If metadata is provided, it is included in the overall metadata of the DataSet, with the name of the parameter as the top-level tag.
+    If metadata is provided, it is included in the overall metadata of the DataSet.
     The metadata can be any JSON-able object.
-	
+    
+ParamSpec.name
+    The name of this parameter.
+    
+ParamSpec.type
+    The dtype of this parameter.
+    
+ParamSpec.metadata
+    The metadata of this parameter.
+    This should be an empty dictionary as a default.
+    
 Either the QCoDeS Parameter class should inherit from ParamSpec, or the Parameter class should provide
 a simple way to get a ParamSpec for the Parameter.
 
@@ -251,68 +272,45 @@ DataSet.unsubscribe(subid)
 Storage
 -------
 
-DataSet.read_from(location, formatter=)
-    Reads a DataSet from persistent store.
-    Location may be a string file system path, a string URL, or some other string that is meaningful to the formatter specified.
-    
-    Formatter is a QCoDeS Formatter object that specifies how data is read and written. 
-    If not provided, the correct formatter is determined from the file extension and file format.
-    If the correct formatter cannot be determined, the default formatter is used. 
-    The default formatter is currently GNUPlotFormat().
-    
-    This is a static method in the DataSet class.
-    It returns a new DataSet object.
+DataSet persistence is handled externally to this class.
 
-DataSet.read_updates()
-    Updates the DataSet by reading any new results and metadata written since the last read.
-    
-    This method returns a tuple of two Booleans indicating whether or not there were new results and whether or not there was new metadata.
+The existing QCoDeS storage subsystem should be modified so that some object has two methods:
 
-DataSet.write(location, formatter=, overwrite=)
-    Writes the DataSet to persistent store.
-    Location may be a string file system path, a string URL, or some other string that is meaningful to the formatter specified.
-    
-    Formatter is a QCoDeS Formatter object that specifies how data is read and written. 
-    If not provided, the default formatter is used; currently the default is GNUPlotFormat().
-    
-    Overwrite, if true, indicates that any old data found at the specified location should be deleted.
-    Otherwise, it is an error to specify a location that is already in use.
-    
-    This method can be called even if the DataSet is empty, in order to specify the location and format
+- A write_dataset method that takes a DataSet object and writes it to the appropriate storage location in an appropriate format.
+- A read_dataset method that reads from the appropriate location, either with a specified format or inferring the format, and returns
+  a DataSet object.
+  
+Metadata
+========
 
-DataSet.write_updates()
-    Writes new results in the DataSet to persistent store.
-    Depending on the formatter, this may append to an existing stored version or may overwrite the stored version.
+While in general the metadata associated with a DataSet is free-form, it is useful to specify a set of "well-known" tags and paths that components can rely on to contain specific information.
+Other components are free to specify new well-known metadata tags and paths, as long as they don't conflict with the set defined here.
 
-DataSet.write_copy(location, formatter=, overwrite=)
-    Writes a separate copy of the DataSet to persistent store.
-    Location may be a string file system path, a string URL, or some other string that is meaningful to the formatter specified.
+parameters
+    This tag contains a dictionary from the string name of each parameter to information about that parameter.
+    Thus, if DataSet ds has a parameter named "foo", there will be a key "foo" in the dictionary returned from ds.get_metadata("parameters").
+    The value associated with this key will be a string-keyed dictionary.
     
-    Formatter is a QCoDeS Formatter object that specifies how data is read and written. 
-    If not provided, the formatter for the DataSet is used. 
+parameters/__param__/spec
+    This path contains a string-keyed dictionary with (at least) the following two keys:
+    The "type" key is associated with the NumPy dtype for the values of this parameter.
+    The "metadata" key is associated with the metadata that was passed to the ParamSpec constructor that defines this parameter, or an empty dictionary if no metadata was set.
     
-    Overwrite, if true, indicates that any old data found at the specified location should be deleted.
-    Otherwise, it is an error to specify a location that is already in use.
+Utilities
+=========
+
+There are many utility routines that may be defined outside of the DataSet class that may be useful.
+We collect several of them here, with the note that these functions will not be part of the DataSet class 
+and will not be required by the DataSet class.
+
+dataframe_from_dataset(dataset)
+    Creates a Pandas DataFrame object from a DataSet that has been marked as completed.
 
 Open Issues
 ===========
 
-#. Should DataSets automatically write to persistent store periodically, or should the user be required to call write() in order to flush changes ?
+#. Should it be possible to "reopen" a DataSet that has been marked as completed?
 
-At least for now, it seems useful to maintain the current behavior of the DataSet flushing to disk periodically.
-On the other hand, this really isn't core functionality.
-
-**Decision: No, we will leave persistence under control of higher-level code.**
-
-#. Should there be a DataSet method similar to add_result that automatically adds a new result by calling the get() method on all parameters that are defined by QCoDeS Parameters?
-
-It would be really easy to write a helper method that does this, so it doesn’t seem necessary to have it in the core API.
-
-**Decision: No, we will not add such a method.**
-
-#. Should the persistence methods be part of DataSet, or should they be methods on persistence-specific classes?
-
-One advantage of removing them from this class is that it makes DataSet completely stand-alone.
-The DataSet module would define two classes, ParamSpec and DataSet, and require only NumPy.
-This level of modularity is very desirable.
+This is convenient for adding data analysis results after the experiement has added, but could potentially lead mixing data from different experimental runs accidentally.
+It is already possible to modify metadata after the DataSet has beenmarked as completed, but sometimes that may not be sufficient.
 
