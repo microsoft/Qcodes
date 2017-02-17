@@ -531,6 +531,11 @@ class AMI430_3D(Instrument):
         self.__z = magnet_z.field()
 
     def _request_field_change(self, magnet, value):
+        """
+        This method is called by the child x/y/z magnets if they are set
+        individually. It results in additional safety checks being
+        performed by this 3D driver.
+        """
         if magnet is self._magnet_x:
             self.x(value)
         elif magnet is self._magnet_y:
@@ -543,6 +548,7 @@ class AMI430_3D(Instrument):
             raise NameError(msg.format(self))
 
     def _cartesian_to_other(self, x, y, z):
+        """ Convert a cartesian set of coordinates to values of interest. """
         field = np.sqrt(x**2 + y**2 + z**2)
         phi = np.arctan2(y, x)
         rho = np.sqrt(x**2 + y**2)
@@ -558,6 +564,9 @@ class AMI430_3D(Instrument):
         """
         Convert x/y/z values into the other coordinates and return a
         tuple of the requested values.
+
+        Args:
+            *names: a series of coordinate names as specified in the function.
         """
         phi, theta, field, rho = self._cartesian_to_other(x, y, z)
 
@@ -579,6 +588,7 @@ class AMI430_3D(Instrument):
             return returned
 
     def _get_measured(self, *names):
+        """ Return the measured coordinates specified in names. """
         x = self._magnet_x.field()
         y = self._magnet_y.field()
         z = self._magnet_z.field()
@@ -586,6 +596,7 @@ class AMI430_3D(Instrument):
         return self._from_xyz(x, y, z, *names)
 
     def _get_setpoints(self, *names):
+        """ Return the setpoints specified in names. """
         return self._from_xyz(self.__x, self.__y, self.__z, *names)
 
     def _set_x(self, value):
@@ -647,6 +658,14 @@ class AMI430_3D(Instrument):
         self._set_cylindrical((phi, rho, self.__z))
 
     def _set_fields(self, values):
+        """
+        Set the fields of the x/y/z magnets. This function is called
+        whenever the field is changed and performs several safety checks
+        to make sure no limits are exceeded.
+
+        Args:
+            values (tuple): a tuple of cartesian coordinates (x, y, z).
+        """
         x, y, z = values
 
         # Check if exceeding an individual magnet field limit
