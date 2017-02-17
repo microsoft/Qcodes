@@ -41,8 +41,8 @@ class AMI430(VisaInstrument):
     """
     def __init__(self, name, address, coil_constant, current_rating,
                  current_ramp_limit, persistent_switch=True,
-                 reset=False, **kwargs):
-        super().__init__(name, address, terminator='\n', **kwargs)
+                 reset=False, terminator='\r\n', **kwargs):
+        super().__init__(name, address, terminator=terminator, **kwargs)
 
         self._parent_instrument = None
 
