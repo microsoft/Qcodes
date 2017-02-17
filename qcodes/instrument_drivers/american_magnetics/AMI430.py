@@ -574,10 +574,10 @@ class AMI430_3D(Instrument):
         y = self._magnet_y.field()
         z = self._magnet_z.field()
 
-        return self._from_xyz(x, y, z, names)
+        return self._from_xyz(x, y, z, *names)
 
     def _get_setpoints(self, *names):
-        return self._from_xyz(self.__x, self.__y, self.__z, names)
+        return self._from_xyz(self.__x, self.__y, self.__z, *names)
 
     def _set_x(self, value):
         self._set_fields((value, self.__y, self.__z))
