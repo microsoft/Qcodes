@@ -408,8 +408,8 @@ class AMI430_3D(Instrument):
         # Make this into a parameter?
         self._field_limit = field_limit
 
-        # Internal magnet field setpoints
-        self.__x, self.__y, self.__z = 0.0, 0.0, 0.0
+        # Initialize the internal magnet field setpoints
+        self.update_internal_setpoints()
 
         # Get-only parameters that return a measured value
         self.add_parameter('cartesian_measured',
@@ -520,6 +520,15 @@ class AMI430_3D(Instrument):
                            set_cmd=self._set_rho,
                            unit='T',
                            vals=Numbers())
+
+    def update_internal_setpoints(self):
+        """
+        Set the internal setpoints to the measured field values.
+        This can be done in case the magnets have been adjusted manually.
+        """
+        self.__x = magnet_x.field()
+        self.__y = magnet_y.field()
+        self.__z = magnet_z.field()
 
     def _request_field_change(self, magnet, value):
         if magnet is self._magnet_x:
