@@ -4,8 +4,7 @@ from qcodes.utils.validators import Numbers, Enum, Ints
 
 class Cryocon_26(VisaInstrument):
     """
-    Driver for the Cryo-con Model 26 temperature controller
-
+    Driver for the Cryo-con Model 26 temperature controller.
     """
     def __init__(self, name, address, reset=False, **kwargs):
         super().__init__(name, address, terminator='\n', **kwargs)
@@ -106,49 +105,49 @@ class Cryocon_26(VisaInstrument):
                                get_parser=float,
                                set_cmd='loop {}:rate {{}}'.format(loop),
                                vals=Numbers(0, 100),
-                               units='units/min')
+                               unit='units/min')
 
             self.add_parameter(l + 'P',
                                get_cmd='loop {}:pgain?'.format(loop),
                                get_parser=float,
                                set_cmd='loop {}:pgain {{}}'.format(loop),
                                vals=Numbers(0, 1000),
-                               units='-')
+                               unit='-')
 
             self.add_parameter(l + 'I',
                                get_cmd='loop {}:igain?'.format(loop),
                                get_parser=float,
                                set_cmd='loop {}:igain {{}}'.format(loop),
                                vals=Numbers(0, 1000),
-                               units='s')
+                               unit='s')
 
             self.add_parameter(l + 'D',
                                get_cmd='loop {}:dgain?'.format(loop),
                                get_parser=float,
                                set_cmd='loop {}:dgain {{}}'.format(loop),
                                vals=Numbers(0, 1000),
-                               units='1/s')
+                               unit='1/s')
 
             self.add_parameter(l + 'manual_power',
                                get_cmd='loop {}:pman?',
                                get_parser=float,
                                set_cmd='loop {}:pman {{}}'.format(loop),
                                vals=Numbers(0, 100),
-                               units='%')
+                               unit='%')
 
             self.add_parameter(l + 'output_power',
                                get_cmd='loop {}:outp?',
                                get_parser=float,
-                               units='%')
+                               unit='%')
 
             self.add_parameter(l + 'read_heater',
                                get_cmd='loop {}:htrread?',
                                get_parser=float,
-                               units='%')
+                               unit='%')
 
             self.add_parameter(l + 'max_power',
                                get_cmd='loop {}:maxp?',
                                get_parser=float,
                                set_cmd='loop {}:maxp {{}}'.format(loop),
                                vals=Numbers(0, 100),
-                               units='%')
+                               unit='%')
