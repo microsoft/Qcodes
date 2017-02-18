@@ -435,7 +435,7 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
                 snap[attr] = getattr(self, attr)
         return snap
 
-    def print_readable_snapshot(self, update=False):
+    def print_readable_snapshot(self, update=False, max_chars=80):
         """
         Prints a readable version of the snapshot.
         The readable snapshot includes the name, value and unit of each
@@ -449,11 +449,18 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
         """
         floating_types = (float, np.integer, np.floating)
         snapshot = self.snapshot(update=update)
+
+        par_lengths = [len(p) for p in snapshot['parameters']]
+
+        # Min of 50 is to prevent a super long parameter name to break this
+        # function
+        par_field_len = min(max(par_lengths)+1, 50)
+
         print(self.name + ':')
-        print('{: >21}'.format('parameter ') + '\tvalue')
+        print('{0:<{1}}'.format('\tparameter ', par_field_len) + 'value')
         print('-'*80)
         for par in sorted(snapshot['parameters']):
-            msg = '{: >21}:'.format(snapshot['parameters'][par]['name'])
+            msg = '{0:<{1}}:'.format(snapshot['parameters'][par]['name'], par_field_len)
             val = snapshot['parameters'][par]['value']
             unit = snapshot['parameters'][par]['unit']
             if isinstance(val, floating_types):
@@ -462,6 +469,9 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
                 msg += '\t{} '.format(val)
             if unit is not '':  # corresponds to no unit
                 msg += '({})'.format(unit)
+            # Truncate the message if it is longer than max length
+            if len(msg) > max_chars and not max_chars==-1:
+                msg = msg[0:max_chars-3] + '...'
             print(msg)
 
     # `write_raw` and `ask_raw` are the interface to hardware                #
