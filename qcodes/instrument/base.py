@@ -443,9 +443,12 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
         A convenience function to quickly get an overview of the status of an instrument.
 
         Args:
-            update (bool): If True, update the state by querying the
+            update (bool)  : If True, update the state by querying the
                 instrument. If False, just use the latest values in memory.
                 This argument gets passed to the snapshot function.
+            max_chars (int) : the maximum number of characters per line. The
+                readable snapshot will be cropped if this value is exceeded.
+                Defaults to 80 to be consistent with default terminal width.
         """
         floating_types = (float, np.integer, np.floating)
         snapshot = self.snapshot(update=update)
