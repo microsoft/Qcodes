@@ -553,8 +553,15 @@ class ActiveLoop(Metadatable):
             action_indices = ((),)
         else:
             raise ValueError('a gettable parameter must have .name or .names')
-
+        if hasattr(action, 'names') and hasattr(action, 'units'):
+            units = action.units
+        elif hasattr(action, 'unit'):
+            units = (action.unit,)
+        else:
+            units = tuple(['']*len(names))
         num_arrays = len(names)
+        num_units = len(units)
+        assert num_arrays == num_units
         shapes = getattr(action, 'shapes', None)
         sp_vals = getattr(action, 'setpoints', None)
         sp_names = getattr(action, 'setpoint_names', None)
@@ -577,8 +584,8 @@ class ActiveLoop(Metadatable):
         # now loop through these all, to make the DataArrays
         # record which setpoint arrays we've made, so we don't duplicate
         all_setpoints = {}
-        for name, full_name, label, shape, i, sp_vi, sp_ni, sp_li in zip(
-                names, full_names, labels, shapes, action_indices,
+        for name, full_name, label, unit, shape, i, sp_vi, sp_ni, sp_li in zip(
+                names, full_names, labels, units, shapes, action_indices,
                 sp_vals, sp_names, sp_labels):
 
             if shape is None or shape == ():
@@ -600,7 +607,7 @@ class ActiveLoop(Metadatable):
 
             # finally, make the output data array with these setpoints
             out.append(DataArray(name=name, full_name=full_name, label=label,
-                                 shape=shape, action_indices=i,
+                                 shape=shape, action_indices=i, unit=unit,
                                  set_arrays=setpoints, parameter=action))
 
         return out
