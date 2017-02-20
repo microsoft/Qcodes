@@ -526,9 +526,9 @@ class AMI430_3D(Instrument):
         Set the internal setpoints to the measured field values.
         This can be done in case the magnets have been adjusted manually.
         """
-        self.__x = self.magnet_x.field()
-        self.__y = self.magnet_y.field()
-        self.__z = self.magnet_z.field()
+        self.__x = self._magnet_x.field()
+        self.__y = self._magnet_y.field()
+        self.__z = self._magnet_z.field()
 
     def _request_field_change(self, magnet, value):
         """
