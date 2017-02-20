@@ -429,9 +429,9 @@ class AMI430_3D(Instrument):
                            unit='T')
 
         self.add_parameter('spherical_measured',
-                           get_cmd=partial(self._get_measured, 'phi',
+                           get_cmd=partial(self._get_measured, 'field',
                                                                'theta',
-                                                               'field'),
+                                                               'phi'),
                            unit='T')
 
         self.add_parameter('phi_measured',
@@ -447,9 +447,9 @@ class AMI430_3D(Instrument):
                            unit='T')
 
         self.add_parameter('cylindrical_measured',
-                           get_cmd=partial(self._get_measured, 'phi',
-                                                               'rho',
-                                                               'field'),
+                           get_cmd=partial(self._get_measured, 'rho',
+                                                               'phi',
+                                                               'z'),
                            unit='T')
 
         self.add_parameter('rho_measured',
@@ -482,9 +482,9 @@ class AMI430_3D(Instrument):
                            vals=Numbers())
 
         self.add_parameter('spherical',
-                           get_cmd=partial(self._get_setpoints, 'phi',
+                           get_cmd=partial(self._get_setpoints, 'field',
                                                                 'theta',
-                                                                'field'),
+                                                                'phi'),
                            set_cmd=self._set_spherical,
                            unit='tuple?',
                            vals=Anything())
@@ -508,8 +508,8 @@ class AMI430_3D(Instrument):
                            vals=Numbers())
 
         self.add_parameter('cylindrical',
-                           get_cmd=partial(self._get_setpoints, 'phi',
-                                                                'rho',
+                           get_cmd=partial(self._get_setpoints, 'rho',
+                                                                'phi',
                                                                 'z'),
                            set_cmd=self._set_cylindrical,
                            unit='tuple?',
