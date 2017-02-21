@@ -1,12 +1,13 @@
 import copy
 import json
-import jsonschema
 import logging
 import os
 import pkg_resources as pkgr
 
 from os.path import expanduser
 from pathlib import Path
+
+import jsonschema
 
 logger = logging.getLogger(__name__)
 
