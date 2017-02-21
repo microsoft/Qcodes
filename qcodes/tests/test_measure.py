@@ -34,7 +34,7 @@ class TestMeasure(TestCase):
     def test_simple_array(self):
         data = Measure(MultiGetter(arr=(1.2, 3.4))).run_temp()
 
-        self.assertEqual(data.index0.tolist(), [0, 1])
+        self.assertEqual(data.index0_set.tolist(), [0, 1])
         self.assertEqual(data.arr.tolist(), [1.2, 3.4])
         self.assertEqual(len(data.arrays), 2, data.arrays)
 
@@ -44,6 +44,6 @@ class TestMeasure(TestCase):
 
         self.assertEqual(data.single_set.tolist(), [0])
         self.assertEqual(data.P1.tolist(), [42])
-        self.assertEqual(data.index0.tolist(), [0, 1])
+        self.assertEqual(data.index0_set.tolist(), [0, 1])
         self.assertEqual(data.arr.tolist(), [5, 6])
         self.assertEqual(len(data.arrays), 4, data.arrays)
