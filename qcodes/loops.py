@@ -566,12 +566,14 @@ class ActiveLoop(Metadatable):
         sp_vals = getattr(action, 'setpoints', None)
         sp_names = getattr(action, 'setpoint_names', None)
         sp_labels = getattr(action, 'setpoint_labels', None)
+        sp_units = getattr(action, 'setpoint_units', None)
 
         if shapes is None:
             shapes = (getattr(action, 'shape', ()),) * num_arrays
             sp_vals = (sp_vals,) * num_arrays
             sp_names = (sp_names,) * num_arrays
             sp_labels = (sp_labels,) * num_arrays
+            sp_units = (sp_units,) * num_arrays
         else:
             sp_blank = (None,) * num_arrays
             # _fill_blank both supplies defaults and tests length
@@ -580,26 +582,28 @@ class ActiveLoop(Metadatable):
             sp_vals = self._fill_blank(sp_vals, sp_blank)
             sp_names = self._fill_blank(sp_names, sp_blank)
             sp_labels = self._fill_blank(sp_labels, sp_blank)
+            sp_units = self._fill_blank(sp_units, sp_blank)
 
         # now loop through these all, to make the DataArrays
         # record which setpoint arrays we've made, so we don't duplicate
         all_setpoints = {}
-        for name, full_name, label, unit, shape, i, sp_vi, sp_ni, sp_li in zip(
+        for name, full_name, label, unit, shape, i, sp_vi, sp_ni, sp_li, sp_ui in zip(
                 names, full_names, labels, units, shapes, action_indices,
-                sp_vals, sp_names, sp_labels):
+                sp_vals, sp_names, sp_labels, sp_units):
 
             if shape is None or shape == ():
-                shape, sp_vi, sp_ni, sp_li = (), (), (), ()
+                shape, sp_vi, sp_ni, sp_li, sp_ui= (), (), (), (), ()
             else:
                 sp_blank = (None,) * len(shape)
                 sp_vi = self._fill_blank(sp_vi, sp_blank)
                 sp_ni = self._fill_blank(sp_ni, sp_blank)
                 sp_li = self._fill_blank(sp_li, sp_blank)
+                sp_ui = self._fill_blank(sp_ui, sp_blank)
 
             setpoints = ()
             # loop through dimensions of shape to make the setpoint arrays
-            for j, (vij, nij, lij) in enumerate(zip(sp_vi, sp_ni, sp_li)):
-                sp_def = (shape[: 1 + j], j, setpoints, vij, nij, lij)
+            for j, (vij, nij, lij, uij) in enumerate(zip(sp_vi, sp_ni, sp_li, sp_ui)):
+                sp_def = (shape[: 1 + j], j, setpoints, vij, nij, lij, uij)
                 if sp_def not in all_setpoints:
                     all_setpoints[sp_def] = self._make_setpoint_array(*sp_def)
                     out.append(all_setpoints[sp_def])
@@ -621,7 +625,7 @@ class ActiveLoop(Metadatable):
             raise ValueError('Wrong number of inputs supplied')
 
     def _make_setpoint_array(self, shape, i, prev_setpoints, vals, name,
-                             label):
+                             label, unit):
         if vals is None:
             vals = self._default_setpoints(shape)
         elif isinstance(vals, DataArray):
@@ -649,7 +653,7 @@ class ActiveLoop(Metadatable):
             name = 'index{}'.format(i)
 
         return DataArray(name=name, label=label, set_arrays=prev_setpoints,
-                         shape=shape, preset_data=vals)
+                         shape=shape, preset_data=vals, unit=unit)
 
     def _default_setpoints(self, shape):
         if len(shape) == 1:
