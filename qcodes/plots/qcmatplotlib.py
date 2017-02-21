@@ -110,9 +110,11 @@ class MatPlot(BasePlot):
 
     def _update_labels(self, ax, config):
         if 'x' in config and not ax.get_xlabel():
-            ax.set_xlabel(self.get_label(config['x']))
+            name, unit = self.get_label(config['x'])
+            ax.set_xlabel("{} ({})".format(name, unit))
         if 'y' in config and not ax.get_ylabel():
-            ax.set_ylabel(self.get_label(config['y']))
+            name, unit = self.get_label(config['y'])
+            ax.set_ylabel("{} ({})".format(name, unit))
 
     def update_plot(self):
         """
