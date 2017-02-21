@@ -649,7 +649,7 @@ class ActiveLoop(Metadatable):
             name = 'index{}'.format(i)
 
         return DataArray(name=name, label=label, set_arrays=prev_setpoints,
-                         shape=shape, preset_data=vals)
+                         shape=shape, preset_data=vals, is_setpoint=True)
 
     def _default_setpoints(self, shape):
         if len(shape) == 1:
