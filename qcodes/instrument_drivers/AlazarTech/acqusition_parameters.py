@@ -1,5 +1,5 @@
 from qcodes import Parameter, MultiParameter
-
+import numpy as np
 
 class AcqVariablesParam(Parameter):
     """
@@ -201,3 +201,89 @@ class AlazarMultiArray3D(AlazarMultiArray):
                            (self._buf_npts, self._rec_npts))
             # self.setpoints = ((self._buf_list, self._rec_list),
             #                   (self._buf_list, self._rec_list))
+
+
+class ExpandingAlazarArrayMultiParameter(MultiParameter):
+    def __init__(self,
+                 name,
+                 instrument,
+                 names = ('raw_output',),
+                 labels = ("raw output",),
+                 units = ('V',),
+                 shapes = ((),),
+                 setpoints = ((),),
+                 setpoint_names = (('time',),),
+                 setpoint_labels = (('time',),),
+                 setpoint_units = (('s',),),
+                 integrate_samples=False):
+        self.acquisition_kwargs = {}
+        self._integrate_samples = integrate_samples
+        super().__init__(name,
+                         names=names,
+                         units=units,
+                         labels=labels,
+                         shapes=shapes,
+                         instrument=instrument,
+                         setpoints=setpoints,
+                         setpoint_names=setpoint_names,
+                         setpoint_labels=setpoint_labels,
+                         setpoint_units=setpoint_units)
+
+    def set_setpoints_and_labels(self):
+        if not self._integrate_samples:
+            if self._instrument.sample_rate and self._instrument.samples_per_record:
+                start = 0
+                step = 1/self._instrument.sample_rate
+                stop = self._instrument.samples_per_record/self._instrument.sample_rate
+            else:
+                start = 0
+                step = 1
+                stop = 1
+            arraysetpoints = (tuple(np.arange(start, stop, step)),)
+            base_shape = (len(arraysetpoints[0]),)
+        else:
+            arraysetpoints = ()
+            base_shape = ()
+        setpoints = [arraysetpoints]
+        names = [self.names[0]]
+        labels = [self.labels[0]]
+        setpoint_name = self.setpoint_names[0]
+        setpoint_names = [setpoint_name]
+        setpoint_label = self.setpoint_labels[0]
+        setpoint_labels = [setpoint_label]
+        setpoint_unit = self.setpoint_units[0]
+        setpoint_units = [setpoint_unit]
+        units = [self.units[0]]
+        shapes = [base_shape]
+        for i, demod_freq in enumerate(self._instrument.demod_freqs):
+            names.append("demod_freq_{}_mag".format(i))
+            labels.append("demod freq {} mag".format(i))
+            names.append("demod_freq_{}_phase".format(i))
+            labels.append("demod freq {} phase".format(i))
+            units.append('v')
+            units.append('v')
+            shapes.append(base_shape)
+            shapes.append(base_shape)
+            setpoints.append(arraysetpoints)
+            setpoint_names.append(setpoint_name)
+            setpoint_labels.append(setpoint_label)
+            setpoint_units.append(setpoint_unit)
+            setpoints.append(arraysetpoints)
+            setpoint_names.append(setpoint_name)
+            setpoint_labels.append(setpoint_label)
+            setpoint_units.append(setpoint_unit)
+        self.metadata['demod_freqs'] = self._instrument.demod_freqs
+        self.names = tuple(names)
+        self.labels = tuple(labels)
+        self.units = tuple(units)
+        self.shapes = tuple(shapes)
+        self.setpoints = tuple(setpoints)
+        self.setpoint_names = tuple(setpoint_names)
+        self.setpoint_labels = tuple(setpoint_labels)
+        self.setpoint_units = tuple(setpoint_units)
+
+    def get(self):
+        output = self._instrument._get_alazar().acquire(
+            acquisition_controller=self._instrument,
+            **self.acquisition_kwargs)
+        return output
