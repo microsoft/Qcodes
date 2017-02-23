@@ -63,6 +63,7 @@ class Sweep(MultiParameter):
         parameter.
 
         """
+
         signals = self._instrument._sweeper_signals
         sweepdict = self._instrument._sweepdict
 
@@ -228,7 +229,7 @@ class Scope(MultiParameter):
     """
     Class similar to the Sweeper class
     TO DO: update docs...
-    Set scopeMode: time or frequency domaine 
+    Set scopeMode: time or frequency domaine
 
     """
     def __init__(self, instrument):
@@ -252,7 +253,7 @@ class Scope(MultiParameter):
         # self.shapes = ((npts,),)*len(signals)
 
         # Send settings to device
-    
+
         # for (setting, value) in scopedict.items():
         #     setting = 'sweep/' + setting
         #     self._instrument.sweeper.set(setting, value)
@@ -312,7 +313,7 @@ class ZIUHFLI(Instrument):
         # this variable enforces building the sweep and scope before using it
         self._sweep_cb = False
         self._scope_cb = False
-   
+
         @property
         def sweep_correctly_built(self):
             return self._sweep_cd
@@ -521,7 +522,7 @@ class ZIUHFLI(Instrument):
                                label='Input signal subtraction',
                                set_cmd=partial(self._setter, 'sigins',
                                                 sigin-1, 0, 'diff'),
-                               get_cmd=partial(self._getter, 'sigins', 
+                               get_cmd=partial(self._getter, 'sigins',
                                                sigin-1, 0, 'diff'),
                                val_mapping=sigindiffs,
                                vals=vals.Enum(*list(sigindiffs.keys())))
@@ -541,7 +542,7 @@ class ZIUHFLI(Instrument):
                                                 sigout-1, 0, 'on'),
                                 val_mapping={'ON': 1, 'OFF': 0},
                                 vals=vals.Enum('ON', 'OFF') )
-            
+
             self.add_parameter('signal_output{}_imp50'.format(sigout),
                                 label='Switch to turn on 50 Ohm impedance',
                                 set_cmd=partial(self._sigout_setter,
@@ -576,7 +577,7 @@ class ZIUHFLI(Instrument):
 
             self.add_parameter('signal_output{}_offset'.format(sigout),
                                 label='Signal output offset',
-                                set_cmd=partial(self._sigout_setter, 
+                                set_cmd=partial(self._sigout_setter,
                                                 sigout-1, 1, 'offset'),
                                 get_cmd=partial(self._sigout_getter,
                                                 sigout-1, 1, 'offset'),
@@ -880,83 +881,83 @@ class ZIUHFLI(Instrument):
         ########################################
         # SCOPE PARAMETERS
         # default parameters:
-        self._sweepdict = {'time': 1e6,
-                           'length': 4096
-                          }
 
         self.add_parameter('scope_mode',
-                            label="Scope's mode: choose time or frequency domain.",
-                            set_cmd=partial(self._scope_setter, 1,
+                            label="Scope's mode: time or frequency domain.",
+                            set_cmd=partial(self._scope_setter, 1, 0,
                                             'mode'),
                             get_cmd=partial(self._scope_getter, 'mode'),
-                            val_mapping={'Time Domain': 1, 'Freq Domain FFT': 3},
+                            val_mapping={'Time Domain': 1,
+                                         'Freq Domain FFT': 3},
                             vals=vals.Enum('Time Domain', 'Freq Domain FFT')
                             )
 
-        sampling_rates = {'1.80 Ghz': 0,
-                                '900 MHz': 1,
-                                '450 MHz': 2,
-                                '225 MHz': 3,
-                                '113 MHz': 4,
-                                '56.2 MHz': 5,
-                                '28.1 MHz': 6,
-                                '14.0 MHz': 7,
-                                '7.03 MHz': 8,
-                                '3.50 MHz': 9,
-                                '1.75 MHz': 10,
-                                '880 kHz': 11,
-                                '440 kHz': 12,
-                                '220 kHz': 13,
-                                '110 kHz': 14,
-                                '54.9 kHz': 15,
-                                '27.5 kHz': 16}
+        self._samplingrate_codes = {'1.80 Ghz': 0,
+                                   '900 MHz': 1,
+                                   '450 MHz': 2,
+                                   '225 MHz': 3,
+                                   '113 MHz': 4,
+                                   '56.2 MHz': 5,
+                                   '28.1 MHz': 6,
+                                   '14.0 MHz': 7,
+                                   '7.03 MHz': 8,
+                                   '3.50 MHz': 9,
+                                   '1.75 MHz': 10,
+                                   '880 kHz': 11,
+                                   '440 kHz': 12,
+                                   '220 kHz': 13,
+                                   '110 kHz': 14,
+                                   '54.9 kHz': 15,
+                                   '27.5 kHz': 16}
 
         self.add_parameter('scope_samplingrate',
                             label="Scope's sampling rate",
-                            set_cmd=partial(self._scope_setter, 0,
+                            set_cmd=partial(self._scope_setter, 0, 0,
                                             'time'),
                             get_cmd=partial(self._getter, 'scopes', 0,
                                             0, 'time'),
-                            val_mapping=sampling_rates,
-                            vals=vals.Enum(*list(sampling_rates.keys()))
+                            val_mapping=self._samplingrate_codes,
+                            vals=vals.Enum(*list(self._samplingrate_codes.keys()))
                             )
 
         self.add_parameter('scope_length',
-                            label="Scope's length [pts]",
-                            set_cmd=partial(self._scope_setter, 0,
+                            label="Length of scope trace (pts)",
+                            set_cmd=partial(self._scope_setter, 0, 1,
                                             'length'),
                             get_cmd=partial(self._getter, 'scopes', 0,
                                             1, 'length'),
-                            val_mapping=sampling_rates,
-                            vals=vals.Numbers(4096, 128000000)
+                            vals=vals.Numbers(4096, 128000000),
+                            get_parser=int
                             )
         #scope duration: ManualParameter? validation depends on value of length
-        # self.add_parameter('scope_duration',
-        #                     label="Scope's sduration [s]",
-        #                     set_cmd=partial(self._scope_setter,
-        #                                     'time'),
-        #                     get_cmd=partial(self._scope_getter, 'time'),
-        #                     val_mapping=sampling_rates,
-        #                     vals=vals.Numbers(2.27e-6,4.660e3)
-        #                     )
-        
+        self.add_parameter('scope_duration',
+                           label="Scope trace duration",
+                           set_cmd=partial(self._scope_setter, 0, 0,
+                                           'duration'),
+                           get_cmd=partial(self._scope_getter,
+                                           'duration'),
+                           vals=vals.Numbers(2.27e-6,4.660e3),
+                           unit='s'
+                           )
+
         inputselect = {'Signal Input 1': 0,
-                        'Signal Input 2': 1,
-                        'Trig Input 1': 2,
-                        'Trig Input 2': 3,
-                        'Aux Output 1': 4,
-                        'Aux Output 2': 5,
-                        'Aux Output 3': 6,
-                        'Aux Output 4': 7,
-                        'Aux In 1 Ch 1': 8,
-                        'Aux In 1 Ch 2': 9,
-                        'Osc phi Demod 4': 10,
-                        'Osc phi Demod 8': 11,
-                        'AU Cartesian 1': 112,
-                        'AU Cartesian 2': 113,
-                        'AU Polar 1': 128,
-                        'AU Polar 2': 129,
-                         }
+                       'Signal Input 2': 1,
+                       'Trig Input 1': 2,
+                       'Trig Input 2': 3,
+                       'Aux Output 1': 4,
+                       'Aux Output 2': 5,
+                       'Aux Output 3': 6,
+                       'Aux Output 4': 7,
+                       'Aux In 1 Ch 1': 8,
+                       'Aux In 1 Ch 2': 9,
+                       'Osc phi Demod 4': 10,
+                       'Osc phi Demod 8': 11,
+                       'AU Cartesian 1': 112,
+                       'AU Cartesian 2': 113,
+                       'AU Polar 1': 128,
+                       'AU Polar 2': 129,
+                       }
+
         for demod in range(1,9):
             inputselect['Demod {} X'.format(demod)] = 15+demod
             inputselect['Demod {} Y'.format(demod)] = 31+demod
@@ -966,7 +967,7 @@ class ZIUHFLI(Instrument):
         for channel in range(1,3):
             self.add_parameter('scope_channel{}_input'.format(channel),
                             label="Scope's channel {} input source".format(channel),
-                            set_cmd=partial(self._scope_setter, 0,
+                            set_cmd=partial(self._scope_setter, 0, 0,
                                             '{}/inputselect'.format(channel-1)),
                             get_cmd=partial(self._getter, 'scopes', 0,
                                             0, '{}/inputselect'.format(channel-1)),
@@ -987,15 +988,11 @@ class ZIUHFLI(Instrument):
 
         self.add_parameter('scope_average_weight',
                             label="Scope Averages",
-                            set_cmd=partial(self._scope_setter, 1,
+                            set_cmd=partial(self._scope_setter, 1, 0,
                                             '/averager/weight'),
-                            get_cmd=partial(self._scope_getter, 
+                            get_cmd=partial(self._scope_getter,
                                             '/averager/weight'),
                             vals=vals.Numbers(min_value=1)
-                            ) 
-
-        self.add_function('scope_reset_avg', 
-                            call_cmd=partial(self.scope.set, 'scopeModule/averager/restart', 1),
                             )
 
         self.add_parameter('scope_trig_enable',
@@ -1005,7 +1002,7 @@ class ZIUHFLI(Instrument):
                             get_cmd=partial(self._getter, 'scopes', 0,
                                             0, 'trigenable'),
                             val_mapping={'ON': 1, 'OFF': 0},
-                            # vals=vals.Enum('ON', 'OFF')
+                            vals=vals.Enum('ON', 'OFF')
                             )
 
         self.add_parameter('scope_trig_signal',
@@ -1015,7 +1012,7 @@ class ZIUHFLI(Instrument):
                             get_cmd=partial(self._getter, 'scopes', 0,
                                             0, 'trigchannel'),
                             val_mapping=inputselect,
-                            vals=vals.Enum(*list(inputselect.keys()))             
+                            vals=vals.Enum(*list(inputselect.keys()))
                             )
 
         slopes = {'None': 0, 'Rise': 1, 'Fall': 2, 'Both': 3}
@@ -1027,18 +1024,20 @@ class ZIUHFLI(Instrument):
                             get_cmd=partial(self._getter, 'scopes', 0,
                                             0, 'trigslope'),
                             val_mapping=slopes,
-                            vals=vals.Enum(*list(slopes.keys()))              
+                            vals=vals.Enum(*list(slopes.keys()))
                             )
 
+        # TODO: figure out how value/percent works for the trigger level
         self.add_parameter('scope_trig_level',
-                            label="Scope trigger level (deg)",
+                            label="Scope trigger level",
                             set_cmd=partial(self._setter, 'scopes', 0,
                                             1, 'triglevel'),
                             get_cmd=partial(self._getter, 'scopes', 0,
                                             1, 'triglevel'),
-                            vals=vals.Numbers()              
+                            vals=vals.Numbers()
                             )
-        #TO DO: Find out how to enable/disable trigger lever. GUI's button does not appear in logging.
+        #TO DO: Find out how to enable/disable trigger lever. GUI's button does
+        # not appear in logging.
 
         self.add_parameter('scope_trig_hystmode',
                             label="Enable triggering for scope readout.",
@@ -1047,7 +1046,7 @@ class ZIUHFLI(Instrument):
                             get_cmd=partial(self._getter, 'scopes', 0,
                                             0, 'trighysteresis/mode'),
                             val_mapping={'deg': 0, '%': 1},
-                            vals=vals.Enum('ON', 'OFF')              
+                            vals=vals.Enum('ON', 'OFF')
                             )
 
         self.add_parameter('scope_trig_hystrelative',
@@ -1057,18 +1056,20 @@ class ZIUHFLI(Instrument):
                             get_cmd=partial(self._getter, 'scopes', 0,
                                             1, 'trighysteresis/relative'),
                             # val_mapping= lambda x: 0.01*x,
-                            vals=vals.Numbers(0)              
+                            vals=vals.Numbers(0)
                             )
 
         self.add_parameter('scope_trig_hystabsolute',
-                            label="Trigger hysteresis, absolute value in degrees",
+                            label="Trigger hysteresis, absolute value",
                             set_cmd=partial(self._setter, 'scopes', 0,
                                             1, 'trighysteresis/absolute'),
                             get_cmd=partial(self._getter, 'scopes', 0,
                                             1, 'trighysteresis/absolute'),
-                            vals=vals.Numbers(0, 20)             
+                            vals=vals.Numbers(0, 20)
                             )
 
+        # make this a slave parameter off scope_holdoff_seconds
+        # and scope_holdoff_events
         self.add_parameter('scope_trig_holdoffmode',
                             label="Scope trigger holdoff mode",
                             set_cmd=partial(self._setter, 'scopes', 0,
@@ -1076,26 +1077,50 @@ class ZIUHFLI(Instrument):
                             get_cmd=partial(self._getter, 'scopes', 0,
                                             0, 'trigholdoffmode'),
                             val_mapping={'s': 0, 'events': 1},
-                            vals=vals.Enum('s', 'events')              
+                            vals=vals.Enum('s', 'events')
+                            )
+
+        self.add_parameter('scope_trig_holdoffseconds',
+                           label='Scope trigger holdoff',
+                           set_cmd=partial(self._scope_setter, 0, 1,
+                                           'trigholdoff'),
+                           get_cmd=partial(self._getter, 'scopes', 0,
+                                           1, 'trigholdoff'),
+                           unit='s',
+                           vals=vals.Numbers(20e-6, 10)
+                           )
+
+        self.add_parameter('scope_segments',
+                           label='No. of segments returned by scope',
+                           set_cmd=partial(self._setter, 'scopes', 0, 1,
+                                           'segments/count'),
+                           get_cmd=partial(self._getter, 'scopes', 0, 1,
+                                          'segments/count'),
+                           vals=vals.Ints(1, 32768)
+                           )
+
+        self.add_function('scope_reset_avg',
+                            call_cmd=partial(self.scope.set,
+                                             'scopeModule/averager/restart', 1),
                             )
 
     def _setter(self, module, number, mode, setting, value):
         """
         General function to set/send settings to the device.
 
-        The module (e.g demodulator, input, output,..) is counted in a zero
-        indexed fashion.
+        The module (e.g demodulator, input, output,..) number is counted in a
+        zero indexed fashion.
 
         Args:
             module (str): The module (eg. demodulator, input, output, ..)
                 to set.
             number (int): Module's index
-            mode (bool): Indicating whether we are asking for an int or double
+            mode (bool): Indicating whether we are setting an int or double
             setting (str): The module's setting to set.
             value (int/double): The value to set.
         """
 
-        setstr = '/{}/{}/{}/{}'.format(self.device, module, number, setting)  
+        setstr = '/{}/{}/{}/{}'.format(self.device, module, number, setting)
 
         if mode == 0:
             self.daq.setInt(setstr, value)
@@ -1104,16 +1129,18 @@ class ZIUHFLI(Instrument):
 
     def _getter(self, module, number, mode, setting):
         """
-        General get function for all parameters (except sweeper parameters).
+        General get function for generic parameters. Note that some parameters
+        use more specialised setter/getters.
 
-        The module (e.g demodulator, input, output,..) is counted in a zero
-        indexed fashion. 
-        
+        The module (e.g demodulator, input, output,..) number is counted in a
+        zero indexed fashion.
+
         Args:
             module (str): The module (eg. demodulator, input, output, ..)
                 we want to know the value of.
             number (int): Module's index
-            mode (bool): Indicating whether we are asking for an int or double
+            mode (int): Indicating whether we are asking for an int or double.
+                0: Int, 1: double.
             setting (str): The module's setting to set.
         returns:
             inquered value
@@ -1126,12 +1153,13 @@ class ZIUHFLI(Instrument):
         if mode == 1:
             value = self.daq.getDouble(querystr)
 
+        # Weird exception, samplingrate returns a string
         return value
 
     def _sigout_setter(self, number, mode, setting, value):
         """
-        Function to set signal output's settings. Specific setter function is needed as 
-        parameters depend on each other and need to be checked and updated accordingly. 
+        Function to set signal output's settings. Specific setter function is needed as
+        parameters depend on each other and need to be checked and updated accordingly.
 
         Args:
             number (int):
@@ -1149,7 +1177,7 @@ class ZIUHFLI(Instrument):
                 imp50_val =  self.parameters['signal_output{}_imp50'.format(number+1)].get()
                 imp50_dic = {'OFF': 1.5, 'ON': 0.75}
                 range_val = imp50_dic[imp50_val]
-    
+
             else:
                 range_val =  round(self.parameters['signal_output{}_range'.format(number+1)].get(),3)
 
@@ -1158,15 +1186,15 @@ class ZIUHFLI(Instrument):
                         'dBm': lambda value: 10**((value-10)/20) }
 
             if -range_val < amp_val_dict[ampdef_val](value) > range_val:
-                raise ValueError('Signal Output:' 
-                                + ' Amplitude too high for chosen range.') 
+                raise ValueError('Signal Output:'
+                                + ' Amplitude too high for chosen range.')
             value = amp_val_dict[ampdef_val](value)
 
         def offset_valid():
             nonlocal value
             nonlocal number
             range_val =  round(self.parameters['signal_output{}_range'.format(number+1)].get(),3)
-            amp_val = round(self.parameters['signal_output{}_amplitude'.format(number+1)].get(),3) 
+            amp_val = round(self.parameters['signal_output{}_amplitude'.format(number+1)].get(),3)
             autorange_val = self.parameters['signal_output{}_autorange'.format(number+1)].get()
             if -range_val< value+amp_val > range_val:
                 raise ValueError('Signal Output: Offset too high for chosen range.')
@@ -1196,7 +1224,7 @@ class ZIUHFLI(Instrument):
 
         def imp50_valid():
             amp_val = round(self.parameters['signal_output{}_amplitude'.format(number+1)].get(),3)
-            amp_val = round(self.parameters['signal_output{}_offset'.format(number+1)].get(),3) 
+            amp_val = round(self.parameters['signal_output{}_offset'.format(number+1)].get(),3)
 
         dynamic_validation = {'range': range_valid,
                             'ampdef': ampdef_valid,
@@ -1210,7 +1238,7 @@ class ZIUHFLI(Instrument):
             offset_val = self.parameters['signal_output{}_offset'.format(number+1)].get()
             amp_val = self.parameters['signal_output{}_amplitude'.format(number+1)].get()
             if -range_val < offset_val + amp_val > range_val:
-                #The GUI would allow higher values but it would clip the signal. 
+                #The GUI would allow higher values but it would clip the signal.
                 raise ValueError('Signal Output: Amplitude and/or offset out of range.')
 
         def update_offset():
@@ -1237,7 +1265,7 @@ class ZIUHFLI(Instrument):
 
         if mode == 0:
             self.daq.setInt(setstr, value)
-        if mode == 1: 
+        if mode == 1:
             self.daq.setDouble(setstr, value)
 
         if setting in changing_param:
@@ -1245,7 +1273,7 @@ class ZIUHFLI(Instrument):
 
     def _sigout_getter(self, number, mode, setting):
         """
-        Function to query the settings of signal outputs. Specific setter function is needed as 
+        Function to query the settings of signal outputs. Specific setter function is needed as
         parameters depend on each other and need to be checked and updated accordingly.
 
         Args:
@@ -1520,55 +1548,137 @@ class ZIUHFLI(Instrument):
         ready = self.sweep_correctly_built
         print('    Sweep built and ready to execute: {}'.format(ready))
 
-    def _scope_setter(self, setting, scopemodule, value):
+    def _scope_setter(self, scopemodule, mode, setting, value):
         """
         set_cmd for all scope parameters. The value and setting are saved in
         a dictionary which is read by the Scope parameter's build_scope method
         and only then sent to the instrument.
 
-        scopemodule: boolean indicating whether it is a setting of the scopeModule or not 
-
-        We have two different parameter types: those under /scopes/0/ and those under scopeModule/
+        Args:
+            scopemodule (int): Indicates whether this is a setting of the
+                scopeModule or not. 1: it is a scopeModule setting,
+                0: it is not.
+            mode (int): Indicates whether we are setting an int or a float.
+                0: int, 1: float. NOTE: Ignored if scopemodule==1.
+            setting (str): The setting, e.g. 'length'.
+            value (Union[int, float, str]): The value to set.
         """
-        scopemoduledict = {0: '/%s/scopes/0/', 1: 'scopeModule/'}
-
-        key = scopemoduledict[scopemodule] + setting
-        self._scopedict[key] = value
+        # Because setpoints need to be built
         self.scope_correctly_built = False
+
+        # Some parameters are linked to each other in specific ways
+        # Therefore, we need special actions for setting these parameters
+
+        SRtranslation = {'kHz': 1e3, 'MHz': 1e6, 'GHz': 1e9,
+                         'khz': 1e3, 'Mhz': 1e6, 'Ghz': 1e9}
+
+        def setlength(value):
+            # TODO: add validation. The GUI seems to correect this value
+            self.daq.setDouble('/{}/scopes/0/length'.format(self.device),
+                               value)
+            SR_str = self.parameters['scope_samplingrate'].get()
+            (number, unit) = SR_str.split(' ')
+            SR = float(number)*SRtranslation[unit]
+            self.parameters['scope_duration']._save_val(value/SR)
+            self.daq.setInt('/{}/scopes/0/length'.format(self.device), value)
+
+        def setduration(value):
+            # TODO: validation?
+            SR_str = self.parameters['scope_samplingrate'].get()
+            (number, unit) = SR_str.split(' ')
+            SR = float(number)*SRtranslation[unit]
+            N = int(np.round(value*SR))
+            self.parameters['scope_length']._save_val(N)
+            self.parameters['scope_duration']._save_val(value)
+            self.daq.setInt('/{}/scopes/0/length'.format(self.device), N)
+
+        def setholdoffseconds(value):
+            self.parameters['scope_trig_holdoffmode'].set('s')
+            self.daq.setDouble('/{}/scopes/0/trigholdoff'.format(self.device),
+                               value)
+
+        def setsamplingrate(value):
+            # When the sample rate is changed, the number of points of the trace
+            # remains unchanged and the duration changes accordingly
+            newSR_str = dict(zip(self._samplingrate_codes.values(),
+                                 self._samplingrate_codes.keys()))[value]
+            (number, unit) = newSR_str.split(' ')
+            newSR = float(number)*SRtranslation[unit]
+            oldSR_str = self.parameters['scope_samplingrate'].get()
+            (number, unit) = oldSR_str.split(' ')
+            oldSR = float(number)*SRtranslation[unit]
+            oldduration = self.parameters['scope_duration'].get()
+            newduration = oldduration*oldSR/newSR
+            self.parameters['scope_duration']._save_val(newduration)
+            self.daq.setInt('/{}/scopes/0/time'.format(self.device), value)
+
+        specialcases = {'length': setlength,
+                        'duration': setduration,
+                        'scope_trig_holdoffseconds': setholdoffseconds,
+                        'time': setsamplingrate}
+
+        if setting in specialcases:
+            specialcases[setting](value)
+            self.daq.sync()
+            return
+        else:
+            # We have two different parameter types: those under
+            # /scopes/0/ and those under scopeModule/
+            if scopemodule:
+                self.daq.set('scopeModule/{}'.format(setting), value)
+            elif mode == 0:
+                self.daq.setInt('/{}/scopes/0/{}'.format(self.device,
+                                                         setting), value)
+            elif mode == 1:
+                self.daq.setDouble('/{}/scopes/0/{}'.format(self.device,
+                                                            setting), value)
+            return
 
     def _scope_getter(self, setting):
         """
         get_cmd for scopeModule parameters
-        
+
         """
-        querystr = 'scopeModule/' + setting
-        returndict =  self.scope.get(querystr)
+        # There are a few special cases
+        SRtranslation = {'kHz': 1e3, 'MHz': 1e6, 'GHz': 1e9,
+                         'khz': 1e3, 'Mhz': 1e6, 'Ghz': 1e9}
 
-        # The dict may have different 'depths' depending on the parameter.
-        # The depth is encoded in the setting string (number of '/')
-        keys = setting.split('/')[1:]
+        def getduration():
+            SR_str = self.parameters['scope_samplingrate'].get()
+            (number, unit) = SR_str.split(' ')
+            SR = float(number)*SRtranslation[unit]
+            N = self.parameters['scope_length'].get()
+            duration = N/SR
+            return duration
 
-        while keys != []:
-            key = keys.pop(0)
-            returndict = returndict[key]
-        rawvalue = returndict
+        specialcases = {'duration': getduration}
 
-        if isinstance(rawvalue, np.ndarray) and len(rawvalue) == 1:
-            value = rawvalue[0]
-        elif isinstance(rawvalue, list) and len(rawvalue) == 1:
-            value = rawvalue[0]
+        if setting in specialcases:
+            value = specialcases[setting]()
         else:
-            value = rawvalue
+            querystr = 'scopeModule/' + setting
+            returndict =  self.scope.get(querystr)
+            # The dict may have different 'depths' depending on the parameter.
+            # The depth is encoded in the setting string (number of '/')
+            keys = setting.split('/')[1:]
+
+            while keys != []:
+                key = keys.pop(0)
+                returndict = returndict[key]
+                rawvalue = returndict
+
+            if isinstance(rawvalue, np.ndarray) and len(rawvalue) == 1:
+                value = rawvalue[0]
+            elif isinstance(rawvalue, list) and len(rawvalue) == 1:
+                value = rawvalue[0]
+            else:
+                value = rawvalue
 
         return value
 
-        return value
- 
- 
     def close(self):
         """
         Override of the base class' close function
         """
         self.daq.disconnect()
         super().close()
-
