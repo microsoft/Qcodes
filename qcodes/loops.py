@@ -47,6 +47,7 @@ Supported commands to .set_measurement or .each are:
 """
 
 from datetime import datetime
+import logging
 import multiprocessing as mp
 import time
 import numpy as np
@@ -64,6 +65,8 @@ from qcodes.utils.metadata import Metadatable
 from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
                       BreakIf, _QcodesBreak)
 
+
+log = logging.getLogger(__name__)
 # Switches off multiprocessing by default, cant' be altered after module
 USE_MP = config.core.legacy_mp
 MP_NAME = 'Measurement'
@@ -939,7 +942,6 @@ class ActiveLoop(Metadatable):
 
         t0 = time.time()
         last_task = t0
-        last_task_failed = False
         imax = len(self.sweep_values)
         for i, value in enumerate(self.sweep_values):
             if self.progress_interval is not None:
@@ -997,11 +999,10 @@ class ActiveLoop(Metadatable):
                 if t - last_task >= self.bg_min_delay:
                     try:
                         self.bg_task()
-                        last_task_failed = False
                     except Exception:
-                        if last_task_failed:
-                            self.bg_task = None
-                        last_task_failed = True
+                        log.exception("Failed to execute bg task")
+                        self.bg_task = None
+                        return
                     last_task = t
 
         if self.progress_interval is not None:
@@ -1021,7 +1022,6 @@ class ActiveLoop(Metadatable):
         # run the bg_final_task from the bg_task:
         if self.bg_final_task is not None:
             self.bg_final_task()
-
 
 
     def _wait(self, delay):
