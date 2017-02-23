@@ -348,23 +348,42 @@ class QtPlot(BasePlot):
         """
         Updates x and y labels, by default tries to extract label from
         the DataArray objects located in the trace config. Custom labels
-        can be specified the **kwargs "xlabel" and "ylabel"
+        can be specified the **kwargs "xlabel" and "ylabel". Custom units
+        can be specified using the kwargs xunit, ylabel
         """
         for axletter, side in (('x', 'bottom'), ('y', 'left')):
             ax = subplot_object.getAxis(side)
+            # danger: 🍝
+            # find if any kwarg from plot.add in the base class
+            # matches xlabel or ylabel, signaling a custom label
+            if axletter+'label' in config and not ax._qcodes_label:
+                label = config[axletter+'label']
+            else:
+                label = None
+
+            # find if any kwarg from plot.add in the base class
+            # matches xunit or yunit, signaling a custom unit
+            if axletter+'unit' in config and not ax._qcodes_label:
+                unit = config[axletter+'unit']
+            else:
+                unit = None
+
+            #  find ( more hope to) unit and label from
+            # the data array inside the config
+            if axletter in config and not ax._qcodes_label:
+                # now if we did not have any kwark gor label or unit
+                # fallback to the data_array
+                if unit is  None:
+                    _, unit = self.get_label(config[axletter])
+                if label is None:
+                    label, _ = self.get_label(config[axletter])
+
             # pyqtgraph doesn't seem able to get labels, only set
             # so we'll store it in the axis object and hope the user
             # doesn't set it separately before adding all traces
-            
-            if axletter+'label' in config and not ax._qcodes_label:
-                label, unit = config[axletter+'label']
-                ax._qcodes_label = label
-                ax.setLabel(label, unit)
-            if axletter in config and not ax._qcodes_label:
-                label, unit = self.get_label(config[axletter])
-                if label:
-                    ax._qcodes_label = label
-                    ax.setLabel(label, unit)
+            ax._qcodes_label = label
+            ax._qcodes_unit = unit
+            ax.setLabel(label, unit)
 
     def update_plot(self):
         for trace in self.traces:
