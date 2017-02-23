@@ -151,6 +151,8 @@ class QtPlot(BasePlot):
         return [self._clean_array(arg) for arg in [x, y] if arg is not None]
 
     def _draw_image(self, subplot_object, z, x=None, y=None, cmap='hot',
+                    zlabel=None,
+                    zunit=None,
                     **kwargs):
         img = self.rpg.ImageItem()
         subplot_object.addItem(img)
@@ -158,10 +160,14 @@ class QtPlot(BasePlot):
         hist = self.rpg.HistogramLUTItem()
         hist.setImageItem(img)
         hist.axis.setPen(self.theme[0])
-        if 'zlabel' in kwargs:  # used to specify a custom zlabel
-            hist.axis.setLabel(kwargs['zlabel'])
-        else:  # otherwise extracts the label from the dataarray
-            hist.axis.setLabel(self.get_label(z))
+
+        if zunit is None:
+            _, zunit = self.get_label(z)
+        if zlabel is None:
+            zlabel, _ = self.get_label(z)
+
+        hist.axis.setLabel(zlabel, zunit)
+
         # TODO - ensure this goes next to the correct subplot?
         self.win.addItem(hist)
 

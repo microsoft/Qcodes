@@ -109,12 +109,32 @@ class MatPlot(BasePlot):
         return self.subplots[config.get('subplot', 1) - 1]
 
     def _update_labels(self, ax, config):
-        if 'x' in config and not ax.get_xlabel():
-            name, unit = self.get_label(config['x'])
-            ax.set_xlabel("{} ({})".format(name, unit))
-        if 'y' in config and not ax.get_ylabel():
-            name, unit = self.get_label(config['y'])
-            ax.set_ylabel("{} ({})".format(name, unit))
+        for axletter in ("x", "y"):
+            if axletter+'label' in config:
+                label = config[axletter+'label']
+            else:
+                label = None
+
+            # find if any kwarg from plot.add in the base class
+            # matches xunit or yunit, signaling a custom unit
+            if axletter+'unit' in config:
+                unit = config[axletter+'unit']
+            else:
+                unit = None
+
+            #  find ( more hope to) unit and label from
+            # the data array inside the config
+            getter = getattr(ax, "get_{}label".format(axletter))
+            if axletter in config and not getter():
+                # now if we did not have any kwark gor label or unit
+                # fallback to the data_array
+                if unit is  None:
+                    _, unit = self.get_label(config[axletter])
+                if label is None:
+                    label, _ = self.get_label(config[axletter])
+
+            axsetter = getattr(ax, "set_{}label".format(axletter))
+            axsetter("{} ({})".format(label, unit))
 
     def update_plot(self):
         """
@@ -164,7 +184,14 @@ class MatPlot(BasePlot):
 
         self.fig.canvas.draw()
 
-    def _draw_plot(self, ax, y, x=None, fmt=None, subplot=1, **kwargs):
+    def _draw_plot(self, ax, y, x=None, fmt=None, subplot=1,
+                   xlabel=None,
+                   ylabel=None,
+                   zlabel=None,
+                   xunit=None,
+                   yunit=None,
+                    zunit=None,
+                   **kwargs):
         # NOTE(alexj)stripping out subplot because which subplot we're in is already
         # described by ax, and it's not a kwarg to matplotlib's ax.plot. But I
         # didn't want to strip it out of kwargs earlier because it should stay
@@ -173,7 +200,14 @@ class MatPlot(BasePlot):
         line, = ax.plot(*args, **kwargs)
         return line
 
-    def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1, **kwargs):
+    def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1,
+                         xlabel=None,
+                         ylabel=None,
+                         zlabel=None,
+                         xunit=None,
+                         yunit=None,
+                         zunit=None,
+                         **kwargs):
         # NOTE(alexj)stripping out subplot because which subplot we're in is already
         # described by ax, and it's not a kwarg to matplotlib's ax.plot. But I
         # didn't want to strip it out of kwargs earlier because it should stay
@@ -203,7 +237,13 @@ class MatPlot(BasePlot):
             # I guess we could create the colorbar no matter what,
             # and just give it a dummy mappable to start, so we could
             # put this where it belongs.
-            ax.qcodes_colorbar.set_label(self.get_label(z))
+            if zunit is None:
+                _, zunit = self.get_label(z)
+            if zlabel is None:
+                zlabel, _ = self.get_label(z)
+
+            label = "{} ({})".format(zlabel, zunit)
+            ax.qcodes_colorbar.set_label(label)
 
         return pc
 
