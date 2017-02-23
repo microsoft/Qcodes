@@ -81,7 +81,11 @@ class BasePlot:
                 into `x`, `y`, and optionally `z`, these are passed along to
                 self.add_to_plot.
                 To use custom labels and units pass for example:
-                    >>> plot.add(x=set, y=amplitude, xlabel=("set", "s"), ylabel= ("Amplitude", "V"))
+                    plot.add(x=set, y=amplitude, 
+                             xlabel="set"
+                             xunit="V",
+                             ylabel= "Amplitude",
+                             yunit ="V")
 
         Array shapes for 2D plots:
             x:(1D-length m), y:(1D-length n), z: (2D- n*m array)
