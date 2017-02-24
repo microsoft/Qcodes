@@ -201,7 +201,7 @@ class AlazarTech_ATS(Instrument):
         Get the information from a connected Alazar board
 
         Args:
-            dll (string): path of the Alazar driver dll
+            dll (CDLL): CTypes CDLL
             system_id: id of the Alazar system
             board_id: id of the board within the alazar system
 
@@ -277,52 +277,53 @@ class AlazarTech_ATS(Instrument):
 
         max_s, bps = self._get_channel_info(self._handle)
 
-        major = np.array([0], dtype=np.uint8)
-        minor = np.array([0], dtype=np.uint8)
-        revision = np.array([0], dtype=np.uint8)
+        major = ctypes.c_uint8(0)
+        minor = ctypes.c_uint8(0)
+        revision = ctypes.c_uint8(0)
         self._call_dll('AlazarGetCPLDVersion',
                        self._handle,
-                       major.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
-                       minor.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
-        cpld_ver = str(major[0]) + "." + str(minor[0])
+                       ctypes.byref(major),
+                       ctypes.byref(minor))
+        cpld_ver = str(major.value) + "." + str(minor.value)
 
         self._call_dll('AlazarGetDriverVersion',
-                       major.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
-                       major.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
-                       revision.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
-        driver_ver = str(major[0])+"."+str(minor[0])+"."+str(revision[0])
+                       ctypes.byref(major),
+                       ctypes.byref(minor),
+                       ctypes.byref(revision))
+        driver_ver = str(major.value)+"."+str(minor.value)+"."+str(revision.value)
 
         self._call_dll('AlazarGetSDKVersion',
-                       major.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
-                       minor.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
-                       revision.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
-        sdk_ver = str(major[0])+"."+str(minor[0])+"."+str(revision[0])
+                       ctypes.byref(major),
+                       ctypes.byref(minor),
+                       ctypes.byref(revision))
+        sdk_ver = str(major.value)+"."+str(minor.value)+"."+str(revision.value)
 
-        value = np.array([0], dtype=np.uint32)
+        value = ctypes.c_uint32(0)
         self._call_dll('AlazarQueryCapability',
-                       self._handle, 0x10000024, 0, value.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32)))
-        serial = str(value[0])
+                       self._handle, 0x10000024, 0, ctypes.byref(value))
+        serial = str(value.value)
         self._call_dll('AlazarQueryCapability',
-                       self._handle, 0x10000026, 0, value.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32)))
-        latest_cal_date = (str(value[0])[0:2] + "-" +
-                           str(value[0])[2:4] + "-" +
-                           str(value[0])[4:6])
+                       self._handle, 0x10000026, 0, ctypes.byref(value))
+        Capabilitystring = str(value.value)
+        latest_cal_date = (Capabilitystring[0:2] + "-" +
+                           Capabilitystring[2:4] + "-" +
+                           Capabilitystring[4:6])
 
         self._call_dll('AlazarQueryCapability',
-                       self._handle, 0x1000002A, 0, value.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32)))
-        memory_size = str(value[0])
+                       self._handle, 0x1000002A, 0, ctypes.byref(value))
+        memory_size = str(value.value)
         self._call_dll('AlazarQueryCapability',
-                       self._handle, 0x1000002C, 0, value.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32)))
-        asopc_type = str(value[0])
+                       self._handle, 0x1000002C, 0, ctypes.byref(value))
+        asopc_type = str(value.value)
 
         # see the ATS-SDK programmer's guide
         # about the encoding of the link speed
         self._call_dll('AlazarQueryCapability',
-                       self._handle, 0x10000030, 0, value.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32)))
-        pcie_link_speed = str(value[0] * 2.5 / 10) + "GB/s"
+                       self._handle, 0x10000030, 0,  ctypes.byref(value))
+        pcie_link_speed = str(value.value * 2.5 / 10) + "GB/s"
         self._call_dll('AlazarQueryCapability',
-                       self._handle, 0x10000031, 0, value.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32)))
-        pcie_link_width = str(value[0])
+                       self._handle, 0x10000031, 0, ctypes.byref(value))
+        pcie_link_width = str(value.value)
 
         return {'firmware': None,
                 'model': board_kind,
@@ -450,13 +451,13 @@ class AlazarTech_ATS(Instrument):
                        self.aux_io_param)
 
     def _get_channel_info(self, handle):
-        bps = np.array([0], dtype=np.uint8)  # bps bits per sample
-        max_s = np.array([0], dtype=np.uint32)  # max_s memory size in samples
+        bps = ctypes.c_uint8(0)  # bps bits per sample
+        max_s = ctypes.c_uint32(0)  # max_s memory size in samples
         self._call_dll('AlazarGetChannelInfo',
                        handle,
-                       max_s.ctypes.data_as(ctypes.POINTER(ctypes.c_uint32)),
-                       bps.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)))
-        return max_s[0], bps[0]
+                       ctypes.byref(max_s),
+                       ctypes.byref(bps))
+        return max_s.value, bps.value
 
     def acquire(self, mode=None, samples_per_record=None,
                 records_per_buffer=None, buffers_per_acquisition=None,
@@ -591,6 +592,7 @@ class AlazarTech_ATS(Instrument):
 
         # bytes per sample
         max_s, bps = self._get_channel_info(self._handle)
+        # TODO(JHN) Why +7
         bytes_per_sample = (bps + 7) // 8
 
         # bytes per record
