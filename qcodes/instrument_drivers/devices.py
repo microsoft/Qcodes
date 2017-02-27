@@ -7,20 +7,28 @@ class VoltageDivider(Parameter):
     """
     Resitive voltage divider
 
-    To be used when you use a voltage divider to measure a parameter.
-    This allows logging of your "divider", and you get the right data
-    and label back.
+    To be used when you use a physical voltage divider to set or get a voltage.
+
+    Initialize the voltage diveder by passing the parameter to be measured
+    and the value of the division (which should be calibrated beforehand)
 
     >>> vd = VoltageDivider(dac.chan0, 10)
 
-    set the value you want to set your sample at
+    The voltage divider acts a your original parameter, but will set the right
+    value, and store the division_value in the metadata.
+
+    Set the value you want to set your device at 10 V
 
     >>> vd(10)
 
-    This will set the dac.cha0 at 10*10, but it will look
+    This will set the dac.cha0 at 10*10, but upon measuring the divider
+    the value returned is the voltage at the sample.
 
     >>> vd()
     10
+
+    To get the voltage that was actually set on the instrument:
+
     >>> vd.get_instrument_value()
     100
 
