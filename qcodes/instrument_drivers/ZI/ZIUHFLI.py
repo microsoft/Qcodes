@@ -109,6 +109,8 @@ class Sweep(MultiParameter):
         # TODO: make sure that these setpoints are correct, i.e. actually
         # matching what the UHFLI does
         # TODO: support non-sequential sweep mode
+        if not sweepdict['scan'] == 0:
+            raise NotImplementedError('Only sequential scanning is supported.')
         if sweepdict['xmapping'] == 'lin':
             sw = tuple(np.linspace(start, stop, npts))
         else:
@@ -223,44 +225,99 @@ class Sweep(MultiParameter):
         return tuple(returndata)
 
 
-
-
 class Scope(MultiParameter):
     """
+    Parameter class for the ZI UHF-LI Scope Channel 1
+
+    The .get method launches an acquisition and returns a tuple of two
+    np.arrays
+
     Class similar to the Sweeper class
     TO DO: update docs...
     Set scopeMode: time or frequency domaine
 
+    FFT mode is NOT supported.
+
     """
-    def __init__(self, instrument):
+    def __init__(self, name, instrument, **kwargs):
         # The __init__ requires that we supply names and shapes,
         # but there is no way to know what they could be known at this time.
         # They are updated via build_scope.
         super().__init__(name, names=('',), shapes=((1,),), **kwargs)
         self._instrument = instrument
 
-    def build_scope(self):
+    def prepare_scope(self):
+        """
+        Prepare the scope for a measurement. Must immediately preceed a
+        measurement.
+        """
 
-        scopedict = self._instrument._scopedict
+        log.info('Preparing the scope')
 
-        log.info('Built a scope')
+        # A convenient reference
+        params = self._instrument.parameters
 
-        # define the gridnode
+        # First figure out what the user has asked for
+        chans = {1: (True, False), 2: (False, True), 3: (True, True)}
+        channels = chans[params['scope_channels'].get()]
 
-        npts = scopedict['lenght']
+        npts = params['scope_length'].get()
+        # Find out whether segments are enabled
+        if params['scope_segments'].get() == 1:
+            segs = params['scope_segments_count'].get()
+        else:
+            segs = 1
 
-        # self.setpoints = ((sw,),)*len(signals)
-        # self.shapes = ((npts,),)*len(signals)
+        inputunits = {'Signal Input 1': 'V',
+                      'Signal Input 2': 'V',
+                      'Trig Input 1': 'V',
+                      'Trig Input 2': 'V',
+                      'Aux Output 1': 'V',
+                      'Aux Output 2': 'V',
+                      'Aux Output 3': 'V',
+                      'Aux Output 4': 'V',
+                      'Aux In 1 Ch 1': 'V',
+                      'Aux In 1 Ch 2': 'V',
+                      'Osc phi Demod 4': '°',
+                      'osc phi Demod 8': '°',
+                      'AU Cartesian 1': 'arb. un.',
+                      'AU Cartesian 2': 'arb. un',
+                      'AU Polar 1': 'arb. un.',
+                      'AU Polar 2': 'arb. un.',
+                      }
 
-        # Send settings to device
+        #TODO: what are good names?
+        inputnames = {'Signal Input 1': 'Sig. In 1',
+                      'Signal Input 2': 'Sig. In 2',
+                      'Trig Input 1': 'Trig. In 1',
+                      'Trig Input 2': 'Trig. In 2',
+                      'Aux Output 1': 'Aux. Out 1',
+                      'Aux Output 2': 'Aux. Out 2',
+                      'Aux Output 3': 'Aux. Out 3',
+                      'Aux Output 4': 'Aux. Out 4',
+                      'Aux In 1 Ch 1': 'Aux. In 1 Ch 1',
+                      'Aux In 1 Ch 2': 'Aux. In 1 Ch 2',
+                      'Osc phi Demod 4': 'Demod. 4 Phase',
+                      'osc phi Demod 8': 'Demod. 8 Phase',
+                      'AU Cartesian 1': 'AU Cartesian 1',
+                      'AU Cartesian 2': 'AU Cartesian 2',
+                      'AU Polar 1': 'AU Polar 1',
+                      'AU Polar 2': 'AU Polar 2',
+                      }
+        # Make the basic setpoints (the x-axis)
+        stop = params['scope_duration'].get()
+        setpointlist = list(np.linspace(0, stop, npts))  # scope x-axis
+        spname = 'Time'
+        namestr = "scope_channel{}_input".format(1)
+        name1 = inputnames[params[namestr].get()]
+        unit1 = inputunits[params[namestr].get()]
+        namestr = "scope_channel{}_input".format(2)
+        name2 = inputnames[params[namestr].get()]
+        unit2 = inputunits[params[namestr].get()]
 
-        # for (setting, value) in scopedict.items():
-        #     setting = 'sweep/' + setting
-        #     self._instrument.sweeper.set(setting, value)
-
-
-
-        # send the settings saved in scopedict to the device
+        self.setpoints = ((setpointlist,)*segs,)*2  # one for each channel
+        self.names = (name1, name2)  # is this right?
+        self.units = (unit1, unit2)
 
         self._instrument.daq.sync()
         self._instrument.scope_correctly_built = True
@@ -269,13 +326,111 @@ class Scope(MultiParameter):
         """
         read scope data
         """
-        # daq = self._instrument.daq
-        # use load_labone_zibin() ? loads data saved in binary format from ziControl
-        # zi.daq.subscribe('/%s/scopes/0/wave' % device)
-        # zi.daq.poll(poll_length, poll_timeout, poll_flags, poll_return_flat_dict)
-        # zi.daq.unsubscribe('*')
+        if not self._instrument.scope_correctly_built:
+            raise ValueError('Scope not properly prepared. Please run '
+                             'prepare_scope before measuring.')
 
+        # A convenient reference
+        params = self._instrument.parameters
+        #
+        chans = {1: (True, False), 2: (False, True), 3: (True, True)}
+        channels = chans[params['scope_channels'].get()]
 
+        if params['scope_trig_holdoffmode'].get_latest() == 'events':
+            raise NotImplementedError('Scope trigger holdoff in number of '
+                                      'events not supported. Please specify '
+                                      'holdoff in seconds.')
+
+        #######################################################
+        # The following steps SEEM to give the correct result
+
+        # Make sure all settings have taken effect
+        self._instrument.daq.sync()
+
+        # Calculate the time needed for the measurement. We often have failed
+        # measurements, so a timeout is needed.
+        if params['scope_segments'].get() == 'ON':
+            segs = params['scope_segments_count'].get()
+        else:
+            segs = 1
+        deadtime = params['scope_trig_holdoffseconds'].get_latest()
+        # We add one second to account for latencies and random delays
+        meas_time = segs*(params['scope_duration'].get()+deadtime)+1
+        npts = params['scope_length'].get()
+
+        # Create a new scopeModule instance (TODO: Why a new instance?)
+        scope = self._instrument.daq.scopeModule()
+
+        # Subscribe to the relevant... publisher?
+        scope.subscribe('/{}/scopes/0/wave'.format(self._instrument.device))
+
+        # Start the scope triggering/acquiring
+        params['scope_runstop'].set('run')
+
+        log.info('[*] Starting ZI scope acquisition.')
+        # Start something... hauling data from the scopeModule?
+        scope.execute()
+
+        starttime = time.time()
+        timedout = False
+
+        while scope.progress() < 1:
+            time.sleep(0.1)  # This while+sleep is how ZI engineers do it
+            if (time.time()-starttime) > meas_time:
+                scope.finish()  # Force break the acquisition
+                timedout = True
+                log.warning('[-] ZI Scope acquisition did not finish correctly')
+                break
+
+        # Stop the scope from running
+        params['scope_runstop'].set('stop')
+
+        if not timedout:
+            log.info('[+] ZI scope acquisition completed OK')
+            rawdata = scope.read()
+            data = self._scopedataparser(rawdata, self._instrument.device,
+                                         npts, segs, channels)
+        else:
+            rawdata = None
+            data = (None, None)
+
+        # unsubscribe from everything (better safe than sorry)
+        #scope.unsubscribe('*')
+
+        # kill the scope instance
+        scope.clear()
+
+        return data
+
+    @staticmethod
+    def _scopedataparser(rawdata, deviceID, scopelength, segments, channels):
+        """
+        Cast the scope return value dict into a tuple.
+
+        Args:
+            rawdata (dict): The return of scopeModule.read()
+            deviceID (str): The device ID string of the instrument.
+            scopelength (int): The length of each segment
+            segments (int): The number of segments
+            channels (tuple): Tuple of two bools controlling what data to return
+                (True, False) will return data for channel 1 etc.
+
+        Returns:
+            tuple: A 2-tuple of either None or np.array with dimensions
+                segments x scopelength.
+        """
+
+        data = rawdata['{}'.format(deviceID)]['scopes']['0']['wave'][0][0]
+        if channels[0]:
+            ch1data = data['wave'][0].reshape(segments, scopelength)
+        else:
+            ch1data = None
+        if channels[1]:
+            ch2data = data['wave'][1].reshape(segments, scopelength)
+        else:
+            ch2data = None
+
+        return (ch1data, ch2data)
 
 class ZIUHFLI(Instrument):
     """
@@ -306,33 +461,13 @@ class ZIUHFLI(Instrument):
         super().__init__(name, **kwargs)
         (self.daq, self.device, self.props) = zhinst.utils.create_api_session(device_ID,
                                                                               api_level)
+        self.daq.setDebugLevel(3)
         # create (instantiate) an instance of each module we will use
         self.sweeper = self.daq.sweep()
         self.sweeper.set('sweep/device', self.device)
         self.scope = self.daq.scopeModule()
-        # this variable enforces building the sweep and scope before using it
-        self._sweep_cb = False
-        self._scope_cb = False
 
-        @property
-        def sweep_correctly_built(self):
-            return self._sweep_cd
-
-        @sweep_correctly_built.setter
-        def sweep_correctly_built(self, value):
-            if not isinstance(value, bool):
-                raise ValueError('sweep_correctly_built')
-            self._sweep_cb = value
-
-        @property
-        def scope_correctly_built(self):
-            return self._scope_cd
-
-        @scope_correctly_built.setter
-        def sweep_correctly_built(self, value):
-            if not isinstance(value, bool):
-                raise ValueError('scope_correctly_built')
-            self._scope_cb = value
+        #
 
         ########################################
         # INSTRUMENT PARAMETERS
@@ -882,6 +1017,18 @@ class ZIUHFLI(Instrument):
         # SCOPE PARAMETERS
         # default parameters:
 
+        # This parameter corresponds to the Run/Stop button in the GUI
+        self.add_parameter('scope_runstop',
+                           label='Scope run state',
+                           set_cmd=partial(self._setter, 'scopes', 0, 0,
+                                           'enable'),
+                           get_cmd=partial(self._getter, 'scopes', 0, 0,
+                                           'enable'),
+                           val_mapping={'run': 1, 'stop': 0},
+                           vals=vals.Enum('run', 'stop'),
+                           docstring=('This parameter corresponds to the '
+                                      'run/stop button in the GUI.'))
+
         self.add_parameter('scope_mode',
                             label="Scope's mode: time or frequency domain.",
                             set_cmd=partial(self._scope_setter, 1, 0,
@@ -891,6 +1038,17 @@ class ZIUHFLI(Instrument):
                                          'Freq Domain FFT': 3},
                             vals=vals.Enum('Time Domain', 'Freq Domain FFT')
                             )
+
+        # 1: Channel 1 on, Channel 2 off. 2: Channel 1 off, Channel 2 on,
+        # 3: Channel 1 on, Channel 2 on.
+        self.add_parameter('scope_channels',
+                           label='Recorded scope channels',
+                           set_cmd=partial(self._scope_setter, 0, 0,
+                                           'channel'),
+                           get_cmd=partial(self._getter, 'scopes', 0,
+                                           0, 'channel'),
+                           vals=vals.Enum(1, 2, 3)
+                           )
 
         self._samplingrate_codes = {'1.80 Ghz': 0,
                                    '900 MHz': 1,
@@ -929,7 +1087,7 @@ class ZIUHFLI(Instrument):
                             vals=vals.Numbers(4096, 128000000),
                             get_parser=int
                             )
-        #scope duration: ManualParameter? validation depends on value of length
+
         self.add_parameter('scope_duration',
                            label="Scope trace duration",
                            set_cmd=partial(self._scope_setter, 0, 0,
@@ -966,11 +1124,14 @@ class ZIUHFLI(Instrument):
 
         for channel in range(1,3):
             self.add_parameter('scope_channel{}_input'.format(channel),
-                            label="Scope's channel {} input source".format(channel),
+                            label=("Scope's channel {}".format(channel) +
+                                   " input source"),
                             set_cmd=partial(self._scope_setter, 0, 0,
-                                            '{}/inputselect'.format(channel-1)),
-                            get_cmd=partial(self._getter, 'scopes', 0,
-                                            0, '{}/inputselect'.format(channel-1)),
+                                            ('channels/{}/'.format(channel-1) +
+                                             'inputselect')),
+                            get_cmd=partial(self._getter, 'scopes', 0, 0,
+                                            ('channels/{}/'.format(channel-1) +
+                                             'inputselect')),
                             val_mapping=inputselect,
                             vals=vals.Enum(*list(inputselect.keys()))
                             )
@@ -1036,8 +1197,6 @@ class ZIUHFLI(Instrument):
                                             1, 'triglevel'),
                             vals=vals.Numbers()
                             )
-        #TO DO: Find out how to enable/disable trigger lever. GUI's button does
-        # not appear in logging.
 
         self.add_parameter('scope_trig_hystmode',
                             label="Enable triggering for scope readout.",
@@ -1045,8 +1204,8 @@ class ZIUHFLI(Instrument):
                                             0, 'trighysteresis/mode'),
                             get_cmd=partial(self._getter, 'scopes', 0,
                                             0, 'trighysteresis/mode'),
-                            val_mapping={'deg': 0, '%': 1},
-                            vals=vals.Enum('ON', 'OFF')
+                            val_mapping={'absolute': 0, 'relative': 1},
+                            vals=vals.Enum('absolute', 'relative')
                             )
 
         self.add_parameter('scope_trig_hystrelative',
@@ -1067,6 +1226,27 @@ class ZIUHFLI(Instrument):
                                             1, 'trighysteresis/absolute'),
                             vals=vals.Numbers(0, 20)
                             )
+
+        triggates = {'Trigger In 3 High': 0, 'Trigger In 3 Low': 1,
+                     'Trigger In 4 High': 2, 'Trigger In 4 Low': 3}
+        self.add_parameter('scope_trig_gating_source',
+                           label='Scope trigger gating source',
+                           set_cmd=partial(self._setter, 'scopes', 0, 0,
+                                           'triggate/inputselect'),
+                           get_cmd=partial(self._getter, 'scopes', 0, 0,
+                                           'triggate/inputselect'),
+                           val_mapping=triggates,
+                           vals=vals.Enum(*list(triggates.keys()))
+                           )
+
+        self.add_parameter('scope_trig_gating_enable',
+                           label='Scope trigger gating ON/OFF',
+                           set_cmd=partial(self._setter, 'scopes', 0, 0,
+                                           'triggate/enable'),
+                           get_cmd=partial(self._getter, 'scopes', 0, 0,
+                                           'triggate/enable'),
+                           val_mapping = {'ON': 1, 'OFF': 0},
+                           vals=vals.Enum('ON', 'OFF'))
 
         # make this a slave parameter off scope_holdoff_seconds
         # and scope_holdoff_events
@@ -1090,19 +1270,55 @@ class ZIUHFLI(Instrument):
                            vals=vals.Numbers(20e-6, 10)
                            )
 
+        self.add_parameter('scope_trig_reference',
+                           label='Scope trigger reference',
+                           set_cmd=partial(self._scope_setter, 0, 1,
+                                           'trigreference'),
+                           get_cmd=partial(self._getter, 'scopes', 0,
+                                           1, 'trigreference'),
+                           vals=vals.Numbers(0, 100)
+                           )
+
+        # TODO: add validation. What's the minimal/maximal delay?
+        self.add_parameter('scope_trig_delay',
+                           label='Scope trigger delay',
+                           set_cmd=partial(self._scope_setter, 0, 1,
+                                           'trigdelay'),
+                           get_cmd=partial(self._getter, 'scopes', 0, 1,
+                                           'trigdelay'),
+                           unit='s')
+
         self.add_parameter('scope_segments',
+                           label='Enable/disable segments',
+                           set_cmd=partial(self._scope_setter, 0, 0,
+                                           'segments/enable'),
+                           get_cmd=partial(self._getter, 'scopes', 0,
+                                           0, 'segments/enable'),
+                           val_mapping={'OFF': 0, 'ON': 1},
+                           vals=vals.Enum('ON', 'OFF')
+                           )
+
+        self.add_parameter('scope_segments_count',
                            label='No. of segments returned by scope',
                            set_cmd=partial(self._setter, 'scopes', 0, 1,
                                            'segments/count'),
                            get_cmd=partial(self._getter, 'scopes', 0, 1,
                                           'segments/count'),
-                           vals=vals.Ints(1, 32768)
+                           vals=vals.Ints(1, 32768),
+                           get_parser=int
                            )
 
         self.add_function('scope_reset_avg',
                             call_cmd=partial(self.scope.set,
                                              'scopeModule/averager/restart', 1),
                             )
+
+        ########################################
+        # THE SCOPE ITSELF
+        self.add_parameter('Scope',
+                           parameter_class=Scope,
+                           )
+
 
     def _setter(self, module, number, mode, setting, value):
         """
@@ -1625,7 +1841,7 @@ class ZIUHFLI(Instrument):
             # We have two different parameter types: those under
             # /scopes/0/ and those under scopeModule/
             if scopemodule:
-                self.daq.set('scopeModule/{}'.format(setting), value)
+                self.scope.set('scopeModule/{}'.format(setting), value)
             elif mode == 0:
                 self.daq.setInt('/{}/scopes/0/{}'.format(self.device,
                                                          setting), value)
