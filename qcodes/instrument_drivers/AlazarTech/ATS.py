@@ -592,9 +592,8 @@ class AlazarTech_ATS(Instrument):
 
         # bytes per sample
         max_s, bps = self._get_channel_info(self._handle)
-        # TODO(JHN) Why +7
+        # TODO(JHN) Why +7 I guess its to do ceil division?
         bytes_per_sample = (bps + 7) // 8
-
         # bytes per record
         bytes_per_record = bytes_per_sample * samples_per_record
 
@@ -610,6 +609,7 @@ class AlazarTech_ATS(Instrument):
 
         # create buffers for acquisition
         # TODO(nataliejpg) should this be > 1 (as intuitive) or > 8 as in alazar sample code?
+        # the alazar code probably uses bits per sample?
         sample_type = ctypes.c_uint8
         if bytes_per_sample > 1:
             sample_type = ctypes.c_uint16
