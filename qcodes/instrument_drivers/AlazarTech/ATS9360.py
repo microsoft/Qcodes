@@ -16,6 +16,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
 
     # samples divisor is listed in the manual as being 32 but this gave
     # incorrect data when tested for divisors less than 128
+    # JHN As far as I can see this is listed as 128 in table 8 of the SDK manual
     samples_divisor = 128
 
     def __init__(self, name, **kwargs):
@@ -170,7 +171,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
         # ----- Parameters for the acquire function -----
         self.add_parameter(name='mode',
                            parameter_class=AlazarParameter,
-                           label='Acquisiton mode',
+                           label='Acquisition mode',
                            unit=None,
                            value='NPT',
                            byte_to_value_dict={0x200: 'NPT', 0x400: 'TS'})
@@ -201,7 +202,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            byte_to_value_dict={1: 'A', 2: 'B', 3: 'AB'})
         self.add_parameter(name='transfer_offset',
                            parameter_class=AlazarParameter,
-                           label='Transer Offset',
+                           label='Transfer Offset',
                            unit='Samples',
                            value=0,
                            vals=validators.Ints(min_value=0))
