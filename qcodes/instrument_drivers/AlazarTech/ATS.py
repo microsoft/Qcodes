@@ -341,6 +341,7 @@ class AlazarTech_ATS(Instrument):
                 'pcie_link_width': pcie_link_width}
 
     def config(self, clock_source=None, sample_rate=None, clock_edge=None,
+               external_sample_rate=None,
                decimation=None, coupling=None, channel_range=None,
                impedance=None, bwlimit=None, trigger_operation=None,
                trigger_engine1=None, trigger_source1=None,
@@ -385,6 +386,7 @@ class AlazarTech_ATS(Instrument):
 
         self._set_if_present('clock_source', clock_source)
         self._set_if_present('sample_rate', sample_rate)
+        self._set_if_present('external_sample_rate', external_sample_rate)
         self._set_if_present('clock_edge', clock_edge)
         self._set_if_present('decimation', decimation)
 
@@ -414,8 +416,14 @@ class AlazarTech_ATS(Instrument):
         self._set_if_present('aux_io_param', aux_io_param)
         # endregion
 
+
+        if clock_source == 'EXTERNAL_CLOCK_10MHz_REF':
+            sample_rate = self.external_sample_rate
+        elif clock_source == 'INTERNAL_CLOCK':
+            sample_rate = self.sample_rate
+
         self._call_dll('AlazarSetCaptureClock',
-                       self._handle, self.clock_source, self.sample_rate,
+                       self._handle, self.clock_source, sample_rate,
                        self.clock_edge, self.decimation)
 
         for i in range(1, self.channels + 1):
@@ -865,7 +873,7 @@ class AlazarParameter(Parameter):
                 # TODO(damazter) (S) test this validator
                 vals = validators.Enum(*byte_to_value_dict.values())
 
-        super().__init__(name=name, label=label, units=unit, vals=vals)
+        super().__init__(name=name, label=label, unit=unit, vals=vals)
         self.instrument = instrument
         self._byte = None
         self._uptodate_flag = False

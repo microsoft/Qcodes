@@ -30,13 +30,54 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            parameter_class=AlazarParameter,
                            label='Clock Source',
                            unit=None,
-                           value='EXTERNAL_CLOCK_10MHz_REF',
-                           byte_to_value_dict={7: 'EXTERNAL_CLOCK_10MHz_REF'})
-        self.add_parameter(name='sample_rate',
+                           value='INTERNAL_CLOCK',
+                           byte_to_value_dict={1: 'INTERNAL_CLOCK',
+                                               2: 'FAST_EXTERNAL_CLOCK',
+                                               7: 'EXTERNAL_CLOCK_10MHz_REF'})
+        self.add_parameter(name='external_sample_rate',
                            parameter_class=AlazarParameter,
-                           label='Sample Rate',
+                           label='External Sample Rate',
                            unit='S/s',
                            value=500000000)
+        self.add_parameter(name='sample_rate',
+                           parameter_class=AlazarParameter,
+                           label='Internal Sample Rate',
+                           unit='S/s',
+                           value=500000000,
+                           byte_to_value_dict={0x00000001: 1000,
+                                                0x00000002: 2000,
+                                                0x00000004: 5000,
+                                                0x00000008: 10000,
+                                                0x0000000A: 20000,
+                                                0x0000000C: 50000,
+                                                0x0000000E: 100000,
+                                                0x00000010: 200000,
+                                                0x00000012: 500000,
+                                                0x00000014: 1000000,
+                                                0x00000018: 2000000,
+                                                0x0000001A: 5000000,
+                                                0x0000001C: 10000000,
+                                                0x0000001E: 20000000,
+                                                0x00000021: 25000000,
+                                                0x00000022: 50000000,
+                                                0x00000024: 100000000,
+                                                0x00000025: 125000000,
+                                                0x00000026: 160000000,
+                                                0x00000027: 180000000,
+                                                0x00000028: 200000000,
+                                                0x0000002B: 250000000,
+                                                0x00000030: 500000000,
+                                                0x00000032: 800000000,
+                                                0x00000035: 1000000000,
+                                                0x00000037: 1200000000,
+                                                0x0000003A: 1500000000,
+                                                0x0000003D: 1800000000,
+                                                0x0000003F: 2000000000,
+                                                0x0000006A: 2400000000,
+                                                0x00000075: 3000000000,
+                                                0x0000007B: 3600000000,
+                                                0x00000080: 4000000000,
+                                                })
         self.add_parameter(name='clock_edge',
                            parameter_class=AlazarParameter,
                            label='Clock Edge',
@@ -266,3 +307,28 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
         if model != 'ATS9360':
             raise Exception("The Alazar board kind is not 'ATS9360',"
                             " found '" + str(model) + "' instead.")
+
+
+    def get_sample_rate(self):
+        """
+        Obtain the effective sampling rate of the acquisition
+        based on clock type, clock speed and decimation
+
+        Returns:
+            the number of samples (per channel) per second
+        """
+        if self.clock_source.get() == 'EXTERNAL_CLOCK_10MHz_REF':
+            rate = self.external_sample_rate.get()
+        elif self.clock_source.get() == 'INTERNAL_CLOCK':
+            rate = self.sample_rate.get()
+        else:
+            raise Exception("Don't know how to get sample rate with {}".format(alazar.clock_source.get()))
+
+        if rate == '1GHz_REFERENCE_CLOCK':
+            rate = 1e9
+
+        decimation = self.decimation.get()
+        if decimation > 0:
+            return rate / decimation
+        else:
+            return rate
