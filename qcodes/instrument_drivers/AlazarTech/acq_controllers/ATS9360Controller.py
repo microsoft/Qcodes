@@ -40,8 +40,6 @@ class ATS9360Controller(AcquisitionController):
                                 'numtaps': numtaps}
         self.chan_b = chan_b
         self.number_of_channels = 2
-        self.samples_per_record = None
-        self.sample_rate = None
         super().__init__(name, alazar_name, **kwargs)
 
         self.add_parameter(name='acquisition',
@@ -63,7 +61,7 @@ class ATS9360Controller(AcquisitionController):
         self._demod_freqs = []
 
     def add_demodulator(self, demod_freq):
-        if demod_freq not in self.demod_freqs:
+        if demod_freq not in self._demod_freqs:
             self._verify_demod_freq(demod_freq)
             self._demod_freqs.append(demod_freq)
             self.acquisition.set_setpoints_and_labels()
@@ -95,9 +93,13 @@ class ATS9360Controller(AcquisitionController):
             raise ValueError('demod_freqs must be 1e6 <= value <= 500e6')
         isValid = True
         alazar = self._get_alazar()
-        self.sample_rate = alazar.get_sample_rate()
-        min_oscillations_measured = self.int_time() * value
-        oversampling = self.sample_rate / (2 * value)
+        sample_rate = alazar.get_sample_rate()
+        if 'int_time' in self.parameters:
+            int_time = self.int_time.get()
+        else:
+            int_time = self.acquisition.acquisition_kwargs["samples_per_record"]/sample_rate
+        min_oscillations_measured = int_time * value
+        oversampling = sample_rate / (2 * value)
         if min_oscillations_measured < 10:
             isValid = False
             logging.warning('{} oscillation measured for largest '
@@ -135,7 +137,7 @@ class ATS9360Controller(AcquisitionController):
             raise ValueError('int_time must be 0 <= value <= 1')
 
         alazar = self._get_alazar()
-        self.sample_rate = alazar.get_sample_rate()
+        sample_rate = alazar.get_sample_rate()
         if self.get_max_demod_freq() is not None:
             self._verify_demod_freq(self.get_max_demod_freq())
         if self.int_delay() is None:
@@ -143,11 +145,11 @@ class ATS9360Controller(AcquisitionController):
 
         # update acquisition kwargs and acq controller value
         total_time = value + self.int_delay()
-        samples_needed = total_time * self.sample_rate
-        self.samples_per_record = helpers.roundup(
+        samples_needed = total_time * sample_rate
+        samples_per_record = helpers.roundup(
             samples_needed, self.samples_divisor)
         self.acquisition.acquisition_kwargs.update(
-            samples_per_record=self.samples_per_record)
+            samples_per_record=samples_per_record)
 
     def _update_int_delay(self, value, **kwargs):
         """
@@ -174,9 +176,9 @@ class ATS9360Controller(AcquisitionController):
                                                                                   int_delay_max,
                                                                                   value))
         alazar = self._get_alazar()
-        self.sample_rate = alazar.get_sample_rate()
+        sample_rate = alazar.get_sample_rate()
         samples_delay_min = (self.filter_settings['numtaps'] - 1)
-        int_delay_min = samples_delay_min / self.sample_rate
+        int_delay_min = samples_delay_min / sample_rate
         if value < int_delay_min:
             logging.warning(
                 'delay is less than recommended for filter choice: '
@@ -184,11 +186,11 @@ class ATS9360Controller(AcquisitionController):
 
         # update acquisition kwargs and acq controller value
         total_time = value + (self.int_time() or 0)
-        samples_needed = total_time * self.sample_rate
-        self.samples_per_record = helpers.roundup(
+        samples_needed = total_time * sample_rate
+        samples_per_record = helpers.roundup(
             samples_needed, self.samples_divisor)
         self.acquisition.acquisition_kwargs.update(
-            samples_per_record=self.samples_per_record)
+            samples_per_record=samples_per_record)
 
     def _int_delay_default(self):
         """
@@ -199,9 +201,9 @@ class ATS9360Controller(AcquisitionController):
             samples to be discarded as recommended for filter
         """
         alazar = self._get_alazar()
-        self.sample_rate = alazar.get_sample_rate()
+        sample_rate = alazar.get_sample_rate()
         samp_delay = self.filter_settings['numtaps'] - 1
-        return samp_delay / self.sample_rate
+        return samp_delay / sample_rate
 
     def _int_time_default(self):
         """
@@ -211,14 +213,15 @@ class ATS9360Controller(AcquisitionController):
             max total time for integration based on samples_per_record,
             sample_rate and int_delay
         """
-        if self.samples_per_record is (0 or None):
+        samples_per_record = self.acquisition.acquisition_kwargs.get('samples_per_record')
+        if samples_per_record in (0 or None):
             raise ValueError('Cannot set int_time to max if acq controller'
                              ' has 0 or None samples_per_record, choose a '
                              'value for int_time and samples_per_record will '
                              'be set accordingly')
         alazar = self._get_alazar()
-        self.sample_rate = alazar.get_sample_rate()
-        total_time = ((self.samples_per_record / self.sample_rate) -
+        sample_rate = alazar.get_sample_rate()
+        total_time = ((samples_per_record / sample_rate) -
                       (self.int_delay() or 0))
         return total_time
 
@@ -275,6 +278,7 @@ class ATS9360Controller(AcquisitionController):
                              'via update_acquisition_kwargs and should instead'
                              ' be set by setting int_time and int_delay')
         self.acquisition.acquisition_kwargs.update(**kwargs)
+        self.acquisition.set_setpoints_and_labels()
 
     def pre_start_capture(self):
         """
@@ -282,15 +286,18 @@ class ATS9360Controller(AcquisitionController):
         Alazar acquisition params and set up software wave for demodulation.
         """
         alazar = self._get_alazar()
-        if self.samples_per_record != alazar.samples_per_record.get():
-            raise Exception('acq controller samples per record does not match'
-                            ' instrument value, most likely need '
-                            'to set and check int_time and int_delay')
-        if self.sample_rate != alazar.get_sample_rate():
-            raise Exception('acq controller sample rate does not match '
-                            'instrument value, most likely need '
-                            'to set and check int_time and int_delay')
-
+        acq_s_p_r = self.acquisition.acquisition_kwargs['samples_per_record']
+        inst_s_p_r = alazar.samples_per_record.get()
+        sample_rate = alazar.get_sample_rate()
+        if acq_s_p_r != inst_s_p_r:
+            raise Exception('acq controller samples per record {} does not match'
+                            ' instrument value {}, most likely need '
+                            'to set and check int_time and int_delay'.format(acq_s_p_r, inst_s_p_r))
+        # if acq_s_r != inst_s_r:
+        #     raise Exception('acq controller sample rate {} does not match '
+        #                     'instrument value {}, most likely need '
+        #                     'to set and check int_time and int_delay'.format(acq_s_r, inst_s_r))
+        samples_per_record = inst_s_p_r
         demod_freqs = self.get_demod_freqs()
         # if len(demod_freqs) == 0:
         #     raise Exception('no demod_freqs set')
@@ -298,14 +305,14 @@ class ATS9360Controller(AcquisitionController):
         self.records_per_buffer = alazar.records_per_buffer.get()
         self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
         self.board_info = alazar.get_idn()
-        self.buffer = np.zeros(self.samples_per_record *
+        self.buffer = np.zeros(samples_per_record *
                                self.records_per_buffer *
                                self.number_of_channels)
 
-        if demod_freqs:
-            integer_list = np.arange(self.samples_per_record)
+        if len(demod_freqs):
+            integer_list = np.arange(samples_per_record)
             angle_mat = 2 * np.pi * \
-                np.outer(demod_freqs, integer_list) / self.sample_rate
+                np.outer(demod_freqs, integer_list) / sample_rate
             self.cos_mat = np.cos(angle_mat)
             self.sin_mat = np.sin(angle_mat)
 
@@ -338,8 +345,10 @@ class ATS9360Controller(AcquisitionController):
         # where SXYZ is record X, sample Y, channel Z.
 
         # break buffer up into records and averages over them
+        alazar = self._get_alazar()
+        samples_per_record = alazar.samples_per_record.get()
         reshaped_buf = self.buffer.reshape(self.records_per_buffer,
-                                           self.samples_per_record,
+                                           samples_per_record,
                                            self.number_of_channels)
         recordA = np.uint16(np.mean(reshaped_buf[:, :, 0], axis=0) /
                             self.buffers_per_acquisition)
@@ -361,7 +370,7 @@ class ATS9360Controller(AcquisitionController):
         else:
             unpacked.append(recordA)
         # do demodulation
-        if self.get_demod_freqs():
+        if len(self.get_demod_freqs()):
             magA, phaseA = self._fit(recordA)
             if self._integrate_samples:
                 magA = np.mean(magA, axis=-1)
@@ -395,7 +404,7 @@ class ATS9360Controller(AcquisitionController):
         Args:
             record (numpy array): record from alazar to be multiplied
                                   with the software signal, filtered and limited
-                                  to integration limits shape = (samples_taken, )
+                                  to ifantegration limits shape = (samples_taken, )
 
         Returns:
             magnitude (numpy array): shape = (demod_length, samples_after_limiting)
@@ -403,7 +412,10 @@ class ATS9360Controller(AcquisitionController):
         """
 
         # volt_rec to matrix and multiply with demodulation signal matrices
-        volt_rec_mat = np.outer(np.ones(self._demod_length), volt_rec)
+        alazar = self._get_alazar()
+        sample_rate = alazar.get_sample_rate()
+        demod_length = len(self._demod_freqs)
+        volt_rec_mat = np.outer(np.ones(demod_length), volt_rec)
         re_mat = np.multiply(volt_rec_mat, self.cos_mat)
         im_mat = np.multiply(volt_rec_mat, self.sin_mat)
 
@@ -411,30 +423,30 @@ class ATS9360Controller(AcquisitionController):
         cutoff = self.get_max_demod_freq() / 10
         if self.filter_settings['filter'] == 0:
             re_filtered = helpers.filter_win(re_mat, cutoff,
-                                             self.sample_rate,
+                                             sample_rate,
                                              self.filter_settings['numtaps'],
                                              axis=-1)
             im_filtered = helpers.filter_win(im_mat, cutoff,
-                                             self.sample_rate,
+                                             sample_rate,
                                              self.filter_settings['numtaps'],
                                              axis=-1)
         elif self.filter_settings['filter'] == 1:
             re_filtered = helpers.filter_ls(re_mat, cutoff,
-                                            self.sample_rate,
+                                            sample_rate,
                                             self.filter_settings['numtaps'],
                                             axis=-1)
             im_filtered = helpers.filter_ls(im_mat, cutoff,
-                                            self.sample_rate,
+                                            sample_rate,
                                             self.filter_settings['numtaps'],
                                             axis=-1)
         elif self.filter_settings['filter'] == 2:
             re_filtered = re_mat
             im_filtered = im_mat
 
-        if self.__integrate_samples:
+        if self._integrate_samples:
             # apply integration limits
-            beginning = int(self.int_delay() * self.sample_rate)
-            end = beginning + int(self.int_time() * self.sample_rate)
+            beginning = int(self.int_delay() * sample_rate)
+            end = beginning + int(self.int_time() * sample_rate)
 
             re_limited = re_filtered[:, beginning:end]
             im_limited = im_filtered[:, beginning:end]
