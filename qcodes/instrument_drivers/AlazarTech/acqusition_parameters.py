@@ -210,8 +210,8 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
                  names = ('raw_output',),
                  labels = ("raw output",),
                  units = ('V',),
-                 shapes = ((),),
-                 setpoints = ((),),
+                 shapes = ((1,),),
+                 setpoints = (((1,),),),
                  setpoint_names = (('time',),),
                  setpoint_labels = (('time',),),
                  setpoint_units = (('s',),),
@@ -231,15 +231,17 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
 
     def set_setpoints_and_labels(self):
         if not self._integrate_samples:
-            if self._instrument.sample_rate and self._instrument.samples_per_record:
+
+            if self._instrument._get_alazar().sample_rate.get() and self.acquisition_kwargs.get('samples_per_record'):
                 start = 0
-                step = 1/self._instrument.sample_rate
-                stop = self._instrument.samples_per_record/self._instrument.sample_rate
+                samples = self.acquisition_kwargs['samples_per_record']
+                stop = samples/self._instrument._get_alazar().sample_rate.get()
             else:
                 start = 0
-                step = 1
+                samples = 1
                 stop = 1
-            arraysetpoints = (tuple(np.arange(start, stop, step)),)
+            print("start {} stop {} num steps {}".format(start, stop, samples))
+            arraysetpoints = (tuple(np.linspace(start, stop, samples)),)
             base_shape = (len(arraysetpoints[0]),)
         else:
             arraysetpoints = ()
@@ -255,7 +257,7 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
         setpoint_units = [setpoint_unit]
         units = [self.units[0]]
         shapes = [base_shape]
-        for i, demod_freq in enumerate(self._instrument.demod_freqs):
+        for i, demod_freq in enumerate(self._instrument._demod_freqs):
             names.append("demod_freq_{}_mag".format(i))
             labels.append("demod freq {} mag".format(i))
             names.append("demod_freq_{}_phase".format(i))
@@ -272,7 +274,7 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
             setpoint_names.append(setpoint_name)
             setpoint_labels.append(setpoint_label)
             setpoint_units.append(setpoint_unit)
-        self.metadata['demod_freqs'] = self._instrument.demod_freqs
+        self.metadata['demod_freqs'] = self._instrument._demod_freqs
         self.names = tuple(names)
         self.labels = tuple(labels)
         self.units = tuple(units)
