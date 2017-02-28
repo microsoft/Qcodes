@@ -980,22 +980,13 @@ class Buffer:
 
         self._allocated = True
         self.addr = None
-        if os.name == 'nt':
-            MEM_COMMIT = 0x1000
-            PAGE_READWRITE = 0x4
-            ctypes.windll.kernel32.VirtualAlloc.argtypes = [ctypes.c_void_p, ctypes.c_long, ctypes.c_long, ctypes.c_long]
-            ctypes.windll.kernel32.VirtualAlloc.restype = ctypes.c_void_p
-            self.addr = ctypes.windll.kernel32.VirtualAlloc(
-                0, ctypes.c_long(size_bytes), MEM_COMMIT, PAGE_READWRITE)
-        else:
-            self._allocated = False
-            raise Exception("Unsupported OS")
 
-        ctypes_array = (c_sample_type *
-                        (size_bytes // bytes_per_sample)).from_address(self.addr)
+        ctypes_array_type = c_sample_type * (size_bytes // bytes_per_sample) # PyCharm deducts the wrong type
+        # This is not an int but a PyCArrayType which is callable. Not sure how to annotate this correctly
+        ctypes_array = ctypes_array_type()
         self.buffer = np.frombuffer(ctypes_array, dtype=npSampleType)
         self.ctypes_buffer = ctypes_array
-        pointer, read_only_flag = self.buffer.__array_interface__['data']
+        self.addr = ctypes.addressof(self.ctypes_buffer)
 
     def free_mem(self):
         """
@@ -1003,14 +994,6 @@ class Buffer:
         """
 
         self._allocated = False
-        if os.name == 'nt':
-            MEM_RELEASE = 0x8000
-            ctypes.windll.kernel32.VirtualFree.argtypes = [ctypes.c_void_p, ctypes.c_long, ctypes.c_long]
-            ctypes.windll.kernel32.VirtualFree.restype = ctypes.c_int
-            ctypes.windll.kernel32.VirtualFree(ctypes.c_void_p(self.addr), 0, MEM_RELEASE);
-        else:
-            self._allocated = True
-            raise Exception("Unsupported OS")
 
     def __del__(self):
         """
