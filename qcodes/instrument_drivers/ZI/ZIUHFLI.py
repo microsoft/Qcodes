@@ -178,7 +178,7 @@ class Sweep(MultiParameter):
         sweeper.execute()
         timeout = self._instrument.sweeper_timeout.get()
         start = time.time()
-        while not sweeper.finished():  # Wait until the sweep is complete, with timeout.
+        while not sweeper.finished():  # Wait until the sweep is done/timeout
             time.sleep(0.2)  # Check every 200 ms whether the sweep is done
             # Here we could read intermediate data via:
             # data = sweeper.read(True)...
@@ -187,7 +187,7 @@ class Sweep(MultiParameter):
                 # If for some reason the sweep is blocking, force the end of the
                 # measurement.
                 log.error("Sweep still not finished, forcing finish...")
-                # should exit function with error message instead of returning data
+                # should exit function with error message instead of returning
                 sweeper.finish()
 
         return_flat_dict = True
@@ -305,8 +305,11 @@ class Scope(MultiParameter):
                       'AU Polar 2': 'AU Polar 2',
                       }
         # Make the basic setpoints (the x-axis)
-        stop = params['scope_duration'].get()
-        setpointlist = list(np.linspace(0, stop, npts))  # scope x-axis
+        duration = params['scope_duration'].get()
+        delay = params['scope_trig_delay']
+        starttime = params['scope_trig_reference']*0.01*duration + delay
+        stoptime = starttime + duration
+        setpointlist = list(np.linspace(starttime, stoptime, npts))  # x-axis
         spname = 'Time'
         namestr = "scope_channel{}_input".format(1)
         name1 = inputnames[params[namestr].get()]
