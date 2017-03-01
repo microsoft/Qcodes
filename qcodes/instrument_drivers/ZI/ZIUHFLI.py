@@ -79,6 +79,7 @@ class Sweep(MultiParameter):
             units.append(sigunits[name])
         self.names = tuple(names)
         self.units = tuple(units)
+        self.labels = tuple(names)  # TODO: What are good labels?
 
         # TODO: what are good set point names?
         spnamedict = {'auxouts/0/offset': 'Volts',
@@ -263,7 +264,7 @@ class Scope(MultiParameter):
 
         npts = params['scope_length'].get()
         # Find out whether segments are enabled
-        if params['scope_segments'].get() == 1:
+        if params['scope_segments'].get() == 'ON':
             segs = params['scope_segments_count'].get()
         else:
             segs = 1
@@ -306,10 +307,11 @@ class Scope(MultiParameter):
                       }
         # Make the basic setpoints (the x-axis)
         duration = params['scope_duration'].get()
-        delay = params['scope_trig_delay']
-        starttime = params['scope_trig_reference']*0.01*duration + delay
+        delay = params['scope_trig_delay'].get()
+        starttime = params['scope_trig_reference'].get()*0.01*duration + delay
         stoptime = starttime + duration
-        setpointlist = list(np.linspace(starttime, stoptime, npts))  # x-axis
+
+        setpointlist = tuple(np.linspace(starttime, stoptime, npts))  # x-axis
         spname = 'Time'
         namestr = "scope_channel{}_input".format(1)
         name1 = inputnames[params[namestr].get()]
@@ -318,9 +320,13 @@ class Scope(MultiParameter):
         name2 = inputnames[params[namestr].get()]
         unit2 = inputunits[params[namestr].get()]
 
-        self.setpoints = ((setpointlist,)*segs,)*2  # one for each channel
-        self.names = (name1, name2)  # is this right?
+        self.setpoints = ((tuple(range(segs)), (setpointlist,)*segs),)*2
+        #self.setpoints = ((setpointlist,)*segs,)*2
+        self.setpoint_names = (('Segments', 'Time'), ('Segments', 'Time'))
+        self.names = (name1, name2)
         self.units = (unit1, unit2)
+        self.labels = ('Scope channel 1', 'Scope channel 2')
+        self.shapes = ((segs, npts), (segs, npts))
 
         self._instrument.daq.sync()
         self._instrument.scope_correctly_built = True
@@ -1153,9 +1159,9 @@ class ZIUHFLI(Instrument):
         self.add_parameter('scope_average_weight',
                             label="Scope Averages",
                             set_cmd=partial(self._scope_setter, 1, 0,
-                                            '/averager/weight'),
+                                            'averager/weight'),
                             get_cmd=partial(self._scope_getter,
-                                            '/averager/weight'),
+                                            'averager/weight'),
                             vals=vals.Numbers(min_value=1)
                             )
 
