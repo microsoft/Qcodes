@@ -232,13 +232,18 @@ class Scope(MultiParameter):
 
     The .get method launches an acquisition and returns a tuple of two
     np.arrays
-
-    Class similar to the Sweeper class
-    TO DO: update docs...
-    Set scopeMode: time or frequency domaine
-
     FFT mode is NOT supported.
 
+    Attributes:
+        names (tuple): Tuple of strings containing the names of the sweep
+          signals (to be measured)
+        units (tuple): Tuple of strings containg the units of the signals
+        shapes (tuple): Tuple of tuples each containing the Length of a
+          signal.
+        setpoints (tuple): Tuple of N copies of the sweep x-axis points,
+          where N is he number of measured signals
+        setpoint_names (tuple): Tuple of N identical strings with the name
+          of the sweep x-axis.
     """
     def __init__(self, name, instrument, **kwargs):
         # The __init__ requires that we supply names and shapes,
@@ -333,7 +338,15 @@ class Scope(MultiParameter):
 
     def get(self):
         """
-        read scope data
+        Acquire data from the scope.
+
+        Returns:
+            tuple: Tuple of two n X m arrays where n is the number of segments
+                and m is the number of points in the scope trace.
+
+        Raises:
+            ValueError: If the scope has not been prepared by running the
+                prepare_scope function.
         """
         if not self._instrument.scope_correctly_built:
             raise ValueError('Scope not properly prepared. Please run '
@@ -403,9 +416,6 @@ class Scope(MultiParameter):
             rawdata = None
             data = (None, None)
 
-        # unsubscribe from everything (better safe than sorry)
-        #scope.unsubscribe('*')
-
         # kill the scope instance
         scope.clear()
 
@@ -468,14 +478,13 @@ class ZIUHFLI(Instrument):
         """
 
         super().__init__(name, **kwargs)
-        (self.daq, self.device, self.props) = zhinst.utils.create_api_session(device_ID,
-                                                                              api_level)
+        zisession = zhinst.utils.create_api_session(device_ID, api_level)
+        (self.daq, self.device, self.props) = zisession
+
         self.daq.setDebugLevel(3)
         # create (instantiate) an instance of each module we will use
         self.sweeper = self.daq.sweep()
         self.sweeper.set('sweep/device', self.device)
-        self.scope = self.daq.scopeModule()
-
         #
 
         ########################################
@@ -740,9 +749,11 @@ class ZIUHFLI(Instrument):
             self.add_parameter('signal_output{}_enable'.format(sigout),
                                 label="Enable signal output's amplitude.",
                                 set_cmd=partial(self._sigout_setter,
-                                                sigout-1, 0, outputampenable[sigout]),
+                                                sigout-1, 0,
+                                                outputampenable[sigout]),
                                 get_cmd=partial(self._sigout_getter,
-                                                sigout-1, 0, outputampenable[sigout]),
+                                                sigout-1, 0,
+                                                outputampenable[sigout]),
                                 val_mapping={'ON': 1, 'OFF': 0},
                                 vals=vals.Enum('ON', 'OFF') )
 
@@ -1144,17 +1155,6 @@ class ZIUHFLI(Instrument):
                             val_mapping=inputselect,
                             vals=vals.Enum(*list(inputselect.keys()))
                             )
-        #TO DO: Implement the average filter correctly. Use a parameter, function or method?
-
-        # self.add_parameter('scope_avgfilter',
-        #                     label="Scope's Avg Filter",
-        #                     set_cmd=partial(self._scope_setter, 1,
-        #                                     '/averager/'),
-        #                     get_cmd=partial(self._scope_getter,
-        #                                     '/averager/'),
-        #                    # val_mapping={'None': 0, 'Exp Moving Avg':}, # to do: double check when it sets it to 1
-        #                     vals=vals.Enum(*list(inputselect.keys()))
-        #                     )
 
         self.add_parameter('scope_average_weight',
                             label="Scope Averages",
@@ -1383,88 +1383,102 @@ class ZIUHFLI(Instrument):
 
     def _sigout_setter(self, number, mode, setting, value):
         """
-        Function to set signal output's settings. Specific setter function is needed as
-        parameters depend on each other and need to be checked and updated accordingly.
+        Function to set signal output's settings. A specific setter function is
+        needed as parameters depend on each other and need to be checked and
+        updated accordingly.
 
         Args:
             number (int):
             mode (bool): Indicating whether we are asking for an int or double
             setting (str): The module's setting to set.
-            value (int/float):
+            value (Union[int, float]): The value to set the setting to.
         """
+
+        # convenient reference
+        params = self.parameters
 
         def amp_valid():
             nonlocal value
-            ampdef_val = self.parameters['signal_output{}_ampdef'.format(number+1)].get()
-            autorange_val =  self.parameters['signal_output{}_autorange'.format(number+1)].get()
+            toget = params['signal_output{}_ampdef'.format(number+1)]
+            ampdef_val = toget.get()
+            toget = params['signal_output{}_autorange'.format(number+1)]
+            autorange_val = toget.get()
 
             if autorange_val == 'ON':
-                imp50_val =  self.parameters['signal_output{}_imp50'.format(number+1)].get()
+                toget = params['signal_output{}_imp50'.format(number+1)]
+                imp50_val = toget.get()
                 imp50_dic = {'OFF': 1.5, 'ON': 0.75}
                 range_val = imp50_dic[imp50_val]
 
             else:
-                range_val =  round(self.parameters['signal_output{}_range'.format(number+1)].get(),3)
+                so_range = params['signal_output{}_range'.format(number+1)].get()
+                range_val = round(so_range, 3)
 
             amp_val_dict={'Vpk': lambda value: value,
-                        'Vrms': lambda value: value*sqrt(2),
-                        'dBm': lambda value: 10**((value-10)/20) }
+                          'Vrms': lambda value: value*sqrt(2),
+                          'dBm': lambda value: 10**((value-10)/20)
+                         }
 
             if -range_val < amp_val_dict[ampdef_val](value) > range_val:
                 raise ValueError('Signal Output:'
-                                + ' Amplitude too high for chosen range.')
+                                 + ' Amplitude too high for chosen range.')
             value = amp_val_dict[ampdef_val](value)
 
         def offset_valid():
             nonlocal value
             nonlocal number
-            range_val =  round(self.parameters['signal_output{}_range'.format(number+1)].get(),3)
-            amp_val = round(self.parameters['signal_output{}_amplitude'.format(number+1)].get(),3)
-            autorange_val = self.parameters['signal_output{}_autorange'.format(number+1)].get()
+            range_val = params['signal_output{}_range'.format(number+1)].get()
+            range_val = round(val, 3)
+            amp_val = params['signal_output{}_amplitude'.format(number+1)].get()
+            amp_val = round(amp_val, 3)
+            toget = params['signal_output{}_autorange'.format(number+1)]
+            autorange_val = toget.get()
             if -range_val< value+amp_val > range_val:
-                raise ValueError('Signal Output: Offset too high for chosen range.')
+                raise ValueError('Signal Output: Offset too high for '
+                                 'chosen range.')
 
         def range_valid():
             nonlocal value
             nonlocal number
-            autorange_val =  self.parameters['signal_output{}_autorange'.format(number+1)].get()
-            imp50_val =  self.parameters['signal_output{}_imp50'.format(number+1)].get()
+            toget = params['signal_output{}_autorange'.format(number+1)]
+            autorange_val = toget.get()
+            imp50_val = params['signal_output{}_imp50'.format(number+1)].get()
             imp50_dic = {'OFF': [1.5, 0.15], 'ON': [0.75, 0.075]}
 
             if autorange_val == "ON":
-                raise ValueError('Signal Output :' \
-                                + ' Cannot set range as autorange is turned on.')
+                raise ValueError('Signal Output :'
+                                ' Cannot set range as autorange is turned on.')
 
             if value not in imp50_dic[imp50_val]:
-                raise ValueError('Signal Output: Choose a valid range:' \
-                                    + '[0.75, 0.075] if imp50 is on, [1.5, 0.15] otherwise.')
+                raise ValueError('Signal Output: Choose a valid range:'
+                                 '[0.75, 0.075] if imp50 is on, [1.5, 0.15]'
+                                 ' otherwise.')
 
         def ampdef_valid():
-            # check which amplitude definition you can use. dBm is only with imp50 "ON" possible
-             imp50_val =  self.parameters['signal_output{}_imp50'.format(number+1)].get()
-             imp50_ampdef_dict = {'ON': ['Vpk','Vrms', 'dBm'], 'OFF': ['Vpk','Vrms']}
-             if value not in imp50_ampdef_dict[imp50_val]:
-                raise ValueError('Signal Output: Choose a valid amplitude definition' \
-                                + "['Vpk','Vrms', 'dBm'] if imp50 is on, ['Vpk','Vrms'] otherwise.")
-
-        def imp50_valid():
-            amp_val = round(self.parameters['signal_output{}_amplitude'.format(number+1)].get(),3)
-            amp_val = round(self.parameters['signal_output{}_offset'.format(number+1)].get(),3)
+            # check which amplitude definition you can use.
+            # dBm is only possible with 50 Ohm imp ON
+            imp50_val = params['signal_output{}_imp50'.format(number+1)].get()
+            imp50_ampdef_dict = {'ON': ['Vpk','Vrms', 'dBm'],
+                                 'OFF': ['Vpk','Vrms']}
+            if value not in imp50_ampdef_dict[imp50_val]:
+                raise ValueError("Signal Output: Choose a valid amplitude "
+                                 "definition; ['Vpk','Vrms', 'dBm'] if imp50 is"
+                                 " on, ['Vpk','Vrms'] otherwise.")
 
         dynamic_validation = {'range': range_valid,
-                            'ampdef': ampdef_valid,
-                            'amplitudes/3': amp_valid,
-                            'amplitudes/7': amp_valid,
-                            'offset': offset_valid}
-
+                              'ampdef': ampdef_valid,
+                              'amplitudes/3': amp_valid,
+                              'amplitudes/7': amp_valid,
+                              'offset': offset_valid}
 
         def update_range_offset_amp():
-            range_val = self.parameters['signal_output{}_range'.format(number+1)].get()
-            offset_val = self.parameters['signal_output{}_offset'.format(number+1)].get()
-            amp_val = self.parameters['signal_output{}_amplitude'.format(number+1)].get()
+            range_val = params['signal_output{}_range'.format(number+1)].get()
+            offset_val = params['signal_output{}_offset'.format(number+1)].get()
+            amp_val = params['signal_output{}_amplitude'.format(number+1)].get()
             if -range_val < offset_val + amp_val > range_val:
                 #The GUI would allow higher values but it would clip the signal.
-                raise ValueError('Signal Output: Amplitude and/or offset out of range.')
+                raise ValueError('Signal Output: Amplitude and/or '
+                                 'offset out of range.')
 
         def update_offset():
             self.parameters['signal_output{}_offset'.format(number+1)].get()
@@ -1475,13 +1489,14 @@ class ZIUHFLI(Instrument):
         def update_range():
             self.parameters['signal_output{}_autorange'.format(number+1)].get()
 
-        # parameters whic will potentially change other parameters
+        # parameters which will potentially change other parameters
         changing_param = {'imp50': [update_range_offset_amp, update_range],
-                        'autorange': [update_range],
-                        'range': [update_offset, update_amp],
-                        'amplitudes/3': [update_range, update_amp], # needed if we are setting in dBm: switchy knob
-                        'amplitudes/7': [update_range, update_amp], # needed if we are setting in dBm: switchy knob
-                        'offset': [update_range]} # range can change if autorange is selected
+                          'autorange': [update_range],
+                          'range': [update_offset, update_amp],
+                          'amplitudes/3': [update_range, update_amp],
+                          'amplitudes/7': [update_range, update_amp],
+                          'offset': [update_range]
+                         }
 
         setstr = '/{}/sigouts/{}/{}'.format(self.device, number, setting)
 
@@ -1498,8 +1513,9 @@ class ZIUHFLI(Instrument):
 
     def _sigout_getter(self, number, mode, setting):
         """
-        Function to query the settings of signal outputs. Specific setter function is needed as
-        parameters depend on each other and need to be checked and updated accordingly.
+        Function to query the settings of signal outputs. Specific setter
+        function is needed as parameters depend on each other and need to be
+        checked and updated accordingly.
 
         Args:
             number (int):
