@@ -873,7 +873,6 @@ class ActiveLoop(Metadatable):
             # this one later.
             self.data_set = None
 
-
         return ds
 
     def _compile_actions(self, actions, action_indices=()):
@@ -943,6 +942,9 @@ class ActiveLoop(Metadatable):
         t0 = time.time()
         last_task = t0
         imax = len(self.sweep_values)
+
+        self.last_task_failed = False
+
         for i, value in enumerate(self.sweep_values):
             if self.progress_interval is not None:
                 tprint('loop %s: %d/%d (%.1f [s])' % (
@@ -1000,14 +1002,17 @@ class ActiveLoop(Metadatable):
                     try:
                         self.bg_task()
                     except Exception:
+                        if self.last_task_failed:
+                            self.bg_task = None
+                        self.last_task_failed = True
                         log.exception("Failed to execute bg task")
-                        self.bg_task = None
-                        return
+
                     last_task = t
 
         if self.progress_interval is not None:
             # final progress note: set dt=-1 so it *always* prints
             tprint('loop %s DONE: %d/%d (%.1f [s])' % (
+
                    self.sweep_values.name, i + 1, imax, time.time() - t0),
                    dt=-1, tag='outerloop')
 
@@ -1022,7 +1027,6 @@ class ActiveLoop(Metadatable):
         # run the bg_final_task from the bg_task:
         if self.bg_final_task is not None:
             self.bg_final_task()
-
 
     def _wait(self, delay):
         if delay:
