@@ -1,5 +1,6 @@
-from qcodes import Parameter, MultiParameter
+from qcodes import Parameter, MultiParameter, ArrayParameter
 import numpy as np
+import logging
 
 class AcqVariablesParam(Parameter):
     """
@@ -209,7 +210,7 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
                  instrument,
                  names = ('raw_output',),
                  labels = ("raw output",),
-                 units = ('V',),
+                 units = ('v',),
                  shapes = ((1,),),
                  setpoints = (((1,),),),
                  setpoint_names = (('time',),),
@@ -231,11 +232,13 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
 
     def set_setpoints_and_labels(self):
         if not self._integrate_samples:
-
-            if self._instrument._get_alazar().sample_rate.get() and self.acquisition_kwargs.get('samples_per_record'):
+            int_time = self._instrument.int_time.get()
+            int_delay = self._instrument.int_delay.get()
+            total_time = int_time + int_delay
+            samples = self._instrument.samples_per_record.get()
+            if total_time and samples:
                 start = 0
-                samples = self.acquisition_kwargs['samples_per_record']
-                stop = samples/self._instrument._get_alazar().sample_rate.get()
+                stop = total_time
             else:
                 start = 0
                 samples = 1
@@ -257,7 +260,8 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
         setpoint_units = [setpoint_unit]
         units = [self.units[0]]
         shapes = [base_shape]
-        for i, demod_freq in enumerate(self._instrument._demod_freqs):
+        demod_freqs = self._instrument.demod_freqs.get()
+        for i, demod_freq in enumerate(demod_freqs):
             names.append("demod_freq_{}_mag".format(i))
             labels.append("demod freq {} mag".format(i))
             names.append("demod_freq_{}_phase".format(i))
@@ -274,7 +278,6 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
             setpoint_names.append(setpoint_name)
             setpoint_labels.append(setpoint_label)
             setpoint_units.append(setpoint_unit)
-        self.metadata['demod_freqs'] = self._instrument._demod_freqs
         self.names = tuple(names)
         self.labels = tuple(labels)
         self.units = tuple(units)
@@ -285,7 +288,127 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
         self.setpoint_units = tuple(setpoint_units)
 
     def get(self):
+        inst = self._instrument
+        params_to_kwargs = ['samples_per_record', 'records_per_buffer',
+                            'buffers_per_acquisition', 'allocated_buffers']
+        acq_kwargs = self.acquisition_kwargs.copy()
+        additional_acq_kwargs = {key: val.get() for key, val in inst.parameters.items() if
+             key in params_to_kwargs}
+        acq_kwargs.update(additional_acq_kwargs)
+
         output = self._instrument._get_alazar().acquire(
             acquisition_controller=self._instrument,
-            **self.acquisition_kwargs)
+            **acq_kwargs)
         return output
+
+
+class NonSettableDerivedParameter(Parameter):
+    """
+    Parameter of an AcquisitionController which cannot be updated directly
+    as it's value is derived from other parameters. This is intended to be
+    used in high level APIs where Alazar parameters such as 'samples_per_record'
+    are not set directly but are parameters of the actual instrument anyway.
+
+    This assumes that the parameter is stored via a call to '_save_val' by
+    any set of parameter that this parameter depends on.
+
+    Args:
+        name: name for this parameter
+        instrument: acquisition controller instrument this parameter belongs to
+        alternative (str): name of parameter(s) that controls the value of this
+            parameter and can be set directly.
+    """
+
+    def __init__(self, name, instrument, alternative: str):
+        self._alternative = alternative
+        super().__init__(name, instrument=instrument)
+
+    def set(self, value):
+        """
+        It's not possible to directly set this parameter as it's derived from other
+        parameters.
+        """
+        raise NotImplementedError("Cannot directly set {}. To control this parameter"
+                                  "set {}".format(self.name, self._alternative))
+
+    def get(self):
+        return self.get_latest()
+
+
+class DemodFreqParameter(ArrayParameter):
+
+    #
+    def __init__(self, name, shape, **kwargs):
+        self._demod_freqs = []
+        super().__init__(name, shape, **kwargs)
+
+
+    def add_demodulator(self, demod_freq):
+        ndemod_freqs = len(self._demod_freqs)
+        if demod_freq not in self._demod_freqs:
+            self._verify_demod_freq(demod_freq)
+            self._demod_freqs.append(demod_freq)
+            self._save_val(self._demod_freqs)
+            self.shape = (ndemod_freqs+1,)
+            self._instrument.acquisition.set_setpoints_and_labels()
+
+    def remove_demodulator(self, demod_freq):
+        ndemod_freqs = len(self._demod_freqs)
+        if demod_freq in self._demod_freqs:
+            self._demod_freqs.pop(self._demod_freqs.index(demod_freq))
+            self.shape = (ndemod_freqs - 1,)
+            self._save_val(self._demod_freqs)
+            self._instrument.acquisition.set_setpoints_and_labels()
+
+    def get(self):
+        return self._demod_freqs
+
+    def get_num_demods(self):
+        return len(self._demod_freqs)
+
+    def get_max_demod_freq(self):
+        if len(self._demod_freqs):
+            return max(self._demod_freqs)
+        else:
+            return None
+
+    def _verify_demod_freq(self, value):
+        """
+        Function to validate a demodulation frequency
+
+        Checks:
+            - 1e6 <= value <= 500e6
+            - number of oscillation measured using current 'int_time' param value
+              at this demodulation frequency value
+            - oversampling rate for this demodulation frequency
+
+        Args:
+            value: proposed demodulation frequency
+        Returns:
+            bool: Returns True if suitable number of oscillations are measured and
+            oversampling is > 1, False otherwise.
+        Raises:
+            ValueError: If value is not a valid demodulation frequency.
+        """
+        if (value is None) or not (1e6 <= value <= 500e6):
+            raise ValueError('demod_freqs must be 1e6 <= value <= 500e6')
+        isValid = True
+        alazar = self._instrument._get_alazar()
+        sample_rate = alazar.get_sample_rate()
+        int_time = self._instrument.int_time.get()
+        min_oscillations_measured = int_time * value
+        oversampling = sample_rate / (2 * value)
+        if min_oscillations_measured < 10:
+            isValid = False
+            logging.warning('{} oscillation measured for largest '
+                            'demod freq, recommend at least 10: '
+                            'decrease sampling rate, take '
+                            'more samples or increase demodulation '
+                            'freq'.format(min_oscillations_measured))
+        elif oversampling < 1:
+            isValid = False
+            logging.warning('oversampling rate is {}, recommend > 1: '
+                            'increase sampling rate or decrease '
+                            'demodulation frequency'.format(oversampling))
+
+        return isValid

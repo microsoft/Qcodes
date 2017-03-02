@@ -2,7 +2,10 @@ import logging
 from ..ATS import AcquisitionController
 import numpy as np
 import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
-from ..acqusition_parameters import AcqVariablesParam, ExpandingAlazarArrayMultiParameter
+from ..acqusition_parameters import AcqVariablesParam, \
+                                    ExpandingAlazarArrayMultiParameter, \
+                                    NonSettableDerivedParameter, \
+                                    DemodFreqParameter
 
 
 class ATS9360Controller(AcquisitionController):
@@ -47,73 +50,38 @@ class ATS9360Controller(AcquisitionController):
                            parameter_class=ExpandingAlazarArrayMultiParameter)
 
         self._integrate_samples = integrate_samples
-        if integrate_samples:
-            self.add_parameter(name='int_time',
-                               check_and_update_fn=self._update_int_time,
-                               default_fn=self._int_time_default,
-                               parameter_class=AcqVariablesParam)
-            self.add_parameter(name='int_delay',
-                               check_and_update_fn=self._update_int_delay,
-                               default_fn=self._int_delay_default,
-                               parameter_class=AcqVariablesParam)
+
+        self.add_parameter(name='int_time',
+                           check_and_update_fn=self._update_int_time,
+                           default_fn=self._int_time_default,
+                           parameter_class=AcqVariablesParam)
+        self.add_parameter(name='int_delay',
+                           check_and_update_fn=self._update_int_delay,
+                           default_fn=self._int_delay_default,
+                           parameter_class=AcqVariablesParam)
+        self.add_parameter(name='num_avg',
+                           check_and_update_fn=self._update_num_avg,
+                           default_fn= lambda : 1,
+                           parameter_class=AcqVariablesParam)
+        self.add_parameter(name='allocated_buffers',
+                           alternative='not controllable in this controller',
+                           parameter_class=NonSettableDerivedParameter)
+        self.add_parameter(name='buffers_per_acquisition',
+                           alternative='not controllable in this controller',
+                           parameter_class=NonSettableDerivedParameter)
+        self.add_parameter(name='records_per_buffer',
+                           alternative='num_avg',
+                           parameter_class=NonSettableDerivedParameter)
+        self.add_parameter(name='samples_per_record',
+                           alternative='int_time and int_delay',
+                           parameter_class=NonSettableDerivedParameter)
+
+        self.add_parameter(name='demod_freqs',
+                           shape=(),
+                           parameter_class=DemodFreqParameter)
 
         self.samples_divisor = self._get_alazar().samples_divisor
-        self._demod_freqs = []
 
-    def add_demodulator(self, demod_freq):
-        if demod_freq not in self._demod_freqs:
-            self._verify_demod_freq(demod_freq)
-            self._demod_freqs.append(demod_freq)
-            self.acquisition.set_setpoints_and_labels()
-
-    def remove_demodulator(self, demod_freq):
-        if demod_freq in self.demod_freqs:
-            self._demod_freqs.pop(self.demod_freqs.index(demod_freq))
-            self.acquisition.set_setpoints_and_labels()
-
-    def _verify_demod_freq(self, value):
-        """
-        Function to validate a demodulation frequency
-
-        Checks:
-            - 1e6 <= value <= 500e6
-            - number of oscillation measured using current 'int_time' param value
-              at this demodulation frequency value
-            - oversampling rate for this demodulation frequency
-
-        Args:
-            value: proposed demodulation frequency
-        Returns:
-            bool: Returns True if suitable number of oscillations are measured and
-            oversampling is > 1, False otherwise.
-        Raises:
-            ValueError: If value is not a valid demodulation frequency.
-        """
-        if (value is None) or not (1e6 <= value <= 500e6):
-            raise ValueError('demod_freqs must be 1e6 <= value <= 500e6')
-        isValid = True
-        alazar = self._get_alazar()
-        sample_rate = alazar.get_sample_rate()
-        if 'int_time' in self.parameters:
-            int_time = self.int_time.get()
-        else:
-            int_time = self.acquisition.acquisition_kwargs["samples_per_record"]/sample_rate
-        min_oscillations_measured = int_time * value
-        oversampling = sample_rate / (2 * value)
-        if min_oscillations_measured < 10:
-            isValid = False
-            logging.warning('{} oscillation measured for largest '
-                            'demod freq, recommend at least 10: '
-                            'decrease sampling rate, take '
-                            'more samples or increase demodulation '
-                            'freq'.format(min_oscillations_measured))
-        elif oversampling < 1:
-            isValid = False
-            logging.warning('oversampling rate is {}, recommend > 1: '
-                            'increase sampling rate or decrease '
-                            'demodulation frequency'.format(oversampling))
-
-        return isValid
 
     def _update_int_time(self, value, **kwargs):
         """
@@ -138,18 +106,21 @@ class ATS9360Controller(AcquisitionController):
 
         alazar = self._get_alazar()
         sample_rate = alazar.get_sample_rate()
-        if self.get_max_demod_freq() is not None:
-            self._verify_demod_freq(self.get_max_demod_freq())
+        max_demod_freq = self.demod_freqs.get_max_demod_freq()
+        if max_demod_freq is not None:
+            self._verify_demod_freq(max_demod_freq)
         if self.int_delay() is None:
             self.int_delay.to_default()
+        int_delay = self.int_delay.get()
+        self._update_samples_per_record(sample_rate, value, int_delay)
 
+    def _update_samples_per_record(self, sample_rate, int_time, int_delay):
         # update acquisition kwargs and acq controller value
-        total_time = value + self.int_delay()
+        total_time = (int_time or 0) + (int_delay or 0)
         samples_needed = total_time * sample_rate
         samples_per_record = helpers.roundup(
             samples_needed, self.samples_divisor)
-        self.acquisition.acquisition_kwargs.update(
-            samples_per_record=samples_per_record)
+        self.samples_per_record._save_val(samples_per_record)
 
     def _update_int_delay(self, value, **kwargs):
         """
@@ -164,7 +135,7 @@ class ATS9360Controller(AcquisitionController):
             number of samples discarded >= numtaps
 
         Sets:
-            sample_rate attr of acq controller to be that of alazar
+            sample_rate attr of acq controller to be that of Alazar
             samples_per_record of acq controller
             acquisition_kwarg['samples_per_record'] of acquisition param
             setpoints of acquisition param
@@ -184,13 +155,17 @@ class ATS9360Controller(AcquisitionController):
                 'delay is less than recommended for filter choice: '
                 '(expect delay >= {})'.format(int_delay_min))
 
-        # update acquisition kwargs and acq controller value
-        total_time = value + (self.int_time() or 0)
-        samples_needed = total_time * sample_rate
-        samples_per_record = helpers.roundup(
-            samples_needed, self.samples_divisor)
-        self.acquisition.acquisition_kwargs.update(
-            samples_per_record=samples_per_record)
+        int_time = self.int_time.get()
+        self._update_samples_per_record(sample_rate, int_time, value)
+
+    def _update_num_avg(self, value: int, **kwargs):
+        if not isinstance(value, int) or value < 1:
+            raise ValueError('number of averages must be a positive integer')
+
+        self.records_per_buffer._save_val(value)
+        self.buffers_per_acquisition._save_val(1)
+        self.allocated_buffers._save_val(1)
+
 
     def _int_delay_default(self):
         """
@@ -213,7 +188,7 @@ class ATS9360Controller(AcquisitionController):
             max total time for integration based on samples_per_record,
             sample_rate and int_delay
         """
-        samples_per_record = self.acquisition.acquisition_kwargs.get('samples_per_record')
+        samples_per_record = self.samples_per_record.get()
         if samples_per_record in (0 or None):
             raise ValueError('Cannot set int_time to max if acq controller'
                              ' has 0 or None samples_per_record, choose a '
@@ -224,27 +199,6 @@ class ATS9360Controller(AcquisitionController):
         total_time = ((samples_per_record / sample_rate) -
                       (self.int_delay() or 0))
         return total_time
-
-    def get_demod_freqs(self):
-        """
-        Function to get all the demod_freq parameter values in a numpy array
-
-        Returns:
-            numpy array of demodulation frequencies
-        """
-        return np.array(self._demod_freqs)
-
-    def get_max_demod_freq(self):
-        """
-        Returns:
-            the largest demodulation frequency
-
-        """
-        freqs = self.get_demod_freqs()
-        if len(freqs) > 0:
-            return max(freqs)
-        else:
-            return None
 
     def update_filter_settings(self, filter, numtaps):
         """
@@ -272,9 +226,8 @@ class ATS9360Controller(AcquisitionController):
             - buffers_per_acquisition
             - allocated_buffers
         """
-        if 'samples_per_record' in kwargs and self._integrate_samples:
-            raise ValueError('With integrating over samples '
-                             'samples_per_record should not be set manually '
+        if 'samples_per_record' in kwargs:
+            raise ValueError('Samples_per_record should not be set manually '
                              'via update_acquisition_kwargs and should instead'
                              ' be set by setting int_time and int_delay')
         self.acquisition.acquisition_kwargs.update(**kwargs)
@@ -286,7 +239,7 @@ class ATS9360Controller(AcquisitionController):
         Alazar acquisition params and set up software wave for demodulation.
         """
         alazar = self._get_alazar()
-        acq_s_p_r = self.acquisition.acquisition_kwargs['samples_per_record']
+        acq_s_p_r = self.samples_per_record.get()
         inst_s_p_r = alazar.samples_per_record.get()
         sample_rate = alazar.get_sample_rate()
         if acq_s_p_r != inst_s_p_r:
@@ -298,15 +251,14 @@ class ATS9360Controller(AcquisitionController):
         #                     'instrument value {}, most likely need '
         #                     'to set and check int_time and int_delay'.format(acq_s_r, inst_s_r))
         samples_per_record = inst_s_p_r
-        demod_freqs = self.get_demod_freqs()
+        demod_freqs = self.demod_freqs.get()
         # if len(demod_freqs) == 0:
         #     raise Exception('no demod_freqs set')
 
-        self.records_per_buffer = alazar.records_per_buffer.get()
-        self.buffers_per_acquisition = alazar.buffers_per_acquisition.get()
+        records_per_buffer = alazar.records_per_buffer.get()
         self.board_info = alazar.get_idn()
         self.buffer = np.zeros(samples_per_record *
-                               self.records_per_buffer *
+                               records_per_buffer *
                                self.number_of_channels)
 
         if len(demod_freqs):
@@ -347,30 +299,22 @@ class ATS9360Controller(AcquisitionController):
         # break buffer up into records and averages over them
         alazar = self._get_alazar()
         samples_per_record = alazar.samples_per_record.get()
-        reshaped_buf = self.buffer.reshape(self.records_per_buffer,
+        records_per_buffer = alazar.records_per_buffer.get()
+        buffers_per_acquisition = alazar.buffers_per_acquisition.get()
+        reshaped_buf = self.buffer.reshape(records_per_buffer,
                                            samples_per_record,
                                            self.number_of_channels)
         recordA = np.uint16(np.mean(reshaped_buf[:, :, 0], axis=0) /
-                            self.buffers_per_acquisition)
+                            buffers_per_acquisition)
 
-        # TODO(nataliejpg): test above version works on alazar and
-        # compare performance
         recordA = self._to_volts(recordA)
-        # records_per_acquisition = (self.buffers_per_acquisition *
-        #                    self.records_per_buffer)
-        # recA = np.zeros(self.samples_per_record)
-        # for i in range(self.records_per_buffer):
-        #     i0 = (i * self.samples_per_record * self.number_of_channels)
-        #     i1 = (i0 + self.samples_per_record * self.number_of_channels)
-        #     recA += self.buffer[i0:i1:self.number_of_channels]
-        # recordA = np.uint16(recA / records_per_acquisition)
         unpacked = []
         if self._integrate_samples:
             unpacked.append(np.mean(recordA, axis=-1))
         else:
             unpacked.append(recordA)
         # do demodulation
-        if len(self.get_demod_freqs()):
+        if self.demod_freqs.get_num_demods():
             magA, phaseA = self._fit(recordA)
             if self._integrate_samples:
                 magA = np.mean(magA, axis=-1)
@@ -414,13 +358,13 @@ class ATS9360Controller(AcquisitionController):
         # volt_rec to matrix and multiply with demodulation signal matrices
         alazar = self._get_alazar()
         sample_rate = alazar.get_sample_rate()
-        demod_length = len(self._demod_freqs)
+        demod_length = self.demod_freqs.get_num_demods()
         volt_rec_mat = np.outer(np.ones(demod_length), volt_rec)
         re_mat = np.multiply(volt_rec_mat, self.cos_mat)
         im_mat = np.multiply(volt_rec_mat, self.sin_mat)
 
         # filter out higher freq component
-        cutoff = self.get_max_demod_freq() / 10
+        cutoff = self.demod_freqs.get_max_demod_freq() / 10
         if self.filter_settings['filter'] == 0:
             re_filtered = helpers.filter_win(re_mat, cutoff,
                                              sample_rate,
@@ -460,3 +404,4 @@ class ATS9360Controller(AcquisitionController):
         phase = np.angle(complex_mat, deg=True)
 
         return magnitude, phase
+
