@@ -322,7 +322,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
         elif self.clock_source.get() == 'INTERNAL_CLOCK':
             rate = self.sample_rate.get()
         else:
-            raise Exception("Don't know how to get sample rate with {}".format(alazar.clock_source.get()))
+            raise Exception("Don't know how to get sample rate with {}".format(self.clock_source.get()))
 
         if rate == '1GHz_REFERENCE_CLOCK':
             rate = 1e9
