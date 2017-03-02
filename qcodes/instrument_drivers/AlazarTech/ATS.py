@@ -416,11 +416,19 @@ class AlazarTech_ATS(Instrument):
         self._set_if_present('aux_io_param', aux_io_param)
         # endregion
 
-
+        # handle that external clock and internal clock uses
+        # two different ways of setting the sample rate.
+        # We use the matching one and make the order one
+        # as up to date since it's not being pushed to
+        # the instrument at any time and is never used
         if clock_source == 'EXTERNAL_CLOCK_10MHz_REF':
             sample_rate = self.external_sample_rate
+            if 'sample_rate' in self.parameters:
+                self.parameters['sample_rate']._set_updated()
         elif clock_source == 'INTERNAL_CLOCK':
             sample_rate = self.sample_rate
+            if 'external_sample_rate' in self.parameters:
+                self.parameters['external_sample_rate']._set_updated()
 
         self._call_dll('AlazarSetCaptureClock',
                        self._handle, self.clock_source, sample_rate,
