@@ -108,7 +108,7 @@ class ATS9360Controller(AcquisitionController):
         sample_rate = alazar.get_sample_rate()
         max_demod_freq = self.demod_freqs.get_max_demod_freq()
         if max_demod_freq is not None:
-            self._verify_demod_freq(max_demod_freq)
+            self.demod_freqs._verify_demod_freq(max_demod_freq)
         if self.int_delay() is None:
             self.int_delay.to_default()
         int_delay = self.int_delay.get()
@@ -121,6 +121,7 @@ class ATS9360Controller(AcquisitionController):
         samples_per_record = helpers.roundup(
             samples_needed, self.samples_divisor)
         self.samples_per_record._save_val(samples_per_record)
+        self.acquisition.set_setpoints_and_labels()
 
     def _update_int_delay(self, value, **kwargs):
         """

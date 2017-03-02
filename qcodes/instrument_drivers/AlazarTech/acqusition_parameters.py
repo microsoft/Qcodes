@@ -232,8 +232,8 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
 
     def set_setpoints_and_labels(self):
         if not self._integrate_samples:
-            int_time = self._instrument.int_time.get()
-            int_delay = self._instrument.int_delay.get()
+            int_time = self._instrument.int_time.get() or 0
+            int_delay = self._instrument.int_delay.get() or 0
             total_time = int_time + int_delay
             samples = self._instrument.samples_per_record.get()
             if total_time and samples:
