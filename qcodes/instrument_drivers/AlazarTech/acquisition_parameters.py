@@ -216,9 +216,11 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
                  setpoint_names = (('time',),),
                  setpoint_labels = (('time',),),
                  setpoint_units = (('s',),),
-                 integrate_samples=False):
+                 integrate_samples=False,
+                 average_records=True):
         self.acquisition_kwargs = {}
         self._integrate_samples = integrate_samples
+        self._average_records = average_records
         super().__init__(name,
                          names=names,
                          units=units,
@@ -246,6 +248,9 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
             print("start {} stop {} num steps {}".format(start, stop, samples))
             arraysetpoints = (tuple(np.linspace(start, stop, samples)),)
             base_shape = (len(arraysetpoints[0]),)
+        elif not self._average_records:
+            arraysetpoints = tuple(range(self._instrument.records_per_buffer.get() or 0))
+            base_shape = (self._instrument.records_per_buffer.get(),)
         else:
             arraysetpoints = ()
             base_shape = ()

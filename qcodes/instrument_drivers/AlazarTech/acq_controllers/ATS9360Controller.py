@@ -2,7 +2,7 @@ import logging
 from ..ATS import AcquisitionController
 import numpy as np
 import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
-from ..acqusition_parameters import AcqVariablesParam, \
+from ..acquisition_parameters import AcqVariablesParam, \
                                     ExpandingAlazarArrayMultiParameter, \
                                     NonSettableDerivedParameter, \
                                     DemodFreqParameter
@@ -38,15 +38,20 @@ class ATS9360Controller(AcquisitionController):
     def __init__(self, name, alazar_name, filter: str = 'win',
                  numtaps: int =101, chan_b: bool = False,
                  integrate_samples: bool = False,
+                 average_records: bool = True,
                  **kwargs):
         self.filter_settings = {'filter': self.filter_dict[filter],
                                 'numtaps': numtaps}
         self.chan_b = chan_b
         self.number_of_channels = 2
+        if not integrate_samples and not average_records:
+            raise RuntimeError("You need to either average records or integrate over samples")
+
         super().__init__(name, alazar_name, **kwargs)
 
         self.add_parameter(name='acquisition',
                            integrate_samples=integrate_samples,
+                           average_records=average_records,
                            parameter_class=ExpandingAlazarArrayMultiParameter)
 
         self._integrate_samples = integrate_samples
@@ -261,11 +266,27 @@ class ATS9360Controller(AcquisitionController):
         self.buffer = np.zeros(samples_per_record *
                                records_per_buffer *
                                self.number_of_channels)
+        avg_buffers = True
+        if avg_buffers:
+            len_buffers = 1
+        else:
+            pass # not implemented yet
 
-        if len(demod_freqs):
+        if self.acquisition._average_records:
+            len_records = 1
+        else:
+            len_records = records_per_buffer
+
+        num_demods = self.demod_freqs.get_num_demods()
+        if num_demods:
+            mat_shape = (num_demods, len_buffers,
+                         len_records, self.samples_per_record.get())
+            self.mat_shape = mat_shape
             integer_list = np.arange(samples_per_record)
+            integer_mat = (np.outer(np.ones(len_buffers),
+                                    np.outer(len_records, integer_list)))
             angle_mat = 2 * np.pi * \
-                np.outer(demod_freqs, integer_list) / sample_rate
+                np.outer(demod_freqs, integer_mat).reshape(mat_shape)  / sample_rate
             self.cos_mat = np.cos(angle_mat)
             self.sin_mat = np.sin(angle_mat)
 
@@ -302,24 +323,35 @@ class ATS9360Controller(AcquisitionController):
         samples_per_record = alazar.samples_per_record.get()
         records_per_buffer = alazar.records_per_buffer.get()
         buffers_per_acquisition = alazar.buffers_per_acquisition.get()
-        reshaped_buf = self.buffer.reshape(records_per_buffer,
+        number_of_buffers = 1 # Hardcoded for now assuming all buffers go to the same array
+        reshaped_buf = self.buffer.reshape(number_of_buffers,
+                                           records_per_buffer,
                                            samples_per_record,
                                            self.number_of_channels)
-        recordA = np.uint16(np.mean(reshaped_buf[:, :, 0], axis=0) /
-                            buffers_per_acquisition)
+
+        channelAData = reshaped_buf[:, :, :, 0]
+        if self.acquisition._average_records:
+            recordA = np.uint16(np.mean(channelAData, axis=1, keepdims=True) /
+                                buffers_per_acquisition)
+        else:
+            recordA = np.uint16(channelAData)/buffers_per_acquisition
 
         recordA = self._to_volts(recordA)
-        unpacked = []
-        if self._integrate_samples:
-            unpacked.append(np.mean(recordA, axis=-1))
-        else:
-            unpacked.append(recordA)
+
         # do demodulation
         if self.demod_freqs.get_num_demods():
             magA, phaseA = self._fit(recordA)
             if self._integrate_samples:
                 magA = np.mean(magA, axis=-1)
                 phaseA = np.mean(phaseA, axis=-1)
+
+        unpacked = []
+        if self._integrate_samples:
+            unpacked.append(np.mean(recordA, axis=-1))
+        else:
+            unpacked.append(np.squeeze(recordA))
+
+        if self.demod_freqs.get_num_demods():
             for i in range(magA.shape[0]):
                 unpacked.append(magA[i])
                 unpacked.append(phaseA[i])
@@ -360,7 +392,7 @@ class ATS9360Controller(AcquisitionController):
         alazar = self._get_alazar()
         sample_rate = alazar.get_sample_rate()
         demod_length = self.demod_freqs.get_num_demods()
-        volt_rec_mat = np.outer(np.ones(demod_length), volt_rec)
+        volt_rec_mat = np.outer(np.ones(demod_length), volt_rec).reshape(self.mat_shape)
         re_mat = np.multiply(volt_rec_mat, self.cos_mat)
         im_mat = np.multiply(volt_rec_mat, self.sin_mat)
 
@@ -393,8 +425,8 @@ class ATS9360Controller(AcquisitionController):
             beginning = int(self.int_delay() * sample_rate)
             end = beginning + int(self.int_time() * sample_rate)
 
-            re_limited = re_filtered[:, beginning:end]
-            im_limited = im_filtered[:, beginning:end]
+            re_limited = re_filtered[..., beginning:end]
+            im_limited = im_filtered[..., beginning:end]
         else:
             re_limited = re_filtered
             im_limited = im_filtered
