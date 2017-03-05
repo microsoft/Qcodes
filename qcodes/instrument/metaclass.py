@@ -40,6 +40,6 @@ class InstrumentMetaclass(type):
 
         # for RemoteInstrument, we want to record this instance with the
         # class that it proxies, not with RemoteInstrument itself
-        cls.record_instance(instrument)
+        # cls.record_instance(instrument)
 
         return instrument

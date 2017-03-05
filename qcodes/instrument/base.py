@@ -95,6 +95,7 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
         self._meta_attrs = ['name']
 
         self._no_proxy_methods = {'__getstate__'}
+        self.record_instance(self)
 
     def get_idn(self):
         """
