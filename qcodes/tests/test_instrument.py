@@ -1,6 +1,7 @@
 """
 Test suite for  instument.*
 """
+import gc
 from datetime import datetime, timedelta
 from unittest import TestCase
 import time
@@ -211,6 +212,13 @@ class TestInstrument(TestCase):
         name = 'gatesFailing2'
         with self.assertRaises(ValueError):
             GatesBadDelayValue(model=self.model, name=name, server_name=None)
+        # gc is confused by the context manager we just used
+        # we want to make sure the ojbect we just tried to create
+        # but it threw an exception is properly gc'ed. Which
+        # is what happens wihtout the context manager AND
+        # it's how the __del__ method is supposed to work.
+
+        gc.collect()
 
         # this instrument should not be in the instance list
         with self.assertRaises(KeyError):

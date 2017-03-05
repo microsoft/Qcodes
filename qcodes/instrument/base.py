@@ -220,7 +220,6 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
         """
         wr = weakref.ref(instance)
         name = instance.name
-
         # First insert this instrument in the record of *all* instruments
         # making sure its name is unique
         existing_wr = cls._all_instruments.get(name)

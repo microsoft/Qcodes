@@ -35,11 +35,12 @@ class InstrumentMetaclass(type):
         else:
             warnings.warn('Multiprocessing is in beta, use at own risk',
                           UserWarning)
+
             instrument = RemoteInstrument(*args, instrument_class=cls,
                                           server_name=server_name, **kwargs)
 
-        # for RemoteInstrument, we want to record this instance with the
-        # class that it proxies, not with RemoteInstrument itself
-        # cls.record_instance(instrument)
+            # for RemoteInstrument, we want to record this instance with the
+            # class that it proxies, not with RemoteInstrument itself
+            cls.record_instance(instrument)
 
         return instrument
