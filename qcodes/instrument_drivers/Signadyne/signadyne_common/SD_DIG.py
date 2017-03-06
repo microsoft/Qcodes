@@ -55,7 +55,7 @@ class SD_DIG(Instrument):
                 #vals=, # TODO: Create a validator to set min,max to be -3,+3 V (non-integer)
                 # Configure this to make sense, needs channel and PR number
                 set_cmd=partial(SD_AIN.channelTriggerConfig, 
-                                analogTriggerMode=current_trigger_mode) ,
+                                analogTriggerMode=current_trigger_mode),
                 get_cmd=None,
                 docstring='The trigger mode for channel {}'.format(n_channels))
 
@@ -68,8 +68,4 @@ class SD_DIG(Instrument):
                 set_cmd=partial(SD_AIN.channelPrescalerConfig,  nChannel=n),
                 get_cmd=None,
                 docstring='The sampling frequency prescaler for channel {}'.format(n_channels))
-        
-    # Wrapper for the DAQconfig function within SD_AIN
-    def DAQ_config(channel, pointsPerCycle, nCycles, triggerDelay, triggerMode):
-        SD_AIN.DAQconfig(channel, pointsPerCycle, nCycles, triggerDelay, triggerMode)
-        
+
