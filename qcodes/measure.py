@@ -71,9 +71,6 @@ class Measure(Metadatable):
             a DataSet object containing the results of the measurement
         """
 
-        # background is not configurable, would be weird to run this in the bg
-        background = False
-
         data_set = self._dummyLoop.get_data_set(data_manager=data_manager,
                                                 **kwargs)
 
@@ -83,7 +80,7 @@ class Measure(Metadatable):
         data_set.location = False
 
         # run the measurement as if it were a Loop
-        self._dummyLoop.run(background=background, use_threads=use_threads,
+        self._dummyLoop.run(use_threads=use_threads,
                             station=station, quiet=True)
 
         # look for arrays that are unnecessarily nested, and un-nest them
@@ -128,7 +125,7 @@ class Measure(Metadatable):
         # puts in a 'loop' section that we need to replace with 'measurement'
         # but we use the info from 'loop' to ensure consistency and avoid
         # duplication.
-        LOOP_SNAPSHOT_KEYS = ['background', 'ts_start', 'ts_end',
+        LOOP_SNAPSHOT_KEYS = ['ts_start', 'ts_end',
                               'use_data_manager', 'use_threads']
         data_set.add_metadata({'measurement': {
             k: data_set.metadata['loop'][k] for k in LOOP_SNAPSHOT_KEYS
