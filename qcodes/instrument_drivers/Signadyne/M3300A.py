@@ -38,6 +38,6 @@ class M3300A(SD_DIG, SD_AWG):
           A lot.
 
         """
-        super(SD_DIG, self).__init__(8)
-        super(SD_AWG, self).__init__(8)
+        super(SD_DIG, self).__init__(n_channels=8)
+        super(SD_AWG, self).__init__(n_channels=8)
 
