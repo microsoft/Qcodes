@@ -344,7 +344,7 @@ class ATS9360Controller(AcquisitionController):
             recordA = np.uint16(np.mean(channelAData, axis=1, keepdims=True) /
                                 buffers_per_acquisition)
         else:
-            recordA = np.uint16(channelAData)/buffers_per_acquisition
+            recordA = np.uint16(channelAData/buffers_per_acquisition)
 
         recordA = self._to_volts(recordA)
 
