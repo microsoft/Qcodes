@@ -1,35 +1,19 @@
 """DataSet class and factory functions."""
 
-from enum import Enum
 import time
 import logging
 from traceback import format_exc
 from copy import deepcopy
 from collections import OrderedDict
 
-from .manager import get_data_manager, NoData
 from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
 from .location import FormatLocation
 from qcodes.utils.helpers import DelegateAttributes, full_class, deep_update
 
 
-class DataMode(Enum):
-
-    """Server connection modes supported by a DataSet."""
-
-    LOCAL = 1
-    PUSH_TO_SERVER = 2
-    PULL_FROM_SERVER = 3
-
-
-SERVER_MODES = set((DataMode.PULL_FROM_SERVER, DataMode.PUSH_TO_SERVER))
-
-
 def new_data(location=None, loc_record=None, name=None, overwrite=False,
-             io=None, data_manager=False, mode=DataMode.LOCAL, **kwargs):
-    # NOTE(giulioungaretti): leave this docstrings as it is, because
-    # documenting the types is silly in this case.
+             io=None, **kwargs):
     """
     Create a new DataSet.
 
@@ -61,24 +45,6 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
             says the root data directory is the current working directory, ie
             where you started the python session.
 
-        data_manager (Optional[bool]): use a manager for the
-            ``DataServer`` that offloads storage and syncing of this Defaults
-            to  ``False`` i.e. this ``DataSet`` will store itself without extra
-            processes. Set to ``True`` to use the default from
-            ``get_data_manager()``.
-
-        mode (DataMode, optional): connection type to the ``DataServer``.
-
-            - ``DataMode.LOCAL``: this DataSet doesn't communicate across
-              processes.
-            - ``DataMode.PUSH_TO_SERVER``: no local copy of data, just pushes
-              each measurement to a ``DataServer``.
-            - ``DataMode.PULL_FROM_SERVER``: pulls changes from the
-              ``DataServer`` on calling ``self.sync()``. Reverts to local if
-              and when it stops being the live measurement.
-
-            Default ``DataMode.LOCAL``.
-
         arrays (Optional[List[qcodes.DataArray]): arrays to add to the DataSet.
                 Can be added later with ``self.add_array(array)``.
 
@@ -86,11 +52,8 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
             write (and read) with. Default ``DataSet.default_formatter`` which
             is initially ``GNUPlotFormat()``.
 
-        write_period (float or None, optional): Only if ``mode=LOCAL``, seconds
-            between saves to disk. If not ``LOCAL``, the ``DataServer`` handles
-            this and generally writes more often. Use None to disable writing
-            from calls to ``self.store``. Default 5.
-
+        write_period (float or None, optional):seconds
+            between saves to disk.
     Returns:
         A new ``DataSet`` object ready for storing new data in.
     """
@@ -111,22 +74,12 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
     if location and (not overwrite) and io.list(location):
         raise FileExistsError('"' + location + '" already has data')
 
-    if data_manager is True:
-        data_manager = get_data_manager()
-    else:
-        if mode != DataMode.LOCAL:
-            raise ValueError('DataSets without a data_manager must be local')
-
-    return DataSet(location=location, io=io, data_manager=data_manager,
-                   mode=mode, **kwargs)
+    return DataSet(location=location, io=io, **kwargs)
 
 
-def load_data(location=None, data_manager=None, formatter=None, io=None):
+def load_data(location=None, formatter=None, io=None):
     """
     Load an existing DataSet.
-
-    The resulting ``DataSet.mode`` is determined automatically from location:
-    PULL_FROM_SERVER if this is the live DataSet, otherwise LOCAL
 
     Args:
         location (str, optional): the location to load from. Default is the
@@ -134,13 +87,6 @@ def load_data(location=None, data_manager=None, formatter=None, io=None):
             Note that the full path to or physical location of the data is a
             combination of io + location. the default ``DiskIO`` sets the base
             directory, which this location is a relative path inside.
-
-        data_manager (DataManager or False, optional): manager for the
-            ``DataServer`` that offloads storage and syncing of this
-            ``DataSet``. Usually omitted (default None) to use the default
-            from ``get_data_manager()``. If ``False``, this ``DataSet`` will
-            store itself. ``load_data`` will not start a DataManager but may
-            query an existing one to determine (and pull) the live data.
 
         formatter (Formatter, optional): sets the file format/structure to
             read with. Default ``DataSet.default_formatter`` which
@@ -154,39 +100,14 @@ def load_data(location=None, data_manager=None, formatter=None, io=None):
     Returns:
         A new ``DataSet`` object loaded with pre-existing data.
     """
-    if data_manager is None:
-        data_manager = get_data_manager(only_existing=True)
-
-    if location is None:
-        if not data_manager:
-            raise RuntimeError('Live data requested but DataManager does '
-                               'not exist or was requested not to be used')
-
-        return _get_live_data(data_manager)
-
-    elif location is False:
+    if location is False:
         raise ValueError('location=False means a temporary DataSet, '
                          'which is incompatible with load_data')
 
-    elif (data_manager and
-            location == data_manager.ask('get_data', 'location')):
-        return _get_live_data(data_manager)
-
-    else:
-        data = DataSet(location=location, formatter=formatter, io=io,
-                       mode=DataMode.LOCAL)
-        data.read_metadata()
-        data.read()
-        return data
-
-
-def _get_live_data(data_manager):
-    live_data = data_manager.ask('get_data')
-    if live_data is None or isinstance(live_data, NoData):
-        raise RuntimeError('DataManager has no live data')
-
-    live_data.mode = DataMode.PULL_FROM_SERVER
-    return live_data
+    data = DataSet(location=location, formatter=formatter, io=io)
+    data.read_metadata()
+    data.read()
+    return data
 
 
 class DataSet(DelegateAttributes):
@@ -211,24 +132,6 @@ class DataSet(DelegateAttributes):
             Default ``DataSet.default_io`` is initially ``DiskIO('.')`` which
             says the root data directory is the current working directory, ie
             where you started the python session.
-
-        data_manager (Optional[bool]): use a manager for the
-            ``DataServer`` that offloads storage and syncing of this Defaults
-            to  ``False`` i.e. this ``DataSet`` will store itself without extra
-            processes.  Set to ``True`` to use the default from
-            ``get_data_manager()``.
-
-        mode (DataMode, optional): connection type to the ``DataServer``.
-
-            - ``DataMode.LOCAL``: this DataSet doesn't communicate across
-              processes.
-            - ``DataMode.PUSH_TO_SERVER``: no local copy of data, just pushes
-              each measurement to a ``DataServer``.
-            - ``DataMode.PULL_FROM_SERVER``: pulls changes from the
-              ``DataServer`` on calling ``self.sync()``. Reverts to local if
-              and when it stops being the live measurement.
-
-            Default to ``DataMode.LOCAL``.
 
         arrays (Optional[List[qcodes.DataArray]): arrays to add to the DataSet.
                 Can be added later with ``self.add_array(array)``.
@@ -265,8 +168,8 @@ class DataSet(DelegateAttributes):
 
     background_functions = OrderedDict()
 
-    def __init__(self, location=None, mode=DataMode.LOCAL, arrays=None,
-                 data_manager=False, formatter=None, io=None, write_period=5):
+    def __init__(self, location=None, arrays=None, formatter=None, io=None,
+                 write_period=5):
         if location is False or isinstance(location, str):
             self.location = location
         else:
@@ -289,91 +192,9 @@ class DataSet(DelegateAttributes):
             for array in arrays:
                 self.add_array(array)
 
-        if data_manager is True and mode in SERVER_MODES:
-            data_manager = get_data_manager()
-
-        if mode == DataMode.LOCAL:
-            self._init_local()
-        elif mode == DataMode.PUSH_TO_SERVER:
-            self._init_push_to_server(data_manager)
-        elif mode == DataMode.PULL_FROM_SERVER:
-            self._init_live(data_manager)
-        else:
-            raise ValueError('unrecognized DataSet mode', mode)
-
-    def _init_local(self):
-        self.mode = DataMode.LOCAL
-
         if self.arrays:
             for array in self.arrays.values():
                 array.init_data()
-
-    def _init_push_to_server(self, data_manager):
-        self.mode = DataMode.PUSH_TO_SERVER
-
-        # If some code was not available when data_manager was started,
-        # we can't unpickle it on the other end.
-        # So we'll try, then restart if this error occurs, then try again.
-        #
-        # This still has a pitfall, if code has been *changed* since
-        # starting the server, it will still have the old version and
-        # everything will look fine but it won't have the new behavior.
-        # If the user does that, they need to manually restart the server,
-        # using:
-        #     data_manager.restart()
-        try:
-            data_manager.ask('new_data', self)
-        except AttributeError:
-            data_manager.restart()
-            data_manager.ask('new_data', self)
-
-        # need to set data_manager *after* sending to data_manager because
-        # we can't (and shouldn't) send data_manager itself through a queue
-        self.data_manager = data_manager
-
-    def init_on_server(self):
-        """
-        Configure this DataSet as the DataServer copy.
-
-        Should be run only by the DataServer itself.
-        """
-        if not self.arrays:
-            raise RuntimeError('A server-side DataSet needs DataArrays.')
-
-        self._init_local()
-
-    def _init_live(self, data_manager):
-        self.mode = DataMode.PULL_FROM_SERVER
-        self.data_manager = data_manager
-        with data_manager.query_lock:
-            if self.is_on_server:
-                live_obj = data_manager.ask('get_data')
-                self.arrays = live_obj.arrays
-            else:
-                self._init_local()
-
-    @property
-    def is_live_mode(self):
-        """
-        Indicate whether this DataSet thinks it is live in the DataServer.
-
-        Does not actually talk to the DataServer or sync with it.
-        """
-        return self.mode in SERVER_MODES and self.data_manager and True
-
-    @property
-    def is_on_server(self):
-        """
-        Check whether this DataSet is actually live in the DataServer.
-
-        If it thought it was but isn't, convert it to mode=LOCAL
-        """
-        if not self.is_live_mode or self.location is False:
-            return False
-
-        with self.data_manager.query_lock:
-            live_location = self.data_manager.ask('get_data', 'location')
-            return self.location == live_location
 
     def sync(self):
         """
@@ -391,39 +212,9 @@ class DataSet(DelegateAttributes):
         # changed (and I guess throw an error if both did? Would be cool if we
         # could find a robust and intuitive way to make modifications to the
         # version on the DataServer from the main copy)
-        if not self.is_live_mode:
-            # LOCAL DataSet - no need to sync just use local data
-            return False
-            # TODO - for remote live plotting, maybe set some timestamp
-            # threshold and call it static after it's been dormant a long time?
-            # I'm thinking like a minute, or ten? Maybe it's configurable?
 
-        with self.data_manager.query_lock:
-            if self.is_on_server:
-                synced_indices = {
-                    array_id: array.get_synced_index()
-                    for array_id, array in self.arrays.items()
-                }
-
-                changes = self.data_manager.ask('get_changes', synced_indices)
-
-                for array_id, array_changes in changes.items():
-                    self.arrays[array_id].apply_changes(**array_changes)
-
-                measuring = self.data_manager.ask('get_measuring')
-                if not measuring:
-                    # we must have *just* stopped measuring
-                    # but the DataSet is still on the server,
-                    # so we got the data, and don't need to read.
-                    self.mode = DataMode.LOCAL
-                    return False
-                return True
-            else:
-                # this DataSet *thought* it was on the server, but it wasn't,
-                # so we haven't synced yet and need to read from storage
-                self.mode = DataMode.LOCAL
-                self.read()
-                return False
+        # LOCAL DataSet - no need to sync just use local data
+        return False
 
     def fraction_complete(self):
         """
@@ -582,9 +373,6 @@ class DataSet(DelegateAttributes):
         """
         Insert data into one or more of our DataArrays.
 
-        If in ``PUSH_TO_SERVER`` mode, this is where we do that!
-        Otherwise we also periodically trigger a write to storage.
-
         Args:
             loop_indices (tuple): the indices within whatever loops we are
                 inside. May have fewer dimensions than some of the arrays
@@ -594,23 +382,13 @@ class DataSet(DelegateAttributes):
                 array_ids, and values are single numbers or entire slices
                 to insert into that array.
          """
-        if self.mode == DataMode.PUSH_TO_SERVER:
-            # Defers to the copy on the dataserver to call this identical
-            # function
-            self.data_manager.write('store_data', loop_indices, ids_values)
-        elif self.mode == DataMode.LOCAL:
-            # You will always end up in this block, either in the copy
-            # on the server (if you hit the if statement above) or else here
-            for array_id, value in ids_values.items():
-                self.arrays[array_id][loop_indices] = value
-            self.last_store = time.time()
-            if (self.write_period is not None and
-                    time.time() > self.last_write + self.write_period):
-                self.write()
-                self.last_write = time.time()
-        else:  # in PULL_FROM_SERVER mode; store() isn't legal
-            raise RuntimeError('This object is pulling from a DataServer, '
-                               'so data insertion is not allowed.')
+        for array_id, value in ids_values.items():
+            self.arrays[array_id][loop_indices] = value
+        self.last_store = time.time()
+        if (self.write_period is not None and
+                time.time() > self.last_write + self.write_period):
+            self.write()
+            self.last_write = time.time()
 
     def default_parameter_name(self, paramname='amplitude'):
         """ Return name of default parameter for plotting
@@ -692,10 +470,6 @@ class DataSet(DelegateAttributes):
         Args:
             write_metadata (bool): write the metadata to disk
         """
-        if self.mode != DataMode.LOCAL:
-            raise RuntimeError('This object is connected to a DataServer, '
-                               'which handles writing automatically.')
-
         if self.location is False:
             return
 
@@ -783,20 +557,11 @@ class DataSet(DelegateAttributes):
         Also closes the data file(s), if the ``Formatter`` we're using
         supports that.
         """
-        if self.mode == DataMode.PUSH_TO_SERVER:
-            # Just like .store, if this DataSet is on the DataServer,
-            # we defer to the copy there and execute this same method.
-            self.data_manager.ask('finalize_data')
-        elif self.mode == DataMode.LOCAL:
-            # You will always end up in this block, either in the copy
-            # on the server (if you hit the if statement above) or else here
-            self.write()
+        self.write()
 
-            if hasattr(self.formatter, 'close_file'):
-                self.formatter.close_file(self)
-        else:
-            raise RuntimeError('This mode does not allow finalizing',
-                               self.mode)
+        if hasattr(self.formatter, 'close_file'):
+            self.formatter.close_file(self)
+
         self.save_metadata()
 
     def snapshot(self, update=False):
@@ -833,8 +598,7 @@ class DataSet(DelegateAttributes):
         """Rich information about the DataSet and contained arrays."""
         out = type(self).__name__ + ':'
 
-        attrs = [['mode', self.mode],
-                 ['location', repr(self.location)]]
+        attrs = [['location', repr(self.location)]]
         attr_template = '\n   {:8} = {}'
         for var, val in attrs:
             out += attr_template.format(var, val)

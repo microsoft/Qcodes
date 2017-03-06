@@ -8,7 +8,7 @@ import logging
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager, NoData
 from qcodes.data.io import DiskIO
-from qcodes.data.data_set import load_data, new_data, DataMode, DataSet
+from qcodes.data.data_set import load_data, new_data, DataSet
 from qcodes.process.helpers import kill_processes
 from qcodes.utils.helpers import LogCapture
 from qcodes import active_children
@@ -287,19 +287,6 @@ class TestLoadData(TestCase):
     def setUp(self):
         kill_processes()
 
-    def test_no_live_data(self):
-        # live data with no DataManager at all
-        with self.assertRaises(RuntimeError):
-            load_data()
-        self.assertEqual(len(active_children()), 0)
-
-        # now make a DataManager and try again
-        get_data_manager()
-        self.assertEqual(len(active_children()), 1)
-        # same result but different code path
-        with self.assertRaises(RuntimeError):
-            load_data()
-
     def test_no_saved_data(self):
         with self.assertRaises(IOError):
             load_data('_no/such/file_')
@@ -308,34 +295,11 @@ class TestLoadData(TestCase):
         with self.assertRaises(ValueError):
             load_data(False)
 
-    def test_get_live(self):
-        loc = 'live from New York!'
-
-        class MockLive:
-            pass
-
-        live_data = MockLive()
-
-        dm = MockDataManager()
-        dm.location = loc
-        dm.live_data = live_data
-
-        data = load_data(data_manager=dm, location=loc)
-        self.assertEqual(data, live_data)
-
-        for nd in (None, NoData()):
-            dm.live_data = nd
-            with self.assertRaises(RuntimeError):
-                load_data(data_manager=dm, location=loc)
-            with self.assertRaises(RuntimeError):
-                load_data(data_manager=dm)
-
     def test_get_read(self):
         dm = MockDataManager()
         dm.location = 'somewhere else'
 
-        data = load_data(formatter=MockFormatter(), data_manager=dm,
-                         location='here!')
+        data = load_data(formatter=MockFormatter(), location='here!')
         self.assertEqual(data.has_read_data, True)
         self.assertEqual(data.has_read_metadata, True)
 
@@ -393,15 +357,10 @@ class TestNewData(TestCase):
         io = MatchIO([1])
 
         with self.assertRaises(FileExistsError):
-            new_data(location='somewhere', io=io, data_manager=False)
+            new_data(location='somewhere', io=io)
 
-        data = new_data(location='somewhere', io=io, overwrite=True,
-                        data_manager=False)
+        data = new_data(location='somewhere', io=io, overwrite=True,)
         self.assertEqual(data.location, 'somewhere')
-
-    def test_mode_error(self):
-        with self.assertRaises(ValueError):
-            new_data(mode=DataMode.PUSH_TO_SERVER, data_manager=False)
 
     def test_location_functions(self):
         def my_location(io, record):
@@ -413,14 +372,12 @@ class TestNewData(TestCase):
 
         DataSet.location_provider = my_location
 
-        self.assertEqual(new_data(data_manager=False).location, 'data/LOOP!')
-        self.assertEqual(new_data(data_manager=False, name='cheese').location,
-                         'data/cheese')
+        self.assertEqual(new_data().location, 'data/LOOP!')
+        self.assertEqual(new_data(name='cheese').location, 'data/cheese')
 
-        data = new_data(data_manager=False, location=my_location2)
+        data = new_data(location=my_location2)
         self.assertEqual(data.location, 'data/loop?/folder')
-        data = new_data(data_manager=False, location=my_location2,
-                        name='iceCream')
+        data = new_data(location=my_location2, name='iceCream')
         self.assertEqual(data.location, 'data/iceCream/folder')
 
 
@@ -436,87 +393,6 @@ class TestDataSet(TestCase):
         # wrong type
         with self.assertRaises(ValueError):
             DataSet(location=42)
-
-        # OK to have location=False, but wrong mode
-        with self.assertRaises(ValueError):
-            DataSet(location=False, mode='happy')
-
-    @patch('qcodes.data.data_set.get_data_manager')
-    def test_from_server(self, gdm_mock):
-        mock_dm = MockDataManager()
-        gdm_mock.return_value = mock_dm
-        mock_dm.location = 'Mars'
-        mock_dm.live_data = MockLive()
-
-        # wrong location or False location - converts to local
-        data = DataSet(location='Jupiter', data_manager=True, mode=DataMode.PULL_FROM_SERVER)
-        self.assertEqual(data.mode, DataMode.LOCAL)
-
-        data = DataSet(location=False,  data_manager=True, mode=DataMode.PULL_FROM_SERVER)
-        self.assertEqual(data.mode, DataMode.LOCAL)
-
-        # location matching server - stays in server mode
-        data = DataSet(location='Mars',  data_manager=True, mode=DataMode.PULL_FROM_SERVER,
-                       formatter=MockFormatter())
-        self.assertEqual(data.mode, DataMode.PULL_FROM_SERVER)
-        self.assertEqual(data.arrays, MockLive.arrays)
-
-        # cannot write except in LOCAL mode
-        with self.assertRaises(RuntimeError):
-            data.write()
-
-        # cannot finalize in PULL_FROM_SERVER mode
-        with self.assertRaises(RuntimeError):
-            data.finalize()
-
-        # now test when the server says it's not there anymore
-        mock_dm.location = 'Saturn'
-        data.sync()
-        self.assertEqual(data.mode, DataMode.LOCAL)
-        self.assertEqual(data.has_read_data, True)
-
-        # now it's LOCAL so we *can* write.
-        data.write()
-        self.assertEqual(data.has_written_data, True)
-
-        # location=False: write, read and sync are noops.
-        data.has_read_data = False
-        data.has_written_data = False
-        data.location = False
-        data.write()
-        data.read()
-        data.sync()
-        self.assertEqual(data.has_read_data, False)
-        self.assertEqual(data.has_written_data, False)
-
-    @patch('qcodes.data.data_set.get_data_manager')
-    def test_to_server(self, gdm_mock):
-        mock_dm = MockDataManager()
-        mock_dm.needs_restart = True
-        gdm_mock.return_value = mock_dm
-
-        data = DataSet(location='Venus', data_manager=True, mode=DataMode.PUSH_TO_SERVER)
-        self.assertEqual(mock_dm.needs_restart, False, data)
-        self.assertEqual(mock_dm.data_set, data)
-        self.assertEqual(data.data_manager, mock_dm)
-        self.assertEqual(data.mode, DataMode.PUSH_TO_SERVER)
-
-        # cannot write except in LOCAL mode
-        with self.assertRaises(RuntimeError):
-            data.write()
-
-        # now do what the DataServer does with this DataSet: init_on_server
-        # fails until there is an array
-        with self.assertRaises(RuntimeError):
-            data.init_on_server()
-
-        data.add_array(MockArray())
-        data.init_on_server()
-        self.assertEqual(data.noise.ready, True)
-
-        # we can only add a given array_id once
-        with self.assertRaises(ValueError):
-            data.add_array(MockArray())
 
     def test_write_copy(self):
         data = DataSet1D(location=False)

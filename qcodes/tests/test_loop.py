@@ -83,7 +83,6 @@ class TestLoop(TestCase):
         active_loop = loop
         data = active_loop.run_temp()
         expected = ('DataSet:\n'
-                    '   mode     = DataMode.LOCAL\n'
                     '   location = False\n'
                     '   <Type>   | <array_id> | <array.name> | <array.shape>\n'
                     '   Setpoint | p1_set     | p1           | (2,)\n'
@@ -402,7 +401,6 @@ class TestLoop(TestCase):
             },
             'loop': {
                 'use_threads': False,
-                'use_data_manager': False,
                 '__class__': 'qcodes.loops.ActiveLoop',
                 'sweep_values': {
                     'parameter': p1snap,
@@ -482,7 +480,7 @@ class Test_halt(TestCase):
         # because loop.run will not return.
         data = loop.get_data_set(location=False)
 
-        loop.run(data_manager=False, quiet=True)
+        loop.run(quiet=True)
         self.assertEqual(repr(data.p1.tolist()), repr(self.res))
 
 

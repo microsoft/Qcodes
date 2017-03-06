@@ -136,8 +136,7 @@ class TestHDF5_Format(TestCase):
         # # added to station to test snapshot at a later stage
         loop = Loop(MockPar.x[-100:100:20]).each(MockPar.skewed_parabola)
         data1 = loop.run(name='MockLoop_hdf5_test',
-                         formatter=self.formatter,
-                         data_manager=False)
+                         formatter=self.formatter)
         data2 = DataSet(location=data1.location, formatter=self.formatter)
         data2.read()
         for key in data2.arrays.keys():
@@ -158,8 +157,7 @@ class TestHDF5_Format(TestCase):
         loop = Loop(MockPar.x[-100:100:20]).loop(
             MockPar.y[-50:50:10]).each(MockPar.skewed_parabola)
         data1 = loop.run(name='MockLoop_hdf5_test',
-                         formatter=self.formatter,
-                         data_manager=False)
+                         formatter=self.formatter)
         data2 = DataSet(location=data1.location, formatter=self.formatter)
         data2.read()
         for key in data2.arrays.keys():

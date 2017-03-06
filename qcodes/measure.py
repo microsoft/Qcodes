@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from qcodes.instrument.parameter import ManualParameter
-from qcodes.loops import Loop, USE_MP
+from qcodes.loops import Loop
 from qcodes.actions import _actions_snapshot
 from qcodes.utils.helpers import full_class
 from qcodes.utils.metadata import Metadatable
@@ -29,11 +29,9 @@ class Measure(Metadatable):
         """
         Wrapper to run this measurement as a temporary data set
         """
-        return self.run(quiet=True, data_manager=False, location=False,
-                        **kwargs)
+        return self.run(quiet=True, location=False, **kwargs)
 
-    def run(self, use_threads=False, quiet=False, data_manager=USE_MP,
-            station=None, **kwargs):
+    def run(self, use_threads=False, quiet=False, station=None, **kwargs):
         """
         Run the actions in this measurement and return their data as a DataSet
 
@@ -71,8 +69,7 @@ class Measure(Metadatable):
             a DataSet object containing the results of the measurement
         """
 
-        data_set = self._dummyLoop.get_data_set(data_manager=data_manager,
-                                                **kwargs)
+        data_set = self._dummyLoop.get_data_set(**kwargs)
 
         # set the DataSet to local for now so we don't save it, since
         # we're going to massage it afterward
@@ -125,8 +122,7 @@ class Measure(Metadatable):
         # puts in a 'loop' section that we need to replace with 'measurement'
         # but we use the info from 'loop' to ensure consistency and avoid
         # duplication.
-        LOOP_SNAPSHOT_KEYS = ['ts_start', 'ts_end',
-                              'use_data_manager', 'use_threads']
+        LOOP_SNAPSHOT_KEYS = ['ts_start', 'ts_end', 'use_threads']
         data_set.add_metadata({'measurement': {
             k: data_set.metadata['loop'][k] for k in LOOP_SNAPSHOT_KEYS
         }})

@@ -25,7 +25,6 @@ class TestMeasure(TestCase):
         meta = data.metadata['measurement']
         self.assertEqual(meta['__class__'], 'qcodes.measure.Measure')
         self.assertEqual(len(meta['actions']), 1)
-        self.assertFalse(meta['use_data_manager'])
         self.assertFalse(meta['use_threads'])
 
         ts_start = datetime.strptime(meta['ts_start'], '%Y-%m-%d %H:%M:%S')

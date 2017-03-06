@@ -50,12 +50,10 @@ from datetime import datetime
 import logging
 import time
 import numpy as np
-import warnings
 
 from qcodes.station import Station
-from qcodes.data.data_set import new_data, DataMode
+from qcodes.data.data_set import new_data
 from qcodes.data.data_array import DataArray
-from qcodes.data.manager import get_data_manager
 from qcodes.utils.helpers import wait_secs, full_class, tprint
 from qcodes.utils.metadata import Metadatable
 
@@ -64,13 +62,6 @@ from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
 
 
 log = logging.getLogger(__name__)
-USE_MP=False
-
-
-def _clear_data_manager():
-    dm = get_data_manager(only_existing=True)
-    if dm and dm.ask('get_measuring'):
-        dm.ask('finalize_data')
 
 
 class Loop(Metadatable):
@@ -240,8 +231,7 @@ class Loop(Metadatable):
         shortcut to run a loop in the foreground as a temporary dataset
         using the default measurement set
         """
-        return self.run(*args, quiet=True,
-                        data_manager=False, location=False, **kwargs)
+        return self.run(*args, quiet=True, location=False, **kwargs)
 
     def then(self, *actions, overwrite=False):
         """
@@ -585,7 +575,7 @@ class ActiveLoop(Metadatable):
             if hasattr(action, 'set_common_attrs'):
                 action.set_common_attrs(data_set, use_threads)
 
-    def get_data_set(self, data_manager=USE_MP, *args, **kwargs):
+    def get_data_set(self, *args, **kwargs):
         """
         Return the data set for this loop.
 
@@ -618,22 +608,12 @@ class ActiveLoop(Metadatable):
             a DataSet object that we can use to plot
         """
         if self.data_set is None:
-            if data_manager is False:
-                data_mode = DataMode.LOCAL
-            else:
-                warnings.warn("Multiprocessing is in beta, use at own risk",
-                              UserWarning)
-                data_mode = DataMode.PUSH_TO_SERVER
-
-            data_set = new_data(arrays=self.containers(), mode=data_mode,
-                                data_manager=data_manager, *args, **kwargs)
-
+            data_set = new_data(arrays=self.containers(), *args, **kwargs)
             self.data_set = data_set
 
         else:
             has_args = len(kwargs) or len(args)
-            uses_data_manager = (self.data_set.mode != DataMode.LOCAL)
-            if has_args or (uses_data_manager != data_manager):
+            if has_args:
                 raise RuntimeError(
                     'The DataSet for this loop already exists. '
                     'You can only provide DataSet attributes, such as '
@@ -648,12 +628,10 @@ class ActiveLoop(Metadatable):
         especially for use in composite parameters that need to run a Loop
         as part of their get method
         """
-        return self.run(quiet=True, data_manager=USE_MP, location=False,
-                **kwargs)
+        return self.run(quiet=True, location=False, **kwargs)
 
-    def run(self, use_threads=False, quiet=False,
-            data_manager=USE_MP, station=None, progress_interval=False,
-            *args, **kwargs):
+    def run(self, use_threads=False, quiet=False, station=None,
+            progress_interval=False, *args, **kwargs):
         """
         Execute this loop.
 
@@ -662,7 +640,6 @@ class ActiveLoop(Metadatable):
                 back-to-back, execute them in separate threads so they run in
                 parallel (as long as they don't block each other)
             quiet: (default False): set True to not print anything except errors
-            data_manager: set to True to use a DataManager. Default to False.
             station: a Station instance for snapshots (omit to use a previously
                 provided Station, or the default Station)
             progress_interval (default None): show progress of the loop every x
@@ -695,7 +672,7 @@ class ActiveLoop(Metadatable):
         if progress_interval is not False:
             self.progress_interval = progress_interval
 
-        data_set = self.get_data_set(data_manager, *args, **kwargs)
+        data_set = self.get_data_set(*args, **kwargs)
 
         self.set_common_attrs(data_set=data_set, use_threads=use_threads)
 
@@ -710,7 +687,6 @@ class ActiveLoop(Metadatable):
         data_set.add_metadata({'loop': {
             'ts_start': ts,
             'use_threads': use_threads,
-            'use_data_manager': (data_manager is not False)
         }})
 
         data_set.save_metadata()
