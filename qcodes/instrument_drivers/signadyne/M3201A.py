@@ -187,6 +187,21 @@ class Signadyne_M3201A(Instrument):
         value_name = 'clock_sync_frequency'
         return result_parser(value, value_name, verbose)
 
+    def off(self):
+        """
+        Stops the AWGs and sets the waveform of all channels to 'No Signal'
+        """
+
+        for i in [0, 1, 2, 3]:
+            awg_response = self.awg.AWGstop(i)
+            if (isinstance(awg_response, int) and awg_response<0):
+                raise Exception('Error in call to Signadyne AWG '
+                                'error code {}'.format(awg_response))
+            channel_response = self.awg.channelWaveShape(i, -1)
+            if (isinstance(channel_response, int) and channel_response<0):
+                raise Exception('Error in call to Signadyne AWG '
+                                'error code {}'.format(channel_response))
+
     # def get_awg_running(self, verbose=0, awg_number):
     #     """
     #     Returns whether the AWG is running or stopped
