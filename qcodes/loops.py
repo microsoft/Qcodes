@@ -330,12 +330,6 @@ class ActiveLoop(Metadatable):
     The *ActiveLoop* determines what *DataArray*\s it will need to hold the data
     it collects, and it creates a *DataSet* holding these *DataArray*\s
     """
-    # constants for signal_queue
-    HALT = 'HALT LOOP'
-    HALT_DEBUG = 'HALT AND DEBUG'
-
-    # maximum sleep time (secs) between checking the signal_queue for a HALT
-    signal_period = 1
 
     def __init__(self, sweep_values, delay, *actions, then_actions=(),
                  station=None, progress_interval=None, bg_task=None,
@@ -356,10 +350,6 @@ class ActiveLoop(Metadatable):
         # happen - the outer delay happens *after* the inner var gets
         # set to its initial value
         self._nest_first = hasattr(actions[0], 'containers')
-
-        # for sending halt signals to the loop
-        import multiprocessing as mp
-        self.signal_queue = mp.Queue()
 
     def then(self, *actions, overwrite=False):
         """
@@ -582,7 +572,7 @@ class ActiveLoop(Metadatable):
 
         return sp
 
-    def set_common_attrs(self, data_set, use_threads, signal_queue):
+    def set_common_attrs(self, data_set, use_threads):
         """
         set a couple of common attributes that the main and nested loops
         all need to have:
@@ -590,21 +580,10 @@ class ActiveLoop(Metadatable):
         - a queue for communicating with the main process
         """
         self.data_set = data_set
-        self.signal_queue = signal_queue
         self.use_threads = use_threads
         for action in self.actions:
             if hasattr(action, 'set_common_attrs'):
-                action.set_common_attrs(data_set, use_threads, signal_queue)
-
-    def _check_signal(self):
-        while not self.signal_queue.empty():
-            signal_ = self.signal_queue.get()
-            if signal_ == self.HALT:
-                raise _QuietInterrupt('sweep was halted')
-            elif signal_ == self.HALT_DEBUG:
-                raise _DebugInterrupt('sweep was halted')
-            else:
-                raise ValueError('unknown signal', signal_)
+                action.set_common_attrs(data_set, use_threads)
 
     def get_data_set(self, data_manager=USE_MP, *args, **kwargs):
         """
@@ -718,8 +697,7 @@ class ActiveLoop(Metadatable):
 
         data_set = self.get_data_set(data_manager, *args, **kwargs)
 
-        self.set_common_attrs(data_set=data_set, use_threads=use_threads,
-                              signal_queue=self.signal_queue)
+        self.set_common_attrs(data_set=data_set, use_threads=use_threads)
 
         station = station or self.station or Station.default
         if station:
@@ -785,17 +763,16 @@ class ActiveLoop(Metadatable):
             return action
 
     def _run_wrapper(self, *args, **kwargs):
-        try:
-            self._run_loop(*args, **kwargs)
-        except _QuietInterrupt:
-            pass
-        finally:
-            if hasattr(self, 'data_set'):
-                # somehow this does not show up in the data_set returned by
-                # run(), but it is saved to the metadata
-                ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                self.data_set.add_metadata({'loop': {'ts_end': ts}})
-                self.data_set.finalize()
+        # try:
+        self._run_loop(*args, **kwargs)
+        # finally:
+        if hasattr(self, 'data_set'):
+            # TODO (giulioungaretti) WTF?
+            # somehow this does not show up in the data_set returned by
+            # run(), but it is saved to the metadata
+            ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            self.data_set.add_metadata({'loop': {'ts_end': ts}})
+            self.data_set.finalize()
 
     def _run_loop(self, first_delay=0, action_indices=(),
                   loop_indices=(), current_values=(),
@@ -824,77 +801,74 @@ class ActiveLoop(Metadatable):
 
         self.last_task_failed = False
 
-        for i, value in enumerate(self.sweep_values):
-            if self.progress_interval is not None:
-                tprint('loop %s: %d/%d (%.1f [s])' % (
-                    self.sweep_values.name, i, imax, time.time() - t0),
-                    dt=self.progress_interval, tag='outerloop')
+        try:
+            for i, value in enumerate(self.sweep_values):
+                if self.progress_interval is not None:
+                    tprint('loop %s: %d/%d (%.1f [s])' % (
+                        self.sweep_values.name, i, imax, time.time() - t0),
+                        dt=self.progress_interval, tag='outerloop')
 
-            set_val = self.sweep_values.set(value)
+                set_val = self.sweep_values.set(value)
 
-            new_indices = loop_indices + (i,)
-            new_values = current_values + (value,)
-            data_to_store = {}
+                new_indices = loop_indices + (i,)
+                new_values = current_values + (value,)
+                data_to_store = {}
 
-            if hasattr(self.sweep_values, "parameters"):
-                set_name = self.data_set.action_id_map[action_indices]
-                if hasattr(self.sweep_values, 'aggregate'):
-                    value = self.sweep_values.aggregate(*set_val)
-                self.data_set.store(new_indices, {set_name: value})
-                for j, val in enumerate(set_val):
-                    set_index = action_indices + (j+1, )
-                    set_name = (self.data_set.action_id_map[set_index])
-                    data_to_store[set_name] = val
-            else:
-                set_name = self.data_set.action_id_map[action_indices]
-                data_to_store[set_name] = value
+                if hasattr(self.sweep_values, "parameters"):
+                    set_name = self.data_set.action_id_map[action_indices]
+                    if hasattr(self.sweep_values, 'aggregate'):
+                        value = self.sweep_values.aggregate(*set_val)
+                    self.data_set.store(new_indices, {set_name: value})
+                    for j, val in enumerate(set_val):
+                        set_index = action_indices + (j+1, )
+                        set_name = (self.data_set.action_id_map[set_index])
+                        data_to_store[set_name] = val
+                else:
+                    set_name = self.data_set.action_id_map[action_indices]
+                    data_to_store[set_name] = value
 
-            self.data_set.store(new_indices, data_to_store)
+                self.data_set.store(new_indices, data_to_store)
 
-            if not self._nest_first:
-                # only wait the delay time if an inner loop will not inherit it
-                self._wait(delay)
+                if not self._nest_first:
+                    # only wait the delay time if an inner loop will not inherit it
+                    self._wait(delay)
 
-            try:
-                for f in callables:
-                    f(first_delay=delay,
-                      loop_indices=new_indices,
-                      current_values=new_values)
+                try:
+                    for f in callables:
+                        f(first_delay=delay,
+                          loop_indices=new_indices,
+                          current_values=new_values)
 
-                    # after the first action, no delay is inherited
-                    delay = 0
-            except _QcodesBreak:
-                break
+                        # after the first action, no delay is inherited
+                        delay = 0
+                except _QcodesBreak:
+                    break
 
-            # after the first setpoint, delay reverts to the loop delay
-            delay = self.delay
+                # after the first setpoint, delay reverts to the loop delay
+                delay = self.delay
 
-            # now check for a background task and execute it if it's
-            # been long enough since the last time
-            # don't let exceptions in the background task interrupt
-            # the loop
-            # if the background task fails twice consecutively, stop
-            # executing it
-            if self.bg_task is not None:
-                t = time.time()
-                if t - last_task >= self.bg_min_delay:
-                    try:
-                        self.bg_task()
-                    except Exception:
-                        if self.last_task_failed:
-                            self.bg_task = None
-                        self.last_task_failed = True
-                        log.exception("Failed to execute bg task")
+                # now check for a background task and execute it if it's
+                # been long enough since the last time
+                # don't let exceptions in the background task interrupt
+                # the loop
+                # if the background task fails twice consecutively, stop
+                # executing it
+                if self.bg_task is not None:
+                    t = time.time()
+                    if t - last_task >= self.bg_min_delay:
+                        try:
+                            self.bg_task()
+                        except Exception:
+                            if self.last_task_failed:
+                                self.bg_task = None
+                            self.last_task_failed = True
+                            log.exception("Failed to execute bg task")
 
-                    last_task = t
+                        last_task = t
 
-        if self.progress_interval is not None:
-            # final progress note: set dt=-1 so it *always* prints
-            tprint('loop %s DONE: %d/%d (%.1f [s])' % (
-
-                   self.sweep_values.name, i + 1, imax, time.time() - t0),
-                   dt=-1, tag='outerloop')
-
+        except Interrupt:
+            log.debug("Stopping loop cleanly")
+            return
         # run the background task one last time to catch the last setpoint(s)
         if self.bg_task is not None:
             self.bg_task()
@@ -910,20 +884,9 @@ class ActiveLoop(Metadatable):
     def _wait(self, delay):
         if delay:
             finish_clock = time.perf_counter() + delay
-
-            while True:
-                self._check_signal()
-                t = wait_secs(finish_clock)
-                time.sleep(min(t, self.signal_period))
-                if t <= self.signal_period:
-                    break
-        else:
-            self._check_signal()
+            t = wait_secs(finish_clock)
+            time.sleep(t)
 
 
-class _QuietInterrupt(Exception):
-    pass
-
-
-class _DebugInterrupt(Exception):
+class Interrupt(Exception):
     pass

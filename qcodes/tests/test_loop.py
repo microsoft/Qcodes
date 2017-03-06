@@ -1,9 +1,10 @@
 from datetime import datetime
 import time
 from unittest import TestCase
+import numpy as np
 from unittest.mock import patch
 
-from qcodes.loops import Loop, ActiveLoop, _DebugInterrupt
+from qcodes.loops import Loop, Interrupt
 from qcodes.actions import Task, Wait, BreakIf
 from qcodes.station import Station
 from qcodes.data.data_array import DataArray
@@ -450,70 +451,39 @@ class TestLoop(TestCase):
 
 
 class AbortingGetter(ManualParameter):
-    '''
-    A manual parameter that can only be measured a couple of times
+    """
+    A manual parameter that can only be measured n times
     before it aborts the loop that's measuring it.
-
-    You have to attach the queue after construction with set_queue
-    so you can grab it from the loop that uses the parameter.
-    '''
+    """
     def __init__(self, *args, count=1, msg=None, **kwargs):
         self._count = self._initial_count = count
-        self.msg = msg
         # also need a _signal_queue, but that has to be added later
         super().__init__(*args, **kwargs)
 
     def get(self):
         self._count -= 1
         if self._count <= 0:
-            self._signal_queue.put(self.msg)
+            raise Interrupt
         return super().get()
-
-    def set_queue(self, queue):
-        self._signal_queue = queue
 
     def reset(self):
         self._count = self._initial_count
 
 
-class TestSignal(TestCase):
+class Test_halt(TestCase):
     def test_halt(self):
-        p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10),
-                            msg=ActiveLoop.HALT_DEBUG)
-        loop = Loop(p1[1:6:1], 0.005).each(p1)
+        abort_after = 3
+        self.res = list(np.arange(0, abort_after-1, 1.))
+        [self.res.append(float('nan')) for i in range(0, abort_after-1)]
+
+        p1 = AbortingGetter('p1', count=abort_after, vals=Numbers(-10, 10))
+        loop = Loop(p1.sweep(0, abort_after, 1), 0.005).each(p1)
         # we want to test what's in data, so get it ahead of time
         # because loop.run will not return.
         data = loop.get_data_set(location=False)
-        p1.set_queue(loop.signal_queue)
 
-        with self.assertRaises(_DebugInterrupt):
-            # need to use explicit loop.run rather than run_temp
-            # so we can avoid providing location=False twice, which
-            # is an error.
-            loop.run(data_manager=False, quiet=True)
-
-        self.check_data(data)
-
-    def test_halt_quiet(self):
-        p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10),
-                            msg=ActiveLoop.HALT)
-        loop = Loop(p1[1:6:1], 0.005).each(p1)
-        p1.set_queue(loop.signal_queue)
-
-        # does not raise, just quits, but the data set looks the same
-        # as in test_halt
-        data = loop.run_temp()
-        self.check_data(data)
-
-    def check_data(self, data):
-        nan = float('nan')
-        self.assertEqual(data.p1.tolist()[:2], [1, 2])
-        # when NaN is involved, I'll just compare reprs, because NaN!=NaN
-        self.assertEqual(repr(data.p1.tolist()[-2:]), repr([nan, nan]))
-        # because of the way the waits work out, we can get an extra
-        # point measured before the interrupt is registered. But the
-        # test would be valid either way.
-        self.assertIn(repr(data.p1[2]), (repr(nan), repr(3), repr(3.0)))
+        loop.run(data_manager=False, quiet=True)
+        self.assertEqual(repr(data.p1.tolist()), repr(self.res))
 
 
 class TestMetaData(TestCase):
