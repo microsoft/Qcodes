@@ -486,7 +486,8 @@ class ZIUHFLI(Instrument):
         self.sweeper = self.daq.sweep()
         self.sweeper.set('sweep/device', self.device)
         #
-
+        self.scope = self.daq.scopeModule()
+        
         ########################################
         # INSTRUMENT PARAMETERS
 
