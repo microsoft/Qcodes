@@ -361,8 +361,6 @@ class ActiveLoop(Metadatable):
         import multiprocessing as mp
         self.signal_queue = mp.Queue()
 
-        self._monitor = None  # TODO: how to specify this?
-
     def then(self, *actions, overwrite=False):
         """
         Attach actions to be performed after the loop completes.
@@ -912,12 +910,6 @@ class ActiveLoop(Metadatable):
     def _wait(self, delay):
         if delay:
             finish_clock = time.perf_counter() + delay
-
-            if self._monitor:
-                # TODO - perhpas pass self._check_signal in here
-                # so that we can halt within monitor.call if it
-                # lasts a very long time?
-                self._monitor.call(finish_by=finish_clock)
 
             while True:
                 self._check_signal()

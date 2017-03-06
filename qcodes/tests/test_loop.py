@@ -14,18 +14,6 @@ from qcodes.utils.helpers import LogCapture
 from .instrument_mocks import MultiGetter
 
 
-class FakeMonitor:
-    '''
-    when attached to an ActiveLoop as _monitor, records how long
-    the monitor was given to measure
-    '''
-    def __init__(self, delay_array):
-        self.delay_array = delay_array
-
-    def call(self, finish_by=None):
-        self.delay_array.append(finish_by - time.perf_counter())
-
-
 class TestLoop(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -142,28 +130,6 @@ class TestLoop(TestCase):
             self.p2, self.p3).run_temp()
 
         self.assertEqual(data.p2.tolist(), [2])
-
-    def test_tasks_waits(self):
-        delay0 = 0.01
-        delay1 = 0.03
-        loop = Loop(self.p1[1:3:1], delay0).each(
-            Task(self.p2.set, -1),
-            Wait(delay1),
-            self.p2,
-            Task(self.p2.set, 1),
-            self.p2)
-        delay_array = []
-        loop._monitor = FakeMonitor(delay_array)
-        data = loop.run_temp()
-        self.assertEqual(data.p1_set.tolist(), [1, 2])
-        self.assertEqual(data.p2_2.tolist(), [-1, -1])
-        self.assertEqual(data.p2_4.tolist(), [1, 1])
-
-        self.assertEqual(len(delay_array), 4)
-        for i, delay in enumerate(delay_array):
-            target = delay1 if i % 2 else delay0
-            self.assertLessEqual(delay, target)
-            self.assertGreater(delay, target - 0.001)
 
     @patch('time.sleep')
     def test_delay0(self, sleep_mock):
