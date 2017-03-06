@@ -1,21 +1,18 @@
 from unittest import TestCase
-from unittest.mock import patch
 import numpy as np
 import os
 import pickle
 import logging
 
 from qcodes.data.data_array import DataArray
-from qcodes.data.manager import get_data_manager, NoData
 from qcodes.data.io import DiskIO
 from qcodes.data.data_set import load_data, new_data, DataSet
-from qcodes.process.helpers import kill_processes
 from qcodes.utils.helpers import LogCapture
-from qcodes import active_children
 
-from .data_mocks import (MockDataManager, MockFormatter, MatchIO,
-                         MockLive, MockArray, DataSet2D, DataSet1D,
+from .data_mocks import (MockFormatter, MatchIO,
+                         DataSet2D, DataSet1D,
                          DataSetCombined, RecordingMockFormatter)
+
 from .common import strip_qc
 
 
@@ -284,9 +281,6 @@ class TestDataArray(TestCase):
 
 class TestLoadData(TestCase):
 
-    def setUp(self):
-        kill_processes()
-
     def test_no_saved_data(self):
         with self.assertRaises(IOError):
             load_data('_no/such/file_')
@@ -296,9 +290,6 @@ class TestLoadData(TestCase):
             load_data(False)
 
     def test_get_read(self):
-        dm = MockDataManager()
-        dm.location = 'somewhere else'
-
         data = load_data(formatter=MockFormatter(), location='here!')
         self.assertEqual(data.has_read_data, True)
         self.assertEqual(data.has_read_metadata, True)
@@ -346,7 +337,6 @@ class TestNewData(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        kill_processes()
         cls.original_lp = DataSet.location_provider
 
     @classmethod
@@ -382,9 +372,6 @@ class TestNewData(TestCase):
 
 
 class TestDataSet(TestCase):
-
-    def tearDown(self):
-        kill_processes()
 
     def test_constructor_errors(self):
         # no location - only allowed with load_data
