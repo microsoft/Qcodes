@@ -1,262 +1,17 @@
 from datetime import datetime
-import logging
-import multiprocessing as mp
-import numpy as np
 import time
 from unittest import TestCase
 from unittest.mock import patch
 
-from qcodes.loops import (Loop, MP_NAME, get_bg, halt_bg, ActiveLoop,
-                          _DebugInterrupt)
+from qcodes.loops import Loop, ActiveLoop, _DebugInterrupt
 from qcodes.actions import Task, Wait, BreakIf
 from qcodes.station import Station
-from qcodes.data.io import DiskIO
 from qcodes.data.data_array import DataArray
-from qcodes.data.manager import get_data_manager
-from qcodes.instrument.mock import ArrayGetter
-from qcodes.instrument.parameter import Parameter, ManualParameter
-from qcodes.process.helpers import kill_processes
-from qcodes.process.qcodes_process import QcodesProcess
+from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils.validators import Numbers
 from qcodes.utils.helpers import LogCapture
 
-from .instrument_mocks import (AMockModel, MockGates, MockSource, MockMeter,
-                               MultiGetter)
-
-
-class TestMockInstLoop(TestCase):
-    def setUp(self):
-        get_data_manager().restart(force=True)
-        kill_processes()
-        # TODO: figure out what's leaving DataManager in a weird state
-        # and fix it
-        get_data_manager().restart(force=True)
-        time.sleep(0.1)
-
-        self.model = AMockModel()
-
-        self.gates = MockGates(model=self.model, server_name='')
-        self.source = MockSource(model=self.model, server_name='')
-        self.meter = MockMeter(model=self.model, server_name='')
-        self.location = '_loop_test_'
-        self.location2 = '_loop_test2_'
-        self.io = DiskIO('.')
-
-        c1 = self.gates.chan1
-        self.loop = Loop(c1[1:5:1], 0.001).each(c1)
-        self.loop_progress = Loop(c1[1:5:1], 0.001,
-                                  progress_interval=1).each(c1)
-
-        self.assertFalse(self.io.list(self.location))
-        self.assertFalse(self.io.list(self.location2))
-
-    def tearDown(self):
-        for instrument in [self.gates, self.source, self.meter]:
-            instrument.close()
-
-        get_data_manager().close()
-        self.model.close()
-
-        self.io.remove_all(self.location)
-        self.io.remove_all(self.location2)
-
-    def check_empty_data(self, data):
-        expected = repr([float('nan')] * 4)
-        self.assertEqual(repr(data.gates_chan1.tolist()), expected)
-        self.assertEqual(repr(data.gates_chan1_set.tolist()), expected)
-
-    def check_loop_data(self, data):
-        self.assertEqual(data.gates_chan1.tolist(), [1, 2, 3, 4])
-        self.assertEqual(data.gates_chan1_set.tolist(), [1, 2, 3, 4])
-
-        self.assertTrue(self.io.list(self.location))
-
-    def test_background_and_datamanager(self):
-        # make sure that an unpicklable instrument can indeed run in a loop
-        # because the instrument itself is in a server
-
-        # TODO: if we don't save the dataset (location=False) then we can't
-        # sync it when we're done. Should fix that - for now that just means
-        # you can only do in-memory loops if you set data_manager=False
-        # TODO: this is the one place we don't do quiet=True - test that we
-        # really print stuff?
-        data = self.loop.run(location=self.location, background=True, data_manager=True)
-        self.check_empty_data(data)
-
-        # wait for process to finish (ensures that this was run in the bg,
-        # because otherwise there *is* no loop.process)
-        self.loop.process.join()
-
-        data.sync()
-        self.check_loop_data(data)
-
-    def test_local_instrument(self):
-        # a local instrument should work in a foreground loop, but
-        # not in a background loop (should give a RuntimeError)
-        self.gates.close()  # so we don't have two gates with same name
-        gates_local = MockGates(model=self.model, server_name=None)
-        self.gates = gates_local
-        c1 = gates_local.chan1
-        loop_local = Loop(c1[1:5:1], 0.001).each(c1)
-
-        # if spawn, pickle will happen
-        if mp.get_start_method() == "spawn":
-            with self.assertRaises(RuntimeError):
-                loop_local.run(location=self.location,
-                               quiet=True,
-                               background=True)
-        # allow for *nix
-        # TODO(giulioungaretti) see what happens ?
-        # what is the expected beavhiour ?
-        # The RunimError will never be raised here, as the forkmethod
-        # won't try to pickle anything at all.
-        else:
-            logging.error("this should not be allowed, but for now we let it be")
-            loop_local.run(location=self.location, quiet=True)
-
-        data = loop_local.run(location=self.location2, background=False,
-                              quiet=True)
-        self.check_loop_data(data)
-
-    def test_background_no_datamanager(self):
-        # We don't support syncing data from a background process
-        # if not using a datamanager. See warning in ActiveLoop.run()
-        # So we expect the data to be empty even after running.
-        data = self.loop.run(location=self.location,
-                             background=True,
-                             data_manager=False,
-                             quiet=True)
-        self.check_empty_data(data)
-
-        self.loop.process.join()
-
-        data.sync()
-        self.check_empty_data(data)
-
-    def test_foreground_and_datamanager(self):
-        data = self.loop.run(location=self.location, background=False,
-                             quiet=True)
-        self.assertFalse(hasattr(self.loop, 'process'))
-
-        self.check_loop_data(data)
-
-    def test_foreground_no_datamanager_progress(self):
-        data = self.loop_progress.run(location=self.location, background=False,
-                                      data_manager=False, quiet=True)
-        self.assertFalse(hasattr(self.loop, 'process'))
-
-        self.check_loop_data(data)
-
-    @patch('qcodes.loops.tprint')
-    def test_progress_calls(self, tprint_mock):
-        data = self.loop_progress.run(location=self.location, background=False,
-                                      data_manager=False, quiet=True)
-        self.assertFalse(hasattr(self.loop, 'process'))
-
-        self.check_loop_data(data)
-        expected_calls = len(self.loop_progress.sweep_values) + 1
-        self.assertEqual(tprint_mock.call_count, expected_calls)
-
-        # now run again with no progress interval and check that we get no
-        # additional calls
-        data = self.loop_progress.run(location=False, background=False,
-                                      data_manager=False, quiet=True,
-                                      progress_interval=None)
-        self.assertFalse(hasattr(self.loop, 'process'))
-
-        self.check_loop_data(data)
-        self.assertEqual(tprint_mock.call_count, expected_calls)
-
-    def test_foreground_no_datamanager(self):
-        data = self.loop.run(location=self.location, background=False,
-                             data_manager=False, quiet=True)
-        self.assertFalse(hasattr(self.loop, 'process'))
-
-        self.check_loop_data(data)
-
-    def test_enqueue(self):
-        c1 = self.gates.chan1
-        loop = Loop(c1[1:5:1], 0.01).each(c1)
-        data1 = loop.run(location=self.location,
-                         quiet=True,
-                         background=True,
-                         data_manager=True)
-
-        # second running of the loop should be enqueued, blocks until
-        # the first one finishes.
-        # TODO: check what it prints?
-        data2 = loop.run(location=self.location2,
-                         quiet=True,
-                         background=True,
-                         data_manager=True)
-
-        data1.sync()
-        data2.sync()
-        self.assertEqual(data1.gates_chan1.tolist(), [1, 2, 3, 4])
-        for v in data2.gates_chan1:
-            self.assertTrue(np.isnan(v))
-
-        loop.process.join()
-        data2.sync()
-        self.assertEqual(data2.gates_chan1.tolist(), [1, 2, 3, 4])
-
-        # and while we're here, check that running a loop in the
-        # foreground *after* the background clears its .process
-        self.assertTrue(hasattr(loop, 'process'))
-        loop.run_temp()
-        self.assertFalse(hasattr(loop, 'process'))
-
-    def test_sync_no_overwrite(self):
-        # Test fix for 380, this tests that the setpoints are not incorrectly
-        # overwritten by data_set.sync() for this to happen with the original code
-        # the delay must be larger than the write period otherwise sync is a no opt.
-
-        loop = Loop(self.gates.chan1.sweep(0, 1, 1), delay=0.1).each(ArrayGetter(self.meter.amplitude,
-                                                                                 self.gates.chan2[0:1:1], 0.000001))
-        data = loop.get_data_set(name='testsweep', write_period=0.01)
-        _ = loop.with_bg_task(data.sync).run()
-        assert not np.isnan(data.chan2_set).any()
-
-def sleeper(t):
-    time.sleep(t)
-
-
-class TestBG(TestCase):
-    def test_get_halt(self):
-        kill_processes()
-        self.assertIsNone(get_bg())
-
-        p1 = QcodesProcess(name=MP_NAME, target=sleeper, args=(10, ))
-        p1.start()
-        p2 = QcodesProcess(name=MP_NAME, target=sleeper, args=(10, ))
-        p2.start()
-        p1.signal_queue = p2.signal_queue = mp.Queue()
-        qcodes_processes = [p for p in mp.active_children()
-                            if isinstance(p, QcodesProcess)]
-        self.assertEqual(len(qcodes_processes), 2, mp.active_children())
-
-        with self.assertRaises(RuntimeError):
-            get_bg()
-        bg1 = get_bg(return_first=True)
-        self.assertIn(bg1, [p1, p2])
-
-        halt_bg(timeout=0.05)
-        bg2 = get_bg()
-        self.assertIn(bg2, [p1, p2])
-        # is this robust? requires that active_children always returns the same
-        # order, even if it's not the order you started processes in
-        self.assertNotEqual(bg1, bg2)
-
-        self.assertEqual(len(mp.active_children()), 1)
-
-        halt_bg(timeout=0.05)
-        self.assertIsNone(get_bg())
-
-        self.assertEqual(len(mp.active_children()), 0)
-
-        # TODO - test that we print "no loops running"?
-        # at least this shows that it won't raise an error
-        halt_bg()
+from .instrument_mocks import MultiGetter
 
 
 class FakeMonitor:
@@ -278,9 +33,6 @@ class TestLoop(TestCase):
         cls.p2 = ManualParameter('p2', vals=Numbers(-10, 10))
         cls.p3 = ManualParameter('p3', vals=Numbers(-10, 10))
         Station().set_measurement(cls.p2, cls.p3)
-
-    def setUp(self):
-        kill_processes()
 
     def test_nesting(self):
         loop = Loop(self.p1[1:3:1], 0.001).loop(
@@ -402,15 +154,7 @@ class TestLoop(TestCase):
             self.p2)
         delay_array = []
         loop._monitor = FakeMonitor(delay_array)
-
-        # give it a "process" as if it was run in the bg before,
-        # check that this gets cleared
-        loop.process = 'TDD'
-
         data = loop.run_temp()
-
-        self.assertFalse(hasattr(loop, 'process'))
-
         self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.p2_2.tolist(), [-1, -1])
         self.assertEqual(data.p2_4.tolist(), [1, 1])
@@ -690,7 +434,6 @@ class TestLoop(TestCase):
                 'default_measurement': [p2snap, p3snap]
             },
             'loop': {
-                'background': False,
                 'use_threads': False,
                 'use_data_manager': False,
                 '__class__': 'qcodes.loops.ActiveLoop',
@@ -781,7 +524,7 @@ class TestSignal(TestCase):
             # need to use explicit loop.run rather than run_temp
             # so we can avoid providing location=False twice, which
             # is an error.
-            loop.run(background=False, data_manager=False, quiet=True)
+            loop.run(data_manager=False, quiet=True)
 
         self.check_data(data)
 

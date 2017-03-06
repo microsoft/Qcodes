@@ -48,18 +48,15 @@ Supported commands to .set_measurement or .each are:
 
 from datetime import datetime
 import logging
-import multiprocessing as mp
 import time
 import numpy as np
 import warnings
 
-from qcodes import config
 from qcodes.station import Station
 from qcodes.data.data_set import new_data, DataMode
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager
 from qcodes.utils.helpers import wait_secs, full_class, tprint
-from qcodes.process.qcodes_process import QcodesProcess
 from qcodes.utils.metadata import Metadatable
 
 from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
@@ -67,84 +64,13 @@ from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
 
 
 log = logging.getLogger(__name__)
-# Switches off multiprocessing by default, cant' be altered after module
-USE_MP = config.core.legacy_mp
-MP_NAME = 'Measurement'
-
-
-def get_bg(return_first=False):
-    """
-    Find the active background measurement process, if any
-    returns None otherwise.
-
-    Todo:
-        RuntimeError message is really hard to understand.
-    Args:
-        return_first(bool): if there are multiple loops running return the
-                            first anyway.
-    Raises:
-        RuntimeError: if multiple loops are active and return_first is False.
-    Returns:
-        Union[loop, None]: active loop or none if no loops are active
-    """
-    processes = mp.active_children()
-    loops = [p for p in processes if getattr(p, 'name', '') == MP_NAME]
-
-    if len(loops) > 1 and not return_first:
-        raise RuntimeError('Oops, multiple loops are running???')
-
-    if loops:
-        return loops[0]
-
-    # if we got here, there shouldn't be a loop running. Make sure the
-    # data manager, if there is one, agrees!
-    _clear_data_manager()
-    return None
-
-
-def halt_bg(timeout=5, traceback=True):
-    """
-    Stop the active background measurement process, if any.
-
-    Args:
-        timeout (int): seconds to wait for a clean exit before forcibly
-         terminating.
-
-        traceback (bool):  whether to print a traceback at the point of
-         interrupt, for debugging purposes.
-    """
-    loop = get_bg(return_first=True)
-    if not loop:
-        print('No loop running')
-        return
-
-    if traceback:
-        signal_ = ActiveLoop.HALT_DEBUG
-    else:
-        signal_ = ActiveLoop.HALT
-
-    loop.signal_queue.put(signal_)
-    loop.join(timeout)
-
-    if loop.is_alive():
-        loop.terminate()
-        loop.join(timeout/2)
-        print('Background loop did not respond to halt signal, terminated')
-
-    _clear_data_manager()
+USE_MP=False
 
 
 def _clear_data_manager():
     dm = get_data_manager(only_existing=True)
     if dm and dm.ask('get_measuring'):
         dm.ask('finalize_data')
-
-# TODO(giulioungaretti) remove dead code
-# def measure(*actions):
-#     # measure has been moved into Station
-#     # TODO - for all-at-once parameters we want to be able to
-#     # store the output into a DataSet without making a Loop.
-#     pass
 
 
 class Loop(Metadatable):
@@ -314,7 +240,7 @@ class Loop(Metadatable):
         shortcut to run a loop in the foreground as a temporary dataset
         using the default measurement set
         """
-        return self.run(*args, background=False, quiet=True,
+        return self.run(*args, quiet=True,
                         data_manager=False, location=False, **kwargs)
 
     def then(self, *actions, overwrite=False):
@@ -426,22 +352,13 @@ class ActiveLoop(Metadatable):
         self.bg_min_delay = bg_min_delay
         self.data_set = None
 
-        # compile now, but don't save the results
-        # just used for preemptive error checking
-        # if we saved the results, we wouldn't capture nesting
-        # nor would we be able to reuse an ActiveLoop multiple times
-        # within one outer Loop.
-        # TODO: this doesn't work, because _Measure needs the data_set,
-        # which doesn't exist yet - do we want to make a special "dry run"
-        # mode, or is it sufficient to let errors wait until .run()?
-        # self._compile_actions(actions)
-
         # if the first action is another loop, it changes how delays
         # happen - the outer delay happens *after* the inner var gets
         # set to its initial value
         self._nest_first = hasattr(actions[0], 'containers')
 
         # for sending halt signals to the loop
+        import multiprocessing as mp
         self.signal_queue = mp.Queue()
 
         self._monitor = None  # TODO: how to specify this?
@@ -754,18 +671,16 @@ class ActiveLoop(Metadatable):
         especially for use in composite parameters that need to run a Loop
         as part of their get method
         """
-        return self.run(background=False, quiet=True,
-                        data_manager=False, location=False, **kwargs)
+        return self.run(quiet=True, data_manager=USE_MP, location=False,
+                **kwargs)
 
-    def run(self, background=USE_MP, use_threads=False, quiet=False,
+    def run(self, use_threads=False, quiet=False,
             data_manager=USE_MP, station=None, progress_interval=False,
             *args, **kwargs):
         """
         Execute this loop.
 
         Args:
-            background: (default False) run this sweep in a separate process
-                so we can have live plotting and other analysis in the main process
             use_threads: (default False): whenever there are multiple `get` calls
                 back-to-back, execute them in separate threads so they run in
                 parallel (as long as they don't block each other)
@@ -803,20 +718,7 @@ class ActiveLoop(Metadatable):
         if progress_interval is not False:
             self.progress_interval = progress_interval
 
-        prev_loop = get_bg()
-        if prev_loop:
-            if not quiet:
-                print('Waiting for the previous background Loop to finish...',
-                      flush=True)
-            prev_loop.join()
-
         data_set = self.get_data_set(data_manager, *args, **kwargs)
-
-        if background and not getattr(data_set, 'data_manager', None):
-            warnings.warn(
-                'With background=True you must also set data_manager=True '
-                'or you will not be able to sync your DataSet.',
-                UserWarning)
 
         self.set_common_attrs(data_set=data_set, use_threads=use_threads,
                               signal_queue=self.signal_queue)
@@ -831,47 +733,17 @@ class ActiveLoop(Metadatable):
         ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         data_set.add_metadata({'loop': {
             'ts_start': ts,
-            'background': background,
             'use_threads': use_threads,
             'use_data_manager': (data_manager is not False)
         }})
 
         data_set.save_metadata()
 
-        if prev_loop and not quiet:
-            print('...done. Starting ' + (data_set.location or 'new loop'),
-                  flush=True)
-
         try:
-            if background:
-                warnings.warn("Multiprocessing is in beta, use at own risk",
-                              UserWarning)
-                p = QcodesProcess(target=self._run_wrapper, name=MP_NAME)
-                p.is_sweep = True
-                p.signal_queue = self.signal_queue
-                p.start()
-                self.process = p
-
-                # now that the data_set we created has been put in the loop
-                # process, this copy turns into a reader
-                # if you're not using a DataManager, it just stays local
-                # and sync() reads from disk
-                if self.data_set.mode == DataMode.PUSH_TO_SERVER:
-                    self.data_set.mode = DataMode.PULL_FROM_SERVER
-                self.data_set.sync()
-            else:
-                if hasattr(self, 'process'):
-                    # in case this ActiveLoop was run before in the background
-                    del self.process
-
-                self._run_wrapper()
-
-                if self.data_set.mode != DataMode.LOCAL:
-                    self.data_set.sync()
-
+            self._run_wrapper()
             ds = self.data_set
-
         finally:
+
             if not quiet:
                 print(repr(self.data_set))
                 print(datetime.now().strftime('started at %Y-%m-%d %H:%M:%S'))

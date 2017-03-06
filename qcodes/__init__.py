@@ -40,7 +40,7 @@ if config['gui']['notebook'] and config['core']['legacy_mp']:
     from qcodes.widgets.widgets import show_subprocess_widget
 
 from qcodes.station import Station
-from qcodes.loops import get_bg, halt_bg, Loop
+from qcodes.loops import Loop
 from qcodes.measure import Measure
 from qcodes.actions import Task, Wait, BreakIf
 
