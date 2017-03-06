@@ -249,7 +249,7 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
             arraysetpoints = (tuple(np.linspace(start, stop, samples)),)
             base_shape = (len(arraysetpoints[0]),)
         elif not self._average_records:
-            arraysetpoints = tuple(range(self._instrument.records_per_buffer.get() or 0))
+            arraysetpoints = (tuple(range(self._instrument.records_per_buffer.get() or 0)),)
             base_shape = (self._instrument.records_per_buffer.get(),)
         else:
             arraysetpoints = ()
