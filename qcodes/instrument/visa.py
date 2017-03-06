@@ -1,6 +1,5 @@
 """Visa instrument driver based on pyvisa."""
 import visa
-import logging
 
 from .base import Instrument
 import qcodes.utils.validators as vals
@@ -56,26 +55,6 @@ class VisaInstrument(Instrument):
         self.set_address(address)
         self.set_terminator(terminator)
         self.timeout.set(timeout)
-
-    @classmethod
-    def default_server_name(cls, **kwargs):
-        """
-        Get the default server name for this instrument.
-
-        Args:
-            **kwargs: All the kwargs supplied in the constructor.
-
-        Returns:
-            str: The default server name, either 'GPIBServer', 'SerialServer',
-                or 'VisaServer' depending on ``kwargs['address']``.
-        """
-        upper_address = kwargs.get('address', '').upper()
-        if 'GPIB' in upper_address:
-            return 'GPIBServer'
-        elif 'ASRL' in upper_address:
-            return 'SerialServer'
-
-        return 'VisaServer'
 
     def set_address(self, address):
         """

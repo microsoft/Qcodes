@@ -60,12 +60,6 @@ class MockVisaHandle:
 
 
 class TestVisaInstrument(TestCase):
-    def test_default_server_name(self):
-        dsn = VisaInstrument.default_server_name
-        self.assertEqual(dsn(), 'VisaServer')
-        self.assertEqual(dsn(address='Gpib::10'), 'GPIBServer')
-        self.assertEqual(dsn(address='aSRL4'), 'SerialServer')
-
     # error args for set(-10)
     args1 = [
         'be more positive!',
@@ -113,43 +107,6 @@ class TestVisaInstrument(TestCase):
             mv.state.get()
         for arg in self.args3:
             self.assertIn(arg, e.exception.args)
-
-        mv.close()
-
-    def test_ask_write_server(self):
-        # same thing as above but Joe is on a server now...
-        mv = MockVisa('Joe', server_name='')
-
-        # test normal ask and write behavior
-        mv.state.set(2)
-        self.assertEqual(mv.state.get(), 2)
-        mv.state.set(3.4567)
-        self.assertEqual(mv.state.get(), 3.457)  # driver rounds to 3 digits
-
-        # test ask and write errors
-        with self.assertRaises(ValueError) as e:
-            mv.state.set(-10)
-        for arg in self.args1:
-            self.assertIn(repr(arg), e.exception.args[0])
-        self.assertEqual(mv.state.get(), -10)  # set still happened
-
-        # only built-in errors get propagated to the main process as the
-        # same type. Perhaps we could include some more common ones like
-        # this (visa.VisaIOError) in the future...
-        with self.assertRaises(RuntimeError) as e:
-            mv.state.set(0)
-        for arg in self.args2:
-            self.assertIn(repr(arg), e.exception.args[0])
-        # the error type isn't VisaIOError, but it should be in the message
-        self.assertIn('VisaIOError', e.exception.args[0])
-        self.assertIn('VI_ERROR_TMO', e.exception.args[0])
-        self.assertEqual(mv.state.get(), 0)
-
-        mv.state.set(15)
-        with self.assertRaises(ValueError) as e:
-            mv.state.get()
-        for arg in self.args3:
-            self.assertIn(repr(arg), e.exception.args[0])
 
         mv.close()
 

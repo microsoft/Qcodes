@@ -2,10 +2,6 @@
 
 # flake8: noqa (we don't need the "<...> imported but unused" error)
 
-# just for convenience in debugging, so we don't have to
-# separately import multiprocessing
-from multiprocessing import active_children
-
 # config
 
 from qcodes.config import Config
@@ -13,7 +9,6 @@ from qcodes.config import Config
 config = Config()
 
 from qcodes.version import __version__
-from qcodes.process.helpers import set_mp_method
 from qcodes.utils.helpers import in_notebook
 
 # code that should only be imported into the main (notebook) thread
@@ -44,7 +39,6 @@ from qcodes.loops import Loop
 from qcodes.measure import Measure
 from qcodes.actions import Task, Wait, BreakIf
 
-from qcodes.data.manager import get_data_manager
 from qcodes.data.data_set import DataSet, new_data, load_data
 from qcodes.data.location import FormatLocation
 from qcodes.data.data_array import DataArray
@@ -56,7 +50,6 @@ from qcodes.data.io import DiskIO
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.ip import IPInstrument
 from qcodes.instrument.visa import VisaInstrument
-from qcodes.instrument.mock import MockInstrument, MockModel
 
 from qcodes.instrument.function import Function
 from qcodes.instrument.parameter import (

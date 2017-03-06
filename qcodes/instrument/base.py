@@ -1,21 +1,17 @@
 """Instrument base class."""
 import logging
 import time
-import warnings
 import weakref
 import numpy as np
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
-from qcodes.utils.nested_attrs import NestedAttrAccess
 from qcodes.utils.validators import Anything
 from .parameter import StandardParameter
 from .function import Function
-from .metaclass import InstrumentMetaclass
 
 
-class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
-                 metaclass=InstrumentMetaclass):
+class Instrument(Metadatable, DelegateAttributes):
 
     """
     Base class for all QCodes instruments.
@@ -136,21 +132,6 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
             idparts[1] = str(idparts[1])[5:].strip()
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
-
-    @classmethod
-    def default_server_name(cls, **kwargs):
-        """
-        Generate a default name for the server to host this instrument.
-
-        Args:
-            **kwargs: the constructor kwargs, used if necessary to choose a
-                name.
-
-        Returns:
-            str: The default server name for the specific instrument instance
-                we are constructing.
-        """
-        return 'Instruments'
 
     def connect_message(self, idn_param='IDN', begin_time=None):
         """
