@@ -622,7 +622,7 @@ class ActiveLoop(Metadatable):
         elif len(inputs) == len(blanks):
             return inputs
         else:
-            raise ValueError('Wrong number of inputs supplied')
+            raise ValueError('Wrong number of inputs supplied got {} expected {}'.format(len(inputs), len(blanks)))
 
     def _make_setpoint_array(self, shape, i, prev_setpoints, vals, name,
                              label, unit):
