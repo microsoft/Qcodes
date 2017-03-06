@@ -74,9 +74,15 @@ class ATS9360Controller(AcquisitionController):
         self.add_parameter(name='buffers_per_acquisition',
                            alternative='not controllable in this controller',
                            parameter_class=NonSettableDerivedParameter)
-        self.add_parameter(name='records_per_buffer',
-                           alternative='num_avg',
-                           parameter_class=NonSettableDerivedParameter)
+        if average_records:
+            self.add_parameter(name='records_per_buffer',
+                               alternative='num_avg',
+                               parameter_class=NonSettableDerivedParameter)
+        else:
+            self.add_parameter(name='records_per_buffer',
+                               parameter_class=AcqVariablesParam,
+                               default_fn= lambda : 1,
+                               check_and_update_fn= lambda x, **kwargs: True)
         self.add_parameter(name='samples_per_record',
                            alternative='int_time and int_delay',
                            parameter_class=NonSettableDerivedParameter)
@@ -168,10 +174,14 @@ class ATS9360Controller(AcquisitionController):
         if not isinstance(value, int) or value < 1:
             raise ValueError('number of averages must be a positive integer')
 
-        self.records_per_buffer._save_val(value)
-        self.buffers_per_acquisition._save_val(1)
-        self.allocated_buffers._save_val(1)
 
+        if self.acquisition._average_records:
+            self.records_per_buffer._save_val(value)
+            self.buffers_per_acquisition._save_val(1)
+            self.allocated_buffers._save_val(1)
+        else:
+            self.buffers_per_acquisition._save_val(value)
+            self.allocated_buffers._save_val(value)
 
     def _int_delay_default(self):
         """
