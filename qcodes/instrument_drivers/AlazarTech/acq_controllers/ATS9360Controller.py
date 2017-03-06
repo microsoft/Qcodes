@@ -82,7 +82,7 @@ class ATS9360Controller(AcquisitionController):
             self.add_parameter(name='records_per_buffer',
                                parameter_class=AcqVariablesParam,
                                default_fn= lambda : 1,
-                               check_and_update_fn= lambda x, **kwargs: True)
+                               check_and_update_fn=self._update_records_per_buffer)
         self.add_parameter(name='samples_per_record',
                            alternative='int_time and int_delay',
                            parameter_class=NonSettableDerivedParameter)
@@ -132,6 +132,11 @@ class ATS9360Controller(AcquisitionController):
         samples_per_record = helpers.roundup(
             samples_needed, self.samples_divisor)
         self.samples_per_record._save_val(samples_per_record)
+        self.acquisition.set_setpoints_and_labels()
+
+    def _update_records_per_buffer(self, value, **kwargs):
+        # Hack store the value early so its useful for set_setpoints...
+        self.records_per_buffer._save_val(value)
         self.acquisition.set_setpoints_and_labels()
 
     def _update_int_delay(self, value, **kwargs):
