@@ -34,8 +34,8 @@ class SD_DIG(Instrument):
 
         # Create distinct parameters for each of the digitizer channels
         for n in range(n_channels):
-            self.__trigger_mode[n]      = SD_TriggerMode.RISING_EDGE
-            self.__trigger_threshold[n] = 0
+            self.__trigger_mode[self, n]      = SD_TriggerMode.RISING_EDGE
+            self.__trigger_threshold[self, n] = 0
 
             self.add_parameter(
                 'prescaler_{}'.format(n),
@@ -58,7 +58,7 @@ class SD_DIG(Instrument):
             raise ValueError("The specified channel {ch} exceeds the number of channels ({n})".format(ch=channel, n=self.n_channels)
         if (mode not in SD_trigger_modes):
             raise ValueError("The specified mode {mode} does not exist.".format(mode=mode))
-        self.__trigger_mode[channel] = mode
+        self.__trigger_mode[self, channel] = mode
         # TODO: Call the SD library to set the current mode
 
     def get_trigger_mode(channel):
@@ -67,7 +67,7 @@ class SD_DIG(Instrument):
         Args:
             channel (int)       : the input channel you are observing
         """
-        return self.__trigger_mode[channel]
+        return self.__trigger_mode[self, channel]
 
     def set_trigger_threshold(channel, threshold=0):
         """ Sets the current trigger threshold, in the range of -3V and 3V
@@ -81,7 +81,7 @@ class SD_DIG(Instrument):
             raise ValueError("The specified channel {ch} exceeds the number of channels ({n})".format(ch=channel, n=self.n_channels)
         if (threshold > 3 or threshold < -3):
             raise ValueError("The specified threshold {thresh} V does not exist.".format(thresh=threshold))
-        self.__trigger_threshold[channel] = threshold
+        self.__trigger_threshold[self, channel] = threshold
         # TODO: Call the SD library to set the current threshold
 
     def get_trigger_threshold(channel):
@@ -90,4 +90,4 @@ class SD_DIG(Instrument):
         Args:
             channel (int)       : the input channel you are observing
         """
-        return self.__trigger_threshold[channel]
+        return self.__trigger_threshold[self, channel]
