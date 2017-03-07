@@ -299,7 +299,7 @@ class ATS9360Controller(AcquisitionController):
             self.mat_shape = mat_shape
             integer_list = np.arange(samples_per_record)
             integer_mat = (np.outer(np.ones(len_buffers),
-                                    np.outer(len_records, integer_list)))
+                                    np.outer(np.ones(len_records), integer_list)))
             angle_mat = 2 * np.pi * \
                 np.outer(demod_freqs, integer_mat).reshape(mat_shape)  / sample_rate
             self.cos_mat = np.cos(angle_mat)
