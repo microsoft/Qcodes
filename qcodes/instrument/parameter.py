@@ -457,7 +457,7 @@ class ArrayParameter(_BaseParameter):
             raise AttributeError('ArrayParameters do not support set '
                                  'at this time.')
 
-        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
+        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels', 'setpoint_units',
                                  'label', 'unit'])
 
         self.label = name if label is None else label
@@ -623,7 +623,7 @@ class MultiParameter(_BaseParameter):
             raise AttributeError('MultiParameters do not support set '
                                  'at this time.')
 
-        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
+        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels', 'setpoint_units',
                                  'names', 'labels', 'units'])
 
         if not is_sequence_of(names, str):
