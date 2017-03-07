@@ -39,3 +39,34 @@ class TestSignadyne_M3201A(DriverTestCase):
     def test_serial_number(self):
         serial_number = self.instrument.serial_number()
         self.assertEqual(serial_number, '21L6MRU4')
+
+    def test_chassis_and_slot(self):
+        chassis_number = self.instrument.chassis_number()
+        slot_number = self.instrument.slot_number()
+        product_name = self.instrument.product_name()
+        serial_number = self.instrument.serial_number()
+
+        product_name_test = self.instrument.get_product_name_by_slot(chassis_number, slot_number)
+        self.assertEqual(product_name_test, product_name)
+
+        serial_number_test = self.instrument.get_serial_number_by_slot(chassis_number, slot_number)
+        self.assertEqual(serial_number_test, serial_number)
+
+    def test_open_close(self):
+        chassis_number = self.instrument.chassis_number()
+        slot_number = self.instrument.slot_number()
+        product_name = self.instrument.product_name()
+        serial_number = self.instrument.serial_number()
+
+        self.instrument.close_soft()
+        open_status = self.instrument.open()
+        self.assertEqual(open_status, False)
+
+        self.instrument.open_with_serial_number(product_name, serial_number)
+        open_status = self.instrument.open()
+        self.assertEqual(open_status, True)
+
+        self.instrument.close_soft()
+        self.instrument.open_with_slot(product_name, chassis_number, slot_number)
+        open_status = self.instrument.open()
+        self.assertEqual(open_status, True)
