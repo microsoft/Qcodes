@@ -29,11 +29,6 @@ if in_notebook():  # pragma: no cover
               'try "from qcodes.plots.pyqtgraph import QtPlot" '
               'to see the full error')
 
-# only import in name space if the gui is set to noebook
-# and there is multiprocessing
-if config['gui']['notebook'] and config['core']['legacy_mp']:
-    from qcodes.widgets.widgets import show_subprocess_widget
-
 from qcodes.station import Station
 from qcodes.loops import Loop
 from qcodes.measure import Measure
