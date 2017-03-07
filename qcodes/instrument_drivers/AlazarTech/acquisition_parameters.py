@@ -213,14 +213,43 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
                  units = ('v',),
                  shapes = ((1,),),
                  setpoints = (((1,),),),
-                 setpoint_names = (('time',),),
-                 setpoint_labels = (('time',),),
-                 setpoint_units = (('s',),),
+                 setpoint_names = None,
+                 setpoint_labels = None,
+                 setpoint_units = None,
                  integrate_samples=False,
                  average_records=True):
         self.acquisition_kwargs = {}
         self._integrate_samples = integrate_samples
         self._average_records = average_records
+
+        if setpoint_names:
+            self.setpoint_names_base = setpoint_names[0]
+        elif integrate_samples and average_records:
+            self.setpoint_names_base = ()
+        elif integrate_samples:
+            self.setpoint_names_base = ('record_num',)
+        elif average_records:
+            self.setpoint_names_base = ('time',)
+        if setpoint_labels:
+            self.setpoint_labels_base = setpoint_names[0]
+        elif integrate_samples and average_records:
+            self.setpoint_labels_base = ()
+        elif integrate_samples:
+            self.setpoint_labels_base = ('record num',)
+        elif average_records:
+            self.setpoint_labels_base = ('time',)
+        if setpoint_units:
+            self.setpoint_units_base = setpoint_units[0]
+        elif integrate_samples and average_records:
+            self.setpoint_units_base = ()
+        elif integrate_samples:
+            self.setpoint_units_base = ('',)
+        elif average_records:
+            self.setpoint_units_base = ('s',)
+
+        self.setpoints_start = 0
+        self.setpoints_stop = 0
+
         super().__init__(name,
                          names=names,
                          units=units,
@@ -231,6 +260,22 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
                          setpoint_names=setpoint_names,
                          setpoint_labels=setpoint_labels,
                          setpoint_units=setpoint_units)
+
+
+
+    def set_base_setpoints(self, base_name=None, base_label=None, base_unit=None,
+                           setpoints_start=None, setpoints_stop=None):
+        if base_name:
+            self.setpoint_names_base = (base_name,)
+        if base_label:
+            self.setpoint_labels_base = (base_label,)
+        if base_unit:
+            self.setpoint_units_base = (base_unit,)
+        if setpoints_start:
+            self.setpoints_start = setpoints_start
+        if setpoints_stop:
+            self.setpoints_stop = setpoints_stop
+        self.set_setpoints_and_labels()
 
     def set_setpoints_and_labels(self):
         if not self._integrate_samples:
@@ -243,13 +288,15 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
                 stop = total_time
             else:
                 start = 0
-                samples = 1
                 stop = 1
-            print("start {} stop {} num steps {}".format(start, stop, samples))
+            samples = samples or 1
             arraysetpoints = (tuple(np.linspace(start, stop, samples)),)
             base_shape = (len(arraysetpoints[0]),)
         elif not self._average_records:
-            arraysetpoints = (tuple(range(self._instrument.records_per_buffer.get() or 0)),)
+            num_records = self._instrument.records_per_buffer.get() or 0
+            start = self.setpoints_start
+            stop = self.setpoints_stop or num_records-1
+            arraysetpoints = (tuple(np.linspace(start, stop, num_records)),)
             base_shape = (self._instrument.records_per_buffer.get(),)
         else:
             arraysetpoints = ()
@@ -257,12 +304,9 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
         setpoints = [arraysetpoints]
         names = [self.names[0]]
         labels = [self.labels[0]]
-        setpoint_name = self.setpoint_names[0]
-        setpoint_names = [setpoint_name]
-        setpoint_label = self.setpoint_labels[0]
-        setpoint_labels = [setpoint_label]
-        setpoint_unit = self.setpoint_units[0]
-        setpoint_units = [setpoint_unit]
+        setpoint_names = [self.setpoint_names_base]
+        setpoint_labels = [self.setpoint_labels_base]
+        setpoint_units = [self.setpoint_units_base]
         units = [self.units[0]]
         shapes = [base_shape]
         demod_freqs = self._instrument.demod_freqs.get()
@@ -276,13 +320,13 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
             shapes.append(base_shape)
             shapes.append(base_shape)
             setpoints.append(arraysetpoints)
-            setpoint_names.append(setpoint_name)
-            setpoint_labels.append(setpoint_label)
-            setpoint_units.append(setpoint_unit)
+            setpoint_names.append(self.setpoint_names_base)
+            setpoint_labels.append(self.setpoint_labels_base)
+            setpoint_units.append(self.setpoint_units_base)
             setpoints.append(arraysetpoints)
-            setpoint_names.append(setpoint_name)
-            setpoint_labels.append(setpoint_label)
-            setpoint_units.append(setpoint_unit)
+            setpoint_names.append(self.setpoint_names_base)
+            setpoint_labels.append(self.setpoint_labels_base)
+            setpoint_units.append(self.setpoint_units_base)
         self.names = tuple(names)
         self.labels = tuple(labels)
         self.units = tuple(units)
