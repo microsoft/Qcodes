@@ -24,7 +24,7 @@ def result_parser(value, name, verbose=False):
         value: parsed value, which is the same as value if non-negative
         or not a number
     """
-    if isinstance(value, str) or (int(value) >= 0):
+    if isinstance(value, str) or isinstance(value, bool) or (int(value) >= 0):
         if verbose:
             print('{}: {}' .format(name, value))
         return value
@@ -85,6 +85,26 @@ class Signadyne_M3201A(Instrument):
                            label='slot number',
                            get_cmd=self.get_slot,
                            docstring='The slot number where the device is located')
+        self.add_parameter('status',
+                           label='status',
+                           get_cmd=self.get_status,
+                           docstring='The status of the device')
+        self.add_parameter('firmware_version',
+                           label='firmware version',
+                           get_cmd=self.get_firmware_version,
+                           docstring='The firmware version of the device')
+        self.add_parameter('hardware_version',
+                           label='hardware version',
+                           get_cmd=self.get_hardware_version,
+                           docstring='The hardware version of the device')
+        self.add_parameter('instrument_type',
+                           label='type',
+                           get_cmd=self.get_type,
+                           docstring='The type of the device')
+        self.add_parameter('open',
+                           label='open',
+                           get_cmd=self.get_open,
+                           docstring='Indicating if device is open, True (open) or False (closed)')
         self.add_parameter('trigger_io',
                            label='trigger io',
                            get_cmd=self.get_trigger_io,
@@ -134,6 +154,36 @@ class Signadyne_M3201A(Instrument):
         """Returns the slot number where the device is located"""
         value = self.awg.getSlot()
         value_name = 'slot_number'
+        return result_parser(value, value_name, verbose)
+
+    def get_status(self, verbose=False):
+        """Returns the status of the device"""
+        value = self.awg.getStatus()
+        value_name = 'status'
+        return result_parser(value, value_name, verbose)
+
+    def get_firmware_version(self, verbose=False):
+        """Returns the firmware version of the device"""
+        value = self.awg.getFirmwareVersion()
+        value_name = 'firmware_version'
+        return result_parser(value, value_name, verbose)
+
+    def get_hardware_version(self, verbose=False):
+        """Returns the hardware version of the device"""
+        value = self.awg.getHardwareVersion()
+        value_name = 'hardware_version'
+        return result_parser(value, value_name, verbose)
+
+    def get_type(self, verbose=False):
+        """Returns the type of the device"""
+        value = self.awg.getType()
+        value_name = 'type'
+        return result_parser(value, value_name, verbose)
+
+    def get_open(self, verbose=False):
+        """Returns whether the device is open (True) or not (False)"""
+        value = self.awg.isOpen()
+        value_name = 'open'
         return result_parser(value, value_name, verbose)
 
     def get_pxi_trigger(self, pxi_trigger, verbose=False):
@@ -188,6 +238,20 @@ class Signadyne_M3201A(Instrument):
         value_name = 'clock_sync_frequency'
         return result_parser(value, value_name, verbose)
 
+    #
+    # The methods below are useful for controlling the device, but are not used for setting or getting parameters
+    #
+
+    # closes the hardware device and also throws away the current instrument object
+    # if you want to open the instrument again, you have to initialize a new instrument object
+    def close(self):
+        self.awg.close()
+        super().close()
+
+    # only closes the hardware device, not the current instrument object
+    def close_soft(self):
+        self.awg.close()
+
     def off(self):
         """
         Stops the AWGs and sets the waveform of all channels to 'No Signal'
@@ -195,14 +259,62 @@ class Signadyne_M3201A(Instrument):
 
         for i in [0, 1, 2, 3]:
             awg_response = self.awg.AWGstop(i)
-            if (isinstance(awg_response, int) and awg_response<0):
+            if isinstance(awg_response, int) and awg_response < 0:
                 raise Exception('Error in call to Signadyne AWG '
                                 'error code {}'.format(awg_response))
             channel_response = self.awg.channelWaveShape(i, -1)
-            if (isinstance(channel_response, int) and channel_response<0):
+            if isinstance(channel_response, int) and channel_response < 0:
                 raise Exception('Error in call to Signadyne AWG '
                                 'error code {}'.format(channel_response))
 
+    def open_with_serial_number(self, name, serial_number):
+        self.awg.openWithSerialNumber(name, serial_number)
+
+    def open_with_slot(self, name, chassis, slot):
+        self.awg.openWithSlot(name, chassis, slot)
+
+    def run_self_test(self):
+        value = self.awg.runSelfTest()
+        print('Did self test and got result: {}'.format(value))
+
+    #
+    # The methods below are not used for setting or getting parameters, but can be used in the test functions of the
+    # test suite e.g. The main reason they are defined is to make this driver more complete
+    #
+
+    def get_product_name_by_slot(self, chassis, slot, verbose=False):
+        value = self.awg.getProductNameBySlot(chassis, slot)
+        value_name = 'product_name'
+        return result_parser(value, value_name, verbose)
+
+    def get_product_name_by_index(self, index, verbose=False):
+        value = self.awg.getProductNameByIndex(index)
+        value_name = 'product_name'
+        return result_parser(value, value_name, verbose)
+
+    def get_serial_number_by_slot(self, chassis, slot, verbose=False):
+        value = self.awg.getSerialNumberBySlot(chassis, slot)
+        value_name = 'serial_number'
+        return result_parser(value, value_name, verbose)
+
+    def get_serial_number_by_index(self, index, verbose=False):
+        value = self.awg.getSerialNumberByIndex(index)
+        value_name = 'serial_number'
+        return result_parser(value, value_name, verbose)
+
+    # method below is commented out because it is missing from the dll provided by Signadyne
+    # def get_type_by_slot(self, chassis, slot, verbose=False):
+    #     value = self.awg.getTypeBySlot(chassis, slot)
+    #     value_name = 'type'
+    #     return result_parser(value, value_name, verbose)
+
+    # method below is commented out because it is missing from the dll provided by Signadyne
+    # def get_type_by_index(self, index, verbose=False):
+    #     value = self.awg.getTypeByIndex(index)
+    #     value_name = 'type'
+    #     return result_parser(value, value_name, verbose)
+
+    # method below is commented out because it is missing from the dll provided by Signadyne
     # def get_awg_running(self, verbose=0, awg_number):
     #     """
     #     Returns whether the AWG is running or stopped
@@ -218,6 +330,7 @@ class Signadyne_M3201A(Instrument):
     #         print('slot_number: %s' % value)
     #     return value
 
+    # method below is commented out because it is missing from the dll provided by Signadyne
     # def get_awg_waveform_number_playing(self, verbose=0, awg_number=0):
     #     """
     #     Returns the waveformNumber of the waveform which is currently being generated.
