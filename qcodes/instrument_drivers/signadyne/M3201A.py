@@ -1,4 +1,5 @@
 from qcodes.instrument.base import Instrument
+from functools import partial
 try:
     import signadyne
 except ImportError:
@@ -47,7 +48,7 @@ class Signadyne_M3201A(Instrument):
         slot (int): slot number where the device is plugged in
     """
 
-    def __init__(self, name, chassis=1, slot=8, **kwargs):
+    def __init__(self, name, chassis=1, slot=7, **kwargs):
         super().__init__(name, **kwargs)
 
         # Create instance of signadyne SD_AOU class
@@ -102,7 +103,7 @@ class Signadyne_M3201A(Instrument):
         for i in [0, 1, 2, 3, 4, 5, 6, 7]:
             self.add_parameter('pxi_trigger_number {}'.format(i),
                                label='pxi trigger number {}'.format(i),
-                               get_cmd=self.get_pxi_trigger(4000+i),
+                               get_cmd=partial(self.get_pxi_trigger, pxi_trigger=(4000 + i)),
                                docstring='The digital value of pxi trigger no. {}, 0 (ON) of 1 (OFF)'.format(i))
 
     def get_module_count(self, verbose=False):
