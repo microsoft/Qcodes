@@ -1,6 +1,7 @@
 from qcodes.instrument_drivers.test import DriverTestCase
 from .M3201A import Signadyne_M3201A
 
+
 class TestSignadyne_M3201A(DriverTestCase):
     """
     This is a test suite for testing the Signadyne M3201A AWG card driver.
@@ -33,8 +34,8 @@ class TestSignadyne_M3201A(DriverTestCase):
 
     def test_slot_number(self):
         slot_number = self.instrument.slot_number()
-        self.assertEqual(slot_number, 8)
+        self.assertEqual(slot_number, 7)
 
     def test_serial_number(self):
         serial_number = self.instrument.serial_number()
-        self.assertEqual(serial_number, 1234567890)
+        self.assertEqual(serial_number, '21L6MRU4')
