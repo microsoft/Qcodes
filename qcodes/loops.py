@@ -564,7 +564,6 @@ class ActiveLoop(Metadatable):
             units = tuple(['']*len(names))
         num_arrays = len(names)
         num_units = len(units)
-        assert num_arrays == num_units
         shapes = getattr(action, 'shapes', None)
         sp_vals = getattr(action, 'setpoints', None)
         sp_names = getattr(action, 'setpoint_names', None)
