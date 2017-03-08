@@ -32,10 +32,43 @@ class SD_DIG(Instrument):
         self.SD_AIN = SD_AIN()
         self.n_channels = kwargs['n_channels']
 
+
         # Create distinct parameters for each of the digitizer channels
         for n in range(n_channels):
-            self.__trigger_mode[self, n]      = SD_TriggerMode.RISING_EDGE
-            self.__trigger_threshold[self, n] = 0
+
+            ########################################################################
+            ### Create a set of internal variables to aid set/get cmds in params ###
+            ########################################################################
+
+            # For channelInputConfig
+            self.__full_scale[self, n]        =  1 # By default, full scale = 1V
+            self.__impedance[self, n]         =  0 # By default, Hi-z
+            self.__coupling[self, n]          =  0 # By default, DC coupling
+            # For channelPrescalerConfig 
+            self.__prescaler[self, n]         =  0 # By default, no prescaling
+            # For channelTriggerConfig
+            self.__trigger_mode[self, n]      =  SD_TriggerMode.RISING_EDGE
+            self.__trigger_threshold[self, n] =  0 # By default, threshold at 0V
+            # For DAQconfig
+            self.__points_per_cycle[self, n]  =  0
+            self.__n_cycles                   =  0
+            self.__trigger_delay              =  0
+            self.__trigger_mode               =  SD_TriggerMode.RISING_EDGE
+            # For DAQtriggerExternalConfig
+            self.__digital_trigger_mode       =  0 
+            self.__digital_trigger_source     =  0
+            self.__analog_trigger_mask        =  0
+            # For DAQread
+            self.__n_points                   =  0
+            self.__timeout                    = -1
+            # for triggerIOconfig
+            self.__direction                  =  0
+            # for clockSetFrequency
+            self.__frequency                  =  100e6
+            # for clockResetPhase
+            self.__trigger_behaviour          =  0 
+            self.__PXItrigger                 =  0
+            self.__skew                       =  0
 
             self.add_parameter(
                 'prescaler_{}'.format(n),
@@ -61,6 +94,7 @@ class SD_DIG(Instrument):
         self.__trigger_mode[self, channel] = mode
         # TODO: Call the SD library to set the current mode
 
+
     def get_trigger_mode(channel):
         """ Returns the current trigger mode
 
@@ -69,13 +103,13 @@ class SD_DIG(Instrument):
         """
         return self.__trigger_mode[self, channel]
 
+
     def set_trigger_threshold(channel, threshold=0):
         """ Sets the current trigger threshold, in the range of -3V and 3V
 
         Args:
             channel (int)       : the input channel you are modifying
             threshold (float)   : the value in volts for the trigger threshold
-
         """
         if (channel > self.n_channels):
             raise ValueError("The specified channel {ch} exceeds the number of channels ({n})".format(ch=channel, n=self.n_channels)
@@ -84,6 +118,7 @@ class SD_DIG(Instrument):
         self.__trigger_threshold[self, channel] = threshold
         # TODO: Call the SD library to set the current threshold
 
+
     def get_trigger_threshold(channel):
         """ Returns the current trigger threshold
 
@@ -91,3 +126,4 @@ class SD_DIG(Instrument):
             channel (int)       : the input channel you are observing
         """
         return self.__trigger_threshold[self, channel]
+
