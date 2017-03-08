@@ -47,6 +47,7 @@ Supported commands to .set_measurement or .each are:
 """
 
 from datetime import datetime
+import logging
 import multiprocessing as mp
 import time
 import numpy as np
@@ -64,6 +65,8 @@ from qcodes.utils.metadata import Metadatable
 from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
                       BreakIf, _QcodesBreak)
 
+
+log = logging.getLogger(__name__)
 # Switches off multiprocessing by default, cant' be altered after module
 USE_MP = config.core.legacy_mp
 MP_NAME = 'Measurement'
@@ -148,23 +151,26 @@ class Loop(Metadatable):
     """
     The entry point for creating measurement loops
 
-    sweep_values - a SweepValues or compatible object describing what
-        parameter to set in the loop and over what values
-    delay - a number of seconds to wait after setting a value before
-        continuing. 0 (default) means no waiting and no warnings. > 0
-        means to wait, potentially filling the delay time with monitoring,
-        and give an error if you wait longer than expected.
-    progress_interval - should progress of the loop every x seconds. Default
-        is None (no output)
+    Args:
+        sweep_values: a SweepValues or compatible object describing what
+            parameter to set in the loop and over what values
+        delay: a number of seconds to wait after setting a value before
+            continuing. 0 (default) means no waiting and no warnings. > 0
+            means to wait, potentially filling the delay time with monitoring,
+            and give an error if you wait longer than expected.
+        progress_interval: should progress of the loop every x seconds. Default
+            is None (no output)
 
-    After creating a Loop, you attach `action`s to it, making an `ActiveLoop`
-    TODO: how? Maybe obvious but not specified!
-    that you can `.run()`, or you can `.run()` a `Loop` directly, in which
-    case it takes the default `action`s from the default `Station`
+    After creating a Loop, you attach ``action``\s to it, making an ``ActiveLoop``
 
-    `actions` are a sequence of things to do at each `Loop` step: they can be
-    `Parameter`s to measure, `Task`s to do (any callable that does not yield
-    data), `Wait` times, or other `ActiveLoop`s or `Loop`s to nest inside
+    TODO:
+        how? Maybe obvious but not specified! that you can ``.run()``,
+        or you can ``.run()`` a ``Loop`` directly, in which
+        case it takes the default ``action``\s from the default ``Station``
+
+    ``actions`` are a sequence of things to do at each ``Loop`` step: they can be
+    ``Parameter``\s to measure, ``Task``\s to do (any callable that does not yield
+    data), ``Wait`` times, or other ``ActiveLoop``\s or ``Loop``\s to nest inside
     this one.
     """
     def __init__(self, sweep_values, delay=0, station=None,
@@ -228,10 +234,12 @@ class Loop(Metadatable):
             *actions (Any): actions to perform at each setting of the loop
 
         Each action can be:
+
         - a Parameter to measure
         - a Task to execute
         - a Wait
         - another Loop or ActiveLoop
+
         """
         actions = list(actions)
 
@@ -313,23 +321,27 @@ class Loop(Metadatable):
         """
         Attach actions to be performed after the loop completes.
 
-        These can only be `Task` and `Wait` actions, as they may not generate
+        These can only be *Task* and *Wait* actions, as they may not generate
         any data.
 
         returns a new Loop object - the original is untouched
 
         This is more naturally done to an ActiveLoop (ie after .each())
         and can also be done there, but it's allowed at this stage too so that
-        you can define final actions and share them among several `Loop`s that
+        you can define final actions and share them among several *Loop*\s that
         have different loop actions, or attach final actions to a Loop run
-        TODO: examples of this ?
-        with default actions.
 
-        *actions: `Task` and `Wait` objects to execute in order
+        TODO:
+            examples of this ? with default actions.
 
-        overwrite: (default False) whether subsequent .then() calls (including
-            calls in an ActiveLoop after .then() has already been called on
-            the Loop) will add to each other or overwrite the earlier ones.
+        Args:
+            \*actions: *Task* and *Wait* objects to execute in order
+
+            overwrite: (default False) whether subsequent .then() calls (including
+                calls in an ActiveLoop after .then() has already been called on
+                the Loop) will add to each other or overwrite the earlier ones.
+        Returns:
+            a new Loop object - the original is untouched
         """
         return _attach_then_actions(self._copy(), actions, overwrite)
 
@@ -385,12 +397,12 @@ def _attach_bg_task(loop, task, bg_final_task, min_delay):
 
 class ActiveLoop(Metadatable):
     """
-    Created by attaching actions to a `Loop`, this is the object that actually
-    runs a measurement loop. An `ActiveLoop` can no longer be nested, only run,
+    Created by attaching actions to a *Loop*, this is the object that actually
+    runs a measurement loop. An *ActiveLoop* can no longer be nested, only run,
     or used as an action inside another `Loop` which will run the whole thing.
 
-    The `ActiveLoop` determines what `DataArray`s it will need to hold the data
-    it collects, and it creates a `DataSet` holding these `DataArray`s
+    The *ActiveLoop* determines what *DataArray*\s it will need to hold the data
+    it collects, and it creates a *DataSet* holding these *DataArray*\s
     """
     # constants for signal_queue
     HALT = 'HALT LOOP'
@@ -443,11 +455,12 @@ class ActiveLoop(Metadatable):
 
         returns a new ActiveLoop object - the original is untouched
 
-        *actions: `Task` and `Wait` objects to execute in order
+        \*actions: `Task` and `Wait` objects to execute in order
 
-        overwrite: (default False) whether subsequent .then() calls (including
-            calls in an ActiveLoop after .then() has already been called on
-            the Loop) will add to each other or overwrite the earlier ones.
+        Args:
+            overwrite: (default False) whether subsequent .then() calls (including
+                calls in an ActiveLoop after .then() has already been called on
+                the Loop) will add to each other or overwrite the earlier ones.
         """
         loop = ActiveLoop(self.sweep_values, self.delay, *self.actions,
                           then_actions=self.then_actions, station=self.station)
@@ -678,22 +691,25 @@ class ActiveLoop(Metadatable):
         `DataSet` is first created; giving these during `run` when
         `get_data_set` has already been called on its own is an error.
 
-        data_manager: a DataManager instance (omit to use default,
-            False to store locally)
+        Args:
+            data_manager: a DataManager instance (omit to use default,
+                False to store locally)
 
         kwargs are passed along to data_set.new_data. The key ones are:
-        location: the location of the DataSet, a string whose meaning
-            depends on formatter and io, or False to only keep in memory.
-            May be a callable to provide automatic locations. If omitted, will
-            use the default DataSet.location_provider
-        name: if location is default or another provider function, name is
-            a string to add to location to make it more readable/meaningful
-            to users
-        formatter: knows how to read and write the file format
-            default can be set in DataSet.default_formatter
-        io: knows how to connect to the storage (disk vs cloud etc)
-        write_period: how often to save to storage during the loop.
-            default 5 sec, use None to write only at the end
+
+        Args:
+            location: the location of the DataSet, a string whose meaning
+                depends on formatter and io, or False to only keep in memory.
+                May be a callable to provide automatic locations. If omitted, will
+                use the default DataSet.location_provider
+            name: if location is default or another provider function, name is
+                a string to add to location to make it more readable/meaningful
+                to users
+            formatter: knows how to read and write the file format
+                default can be set in DataSet.default_formatter
+            io: knows how to connect to the storage (disk vs cloud etc)
+            write_period: how often to save to storage during the loop.
+                default 5 sec, use None to write only at the end
 
         returns:
             a DataSet object that we can use to plot
@@ -738,36 +754,38 @@ class ActiveLoop(Metadatable):
         """
         Execute this loop.
 
-        background: (default False) run this sweep in a separate process
-            so we can have live plotting and other analysis in the main process
-        use_threads: (default True): whenever there are multiple `get` calls
-            back-to-back, execute them in separate threads so they run in
-            parallel (as long as they don't block each other)
-        quiet: (default False): set True to not print anything except errors
-        data_manager: set to True to use a DataManager. Default to False.
-        station: a Station instance for snapshots (omit to use a previously
-            provided Station, or the default Station)
-        progress_interval (default None): show progress of the loop every x
-            seconds. If provided here, will override any interval provided
-            with the Loop definition
+        Args:
+            background: (default False) run this sweep in a separate process
+                so we can have live plotting and other analysis in the main process
+            use_threads: (default False): whenever there are multiple `get` calls
+                back-to-back, execute them in separate threads so they run in
+                parallel (as long as they don't block each other)
+            quiet: (default False): set True to not print anything except errors
+            data_manager: set to True to use a DataManager. Default to False.
+            station: a Station instance for snapshots (omit to use a previously
+                provided Station, or the default Station)
+            progress_interval (default None): show progress of the loop every x
+                seconds. If provided here, will override any interval provided
+                with the Loop definition
 
         kwargs are passed along to data_set.new_data. These can only be
         provided when the `DataSet` is first created; giving these during `run`
         when `get_data_set` has already been called on its own is an error.
         The key ones are:
 
-        location: the location of the DataSet, a string whose meaning
-            depends on formatter and io, or False to only keep in memory.
-            May be a callable to provide automatic locations. If omitted, will
-            use the default DataSet.location_provider
-        name: if location is default or another provider function, name is
-            a string to add to location to make it more readable/meaningful
-            to users
-        formatter: knows how to read and write the file format
-            default can be set in DataSet.default_formatter
-        io: knows how to connect to the storage (disk vs cloud etc)
-        write_period: how often to save to storage during the loop.
-            default 5 sec, use None to write only at the end
+        Args:
+            location: the location of the DataSet, a string whose meaning
+                depends on formatter and io, or False to only keep in memory.
+                May be a callable to provide automatic locations. If omitted, will
+                use the default DataSet.location_provider
+            name: if location is default or another provider function, name is
+                a string to add to location to make it more readable/meaningful
+                to users
+            formatter: knows how to read and write the file format
+                default can be set in DataSet.default_formatter
+            io: knows how to connect to the storage (disk vs cloud etc)
+                write_period: how often to save to storage during the loop.
+                default 5 sec, use None to write only at the end
 
 
         returns:
@@ -855,7 +873,6 @@ class ActiveLoop(Metadatable):
             # this one later.
             self.data_set = None
 
-
         return ds
 
     def _compile_actions(self, actions, action_indices=()):
@@ -924,8 +941,10 @@ class ActiveLoop(Metadatable):
 
         t0 = time.time()
         last_task = t0
-        last_task_failed = False
         imax = len(self.sweep_values)
+
+        self.last_task_failed = False
+
         for i, value in enumerate(self.sweep_values):
             if self.progress_interval is not None:
                 tprint('loop %s: %d/%d (%.1f [s])' % (
@@ -982,16 +1001,18 @@ class ActiveLoop(Metadatable):
                 if t - last_task >= self.bg_min_delay:
                     try:
                         self.bg_task()
-                        last_task_failed = False
                     except Exception:
-                        if last_task_failed:
+                        if self.last_task_failed:
                             self.bg_task = None
-                        last_task_failed = True
+                        self.last_task_failed = True
+                        log.exception("Failed to execute bg task")
+
                     last_task = t
 
         if self.progress_interval is not None:
             # final progress note: set dt=-1 so it *always* prints
             tprint('loop %s DONE: %d/%d (%.1f [s])' % (
+
                    self.sweep_values.name, i + 1, imax, time.time() - t0),
                    dt=-1, tag='outerloop')
 
@@ -1006,8 +1027,6 @@ class ActiveLoop(Metadatable):
         # run the bg_final_task from the bg_task:
         if self.bg_final_task is not None:
             self.bg_final_task()
-
-
 
     def _wait(self, delay):
         if delay:

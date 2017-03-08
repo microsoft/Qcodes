@@ -636,7 +636,6 @@ class TestDataSet(TestCase):
         self.assertEqual(data.fraction_complete(), 0.75)
 
     def mock_sync(self):
-        # import pdb; pdb.set_trace()
         i = self.sync_index
         self.syncing_array[i] = i
         self.sync_index = i + 1

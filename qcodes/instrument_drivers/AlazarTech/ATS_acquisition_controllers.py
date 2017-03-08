@@ -12,12 +12,16 @@ class Demodulation_AcquisitionController(AcquisitionController):
     for one frequency component. The amplitude of the result of channel_a will
     be returned.
 
-    args:
-    name: name for this acquisition_conroller as an instrument
-    alazar_name: the name of the alazar instrument such that this controller
-        can communicate with the Alazar
-    demodulation_frequency: the selected component for the fourier transform
-    **kwargs: kwargs are forwarded to the Instrument base class
+    Args:
+        name: name for this acquisition_conroller as an instrument
+
+        alazar_name: the name of the alazar instrument such that this controller
+            can communicate with the Alazar
+
+        demodulation_frequency: the selected component for the fourier transform
+
+        **kwargs: kwargs are forwarded to the Instrument base class
+
     """
     def __init__(self, name, alazar_name, demodulation_frequency, **kwargs):
         self.demodulation_frequency = demodulation_frequency

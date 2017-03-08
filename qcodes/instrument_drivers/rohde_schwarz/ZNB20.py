@@ -2,55 +2,56 @@ from qcodes import VisaInstrument
 from qcodes.utils import validators as vals
 from cmath import phase
 import numpy as np
-from qcodes import Parameter
+from qcodes import MultiParameter, Parameter
 
 
-# class FrequencySweep(Parameter):
-#     """
-#     Hardware controlled parameter class for Rohde Schwarz RSZNB20 trace.
+class FrequencySweep(MultiParameter):
+    """
+    Hardware controlled parameter class for Rohde Schwarz RSZNB20 trace.
 
 #     Instrument returns an list of transmission data in the form of a list of
 #     complex numbers taken from a frequency sweep.
 
-#     TODO:
-#       - ability to choose for abs or db in magnitude return
-#     """
-#     def __init__(self, name, instrument, start, stop, npts):
-#         super().__init__(name)
-#         self._instrument = instrument
-#         self.set_sweep(start, stop, npts)
-#         self.names = ('magnitude', 'phase')
-#         self.units = ('dBm', 'rad')
-#         self.setpoint_names = (('frequency',), ('frequency',))
 
-#     def set_sweep(self, start, stop, npts):
-#         #  needed to update config of the software parameter on sweep chage
-#         # freq setpoints tuple as needs to be hashable for look up
-#         f = tuple(np.linspace(int(start), int(stop), num=npts))
-#         self.setpoints = ((f,), (f,))
-#         self.shapes = ((npts,), (npts,))
+    TODO:
+      - ability to choose for abs or db in magnitude return
+    """
+    def __init__(self, name, instrument, start, stop, npts):
+        super().__init__(name, names=("", ""), shapes=((), ()))
+        self._instrument = instrument
+        self.set_sweep(start, stop, npts)
+        self.names = ('magnitude', 'phase')
+        self.units = ('dBm', 'rad')
+        self.setpoint_names = (('frequency',), ('frequency',))
 
-#     def get(self):
-#         self._instrument.write('SENS1:AVER:STAT off')
-#         self._instrument.write('AVER:CLE')
-#         self._instrument.cont_meas_off()
+    def set_sweep(self, start, stop, npts):
+        #  needed to update config of the software parameter on sweep chage
+        # freq setpoints tuple as needs to be hashable for look up
+        f = tuple(np.linspace(int(start), int(stop), num=npts))
+        self.setpoints = ((f,), (f,))
+        self.shapes = ((npts,), (npts,))
 
-#         # instrument averages over its last 'avg' number of sweeps
-#         # need to ensure averaged result is returned
-#         for avgcount in range(self._instrument.avg()):
-#             self._instrument.write('INIT:IMM; *WAI')
-#         data_str = self._instrument.ask('CALC:DATA? SDAT').split(',')
-#         data_list = [float(v) for v in data_str]
+    def get(self):
+        self._instrument.write('SENS1:AVER:STAT ON')
+        self._instrument.write('AVER:CLE')
+        self._instrument.cont_meas_off()
 
-#         # data_list of complex numbers [re1,im1,re2,im2...]
-#         data_arr = np.array(data_list).reshape(int(len(data_list) / 2), 2)
-#         mag_array, phase_array = [], []
-#         for comp in data_arr:
-#             complex_num = complex(comp[0], comp[1])
-#             mag_array.append(abs(complex_num))
-#             phase_array.append(phase(complex_num))
-#         self._instrument.cont_meas_on()
-#         return mag_array, phase_array
+        # instrument averages over its last 'avg' number of sweeps
+        # need to ensure averaged result is returned
+        for avgcount in range(self._instrument.avg()):
+            self._instrument.write('INIT:IMM; *WAI')
+        data_str = self._instrument.ask('CALC:DATA? SDAT').split(',')
+        data_list = [float(v) for v in data_str]
+
+        # data_list of complex numbers [re1,im1,re2,im2...]
+        data_arr = np.array(data_list).reshape(int(len(data_list) / 2), 2)
+        mag_array, phase_array = [], []
+        for comp in data_arr:
+            complex_num = complex(comp[0], comp[1])
+            mag_array.append(abs(complex_num))
+            phase_array.append(phase(complex_num))
+        self._instrument.cont_meas_on()
+        return mag_array, phase_array
 
 
 class ZNB20(VisaInstrument):
@@ -65,20 +66,11 @@ class ZNB20(VisaInstrument):
 
         self.add_parameter(name='power',
                            label='Power',
-                           units='dBm',
+                           unit='dBm',
                            get_cmd='SOUR:POW?',
                            set_cmd='SOUR:POW {:.4f}',
                            get_parser=VISA_str_to_int,
                            vals=vals.Numbers(-150, 25))
-
-
-
-        # self.add_parameter(name='trace',
-        #                    start=self.start(),
-        #                    stop=self.stop(),
-        #                    npts=self.npts(),
-        #                    parameter_class=FrequencySweep)
-
 
         self.add_function('tooltip_on', call_cmd='SYST:ERR:DISP ON')
         self.add_function('tooltip_off', call_cmd='SYST:ERR:DISP OFF')
@@ -157,7 +149,7 @@ class ZNB20(VisaInstrument):
 
         self.add_parameter(name='bandwidth',
                            label='Bandwidth',
-                           units='Hz',
+                           unit='Hz',
                            get_cmd='SENS:BAND?',
                            set_cmd='SENS:BAND {:.4f}',
                            get_parser=VISA_str_to_int,
@@ -169,6 +161,7 @@ class ZNB20(VisaInstrument):
                            set_cmd='SENSE:FREQUENCY:CENTER {:.4f}',
                            get_parser=VISA_str_to_int,
                            vals=vals.Numbers(100e3, 20e9))
+
 
         self.add_parameter(name='span_frequency',
                            units='Hz',

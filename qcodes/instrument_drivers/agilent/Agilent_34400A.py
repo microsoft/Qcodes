@@ -33,19 +33,19 @@ class Agilent_34400A(VisaInstrument):
                            get_parser=float,
                            set_cmd=self._set_resolution,
                            label='Resolution',
-                           units='V')
+                           unit='V')
 
         self.add_parameter('volt',
                            get_cmd='READ?',
                            label='Voltage',
                            get_parser=float,
-                           units='V')
+                           unit='V')
 
         self.add_parameter('fetch',
                            get_cmd='FETCH?',
                            label='Voltage',
                            get_parser=float,
-                           units='V',
+                           unit='V',
                            snapshot_get=False,
                            docstring=('Reads the data you asked for, i.e. '
                                       'after an `init_measurement()` you can '
@@ -59,7 +59,7 @@ class Agilent_34400A(VisaInstrument):
                            set_cmd=self._set_NPLC,
                            vals=Enum(*NPLC_list),
                            label='Integration time',
-                           units='NPLC')
+                           unit='NPLC')
 
         self.add_parameter('terminals',
                            get_cmd='ROUT:TERM?')

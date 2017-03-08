@@ -1,39 +1,54 @@
 """
 Measured and/or controlled parameters
 
-The Parameter class is meant for direct parameters of instruments (ie
-subclasses of Instrument) but elsewhere in Qcodes we can use anything
-as a parameter if it has the right attributes:
+Anything that you want to either measure or control within QCoDeS should
+satisfy the Parameter interface. Most of the time that is easiest to do
+by either using or subclassing one of the classes defined here, but you can
+also use any class with the right attributes.
 
-To use Parameters in data acquisition loops, they should have:
-    .name - like a variable name, ie no spaces or weird characters
-    .label - string to use as an axis label (optional, defaults to .name)
-    (except for composite measurements, see below)
+TODO (alexcjohnson) update this with the real duck-typing requirements or
+create an ABC for Parameter and MultiParameter - or just remove this statement
+if everyone is happy to use these classes.
 
-Controlled parameters should have a .set(value) method, which takes a single
-value to apply to this parameter. To use this parameter for sweeping, also
-connect its __getitem__ to SweepFixedValues as below.
+This file defines four classes of parameters:
 
-Measured parameters should have .get() which can return:
+``Parameter``, ``ArrayParameter``, and ``MultiParameter`` must be subclassed:
 
-- a single value:
-    parameter should have .name and optional .label as above
+- ``Parameter`` is the base class for scalar-valued parameters, if you have
+    custom code to read or write a single value. Provides ``sweep`` and
+    ``__getitem__`` (slice notation) methods to use a settable parameter as
+    the swept variable in a ``Loop``. To use, fill in ``super().__init__``,
+    and provide a ``get`` method, a ``set`` method, or both.
 
-- several values of different meaning (raw and measured, I and Q,
-  a set of fit parameters, that sort of thing, that all get measured/calculated
-  at once):
-    parameter should have .names and optional .labels, each a sequence with
-    the same length as returned by .get()
+- ``ArrayParameter`` is a base class for array-valued parameters, ie anything
+    for which each ``get`` call returns an array of values that all have the
+    same type and meaning. Currently not settable, only gettable. Can be used
+    in ``Measure``, or in ``Loop`` - in which case these arrays are nested
+    inside the loop's setpoint array. To use, provide a ``get`` method that
+    returns an array or regularly-shaped sequence, and describe that array in
+    ``super().__init__``.
 
-- an array of values of one type:
-    parameter should have .name and optional .label as above, but also
-    .shape attribute, which is an integer (or tuple of integers) describing
-    the shape of the returned array (which must be fixed)
-    optionally also .setpoints, array(s) of setpoint values for this data
-    otherwise we will use integers from 0 in each direction as the setpoints
+- ``MultiParameter`` is the base class for multi-valued parameters. Currently
+    not settable, only gettable, but can return an arbitrary collection of
+    scalar and array values and can be used in ``Measure`` or ``Loop`` to
+    feed data to a ``DataSet``. To use, provide a ``get`` method
+    that returns a sequence of values, and describe those values in
+    ``super().__init__``.
 
-- several arrays of values (all the same shape):
-    define .names (and .labels) AND .shape (and .setpoints)
+``StandardParameter`` and ``ManualParameter`` can be instantiated directly:
+
+- ``StandardParameter`` is the default class for instrument parameters
+    (see ``Instrument.add_parameter``). Can be gettable, settable, or both.
+    Provides a standardized interface to construct strings to pass to the
+    instrument's ``write`` and ``ask`` methods (but can also be given other
+    functions to execute on ``get`` or ``set``), to convert the string
+    responses to meaningful output, and optionally to ramp a setpoint with
+    stepped ``write`` calls from a single ``set``. Does not need to be
+    subclassed, just instantiated.
+
+- ``ManualParameter`` is for values you want to keep track of but cannot
+    set or get electronically. Holds the last value it was ``set`` to, and
+    returns it on ``get``.
 """
 
 from datetime import datetime, timedelta
@@ -46,210 +61,64 @@ import collections
 import numpy
 
 from qcodes.utils.deferred_operations import DeferredOperations
-from qcodes.utils.helpers import (permissive_range, wait_secs, is_sequence_of,
-                                  DelegateAttributes, full_class, named_repr)
+from qcodes.utils.helpers import (permissive_range, wait_secs, is_sequence,
+                                  is_sequence_of, DelegateAttributes,
+                                  full_class, named_repr, warn_units)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.command import Command, NoCommandError
-from qcodes.utils.validators import Validator, Numbers, Ints, Enum, Anything
+from qcodes.utils.validators import Validator, Numbers, Ints, Enum
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
 
 
-def no_setter(*args, **kwargs):
-    raise NotImplementedError('This Parameter has no setter defined.')
-
-
-def no_getter(*args, **kwargs):
-    raise NotImplementedError(
-        'This Parameter has no getter, use .get_latest to get the most recent '
-        'set value.')
-
-
-class Parameter(Metadatable, DeferredOperations):
+class _BaseParameter(Metadatable, DeferredOperations):
     """
-    Define one generic parameter, not necessarily part of
-    an instrument. can be settable and/or gettable.
-
-    A settable Parameter has a .set method, and supports only a single value
-    at a time (see below)
-
-    A gettable Parameter has a .get method, which may return:
-
-    1.  a single value
-    2.  a sequence of values with different names (for example,
-        raw and interpreted, I and Q, several fit parameters...)
-    3.  an array of values all with the same name, but at different
-        setpoints (for example, a time trace or fourier transform that
-        was acquired in the hardware and all sent to the computer at once)
-    4.  2 & 3 together: a sequence of arrays. All arrays should be the same
-        shape.
-    5.  a sequence of differently shaped items
-
-    Because .set only supports a single value, if a Parameter is both
-    gettable AND settable, .get should return a single value too (case 1)
-
-    Parameters have a .get_latest method that simply returns the most recent
-    set or measured value. This can either be called ( param.get_latest() )
-    or used in a Loop as if it were a (gettable-only) parameter itself:
-
-        Loop(...).each(param.get_latest)
-
-
-    The constructor arguments change somewhat between these cases:
-
-    Todo:
-        no idea how to document such a constructor
+    Shared behavior for simple and multi parameters. Not intended to be used
+    directly, normally you should use ``StandardParameter`` or
+    ``ManualParameter``, or create your own subclass of ``Parameter`` or
+    ``MultiParameter``.
 
     Args:
-        name: (1&3) the local name of this parameter, should be a valid
-            identifier, ie no spaces or special characters
+        name (str): the local name of the parameter. Should be a valid
+            identifier, ie no spaces or special characters. If this parameter
+            is part of an Instrument or Station, this should match how it will
+            be referenced from that parent, ie ``instrument.name`` or
+            ``instrument.parameters[name]``
 
-        names: (2,4,5) a tuple of names
+        instrument (Optional[Instrument]): the instrument this parameter
+            belongs to, if any
 
-        label: (1&3) string to use as an axis label for this parameter
-            defaults to name
+        snapshot_get (Optional[bool]): False prevents any update to the
+            parameter during a snapshot, even if the snapshot was called with
+            ``update=True``, for example if it takes too long to update.
+            Default True.
 
-        labels: (2,4,5) a tuple of labels
-
-        units: (1&3) string that indicates units of parameter for use in axis
-            label and snapshot
-
-        shape: (3&4) a tuple of integers for the shape of array returned by
-            .get().
-
-        shapes: (5) a tuple of tuples, each one as in `shape`.
-            Single values should be denoted by None or ()
-
-        setpoints: (3,4,5) the setpoints for the returned array of values.
-            3&4 - a tuple of arrays. The first array is be 1D, the second 2D,
-            etc.
-            5 - a tuple of tuples of arrays
-            Defaults to integers from zero in each respective direction
-            Each may be either a DataArray, a numpy array, or a sequence
-            (sequences will be converted to numpy arrays)
-            NOTE: if the setpoints will be different each measurement, leave
-            this out and return the setpoints (with extra names) in the get.
-
-        setpoint_names: (3,4,5) one identifier (like `name`) per setpoint
-            array. Ignored if `setpoints` are DataArrays, which already have
-            names.
-
-        setpoint_labels: (3&4) one label (like `label`) per setpoint array.
-            Overridden if `setpoints` are DataArrays and already have labels.
-
-        vals: allowed values for setting this parameter (only relevant
-            if it has a setter),  defaults to Numbers()
-
-        docstring (Optional[string]): documentation string for the __doc__
-            field of the object. The __doc__ field of the instance is used by
-            some help systems, but not all
-
-        snapshot_get (bool): Prevent any update to the parameter
-          for example if it takes too long to update
-
+        metadata (Optional[dict]): extra information to include with the
+            JSON snapshot of the parameter
     """
-    def __init__(self,
-                 name=None, names=None,
-                 label=None, labels=None,
-                 units=None,
-                 shape=None, shapes=None,
-                 setpoints=None, setpoint_names=None, setpoint_labels=None,
-                 vals=None, docstring=None, snapshot_get=True, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, name, instrument, snapshot_get, metadata):
+        super().__init__(metadata)
         self._snapshot_get = snapshot_get
+        self.name = str(name)
+        self._instrument = instrument
 
         self.has_get = hasattr(self, 'get')
         self.has_set = hasattr(self, 'set')
-        self._meta_attrs = ['setpoint_names', 'setpoint_labels']
 
-        # always let the parameter have a single name (in fact, require this!)
-        # even if it has names too
-        self.name = str(name)
-
-        if names is not None:
-            # check for names first - that way you can provide both name
-            # AND names for instrument parameters - name is how you get the
-            # object (from the parameters dict or the delegated attributes),
-            # and names are the items it returns
-            self.names = names
-            self.labels = names if labels is None else names
-            self.units = units if units is not None else [''] * len(names)
-
-            self.set_validator(vals or Anything())
-            self.__doc__ = os.linesep.join((
-                'Parameter class:',
-                '* `names` %s' % ', '.join(self.names),
-                '* `labels` %s' % ', '.join(self.labels),
-                '* `units` %s' % ', '.join(self.units)))
-            self._meta_attrs.extend(['names', 'labels', 'units'])
-
-        elif name is not None:
-            self.label = name if label is None else label
-            self.units = units if units is not None else ''
-
-            # vals / validate only applies to simple single-value parameters
-            self.set_validator(vals)
-
-            # generate default docstring
-            self.__doc__ = os.linesep.join((
-                'Parameter class:',
-                '* `name` %s' % self.name,
-                '* `label` %s' % self.label,
-                # TODO is this unit s a typo? shouldnt that be unit?
-                '* `units` %s' % self.units,
-                '* `vals` %s' % repr(self._vals)))
-            self._meta_attrs.extend(['name', 'label', 'units', 'vals'])
-
-        else:
-            raise ValueError('either name or names is required')
-
-        if shape is not None or shapes is not None:
-            nt = type(None)
-
-            if shape is not None:
-                if not is_sequence_of(shape, int):
-                    raise ValueError('shape must be a tuple of ints, not ' +
-                                     repr(shape))
-                self.shape = shape
-                depth = 1
-                container_str = 'tuple'
-            else:
-                if not is_sequence_of(shapes, int, depth=2):
-                    raise ValueError('shapes must be a tuple of tuples '
-                                     'of ints, not ' + repr(shape))
-                self.shapes = shapes
-                depth = 2
-                container_str = 'tuple of tuples'
-
-            sp_types = (nt, DataArray, collections.Sequence,
-                        collections.Iterator)
-            if (setpoints is not None and
-                    not is_sequence_of(setpoints, sp_types, depth)):
-                raise ValueError(
-                    'setpoints must be a {} of arrays'.format(container_str))
-            if (setpoint_names is not None and
-                    not is_sequence_of(setpoint_names, (nt, str), depth)):
-                raise ValueError('setpoint_names must be a {} '
-                                 'of strings'.format(container_str))
-            if (setpoint_labels is not None and
-                    not is_sequence_of(setpoint_labels, (nt, str), depth)):
-                raise ValueError('setpoint_labels must be a {} '
-                                 'of strings'.format(container_str))
-
-            self.setpoints = setpoints
-            self.setpoint_names = setpoint_names
-            self.setpoint_labels = setpoint_labels
+        if not (self.has_get or self.has_set):
+            raise AttributeError('A parameter must have either a get or a '
+                                 'set method, or both.')
 
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
         # but they all use the same attributes so snapshot is consistent.
         self._latest_value = None
         self._latest_ts = None
-
-        if docstring is not None:
-            self.__doc__ = docstring + os.linesep + self.__doc__
-
         self.get_latest = GetLatest(self)
+
+        # subclasses should extend this list with extra attributes they
+        # want automatically included in the snapshot
+        self._meta_attrs = ['name', 'instrument']
 
     def __repr__(self):
         return named_repr(self)
@@ -259,14 +128,14 @@ class Parameter(Metadatable, DeferredOperations):
             if self.has_get:
                 return self.get()
             else:
-                raise NoCommandError('no get cmd found in' +
-                                     ' Parameter {}'.format(self.name))
+                raise NotImplementedError('no get cmd found in' +
+                                          ' Parameter {}'.format(self.name))
         else:
             if self.has_set:
                 self.set(*args)
             else:
-                raise NoCommandError('no set cmd found in' +
-                                     ' Parameter {}'.format(self.name))
+                raise NotImplementedError('no set cmd found in' +
+                                          ' Parameter {}'.format(self.name))
 
     def _latest(self):
         return {
@@ -290,8 +159,10 @@ class Parameter(Metadatable, DeferredOperations):
         out = []
 
         for attr in dir(self):
+            # while we're keeping units as a deprecated attribute in some
+            # classes, avoid calling it here so we don't get spurious errors
             if ((attr[0] == '_' and attr not in self._keep_attrs) or
-                    callable(getattr(self, attr))):
+                    (attr != 'units' and callable(getattr(self, attr)))):
                 continue
             out.append(attr)
 
@@ -303,8 +174,8 @@ class Parameter(Metadatable, DeferredOperations):
 
         Args:
             update (bool): If True, update the state by calling
-                    parameter.get().
-                    If False, just use the latest values in memory.
+                parameter.get().
+                If False, just use the latest values in memory.
 
         Returns:
             dict: base snapshot
@@ -320,20 +191,120 @@ class Parameter(Metadatable, DeferredOperations):
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
 
         for attr in set(self._meta_attrs):
-            if attr == 'instrument' and getattr(self, '_instrument', None):
+            if attr == 'instrument' and self._instrument:
                 state.update({
                     'instrument': full_class(self._instrument),
                     'instrument_name': self._instrument.name
                 })
 
             elif hasattr(self, attr):
-                state[attr] = getattr(self, attr)
+                val = getattr(self, attr)
+                attr_strip = attr.lstrip('_')  # eg _vals - do not include _
+                if isinstance(val, Validator):
+                    state[attr_strip] = repr(val)
+                else:
+                    state[attr_strip] = val
 
         return state
 
     def _save_val(self, value):
         self._latest_value = value
         self._latest_ts = datetime.now()
+
+    @property
+    def full_name(self):
+        """Include the instrument name with the Parameter name if possible."""
+        try:
+            inst_name = self._instrument.name
+            if inst_name:
+                return inst_name + '_' + self.name
+        except AttributeError:
+            pass
+
+        return self.name
+
+
+class Parameter(_BaseParameter):
+    """
+    A parameter that represents a single degree of freedom.
+    Not necessarily part of an instrument.
+
+    Subclasses should define either a ``set`` method, a ``get`` method, or
+    both.
+
+    Parameters have a ``.get_latest`` method that simply returns the most
+    recent set or measured value. This can be called ( ``param.get_latest()`` )
+    or used in a ``Loop`` as if it were a (gettable-only) parameter itself:
+
+        ``Loop(...).each(param.get_latest)``
+
+    Note: If you want ``.get`` or ``.set`` to save the measurement for
+    ``.get_latest``, you must explicitly call ``self._save_val(value)``
+    inside ``.get`` and ``.set``.
+
+    Args:
+        name (str): the local name of the parameter. Should be a valid
+            identifier, ie no spaces or special characters. If this parameter
+            is part of an Instrument or Station, this is how it will be
+            referenced from that parent, ie ``instrument.name`` or
+            ``instrument.parameters[name]``
+
+        instrument (Optional[Instrument]): the instrument this parameter
+            belongs to, if any
+
+        label (Optional[str]): Normally used as the axis label when this
+            parameter is graphed, along with ``unit``.
+
+        unit (Optional[str]): The unit of measure. Use ``''`` for unitless.
+
+        units (Optional[str]): DEPRECATED, redirects to ``unit``.
+
+        vals (Optional[Validator]): Allowed values for setting this parameter.
+            Only relevant if settable. Defaults to ``Numbers()``
+
+        docstring (Optional[str]): documentation string for the __doc__
+            field of the object. The __doc__ field of the instance is used by
+            some help systems, but not all
+
+        snapshot_get (Optional[bool]): False prevents any update to the
+            parameter during a snapshot, even if the snapshot was called with
+            ``update=True``, for example if it takes too long to update.
+            Default True.
+
+        metadata (Optional[dict]): extra information to include with the
+            JSON snapshot of the parameter
+    """
+    def __init__(self, name, instrument=None, label=None,
+                 unit=None, units=None, vals=None, docstring=None,
+                 snapshot_get=True, metadata=None):
+        super().__init__(name, instrument, snapshot_get, metadata)
+
+        self._meta_attrs.extend(['label', 'unit', '_vals'])
+
+        self.label = name if label is None else label
+
+        if units is not None:
+            warn_units('Parameter', self)
+            if unit is None:
+                unit = units
+        self.unit = unit if unit is not None else ''
+
+        self.set_validator(vals)
+
+        # generate default docstring
+        self.__doc__ = os.linesep.join((
+            'Parameter class:',
+            '',
+            '* `name` %s' % self.name,
+            '* `label` %s' % self.label,
+            '* `unit` %s' % self.unit,
+            '* `vals` %s' % repr(self._vals)))
+
+        if docstring is not None:
+            self.__doc__ = os.linesep.join((
+                docstring,
+                '',
+                self.__doc__))
 
     def set_validator(self, vals):
         """
@@ -357,7 +328,7 @@ class Parameter(Metadatable, DeferredOperations):
             value (any): value to validate
 
         """
-        if hasattr(self, '_instrument'):
+        if self._instrument:
             context = (getattr(self._instrument, 'name', '') or
                        str(self._instrument.__class__)) + '.' + self.name
         else:
@@ -400,26 +371,299 @@ class Parameter(Metadatable, DeferredOperations):
         return SweepFixedValues(self, keys)
 
     @property
-    def full_name(self):
-        """Include the instrument name with the Parameter name if possible."""
-        if getattr(self, 'name', None) is None:
-            return None
+    def units(self):
+        warn_units('Parameter', self)
+        return self.unit
 
-        try:
-            inst_name = self._instrument.name
-            if inst_name:
-                return inst_name + '_' + self.name
-        except AttributeError:
-            pass
 
-        return self.name
+class ArrayParameter(_BaseParameter):
+    """
+    A gettable parameter that returns an array of values.
+    Not necessarily part of an instrument.
+
+    Subclasses should define a ``.get`` method, which returns an array.
+    When used in a ``Loop`` or ``Measure`` operation, this will be entered
+    into a single ``DataArray``, with extra dimensions added by the ``Loop``.
+    The constructor args describe the array we expect from each ``.get`` call
+    and how it should be handled.
+
+    For now you must specify upfront the array shape, and this cannot change
+    from one call to the next. Later we intend to require only that you specify
+    the dimension, and the size of each dimension can vary from call to call.
+
+    Note: If you want ``.get`` to save the measurement for ``.get_latest``,
+    you must explicitly call ``self._save_val(items)`` inside ``.get``.
+
+    Args:
+        name (str): the local name of the parameter. Should be a valid
+            identifier, ie no spaces or special characters. If this parameter
+            is part of an Instrument or Station, this is how it will be
+            referenced from that parent, ie ``instrument.name`` or
+            ``instrument.parameters[name]``
+
+        shape (Tuple[int]): The shape (as used in numpy arrays) of the array
+            to expect. Scalars should be denoted by (), 1D arrays as (n,),
+            2D arrays as (n, m), etc.
+
+        instrument (Optional[Instrument]): the instrument this parameter
+            belongs to, if any
+
+        label (Optional[str]): Normally used as the axis label when this
+            parameter is graphed, along with ``unit``.
+
+        unit (Optional[str]): The unit of measure. Use ``''`` for unitless.
+
+        units (Optional[str]): DEPRECATED, redirects to ``unit``.
+
+        setpoints (Optional[Tuple[setpoint_array]]):
+            ``setpoint_array`` can be a DataArray, numpy.ndarray, or sequence.
+            The setpoints for each dimension of the returned array. An
+            N-dimension item should have N setpoint arrays, where the first is
+            1D, the second 2D, etc.
+            If omitted for any or all items, defaults to integers from zero in
+            each respective direction.
+            Note: if the setpoints will be different each measurement, leave
+            this out and return the setpoints (with extra names) in ``.get``.
+
+        setpoint_names (Optional[Tuple[str]]): one identifier (like
+            ``name``) per setpoint array. Ignored if a setpoint is a
+            DataArray, which already has a name.
+
+        setpoint_labels (Optional[Tuple[str]]): one label (like ``labels``)
+            per setpoint array. Ignored if a setpoint is a DataArray, which
+            already has a label.
+
+            TODO (alexcjohnson) we need setpoint_units (and in MultiParameter)
+
+        docstring (Optional[str]): documentation string for the __doc__
+            field of the object. The __doc__ field of the instance is used by
+            some help systems, but not all
+
+        snapshot_get (bool): Prevent any update to the parameter, for example
+            if it takes too long to update. Default True.
+
+        metadata (Optional[dict]): extra information to include with the
+            JSON snapshot of the parameter
+    """
+    def __init__(self, name, shape, instrument=None,
+                 label=None, unit=None, units=None,
+                 setpoints=None, setpoint_names=None, setpoint_labels=None,
+                 docstring=None, snapshot_get=True, metadata=None):
+        super().__init__(name, instrument, snapshot_get, metadata)
+
+        if self.has_set:  # TODO (alexcjohnson): can we support, ala Combine?
+            raise AttributeError('ArrayParameters do not support set '
+                                 'at this time.')
+
+        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
+                                 'label', 'unit'])
+
+        self.label = name if label is None else label
+
+        if units is not None:
+            warn_units('ArrayParameter', self)
+            if unit is None:
+                unit = units
+        self.unit = unit if unit is not None else ''
+
+        nt = type(None)
+
+        if not is_sequence_of(shape, int):
+            raise ValueError('shapes must be a tuple of ints, not ' +
+                             repr(shape))
+        self.shape = shape
+
+        # require one setpoint per dimension of shape
+        sp_shape = (len(shape),)
+
+        sp_types = (nt, DataArray, collections.Sequence,
+                    collections.Iterator)
+        if (setpoints is not None and
+                not is_sequence_of(setpoints, sp_types, shape=sp_shape)):
+            raise ValueError('setpoints must be a tuple of arrays')
+        if (setpoint_names is not None and
+                not is_sequence_of(setpoint_names, (nt, str), shape=sp_shape)):
+            raise ValueError('setpoint_names must be a tuple of strings')
+        if (setpoint_labels is not None and
+                not is_sequence_of(setpoint_labels, (nt, str),
+                                   shape=sp_shape)):
+            raise ValueError('setpoint_labels must be a tuple of strings')
+
+        self.setpoints = setpoints
+        self.setpoint_names = setpoint_names
+        self.setpoint_labels = setpoint_labels
+
+        self.__doc__ = os.linesep.join((
+            'Parameter class:',
+            '',
+            '* `name` %s' % self.name,
+            '* `label` %s' % self.label,
+            '* `unit` %s' % self.unit,
+            '* `shape` %s' % repr(self.shape)))
+
+        if docstring is not None:
+            self.__doc__ = os.linesep.join((
+                docstring,
+                '',
+                self.__doc__))
+
+    @property
+    def units(self):
+        warn_units('ArrayParameter', self)
+        return self.unit
+
+
+def _is_nested_sequence_or_none(obj, types, shapes):
+    """Validator for MultiParameter setpoints/names/labels"""
+    if obj is None:
+        return True
+
+    if not is_sequence_of(obj, tuple, shape=(len(shapes),)):
+        return False
+
+    for obji, shapei in zip(obj, shapes):
+        if not is_sequence_of(obji, types, shape=(len(shapei),)):
+            return False
+
+    return True
+
+
+class MultiParameter(_BaseParameter):
+    """
+    A gettable parameter that returns multiple values with separate names,
+    each of arbitrary shape.
+    Not necessarily part of an instrument.
+
+    Subclasses should define a ``.get`` method, which returns a sequence of
+    values. When used in a ``Loop`` or ``Measure`` operation, each of these
+    values will be entered into a different ``DataArray``. The constructor
+    args describe what data we expect from each ``.get`` call and how it
+    should be handled. ``.get`` should always return the same number of items,
+    and most of the constructor arguments should be tuples of that same length.
+
+    For now you must specify upfront the array shape of each item returned by
+    ``.get``, and this cannot change from one call to the next. Later we intend
+    to require only that you specify the dimension of each item returned, and
+    the size of each dimension can vary from call to call.
+
+    Note: If you want ``.get`` to save the measurement for ``.get_latest``,
+    you must explicitly call ``self._save_val(items)`` inside ``.get``.
+
+    Args:
+        name (str): the local name of the whole parameter. Should be a valid
+            identifier, ie no spaces or special characters. If this parameter
+            is part of an Instrument or Station, this is how it will be
+            referenced from that parent, ie ``instrument.name`` or
+            ``instrument.parameters[name]``
+
+        names (Tuple[str]): A name for each item returned by a ``.get``
+            call. Will be used as the basis of the ``DataArray`` names
+            when this parameter is used to create a ``DataSet``.
+
+        shapes (Tuple[Tuple[int]]): The shape (as used in numpy arrays) of
+            each item. Scalars should be denoted by (), 1D arrays as (n,),
+            2D arrays as (n, m), etc.
+
+        instrument (Optional[Instrument]): the instrument this parameter
+            belongs to, if any
+
+        labels (Optional[Tuple[str]]): A label for each item. Normally used
+            as the axis label when a component is graphed, along with the
+            matching entry from ``units``.
+
+        units (Optional[Tuple[str]]): The unit of measure for each item.
+            Use ``''`` or ``None`` for unitless values.
+
+        setpoints (Optional[Tuple[Tuple[setpoint_array]]]):
+            ``setpoint_array`` can be a DataArray, numpy.ndarray, or sequence.
+            The setpoints for each returned array. An N-dimension item should
+            have N setpoint arrays, where the first is 1D, the second 2D, etc.
+            If omitted for any or all items, defaults to integers from zero in
+            each respective direction.
+            Note: if the setpoints will be different each measurement, leave
+            this out and return the setpoints (with extra names) in ``.get``.
+
+        setpoint_names (Optional[Tuple[Tuple[str]]]): one identifier (like
+            ``name``) per setpoint array. Ignored if a setpoint is a
+            DataArray, which already has a name.
+
+        setpoint_labels (Optional[Tuple[Tuple[str]]]): one label (like
+            ``labels``) per setpoint array. Ignored if a setpoint is a
+            DataArray, which already has a label.
+
+        docstring (Optional[str]): documentation string for the __doc__
+            field of the object. The __doc__ field of the instance is used by
+            some help systems, but not all
+
+        snapshot_get (bool): Prevent any update to the parameter, for example
+            if it takes too long to update. Default True.
+
+        metadata (Optional[dict]): extra information to include with the
+            JSON snapshot of the parameter
+    """
+    def __init__(self, name, names, shapes, instrument=None,
+                 labels=None, units=None,
+                 setpoints=None, setpoint_names=None, setpoint_labels=None,
+                 docstring=None, snapshot_get=True, metadata=None):
+        super().__init__(name, instrument, snapshot_get, metadata)
+
+        if self.has_set:  # TODO (alexcjohnson): can we support, ala Combine?
+            raise AttributeError('MultiParameters do not support set '
+                                 'at this time.')
+
+        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
+                                 'names', 'labels', 'units'])
+
+        if not is_sequence_of(names, str):
+            raise ValueError('names must be a tuple of strings, not' +
+                             repr(names))
+
+        self.names = names
+        self.labels = labels if labels is not None else names
+        self.units = units if units is not None else [''] * len(names)
+
+        nt = type(None)
+
+        if (not is_sequence_of(shapes, int, depth=2) or
+                len(shapes) != len(names)):
+            raise ValueError('shapes must be a tuple of tuples '
+                             'of ints, not ' + repr(shapes))
+        self.shapes = shapes
+
+        sp_types = (nt, DataArray, collections.Sequence,
+                    collections.Iterator)
+        if not _is_nested_sequence_or_none(setpoints, sp_types, shapes):
+            raise ValueError('setpoints must be a tuple of tuples of arrays')
+
+        if not _is_nested_sequence_or_none(setpoint_names, (nt, str), shapes):
+            raise ValueError(
+                'setpoint_names must be a tuple of tuples of strings')
+
+        if not _is_nested_sequence_or_none(setpoint_labels, (nt, str), shapes):
+            raise ValueError(
+                'setpoint_labels must be a tuple of tuples of strings')
+
+        self.setpoints = setpoints
+        self.setpoint_names = setpoint_names
+        self.setpoint_labels = setpoint_labels
+
+        self.__doc__ = os.linesep.join((
+            'MultiParameter class:',
+            '',
+            '* `name` %s' % self.name,
+            '* `names` %s' % ', '.join(self.names),
+            '* `labels` %s' % ', '.join(self.labels),
+            '* `units` %s' % ', '.join(self.units)))
+
+        if docstring is not None:
+            self.__doc__ = os.linesep.join((
+                docstring,
+                '',
+                self.__doc__))
 
     @property
     def full_names(self):
         """Include the instrument name with the Parameter names if possible."""
-        if getattr(self, 'names', None) is None:
-            return None
-
         try:
             inst_name = self._instrument.name
             if inst_name:
@@ -430,16 +674,27 @@ class Parameter(Metadatable, DeferredOperations):
         return self.names
 
 
+def no_setter(*args, **kwargs):
+    raise NotImplementedError('This Parameter has no setter defined.')
+
+
+def no_getter(*args, **kwargs):
+    raise NotImplementedError(
+        'This Parameter has no getter, use .get_latest to get the most recent '
+        'set value.')
+
+
 class StandardParameter(Parameter):
     """
     Define one measurement parameter.
 
     Args:
-        name (string): the local name of this parameter
-        instrument (Optional[Instrument]): an instrument that handles this
-            function. Default None.
+        name (str): the local name of this parameter
 
-        get_cmd (Optional[Union[string, function]]): a string or function to
+        instrument (Optional[Instrument]): the instrument this parameter
+            belongs to, if any
+
+        get_cmd (Optional[Union[str, function]]): a string or function to
             get this parameter. You can only use a string if an instrument is
             provided, then this string will be passed to instrument.ask
 
@@ -447,7 +702,7 @@ class StandardParameter(Parameter):
             from get to the final output value.
             See also val_mapping
 
-        set_cmd (Optional[Union[string, function]]): command to set this
+        set_cmd (Optional[Union[str, function]]): command to set this
             parameter, either:
 
             - a string (containing one field to .format, like "{}" etc)
@@ -527,15 +782,10 @@ class StandardParameter(Parameter):
                 raise TypeError(
                     'You cannot use set_parser and val_mapping together.')
 
-        if get_parser is not None and not isinstance(get_cmd, str):
-            logging.warning('get_parser is set, but will not be used ' +
-                            '(name %s)' % name)
-        super().__init__(name=name, vals=vals, **kwargs)
+        super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
 
-        self._instrument = instrument
-
-        self._meta_attrs.extend(['instrument', 'sweep_step', 'sweep_delay',
-                                'max_sweep_delay'])
+        self._meta_attrs.extend(['sweep_step', 'sweep_delay',
+                                 'max_sweep_delay'])
 
         # stored value from last .set() or .get()
         # normally only used by set with a sweep, to avoid
@@ -557,8 +807,7 @@ class StandardParameter(Parameter):
             self._save_val(value)
             return value
         except Exception as e:
-            e.args = e.args + (
-                'getting {}:{}'.format(self._instrument.name, self.name),)
+            e.args = e.args + ('getting {}'.format(self.full_name),)
             raise e
 
     def _valmapping_get_parser(self, val):
@@ -582,7 +831,7 @@ class StandardParameter(Parameter):
             val = int(val)
             return self._get_mapping[val]
         except (ValueError, KeyError):
-            raise KeyError("Unmapped value from instrument: {!r}".format(val))
+            raise KeyError('Unmapped value from instrument: {!r}'.format(val))
 
     def _valmapping_with_preparser(self, val):
         return self._valmapping_get_parser(self._get_preparser(val))
@@ -598,6 +847,8 @@ class StandardParameter(Parameter):
     def _set_set(self, set_cmd, set_parser):
         # note: this does not set the final setter functions. that's handled
         # in self.set_sweep, when we choose a swept or non-swept setter.
+        # TODO(giulioungaretti) lies! that method does not exis.
+        # probably alexj left it out :(
         exec_str = self._instrument.write if self._instrument else None
         self._set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str,
                             input_parser=set_parser, no_cmd_function=no_setter)
@@ -615,8 +866,7 @@ class StandardParameter(Parameter):
                 time.sleep(remainder)
         except Exception as e:
             e.args = e.args + (
-                'setting {}:{} to {}'.format(self._instrument.name,
-                                             self.name, repr(value)),)
+                'setting {} to {}'.format(self.full_name, repr(value)),)
             raise e
 
     def _sweep_steps(self, value):
@@ -676,8 +926,7 @@ class StandardParameter(Parameter):
                 time.sleep(remainder)
         except Exception as e:
             e.args = e.args + (
-                'setting {}:{} to {}'.format(self._instrument.name,
-                                             self.name, repr(value)),)
+                'setting {} to {}'.format(self.full_name, repr(value)),)
             raise e
 
     def set_step(self, step, max_val_age=None):
@@ -791,21 +1040,20 @@ class ManualParameter(Parameter):
     Define one parameter that reflects a manual setting / configuration.
 
     Args:
-        name (string): the local name of this parameter
+        name (str): the local name of this parameter
 
         instrument (Optional[Instrument]): the instrument this applies to,
             if any.
 
-        initial_value (Optional[string]): starting value, the
+        initial_value (Optional[str]): starting value, the
             only invalid value allowed, and None is only allowed as an initial
             value, it cannot be set later
 
         **kwargs: Passed to Parameter parent class
     """
     def __init__(self, name, instrument=None, initial_value=None, **kwargs):
-        super().__init__(name=name, **kwargs)
-        self._instrument = instrument
-        self._meta_attrs.extend(['instrument', 'initial_value'])
+        super().__init__(name=name, instrument=instrument, **kwargs)
+        self._meta_attrs.extend(['initial_value'])
 
         if initial_value is not None:
             self.validate(initial_value)
@@ -814,6 +1062,7 @@ class ManualParameter(Parameter):
     def set(self, value):
         """
         Validate and saves value
+
         Args:
             value (any): value to validate and save
         """
@@ -853,8 +1102,10 @@ class GetLatest(DelegateAttributes, DeferredOperations):
         return self.get()
 
 
-def combine(*parameters, name, label=None, units=None, aggregator=None):
-    """Combine parameters into one swepable parameter
+def combine(*parameters, name, label=None, unit=None, units=None,
+            aggregator=None):
+    """
+    Combine parameters into one sweepable parameter
 
     Args:
         *paramters (qcodes.Parameter): the parameters to combine
@@ -870,7 +1121,8 @@ def combine(*parameters, name, label=None, units=None, aggregator=None):
     sequantially.
     """
     parameters = list(parameters)
-    multi_par = CombinedParameter(parameters, name, label, units, aggregator)
+    multi_par = CombinedParameter(parameters, name, label, unit, units,
+                                  aggregator)
     return multi_par
 
 
@@ -878,8 +1130,8 @@ class CombinedParameter(Metadatable):
     """ A combined parameter
 
     Args:
-        *paramters (qcodes.Parameter): the parameters to combine
-        name (str): the name of the paramter
+        *parameters (qcodes.Parameter): the parameters to combine
+        name (str): the name of the parameter
         label (Optional[str]): the label of the combined parameter
         unit (Optional[str]): the unit of the combined parameter
         aggregator (Optional[Callable[list[any]]]): a function to aggregate
@@ -888,11 +1140,11 @@ class CombinedParameter(Metadatable):
     A combined parameter sets all the combined parameters at every point of the
     sweep.
     The sets are called in the same order the parameters are, and
-    sequantially.
+    sequentially.
     """
 
     def __init__(self, parameters, name, label=None,
-                 units=None, aggregator=None):
+                 unit=None, units=None, aggregator=None):
         super().__init__()
         # TODO(giulioungaretti)temporary hack
         # starthack
@@ -902,7 +1154,12 @@ class CombinedParameter(Metadatable):
         self.parameter.full_name = name
         self.parameter.name = name
         self.parameter.label = label
-        self.parameter.units = units
+
+        if units is not None:
+            warn_units('CombinedParameter', self)
+            if unit is None:
+                unit = units
+        self.parameter.unit = unit
         # endhack
         self.parameters = parameters
         self.sets = [parameter.set for parameter in self.parameters]
@@ -918,6 +1175,7 @@ class CombinedParameter(Metadatable):
 
         Args:
             index (int): the index of the setpoints one wants to set
+
         Returns:
             list: values that where actually set
         """
@@ -930,8 +1188,9 @@ class CombinedParameter(Metadatable):
         """
         Creates a new combined parameter to be iterated over.
         One can sweep over either:
-             - n array of lenght m
-             - one nxm array
+
+         - n array of lenght m
+         - one nxm array
 
         where n is the number of combined parameters
         and m is the number of setpoints
@@ -946,7 +1205,7 @@ class CombinedParameter(Metadatable):
         if len(array) > 1:
             dim = set([len(a) for a in array])
             if len(dim) != 1:
-                raise ValueError("Arrays have different number of setpoints")
+                raise ValueError('Arrays have different number of setpoints')
             array = numpy.array(array).transpose()
         else:
             # cast to array in case users
@@ -993,10 +1252,10 @@ class CombinedParameter(Metadatable):
         """
         meta_data = collections.OrderedDict()
         meta_data['__class__'] = full_class(self)
-        meta_data["units"] = self.parameter.units
-        meta_data["label"] = self.parameter.label
-        meta_data["full_name"] = self.parameter.full_name
-        meta_data["aggreagator"] = repr(getattr(self, 'f', None))
+        meta_data['unit'] = self.parameter.unit
+        meta_data['label'] = self.parameter.label
+        meta_data['full_name'] = self.parameter.full_name
+        meta_data['aggreagator'] = repr(getattr(self, 'f', None))
         for param in self.parameters:
             meta_data[param.full_name] = param.snapshot()
 
