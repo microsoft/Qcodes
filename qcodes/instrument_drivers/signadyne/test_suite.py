@@ -70,3 +70,21 @@ class TestSignadyne_M3201A(DriverTestCase):
         self.instrument.open_with_slot(product_name, chassis_number, slot_number)
         open_status = self.instrument.open()
         self.assertEqual(open_status, True)
+
+    def test_clock_frequency(self):
+        with self.assertRaises(ValueError):
+            self.instrument.clock_frequency(600e6)
+        with self.assertRaises(ValueError):
+            self.instrument.clock_frequency(32)
+
+        cur_f = self.instrument.clock_frequency()
+        test_f = 300e6
+        self.instrument.clock_frequency(test_f)
+        self.assertAlmostEqual(self.instrument.clock_frequency(), test_f, delta=1)
+
+        test_f = 453.152e6
+        self.instrument.clock_frequency(test_f)
+        self.assertAlmostEqual(self.instrument.clock_frequency(), test_f, delta=1)
+
+        # leave the setup in the initial state
+        self.instrument.clock_frequency(cur_f)
