@@ -5,61 +5,14 @@ import numpy as np
 from qcodes import MultiParameter, Parameter
 
 
-class FrequencySweep(MultiParameter):
-    """
-    Hardware controlled parameter class for Rohde Schwarz RSZNB20 trace.
-
-#     Instrument returns an list of transmission data in the form of a list of
-#     complex numbers taken from a frequency sweep.
-
-
-    TODO:
-      - ability to choose for abs or db in magnitude return
-    """
-    def __init__(self, name, instrument, start, stop, npts):
-        super().__init__(name, names=("", ""), shapes=((), ()))
-        self._instrument = instrument
-        self.set_sweep(start, stop, npts)
-        self.names = ('magnitude', 'phase')
-        self.units = ('dBm', 'rad')
-        self.setpoint_names = (('frequency',), ('frequency',))
-
-    def set_sweep(self, start, stop, npts):
-        #  needed to update config of the software parameter on sweep chage
-        # freq setpoints tuple as needs to be hashable for look up
-        f = tuple(np.linspace(int(start), int(stop), num=npts))
-        self.setpoints = ((f,), (f,))
-        self.shapes = ((npts,), (npts,))
-
-    def get(self):
-        self._instrument.write('SENS1:AVER:STAT ON')
-        self._instrument.write('AVER:CLE')
-        self._instrument.cont_meas_off()
-
-        # instrument averages over its last 'avg' number of sweeps
-        # need to ensure averaged result is returned
-        for avgcount in range(self._instrument.avg()):
-            self._instrument.write('INIT:IMM; *WAI')
-        data_str = self._instrument.ask('CALC:DATA? SDAT').split(',')
-        data_list = [float(v) for v in data_str]
-
-        # data_list of complex numbers [re1,im1,re2,im2...]
-        data_arr = np.array(data_list).reshape(int(len(data_list) / 2), 2)
-        mag_array, phase_array = [], []
-        for comp in data_arr:
-            complex_num = complex(comp[0], comp[1])
-            mag_array.append(abs(complex_num))
-            phase_array.append(phase(complex_num))
-        self._instrument.cont_meas_on()
-        return mag_array, phase_array
-
-
 class ZNB20(VisaInstrument):
+
     """
     qcodes driver for the Rohde & Schwarz ZNB20
 
     Author: Stefano Poletto (QuTech)
     """
+
     def __init__(self, name, address, **kwargs):
 
         super().__init__(name=name, address=address, **kwargs)
@@ -82,15 +35,12 @@ class ZNB20(VisaInstrument):
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
         self.add_function('rf_on', call_cmd='OUTP1 ON')
 
-
-
         ###################
         # Common commands #
         ###################
         # common commands for all devices as described in IEEE 488.2
         self.add_function('reset', call_cmd='*RST')
         self.add_function('wait_to_continue', call_cmd='*WAI')
-
 
         ######################
         # CALCULATE commands #
@@ -102,13 +52,11 @@ class ZNB20(VisaInstrument):
                                           'smit', 'ism', 'gdel', 'real', 'imag',
                                           'swr'))
 
-
         ####################
         # DISPLAY commands #
         ####################
         # Commands to select and present data on screen
         self.add_function('autoscale_trace', call_cmd='DISP:TRAC:Y:AUTO ONCE')
-
 
         #####################
         # INITIATE commands #
@@ -120,7 +68,6 @@ class ZNB20(VisaInstrument):
                            vals=vals.OnOff())
 
         self.add_function('start_sweep_all', call_cmd='INITIATE:IMMEDIATE:ALL')
-
 
         ##################
         # SENSE commands #
@@ -162,7 +109,6 @@ class ZNB20(VisaInstrument):
                            get_parser=VISA_str_to_int,
                            vals=vals.Numbers(100e3, 20e9))
 
-
         self.add_parameter(name='span_frequency',
                            units='Hz',
                            get_cmd='SENSE:FREQUENCY:SPAN?',
@@ -188,13 +134,13 @@ class ZNB20(VisaInstrument):
 
         self.add_parameter(name='number_sweeps_all',
                            set_cmd='SENS:SWE:COUN:ALL {:.4f}',
-                           vals=vals.Ints(1,100000))
+                           vals=vals.Ints(1, 100000))
 
         self.add_parameter(name='npts',
                            get_cmd='SENS:SWE:POIN?',
                            set_cmd='SENS:SWE:POIN {:.4f}',
                            get_parser=VISA_str_to_int,
-                           vals=vals.Ints(1,100001))
+                           vals=vals.Ints(1, 100001))
 
         self.add_parameter(name='min_sweep_time',
                            get_cmd='SENS:SWE:TIME:AUTO?',
@@ -215,7 +161,6 @@ class ZNB20(VisaInstrument):
                            vals=vals.Enum('lin', 'linear', 'log', 'logarithmic', 'pow', 'power',
                                           'cw', 'poin', 'point', 'segm', 'segment'))
 
-
         #####################
         #  TRIGGER commands #
         #####################
@@ -224,11 +169,8 @@ class ZNB20(VisaInstrument):
                            set_cmd='TRIGGER:SEQUENCE:SOURCE {:s}',
                            vals=vals.Enum('immediate', 'external', 'manual', 'multiple'))
 
-
-
         self.reset()
         self.connect_message()
-
 
     def get_stimulus(self):
         '''
@@ -238,7 +180,6 @@ class ZNB20(VisaInstrument):
         stimulus_double = np.array(stimulus_str.split(','), dtype=np.double)
 
         return stimulus_double
-
 
     def get_real_imaginary_data(self):
         data_str = self.ask('CALC:DATA? SDAT')
@@ -253,10 +194,9 @@ class ZNB20(VisaInstrument):
         print('in progress')
 
 
-
-
 def VISA_str_to_int(message):
     return int(float(message.strip('\\n')))
+
 
 def VISA_str_to_float(message):
     return float(message.strip('\\n'))
