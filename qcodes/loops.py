@@ -777,74 +777,70 @@ class ActiveLoop(Metadatable):
 
         self.last_task_failed = False
 
-        try:
-            for i, value in enumerate(self.sweep_values):
-                if self.progress_interval is not None:
-                    tprint('loop %s: %d/%d (%.1f [s])' % (
-                        self.sweep_values.name, i, imax, time.time() - t0),
-                        dt=self.progress_interval, tag='outerloop')
+        for i, value in enumerate(self.sweep_values):
+            if self.progress_interval is not None:
+                tprint('loop %s: %d/%d (%.1f [s])' % (
+                    self.sweep_values.name, i, imax, time.time() - t0),
+                    dt=self.progress_interval, tag='outerloop')
 
-                set_val = self.sweep_values.set(value)
+            set_val = self.sweep_values.set(value)
 
-                new_indices = loop_indices + (i,)
-                new_values = current_values + (value,)
-                data_to_store = {}
+            new_indices = loop_indices + (i,)
+            new_values = current_values + (value,)
+            data_to_store = {}
 
-                if hasattr(self.sweep_values, "parameters"):
-                    set_name = self.data_set.action_id_map[action_indices]
-                    if hasattr(self.sweep_values, 'aggregate'):
-                        value = self.sweep_values.aggregate(*set_val)
-                    self.data_set.store(new_indices, {set_name: value})
-                    for j, val in enumerate(set_val):
-                        set_index = action_indices + (j+1, )
-                        set_name = (self.data_set.action_id_map[set_index])
-                        data_to_store[set_name] = val
-                else:
-                    set_name = self.data_set.action_id_map[action_indices]
-                    data_to_store[set_name] = value
+            if hasattr(self.sweep_values, "parameters"):
+                set_name = self.data_set.action_id_map[action_indices]
+                if hasattr(self.sweep_values, 'aggregate'):
+                    value = self.sweep_values.aggregate(*set_val)
+                self.data_set.store(new_indices, {set_name: value})
+                for j, val in enumerate(set_val):
+                    set_index = action_indices + (j+1, )
+                    set_name = (self.data_set.action_id_map[set_index])
+                    data_to_store[set_name] = val
+            else:
+                set_name = self.data_set.action_id_map[action_indices]
+                data_to_store[set_name] = value
 
-                self.data_set.store(new_indices, data_to_store)
+            self.data_set.store(new_indices, data_to_store)
 
-                if not self._nest_first:
-                    # only wait the delay time if an inner loop will not inherit it
-                    self._wait(delay)
+            if not self._nest_first:
+                # only wait the delay time if an inner loop will not inherit it
+                self._wait(delay)
 
-                try:
-                    for f in callables:
-                        f(first_delay=delay,
-                          loop_indices=new_indices,
-                          current_values=new_values)
+            try:
+                for f in callables:
+                    f(first_delay=delay,
+                      loop_indices=new_indices,
+                      current_values=new_values)
 
-                        # after the first action, no delay is inherited
-                        delay = 0
-                except _QcodesBreak:
-                    break
+                    # after the first action, no delay is inherited
+                    delay = 0
+            except _QcodesBreak:
+                break
 
-                # after the first setpoint, delay reverts to the loop delay
-                delay = self.delay
+            # after the first setpoint, delay reverts to the loop delay
+            delay = self.delay
 
-                # now check for a background task and execute it if it's
-                # been long enough since the last time
-                # don't let exceptions in the background task interrupt
-                # the loop
-                # if the background task fails twice consecutively, stop
-                # executing it
-                if self.bg_task is not None:
-                    t = time.time()
-                    if t - last_task >= self.bg_min_delay:
-                        try:
-                            self.bg_task()
-                        except Exception:
-                            if self.last_task_failed:
-                                self.bg_task = None
-                            self.last_task_failed = True
-                            log.exception("Failed to execute bg task")
+            # now check for a background task and execute it if it's
+            # been long enough since the last time
+            # don't let exceptions in the background task interrupt
+            # the loop
+            # if the background task fails twice consecutively, stop
+            # executing it
+            if self.bg_task is not None:
+                t = time.time()
+                if t - last_task >= self.bg_min_delay:
+                    try:
+                        self.bg_task()
+                    except Exception:
+                        if self.last_task_failed:
+                            self.bg_task = None
+                        self.last_task_failed = True
+                        log.exception("Failed to execute bg task")
 
-                        last_task = t
+                    last_task = t
 
-        except Interrupt:
-            log.debug("Stopping loop cleanly")
-            return
         # run the background task one last time to catch the last setpoint(s)
         if self.bg_task is not None:
             self.bg_task()
@@ -862,7 +858,3 @@ class ActiveLoop(Metadatable):
             finish_clock = time.perf_counter() + delay
             t = wait_secs(finish_clock)
             time.sleep(t)
-
-
-class Interrupt(Exception):
-    pass

@@ -4,8 +4,8 @@ from unittest import TestCase
 import numpy as np
 from unittest.mock import patch
 
-from qcodes.loops import Loop, Interrupt
-from qcodes.actions import Task, Wait, BreakIf
+from qcodes.loops import Loop
+from qcodes.actions import Task, Wait, BreakIf, _QcodesBreak
 from qcodes.station import Station
 from qcodes.data.data_array import DataArray
 from qcodes.instrument.parameter import ManualParameter
@@ -461,7 +461,7 @@ class AbortingGetter(ManualParameter):
     def get(self):
         self._count -= 1
         if self._count <= 0:
-            raise Interrupt
+            raise _QcodesBreak
         return super().get()
 
     def reset(self):
