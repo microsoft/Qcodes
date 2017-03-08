@@ -215,7 +215,7 @@ class TestMockInstLoop(TestCase):
                                                                                  self.gates.chan2[0:1:1], 0.000001))
         data = loop.get_data_set(name='testsweep', write_period=0.01)
         _ = loop.with_bg_task(data.sync).run()
-        assert not np.isnan(data.chan2).any()
+        assert not np.isnan(data.chan2_set).any()
 
 def sleeper(t):
     time.sleep(t)
@@ -467,7 +467,7 @@ class TestLoop(TestCase):
         self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.one.tolist(), [1, 1])
         self.assertEqual(data.onetwo.tolist(), [[1, 2]] * 2)
-        self.assertEqual(data.index0.tolist(), [[0, 1]] * 2)
+        self.assertEqual(data.index0_set.tolist(), [[0, 1]] * 2)
 
         # give it setpoints, names, and labels
         mg.setpoints = (None, ((10, 11),))
@@ -478,8 +478,8 @@ class TestLoop(TestCase):
 
         data = loop.run_temp()
 
-        self.assertEqual(data.highest.tolist(), [[10, 11]] * 2)
-        self.assertEqual(data.highest.label, sp_label)
+        self.assertEqual(data.highest_set.tolist(), [[10, 11]] * 2)
+        self.assertEqual(data.highest_set.label, sp_label)
 
         # setpoints as DataArray - name and label here override
         # setpoint_names and setpoint_labels attributes
@@ -490,8 +490,8 @@ class TestLoop(TestCase):
         mg.setpoints = (None, (sp_dataarray,))
 
         data = loop.run_temp()
-        self.assertEqual(data.bgn.tolist(), [[6, 7]] * 2)
-        self.assertEqual(data.bgn.label, new_sp_label)
+        self.assertEqual(data.bgn_set.tolist(), [[6, 7]] * 2)
+        self.assertEqual(data.bgn_set.label, new_sp_label)
 
         # muck things up and test for errors
         mg.setpoints = (None, ((1, 2, 3),))
@@ -522,7 +522,7 @@ class TestLoop(TestCase):
 
         self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.arr.tolist(), [[4, 5, 6]] * 2)
-        self.assertEqual(data.index0.tolist(), [[0, 1, 2]] * 2)
+        self.assertEqual(data.index0_set.tolist(), [[0, 1, 2]] * 2)
 
         mg = MultiGetter(arr2d=((21, 22), (23, 24)))
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
@@ -530,8 +530,8 @@ class TestLoop(TestCase):
 
         self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.arr2d.tolist(), [[[21, 22], [23, 24]]] * 2)
-        self.assertEqual(data.index0.tolist(), [[0, 1]] * 2)
-        self.assertEqual(data.index1.tolist(), [[[0, 1]] * 2] * 2)
+        self.assertEqual(data.index0_set.tolist(), [[0, 1]] * 2)
+        self.assertEqual(data.index1_set.tolist(), [[[0, 1]] * 2] * 2)
 
     def test_bad_actors(self):
         def f():

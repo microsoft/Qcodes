@@ -15,7 +15,6 @@ config = Config()
 from qcodes.version import __version__
 from qcodes.process.helpers import set_mp_method
 from qcodes.utils.helpers import in_notebook
-from qcodes.utils.wrappers import  do1d, do2d
 
 # code that should only be imported into the main (notebook) thread
 # in particular, importing matplotlib in the side processes takes a long
