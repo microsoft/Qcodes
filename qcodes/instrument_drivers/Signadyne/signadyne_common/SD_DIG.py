@@ -280,6 +280,97 @@ class SD_DIG(Instrument):
             )
 
 
+    def set_IO_trigger_direction(direction):
+        """ Sets the external port trigger direction
+
+        Args:
+            direction (int)     : the port direction (0 = output, 1 = input)
+
+        """
+        pass
+
+    def setclksys_frequency(frequency):
+        """ Sets the CLKsys frequency
+
+        Args:
+
+        frequency (int)         : frequency of CLKsys in Hz
+
+        """
+        pass
+
+    def set_trigger_behaviour(behaviour):
+        """ Sets the trigger behaviour in resetting the CLKsync and CLKsys phases
+
+        Args:
+            behaviour (int)     : edge sensitivity to the PXI trigger
+
+        """
+        pass
+
+    def set_PXI_trigger(PXI):
+        """ Sets the PXI trigger which causes the phase reset of CLKsync and CLKsys
+
+        Args:
+            PXI (int)           : the PXI trigger number
+        """
+        pass
+
+    def set_skew(skew):
+        """ Sets the skew between PXI_CLK10 and CLKsync in multiples of 10 ns
+
+        Args:
+            skew (int)          : the skew value (1 = 10ns, 2 = 20ns, etc.)
+        """
+        pass
+
+    def set_channel_input_config(channel, fullScale, impedance, coupling):
+        """ Sets the input configuration for the specified channel
+
+        Args:
+            channel (int)       : the input channel you are modifying
+            fullScale (float)   : the full scale input range in volts
+            impedance (int)     : the input impedance (0 = Hi-Z, 1 = 50 Ohm)
+            coupling (int)      : the channel coupling (0 = DC, 1 = AC)
+        """
+        pass
+
+    def set_prescaler(channel, prescaler):
+        """ Sets the channel sampling frequency via the prescaler
+
+        Args:
+            channel (int)       : the input channel you are modifying
+            prescaler (int)     : the prescaler value [0..4095]
+        """
+        pass
+
+    def set_full_scale(channel, full_scale):
+        """ Sets the channel full scale input voltage
+
+        Args:
+            channel(int)        : the input channel you are modifying
+            full_scale (float)  : the input full scale range in volts
+        """
+        pass
+    
+    def set_impedance(channel, impedance):
+        """ Sets the channel input impedance
+
+        Args:
+            channel (int)       : the input channel you are modifying
+            impedance (int)     : the input impedance (0 = Hi-Z, 1 = 50 Ohm)
+        """
+        pass
+
+    def set_coupling(channel, coupling):
+        """ Sets the channel coupling
+
+        Args:
+            channel (int)       : the input channel you are modifying
+            coupling (int)      : the channel coupling (0 = DC, 1 = AC)
+        """
+        pass
+
     def set_trigger_mode(channel, mode=None):
         """ Sets the current trigger mode from those defined in SD_TriggerModes
 
