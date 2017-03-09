@@ -3,7 +3,7 @@ from qcodes.instrument.parameter import ManualParameter
 from functools import partial
 try:
     import Signadyne.signadyne.SD_AIN as SD_AIN
-    import Signadyne.signadyne.SD_AIN_TriggerMode as SD_TriggerMode
+    import Signadyne.signadyne.SD_AIN_TriggerModes as SD_TriggerModes
     # TODO: Import all Signadyne classes as themselves
 except ImportError:
     raise ImportError('To use a Signadyne Digitizer, install the Signadyne module')
@@ -108,13 +108,13 @@ class SD_DIG(Instrument):
             # For channelPrescalerConfig 
             self.__prescaler[self, n]                =  0 # By default, no prescaling
             # For channelTriggerConfig
-            self.__trigger_mode[self, n]             =  SD_TriggerMode.RISING_EDGE
+            self.__trigger_mode[self, n]             =  SD_TriggerModes.RISING_EDGE
             self.__trigger_threshold[self, n]        =  0 # By default, threshold at 0V
             # For DAQconfig
             self.__points_per_cycle[self, n]         =  0
             self.__n_cycles[self, n]                 =  0
             self.__trigger_delay[self, n]            =  0
-            self.__trigger_mode[self, n]             =  SD_TriggerMode.RISING_EDGE
+            self.__trigger_mode[self, n]             =  SD_TriggerModes.RISING_EDGE
             # For DAQtriggerExternalConfig
             self.__digital_trigger_mode[self, n]     =  0 
             self.__digital_trigger_source[self, n]   =  0
@@ -281,15 +281,15 @@ class SD_DIG(Instrument):
 
 
     def set_trigger_mode(channel, mode=None):
-        """ Sets the current trigger mode from those defined in SD_TriggerMode
+        """ Sets the current trigger mode from those defined in SD_TriggerModes
 
         Args:
             channel (int)       : the input channel you are modifying
-            mode (int)          : the trigger mode drawn from the class SD_TriggerMode
+            mode (int)          : the trigger mode drawn from the class SD_TriggerModes
         """
         if (channel > self.n_channels):
-            raise ValueError("The specified channel {ch} exceeds the number of channels ({n})".format(ch=channel, n=self.n_channels)
-        if (mode not in SD_trigger_modes):
+            raise ValueError("The specified channel {ch} exceeds the number of channels ({n})".format(ch=channel, n=self.n_channels))
+        if mode not in vars(SD_TriggerModes):
             raise ValueError("The specified mode {mode} does not exist.".format(mode=mode))
         self.__trigger_mode[self, channel] = mode
         # TODO: Call the SD library to set the current mode
@@ -312,7 +312,7 @@ class SD_DIG(Instrument):
             threshold (float)   : the value in volts for the trigger threshold
         """
         if (channel > self.n_channels):
-            raise ValueError("The specified channel {ch} exceeds the number of channels ({n})".format(ch=channel, n=self.n_channels)
+            raise ValueError("The specified channel {ch} exceeds the number of channels ({n})".format(ch=channel, n=self.n_channels))
         if (threshold > 3 or threshold < -3):
             raise ValueError("The specified threshold {thresh} V does not exist.".format(thresh=threshold))
         self.__trigger_threshold[self, channel] = threshold
