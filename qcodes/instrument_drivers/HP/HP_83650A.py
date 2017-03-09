@@ -7,13 +7,15 @@ import logging
 from qcodes import VisaInstrument
 from qcodes import validators as vals
 
+
 def parsestr(v):
     return v.strip().strip('"')
 
+
 class HP_83650A(VisaInstrument):
-    def __init__(self, name, address, verbose=1, reset=False,server_name=None, **kwargs):
+    def __init__(self, name, address, verbose=1, reset=False, server_name=None, **kwargs):
         """ Driver for HP_83650A
-    
+
         Also see: [xxxx]
         """
         self.verbose = verbose
@@ -50,7 +52,7 @@ class HP_83650A(VisaInstrument):
                            label='RF status',
                            get_cmd=':POW:STAT?',
                            set_cmd=':POW:STAT {}',
-                           val_mapping={'on':'1','off':'0'},
+                           val_mapping={'on': '1', 'off': '0'},
                            vals=vals.Strings(),
                            get_parser=parsestr,
                            docstring='Status, ....')
@@ -59,7 +61,7 @@ class HP_83650A(VisaInstrument):
                            label='FM status',
                            get_cmd=':FM:STAT?',
                            set_cmd=':FM:STAT {}',
-                           val_mapping={'on':'1','off':'0'},
+                           val_mapping={'on': '1', 'off': '0'},
                            vals=vals.Strings(),
                            get_parser=parsestr,
                            docstring='FM status, ....')
@@ -76,7 +78,7 @@ class HP_83650A(VisaInstrument):
                            label='AM status',
                            get_cmd=':AM:STAT?',
                            set_cmd=':AM:STAT {}',
-                           val_mapping={'on':'1','off':'0'},
+                           val_mapping={'on': '1', 'off': '0'},
                            vals=vals.Strings(),
                            get_parser=parsestr,
                            docstring='AM status, ....')
@@ -85,7 +87,7 @@ class HP_83650A(VisaInstrument):
                            label='Pulse status',
                            get_cmd=':PULS:STAT?',
                            set_cmd=':PULS:STAT {}',
-                           val_mapping={'on':'1','off':'0'},
+                           val_mapping={'on': '1', 'off': '0'},
                            vals=vals.Strings(),
                            get_parser=parsestr,
                            docstring='Pulse status, ....')
@@ -105,18 +107,19 @@ class HP_83650A(VisaInstrument):
 
     def getall(self):
         logging.info(__name__ + ' : reading all settings from instrument')
-        print(self.rfstatus.label + ':',self.rfstatus.get())
-        print(self.power.label + ':',self.power.get(),self.power.units)
-        print(self.frequency.label + ': %e' %self.frequency.get(),self.frequency.units)
-        print(self.freqmode.label + ':',self.freqmode.get())
+        print(self.rfstatus.label + ':', self.rfstatus.get())
+        print(self.power.label + ':', self.power.get(), self.power.units)
+        print(self.frequency.label +
+              ': %e' % self.frequency.get(), self.frequency.units)
+        print(self.freqmode.label + ':', self.freqmode.get())
         self.getmodstatus()
-        #self.get_modstatus()
-        #self.get_modsource()
-        #self.get_FM()
+        # self.get_modstatus()
+        # self.get_modsource()
+        # self.get_FM()
 
     def getmodstatus(self):
-        print(self.fmstatus.label + ':',self.fmstatus.get())
-        print(self.fmcoup.label + ':',self.fmcoup.get())
-        print(self.amstatus.label + ':',self.amstatus.get())
-        print(self.pulsestatus.label + ':',self.pulsestatus.get())
-        print(self.pulsesource.label + ':',self.pulsesource.get())
+        print(self.fmstatus.label + ':', self.fmstatus.get())
+        print(self.fmcoup.label + ':', self.fmcoup.get())
+        print(self.amstatus.label + ':', self.amstatus.get())
+        print(self.pulsestatus.label + ':', self.pulsestatus.get())
+        print(self.pulsesource.label + ':', self.pulsesource.get())
