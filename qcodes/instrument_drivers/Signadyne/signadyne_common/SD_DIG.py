@@ -1,9 +1,11 @@
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import ManualParameter
+from qcodes.utils.validators    import Numbers, Enum, Ints, Strings, Anything
 from functools import partial
 try:
     import Signadyne.signadyne.SD_AIN as SD_AIN
-    import Signadyne.signadyne.SD_AIN_TriggerModes as SD_TriggerModes
+    import Signadyne.signadyne.SD_AIN_TriggerMode as SD_AIN_TriggerMode # for channel edge sensitivities
+    import Signadyne.signadyne.SD_TriggerModes  as SD_TriggerModes      # for channel trigger source
     # TODO: Import all Signadyne classes as themselves
 except ImportError:
     raise ImportError('To use a Signadyne Digitizer, install the Signadyne module')
@@ -49,7 +51,6 @@ class SD_DIG(Instrument):
         self.add_parameter(
             'trigger_direction',
             label='Trigger direction for trigger port',
-            initial_value=0,
             vals=Ints(),
             set_cmd=None,
             get_cmd=None,
@@ -60,7 +61,6 @@ class SD_DIG(Instrument):
         self.add_parameter(
             'frequency',
             label='CLKsys frequency',
-            initial_value=0,
             vals=Ints(),
             set_cmd=None,
             get_cmd=None,
@@ -71,7 +71,6 @@ class SD_DIG(Instrument):
         self.add_parameter(
             'trigger_behaviour',
             label='Trigger behaviour for resetting CLKsys phase',
-            initial_value=0,
             vals=Ints(),
             set_cmd=None,
             get_cmd=None,
@@ -81,7 +80,6 @@ class SD_DIG(Instrument):
         self.add_parameter(
             'PXI_trigger',
             label='PXI trigger for clockResetPhase',
-            initial_value=0,
             vals=Ints(),
             set_cmd=None,
             get_cmd=None,
@@ -91,7 +89,6 @@ class SD_DIG(Instrument):
         self.add_parameter(
             'skew',
             label='Skew between PXI_CLK10 and CLKsync',
-            initial_value=0,
             vals=Ints(),
             set_cmd=None,
             get_cmd=None,
@@ -102,32 +99,31 @@ class SD_DIG(Instrument):
         for n in range(n_channels):
 
             # For channelInputConfig
-            self.__full_scale[self, n]               =  1 # By default, full scale = 1V
-            self.__impedance[self, n]                =  0 # By default, Hi-z
-            self.__coupling[self, n]                 =  0 # By default, DC coupling
+            self.__full_scale[n]               =  1 # By default, full scale = 1V
+            self.__impedance[n]                =  0 # By default, Hi-z
+            self.__coupling[n]                 =  0 # By default, DC coupling
             # For channelPrescalerConfig 
-            self.__prescaler[self, n]                =  0 # By default, no prescaling
+            self.__prescaler[n]                =  0 # By default, no prescaling
             # For channelTriggerConfig
-            self.__trigger_mode[self, n]             =  SD_TriggerModes.RISING_EDGE
-            self.__trigger_threshold[self, n]        =  0 # By default, threshold at 0V
+            self.__trigger_mode[n]             =  SD_AIN_TriggerMode.RISING_EDGE
+            self.__trigger_threshold[n]        =  0 # By default, threshold at 0V
             # For DAQconfig
-            self.__points_per_cycle[self, n]         =  0
-            self.__n_cycles[self, n]                 =  0
-            self.__trigger_delay[self, n]            =  0
-            self.__trigger_mode[self, n]             =  SD_TriggerModes.RISING_EDGE
+            self.__points_per_cycle[n]         =  0
+            self.__n_cycles[n]                 =  0
+            self.__trigger_delay[n]            =  0
+            self.__trigger_mode[n]             =  SD_AIN_TriggerMode.RISING_EDGE
             # For DAQtriggerExternalConfig
-            self.__digital_trigger_mode[self, n]     =  0 
-            self.__digital_trigger_source[self, n]   =  0
-            self.__analog_trigger_mask[self, n]      =  0
+            self.__digital_trigger_mode[n]     =  0 
+            self.__digital_trigger_source[n]   =  0
+            self.__analog_trigger_mask[n]      =  0
             # For DAQread
-            self.__n_points[self, n]                 =  0
-            self.__timeout[self, n]                  = -1
+            self.__n_points[n]                 =  0
+            self.__timeout[n]                  = -1
 
             # For channelInputConfig
             self.add_parameter(
                 'full_scale_{}'.format(n),
                 label='Full scale range for channel {}'.format(n),
-                initial_value=0,
                 # Creates a partial function to allow for single-argument set_cmd to change parameter
                 set_cmd=partial(SD_AIN.channelInputConfig, channel=n, impedance=self.impedance_),
                 get_cmd=partial(channelFullScale, channel=n),
@@ -138,7 +134,6 @@ class SD_DIG(Instrument):
             self.add_parameter(
                 'impedance_{}'.format(n),
                 label='Impedance for channel {}'.format(n),
-                initial_value=0,
                 vals=[0,1],
                 set_cmd=None,
                 get_cmd=None,
@@ -148,7 +143,6 @@ class SD_DIG(Instrument):
             self.add_parameter(
                 'coupling_{}'.format(n),
                 label='Coupling for channel {}'.format(n),
-                initial_value=0,
                 vals=[0,1],
                 set_cmd=None,
                 get_cmd=None,
@@ -159,7 +153,6 @@ class SD_DIG(Instrument):
             self.add_parameter(
                 'prescaler_{}'.format(n),
                 label='Prescaler for channel {}'.format(n),
-                initial_value=0,
                 vals=range(0,4096),
                 # Creates a partial function to allow for single-argument set_cmd to change parameter
                 set_cmd=partial(SD_AIN.channelPrescalerConfig,  nChannel=n),
@@ -179,7 +172,6 @@ class SD_DIG(Instrument):
             self.add_parameter(
                 'trigger_threshold_{}'.format(n),
                 label='Trigger threshold for channel {}'.format(n),
-                initial_value=0,
                 vals=Numbers(-3,3),
                 set_cmd=None,
                 get_cmd=None,
@@ -190,7 +182,6 @@ class SD_DIG(Instrument):
             self.add_parameter(
                 'points_per_cycle_{}'.format(n),
                 label='Points per cycle for channel {}'.format(n),
-                initial_value=0,
                 vals=Ints(),
                 set_cmd=None,
                 get_cmd=None,
@@ -200,7 +191,6 @@ class SD_DIG(Instrument):
             self.add_parameter(
                 'n_cycles_{}'.format(n),
                 label='n cycles for channel {}'.format(n),
-                initial_value=0,
                 vals=Ints(),
                 set_cmd=None,
                 get_cmd=None,
@@ -210,7 +200,6 @@ class SD_DIG(Instrument):
             self.add_parameter(
                 'trigger_delay_{}'.format(n),
                 label='Trigger delay for for channel {}'.format(n),
-                initial_value=0,
                 vals=Ints(),
                 set_cmd=None,
                 get_cmd=None,
@@ -221,7 +210,6 @@ class SD_DIG(Instrument):
             self.add_parameter(
                 'trigger_mode_{}'.format(n),
                 label='Trigger mode for channel {}'.format(n),
-                initial_value=0,
                 vals=Ints(),
                 set_cmd=None,
                 get_cmd=None,
@@ -231,7 +219,6 @@ class SD_DIG(Instrument):
             self.add_parameter(
                 'digital_trigger_mode_{}'.format(n),
                 label='Digital trigger mode for channel {}'.format(n),
-                initial_value=0,
                 vals=Ints(),
                 set_cmd=None,
                 get_cmd=None,
@@ -241,7 +228,6 @@ class SD_DIG(Instrument):
             self.add_parameter(
                 'digital_trigger_source_{}'.format(n),
                 label='Digital trigger source for channel {}'.format(n),
-                initial_value=0,
                 vals=Ints(),
                 set_cmd=None,
                 get_cmd=None,
@@ -251,7 +237,6 @@ class SD_DIG(Instrument):
             self.add_parameter(
                 'analog_trigger_mask_{}'.format(n),
                 label='Analog trigger mask for channel {}'.format(n),
-                initial_value=0,
                 vals=Ints(),
                 set_cmd=None,
                 get_cmd=None,
@@ -262,7 +247,6 @@ class SD_DIG(Instrument):
             self.add_parameter(
                 'n_points_{}'.format(n),
                 label='n points for channel {}'.format(n),
-                initial_value=0,
                 vals=Ints(),
                 set_cmd=None,
                 get_cmd=None,
@@ -272,7 +256,6 @@ class SD_DIG(Instrument):
             self.add_parameter(
                 'timeout_{}'.format(n),
                 label='timeout for channel {}'.format(n),
-                initial_value=0,
                 vals=Ints(),
                 set_cmd=None,
                 get_cmd=None,
@@ -289,7 +272,7 @@ class SD_DIG(Instrument):
         """
         pass
 
-    def setclksys_frequency(frequency):
+    def set_CLKsys_frequency(frequency):
         """ Sets the CLKsys frequency
 
         Args:
@@ -372,16 +355,16 @@ class SD_DIG(Instrument):
         pass
 
     def set_trigger_mode(channel, mode=None):
-        """ Sets the current trigger mode from those defined in SD_TriggerModes
+        """ Sets the current trigger mode from those defined in SD_AIN_TriggerMode
 
         Args:
             channel (int)       : the input channel you are modifying
-            mode (int)          : the trigger mode drawn from the class SD_TriggerModes
+            mode (int)          : the trigger mode drawn from the class SD_AIN_TriggerMode
         """
         if (channel > self.n_channels):
             raise ValueError("The specified channel {ch} exceeds the number of channels ({n})".format(ch=channel, n=self.n_channels))
-        if mode not in vars(SD_TriggerModes):
-            raise ValueError("The specified mode {mode} does not exist.".format(mode=mode))
+        if mode not in vars(SD_AIN_TriggerMode):
+            raise ValueError("The specified mode {} does not exist.".format(mode))
         self.__trigger_mode[self, channel] = mode
         # TODO: Call the SD library to set the current mode
 
