@@ -43,17 +43,20 @@ Instruments come in several flavors:
 An instrument can exist as local instrument or remote instrument. A local instrument is instantiated in the main process, and you interact with it directly. This is convenient for testing and debugging, but a local instrument cannot be used with a measurement loop in a separate process (ie a background loop). For that purpose you need a remote instrument. A remote instrument starts (or connects to) a server process, instantiates the instrument in that process, and returns a proxy object that mimicks the API of the instrument. This proxy holds no state or hardware connection, so it can be freely copied to other processes, in particular background loops and composite-instrument servers.
 
 .. responsibilities
+
 Instruments are responsible for:
   - Holding connections to hardware, be it VISA, some other communication protocol, or a specific DLL or lower-level driver.
   - Creating a parameter_, ref:`function`, or method for each piece of functionality we support. These objects may be used independent of the instrument, but they make use of the instrument's hardware connection in order to do their jobs.
   - Describing their complete current state ("snapshot") when asked, as a JSON-compatible dictionary.
 
 .. state
+
 Instruments hold state of:
   - The communication address, and in many cases the open communication channel.
   - A list of references to parameters added to the instrument.
 
 .. failures
+
 Instruments can fail:
   - When a VisaInstrument has been instantiated before, particularly with TCPIP, sometimes it will complain "VI_ERROR_RSRC_NFOUND: Insufficient location information or the requested device or resource is not present in the system" and not allow you to open the instrument until either the hardware has been power cycled or the network cable disconnected and reconnected. Are we using visa/pyvisa in a brittle way?
   - If you try to use a background loop with a local instrument, because that would require copying the local instrument and there may only be one local copy of the instrument (if you make a remote instrument, the server instance is the one local copy).
@@ -77,10 +80,11 @@ Responsibilities
 ~~~~~~~~~~~~~~~~
 
 .. responsibilities
+
 Parameters are responsible for:
   - (if part of an Instrument) generating the commands to pass to the Instrument and interpreting its response
   - (if not part of an Instrument) providing get and/or set methods
-  - (if settable) testing whether an input is valid, usually using a :ref:`validator`.
+  - (if settable) testing whether an input is valid, usually using a :mod:`validator. <qcodes.utils.validators>`
   - providing context and meaning to the parameter through descriptive attributes:
     - name: its name as an attribute
     - label: short description as in an axis label
@@ -88,10 +92,12 @@ Parameters are responsible for:
     - and more if multi-valued or array-valued
 
 .. state
+
 Parameters hold onto their latest set or measured value, as well as the timestamp of the latest update.
 Thus, snapshots need not always query the hardware for this information, but can update it intelligently when it has gotten stale.
 
 .. failures
+
 A Parameter that is part of an Instrument, even though it can be used as an independent object without directly referencing the Instrument, 
 is subject to the same local/remote limitations as the Instrument.
 
@@ -112,7 +118,8 @@ but there can be differences due to rounding, clipping, feedback loops, etc.
 Note that setting a Parameter of a :ref:`metainstrument` may involve setting several lower-level Parameters of the underlying Instruments, 
 or even getting the values of other Parameters to inform the value(s) to set.
 
-A Parameter that is only gettable typically represents a single measurement command or sequence. 
+A Parameter that is only gettable typically represents a single measurement command or sequence.
+
 The value of such a Parameter may be of many types:
   - A single numeric value, such as a voltage measurement
   - A string that represents a discrete instrument setting, such as the orientation of a vector
@@ -168,17 +175,20 @@ The key loop running conditions are:
   - where and how to save the data to disk
 
 .. responsibilities
+
 The Loop is responsible for:
   - creating the dataset_ that will be needed to store its data
   - generating all the metadata for the DataSet. Metadata is intended to describe the system and software configuration to give it context, help reproduce and troubleshoot the experiment, and to aid searching and datamining later. The Loop generates its own metadata, regarding when and how it was run and the Parameters and other actions involved, as well as asking all the Instruments, via a :ref:`station` if possible, for their own metadata and including it.
   - sequencing actions: the Loop should have the highest priority and the least overhead of extra responsibilities so that setpoints and actions occur with as fast and reliable timing as possible.
 
 .. state
+
 Before the Loop is run, it holds the setpoint and action definitions you are building up. You can actually keep a loop at any level of definition and reuse it later. Loop methods chain by creating entirely new objects, so that you can hold onto the Loop at any stage of definition and reuse just what has been defined up to that point.
 
 After the Loop is run, it returns a dataset_ and the executed loop itself, along with the process it starts if it's a background Loop, only hold state (such as the current indices within the potentially nested Loops) while it is running.
 
 .. failures
+
 Loops can fail:
   - If you try to use a (parameter of a) local instrument in a background loop
 
@@ -208,7 +218,7 @@ A DataSet is a way to group arrays of data together, describe the meaning of eac
 
 Typically a DataSet is the result of running a single Loop, and contains all the data generated by the Loop as well as all the metadata necessary to understand and repeat it.
 
-The data in a DataSet is stored in one or more :ref:`dataarray` objects, each of which is a single numpy ndarray (wrapped with some extra functionality and attributes). The metadata is stored in a JSON-compatible dictionary structure.
+The data in a DataSet is stored in one or more :mod:`DataArray <qcodes.DataArray>` objects, each of which is a single numpy ndarray (wrapped with some extra functionality and attributes). The metadata is stored in a JSON-compatible dictionary structure.
 
 A DataArray with N dimensions should list N setpoint arrays, each of which is also a DataArray in the same DataSet. The first setpoint array should have 1 dimension, the second 2 dimensions, etc. This follows the procedure of most experimental loops, where the outer loop parameter only changes when you increment the outer loop.
 
@@ -216,7 +226,7 @@ If your loop does *not* work this way, and the setpoint of the first index chang
 
 One DataArray can only be part of at most one DataSet. This ensures that we don't generate irreversible situations by saving an array in multiple places and reloading them separately, or conflicts if we try to sync (or reload) several DataSets with inconsistent data in the multiply-referenced arrays, and that we can always refer from the DataArray to a single DataSet, which is important for live plotting.
 
-The DataSet also specifies where and how it is to be stored on disk, as well as its relationship (if any) to a :ref:`datamanager`. Storage is specified by an :ref:`iomanager` (the physical device / protocol, and base location in the normal case of disk storage), a location (string, relative path within the io manager), and :ref:`formatter` (specifies the file type and how to read to and write from a DataSet).
+The DataSet also specifies where and how it is to be stored on disk, as well as its relationship (if any) to a :mod:`datamanager <qcodes.data.manager.DataManager>`. Storage is specified by an io_manager (the physical device / protocol, and base location in the normal case of disk storage), a location (string, relative path within the io manager), and :mod:`formatter <qcodes.Formatter>` (specifies the file type and how to read to and write from a DataSet).
 
 A DataManager can be used during acquisition to offload io operations to a separate DataServer process, and to update any live plots without burdening the Loop process.
 

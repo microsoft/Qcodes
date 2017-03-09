@@ -26,7 +26,7 @@ def readme():
 
 extras = {
     'MatPlot': ('matplotlib', '1.5'),
-    'QtPlot': ('pyqtgraph', '0.9.10'),
+    'QtPlot': ('pyqtgraph', '0.10.0'),
     'coverage tests': ('coverage', '4.0')
 }
 extras_require = {k: '>='.join(v) for k, v in extras.items()}
@@ -46,8 +46,6 @@ setup(name='qcodes',
           'Development Status :: 3 - Alpha',
           'Intended Audience :: Science/Research',
           'Programming Language :: Python :: 3 :: Only',
-          'Programming Language :: Python :: 3.3',
-          'Programming Language :: Python :: 3.4',
           'Programming Language :: Python :: 3.5',
           'Topic :: Scientific/Engineering'
       ],
@@ -61,7 +59,6 @@ setup(name='qcodes',
           'pyvisa>=1.8',
           'ipython>=4.1.0',
           'jupyter>=1.0.0',
-          'ipywidgets>=4.1',
           'h5py>=2.6'
       ],
 

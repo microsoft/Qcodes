@@ -24,6 +24,8 @@ Config
 
    Config
 
+.. _station:
+
 Station
 ~~~~~~~
 
@@ -31,6 +33,8 @@ Station
    :toctree: generated/
 
    station.Station
+
+.. _loops:
 
 Loops
 ~~~~~
@@ -67,6 +71,7 @@ Data
    :toctree: generated/
 
     get_data_manager
+    qcodes.data.manager.DataManager
     DataMode
     DataSet
     new_data
@@ -91,7 +96,7 @@ Instrument
    SweepFixedValues
    SweepValues
    combine
-   CombinedPar
+   CombinedParameter
 
 
    Instrument
@@ -113,7 +118,6 @@ Note that the plotting modules may not be available if their dependencies were n
 
 Utils & misc
 ~~~~~~~~~~~~
-.. automodule::
 
 .. autosummary::
    :toctree: generated/

@@ -13,6 +13,7 @@ from qcodes.station import Station
 from qcodes.data.io import DiskIO
 from qcodes.data.data_array import DataArray
 from qcodes.data.manager import get_data_manager
+from qcodes.instrument.mock import ArrayGetter
 from qcodes.instrument.parameter import Parameter, ManualParameter
 from qcodes.process.helpers import kill_processes
 from qcodes.process.qcodes_process import QcodesProcess
@@ -79,7 +80,7 @@ class TestMockInstLoop(TestCase):
         # you can only do in-memory loops if you set data_manager=False
         # TODO: this is the one place we don't do quiet=True - test that we
         # really print stuff?
-        data = self.loop.run(location=self.location, background=True)
+        data = self.loop.run(location=self.location, background=True, data_manager=True)
         self.check_empty_data(data)
 
         # wait for process to finish (ensures that this was run in the bg,
@@ -118,6 +119,9 @@ class TestMockInstLoop(TestCase):
         self.check_loop_data(data)
 
     def test_background_no_datamanager(self):
+        # We don't support syncing data from a background process
+        # if not using a datamanager. See warning in ActiveLoop.run()
+        # So we expect the data to be empty even after running.
         data = self.loop.run(location=self.location,
                              background=True,
                              data_manager=False,
@@ -127,7 +131,7 @@ class TestMockInstLoop(TestCase):
         self.loop.process.join()
 
         data.sync()
-        self.check_loop_data(data)
+        self.check_empty_data(data)
 
     def test_foreground_and_datamanager(self):
         data = self.loop.run(location=self.location, background=False,
@@ -202,6 +206,16 @@ class TestMockInstLoop(TestCase):
         loop.run_temp()
         self.assertFalse(hasattr(loop, 'process'))
 
+    def test_sync_no_overwrite(self):
+        # Test fix for 380, this tests that the setpoints are not incorrectly
+        # overwritten by data_set.sync() for this to happen with the original code
+        # the delay must be larger than the write period otherwise sync is a no opt.
+
+        loop = Loop(self.gates.chan1.sweep(0, 1, 1), delay=0.1).each(ArrayGetter(self.meter.amplitude,
+                                                                                 self.gates.chan2[0:1:1], 0.000001))
+        data = loop.get_data_set(name='testsweep', write_period=0.01)
+        _ = loop.with_bg_task(data.sync).run()
+        assert not np.isnan(data.chan2_set).any()
 
 def sleeper(t):
     time.sleep(t)
@@ -226,7 +240,7 @@ class TestBG(TestCase):
         bg1 = get_bg(return_first=True)
         self.assertIn(bg1, [p1, p2])
 
-        halt_bg(timeout=0.01)
+        halt_bg(timeout=0.05)
         bg2 = get_bg()
         self.assertIn(bg2, [p1, p2])
         # is this robust? requires that active_children always returns the same
@@ -235,7 +249,7 @@ class TestBG(TestCase):
 
         self.assertEqual(len(mp.active_children()), 1)
 
-        halt_bg(timeout=0.01)
+        halt_bg(timeout=0.05)
         self.assertIsNone(get_bg())
 
         self.assertEqual(len(mp.active_children()), 0)
@@ -445,7 +459,7 @@ class TestLoop(TestCase):
         mg = MultiGetter(one=1, onetwo=(1, 2))
         self.assertTrue(hasattr(mg, 'names'))
         self.assertTrue(hasattr(mg, 'shapes'))
-        self.assertEqual(mg.name, 'None')
+        self.assertEqual(mg.name, 'multigetter')
         self.assertFalse(hasattr(mg, 'shape'))
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
         data = loop.run_temp()
@@ -453,7 +467,7 @@ class TestLoop(TestCase):
         self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.one.tolist(), [1, 1])
         self.assertEqual(data.onetwo.tolist(), [[1, 2]] * 2)
-        self.assertEqual(data.index0.tolist(), [[0, 1]] * 2)
+        self.assertEqual(data.index0_set.tolist(), [[0, 1]] * 2)
 
         # give it setpoints, names, and labels
         mg.setpoints = (None, ((10, 11),))
@@ -464,8 +478,8 @@ class TestLoop(TestCase):
 
         data = loop.run_temp()
 
-        self.assertEqual(data.highest.tolist(), [[10, 11]] * 2)
-        self.assertEqual(data.highest.label, sp_label)
+        self.assertEqual(data.highest_set.tolist(), [[10, 11]] * 2)
+        self.assertEqual(data.highest_set.label, sp_label)
 
         # setpoints as DataArray - name and label here override
         # setpoint_names and setpoint_labels attributes
@@ -476,8 +490,8 @@ class TestLoop(TestCase):
         mg.setpoints = (None, (sp_dataarray,))
 
         data = loop.run_temp()
-        self.assertEqual(data.bgn.tolist(), [[6, 7]] * 2)
-        self.assertEqual(data.bgn.label, new_sp_label)
+        self.assertEqual(data.bgn_set.tolist(), [[6, 7]] * 2)
+        self.assertEqual(data.bgn_set.label, new_sp_label)
 
         # muck things up and test for errors
         mg.setpoints = (None, ((1, 2, 3),))
@@ -497,18 +511,18 @@ class TestLoop(TestCase):
         with self.assertRaises(ValueError):
             loop.run_temp()
 
-        # this one has name and shape
+        # this one still has names and shapes
         mg = MultiGetter(arr=(4, 5, 6))
         self.assertTrue(hasattr(mg, 'name'))
-        self.assertTrue(hasattr(mg, 'shape'))
-        self.assertFalse(hasattr(mg, 'names'))
-        self.assertFalse(hasattr(mg, 'shapes'))
+        self.assertFalse(hasattr(mg, 'shape'))
+        self.assertTrue(hasattr(mg, 'names'))
+        self.assertTrue(hasattr(mg, 'shapes'))
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
         data = loop.run_temp()
 
         self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.arr.tolist(), [[4, 5, 6]] * 2)
-        self.assertEqual(data.index0.tolist(), [[0, 1, 2]] * 2)
+        self.assertEqual(data.index0_set.tolist(), [[0, 1, 2]] * 2)
 
         mg = MultiGetter(arr2d=((21, 22), (23, 24)))
         loop = Loop(self.p1[1:3:1], 0.001).each(mg)
@@ -516,8 +530,8 @@ class TestLoop(TestCase):
 
         self.assertEqual(data.p1_set.tolist(), [1, 2])
         self.assertEqual(data.arr2d.tolist(), [[[21, 22], [23, 24]]] * 2)
-        self.assertEqual(data.index0.tolist(), [[0, 1]] * 2)
-        self.assertEqual(data.index1.tolist(), [[[0, 1]] * 2] * 2)
+        self.assertEqual(data.index0_set.tolist(), [[0, 1]] * 2)
+        self.assertEqual(data.index1_set.tolist(), [[[0, 1]] * 2] * 2)
 
     def test_bad_actors(self):
         def f():

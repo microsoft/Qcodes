@@ -586,6 +586,35 @@ class TestDataSet(TestCase):
         m = DataSet2D()
         pickle.dumps(m)
 
+    def test_default_parameter(self):
+        # Test whether the default_array function works
+        m = DataSet2D()
+
+        # test we can run with default arguments
+        name = m.default_parameter_name()
+
+        # test with paramname
+        name = m.default_parameter_name(paramname='z')
+        self.assertEqual(name, 'z')
+        # test we can get the array instead of the name
+        array = m.default_parameter_array(paramname='z')
+        self.assertEqual(array, m.z)
+
+        # first non-setpoint array
+        array = m.default_parameter_array()
+        self.assertEqual(array, m.z)
+
+        # test with metadata
+        m.metadata = dict({'default_parameter_name': 'x_set'})
+        name = m.default_parameter_name()
+        self.assertEqual(name, 'x_set')
+
+        # test the fallback: no name matches, no non-setpoint array
+        x = DataArray(name='x', label='X', preset_data=(1., 2., 3., 4., 5.), is_setpoint=True)
+        m= new_data(arrays=(x,), name='onlysetpoint')
+        name=m.default_parameter_name(paramname='dummy')
+        self.assertEqual(name, 'x_set')
+
     def test_fraction_complete(self):
         empty_data = new_data(arrays=(), location=False)
         self.assertEqual(empty_data.fraction_complete(), 0.0)
@@ -607,7 +636,6 @@ class TestDataSet(TestCase):
         self.assertEqual(data.fraction_complete(), 0.75)
 
     def mock_sync(self):
-        # import pdb; pdb.set_trace()
         i = self.sync_index
         self.syncing_array[i] = i
         self.sync_index = i + 1

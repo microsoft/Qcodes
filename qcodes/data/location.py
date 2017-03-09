@@ -3,6 +3,7 @@ from datetime import datetime
 import re
 import string
 
+from qcodes import config
 
 class SafeFormatter(string.Formatter):
 
@@ -82,10 +83,12 @@ class FormatLocation:
         as '{date:%Y-%m-%d}' or '{counter:03}'
     """
 
-    default_fmt = '{date}/{time}'
+    default_fmt = config['core']['default_fmt']
 
     def __init__(self, fmt=None, fmt_date=None, fmt_time=None,
                  fmt_counter=None, record=None):
+        #TODO(giulioungaretti) this should be
+        # FormatLocation.default_fmt
         self.fmt = fmt or self.default_fmt
         self.fmt_date = fmt_date or '%Y-%m-%d'
         self.fmt_time = fmt_time or '%H-%M-%S'

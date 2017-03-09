@@ -3,6 +3,9 @@ import time
 from datetime import datetime
 
 from .base import Instrument
+from .parameter import MultiParameter
+from qcodes import Loop
+from qcodes.data.data_array import DataArray
 from qcodes.process.server import ServerManager, BaseServer
 from qcodes.utils.nested_attrs import _NoDefault
 
@@ -12,17 +15,19 @@ class MockInstrument(Instrument):
     """
     Create a software instrument, mostly for testing purposes.
 
-    Also works for simulatoins, but usually this will be simpler, easier to
+    Also works for simulations, but usually this will be simpler, easier to
     use, and faster if made as a single ``Instrument`` subclass.
 
-    ``MockInstrument``s have extra overhead as they serialize all commands
+    ``MockInstrument``\s have extra overhead as they serialize all commands
     (to mimic a network communication channel) and use at least two processes
     (instrument server and model server) both of which must be involved in any
     given query.
 
     parameters to pass to model should be declared with:
-        get_cmd = param_name + '?'
-        set_cmd = param_name + ':{:.3f}' (specify the format & precision)
+
+        - get_cmd = param_name + '?'
+        - set_cmd = param_name + ':{:.3f}' (specify the format & precision)
+
     alternatively independent set/get functions may still be provided.
 
     Args:
@@ -56,7 +61,7 @@ class MockInstrument(Instrument):
 
         history (List[tuple]): All commands and responses while keep_history is
             enabled, as tuples:
-                (timestamp, 'ask' or 'write', param_name[, value])
+            (timestamp, 'ask' or 'write', param_name[, value])
     """
 
     shared_kwargs = ['model']
@@ -175,9 +180,9 @@ class MockModel(ServerManager, BaseServer):  # pragma: no cover
             the server's uuid.
 
     for every instrument that connects to this model, create two methods:
-        ``<instrument>_set(param, value)``: set a parameter on the model
-        ``<instrument>_get(param)``: returns the value of a parameter
-    ``param`` and the set/return values should all be strings
+        - ``<instrument>_set(param, value)``: set a parameter on the model
+        - ``<instrument>_get(param)``: returns the value of a parameter
+          ``param`` and the set/return values should all be strings
 
     If ``param`` and/or ``value`` is not recognized, the method should raise
     an error.
@@ -215,17 +220,18 @@ class MockModel(ServerManager, BaseServer):  # pragma: no cover
 
         Args:
             cmd (str): Can take several forms:
-                '<instrument>:<parameter>?':
-                    calls ``self.<instrument>_get(<parameter>)`` and forwards
-                    the return value.
-                '<instrument>:<parameter>:<value>':
-                    calls ``self.<instrument>_set(<parameter>, <value>)``
-                '<instrument>:<parameter>'.
-                    calls ``self.<instrument>_set(<parameter>, None)``
+
+                - '<instrument>:<parameter>?':
+                  calls ``self.<instrument>_get(<parameter>)`` and forwards
+                  the return value.
+                - '<instrument>:<parameter>:<value>':
+                  calls ``self.<instrument>_set(<parameter>, <value>)``
+                - '<instrument>:<parameter>'.
+                  calls ``self.<instrument>_set(<parameter>, None)``
 
         Returns:
             Union(str, None): The parameter value, if ``cmd`` has the form
-                '<instrument>:<parameter>?', otherwise no return.
+            '<instrument>:<parameter>?', otherwise no return.
 
         Raises:
             ValueError: if cmd does not match one of the patterns above.
@@ -276,3 +282,35 @@ class MockModel(ServerManager, BaseServer):  # pragma: no cover
         See NestedAttrAccess for details.
         """
         self.ask('method_call', 'delattr', attr)
+
+class ArrayGetter(MultiParameter):
+    """
+    Example parameter that just returns a single array
+
+    TODO: in theory you can make this an ArrayParameter with
+    name, label & shape (instead of names, labels & shapes) and altered
+    setpoints (not wrapped in an extra tuple) and this mostly works,
+    but when run in a loop it doesn't propagate setpoints to the
+    DataSet. This is a bug
+    """
+    def __init__(self, measured_param, sweep_values, delay):
+        name = measured_param.name
+        super().__init__(names=(name,),
+                         shapes=((len(sweep_values),),),
+                         name=name)
+        self._instrument = getattr(measured_param, '_instrument', None)
+        self.measured_param = measured_param
+        self.sweep_values = sweep_values
+        self.delay = delay
+        self.shapes = ((len(sweep_values),),)
+        set_array = DataArray(parameter=sweep_values.parameter,
+                              preset_data=sweep_values)
+        self.setpoints = ((set_array,),)
+        if hasattr(measured_param, 'label'):
+            self.labels = (measured_param.label,)
+
+    def get(self):
+        loop = Loop(self.sweep_values, self.delay).each(self.measured_param)
+        data = loop.run_temp()
+        array = data.arrays[self.measured_param.full_name]
+        return (array,)

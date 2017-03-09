@@ -23,7 +23,7 @@ to use. Normal text the container includes and uses this object.
 -  *actions*
 -  DataManager
 -  **DataServer**
--  :doc:`loops`
+-  :ref:`loops`
 -  actions: Parameter, Task, Wait, (Active)Loop
 -  **ActiveLoop**
 
@@ -36,7 +36,7 @@ to use. Normal text the container includes and uses this object.
 Station
 -------
 
-Read more about :doc:`station`.
+Read more about :ref:`station`.
 
 .. todo:: is this how we want it ? or like the one below ?
 

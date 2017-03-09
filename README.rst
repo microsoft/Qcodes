@@ -1,17 +1,16 @@
-QCoDeS |Build Status|
-=====================
+QCoDeS |Build Status| |DOCS| |DOI|
+===================================
 
 QCoDeS is a Python-based data acquisition framework developed by the
 Copenhagen / Delft / Sydney / Microsoft quantum computing consortium.
 While it has been developed to serve the needs of nanoelectronic device
 experiments, it is not inherently limited to such experiments, and can
 be used anywhere a system with many degrees of freedom is controllable
-by computer.
+by computer. 
+To learn more about QCoDeS, browse our `homepage <http://qcodes.github.io/Qcodes>`_ .
 
 To get  a feeling of qcodes browse the Jupyter notebooks in `docs/examples
 <https://github.com/QCoDeS/Qcodes/tree/master/docs/examples>`__ .
-
-If you <3 and want to use it straight after, jump to `here <http://qcodes.github.io/Qcodes>`__  !
 
 
 QCoDeS is compatible with Python 3.5+. It is primarily intended for use
@@ -61,7 +60,7 @@ Developer-pyenv
 
 Core developers use virtualenv and pyenv to make sure all the system are the same,
 this rules out issues and the usual "it works on my machine". Install pyenv
-on your OS `see this https://github.com/yyuu/pyenv`__ .
+on your OS `see this <https://github.com/yyuu/pyenv>`__ .
 
 $QCODES_INSTALL_DIR is the folder where you want to have the source code.
 
@@ -71,47 +70,13 @@ $QCODES_INSTALL_DIR is the folder where you want to have the source code.
     cd $QCODES_INSTALL_DIR
     pyenv install 3.5.2
     pyenv virtualenv 3.5.2 qcodes-dev
-    pip install -r develop_requirements.txt
+    pip install -r requirements.txt
     pip install -e .
     python qcodes/test.py -f
 
 If the tests pass you are ready to hack!
 This is the reference setup one needs to have to contribute, otherwise
 too many non-reproducible environments will show up.
-
-If all of this sounds too complicated, use anaconda!
-
-Anaconda
---------
-
-One can also use anaconda:
-
--  First clone the repo
-    
-   `` git clone https://github.com/QCoDeS/Qcodes.git $QCODES_INSTALL_DIR ``
-
--  Open the 'navigator' app that was installed with anaconda.
--  On the left side click on "Environments".
--  Then on the "import" icon, on the bottom.
--  Pick a name, and click on the folder icon next to file to import
-   from.
--  Make sure you select "Pip requirement files" from the "Files of type"
-   dialog then navigate to the qcodes folder (QCODES_INSTALL_DIR) and select
-   ``basic_requirements.txt``.
--  Finally click import, and wait until done.
--  The enviroment is now created, click on the green arrow to open a
-   terminal inside it.
--  Navigate again with the terminal (or drag and drop the the folder on
-   OsX)
--  Most likely you will want to plot stuff, so type:
-
-``conda install matplotlib``
-
-and after if you want qtplot
-
-``conda install pyqtgraph``
-
--  Then type ``pip install -e .``
 
 Updating QCoDeS
 ===============
@@ -165,7 +130,11 @@ reports, contributing code, style, and testing
 License
 =======
 
-See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.md>`__.
+See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.rst>`__.
 
-.. |Build Status| image:: https://travis-ci.com/QCoDeS/Qcodes.svg?token=H7MjHi74teZgv8JHTYhx&branch=master
-   :target: https://travis-c
+.. |Build Status| image:: https://travis-ci.org/QCoDeS/Qcodes.svg?branch=master
+    :target: https://travis-ci.org/QCoDeS/Qcodes
+.. |DOCS| image:: https://img.shields.io/badge/read%20-thedocs-ff66b4.svg
+   :target: http://qcodes.github.io/Qcodes
+.. |DOI| image:: https://zenodo.org/badge/37137879.svg
+   :target: https://zenodo.org/badge/latestdoi/37137879

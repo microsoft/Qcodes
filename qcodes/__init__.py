@@ -34,6 +34,9 @@ if in_notebook():  # pragma: no cover
               'try "from qcodes.plots.pyqtgraph import QtPlot" '
               'to see the full error')
 
+# only import in name space if the gui is set to noebook
+# and there is multiprocessing
+if config['gui']['notebook'] and config['core']['legacy_mp']:
     from qcodes.widgets.widgets import show_subprocess_widget
 
 from qcodes.station import Station
@@ -56,7 +59,14 @@ from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument.mock import MockInstrument, MockModel
 
 from qcodes.instrument.function import Function
-from qcodes.instrument.parameter import Parameter, StandardParameter, combine, CombinedParameter
+from qcodes.instrument.parameter import (
+    Parameter,
+    ArrayParameter,
+    MultiParameter,
+    StandardParameter,
+    ManualParameter,
+    combine,
+    CombinedParameter)
 from qcodes.instrument.sweep_values import SweepFixedValues, SweepValues
 
 from qcodes.utils import validators
