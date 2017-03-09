@@ -7,18 +7,21 @@ import logging
 from qcodes import VisaInstrument
 from qcodes import validators as vals
 
+log = logging.getLogger(__name__)
+
 
 def parsestr(v):
     return v.strip().strip('"')
 
 
 class HP_83650A(VisaInstrument):
+
     def __init__(self, name, address, verbose=1, reset=False, server_name=None, **kwargs):
         """ Driver for HP_83650A
-        
+
         """
         self.verbose = verbose
-        logging.debug(__name__ + ' : Initializing instrument')
+        log.debug(__name__ + ' : Initializing instrument')
         super().__init__(name, address, **kwargs)
 
         self.add_parameter('frequency',
@@ -100,21 +103,18 @@ class HP_83650A(VisaInstrument):
                            docstring='Pulse source, ....')
 
     def reset(self):
-        logging.info(__name__ + ' : Resetting instrument')
+        log.info(__name__ + ' : Resetting instrument')
         self.write('*RST')
         self.getall()
 
     def getall(self):
-        logging.info(__name__ + ' : reading all settings from instrument')
+        log.debug(__name__ + ' : reading all settings from instrument')
         print(self.rfstatus.label + ':', self.rfstatus.get())
         print(self.power.label + ':', self.power.get(), self.power.units)
         print(self.frequency.label +
               ': %e' % self.frequency.get(), self.frequency.units)
         print(self.freqmode.label + ':', self.freqmode.get())
         self.getmodstatus()
-        # self.get_modstatus()
-        # self.get_modsource()
-        # self.get_FM()
 
     def getmodstatus(self):
         print(self.fmstatus.label + ':', self.fmstatus.get())
