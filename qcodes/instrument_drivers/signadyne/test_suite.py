@@ -88,3 +88,131 @@ class TestSignadyne_M3201A(DriverTestCase):
 
         # leave the setup in the initial state
         self.instrument.clock_frequency(cur_f)
+
+    def test_channel_frequency(self):
+        cur_f = self.instrument.frequency_channel_0.get_latest()
+        with self.assertRaises(ValueError):
+            self.instrument.frequency_channel_0.set(600e6)
+        with self.assertRaises(ValueError):
+            self.instrument.frequency_channel_0.set(-32)
+
+        # turn off the signal for safety
+        self.instrument.off()
+
+        self.instrument.frequency_channel_0.set(0.1e6)
+        self.instrument.frequency_channel_0.set(10e6)
+        self.instrument.frequency_channel_0.set(132)
+
+        # leave the setup in the initial state or default values if no initial state was found
+        if cur_f:
+            self.instrument.frequency_channel_0.set(cur_f)
+        else:
+            self.instrument.frequency_channel_0.set(0)
+
+    def test_channel_phase(self):
+        cur_p = self.instrument.phase_channel_0.get_latest()
+        with self.assertRaises(ValueError):
+            self.instrument.phase_channel_0.set(400)
+        with self.assertRaises(ValueError):
+            self.instrument.phase_channel_0.set(-32)
+
+        # turn off the signal for safety
+        self.instrument.off()
+
+        self.instrument.phase_channel_0.set(0)
+        self.instrument.phase_channel_0.set(351.89)
+        self.instrument.phase_channel_0.set(6.123)
+
+        # leave the setup in the initial state or default values if no initial state was found
+        if cur_p:
+            self.instrument.phase_channel_0.set(cur_p)
+        else:
+            self.instrument.phase_channel_0.set(0)
+
+    def test_channel_amplitude(self):
+        cur_a = self.instrument.amplitude_channel_0.get_latest()
+        cur_o = self.instrument.offset_channel_0.get_latest()
+        with self.assertRaises(ValueError):
+            self.instrument.amplitude_channel_0.set(2)
+        with self.assertRaises(ValueError):
+            self.instrument.amplitude_channel_0.set(-3)
+
+        # turn off the signal for safety
+        self.instrument.off()
+        # set offset to zero (so we don't go out of range)
+        self.instrument.offset_channel_0.set(0)
+
+        self.instrument.amplitude_channel_0.set(0)
+        self.instrument.amplitude_channel_0.set(1.35)
+        self.instrument.amplitude_channel_0.set(-1.112)
+
+        # leave the setup in the initial state or default values if no initial state was found
+        if cur_a:
+            self.instrument.amplitude_channel_0.set(cur_a)
+        else:
+            self.instrument.amplitude_channel_0.set(0)
+        if cur_o:
+            self.instrument.offset_channel_0.set(cur_o)
+        else:
+            self.instrument.offset_channel_0.set(0)
+
+    def test_channel_offset(self):
+        cur_o = self.instrument.offset_channel_0.get_latest()
+        cur_a = self.instrument.amplitude_channel_0.get_latest()
+        with self.assertRaises(ValueError):
+            self.instrument.offset_channel_0.set(2)
+        with self.assertRaises(ValueError):
+            self.instrument.offset_channel_0.set(-3)
+
+        # turn off the signal for safety
+        self.instrument.off()
+        # set amplitude to zero (so we don't go out of range)
+        self.instrument.amplitude_channel_0.set(0)
+
+        self.instrument.offset_channel_0.set(0)
+        self.instrument.offset_channel_0.set(1.35)
+        self.instrument.offset_channel_0.set(-1.112)
+
+        # leave the setup in the initial state or default values if no initial state was found
+        if cur_o:
+            self.instrument.offset_channel_0.set(cur_o)
+        else:
+            self.instrument.offset_channel_0.set(0)
+        if cur_a:
+            self.instrument.amplitude_channel_0.set(cur_a)
+        else:
+            self.instrument.amplitude_channel_0.set(0)
+
+    def test_channel_wave_shape(self):
+        cur_w = self.instrument.wave_shape_channel_0.get_latest()
+        cur_o = self.instrument.offset_channel_0.get_latest()
+        cur_a = self.instrument.amplitude_channel_0.get_latest()
+        with self.assertRaises(ValueError):
+            self.instrument.wave_shape_channel_0.set(1.5)
+        with self.assertRaises(ValueError):
+            self.instrument.wave_shape_channel_0.set(-3)
+
+        # turn off the signal for safety
+        self.instrument.off()
+        # set amplitude and offset to zero for safety
+        self.instrument.amplitude_channel_0.set(0)
+        self.instrument.offset_channel_0.set(0)
+
+        self.instrument.wave_shape_channel_0.set(-1)
+        self.instrument.wave_shape_channel_0.set(1)
+        self.instrument.wave_shape_channel_0.set(6)
+        self.instrument.wave_shape_channel_0.set(5)
+
+        # leave the setup in the initial state or default values if no initial state was found
+        if cur_w:
+            self.instrument.wave_shape_channel_0.set(cur_w)
+        else:
+            self.instrument.wave_shape_channel_0.set(-1)
+        if cur_o:
+            self.instrument.offset_channel_0.set(cur_o)
+        else:
+            self.instrument.offset_channel_0.set(0)
+        if cur_a:
+            self.instrument.amplitude_channel_0.set(cur_a)
+        else:
+            self.instrument.amplitude_channel_0.set(0)
