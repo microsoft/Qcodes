@@ -77,4 +77,5 @@ target/
 tmp/
 
 # Other
+docs/examples/data/*
 .DS_Store
