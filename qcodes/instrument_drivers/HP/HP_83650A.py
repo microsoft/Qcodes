@@ -15,8 +15,7 @@ def parsestr(v):
 class HP_83650A(VisaInstrument):
     def __init__(self, name, address, verbose=1, reset=False, server_name=None, **kwargs):
         """ Driver for HP_83650A
-
-        Also see: [xxxx]
+        
         """
         self.verbose = verbose
         logging.debug(__name__ + ' : Initializing instrument')
