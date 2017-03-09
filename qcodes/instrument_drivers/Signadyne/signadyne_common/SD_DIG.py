@@ -173,7 +173,6 @@ class SD_DIG(Instrument):
                 label='Trigger threshold for channel {}'.format(n),
                 vals=Numbers(-3,3),
                 set_cmd=None,
-                get_cmd=None,
                 docstring='The trigger threshold for channel {}'.format(n)
             )
 
@@ -183,81 +182,72 @@ class SD_DIG(Instrument):
                 label='Points per cycle for channel {}'.format(n),
                 vals=Ints(),
                 set_cmd=None,
-                get_cmd=None,
                 docstring='The number of points per cycle for DAQ {}'.format(n)
             )
 
             self.add_parameter(
                 'n_cycles_{}'.format(n),
-                label='n cycles for channel {}'.format(n),
+                label='n cycles for DAQ {}'.format(n),
                 vals=Ints(),
                 set_cmd=None,
-                get_cmd=None,
                 docstring='The number of cycles to collect on DAQ {}'.format(n)
             )
 
             self.add_parameter(
-                'trigger_delay_{}'.format(n),
-                label='Trigger delay for for channel {}'.format(n),
+                'ext_trigger_delay_{}'.format(n),
+                label='Trigger delay for for DAQ {}'.format(n),
                 vals=Ints(),
                 set_cmd=None,
-                get_cmd=None,
                 docstring='The trigger delay for DAQ {}'.format(n)
             )
 
             # For DAQtriggerExternalConfig
             self.add_parameter(
-                'trigger_mode_{}'.format(n),
-                label='Trigger mode for channel {}'.format(n),
+                'ext_trigger_mode_{}'.format(n),
+                label='External trigger mode for DAQ {}'.format(n),
                 vals=Ints(),
                 set_cmd=None,
-                get_cmd=None,
                 docstring='The trigger mode for DAQ {}'.format(n)
             )
 
             self.add_parameter(
                 'digital_trigger_mode_{}'.format(n),
-                label='Digital trigger mode for channel {}'.format(n),
+                label='Digital trigger mode for DAQ {}'.format(n),
                 vals=Ints(),
                 set_cmd=None,
-                get_cmd=None,
                 docstring='The digital trigger mode for DAQ {}'.format(n)
             )
 
             self.add_parameter(
                 'digital_trigger_source_{}'.format(n),
-                label='Digital trigger source for channel {}'.format(n),
+                label='Digital trigger source for DAQ {}'.format(n),
                 vals=Ints(),
                 set_cmd=None,
-                get_cmd=None,
                 docstring='The digital trigger source for DAQ {}'.format(n)
             )
 
             self.add_parameter(
                 'analog_trigger_mask_{}'.format(n),
-                label='Analog trigger mask for channel {}'.format(n),
+                label='Analog trigger mask for DAQ {}'.format(n),
                 vals=Ints(),
                 set_cmd=None,
-                get_cmd=None,
                 docstring='The analog trigger mask for DAQ {}'.format(n)
             )
 
             # For DAQread
             self.add_parameter(
                 'n_points_{}'.format(n),
-                label='n points for channel {}'.format(n),
+                label='n points for DAQ {}'.format(n),
                 vals=Ints(),
                 set_cmd=None,
-                get_cmd=None,
                 docstring='The number of points to be read using DAQread on DAQ {}'.format(n)
             )
 
             self.add_parameter(
                 'timeout_{}'.format(n),
-                label='timeout for channel {}'.format(n),
+                label='timeout for DAQ {}'.format(n),
                 vals=Ints(),
                 set_cmd=None,
-                get_cmd=None,
                 docstring='The read timeout for DAQ {}'.format(n)
             )
 
