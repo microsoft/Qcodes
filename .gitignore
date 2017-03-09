@@ -76,4 +76,5 @@ target/
 *.py~
 tmp/
 
-docs/examples/data/*
+# Other
+.DS_Store
