@@ -5,13 +5,13 @@ from .M3201A import Signadyne_M3201A
 class TestSignadyne_M3201A(DriverTestCase):
     """
     This is a test suite for testing the Signadyne M3201A AWG card driver.
-    It provides test functions for each function and parameter as defined in the driver,
+    It provides test functions for most of the functions and parameters as defined in the driver,
     as well as test functions for general things like connecting to the device.
 
     Status: beta
 
-    The current test functions are not super useful yet because the driver doesn't support set-able parameters at the
-    moment. Normally a more useful test function would do something like:
+    Most of the current test functions are not super useful yet because the driver doesn't support set-able parameters
+    at the moment. Normally a more useful test function would do something like:
 
             self.instrument.clock_frequency(100e6)
             self.assertAlmostEqual(self.instrument.clock_frequency(), 100e6, places=4)
@@ -26,6 +26,7 @@ class TestSignadyne_M3201A(DriverTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        print('Did set up Class. Should have printed `found ..., testing`.')
         cls.instrument.off()  # Not a test but a safety measure
 
     def test_chassis_number(self):
@@ -216,3 +217,22 @@ class TestSignadyne_M3201A(DriverTestCase):
             self.instrument.amplitude_channel_0.set(cur_a)
         else:
             self.instrument.amplitude_channel_0.set(0)
+
+    def test_PXI_trigger(self):
+        with self.assertRaises(ValueError):
+            self.instrument.pxi_trigger_number_0.set(1.5)
+        with self.assertRaises(ValueError):
+            self.instrument.clock_frequency(32)
+
+        cur_pxi = self.instrument.pxi_trigger_number_0.get()
+
+        test_pxi = 0
+        self.instrument.pxi_trigger_number_0.set(test_pxi)
+        self.assertEqual(self.instrument.pxi_trigger_number_0.get(), test_pxi)
+
+        test_pxi = 1
+        self.instrument.pxi_trigger_number_0.set(test_pxi)
+        self.assertEqual(self.instrument.pxi_trigger_number_0.get(), test_pxi)
+
+        # leave the setup in the initial state
+        self.instrument.pxi_trigger_number_0.set(cur_pxi)

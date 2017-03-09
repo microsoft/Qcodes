@@ -127,7 +127,9 @@ class Signadyne_M3201A(Instrument):
             self.add_parameter('pxi_trigger_number_{}'.format(i),
                                label='pxi trigger number {}'.format(i),
                                get_cmd=partial(self.get_pxi_trigger, pxi_trigger=(4000 + i)),
-                               docstring='The digital value of pxi trigger no. {}, 0 (ON) of 1 (OFF)'.format(i))
+                               set_cmd=partial(self.set_pxi_trigger, pxi_trigger=(4000 + i)),
+                               docstring='The digital value of pxi trigger no. {}, 0 (ON) of 1 (OFF)'.format(i),
+                               vals=validator.Enum(0, 1))
 
         for i in [0, 1, 2, 3]:
             self.add_parameter('frequency_channel_{}'.format(i),
@@ -353,6 +355,16 @@ class Signadyne_M3201A(Instrument):
             wave_shape (int): wave shape type
         """
         self.awg.channelWaveShape(channel_number, wave_shape)
+
+    def set_pxi_trigger(self, value, pxi_trigger):
+        """
+        Sets the digital value of the specified PXI trigger
+
+        Args:
+            pxi_trigger (int): PXI trigger number (4000 + Trigger No.)
+            value (int): Digital value with negated logic, 0 (ON) or 1 (OFF)
+        """
+        self.awg.PXItriggerWrite(pxi_trigger, value)
 
     #
     # The methods below are useful for controlling the device, but are not used for setting or getting parameters
