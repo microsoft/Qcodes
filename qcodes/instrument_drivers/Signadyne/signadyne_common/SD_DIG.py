@@ -131,10 +131,11 @@ class SD_DIG(Instrument):
             self.add_parameter(
                 'full_scale_{}'.format(n),
                 label='Full scale range for channel {}'.format(n),
-                vals=Numbers(SD_AIN.channelMinFullScale(), SD_AIN.channelMaxFullScale())
+                # TODO: validator must be set after device opened
+                #vals=Numbers(self.SD_AIN.channelMinFullScale(), self.SD_AIN.channelMaxFullScale())
                 # Creates a partial function to allow for single-argument set_cmd to change parameter
                 set_cmd=partial(set_full_scale, channel=n),
-                get_cmd=partial(SD_AIN.channelFullScale, channel=n),
+                get_cmd=partial(self.SD_AIN.channelFullScale, channel=n),
                 docstring='The full scale voltage for channel {}'.format(n)
             )
 
@@ -142,18 +143,18 @@ class SD_DIG(Instrument):
             self.add_parameter(
                 'impedance_{}'.format(n),
                 label='Impedance for channel {}'.format(n),
-                vals=Enum([0,1]),
+                vals=Enum(0,1),
                 set_cmd=partial(set_impedance, channel=n),
-                get_cmd=partial(SD_AIN.channelImpedance, channel=n),
+                get_cmd=partial(self.SD_AIN.channelImpedance, channel=n),
                 docstring='The input impedance of channel {}'.format(n)
             )
 
             self.add_parameter(
                 'coupling_{}'.format(n),
                 label='Coupling for channel {}'.format(n),
-                vals=Enum([0,1]),
+                vals=Enum(0,1),
                 set_cmd=partial(set_coupling, channel=n),
-                get_cmd=partial(SD_AIN.channelCoupling, channel=n),
+                get_cmd=partial(self.SD_AIN.channelCoupling, channel=n),
                 docstring='The coupling of channel {}'.format(n)
             )
 
@@ -161,16 +162,16 @@ class SD_DIG(Instrument):
             self.add_parameter(
                 'prescaler_{}'.format(n),
                 label='Prescaler for channel {}'.format(n),
-                vals=Ints(0,4096),
-                set_cmd=partial(SD_AIN.channelPrescalerConfig,  channel=n),
-                get_cmd=partial(SD_AIN.channelPrescaler, channel=n),
+                vals=Ints(0,4095),
+                set_cmd=partial(self.SD_AIN.channelPrescalerConfig,  channel=n),
+                get_cmd=partial(self.SD_AIN.channelPrescaler, channel=n),
                 docstring='The sampling frequency prescaler for channel {}'.format(n)
             )
 
             # For channelTriggerConfig
             self.add_parameter(
                 'trigger_mode_{}'.format(n), label='Trigger mode for channel {}'.format(n), 
-                vals=Enum([1,2,3]),
+                vals=Enum(1,2,3),
                 set_cmd=partial(set_trigger_mode, channel=n),
                 docstring='The trigger mode for channel {}'.format(n)
             )
@@ -179,7 +180,7 @@ class SD_DIG(Instrument):
                 'trigger_threshold_{}'.format(n),
                 label='Trigger threshold for channel {}'.format(n),
                 vals=Numbers(-3,3),
-                set_cmd=None,
+                set_cmd=partial(set_trigger_threshold, channel=n),
                 docstring='The trigger threshold for channel {}'.format(n)
             )
 
