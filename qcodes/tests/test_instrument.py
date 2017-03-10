@@ -6,7 +6,7 @@ from unittest import TestCase
 from .instrument_mocks import DummyInstrument
 
 
-class TestInstrument2(TestCase):
+class TestInstrument(TestCase):
 
     def setUp(self):
         self.instrument = DummyInstrument(
