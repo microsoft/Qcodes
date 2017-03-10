@@ -3,9 +3,9 @@ from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils.validators    import Numbers, Enum, Ints, Strings, Anything
 from functools import partial
 try:
-    import Signadyne.signadyne.SD_AIN as SD_AIN
-    import Signadyne.signadyne.SD_AIN_TriggerMode as SD_AIN_TriggerMode # for channel edge sensitivities
-    import Signadyne.signadyne.SD_TriggerModes  as SD_TriggerModes      # for channel trigger source
+    import signadyne.SD_AIN as SD_AIN
+    import signadyne.SD_AIN_TriggerMode as SD_AIN_TriggerMode # for channel edge sensitivities
+    import signadyne.SD_TriggerModes  as SD_TriggerModes      # for channel trigger source
     # TODO: Import all Signadyne classes as themselves
 except ImportError:
     raise ImportError('To use a Signadyne Digitizer, install the Signadyne module')
@@ -30,9 +30,10 @@ class SD_DIG(Instrument):
                 name (str)          : the name of the digitizer card
                 [n_channels] (int)  : the number of input channels the specified card has
         """
-        super().__init__(name, **kwargs)
+        self.n_channels = kwargs.pop('n_channels')
+        super().__init__(**kwargs)
+        self.name       = kwargs['name']
         self.SD_AIN = SD_AIN()
-        self.n_channels = kwargs['n_channels']
 
         ########################################################################
         ### Create a set of internal variables to aid set/get cmds in params ###
@@ -46,7 +47,35 @@ class SD_DIG(Instrument):
         self.__trigger_behaviour          =  0 
         self.__PXItrigger                 =  0
         self.__skew                       =  0
+
+        # Create distinct parameters for each of the digitizer channels
+
+        # For channelInputConfig
+        self.__full_scale               = [ 1]*self.n_channels # By default, full scale = 1V
+        self.__impedance                = [ 0]*self.n_channels # By default, Hi-z
+        self.__coupling                 = [ 0]*self.n_channels # By default, DC coupling
+        # For channelPrescalerConfig         
+        self.__prescaler                = [ 0]*self.n_channels # By default, no prescaling
+        # For channelTriggerConfig           
+        self.__trigger_mode             = [ SD_AIN_TriggerMode.RISING_EDGE]*self.n_channels
+        self.__trigger_threshold        = [ 0]*self.n_channels # By default, threshold at 0V
+        # For DAQconfig                      
+        self.__points_per_cycle         = [ 0]*self.n_channels
+        self.__n_cycles                 = [ 0]*self.n_channels
+        self.__trigger_delay            = [ 0]*self.n_channels
+        self.__trigger_mode             = [ SD_AIN_TriggerMode.RISING_EDGE]*self.n_channels
+        # For DAQtriggerExternalConfig       
+        self.__digital_trigger_mode     = [ 0] *self.n_channels
+        self.__digital_trigger_source   = [ 0]*self.n_channels
+        self.__analog_trigger_mask      = [ 0]*self.n_channels
+        # For DAQread                        
+        self.__n_points                 = [ 0]*self.n_channels
+        self.__timeout                  = [-1]*self.n_channels
         
+        ###############################################
+        ###         Create internal parameters      ###
+        ###############################################
+
         # for triggerIOconfig
         self.add_parameter(
             'trigger_direction',
@@ -95,30 +124,8 @@ class SD_DIG(Instrument):
             docstring='The skew between PXI_CLK10 and CLKsync in multiples of 10 ns'
         )
 
-        # Create distinct parameters for each of the digitizer channels
         for n in range(n_channels):
 
-            # For channelInputConfig
-            self.__full_scale[n]               =  1 # By default, full scale = 1V
-            self.__impedance[n]                =  0 # By default, Hi-z
-            self.__coupling[n]                 =  0 # By default, DC coupling
-            # For channelPrescalerConfig 
-            self.__prescaler[n]                =  0 # By default, no prescaling
-            # For channelTriggerConfig
-            self.__trigger_mode[n]             =  SD_AIN_TriggerMode.RISING_EDGE
-            self.__trigger_threshold[n]        =  0 # By default, threshold at 0V
-            # For DAQconfig
-            self.__points_per_cycle[n]         =  0
-            self.__n_cycles[n]                 =  0
-            self.__trigger_delay[n]            =  0
-            self.__trigger_mode[n]             =  SD_AIN_TriggerMode.RISING_EDGE
-            # For DAQtriggerExternalConfig
-            self.__digital_trigger_mode[n]     =  0 
-            self.__digital_trigger_source[n]   =  0
-            self.__analog_trigger_mask[n]      =  0
-            # For DAQread
-            self.__n_points[n]                 =  0
-            self.__timeout[n]                  = -1
 
             # For channelInputConfig
             self.add_parameter(
