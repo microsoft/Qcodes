@@ -55,6 +55,9 @@ class Signadyne_M3201A(Instrument):
         # Create instance of signadyne SD_AOU class
         self.awg = signadyne.SD_AOU()
 
+        # Create an instance of signadyne SD_Wave class
+        self.wave = signadyne.SD_Wave()
+
         # Open the device, using the specified chassis and slot number
         awg_name = self.awg.getProductNameBySlot(chassis, slot)
         if isinstance(awg_name, str):
@@ -522,7 +525,7 @@ class Signadyne_M3201A(Instrument):
     # Waveform related functions
     #
 
-    def load_wave_form(self, waveform_object, waveform_number, verbose=False):
+    def load_waveform(self, waveform_object, waveform_number, verbose=False):
         """
         Loads the specified waveform into the module onboard RAM.
         Waveforms must be created first as an instance of the SD_Wave class.
@@ -540,7 +543,7 @@ class Signadyne_M3201A(Instrument):
         value_name = 'Loaded waveform. available_RAM'
         return result_parser(value, value_name, verbose)
 
-    def load_wave_form_int16(self, waveform_type, data_raw, waveform_number, verbose=False):
+    def load_waveform_int16(self, waveform_type, data_raw, waveform_number, verbose=False):
         """
         Loads the specified waveform into the module onboard RAM.
         Waveforms must be created first as an instance of the SD_Wave class.
@@ -559,7 +562,7 @@ class Signadyne_M3201A(Instrument):
         value_name = 'Loaded waveform. available_RAM'
         return result_parser(value, value_name, verbose)
 
-    def reload_wave_form(self, waveform_object, waveform_number, padding_mode=0, verbose=False):
+    def reload_waveform(self, waveform_object, waveform_number, padding_mode=0, verbose=False):
         """
         Replaces a waveform located in the module onboard RAM.
         The size of the new waveform must be smaller than or
@@ -585,7 +588,7 @@ class Signadyne_M3201A(Instrument):
         value_name = 'Reloaded waveform. available_RAM'
         return result_parser(value, value_name, verbose)
 
-    def reload_wave_form_int16(self, waveform_type, data_raw, waveform_number, padding_mode=0, verbose=False):
+    def reload_waveform_int16(self, waveform_type, data_raw, waveform_number, padding_mode=0, verbose=False):
         """
         Replaces a waveform located in the module onboard RAM.
         The size of the new waveform must be smaller than or
@@ -612,7 +615,7 @@ class Signadyne_M3201A(Instrument):
         value_name = 'Reloaded waveform. available_RAM'
         return result_parser(value, value_name, verbose)
 
-    def flush_wave_form(self, verbose=False):
+    def flush_waveform(self, verbose=False):
         """
         Deletes all waveforms from the module onboard RAM and flushes all the AWG queues.
         """
@@ -777,7 +780,7 @@ class Signadyne_M3201A(Instrument):
         """
         self.awg.AWGstopMultiple(awg_mask)
 
-    def awg_jump_next_wave_form(self, awg_number):
+    def awg_jump_next_waveform(self, awg_number):
         """
         Forces a jump to the next waveform in the awg queue.
         The jump is executed once the current waveform has finished a complete cycle.
@@ -820,6 +823,69 @@ class Signadyne_M3201A(Instrument):
             awg_mask (int): Mask to select the awgs to stop (LSB is awg 0, bit 1 is awg 1 etc.)
         """
         self.awg.AWGtriggerMultiple(awg_mask)
+
+    #
+    # Functions related to creation of SD_Wave objects
+    #
+
+    def new_waveform_from_file(self, waveform_file):
+        """
+        Creates a SD_Wave object from data points contained in a file.
+        This waveform object is stored in the PC RAM, not in the onboard RAM.
+
+        Args:
+            waveform_file (str): file containing the waveform points
+
+        Returns:
+            waveform (SD_Wave): pointer to the waveform object,
+            or negative numbers for errors
+        """
+        return self.wave.newFromFile(waveform_file)
+
+    def new_waveform_from_double(self, waveform_type, waveform_data_a, waveform_data_b=None):
+        """
+        Creates a SD_Wave object from data points contained in an array.
+        This waveform object is stored in the PC RAM, not in the onboard RAM.
+
+        Args:
+            waveform_type (int): waveform type
+            waveform_data_a (array): array of (float) with waveform points
+            waveform_data_b (array): array of (float) with waveform points,
+                                     only for the waveforms which have a second component
+
+        Returns:
+            waveform (SD_Wave): pointer to the waveform object,
+            or negative numbers for errors
+        """
+        return self.wave.newFromArrayDouble(waveform_type, waveform_data_a, waveform_data_b)
+
+    def new_waveform_from_int(self, waveform_type, waveform_data_a, waveform_data_b=None):
+        """
+        Creates a SD_Wave object from data points contained in an array.
+        This waveform object is stored in the PC RAM, not in the onboard RAM.
+
+        Args:
+            waveform_type (int): waveform type
+            waveform_data_a (array): array of (int) with waveform points
+            waveform_data_b (array): array of (int) with waveform points,
+                                     only for the waveforms which have a second component
+
+        Returns:
+            waveform (SD_Wave): pointer to the waveform object,
+            or negative numbers for errors
+        """
+        return self.wave.newFromArrayInteger(waveform_type, waveform_data_a, waveform_data_b)
+
+    def get_waveform_status(self, waveform, verbose=False):
+        value = waveform.getStatus()
+        value_name = 'waveform_status'
+        return result_parser(value, value_name, verbose)
+
+    def get_waveform_type(self, waveform, verbose=False):
+        value = waveform.getType()
+        value_name = 'waveform_type'
+        return result_parser(value, value_name, verbose)
+
 
     #
     # The methods below are not used for setting or getting parameters, but can be used in the test functions of the
