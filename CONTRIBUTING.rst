@@ -233,9 +233,6 @@ and then unit testing should be run on pull-request, using CI. Maybe
 simplify to a one command that says: if there's enough cover, and all
 good or fail and where it fails.
 
--  The standard test commands are listed above under
-   :ref:`runnningtests` .
-
 -  We should have a *few* high-level "integration" tests, but simple
    unit tests (that just depend on code in one module) are more valuable
    for several reasons:

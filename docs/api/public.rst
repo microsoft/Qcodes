@@ -42,8 +42,6 @@ Loops
 .. autosummary::
    :toctree: generated/
 
-   get_bg
-   halt_bg
    Loop
 
 Measure
@@ -70,9 +68,6 @@ Data
 .. autosummary::
    :toctree: generated/
 
-    get_data_manager
-    qcodes.data.manager.DataManager
-    DataMode
     DataSet
     new_data
     load_data
@@ -102,8 +97,6 @@ Instrument
    Instrument
    IPInstrument
    VisaInstrument
-   MockInstrument
-   MockModel
 
 
 Plot
@@ -123,7 +116,5 @@ Utils & misc
    :toctree: generated/
 
    qcodes.utils.validators
-   qcodes.process.helpers.set_mp_method
    qcodes.utils.helpers.in_notebook
-   qcodes.widgets.widgets.show_subprocess_widget
 
