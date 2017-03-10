@@ -102,7 +102,8 @@ class DummyInstrument(Instrument):
             self.add_parameter(g,
                                parameter_class=ManualParameter,
                                initial_value=0,
-                               label='Gate {} (arb. units)'.format(g),
+                               label='Gate {}'.format(g),
+                               unit="V",
                                vals=Numbers(-800, 400))
 
 
