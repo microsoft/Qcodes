@@ -259,8 +259,8 @@ class SD_DIG(Instrument):
                 docstring='The read timeout for DAQ {}'.format(n)
             )
 
-
-    def set_IO_trigger_direction(direction):
+    # External trigger port functions
+    def set_IO_trigger_direction(self, direction):
         """ Sets the external port trigger direction
 
         Args:
@@ -269,7 +269,7 @@ class SD_DIG(Instrument):
         """
         pass
 
-    def set_CLKsys_frequency(frequency):
+    def set_CLKsys_frequency(self, frequency):
         """ Sets the CLKsys frequency
 
         Args:
@@ -279,7 +279,7 @@ class SD_DIG(Instrument):
         """
         pass
 
-    def set_trigger_behaviour(behaviour):
+    def set_trigger_behaviour(self, behaviour):
         """ Sets the trigger behaviour in resetting the CLKsync and CLKsys phases
 
         Args:
@@ -288,7 +288,7 @@ class SD_DIG(Instrument):
         """
         pass
 
-    def set_PXI_trigger(PXI):
+    def set_PXI_trigger(self, PXI):
         """ Sets the PXI trigger which causes the phase reset of CLKsync and CLKsys
 
         Args:
@@ -296,7 +296,7 @@ class SD_DIG(Instrument):
         """
         pass
 
-    def set_skew(skew):
+    def set_skew(self, skew):
         """ Sets the skew between PXI_CLK10 and CLKsync in multiples of 10 ns
 
         Args:
@@ -304,89 +304,91 @@ class SD_DIG(Instrument):
         """
         pass
 
-    def set_channel_input_config(channel, fullScale, impedance, coupling):
+    # Individual channel functions
+    # This function may not be needed
+    def set_channel_input_config(self, channel, fullScale, impedance, coupling):
         """ Sets the input configuration for the specified channel
 
         Args:
-            channel (int)       : the input channel you are modifying
+            channel (int)       : the input channel you are configuring
             fullScale (float)   : the full scale input range in volts
             impedance (int)     : the input impedance (0 = Hi-Z, 1 = 50 Ohm)
             coupling (int)      : the channel coupling (0 = DC, 1 = AC)
         """
         pass
 
-    def set_prescaler(channel, prescaler):
+    def set_prescaler(self, prescaler, channel):
         """ Sets the channel sampling frequency via the prescaler
 
         Args:
-            channel (int)       : the input channel you are modifying
+            channel (int)       : the input channel you are configuring
             prescaler (int)     : the prescaler value [0..4095]
         """
         pass
 
-    def set_full_scale(channel, full_scale):
+    def set_full_scale(self, full_scale, channel):
         """ Sets the channel full scale input voltage
 
         Args:
-            channel(int)        : the input channel you are modifying
+            channel(int)        : the input channel you are configuring
             full_scale (float)  : the input full scale range in volts
         """
         pass
     
-    def set_impedance(channel, impedance):
+    def set_impedance(self, impedance, channel):
         """ Sets the channel input impedance
 
         Args:
-            channel (int)       : the input channel you are modifying
+            channel (int)       : the input channel you are configuring
             impedance (int)     : the input impedance (0 = Hi-Z, 1 = 50 Ohm)
         """
         pass
 
-    def set_coupling(channel, coupling):
+    def set_coupling(self, coupling, channel):
         """ Sets the channel coupling
 
         Args:
-            channel (int)       : the input channel you are modifying
+            channel (int)       : the input channel you are configuring
             coupling (int)      : the channel coupling (0 = DC, 1 = AC)
         """
         pass
 
-    def set_trigger_mode(channel, mode=None):
+    def set_trigger_mode(self, mode, channel):
         """ Sets the current trigger mode from those defined in SD_AIN_TriggerMode
 
         Args:
-            channel (int)       : the input channel you are modifying
+            channel (int)       : the input channel you are configuring
             mode (int)          : the trigger mode drawn from the class SD_AIN_TriggerMode
         """
         if (channel > self.n_channels):
             raise ValueError("The specified channel {ch} exceeds the number of channels ({n})".format(ch=channel, n=self.n_channels))
         if mode not in vars(SD_AIN_TriggerMode):
             raise ValueError("The specified mode {} does not exist.".format(mode))
-        self.__trigger_mode[self, channel] = mode
+        self.__trigger_mode[channel] = mode
         # TODO: Call the SD library to set the current mode
 
 
-    def get_trigger_mode(channel):
+    def get_trigger_mode(self, channel):
         """ Returns the current trigger mode
 
         Args:
             channel (int)       : the input channel you are observing
         """
-        return self.__trigger_mode[self, channel]
+        return self.__trigger_mode[channel]
 
 
-    def set_trigger_threshold(channel, threshold=0):
+    def set_trigger_threshold(self, threshold, channel):
         """ Sets the current trigger threshold, in the range of -3V and 3V
 
         Args:
-            channel (int)       : the input channel you are modifying
+            channel (int)       : the input channel you are configuring
             threshold (float)   : the value in volts for the trigger threshold
         """
         if (channel > self.n_channels):
             raise ValueError("The specified channel {ch} exceeds the number of channels ({n})".format(ch=channel, n=self.n_channels))
         if (threshold > 3 or threshold < -3):
             raise ValueError("The specified threshold {thresh} V does not exist.".format(thresh=threshold))
-        self.__trigger_threshold[self, channel] = threshold
+        self.__trigger_threshold[channel] = threshold
         # TODO: Call the SD library to set the current threshold
 
 
