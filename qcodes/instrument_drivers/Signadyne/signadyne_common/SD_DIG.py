@@ -209,6 +209,15 @@ class SD_DIG(Instrument):
                 docstring='The trigger delay for DAQ {}'.format(n)
             )
 
+            self.add_parameter(
+                'trigger_mode_{}'.format(n),
+                label='Trigger mode for for DAQ {}'.format(n),
+                vals=Ints(),
+                set_cmd=None,
+                docstring='The trigger mode for DAQ {}'.format(n)
+            )
+            # TODO: Put DAQtriggerConfig params here
+
             # For DAQtriggerExternalConfig
             self.add_parameter(
                 'ext_trigger_mode_{}'.format(n),
@@ -399,4 +408,69 @@ class SD_DIG(Instrument):
             channel (int)       : the input channel you are observing
         """
         return self.__trigger_threshold[self, channel]
+
+    # DAQtriggerConfig
+    def set_points_per_cycle(self, channel, n_points):
+        """ Sets the number of points to be collected per trigger
+
+        Args:
+            channel (int)       : the input channel you are configuring
+        """
+        pass
+
+    def set_n_cycles(self, n_cycles, channel):
+        """ Sets the number of trigger cycles to collect data for
+
+        Args:
+            channel (int)       : the input channel you are configuring
+            n_cycles (int)      : the number of triggers to collect data from
+
+        """
+        pass
+
+    def set_DAQ_trigger_delay(self, delay, channel):
+        """ Sets the trigger delay for the specified trigger source
+
+        Args:
+            channel (int)       : the input channel you are configuring
+            delay   (int)       : the delay in unknown units
+        """
+        pass
+
+    def set_DAQ_trigger_mode(self, mode, channel):
+        """ Sets the trigger mode when using an external trigger 
+
+        Args:
+            channel (int)       : the input channel you are configuring
+            mode  (int)         : the trigger mode you are using
+        """
+        pass
+
+    # DAQtriggerExternalConfig
+    def set_trigger_source(self, source, channel):
+        """ Sets the trigger source 
+
+        Args:
+            channel (int)       : the input channel you are configuring
+            source  (int)       : the trigger source you are using
+        """
+        pass
+
+    def set_trigger_source(self, source, channel):
+        """ Sets the trigger source 
+
+        Args:
+            channel (int)       : the input channel you are configuring
+            source  (int)       : the trigger source you are using
+        """
+        pass
+    
+           # # For DAQtriggerExternalConfig
+           #     'ext_trigger_mode_{}'.format(n),
+           #     'digital_trigger_mode_{}'.format(n),
+           #     'digital_trigger_source_{}'.format(n),
+           #     'analog_trigger_mask_{}'.format(n),
+           # # For DAQread
+           #     'n_points_{}'.format(n),
+           #     'timeout_{}'.format(n),
 
