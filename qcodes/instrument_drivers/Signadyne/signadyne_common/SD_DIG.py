@@ -1,12 +1,11 @@
 from qcodes.instrument.base import Instrument
-from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils.validators    import Numbers, Enum, Ints, Strings, Anything
 from functools import partial
+from warnings import warn
 try:
     import signadyne.SD_AIN as SD_AIN
     import signadyne.SD_AIN_TriggerMode as SD_AIN_TriggerMode # for channel edge sensitivities
     import signadyne.SD_TriggerModes  as SD_TriggerModes      # for channel trigger source
-    # TODO: Import all Signadyne classes as themselves
 except ImportError:
     raise ImportError('To use a Signadyne Digitizer, install the Signadyne module')
 
@@ -40,13 +39,13 @@ class SD_DIG(Instrument):
         ########################################################################
 
         # for triggerIOconfig
-        self.__direction                  =  0
+        self.__direction                =  0
         # for clockSetFrequency
-        self.__frequency                  =  100e6
+        self.__frequency                =  100e6
         # for clockResetPhase
-        self.__trigger_behaviour          =  0 
-        self.__PXItrigger                 =  0
-        self.__skew                       =  0
+        self.__trigger_behaviour        =  0 
+        self.__PXItrigger               =  0
+        self.__skew                     =  0
 
         # Create distinct parameters for each of the digitizer channels
 
