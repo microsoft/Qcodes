@@ -198,6 +198,16 @@ class SD_Module(Instrument):
         value_name = 'serial_number'
         return result_parser(value, value_name, verbose)
 
+    def get_type_by_slot(self, chassis, slot, verbose=False):
+        value = self.awg.getTypeBySlot(chassis, slot)
+        value_name = 'type'
+        return result_parser(value, value_name, verbose)
+
+    def get_type_by_index(self, index, verbose=False):
+        value = self.awg.getTypeByIndex(index)
+        value_name = 'type'
+        return result_parser(value, value_name, verbose)
+
     #
     # The methods below are useful for controlling the device, but are not used for setting or getting parameters
     #
@@ -221,3 +231,36 @@ class SD_Module(Instrument):
     def run_self_test(self):
         value = self.SD_module.runSelfTest()
         print('Did self test and got result: {}'.format(value))
+
+    # method below is commented out because it is missing from the dll provided by Keysight
+    # def get_awg_running(self, verbose=0, awg_number):
+    #     """
+    #     Returns whether the AWG is running or stopped
+    #
+    #     Args:
+    #         awg_number (int): AWG number
+    #
+    #     Returns:
+    #         value (int): 1 if the AWG is running, 0 if it is stopped
+    #     """
+    #     value =
+    #     if verbose:
+    #         print('slot_number: %s' % value)
+    #     return value
+
+    # method below is commented out because it is missing from the dll provided by Keysight
+    # def get_awg_waveform_number_playing(self, verbose=0, awg_number=0):
+    #     """
+    #     Returns the waveformNumber of the waveform which is currently being generated.
+    #
+    #     Args:
+    #         awg_number (int): AWG number
+    #
+    #     Returns:
+    #         value (int): Waveform identifier,
+    #         or negative numbers for errors
+    #     """
+    #     value = self.awg.AWG
+    #     if verbose:
+    #         print('pxi_trigger number %s: %s' % (pxi_trigger, value))
+    #     return value

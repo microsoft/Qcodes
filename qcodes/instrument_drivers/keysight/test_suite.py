@@ -1,5 +1,5 @@
 from qcodes.instrument_drivers.test import DriverTestCase
-from .M3201A import Signadyne_M3201A
+from .M3201A import Keysight_M3201A
 from .SD_common.SD_Module import SD_Module
 
 
@@ -32,7 +32,7 @@ class TestSD_Module(DriverTestCase):
         self.assertEqual(serial_number_test, serial_number)
 
 
-class TestSignadyne_M3201A(DriverTestCase):
+class TestKeysight_M3201A(DriverTestCase):
     """
     This is a test suite for testing the Signadyne M3201A AWG card driver.
     It provides test functions for most of the functions and parameters as defined in the driver,
@@ -51,7 +51,7 @@ class TestSignadyne_M3201A(DriverTestCase):
     We can however test for ValueErrors which is a useful safety test.
     """
 
-    driver = Signadyne_M3201A
+    driver = Keysight_M3201A
 
     @classmethod
     def setUpClass(cls):
@@ -231,7 +231,7 @@ class TestSignadyne_M3201A(DriverTestCase):
         self.instrument.amplitude_channel_0.set(0)
         self.instrument.offset_channel_0.set(0)
 
-        self.instrument.wave_shape_channel_0.set(-1)
+        self.instrument.wave_shape_channel_0.set(0)
         self.instrument.wave_shape_channel_0.set(1)
         self.instrument.wave_shape_channel_0.set(6)
         self.instrument.wave_shape_channel_0.set(5)
@@ -240,7 +240,7 @@ class TestSignadyne_M3201A(DriverTestCase):
         if cur_w:
             self.instrument.wave_shape_channel_0.set(cur_w)
         else:
-            self.instrument.wave_shape_channel_0.set(-1)
+            self.instrument.wave_shape_channel_0.set(0)
         if cur_o:
             self.instrument.offset_channel_0.set(cur_o)
         else:
