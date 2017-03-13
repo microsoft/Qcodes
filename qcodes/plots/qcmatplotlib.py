@@ -126,13 +126,19 @@ class MatPlot(BasePlot):
             # the data array inside the config
             getter = getattr(ax, "get_{}label".format(axletter))
             if axletter in config and not getter():
-                # now if we did not have any kwark gor label or unit
+                # now if we did not have any kwarg for label or unit
                 # fallback to the data_array
-                if unit is  None:
+                if unit is None:
                     _, unit = self.get_label(config[axletter])
                 if label is None:
                     label, _ = self.get_label(config[axletter])
-
+            elif getter():
+                # The axis already has label. Assume that is correct
+                # We should probably check consistent units and error or warn
+                # if not consistent. It's also not at all clear how to handle
+                # labels/names as these will in general not be consistent on
+                # at least one axis
+                return
             axsetter = getattr(ax, "set_{}label".format(axletter))
             axsetter("{} ({})".format(label, unit))
 
