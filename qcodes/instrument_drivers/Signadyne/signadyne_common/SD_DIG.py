@@ -98,33 +98,6 @@ class SD_DIG(Instrument):
             docstring='The frequency of internal CLKsys in Hz'
         )
 
-        # for clockResetPhase
-        self.add_parameter(
-            'trigger_behaviour',
-            label='Trigger behaviour for resetting CLKsys phase',
-            vals=Ints(),
-            set_cmd=None,
-            get_cmd=None,
-            docstring='The trigger behaviour for resetting CLKsys phase'
-        )
-
-        self.add_parameter(
-            'PXI_trigger',
-            label='PXI trigger for clockResetPhase',
-            vals=Ints(),
-            set_cmd=None,
-            get_cmd=None,
-            docstring='The PXI trigger which resets CLKsys'
-        )
-
-        self.add_parameter(
-            'skew',
-            label='Skew between PXI_CLK10 and CLKsync',
-            vals=Ints(),
-            set_cmd=None,
-            get_cmd=None,
-            docstring='The skew between PXI_CLK10 and CLKsync in multiples of 10 ns'
-        )
 
         for n in range(n_channels):
 
@@ -352,6 +325,17 @@ class SD_DIG(Instrument):
         """
         pass
 
+
+    def clock_reset_phase(self, trigger_behaviour, trigger_source, skew = 0.0):
+        """ Reset the clock phase between CLKsync and CLKsys
+        
+        Args:
+            trigger_behaviour (int) : 
+            trigger_source    (int) : the PXI trigger number
+            [skew]         (double) : the skew between PXI_CLK10 and CLKsync in multiples of 10ns
+    
+        """
+        self.SD_AIN.clockResetPhase(trigger_behaviour, trigger_source, skew)
 
     #######################################################
     ### Functions used internally to set/get parameters ###
