@@ -163,8 +163,8 @@ class SD_DIG(Instrument):
                 'prescaler_{}'.format(n),
                 label='Prescaler for channel {}'.format(n),
                 vals=Ints(0,4095),
-                set_cmd=partial(self.SD_AIN.channelPrescalerConfig,  channel=n),
-                get_cmd=partial(self.SD_AIN.channelPrescaler, channel=n),
+                set_cmd=partial(set_prescaler,  channel=n),
+                get_cmd=partial(self.SD_AIN.channelPrescaler, channel=n), #TODO: fix
                 docstring='The sampling frequency prescaler for channel {}'.format(n)
             )
 
@@ -189,7 +189,7 @@ class SD_DIG(Instrument):
                 'points_per_cycle_{}'.format(n),
                 label='Points per cycle for channel {}'.format(n),
                 vals=Ints(),
-                set_cmd=None,
+                set_cmd=partial(set_points_per_cycle, channel=n) ,
                 docstring='The number of points per cycle for DAQ {}'.format(n)
             )
 
@@ -197,41 +197,32 @@ class SD_DIG(Instrument):
                 'n_cycles_{}'.format(n),
                 label='n cycles for DAQ {}'.format(n),
                 vals=Ints(),
-                set_cmd=None,
+                set_cmd=partial(set_n_cycles, channel=n),
                 docstring='The number of cycles to collect on DAQ {}'.format(n)
             )
 
             self.add_parameter(
-                'ext_trigger_delay_{}'.format(n),
+                'DAQ_trigger_delay_{}'.format(n),
                 label='Trigger delay for for DAQ {}'.format(n),
                 vals=Ints(),
-                set_cmd=None,
+                set_cmd=partial(set_DAQ_trigger_delay, channel=n),
                 docstring='The trigger delay for DAQ {}'.format(n)
             )
 
             self.add_parameter(
-                'trigger_mode_{}'.format(n),
+                'DAQ_trigger_mode_{}'.format(n),
                 label='Trigger mode for for DAQ {}'.format(n),
                 vals=Ints(),
-                set_cmd=None,
-                docstring='The trigger mode for DAQ {}'.format(n)
-            )
-            # TODO: Put DAQtriggerConfig params here
-
-            # For DAQtriggerExternalConfig
-            self.add_parameter(
-                'ext_trigger_mode_{}'.format(n),
-                label='External trigger mode for DAQ {}'.format(n),
-                vals=Ints(),
-                set_cmd=None,
+                set_cmd=partial(set_DAQ_trigger_mode, channel=n),
                 docstring='The trigger mode for DAQ {}'.format(n)
             )
 
+            # For DAQtriggerConfig
             self.add_parameter(
                 'digital_trigger_mode_{}'.format(n),
                 label='Digital trigger mode for DAQ {}'.format(n),
                 vals=Ints(),
-                set_cmd=None,
+                set_cmd=partial(set_digital_trigger_mode, channel=n),
                 docstring='The digital trigger mode for DAQ {}'.format(n)
             )
 
@@ -239,7 +230,7 @@ class SD_DIG(Instrument):
                 'digital_trigger_source_{}'.format(n),
                 label='Digital trigger source for DAQ {}'.format(n),
                 vals=Ints(),
-                set_cmd=None,
+                set_cmd=partial(set_digital_trigger_source, channel=n),
                 docstring='The digital trigger source for DAQ {}'.format(n)
             )
 
@@ -247,8 +238,25 @@ class SD_DIG(Instrument):
                 'analog_trigger_mask_{}'.format(n),
                 label='Analog trigger mask for DAQ {}'.format(n),
                 vals=Ints(),
-                set_cmd=None,
+                set_cmd=partial(set_analog_trigger_mask, channel=n),
                 docstring='The analog trigger mask for DAQ {}'.format(n)
+            )
+
+            # For DAQtriggerExternalConfig
+            self.add_parameter(
+                'ext_trigger_source_{}'.format(n),
+                label='External trigger source for DAQ {}'.format(n),
+                vals=Ints(),
+                set_cmd=partial(set_ext_trigger_source, channel=n),
+                docstring='The trigger source for DAQ {}'.format(n)
+            )
+
+            self.add_parameter(
+                'ext_trigger_behaviour_{}'.format(n),
+                label='External trigger behaviour for DAQ {}'.format(n),
+                vals=Ints(),
+                set_cmd=partial(set_ext_trigger_behaviour, channel=n),
+                docstring='The trigger behaviour for DAQ {}'.format(n)
             )
 
             # For DAQread
@@ -256,7 +264,7 @@ class SD_DIG(Instrument):
                 'n_points_{}'.format(n),
                 label='n points for DAQ {}'.format(n),
                 vals=Ints(),
-                set_cmd=None,
+                set_cmd=partial(set_n_points, channel=n),
                 docstring='The number of points to be read using DAQread on DAQ {}'.format(n)
             )
 
@@ -264,9 +272,13 @@ class SD_DIG(Instrument):
                 'timeout_{}'.format(n),
                 label='timeout for DAQ {}'.format(n),
                 vals=Ints(),
-                set_cmd=None,
+                set_cmd=partial(set_timeout, channel=n),
                 docstring='The read timeout for DAQ {}'.format(n)
             )
+
+    #######################################################
+    ### Functions used internally to set/get parameters ###
+    #######################################################
 
     # External trigger port functions
     def set_IO_trigger_direction(self, direction):
