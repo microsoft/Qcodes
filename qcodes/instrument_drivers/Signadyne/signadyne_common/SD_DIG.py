@@ -534,23 +534,41 @@ class SD_DIG(Instrument):
             channel (int)       : the input channel you are configuring
             source  (int)       : the trigger source you are using
         """
-        pass
+        self.__external_source[channel] = source
+        self.SD_AIN.DAQtriggerExternalConfig(channel, self.__external_source[channel],
+                                                      self.__trigger_behaviour[channel])
 
-    def set_trigger_source(self, source, channel):
+    def set_ext_trigger_behaviour(self, behaviour, channel):
         """ Sets the trigger source 
 
         Args:
             channel (int)       : the input channel you are configuring
-            source  (int)       : the trigger source you are using
+            behaviour  (int)    : the trigger behaviour you are using
         """
-        pass
+        self.__external_behaviour[channel] = behaviour
+        self.SD_AIN.DAQtriggerExternalConfig(channel, self.__external_source[channel],
+                                                      self.__trigger_behaviour[channel])
     
-           # # For DAQtriggerExternalConfig
-           #     'ext_trigger_mode_{}'.format(n),
-           #     'digital_trigger_mode_{}'.format(n),
-           #     'digital_trigger_source_{}'.format(n),
-           #     'analog_trigger_mask_{}'.format(n),
-           # # For DAQread
-           #     'n_points_{}'.format(n),
-           #     'timeout_{}'.format(n),
+    # DAQread
+    def set_n_points(self, n_points, channel):
+        """ Sets the trigger source 
 
+        Args:
+            channel (int)       : the input channel you are configuring
+            n_points  (int)     : the number of points to be read from specified DAQ
+        """
+        self.__n_points[channel] = n_points
+        self.SD_AIN.DAQread(channel, self.__n_points[channel], self.__timeout[channel])
+
+    def set_timeout(self, timeout, channel):
+        """ Sets the trigger source 
+
+        Args:
+            channel (int)       : the input channel you are configuring
+            timeout (int)       : the read timeout in ms for the specified DAQ
+        """
+        self.__timeout[channel] = timeout
+        self.SD_AIN.DAQread(channel, self.__n_points[channel], self.__timeout[channel])
+
+
+    
