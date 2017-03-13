@@ -2,7 +2,7 @@ import logging
 import numpy as np
 import time
 
-from qcodes import Instrument, VisaInstrument
+from qcodes import Instrument, VisaInstrument, IPInstrument
 from qcodes.utils.validators import Numbers, Anything
 
 from functools import partial
@@ -22,7 +22,7 @@ def R_z(theta):
                      [0, 0, 1]])
 
 
-class AMI430(VisaInstrument):
+class AMI430(IPInstrument):
     """
     Driver for the American Magnetics Model 430 magnet power supply programmer.
 
@@ -39,10 +39,10 @@ class AMI430(VisaInstrument):
         current_ramp_limit (float): current ramp limit in ampere per second
         persistent_switch (bool): whether this magnet has a persistent switch
     """
-    def __init__(self, name, address, coil_constant, current_rating,
+    def __init__(self, name, address, port, coil_constant, current_rating,
                  current_ramp_limit, persistent_switch=True,
                  reset=False, terminator='\r\n', **kwargs):
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, port, terminator=terminator, **kwargs)
 
         self._parent_instrument = None
 
@@ -272,6 +272,14 @@ class AMI430(VisaInstrument):
             while self.ramping_state() == 'cooling switch':
                 time.sleep(0.3)
 
+    def _connect(self):
+        """
+        Append the IPInstrument connect to flush the welcome message of the AMI
+        430 programmer
+        :return: None
+        """
+        super()._connect()
+        print(self._recv())
 
 class AMI430_2D(Instrument):
     """
