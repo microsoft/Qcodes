@@ -64,10 +64,13 @@ class SD_DIG(Instrument):
         self.__n_cycles                 = [ 0]*self.n_channels
         self.__trigger_delay            = [ 0]*self.n_channels
         self.__trigger_mode             = [ SD_AIN_TriggerMode.RISING_EDGE]*self.n_channels
-        # For DAQtriggerExternalConfig       
-        self.__digital_trigger_mode     = [ 0] *self.n_channels
+        # For DAQtriggerConfig
+        self.__digital_trigger_mode     = [ 0]*self.n_channels
         self.__digital_trigger_source   = [ 0]*self.n_channels
         self.__analog_trigger_mask      = [ 0]*self.n_channels
+        # For DAQtriggerExternalConfig       
+        self.__external_source          = [ 0]*self.n_channels
+        self.__trigger_behaviour        = [ 0]*self.n_channels
         # For DAQread                        
         self.__n_points                 = [ 0]*self.n_channels
         self.__timeout                  = [-1]*self.n_channels
