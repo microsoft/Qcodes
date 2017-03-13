@@ -278,6 +278,81 @@ class SD_DIG(Instrument):
                 docstring='The read timeout for DAQ {}'.format(n)
             )
 
+
+
+    #######################################################
+    ###                 User functions                  ###
+    #######################################################
+
+    def DAQ_start(self, DAQ):
+        """ Start acquiring data or waiting for a trigger on the specified DAQ
+
+        Args:
+            DAQ (int)       : the input DAQ you are enabling
+        """
+        pass
+
+    def DAQ_start_multiple(self, DAQ):
+        """ Start acquiring data or waiting for a trigger on the specified DAQs
+
+        Args:
+            DAQ (int)       : the input DAQs you are enabling, composed as a bitmask
+                              where the LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
+        """
+        pass
+
+    def DAQ_stop(self, DAQ):
+        """ Stop acquiring data on the specified DAQ
+
+        Args:
+            DAQ (int)       : the DAQ you are disabling
+        """
+        pass
+
+    def DAQ_stop_multiple(self, DAQ):
+        """ Stop acquiring data on the specified DAQs
+        
+        Args:
+            DAQ (int)       : the DAQs you are triggering, composed as a bitmask
+                              where the LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
+        """
+        pass
+
+    def DAQ_trigger(self, DAQ):
+        """ Manually trigger the specified DAQ
+
+        Args:
+            DAQ (int)       : the DAQ you are triggering
+        """
+        pass
+
+    def DAQ_trigger_multiple(self, DAQ):
+        """ Manually trigger the specified DAQs
+        
+        Args:
+            DAQ (int)       : the DAQs you are triggering, composed as a bitmask
+                              where the LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
+        """
+        pass
+
+    def DAQ_flush(self, DAQ):
+        """ Flush the specified DAQ
+
+        Args:
+            DAQ (int)       : the DAQ you are flushing
+        """
+        pass
+
+    def DAQ_flush_multiple(self, DAQ):
+        """ Flush the specified DAQs
+        
+        Args:
+            DAQ (int)       : the DAQs you are flushing, composed as a bitmask
+                              where the LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
+        """
+        pass
+
+
     #######################################################
     ### Functions used internally to set/get parameters ###
     #######################################################
