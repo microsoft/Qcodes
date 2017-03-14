@@ -346,6 +346,12 @@ class MatPlot(BasePlot):
             # Only the masked value of z is used as a mask
             args = args_masked[-1:]
 
+        if 'edgecolors' not in kwargs:
+            # Matplotlib pcolormesh per default are drawn as individual patches lined up next to each other
+            # due to rounding this produces visible gaps in some pdf viewers. To prevent this we draw each
+            # mesh with a visible edge (slightly overlapping) this assumes alpha=1 or it will produce artifacts
+            # at the overlaps
+            kwargs['edgecolors'] = 'face'
         pc = ax.pcolormesh(*args, **kwargs)
 
         # Set x and y limits if arrays are provided
