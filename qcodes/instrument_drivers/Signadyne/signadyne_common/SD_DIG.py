@@ -83,21 +83,28 @@ class SD_DIG(Instrument):
             'trigger_direction',
             label='Trigger direction for trigger port',
             vals=Ints(),
-            set_cmd=None,
-            get_cmd=None,
+            set_cmd=self.SD_AIN.triggerIOconfig,
             docstring='The trigger direction for digitizer trigger port'
         )
 
         # for clockSetFrequency
         self.add_parameter(
-            'frequency',
+            'sys_frequency',
             label='CLKsys frequency',
             vals=Ints(),
-            set_cmd=None,
-            get_cmd=None,
+            set_cmd=self.SD_AIN.clockSetFrequency,
+            get_cmd=self.SD_AIN.clockGetFrequency,
             docstring='The frequency of internal CLKsys in Hz'
         )
 
+        # for clockGetSyncFrequency
+        self.add_parameter(
+            'sync_frequency',
+            label='CLKsync frequency',
+            vals=Ints(),
+            get_cmd=self.SD_AIN.clockGetSyncFrequency,
+            docstring='The frequency of internal CLKsync in Hz'
+        )
 
         for n in range(n_channels):
 
@@ -108,7 +115,6 @@ class SD_DIG(Instrument):
                 label='Full scale range for channel {}'.format(n),
                 # TODO: validator must be set after device opened
                 #vals=Numbers(self.SD_AIN.channelMinFullScale(), self.SD_AIN.channelMaxFullScale())
-                # Creates a partial function to allow for single-argument set_cmd to change parameter
                 set_cmd=partial(set_full_scale, channel=n),
                 get_cmd=partial(self.SD_AIN.channelFullScale, channel=n),
                 docstring='The full scale voltage for channel {}'.format(n)
