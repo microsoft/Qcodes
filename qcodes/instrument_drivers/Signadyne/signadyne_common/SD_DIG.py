@@ -260,16 +260,16 @@ class SD_DIG(Instrument):
         Args:
             DAQ (int)       : the input DAQ you are enabling
         """
-        pass
+        self.SD_AIN.DAQstart(DAQ)
 
-    def DAQ_start_multiple(self, DAQ):
+    def DAQ_start_multiple(self, DAQ_mask):
         """ Start acquiring data or waiting for a trigger on the specified DAQs
 
         Args:
-            DAQ (int)       : the input DAQs you are enabling, composed as a bitmask
+            DAQ_mask (int)  : the input DAQs you are enabling, composed as a bitmask
                               where the LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
         """
-        pass
+        self.SD_AIN.DAQstartMultiple(DAQ_mask)
 
     def DAQ_stop(self, DAQ):
         """ Stop acquiring data on the specified DAQ
@@ -277,16 +277,16 @@ class SD_DIG(Instrument):
         Args:
             DAQ (int)       : the DAQ you are disabling
         """
-        pass
+        self.SD_AIN.DAQstop(DAQ)
 
-    def DAQ_stop_multiple(self, DAQ):
+    def DAQ_stop_multiple(self, DAQ_mask):
         """ Stop acquiring data on the specified DAQs
         
         Args:
-            DAQ (int)       : the DAQs you are triggering, composed as a bitmask
+            DAQ_mask (int)  : the DAQs you are triggering, composed as a bitmask
                               where the LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
         """
-        pass
+        self.SD_AIN.DAQstopMultiple(DAQ_mask)
 
     def DAQ_trigger(self, DAQ):
         """ Manually trigger the specified DAQ
@@ -294,16 +294,16 @@ class SD_DIG(Instrument):
         Args:
             DAQ (int)       : the DAQ you are triggering
         """
-        pass
+        self.SD_AIN.DAQtrigger(DAQ)
 
-    def DAQ_trigger_multiple(self, DAQ):
+    def DAQ_trigger_multiple(self, DAQ_mask):
         """ Manually trigger the specified DAQs
         
         Args:
-            DAQ (int)       : the DAQs you are triggering, composed as a bitmask
+            DAQ_mask (int)  : the DAQs you are triggering, composed as a bitmask
                               where the LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
         """
-        pass
+        self.SD_AIN.DAQtriggerMultiple(DAQ_mask)
 
     def DAQ_flush(self, DAQ):
         """ Flush the specified DAQ
@@ -311,16 +311,16 @@ class SD_DIG(Instrument):
         Args:
             DAQ (int)       : the DAQ you are flushing
         """
-        pass
+        self.SD_AIN.DAQflush(DAQ)
 
-    def DAQ_flush_multiple(self, DAQ):
+    def DAQ_flush_multiple(self, DAQ_mask):
         """ Flush the specified DAQs
         
         Args:
-            DAQ (int)       : the DAQs you are flushing, composed as a bitmask
+            DAQ_mask (int)  : the DAQs you are flushing, composed as a bitmask
                               where the LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
         """
-        pass
+        self.SD_AIN.DAQflushMultiple(DAQ_mask)
 
     def IO_trigger_write(self, value):
         """ Write a value to the IO trigger port
