@@ -38,15 +38,6 @@ class SD_DIG(Instrument):
         ### Create a set of internal variables to aid set/get cmds in params ###
         ########################################################################
 
-        # for triggerIOconfig
-        self.__direction                =  0
-        # for clockSetFrequency
-        self.__frequency                =  100e6
-        # for clockResetPhase
-        self.__trigger_behaviour        =  0 
-        self.__PXItrigger               =  0
-        self.__skew                     =  0
-
         # Create distinct parameters for each of the digitizer channels
 
         # For channelInputConfig
