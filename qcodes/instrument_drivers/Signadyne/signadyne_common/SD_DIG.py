@@ -606,7 +606,6 @@ class SD_DIG(Instrument):
             n_points  (int)     : the number of points to be read from specified DAQ
         """
         self.__n_points[channel] = n_points
-        self.SD_AIN.DAQread(channel, self.__n_points[channel], self.__timeout[channel])
 
     def set_timeout(self, timeout, channel):
         """ Sets the trigger source 
@@ -616,7 +615,6 @@ class SD_DIG(Instrument):
             timeout (int)       : the read timeout in ms for the specified DAQ
         """
         self.__timeout[channel] = timeout
-        self.SD_AIN.DAQread(channel, self.__n_points[channel], self.__timeout[channel])
 
 
     
