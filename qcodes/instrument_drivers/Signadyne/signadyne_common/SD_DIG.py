@@ -73,7 +73,7 @@ class SD_DIG(Instrument):
         self.add_parameter(
             'trigger_direction',
             label='Trigger direction for trigger port',
-            vals=Ints(),
+            vals=Enum(0,1),
             set_cmd=self.SD_AIN.triggerIOconfig,
             docstring='The trigger direction for digitizer trigger port'
         )
@@ -337,16 +337,6 @@ class SD_DIG(Instrument):
     #######################################################
     ### Functions used internally to set/get parameters ###
     #######################################################
-
-    # External trigger port functions
-    def set_IO_trigger_direction(self, direction):
-        """ Sets the external port trigger direction
-
-        Args:
-            direction (int)     : the port direction (0 = output, 1 = input)
-
-        """
-        pass
 
     def set_CLKsys_frequency(self, frequency):
         """ Sets the CLKsys frequency
