@@ -6,6 +6,7 @@ from collections import Mapping
 
 import matplotlib.pyplot as plt
 from matplotlib.transforms import Bbox
+from matplotlib import cm
 import numpy as np
 from numpy.ma import masked_invalid, getmask
 
@@ -226,6 +227,8 @@ class MatPlot(BasePlot):
                 # if any entire array is masked, don't draw at all
                 # there's nothing to draw, and anyway it throws a warning
                 return False
+        if 'cmap' not in kwargs:
+            kwargs['cmap'] = cm.hot
         pc = ax.pcolormesh(*args, **kwargs)
 
         if getattr(ax, 'qcodes_colorbar', None):
