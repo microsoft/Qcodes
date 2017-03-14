@@ -27,10 +27,10 @@ class ATS9360Controller(AcquisitionController):
         **kwargs: kwargs are forwarded to the Instrument base class
 
     TODO(nataliejpg) test filter options
+    TODO(JHN) Use filtfit for better performance?
     TODO(nataliejpg) finish implementation of channel b option
     TODO(nataliejpg) what should be private?
     TODO(nataliejpg) where should filter_dict live?
-    TODO(nataliejpg) demod_freq should be changeable number: maybe channels
     """
 
     filter_dict = {'win': 0, 'ls': 1, 'ave': 2}
@@ -108,9 +108,7 @@ class ATS9360Controller(AcquisitionController):
             oversampling rate
 
         Sets:
-            sample_rate attr of acq controller to be that of alazar
-            samples_per_record of acq controller
-            acquisition_kwarg['samples_per_record'] of acquisition param
+            samples_per_record of acq controller to match int_time and int_delay
         """
         if (value is None) or not (0 <= value <= 0.1):
             raise ValueError('int_time must be 0 <= value <= 1')
@@ -126,7 +124,10 @@ class ATS9360Controller(AcquisitionController):
         self._update_samples_per_record(sample_rate, value, int_delay)
 
     def _update_samples_per_record(self, sample_rate, int_time, int_delay):
-        # update acquisition kwargs and acq controller value
+        """
+        Keeps non settable samples_per_record up to date with int_time int_delay
+        and updates setpoints as needed.
+        """
         total_time = (int_time or 0) + (int_delay or 0)
         samples_needed = total_time * sample_rate
         samples_per_record = helpers.roundup(
@@ -152,7 +153,7 @@ class ATS9360Controller(AcquisitionController):
             number of samples discarded >= numtaps
 
         Sets:
-            sample_rate attr of acq controller to be that of Alazar
+            samples_per_record of acq controller to match int_time and int_delay
             samples_per_record of acq controller
             acquisition_kwarg['samples_per_record'] of acquisition param
             setpoints of acquisition param
