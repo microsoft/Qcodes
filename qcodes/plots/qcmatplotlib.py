@@ -8,6 +8,7 @@ from functools import partial
 
 import matplotlib.pyplot as plt
 from matplotlib import ticker
+from matplotlib import cm
 import numpy as np
 from matplotlib.transforms import Bbox
 from numpy.ma import masked_invalid, getmask
