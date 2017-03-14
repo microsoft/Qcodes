@@ -42,7 +42,8 @@ class AMI430(IPInstrument):
     def __init__(self, name, address, port, coil_constant, current_rating,
                  current_ramp_limit, persistent_switch=True,
                  reset=False, terminator='\r\n', **kwargs):
-        super().__init__(name, address, port, terminator=terminator, **kwargs)
+        super().__init__(name, address, port, terminator=terminator,
+                         write_confirmation=False, **kwargs)
 
         self._parent_instrument = None
 
