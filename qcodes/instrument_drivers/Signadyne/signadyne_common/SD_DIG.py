@@ -254,6 +254,18 @@ class SD_DIG(Instrument):
     ###                 User functions                  ###
     #######################################################
 
+    def DAQ_read(self, DAQ):
+        """ Read from the specified DAQ
+
+        Args:
+            DAQ (int)       : the input DAQ you are reading from
+
+        Parameters:
+            n_points
+            timeout
+        """
+        return self.SD_AIN.DAQread(DAQ, self.__n_points[DAQ], self.__timeout[DAQ])
+
     def DAQ_start(self, DAQ):
         """ Start acquiring data or waiting for a trigger on the specified DAQ
 
