@@ -31,7 +31,7 @@ class HP_83650A(VisaInstrument):
                            vals=vals.Numbers(10e6, 40e9),
                            docstring='Microwave frequency, ....',
                            get_parser=float,
-                           units='Hz')
+                           unit='Hz')
 
         self.add_parameter('freqmode',
                            label='Frequency mode',
@@ -47,7 +47,7 @@ class HP_83650A(VisaInstrument):
                            set_cmd='SOUR:POW {}',
                            vals=vals.Numbers(-20, 20),
                            get_parser=float,
-                           units='dBm',
+                           unit='dBm',
                            docstring='Microwave power, ....')
 
         self.add_parameter('rfstatus',
