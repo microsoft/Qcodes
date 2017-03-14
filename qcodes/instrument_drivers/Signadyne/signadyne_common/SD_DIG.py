@@ -361,31 +361,6 @@ class SD_DIG(Instrument):
         """
         pass
 
-    def set_trigger_behaviour(self, behaviour):
-        """ Sets the trigger behaviour in resetting the CLKsync and CLKsys phases
-
-        Args:
-            behaviour (int)     : edge sensitivity to the PXI trigger
-
-        """
-        pass
-
-    def set_PXI_trigger(self, PXI):
-        """ Sets the PXI trigger which causes the phase reset of CLKsync and CLKsys
-
-        Args:
-            PXI (int)           : the PXI trigger number
-        """
-        pass
-
-    def set_skew(self, skew):
-        """ Sets the skew between PXI_CLK10 and CLKsync in multiples of 10 ns
-
-        Args:
-            skew (int)          : the skew value (1 = 10ns, 2 = 20ns, etc.)
-        """
-        pass
-
     # Individual channel functions
     # This function may not be needed
     def set_channel_input_config(self, channel, fullScale, impedance, coupling):
