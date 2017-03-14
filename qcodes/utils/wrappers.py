@@ -4,7 +4,9 @@ from os.path import sep
 from os import makedirs
 import logging
 from qcodes.plots.pyqtgraph import QtPlot
+from qcodes.plots.qcmatplotlib import MatPlot
 from IPython import get_ipython
+from matplotlib import cm
 CURRENT_EXPERIMENT  = {}
 CURRENT_EXPERIMENT["logging_enabled"] = False
 
@@ -12,7 +14,7 @@ def init(mainfolder:str, sample_name: str):
     """
 
     Args:
-        mainfolder:  base loacation for the data
+        mainfolder:  base location for the data
         sample_name:  name of the sample
 
     """
@@ -59,29 +61,46 @@ def init(mainfolder:str, sample_name: str):
             logging.debug("Logging already started at {}".format(logfile))
 
 
-def _plot_setup(data, inst_meas):
+def _plot_setup(data, inst_meas, useQT=True):
     title = "{} #{:03d}".format(CURRENT_EXPERIMENT["sample_name"], data.location_provider.counter)
-    plot = QtPlot()
+    if useQT:
+        plot = QtPlot()
+    else:
+        plot = MatPlot()
     for j, i in enumerate(inst_meas):
         if getattr(i, "names", False):
-            # deal with multi dimenstional parameter
+            # deal with multidimensional parameter
             for k, name in enumerate(i.names):
                 inst_meas_name = "{}_{}".format(i._instrument.name, name)
                 plot.add(getattr(data, inst_meas_name), subplot=j + k + 1)
-                plot.subplots[j+k].showGrid(True, True)
-                if j == 0:
-                    plot.subplots[0].setTitle(title)
+                if useQT:
+                    plot.subplots[j+k].showGrid(True, True)
+                    if j == 0:
+                        plot.subplots[0].setTitle(title)
+                    else:
+                        plot.subplots[j+k].setTitle("")
                 else:
-                    plot.subplots[j+k].setTitle("")
+                    plot.subplots[j+k].grid()
+                    if j == 0:
+                        plot.subplots[0].set_title(title)
+                    else:
+                        plot.subplots[j+k].set_title("")
         else:
             # simple_parameters
             inst_meas_name = "{}_{}".format(i._instrument.name, i.name)
             plot.add(getattr(data, inst_meas_name), subplot=j + 1)
-            plot.subplots[j].showGrid(True, True)
-            if j == 0:
-                plot.subplots[0].setTitle(title)
+            if useQT:
+                plot.subplots[j].showGrid(True, True)
+                if j == 0:
+                    plot.subplots[0].setTitle(title)
+                else:
+                    plot.subplots[j].setTitle("")
             else:
-                plot.subplots[j].setTitle("")
+                plot.subplots[j].grid()
+                if j == 0:
+                    plot.subplots[0].set_title(title)
+                else:
+                    plot.subplots[j].set_title("")
     return plot
 
 def do1d(inst_set, start, stop, division, delay, *inst_meas):
@@ -106,12 +125,14 @@ def do1d(inst_set, start, stop, division, delay, *inst_meas):
         _ = loop.with_bg_task(plot.update, plot.save).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
+    staticplot = _plot_setup(data, inst_meas, useQT=False)
+    staticplot.save(staticplot.get_default_title()+'.pdf')
     return plot, data
 
 
 def do1dDiagonal(inst_set, inst2_set, start, stop, division, delay, start2, slope, *inst_meas):
     """
-    Perform diagonal sweep in 1 dimension, given two insturments
+    Perform diagonal sweep in 1 dimension, given two instruments
 
     Args:
         inst_set:  Instrument to sweep over
@@ -136,7 +157,9 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, division, delay, start2, slop
         _ = loop.with_bg_task(plot.update, plot.save).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
-    return data
+    staticplot = _plot_setup(data, inst_meas, useQT=False)
+    staticplot.save(staticplot.get_default_title()+'.pdf')
+    return plot, data
 
 
 def do2d(inst_set, start, stop, division, delay, inst_set2, start2, stop2, division2, delay2, *inst_meas):
@@ -149,10 +172,10 @@ def do2d(inst_set, start, stop, division, delay, inst_set2, start2, stop2, divis
         division:  Spacing between values
         delay:  Delay at every step
         inst_set_2:  Second instrument to sweep over
-        start_2:  Start of sweep for second intrument
-        stop_2:  End of sweep for second intrument
-        division_2:  Spacing between values for second intrument
-        delay_2:  Delay at every step for second intrument
+        start_2:  Start of sweep for second instrument
+        stop_2:  End of sweep for second instrument
+        division_2:  Spacing between values for second instrument
+        delay_2:  Delay at every step for second instrument
         *inst_meas:
 
     Returns:
@@ -171,6 +194,8 @@ def do2d(inst_set, start, stop, division, delay, inst_set2, start2, stop2, divis
         _ = loop.with_bg_task(plot.update, plot.save).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
+    staticplot = _plot_setup(data, inst_meas, useQT=False)
+    staticplot.save(staticplot.get_default_title()+'.pdf')
     return plot, data
 
 
@@ -178,7 +203,7 @@ def show_num(id):
     """
     Show  and return plot and data for id in current instrument.
     Args:
-        id(number): id of intrumetn
+        id(number): id of instrument
 
     Returns:
         plot, data : returns the plot and the dataset
