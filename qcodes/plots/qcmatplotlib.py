@@ -7,6 +7,7 @@ from functools import partial
 
 import matplotlib.pyplot as plt
 from matplotlib.transforms import Bbox
+from matplotlib import cm
 import numpy as np
 from numpy.ma import masked_invalid, getmask
 from collections import Sequence
@@ -302,6 +303,9 @@ class MatPlot(BasePlot):
             # pcolormesh does not accept masked x and y axes, so we do not need
             # to check for them.
             return False
+
+        if 'cmap' not in kwargs:
+            kwargs['cmap'] = cm.hot
 
         if x is not None and y is not None:
             # If x and y are provided, modify the arrays such that they
