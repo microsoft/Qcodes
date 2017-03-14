@@ -55,11 +55,11 @@ class AMI430(IPInstrument):
         self._field_ramp_limit = coil_constant * current_ramp_limit
 
         # Make sure the ramp rate time unit is seconds
-        if self.ask('RAMP:RATE:UNITS?') == '1':
+        if int(self.ask('RAMP:RATE:UNITS?')) == 1:
             self.write('CONF:RAMP:RATE:UNITS 0')
 
         # Make sure the field unit is Tesla
-        if self.ask('FIELD:UNITS?') == '0':
+        if int(self.ask('FIELD:UNITS?')) == 0:
             self.write('CONF:FIELD:UNITS 1')
 
         self.add_parameter('field',
@@ -90,15 +90,15 @@ class AMI430(IPInstrument):
             self.add_parameter('switch_heater_enabled',
                                get_cmd='PS?',
                                set_cmd=self._set_persistent_switch,
-                               val_mapping={False: '0', True: '1'})
+                               val_mapping={False: 0, True: 1})
 
             self.add_parameter('in_persistent_mode',
                                get_cmd='PERS?',
-                               val_mapping={False: '0', True: '1'})
+                               val_mapping={False: 0, True: 1})
 
         self.add_parameter('is_quenched',
                            get_cmd='QU?',
-                           val_mapping={False: '0', True: '1'})
+                           val_mapping={False: 0, True: 1})
 
         self.add_function('reset_quench', call_cmd='QU 0')
         self.add_function('set_quenched', call_cmd='QU 1')
