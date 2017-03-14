@@ -322,6 +322,22 @@ class SD_DIG(Instrument):
         """
         pass
 
+    def IO_trigger_write(self, value):
+        """ Write a value to the IO trigger port
+
+        Args:
+            value (int)     : the binary value to write to the IO port
+
+        """
+        # TODO: Check if the port is writable
+        self.SD_AIN.triggerIOwrite(value)
+
+    def IO_trigger_read(self):
+        """ Write a value to the IO trigger port
+
+        """
+        # TODO: Check if the port is readable
+        return self.SD_AIN.triggerIOread()
 
     def clock_reset_phase(self, trigger_behaviour, trigger_source, skew = 0.0):
         """ Reset the clock phase between CLKsync and CLKsys
