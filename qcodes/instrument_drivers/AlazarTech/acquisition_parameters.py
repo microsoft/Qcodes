@@ -472,7 +472,7 @@ class DemodFreqParameter(ArrayParameter):
             raise ValueError('demod_freqs must be 1e6 <= value <= 500e6')
         isValid = True
         alazar = self._instrument._get_alazar()
-        sample_rate = alazar.get_sample_rate()
+        sample_rate = alazar.effective_sample_rate.get()
         int_time = self._instrument.int_time.get()
         min_oscillations_measured = int_time * value
         oversampling = sample_rate / (2 * value)
