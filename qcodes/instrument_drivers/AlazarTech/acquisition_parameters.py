@@ -368,9 +368,9 @@ class NonSettableDerivedParameter(Parameter):
             parameter and can be set directly.
     """
 
-    def __init__(self, name, instrument, alternative: str):
+    def __init__(self, name, instrument, alternative: str, **kwargs):
         self._alternative = alternative
-        super().__init__(name, instrument=instrument)
+        super().__init__(name, instrument=instrument, **kwargs)
 
     def set(self, value):
         """
@@ -382,6 +382,35 @@ class NonSettableDerivedParameter(Parameter):
 
     def get(self):
         return self.get_latest()
+
+
+class EffectiveSampleRateParameter(NonSettableDerivedParameter):
+
+
+    def get(self):
+        """
+        Obtain the effective sampling rate of the acquisition
+        based on clock type, clock speed and decimation
+
+        Returns:
+            the number of samples (per channel) per second
+        """
+        if self._instrument.clock_source.get() == 'EXTERNAL_CLOCK_10MHz_REF':
+            rate = self._instrument.external_sample_rate.get()
+        elif self._instrument.clock_source.get() == 'INTERNAL_CLOCK':
+            rate = self._instrument.sample_rate.get()
+        else:
+            raise Exception("Don't know how to get sample rate with {}".format(self._instrument.clock_source.get()))
+
+        if rate == '1GHz_REFERENCE_CLOCK':
+            rate = 1e9
+
+        decimation = self._instrument.decimation.get()
+        if decimation > 0:
+            rate = rate / decimation
+
+        self._save_val(rate)
+        return rate
 
 
 class DemodFreqParameter(ArrayParameter):

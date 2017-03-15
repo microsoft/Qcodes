@@ -1,4 +1,5 @@
 from .ATS import AlazarTech_ATS, AlazarParameter
+from .acquisition_parameters import EffectiveSampleRateParameter
 from qcodes.utils import validators
 
 
@@ -298,6 +299,11 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
                            unit='ms',
                            value=1000,
                            vals=validators.Ints(min_value=0))
+
+        self.add_parameter(name='effective_sample_rate',
+                           unit='Hz',
+                           alternative='decimation and sample_rate or external_sample_rate depending on clock_source',
+                           parameter_class=EffectiveSampleRateParameter)
 
         model = self.get_idn()['model']
         if model != 'ATS9360':
