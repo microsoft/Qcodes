@@ -352,7 +352,7 @@ class Tektronix_AWG5014(VisaInstrument):
                 self.add_parameter(
                     'ch{}_m{}_del'.format(i, j),
                     label='Channel {} Marker {} delay'.format(i, j),
-                    units='ns',
+                    unit='ns',
                     get_cmd=m_del_cmd + '?',
                     set_cmd=m_del_cmd + ' {:.3f}e-9',
                     vals=vals.Numbers(0, 1),
