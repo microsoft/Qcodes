@@ -114,7 +114,7 @@ class ATS9360Controller(AcquisitionController):
             raise ValueError('int_time must be 0 <= value <= 1')
 
         alazar = self._get_alazar()
-        sample_rate = alazar.get_sample_rate()
+        sample_rate = alazar.effective_sample_rate.get()
         max_demod_freq = self.demod_freqs.get_max_demod_freq()
         if max_demod_freq is not None:
             self.demod_freqs._verify_demod_freq(max_demod_freq)
@@ -165,7 +165,7 @@ class ATS9360Controller(AcquisitionController):
                                                                                   int_delay_max,
                                                                                   value))
         alazar = self._get_alazar()
-        sample_rate = alazar.get_sample_rate()
+        sample_rate = alazar.effective_sample_rate.get()
         samples_delay_min = (self.filter_settings['numtaps'] - 1)
         int_delay_min = samples_delay_min / sample_rate
         if value < int_delay_min:
@@ -198,7 +198,7 @@ class ATS9360Controller(AcquisitionController):
             samples to be discarded as recommended for filter
         """
         alazar = self._get_alazar()
-        sample_rate = alazar.get_sample_rate()
+        sample_rate = alazar.effective_sample_rate.get()
         samp_delay = self.filter_settings['numtaps'] - 1
         return samp_delay / sample_rate
 
@@ -217,7 +217,7 @@ class ATS9360Controller(AcquisitionController):
                              'value for int_time and samples_per_record will '
                              'be set accordingly')
         alazar = self._get_alazar()
-        sample_rate = alazar.get_sample_rate()
+        sample_rate = alazar.effective_sample_rate.get()
         total_time = ((samples_per_record / sample_rate) -
                       (self.int_delay() or 0))
         return total_time
@@ -263,7 +263,7 @@ class ATS9360Controller(AcquisitionController):
         alazar = self._get_alazar()
         acq_s_p_r = self.samples_per_record.get()
         inst_s_p_r = alazar.samples_per_record.get()
-        sample_rate = alazar.get_sample_rate()
+        sample_rate = alazar.effective_sample_rate.get()
         if acq_s_p_r != inst_s_p_r:
             raise Exception('acq controller samples per record {} does not match'
                             ' instrument value {}, most likely need '
@@ -411,7 +411,7 @@ class ATS9360Controller(AcquisitionController):
 
         # volt_rec to matrix and multiply with demodulation signal matrices
         alazar = self._get_alazar()
-        sample_rate = alazar.get_sample_rate()
+        sample_rate = alazar.effective_sample_rate.get()
         demod_length = self.demod_freqs.get_num_demods()
         volt_rec_mat = np.outer(np.ones(demod_length), volt_rec).reshape(self.mat_shape)
         re_mat = np.multiply(volt_rec_mat, self.cos_mat)
