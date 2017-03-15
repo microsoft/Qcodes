@@ -106,7 +106,7 @@ class SD_DIG(Instrument):
                 label='Full scale range for channel {}'.format(n),
                 # TODO: validator must be set after device opened
                 #vals=Numbers(self.SD_AIN.channelMinFullScale(), self.SD_AIN.channelMaxFullScale())
-                set_cmd=partial(set_full_scale, channel=n),
+                set_cmd=partial(self.set_full_scale, channel=n),
                 get_cmd=partial(self.SD_AIN.channelFullScale, channel=n),
                 docstring='The full scale voltage for channel {}'.format(n)
             )
@@ -116,7 +116,7 @@ class SD_DIG(Instrument):
                 'impedance_{}'.format(n),
                 label='Impedance for channel {}'.format(n),
                 vals=Enum(0,1),
-                set_cmd=partial(set_impedance, channel=n),
+                set_cmd=partial(self.set_impedance, channel=n),
                 get_cmd=partial(self.SD_AIN.channelImpedance, channel=n),
                 docstring='The input impedance of channel {}'.format(n)
             )
@@ -125,7 +125,7 @@ class SD_DIG(Instrument):
                 'coupling_{}'.format(n),
                 label='Coupling for channel {}'.format(n),
                 vals=Enum(0,1),
-                set_cmd=partial(set_coupling, channel=n),
+                set_cmd=partial(self.set_coupling, channel=n),
                 get_cmd=partial(self.SD_AIN.channelCoupling, channel=n),
                 docstring='The coupling of channel {}'.format(n)
             )
@@ -135,8 +135,8 @@ class SD_DIG(Instrument):
                 'prescaler_{}'.format(n),
                 label='Prescaler for channel {}'.format(n),
                 vals=Ints(0,4095),
-                set_cmd=partial(set_prescaler,  channel=n),
-                get_cmd=partial(self.SD_AIN.channelPrescaler, channel=n), #TODO: fix
+                set_cmd=partial(self.set_prescaler,  channel=n),
+                get_cmd=partial(self.SD_AIN.channelPrescaler, channel=n),
                 docstring='The sampling frequency prescaler for channel {}'.format(n)
             )
 
@@ -144,7 +144,7 @@ class SD_DIG(Instrument):
             self.add_parameter(
                 'trigger_mode_{}'.format(n), label='Trigger mode for channel {}'.format(n), 
                 vals=Enum(1,2,3),
-                set_cmd=partial(set_trigger_mode, channel=n),
+                set_cmd=partial(self.set_trigger_mode, channel=n),
                 docstring='The trigger mode for channel {}'.format(n)
             )
 
@@ -152,7 +152,7 @@ class SD_DIG(Instrument):
                 'trigger_threshold_{}'.format(n),
                 label='Trigger threshold for channel {}'.format(n),
                 vals=Numbers(-3,3),
-                set_cmd=partial(set_trigger_threshold, channel=n),
+                set_cmd=partial(self.set_trigger_threshold, channel=n),
                 docstring='The trigger threshold for channel {}'.format(n)
             )
 
@@ -161,7 +161,7 @@ class SD_DIG(Instrument):
                 'points_per_cycle_{}'.format(n),
                 label='Points per cycle for channel {}'.format(n),
                 vals=Ints(),
-                set_cmd=partial(set_points_per_cycle, channel=n) ,
+                set_cmd=partial(self.set_points_per_cycle, channel=n) ,
                 docstring='The number of points per cycle for DAQ {}'.format(n)
             )
 
@@ -169,7 +169,7 @@ class SD_DIG(Instrument):
                 'n_cycles_{}'.format(n),
                 label='n cycles for DAQ {}'.format(n),
                 vals=Ints(),
-                set_cmd=partial(set_n_cycles, channel=n),
+                set_cmd=partial(self.set_n_cycles, channel=n),
                 docstring='The number of cycles to collect on DAQ {}'.format(n)
             )
 
@@ -177,7 +177,7 @@ class SD_DIG(Instrument):
                 'DAQ_trigger_delay_{}'.format(n),
                 label='Trigger delay for for DAQ {}'.format(n),
                 vals=Ints(),
-                set_cmd=partial(set_DAQ_trigger_delay, channel=n),
+                set_cmd=partial(self.set_DAQ_trigger_delay, channel=n),
                 docstring='The trigger delay for DAQ {}'.format(n)
             )
 
@@ -185,7 +185,7 @@ class SD_DIG(Instrument):
                 'DAQ_trigger_mode_{}'.format(n),
                 label='Trigger mode for for DAQ {}'.format(n),
                 vals=Ints(),
-                set_cmd=partial(set_DAQ_trigger_mode, channel=n),
+                set_cmd=partial(self.set_DAQ_trigger_mode, channel=n),
                 docstring='The trigger mode for DAQ {}'.format(n)
             )
 
@@ -194,7 +194,7 @@ class SD_DIG(Instrument):
                 'digital_trigger_mode_{}'.format(n),
                 label='Digital trigger mode for DAQ {}'.format(n),
                 vals=Ints(),
-                set_cmd=partial(set_digital_trigger_mode, channel=n),
+                set_cmd=partial(self.set_digital_trigger_mode, channel=n),
                 docstring='The digital trigger mode for DAQ {}'.format(n)
             )
 
@@ -202,7 +202,7 @@ class SD_DIG(Instrument):
                 'digital_trigger_source_{}'.format(n),
                 label='Digital trigger source for DAQ {}'.format(n),
                 vals=Ints(),
-                set_cmd=partial(set_digital_trigger_source, channel=n),
+                set_cmd=partial(self.set_digital_trigger_source, channel=n),
                 docstring='The digital trigger source for DAQ {}'.format(n)
             )
 
@@ -210,7 +210,7 @@ class SD_DIG(Instrument):
                 'analog_trigger_mask_{}'.format(n),
                 label='Analog trigger mask for DAQ {}'.format(n),
                 vals=Ints(),
-                set_cmd=partial(set_analog_trigger_mask, channel=n),
+                set_cmd=partial(self.set_analog_trigger_mask, channel=n),
                 docstring='The analog trigger mask for DAQ {}'.format(n)
             )
 
@@ -219,7 +219,7 @@ class SD_DIG(Instrument):
                 'ext_trigger_source_{}'.format(n),
                 label='External trigger source for DAQ {}'.format(n),
                 vals=Ints(),
-                set_cmd=partial(set_ext_trigger_source, channel=n),
+                set_cmd=partial(self.set_ext_trigger_source, channel=n),
                 docstring='The trigger source for DAQ {}'.format(n)
             )
 
@@ -227,7 +227,7 @@ class SD_DIG(Instrument):
                 'ext_trigger_behaviour_{}'.format(n),
                 label='External trigger behaviour for DAQ {}'.format(n),
                 vals=Ints(),
-                set_cmd=partial(set_ext_trigger_behaviour, channel=n),
+                set_cmd=partial(self.set_ext_trigger_behaviour, channel=n),
                 docstring='The trigger behaviour for DAQ {}'.format(n)
             )
 
@@ -236,7 +236,7 @@ class SD_DIG(Instrument):
                 'n_points_{}'.format(n),
                 label='n points for DAQ {}'.format(n),
                 vals=Ints(),
-                set_cmd=partial(set_n_points, channel=n),
+                set_cmd=partial(self.set_n_points, channel=n),
                 docstring='The number of points to be read using DAQread on DAQ {}'.format(n)
             )
 
@@ -244,7 +244,7 @@ class SD_DIG(Instrument):
                 'timeout_{}'.format(n),
                 label='timeout for DAQ {}'.format(n),
                 vals=Ints(),
-                set_cmd=partial(set_timeout, channel=n),
+                set_cmd=partial(self.set_timeout, channel=n),
                 docstring='The read timeout for DAQ {}'.format(n)
             )
 
