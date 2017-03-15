@@ -241,7 +241,7 @@ class ATS9360Controller(AcquisitionController):
         acquisition parameter. Should be used by the user for
         updating averaging settings. If integrating over samples
         'samples_per_record' cannot be set directly it should instead
-         be set via the int_time and int_delay parameters.
+        be set via the int_time and int_delay parameters.
 
         Kwargs (ints):
             - records_per_buffer
