@@ -881,7 +881,7 @@ class AlazarParameter(Parameter):
                 # TODO(damazter) (S) test this validator
                 vals = validators.Enum(*byte_to_value_dict.values())
 
-        super().__init__(name=name, label=label, units=unit, vals=vals,
+        super().__init__(name=name, label=label, unit=unit, vals=vals,
                          instrument=instrument)
         self.instrument = instrument
         self._byte = None
