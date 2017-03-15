@@ -9,28 +9,26 @@ try:
 except ImportError:
     raise ImportError('To use a Signadyne Digitizer, install the Signadyne module')
 
-class SD_DIG(Instrument):
+class SD_DIG(SD_Module):
     """
     This is the qcodes driver for a generic Signadyne Digitizer of the M32/33XX series.
 
-    Status: pre-alpha
+    Status: beta
 
     This driver is written with the M3300A in mind.
 
-    Args:
-        name (str)      : the name of the digitizer card
-        n_channels (int): the number of digitizer channels for the card 
-
     """
-    def __init__(self, **kwargs):
+    def __init__(self, name, chassis, slot, channels, triggers, **kwargs):
         """ Initialises a generic Signadyne digitizer and its parameters
 
             Args:
                 name (str)          : the name of the digitizer card
-                [n_channels] (int)  : the number of input channels the specified card has
+                channels (int)  : the number of input channels the specified card has
+                triggers (int)  : the number of trigger inputs the specified card has
         """
-        self.n_channels = kwargs.pop('n_channels')
         super().__init__(**kwargs)
+        self.n_channels = channels
+        self.n_triggers = triggers
         self.name       = kwargs['name']
         self.SD_AIN = SD_AIN()
 
