@@ -28,7 +28,9 @@ class ATS9360Controller(AcquisitionController):
 
     TODO(nataliejpg) test filter options
     TODO(JHN) Use filtfit for better performance?
+    TODO(JHN) Test demod+filtering and make it more modular
     TODO(nataliejpg) finish implementation of channel b option
+    TODO(JHN) Option to not read channel b at all (Speedup)
     TODO(nataliejpg) what should be private?
     TODO(nataliejpg) where should filter_dict live?
     """
