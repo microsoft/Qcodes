@@ -2,7 +2,7 @@ import logging
 from .ATS import AcquisitionController
 import numpy as np
 import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
-from .acqusition_parameters import AlazarMultiArray
+from .acquisition_parameters import AlazarMultiArray
 
 
 class Basic_Acquisition_Controller(AcquisitionController):
