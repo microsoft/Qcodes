@@ -3,9 +3,7 @@ from qcodes.utils.validators    import Numbers, Enum, Ints, Strings, Anything
 from functools import partial
 from warnings import warn
 try:
-    import signadyne.SD_AIN as SD_AIN
-    import signadyne.SD_AIN_TriggerMode as SD_AIN_TriggerMode # for channel edge sensitivities
-    import signadyne.SD_TriggerModes  as SD_TriggerModes      # for channel trigger source
+    from keysightSD1 import SD_AIN, SD_TriggerModes, SD_AIN_TriggerMode 
 except ImportError:
     raise ImportError('To use a Signadyne Digitizer, install the Signadyne module')
 
