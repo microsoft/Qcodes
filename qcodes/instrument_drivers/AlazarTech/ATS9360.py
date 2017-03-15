@@ -14,10 +14,6 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
            sample_rate relies on value of clock_source)
 
     """
-
-    # samples divisor is listed in the manual as being 32 but this gave
-    # incorrect data when tested for divisors less than 128
-    # JHN As far as I can see this is listed as 128 in table 8 of the SDK manual
     samples_divisor = 128
 
     def __init__(self, name, **kwargs):
