@@ -199,7 +199,7 @@ def do2d(inst_set, start, stop, division, delay, inst_set2, start2, stop2, divis
     return plot, data
 
 
-def show_num(id):
+def show_num(id, useQT=False):
     """
     Show  and return plot and data for id in current instrument.
     Args:
@@ -220,9 +220,15 @@ def show_num(id):
     plots = []
     for value in data.arrays.keys():
         if "set" not in value:
-            plot = QtPlot(getattr(data, value))
-            title = "{} #{}".format(CURRENT_EXPERIMENT["sample_name"], str_id)
-            plot.subplots[0].setTitle(title)
-            plot.subplots[0].showGrid(True, True)
+            if useQT:
+                plot = QtPlot(getattr(data, value))
+                title = "{} #{}".format(CURRENT_EXPERIMENT["sample_name"], str_id)
+                plot.subplots[0].setTitle(title)
+                plot.subplots[0].showGrid(True, True)
+            else:
+                plot = MatPlot(getattr(data, value))
+                title = "{} #{}".format(CURRENT_EXPERIMENT["sample_name"], str_id)
+                plot.subplots[0].set_title(title)
+                plot.subplots[0].grid()
             plots.append(plot)
     return data, plots
