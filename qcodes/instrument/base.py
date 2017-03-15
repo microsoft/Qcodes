@@ -127,8 +127,8 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
             if len(idparts) < 4:
                 idparts += [None] * (4 - len(idparts))
         except:
-            logging.warn('Error getting or interpreting *IDN?: ' + repr(idstr))
-            idparts = [None, None, None, None]
+            logging.debug('Error getting or interpreting *IDN?: ' + repr(idstr))
+            idparts = [None, self.name, None, None]
 
         # some strings include the word 'model' at the front of model
         if str(idparts[1]).lower().startswith('model'):
