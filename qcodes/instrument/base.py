@@ -243,34 +243,6 @@ class Instrument(Metadatable, DelegateAttributes):
 
         return ins
 
-    @classmethod
-    def find_component(cls, name_attr, instrument_class=None):
-        """
-        Find a component of an existing instrument by name and attribute.
-
-        Args:
-            name_attr (str): A string in nested attribute format:
-                <name>.<attribute>[.<subattribute>] and so on.
-                For example, <attribute> can be a parameter name,
-                or a method name.
-            instrument_class (Optional[class]): The type of instrument
-                you are looking for this component within.
-
-        Returns:
-            Any: The component requested.
-        """
-
-        if '.' in name_attr:
-            name, attr = name_attr.split('.', 1)
-            ins = cls.find_instrument(name, instrument_class=instrument_class)
-            return ins.getattr(attr)
-
-        else:
-            # allow find_component to return the whole instrument,
-            # if no attribute was specified, for maximum generality.
-            return cls.find_instrument(name_attr,
-                                       instrument_class=instrument_class)
-
     def add_parameter(self, name, parameter_class=StandardParameter,
                       **kwargs):
         """
