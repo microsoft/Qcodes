@@ -124,7 +124,7 @@ class Instrument(Metadatable, DelegateAttributes):
         """Close the instrument and remove its instance record."""
         try:
             wr = weakref.ref(self)
-            if wr in getattr(self, '_instances', {}):
+            if wr in getattr(self, '_instances', []):
                 self._instances.remove(wr)
             self.close()
         except:
