@@ -3,7 +3,6 @@
 Tutorial
 ========
 
-:Gw
 Writing a Driver
 ----------------
 
