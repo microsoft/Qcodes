@@ -10,11 +10,10 @@ class TestInstrument(TestCase):
 
     def setUp(self):
         self.instrument = DummyInstrument(
-            name='testdummy', gates=['dac1', 'dac2', 'dac3'], server_name=None)
+            name='testdummy', gates=['dac1', 'dac2', 'dac3'])
 
     def tearDown(self):
-        # TODO (giulioungaretti) remove ( does nothing ?)
-        pass
+        del self.instrument
 
     def test_validate_function(self):
         instrument = self.instrument
@@ -40,3 +39,8 @@ class TestInstrument(TestCase):
 
         # make sure the gate is removed
         self.assertEqual(hasattr(instrument, 'dac1'), False)
+
+    def test_repr(self):
+        idn = dict(zip(('vendor', 'model', 'serial', 'firmware'),
+                       [None, self.instrument.name, None, None]))
+        self.assertEqual(idn, self.instrument.get_idn())

@@ -24,23 +24,6 @@ class Instrument(Metadatable, DelegateAttributes):
             instrument's JSON snapshot.
 
 
-    Any unpicklable objects that are inputs to the constructor must be set
-    on server initialization, and must be shared between all instruments
-    that reside on the same server. To make this happen, set the
-    ``shared_kwargs`` class attribute to a tuple of kwarg names that should
-    be treated this way.
-
-    It is an error to initialize two instruments on the same server with
-    different keys or values for ``shared_kwargs``, unless the later
-    instruments have NO ``shared_kwargs`` at all.
-
-    subclass constructors: ``server_name`` and any ``shared_kwargs`` must be
-    available as kwargs and kwargs ONLY (not positional) in all subclasses,
-    and not modified in the inheritance chain. This is because we need to
-    create the server before instantiating the actual instrument. The easiest
-    way to manage this is to accept ``**kwargs`` in your subclass and pass them
-    on to ``super().__init()``.
-
     Attributes:
         name (str): an identifier for this instrument, particularly for
             attaching it to a Station.
@@ -199,12 +182,8 @@ class Instrument(Metadatable, DelegateAttributes):
         You can use this to get the objects back if you lose track of them,
         and it's also used by the test system to find objects to test against.
 
-        Note:
-            Will also include ``RemoteInstrument`` instances that proxy
-            instruments of this class.
-
         Returns:
-            List[Union[Instrument, RemoteInstrument]]
+            List[Instrument]]
         """
         if getattr(cls, '_type', None) is not cls:
             # only instances of a superclass - we want instances of this
@@ -218,7 +197,7 @@ class Instrument(Metadatable, DelegateAttributes):
         Remove a particular instance from the record.
 
         Args:
-            instance (Union[Instrument, RemoteInstrument])
+            instance (Union[Instrument])
         """
         wr = weakref.ref(instance)
         if wr in cls._instances:
@@ -242,7 +221,7 @@ class Instrument(Metadatable, DelegateAttributes):
                 you are looking for.
 
         Returns:
-            Union[Instrument, RemoteInstrument]
+            Union[Instrument]
 
         Raises:
             KeyError: if no instrument of that name was found, or if its
