@@ -462,11 +462,10 @@ class ZIUHFLI(Instrument):
     between the two must be made.
 
     TODOs:
-        * Add the scope
         * Add zoom-FFT
     """
 
-    def __init__(self, name, device_ID, api_level=5, **kwargs):
+    def __init__(self, name, device_ID, **kwargs):
         """
         Create an instance of the instrument.
 
@@ -478,14 +477,14 @@ class ZIUHFLI(Instrument):
         """
 
         super().__init__(name, **kwargs)
-        zisession = zhinst.utils.create_api_session(device_ID, api_level)
+        self.api_level = 5
+        zisession = zhinst.utils.create_api_session(device_ID, self.api_level)
         (self.daq, self.device, self.props) = zisession
 
         self.daq.setDebugLevel(3)
         # create (instantiate) an instance of each module we will use
         self.sweeper = self.daq.sweep()
         self.sweeper.set('sweep/device', self.device)
-        #
         self.scope = self.daq.scopeModule()
         
         ########################################
@@ -950,7 +949,7 @@ class ZIUHFLI(Instrument):
                            label='Sweep filter settling time',
                            get_cmd=partial(self._sweep_getter,
                                            'sweep/settling/tc'),
-                           unit='dim. less.',
+                           unit='',
                            docstring="""This settling time is in units of
                                         the filter time constant."""
                            )
@@ -1060,7 +1059,8 @@ class ZIUHFLI(Instrument):
                             vals=vals.Enum('Time Domain', 'Freq Domain FFT')
                             )
 
-        # 1: Channel 1 on, Channel 2 off. 2: Channel 1 off, Channel 2 on,
+        # 1: Channel 1 on, Channel 2 off. 
+        # 2: Channel 1 off, Channel 2 on,
         # 3: Channel 1 on, Channel 2 on.
         self.add_parameter('scope_channels',
                            label='Recorded scope channels',
@@ -1119,6 +1119,8 @@ class ZIUHFLI(Instrument):
                            unit='s'
                            )
 
+        # Map the possible input sources to LabOne's IDs. 
+        # The IDs can be seen in log file of LabOne UI 
         inputselect = {'Signal Input 1': 0,
                        'Signal Input 2': 1,
                        'Trig Input 1': 2,
@@ -1136,7 +1138,9 @@ class ZIUHFLI(Instrument):
                        'AU Polar 1': 128,
                        'AU Polar 2': 129,
                        }
-
+        # Add all 8 demodulators and their respective parameters 
+        # to inputselect as well. 
+        # Numbers correspond to LabOne IDs, taken from UI log. 
         for demod in range(1,9):
             inputselect['Demod {} X'.format(demod)] = 15+demod
             inputselect['Demod {} Y'.format(demod)] = 31+demod
