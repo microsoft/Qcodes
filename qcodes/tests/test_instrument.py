@@ -9,11 +9,16 @@ from .instrument_mocks import DummyInstrument
 class TestInstrument(TestCase):
 
     def setUp(self):
+        print("yolo")
         self.instrument = DummyInstrument(
             name='testdummy', gates=['dac1', 'dac2', 'dac3'])
-
-    def tearDown(self):
+    
+    def test_del(self):
+        import pdb
+        pdb.set_trace()
         del self.instrument
+        pdb.set_trace()
+        #self.assertEqual(DummyInstrument._instances, [])
 
     def test_validate_function(self):
         instrument = self.instrument
