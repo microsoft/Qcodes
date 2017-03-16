@@ -2,23 +2,24 @@
 Test suite for  instument.*
 """
 from unittest import TestCase
-
-from .instrument_mocks import DummyInstrument
+from qcodes.instrument.base import Instrument
+from .instrument_mocks import DummyInstrument, MockParabola
+from qcodes.instrument.parameter import ManualParameter
+import gc
 
 
 class TestInstrument(TestCase):
 
     def setUp(self):
-        print("yolo")
         self.instrument = DummyInstrument(
             name='testdummy', gates=['dac1', 'dac2', 'dac3'])
-    
-    def test_del(self):
-        import pdb
-        pdb.set_trace()
+        self.instrument2 = MockParabola("parabola")
+
+    def tearDown(self):
+        # force gc run
         del self.instrument
-        pdb.set_trace()
-        #self.assertEqual(DummyInstrument._instances, [])
+        del self.instrument2
+        gc.collect()
 
     def test_validate_function(self):
         instrument = self.instrument
@@ -27,6 +28,14 @@ class TestInstrument(TestCase):
         instrument.dac1._save_val(1000)  # overrule the validator
         with self.assertRaises(Exception):
             instrument.validate_status()
+
+    def test_check_instances(self):
+        with self.assertRaises(KeyError):
+            DummyInstrument(name='testdummy', gates=['dac1', 'dac2', 'dac3'])
+
+        self.assertEqual(Instrument.instances(), [])
+        self.assertEqual(DummyInstrument.instances(), [self.instrument])
+        self.assertEqual(self.instrument.instances(), [self.instrument])
 
     def test_attr_access(self):
         instrument = self.instrument
@@ -49,3 +58,38 @@ class TestInstrument(TestCase):
         idn = dict(zip(('vendor', 'model', 'serial', 'firmware'),
                        [None, self.instrument.name, None, None]))
         self.assertEqual(idn, self.instrument.get_idn())
+
+    def test_add_remove_f_p(self):
+        with self.assertRaises(KeyError):
+                self.instrument.add_parameter('dac1', get_cmd='foo')
+        self.instrument.add_function('function', call_cmd='foo')
+        with self.assertRaises(KeyError):
+                self.instrument.add_function('function', call_cmd='foo')
+
+        self.instrument.add_function('dac1', call_cmd='foo')
+        # test custom __get_attr__
+        self.instrument['function']
+        # by desgin one gets the parameter if a function exists and has same
+        # name
+        dac1 = self.instrument['dac1']
+        self.assertTrue(isinstance(dac1, ManualParameter))
+
+    def test_instances(self):
+        instruments = [self.instrument, self.instrument2]
+        for instrument in instruments:
+            for other_instrument in instruments:
+                instances = instrument.instances()
+                # check that each instrument is in only its own
+                if other_instrument is instrument:
+                    self.assertIn(instrument, instances)
+                else:
+                    self.assertNotIn(other_instrument, instances)
+
+                # check that we can find each instrument from any other
+                self.assertEqual(
+                    instrument,
+                    other_instrument.find_instrument(instrument.name))
+
+            # check that we can find this instrument from the base class
+            self.assertEqual(instrument,
+                             Instrument.find_instrument(instrument.name))
