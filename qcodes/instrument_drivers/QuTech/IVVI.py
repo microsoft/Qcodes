@@ -443,6 +443,32 @@ class IVVI(VisaInstrument):
             return fun(ch)
         return get_func
 
+    def adjust_parameter_validator(self, param):
+        """Adjust the parameter validator range based on the dac resolution.
+
+        The dac's of the IVVI have a finite resolution. If the validator range
+        min and max values are not values the dac's can actually have, then it
+        can occur that a set command results in the dac's going to a value just
+        outside the validator range. Adjusting the validators with this
+        function prevents that.
+
+        Args:
+            param (StandardParameter): a dac of the IVVI instrument
+        """
+        if type(param._vals) is not Numbers:
+            raise Exception('Only the Numbers validator is supported.')
+        min_val = param._vals._min_value
+        max_val = param._vals._max_value
+        min_val_pol_corr = min_val - self.pol_num[int(param.name[3:]) - 1]
+        max_val_pol_corr = max_val - self.pol_num[int(param.name[3:]) - 1]
+        min_val_bytes = self._mvoltage_to_bytes(min_val_pol_corr)
+        min_val_upd = (min_val_bytes[0] * 256 + min_val_bytes[1]) / \
+            65535.0 * self.Fullrange + self.pol_num[int(param.name[3:]) - 1]
+        max_val_bytes = self._mvoltage_to_bytes(max_val_pol_corr)
+        max_val_upd = (max_val_bytes[0] * 256 + max_val_bytes[1]) / \
+            65535.0 * self.Fullrange + self.pol_num[int(param.name[3:]) - 1]
+        param._vals = Numbers(min_val_upd, max_val_upd)
+
 '''
 RS232 PROTOCOL
 -----------------------
