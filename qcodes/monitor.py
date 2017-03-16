@@ -32,8 +32,7 @@ def _get_metadata(*parameters: qc.Parameter)-> dict:
         meta = parameter._latest()
         if meta["ts"] is not None:
             meta["ts"] = time.mktime(meta["ts"].timetuple())
-        meta["name"] = parameter.name
-        meta["label"] = parameter.label
+        meta["name"] = parameter.label or parameter.name
         meta["unit"] = parameter.unit
         metas.append(meta)
     state = {"ts": ts, "parameters": metas}
@@ -47,7 +46,12 @@ def poll_and_send(parameters: qc.Parameter, interval: int):
             try:
                 meta = _get_metadata(*parameters)
                 log.debug("sending..")
-                await websocket.send(json.dumps(meta))
+                try:
+                    await websocket.send(json.dumps(meta))
+                # mute browser discconects
+                except websockets.exceptions.ConnectionClosed as e:
+                    log.debug(e)
+                    pass
                 await asyncio.sleep(interval)
             except CancelledError:
                 break
@@ -60,16 +64,22 @@ def monitor(parameters: qc.Parameter, interval=1) -> list:
     handler = poll_and_send(parameters, interval=interval)
     server = websockets.serve(handler, '127.0.0.1', 5678)
     log.debug("Start monitoring thread")
+    if AsyncThread.running:
+        # stop the old server
+        log.debug("stoppging and restarting server")
+        AsyncThread.running.stop()
     thread = AsyncThread()
     thread.start()
     # let the thread start
-    time.sleep(0.0001)
+    time.sleep(0.001)
     log.debug("Start monitoring server")
-    task = thread.add_task(server)
-    return task, thread
+    thread.add_task(server)
+    return thread
 
 
 class AsyncThread(Thread):
+    running = None
+
     def __init__(self):
         super().__init__()
         self.loop = None
@@ -77,6 +87,7 @@ class AsyncThread(Thread):
     def run(self):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
+        AsyncThread.running = self
         self.loop.run_forever()
 
     def stop(self):
@@ -87,6 +98,7 @@ class AsyncThread(Thread):
         server.close()
         self.loop.call_soon_threadsafe(self.loop.stop)
         self.join()
+        AsyncThread.running = None
 
     def _add_task(self, future, coro):
         task = self.loop.create_task(coro)
