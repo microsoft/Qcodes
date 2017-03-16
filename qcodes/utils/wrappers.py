@@ -103,6 +103,33 @@ def _plot_setup(data, inst_meas, useQT=True):
                     plot.subplots[j].set_title("")
     return plot
 
+
+def _save_individual_plots(data, inst_meas):
+    title = "{} #{:03d}".format(CURRENT_EXPERIMENT["sample_name"], data.location_provider.counter)
+    counter_two = 0
+    for j, i in enumerate(inst_meas):
+        if getattr(i, "names", False):
+            # deal with multidimensional parameter
+            for k, name in enumerate(i.names):
+                counter_two += 1
+                plot = MatPlot()
+                inst_meas_name = "{}_{}".format(i._instrument.name, name)
+                plot.add(getattr(data, inst_meas_name))
+                plot.subplots[0].set_title(title)
+                plot.subplots[0].grid()
+                plot.save("{}_{:03d}.pdf".format(plot.get_default_title(), counter_two))
+        else:
+            counter_two += 1
+            plot = MatPlot()
+            # simple_parameters
+            inst_meas_name = "{}_{}".format(i._instrument.name, i.name)
+            plot.add(getattr(data, inst_meas_name))
+            plot.subplots[0].set_title(title)
+            plot.subplots[0].grid()
+            plot.save("{}_{:03d}.pdf".format(plot.get_default_title(), counter_two))
+
+
+
 def do1d(inst_set, start, stop, division, delay, *inst_meas):
     """
 
@@ -125,8 +152,7 @@ def do1d(inst_set, start, stop, division, delay, *inst_meas):
         _ = loop.with_bg_task(plot.update, plot.save).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
-    staticplot = _plot_setup(data, inst_meas, useQT=False)
-    staticplot.save(staticplot.get_default_title()+'.pdf')
+    _save_individual_plots(data, inst_meas)
     return plot, data
 
 
@@ -157,8 +183,7 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, division, delay, start2, slop
         _ = loop.with_bg_task(plot.update, plot.save).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
-    staticplot = _plot_setup(data, inst_meas, useQT=False)
-    staticplot.save(staticplot.get_default_title()+'.pdf')
+    _save_individual_plots(data, inst_meas)
     return plot, data
 
 
@@ -194,8 +219,7 @@ def do2d(inst_set, start, stop, division, delay, inst_set2, start2, stop2, divis
         _ = loop.with_bg_task(plot.update, plot.save).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
-    staticplot = _plot_setup(data, inst_meas, useQT=False)
-    staticplot.save(staticplot.get_default_title()+'.pdf')
+    _save_individual_plots(data, inst_meas)
     return plot, data
 
 
