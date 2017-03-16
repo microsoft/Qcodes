@@ -7,21 +7,18 @@ import logging
 from qcodes import VisaInstrument
 from qcodes import validators as vals
 
-log = logging.getLogger(__name__)
-
 
 def parsestr(v):
     return v.strip().strip('"')
 
 
 class HP_83650A(VisaInstrument):
-
     def __init__(self, name, address, verbose=1, reset=False, server_name=None, **kwargs):
         """ Driver for HP_83650A
-
+        
         """
         self.verbose = verbose
-        log.debug(__name__ + ' : Initializing instrument')
+        logging.debug(__name__ + ' : Initializing instrument')
         super().__init__(name, address, **kwargs)
 
         self.add_parameter('frequency',
@@ -31,7 +28,7 @@ class HP_83650A(VisaInstrument):
                            vals=vals.Numbers(10e6, 40e9),
                            docstring='Microwave frequency, ....',
                            get_parser=float,
-                           unit='Hz')
+                           units='Hz')
 
         self.add_parameter('freqmode',
                            label='Frequency mode',
@@ -47,7 +44,7 @@ class HP_83650A(VisaInstrument):
                            set_cmd='SOUR:POW {}',
                            vals=vals.Numbers(-20, 20),
                            get_parser=float,
-                           unit='dBm',
+                           units='dBm',
                            docstring='Microwave power, ....')
 
         self.add_parameter('rfstatus',
@@ -103,20 +100,20 @@ class HP_83650A(VisaInstrument):
                            docstring='Pulse source, ....')
 
     def reset(self):
-        log.info(__name__ + ' : Resetting instrument')
+        logging.debug(__name__ + ' : Resetting instrument')
         self.write('*RST')
-        self.getall()
+        self.print_all()
 
-    def getall(self):
-        log.debug(__name__ + ' : reading all settings from instrument')
+    def print_all(self):
+        logging.debug(__name__ + ' : reading all settings from instrument')
         print(self.rfstatus.label + ':', self.rfstatus.get())
         print(self.power.label + ':', self.power.get(), self.power.units)
         print(self.frequency.label +
               ': %e' % self.frequency.get(), self.frequency.units)
         print(self.freqmode.label + ':', self.freqmode.get())
-        self.getmodstatus()
+        self.print_modstatus()
 
-    def getmodstatus(self):
+    def print_modstatus(self):
         print(self.fmstatus.label + ':', self.fmstatus.get())
         print(self.fmcoup.label + ':', self.fmcoup.get())
         print(self.amstatus.label + ':', self.amstatus.get())
