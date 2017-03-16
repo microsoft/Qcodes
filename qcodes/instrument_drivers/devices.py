@@ -68,7 +68,7 @@ class VoltageDivider(Parameter):
             metadata=self.v1.metadata)
 
         # extend metadata
-        self._meta_attrs.extend(['v1', 'division_value'])
+        self._meta_attrs.extend(["division_value"])
 
     def set(self, value: Union[int, float]) -> None:
         instrument_value = value * self.division_value
