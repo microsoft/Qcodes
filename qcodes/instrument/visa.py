@@ -25,13 +25,6 @@ class VisaInstrument(Instrument):
 
         terminator: Read termination character(s) to look for. Default ''.
 
-        server_name (str): Name of the InstrumentServer to use. By default
-            uses 'GPIBServer' for all GPIB instruments, 'SerialServer' for
-            serial port instruments, and 'VisaServer' for all others.
-
-            Use ``None`` to run locally - but then this instrument will not
-            work with qcodes Loops or other multiprocess procedures.
-
         metadata (Optional[Dict]): additional static metadata to add to this
             instrument's JSON snapshot.
 

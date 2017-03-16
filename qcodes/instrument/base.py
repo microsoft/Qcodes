@@ -20,27 +20,6 @@ class Instrument(Metadatable, DelegateAttributes):
         name (str): an identifier for this instrument, particularly for
             attaching it to a Station.
 
-        server_name (Optional[str]): If not ``None``, this instrument starts a
-            separate server process (or connects to one, if one already exists
-            with the same name) and all hardware calls are made there.
-
-            Default '', then we call classmethod ``default_server_name``,
-            passing in all the constructor kwargs, to determine the name.
-            If not overridden, this just gives 'Instruments'.
-
-            **see subclass constructors below for more on ``server_name``**
-
-            Use None to operate without a server - but then this Instrument
-            will not work with qcodes Loops or other multiprocess procedures.
-
-            If a server is used, the ``Instrument`` you asked for is
-            instantiated on the server, and the object you get in the main
-            process is actually a ``RemoteInstrument`` that proxies all method
-            calls, ``Parameters``, and ``Functions`` to the server.
-
-            The metaclass ``InstrumentMetaclass`` handles making either the
-            requested class or its RemoteInstrument proxy.
-
         metadata (Optional[Dict]): additional static metadata to add to this
             instrument's JSON snapshot.
 
@@ -77,7 +56,7 @@ class Instrument(Metadatable, DelegateAttributes):
 
     _all_instruments = {}
 
-    def __init__(self, name, server_name=None, **kwargs):
+    def __init__(self, name, **kwargs):
         self._t0 = time.time()
         super().__init__(**kwargs)
         self.parameters = {}
@@ -90,7 +69,6 @@ class Instrument(Metadatable, DelegateAttributes):
 
         self._meta_attrs = ['name']
 
-        self._no_proxy_methods = {'__getstate__'}
         self.record_instance(self)
 
     def get_idn(self):
@@ -191,10 +169,7 @@ class Instrument(Metadatable, DelegateAttributes):
         that there are no other instruments with the same name.
 
         Args:
-            instance (Union[Instrument, RemoteInstrument]): Note: we *do not*
-                check that instance is actually an instance of ``cls``. This is
-                important, because a ``RemoteInstrument`` should function as an
-                instance of the instrument it proxies.
+            instance (Instrument): Instance to record
 
         Raises:
             KeyError: if another instance with the same name is already present
@@ -338,11 +313,6 @@ class Instrument(Metadatable, DelegateAttributes):
 
             **kwargs: constructor arguments for ``parameter_class``.
 
-        Returns:
-            dict: attribute information. Only used if you add parameters
-                from the ``RemoteInstrument`` rather than at construction, to
-                properly construct the proxy for this parameter.
-
         Raises:
             KeyError: if this instrument already has a parameter with this
                 name.
@@ -351,10 +321,6 @@ class Instrument(Metadatable, DelegateAttributes):
             raise KeyError('Duplicate parameter name {}'.format(name))
         param = parameter_class(name=name, instrument=self, **kwargs)
         self.parameters[name] = param
-
-        # for use in RemoteInstruments to add parameters to the server
-        # we return the info they need to construct their proxy
-        return param.get_attrs()
 
     def add_function(self, name, **kwargs):
         """
@@ -376,11 +342,6 @@ class Instrument(Metadatable, DelegateAttributes):
 
             **kwargs: constructor kwargs for ``Function``
 
-        Returns:
-            A dict of attribute information. Only used if you add functions
-            from the ``RemoteInstrument`` rather than at construction, to
-            properly construct the proxy for this function.
-
         Raises:
             KeyError: if this instrument already has a function with this
                 name.
@@ -389,10 +350,6 @@ class Instrument(Metadatable, DelegateAttributes):
             raise KeyError('Duplicate function name {}'.format(name))
         func = Function(name=name, instrument=self, **kwargs)
         self.functions[name] = func
-
-        # for use in RemoteInstruments to add functions to the server
-        # we return the info they need to construct their proxy
-        return func.get_attrs()
 
     def snapshot_base(self, update=False):
         """
@@ -444,7 +401,8 @@ class Instrument(Metadatable, DelegateAttributes):
         print('{0:<{1}}'.format('\tparameter ', par_field_len) + 'value')
         print('-'*80)
         for par in sorted(snapshot['parameters']):
-            msg = '{0:<{1}}:'.format(snapshot['parameters'][par]['name'], par_field_len)
+            name = snapshot['parameters'][par]['name']
+            msg = '{0:<{1}}:'.format(name, par_field_len)
             val = snapshot['parameters'][par]['value']
             unit = snapshot['parameters'][par]['unit']
             if isinstance(val, floating_types):
@@ -454,7 +412,7 @@ class Instrument(Metadatable, DelegateAttributes):
             if unit is not '':  # corresponds to no unit
                 msg += '({})'.format(unit)
             # Truncate the message if it is longer than max length
-            if len(msg) > max_chars and not max_chars==-1:
+            if len(msg) > max_chars and not max_chars == -1:
                 msg = msg[0:max_chars-3] + '...'
             print(msg)
 
@@ -589,60 +547,6 @@ class Instrument(Metadatable, DelegateAttributes):
             any: The return value of the function.
         """
         return self.functions[func_name].call(*args)
-
-    #
-    # info about what's in this instrument, to help construct the remote     #
-    #
-
-    def connection_attrs(self, new_id):
-        """
-        Collect info to reconstruct the instrument API in the RemoteInstrument.
-
-        Args:
-            new_id (int): The ID of this instrument on its server.
-                This is how the RemoteInstrument points its calls to the
-                correct server instrument when it calls the server.
-
-        Returns:
-            dict: Dictionary of name: str, id: int, parameters: dict,
-                functions: dict, _methods: dict
-                parameters, functions, and _methods are dictionaries of
-                name: List(str) of attributes to be proxied in the remote.
-        """
-        return {
-            'name': self.name,
-            'id': new_id,
-            'parameters': {name: p.get_attrs()
-                           for name, p in self.parameters.items()},
-            'functions': {name: f.get_attrs()
-                          for name, f in self.functions.items()},
-            '_methods': self._get_method_attrs()
-        }
-
-    def _get_method_attrs(self):
-        """
-        Construct a dict of methods this instrument has.
-
-        Returns:
-            dict: Dictionary of method names : list of attributes each method
-                has that should be proxied. As of now, this is just its
-                docstring, if it has one.
-        """
-        out = {}
-
-        for attr in dir(self):
-            value = getattr(self, attr)
-            if ((not callable(value)) or
-                    value is self.parameters.get(attr) or
-                    value is self.functions.get(attr) or
-                    attr in self._no_proxy_methods):
-                # Functions and Parameters are callable and they show up in
-                # dir(), but they have their own listing.
-                continue
-
-            out[attr] = ['__doc__'] if hasattr(value, '__doc__') else []
-
-        return out
 
     def __getstate__(self):
         """Prevent pickling instruments, and give a nice error message."""

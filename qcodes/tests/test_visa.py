@@ -81,7 +81,7 @@ class TestVisaInstrument(TestCase):
     ]
 
     def test_ask_write_local(self):
-        mv = MockVisa('Joe', server_name=None)
+        mv = MockVisa('Joe')
 
         # test normal ask and write behavior
         mv.state.set(2)
@@ -124,18 +124,17 @@ class TestVisaInstrument(TestCase):
 
         rm_mock.return_value = MockRM()
 
-        MockBackendVisaInstrument('name', server_name=None)
+        MockBackendVisaInstrument('name')
         self.assertEqual(rm_mock.call_count, 1)
         self.assertEqual(rm_mock.call_args, ((),))
         self.assertEqual(address_opened[0], None)
 
-        MockBackendVisaInstrument('name2', server_name=None, address='ASRL2')
+        MockBackendVisaInstrument('name2', address='ASRL2')
         self.assertEqual(rm_mock.call_count, 2)
         self.assertEqual(rm_mock.call_args, ((),))
         self.assertEqual(address_opened[0], 'ASRL2')
 
-        MockBackendVisaInstrument('name3', server_name=None,
-                                  address='ASRL3@py')
+        MockBackendVisaInstrument('name3', address='ASRL3@py')
         self.assertEqual(rm_mock.call_count, 3)
         self.assertEqual(rm_mock.call_args, (('@py',),))
         self.assertEqual(address_opened[0], 'ASRL3')
