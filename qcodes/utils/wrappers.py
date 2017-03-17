@@ -3,19 +3,24 @@ from os.path import abspath
 from os.path import sep
 from os import makedirs
 import logging
+from qtpy import QtWidgets
+
 from qcodes.plots.pyqtgraph import QtPlot
 from qcodes.plots.qcmatplotlib import MatPlot
 from IPython import get_ipython
-from matplotlib import cm
+
 CURRENT_EXPERIMENT  = {}
 CURRENT_EXPERIMENT["logging_enabled"] = False
 
-def init(mainfolder:str, sample_name: str):
+def init(mainfolder:str, sample_name: str, plot_x_position=0.66):
     """
 
     Args:
         mainfolder:  base location for the data
         sample_name:  name of the sample
+        plot_x_position: fractional of screen position to put QT plots.
+                         0 is all the way to the left and
+                         1 is all the way to the right.
 
     """
     if sep in sample_name:
@@ -30,9 +35,10 @@ def init(mainfolder:str, sample_name: str):
     CURRENT_EXPERIMENT["sample_name"] = sample_name
     CURRENT_EXPERIMENT['init']  = True
 
+    CURRENT_EXPERIMENT['plot_x_position'] = plot_x_position
+
     path_to_experiment_folder = sep.join([mainfolder, sample_name, ""])
     CURRENT_EXPERIMENT["exp_folder"] = path_to_experiment_folder
-
 
     try:
         makedirs(path_to_experiment_folder)
@@ -64,7 +70,7 @@ def init(mainfolder:str, sample_name: str):
 def _plot_setup(data, inst_meas, useQT=True):
     title = "{} #{:03d}".format(CURRENT_EXPERIMENT["sample_name"], data.location_provider.counter)
     if useQT:
-        plot = QtPlot()
+        plot = QtPlot(fig_x_position=CURRENT_EXPERIMENT['plot_x_position'])
     else:
         plot = MatPlot()
     for j, i in enumerate(inst_meas):
@@ -245,7 +251,7 @@ def show_num(id, useQT=False):
     for value in data.arrays.keys():
         if "set" not in value:
             if useQT:
-                plot = QtPlot(getattr(data, value))
+                plot = QtPlot(getattr(data, value), fig_x_position=CURRENT_EXPERIMENT['plot_x_position'])
                 title = "{} #{}".format(CURRENT_EXPERIMENT["sample_name"], str_id)
                 plot.subplots[0].setTitle(title)
                 plot.subplots[0].showGrid(True, True)
