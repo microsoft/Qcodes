@@ -100,7 +100,8 @@ class QtPlot(BasePlot):
         subplot_object = self.subplots[subplot - 1]
 
         if 'name' in kwargs:
-            subplot_object.addLegend()
+            if subplot_object.legend is None:
+                subplot_object.addLegend(offset=(-30,30))
 
         if 'z' in kwargs:
             plot_object = self._draw_image(subplot_object, **kwargs)
