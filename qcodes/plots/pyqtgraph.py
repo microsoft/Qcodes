@@ -99,6 +99,9 @@ class QtPlot(BasePlot):
                 self.subplots.append(self.add_subplot())
         subplot_object = self.subplots[subplot - 1]
 
+        if 'name' in kwargs:
+            subplot_object.addLegend()
+
         if 'z' in kwargs:
             plot_object = self._draw_image(subplot_object, **kwargs)
         else:
@@ -425,11 +428,11 @@ class QtPlot(BasePlot):
         image.save(buffer, 'PNG')
         buffer.close()
         return bytes(byte_array._getValue())
-    
+
     def save(self, filename=None):
         """
         Save current plot to filename, by default
-        to the location corresponding to the default 
+        to the location corresponding to the default
         title.
 
         Args:
