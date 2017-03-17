@@ -4,6 +4,7 @@ Live plotting using pyqtgraph
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as pgmp
+from qtpy import QtWidgets
 import warnings
 from collections import namedtuple
 
@@ -27,6 +28,10 @@ class QtPlot(BasePlot):
 
         figsize: (width, height) tuple in pixels to pass to GraphicsWindow
             default (1000, 600)
+        fig_x_pos: fraction of screen width to place the figure at
+            0 is all the way to the left and
+            1 is all the way to the right.
+            default None let qt decide.
         interval: period in seconds between update checks
             default 0.25
         theme: tuple of (foreground_color, background_color), where each is
@@ -39,7 +44,8 @@ class QtPlot(BasePlot):
     rpg = None
 
     def __init__(self, *args, figsize=(1000, 600), interval=0.25,
-                 window_title='', theme=((60, 60, 60), 'w'), show_window=True, remote=True, **kwargs):
+                 window_title='', theme=((60, 60, 60), 'w'), show_window=True, remote=True, fig_x_position=None,
+                 **kwargs):
         super().__init__(interval)
 
         if 'windowTitle' in kwargs.keys():
@@ -58,6 +64,10 @@ class QtPlot(BasePlot):
         self.win = self.rpg.GraphicsWindow(title=window_title)
         self.win.setBackground(theme[1])
         self.win.resize(*figsize)
+        if fig_x_position:
+            _, _, width, height = QtWidgets.QDesktopWidget().screenGeometry().getCoords()
+            y_pos = self.win.y()
+            self.win.move(width * fig_x_position, y_pos)
         self.subplots = [self.add_subplot()]
 
         if args or kwargs:
