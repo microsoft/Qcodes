@@ -654,7 +654,7 @@ class AlazarTech_ATS(Instrument):
         for buf in self.buffer_list:
             self._ATS_dll.AlazarPostAsyncBuffer.argtypes = [ctypes.c_uint32, ctypes.c_void_p, ctypes.c_uint32]
             self._call_dll('AlazarPostAsyncBuffer',
-                           self._handle, buf.addr, buf.size_bytes)
+                           self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes)
         self.allocated_buffers._set_updated()
 
         # -----start capture here-----
@@ -681,7 +681,7 @@ class AlazarTech_ATS(Instrument):
             buf = self.buffer_list[buffers_completed % allocated_buffers]
 
             self._call_dll('AlazarWaitAsyncBufferComplete',
-                           self._handle, buf.addr, buffer_timeout)
+                           self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buffer_timeout)
 
             # TODO(damazter) (C) last series of buffers must be handled
             # exceptionally
@@ -693,7 +693,7 @@ class AlazarTech_ATS(Instrument):
             if buffer_recycling:
                 acquisition_controller.handle_buffer(buf.buffer)
                 self._call_dll('AlazarPostAsyncBuffer',
-                               self._handle, buf.addr, buf.size_bytes)
+                               self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes)
             buffers_completed += 1
             bytes_transferred += buf.size_bytes
 
