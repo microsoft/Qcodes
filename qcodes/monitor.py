@@ -15,26 +15,29 @@ import time
 import json
 
 from threading import Thread
+from typing import Dict, List
 from concurrent.futures import Future
 from concurrent.futures import CancelledError
 import functools
 
+
+from qcodes import Parameter
 import qcodes as qc
 import websockets
 
 log = logging.getLogger(__name__)
 
 
-def _get_metadata(*parameters: qc.Parameter)-> dict:
+def _get_metadata(*parameters: Parameter)-> Dict[float, Dict[str,List[Dict[float, float, str, str]]]]:
     ts = time.time()
-    metas = []
+    metas = {}
     for parameter in parameters:
         meta = parameter._latest()
         if meta["ts"] is not None:
             meta["ts"] = time.mktime(meta["ts"].timetuple())
         meta["name"] = parameter.label or parameter.name
         meta["unit"] = parameter.unit
-        metas.append(meta)
+        metas[str(parameter._instrument)] = meta
     state = {"ts": ts, "parameters": metas}
     return state
 
