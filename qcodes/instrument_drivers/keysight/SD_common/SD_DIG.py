@@ -20,7 +20,7 @@ class SD_DIG(SD_Module):
         """ Initialises a generic Signadyne digitizer and its parameters
 
             Args:
-                name (str)          : the name of the digitizer card
+                name (str)      : the name of the digitizer card
                 channels (int)  : the number of input channels the specified card has
                 triggers (int)  : the number of trigger inputs the specified card has
         """
@@ -168,7 +168,7 @@ class SD_DIG(SD_Module):
                 'points_per_cycle_{}'.format(n),
                 label='Points per cycle for channel {}'.format(n),
                 vals=Ints(),
-                set_cmd=partial(self.set_points_per_cycle, channel=n) ,
+                set_cmd=partial(self.set_points_per_cycle, channel=n),
                 docstring='The number of points per cycle for DAQ {}'.format(n)
             )
 
