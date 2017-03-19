@@ -60,7 +60,7 @@ class SD_DIG(SD_Module):
         self.__points_per_cycle         = [ 0]*self.n_channels
         self.__n_cycles                 = [ 0]*self.n_channels
         self.__trigger_delay            = [ 0]*self.n_channels
-        self.__trigger_mode             = [ SD_AIN_TriggerMode.RISING_EDGE]*self.n_channels
+        self.__trigger_mode             = [ 0]*self.n_channels
         # For DAQtriggerConfig
         self.__digital_trigger_mode     = [ 0]*self.n_channels
         self.__digital_trigger_source   = [ 0]*self.n_channels
@@ -150,7 +150,7 @@ class SD_DIG(SD_Module):
             # For channelTriggerConfig
             self.add_parameter(
                 'trigger_mode_{}'.format(n), label='Trigger mode for channel {}'.format(n), 
-                vals=Enum(1,2,3),
+                vals=Enum(0,1,2,3,4,5,6,7),
                 set_cmd=partial(self.set_trigger_mode, channel=n),
                 docstring='The trigger mode for channel {}'.format(n)
             )
@@ -453,11 +453,9 @@ class SD_DIG(SD_Module):
         """
         if (channel > self.n_channels):
             raise ValueError("The specified channel {ch} exceeds the number of channels ({n})".format(ch=channel, n=self.n_channels))
-        if mode not in vars(SD_AIN_TriggerMode):
-            raise ValueError("The specified mode {} does not exist.".format(mode))
         self.__trigger_mode[channel] = mode
-        self.SD_AIN.channelTriggerConfig(channel, self.__analogTriggerMode[channel],
-                                                  self.__threshold[channel])
+        self.SD_AIN.channelTriggerConfig(channel, self.__analog_trigger_mask[channel],
+                                                  self.__trigger_threshold[channel])
 
     def get_trigger_mode(self, channel):
         """ Returns the current trigger mode
@@ -480,8 +478,8 @@ class SD_DIG(SD_Module):
         if (threshold > 3 or threshold < -3):
             raise ValueError("The specified threshold {thresh} V does not exist.".format(thresh=threshold))
         self.__trigger_threshold[channel] = threshold
-        self.SD_AIN.channelTriggerConfig(channel, self.__analogTriggerMode[channel],
-                                                  self.__threshold[channel])
+        self.SD_AIN.channelTriggerConfig(channel, self.__analog_trigger_mask[channel],
+                                                  self.__trigger_threshold[channel])
 
     def get_trigger_threshold(channel):
         """ Returns the current trigger threshold
