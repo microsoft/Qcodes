@@ -4,6 +4,7 @@ from functools import partial
 from warnings import warn
 try:
     from keysightSD1 import SD_AIN, SD_TriggerModes, SD_AIN_TriggerMode 
+    from .SD_Module import SD_Module, result_parser
 except ImportError:
     raise ImportError('To use a Signadyne Digitizer, install the Signadyne module')
 
