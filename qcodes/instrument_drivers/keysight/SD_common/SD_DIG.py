@@ -104,7 +104,7 @@ class SD_DIG(SD_Module):
             docstring='The frequency of internal CLKsync in Hz'
         )
 
-        for n in range(n_channels):
+        for n in range(self.n_channels):
 
 
             # For channelInputConfig
@@ -490,7 +490,7 @@ class SD_DIG(SD_Module):
         return self.__trigger_threshold[channel]
 
     # DAQConfig
-    def set_points_per_cycle(self, channel, n_points):
+    def set_points_per_cycle(self, n_points, channel):
         """ Sets the number of points to be collected per trigger
 
         Args:
