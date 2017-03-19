@@ -24,11 +24,22 @@ class SD_DIG(SD_Module):
                 channels (int)  : the number of input channels the specified card has
                 triggers (int)  : the number of trigger inputs the specified card has
         """
-        super().__init__(**kwargs)
+        super().__init__(name, chassis, slot, **kwargs)
+        self.SD_AIN = SD_AIN()
+
+        # Open the device, using the specified chassis and slot number
+        dig_name = self.SD_AIN.getProductNameBySlot(chassis, slot)
+        if isinstance(dig_name, str):
+            result_code = self.SD_AIN.openWithSlot(dig_name, chassis, slot)
+            if result_code <= 0:
+                raise Exception('Could not open SD_DIG '
+                                'error code {}'.format(result_code))
+        else:
+            raise Exception('No SD_DIG found at '
+                            'chassis {}, slot {}'.format(chassis, slot))
+
         self.n_channels = channels
         self.n_triggers = triggers
-        self.name       = kwargs['name']
-        self.SD_AIN = SD_AIN()
 
         ########################################################################
         ### Create a set of internal variables to aid set/get cmds in params ###
