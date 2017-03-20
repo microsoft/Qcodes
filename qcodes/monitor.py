@@ -5,21 +5,21 @@
 # Copyright © 2017 unga <giulioungaretti@me.com>
 #
 # Distributed under terms of the MIT license.
+"""
+Monitor a set of parameter in a background thread
+stream opuput over websocket
+"""
 
-"""
-Monitor a set of parameter
-"""
 import asyncio
 import logging
 import time
 import json
 
 from threading import Thread
-from typing import Dict, List
+from typing import Dict
 from concurrent.futures import Future
 from concurrent.futures import CancelledError
 import functools
-
 
 from qcodes import Parameter
 import qcodes as qc
@@ -28,23 +28,32 @@ import websockets
 log = logging.getLogger(__name__)
 
 
-def _get_metadata(*parameters: Parameter)-> Dict[float, Dict[str,List[Dict[float, float, str, str]]]]:
+def _get_metadata(*parameters: Parameter) -> Dict[float, list]:
     ts = time.time()
+    # group meta data by instrument if any
     metas = {}
     for parameter in parameters:
         meta = parameter._latest()
+        # convert to string
+        meta['value'] = str(meta['value'])
         if meta["ts"] is not None:
             meta["ts"] = time.mktime(meta["ts"].timetuple())
         meta["name"] = parameter.label or parameter.name
         meta["unit"] = parameter.unit
-        metas[str(parameter._instrument)] = meta
-    state = {"ts": ts, "parameters": metas}
+        accumulator = metas.get(str(parameter._instrument), [])
+        accumulator.append(meta)
+        metas[str(parameter._instrument)] = accumulator
+    parameters = []
+    for instrument in metas:
+        temp = {"instrument": instrument, "parameters": metas[instrument]}
+        parameters.append(temp)
+    state = {"ts": ts, "parameters": parameters}
     return state
 
 
-def poll_and_send(parameters: qc.Parameter, interval: int):
+def _handler(parameters: qc.Parameter, interval: int):
 
-    async def poll_and_send(websocket, path):
+    async def serverFunc(websocket, path):
         while True:
             try:
                 meta = _get_metadata(*parameters)
@@ -60,52 +69,58 @@ def poll_and_send(parameters: qc.Parameter, interval: int):
                 break
         log.debug("closing sever")
 
-    return poll_and_send
+    return serverFunc
 
 
-def monitor(parameters: qc.Parameter, interval=1) -> list:
-    handler = poll_and_send(parameters, interval=interval)
-    server = websockets.serve(handler, '127.0.0.1', 5678)
-    log.debug("Start monitoring thread")
-    if AsyncThread.running:
-        # stop the old server
-        log.debug("stoppging and restarting server")
-        AsyncThread.running.stop()
-    thread = AsyncThread()
-    thread.start()
-    # let the thread start
-    time.sleep(0.001)
-    log.debug("Start monitoring server")
-    thread.add_task(server)
-    return thread
-
-
-class AsyncThread(Thread):
+class MonitorThread(Thread):
     running = None
 
-    def __init__(self):
+    def __init__(self, *parameters: qc.Parameter, interval=1):
         super().__init__()
         self.loop = None
+        self._monitor(*parameters, interval=1)
 
     def run(self):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
-        AsyncThread.running = self
+        MonitorThread.running = self
         self.loop.run_forever()
 
     def stop(self):
-        time.sleep(1)
         # this contains the server
         # or any exception
         server = self.future_restult.result()
-        server.close()
+        # server.close()
+        self.loop.call_soon_threadsafe(server.close)
         self.loop.call_soon_threadsafe(self.loop.stop)
         self.join()
-        AsyncThread.running = None
+        MonitorThread.running = None
 
     def _add_task(self, future, coro):
         task = self.loop.create_task(coro)
         future.set_result(task)
+
+    def show(self):
+        raise NotImplemented
+     
+    def _monitor(self, *parameters: qc.Parameter, interval=1):
+        handler = _handler(parameters, interval=interval)
+        server = websockets.serve(handler, '127.0.0.1', 5678)
+
+        log.debug("Start monitoring thread")
+
+        if MonitorThread.running:
+            # stop the old server
+            log.debug("Stoppging and restarting server")
+            MonitorThread.running.stop()
+    
+        self.start()
+
+        # let the thread start
+        time.sleep(0.001)
+
+        log.debug("Start monitoring server")
+        self.add_task(server)
 
     def add_task(self, coro):
         future = Future()
@@ -114,12 +129,12 @@ class AsyncThread(Thread):
         self.loop.call_soon_threadsafe(p)
         # this stores the result of the future
         self.future_restult = future.result()
-        self.future_restult.add_done_callback(log_result)
+        self.future_restult.add_done_callback(_log_result)
 
 
-def log_result(future):
+def _log_result(future):
     try:
         future.result()
-        log.debug("started server loop")
+        log.debug("Started server loop")
     except:
-        log.exception("Could not start")
+        log.exception("Could not start server loop")
