@@ -70,6 +70,9 @@ class QDac(VisaInstrument):
 
         # Assigned slopes. Entries will eventually be [chan, slope] (V/s)
         self._slopes = []
+        # Function generators (used in _set_voltage)
+        self._fgs = set(range(1, 9))
+        self._assigned_fgs = {}
 
         self.chan_range = range(1, 1 + self.num_chans)
         self.channel_validator = vals.Ints(1, self.num_chans)
@@ -157,8 +160,10 @@ class QDac(VisaInstrument):
 
         slopechans = [sl[0] for sl in self._slopes]
         if chan in slopechans:
-            slope = [sl[1] for sl in self._slopes if sl[0]==chan][0]
-            fg = self._slopes.index([chan, slope]) + 1
+            slope = [sl[1] for sl in self._slopes if sl[0] == chan][0]
+            # fg = self._slopes.index([chan, slope]) + 1
+            fg = min(self._fgs.difference(set(self._assigned_fgs.values())))
+            self._assigned_fgs[chan] = fg
             v_start = self.parameters['ch{:02}_v'.format(chan)].get_latest()
             time = abs(v_set-v_start)/slope
             # Attenuation compensation takes place inside _rampvoltage
@@ -329,18 +334,25 @@ class QDac(VisaInstrument):
             raise ValueError('Channel number must be 1-48.')
 
         if slope == 'Inf':
+            self.write('wav {} 0 0 0'.format(chan))
+
+            # Now clear the assigned slope and function generator (if possible)
+            try:
+                self._assigned_fgs.pop(chan)
+            except KeyError:
+                pass
             try:
                 sls = self._slopes
-                to_remove = [sls.index(sl) for sl in sls if sl[0]==chan][0]
+                to_remove = [sls.index(sl) for sl in sls if sl[0] == chan][0]
                 self._slopes.remove(sls[to_remove])
                 return
             # If the value was already 'Inf', the channel was not
             # in the list and nothing happens
-            except ValueError:
+            except IndexError:
                 return
 
         if chan in [sl[0] for sl in self._slopes]:
-            oldslope = [sl[1] for sl in self._slopes if sl[0]==chan][0]
+            oldslope = [sl[1] for sl in self._slopes if sl[0] == chan][0]
             self._slopes[self._slopes.index([chan, oldslope])] = [chan, slope]
             return
 
