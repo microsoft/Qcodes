@@ -324,3 +324,31 @@ class MultiGetter(MultiParameter):
 
     def get(self):
         return self._return
+
+
+class MultiSetPointParam(MultiParameter):
+    """
+    Multiparameter which only purpose it to test that units, setpoints
+    and so on are copied correctly to the individual arrays in the datarray.
+    """
+    def __init__(self):
+        name = 'testparameter'
+        shapes = ((5,), (5,))
+        names = ('this', 'that')
+        labels = ('this label', 'that label')
+        units = ('this unit', 'that unit')
+        sp_base = tuple(np.linspace(5, 9, 5))
+        setpoints = ((sp_base,), (sp_base,))
+        setpoint_names = (('this_setpoint',), ('this_setpoint',))
+        setpoint_labels = (('this setpoint',), ('this setpoint',))
+        setpoint_units = (('this setpointunit',), ('this setpointunit',))
+        super().__init__(name, names, shapes,
+                         labels=labels,
+                         units=units,
+                         setpoints=setpoints,
+                         setpoint_labels=setpoint_labels,
+                         setpoint_names=setpoint_names,
+                         setpoint_units=setpoint_units)
+
+    def get(self):
+        return np.zeros(5), np.ones(5)

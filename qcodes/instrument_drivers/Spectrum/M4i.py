@@ -89,17 +89,17 @@ class M4i(Instrument):
                            docstring='The card ID')
         self.add_parameter('max_sample_rate',
                            label='max sample rate',
-                           units='Hz',
+                           unit='Hz',
                            get_cmd=self.get_max_sample_rate,
                            docstring='The maximumum sample rate')
         self.add_parameter('memory',
                            label='memory',
-                           units='bytes',
+                           unit='bytes',
                            get_cmd=self.get_card_memory,
                            docstring='Amount of memory on card')
         self.add_parameter('resolution',
                            label='resolution',
-                           units='bits',
+                           unit='bits',
                            get_cmd=partial(self._param32bit,
                                            pyspcm.SPC_MIINST_BITSPERSAMPLE),
                            docstring='Resolution of the card')
@@ -144,7 +144,7 @@ class M4i(Instrument):
                                            pyspcm.SPC_M2STATUS),
                            docstring='Return a bitmap for the status information')
         self.add_parameter('read_range_min_0',
-                           label='read range min 0', units='mV',
+                           label='read range min 0', unit='mV',
                            get_cmd=partial(self._param32bit,
                                            pyspcm.SPC_READRANGEMIN0),
                            docstring='Return the lower border of input range 0')
@@ -199,19 +199,19 @@ class M4i(Instrument):
                            docstring='bitmask showing all available trigger modes for external 0 (main analog trigger input)')
         self.add_parameter('external_trigger_min_level',
                            label='external trigger min level',
-                           units='mV',
+                           unit='mV',
                            get_cmd=partial(self._param32bit,
                                            pyspcm.SPC_TRIG_EXT_AVAIL0_MIN),
                            docstring='returns the minimum trigger level')
         self.add_parameter('external_trigger_max_level',
                            label='external trigger max level',
-                           units='mV',
+                           unit='mV',
                            get_cmd=partial(self._param32bit,
                                            pyspcm.SPC_TRIG_EXT_AVAIL0_MAX),
                            docstring='returns the maximum trigger level')
         self.add_parameter('external_trigger_level_step_size',
                            label='external trigger level step size',
-                           units='mV',
+                           unit='mV',
                            get_cmd=partial(self._param32bit,
                                            pyspcm.SPC_TRIG_EXT_AVAIL0_STEP),
                            docstring='returns the step size of the trigger level')
@@ -361,7 +361,7 @@ class M4i(Instrument):
                            label='timeout',
                            get_cmd=partial(self._param32bit,
                                            pyspcm.SPC_TIMEOUT),
-                           units='ms',
+                           unit='ms',
                            set_cmd=partial(self._set_param32bit,
                                            pyspcm.SPC_TIMEOUT),
                            docstring='defines the timeout for wait commands')
@@ -421,7 +421,7 @@ class M4i(Instrument):
                            label='sample rate',
                            get_cmd=partial(self._param32bit,
                                            pyspcm.SPC_SAMPLERATE),
-                           units='Hz',
+                           unit='Hz',
                            set_cmd=partial(self._set_param32bit,
                                            pyspcm.SPC_SAMPLERATE),
                            docstring='write the sample rate for internal sample generation or read rate nearest to desired')
@@ -429,7 +429,7 @@ class M4i(Instrument):
                            label='special clock',
                            get_cmd=partial(self._param32bit,
                                            pyspcm.SPC_SPECIALCLOCK),
-                           units='Hz',
+                           unit='Hz',
                            set_cmd=partial(self._set_param32bit,
                                            pyspcm.SPC_SPECIALCLOCK),
                            docstring='Activate/Deactivate the special clock mode (lower and more sampling clock rates)')
