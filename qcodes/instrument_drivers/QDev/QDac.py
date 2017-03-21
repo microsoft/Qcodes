@@ -104,6 +104,7 @@ class QDac(VisaInstrument):
                                )
             self.add_parameter(name='ch{:02}_slope'.format(i),
                                label='Maximum voltage slope',
+                               unit='V/s',
                                set_cmd=partial(self._setslope, i),
                                get_cmd=partial(self._getslope, i),
                                vals=vals.Anything()
@@ -161,7 +162,6 @@ class QDac(VisaInstrument):
         slopechans = [sl[0] for sl in self._slopes]
         if chan in slopechans:
             slope = [sl[1] for sl in self._slopes if sl[0] == chan][0]
-            # fg = self._slopes.index([chan, slope]) + 1
             fg = min(self._fgs.difference(set(self._assigned_fgs.values())))
             self._assigned_fgs[chan] = fg
             v_start = self.parameters['ch{:02}_v'.format(chan)].get_latest()
