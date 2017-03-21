@@ -3,7 +3,6 @@ from os.path import abspath
 from os.path import sep
 from os import makedirs
 import logging
-from qtpy import QtWidgets
 
 from qcodes.plots.pyqtgraph import QtPlot
 from qcodes.plots.qcmatplotlib import MatPlot
