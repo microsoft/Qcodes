@@ -110,9 +110,9 @@ class HP_83650A(VisaInstrument):
     def print_all(self):
         log.debug(__name__ + ' : reading all settings from instrument')
         print(self.rfstatus.label + ':', self.rfstatus.get())
-        print(self.power.label + ':', self.power.get(), self.power.units)
+        print(self.power.label + ':', self.power.get(), self.power.unit)
         print(self.frequency.label +
-              ': %e' % self.frequency.get(), self.frequency.units)
+              ': %e' % self.frequency.get(), self.frequency.unit)
         print(self.freqmode.label + ':', self.freqmode.get())
         self.print_modstatus()
 
