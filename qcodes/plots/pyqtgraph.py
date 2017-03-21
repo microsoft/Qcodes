@@ -9,7 +9,8 @@ from pyqtgraph import QtGui
 from pyqtgraph.multiprocess.remoteproxy import ClosedError
 import qcodes.utils.helpers
 
-from qtpy import QtWidgets
+from pyqtgraph import QtGui # note that pyqtgraph still uses the old pyqt4 layout
+
 import warnings
 from collections import namedtuple, deque
 
