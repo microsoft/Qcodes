@@ -29,6 +29,10 @@ log = logging.getLogger(__name__)
 
 
 def _get_metadata(*parameters: Parameter) -> Dict[float, list]:
+    """
+    Return a dict that contains the paraemter metadata grouped by the
+    instrument it belongs to.
+    """
     ts = time.time()
     # group meta data by instrument if any
     metas = {}
@@ -72,21 +76,34 @@ def _handler(parameters: qc.Parameter, interval: int):
     return serverFunc
 
 
-class MonitorThread(Thread):
+class Monitor(Thread):
     running = None
 
     def __init__(self, *parameters: qc.Parameter, interval=1):
+        """
+        Monitor qcodes parameters.
+
+        Args:
+            *parameters: Parameters to monitor
+            interval: How often one wants to refresh the values
+        """
         super().__init__()
         self.loop = None
         self._monitor(*parameters, interval=1)
 
     def run(self):
+        """
+        Start the event loop and run forever
+        """
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
-        MonitorThread.running = self
+        Monitor.running = self
         self.loop.run_forever()
 
     def stop(self):
+        """
+        Shutodwn the server, close the event loop and join the thread
+        """
         # this contains the server
         # or any exception
         server = self.future_restult.result()
@@ -94,13 +111,26 @@ class MonitorThread(Thread):
         self.loop.call_soon_threadsafe(server.close)
         self.loop.call_soon_threadsafe(self.loop.stop)
         self.join()
-        MonitorThread.running = None
+        Monitor.running = None
 
     def _add_task(self, future, coro):
         task = self.loop.create_task(coro)
         future.set_result(task)
 
-    def show(self):
+    @staticmethod
+    def show():
+        """
+        Overwrite this method to show/raise your monitor GUI
+        F.ex.
+
+        ::
+
+            import webbrowser
+            url = "localhost:3000"
+            # Open URL in new window, raising the window if possible.
+            webbrowser.open_new(url)
+
+        """
         raise NotImplemented
 
     def _monitor(self, *parameters: qc.Parameter, interval=1):
@@ -110,10 +140,10 @@ class MonitorThread(Thread):
 
         log.debug("Start monitoring thread")
 
-        if MonitorThread.running:
+        if Monitor.running:
             # stop the old server
             log.debug("Stoppging and restarting server")
-            MonitorThread.running.stop()
+            Monitor.running.stop()
 
         self.start()
 
