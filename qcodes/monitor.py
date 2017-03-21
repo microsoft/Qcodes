@@ -113,10 +113,6 @@ class Monitor(Thread):
         self.join()
         Monitor.running = None
 
-    def _add_task(self, future, coro):
-        task = self.loop.create_task(coro)
-        future.set_result(task)
-
     @staticmethod
     def show():
         """
@@ -151,12 +147,16 @@ class Monitor(Thread):
         time.sleep(0.001)
 
         log.debug("Start monitoring server")
-        self.add_task(server)
+        self._add_task(server)
 
-    def add_task(self, coro):
+    def _create_task(self, future, coro):
+        task = self.loop.create_task(coro)
+        future.set_result(task)
+
+    def _add_task(self, coro):
         future = Future()
         self.task = coro
-        p = functools.partial(self._add_task, future, coro)
+        p = functools.partial(self._create_task, future, coro)
         self.loop.call_soon_threadsafe(p)
         # this stores the result of the future
         self.future_restult = future.result()
