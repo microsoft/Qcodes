@@ -82,7 +82,6 @@ class QDac(VisaInstrument):
             self.add_parameter(name='ch{:02}_v'.format(i),
                                label='Channel ' + stri,
                                unit='V',
-                               # TO-DO: implement max slope for setting
                                set_cmd=partial(self._set_voltage, i),
                                vals=vals.Numbers(-10, 10),
                                get_cmd=partial(self.read_state, i, 'v')
