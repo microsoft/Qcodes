@@ -7,7 +7,8 @@ import pyqtgraph.multiprocess as pgmp
 from pyqtgraph.multiprocess.remoteproxy import ClosedError
 import qcodes.utils.helpers
 
-from qtpy import QtWidgets
+from pyqtgraph import QtGui # note that pyqtgraph still uses the old pyqt4 layout
+
 import warnings
 from collections import namedtuple, deque
 
@@ -87,7 +88,7 @@ class QtPlot(BasePlot):
         self.win.setBackground(theme[1])
         self.win.resize(*figsize)
         if fig_x_position:
-            _, _, width, height = QtWidgets.QDesktopWidget().screenGeometry().getCoords()
+            _, _, width, height = QtGui.QDesktopWidget().screenGeometry().getCoords()
             y_pos = self.win.y()
             self.win.move(width * fig_x_position, y_pos)
         self.subplots = [self.add_subplot()]
