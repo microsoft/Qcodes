@@ -1,8 +1,9 @@
 """Instrument base class."""
 import logging
-import time
-import weakref
 import numpy as np
+import time
+import warnings
+import weakref
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
@@ -41,6 +42,9 @@ class Instrument(Metadatable, DelegateAttributes):
 
     def __init__(self, name, **kwargs):
         self._t0 = time.time()
+        if kwargs.pop('server_name', False):
+            warnings.warn("server_name argument not supported any more",
+                          stacklevel=0)
         super().__init__(**kwargs)
         self.parameters = {}
         self.functions = {}
