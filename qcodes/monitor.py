@@ -102,9 +102,10 @@ class MonitorThread(Thread):
 
     def show(self):
         raise NotImplemented
-     
+
     def _monitor(self, *parameters: qc.Parameter, interval=1):
         handler = _handler(parameters, interval=interval)
+        # TODO (giulioungaretti) read from config
         server = websockets.serve(handler, '127.0.0.1', 5678)
 
         log.debug("Start monitoring thread")
@@ -113,7 +114,7 @@ class MonitorThread(Thread):
             # stop the old server
             log.debug("Stoppging and restarting server")
             MonitorThread.running.stop()
-    
+
         self.start()
 
         # let the thread start
