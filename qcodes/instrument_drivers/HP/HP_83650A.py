@@ -21,7 +21,7 @@ class HP_83650A(VisaInstrument):
 
         """
         self.verbose = verbose
-        log.debug(__name__ + ' : Initializing instrument')
+        log.debug('Initializing instrument')
         super().__init__(name, address, **kwargs)
 
         self.add_parameter('frequency',
@@ -103,12 +103,12 @@ class HP_83650A(VisaInstrument):
                            docstring='Pulse source, ....')
 
     def reset(self):
-        log.debug(__name__ + ' : Resetting instrument')
+        log.debug('Resetting instrument')
         self.write('*RST')
         self.print_all()
 
     def print_all(self):
-        log.debug(__name__ + ' : reading all settings from instrument')
+        log.debug('Reading all settings from instrument')
         print(self.rfstatus.label + ':', self.rfstatus.get())
         print(self.power.label + ':', self.power.get(), self.power.unit)
         print(self.frequency.label +
