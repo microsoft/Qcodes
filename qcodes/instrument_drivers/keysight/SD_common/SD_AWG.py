@@ -103,22 +103,6 @@ class SD_AWG(SD_Module):
     # Get-commands
     #
 
-    def get_pxi_trigger(self, pxi_trigger, verbose=False):
-        """
-        Returns the digital value of the specified PXI trigger
-
-        Args:
-            pxi_trigger (int): PXI trigger number (4000 + Trigger No.)
-            verbose (bool): boolean indicating verbose mode
-
-        Returns:
-            value (int): Digital value with negated logic, 0 (ON) or 1 (OFF),
-            or negative numbers for errors
-        """
-        value = self.awg.PXItriggerRead(pxi_trigger)
-        value_name = 'pxi_trigger number {}'.format(pxi_trigger)
-        return result_parser(value, value_name, verbose)
-
     def get_trigger_io(self, verbose=False):
         """
         Reads and returns the trigger input
@@ -232,16 +216,6 @@ class SD_AWG(SD_Module):
             wave_shape (int): wave shape type
         """
         self.awg.channelWaveShape(channel_number, wave_shape)
-
-    def set_pxi_trigger(self, value, pxi_trigger):
-        """
-        Sets the digital value of the specified PXI trigger
-
-        Args:
-            pxi_trigger (int): PXI trigger number (4000 + Trigger No.)
-            value (int): Digital value with negated logic, 0 (ON) or 1 (OFF)
-        """
-        self.awg.PXItriggerWrite(pxi_trigger, value)
 
     def set_trigger_io(self, value):
         """
@@ -499,7 +473,7 @@ class SD_AWG(SD_Module):
             start_delay (int): defines the delay between trigger and wf launch
                 given in multiples of 10ns.
             cycles (int): number of times the waveform is repeated once launched
-                negative = infinite repeats
+                zero = infinite repeats
             prescaler (int): waveform prescaler value, to reduce eff. sampling rate
 
         Returns:
@@ -530,7 +504,7 @@ class SD_AWG(SD_Module):
             start_delay (int): defines the delay between trigger and wf launch
                 given in multiples of 10ns.
             cycles (int): number of times the waveform is repeated once launched
-                negative = infinite repeats
+                zero = infinite repeats
             prescaler (int): waveform prescaler value, to reduce eff. sampling rate
             waveform_type (int): waveform type
             waveform_data_a (array): array with waveform points
@@ -672,7 +646,7 @@ class SD_AWG(SD_Module):
         provided it is configured with VI/HVI Trigger.
 
         Args:
-            awg_mask (int): Mask to select the awgs to stop (LSB is awg 0, bit 1 is awg 1 etc.)
+            awg_mask (int): Mask to select the awgs to be triggered (LSB is awg 0, bit 1 is awg 1 etc.)
         """
         self.awg.AWGtriggerMultiple(awg_mask)
 
@@ -692,7 +666,10 @@ class SD_AWG(SD_Module):
             waveform (SD_Wave): pointer to the waveform object,
             or negative numbers for errors
         """
-        return self.wave.newFromFile(waveform_file)
+        wave = keysightSD1.SD_Wave()
+        result = wave.newFromFile(waveform_file)
+        result_parser(result)
+        return wave
 
     def new_waveform_from_double(self, waveform_type, waveform_data_a, waveform_data_b=None):
         """
@@ -709,7 +686,10 @@ class SD_AWG(SD_Module):
             waveform (SD_Wave): pointer to the waveform object,
             or negative numbers for errors
         """
-        return self.wave.newFromArrayDouble(waveform_type, waveform_data_a, waveform_data_b)
+        wave = keysightSD1.SD_Wave()
+        result = wave.newFromArrayDouble(waveform_type, waveform_data_a, waveform_data_b)
+        result_parser(result)
+        return wave
 
     def new_waveform_from_int(self, waveform_type, waveform_data_a, waveform_data_b=None):
         """
@@ -726,7 +706,10 @@ class SD_AWG(SD_Module):
             waveform (SD_Wave): pointer to the waveform object,
             or negative numbers for errors
         """
-        return self.wave.newFromArrayInteger(waveform_type, waveform_data_a, waveform_data_b)
+        wave = keysightSD1.SD_Wave()
+        result = wave.newFromArrayInteger(waveform_type, waveform_data_a, waveform_data_b)
+        result_parser(result)
+        return wave
 
     def get_waveform_status(self, waveform, verbose=False):
         value = waveform.getStatus()
