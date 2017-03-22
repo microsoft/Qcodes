@@ -274,10 +274,7 @@ class SD_DIG(SD_Module):
         """
         value = self.SD_AIN.DAQread(DAQ, self.__n_points[DAQ], self.__timeout[DAQ])
         value_name = 'DAQ_read channel {}'.format(DAQ)
-        if len(value) > 1:
-            return value
-        else:
-            return result_parser(value, value_name, verbose)
+        return result_parser(value, value_name, verbose)
 
     def DAQ_start(self, DAQ, verbose=False):
         """ Start acquiring data or waiting for a trigger on the specified DAQ
