@@ -9,7 +9,7 @@ except ImportError:
                       '(http://www.keysight.com/main/software.jspx?ckey=2784055)')
 
 
-def result_parser(value, name, verbose=False):
+def result_parser(value, name='result', verbose=False):
     """
     This method is used for parsing the result in the get-methods.
     For values that are non-negative, the value is simply returned.
