@@ -103,22 +103,6 @@ class SD_AWG(SD_Module):
     # Get-commands
     #
 
-    def get_pxi_trigger(self, pxi_trigger, verbose=False):
-        """
-        Returns the digital value of the specified PXI trigger
-
-        Args:
-            pxi_trigger (int): PXI trigger number (4000 + Trigger No.)
-            verbose (bool): boolean indicating verbose mode
-
-        Returns:
-            value (int): Digital value with negated logic, 0 (ON) or 1 (OFF),
-            or negative numbers for errors
-        """
-        value = self.awg.PXItriggerRead(pxi_trigger)
-        value_name = 'pxi_trigger number {}'.format(pxi_trigger)
-        return result_parser(value, value_name, verbose)
-
     def get_trigger_io(self, verbose=False):
         """
         Reads and returns the trigger input
@@ -232,16 +216,6 @@ class SD_AWG(SD_Module):
             wave_shape (int): wave shape type
         """
         self.awg.channelWaveShape(channel_number, wave_shape)
-
-    def set_pxi_trigger(self, value, pxi_trigger):
-        """
-        Sets the digital value of the specified PXI trigger
-
-        Args:
-            pxi_trigger (int): PXI trigger number (4000 + Trigger No.)
-            value (int): Digital value with negated logic, 0 (ON) or 1 (OFF)
-        """
-        self.awg.PXItriggerWrite(pxi_trigger, value)
 
     def set_trigger_io(self, value):
         """

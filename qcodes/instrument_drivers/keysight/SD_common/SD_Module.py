@@ -171,6 +171,36 @@ class SD_Module(Instrument):
         value_name = 'open'
         return result_parser(value, value_name, verbose)
 
+    def get_pxi_trigger(self, pxi_trigger, verbose=False):
+        """
+        Returns the digital value of the specified PXI trigger
+
+        Args:
+            pxi_trigger (int): PXI trigger number (4000 + Trigger No.)
+            verbose (bool): boolean indicating verbose mode
+
+        Returns:
+            value (int): Digital value with negated logic, 0 (ON) or 1 (OFF),
+            or negative numbers for errors
+        """
+        value = self.awg.PXItriggerRead(pxi_trigger)
+        value_name = 'pxi_trigger number {}'.format(pxi_trigger)
+        return result_parser(value, value_name, verbose)
+
+    #
+    # Set-commands
+    #
+
+    def set_pxi_trigger(self, value, pxi_trigger):
+        """
+        Sets the digital value of the specified PXI trigger
+
+        Args:
+            pxi_trigger (int): PXI trigger number (4000 + Trigger No.)
+            value (int): Digital value with negated logic, 0 (ON) or 1 (OFF)
+        """
+        self.awg.PXItriggerWrite(pxi_trigger, value)
+
     #
     # The methods below are not used for setting or getting parameters, but can be used in the test functions of the
     # test suite e.g. The main reason they are defined is to make this driver more complete
