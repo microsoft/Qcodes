@@ -31,7 +31,7 @@ class QDac(VisaInstrument):
     # set nonzero value (seconds) to accept older status when reading settings
     max_status_age = 1
 
-    def __init__(self, name, address, num_chans=48):
+    def __init__(self, name, address, num_chans=48, update_currents=True):
         """
         Instantiates the instrument.
 
@@ -39,6 +39,8 @@ class QDac(VisaInstrument):
             name (str): The instrument name used by qcodes
             address (str): The VISA name of the resource
             num_chans (int): Number of channels to assign. Default: 48
+            update_currents (bool): Whether to query all channels for their
+                current current value on startup. Default: True.
 
         Returns:
             QDac object
@@ -68,6 +70,9 @@ class QDac(VisaInstrument):
 
         # Assigned slopes. Entries will eventually be [chan, slope] (V/s)
         self._slopes = []
+        # Function generators (used in _set_voltage)
+        self._fgs = set(range(1, 9))
+        self._assigned_fgs = {}
 
         self.chan_range = range(1, 1 + self.num_chans)
         self.channel_validator = vals.Ints(1, self.num_chans)
@@ -77,7 +82,6 @@ class QDac(VisaInstrument):
             self.add_parameter(name='ch{:02}_v'.format(i),
                                label='Channel ' + stri,
                                unit='V',
-                               # TO-DO: implement max slope for setting
                                set_cmd=partial(self._set_voltage, i),
                                vals=vals.Numbers(-10, 10),
                                get_cmd=partial(self.read_state, i, 'v')
@@ -99,6 +103,7 @@ class QDac(VisaInstrument):
                                )
             self.add_parameter(name='ch{:02}_slope'.format(i),
                                label='Maximum voltage slope',
+                               unit='V/s',
                                set_cmd=partial(self._setslope, i),
                                get_cmd=partial(self._getslope, i),
                                vals=vals.Anything()
@@ -122,16 +127,15 @@ class QDac(VisaInstrument):
                            set_cmd='ver {}',
                            val_mapping={True: 1, False: 0})
 
-        # Initialise the instrument, all channels DC, no attenuation
+        # Initialise the instrument, all channels DC (unbind func. generators)
         for chan in self.chan_range:
             # Note: this call does NOT change the voltage on the channel
             self.write('wav {} 0 1 0'.format(chan))
-            self.write('vol {} 0'.format(chan))
 
         self.verbose.set(False)
         self.connect_message()
         log.info('[*] Querying all channels for voltages and currents...')
-        self._get_status(readcurrents=True)
+        self._get_status(readcurrents=update_currents)
         log.info('[+] Done')
 
     #########################
@@ -156,8 +160,9 @@ class QDac(VisaInstrument):
 
         slopechans = [sl[0] for sl in self._slopes]
         if chan in slopechans:
-            slope = [sl[1] for sl in self._slopes if sl[0]==chan][0]
-            fg = self._slopes.index([chan, slope]) + 1
+            slope = [sl[1] for sl in self._slopes if sl[0] == chan][0]
+            fg = min(self._fgs.difference(set(self._assigned_fgs.values())))
+            self._assigned_fgs[chan] = fg
             v_start = self.parameters['ch{:02}_v'.format(chan)].get_latest()
             time = abs(v_set-v_start)/slope
             # Attenuation compensation takes place inside _rampvoltage
@@ -328,18 +333,25 @@ class QDac(VisaInstrument):
             raise ValueError('Channel number must be 1-48.')
 
         if slope == 'Inf':
+            self.write('wav {} 0 0 0'.format(chan))
+
+            # Now clear the assigned slope and function generator (if possible)
+            try:
+                self._assigned_fgs.pop(chan)
+            except KeyError:
+                pass
             try:
                 sls = self._slopes
-                to_remove = [sls.index(sl) for sl in sls if sl[0]==chan][0]
+                to_remove = [sls.index(sl) for sl in sls if sl[0] == chan][0]
                 self._slopes.remove(sls[to_remove])
                 return
             # If the value was already 'Inf', the channel was not
             # in the list and nothing happens
-            except ValueError:
+            except IndexError:
                 return
 
         if chan in [sl[0] for sl in self._slopes]:
-            oldslope = [sl[1] for sl in self._slopes if sl[0]==chan][0]
+            oldslope = [sl[1] for sl in self._slopes if sl[0] == chan][0]
             self._slopes[self._slopes.index([chan, oldslope])] = [chan, slope]
             return
 
