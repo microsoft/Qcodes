@@ -183,7 +183,7 @@ class SD_Module(Instrument):
             value (int): Digital value with negated logic, 0 (ON) or 1 (OFF),
             or negative numbers for errors
         """
-        value = self.awg.PXItriggerRead(pxi_trigger)
+        value = self.SD_module.PXItriggerRead(pxi_trigger)
         value_name = 'pxi_trigger number {}'.format(pxi_trigger)
         return result_parser(value, value_name, verbose)
 
@@ -199,7 +199,39 @@ class SD_Module(Instrument):
             pxi_trigger (int): PXI trigger number (4000 + Trigger No.)
             value (int): Digital value with negated logic, 0 (ON) or 1 (OFF)
         """
-        self.awg.PXItriggerWrite(pxi_trigger, value)
+        self.SD_module.PXItriggerWrite(pxi_trigger, value)
+
+    #
+    # FPGA related functions
+    #
+
+    def get_fpga_pc_port(self, port, data_size, address, address_mode, access_mode, verbose=False):
+        """
+        Reads data at the PCport FPGA Block
+
+        Args:
+            port (int): PCport number
+            data_size (int): number of 32-bit words to read (maximum is 128 words)
+            address (int): address that wil appear at the PCport interface
+            address_mode (int): ?? not in the docs
+            access_mode (int): ?? not in the docs
+        """
+        data = self.SD_module.FPGAreadPCport(port, data_size, address, address_mode, access_mode)
+        value_name = 'data at PCport {}'.format(port)
+        return result_parser(data, value_name, verbose)
+
+    def set_fpga_pc_port(self, port, data, address, address_mode, access_mode, verbose=False):
+        """
+        Writes data at the PCport FPGA Block
+
+        Args:
+            port (int): PCport number
+            data (array): array of integers containing the data
+            address (int): address that wil appear at the PCport interface
+            address_mode (int): ?? not in the docs
+            access_mode (int): ?? not in the docs
+        """
+        self.SD_module.FPGAwritePCport(port, data, address, address_mode, access_mode, verbose)
 
     #
     # The methods below are not used for setting or getting parameters, but can be used in the test functions of the
