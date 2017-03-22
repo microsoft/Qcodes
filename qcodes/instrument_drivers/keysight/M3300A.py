@@ -4,40 +4,40 @@
 #                                                                                 #
 ###################################################################################
 #                                                                                 #
-# CQC2T                                                                           #
-#                                                                                 #
 # Written by: Mark Johnson                                                        #
-# Also see: https://www.signadyne.com/en/products/hardware/generators-digitizers/ #
+# Also see: http://www.keysight.com/en/pd-2747490-pn-M3300A                       #
 #                                                                                 #
 ###################################################################################
 
-import numpy as np
-import ctypes as ct
-from functools import partial
-from qcodes.utils.validators import Enum, Numbers, Anything
-from qcodes.instrument.base import Instrument
-from qcodes.instrument.parameter import ManualParameter
 try:
-    import signadyne_common.SD_AWG as SD_AWG
-    import signadyne_common.SD_DIG as SD_DIG
+    from .SD_common.SD_AWG import SD_AWG
+    from .SD_common.SD_DIG import SD_DIG
 except ImportError:
-    raise ImportError('To use the M3300A driver, install the Signadyne module')
+    raise ImportError('To use the M3300A driver, install the keysight module')
 
-class M3300A(SD_DIG, SD_AWG):
-    def __init__(self, name, cardid='', **kwargs):
-        """ Driver for the Signadyne M3300A card.
+class M3300A_AWG(SD_AWG):
+    """ Driver for the AWG of the Keysight M3300A card.
 
-        Example:
+    Args:
+        name (str)    : name for this instrument, passed to the base instrument
+        chassis (int) : chassis number where the device is located
+        slot (int)    : slot number where the device is plugged in
+    Example:
+        AWG = AWG('M3300A')
+    """
+    def __init__(self, name, chassis=1, slot=8, **kwargs):
+        super().__init__(name, chassis=1, slot=8, channels=4, triggers=8, **kwargs)
 
-            Example usage for acquisition with channel 2 using an external trigger
-            that triggers multiple times with trigger mode HIGH::
+class M3300A_DIG(SD_DIG):
+    """ Driver for the digitizer of the keysight M3300A card.
 
-                m3300A = M3300A(name='M3300A')
+    Args:
+        name (str)    : name for this instrument, passed to the base instrument
+        chassis (int) : chassis number where the device is located
+        slot (int)    : slot number where the device is plugged in
 
-        Todo:
-          A lot.
-
-        """
-        super(SD_DIG, self).__init__(n_channels=8)
-        super(SD_AWG, self).__init__(n_channels=8)
-
+    Example:
+        DIG  = DIG('M3300A')
+    """
+    def __init__(self, name, chassis=1, slot=8, **kwargs):
+        super().__init__(name, chassis, slot, channels=8, triggers=8, **kwargs)
