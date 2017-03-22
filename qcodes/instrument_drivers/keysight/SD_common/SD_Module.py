@@ -28,7 +28,7 @@ def result_parser(value, name, verbose=False):
         value: parsed value, which is the same as value if non-negative
         or not a number
     """
-    if isinstance(value, ndarray) isinstance(value, str) or isinstance(value, bool) or (int(value) >= 0):
+    if isinstance(value, ndarray) or isinstance(value, str) or isinstance(value, bool) or (int(value) >= 0):
         if verbose:
             print('{}: {}'.format(name, value))
         return value
