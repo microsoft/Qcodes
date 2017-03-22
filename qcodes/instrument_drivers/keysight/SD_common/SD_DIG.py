@@ -115,7 +115,7 @@ class SD_DIG(SD_Module):
                 # TODO: validator must be set after device opened
                 #vals=Numbers(self.SD_AIN.channelMinFullScale(), self.SD_AIN.channelMaxFullScale())
                 set_cmd=partial(self.set_full_scale, channel=n),
-                get_cmd=partial(self.SD_AIN.channelFullScale, channel=n),
+                get_cmd=partial(self.get_full_scale, channel=n),
                 docstring='The full scale voltage for channel {}'.format(n)
             )
 
@@ -125,7 +125,7 @@ class SD_DIG(SD_Module):
                 label='Impedance for channel {}'.format(n),
                 vals=Enum(0,1),
                 set_cmd=partial(self.set_impedance, channel=n),
-                get_cmd=partial(self.SD_AIN.channelImpedance, channel=n),
+                get_cmd=partial(self.get_impedance, channel=n),
                 docstring='The input impedance of channel {}'.format(n)
             )
 
@@ -134,7 +134,7 @@ class SD_DIG(SD_Module):
                 label='Coupling for channel {}'.format(n),
                 vals=Enum(0,1),
                 set_cmd=partial(self.set_coupling, channel=n),
-                get_cmd=partial(self.SD_AIN.channelCoupling, channel=n),
+                get_cmd=partial(self.get_coupling, channel=n),
                 docstring='The coupling of channel {}'.format(n)
             )
 
@@ -143,8 +143,8 @@ class SD_DIG(SD_Module):
                 'prescaler_{}'.format(n),
                 label='Prescaler for channel {}'.format(n),
                 vals=Ints(0,4095),
-                set_cmd=partial(self.set_prescaler,  channel=n),
-                get_cmd=partial(self.SD_AIN.channelPrescaler, channel=n),
+                set_cmd=partial(self.set_prescaler, channel=n),
+                get_cmd=partial(self.get_prescaler, channel=n),
                 docstring='The sampling frequency prescaler for channel {}'.format(n)
             )
 
@@ -415,6 +415,18 @@ class SD_DIG(SD_Module):
         value_name = 'set_CLKsys_frequency not implemented'
         return result_parser(value, value_name, verbose)
 
+    def get_prescaler(self, channel, verbose=False):
+        """ Gets the channel prescaler value
+
+        Args:
+            channel (int)       : the input channel you are observing
+        """
+        value = self.SD_AIN.channelPrescaler(channel)
+        # Update internal parameter for consistency
+        self.__prescaler[channel] = value
+        value_name = 'get_prescaler'
+        return result_parser(value, value_name, verbose)
+
     def set_prescaler(self, prescaler, channel, verbose=False):
         """ Sets the channel sampling frequency via the prescaler
 
@@ -428,6 +440,21 @@ class SD_DIG(SD_Module):
         return result_parser(value, value_name, verbose)
 
     # channelInputConfig
+    # NOTE: When setting any of full_scale, coupling or impedance
+    # the initial internal value is used as a placeholder, as all 3 arguments
+    # are required at once to the Keysight library
+    def get_full_scale(self, channel, verbose=False):
+        """ Gets the channel full scale input voltage
+
+        Args:
+            channel(int)        : the input channel you are observing
+        """
+        value = self.SD_AIN.channelFullScale(channel)
+        # Update internal parameter for consistency
+        self.__full_scale[channel] = value
+        value_name = 'get_full_scale'
+        return result_parser(value, value_name, verbose)
+
     def set_full_scale(self, full_scale, channel, verbose=False):
         """ Sets the channel full scale input voltage
 
@@ -442,6 +469,18 @@ class SD_DIG(SD_Module):
         value_name = 'set_full_scale {}'.format(full_scale)
         return result_parser(value, value_name, verbose)
     
+    def get_impedance(self, channel, verbose=False):
+        """ Gets the channel input impedance
+
+        Args:
+            channel (int)       : the input channel you are observing
+        """
+        value = self.SD_AIN.channelImpedance(channel)
+        # Update internal parameter for consistency
+        self.__impedance[channel] = value
+        value_name = 'get_impedance'
+        return result_parser(value, value_name, verbose)
+
     def set_impedance(self, impedance, channel, verbose=False):
         """ Sets the channel input impedance
 
@@ -454,6 +493,18 @@ class SD_DIG(SD_Module):
                                                         self.__impedance[channel],
                                                         self.__coupling[channel])
         value_name = 'set_impedance {}'.format(impedance)
+        return result_parser(value, value_name, verbose)
+
+    def get_coupling(self, channel, verbose=False):
+        """ Gets the channel coupling
+
+        Args:
+            channel (int)       : the input channel you are observing
+        """
+        value = self.SD_AIN.channelCoupling(channel)
+        # Update internal parameter for consistency
+        self.__coupling[channel] = value
+        value_name = 'get_coupling'
         return result_parser(value, value_name, verbose)
 
     def set_coupling(self, coupling, channel, verbose=False):
