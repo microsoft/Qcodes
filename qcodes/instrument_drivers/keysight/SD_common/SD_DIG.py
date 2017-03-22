@@ -537,6 +537,7 @@ class SD_DIG(SD_Module):
         value_name = 'set_trigger_mode {}'.format(mode)
         return result_parser(value, value_name, verbose)
 
+    @deprecated
     def get_trigger_mode(self, channel, verbose=False):
         """ Returns the current trigger mode
 
@@ -562,6 +563,7 @@ class SD_DIG(SD_Module):
         value_name = 'set_trigger_threshold {}'.format(threshold)
         return result_parser(value, value_name, verbose)
 
+    @deprecated
     def get_trigger_threshold(channel, verbose=False):
         """ Returns the current trigger threshold
 
