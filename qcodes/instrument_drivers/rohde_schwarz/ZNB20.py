@@ -64,6 +64,7 @@ class ZNB20(VisaInstrument):
         # commands to control the initialization of the trigger system and define
         # the scope ot the triggered measurement
         self.add_parameter(name='continuous_mode_all',
+                           docstring='My explanation',
                            set_cmd='INIT:CONT {:s}',
                            vals=vals.OnOff())
 
@@ -77,7 +78,7 @@ class ZNB20(VisaInstrument):
 
         self.add_parameter(name='avg',
                            label='Averages',
-                           units='',
+                           unit='',
                            get_cmd='SENS:AVER:COUN?',
                            set_cmd='SENS:AVER:COUN {:.4f}',
                            get_parser=VISA_str_to_int,
@@ -86,7 +87,6 @@ class ZNB20(VisaInstrument):
         self.add_parameter(name='average_mode',
                            get_cmd='SENS:AVER:MODE?',
                            set_cmd='SENS:AVER:MODE {:s}',
-                           get_parser=VISA_str_to_int,
                            vals=vals.Enum('auto', 'flatten', 'reduce', 'moving'))
 
         self.add_parameter(name='average_state',
@@ -103,28 +103,28 @@ class ZNB20(VisaInstrument):
                            vals=vals.Numbers(1, 1e6))
 
         self.add_parameter(name='center_frequency',
-                           units='Hz',
+                           unit='Hz',
                            get_cmd='SENSE:FREQUENCY:CENTER?',
                            set_cmd='SENSE:FREQUENCY:CENTER {:.4f}',
                            get_parser=VISA_str_to_int,
                            vals=vals.Numbers(100e3, 20e9))
 
         self.add_parameter(name='span_frequency',
-                           units='Hz',
+                           unit='Hz',
                            get_cmd='SENSE:FREQUENCY:SPAN?',
                            set_cmd='SENSE:FREQUENCY:SPAN {:.4f}',
                            get_parser=VISA_str_to_int,
                            vals=vals.Numbers(0, 20e9))
 
         self.add_parameter(name='start_frequency',
-                           units='Hz',
+                           unit='Hz',
                            get_cmd='SENSE:FREQUENCY:START?',
                            set_cmd='SENSE:FREQUENCY:START {:.4f}',
                            get_parser=VISA_str_to_int,
                            vals=vals.Numbers(100e3, 20e9))
 
         self.add_parameter(name='stop_frequency',
-                           units='Hz',
+                           unit='Hz',
                            get_cmd='SENSE:FREQUENCY:STOP?',
                            set_cmd='SENSE:FREQUENCY:STOP {:.4f}',
                            get_parser=VISA_str_to_int,
