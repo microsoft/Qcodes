@@ -157,12 +157,20 @@ class Tektronix_AWG5014(VisaInstrument):
                            vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'),
                            get_parser=self.newlinestripper
                            )
-        self.add_parameter('ref_clock_source',
-                           label='Reference clock source',
+        self.add_parameter('clock_source',
+                           label='Clock source',
                            get_cmd='AWGControl:CLOCk:SOURce?',
                            set_cmd='AWGControl:CLOCk:SOURce ' + '{}',
                            vals=vals.Enum('INT', 'EXT'),
                            get_parser=self.newlinestripper)
+
+        self.add_parameter('ref_source',
+                           label='Reference source',
+                           get_cmd='SOURce1:ROSCillator:SOURce?',
+                           set_cmd='SOURce1:ROSCillator:SOURce ' + '{}',
+                           vals=vals.Enum('INT', 'EXT'),
+                           get_parser=self.newlinestripper)
+
         self.add_parameter('DC_output',
                            label='DC Output (ON/OFF)',
                            get_cmd='AWGControl:DC:STATe?',
@@ -332,7 +340,7 @@ class Tektronix_AWG5014(VisaInstrument):
                                set_cmd=filter_cmd + ' {}',
                                vals=vals.Enum(20e6, 100e6, 9.9e37,
                                               'INF', 'INFinity'),
-                               get_parser=float)
+                               get_parser=self._lowpass_filter_get_parser)
             self.add_parameter('ch{}_DC_out'.format(i),
                                label='DC output level channel {}'.format(i),
                                unit='V',
@@ -386,6 +394,13 @@ class Tektronix_AWG5014(VisaInstrument):
                 return string[:-1]
             else:
                 return string
+
+    def _lowpass_filter_get_parser(self, string):
+        if 'E+037\n' in string:
+            val = 'INF'
+        else:
+            val = float(string)
+        return val
 
     # Functions
     def get_all(self, update=True):
