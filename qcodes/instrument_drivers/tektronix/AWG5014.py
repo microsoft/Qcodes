@@ -339,8 +339,9 @@ class Tektronix_AWG5014(VisaInstrument):
                                get_cmd=filter_cmd + '?',
                                set_cmd=filter_cmd + ' {}',
                                vals=vals.Enum(20e6, 100e6, 9.9e37,
+                                              np.float('inf'),
                                               'INF', 'INFinity'),
-                               get_parser=self._lowpass_filter_get_parser)
+                               get_parser=self._tek_outofrange_get_parser)
             self.add_parameter('ch{}_DC_out'.format(i),
                                label='DC output level channel {}'.format(i),
                                unit='V',
@@ -395,11 +396,12 @@ class Tektronix_AWG5014(VisaInstrument):
             else:
                 return string
 
-    def _lowpass_filter_get_parser(self, string):
-        if 'E+037\n' in string:
-            val = 'INF'
-        else:
-            val = float(string)
+    def _tek_outofrange_get_parser(self, string):
+        val = float(string)
+        # note that 9.9e37 is used as a generic out of range value
+        # in tektronix instruments
+        if val >= 9.9e37:
+            val = np.float('INF')
         return val
 
     # Functions
