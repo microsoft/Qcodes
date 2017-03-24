@@ -379,17 +379,6 @@ class Scope(MultiParameter):
         # We add one second to account for latencies and random delays
         meas_time = segs*(params['scope_duration'].get()+deadtime)+1
         npts = params['scope_length'].get()
-
-        # Create a new scopeModule instance (TODO: Why a new instance?)
-        scope = self._instrument.daq.scopeModule()
-
-        # Subscribe to the relevant... publisher?
-        scope.subscribe('/{}/scopes/0/wave'.format(self._instrument.device))
-
-        # Start the scope triggering/acquiring
-        params['scope_runstop'].set('run')
-
-        log.info('[*] Starting ZI scope acquisition.')
         # one shot per trigger. This needs to be set every time
         # a the scope is enabled as below using scope_runstop
         # We should also test if scopeModule/mode and scopeModule/averager/weight
@@ -397,6 +386,21 @@ class Scope(MultiParameter):
         # here
         self._instrument.daq.setInt('/{}/scopes/0/single'.format(self._instrument.device), 1)
         self._instrument.daq.sync()
+        # Create a new scopeModule instance (TODO: Why a new instance?)
+        scope = self._instrument.daq.scopeModule()
+        # TODO We are hard coding scope mode and avg weight here because the setting
+        # in the main driver references a different scope which will fail and give garbage data
+        # YOU cannot set other scope modes or weights at the moment
+        scope.set('scopeModule/mode', 1)
+        scope.set('scopeModule/averager/weight', 1)
+        # Subscribe to the relevant... publisher?
+        scope.subscribe('/{}/scopes/0/wave'.format(self._instrument.device))
+
+        # Start the scope triggering/acquiring
+        params['scope_runstop'].set('run')
+
+        log.info('[*] Starting ZI scope acquisition.')
+
         # Start something... hauling data from the scopeModule?
         scope.execute()
 
