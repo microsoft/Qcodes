@@ -388,7 +388,11 @@ class Scope(MultiParameter):
         self._instrument.daq.sync()
         # Create a new scopeModule instance (TODO: Why a new instance?)
         scope = self._instrument.daq.scopeModule()
-
+        # TODO We are hard coding scope mode and avg weight here because the setting
+        # in the main driver references a different scope which will fail and give garbage data
+        # YOU cannot set other scope modes or weights at the moment
+        scope.set('scopeModule/mode', 1)
+        scope.set('scopeModule/averager/weight', 1)
         # Subscribe to the relevant... publisher?
         scope.subscribe('/{}/scopes/0/wave'.format(self._instrument.device))
 
