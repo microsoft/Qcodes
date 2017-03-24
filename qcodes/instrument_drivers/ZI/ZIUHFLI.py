@@ -379,7 +379,13 @@ class Scope(MultiParameter):
         # We add one second to account for latencies and random delays
         meas_time = segs*(params['scope_duration'].get()+deadtime)+1
         npts = params['scope_length'].get()
-
+        # one shot per trigger. This needs to be set every time
+        # a the scope is enabled as below using scope_runstop
+        # We should also test if scopeModule/mode and scopeModule/averager/weight
+        # needs to be set every time since we are creating a new scopemodule
+        # here
+        self._instrument.daq.setInt('/{}/scopes/0/single'.format(self._instrument.device), 1)
+        self._instrument.daq.sync()
         # Create a new scopeModule instance (TODO: Why a new instance?)
         scope = self._instrument.daq.scopeModule()
 
@@ -390,13 +396,7 @@ class Scope(MultiParameter):
         params['scope_runstop'].set('run')
 
         log.info('[*] Starting ZI scope acquisition.')
-        # one shot per trigger. This needs to be set every time
-        # a the scope is enabled as below using scope_runstop
-        # We should also test if scopeModule/mode and scopeModule/averager/weight
-        # needs to be set every time since we are creating a new scopemodule
-        # here
-        self._instrument.daq.setInt('/{}/scopes/0/single'.format(self._instrument.device), 1)
-        self._instrument.daq.sync()
+
         # Start something... hauling data from the scopeModule?
         scope.execute()
 
