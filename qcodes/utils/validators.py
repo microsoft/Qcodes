@@ -391,3 +391,27 @@ class Arrays(Validator):
         maxv = self._max_value if math.isfinite(self._max_value) else None
         return '<Arrays{}, shape: {}>'.format(range_str(minv, maxv, 'v'),
                                               self._shape)
+
+class Lists(Validator):
+    """
+    Validator for lists
+    Args:
+        elt_validator: used to validate the individual elements of the list
+
+
+    """
+    def __init__(self, elt_validator=Anything()):
+        self._elt_validator = elt_validator
+
+    def __repr__(self):
+        msg = '<Lists : '
+        msg += self._elt_validator.__repr__() +'>'
+        return msg
+
+    def validate(self, value, context=''):
+        if not isinstance(value, list):
+            raise TypeError(
+                '{} is not a list; {}'.format(repr(value), context))
+        for elt in value:
+            self._elt_validator.validate(elt)
+
