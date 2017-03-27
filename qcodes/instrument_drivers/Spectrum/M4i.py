@@ -587,11 +587,11 @@ class M4i(Instrument):
                        termination = termination, coupling = coupling, compensation = compensation)
             self.enable_channels(getattr(pyspcm, 'CHANNEL%d' % ch))
 
-    def _read_channel(self, channel):  
+    def _read_channel(self, channel, memsize=2**11):  
         """ Helper function to read out a channel """
-        memsize = 2**9
         posttrigger_size = int(memsize/2)
         mV_range = getattr(self, 'range_channel_%d'  % channel).get()
+        self.enable_channels(pyspcm.getattr('CHANNEL{}'.format(channel) ) )
         value=np.mean(self.single_software_trigger_acquisition(mV_range,memsize,posttrigger_size))
         return value
 
