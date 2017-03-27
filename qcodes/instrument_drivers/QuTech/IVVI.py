@@ -290,7 +290,7 @@ class IVVI(VisaInstrument):
                 except Exception as ex:
                     logging.warning('IVVI communication error trying again')
             if i + 1 == max_tries:  # +1 because range goes stops before end
-                raise('IVVI Communication error')
+                raise ex
         return self._mvoltages
 
     def write(self, message, raw=False):
