@@ -343,6 +343,12 @@ class M4i(Instrument):
                                vals=Enum(0, 1),
                                docstring='if 1 selects bandwidth limit, if 0 sets to full bandwidth for channel {}'.format(i))
 
+
+            self.add_parameter('channel_{}'.format(i),
+                               label='channel {}'.format(i),
+                               unit='a.u.',
+                               get_cmd=partial(self._read_channel, i) )
+
         # acquisition modes
         # TODO: If required, the other acquisition modes can be added to the
         # validator
@@ -568,7 +574,28 @@ class M4i(Instrument):
         resolution = self.ADC_to_voltage()
         return data * input_range / resolution
 
-    def set_channel_settings(self, i, mV_range, input_path, termination, coupling, compensation):
+    def initialize_channels(self, channels=None, mV_range = 1000, input_path = 0, termination = 0, coupling = 0, compensation = None):
+        """ Setup channels of the digitizer for simple readout using Parameters
+        
+        Args:
+            channels (list): list of channels to setu
+        """
+        if channels is None:
+            channels = range(4)
+        for ch in channels:        
+            self.set_channel_settings(ch,mV_range, input_path = input_path,
+                       termination = termination, coupling = coupling, compensation = compensation)
+            self.enable_channels(getattr(pyspcm, 'CHANNEL%d' % ch))
+
+    def _read_channel(self, channel):  
+        """ Helper function to read out a channel """
+        memsize = 2**9
+        posttrigger_size = int(memsize/2)
+        mV_range = getattr(self, 'range_channel_%d'  % channel).get()
+        value=np.mean(self.single_software_trigger_acquisition(mV_range,memsize,posttrigger_size))
+        return value
+
+    def set_channel_settings(self, i, mV_range, input_path, termination, coupling, compensation = None):
         # initialize
         getattr(self, 'input_path_{}'.format(i))(input_path)  # 0: 1 MOhm
         getattr(self, 'termination_{}'.format(i))(termination)  # 0: DC
@@ -576,7 +603,8 @@ class M4i(Instrument):
         getattr(self, 'range_channel_{}'.format(i))(
             mV_range)  # note: set after voltage range
         # can only be used with DC coupling and 50 Ohm path (hf)
-        getattr(self, 'ACDC_offs_compensation_{}'.format(i))(compensation)
+        if compensation is not None:
+            getattr(self, 'ACDC_offs_compensation_{}'.format(i))(compensation)
 
     def set_ext0_OR_trigger_settings(self, trig_mode, termination, coupling, level0, level1=None):
 
