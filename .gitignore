@@ -53,6 +53,9 @@ coverage.xml
 *.mo
 *.pot
 
+# MAC OSX junk files
+.DS_Store
+
 # Django stuff:
 *.log
 
