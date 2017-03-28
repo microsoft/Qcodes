@@ -8,8 +8,9 @@ from qcodes.plots.pyqtgraph import QtPlot
 from qcodes.plots.qcmatplotlib import MatPlot
 from IPython import get_ipython
 
-CURRENT_EXPERIMENT  = {}
+CURRENT_EXPERIMENT = {}
 CURRENT_EXPERIMENT["logging_enabled"] = False
+
 
 def init(mainfolder:str, sample_name: str, plot_x_position=0.66):
     """
@@ -23,14 +24,14 @@ def init(mainfolder:str, sample_name: str, plot_x_position=0.66):
 
     """
     if sep in sample_name:
-        raise  TypeError("Use Relative names. That is wihtout {}".format(sep))
+        raise TypeError("Use Relative names. That is wihtout {}".format(sep))
     # always remove trailing sep in the main folder
-    if mainfolder[-1] ==  sep:
+    if mainfolder[-1] == sep:
         mainfolder = mainfolder[:-1]
 
     mainfolder = abspath(mainfolder)
 
-    CURRENT_EXPERIMENT["mainfolder"]  =  mainfolder
+    CURRENT_EXPERIMENT["mainfolder"] = mainfolder
     CURRENT_EXPERIMENT["sample_name"] = sample_name
     CURRENT_EXPERIMENT['init']  = True
 
@@ -66,8 +67,25 @@ def init(mainfolder:str, sample_name: str, plot_x_position=0.66):
             logging.debug("Logging already started at {}".format(logfile))
 
 
+def _select_plottables(tasks):
+    """
+    Helper function to select plottable tasks. Used inside the doNd functions.
+
+    A task is here understood to be anything that the qc.Loop 'each' can eat.
+    """
+    # allow passing a single task
+    if not isinstance(tasks, tuple):
+        tasks = (tasks,)
+
+    # is the following check necessary AND sufficient?
+    plottables = [task for task in tasks if hasattr(task, '_instrument')]
+
+    return tuple(plottables)
+
+
 def _plot_setup(data, inst_meas, useQT=True):
-    title = "{} #{:03d}".format(CURRENT_EXPERIMENT["sample_name"], data.location_provider.counter)
+    title = "{} #{:03d}".format(CURRENT_EXPERIMENT["sample_name"],
+                                data.location_provider.counter)
     if useQT:
         plot = QtPlot(fig_x_position=CURRENT_EXPERIMENT['plot_x_position'])
     else:
@@ -134,7 +152,6 @@ def _save_individual_plots(data, inst_meas):
             plot.save("{}_{:03d}.pdf".format(plot.get_default_title(), counter_two))
 
 
-
 def do1d(inst_set, start, stop, division, delay, *inst_meas):
     """
 
@@ -144,20 +161,23 @@ def do1d(inst_set, start, stop, division, delay, *inst_meas):
         stop:  End of sweep
         division:  Spacing between values
         delay:  Delay at every step
-        *inst_meas:  any number of instrument to measure
+        *inst_meas:  any number of instrument to measure and/or tasks to
+            perform at each step of the sweep
 
     Returns:
         plot, data : returns the plot and the dataset
 
     """
-    loop = qc.Loop(inst_set.sweep(start, stop, division), delay).each(*inst_meas)
+    loop = qc.Loop(inst_set.sweep(start,
+                                  stop, division), delay).each(*inst_meas)
     data = loop.get_data_set()
-    plot = _plot_setup(data, inst_meas)
+    plottables = _select_plottables(inst_meas)
+    plot = _plot_setup(data, plottables)
     try:
         _ = loop.with_bg_task(plot.update, plot.save).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
-    _save_individual_plots(data, inst_meas)
+    _save_individual_plots(data, plottables)
     return plot, data
 
 
@@ -183,12 +203,13 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, division, delay, start2, slop
     loop = qc.Loop(inst_set.sweep(start, stop, division), delay).each(
         qc.Task(inst2_set, (inst_set) * slope + (slope * start - start2)), *inst_meas, inst2_set)
     data = loop.get_data_set()
-    plot = _plot_setup(data, inst_meas)
+    plottables = _select_plottables(inst_meas)
+    plot = _plot_setup(data, plottables)
     try:
         _ = loop.with_bg_task(plot.update, plot.save).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
-    _save_individual_plots(data, inst_meas)
+    _save_individual_plots(data, plottables)
     return plot, data
 
 
@@ -219,12 +240,13 @@ def do2d(inst_set, start, stop, division, delay, inst_set2, start2, stop2, divis
     loop = qc.Loop(inst_set.sweep(start, stop, division), delay).loop(inst_set2.sweep(start2,stop2,division2), delay2).each(
         *inst_meas)
     data = loop.get_data_set()
-    plot = _plot_setup(data, inst_meas)
+    plottables = _select_plottables(inst_meas)
+    plot = _plot_setup(data, plottables)
     try:
         _ = loop.with_bg_task(plot.update, plot.save).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
-    _save_individual_plots(data, inst_meas)
+    _save_individual_plots(data, plottables)
     return plot, data
 
 
@@ -239,7 +261,8 @@ def show_num(id, useQT=False):
 
     """
     if not getattr(CURRENT_EXPERIMENT, "init", True):
-        raise RuntimeError("Experiment not initalized. use qc.Init(mainfolder, samplename)")
+        raise RuntimeError("Experiment not initalized. "
+                           "use qc.Init(mainfolder, samplename)")
 
     str_id = '{0:03d}'.format(id)
 
@@ -250,13 +273,16 @@ def show_num(id, useQT=False):
     for value in data.arrays.keys():
         if "set" not in value:
             if useQT:
-                plot = QtPlot(getattr(data, value), fig_x_position=CURRENT_EXPERIMENT['plot_x_position'])
-                title = "{} #{}".format(CURRENT_EXPERIMENT["sample_name"], str_id)
+                plot = QtPlot(getattr(data, value),
+                              fig_x_position=CURRENT_EXPERIMENT['plot_x_position'])
+                title = "{} #{}".format(CURRENT_EXPERIMENT["sample_name"],
+                                        str_id)
                 plot.subplots[0].setTitle(title)
                 plot.subplots[0].showGrid(True, True)
             else:
                 plot = MatPlot(getattr(data, value))
-                title = "{} #{}".format(CURRENT_EXPERIMENT["sample_name"], str_id)
+                title = "{} #{}".format(CURRENT_EXPERIMENT["sample_name"],
+                                        str_id)
                 plot.subplots[0].set_title(title)
                 plot.subplots[0].grid()
             plots.append(plot)
