@@ -301,6 +301,14 @@ class DataSet(DelegateAttributes):
         else:
             raise ValueError('unrecognized DataSet mode', mode)
 
+    def __getstate__(self):
+        """ Called when an object is pickled """
+        self.sync()
+        self.data_manager = None
+        self.background_functions = {}
+        self.formatter.close_file(self)
+        return self.__dict__
+
     def _init_local(self):
         self.mode = DataMode.LOCAL
 
