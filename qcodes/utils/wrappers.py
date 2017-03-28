@@ -6,6 +6,8 @@ import logging
 
 from qcodes.plots.pyqtgraph import QtPlot
 from qcodes.plots.qcmatplotlib import MatPlot
+from qcodes.utils.qcodes_device_annotator import DeviceImage
+
 from IPython import get_ipython
 
 CURRENT_EXPERIMENT = {}
@@ -66,6 +68,15 @@ def init(mainfolder:str, sample_name: str, plot_x_position=0.66):
         else:
             logging.debug("Logging already started at {}".format(logfile))
 
+def init_device_image(station):
+    # TODO handle default station
+    di = DeviceImage(CURRENT_EXPERIMENT["exp_folder"], station)
+    try:
+        di.loadAnnotations()
+    except:
+        di.annotateImage()
+    CURRENT_EXPERIMENT['device_image'] = di
+    CURRENT_EXPERIMENT['station'] = station
 
 def _select_plottables(tasks):
     """
@@ -151,6 +162,10 @@ def _save_individual_plots(data, inst_meas):
             plot.subplots[0].grid()
             plot.save("{}_{:03d}.pdf".format(plot.get_default_title(), counter_two))
 
+def save_device_image():
+    CURRENT_EXPERIMENT['device_image'].updateValues(CURRENT_EXPERIMENT['station'])
+    CURRENT_EXPERIMENT['device_image'].makePNG(CURRENT_EXPERIMENT["provider"].counter,
+                                               CURRENT_EXPERIMENT["exp_folder"])
 
 def do1d(inst_set, start, stop, division, delay, *inst_meas):
     """
@@ -177,7 +192,9 @@ def do1d(inst_set, start, stop, division, delay, *inst_meas):
         _ = loop.with_bg_task(plot.update, plot.save).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
-    _save_individual_plots(data, plottables)
+    _save_individual_plots(data, inst_meas)
+    if CURRENT_EXPERIMENT.get('device_image'):
+        save_device_image()
     return plot, data
 
 
@@ -209,7 +226,9 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, division, delay, start2, slop
         _ = loop.with_bg_task(plot.update, plot.save).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
-    _save_individual_plots(data, plottables)
+    _save_individual_plots(data, inst_meas)
+    if CURRENT_EXPERIMENT.get('device_image'):
+        save_device_image()
     return plot, data
 
 
@@ -246,7 +265,9 @@ def do2d(inst_set, start, stop, division, delay, inst_set2, start2, stop2, divis
         _ = loop.with_bg_task(plot.update, plot.save).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
-    _save_individual_plots(data, plottables)
+    _save_individual_plots(data, inst_meas)
+    if CURRENT_EXPERIMENT.get('device_image'):
+        save_device_image()
     return plot, data
 
 
