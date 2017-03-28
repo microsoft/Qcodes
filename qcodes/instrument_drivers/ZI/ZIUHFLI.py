@@ -1,4 +1,4 @@
-import time
+port time
 import logging
 import numpy as np
 from functools import partial
@@ -379,53 +379,61 @@ class Scope(MultiParameter):
         # We add one second to account for latencies and random delays
         meas_time = segs*(params['scope_duration'].get()+deadtime)+1
         npts = params['scope_length'].get()
-        # one shot per trigger. This needs to be set every time
-        # a the scope is enabled as below using scope_runstop
-        # We should also test if scopeModule/mode and scopeModule/averager/weight
-        # needs to be set every time since we are creating a new scopemodule
-        # here
-        self._instrument.daq.setInt('/{}/scopes/0/single'.format(self._instrument.device), 1)
-        self._instrument.daq.sync()
-        # Create a new scopeModule instance (TODO: Why a new instance?)
-        scope = self._instrument.daq.scopeModule()
 
-        # Subscribe to the relevant... publisher?
-        scope.subscribe('/{}/scopes/0/wave'.format(self._instrument.device))
-
-        # Start the scope triggering/acquiring
-        params['scope_runstop'].set('run')
-
-        log.info('[*] Starting ZI scope acquisition.')
-
-        # Start something... hauling data from the scopeModule?
-        scope.execute()
-
-        starttime = time.time()
+        zi_error = True
+        error_counter = 0
+        num_retries = 10
         timedout = False
+        while (zi_error or timedout) and error_counter < num_retries:
+            # one shot per trigger. This needs to be set every time
+            # a the scope is enabled as below using scope_runstop
+            self._instrument.daq.setInt('/{}/scopes/0/single'.format(self._instrument.device), 1)
+            self._instrument.daq.sync()
 
-        while scope.progress() < 1:
-            time.sleep(0.1)  # This while+sleep is how ZI engineers do it
-            if (time.time()-starttime) > meas_time:
-                scope.finish()  # Force break the acquisition
-                timedout = True
-                log.warning('[-] ZI Scope acquisition did not finish correctly')
-                break
+            scope = self._instrument.scope # There are issues reusing the scope.
 
-        # Stop the scope from running
-        params['scope_runstop'].set('stop')
+            # Subscribe to the relevant... publisher?
+            scope.subscribe('/{}/scopes/0/wave'.format(self._instrument.device))
 
-        if not timedout:
-            log.info('[+] ZI scope acquisition completed OK')
-            rawdata = scope.read()
-            data = self._scopedataparser(rawdata, self._instrument.device,
-                                         npts, segs, channels)
-        else:
-            rawdata = None
-            data = (None, None)
+            # Start the scope triggering/acquiring
+            params['scope_runstop'].set('run') # set /dev/scopes/0/enable to 1
 
-        # kill the scope instance
-        scope.clear()
+            log.info('[*] Starting ZI scope acquisition.')
+            # Start something... hauling data from the scopeModule?
+            scope.execute()
+            starttime = time.time()
+            timedout = False
 
+            while scope.progress() < 1:
+                time.sleep(0.1)  # This while+sleep is how ZI engineers do it
+                if (time.time()-starttime) > 2 * meas_time:
+                    timedout = True
+                    break
+            metadata = scope.get("scopeModule/*")
+            zi_error = bool(metadata['error'][0])
+
+            # Stop the scope from running
+            params['scope_runstop'].set('stop')
+
+            if not (timedout or zi_error):
+                log.info('[+] ZI scope acquisition completed OK')
+                rawdata = scope.read()
+                data = self._scopedataparser(rawdata, self._instrument.device,
+                                             npts, segs, channels)
+            else:
+                log.warning('[-] ZI scope acquisition attempt {} '
+                            'failed, Timeout: {}, Error: {}, '
+                            'retrying'.format(error_counter, timedout, zi_error))
+                rawdata = None
+                data = (None, None)
+                error_counter += 1
+
+            # cleanup and make ready for next scope acquisition
+            scope.finish()
+            scope.unsubscribe('/{}/scopes/0/wave'.format(self._instrument.device))
+            if error_counter >= num_retries:
+                log.warning('[+] ZI scope acquisition failed, maximum number'
+                            'of retries performed. No data returned')
         return data
 
     @staticmethod
@@ -1078,7 +1086,7 @@ class ZIUHFLI(Instrument):
                            vals=vals.Enum(1, 2, 3)
                            )
 
-        self._samplingrate_codes = {'1.80 Ghz': 0,
+        self._samplingrate_codes = {'1.80 GHz': 0,
                                    '900 MHz': 1,
                                    '450 MHz': 2,
                                    '225 MHz': 3,
@@ -1933,5 +1941,7 @@ class ZIUHFLI(Instrument):
         """
         Override of the base class' close function
         """
+        self.scope.clear()
+        self.sweeper.clear()
         self.daq.disconnect()
         super().close()
