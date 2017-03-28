@@ -576,11 +576,11 @@ class M4i(Instrument):
     def initialize_channels(self, channels=None, mV_range=1000, input_path=0, termination=0, coupling=0, compensation=None):
         """ Setup channels of the digitizer for simple readout using Parameters
 
-	The channels can be read out using the Parmeters `channel_0`, `channel_1`, ...
+        The channels can be read out using the Parmeters `channel_0`, `channel_1`, ...
 
         Args:
             channels (list): list of channels to setup
-	    mV_range, input_path, termination, coupling, compensation: passed to the 					set_channel_settings function
+            mV_range, input_path, termination, coupling, compensation: passed to the 					set_channel_settings function
         """
         if channels is None:
             channels = range(4)
@@ -592,8 +592,8 @@ class M4i(Instrument):
     def _read_channel(self, channel, memsize=2**11):
         """ Helper function to read out a channel 
 
-	Before a channel is measured it is explicitly enabled. 
-	"""
+        Before a channel is measured it is explicitly enabled. 
+        """
         posttrigger_size = int(memsize / 2)
         mV_range = getattr(self, 'range_channel_%d' % channel).get()
         self.enable_channels(getattr(pyspcm, 'CHANNEL{}'.format(channel)))
