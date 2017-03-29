@@ -106,6 +106,13 @@ class SD_DIG(SD_Module):
             docstring='The frequency of internal CLKsync in Hz'
         )
 
+        self.add_parameter('trigger_io',
+                           label='trigger io',
+                           get_cmd=self.get_trigger_io,
+                           set_cmd=self.set_trigger_io,
+                           docstring='The trigger input value, 0 (OFF) or 1 (ON)',
+                           vals=Enum(0, 1))
+
         for n in range(self.n_channels):
             # For channelInputConfig
             self.add_parameter(
