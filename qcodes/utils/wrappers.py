@@ -2,6 +2,7 @@ import qcodes as qc
 from os.path import abspath
 from os.path import sep
 from os import makedirs
+import os
 import logging
 
 from qcodes.plots.pyqtgraph import QtPlot
@@ -14,7 +15,8 @@ CURRENT_EXPERIMENT = {}
 CURRENT_EXPERIMENT["logging_enabled"] = False
 
 
-def init(mainfolder:str, sample_name: str, plot_x_position=0.66):
+def init(mainfolder:str, sample_name: str, station, plot_x_position=0.66,
+         annotate_image=True):
     """
 
     Args:
@@ -54,6 +56,8 @@ def init(mainfolder:str, sample_name: str, plot_x_position=0.66):
     qc.data.data_set.DataSet.location_provider = loc_provider
     CURRENT_EXPERIMENT["provider"] = loc_provider
 
+    CURRENT_EXPERIMENT['station'] = station
+
     ipython = get_ipython()
     # turn on logging only if in ipython
     # else crash and burn
@@ -68,15 +72,20 @@ def init(mainfolder:str, sample_name: str, plot_x_position=0.66):
         else:
             logging.debug("Logging already started at {}".format(logfile))
 
-def init_device_image(station):
-    # TODO handle default station
+    # Annotate image if wanted and necessary
+    if annotate_image:
+        _init_device_image(station)
+
+
+def _init_device_image(station):
+
     di = DeviceImage(CURRENT_EXPERIMENT["exp_folder"], station)
     try:
         di.loadAnnotations()
     except:
         di.annotateImage()
     CURRENT_EXPERIMENT['device_image'] = di
-    CURRENT_EXPERIMENT['station'] = station
+
 
 def _select_plottables(tasks):
     """
@@ -162,10 +171,19 @@ def _save_individual_plots(data, inst_meas):
             plot.subplots[0].grid()
             plot.save("{}_{:03d}.pdf".format(plot.get_default_title(), counter_two))
 
+
 def save_device_image():
-    CURRENT_EXPERIMENT['device_image'].updateValues(CURRENT_EXPERIMENT['station'])
-    CURRENT_EXPERIMENT['device_image'].makePNG(CURRENT_EXPERIMENT["provider"].counter,
-                                               CURRENT_EXPERIMENT["exp_folder"])
+    counter = CURRENT_EXPERIMENT['provider'].counter
+    di = CURRENT_EXPERIMENT['device_image']
+    di.updateValues(CURRENT_EXPERIMENT['station'])
+
+    print(os.path.join(CURRENT_EXPERIMENT["exp_folder"],
+                       '{:03d}'.format(counter)))
+
+    di.makePNG(CURRENT_EXPERIMENT["provider"].counter,
+               os.path.join(CURRENT_EXPERIMENT["exp_folder"],
+                            '{:03d}'.format(counter)))
+
 
 def do1d(inst_set, start, stop, division, delay, *inst_meas):
     """
@@ -192,8 +210,9 @@ def do1d(inst_set, start, stop, division, delay, *inst_meas):
         _ = loop.with_bg_task(plot.update, plot.save).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
-    _save_individual_plots(data, inst_meas)
+    _save_individual_plots(data, plottables)
     if CURRENT_EXPERIMENT.get('device_image'):
+        print('Saving an image')
         save_device_image()
     return plot, data
 
