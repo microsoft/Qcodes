@@ -246,7 +246,7 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, division, delay, start2, slop
         _ = loop.with_bg_task(plot.update, plot.save).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
-    _save_individual_plots(data, inst_meas)
+    _save_individual_plots(data, plottables)
     if CURRENT_EXPERIMENT.get('device_image'):
         save_device_image()
     return plot, data
@@ -285,7 +285,7 @@ def do2d(inst_set, start, stop, division, delay, inst_set2, start2, stop2, divis
         _ = loop.with_bg_task(plot.update, plot.save).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
-    _save_individual_plots(data, inst_meas)
+    _save_individual_plots(data, plottables)
     if CURRENT_EXPERIMENT.get('device_image'):
         save_device_image()
     return plot, data
