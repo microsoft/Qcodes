@@ -56,7 +56,7 @@ class SD_DIG(SD_Module):
         # For channelPrescalerConfig         
         self.__prescaler = [0] * self.n_channels  # By default, no prescaling
         # For channelTriggerConfig           
-        self.__trigger_mode = [SD_AIN_TriggerMode.RISING_EDGE] * self.n_channels
+        self.__trigger_mode = [keysightSD1.SD_AIN_TriggerMode.RISING_EDGE] * self.n_channels
         self.__trigger_threshold = [0] * self.n_channels  # By default, threshold at 0V
         # For DAQ config
         self.__points_per_cycle = [0] * self.n_channels
