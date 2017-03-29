@@ -1,4 +1,4 @@
-port time
+import time
 import logging
 import numpy as np
 from functools import partial
