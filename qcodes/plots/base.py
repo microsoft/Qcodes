@@ -80,7 +80,13 @@ class BasePlot:
 
             kwargs: after inserting info found in args and possibly in set_arrays
                 into `x`, `y`, and optionally `z`, these are passed along to
-                self.add_to_plot
+                self.add_to_plot.
+                To use custom labels and units pass for example:
+                    plot.add(x=set, y=amplitude,
+                             xlabel="set"
+                             xunit="V",
+                             ylabel= "Amplitude",
+                             yunit ="V")
 
         Array shapes for 2D plots:
             x:(1D-length m), y:(1D-length n), z: (2D- n*m array)
@@ -172,8 +178,10 @@ class BasePlot:
 
         """
         # TODO this should really be a static method
-        return (getattr(data_array, 'label', '') or
+        name = (getattr(data_array, 'label', '') or
                 getattr(data_array, 'name', ''))
+        unit = getattr(data_array, 'unit', '')
+        return  name, unit
 
     def expand_trace(self, args, kwargs):
         """
