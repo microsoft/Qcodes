@@ -11,6 +11,7 @@ from qcodes.utils.qcodes_device_annotator import DeviceImage
 
 from IPython import get_ipython
 
+log = logging.getLogger(__name__)
 CURRENT_EXPERIMENT = {}
 CURRENT_EXPERIMENT["logging_enabled"] = False
 
@@ -49,7 +50,7 @@ def init(mainfolder:str, sample_name: str, station, plot_x_position=0.66,
     except FileExistsError:
         pass
 
-    logging.info("experiment started at {}".format(path_to_experiment_folder))
+    log.info("experiment started at {}".format(path_to_experiment_folder))
 
     loc_provider = qc.FormatLocation(
         fmt= path_to_experiment_folder + '{counter}')
@@ -66,11 +67,11 @@ def init(mainfolder:str, sample_name: str, station, plot_x_position=0.66,
     else:
         logfile = "{}{}".format(path_to_experiment_folder, "commands.log")
         if not CURRENT_EXPERIMENT["logging_enabled"]:
-            logging.debug("Logging commands to: t{}".format(logfile))
+            log.debug("Logging commands to: t{}".format(logfile))
             ipython.magic("%logstart -t {} {}".format(logfile, "append"))
             CURRENT_EXPERIMENT["logging_enabled"] = True
         else:
-            logging.debug("Logging already started at {}".format(logfile))
+            log.debug("Logging already started at {}".format(logfile))
 
     # Annotate image if wanted and necessary
     if annotate_image:
@@ -177,7 +178,7 @@ def save_device_image():
     di = CURRENT_EXPERIMENT['device_image']
     di.updateValues(CURRENT_EXPERIMENT['station'])
 
-    print(os.path.join(CURRENT_EXPERIMENT["exp_folder"],
+    log.debug(os.path.join(CURRENT_EXPERIMENT["exp_folder"],
                        '{:03d}'.format(counter)))
 
     di.makePNG(CURRENT_EXPERIMENT["provider"].counter,
@@ -212,7 +213,7 @@ def do1d(inst_set, start, stop, division, delay, *inst_meas):
         print("Measurement Interrupted")
     _save_individual_plots(data, plottables)
     if CURRENT_EXPERIMENT.get('device_image'):
-        print('Saving an image')
+        log.debug('Saving device image')
         save_device_image()
     return plot, data
 
