@@ -1,3 +1,4 @@
+import collections
 import copy
 import json
 import logging
@@ -368,6 +369,7 @@ class DotDict(dict):
                 self.__setitem__(key, value[key])
 
     def __setitem__(self, key, value):
+        # string type must be checked, as key could be other datatype
         if type(key)==str and '.' in key:
             myKey, restOfKey = key.split('.', 1)
             target = self.setdefault(myKey, DotDict())
