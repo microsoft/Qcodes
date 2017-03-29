@@ -563,6 +563,16 @@ class SD_AWG(SD_Module):
         """
         self.awg.AWGqueueWaveform(awg_number, waveform_number, trigger_mode, start_delay, cycles, prescaler)
 
+    def awg_queue_config(self, awg_number, mode):
+        """
+        Configures the cyclic mode of the queue. All waveforms must be already queued in one of the AWGs
+
+        Args:
+            awg_number (int): awg number where the waveform is queued
+            mode (int): operation mode of the queue: One Shot (0), Cyclic (1)
+        """
+        self.awg.AWGqueueConfig(awg_number, mode)
+
     def awg_flush(self, awg_number):
         """
         Empties the queue of the selected AWG.
