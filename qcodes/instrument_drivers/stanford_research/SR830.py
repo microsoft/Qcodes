@@ -50,7 +50,7 @@ class SR830(VisaInstrument):
                            get_cmd='PHAS?',
                            get_parser=float,
                            set_cmd='PHAS {:.2f}',
-                           unit='deg',
+                           units='deg',
                            vals=Numbers(min_value=-360, max_value=729.99))
 
         self.add_parameter('reference_source',
@@ -67,7 +67,7 @@ class SR830(VisaInstrument):
                            get_cmd='FREQ?',
                            get_parser=float,
                            set_cmd='FREQ {:.4f}',
-                           unit='Hz',
+                           units='Hz',
                            vals=Numbers(min_value=1e-3, max_value=102e3))
 
         self.add_parameter('ext_trigger',
@@ -92,7 +92,7 @@ class SR830(VisaInstrument):
                            get_cmd='SLVL?',
                            get_parser=float,
                            set_cmd='SLVL {:.3f}',
-                           unit='V',
+                           units='V',
                            vals=Numbers(min_value=0.004, max_value=5.000))
 
         # Input and filter
@@ -156,7 +156,7 @@ class SR830(VisaInstrument):
                            label='Time constant',
                            get_cmd='OFLT?',
                            set_cmd='OFLT {}',
-                           unit='s',
+                           units='s',
                            val_mapping={
                                10e-6:  0, 30e-6:  1,
                                100e-6: 2, 300e-6: 3,
@@ -174,7 +174,7 @@ class SR830(VisaInstrument):
                            label='Filter slope',
                            get_cmd='OFSL?',
                            set_cmd='OFSL {}',
-                           unit='dB/oct',
+                           units='dB/oct',
                            val_mapping={
                                6: 0,
                                12: 1,
@@ -216,14 +216,14 @@ class SR830(VisaInstrument):
                                label='Aux input {}'.format(i),
                                get_cmd='OAUX? {}'.format(i),
                                get_parser=float,
-                               unit='V')
+                               units='V')
 
             self.add_parameter('aux_out{}'.format(i),
                                label='Aux output {}'.format(i),
                                get_cmd='AUXV? {}'.format(i),
                                get_parser=float,
                                set_cmd='AUXV {0}, {{}}'.format(i),
-                               unit='V')
+                               units='V')
 
         # Setup
         self.add_parameter('output_interface',
@@ -245,22 +245,22 @@ class SR830(VisaInstrument):
         self.add_parameter('X',
                            get_cmd='OUTP? 1',
                            get_parser=float,
-                           unit='V')
+                           units='V')
 
         self.add_parameter('Y',
                            get_cmd='OUTP? 2',
                            get_parser=float,
-                           unit='V')
+                           units='V')
 
         self.add_parameter('R',
                            get_cmd='OUTP? 3',
                            get_parser=float,
-                           unit='V')
+                           units='V')
 
         self.add_parameter('P',
                            get_cmd='OUTP? 4',
                            get_parser=float,
-                           unit='deg')
+                           units='deg')
 
         # Interface
         self.add_function('reset', call_cmd='*RST')
@@ -273,11 +273,11 @@ class SR830(VisaInstrument):
 
         self.connect_message()
 
-    def _set_units(self, unit):
+    def _set_units(self, units):
         # TODO:
         # make a public parameter function that allows to change the units
         for param in [self.X, self.Y, self.R, self.sensitivity]:
-            param.unit = unit
+            param.units = units
 
     def _get_input_config(self, s):
         mode = self._N_TO_INPUT_CONFIG[int(s)]

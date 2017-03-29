@@ -21,7 +21,7 @@ class Agilent_E8527D(VisaInstrument):
 
         self.add_parameter(name='frequency',
                            label='Frequency',
-                           unit='Hz',
+                           units='Hz',
                            get_cmd='FREQ:CW?',
                            set_cmd='FREQ:CW' + ' {:.4f}',
                            get_parser=float,
@@ -29,7 +29,7 @@ class Agilent_E8527D(VisaInstrument):
                            vals=vals.Numbers(1e5, 20e9))
         self.add_parameter(name='phase',
                            label='Phase',
-                           unit='deg',
+                           units='deg',
                            get_cmd='PHASE?',
                            set_cmd='PHASE' + ' {:.8f}',
                            get_parser=self.rad_to_deg,
@@ -38,7 +38,7 @@ class Agilent_E8527D(VisaInstrument):
         min_power = -135 if step_attenuator else -20
         self.add_parameter(name='power',
                            label='Power',
-                           unit='dBm',
+                           units='dBm',
                            get_cmd='POW:AMPL?',
                            set_cmd='POW:AMPL' + ' {:.4f}',
                            get_parser=float,

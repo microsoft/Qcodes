@@ -1,10 +1,10 @@
 from qcodes import Instrument
-from qcodes.instrument.parameter import MultiParameter
+from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils.validators import Enum, Bool
 
 
-class CurrentParameter(MultiParameter):
+class CurrentParameter(Parameter):
     """
     Current measurement via an Ithaco preamp and a measured voltage.
 
@@ -31,13 +31,13 @@ class CurrentParameter(MultiParameter):
     def __init__(self, measured_param, c_amp_ins, name='curr'):
         p_name = measured_param.name
 
-        super().__init__(name=name, names=(p_name+'_raw', name), shapes=((), ()))
+        super().__init__(name=name, names=(p_name+'_raw', name))
 
         self._measured_param = measured_param
         self._instrument = c_amp_ins
 
         p_label = getattr(measured_param, 'label', None)
-        p_unit = getattr(measured_param, 'unit', None)
+        p_unit = getattr(measured_param, 'units', None)
 
         self.labels = (p_label, 'Current')
         self.units = (p_unit, 'A')
@@ -68,7 +68,7 @@ class Ithaco_1211(Instrument):
                            parameter_class=ManualParameter,
                            initial_value=1e-8,
                            label='Sensitivity',
-                           unit='A/V',
+                           units='A/V',
                            vals=Enum(1e-11, 1e-10, 1e-09, 1e-08, 1e-07,
                                      1e-06, 1e-05, 1e-4, 1e-3))
 
@@ -82,14 +82,14 @@ class Ithaco_1211(Instrument):
                            parameter_class=ManualParameter,
                            initial_value=1,
                            label='Sensitivity factor',
-                           unit=None,
+                           units=None,
                            vals=Enum(0.1, 1, 10))
 
         self.add_parameter('suppression',
                            parameter_class=ManualParameter,
                            initial_value=1e-7,
                            label='Suppression',
-                           unit='A',
+                           units='A',
                            vals=Enum(1e-10, 1e-09, 1e-08, 1e-07, 1e-06,
                                      1e-05, 1e-4, 1e-3))
 
@@ -97,7 +97,7 @@ class Ithaco_1211(Instrument):
                            parameter_class=ManualParameter,
                            initial_value=0.3,
                            label='Rise Time',
-                           unit='msec',
+                           units='msec',
                            vals=Enum(0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30,
                                      100, 300, 1000))
 

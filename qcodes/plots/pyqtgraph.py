@@ -151,8 +151,6 @@ class QtPlot(BasePlot):
         return [self._clean_array(arg) for arg in [x, y] if arg is not None]
 
     def _draw_image(self, subplot_object, z, x=None, y=None, cmap='hot',
-                    zlabel=None,
-                    zunit=None,
                     **kwargs):
         img = self.rpg.ImageItem()
         subplot_object.addItem(img)
@@ -160,14 +158,10 @@ class QtPlot(BasePlot):
         hist = self.rpg.HistogramLUTItem()
         hist.setImageItem(img)
         hist.axis.setPen(self.theme[0])
-
-        if zunit is None:
-            _, zunit = self.get_label(z)
-        if zlabel is None:
-            zlabel, _ = self.get_label(z)
-
-        hist.axis.setLabel(zlabel, zunit)
-
+        if 'zlabel' in kwargs:  # used to specify a custom zlabel
+            hist.axis.setLabel(kwargs['zlabel'])
+        else:  # otherwise extracts the label from the dataarray
+            hist.axis.setLabel(self.get_label(z))
         # TODO - ensure this goes next to the correct subplot?
         self.win.addItem(hist)
 
@@ -348,42 +342,22 @@ class QtPlot(BasePlot):
         """
         Updates x and y labels, by default tries to extract label from
         the DataArray objects located in the trace config. Custom labels
-        can be specified the **kwargs "xlabel" and "ylabel". Custom units
-        can be specified using the kwargs xunit, ylabel
+        can be specified the **kwargs "xlabel" and "ylabel"
         """
         for axletter, side in (('x', 'bottom'), ('y', 'left')):
             ax = subplot_object.getAxis(side)
-            # danger: 🍝
-            # find if any kwarg from plot.add in the base class
-            # matches xlabel or ylabel, signaling a custom label
-            if axletter+'label' in config and not ax._qcodes_label:
-                label = config[axletter+'label']
-            else:
-                label = None
-
-            # find if any kwarg from plot.add in the base class
-            # matches xunit or yunit, signaling a custom unit
-            if axletter+'unit' in config and not ax._qcodes_label:
-                unit = config[axletter+'unit']
-            else:
-                unit = None
-
-            #  find ( more hope to) unit and label from
-            # the data array inside the config
-            if axletter in config and not ax._qcodes_label:
-                # now if we did not have any kwark gor label or unit
-                # fallback to the data_array
-                if unit is  None:
-                    _, unit = self.get_label(config[axletter])
-                if label is None:
-                    label, _ = self.get_label(config[axletter])
-
             # pyqtgraph doesn't seem able to get labels, only set
             # so we'll store it in the axis object and hope the user
             # doesn't set it separately before adding all traces
-            ax._qcodes_label = label
-            ax._qcodes_unit = unit
-            ax.setLabel(label, unit)
+            if axletter+'label' in config and not ax._qcodes_label:
+                label = config[axletter+'label']
+                ax._qcodes_label = label
+                ax.setLabel(label)
+            if axletter in config and not ax._qcodes_label:
+                label = self.get_label(config[axletter])
+                if label:
+                    ax._qcodes_label = label
+                    ax.setLabel(label)
 
     def update_plot(self):
         for trace in self.traces:
