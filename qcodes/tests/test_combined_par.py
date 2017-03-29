@@ -89,18 +89,18 @@ class TestMultiPar(unittest.TestCase):
     def testMeta(self):
         name = "combined"
         label = "Linear Combination"
-        units = "a.u"
+        unit = "a.u"
         aggregator = linear
         sweep_values = combine(*self.parameters,
                                name=name,
                                label=label,
-                               units=units,
+                               unit=unit,
                                aggregator=aggregator
                                )
         snap = sweep_values.snapshot()
         out = OrderedDict()
         out['__class__'] = full_class(sweep_values)
-        out["units"] = units
+        out["unit"] = unit
         out["label"] = label
         out["full_name"] = name
         out["aggreagator"] = repr(linear)

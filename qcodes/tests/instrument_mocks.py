@@ -4,7 +4,7 @@ import numpy as np
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.mock import MockInstrument, MockModel
 from qcodes.utils.validators import Numbers
-from qcodes.instrument.parameter import Parameter, ManualParameter
+from qcodes.instrument.parameter import MultiParameter, ManualParameter
 
 
 class AMockModel(MockModel):
@@ -219,18 +219,18 @@ class MockParabola(Instrument):
 
         # Instrument parameters
         for parname in ['x', 'y', 'z']:
-            self.add_parameter(parname, units='a.u.',
+            self.add_parameter(parname, unit='a.u.',
                                parameter_class=ManualParameter,
                                vals=Numbers(), initial_value=0)
 
-        self.add_parameter('noise', units='a.u.',
+        self.add_parameter('noise', unit='a.u.',
                            label='white noise amplitude',
                            parameter_class=ManualParameter,
                            vals=Numbers(), initial_value=0)
 
-        self.add_parameter('parabola', units='a.u.',
+        self.add_parameter('parabola', unit='a.u.',
                            get_cmd=self._measure_parabola)
-        self.add_parameter('skewed_parabola', units='a.u.',
+        self.add_parameter('skewed_parabola', unit='a.u.',
                            get_cmd=self._measure_skewed_parabola)
 
     def _measure_parabola(self):
@@ -258,15 +258,15 @@ class MockMetaParabola(Instrument):
 
         # Instrument parameters
         for parname in ['x', 'y', 'z']:
-            self.add_parameter(parname, units='a.u.',
+            self.add_parameter(parname, unit='a.u.',
                                parameter_class=ManualParameter,
                                vals=Numbers(), initial_value=0)
         self.add_parameter('gain', parameter_class=ManualParameter,
                            initial_value=1)
 
-        self.add_parameter('parabola', units='a.u.',
+        self.add_parameter('parabola', unit='a.u.',
                            get_cmd=self._get_parabola)
-        self.add_parameter('skewed_parabola', units='a.u.',
+        self.add_parameter('skewed_parabola', unit='a.u.',
                            get_cmd=self._get_skew_parabola)
 
     def _get_parabola(self):
@@ -301,7 +301,7 @@ class DummyInstrument(Instrument):
                                vals=Numbers(-800, 400))
 
 
-class MultiGetter(Parameter):
+class MultiGetter(MultiParameter):
     """
     Test parameters with complicated return values
     instantiate with kwargs::
@@ -317,15 +317,38 @@ class MultiGetter(Parameter):
 
     """
     def __init__(self, **kwargs):
-        if len(kwargs) == 1:
-            name, self._return = list(kwargs.items())[0]
-            super().__init__(name=name)
-            self.shape = np.shape(self._return)
-        else:
-            names = tuple(sorted(kwargs.keys()))
-            super().__init__(names=names)
-            self._return = tuple(kwargs[k] for k in names)
-            self.shapes = tuple(np.shape(v) for v in self._return)
+        names = tuple(sorted(kwargs.keys()))
+        self._return = tuple(kwargs[k] for k in names)
+        shapes = tuple(np.shape(v) for v in self._return)
+        super().__init__(name='multigetter', names=names, shapes=shapes)
 
     def get(self):
         return self._return
+
+
+class MultiSetPointParam(MultiParameter):
+    """
+    Multiparameter which only purpose it to test that units, setpoints
+    and so on are copied correctly to the individual arrays in the datarray.
+    """
+    def __init__(self):
+        name = 'testparameter'
+        shapes = ((5,), (5,))
+        names = ('this', 'that')
+        labels = ('this label', 'that label')
+        units = ('this unit', 'that unit')
+        sp_base = tuple(np.linspace(5, 9, 5))
+        setpoints = ((sp_base,), (sp_base,))
+        setpoint_names = (('this_setpoint',), ('this_setpoint',))
+        setpoint_labels = (('this setpoint',), ('this setpoint',))
+        setpoint_units = (('this setpointunit',), ('this setpointunit',))
+        super().__init__(name, names, shapes,
+                         labels=labels,
+                         units=units,
+                         setpoints=setpoints,
+                         setpoint_labels=setpoint_labels,
+                         setpoint_names=setpoint_names,
+                         setpoint_units=setpoint_units)
+
+    def get(self):
+        return np.zeros(5), np.ones(5)
