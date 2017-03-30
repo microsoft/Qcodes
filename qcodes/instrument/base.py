@@ -3,6 +3,7 @@ import logging
 import time
 import warnings
 import weakref
+import numpy as np
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
@@ -126,8 +127,8 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
             if len(idparts) < 4:
                 idparts += [None] * (4 - len(idparts))
         except:
-            logging.warn('Error getting or interpreting *IDN?: ' + repr(idstr))
-            idparts = [None, None, None, None]
+            logging.debug('Error getting or interpreting *IDN?: ' + repr(idstr))
+            idparts = [None, self.name, None, None]
 
         # some strings include the word 'model' at the front of model
         if str(idparts[1]).lower().startswith('model'):
@@ -434,7 +435,48 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
                 snap[attr] = getattr(self, attr)
         return snap
 
-    #
+    def print_readable_snapshot(self, update=False, max_chars=80):
+        """
+        Prints a readable version of the snapshot.
+        The readable snapshot includes the name, value and unit of each
+        parameter.
+        A convenience function to quickly get an overview of the status of an instrument.
+
+        Args:
+            update (bool)  : If True, update the state by querying the
+                instrument. If False, just use the latest values in memory.
+                This argument gets passed to the snapshot function.
+            max_chars (int) : the maximum number of characters per line. The
+                readable snapshot will be cropped if this value is exceeded.
+                Defaults to 80 to be consistent with default terminal width.
+        """
+        floating_types = (float, np.integer, np.floating)
+        snapshot = self.snapshot(update=update)
+
+        par_lengths = [len(p) for p in snapshot['parameters']]
+
+        # Min of 50 is to prevent a super long parameter name to break this
+        # function
+        par_field_len = min(max(par_lengths)+1, 50)
+
+        print(self.name + ':')
+        print('{0:<{1}}'.format('\tparameter ', par_field_len) + 'value')
+        print('-'*80)
+        for par in sorted(snapshot['parameters']):
+            msg = '{0:<{1}}:'.format(snapshot['parameters'][par]['name'], par_field_len)
+            val = snapshot['parameters'][par]['value']
+            unit = snapshot['parameters'][par]['unit']
+            if isinstance(val, floating_types):
+                msg += '\t{:.5g} '.format(val)
+            else:
+                msg += '\t{} '.format(val)
+            if unit is not '':  # corresponds to no unit
+                msg += '({})'.format(unit)
+            # Truncate the message if it is longer than max length
+            if len(msg) > max_chars and not max_chars==-1:
+                msg = msg[0:max_chars-3] + '...'
+            print(msg)
+
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #
     #
