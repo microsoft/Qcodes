@@ -1451,8 +1451,6 @@ class ZIUHFLI(Instrument):
             range_val = round(range_val, 3)
             amp_val = params['signal_output{}_amplitude'.format(number+1)].get()
             amp_val = round(amp_val, 3)
-            toget = params['signal_output{}_autorange'.format(number+1)]
-            autorange_val = toget.get()
             if -range_val< value+amp_val > range_val:
                 raise ValueError('Signal Output: Offset too high for '
                                  'chosen range.')
