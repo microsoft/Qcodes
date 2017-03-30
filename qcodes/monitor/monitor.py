@@ -12,8 +12,12 @@ stream opuput over websocket
 
 import asyncio
 import logging
+import os
 import time
 import json
+import http.server
+import socketserver
+import webbrowser
 
 from threading import Thread
 from typing import Dict
@@ -21,14 +25,14 @@ from concurrent.futures import Future
 from concurrent.futures import CancelledError
 import functools
 
-from qcodes import Parameter
-import qcodes as qc
 import websockets
+
+SERVER_PORT = 3000
 
 log = logging.getLogger(__name__)
 
 
-def _get_metadata(*parameters: Parameter) -> Dict[float, list]:
+def _get_metadata(*parameters) -> Dict[float, list]:
     """
     Return a dict that contains the paraemter metadata grouped by the
     instrument it belongs to.
@@ -37,7 +41,11 @@ def _get_metadata(*parameters: Parameter) -> Dict[float, list]:
     # group meta data by instrument if any
     metas = {}
     for parameter in parameters:
-        meta = parameter._latest()
+        _meta = getattr(parameter, "_latest", None)
+        if _meta:
+            meta = _meta()
+        else:
+            raise ValueError("Input is not a paraemter; Refusing to proceed")
         # convert to string
         meta['value'] = str(meta['value'])
         if meta["ts"] is not None:
@@ -55,12 +63,16 @@ def _get_metadata(*parameters: Parameter) -> Dict[float, list]:
     return state
 
 
-def _handler(parameters: qc.Parameter, interval: int):
+def _handler(parameters, interval: int):
 
     async def serverFunc(websocket, path):
         while True:
             try:
-                meta = _get_metadata(*parameters)
+                try:
+                    meta = _get_metadata(*parameters)
+                except ValueError as e:
+                    log.exception(e)
+                    break
                 log.debug("sending..")
                 try:
                     await websocket.send(json.dumps(meta))
@@ -78,8 +90,9 @@ def _handler(parameters: qc.Parameter, interval: int):
 
 class Monitor(Thread):
     running = None
+    server = None
 
-    def __init__(self, *parameters: qc.Parameter, interval=1):
+    def __init__(self, *parameters, interval=1):
         """
         Monitor qcodes parameters.
 
@@ -89,6 +102,12 @@ class Monitor(Thread):
         """
         super().__init__()
         self.loop = None
+        # start the server to server monitor http/files
+        if Monitor.server:
+            self.show()
+        else:
+            Monitor.server = Server(port=SERVER_PORT)
+            Monitor.server.start()
         self._monitor(*parameters, interval=1)
 
     def run(self):
@@ -98,6 +117,7 @@ class Monitor(Thread):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         Monitor.running = self
+        self.show()
         self.loop.run_forever()
 
     def stop(self):
@@ -127,9 +147,9 @@ class Monitor(Thread):
             webbrowser.open_new(url)
 
         """
-        raise NotImplemented
+        webbrowser.open("localhost:{}".format(SERVER_PORT))
 
-    def _monitor(self, *parameters: qc.Parameter, interval=1):
+    def _monitor(self, *parameters, interval=1):
         handler = _handler(parameters, interval=interval)
         # TODO (giulioungaretti) read from config
         server = websockets.serve(handler, '127.0.0.1', 5678)
@@ -169,3 +189,23 @@ def _log_result(future):
         log.debug("Started server loop")
     except:
         log.exception("Could not start server loop")
+
+
+class Server(Thread):
+
+    def __init__(self, port=3000):
+        self.port = port
+        self.handler = http.server.SimpleHTTPRequestHandler
+        self.httpd = socketserver.TCPServer(("", self.port), self.handler)
+        self.static_dir = os.path.join(os.path.dirname(__file__), 'dist')
+        super().__init__()
+
+    def run(self):
+        os.chdir(self.static_dir)
+        log.debug("serving directory %s", self.static_dir)
+        log.debug("serving at port", self.port)
+        self.httpd.serve_forever()
+
+    def stop(self):
+        self.httpd.shutdown()
+        self.join()

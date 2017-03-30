@@ -33,6 +33,7 @@ from qcodes.station import Station
 from qcodes.loops import Loop
 from qcodes.measure import Measure
 from qcodes.actions import Task, Wait, BreakIf
+from qcodes.monitor.monitor import Monitor
 
 from qcodes.data.data_set import DataSet, new_data, load_data
 from qcodes.data.location import FormatLocation
