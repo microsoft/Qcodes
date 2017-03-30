@@ -825,7 +825,7 @@ class M4i(Instrument):
 
     def _set_param32bit(self, param, value):
         """ Set a 32-bit parameter on the device."""
-        value=int(value) # convert floating point to int if necessary
+        value = int(value)  # convert floating point to int if necessary
         pyspcm.spcm_dwSetParam_i32(self.hCard, param, value)
 
     def _invalidate_buf(self, buf_type):
