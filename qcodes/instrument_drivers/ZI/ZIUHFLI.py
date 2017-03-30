@@ -290,6 +290,38 @@ class Scope(MultiParameter):
                       'AU Cartesian 2': 'arb. un',
                       'AU Polar 1': 'arb. un.',
                       'AU Polar 2': 'arb. un.',
+                      'Demod 1 X': 'V',
+                      'Demod 1 Y': 'V',
+                      'Demod 1 R': 'V',
+                      'Demod 1 Phase':  '°',
+                      'Demod 2 X': 'V',
+                      'Demod 2 Y': 'V',
+                      'Demod 2 R': 'V',
+                      'Demod 2 Phase': '°',
+                      'Demod 3 X': 'V',
+                      'Demod 3 Y': 'V',
+                      'Demod 3 R': 'V',
+                      'Demod 3 Phase': '°',
+                      'Demod 4 X': 'V',
+                      'Demod 4 Y': 'V',
+                      'Demod 4 R': 'V',
+                      'Demod 4 Phase': '°',
+                      'Demod 5 X': 'V',
+                      'Demod 5 Y': 'V',
+                      'Demod 5 R': 'V',
+                      'Demod 5 Phase': '°',
+                      'Demod 6 X': 'V',
+                      'Demod 6 Y': 'V',
+                      'Demod 6 R': 'V',
+                      'Demod 6 Phase': '°',
+                      'Demod 7 X': 'V',
+                      'Demod 7 Y': 'V',
+                      'Demod 7 R': 'V',
+                      'Demod 7 Phase': '°',
+                      'Demod 8 X': 'V',
+                      'Demod 8 Y': 'V',
+                      'Demod 8 R': 'V',
+                      'Demod 8 Phase': '°',
                       }
 
         #TODO: what are good names?
@@ -1448,11 +1480,9 @@ class ZIUHFLI(Instrument):
             nonlocal value
             nonlocal number
             range_val = params['signal_output{}_range'.format(number+1)].get()
-            range_val = round(val, 3)
+            range_val = round(range_val, 3)
             amp_val = params['signal_output{}_amplitude'.format(number+1)].get()
             amp_val = round(amp_val, 3)
-            toget = params['signal_output{}_autorange'.format(number+1)]
-            autorange_val = toget.get()
             if -range_val< value+amp_val > range_val:
                 raise ValueError('Signal Output: Offset too high for '
                                  'chosen range.')
