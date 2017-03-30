@@ -47,6 +47,7 @@ Supported commands to .set_measurement or .each are:
 """
 
 from datetime import datetime
+import logging
 import multiprocessing as mp
 import time
 import numpy as np
@@ -64,6 +65,8 @@ from qcodes.utils.metadata import Metadatable
 from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
                       BreakIf, _QcodesBreak)
 
+
+log = logging.getLogger(__name__)
 # Switches off multiprocessing by default, cant' be altered after module
 USE_MP = True # config.core.legacy_mp
 MP_NAME = 'Measurement'
@@ -114,6 +117,7 @@ def halt_bg(timeout=300, traceback=True):
     if not loop:
         print('No loop running')
         return
+
     if traceback:
         signal_ = ActiveLoop.HALT_DEBUG
     else:
@@ -552,18 +556,25 @@ class ActiveLoop(Metadatable):
             action_indices = ((),)
         else:
             raise ValueError('a gettable parameter must have .name or .names')
-
+        if hasattr(action, 'names') and hasattr(action, 'units'):
+            units = action.units
+        elif hasattr(action, 'unit'):
+            units = (action.unit,)
+        else:
+            units = tuple(['']*len(names))
         num_arrays = len(names)
         shapes = getattr(action, 'shapes', None)
         sp_vals = getattr(action, 'setpoints', None)
         sp_names = getattr(action, 'setpoint_names', None)
         sp_labels = getattr(action, 'setpoint_labels', None)
+        sp_units = getattr(action, 'setpoint_units', None)
 
         if shapes is None:
             shapes = (getattr(action, 'shape', ()),) * num_arrays
             sp_vals = (sp_vals,) * num_arrays
             sp_names = (sp_names,) * num_arrays
             sp_labels = (sp_labels,) * num_arrays
+            sp_units = (sp_units,) * num_arrays
         else:
             sp_blank = (None,) * num_arrays
             # _fill_blank both supplies defaults and tests length
@@ -572,25 +583,28 @@ class ActiveLoop(Metadatable):
             sp_vals = self._fill_blank(sp_vals, sp_blank)
             sp_names = self._fill_blank(sp_names, sp_blank)
             sp_labels = self._fill_blank(sp_labels, sp_blank)
+            sp_units = self._fill_blank(sp_units, sp_blank)
 
         # now loop through these all, to make the DataArrays
         # record which setpoint arrays we've made, so we don't duplicate
         all_setpoints = {}
-        for name, full_name, label, shape, i, sp_vi, sp_ni, sp_li in zip(
-                names, full_names, labels, shapes, action_indices,
-                sp_vals, sp_names, sp_labels):
+        for name, full_name, label, unit, shape, i, sp_vi, sp_ni, sp_li, sp_ui in zip(
+                names, full_names, labels, units, shapes, action_indices,
+                sp_vals, sp_names, sp_labels, sp_units):
+
             if shape is None or shape == ():
-                shape, sp_vi, sp_ni, sp_li = (), (), (), ()
+                shape, sp_vi, sp_ni, sp_li, sp_ui= (), (), (), (), ()
             else:
                 sp_blank = (None,) * len(shape)
                 sp_vi = self._fill_blank(sp_vi, sp_blank)
                 sp_ni = self._fill_blank(sp_ni, sp_blank)
                 sp_li = self._fill_blank(sp_li, sp_blank)
+                sp_ui = self._fill_blank(sp_ui, sp_blank)
 
             setpoints = ()
             # loop through dimensions of shape to make the setpoint arrays
-            for j, (vij, nij, lij) in enumerate(zip(sp_vi, sp_ni, sp_li)):
-                sp_def = (shape[: 1 + j], j, setpoints, vij, nij, lij)
+            for j, (vij, nij, lij, uij) in enumerate(zip(sp_vi, sp_ni, sp_li, sp_ui)):
+                sp_def = (shape[: 1 + j], j, setpoints, vij, nij, lij, uij)
                 if sp_def not in all_setpoints:
                     all_setpoints[sp_def] = self._make_setpoint_array(*sp_def)
                     out.append(all_setpoints[sp_def])
@@ -598,7 +612,7 @@ class ActiveLoop(Metadatable):
 
             # finally, make the output data array with these setpoints
             out.append(DataArray(name=name, full_name=full_name, label=label,
-                                 shape=shape, action_indices=i,
+                                 shape=shape, action_indices=i, unit=unit,
                                  set_arrays=setpoints, parameter=action))
 
         return out
@@ -609,12 +623,10 @@ class ActiveLoop(Metadatable):
         elif len(inputs) == len(blanks):
             return inputs
         else:
-            raise ValueError(
-                'Wrong number of inputs supplied:\n'
-                'Inputs: {}\nBlanks: {}'.format(inputs, blanks))
+            raise ValueError('Wrong number of inputs supplied')
 
     def _make_setpoint_array(self, shape, i, prev_setpoints, vals, name,
-                             label):
+                             label, unit):
         if vals is None:
             vals = self._default_setpoints(shape)
         elif isinstance(vals, DataArray):
@@ -642,7 +654,7 @@ class ActiveLoop(Metadatable):
             name = 'index{}'.format(i)
 
         return DataArray(name=name, label=label, set_arrays=prev_setpoints,
-                         shape=shape, preset_data=vals)
+                         shape=shape, preset_data=vals, unit=unit, is_setpoint=True)
 
     def _default_setpoints(self, shape):
         if len(shape) == 1:
@@ -754,7 +766,7 @@ class ActiveLoop(Metadatable):
         Args:
             background: (default False) run this sweep in a separate process
                 so we can have live plotting and other analysis in the main process
-            use_threads: (default True): whenever there are multiple `get` calls
+            use_threads: (default False): whenever there are multiple `get` calls
                 back-to-back, execute them in separate threads so they run in
                 parallel (as long as they don't block each other)
             quiet: (default False): set True to not print anything except errors
@@ -870,7 +882,6 @@ class ActiveLoop(Metadatable):
             # this one later.
             self.data_set = None
 
-
         return ds
 
     def _compile_actions(self, actions, action_indices=()):
@@ -939,8 +950,10 @@ class ActiveLoop(Metadatable):
 
         t0 = time.time()
         last_task = t0
-        last_task_failed = False
         imax = len(self.sweep_values)
+
+        self.last_task_failed = False
+
         for i, value in enumerate(self.sweep_values):
             if self.progress_interval is not None:
                 tprint('loop %s: %d/%d (%.1f [s])' % (
@@ -997,16 +1010,18 @@ class ActiveLoop(Metadatable):
                 if t - last_task >= self.bg_min_delay:
                     try:
                         self.bg_task()
-                        last_task_failed = False
                     except Exception:
-                        if last_task_failed:
+                        if self.last_task_failed:
                             self.bg_task = None
-                        last_task_failed = True
+                        self.last_task_failed = True
+                        log.exception("Failed to execute bg task")
+
                     last_task = t
 
         if self.progress_interval is not None:
             # final progress note: set dt=-1 so it *always* prints
             tprint('loop %s DONE: %d/%d (%.1f [s])' % (
+
                    self.sweep_values.name, i + 1, imax, time.time() - t0),
                    dt=-1, tag='outerloop')
 
@@ -1021,8 +1036,6 @@ class ActiveLoop(Metadatable):
         # run the bg_final_task from the bg_task:
         if self.bg_final_task is not None:
             self.bg_final_task()
-
-
 
     def _wait(self, delay):
         if delay:

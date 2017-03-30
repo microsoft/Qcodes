@@ -27,7 +27,7 @@ SERVER_MODES = set((DataMode.PULL_FROM_SERVER, DataMode.PUSH_TO_SERVER))
 
 
 def new_data(location=None, loc_record=None, name=None, overwrite=False,
-             io=None, data_manager=None, mode=DataMode.LOCAL, **kwargs):
+             io=None, data_manager=False, mode=DataMode.LOCAL, **kwargs):
     # NOTE(giulioungaretti): leave this docstrings as it is, because
     # documenting the types is silly in this case.
     """
@@ -113,7 +113,7 @@ def new_data(location=None, loc_record=None, name=None, overwrite=False,
 
     if data_manager is True:
         data_manager = get_data_manager()
-    elif data_manager is None:
+    else:
         if mode != DataMode.LOCAL:
             raise ValueError('DataSets without a data_manager must be local')
 
@@ -285,7 +285,7 @@ class DataSet(DelegateAttributes):
 
         self.metadata = {}
 
-        self.arrays = {}
+        self.arrays = _PrettyPrintDict()
         if arrays:
             self.action_id_map = self._clean_array_ids(arrays)
             for array in arrays:
@@ -395,15 +395,7 @@ class DataSet(DelegateAttributes):
         # could find a robust and intuitive way to make modifications to the
         # version on the DataServer from the main copy)
         if not self.is_live_mode:
-            # LOCAL DataSet - just read it in
-            # Compare timestamps to avoid overwriting unsaved data
-            if self.last_store > self.last_write:
-                return True
-            try:
-                self.read()
-            except IOError:
-                # if no files exist, they probably haven't been created yet.
-                pass
+            # LOCAL DataSet - no need to sync just use local data
             return False
             # TODO - for remote live plotting, maybe set some timestamp
             # threshold and call it static after it's been dormant a long time?
@@ -843,9 +835,10 @@ class DataSet(DelegateAttributes):
     def __repr__(self):
         """Rich information about the DataSet and contained arrays."""
         out = type(self).__name__ + ':'
-        out += "\ndata = qc.load_data('{}')".format(self.location)
-        attrs = [['mode', self.mode]]
-        attr_template = '\n   {:4} = {}'
+
+        attrs = [['mode', self.mode],
+                 ['location', repr(self.location)]]
+        attr_template = '\n   {:8} = {}'
         for var, val in attrs:
             out += attr_template.format(var, val)
 
@@ -874,3 +867,18 @@ class DataSet(DelegateAttributes):
             out += out_template.format(info=arr_info_i, lens=column_lengths)
 
         return out
+
+
+class _PrettyPrintDict(dict):
+    """
+    simple wrapper for a dict to repr its items on separate lines
+    with a bit of indentation
+    """
+    def __repr__(self):
+        body = '\n  '.join([repr(k) + ': ' + self._indent(repr(v))
+                            for k, v in self.items()])
+        return '{\n  ' + body + '\n}'
+
+    def _indent(self, s):
+        lines = s.split('\n')
+        return '\n    '.join(lines)
