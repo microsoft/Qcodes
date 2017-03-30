@@ -68,7 +68,7 @@ from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
 
 log = logging.getLogger(__name__)
 # Switches off multiprocessing by default, cant' be altered after module
-USE_MP = True # config.core.legacy_mp
+USE_MP = config.core.legacy_mp
 MP_NAME = 'Measurement'
 
 

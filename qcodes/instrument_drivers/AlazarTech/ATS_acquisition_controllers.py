@@ -64,20 +64,6 @@ class Triggered_AcquisitionController(AcquisitionController):
             raise SyntaxError('Samples per record {} is not multiple of '
                               '16'.format(self.samples_per_record))
 
-        # Set acquisition parameter metadata
-        self.acquisition.names = tuple(['ch{}_signal'.format(ch) for ch in
-                                        self.channel_selection])
-        self.acquisition.labels = self.acquisition.names
-        self.acquisition.units = ['V'] * self.number_of_channels
-
-        if self.average_mode() == 'point':
-            shape = ()
-        elif self.average_mode() == 'trace':
-            shape = (self.samples_per_record,)
-        else:
-            shape = (self.traces_per_acquisition, self.samples_per_record)
-        self.acquisition.shapes = tuple([shape] * self.number_of_channels)
-
     def requires_buffer(self, buffers_completed):
         # Check buffers_completed instead of self.buffer_idx since buffers
         # may be analysed after all buffers are acquired
@@ -195,20 +181,6 @@ class Continuous_AcquisitionController(AcquisitionController):
             raise SyntaxError('Samples per record {} is not multiple of '
                               '16'.format(self.samples_per_record))
 
-        # Set acquisition parameter metadata
-        self.acquisition.names = tuple(['ch{}_signal'.format(ch) for ch in
-                                        self.channel_selection])
-        self.acquisition.labels = self.acquisition.names
-        self.acquisition.units = ['V'] * self.number_of_channels
-
-        if self.average_mode() == 'point':
-            shape = ()
-        elif self.average_mode() == 'trace':
-            shape = (self.samples_per_trace(),)
-        else:
-            shape = (self.traces_per_acquisition(), self.samples_per_record)
-        self.acquisition.shapes = tuple([shape] * self.number_of_channels)
-
     def requires_buffer(self, buffers_completed):
         return self.trace_idx < self.traces_per_acquisition()
 
@@ -316,15 +288,15 @@ class SteeredInitialization_AcquisitionController(
 
         self.add_parameter(name='t_no_blip',
                            parameter_class=ManualParameter,
-                           units='ms',
+                           unit='ms',
                            initial_value=40)
         self.add_parameter(name='t_max_wait',
                            parameter_class=ManualParameter,
-                           units='ms',
+                           unit='ms',
                            initial_value=500)
         self.add_parameter(name='max_wait_action',
                            parameter_class=ManualParameter,
-                           units='ms',
+                           unit='ms',
                            initial_value='start',
                            vals=vals.Enum('start', 'error'))
 

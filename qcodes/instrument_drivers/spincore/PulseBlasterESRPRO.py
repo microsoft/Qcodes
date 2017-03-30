@@ -40,7 +40,7 @@ class PulseBlasterESRPRO(Instrument):
         # The wait duration is inversely proportional to the core clock, in contrast to the sampling rate
         self.add_parameter('core_clock',
                            label='Core clock',
-                           units='MHz',
+                           unit='MHz',
                            set_cmd=api.pb_core_clock,
                            vals=vals.Numbers(0, 500))
 

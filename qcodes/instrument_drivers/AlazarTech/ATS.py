@@ -6,7 +6,7 @@ import os
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
 from qcodes.utils import validators
-from qcodes.instrument.parameter import ManualParameter
+from qcodes.instrument.parameter import MultiParameter, ManualParameter
 
 # TODO(damazter) (C) logging
 
@@ -1033,10 +1033,7 @@ class AcquisitionController(Instrument):
         # overwritten in set_acquisition_settings. If we don't do this, the
         # remoteInstrument will not recognize that it returns multiple values.
         self.add_parameter(name="acquisition",
-                           names=['channel_signal'],
-                           get_cmd=self.do_acquisition,
-                           shapes=((),),
-                           snapshot_value=False)
+                           parameter_class=ATSAcquisitionParameter)
 
         # Save bytes_per_sample received from ATS digitizer
         self._bytes_per_sample = self._alazar.bytes_per_sample() * 8
@@ -1201,6 +1198,41 @@ class AcquisitionController(Instrument):
         """
         raise NotImplementedError(
             'This method should be implemented in a subclass')
+
+
+class ATSAcquisitionParameter(MultiParameter):
+    def __init__(self, instrument, **kwargs):
+        super().__init__(snapshot_value=False, **kwargs)
+        self.instrument = instrument
+
+    @property
+    def names(self):
+        return tuple(['ch{}_signal'.format(ch)
+                      for ch in self.instrument.channel_selection])
+
+    @property
+    def labels(self):
+        return self.names
+
+    @property
+    def units(self):
+        return ['V'] * len(self.names)
+
+    @property
+    def shapes(self):
+        average_mode = self.instrument.average_mode()
+
+        if average_mode == 'point':
+            shape = ()
+        elif average_mode == 'trace':
+            shape = (self.instrument.samples_per_record,)
+        else:
+            shape = (self.instrument.traces_per_acquisition,
+                     self.instrument.samples_per_record)
+        return tuple([shape] * self.instrument.number_of_channels)
+
+    def get(self):
+        return self.instrument.do_acquisition()
 
 
 class TrivialDictionary:

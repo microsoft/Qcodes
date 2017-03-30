@@ -28,7 +28,7 @@ class SIM928(StandardParameter):
         self.send_cmd = cmdbase + "SNDT {:d} ,".format(channel)
 
         super().__init__(name=name,
-                         units='V',
+                         unit='V',
                          get_cmd=self.get_voltage,
                          set_cmd=self.send_cmd + '"VOLT {:.4f}"',
                          step=0.005,
