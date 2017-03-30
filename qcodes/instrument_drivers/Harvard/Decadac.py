@@ -91,10 +91,10 @@ class Decadac(VisaInstrument):
         self.add_parameter('mode',
                            label='Output mode',
                            set_cmd=partial(self._setmode, self.slot),
-                           vals=vals.Enum(0, 1, 2),
+                           vals=vals.Enum(0, 2),
                            docstring="""
                                      The operational mode of the slot.
-                                     0: output off, 1: high res mode,
+                                     0: output off,
                                      2: 4-channel (low res) mode.
                                      """)
 
