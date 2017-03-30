@@ -59,7 +59,8 @@ setup(name='qcodes',
           'pyvisa>=1.8',
           'ipython>=4.1.0',
           'jupyter>=1.0.0',
-          'h5py>=2.6'
+          'h5py>=2.6',
+          'websockets>=3.2'
       ],
 
       test_suite='qcodes.tests',
