@@ -73,6 +73,7 @@ class MakeDeviceImage(qt.QWidget):
                 paramitem = gui.QStandardItem(param)
                 paramitem.setEditable(False)
                 item.appendRow(paramitem)
+            item.sortChildren(0)
 
     def loadimage(self):
         """
