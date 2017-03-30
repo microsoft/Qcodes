@@ -391,7 +391,7 @@ class Scope(MultiParameter):
             self._instrument.daq.sync()
 
             scope = self._instrument.scope # There are issues reusing the scope.
-
+            scope.set('scopeModule/clearhistory', 1)
             # Subscribe to the relevant... publisher?
             scope.subscribe('/{}/scopes/0/wave'.format(self._instrument.device))
 
