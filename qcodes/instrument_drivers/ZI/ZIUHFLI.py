@@ -1448,7 +1448,7 @@ class ZIUHFLI(Instrument):
             nonlocal value
             nonlocal number
             range_val = params['signal_output{}_range'.format(number+1)].get()
-            range_val = round(val, 3)
+            range_val = round(range_val, 3)
             amp_val = params['signal_output{}_amplitude'.format(number+1)].get()
             amp_val = round(amp_val, 3)
             toget = params['signal_output{}_autorange'.format(number+1)]
