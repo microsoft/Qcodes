@@ -4,9 +4,9 @@ import sys
 import os
 import json
 import glob
-import qtpy.QtWidgets as qt
-import qtpy.QtGui as gui
-import qtpy.QtCore as core
+import PyQt5.QtWidgets as qt
+import PyQt5.QtGui as gui
+import PyQt5.QtCore as core
 
 from shutil import copyfile
 
@@ -49,7 +49,8 @@ class MakeDeviceImage(qt.QWidget):
         self.model.setHorizontalHeaderLabels([self.tr("Instruments")])
         self.addStation(self.model, station)
         self.treeView.setModel(self.model)
-
+        self.treeView.sortByColumn(0, core.Qt.AscendingOrder)
+        self.treeView.setSortingEnabled(True)
         grid.addWidget(self.imageCanvas, 0, 0, 4, 6)
         grid.addWidget(self.loadButton, 4, 0)
         grid.addWidget(self.labelButton, 4, 1)
@@ -73,7 +74,6 @@ class MakeDeviceImage(qt.QWidget):
                 paramitem = gui.QStandardItem(param)
                 paramitem.setEditable(False)
                 item.appendRow(paramitem)
-            item.sortChildren(0)
 
     def loadimage(self):
         """
@@ -262,7 +262,16 @@ class DeviceImage:
 
         for instrument, parameters in self._data.items():
             for parameter in parameters.keys():
-                self._data[instrument][parameter]['value'] = str(station.components[instrument][parameter].get_latest())
+                value = station.components[instrument][parameter].get_latest()
+                try:
+                    floatvalue = float(station.components[instrument][parameter].get_latest())
+                    if floatvalue > 1000 or floatvalue < 0.1:
+                        valuestr = "{:.2e}".format(floatvalue)
+                    else:
+                        valuestr = "{:.2f}".format(floatvalue)
+                except ValueError:
+                    valuestr = str(value)
+                self._data[instrument][parameter]['value'] = valuestr
 
     def makePNG(self, counter, path=None):
         """
