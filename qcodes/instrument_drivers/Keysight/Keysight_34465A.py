@@ -8,7 +8,7 @@ class Keysight_34465A(VisaInstrument):
     """
     Instrument class for Keysight 34465A.
 
-    The driver is written such that usage which models
+    The driver is written such that usage with models
     34460A, 34461A, and 34470A should be seamless.
 
     Tested with: 34465A.
@@ -135,6 +135,37 @@ class Keysight_34465A(VisaInstrument):
                            set_cmd='DISPLAY:TEXT "{}"',
                            get_cmd='DISPLAY:TEXT?',
                            vals=vals.Strings())
+
+        # TRIGGERING
+
+        self.add_parameter('trigger_count',
+                           label='Trigger Count',
+                           set_cmd='TRIGger:COUNt {}',
+                           get_cmd='TRIGger:COUNt?',
+                           get_parser=float,
+                           vals=vals.MultiType(vals.Numbers(1, 1e6),
+                                               vals.Enum('MIN', 'MAX', 'DEF',
+                                                         'INF')))
+
+        self.add_parameter('trigger_delay',
+                           label='Trigger Delay',
+                           set_cmd='TRIGger:DELay {}',
+                           get_cmd='TRIGger:DELay?',
+                           vals=vals.MultiType(vals.Numbers(0, 3600),
+                                               vals.Enum('MIN', 'MAX', 'DEF')),
+                           get_parser=float)
+
+        self.add_parameter('trigger_slope',
+                           label='Trigger Slope',
+                           set_cmd='TRIGger:SLOPe {}',
+                           get_cmd='TRIGger:SLOPe?',
+                           vals=vals.Enum('POS', 'NEG'))
+
+        self.add_parameter('trigger_source',
+                           label='Trigger Source',
+                           set_cmd='TRIGger:SOURce {}',
+                           get_cmd='TRIGger:SOURce?',
+                           vals=vals.Enum('IMM', 'EXT', 'BUS', 'INT'))
 
         ####################################
         # Model-specific parameters
