@@ -2,7 +2,6 @@ import time
 import logging
 import numpy as np
 from functools import partial
-
 try:
     import zhinst.utils
 except ImportError:
@@ -450,6 +449,8 @@ class Scope(MultiParameter):
             if not (timedout or zi_error):
                 log.info('[+] ZI scope acquisition completed OK')
                 rawdata = scope.read()
+                if 'error' in rawdata:
+                    zi_error = bool(rawdata['error'][0])
                 data = self._scopedataparser(rawdata, self._instrument.device,
                                              npts, segs, channels)
             else:
