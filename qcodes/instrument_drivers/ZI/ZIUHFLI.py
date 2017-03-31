@@ -423,8 +423,6 @@ class Scope(MultiParameter):
 
             scope = self._instrument.scope # There are issues reusing the scope.
             scope.set('scopeModule/clearhistory', 1)
-            # Subscribe to the relevant... publisher?
-            scope.subscribe('/{}/scopes/0/wave'.format(self._instrument.device))
 
             # Start the scope triggering/acquiring
             params['scope_runstop'].set('run') # set /dev/scopes/0/enable to 1
@@ -463,7 +461,6 @@ class Scope(MultiParameter):
 
             # cleanup and make ready for next scope acquisition
             scope.finish()
-            scope.unsubscribe('/{}/scopes/0/wave'.format(self._instrument.device))
             if error_counter >= num_retries:
                 log.warning('[+] ZI scope acquisition failed, maximum number'
                             'of retries performed. No data returned')
@@ -534,7 +531,7 @@ class ZIUHFLI(Instrument):
         self.sweeper = self.daq.sweep()
         self.sweeper.set('sweep/device', self.device)
         self.scope = self.daq.scopeModule()
-        
+        self.scope.subscribe('/{}/scopes/0/wave'.format(self.device))
         ########################################
         # INSTRUMENT PARAMETERS
 
@@ -1972,6 +1969,7 @@ class ZIUHFLI(Instrument):
         """
         Override of the base class' close function
         """
+        self.scope.unsubscribe('/{}/scopes/0/wave'.format(self.device))
         self.scope.clear()
         self.sweeper.clear()
         self.daq.disconnect()
