@@ -166,6 +166,47 @@ class Keysight_34465A(VisaInstrument):
                            get_cmd='TRIGger:SOURce?',
                            vals=vals.Enum('IMM', 'EXT', 'BUS', 'INT'))
 
+        # SAMPLING
+
+        self.add_parameter('sample_count',
+                           label='Sample Count',
+                           set_cmd='SAMPle:COUNt {}',
+                           get_cmd='SAMPle:COUNt?',
+                           vals=vals.MultiType(vals.Numbers(1, 1e6),
+                                               vals.Enum('MIN', 'MAX', 'DEF')),
+                           get_parser=int)
+
+        self.add_parameter('sample_count_pretrigger',
+                           label='Sample Pretrigger Count',
+                           set_cmd='SAMPle:COUNt:PRETrigger {}',
+                           get_cmd='SAMPle:COUNt:PRETrigger?',
+                           vals=vals.MultiType(vals.Numbers(0, 2e6-1),
+                                               vals.Enum('MIN', 'MAX', 'DEF')),
+                           get_parser=int,
+                           docstring=('Allows collection of the data '
+                                      'being digitized the trigger. Reserves '
+                                      'memory for pretrigger samples up to the'
+                                      ' specified num. of pretrigger samples.'
+                           ))
+
+        self.add_parameter('sample_source',
+                           label='Sample Timing Source',
+                           set_cmd='SAMPle:SOURce {}',
+                           get_cmd='SAMPle:SOURce?',
+                           vals=vals.Enum('IMM', 'TIM'),
+                           docstring=('Determines sampling time, immediate'
+                                      ' or using sample_timer'))
+
+        self.add_parameter('sample_timer',
+                           label='Sample Timer',
+                           set_cmd='SAMPle:TIMer {}',
+                           get_cmd='SAMPle:TIMer?',
+                           unit='s',
+                           vals=vals.MultiType(vals.Numbers(0, 3600),
+                                               vals.Enum('MIN', 'MAX', 'DEF')),
+                           get_parser=float)
+
+
         ####################################
         # Model-specific parameters
 
