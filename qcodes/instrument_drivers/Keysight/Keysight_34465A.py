@@ -2,6 +2,47 @@
 
 import qcodes.utils.validators as vals
 from qcodes import VisaInstrument
+from qcodes.instrument.parameter import ArrayPa
+import numpy as np
+
+
+class ArrayMeasurement(ArrayParameter):
+    """
+    Class to return several values. Really represents a measurement routine.
+    """
+
+    def __init__(self, name, *args, **kwargs):
+
+        super().__init__(name, *args, **kwargs)
+
+        self.label = ''
+        self.unit = ''
+        self.properly_prepared = False
+
+    def prepare(self):
+        """
+        Prepare the measurement, create the setpoints.
+
+        To get deterministic times, we must set the timing to be
+        TWICE that derived from the NPLC value.
+        """
+
+        inst = self._instrument
+
+        N = inst.sample_count()
+        inst.aperture_mode('OFF')  # aperture mode seems slower ON than OFF
+
+        t_expec = inst.NPLC()/50  # 50 Hz power
+
+        self.setpoints = (tuple(np.linspace(0, 2*t_expec, N)),)
+
+        self.properly_prepared = True
+
+    def get(self):
+
+        if not self.properly_prepared:
+            raise ValueError('ArrayMeasurement not properly_prepared. '
+                             'Please run prepare')
 
 
 class Keysight_34465A(VisaInstrument):
