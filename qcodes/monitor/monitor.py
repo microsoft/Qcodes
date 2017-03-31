@@ -147,7 +147,7 @@ class Monitor(Thread):
             webbrowser.open_new(url)
 
         """
-        webbrowser.open("localhost:{}".format(SERVER_PORT))
+        webbrowser.open("http://localhost:{}".format(SERVER_PORT))
 
     def _monitor(self, *parameters, interval=1):
         handler = _handler(parameters, interval=interval)
