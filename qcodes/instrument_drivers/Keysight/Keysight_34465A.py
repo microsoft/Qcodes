@@ -105,7 +105,7 @@ class Keysight_34465A(VisaInstrument):
                            unit='NPLC')
 
         self.add_parameter('volt',
-                           get_cmd=_get_voltage,
+                           get_cmd=self._get_voltage,
                            label='Voltage',
                            unit='V')
 
