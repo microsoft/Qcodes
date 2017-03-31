@@ -105,9 +105,8 @@ class Keysight_34465A(VisaInstrument):
                            unit='NPLC')
 
         self.add_parameter('volt',
-                           get_cmd='READ?',
+                           get_cmd=_get_voltage,
                            label='Voltage',
-                           get_parser=float,
                            unit='V')
 
         self.add_parameter('range',
@@ -195,6 +194,15 @@ class Keysight_34465A(VisaInstrument):
 
         if not silent:
             self.connect_message()
+
+    def _get_voltage(self):
+        # TODO: massive improvements! What if more than one number was
+        # asked for?
+        # What if mode is not voltage sensing? What if...
+
+        response = self.ask('READ?')
+
+        return float(response)
 
     def _set_apt_time(self, value):
         self.write('SENSe:VOLTage:DC:APERture {:f}'.format(value))
