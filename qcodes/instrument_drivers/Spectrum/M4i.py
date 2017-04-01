@@ -590,9 +590,9 @@ class M4i(Instrument):
             self.enable_channels(getattr(pyspcm, 'CHANNEL%d' % ch))
 
     def _read_channel(self, channel, memsize=2**11):
-        """ Helper function to read out a channel 
+        """ Helper function to read out a channel
 
-        Before a channel is measured it is explicitly enabled. 
+        Before a channel is measured it is explicitly enabled.
         """
         posttrigger_size = int(memsize / 2)
         mV_range = getattr(self, 'range_channel_%d' % channel).get()
