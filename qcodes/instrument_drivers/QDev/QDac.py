@@ -68,6 +68,9 @@ class QDac(VisaInstrument):
 
         self.num_chans = num_chans
 
+        # The following bool is used in self.write
+        self.debugmode = False
+        
         # Assigned slopes. Entries will eventually be [chan, slope] (V/s)
         self._slopes = []
         # Function generators (used in _set_voltage)
@@ -400,7 +403,9 @@ class QDac(VisaInstrument):
             ramptime (float): The ramp time in seconds.
         """
 
-        v_start = self.parameters['ch{:02}_v'.format(chan)].get_latest()
+        # .get is slower than .get_latest, but safe if a ramp is
+        # interrupted
+        v_start = self.parameters['ch{:02}_v'.format(chan)].get()
 
         offset = v_start
         amplitude = setvoltage-v_start
@@ -436,7 +441,12 @@ class QDac(VisaInstrument):
         Note that this procedure makes it very cumbersome to handle the returned
         messages from concatenated commands, e.g. 'wav 1 1 1 0;fun 2 1 100 1 1'
         Please don't use concatenated commands
+
+        TODO (WilliamHPNielsen): add automatic de-concatenation of commands.
         """
+        if self.debugmode:
+            log.debug('Sending command string: {}'.format(cmd))
+            
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
         self._write_response = self.visa_handle.read()
