@@ -51,6 +51,7 @@ class Validator:
 
     is_numeric: is this a numeric type (so it can be swept)?
     """
+
     def __init__(self):
         raise NotImplementedError
 
@@ -62,6 +63,7 @@ class Validator:
 
 class Anything(Validator):
     """allow any value to pass"""
+
     def __init__(self):
         pass
 
@@ -80,6 +82,7 @@ class Bool(Validator):
     """
     requires a boolean
     """
+
     def __init__(self):
         pass
 
@@ -246,6 +249,7 @@ class OnOff(Validator):
     """
     requires either the string 'on' or 'off'
     """
+
     def __init__(self):
         self._validator = Enum('on', 'off')
 
@@ -392,26 +396,27 @@ class Arrays(Validator):
         return '<Arrays{}, shape: {}>'.format(range_str(minv, maxv, 'v'),
                                               self._shape)
 
+
 class Lists(Validator):
     """
     Validator for lists
     Args:
         elt_validator: used to validate the individual elements of the list
-
-
     """
+
     def __init__(self, elt_validator=Anything()):
         self._elt_validator = elt_validator
 
     def __repr__(self):
         msg = '<Lists : '
-        msg += self._elt_validator.__repr__() +'>'
+        msg += self._elt_validator.__repr__() + '>'
         return msg
 
     def validate(self, value, context=''):
         if not isinstance(value, list):
             raise TypeError(
                 '{} is not a list; {}'.format(repr(value), context))
-        for elt in value:
-            self._elt_validator.validate(elt)
-
+        # Does not validate elements if not required to improve performance
+        if not isinstance(self._elt_validator, Anything):
+            for elt in value:
+                self._elt_validator.validate(elt)
