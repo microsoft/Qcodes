@@ -53,7 +53,8 @@ setup(name='qcodes',
       # if we want to install without tests:
       # packages=find_packages(exclude=["*.tests", "tests"]),
       packages=find_packages(),
-      package_data={'qcodes': ['monitor/dist/*', 'config/*.json']},
+      package_data={'qcodes': ['monitor/dist/*', 'monitor/dist/js/*',
+                               'monitor/dist/css/*', 'config/*.json']},
       install_requires=[
           'numpy>=1.10',
           'pyvisa>=1.8',
