@@ -73,6 +73,9 @@ class PB_DDS(Instrument):
         for n in range(self.N_CHANNELS):
             self.__chan_instructions.append([])
 
+        ###########################################################################
+        ###                              Parameters                             ###
+        ###########################################################################
         for n in range(self.N_CHANNELS):
             # DDS Register Bank
             for r in range(self.N_FREQ_REGS):
@@ -256,9 +259,9 @@ class PB_DDS(Instrument):
         """ Sets the DDS frequency for the specified channel and register
         
         Args:
-            frequency (double) :
-            channel      (int) :
-            register     (int) :
+            frequency (double) : the frequency in Mhz to write to the register
+            register     (int) : the register number
+            channel      (int) : Either DDS0 (0) or DDS1 (1)
         """
         self.__frequency[channel][register] = frequency
         pb_select_dds(channel)
@@ -276,9 +279,9 @@ class PB_DDS(Instrument):
         """ Sets the DDS phase for the specified channel and register
         
         Args:
-            phase     (double) :
-            channel      (int) :
-            register     (int) :
+            phase     (double) : the phase in degrees to write to the register
+            register     (int) : the register number
+            channel      (int) : Either DDS0 (0) or DDS1 (1)
         """
         self.__phase[channel][register] = phase
         pb_select_dds(channel)
@@ -294,9 +297,9 @@ class PB_DDS(Instrument):
         """ Sets the DDS amplitude for the specified channel and register
         
         Args:
-            amplitude (double) :
-            channel      (int) :
-            register     (int) :
+            amplitude (double) : the amplitude in volts to write to the register
+            register     (int) : the register number
+            channel      (int) : Either DDS0 (0) or DDS1 (1)
         """
         pb_select_dds(channel)
         ret = self.pb_set_amp(amplitude, register)
