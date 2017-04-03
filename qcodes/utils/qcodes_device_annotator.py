@@ -269,7 +269,7 @@ class DeviceImage:
                         valuestr = "{:.2e}".format(floatvalue)
                     else:
                         valuestr = "{:.2f}".format(floatvalue)
-                except ValueError:
+                except (ValueError, TypeError):
                     valuestr = str(value)
                 self._data[instrument][parameter]['value'] = valuestr
 
