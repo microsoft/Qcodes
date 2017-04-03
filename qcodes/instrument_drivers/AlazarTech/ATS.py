@@ -1033,7 +1033,8 @@ class AcquisitionController(Instrument):
         # overwritten in set_acquisition_settings. If we don't do this, the
         # remoteInstrument will not recognize that it returns multiple values.
         self.add_parameter(name="acquisition",
-                           parameter_class=ATSAcquisitionParameter)
+                           parameter_class=ATSAcquisitionParameter,
+                           instrument=self)
 
         # Save bytes_per_sample received from ATS digitizer
         self._bytes_per_sample = self._alazar.bytes_per_sample() * 8
@@ -1201,38 +1202,59 @@ class AcquisitionController(Instrument):
 
 
 class ATSAcquisitionParameter(MultiParameter):
-    def __init__(self, instrument, **kwargs):
-        super().__init__(snapshot_value=False, **kwargs)
-        self.instrument = instrument
+    def __init__(self, acquisition_controller, **kwargs):
+        self.acquisition_controller = acquisition_controller
+        super().__init__(snapshot_value=False,
+                         names=[''], shapes=[()], **kwargs)
 
     @property
     def names(self):
         return tuple(['ch{}_signal'.format(ch)
-                      for ch in self.instrument.channel_selection])
+                      for ch in self.acquisition_controller.channel_selection])
+
+    @names.setter
+    def names(self, names):
+        # Ignore setter since getter is extracted from acquisition controller
+        pass
 
     @property
     def labels(self):
         return self.names
 
+    @labels.setter
+    def labels(self, labels):
+        # Ignore setter since getter is extracted from acquisition controller
+        pass
+
     @property
     def units(self):
         return ['V'] * len(self.names)
 
+    @units.setter
+    def units(self, units):
+        # Ignore setter since getter is extracted from acquisition controller
+        pass
+
     @property
     def shapes(self):
-        average_mode = self.instrument.average_mode()
+        average_mode = self.acquisition_controller.average_mode()
 
         if average_mode == 'point':
             shape = ()
         elif average_mode == 'trace':
-            shape = (self.instrument.samples_per_record,)
+            shape = (self.acquisition_controller.samples_per_record,)
         else:
-            shape = (self.instrument.traces_per_acquisition,
-                     self.instrument.samples_per_record)
-        return tuple([shape] * self.instrument.number_of_channels)
+            shape = (self.acquisition_controller.traces_per_acquisition,
+                     self.acquisition_controller.samples_per_record)
+        return tuple([shape] * self.acquisition_controller.number_of_channels)
+
+    @shapes.setter
+    def shapes(self, shapes):
+        # Ignore setter since getter is extracted from acquisition controller
+        pass
 
     def get(self):
-        return self.instrument.do_acquisition()
+        return self.acquisition_controller.do_acquisition()
 
 
 class TrivialDictionary:

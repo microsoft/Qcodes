@@ -41,6 +41,13 @@ class Triggered_AcquisitionController(AcquisitionController):
                            parameter_class=ManualParameter,
                            initial_value='trace',
                            vals=vals.Enum('none', 'trace', 'point'))
+        self.add_parameter(name='samples_per_trace',
+                           get_cmd=lambda: self.samples_per_record,
+                           vals=vals.Multiples(divisor=16))
+        self.add_parameter(name='traces_per_acquisition',
+                           get_cmd=lambda: self.buffers_per_acquisition * \
+                                           self.records_per_buffer,
+                           vals=vals.Ints())
 
     def setup(self, **kwargs):
         """
@@ -57,8 +64,6 @@ class Triggered_AcquisitionController(AcquisitionController):
         self.samples_per_buffer = self.samples_per_record * \
                                   self.records_per_buffer
         self.number_of_channels = len(self.channel_selection)
-        self.traces_per_acquisition = self.buffers_per_acquisition * \
-                                       self.records_per_buffer
 
         if self.samples_per_record % 16:
             raise SyntaxError('Samples per record {} is not multiple of '
@@ -74,7 +79,7 @@ class Triggered_AcquisitionController(AcquisitionController):
         Initializes buffers before capturing
         """
         self.buffer_idx = 0
-        self.buffers = [np.zeros((self.traces_per_acquisition,
+        self.buffers = [np.zeros((self.traces_per_acquisition(),
                                   self.samples_per_record))
                         for ch in self.channel_selection]
 

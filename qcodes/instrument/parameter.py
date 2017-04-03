@@ -282,8 +282,9 @@ class Parameter(_BaseParameter):
     """
     def __init__(self, name, instrument=None, label=None,
                  unit=None, units=None, vals=None, docstring=None,
-                 snapshot_get=True, metadata=None):
-        super().__init__(name, instrument, snapshot_get, metadata)
+                 snapshot_get=True, snapshot_value=True, metadata=None):
+        super().__init__(name, instrument, snapshot_get, metadata,
+                         snapshot_value=snapshot_value)
 
         self._meta_attrs.extend(['label', 'unit', '_vals'])
 
@@ -456,8 +457,10 @@ class ArrayParameter(_BaseParameter):
     def __init__(self, name, shape, instrument=None,
                  label=None, unit=None, units=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
-                 setpoint_units=None, docstring=None, snapshot_get=True, metadata=None):
-        super().__init__(name, instrument, snapshot_get, metadata)
+                 setpoint_units=None, docstring=None,
+                 snapshot_get=True, snapshot_value=True, metadata=None):
+        super().__init__(name, instrument, snapshot_get, metadata,
+                         snapshot_value=snapshot_value)
 
         if self.has_set:  # TODO (alexcjohnson): can we support, ala Combine?
             raise AttributeError('ArrayParameters do not support set '
@@ -621,9 +624,10 @@ class MultiParameter(_BaseParameter):
     def __init__(self, name, names, shapes, instrument=None,
                  labels=None, units=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
-                 setpoint_units=None,
-                 docstring=None, snapshot_get=True, metadata=None):
-        super().__init__(name, instrument, snapshot_get, metadata)
+                 setpoint_units=None, docstring=None,
+                 snapshot_get=True, snapshot_value=True, metadata=None):
+        super().__init__(name, instrument, snapshot_get, metadata,
+                         snapshot_value=snapshot_value)
 
         if self.has_set:  # TODO (alexcjohnson): can we support, ala Combine?
             raise AttributeError('MultiParameters do not support set '
