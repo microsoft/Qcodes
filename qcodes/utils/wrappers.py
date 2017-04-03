@@ -186,14 +186,14 @@ def save_device_image():
                             '{:03d}'.format(counter)))
 
 
-def do1d(inst_set, start, stop, division, delay, *inst_meas):
+def do1d(inst_set, start, stop, num_points, delay, *inst_meas):
     """
 
     Args:
         inst_set:  Instrument to sweep over
         start:  Start of sweep
         stop:  End of sweep
-        division:  Spacing between values
+        num_points:  Number of steps to perform
         delay:  Delay at every step
         *inst_meas:  any number of instrument to measure and/or tasks to
             perform at each step of the sweep
@@ -203,7 +203,7 @@ def do1d(inst_set, start, stop, division, delay, *inst_meas):
 
     """
     loop = qc.Loop(inst_set.sweep(start,
-                                  stop, division), delay).each(*inst_meas)
+                                  stop, num=num_points), delay).each(*inst_meas)
     data = loop.get_data_set()
     plottables = _select_plottables(inst_meas)
     plot = _plot_setup(data, plottables)
@@ -218,7 +218,7 @@ def do1d(inst_set, start, stop, division, delay, *inst_meas):
     return plot, data
 
 
-def do1dDiagonal(inst_set, inst2_set, start, stop, division, delay, start2, slope, *inst_meas):
+def do1dDiagonal(inst_set, inst2_set, start, stop, num_points, delay, start2, slope, *inst_meas):
     """
     Perform diagonal sweep in 1 dimension, given two instruments
 
@@ -227,7 +227,7 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, division, delay, start2, slop
         inst2_set: Second instrument to sweep over
         start:  Start of sweep
         stop:  End of sweep
-        division:  Spacing between values
+        num_points:  Number of steps to perform
         delay:  Delay at every step
         start2:  Second start point
         slope:  slope of the diagonal cut
@@ -237,7 +237,7 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, division, delay, start2, slop
         plot, data : returns the plot and the dataset
 
     """
-    loop = qc.Loop(inst_set.sweep(start, stop, division), delay).each(
+    loop = qc.Loop(inst_set.sweep(start, stop, num=num_points), delay).each(
         qc.Task(inst2_set, (inst_set) * slope + (slope * start - start2)), *inst_meas, inst2_set)
     data = loop.get_data_set()
     plottables = _select_plottables(inst_meas)
@@ -252,20 +252,20 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, division, delay, start2, slop
     return plot, data
 
 
-def do2d(inst_set, start, stop, division, delay, inst_set2, start2, stop2, division2, delay2, *inst_meas):
+def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num_points2, delay2, *inst_meas):
     """
 
     Args:
         inst_set:  Instrument to sweep over
         start:  Start of sweep
         stop:  End of sweep
-        division:  Spacing between values
+        num_points:  Number of steps to perform
         delay:  Delay at every step
-        inst_set_2:  Second instrument to sweep over
-        start_2:  Start of sweep for second instrument
-        stop_2:  End of sweep for second instrument
-        division_2:  Spacing between values for second instrument
-        delay_2:  Delay at every step for second instrument
+        inst_set2:  Second instrument to sweep over
+        start2:  Start of sweep for second instrument
+        stop2:  End of sweep for second instrument
+        num_points2:  Number of steps to perform
+        delay2:  Delay at every step for second instrument
         *inst_meas:
 
     Returns:
@@ -276,7 +276,7 @@ def do2d(inst_set, start, stop, division, delay, inst_set2, start2, stop2, divis
         if getattr(inst, "setpoints", False):
             raise ValueError("3d plotting is not supported")
 
-    loop = qc.Loop(inst_set.sweep(start, stop, division), delay).loop(inst_set2.sweep(start2,stop2,division2), delay2).each(
+    loop = qc.Loop(inst_set.sweep(start, stop, num=num_points), delay).loop(inst_set2.sweep(start2,stop2,num=num_points2), delay2).each(
         *inst_meas)
     data = loop.get_data_set()
     plottables = _select_plottables(inst_meas)
