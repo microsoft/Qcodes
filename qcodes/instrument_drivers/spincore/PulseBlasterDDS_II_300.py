@@ -76,6 +76,15 @@ class PB_DDS(Instrument):
         ###########################################################################
         ###                              Parameters                             ###
         ###########################################################################
+
+        self.add_parameter(
+            'core_clock',
+            label='The core clock of the PulseBlasterDDS'
+            set_cmd=self._core_clock,
+            vals=Numbers(),
+            docstring=''
+        )
+
         for n in range(self.N_CHANNELS):
             # DDS Register Bank
             for r in range(self.N_FREQ_REGS):
