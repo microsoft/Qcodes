@@ -1,9 +1,14 @@
 # QCoDeS driver for the Keysight 34465A Digital Multimeter
 
+from functools import partial
+import numpy as np
+import logging
+
+from qcodes.instrument.parameter import ArrayParameter
 import qcodes.utils.validators as vals
 from qcodes import VisaInstrument
-from qcodes.instrument.parameter import ArrayPa
-import numpy as np
+
+log = logging.getLogger(__name__)
 
 
 class ArrayMeasurement(ArrayParameter):
@@ -11,9 +16,9 @@ class ArrayMeasurement(ArrayParameter):
     Class to return several values. Really represents a measurement routine.
     """
 
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, name, shape=(1,), *args, **kwargs):
 
-        super().__init__(name, *args, **kwargs)
+        super().__init__(name, shape=shape, *args, **kwargs)
 
         self.label = ''
         self.unit = ''
@@ -23,18 +28,31 @@ class ArrayMeasurement(ArrayParameter):
         """
         Prepare the measurement, create the setpoints.
 
-        To get deterministic times, we must set the timing to be
-        TWICE that derived from the NPLC value.
+        There is some randomness in the measurement times.
         """
 
         inst = self._instrument
 
         N = inst.sample_count()
+
+        # ensure correct instrument settings
         inst.aperture_mode('OFF')  # aperture mode seems slower ON than OFF
+        inst.trigger_count(1)
+        inst.trigger_delay(0)
+        inst.sample_count_pretrigger(0)
+        inst.sample_source('TIM')
+        inst.autorange('OFF')
 
-        t_expec = inst.NPLC()/50  # 50 Hz power
+        if inst.trigger_source() is None:
+            raise ValueError('Trigger source unspecified! Please set '
+                             "trigger_source to 'INT' or 'EXT'.")
 
-        self.setpoints = (tuple(np.linspace(0, 2*t_expec, N)),)
+        # Final step
+        self.time_per_point = inst.sample_timer_minimum()
+        inst.sample_timer(self.time_per_point)
+
+        self.setpoints = (tuple(np.linspace(0, N*self.time_per_point, N)),)
+        self.shape = (N,)
 
         self.properly_prepared = True
 
@@ -42,12 +60,40 @@ class ArrayMeasurement(ArrayParameter):
 
         if not self.properly_prepared:
             raise ValueError('ArrayMeasurement not properly_prepared. '
-                             'Please run prepare')
+                             'Please run prepare().')
+
+        N = self._instrument.sample_count()
+        log.debug("Acquiring {} samples.".format(N))
+
+        # Ensure that the measurement doesn't time out
+        # TODO (WilliamHPNielsen): What if we wait really long for a trigger?
+        old_timeout = self._instrument.visa_handle.timeout
+        self._instrument.visa_handle.timeout = N*1000*1.2*self.time_per_point
+        self._instrument.visa_handle.timeout += old_timeout
+
+        # Turn off the display to increase measurement speed
+        self._instrument.display_text('Acquiring {} samples'.format(N))
+
+        self._instrument.init_measurement()
+        rawvals = self._instrument.ask('FETCH?')
+
+        self._instrument.visa_handle.timeout = old_timeout
+
+        # parse the aqcuired values
+        try:
+            numvals = np.array(list(map(float, rawvals.split(','))))
+        except AttributeError:
+            numvals = None
+
+        self._instrument.display_clear()
+
+        return numvals
 
 
 class Keysight_34465A(VisaInstrument):
     """
     Instrument class for Keysight 34465A.
+
 
     The driver is written such that usage with models
     34460A, 34461A, and 34470A should be seamless.
@@ -146,6 +192,7 @@ class Keysight_34465A(VisaInstrument):
                            unit='NPLC')
 
         self.add_parameter('volt',
+
                            get_cmd=self._get_voltage,
                            label='Voltage',
                            unit='V')
@@ -211,7 +258,8 @@ class Keysight_34465A(VisaInstrument):
 
         self.add_parameter('sample_count',
                            label='Sample Count',
-                           set_cmd='SAMPle:COUNt {}',
+                           set_cmd=partial(self._set_databuffer_setpoints,
+                                           'SAMPle:COUNt {}'),
                            get_cmd='SAMPle:COUNt?',
                            vals=vals.MultiType(vals.Numbers(1, 1e6),
                                                vals.Enum('MIN', 'MAX', 'DEF')),
@@ -227,8 +275,8 @@ class Keysight_34465A(VisaInstrument):
                            docstring=('Allows collection of the data '
                                       'being digitized the trigger. Reserves '
                                       'memory for pretrigger samples up to the'
-                                      ' specified num. of pretrigger samples.'
-                           ))
+                                      ' specified num. of pretrigger samples.')
+                           )
 
         self.add_parameter('sample_source',
                            label='Sample Timing Source',
@@ -247,6 +295,15 @@ class Keysight_34465A(VisaInstrument):
                                                vals.Enum('MIN', 'MAX', 'DEF')),
                            get_parser=float)
 
+        self.add_parameter('sample_timer_minimum',
+                           label='Minimal sample time',
+                           get_cmd='SAMPle:TIMer? MIN',
+                           get_parser=float,
+                           unit='s')
+
+        # The array parameter
+        self.add_parameter('data_buffer',
+                           parameter_class=ArrayMeasurement)
 
         ####################################
         # Model-specific parameters
@@ -286,6 +343,14 @@ class Keysight_34465A(VisaInstrument):
 
         return float(response)
 
+    def _set_databuffer_setpoints(self, cmd, value):
+        """
+        set_cmd for all databuffer-setpoint related parameters
+        """
+
+        self.data_buffer.properly_prepared = False
+        self.write(cmd.format(value))
+
     def _set_apt_time(self, value):
         self.write('SENSe:VOLTage:DC:APERture {:f}'.format(value))
 
@@ -294,6 +359,9 @@ class Keysight_34465A(VisaInstrument):
 
     def _set_NPLC(self, value):
         self.write('SENSe:VOLTage:DC:NPLC {:f}'.format(value))
+
+        # This will change data_buffer setpoints (timebase)
+        self.data_buffer.properly_prepared = False
 
         # resolution settings change with NPLC
         self.resolution.get()
@@ -327,4 +395,5 @@ class Keysight_34465A(VisaInstrument):
         self.write('VOLT:DC:RES {:.1e}'.format(value))
 
         # NPLC settings change with resolution
+
         self.NPLC.get()
