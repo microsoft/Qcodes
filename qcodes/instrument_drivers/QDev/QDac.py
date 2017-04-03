@@ -59,6 +59,9 @@ class QDac(VisaInstrument):
         # TODO: do we need a query delay for robust operation?
         self._write_response = ''
 
+        # The following bool is used in self.write
+        self.debugmode = False
+
         if self._get_firmware_version() < 0.170202:
             raise RuntimeError('''
                                Obsolete QDAC Software version detected.
@@ -68,9 +71,8 @@ class QDac(VisaInstrument):
 
         self.num_chans = num_chans
 
-        # The following bool is used in self.write
-        self.debugmode = False
-        
+
+
         # Assigned slopes. Entries will eventually be [chan, slope] (V/s)
         self._slopes = []
         # Function generators (used in _set_voltage)
@@ -403,6 +405,11 @@ class QDac(VisaInstrument):
             ramptime (float): The ramp time in seconds.
         """
 
+        # Crazy stuff happens if the period is too small, e.g. the channel
+        # can jump to its max voltage
+        if ramptime < 0.002:
+            ramptime = 0
+
         # .get is slower than .get_latest, but safe if a ramp is
         # interrupted
         v_start = self.parameters['ch{:02}_v'.format(chan)].get()
@@ -445,8 +452,8 @@ class QDac(VisaInstrument):
         TODO (WilliamHPNielsen): add automatic de-concatenation of commands.
         """
         if self.debugmode:
-            log.debug('Sending command string: {}'.format(cmd))
-            
+            log.info('Sending command string: {}'.format(cmd))
+
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
         self._write_response = self.visa_handle.read()
