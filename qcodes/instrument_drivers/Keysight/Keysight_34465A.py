@@ -79,7 +79,7 @@ class ArrayMeasurement(ArrayParameter):
 
         self._instrument.visa_handle.timeout = old_timeout
 
-        # parse the aqcuired values
+        # parse the acquired values
         try:
             numvals = np.array(list(map(float, rawvals.split(','))))
         except AttributeError:
@@ -192,7 +192,6 @@ class Keysight_34465A(VisaInstrument):
                            unit='NPLC')
 
         self.add_parameter('volt',
-
                            get_cmd=self._get_voltage,
                            label='Voltage',
                            unit='V')
@@ -335,9 +334,11 @@ class Keysight_34465A(VisaInstrument):
             self.connect_message()
 
     def _get_voltage(self):
-        # TODO: massive improvements! What if more than one number was
-        # asked for?
-        # What if mode is not voltage sensing? What if...
+        # TODO: massive improvements!
+        # The 'READ?' command will return anything the instrument is set up
+        # to return, i.e. not necessarily a voltage (might be current or
+        # or resistance) and not necessarily a single value. This function
+        # should be aware of the configuration. 
 
         response = self.ask('READ?')
 
