@@ -78,9 +78,6 @@ class QDac(VisaInstrument):
         self._assigned_fgs = {}
         # Sync channels
         self._syncoutputs = []  # Entries: [chan, syncchannel]
-        self._syncs = set(range(1, 6))
-        self._assigned_syncs = {}
-
 
         self.chan_range = range(1, 1 + self.num_chans)
         self.channel_validator = vals.Ints(1, self.num_chans)
@@ -176,13 +173,16 @@ class QDac(VisaInstrument):
         slopechans = [sl[0] for sl in self._slopes]
         if chan in slopechans:
             slope = [sl[1] for sl in self._slopes if sl[0] == chan][0]
+            # find and assign fg
             fg = min(self._fgs.difference(set(self._assigned_fgs.values())))
             self._assigned_fgs[chan] = fg
+            # We need .get and not get_latest in case a ramp was interrupted
             v_start = self.parameters['ch{:02}_v'.format(chan)].get()
             time = abs(v_set-v_start)/slope
             log.info('Slope: {}, time: {}'.format(slope, time))
-            # Attenuation compensation takes place inside _rampvoltage
-            self._rampvoltage(chan, fg, v_set, time)
+            # Attenuation compensation and syncing take place
+            # inside _rampvoltage
+            self._rampvoltage(chan, fg, v_start, v_set, time)
         else:
             # compensate for the 0.1 multiplier, if it's on
             if self.parameters['ch{:02}_vrange'.format(chan)].get_latest() == 1:
@@ -348,13 +348,12 @@ class QDac(VisaInstrument):
         if chan not in range(1, 49):
             raise ValueError('Channel number must be 1-48.')
 
-        if sync == '0':
-
+        if sync == 0:
             # try to remove the sync
             try:
                 sc = self._syncoutputs
                 to_remove = [sc.index(syn) for syn in sc if syn[0] == chan][0]
-                sc.remove(sc[to_remove])
+                self._syncoutputs.remove(sc[to_remove])
             except IndexError:
                 pass
             return
@@ -368,12 +367,6 @@ class QDac(VisaInstrument):
             self._syncoutputs[self._syncoutputs.index([chan, oldsyn])] = [chan,
                                                                           sync]
             return
-
-        if len(self._syncoutputs) >= 5:
-            syncchans = ', '.join([str(c[0]) for c in self._syncoutputs])
-            raise ValueError('Can not assign a sync output to more than 5 '
-                             'channels. Assign 0 to at least one of the '
-                             'following channels: {}'.format(syncchans))
 
         self._syncoutputs.append([chan, sync])
         return
@@ -442,13 +435,6 @@ class QDac(VisaInstrument):
         else:
             return 'Inf'
 
-    def slopes(self):
-        """
-        unit the slopes assigned to each channel
-        """
-        for (chan, slope) in self._slopes:
-            print('Channel {}, slope: {} (V/s)'.format(chan, slope))
-
     def printslopes(self):
         """
         Print the finite slopes assigned to channels
@@ -456,7 +442,7 @@ class QDac(VisaInstrument):
         for sl in self._slopes:
             print('Channel {}, slope: {} (V/s)'.format(sl[0], sl[1]))
 
-    def _rampvoltage(self, chan, fg, setvoltage, ramptime):
+    def _rampvoltage(self, chan, fg, v_start, setvoltage, ramptime):
         """
         Smoothly ramp the voltage of a channel by the means of a function
         generator. Helper function used by _set_voltage.
@@ -470,14 +456,10 @@ class QDac(VisaInstrument):
 
         # Crazy stuff happens if the period is too small, e.g. the channel
         # can jump to its max voltage
-        if ramptime < 0.002:
+        if ramptime <= 0.002:
             ramptime = 0
-
-        # .get is slower than .get_latest, but safe if a ramp is
-        # interrupted
-        v_start = self.parameters['ch{:02}_v'.format(chan)].get()
-
-        log.info('Start: {}, stop: {}, time: {}'.format(v_start, setvoltage, ramptime))
+            log.warning('Cancelled a ramp with a ramptime of '
+                        '{} s'.format(ramptime))
 
         offset = v_start
         amplitude = setvoltage-v_start
@@ -488,6 +470,13 @@ class QDac(VisaInstrument):
         chanmssg = 'wav {} {} {} {}'.format(chan, fg,
                                             amplitude,
                                             offset)
+
+        if chan in [syn[0] for syn in self._syncoutputs]:
+            syncing = True
+            sync = [syn[1] for syn in self._syncoutputs if syn[0] == chan][0]
+            self.write('syn {} {} 0 {}'.format(sync, fg, 10))
+        else:
+            syncing = False
 
         typedict = {'SINE': 1, 'SQUARE': 2, 'RAMP': 3}
 
@@ -502,6 +491,9 @@ class QDac(VisaInstrument):
         self.write(chanmssg)
         self.write(funmssg)
         self.parameters['ch{:02}_v'.format(chan)]._save_val(setvoltage)
+
+        if syncing:
+            self.write('syn {} 0 0 0'.format(sync))
 
     def write(self, cmd):
         """
