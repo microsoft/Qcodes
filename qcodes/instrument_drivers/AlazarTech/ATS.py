@@ -850,7 +850,7 @@ class AlazarParameter(Parameter):
                 # TODO(damazter) (S) test this validator
                 vals = validators.Enum(*byte_to_value_dict.values())
 
-        super().__init__(name=name, label=label, units=unit, vals=vals,
+        super().__init__(name=name, label=label, unit=unit, vals=vals,
                          instrument=instrument)
         self.instrument = instrument
         self._byte = None
@@ -1034,7 +1034,7 @@ class AcquisitionController(Instrument):
         # remoteInstrument will not recognize that it returns multiple values.
         self.add_parameter(name="acquisition",
                            parameter_class=ATSAcquisitionParameter,
-                           instrument=self)
+                           acquisition_controller=self)
 
         # Save bytes_per_sample received from ATS digitizer
         self._bytes_per_sample = self._alazar.bytes_per_sample() * 8
@@ -1202,15 +1202,17 @@ class AcquisitionController(Instrument):
 
 
 class ATSAcquisitionParameter(MultiParameter):
-    def __init__(self, acquisition_controller, **kwargs):
+    def __init__(self, acquisition_controller=None, **kwargs):
         self.acquisition_controller = acquisition_controller
         super().__init__(snapshot_value=False,
                          names=[''], shapes=[()], **kwargs)
 
     @property
     def names(self):
-        return tuple(['ch{}_signal'.format(ch)
-                      for ch in self.acquisition_controller.channel_selection])
+        if self.acquisition_controller is None or \
+                not hasattr(self.acquisition_controller, 'channel_selection'):
+            return ['']
+        else:
 
     @names.setter
     def names(self, names):
@@ -1237,16 +1239,19 @@ class ATSAcquisitionParameter(MultiParameter):
 
     @property
     def shapes(self):
-        average_mode = self.acquisition_controller.average_mode()
+        if hasattr(self.acquisition_controller, 'average_mode'):
+            average_mode = self.acquisition_controller.average_mode()
 
-        if average_mode == 'point':
-            shape = ()
-        elif average_mode == 'trace':
-            shape = (self.acquisition_controller.samples_per_record,)
+            if average_mode == 'point':
+                shape = ()
+            elif average_mode == 'trace':
+                shape = (self.acquisition_controller.samples_per_record,)
+            else:
+                shape = (self.acquisition_controller.traces_per_acquisition,
+                         self.acquisition_controller.samples_per_record)
+            return tuple([shape] * self.acquisition_controller.number_of_channels)
         else:
-            shape = (self.acquisition_controller.traces_per_acquisition,
-                     self.acquisition_controller.samples_per_record)
-        return tuple([shape] * self.acquisition_controller.number_of_channels)
+            return tuple(() * len(self.names))
 
     @shapes.setter
     def shapes(self, shapes):
