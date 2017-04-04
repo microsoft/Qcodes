@@ -1213,6 +1213,8 @@ class ATSAcquisitionParameter(MultiParameter):
                 not hasattr(self.acquisition_controller, 'channel_selection'):
             return ['']
         else:
+            return tuple(['ch{}_signal'.format(ch) for ch in
+                          self.acquisition_controller.channel_selection])
 
     @names.setter
     def names(self, names):
