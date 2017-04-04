@@ -474,7 +474,8 @@ class QDac(VisaInstrument):
         if chan in [syn[0] for syn in self._syncoutputs]:
             syncing = True
             sync = [syn[1] for syn in self._syncoutputs if syn[0] == chan][0]
-            self.write('syn {} {} 0 {}'.format(sync, fg, 10))
+            sync_duration = 10  # duration in ms
+            self.write('syn {} {} 0 {}'.format(sync, fg, sync_duration))
         else:
             syncing = False
 
