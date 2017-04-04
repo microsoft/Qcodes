@@ -459,7 +459,7 @@ class QDac(VisaInstrument):
         if ramptime <= 0.002:
             ramptime = 0
             log.warning('Cancelled a ramp with a ramptime of '
-                        '{} s'.format(ramptime). + '. Voltage not changed.')
+                        '{} s'.format(ramptime) + '. Voltage not changed.')
 
         offset = v_start
         amplitude = setvoltage-v_start
