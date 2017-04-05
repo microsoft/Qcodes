@@ -4,6 +4,7 @@ from os.path import sep
 from os import makedirs
 import os
 import logging
+from copy import deepcopy
 
 from qcodes.plots.pyqtgraph import QtPlot
 from qcodes.plots.qcmatplotlib import MatPlot
@@ -162,9 +163,19 @@ def _save_individual_plots(data, inst_meas):
                 counter_two += 1
                 plot = MatPlot()
                 inst_meas_name = "{}_{}".format(i._instrument.name, name)
-                plot.add(getattr(data, inst_meas_name))
+                inst_meas_data = getattr(data, inst_meas_name)
+                # this is a hack because expand_trace works
+                # in place. Also it should probably * expand its args and kwargs. N
+                # Same below
+                inst_meas_data_copy = deepcopy(inst_meas_data)
+                inst_meta_data = {}
+                plot.expand_trace((inst_meas_data_copy,), kwargs=inst_meta_data)
+                if 'z' in inst_meta_data:
+                    plot.add(inst_meas_data, rasterized=True)
+                else:
+                    plot.add(inst_meas_data, color=color)
+                    plot.subplots[0].grid()
                 plot.subplots[0].set_title(title)
-                plot.subplots[0].grid()
                 plot.save("{}_{:03d}.pdf".format(plot.get_default_title(), counter_two))
         else:
             # Step the color on all subplots no just on plots within the same axis/subplot
@@ -174,9 +185,16 @@ def _save_individual_plots(data, inst_meas):
             plot = MatPlot()
             # simple_parameter
             inst_meas_name = "{}_{}".format(i._instrument.name, i.name)
-            plot.add(getattr(data, inst_meas_name))
+            inst_meas_data = getattr(data, inst_meas_name)
+            inst_meas_data_copy = deepcopy(inst_meas_data)
+            inst_meta_data = {}
+            plot.expand_trace((inst_meas_data_copy,), kwargs=inst_meta_data)
+            if 'z' in inst_meta_data:
+                plot.add(inst_meas_data, rasterized=True)
+            else:
+                plot.add(inst_meas_data, color=color)
+                plot.subplots[0].grid()
             plot.subplots[0].set_title(title)
-            plot.subplots[0].grid()
             plot.save("{}_{:03d}.pdf".format(plot.get_default_title(), counter_two))
 
 
