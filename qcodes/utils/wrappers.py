@@ -66,9 +66,10 @@ def init(mainfolder:str, sample_name: str, station, plot_x_position=0.66,
         raise RuntimeWarning("History can't be saved refusing to proceed (use IPython/jupyter)")
     else:
         logfile = "{}{}".format(path_to_experiment_folder, "commands.log")
+        CURRENT_EXPERIMENT['logfile'] = logfile
         if not CURRENT_EXPERIMENT["logging_enabled"]:
             log.debug("Logging commands to: t{}".format(logfile))
-            ipython.magic("%logstart -t {} {}".format(logfile, "append"))
+            ipython.magic("%logstart -t -o {} {}".format(logfile, "append"))
             CURRENT_EXPERIMENT["logging_enabled"] = True
         else:
             log.debug("Logging already started at {}".format(logfile))
@@ -223,6 +224,12 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas):
     if CURRENT_EXPERIMENT.get('device_image'):
         log.debug('Saving device image')
         save_device_image()
+
+    # add the measurement ID to the logfile
+    with open(CURRENT_EXPERIMENT['logfile'], 'a') as fid:
+        print("#[QCoDeS]# Saved dataset to: {}".format(data.location),
+              file=fid)
+
     return plot, data
 
 
@@ -258,6 +265,12 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, num_points, delay, start2, sl
     _save_individual_plots(data, plottables)
     if CURRENT_EXPERIMENT.get('device_image'):
         save_device_image()
+
+    # add the measurement ID to the logfile
+    with open(CURRENT_EXPERIMENT['logfile'], 'a') as fid:
+        print("#[QCoDeS]# Saved dataset to: {}".format(data.location),
+              file=fid)
+
     return plot, data
 
 
@@ -298,6 +311,12 @@ def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num
     _save_individual_plots(data, plottables)
     if CURRENT_EXPERIMENT.get('device_image'):
         save_device_image()
+
+    # add the measurement ID to the logfile
+    with open(CURRENT_EXPERIMENT['logfile'], 'a') as fid:
+        print("#[QCoDeS]# Saved dataset to: {}".format(data.location),
+              file=fid)
+
     return plot, data
 
 
