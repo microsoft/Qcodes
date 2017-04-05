@@ -81,6 +81,9 @@ class Config():
     schema_cwd_file_name = cwd_file_name.replace(config_file_name,
                                                  schema_file_name)
 
+    # SilQ upgrade: add a custom file name, which can be anywhere
+    custom_file_name = ''
+
     current_schema = None
     current_config = None
 
@@ -90,9 +93,18 @@ class Config():
     _diff_config = {}
     _diff_schema = {}
 
+    subconfigs = []
+
     def __init__(self):
         self.defaults, self.defaults_schema = self.load_default()
         self.current_config = self.update_config()
+
+    @property
+    def schema_custom_file_name(self):
+        # We make this a dependent property as you don't want to also update
+        # this when you update self.custom_file_name
+        return self.custom_file_name.replace(self.config_file_name,
+                                             self.schema_file_name)
 
     def load_default(self):
         defaults = self.load_config(self.default_file_name)
@@ -139,6 +151,11 @@ class Config():
             self.validate(config, self.current_schema,
                           self.schema_cwd_file_name)
 
+        if os.path.isfile(self.custom_file_name):
+            custom_config = self.load_config(self.custom_file_name)
+            config = update(config, custom_config)
+            self.validate(config, self.current_schema,
+                          self.schema_custom_file_name)
         return config
 
     def validate(self, json_config=None, schema=None, extra_schema_path=None):
@@ -259,6 +276,8 @@ class Config():
                 props["user"] = {}
             props.get("user").update(schema_entry)
 
+    # def add_subconfig(self, path):
+
     def load_config(self, path):
         """ Load a config JSON file
         As a side effect it records which file is loaded
@@ -314,6 +333,12 @@ class Config():
         """
         self.save_config(self.cwd_file_name)
         self.save_schema(self.schema_cwd_file_name)
+
+    def save_to_custom(self):
+        """ Save files to custom dir (defined in self.custom_file_name)
+        """
+        self.save_config(self.custom_file_name)
+        self.save_schema(self.schema_custom_file_name)
 
     def describe(self, name):
         """
