@@ -141,7 +141,7 @@ class MakeDeviceImage(qt.QWidget):
         self.close()
 
     @staticmethod
-    def _renderImage(data, canvas, filename):
+    def _renderImage(data, canvas, filename, title=None):
         """
         Render an image
         """
@@ -154,6 +154,21 @@ class MakeDeviceImage(qt.QWidget):
         spacing = int(label_size * 0.2)
 
         painter = gui.QPainter(pixmap)
+        if title:
+            painter.setBrush(gui.QColor(255, 255, 255, 100))
+            textfont = gui.QFont('Decorative', label_size)
+            textwidth = gui.QFontMetrics(textfont).width(title)
+            rectangle_width = textwidth + 2 * spacing
+            rectangle_height = label_size + 2 * spacing
+            painter.drawRect(0,
+                             0,
+                             rectangle_width,
+                             rectangle_height)
+            painter.drawText(core.QRectF(spacing, spacing,
+                                         rectangle_width, rectangle_height),
+                             core.Qt.AlignTop + core.Qt.AlignLeft,
+                             title)
+
         for instrument, parameters in data.items():
             for parameter, positions in parameters.items():
 
@@ -273,7 +288,7 @@ class DeviceImage:
                     valuestr = str(value)
                 self._data[instrument][parameter]['value'] = valuestr
 
-    def makePNG(self, counter, path=None):
+    def makePNG(self, counter, path=None, title=None):
         """
         Render the image with new voltage values and save it to disk
 
@@ -293,7 +308,8 @@ class DeviceImage:
         grid.addWidget(win.imageCanvas)
         win.imageCanvas, pixmap = MakeDeviceImage._renderImage(self._data,
                                                                win.imageCanvas,
-                                                               self.filename)
+                                                               self.filename,
+                                                               title)
         filename = '{:03d}_deviceimage.png'.format(counter)
         if path:
             filename = os.path.join(path, filename)
