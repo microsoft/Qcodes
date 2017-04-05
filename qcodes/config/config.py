@@ -93,7 +93,7 @@ class Config():
     _diff_config = {}
     _diff_schema = {}
 
-    subconfigs = []
+    subconfigs = {}
 
     def __init__(self):
         self.defaults, self.defaults_schema = self.load_default()
@@ -156,6 +156,12 @@ class Config():
             config = update(config, custom_config)
             self.validate(config, self.current_schema,
                           self.schema_custom_file_name)
+
+        for subconfig_key, subconfig_dir in self.subconfigs.items():
+            with open(subconfig_dir, "r") as fp:
+                subconfig = json.load(fp)
+            config["user"].update({subconfig_key: subconfig})
+
         return config
 
     def validate(self, json_config=None, schema=None, extra_schema_path=None):
@@ -275,8 +281,6 @@ class Config():
             if props.get("user", True):
                 props["user"] = {}
             props.get("user").update(schema_entry)
-
-    # def add_subconfig(self, path):
 
     def load_config(self, path):
         """ Load a config JSON file
