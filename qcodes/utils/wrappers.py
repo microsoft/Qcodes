@@ -181,6 +181,7 @@ def _save_individual_plots(data, inst_meas):
 
 def save_device_image():
     counter = CURRENT_EXPERIMENT['provider'].counter
+    title = "{} #{:03d}".format(CURRENT_EXPERIMENT["sample_name"], counter)
     di = CURRENT_EXPERIMENT['device_image']
     di.updateValues(CURRENT_EXPERIMENT['station'])
 
@@ -189,7 +190,7 @@ def save_device_image():
 
     di.makePNG(CURRENT_EXPERIMENT["provider"].counter,
                os.path.join(CURRENT_EXPERIMENT["exp_folder"],
-                            '{:03d}'.format(counter)))
+                            '{:03d}'.format(counter)), title)
 
 
 def do1d(inst_set, start, stop, num_points, delay, *inst_meas):
