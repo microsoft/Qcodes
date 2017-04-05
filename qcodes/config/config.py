@@ -338,6 +338,14 @@ class Config():
         self.save_config(self.cwd_file_name)
         self.save_schema(self.schema_cwd_file_name)
 
+    def save_subconfigs(self):
+        """ Save subconfigs to their respective files
+        """
+        for subconfig_key, path in self.subconfigs.items():
+            with open(path, "w") as fp:
+                subconfig = self.current_config['user'][subconfig_key]
+                json.dump(subconfig, fp, indent=4)
+
     def save_to_custom(self):
         """ Save files to custom dir (defined in self.custom_file_name)
         """
