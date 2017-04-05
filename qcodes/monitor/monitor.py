@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+# ! /usr/bin/env python
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
@@ -19,10 +19,10 @@ import http.server
 import socketserver
 import webbrowser
 
+from multiprocessing import Process
 from threading import Thread
 from typing import Dict
 from concurrent.futures import Future
-from concurrent.futures import CancelledError
 import functools
 
 import websockets
@@ -81,7 +81,7 @@ def _handler(parameters, interval: int):
                     log.debug(e)
                     pass
                 await asyncio.sleep(interval)
-            except CancelledError:
+            except asyncio.CancelledError:
                 break
         log.debug("closing sever")
 
@@ -103,11 +103,18 @@ class Monitor(Thread):
         super().__init__()
         self.loop = None
         # start the server to server monitor http/files
+        # the server may have been already started in this
+        # session or it could be a zombie process
         if Monitor.server:
             self.show()
         else:
-            Monitor.server = Server(port=SERVER_PORT)
-            Monitor.server.start()
+            try:
+                Monitor.server = Server(port=SERVER_PORT)
+                Monitor.server.start()
+            except socketserver.socket.error as exc:
+                if exc.args[0] != 48:
+                    raise
+                self.show()
         self._monitor(*parameters, interval=1)
 
     def run(self):
@@ -191,7 +198,7 @@ def _log_result(future):
         log.exception("Could not start server loop")
 
 
-class Server(Thread):
+class Server(Process):
 
     def __init__(self, port=3000):
         self.port = port
