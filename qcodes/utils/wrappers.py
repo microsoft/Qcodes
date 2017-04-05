@@ -173,7 +173,7 @@ def _save_individual_plots(data, inst_meas):
             plot = MatPlot()
             # simple_parameter
             inst_meas_name = "{}_{}".format(i._instrument.name, i.name)
-            plot.add(getattr(data, inst_meas_name), color=color)
+            plot.add(getattr(data, inst_meas_name))
             plot.subplots[0].set_title(title)
             plot.subplots[0].grid()
             plot.save("{}_{:03d}.pdf".format(plot.get_default_title(), counter_two))
