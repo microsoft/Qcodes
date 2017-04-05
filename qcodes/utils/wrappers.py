@@ -109,46 +109,77 @@ def _select_plottables(tasks):
 def _plot_setup(data, inst_meas, useQT=True):
     title = "{} #{:03d}".format(CURRENT_EXPERIMENT["sample_name"],
                                 data.location_provider.counter)
+    num_subplots = 0
+    counter_two = 0
+    for j, i in enumerate(inst_meas):
+        if getattr(i, "names", False):
+            num_subplots += len(i.names)
+        else:
+            num_subplots += 1
     if useQT:
         plot = QtPlot(fig_x_position=CURRENT_EXPERIMENT['plot_x_position'])
     else:
-        plot = MatPlot()
+        plot = MatPlot(subplots=(1,num_subplots))
     for j, i in enumerate(inst_meas):
         if getattr(i, "names", False):
             # deal with multidimensional parameter
             for k, name in enumerate(i.names):
+                color = 'C' + str(counter_two)
+                counter_two += 1
                 inst_meas_name = "{}_{}".format(i._instrument.name, name)
-                plot.add(getattr(data, inst_meas_name), subplot=j + k + 1)
+                inst_meas_data = getattr(data, inst_meas_name)
+                inst_meta_data = __get_plot_type(inst_meas_data, plot)
                 if useQT:
+                    plot.add(inst_meas_data, subplot=j + k + 1)
                     plot.subplots[j+k].showGrid(True, True)
                     if j == 0:
                         plot.subplots[0].setTitle(title)
                     else:
                         plot.subplots[j+k].setTitle("")
                 else:
-                    plot.subplots[j+k].grid()
+                    if 'z' in inst_meta_data:
+                        plot.add(inst_meas_data, subplot=j + k + 1, rasterized=True)
+                    else:
+                        plot.add(inst_meas_data, subplot=j + k + 1, color=color)
+                        plot.subplots[j + k].grid()
                     if j == 0:
                         plot.subplots[0].set_title(title)
                     else:
                         plot.subplots[j+k].set_title("")
         else:
+            color = 'C' + str(counter_two)
+            counter_two += 1
             # simple_parameters
             inst_meas_name = "{}_{}".format(i._instrument.name, i.name)
-            plot.add(getattr(data, inst_meas_name), subplot=j + 1)
+            inst_meas_data = getattr(data, inst_meas_name)
+            inst_meta_data = __get_plot_type(inst_meas_data, plot)
             if useQT:
+                plot.add(inst_meas_data, subplot=j + 1)
                 plot.subplots[j].showGrid(True, True)
                 if j == 0:
                     plot.subplots[0].setTitle(title)
                 else:
                     plot.subplots[j].setTitle("")
             else:
-                plot.subplots[j].grid()
+                if 'z' in inst_meta_data:
+                    plot.add(inst_meas_data, subplot=j + 1, rasterized=True)
+                else:
+                    plot.add(inst_meas_data, subplot=j + 1, color=color)
+                    plot.subplots[j].grid()
                 if j == 0:
                     plot.subplots[0].set_title(title)
                 else:
                     plot.subplots[j].set_title("")
-    return plot
+    return plot, num_subplots
 
+def __get_plot_type(data, plot):
+    # this is a hack because expand_trace works
+    # in place. Also it should probably * expand its args and kwargs. N
+    # Same below
+    data_copy = deepcopy(data)
+    metadata = {}
+    plot.expand_trace((data_copy,), kwargs=metadata)
+    return metadata
 
 def _save_individual_plots(data, inst_meas):
     title = "{} #{:03d}".format(CURRENT_EXPERIMENT["sample_name"], data.location_provider.counter)
@@ -164,12 +195,7 @@ def _save_individual_plots(data, inst_meas):
                 plot = MatPlot()
                 inst_meas_name = "{}_{}".format(i._instrument.name, name)
                 inst_meas_data = getattr(data, inst_meas_name)
-                # this is a hack because expand_trace works
-                # in place. Also it should probably * expand its args and kwargs. N
-                # Same below
-                inst_meas_data_copy = deepcopy(inst_meas_data)
-                inst_meta_data = {}
-                plot.expand_trace((inst_meas_data_copy,), kwargs=inst_meta_data)
+                inst_meta_data = __get_plot_type(inst_meas_data, plot)
                 if 'z' in inst_meta_data:
                     plot.add(inst_meas_data, rasterized=True)
                 else:
@@ -186,9 +212,7 @@ def _save_individual_plots(data, inst_meas):
             # simple_parameter
             inst_meas_name = "{}_{}".format(i._instrument.name, i.name)
             inst_meas_data = getattr(data, inst_meas_name)
-            inst_meas_data_copy = deepcopy(inst_meas_data)
-            inst_meta_data = {}
-            plot.expand_trace((inst_meas_data_copy,), kwargs=inst_meta_data)
+            inst_meta_data = __get_plot_type(inst_meas_data, plot)
             if 'z' in inst_meta_data:
                 plot.add(inst_meas_data, rasterized=True)
             else:
@@ -232,13 +256,19 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas):
                                   stop, num=num_points), delay).each(*inst_meas)
     data = loop.get_data_set()
     plottables = _select_plottables(inst_meas)
-    plot = _plot_setup(data, plottables)
+    plot, _ = _plot_setup(data, plottables)
     try:
         _ = loop.with_bg_task(plot.update).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
     plot.save()
-    _save_individual_plots(data, plottables)
+    pdfplot, num_subplots = _plot_setup(data, plottables, useQT=False)
+    # pad a bit more to prevent overlap between
+    # suptitle and title
+    pdfplot.fig.tight_layout(pad=3)
+    pdfplot.save("{}.pdf".format(plot.get_default_title()))
+    if num_subplots > 1:
+        _save_individual_plots(data, plottables)
     if CURRENT_EXPERIMENT.get('device_image'):
         log.debug('Saving device image')
         save_device_image()
@@ -247,7 +277,6 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas):
     with open(CURRENT_EXPERIMENT['logfile'], 'a') as fid:
         print("#[QCoDeS]# Saved dataset to: {}".format(data.location),
               file=fid)
-
     return plot, data
 
 
@@ -274,13 +303,20 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, num_points, delay, start2, sl
         qc.Task(inst2_set, (inst_set) * slope + (slope * start - start2)), *inst_meas, inst2_set)
     data = loop.get_data_set()
     plottables = _select_plottables(inst_meas)
-    plot = _plot_setup(data, plottables)
+    plot, _ = _plot_setup(data, plottables)
     try:
         _ = loop.with_bg_task(plot.update).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
     plot.save()
-    _save_individual_plots(data, plottables)
+    pdfplot, num_subplots = _plot_setup(data, plottables, useQT=False)
+    # pad a bit more to prevent overlap between
+    # suptitle and title
+    pdfplot.fig.tight_layout(pad=3)
+    pdfplot.save("{}.pdf".format(plot.get_default_title()))
+    if num_subplots > 1:
+        _save_individual_plots(data, plottables)
+    pdfplot.save("{}.pdf".format(plot.get_default_title()))
     if CURRENT_EXPERIMENT.get('device_image'):
         save_device_image()
 
@@ -320,13 +356,20 @@ def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num
         *inst_meas)
     data = loop.get_data_set()
     plottables = _select_plottables(inst_meas)
-    plot = _plot_setup(data, plottables)
+    plot, _ = _plot_setup(data, plottables)
     try:
         _ = loop.with_bg_task(plot.update).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
     plot.save()
-    _save_individual_plots(data, plottables)
+    pdfplot, num_subplots = _plot_setup(data, plottables, useQT=False)
+    # pad a bit more to prevent overlap between
+    # suptitle and title
+    pdfplot.fig.tight_layout(pad=3)
+    pdfplot.save("{}.pdf".format(plot.get_default_title()))
+    if num_subplots > 1:
+        _save_individual_plots(data, plottables)
+    pdfplot.save("{}.pdf".format(plot.get_default_title()))
     if CURRENT_EXPERIMENT.get('device_image'):
         save_device_image()
 
