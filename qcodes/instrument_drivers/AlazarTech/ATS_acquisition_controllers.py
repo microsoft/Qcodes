@@ -41,6 +41,13 @@ class Triggered_AcquisitionController(AcquisitionController):
                            parameter_class=ManualParameter,
                            initial_value='trace',
                            vals=vals.Enum('none', 'trace', 'point'))
+        self.add_parameter(name='samples_per_trace',
+                           get_cmd=lambda: self.samples_per_record,
+                           vals=vals.Multiples(divisor=16))
+        self.add_parameter(name='traces_per_acquisition',
+                           get_cmd=lambda: self.buffers_per_acquisition * \
+                                           self.records_per_buffer,
+                           vals=vals.Ints())
 
     def setup(self, **kwargs):
         """
@@ -57,26 +64,10 @@ class Triggered_AcquisitionController(AcquisitionController):
         self.samples_per_buffer = self.samples_per_record * \
                                   self.records_per_buffer
         self.number_of_channels = len(self.channel_selection)
-        self.traces_per_acquisition = self.buffers_per_acquisition * \
-                                       self.records_per_buffer
 
         if self.samples_per_record % 16:
             raise SyntaxError('Samples per record {} is not multiple of '
                               '16'.format(self.samples_per_record))
-
-        # Set acquisition parameter metadata
-        self.acquisition.names = tuple(['ch{}_signal'.format(ch) for ch in
-                                        self.channel_selection])
-        self.acquisition.labels = self.acquisition.names
-        self.acquisition.units = ['V'] * self.number_of_channels
-
-        if self.average_mode() == 'point':
-            shape = ()
-        elif self.average_mode() == 'trace':
-            shape = (self.samples_per_record,)
-        else:
-            shape = (self.traces_per_acquisition, self.samples_per_record)
-        self.acquisition.shapes = tuple([shape] * self.number_of_channels)
 
     def requires_buffer(self, buffers_completed):
         # Check buffers_completed instead of self.buffer_idx since buffers
@@ -88,7 +79,7 @@ class Triggered_AcquisitionController(AcquisitionController):
         Initializes buffers before capturing
         """
         self.buffer_idx = 0
-        self.buffers = [np.zeros((self.traces_per_acquisition,
+        self.buffers = [np.zeros((self.traces_per_acquisition(),
                                   self.samples_per_record))
                         for ch in self.channel_selection]
 
@@ -194,20 +185,6 @@ class Continuous_AcquisitionController(AcquisitionController):
         if self.samples_per_record % 16:
             raise SyntaxError('Samples per record {} is not multiple of '
                               '16'.format(self.samples_per_record))
-
-        # Set acquisition parameter metadata
-        self.acquisition.names = tuple(['ch{}_signal'.format(ch) for ch in
-                                        self.channel_selection])
-        self.acquisition.labels = self.acquisition.names
-        self.acquisition.units = ['V'] * self.number_of_channels
-
-        if self.average_mode() == 'point':
-            shape = ()
-        elif self.average_mode() == 'trace':
-            shape = (self.samples_per_trace(),)
-        else:
-            shape = (self.traces_per_acquisition(), self.samples_per_record)
-        self.acquisition.shapes = tuple([shape] * self.number_of_channels)
 
     def requires_buffer(self, buffers_completed):
         return self.trace_idx < self.traces_per_acquisition()
@@ -316,15 +293,15 @@ class SteeredInitialization_AcquisitionController(
 
         self.add_parameter(name='t_no_blip',
                            parameter_class=ManualParameter,
-                           units='ms',
+                           unit='ms',
                            initial_value=40)
         self.add_parameter(name='t_max_wait',
                            parameter_class=ManualParameter,
-                           units='ms',
+                           unit='ms',
                            initial_value=500)
         self.add_parameter(name='max_wait_action',
                            parameter_class=ManualParameter,
-                           units='ms',
+                           unit='ms',
                            initial_value='start',
                            vals=vals.Enum('start', 'error'))
 

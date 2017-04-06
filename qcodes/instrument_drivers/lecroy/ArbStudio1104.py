@@ -9,8 +9,6 @@ from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils import validators as vals
 
 
-
-
 class ArbStudio1104(Instrument):
     def __init__(self, name, dll_path, **kwargs):
         super().__init__(name, **kwargs)
@@ -75,7 +73,6 @@ class ArbStudio1104(Instrument):
                                set_cmd=partial(self._set_sampling_rate_prescaler, ch),
                                vals=vals.MultiType(Multiples(2), vals.Enum(1)))
 
-
             self.add_parameter('ch{}_sequence'.format(ch),
                                parameter_class=ManualParameter,
                                label='Channel {} Sequence'.format(ch),
@@ -99,7 +96,7 @@ class ArbStudio1104(Instrument):
         self.add_parameter('max_voltage',
                            parameter_class=ManualParameter,
                            label='Maximum waveform voltage',
-                           units='V',
+                           unit='V',
                            initial_value=6,
                            vals=vals.Numbers())  # Can we test
 

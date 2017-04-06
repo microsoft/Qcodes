@@ -15,7 +15,7 @@ class Keysight_E8267D(VisaInstrument):
 
         self.add_parameter(name='frequency',
                            label='Frequency',
-                           units='Hz',
+                           unit='Hz',
                            get_cmd='SOURce:FREQuency:CW?',
                            set_cmd='SOURce:FREQuency:CW' + ' {:.4f}',
                            get_parser=float,
@@ -23,7 +23,7 @@ class Keysight_E8267D(VisaInstrument):
                            vals=vals.Numbers(250e3, 44e9))
         self.add_parameter(name='phase',
                            label='Phase',
-                           units='deg',
+                           unit='deg',
                            get_cmd='SOURce:PHASe?',
                            set_cmd='SOURce:PHASe' + ' {:.8f}',
                            get_parser=self.rad_to_deg,
@@ -31,7 +31,7 @@ class Keysight_E8267D(VisaInstrument):
                            vals=vals.Numbers(-180, 180))
         self.add_parameter(name='power',
                            label='Power',
-                           units='dBm',
+                           unit='dBm',
                            get_cmd='POW:AMPL?',
                            set_cmd='POW:AMPL' + ' {:.4f}',
                            get_parser=float,

@@ -6,7 +6,7 @@ import os
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
 from qcodes.utils import validators
-from qcodes.instrument.parameter import ManualParameter
+from qcodes.instrument.parameter import MultiParameter, ManualParameter
 
 # TODO(damazter) (C) logging
 
@@ -850,7 +850,7 @@ class AlazarParameter(Parameter):
                 # TODO(damazter) (S) test this validator
                 vals = validators.Enum(*byte_to_value_dict.values())
 
-        super().__init__(name=name, label=label, units=unit, vals=vals,
+        super().__init__(name=name, label=label, unit=unit, vals=vals,
                          instrument=instrument)
         self.instrument = instrument
         self._byte = None
@@ -1033,10 +1033,8 @@ class AcquisitionController(Instrument):
         # overwritten in set_acquisition_settings. If we don't do this, the
         # remoteInstrument will not recognize that it returns multiple values.
         self.add_parameter(name="acquisition",
-                           names=['channel_signal'],
-                           get_cmd=self.do_acquisition,
-                           shapes=((),),
-                           snapshot_value=False)
+                           parameter_class=ATSAcquisitionParameter,
+                           acquisition_controller=self)
 
         # Save bytes_per_sample received from ATS digitizer
         self._bytes_per_sample = self._alazar.bytes_per_sample() * 8
@@ -1201,6 +1199,69 @@ class AcquisitionController(Instrument):
         """
         raise NotImplementedError(
             'This method should be implemented in a subclass')
+
+
+class ATSAcquisitionParameter(MultiParameter):
+    def __init__(self, acquisition_controller=None, **kwargs):
+        self.acquisition_controller = acquisition_controller
+        super().__init__(snapshot_value=False,
+                         names=[''], shapes=[()], **kwargs)
+
+    @property
+    def names(self):
+        if self.acquisition_controller is None or \
+                not hasattr(self.acquisition_controller, 'channel_selection'):
+            return ['']
+        else:
+            return tuple(['ch{}_signal'.format(ch) for ch in
+                          self.acquisition_controller.channel_selection])
+
+    @names.setter
+    def names(self, names):
+        # Ignore setter since getter is extracted from acquisition controller
+        pass
+
+    @property
+    def labels(self):
+        return self.names
+
+    @labels.setter
+    def labels(self, labels):
+        # Ignore setter since getter is extracted from acquisition controller
+        pass
+
+    @property
+    def units(self):
+        return ['V'] * len(self.names)
+
+    @units.setter
+    def units(self, units):
+        # Ignore setter since getter is extracted from acquisition controller
+        pass
+
+    @property
+    def shapes(self):
+        if hasattr(self.acquisition_controller, 'average_mode'):
+            average_mode = self.acquisition_controller.average_mode()
+
+            if average_mode == 'point':
+                shape = ()
+            elif average_mode == 'trace':
+                shape = (self.acquisition_controller.samples_per_record,)
+            else:
+                shape = (self.acquisition_controller.traces_per_acquisition,
+                         self.acquisition_controller.samples_per_record)
+            return tuple([shape] * self.acquisition_controller.number_of_channels)
+        else:
+            return tuple(() * len(self.names))
+
+    @shapes.setter
+    def shapes(self, shapes):
+        # Ignore setter since getter is extracted from acquisition controller
+        pass
+
+    def get(self):
+        return self.acquisition_controller.do_acquisition()
 
 
 class TrivialDictionary:
