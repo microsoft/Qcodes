@@ -111,7 +111,6 @@ class Monitor(Thread):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         Monitor.running = self
-        self.show()
         self.loop.run_forever()
 
     def stop(self):
@@ -196,7 +195,7 @@ class Server():
     def run(self):
         os.chdir(self.static_dir)
         log.debug("serving directory %s", self.static_dir)
-        log.debug("serving at port", self.port)
+        log.info("Open broswer at http://localhost::{}".format(self.port))
         self.httpd.serve_forever()
 
     def stop(self):
@@ -205,5 +204,10 @@ class Server():
 
 
 if __name__ == "__main__":
-    server = Server()
-    server.run()
+    server = Server(SERVER_PORT)
+    print("Open broswer at http://localhost:{}".format(server.port))
+    try:
+        webbrowser.open("http://localhost:{}".format(server.port))
+        server.run()
+    except KeyboardInterrupt:
+        exit()
