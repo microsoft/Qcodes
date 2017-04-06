@@ -102,12 +102,6 @@ class Monitor(Thread):
         """
         super().__init__()
         self.loop = None
-        # start the server to server monitor http/files
-        if Monitor.server:
-            self.show()
-        else:
-            Monitor.server = Server(port=SERVER_PORT)
-            Monitor.server.start()
         self._monitor(*parameters, interval=1)
 
     def run(self):
@@ -191,14 +185,13 @@ def _log_result(future):
         log.exception("Could not start server loop")
 
 
-class Server(Thread):
+class Server():
 
     def __init__(self, port=3000):
         self.port = port
         self.handler = http.server.SimpleHTTPRequestHandler
         self.httpd = socketserver.TCPServer(("", self.port), self.handler)
         self.static_dir = os.path.join(os.path.dirname(__file__), 'dist')
-        super().__init__()
 
     def run(self):
         os.chdir(self.static_dir)
@@ -209,3 +202,8 @@ class Server(Thread):
     def stop(self):
         self.httpd.shutdown()
         self.join()
+
+
+if __name__ == "__main__":
+    server = Server()
+    server.run()
