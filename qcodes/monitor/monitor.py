@@ -100,6 +100,8 @@ class Monitor(Thread):
             *parameters: Parameters to monitor
             interval: How often one wants to refresh the values
         """
+        # let the thread start
+        time.sleep(0.01)
         super().__init__()
         self.loop = None
         self._monitor(*parameters, interval=1)
@@ -157,7 +159,7 @@ class Monitor(Thread):
         self.start()
 
         # let the thread start
-        time.sleep(0.001)
+        time.sleep(0.01)
 
         log.debug("Start monitoring server")
         self._add_task(server)
