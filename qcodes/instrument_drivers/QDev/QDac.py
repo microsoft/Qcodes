@@ -180,8 +180,8 @@ class QDac(VisaInstrument):
             v_start = self.parameters['ch{:02}_v'.format(chan)].get()
             time = abs(v_set-v_start)/slope
             log.info('Slope: {}, time: {}'.format(slope, time))
-            # Attenuation compensation, syncing, and
-            # _save_val happen inside _rampvoltage
+            # Attenuation compensation and syncing
+            # happen inside _rampvoltage
             self._rampvoltage(chan, fg, v_start, v_set, time)
         else:
             # compensate for the 0.1 multiplier, if it's on
@@ -190,7 +190,6 @@ class QDac(VisaInstrument):
             # set the mode back to DC in case it had been changed
             self.write('wav {} 0 0 0'.format(chan))
             self.write('set {} {:.6f}'.format(chan, v_set))
-            self._save_val(v_set)
 
     def _set_vrange(self, chan, switchint):
         """
@@ -492,7 +491,6 @@ class QDac(VisaInstrument):
                                               dutyval, repval)
         self.write(chanmssg)
         self.write(funmssg)
-        self.parameters['ch{:02}_v'.format(chan)]._save_val(setvoltage)
 
         if syncing:
             self.write('syn {} 0 0 0'.format(sync))
