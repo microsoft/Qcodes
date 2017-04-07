@@ -24,6 +24,10 @@ class PB_KEYWORDS():
     #SIN_PHASE_REGS = 5 # RadioProcessor boards ONLY
 
 
+def error_parse(self, value):
+    if not isinstance(value, str) and value < 0:
+        raise IOError(self.get_error())
+    return value
 
 class PB_DDS(Instrument):
     """
@@ -118,48 +122,32 @@ class PB_DDS(Instrument):
     # Just wrapped from spinapi.py #
     
     def get_version(self):
-        ret = pb_get_version()
-        if not isinstance(ret, str):
-            raise IOError(self.get_error())
-        return ret
+        """ Return the current version of the spinapi library being used. """
+        return error_parse(pb_get_version())
 
     def get_error(self):
-        """ Print library error as UTF-8 encoded string."""
+        """ Print library error as UTF-8 encoded string. """
         ret = "PB Error: " + pb_get_error()
         
     def count_boards(self):
-        """ Print the number of boards detected in the system."""
-        ret = pb_count_boards()
-        if (ret < 0):
-            raise IOError(self.get_error())
-        return ret
+        """ Print the number of boards detected in the system. """
+        return error_parse(pb_count_boards())
         
     def init(self):
-        """ Initialize currently selected board."""
-        ret = pb_init()
-        if (ret < 0):
-            raise IOError(self.get_error())
-        return ret
+        """ Initialize currently selected board. """
+        return error_parse(pb_init())
         
     def set_debug(self, debug):
-        ret = pb_set_debug(debug)
-        if (ret < 0):
-            raise IOError(self.get_error())
-        return ret
+        """ Enables logging to a log.txt file in the current directory """
+        return error_parse(pb_set_debug(debug))
         
     def select_board(self, board_number):
-        """ Select a specific board number"""
-        ret = pb_select_board(board_number)
-        if (ret < 0):
-            raise IOError(self.get_error())
-        return ret
+        """ Select a specific board number """
+        return error_parse(pb_select_board(board_number))
         
     def set_defaults(self):
         """ Set board defaults. Must be called before using any other board functions."""
-        ret = pb_set_defaults()
-        if (ret < 0):
-            raise IOError(self.get_error())
-        return ret
+        return error_parse(pb_set_defaults())
         
     def set_core_clock(self, clock):
         """ Sets the core clock reference value
@@ -170,10 +158,13 @@ class PB_DDS(Instrument):
         pb_core_clock(clock)
         
     def write_register(self, address, value):
-        ret = pb_write_register(address, value)
-        if (ret < 0):
-            raise IOError(self.get_error())
-        return ret
+        """ Write to one of two core registers in the DDS
+        
+        Args:
+            address (int) : the address of the register
+            value   (int) : the value to be written to the register
+        """
+        return error_parse(pb_write_register(address, value))
 
     ###########################################################################
     ###                        DDS Control commands                         ###
@@ -248,10 +239,7 @@ class PB_DDS(Instrument):
             channel      (int) : Either DDS0 (0) or DDS1 (1)
         """
         pb_select_dds(channel)
-        ret = pb_set_shape_defaults()
-        if (ret < 0):
-            raise IOError(self.get_error())
-        return ret
+        return error_parse(pb_set_shape_defaults())
 
     def load_waveform(self, data, device, channel):
         """ Loads a waveform onto the DDS
@@ -264,10 +252,7 @@ class PB_DDS(Instrument):
             channel      (int) : Either DDS0 (0) or DDS1 (1)
         """
         pb_select_dds(channel)
-        ret = pb_dds_load(data, device)
-        if (ret < 0):
-            raise IOError(self.get_error())
-        return ret
+        return error_parse(pb_dds_load(data, device))
 
     def set_envelope_freq(self, freq, register, channel):
         """ Sets the frequency for an envelope register
@@ -278,10 +263,7 @@ class PB_DDS(Instrument):
             channel      (int) : Either DDS0 (0) or DDS1 (1)
         """
         pb_select_dds(channel)
-        ret = pb_dds_set_envelope_freq(freq, register)
-        if (ret < 0):
-            raise IOError(self.get_error())
-        return ret
+        return error_parse(pb_dds_set_envelope_freq(freq, register))
 
     ###########################################################################
     ###                  Set/Get commands for parameters                    ###
@@ -297,15 +279,10 @@ class PB_DDS(Instrument):
         """
         self.__frequency[channel][register] = frequency
         pb_select_dds(channel)
-        pb_start_programming(PB_KEYWORDS.FREQ_REGS)
+        self.start_programming(PB_KEYWORDS.FREQ_REGS)
         for r in range(self.N_FREQ_REGS):
-            ret = pb_set_freq(self.__frequency[channel][r])
-            if (ret < 0):
-                raise IOError(self.get_error())
-        ret = pb_stop_programming()
-        if (ret < 0):
-            raise IOError(self.get_error())
-        return ret
+            error_parse(pb_set_freq(self.__frequency[channel][r]))
+        self.stop_programming()
 
     def set_phase_register(self, phase, channel, register):
         """ Sets the DDS phase for the specified channel and register
@@ -317,13 +294,10 @@ class PB_DDS(Instrument):
         """
         self.__phase[channel][register] = phase
         pb_select_dds(channel)
-        pb_start_programming(PB_KEYWORDS.TX_PHASE_REGS)
+        self.start_programming(PB_KEYWORDS.TX_PHASE_REGS)
         for r in range(self.N_PHASE_REGS):
-            pb_set_phase(self.__phase[channel][register])
-        ret = pb_stop_programming()
-        if (ret < 0):
-            raise IOError(self.get_error())
-        return ret
+            error_parse(pb_set_phase(self.__phase[channel][register]))
+        self.stop_programming()
 
     def set_amplitude_register(self, amplitude, channel, register):
         """ Sets the DDS amplitude for the specified channel and register
@@ -334,8 +308,5 @@ class PB_DDS(Instrument):
             channel      (int) : Either DDS0 (0) or DDS1 (1)
         """
         pb_select_dds(channel)
-        ret = self.pb_set_amp(amplitude, register)
-        if (ret < 0):
-            raise IOError(self.get_error())
-        return ret
+        return error_parse(self.pb_set_amp(amplitude, register))
 
