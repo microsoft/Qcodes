@@ -1,6 +1,5 @@
 {
     "core":{
-        "legacy_mp": false,
         "loglevel": "DEBUG",
         "default_fmt": "data/{date}/#{counter}_{name}_{time}"
     },

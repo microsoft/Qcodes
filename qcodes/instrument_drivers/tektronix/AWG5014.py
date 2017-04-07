@@ -157,12 +157,20 @@ class Tektronix_AWG5014(VisaInstrument):
                            vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'),
                            get_parser=self.newlinestripper
                            )
-        self.add_parameter('ref_clock_source',
-                           label='Reference clock source',
+        self.add_parameter('clock_source',
+                           label='Clock source',
                            get_cmd='AWGControl:CLOCk:SOURce?',
                            set_cmd='AWGControl:CLOCk:SOURce ' + '{}',
                            vals=vals.Enum('INT', 'EXT'),
                            get_parser=self.newlinestripper)
+
+        self.add_parameter('ref_source',
+                           label='Reference source',
+                           get_cmd='SOURce1:ROSCillator:SOURce?',
+                           set_cmd='SOURce1:ROSCillator:SOURce ' + '{}',
+                           vals=vals.Enum('INT', 'EXT'),
+                           get_parser=self.newlinestripper)
+
         self.add_parameter('DC_output',
                            label='DC Output (ON/OFF)',
                            get_cmd='AWGControl:DC:STATe?',
@@ -331,8 +339,9 @@ class Tektronix_AWG5014(VisaInstrument):
                                get_cmd=filter_cmd + '?',
                                set_cmd=filter_cmd + ' {}',
                                vals=vals.Enum(20e6, 100e6, 9.9e37,
+                                              np.float('inf'),
                                               'INF', 'INFinity'),
-                               get_parser=float)
+                               get_parser=self._tek_outofrange_get_parser)
             self.add_parameter('ch{}_DC_out'.format(i),
                                label='DC output level channel {}'.format(i),
                                unit='V',
@@ -386,6 +395,14 @@ class Tektronix_AWG5014(VisaInstrument):
                 return string[:-1]
             else:
                 return string
+
+    def _tek_outofrange_get_parser(self, string):
+        val = float(string)
+        # note that 9.9e37 is used as a generic out of range value
+        # in tektronix instruments
+        if val >= 9.9e37:
+            val = np.float('INF')
+        return val
 
     # Functions
     def get_all(self, update=True):
