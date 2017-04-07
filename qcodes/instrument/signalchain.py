@@ -15,6 +15,9 @@ def addToSignalChain(param, mapping, value):
         mapping (str): A string describing the mapping. Must be either
             'offset' or 'multiplier'.
         value (Union[float, int]): The numerical parameter of the mapping.
+
+    Raises:
+        NotImplementedError: If param is not a StandardParameter.
     """
 
     if not isinstance(param, StandardParameter):
@@ -31,7 +34,10 @@ def addToSignalChain(param, mapping, value):
     if not hasattr(param, 'signalchain'):
         param._meta_attrs.append('signalchain')
         param.signalchain = [(mapping, value)]
-        # TODO: save original/raw set/get
+
+        # The original (raw/instrument) set/get functions
+        param.raw_get = param._get
+        param.raw_set = param._set
     else:
         param.signalchain.append((mapping, value))
 
