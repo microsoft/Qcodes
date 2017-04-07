@@ -29,6 +29,10 @@ class PB_KEYWORDS():
     FLAG_STATES     = BASE_ADDR + 0x8
     START_LOCATION  = BASE_ADDR + 0x7
 
+    # pb_dds_load options
+    DEVICE_DDS   = 0
+    DEVICE_SHAPE = 1
+
 def error_parse(self, value):
     if not isinstance(value, str) and value < 0:
         raise IOError(self.get_error())
@@ -236,7 +240,7 @@ class PB_DDS(Instrument):
         pb_start_programming(PB_KEYWORDS.PULSE_PROGRAM)
         for p in pulse_sequence:
             # convert last element from seconds to ns
-            p = p[0:-2] + (p[-1]*PB_KEYWORDS.s,)
+            p = p[:-2] + (p[-1]*PB_KEYWORDS.s,)
             # * breaks tuple into args, 
             pb_inst_dds2(*p)
         pb_stop_programming()
@@ -248,7 +252,7 @@ class PB_DDS(Instrument):
         Args:
             
         """
-        raise IOError('Warning: Unimplemented function')
+        raise NotImplementedError('Warning: Unimplemented function')
         pass
         #pb_start_programming()
         #n_inst = 0

@@ -22,9 +22,6 @@
 import ctypes
 c_float_p = ctypes.POINTER(ctypes.c_float), # create a float pointer type
 
-PULSE_PROGRAM = 0
-FREQ_REGS = 1  
-   
 try:
         spinapi = ctypes.CDLL("spinapi64")
 except:
@@ -197,10 +194,10 @@ def pb_close():
 ################################################################################
 
 def pb_set_freq(freq):
-    return spinapi.pb_set_freq(ctypes.c_double(freq))
+        return spinapi.pb_set_freq(ctypes.c_double(freq))
 
 def pb_set_phase(phase):
-    return spinapi.pb_set_phase(ctypes.c_double(phase))
+        return spinapi.pb_set_phase(ctypes.c_double(phase))
 
 def pb_inst_dds2(*args):
 	t = list(args)
@@ -218,16 +215,16 @@ def pb_inst_dds2_shape(*args):
         return spinapi.pb_inst_dds2_shape(*args)
 
 def pb_set_shape_defaults():
-    return spinapi.pb_set_shape_defaults()
+        return spinapi.pb_set_shape_defaults()
 
 def pb_select_dds(dds_num):
-    return spinapi.pb_select_dds(dds_num)
+        return spinapi.pb_select_dds(dds_num)
 
 def pb_dds_load(data, device):
-    return spinapi.pb_dds_load(c_float_p(data), device)
+        return spinapi.pb_dds_load(c_float_p(data), device)
 
 def pb_dds_set_envelope_freq(freq, n):
-    return spinapi.pb_dds_set_envelope_freq(ctypes.c_double(freq), n)
+        return spinapi.pb_dds_set_envelope_freq(ctypes.c_double(freq), n)
 
 def pb_set_amp(amp, addr):
-    return spinapi.pb_set_amp(ctypes.c_float(amp), addr)
+        return spinapi.pb_set_amp(ctypes.c_float(amp), addr)
