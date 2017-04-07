@@ -190,7 +190,8 @@ class PB_DDS(Instrument):
         return error_parse(pb_start_programming(mode))
 
     def inst_dds2(self, inst):
-        """ 
+        """ During start_programming(PULSE_PROGRAM) 
+            add an unshaped sine pulse to program
         
         Args:
             inst  (tuple) : a tuple to program the board in the
@@ -198,6 +199,26 @@ class PB_DDS(Instrument):
         """
         return error_parse(pb_inst_dds2(*inst))
 
+    def inst_dds2_shape(self, inst):
+        """ During start_programming(PULSE_PROGRAM) 
+            add a shaped pulse to program, if desired
+        
+        Args:
+            inst  (tuple) : a tuple to program the board in the
+                            (FREQ0, PHASE0, ...)
+        """
+        return error_parse(pb_inst_dds2_shape(*inst))
+
+    def dds_load(self, data, device):
+        """ Load a 1024 point waveform into one of two devices
+
+        Args:
+            data  (list) : a 1024 point waveform. Each point ranges
+                           from -1.0 to 1.0
+            device (int) : Either DEVICE_DDS (the default shape for all output)
+                               or DEVICE_SHAPE (an alternative shape register)
+        """
+        return error_parse(pb_dds_load())
 
     def stop_programming(self):
         """ End a programming sequence """

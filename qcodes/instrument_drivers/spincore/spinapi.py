@@ -211,7 +211,11 @@ def pb_inst_dds2(*args):
 
 
 def pb_inst_dds2_shape(*args):
-    return spinapi.pb_inst_dds2_shape(*args)
+	t = list(args)
+	# Final argument must be a double
+	t[-1] = ctypes.c_double(t[-1])
+	args = tuple(t)
+        return spinapi.pb_inst_dds2_shape(*args)
 
 def pb_set_shape_defaults():
     return spinapi.pb_set_shape_defaults()
