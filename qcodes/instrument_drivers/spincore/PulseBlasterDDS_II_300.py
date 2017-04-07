@@ -185,6 +185,29 @@ class PB_DDS(Instrument):
     def get_inst_list(self, channel):
         return self.__chan_instructions[channel]
 
+    def start_programming(self, mode):
+        """ Start a programming sequence 
+        
+        Args:
+            mode    (int) : one of (PULSE_PROGRAM, FREQ_REGS, etc.)
+        """
+        return error_parse(pb_start_programming(mode))
+
+    def inst_dds2(self, inst):
+        """ 
+        
+        Args:
+            inst  (tuple) : a tuple to program the board in the
+                            (FREQ0, PHASE0, ...)
+        """
+        return error_parse(pb_inst_dds2(*inst))
+
+
+    def stop_programming(self):
+        """ End a programming sequence """
+        return error_parse(pb_stop_programming())
+
+
     def program_pulse_sequence(self, pulse_sequence):
         """ An all-in-one function to send a pulse sequence to the board
 
