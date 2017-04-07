@@ -23,8 +23,6 @@ class PB_KEYWORDS():
     #COS_PHASE_REGS = 4 # RadioProcessor boards ONLY
     #SIN_PHASE_REGS = 5 # RadioProcessor boards ONLY
 
-class PB_ERRORS():
-    pass
 
 
 class PB_DDS(Instrument):
@@ -54,8 +52,8 @@ class PB_DDS(Instrument):
         # Initialise the DDS
         # NOTE: Hard coded value for board may want to be part of instrument init
         if self.count_boards() > 0:
+            self.init()
             self.select_board(0)
-            pb_init()
             # Call set defaults as part of init to give board a well defined state
             pb_set_defaults()
         else:
@@ -80,7 +78,7 @@ class PB_DDS(Instrument):
         self.add_parameter(
             'core_clock',
             label='The core clock of the PulseBlasterDDS'
-            set_cmd=self._core_clock,
+            set_cmd=self.set_core_clock,
             vals=Numbers(),
             docstring=''
         )
@@ -163,11 +161,13 @@ class PB_DDS(Instrument):
             raise IOError(self.get_error())
         return ret
         
-    def _core_clock(self, clock):
-        ret = pb_core_clock(ctypes.c_double(clock))
-        if (ret < 0):
-            raise IOError(self.get_error())
-        return ret
+    def set_core_clock(self, clock):
+        """ Sets the core clock reference value
+        
+        Note: This does not change anything in the device, it just provides the library
+              with the value given
+        """
+        pb_core_clock(clock)
         
     def write_register(self, address, value):
         ret = pb_write_register(address, value)
