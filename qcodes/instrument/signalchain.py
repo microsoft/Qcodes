@@ -59,3 +59,37 @@ def addToSignalChain(param, mapping, value):
 
     param._get = new_get
     param._set = new_set
+
+
+def removeFromSignalChain(param, element_number):
+    """
+    Remove an element from the signal chain of a parameter.
+
+    Args:
+        param (StandardParameter): A QCoDeS StandardParameter with a signal
+            chain.
+        element_number (int): The (1-indexed) number of the element to remove,
+            counting from the instrument.
+    """
+
+    if not hasattr(param, 'signalchain'):
+        raise ValueError('{} has no assigned signalchain'.format(param))
+
+    if element_number > len(param.signalchain):
+        raise ValueError('Can not remove element {} '.format(element_number) +
+                         'from signal chain. Only contains '
+                         '{} elements'.format(len(param.signalchain)))
+
+    # remove the element by removing everything and then reapplying everything
+    # BUT the specific element
+
+    to_apply = param.signalchain.copy()
+    to_apply.remove(to_apply[element_number-1])
+
+    # reset the param to be "virgin"
+    del param.signalchain
+    param._meta_attrs.remove('signalchain')
+
+    # and reapply the chain
+    for (mapping, value) in to_apply:
+        addToSignalChain(param, mapping, value)
