@@ -226,4 +226,4 @@ def pb_dds_set_envelope_freq(freq, n):
     return spinapi.pb_dds_set_envelope_freq(ctypes.c_double(freq), n)
 
 def pb_set_amp(amp, addr):
-    return spinapi.pb_set_amp(c_types.c_double(amp), addr)
+    return spinapi.pb_set_amp(ctypes.c_float(amp), addr)
