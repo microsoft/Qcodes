@@ -90,7 +90,7 @@ class PB_DDS(Instrument):
 
         self.add_parameter(
             'core_clock',
-            label='The core clock of the PulseBlasterDDS'
+            label='The core clock of the PulseBlasterDDS',
             set_cmd=self.set_core_clock,
             vals=Numbers(),
             docstring=''
