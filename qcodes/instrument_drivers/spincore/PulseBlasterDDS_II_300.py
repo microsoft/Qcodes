@@ -10,6 +10,7 @@ class PB_KEYWORDS():
     ns = 1.0
     us = 1000.0
     ms = 1000000.0
+    s  = 1000000000.0
 
     MHz = 1.0
     kHz = 0.001
@@ -23,6 +24,10 @@ class PB_KEYWORDS():
     #COS_PHASE_REGS = 4 # RadioProcessor boards ONLY
     #SIN_PHASE_REGS = 5 # RadioProcessor boards ONLY
 
+    # pb_write_register options
+    BASE_ADDR       = 0x40000
+    FLAG_STATES     = BASE_ADDR + 0x8
+    START_LOCATION  = BASE_ADDR + 0x7
 
 def error_parse(self, value):
     if not isinstance(value, str) and value < 0:
@@ -209,6 +214,9 @@ class PB_DDS(Instrument):
         """
         pb_start_programming(PB_KEYWORDS.PULSE_PROGRAM)
         for p in pulse_sequence:
+            # convert last element from seconds to ns
+            p = p[0:-2] + (p[-1]*PB_KEYWORDS.s,)
+            # * breaks tuple into args, 
             pb_inst_dds2(*p)
         pb_stop_programming()
     
@@ -258,10 +266,12 @@ class PB_DDS(Instrument):
         """ Sets the frequency for an envelope register
         
         Args:
-            freq       (float) : the frequency in MHz for the envelope register
+            freq       (float) : the frequency in Hz for the envelope register
             register     (int) : the register number
             channel      (int) : Either DDS0 (0) or DDS1 (1)
         """
+        # Scale the frequency to Hertz, as the underlying api assumes MHz
+        freq *= PB_KEYWORDS.Hz 
         pb_select_dds(channel)
         return error_parse(pb_dds_set_envelope_freq(freq, register))
 
@@ -273,10 +283,12 @@ class PB_DDS(Instrument):
         """ Sets the DDS frequency for the specified channel and register
         
         Args:
-            frequency (double) : the frequency in Mhz to write to the register
+            frequency (double) : the frequency in Hz to write to the register
             register     (int) : the register number
             channel      (int) : Either DDS0 (0) or DDS1 (1)
         """
+        # Scale the frequency to Hertz, as the underlying api assumes MHz
+        frequency *= PB_KEYWORDS.Hz 
         self.__frequency[channel][register] = frequency
         pb_select_dds(channel)
         self.start_programming(PB_KEYWORDS.FREQ_REGS)
