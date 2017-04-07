@@ -1,9 +1,7 @@
 """
 Live plotting in Jupyter notebooks
 """
-from IPython.display import display
 
-from qcodes import config
 
 class BasePlot:
 
@@ -24,13 +22,7 @@ class BasePlot:
         self.data_keys = data_keys
         self.traces = []
         self.data_updaters = set()
-        # only import in name space if the gui is set to noebook
-        # and there is multiprocessing
         self.interval = interval
-        if config['gui']['notebook'] and config['core']['legacy_mp']:
-            from qcodes.widgets.widgets import HiddenUpdateWidget
-            self.update_widget = HiddenUpdateWidget(self.update, interval)
-            display(self.update_widget)
 
     def clear(self):
         """
@@ -81,7 +73,7 @@ class BasePlot:
                 into `x`, `y`, and optionally `z`, these are passed along to
                 self.add_to_plot.
                 To use custom labels and units pass for example:
-                    plot.add(x=set, y=amplitude, 
+                    plot.add(x=set, y=amplitude,
                              xlabel="set"
                              xunit="V",
                              ylabel= "Amplitude",

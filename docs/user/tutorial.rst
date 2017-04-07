@@ -3,34 +3,22 @@
 Tutorial
 ========
 
-In this tutorial we'll walk through *****
-
-
-.. _driver :
-
 Writing a Driver
 ----------------
 
-Write a simple driver example
-with commented code
-- add parameter
-- add validator
-- add custom stuff
-- add doccstrings f.ex
+First look at what parameters are and how to create them: `qcodes parameter <https://github.com/QCoDeS/Qcodes/blob/master/docs/examples/Parameters.ipynb>`__ .
 
-.. todo::  missing
-
+Then check out the walk-through to write your first driver:  `qcodes instrument <https://github.com/QCoDeS/Qcodes/blob/master/docs/examples/Creating%20Instrument%20Drivers.ipynb>`__ .
 
 Measuring
 ---------
 
-.. todo::  missing
+Browse the   `example <https://github.com/QCoDeS/Qcodes/blob/master/docs/examples/Measure%20without%20a%20Loop.ipynb>`__ .
 
 .. _simulation :
 
 Simulation
 ----------
-Explain the mock mock
 
 .. todo::  missing
 
