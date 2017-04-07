@@ -333,8 +333,8 @@ class TestGNUPlotFormat(TestCase):
             # we wrote to a second location without the stars, so we can read
             # back in and make sure that we get the right last_saved_index
             # for the amount of data we've read.
-            reread_data = load_data(location=location2, data_manager=False,
-                                    formatter=formatter, io=data.io)
+            reread_data = load_data(location=location2, formatter=formatter,
+                                    io=data.io)
             self.assertEqual(repr(reread_data.x_set.tolist()),
                              repr(data.x_set.tolist()))
             self.assertEqual(repr(reread_data.y.tolist()),
