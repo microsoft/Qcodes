@@ -214,6 +214,7 @@ class PB_DDS(Instrument):
             inst  (tuple) : a tuple to program the board in the
                             (FREQ0, PHASE0, ...)
         """
+        inst = inst[:-1] + (inst[-1] * PB_KEYWORDS.s,)
         return self.error_parse(pb_inst_dds2(*inst))
 
     def inst_dds2_shape(self, inst):
@@ -224,6 +225,7 @@ class PB_DDS(Instrument):
             inst  (tuple) : a tuple to program the board in the
                             (FREQ0, PHASE0, ...)
         """
+        inst = inst[:-1] + (inst[-1] * PB_KEYWORDS.s,)
         return self.error_parse(pb_inst_dds2_shape(*inst))
 
     def dds_load(self, data, device):
