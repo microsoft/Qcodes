@@ -109,6 +109,7 @@ def _select_plottables(tasks):
 def _plot_setup(data, inst_meas, useQT=True):
     title = "{} #{:03d}".format(CURRENT_EXPERIMENT["sample_name"],
                                 data.location_provider.counter)
+    rasterized_note = " rasterized plot"
     num_subplots = 0
     counter_two = 0
     for j, i in enumerate(inst_meas):
@@ -120,56 +121,52 @@ def _plot_setup(data, inst_meas, useQT=True):
         plot = QtPlot(fig_x_position=CURRENT_EXPERIMENT['plot_x_position'])
     else:
         plot = MatPlot(subplots=(1,num_subplots))
+
+
+    def _create_plot(plot, i, name, data, counter_two, j, k):
+        color = 'C' + str(counter_two)
+        counter_two += 1
+        inst_meas_name = "{}_{}".format(i._instrument.name, name)
+        inst_meas_data = getattr(data, inst_meas_name)
+        inst_meta_data = __get_plot_type(inst_meas_data, plot)
+        if useQT:
+            plot.add(inst_meas_data, subplot=j + k + 1)
+            plot.subplots[j + k].showGrid(True, True)
+            if j == 0:
+                plot.subplots[0].setTitle(title)
+            else:
+                plot.subplots[j + k].setTitle("")
+        else:
+            if 'z' in inst_meta_data:
+                xlen, ylen = inst_meta_data['z'].shape
+                rasterized = xlen*ylen > 5000
+                plot.add(inst_meas_data, subplot=j + k + 1, rasterized=rasterized)
+            else:
+                plot.add(inst_meas_data, subplot=j + k + 1, color=color)
+                plot.subplots[j + k].grid()
+            if j == 0:
+                if rasterized:
+                    fulltitle = title + rasterized_note
+                else:
+                    fulltitle = title
+                plot.subplots[0].set_title(fulltitle)
+            else:
+                if rasterized:
+                    fulltitle = rasterized_note
+                else:
+                    fulltitle = ""
+                plot.subplots[j + k].set_title(fulltitle)
+
     for j, i in enumerate(inst_meas):
         if getattr(i, "names", False):
             # deal with multidimensional parameter
             for k, name in enumerate(i.names):
-                color = 'C' + str(counter_two)
+                _create_plot(plot, i, name, data, counter_two, j, k)
                 counter_two += 1
-                inst_meas_name = "{}_{}".format(i._instrument.name, name)
-                inst_meas_data = getattr(data, inst_meas_name)
-                inst_meta_data = __get_plot_type(inst_meas_data, plot)
-                if useQT:
-                    plot.add(inst_meas_data, subplot=j + k + 1)
-                    plot.subplots[j+k].showGrid(True, True)
-                    if j == 0:
-                        plot.subplots[0].setTitle(title)
-                    else:
-                        plot.subplots[j+k].setTitle("")
-                else:
-                    if 'z' in inst_meta_data:
-                        plot.add(inst_meas_data, subplot=j + k + 1, rasterized=True)
-                    else:
-                        plot.add(inst_meas_data, subplot=j + k + 1, color=color)
-                        plot.subplots[j + k].grid()
-                    if j == 0:
-                        plot.subplots[0].set_title(title)
-                    else:
-                        plot.subplots[j+k].set_title("")
         else:
-            color = 'C' + str(counter_two)
-            counter_two += 1
             # simple_parameters
-            inst_meas_name = "{}_{}".format(i._instrument.name, i.name)
-            inst_meas_data = getattr(data, inst_meas_name)
-            inst_meta_data = __get_plot_type(inst_meas_data, plot)
-            if useQT:
-                plot.add(inst_meas_data, subplot=j + 1)
-                plot.subplots[j].showGrid(True, True)
-                if j == 0:
-                    plot.subplots[0].setTitle(title)
-                else:
-                    plot.subplots[j].setTitle("")
-            else:
-                if 'z' in inst_meta_data:
-                    plot.add(inst_meas_data, subplot=j + 1, rasterized=True)
-                else:
-                    plot.add(inst_meas_data, subplot=j + 1, color=color)
-                    plot.subplots[j].grid()
-                if j == 0:
-                    plot.subplots[0].set_title(title)
-                else:
-                    plot.subplots[j].set_title("")
+            _create_plot(plot, i, i.name, data, counter_two, j, 0)
+            counter_two += 1
     return plot, num_subplots
 
 def __get_plot_type(data, plot):
@@ -182,44 +179,43 @@ def __get_plot_type(data, plot):
     return metadata
 
 def _save_individual_plots(data, inst_meas):
-    title = "{} #{:03d}".format(CURRENT_EXPERIMENT["sample_name"], data.location_provider.counter)
+
+    def _create_plot(i, name, data, counter_two):
+        # Step the color on all subplots no just on plots within the same axis/subplot
+        # this is to match the qcodes-pyqtplot behaviour.
+        title = "{} #{:03d}".format(CURRENT_EXPERIMENT["sample_name"], data.location_provider.counter)
+        rasterized_note = " rasterized plot full data available in datafile"
+        color = 'C' + str(counter_two)
+        counter_two += 1
+        plot = MatPlot()
+        inst_meas_name = "{}_{}".format(i._instrument.name, name)
+        inst_meas_data = getattr(data, inst_meas_name)
+        inst_meta_data = __get_plot_type(inst_meas_data, plot)
+        if 'z' in inst_meta_data:
+            xlen, ylen = inst_meta_data['z'].shape
+            rasterized = xlen * ylen > 5000
+            plot.add(inst_meas_data, rasterized=rasterized)
+        else:
+            plot.add(inst_meas_data, color=color)
+            plot.subplots[0].grid()
+        if rasterized:
+            plot.subplots[0].set_title(title + rasterized_note)
+        else:
+            plot.subplots[0].set_title(title)
+        plot.save("{}_{:03d}.pdf".format(plot.get_default_title(), counter_two))
+
+
     counter_two = 0
     for j, i in enumerate(inst_meas):
         if getattr(i, "names", False):
             # deal with multidimensional parameter
             for k, name in enumerate(i.names):
-                # Step the color on all subplots no just on plots within the same axis/subplot
-                # this is to match the qcodes-pyqtplot behaviour.
-                color = 'C' + str(counter_two)
+                _create_plot(i, name, data, counter_two)
                 counter_two += 1
-                plot = MatPlot()
-                inst_meas_name = "{}_{}".format(i._instrument.name, name)
-                inst_meas_data = getattr(data, inst_meas_name)
-                inst_meta_data = __get_plot_type(inst_meas_data, plot)
-                if 'z' in inst_meta_data:
-                    plot.add(inst_meas_data, rasterized=True)
-                else:
-                    plot.add(inst_meas_data, color=color)
-                    plot.subplots[0].grid()
-                plot.subplots[0].set_title(title)
-                plot.save("{}_{:03d}.pdf".format(plot.get_default_title(), counter_two))
         else:
-            # Step the color on all subplots no just on plots within the same axis/subplot
-            # this is to match the qcodes-pyqtplot behaviour.
-            color = 'C'+str(counter_two)
+            _create_plot(i, i.name, data, counter_two)
             counter_two += 1
-            plot = MatPlot()
-            # simple_parameter
-            inst_meas_name = "{}_{}".format(i._instrument.name, i.name)
-            inst_meas_data = getattr(data, inst_meas_name)
-            inst_meta_data = __get_plot_type(inst_meas_data, plot)
-            if 'z' in inst_meta_data:
-                plot.add(inst_meas_data, rasterized=True)
-            else:
-                plot.add(inst_meas_data, color=color)
-                plot.subplots[0].grid()
-            plot.subplots[0].set_title(title)
-            plot.save("{}_{:03d}.pdf".format(plot.get_default_title(), counter_two))
+
 
 
 def save_device_image():
