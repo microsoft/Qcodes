@@ -253,7 +253,7 @@ class PB_DDS(Instrument):
         pb_start_programming(PB_KEYWORDS.PULSE_PROGRAM)
         for p in pulse_sequence:
             # convert last element from seconds to ns
-            p = p[:-2] + (p[-1]*PB_KEYWORDS.s,)
+            p = p[:-1] + (p[-1]*PB_KEYWORDS.s,)
             # * breaks tuple into args, 
             pb_inst_dds2(*p)
         pb_stop_programming()
