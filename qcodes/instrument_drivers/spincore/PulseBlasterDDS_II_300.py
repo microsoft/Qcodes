@@ -180,6 +180,18 @@ class PB_DDS(Instrument):
     ###                        DDS Control commands                         ###
     ###########################################################################
 
+    def start(self):
+        return self.error_parse(pb_start())
+
+    def reset(self):
+        return self.error_parse(pb_reset())
+
+    def stop(self):
+        return self.error_parse(pb_stop())
+
+    def close(self):
+        return self.error_parse(pb_close())
+
     def add_inst(self, inst, channel):
         self.__chan_instructions[channel].append(inst)
 
