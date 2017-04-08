@@ -44,7 +44,7 @@ class PB_DDS(Instrument):
     """
     def error_parse(self, value):
         if not isinstance(value, str) and value < 0:
-            raise IOError(self.get_error())
+            raise IOError('{}:'.format(value) + self.get_error())
         return value
 
     def __init__(self, name, **kwargs):
@@ -137,7 +137,7 @@ class PB_DDS(Instrument):
 
     def get_error(self):
         """ Print library error as UTF-8 encoded string. """
-        ret = "PB Error: " + pb_get_error()
+        return str(pb_get_error())
         
     def count_boards(self):
         """ Print the number of boards detected in the system. """
