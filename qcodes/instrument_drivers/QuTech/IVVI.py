@@ -44,11 +44,16 @@ class IVVI(VisaInstrument):
             polarity (string[4]) : list of polarities of each set of 4 dacs
                                    choose from 'BIP', 'POS', 'NEG',
                                    default=['BIP', 'BIP', 'BIP', 'BIP']
-            dac_step (float)     : max step size for dac parameter
-            dac_delay (float)    : delay (in seconds) for dac
-            dac_max_delay (float): maximum delay before emitting a warning
-            safe_version (bool)  : if True then do not send version commands
-                                   to the IVVI controller
+            dac_step (float)         : max step size for dac parameter
+            dac_delay (float)        : delay (in seconds) for dac
+            dac_max_delay (float)    : maximum delay before emitting a warning
+            safe_version (bool)    : if True then do not send version commands
+                                     to the IVVI controller
+            use_locks (bool) : if True then locks are used in the `ask`
+                              function of the driver. The IVVI driver is not
+                              thread safe, this locking mechanism makes it
+                              thread safe at the cost of making the call to ask
+                              blocking.
         '''
         t0 = time.time()
         super().__init__(name, address, **kwargs)
