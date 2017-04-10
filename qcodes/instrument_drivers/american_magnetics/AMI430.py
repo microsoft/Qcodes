@@ -618,7 +618,7 @@ class AMI430_3D(Instrument):
         self._set_fields((self.__x, self.__y, value))
 
     def _set_spherical(self, values):
-        phi, theta, field = values
+        field, theta, phi = values
 
         phi, theta = np.radians(phi), np.radians(theta)
 
@@ -629,25 +629,25 @@ class AMI430_3D(Instrument):
         self._set_fields((x, y, z))
 
     def _set_phi(self, value):
-        phi, theta, field = self._get_setpoints('phi', 'theta', 'field')
+        field, theta, phi = self._get_setpoints('field', 'theta', 'phi')
 
         phi = np.radians(value)
 
-        self._set_spherical((phi, theta, field))
+        self._set_spherical((field, theta, phi))
 
     def _set_theta(self, value):
-        phi, theta, field = self._get_setpoints('phi', 'theta', 'field')
+        field, theta, phi = self._get_setpoints('field', 'theta', 'phi')
 
         theta = np.radians(value)
 
-        self._set_spherical((phi, theta, field))
+        self._set_spherical((field, theta, phi))
 
     def _set_field(self, value):
-        phi, theta, field = self._get_setpoints('phi', 'theta', 'field')
+        field, theta, phi = self._get_setpoints('field', 'theta', 'phi')
 
         field = value
 
-        self._set_spherical((phi, theta, field))
+        self._set_spherical((field, theta, phi))
 
     def _set_cylindrical(self, values):
         phi, rho, z = values
