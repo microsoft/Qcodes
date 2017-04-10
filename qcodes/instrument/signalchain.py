@@ -89,6 +89,8 @@ def removeFromSignalChain(param, element_number):
     # reset the param to be "virgin"
     del param.signalchain
     param._meta_attrs.remove('signalchain')
+    param._get = param.raw_get
+    param._set = param.raw_set
 
     # and reapply the chain
     for (mapping, value) in to_apply:
