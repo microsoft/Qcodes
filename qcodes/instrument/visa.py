@@ -74,7 +74,6 @@ class VisaInstrument(Instrument):
 
         self.visa_handle = resource_manager.open_resource(address)
 
-        self.visa_handle.clear()
         self._address = address
 
     def set_terminator(self, terminator):
