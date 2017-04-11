@@ -8,7 +8,8 @@ class DACException(Exception):
     pass
 
 class DacReader(object):
-    def _dac_parse(self, resp):
+    @staticmethod
+    def _dac_parse(resp):
         """
         Parses responses from the DAC. They should take the form of "<cmd><resp>!"
         This command returns the value of resp.
@@ -467,16 +468,6 @@ class Decadac(VisaInstrument, DacReader):
     def __repr__(self):
         """Simplified repr giving just the class and name."""
         return '<{}: {}>'.format(type(self).__name__, self.name)
-
-    def __del__(self):
-        """Close the instrument and remove its instance record."""
-        try:
-            wr = weakref.ref(self)
-            if wr in getattr(self, '_instances', []):
-                self._instances.remove(wr)
-            self.close()
-        except:
-            pass
 
     def _feature_detect(self):
         """

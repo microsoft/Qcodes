@@ -1,7 +1,5 @@
-
-import numpy as numpy
-from qcodes import Parameter, VisaInstrument, InstrumentChannel, ChannelList
-from qcodes.utils.validators import Numbers, Enum, Strings
+from qcodes import VisaInstrument, InstrumentChannel, ChannelList
+from qcodes.utils.validators import Enum, Strings
 
 class SensorChannel(InstrumentChannel):
 	"""
@@ -29,7 +27,7 @@ class SensorChannel(InstrumentChannel):
 		self.add_parameter('sensor_status', get_cmd='RDGST? {}'.format(self._channel),
 			val_mapping={'OK': 0, 'Invalid Reading': 1, 'Temp Underrange': 16, 'Temp Overrange': 32,
 			'Sensor Units Zero': 64, 'Sensor Units Overrange': 128}, label='Sensor_Status')
-		
+
 		self.add_parameter('sensor_name', get_cmd='INNAME? {}'.format(self._channel),
 			get_parser=str, set_cmd='INNAME {},\"{{}}\"'.format(self._channel), vals=Strings(15),
 			label='Sensor_Name')
