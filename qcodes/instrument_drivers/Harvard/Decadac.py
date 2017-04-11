@@ -1,4 +1,4 @@
-from time import sleep, time
+from time import time
 from functools import partial
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList, ManualParameter
 from qcodes.utils import validators as vals
@@ -172,16 +172,16 @@ class DacChannel(InstrumentChannel, DacReader):
         # Note we will use the older addresses to read the value from the dac rather than the newer
         # 'd' command for backwards compatibility
         self._volt_val = vals.Numbers(self.min_val, self.max_val)
-        self.add_parameter("volt", get_cmd=partial(self._query_address, self._base_addr+9, 1), 
+        self.add_parameter("volt", get_cmd=partial(self._query_address, self._base_addr+9, 1),
             get_parser=self._dac_code_to_v,
             set_cmd=self._set_dac, set_parser=self._dac_v_to_code, vals=self._volt_val,
             label="Voltage", unit="V")
         # The limit commands are used to sweep dac voltages. They are not safety features.
-        self.add_parameter("lower_ramp_limit", get_cmd=partial(self._query_address, self._base_addr+5), 
+        self.add_parameter("lower_ramp_limit", get_cmd=partial(self._query_address, self._base_addr+5),
             get_parser=self._dac_code_to_v,
             set_cmd="L{};", set_parser=self._dac_v_to_code, vals=self._volt_val,
             label="Lower_Ramp_Limit", unit="V")
-        self.add_parameter("upper_ramp_limit", get_cmd=partial(self._query_address, self._base_addr+4), 
+        self.add_parameter("upper_ramp_limit", get_cmd=partial(self._query_address, self._base_addr+4),
             get_parser=self._dac_code_to_v,
             set_cmd="U{};", set_parser=self._dac_v_to_code, vals=self._volt_val,
             label="Upper_Ramp_Limit", unit="V")
@@ -207,7 +207,7 @@ class DacChannel(InstrumentChannel, DacReader):
         # NOTE: these values will be overwritten by a K3 calibration
         if self._parent._VERSA_EEPROM_available:
             _INITIAL_ADDR = [6, 8, 32774, 32776]
-            self.add_parameter("initial_value", 
+            self.add_parameter("initial_value",
                 get_cmd=partial(self._query_address, _INITIAL_ADDR[self._channel], versa_eeprom=True),
                 get_parser=self._dac_code_to_v,
                 set_cmd=partial(self._write_address, _INITIAL_ADDR[self._channel], versa_eeprom=True),
@@ -304,10 +304,10 @@ class DacSlot(InstrumentChannel, DacReader):
 
         # Set the slot mode. Valid modes are:
         #   Off: Channel outputs are disconnected from the input, grounded with 10MOhm.
-        #   Fine: 2-channel mode. Channels 0 and 1 are output, use 2 and 3 for fine 
+        #   Fine: 2-channel mode. Channels 0 and 1 are output, use 2 and 3 for fine
         #       adjustment of Channels 0 and 1 respectively
         #   Coarse: All 4 channels are used as output
-        #   FineCald: Calibrated 2-channel mode, with 0 and 1 output, 2 and 3 used 
+        #   FineCald: Calibrated 2-channel mode, with 0 and 1 output, 2 and 3 used
         #       automatically for fine adjustment. This mode only works for calibrated
         #       DecaDAC's
         # Unfortunately there is no known way of reading the slot mode hence this will be
@@ -368,7 +368,7 @@ class Decadac(VisaInstrument, DacReader):
             name (str): What this instrument is called locally.
 
             port (str): The address of the DAC. For a serial port this is ASRLn::INSTR
-                where n is replaced with the address set in the VISA control panel. 
+                where n is replaced with the address set in the VISA control panel.
                 Baud rate and other serial parameters must also be set in the VISA control
                 panel.
 
@@ -416,7 +416,8 @@ class Decadac(VisaInstrument, DacReader):
     def ramp_all(self, volt, ramp_rate):
         """
         Ramp all dac channels to a specific voltage at the given rate simultaneously. Note
-        that the ramps are not synchronized due.
+        that the ramps are not synchronized due to communications time and DAC ramps starting
+        as soon as the commands are in.
 
         Args:
             volt(float): The voltage to ramp all channels to.
@@ -458,7 +459,7 @@ class Decadac(VisaInstrument, DacReader):
         # heed our request to return all 4 fields.
         t = time.time() - (begin_time or self._t0)
 
-        con_msg = ("Connected to Harvard DecaDAC " 
+        con_msg = ("Connected to Harvard DecaDAC "
                    "(hw ver: {}, serial: {}) in {:.2f}s".format(
                     self.version, self.serial_no, t))
         print(con_msg)
