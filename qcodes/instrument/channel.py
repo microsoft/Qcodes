@@ -109,6 +109,7 @@ class ChannelList(Metadatable):
         self._parent = parent
         self._name = name
         if type(chan_type) != type or not issubclass(chan_type, InstrumentChannel):
+            print(chan_type, InstrumentChannel)
             raise ValueError("Channel Lists can only hold instances of type InstrumentChannel")
         self._chan_type = chan_type
 
@@ -131,7 +132,7 @@ class ChannelList(Metadatable):
             i (int/slice): Either a single channel index or a slice of channels to get
         """
         if isinstance(i, slice):
-            return ChannelList(self._parent, self._chan_type, self._channels[i])
+            return ChannelList(self._parent, self._name, self._chan_type, self._channels[i])
         return self._channels[i]
 
     def __iter__(self):
@@ -162,7 +163,7 @@ class ChannelList(Metadatable):
         if self._parent != other._parent:
             raise ValueError("Can only add channels from the same parent together.")
 
-        return ChannelList(self._parent, self._chan_type, self._channels + other._channels)
+        return ChannelList(self._parent, self._name, self._chan_type, self._channels + other._channels)
 
     def append(self, object):
         """
