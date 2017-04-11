@@ -819,6 +819,10 @@ class StandardParameter(Parameter):
         # having to call .get() for every .set()
         self._max_val_age = 0
 
+        # Specify time of last set operation, used when comparing to delay to
+        # check if additional waiting time is needed before next set
+        self._t_last_set = time.perf_counter()
+
         self._set_get(get_cmd, get_parser)
         self._set_set(set_cmd, set_parser)
         self.set_delay(delay, max_delay)
@@ -884,13 +888,16 @@ class StandardParameter(Parameter):
 
     def _validate_and_set(self, value):
         try:
-            clock = time.perf_counter()
+            if self._delay is not None:
+                clock, remainder = self._update_set_ts(self._t_last_set)
+                time.sleep(remainder)
+
             self.validate(value)
             self._set(value)
             self._save_val(value)
-            if self._delay is not None:
-                clock, remainder = self._update_set_ts(clock)
-                time.sleep(remainder)
+
+            # Update time of last set
+            self._t_last_set = time.perf_counter()
         except Exception as e:
             e.args = e.args + (
                 'setting {} to {}'.format(self.full_name, repr(value)),)
@@ -936,21 +943,18 @@ class StandardParameter(Parameter):
     def _validate_and_sweep(self, value):
         try:
             self.validate(value)
-            step_clock = time.perf_counter()
 
-            for step_val in self._sweep_steps(value):
-                self._set(step_val)
-                self._save_val(step_val)
+            for step_val in self._sweep_steps(value) + [value]:
                 if self._delay is not None:
-                    step_clock, remainder = self._update_set_ts(step_clock)
+                    clock, remainder = self._update_set_ts(self._t_last_set)
                     time.sleep(remainder)
 
-            self._set(value)
-            self._save_val(value)
+                self._set(step_val)
+                self._save_val(step_val)
 
-            if self._delay is not None:
-                step_clock, remainder = self._update_set_ts(step_clock)
-                time.sleep(remainder)
+                # Update time of last set
+                self._t_last_set = time.perf_counter()
+
         except Exception as e:
             e.args = e.args + (
                 'setting {} to {}'.format(self.full_name, repr(value)),)
