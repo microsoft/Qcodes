@@ -11,10 +11,30 @@ class SIM928(VisaInstrument):
     """
     A driver for Stanford Research Systems SIM 928 DC source modules installed
     in a SIM900 mainframe.
+
+    Args:
+        name (str): An identifier for this instrument, particularly for
+            attaching it to a ``Station``.
+        address (str): The visa resource name to use to connect.
+        slot_names (Dict[int]): An dictionary that optionally maps slot numbers
+            to user-defined module names. Default ``{}``.
+        timeout (number): Seconds to allow for responses. Default ``5``.
+        metadata (Optional[Dict]): Additional static metadata to add to this
+            instrument's JSON snapshot.
     """
 
-    def __init__(self, name, address, **kw):
+    def __init__(self, name, address, slot_names=None, **kw):
         super().__init__(name, address=address, terminator='\n', **kw)
+
+        if slot_names is None:
+            self.slot_names = {}
+        else:
+            self.slot_names = slot_names
+        self.module_nr = {}
+        for i in self.slot_names:
+            if self.slot_names[i] in self.module_nr:
+                raise ValueError('Duplicate names in slot_names')
+            self.module_nr[self.slot_names[i]] = i
 
         self.write('*DCL')  # device clear
         self.write('FLSH')  # flush port buffers
@@ -24,40 +44,48 @@ class SIM928(VisaInstrument):
         self.modules = self.find_modules()
         for i in self.modules:
             self.write_module(i, 'TERM LF')
-            self.add_parameter('IDN{}'.format(i),
-                               label="IDN of module {}".format(i),
-                               get_cmd=partial(self.get_idn, i))
-            self.add_parameter('voltage{}'.format(i), unit='V',
-                               label="Output voltage of module {}".format(i),
+            module_name = self.slot_names.get(i, i)
+            self.add_parameter('IDN_{}'.format(module_name),
+                               label="IDN of module {}".format(module_name),
+                               get_cmd=partial(self.get_module_idn, i))
+            self.add_parameter('volt_{}'.format(module_name), unit='V',
+                               label="Output voltage of module "
+                                     "{}".format(module_name),
                                vals=vals.Numbers(-20, 20),
                                get_cmd=partial(self.get_voltage, i),
                                set_cmd=partial(self.set_voltage, i))
-            self.add_parameter('voltage{}_step'.format(i), unit='V',
-                               label="The step size when changing the voltage "
-                                     "smoothly on module {}".format(i),
+            self.add_parameter('volt_{}_step'.format(module_name), unit='V',
+                               label="Step size when changing the voltage "
+                                     "smoothly on module "
+                                     "{}".format(module_name),
                                parameter_class=ManualParameter,
                                vals=vals.Numbers(0, 20), initial_value=0.005)
         self.add_parameter('smooth_timestep', unit='s',
-                           label="The delay between sending the write commands"
+                           label="Delay between sending the write commands"
                                  "when changing the voltage smoothly",
                            parameter_class=ManualParameter,
-                           vals=vals.Numbers(0,1), initial_value=0.05)
+                           vals=vals.Numbers(0, 1), initial_value=0.05)
 
         super().connect_message()
 
-    def get_idn(self, i=None):
+    def get_module_idn(self, i):
         """
-        i:
-            Slot of the module whose id is returned
+        Get the vendor, model, serial number and firmware version of a module.
+
+        Args:
+            i (int/str): Slot number or module name (as in ``slot_names``)
+                of the module whose id is returned.
+
         Returns:
             A dict containing vendor, model, serial, and firmware.
         """
+        if type(i) != int:
+            i = self.module_nr[i]
+
+        idstr = ''  # in case self.ask fails
+        idparts = [None, None, None, None]
         try:
-            idstr = ''  # in case self.ask fails
-            if i is None:
-                idstr = self.ask('*IDN?')
-            else:
-                idstr = self.ask_module(i, '*IDN?')
+            idstr = self.ask_module(i, '*IDN?')
             # form is supposed to be comma-separated, but we've seen
             # other separators occasionally
             for separator in ',;:':
@@ -81,20 +109,35 @@ class SIM928(VisaInstrument):
 
     def find_modules(self):
         """
-        Queries the SIM900 mainframe, in which slots there is a module present.
-        :return: a list of slot numbers where a module is present (starting
+        Query the SIM900 mainframe for which slots have a SIM928 module present.
+
+        Returns:
+             A list of slot numbers where a SIM928 module is present (starting
                  from 1)
         """
         CTCR = self.ask('CTCR?')
         CTCR = int(CTCR) >> 1
         modules = []
-        for i in range(1,10):
-            if CTCR & 1 != 0:
+        for i in range(1, 10):
+            if CTCR & 1 != 0 and self.get_module_idn(i)['model'] == 'SIM928':
                 modules.append(i)
             CTCR >>= 1
         return modules
 
     def ask_module(self, i, cmd):
+        """
+        Write a command string to a module and return a response.
+
+        Args:
+            i (int/str): Slot number or module name (as in ``slot_names``)
+                of the module to ask from.
+            cmd (str): The VISA query string.
+
+        Returns:
+            The response string from the module.
+        """
+        if type(i) != int:
+            i = self.module_nr[i]
         msg = 'SNDT {},"{}"'.format(i, cmd)
         self.write(msg)
         time.sleep(100e-3)
@@ -110,62 +153,107 @@ class SIM928(VisaInstrument):
         return msg[5:]
 
     def write_module(self, i, cmd):
+        """
+        Write a command string to a module with NO response expected.
+
+        Args:
+            i (int/str): Slot number or module name (as in ``slot_names``)
+                of the module to write to.
+            cmd (str): The VISA command string.
+        """
+        if type(i) != int:
+            i = self.module_nr[i]
         self.write('SNDT {},"{}"'.format(i, cmd))
 
     def set_voltage(self, i, voltage):
+        """
+        Set the output voltage of a module.
+
+        Args:
+            i (int/str): Slot number or module name (as in ``slot_names``)
+                of the module to set the voltage of.
+            voltage (float): The value to set the voltage to.
+        """
+        if type(i) != int:
+            name = i
+            i = self.module_nr[i]
+        else:
+            name = self.slot_names.get(i, i)
         self.write_module(i, 'VOLT {:.3f}'.format(voltage))
-        self.parameters['voltage{}'.format(i)]._save_val(voltage)
+        self.parameters['volt_{}'.format(name)]._save_val(voltage)
 
     def get_voltage(self, i):
+        """
+        Get the output voltage of a module.
+
+        Args:
+           i (int/str): Slot number or module name (as in ``slot_names``)
+               of the module to get the voltage of.
+
+        Returns:
+            The current voltage of module ``i`` as a ``float``.
+        """
+        if type(i) != int:
+            i = self.module_nr[i]
         return float(self.ask_module(i, 'VOLT?'))
 
-    def set_smooth(self, voltagedict, equitime=False, verbose=False):
+    def set_smooth(self, voltagedict, equitime=False):
         """
-        Sets the voltages as specified in voltagedict, by changing the output
-        on each module at a rate voltage#_step/smooth_timestep.
+        Set the voltages as specified in ``voltagedict` smoothly,
+        by changing the output on each module at a rate
+        ``volt_#_step/smooth_timestep``.
 
-        voltagedict:
-            a dictionary where keys are module slot numbers and values are the
-            desired output voltages.
-        equitime:
-            if True, uses smaller step sizes for some of the modules so that all
-            modules reach the desired value at the same time
+        Args:
+            voltagedict (Dict[float]): A dictionary where keys are module slot
+                numbers or names and values are the desired output voltages.
+            equitime (bool): If ``True``, uses smaller step sizes for some of
+                the modules so that all modules reach the desired value at the
+                same time.
         """
 
+        # convert voltagedict to contain module names only and validate inputs
+        vdict = {}
         for i in voltagedict:
-            if i not in self.modules:
-                raise KeyError('There is no module in slot {}'.format(i))
-            self.parameters['voltage{}'.format(i)].validate(voltagedict[i])
+            if type(i) != int:
+                if self.module_nr[i] not in self.modules:
+                    raise KeyError('There is no module named {}'.format(i))
+                name = i
+            else:
+                if i not in self.modules:
+                    raise KeyError('There is no module in slot {}'.format(i))
+                name = self.slot_names.get(i, i)
+            vdict[name] = voltagedict[i]
+            self.parameters['volt_{}'.format(name)].validate(vdict[name])
 
         intermediate = []
         if equitime:
             maxsteps = 0
             deltav = {}
-            for i in voltagedict:
-                deltav[i] = voltagedict[i]-self.get('voltage{}'.format(i))
-                stepsize = self.get('voltage{}_step'.format(i))
+            for i in vdict:
+                deltav[i] = vdict[i]-self.get('volt_{}'.format(i))
+                stepsize = self.get('volt_{}_step'.format(i))
                 steps = abs(int(np.ceil(deltav[i]/stepsize)))
                 if steps > maxsteps:
                     maxsteps = steps
             for s in range(maxsteps):
                 intermediate.append({})
-                for i in voltagedict:
-                    intermediate[-1][i] = voltagedict[i] - \
+                for i in vdict:
+                    intermediate[-1][i] = vdict[i] - \
                                           deltav[i]*(maxsteps-s-1)/maxsteps
         else:
             done = []
             prevvals = {}
-            for i in voltagedict:
-                prevvals[i] = self.get('voltage{}'.format(i))
-            while len(done) != len(voltagedict):
+            for i in vdict:
+                prevvals[i] = self.get('volt_{}'.format(i))
+            while len(done) != len(vdict):
                 intermediate.append({})
-                for i in voltagedict:
+                for i in vdict:
                     if i in done:
                         continue
-                    stepsize = self.get('voltage{}_step'.format(i))
-                    deltav = voltagedict[i]-prevvals[i]
+                    stepsize = self.get('volt_{}_step'.format(i))
+                    deltav = vdict[i]-prevvals[i]
                     if abs(deltav) <= stepsize:
-                        intermediate[-1][i] = voltagedict[i]
+                        intermediate[-1][i] = vdict[i]
                         done.append(i)
                     elif deltav > 0:
                         intermediate[-1][i] = prevvals[i] + stepsize
@@ -179,12 +267,40 @@ class SIM928(VisaInstrument):
             time.sleep(self.smooth_timestep())
 
     def get_module_status(self, i):
+        """
+        Gets and clears the status bytes corresponding to the registers ESR,
+        CESR and OVSR of module ``i``.
+
+        Args:
+            i (int/str): Slot number or module name (as in ``slot_names``)
+                of the module to get the status of.
+
+        Returns:
+            int, int, int: The bytes corresponding to standard event,
+            communication error and overload statuses of module ``i``
+        """
+        if type(i) != int:
+            i = self.module_nr[i]
         stdevent = self.ask_module(i, '*ESR?')
         commerr = self.ask_module(i, 'CESR?')
         overload = self.ask_module(i, 'OVSR?')
         return stdevent, commerr, overload
 
     def check_module_errors(self, i, raiseexc=True):
+        """
+        Check if any errors have occurred on module ``i`` and clear the status
+        registers.
+
+        Args:
+            i (int/str): Slot number or module name (as in ``slot_names``)
+                of the module to check the error of.
+            raiseexc (bool): If true, raises an exception if any errors have
+                occurred. Default ``True``.
+
+        Returns:
+            list[str]: A list of strings with the error messages that have
+            occurred.
+        """
         stdevent, commerr, overload = self.get_module_status(i)
         OPC, INP, QYE, DDE, EXE, CME, URQ, PON \
             = self.byte_to_bits(int(stdevent))
@@ -254,6 +370,16 @@ class SIM928(VisaInstrument):
 
     @classmethod
     def byte_to_bits(cls, x):
+        """
+        Convert an integer to a list of bits
+
+        Args:
+            x (int): The number to convert.
+
+        Returns:
+            list[bool]: A list of the lowest 8 bits of ``x`` where ``True``
+            represents 1 and ``False`` 0.
+        """
         bits = []
         for i in range(8):
             if x & 1 != 0:

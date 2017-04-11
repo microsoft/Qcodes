@@ -45,7 +45,7 @@ class Advantech_PCIE_1751(Instrument):
 
     Tested with driver version 3.1.10.0 and ddl version 3.1.12.1.
     """
-    
+
     def __init__(self, name, device_description="PCIE-1751,BID#0", **kw):
         super().__init__(name, **kw)
         
@@ -79,16 +79,16 @@ class Advantech_PCIE_1751(Instrument):
                 vals=vals.Enum(0x00, 0x0f, 0xf0, 0xff),
                 get_cmd=partial(self._get_port_direction, i),
                 set_cmd=partial(self._set_port_direction, i),
-                docstring="The direction (input or output) of the digital i/o"
-                    " port nr {}. Possible values are\n"
-                    "    0x00 indicating that all pins of the port are "
-                    "configured as inputs\n"
-                    "    0x0f indicating that pins 0 to 3 are configured as "
-                    "outputs and pins 4 to 7 as inputs\n"
-                    "    0xf0 indicating that pins 0 to 3 are configured as "
-                    "inputs and pins 4 to 7 as outputs\n"
-                    "    0xff indicating that all pins are configured as "
-                    "outputs".format(i))
+                docstring="The direction (input or output) of the digital i/o "
+                          "port nr {}. Possible values are\n"
+                          "    0x00 indicating that all pins of the port are "
+                          "configured as inputs\n"
+                          "    0x0f indicating that pins 0 to 3 are configured "
+                          "as outputs and pins 4 to 7 as inputs\n"
+                          "    0xf0 indicating that pins 0 to 3 are configured "
+                          "as inputs and pins 4 to 7 as outputs\n"
+                          "    0xff indicating that all pins are configured as "
+                          "outputs".format(i))
         
         self.connect_message()
 
@@ -129,8 +129,7 @@ class Advantech_PCIE_1751(Instrument):
         data = self.ffi.new('uint8 *')
         self.check(self.dll.InstantDiCtrl_ReadBit(self.di, port, pin, data))
         return data[0]
-        
-    
+
     def write_pin(self, port, pin, value):
         """
         Sets pin pin of port port to 1 if value != 0, and to 0 otherwise.
