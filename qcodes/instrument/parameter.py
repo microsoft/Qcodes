@@ -434,7 +434,9 @@ class ArrayParameter(_BaseParameter):
             per setpoint array. Ignored if a setpoint is a DataArray, which
             already has a label.
 
-            TODO (alexcjohnson) we need setpoint_units (and in MultiParameter)
+        setpoint_units (Optional[Tuple[str]]): one label (like ``v``)
+            per setpoint array. Ignored if a setpoint is a DataArray, which
+            already has a unit.
 
         docstring (Optional[str]): documentation string for the __doc__
             field of the object. The __doc__ field of the instance is used by
@@ -449,14 +451,14 @@ class ArrayParameter(_BaseParameter):
     def __init__(self, name, shape, instrument=None,
                  label=None, unit=None, units=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
-                 docstring=None, snapshot_get=True, metadata=None):
+                 setpoint_units=None, docstring=None, snapshot_get=True, metadata=None):
         super().__init__(name, instrument, snapshot_get, metadata)
 
         if self.has_set:  # TODO (alexcjohnson): can we support, ala Combine?
             raise AttributeError('ArrayParameters do not support set '
                                  'at this time.')
 
-        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
+        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels', 'setpoint_units',
                                  'label', 'unit'])
 
         self.label = name if label is None else label
@@ -489,10 +491,15 @@ class ArrayParameter(_BaseParameter):
                 not is_sequence_of(setpoint_labels, (nt, str),
                                    shape=sp_shape)):
             raise ValueError('setpoint_labels must be a tuple of strings')
+        if (setpoint_units is not None and
+                not is_sequence_of(setpoint_units, (nt, str),
+                                   shape=sp_shape)):
+            raise ValueError('setpoint_units must be a tuple of strings')
 
         self.setpoints = setpoints
         self.setpoint_names = setpoint_names
         self.setpoint_labels = setpoint_labels
+        self.setpoint_units = setpoint_units
 
         self.__doc__ = os.linesep.join((
             'Parameter class:',
@@ -592,6 +599,10 @@ class MultiParameter(_BaseParameter):
             ``labels``) per setpoint array. Ignored if a setpoint is a
             DataArray, which already has a label.
 
+        setpoint_units (Optional[Tuple[Tuple[str]]]): one unit (like
+            ``V``) per setpoint array. Ignored if a setpoint is a
+            DataArray, which already has a unit.
+
         docstring (Optional[str]): documentation string for the __doc__
             field of the object. The __doc__ field of the instance is used by
             some help systems, but not all
@@ -605,6 +616,7 @@ class MultiParameter(_BaseParameter):
     def __init__(self, name, names, shapes, instrument=None,
                  labels=None, units=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
+                 setpoint_units=None,
                  docstring=None, snapshot_get=True, metadata=None):
         super().__init__(name, instrument, snapshot_get, metadata)
 
@@ -612,7 +624,7 @@ class MultiParameter(_BaseParameter):
             warnings.warn('MultiParameters do not fully support set '
                           'at this time.')
 
-        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
+        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels', 'setpoint_units',
                                  'names', 'labels', 'units'])
 
         if not is_sequence_of(names, str):
@@ -644,9 +656,14 @@ class MultiParameter(_BaseParameter):
             raise ValueError(
                 'setpoint_labels must be a tuple of tuples of strings')
 
+        if not _is_nested_sequence_or_none(setpoint_units, (nt, str), shapes):
+            raise ValueError(
+                'setpoint_units must be a tuple of tuples of strings')
+
         self.setpoints = setpoints
         self.setpoint_names = setpoint_names
         self.setpoint_labels = setpoint_labels
+        self.setpoint_units = setpoint_units
 
         self.__doc__ = os.linesep.join((
             'MultiParameter class:',
@@ -783,9 +800,6 @@ class StandardParameter(Parameter):
                 raise TypeError(
                     'You cannot use set_parser and val_mapping together.')
 
-        if get_parser is not None and not isinstance(get_cmd, str):
-            logging.warning('get_parser is set, but will not be used ' +
-                            '(name %s)' % name)
         super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
 
         self._meta_attrs.extend(['sweep_step', 'sweep_delay',
@@ -851,6 +865,8 @@ class StandardParameter(Parameter):
     def _set_set(self, set_cmd, set_parser):
         # note: this does not set the final setter functions. that's handled
         # in self.set_sweep, when we choose a swept or non-swept setter.
+        # TODO(giulioungaretti) lies! that method does not exis.
+        # probably alexj left it out :(
         exec_str = self._instrument.write if self._instrument else None
         self._set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str,
                             input_parser=set_parser, no_cmd_function=no_setter)

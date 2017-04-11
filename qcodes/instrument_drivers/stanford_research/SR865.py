@@ -44,21 +44,21 @@ class SR865(VisaInstrument):
         # Reference commands
         self.add_parameter(name='frequency',
                            label='Frequency',
-                           units='Hz',
+                           unit='Hz',
                            get_cmd='FREQ?',
                            set_cmd='FREQ {}',
                            get_parser=float,
                            vals=Numbers(min_value=1e-3, max_value=2.5e6))
         self.add_parameter(name='sine_outdc',
                            label='Sine out dc level',
-                           units='V',
+                           unit='V',
                            get_cmd='SOFF?',
                            set_cmd='SOFF {:.3f}',
                            get_parser=float,
                            vals=Numbers(min_value=-5, max_value=5))
         self.add_parameter(name='amplitude',
                            label='Amplitude',
-                           units='V',
+                           unit='V',
                            get_cmd='SLVL?',
                            set_cmd='SLVL {}',
                            get_parser=float,
@@ -71,7 +71,7 @@ class SR865(VisaInstrument):
                            vals=Ints(min_value=1, max_value=99))
         self.add_parameter(name='phase',
                            label='Phase',
-                           units='deg',
+                           unit='deg',
                            get_cmd='PHAS?',
                            set_cmd='PHAS {}',
                            get_parser=float,
@@ -86,7 +86,7 @@ class SR865(VisaInstrument):
                            )
         self.add_parameter(name='filter_slope',
                            label='Filter slope',
-                           units='dB/oct',
+                           unit='dB/oct',
                            get_cmd='OFSL?',
                            set_cmd='OFSL {}',
                            val_mapping={6: 0,
@@ -101,7 +101,7 @@ class SR865(VisaInstrument):
                                         'ON': 1})
         self.add_parameter(name='noise_bandwidth',
                            label='Noise bandwidth',
-                           units='Hz',
+                           unit='Hz',
                            get_cmd='ENBW?',
                            get_parser=float)
         self.add_parameter(name='signal_strength',
@@ -117,7 +117,7 @@ class SR865(VisaInstrument):
                            vals=Enum(*self._INPUT_SIGNAL_TO_N.keys()))
         self.add_parameter(name='input_range',
                            label='Input range',
-                           units='V',
+                           unit='V',
                            get_cmd='IRNG?',
                            set_cmd='IRNG {}',
                            val_mapping={1: 0,
@@ -139,7 +139,7 @@ class SR865(VisaInstrument):
                                         'ground': 1})
         self.add_parameter(name='input_gain',
                            label='Input gain',
-                           units='ohm',
+                           unit='ohm',
                            get_cmd='ICUR?',
                            set_cmd='ICUR {}',
                            val_mapping={1e6:   0,
@@ -157,7 +157,7 @@ class SR865(VisaInstrument):
                            val_mapping={'ac': 0, 'dc': 1})
         self.add_parameter(name='time_constant',
                            label='Time constant',
-                           units='s',
+                           unit='s',
                            get_cmd='OFLT?',
                            set_cmd='OFLT {}',
                            val_mapping={1e-6: 0, 3e-6: 1,
@@ -182,41 +182,41 @@ class SR865(VisaInstrument):
                            label='In-phase Magnitude',
                            get_cmd='OUTP? 0',
                            get_parser=float,
-                           units='V')
+                           unit='V')
         self.add_parameter('Y',
                            label='Out-phase Magnitude',
                            get_cmd='OUTP? 1',
                            get_parser=float,
-                           units='V')
+                           unit='V')
         self.add_parameter('R',
                            label='Magnitude',
                            get_cmd='OUTP? 2',
                            get_parser=float,
-                           units='V')
+                           unit='V')
         self.add_parameter('P',
                            label='Phase',
                            get_cmd='OUTP? 3',
                            get_parser=float,
-                           units='deg')
+                           unit='deg')
 
         # CH1/CH2 Output Commands
         self.add_parameter('X_offset',
                            label='X offset ',
-                           units='%',
+                           unit='%',
                            get_cmd='COFP? 0',
                            set_cmd='COFP 0, {}',
                            get_parser=float,
                            vals=Numbers(min_value=-999.99, max_value=999.99))
         self.add_parameter('Y_offset',
                            label='Y offset',
-                           units='%',
+                           unit='%',
                            get_cmd='COFP? 1',
                            set_cmd='COFP 1, {}',
                            get_parser=float,
                            vals=Numbers(min_value=-999.99, max_value=999.99))
         self.add_parameter('R_offset',
                            label='R offset',
-                           units='%',
+                           unit='%',
                            get_cmd='COFP? 2',
                            set_cmd='COFP 2, {}',
                            get_parser=float,
@@ -248,14 +248,14 @@ class SR865(VisaInstrument):
                                label='Aux input {}'.format(i),
                                get_cmd='OAUX? {}'.format(i),
                                get_parser=float,
-                               units='V')
+                               unit='V')
 
             self.add_parameter('aux_out{}'.format(i),
                                label='Aux output {}'.format(i),
                                get_cmd='AUXV? {}'.format(i),
                                get_parser=float,
                                set_cmd='AUXV {0}, {{}}'.format(i),
-                               units='V')
+                               unit='V')
 
         # Interface
         self.add_function('reset', call_cmd='*RST')
@@ -266,9 +266,9 @@ class SR865(VisaInstrument):
         self.input_config()
         self.connect_message()
 
-    def _set_units(self, units):
+    def _set_units(self, unit):
         for param in [self.X, self.Y, self.R, self.sensitivity]:
-            param.units = units
+            param.unit = unit
 
     def _get_input_config(self, s):
         mode = self._N_TO_INPUT_SIGNAL[int(s)]

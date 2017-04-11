@@ -1,12 +1,14 @@
+import collections
 import copy
 import json
-import jsonschema
 import logging
 import os
 import pkg_resources as pkgr
 
 from os.path import expanduser
 from pathlib import Path
+
+import jsonschema
 
 logger = logging.getLogger(__name__)
 
@@ -121,19 +123,19 @@ class Config():
 
         if os.path.isfile(self.home_file_name):
             home_config = self.load_config(self.home_file_name)
-            config.update(home_config)
+            config = update(config, home_config)
             self.validate(config, self.current_schema,
                           self.schema_home_file_name)
 
         if os.path.isfile(self.env_file_name):
             env_config = self.load_config(self.env_file_name)
-            config.update(env_config)
+            config = update(config, env_config)
             self.validate(config, self.current_schema,
                           self.schema_env_file_name)
 
         if os.path.isfile(self.cwd_file_name):
             cwd_config = self.load_config(self.cwd_file_name)
-            config.update(cwd_config)
+            config = update(config, cwd_config)
             self.validate(config, self.current_schema,
                           self.schema_cwd_file_name)
 
@@ -160,9 +162,7 @@ class Config():
                     # be overwritten
                     new_user = json.load(f)["properties"]["user"]
                     user = schema["properties"]['user']
-                    user["properties"].update(
-                            new_user["properties"]
-                            )
+                    user["properties"].update(new_user["properties"])
                 jsonschema.validate(json_config, schema)
             else:
                 logger.warning(EMPTY_USER_SCHEMA.format(extra_schema_path))
@@ -231,11 +231,13 @@ class Config():
             # update schema!
             schema_entry = {key: {"type": value_type}}
             if description is not None:
-                schema_entry = {key: {
-                                    "type": value_type,
-                                    "default": default,
-                                    "description": description}
-                                }
+                schema_entry = {
+                    key: {
+                        "type": value_type,
+                        "default": default,
+                        "description": description
+                    }
+                }
             # the schema is nested we only update properties of the user object
             user = self.current_schema['properties']["user"]
             user["properties"].update(schema_entry)
@@ -335,12 +337,7 @@ class Config():
         # add cool description to docstring
         base_docstring = """{}.\nCurrent value: {}. Type: {}. Default: {}."""
 
-        doc = base_docstring.format(
-                description,
-                val,
-                _type,
-                default
-                )
+        doc = base_docstring.format(description, val, _type, default)
 
         return doc
 
@@ -356,15 +353,14 @@ class Config():
     def __repr__(self):
         old = super().__repr__()
         base = """Current values: \n {} \n Current path: \n {} \n {}"""
-        return base.format(self.current_config,
-                           self.current_config_path,
-                           old)
+        return base.format(self.current_config, self.current_config_path, old)
 
 
 class DotDict(dict):
     """
     Wrapper dict that allows to get dotted attributes
     """
+
     def __init__(self, value=None):
         if value is None:
             pass
@@ -402,3 +398,13 @@ class DotDict(dict):
     # dot acces baby
     __setattr__ = __setitem__
     __getattr__ = __getitem__
+
+
+def update(d, u):
+    for k, v in u.items():
+        if isinstance(v, collections.Mapping):
+            r = update(d.get(k, {}), v)
+            d[k] = r
+        else:
+            d[k] = u[k]
+    return d
