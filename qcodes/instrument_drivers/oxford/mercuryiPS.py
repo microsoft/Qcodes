@@ -3,8 +3,33 @@ import re
 import time
 import numpy as np
 
-from qcodes import IPInstrument
-from qcodes.utils.validators import Enum, Anything
+from qcodes import IPInstrument, MultiParameter
+from qcodes.utils.validators import Enum
+
+class MercuryiPSArray(MultiParameter):
+    """
+    This parameter holds the MercuryiPS's 3 dimensional parameters
+
+    """
+    def __init__(self, name, instrument, names, units, get_cmd, set_cmd, **kwargs):
+        shapes = tuple(() for i in names)
+        super().__init__(name, names, shapes, **kwargs)
+        self._get = get_cmd
+        self._set = set_cmd
+        self._instrument = instrument
+        self.units = units
+
+    def get(self):
+        try:
+            value = self._get()
+            self._save_val(value)
+            return value
+        except Exception as e:
+            e.args = e.args + ('getting {}'.format(self.full_name),)
+            raise e
+
+    def set(self, setpoint):
+        return self._set(setpoint)
 
 
 class MercuryiPS(IPInstrument):
@@ -21,7 +46,9 @@ class MercuryiPS(IPInstrument):
             instrument what axes it supports.
 
     Status: beta-version.
-        TODO:
+
+    .. todo::
+
         - SAFETY!! we need to make sure the magnet is only ramped at certain
           conditions!
         - make ATOB a parameter, and move all possible to use
@@ -30,8 +57,10 @@ class MercuryiPS(IPInstrument):
 
     The driver is written as an IPInstrument, but it can likely be converted to
     ``VisaInstrument`` by removing the ``port`` arg and defining methods:
-        ``def _send(self, msg): self.visa_handle.write(msg)``
-        ``def _recv(self): return self.visa_handle.read()``
+
+        - ``def _send(self, msg): self.visa_handle.write(msg)``
+        - ``def _recv(self): return self.visa_handle.read()``
+
     """
     # def __init__(self, name, axes=None, **kwargs):
     #     super().__init__(name, terminator='\n', **kwargs)
@@ -50,54 +79,46 @@ class MercuryiPS(IPInstrument):
         self._determine_current_to_field()
 
         self.add_parameter('setpoint',
-                           names=['B'+ax.lower()+'_setpoint'
-                                  for ax in self.axes],
+                           names=tuple('B' + ax.lower() + '_setpoint' for ax in axes),
+                           units=tuple('T' for ax in axes),
                            get_cmd=partial(self._get_fld, self.axes, 'FSET'),
-                           set_cmd=partial(self._ramp_to_setpoint,
-                                           self.axes, 'FSET'),
-                           units=['T'for ax in self.axes],
-                           vals=Anything())
+                           set_cmd=partial(self._ramp_to_setpoint, self.axes, 'FSET'),
+                           parameter_class=MercuryiPSArray)
 
         self.add_parameter('rate',
-                           names=['rate_B'+ax.lower() for ax in self.axes],
+                           names=tuple('rate_B' + ax.lower() for ax in axes),
+                           units=tuple('T/m' for ax in axes),
                            get_cmd=partial(self._get_fld, self.axes, 'RFST'),
-                           set_cmd=partial(self._ramp_to_setpoint,
-                                           self.axes, 'RFST'),
-                           units=['T/m'for ax in self.axes],
-                           vals=Anything())
+                           set_cmd=partial(self._ramp_to_setpoint, self.axes, 'RFST'),
+                           parameter_class=MercuryiPSArray)
 
         self.add_parameter('fld',
-                           names=['B'+ax.lower() for ax in self.axes],
+                           names=tuple('B'+ax.lower() for ax in self.axes),
+                           units=tuple('T'for ax in self.axes),
                            get_cmd=partial(self._get_fld, self.axes, 'FLD'),
-                           set_cmd=partial(self._ramp_to_setpoint,
-                                           self.axes, 'FSET'),
-                           units=['T'for ax in self.axes],
-                           vals=Anything())
+                           set_cmd=partial(self._ramp_to_setpoint, self.axes, 'FSET'),
+                           parameter_class=MercuryiPSArray)
 
         self.add_parameter('fldC',
                            names=['B'+ax.lower() for ax in self.axes],
-                           get_cmd=partial(self._get_fld,
-                                           self.axes, 'CURR'),
-                           set_cmd=partial(self._ramp_to_setpoint,
-                                           self.axes, 'CSET'),
-                           units=['T'for ax in self.axes],
-                           vals=Anything())
+                           units=['T' for ax in self.axes],
+                           get_cmd=partial(self._get_fld, self.axes, 'CURR'),
+                           set_cmd=partial(self._ramp_to_setpoint, self.axes, 'CSET'),
+                           parameter_class=MercuryiPSArray)
 
         self.add_parameter('rtp',
                            names=['radius', 'theta', 'phi'],
-                           get_cmd=partial(self._get_rtp,
-                                           self.axes, 'FLD'),
-                           set_cmd=partial(self._set_rtp, self.axes, 'FSET'),
                            units=['|B|', 'rad', 'rad'],
-                           vals=Anything())
+                           get_cmd=partial(self._get_rtp, self.axes, 'FLD'),
+                           set_cmd=partial(self._set_rtp, self.axes, 'FSET'),
+                           parameter_class=MercuryiPSArray)
 
         self.add_parameter('rtpC',
                            names=['radius', 'theta', 'phi'],
-                           get_cmd=partial(self._get_rtp,
-                                           self.axes, 'CURR'),
-                           set_cmd=partial(self._set_rtp, self.axes, 'CSET'),
                            units=['|B|', 'rad', 'rad'],
-                           vals=Anything())
+                           get_cmd=partial(self._get_rtp, self.axes, 'CURR'),
+                           set_cmd=partial(self._set_rtp, self.axes, 'CSET'),
+                           parameter_class=MercuryiPSArray)
 
         # so we have radius, theta and phi in buffer
         self.rtp.get()
@@ -105,15 +126,15 @@ class MercuryiPS(IPInstrument):
         self.add_parameter('radius',
                            get_cmd=self._get_r,
                            set_cmd=self._set_r,
-                           units='|B|')
+                           unit='|B|')
         self.add_parameter('theta',
                            get_cmd=self._get_theta,
                            set_cmd=self._set_theta,
-                           units='rad')
+                           unit='rad')
         self.add_parameter('phi',
                            get_cmd=self._get_phi,
                            set_cmd=self._set_phi,
-                           units='rad')
+                           unit='rad')
 
         for ax in self.axes:
             self.add_parameter(ax.lower()+'_fld',
@@ -121,21 +142,21 @@ class MercuryiPS(IPInstrument):
                                set_cmd=partial(self._ramp_to_setpoint,
                                                ax, 'FSET'),
                                label='B'+ax.lower(),
-                               units='T')
+                               unit='T')
             self.add_parameter(ax.lower()+'_fldC',
                                get_cmd=partial(self._get_fld,
                                                ax, 'CURR'),
                                set_cmd=partial(self._ramp_to_setpoint,
                                                ax, 'CSET'),
                                label='B'+ax.lower(),
-                               units='T')
+                               unit='T')
             self.add_parameter(ax.lower()+'_fld_wait',
                                get_cmd=partial(self._get_fld,
                                                ax, 'CURR'),
                                set_cmd=partial(self._ramp_to_setpoint_and_wait,
                                                ax, 'CSET'),
                                label='B'+ax.lower(),
-                               units='T')
+                               unit='T')
             self.add_parameter(ax.lower()+'_ACTN',
                                get_cmd=partial(
                                    self._get_cmd,
@@ -145,19 +166,19 @@ class MercuryiPS(IPInstrument):
             self.add_parameter(ax.lower()+'_setpoint',
                                get_cmd=partial(self._get_fld, ax, 'FSET'),
                                set_cmd=partial(self._set_fld, ax, 'FSET'),
-                               units='T')
+                               unit='T')
             self.add_parameter(ax.lower()+'_setpointC',
                                get_cmd=partial(self._get_fld, ax, 'CSET'),
                                set_cmd=partial(self._set_fld, ax, 'CSET'),
-                               units='T')
+                               unit='T')
             self.add_parameter(ax.lower()+'_rate',
                                get_cmd=partial(self._get_fld, ax, 'RFST'),
                                set_cmd=partial(self._set_fld, ax, 'RFST'),
-                               units='T/m')
+                               unit='T/m')
             self.add_parameter(ax.lower()+'_rateC',
                                get_cmd=partial(self._get_fld, ax, 'RCST'),
                                set_cmd=partial(self._set_fld, ax, 'RCST'),
-                               units='T/m')
+                               unit='T/m')
 
             self.connect_message()
 

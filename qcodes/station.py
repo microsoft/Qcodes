@@ -3,8 +3,6 @@
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import make_unique, DelegateAttributes
 
-from qcodes.instrument.remote import RemoteInstrument
-from qcodes.instrument.remote import RemoteParameter
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.parameter import ManualParameter
@@ -18,7 +16,7 @@ class Station(Metadatable, DelegateAttributes):
     """
     A representation of the entire physical setup.
 
-    Lists all the connected `Components`s and the current default
+    Lists all the connected `Component`\s and the current default
     measurement (a list of actions). Contains a convenience method
     `.measure()` to measure these defaults right now, but this is separate
     from the code used by `Loop`.
@@ -86,13 +84,12 @@ class Station(Metadatable, DelegateAttributes):
         }
 
         for name, itm in self.components.items():
-            if isinstance(itm, (RemoteInstrument,
-                                Instrument)):
+            if isinstance(itm, (Instrument)):
                 snap['instruments'][name] = itm.snapshot(update=update)
             elif isinstance(itm, (Parameter,
                                   ManualParameter,
-                                  StandardParameter,
-                                  RemoteParameter)):
+                                  StandardParameter
+                                  )):
                 snap['parameters'][name] = itm.snapshot(update=update)
             else:
                 snap['components'][name] = itm.snapshot(update=update)
@@ -110,8 +107,8 @@ class Station(Metadatable, DelegateAttributes):
                 of each component as it is added to the Station, default true
 
         Returns:
-            str: the name assigned this component, which may have been changed to
-             make it unique among previously added components.
+            str: The name assigned this component, which may have been changed to
+            make it unique among previously added components.
 
         """
         try:
@@ -127,7 +124,7 @@ class Station(Metadatable, DelegateAttributes):
 
     def set_measurement(self, *actions):
         """
-        Save a set *actions as the default measurement for this Station.
+        Save a set \*actions as the default measurement for this Station.
 
         These actions will be executed by default by a Loop if this is the
         default Station, and any measurements among them can be done once

@@ -62,9 +62,10 @@ Documentation
    user/index
    community/index
    api/index
-   auto/qcodes.instrument_drivers
+   api/generated/qcodes.instrument_drivers
    roadmap
    changes/index
+   examples/index
 
 
 Indices and tables

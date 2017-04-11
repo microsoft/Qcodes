@@ -4,6 +4,12 @@ notifications:
     # send all notifcations to slack
   slack: qcodes:tNlhSminOHdt2fZf6x6hyT24
 
+cache: pip
+
+addons:
+  apt_packages:
+    - pandoc
+
 python:
   - "3.5"
   # whitelist
@@ -11,7 +17,7 @@ branches:
   only:
     - master
 
-# singal that we are on travis
+# signal that we are on travis
 # to disable things that expect an
 # X Display
 #
@@ -21,18 +27,17 @@ env:
 install:
     - pip install --upgrade pip
     - pip install -r requirements.txt
-    - pip install coverage
-    - python setup.py develop
+    - pip install coverage pytest-cov pytest --upgrade
+    - pip install -e .
 # command to run tests
-script: 
-    - python  qcodes/test.py
+script:
+    - cd qcodes
+    - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
 
 after_success:
-    # install codacy coverage plugin only on traivs
+    # install codacy coverage plugin and sphinx only on traivs
     - pip install codacy-coverage sphinx sphinx_rtd_theme jsonschema sphinxcontrib-jsonschema
-    - cd qcodes
-    - coverage xml
     - python-codacy-coverage -r coverage.xml
-    # build the docs, one dir up
-    - cd ../ 
+    - cd ..
+    # build the docs
     - make -f docs/Makefile gh-pages
