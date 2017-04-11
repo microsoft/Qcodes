@@ -6,6 +6,10 @@ notifications:
 
 cache: pip
 
+addons:
+  apt_packages:
+    - pandoc
+
 python:
   - "3.5"
   # whitelist
