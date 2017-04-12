@@ -279,12 +279,28 @@ class SIM928(VisaInstrument):
             int, int, int: The bytes corresponding to standard event,
             communication error and overload statuses of module ``i``
         """
-        if type(i) != int:
-            i = self.module_nr[i]
         stdevent = self.ask_module(i, '*ESR?')
         commerr = self.ask_module(i, 'CESR?')
         overload = self.ask_module(i, 'OVSR?')
         return stdevent, commerr, overload
+
+    def reset_module(self, i):
+        """
+        Sends the SIM Reset signal to module i.
+
+        Causes a break signal (MARK level) to be asserted for 100 milliseconds
+        to module i. Upon receiving the break signal the modul will flush its
+        internal input buffer, reset its command parser, and default to 9600
+        baud communications.
+
+        Args:
+            i (int/str): Slot number or module name (as in ``slot_names``)
+                of the module to reset.
+        """
+        if type(i) != int:
+            i = self.module_nr[i]
+        self.write('SRST {}'.format(i))
+
 
     def check_module_errors(self, i, raiseexc=True):
         """
@@ -310,6 +326,7 @@ class SIM928(VisaInstrument):
             = self.byte_to_bits(int(overload))
 
         errors = []
+        warnings = []
         if INP:
             errors.append('Input Buffer Error.')
         if QYE:
@@ -322,8 +339,11 @@ class SIM928(VisaInstrument):
             msg = {0: 'No error',
                    1: 'Illegal value',
                    2: 'Wrong token',
-                   3: 'Invalid bit'}.get(code, 'Unknown')
-            errors.append('Execution Error: {} ({})'.format(msg, code))
+                   3: 'Invalid bit'}.get(int(code), 'Unknown')
+            if int(code) > 3 or int(code) == 0:
+                warnings.append('Execution Error: {} ({}).'.format(msg, code))
+            else:
+                errors.append('Execution Error: {} ({}).'.format(msg, code))
         if CME:
             code = self.ask_module(i, 'LCME?')
             msg = {0: 'No error',
@@ -340,8 +360,11 @@ class SIM928(VisaInstrument):
                    11: 'Bad integer token',
                    12: 'Bad token value',
                    13: 'Bad hex block',
-                   14: 'Unknown token'}.get(code, 'Unknown')
-            errors.append('Command Error: {} ({})'.format(msg, code))
+                   14: 'Unknown token'}.get(int(code), 'Unknown')
+            if int(code) > 14 or int(code) == 0:
+                warnings.append('Command Error: {} ({}).'.format(msg, code))
+            else:
+                errors.append('Command Error: {} ({}).'.format(msg, code))
         if PARITY:
             errors.append('Parity Error.')
         if FRAME:
@@ -365,8 +388,8 @@ class SIM928(VisaInstrument):
 
         if raiseexc:
             if len(errors) != 0:
-                raise Exception(' '.join(errors))
-        return errors
+                raise Exception(' '.join(errors + warnings))
+        return errors + warnings
 
     @classmethod
     def byte_to_bits(cls, x):
