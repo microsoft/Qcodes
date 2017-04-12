@@ -79,15 +79,15 @@ class MercuryiPS(IPInstrument):
         self._determine_current_to_field()
 
         self.add_parameter('setpoint',
-                           names=tuple('B' + ax.lower() + '_setpoint' for ax in axes),
-                           units=tuple('T' for ax in axes),
+                           names=tuple('B' + ax.lower() + '_setpoint' for ax in self.axes),
+                           units=tuple('T' for ax in self.axes),
                            get_cmd=partial(self._get_fld, self.axes, 'FSET'),
                            set_cmd=partial(self._ramp_to_setpoint, self.axes, 'FSET'),
                            parameter_class=MercuryiPSArray)
 
         self.add_parameter('rate',
-                           names=tuple('rate_B' + ax.lower() for ax in axes),
-                           units=tuple('T/m' for ax in axes),
+                           names=tuple('rate_B' + ax.lower() for ax in self.axes),
+                           units=tuple('T/m' for ax in self.axes),
                            get_cmd=partial(self._get_fld, self.axes, 'RFST'),
                            set_cmd=partial(self._ramp_to_setpoint, self.axes, 'RFST'),
                            parameter_class=MercuryiPSArray)
