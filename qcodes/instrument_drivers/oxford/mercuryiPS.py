@@ -39,7 +39,7 @@ class MercuryiPS(IPInstrument):
     Args:
         name (str): name of the instrument
         address (str): The IP address or domain name of this instrument
-        port (int): the IP port to communicate on (TODO: what port is normal?)
+        port (int): the IP port to communicate on (default 7020, as in the manual)
 
         axes (List[str], Optional): axes to support, as a list of uppercase
             characters, eg ``['X', 'Y', 'Z']``. If omitted, will ask the
@@ -64,7 +64,7 @@ class MercuryiPS(IPInstrument):
     """
     # def __init__(self, name, axes=None, **kwargs):
     #     super().__init__(name, terminator='\n', **kwargs)
-    def __init__(self, name, address=None, port=None, axes=None, **kwargs):
+    def __init__(self, name, address=None, port=7020, axes=None, **kwargs):
         super().__init__(name, address=address, port=port, terminator='\n',
                          **kwargs)
         self.axes = axes
