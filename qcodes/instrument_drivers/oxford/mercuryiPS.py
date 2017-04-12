@@ -220,7 +220,7 @@ class MercuryiPS(IPInstrument):
             setpoint = np.array(self._ATOB) * np.array(setpoint)
 
         if len(ax) == 1:
-            setpoint = setpoint[self.axes.index(ax)]
+            setpoint = setpoint[0]
 
         msg = 'SET:DEV:GRP{}:PSU:SIG:{}:{:6f}'
         self._write_cmd(cmd, ax, setpoint, msg)
@@ -236,7 +236,7 @@ class MercuryiPS(IPInstrument):
             fld = np.array(fld) / np.array(self._ATOB)
 
         if len(ax) == 1:
-            return fld[self.axes.index(ax)]
+            return fld[0]
         return list(fld)
 
     def _get_rtp(self, ax, cmd):
