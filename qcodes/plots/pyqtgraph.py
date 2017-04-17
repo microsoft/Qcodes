@@ -10,7 +10,6 @@ from collections import namedtuple
 from .base import BasePlot
 from .colors import color_cycle, colorscales
 
-
 TransformState = namedtuple('TransformState', 'translate scale revisit')
 
 
@@ -215,7 +214,9 @@ class QtPlot(BasePlot):
             hist.setLevels(*z_range)
             hist_range = z_range
 
-        img.setImage(self._clean_array(z), levels=hist_range)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', 'using a non-integer number instead of an integer will result in an error in the future')
+            img.setImage(self._clean_array(z), levels=hist_range)
 
         scales_changed = False
         for axletter, axscale in scales.items():
