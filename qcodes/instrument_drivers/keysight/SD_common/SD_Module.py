@@ -221,7 +221,7 @@ class SD_Module(Instrument):
         value_name = 'data at PCport {}'.format(port)
         return result_parser(data, value_name, verbose)
 
-    def set_fpga_pc_port(self, port, data, address, address_mode, access_mode, verbose=False):
+    def set_fpga_pc_port(self, port, data, address, address_mode, access_mode):
         """
         Writes data at the PCport FPGA Block
 
@@ -232,7 +232,7 @@ class SD_Module(Instrument):
             address_mode (int): ?? not in the docs
             access_mode (int): ?? not in the docs
         """
-        self.SD_module.FPGAwritePCport(port, data, address, address_mode, access_mode, verbose)
+        self.SD_module.FPGAwritePCport(port, data, address, address_mode, access_mode)
 
     #
     # The methods below are not used for setting or getting parameters, but can be used in the test functions of the
