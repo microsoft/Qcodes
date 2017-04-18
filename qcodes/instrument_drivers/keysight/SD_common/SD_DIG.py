@@ -144,7 +144,7 @@ class SD_DIG(SD_Module):
                 docstring='The coupling of channel {}'.format(n)
             )
 
-            # For channelPrescalerConfig 
+            # For channelPrescalerConfig
             self.add_parameter(
                 'prescaler_{}'.format(n),
                 label='Prescaler for channel {}'.format(n),
@@ -334,7 +334,7 @@ class SD_DIG(SD_Module):
 
     def daq_trigger_multiple(self, daq_mask, verbose=False):
         """ Manually trigger the specified DAQs
-        
+
         Args:
             daq_mask (int)  : the DAQs you are triggering, composed as a bitmask
                               where the LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
@@ -685,7 +685,7 @@ class SD_DIG(SD_Module):
         return result_parser(value, value_name, verbose)
 
     def set_ext_trigger_behaviour(self, behaviour, channel, verbose=False):
-        """ Sets the trigger source 
+        """ Sets the trigger source
 
         Args:
             channel (int)       : the input channel you are configuring
