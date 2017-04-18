@@ -218,8 +218,9 @@ class MercuryiPS(IPInstrument):
             setpoint = [setpoint]
         if cmd in ['CSET', 'RCST', 'CURR', 'PCUR', 'RCUR']:
             setpoint = np.array(self._ATOB) * np.array(setpoint)
-
-        if len(ax) == 1:
+            if len(ax) == 1:
+                setpoint = setpoint[self.axes.index(ax)]
+        elif len(ax) == 1:
             setpoint = setpoint[0]
 
         msg = 'SET:DEV:GRP{}:PSU:SIG:{}:{:6f}'
@@ -234,8 +235,9 @@ class MercuryiPS(IPInstrument):
 
         if cmd in ['CSET', 'RCST', 'CURR', 'PCUR', 'RCUR']:
             fld = np.array(fld) / np.array(self._ATOB)
-
-        if len(ax) == 1:
+            if len(ax) == 1:
+                return fld[self.axes.index(ax)]
+        elif len(ax) == 1:
             return fld[0]
         return list(fld)
 
