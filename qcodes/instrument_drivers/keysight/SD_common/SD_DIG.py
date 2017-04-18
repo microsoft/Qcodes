@@ -53,9 +53,9 @@ class SD_DIG(SD_Module):
         self.__full_scale = [1] * self.n_channels  # By default, full scale = 1V
         self.__impedance = [0] * self.n_channels  # By default, Hi-z
         self.__coupling = [0] * self.n_channels  # By default, DC coupling
-        # For channelPrescalerConfig         
+        # For channelPrescalerConfig
         self.__prescaler = [0] * self.n_channels  # By default, no prescaling
-        # For channelTriggerConfig           
+        # For channelTriggerConfig
         self.__trigger_mode = [keysightSD1.SD_AIN_TriggerMode.RISING_EDGE] * self.n_channels
         self.__trigger_threshold = [0] * self.n_channels  # By default, threshold at 0V
         # For DAQ config
@@ -313,7 +313,7 @@ class SD_DIG(SD_Module):
 
     def daq_stop_multiple(self, daq_mask, verbose=False):
         """ Stop acquiring data on the specified DAQs
-        
+
         Args:
             daq_mask (int)  : the DAQs you are triggering, composed as a bitmask
                               where the LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
@@ -389,7 +389,7 @@ class SD_DIG(SD_Module):
         """ Reset the clock phase between CLKsync and CLKsys
         
         Args:
-            trigger_behaviour (int) : 
+            trigger_behaviour (int) :
             trigger_source    (int) : the PXI trigger number
             skew           (double) : the skew between PXI_CLK10 and CLKsync in multiples of 10ns
     
@@ -612,7 +612,7 @@ class SD_DIG(SD_Module):
         return result_parser(value, value_name, verbose)
 
     def set_daq_trigger_mode(self, mode, channel, verbose=False):
-        """ Sets the trigger mode when using an external trigger 
+        """ Sets the trigger mode when using an external trigger
 
         Args:
             channel (int)       : the input channel you are configuring
@@ -671,7 +671,7 @@ class SD_DIG(SD_Module):
 
     # DAQ trigger External Config
     def set_ext_trigger_source(self, source, channel, verbose=False):
-        """ Sets the trigger source 
+        """ Sets the trigger source
 
         Args:
             channel (int)       : the input channel you are configuring
