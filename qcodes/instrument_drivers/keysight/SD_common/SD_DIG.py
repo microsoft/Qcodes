@@ -577,7 +577,7 @@ class SD_DIG(SD_Module):
                                       self.__n_cycles[channel],
                                       self.__trigger_delay[channel],
                                       self.__trigger_mode[channel])
-        value_name = 'set_points_per_cycle'.format(n_points)
+        value_name = 'set_points_per_cycle {}'.format(n_points)
         return result_parser(value, value_name, verbose)
 
     def set_n_cycles(self, n_cycles, channel, verbose=False):
