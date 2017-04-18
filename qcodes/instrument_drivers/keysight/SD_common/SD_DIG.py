@@ -355,7 +355,7 @@ class SD_DIG(SD_Module):
 
     def daq_flush_multiple(self, daq_mask, verbose=False):
         """ Flush the specified DAQs
-        
+
         Args:
             daq_mask (int)  : the DAQs you are flushing, composed as a bitmask
                               where the LSB is for DAQ_0, bit 1 is for DAQ_1 etc.
@@ -387,12 +387,12 @@ class SD_DIG(SD_Module):
 
     def reset_clock_phase(self, trigger_behaviour, trigger_source, skew=0.0, verbose=False):
         """ Reset the clock phase between CLKsync and CLKsys
-        
+
         Args:
             trigger_behaviour (int) :
             trigger_source    (int) : the PXI trigger number
             skew           (double) : the skew between PXI_CLK10 and CLKsync in multiples of 10ns
-    
+
         """
         value = self.SD_AIN.clockResetPhase(trigger_behaviour, trigger_source, skew)
         value_name = 'reset_clock_phase trigger_behaviour: {}, trigger_source: {}, skew: {}'.format(
@@ -435,7 +435,7 @@ class SD_DIG(SD_Module):
             channel (int)       : the input channel you are configuring
             prescaler (int)     : the prescaler value [0..4095]
         """
-        self.__prescaler[channel] = prescaler;
+        self.__prescaler[channel] = prescaler
         value = self.SD_AIN.channelPrescalerConfig(channel, prescaler)
         value_name = 'set_prescaler {}'.format(prescaler)
         return result_parser(value, value_name, verbose)
@@ -699,7 +699,7 @@ class SD_DIG(SD_Module):
 
     # DAQ read
     def set_n_points(self, n_points, channel):
-        """ Sets the trigger source 
+        """ Sets the trigger source
 
         Args:
             channel (int)       : the input channel you are configuring
@@ -708,7 +708,7 @@ class SD_DIG(SD_Module):
         self.__n_points[channel] = n_points
 
     def set_timeout(self, timeout, channel):
-        """ Sets the trigger source 
+        """ Sets the trigger source
 
         Args:
             channel (int)       : the input channel you are configuring
