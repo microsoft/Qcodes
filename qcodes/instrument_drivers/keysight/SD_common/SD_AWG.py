@@ -700,7 +700,8 @@ class SD_AWG(SD_Module):
     # Functions related to creation of SD_Wave objects
     #
 
-    def new_waveform_from_file(self, waveform_file):
+    @staticmethod
+    def new_waveform_from_file(waveform_file):
         """
         Creates a SD_Wave object from data points contained in a file.
         This waveform object is stored in the PC RAM, not in the onboard RAM.
@@ -717,7 +718,8 @@ class SD_AWG(SD_Module):
         result_parser(result)
         return wave
 
-    def new_waveform_from_double(self, waveform_type, waveform_data_a, waveform_data_b=None):
+    @staticmethod
+    def new_waveform_from_double(waveform_type, waveform_data_a, waveform_data_b=None):
         """
         Creates a SD_Wave object from data points contained in an array.
         This waveform object is stored in the PC RAM, not in the onboard RAM.
@@ -737,7 +739,8 @@ class SD_AWG(SD_Module):
         result_parser(result)
         return wave
 
-    def new_waveform_from_int(self, waveform_type, waveform_data_a, waveform_data_b=None):
+    @staticmethod
+    def new_waveform_from_int(waveform_type, waveform_data_a, waveform_data_b=None):
         """
         Creates a SD_Wave object from data points contained in an array.
         This waveform object is stored in the PC RAM, not in the onboard RAM.
@@ -757,12 +760,14 @@ class SD_AWG(SD_Module):
         result_parser(result)
         return wave
 
-    def get_waveform_status(self, waveform, verbose=False):
+    @staticmethod
+    def get_waveform_status(waveform, verbose=False):
         value = waveform.getStatus()
         value_name = 'waveform_status'
         return result_parser(value, value_name, verbose)
 
-    def get_waveform_type(self, waveform, verbose=False):
+    @staticmethod
+    def get_waveform_type(waveform, verbose=False):
         value = waveform.getType()
         value_name = 'waveform_type'
         return result_parser(value, value_name, verbose)

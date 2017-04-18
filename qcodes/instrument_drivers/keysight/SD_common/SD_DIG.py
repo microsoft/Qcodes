@@ -403,7 +403,8 @@ class SD_DIG(SD_Module):
     # Functions used internally to set/get parameters
     #
 
-    def set_clksys_frequency(self, frequency, verbose=False):
+    @staticmethod
+    def set_clksys_frequency(frequency, verbose=False):
         """ Sets the CLKsys frequency
 
         Args:
