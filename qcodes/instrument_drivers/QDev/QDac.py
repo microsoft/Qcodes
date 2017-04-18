@@ -10,6 +10,7 @@ from functools import partial
 from operator import xor
 from collections import OrderedDict
 
+from qcodes.instrument.parameter import ManualParameter
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
 
@@ -75,7 +76,7 @@ class QDac(VisaInstrument):
         self._slopes = []
         # Function generators (used in _set_voltage)
         self._fgs = set(range(1, 9))
-        self._assigned_fgs = {}
+        self._assigned_fgs = {}  # {chan: fg}
         # Sync channels
         self._syncoutputs = []  # Entries: [chan, syncchannel]
 
@@ -120,6 +121,18 @@ class QDac(VisaInstrument):
                                get_cmd=partial(self._getsync, i),
                                vals=vals.Ints(0, 5)
                                )
+
+            self.add_parameter(name='ch{:02}_sync_delay'.format(i),
+                               label='Channel {} sync pulse delay'.format(i),
+                               unit='s',
+                               parameter_class=ManualParameter,
+                               initial_value=0)
+
+            self.add_parameter(name='ch{:02}_sync_duration'.format(i),
+                               label='Channel {} sync pulse duration'.format(i),
+                               unit='s',
+                               parameter_class=ManualParameter,
+                               initial_value=0.01)
 
         for board in range(6):
             for sensor in range(3):
@@ -349,13 +362,17 @@ class QDac(VisaInstrument):
             raise ValueError('Channel number must be 1-48.')
 
         if sync == 0:
-            # try to remove the sync
+            # try to remove the sync from internal bookkeeping
             try:
                 sc = self._syncoutputs
                 to_remove = [sc.index(syn) for syn in sc if syn[0] == chan][0]
                 self._syncoutputs.remove(sc[to_remove])
             except IndexError:
                 pass
+            # free the previously assigned sync
+            oldsync = self.parameters['ch{:02d}_sync'.format(chan)].get_latest()
+            if oldsync is not None:
+                self.write('syn {} 0 0 0'.format(oldsync))
             return
 
         if sync in [syn[1] for syn in self._syncoutputs]:
@@ -401,6 +418,10 @@ class QDac(VisaInstrument):
                 self._assigned_fgs.pop(chan)
             except KeyError:
                 pass
+            # Remove a sync output, if one was assigned
+            syncchans = [syn[0] for syn in self._syncoutputs]
+            if chan in syncchans:
+                self.parameters['ch{:02d}_sync'.format(chan)].set(0)
             try:
                 sls = self._slopes
                 to_remove = [sls.index(sl) for sl in sls if sl[0] == chan][0]
@@ -472,10 +493,14 @@ class QDac(VisaInstrument):
                                             offset)
 
         if chan in [syn[0] for syn in self._syncoutputs]:
-            syncing = True
+            #syncing = True
             sync = [syn[1] for syn in self._syncoutputs if syn[0] == chan][0]
-            sync_duration = 10  # duration in ms
-            self.write('syn {} {} 0 {}'.format(sync, fg, sync_duration))
+            chstr = 'ch{:02}_sync'.format(chan)
+            sync_duration = 1000*self.parameters[chstr+'_duration'].get()
+            sync_delay = 1000*self.parameters[chstr+'_delay'].get()
+            self.write('syn {} {} {} {}'.format(sync, fg,
+                                                sync_delay,
+                                                sync_duration))
         else:
             syncing = False
 
@@ -493,8 +518,6 @@ class QDac(VisaInstrument):
         self.write(funmssg)
         self.parameters['ch{:02}_v'.format(chan)]._save_val(setvoltage)
 
-        if syncing:
-            self.write('syn {} 0 0 0'.format(sync))
 
     def write(self, cmd):
         """
