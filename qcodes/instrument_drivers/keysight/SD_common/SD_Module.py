@@ -192,7 +192,7 @@ class SD_Module(Instrument):
     # Set-commands
     #
 
-    def set_pxi_trigger(self, value, pxi_trigger):
+    def set_pxi_trigger(self, value, pxi_trigger, verbose=False):
         """
         Sets the digital value of the specified PXI trigger
 
@@ -200,7 +200,9 @@ class SD_Module(Instrument):
             pxi_trigger (int): PXI trigger number (4000 + Trigger No.)
             value (int): Digital value with negated logic, 0 (ON) or 1 (OFF)
         """
-        self.SD_module.PXItriggerWrite(pxi_trigger, value)
+        result = self.SD_module.PXItriggerWrite(pxi_trigger, value)
+        value_name = 'set pxi_trigger {} to {}'.format(pxi_trigger, value)
+        return result_parser(result, value_name, verbose)
 
     #
     # FPGA related functions
@@ -221,7 +223,7 @@ class SD_Module(Instrument):
         value_name = 'data at PCport {}'.format(port)
         return result_parser(data, value_name, verbose)
 
-    def set_fpga_pc_port(self, port, data, address, address_mode, access_mode):
+    def set_fpga_pc_port(self, port, data, address, address_mode, access_mode, verbose=False):
         """
         Writes data at the PCport FPGA Block
 
@@ -232,7 +234,10 @@ class SD_Module(Instrument):
             address_mode (int): ?? not in the docs
             access_mode (int): ?? not in the docs
         """
-        self.SD_module.FPGAwritePCport(port, data, address, address_mode, access_mode)
+        result = self.SD_module.FPGAwritePCport(port, data, address, address_mode, access_mode)
+        value_name = 'set fpga PCport {} to data:{}, address:{}, address_mode:{}, access_mode:{}'\
+            .format(port, data, address, address_mode, access_mode)
+        return result_parser(result, value_name, verbose)
 
     #
     # The methods below are not used for setting or getting parameters, but can be used in the test functions of the
@@ -294,36 +299,3 @@ class SD_Module(Instrument):
     def run_self_test(self):
         value = self.SD_module.runSelfTest()
         print('Did self test and got result: {}'.format(value))
-
-    # method below is commented out because it is missing from the dll provided by Keysight
-    # def get_awg_running(self, verbose=0, awg_number):
-    #     """
-    #     Returns whether the AWG is running or stopped
-    #
-    #     Args:
-    #         awg_number (int): AWG number
-    #
-    #     Returns:
-    #         value (int): 1 if the AWG is running, 0 if it is stopped
-    #     """
-    #     value =
-    #     if verbose:
-    #         print('slot_number: %s' % value)
-    #     return value
-
-    # method below is commented out because it is missing from the dll provided by Keysight
-    # def get_awg_waveform_number_playing(self, verbose=0, awg_number=0):
-    #     """
-    #     Returns the waveformNumber of the waveform which is currently being generated.
-    #
-    #     Args:
-    #         awg_number (int): AWG number
-    #
-    #     Returns:
-    #         value (int): Waveform identifier,
-    #         or negative numbers for errors
-    #     """
-    #     value = self.awg.AWG
-    #     if verbose:
-    #         print('pxi_trigger number %s: %s' % (pxi_trigger, value))
-    #     return value
