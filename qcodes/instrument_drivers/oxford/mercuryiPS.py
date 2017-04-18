@@ -39,7 +39,7 @@ class MercuryiPS(IPInstrument):
     Args:
         name (str): name of the instrument
         address (str): The IP address or domain name of this instrument
-        port (int): the IP port to communicate on (TODO: what port is normal?)
+        port (int): the IP port to communicate on (default 7020, as in the manual)
 
         axes (List[str], Optional): axes to support, as a list of uppercase
             characters, eg ``['X', 'Y', 'Z']``. If omitted, will ask the
@@ -64,7 +64,7 @@ class MercuryiPS(IPInstrument):
     """
     # def __init__(self, name, axes=None, **kwargs):
     #     super().__init__(name, terminator='\n', **kwargs)
-    def __init__(self, name, address=None, port=None, axes=None, **kwargs):
+    def __init__(self, name, address=None, port=7020, axes=None, **kwargs):
         super().__init__(name, address=address, port=port, terminator='\n',
                          **kwargs)
         self.axes = axes
@@ -79,15 +79,15 @@ class MercuryiPS(IPInstrument):
         self._determine_current_to_field()
 
         self.add_parameter('setpoint',
-                           names=tuple('B' + ax.lower() + '_setpoint' for ax in axes),
-                           units=tuple('T' for ax in axes),
+                           names=tuple('B' + ax.lower() + '_setpoint' for ax in self.axes),
+                           units=tuple('T' for ax in self.axes),
                            get_cmd=partial(self._get_fld, self.axes, 'FSET'),
                            set_cmd=partial(self._ramp_to_setpoint, self.axes, 'FSET'),
                            parameter_class=MercuryiPSArray)
 
         self.add_parameter('rate',
-                           names=tuple('rate_B' + ax.lower() for ax in axes),
-                           units=tuple('T/m' for ax in axes),
+                           names=tuple('rate_B' + ax.lower() for ax in self.axes),
+                           units=tuple('T/m' for ax in self.axes),
                            get_cmd=partial(self._get_fld, self.axes, 'RFST'),
                            set_cmd=partial(self._ramp_to_setpoint, self.axes, 'RFST'),
                            parameter_class=MercuryiPSArray)
@@ -218,9 +218,10 @@ class MercuryiPS(IPInstrument):
             setpoint = [setpoint]
         if cmd in ['CSET', 'RCST', 'CURR', 'PCUR', 'RCUR']:
             setpoint = np.array(self._ATOB) * np.array(setpoint)
-
-        if len(ax) == 1:
-            setpoint = setpoint[self.axes.index(ax)]
+            if len(ax) == 1:
+                setpoint = setpoint[self.axes.index(ax)]
+        elif len(ax) == 1:
+            setpoint = setpoint[0]
 
         msg = 'SET:DEV:GRP{}:PSU:SIG:{}:{:6f}'
         self._write_cmd(cmd, ax, setpoint, msg)
@@ -234,9 +235,10 @@ class MercuryiPS(IPInstrument):
 
         if cmd in ['CSET', 'RCST', 'CURR', 'PCUR', 'RCUR']:
             fld = np.array(fld) / np.array(self._ATOB)
-
-        if len(ax) == 1:
-            return fld[self.axes.index(ax)]
+            if len(ax) == 1:
+                return fld[self.axes.index(ax)]
+        elif len(ax) == 1:
+            return fld[0]
         return list(fld)
 
     def _get_rtp(self, ax, cmd):
@@ -376,4 +378,6 @@ class MercuryiPS(IPInstrument):
         else:
             theta = np.arccos(field[2] / r)
             phi = np.arctan2(field[1],  field[0])
+            if phi<0:
+                phi = phi+np.pi*2
         return [r, theta, phi]
