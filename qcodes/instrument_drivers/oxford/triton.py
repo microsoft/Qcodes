@@ -125,7 +125,7 @@ class Triton(IPInstrument):
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
-    def _get_control_channel(self, force_get=False):
+    def _get_control_channel(self, force_get=True):
         if force_get or (not self._control_channel):
             for i in range(1,17):
                 tempval = self.ask('READ:DEV:T%s:TEMP:LOOP:MODE' % (i))
