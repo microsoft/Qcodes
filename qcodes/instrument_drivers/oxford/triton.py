@@ -127,7 +127,7 @@ class Triton(IPInstrument):
 
     def _get_control_channel(self, force_get=False):
         if force_get or (not self._control_channel):
-            for i in range(20):
+            for i in range(1,17):
                 tempval = self.ask('READ:DEV:T%s:TEMP:LOOP:MODE' % (i))
                 if not tempval.endswith('NOT_FOUND'):
                     self._control_channel = i
@@ -193,7 +193,7 @@ class Triton(IPInstrument):
 
     def _get_temp_channels(self):
         self.chan_temps = []
-        for i in range(1, 16):
+        for i in range(1, 17):
             chan = 'T%d' % i
             self.chan_temps.append(chan)
             self.add_parameter(name=chan,
