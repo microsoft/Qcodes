@@ -155,7 +155,7 @@ class Triton(IPInstrument):
         for ch in allchans:
             msg = 'READ:SYS:DR:CHAN:%s' % ch
             rep = self.ask(msg)
-            if 'INVALID' not in rep or 'NONE' not in rep:
+            if 'INVALID' not in rep and 'NONE' not in rep:
                 alias, chan = rep.split(':')[-2:]
                 self.chan_alias[alias] = chan
                 self.add_parameter(name=alias,
