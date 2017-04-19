@@ -93,9 +93,10 @@ class Triton(IPInstrument):
                            vals=Enum(*self._heater_range_curr))
 
         self.chan_alias = {}
-        self.chan_temps = {}
+        self.chan_temp_names = {}
         if tmpfile is not None:
-            self._get_temp_channels(tmpfile)
+            self._get_temp_channel_names(tmpfile)
+        self._get_temp_channels()
         self._get_pressure_channels()
 
         try:
@@ -163,14 +164,17 @@ class Triton(IPInstrument):
                                    get_parser=self._parse_temp)
 
     def _get_pressure_channels(self):
+        self.chan_pressure = []
         for i in range(1, 7):
             chan = 'P%d' % i
+            self.chan_pressure.append(chan)
             self.add_parameter(name=chan,
                                unit='bar',
                                get_cmd='READ:DEV:%s:PRES:SIG:PRES' % chan,
                                get_parser=self._parse_pres)
+        self.chan_pressure = set(self.chan_pressure)
 
-    def _get_temp_channels(self, file):
+    def _get_temp_channel_names(self, file):
         config = configparser.ConfigParser()
         with open(file, 'r', encoding='utf16') as f:
             next(f)
@@ -185,11 +189,18 @@ class Triton(IPInstrument):
                 # uses base one names so add one
                 chan = 'T'+ str(chan_number)
                 name = config.get(section, '"m_lpszname"').strip("\"")
-                self.chan_temps[chan] = {'name': name, 'value': None}
-                self.add_parameter(name=chan,
-                                   unit='K',
-                                   get_cmd='READ:DEV:%s:TEMP:SIG:TEMP' % chan,
-                                   get_parser=self._parse_temp)
+                self.chan_temp_names[chan] = {'name': name, 'value': None}
+
+    def _get_temp_channels(self):
+        self.chan_temps = []
+        for i in range(1, 16):
+            chan = 'T%d' % i
+            self.chan_temps.append(chan)
+            self.add_parameter(name=chan,
+                               unit = 'K',
+                               get_cmd = 'READ:DEV:%s:TEMP:SIG:TEMP' % chan,
+                               get_parser = self._parse_temp)
+        self.chan_temps = set(self.chan_temps)
 
     def _parse_action(self, msg):
         action = msg[17:]
