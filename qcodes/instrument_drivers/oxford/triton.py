@@ -13,10 +13,10 @@ class Triton(IPInstrument):
     Triton Driver
 
     Args:
-        tmpfile: Expects an exported windows registry file from the registry
+        tmpfile: Optional: an exported windows registry file from the registry
             path:
             `[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry]`
-            and is used to extract the available temperature channels.
+            It is used to extract the names of temperature channels if set.
 
 
     Status: beta-version.
