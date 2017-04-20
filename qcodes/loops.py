@@ -921,14 +921,12 @@ class ActiveLoop(Metadatable):
     def _run_wrapper(self, set_active=True, *args, **kwargs):
         try:
             if set_active:
-                print('setting active')
                 ActiveLoop.active_loop = self
             self._run_loop(*args, **kwargs)
         except _QuietInterrupt:
             pass
         finally:
             if set_active:
-                print('deactivating')
                 ActiveLoop.active_loop = None
             if hasattr(self, 'data_set'):
                 # somehow this does not show up in the data_set returned by
