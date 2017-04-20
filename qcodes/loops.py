@@ -146,6 +146,8 @@ def _clear_data_manager():
 #     # store the output into a DataSet without making a Loop.
 #     pass
 
+def active_loop():
+    return ActiveLoop.active_loop
 
 class Loop(Metadatable):
     """
@@ -410,6 +412,8 @@ class ActiveLoop(Metadatable):
 
     # maximum sleep time (secs) between checking the signal_queue for a HALT
     signal_period = 1
+
+    active_loop = None
 
     def __init__(self, sweep_values, delay, *actions, then_actions=(),
                  station=None, progress_interval=None, bg_task=None,
@@ -759,7 +763,7 @@ class ActiveLoop(Metadatable):
 
     def run(self, background=USE_MP, use_threads=False, quiet=False,
             data_manager=USE_MP, station=None, progress_interval=False,
-            *args, **kwargs):
+            set_active=True, *args, **kwargs):
         """
         Execute this loop.
 
@@ -864,7 +868,7 @@ class ActiveLoop(Metadatable):
                     # in case this ActiveLoop was run before in the background
                     del self.process
 
-                self._run_wrapper()
+                self._run_wrapper(set_active=set_active)
 
                 if self.data_set.mode != DataMode.LOCAL:
                     self.data_set.sync()
@@ -914,12 +918,18 @@ class ActiveLoop(Metadatable):
         else:
             return action
 
-    def _run_wrapper(self, *args, **kwargs):
+    def _run_wrapper(self, set_active=True, *args, **kwargs):
         try:
+            if set_active:
+                print('setting active')
+                ActiveLoop.active_loop = self
             self._run_loop(*args, **kwargs)
         except _QuietInterrupt:
             pass
         finally:
+            if set_active:
+                print('deactivating')
+                ActiveLoop.active_loop = None
             if hasattr(self, 'data_set'):
                 # somehow this does not show up in the data_set returned by
                 # run(), but it is saved to the metadata
