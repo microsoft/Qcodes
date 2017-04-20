@@ -48,18 +48,13 @@ Supported commands to .set_measurement or .each are:
 
 from datetime import datetime
 import logging
-import multiprocessing as mp
 import time
 import numpy as np
-import warnings
 
-from qcodes import config
 from qcodes.station import Station
-from qcodes.data.data_set import new_data, DataMode
+from qcodes.data.data_set import new_data
 from qcodes.data.data_array import DataArray
-from qcodes.data.manager import get_data_manager
 from qcodes.utils.helpers import wait_secs, full_class, tprint
-from qcodes.process.qcodes_process import QcodesProcess
 from qcodes.utils.metadata import Metadatable
 
 from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
@@ -67,84 +62,6 @@ from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
 
 
 log = logging.getLogger(__name__)
-# Switches off multiprocessing by default, cant' be altered after module
-USE_MP = config.core.legacy_mp
-MP_NAME = 'Measurement'
-
-
-def get_bg(return_first=False):
-    """
-    Find the active background measurement process, if any
-    returns None otherwise.
-
-    Todo:
-        RuntimeError message is really hard to understand.
-    Args:
-        return_first(bool): if there are multiple loops running return the
-                            first anyway.
-    Raises:
-        RuntimeError: if multiple loops are active and return_first is False.
-    Returns:
-        Union[loop, None]: active loop or none if no loops are active
-    """
-    processes = mp.active_children()
-    loops = [p for p in processes if getattr(p, 'name', '') == MP_NAME]
-
-    if len(loops) > 1 and not return_first:
-        raise RuntimeError('Oops, multiple loops are running???')
-
-    if loops:
-        return loops[0]
-
-    # if we got here, there shouldn't be a loop running. Make sure the
-    # data manager, if there is one, agrees!
-    _clear_data_manager()
-    return None
-
-
-def halt_bg(timeout=300, traceback=True):
-    """
-    Stop the active background measurement process, if any.
-
-    Args:
-        timeout (int): seconds to wait for a clean exit before forcibly
-         terminating.
-
-        traceback (bool):  whether to print a traceback at the point of
-         interrupt, for debugging purposes.
-    """
-    loop = get_bg(return_first=True)
-    if not loop:
-        print('No loop running')
-        return
-
-    if traceback:
-        signal_ = ActiveLoop.HALT_DEBUG
-    else:
-        signal_ = ActiveLoop.HALT
-
-    loop.signal_queue.put(signal_)
-    loop.join(timeout)
-
-    if loop.is_alive():
-        loop.terminate()
-        loop.join(timeout/2)
-        print('Background loop did not respond to halt signal, terminated')
-
-    _clear_data_manager()
-
-
-def _clear_data_manager():
-    dm = get_data_manager(only_existing=True)
-    if dm and dm.ask('get_measuring'):
-        dm.ask('finalize_data')
-
-# TODO(giulioungaretti) remove dead code
-# def measure(*actions):
-#     # measure has been moved into Station
-#     # TODO - for all-at-once parameters we want to be able to
-#     # store the output into a DataSet without making a Loop.
-#     pass
 
 def active_loop():
     return ActiveLoop.active_loop
@@ -316,8 +233,7 @@ class Loop(Metadatable):
         shortcut to run a loop in the foreground as a temporary dataset
         using the default measurement set
         """
-        return self.run(*args, background=False, quiet=True,
-                        data_manager=False, location=False, **kwargs)
+        return self.run(*args, quiet=True, location=False, **kwargs)
 
     def then(self, *actions, overwrite=False):
         """
@@ -406,12 +322,6 @@ class ActiveLoop(Metadatable):
     The *ActiveLoop* determines what *DataArray*\s it will need to hold the data
     it collects, and it creates a *DataSet* holding these *DataArray*\s
     """
-    # constants for signal_queue
-    HALT = 'HALT LOOP'
-    HALT_DEBUG = 'HALT AND DEBUG'
-
-    # maximum sleep time (secs) between checking the signal_queue for a HALT
-    signal_period = 1
 
     active_loop = None
 
@@ -430,25 +340,10 @@ class ActiveLoop(Metadatable):
         self.bg_min_delay = bg_min_delay
         self.data_set = None
 
-        # compile now, but don't save the results
-        # just used for preemptive error checking
-        # if we saved the results, we wouldn't capture nesting
-        # nor would we be able to reuse an ActiveLoop multiple times
-        # within one outer Loop.
-        # TODO: this doesn't work, because _Measure needs the data_set,
-        # which doesn't exist yet - do we want to make a special "dry run"
-        # mode, or is it sufficient to let errors wait until .run()?
-        # self._compile_actions(actions)
-
         # if the first action is another loop, it changes how delays
         # happen - the outer delay happens *after* the inner var gets
         # set to its initial value
         self._nest_first = hasattr(actions[0], 'containers')
-
-        # for sending halt signals to the loop
-        self.signal_queue = mp.Queue()
-
-        self._monitor = None  # TODO: how to specify this?
 
     def then(self, *actions, overwrite=False):
         """
@@ -671,7 +566,7 @@ class ActiveLoop(Metadatable):
 
         return sp
 
-    def set_common_attrs(self, data_set, use_threads, signal_queue):
+    def set_common_attrs(self, data_set, use_threads):
         """
         set a couple of common attributes that the main and nested loops
         all need to have:
@@ -679,23 +574,12 @@ class ActiveLoop(Metadatable):
         - a queue for communicating with the main process
         """
         self.data_set = data_set
-        self.signal_queue = signal_queue
         self.use_threads = use_threads
         for action in self.actions:
             if hasattr(action, 'set_common_attrs'):
-                action.set_common_attrs(data_set, use_threads, signal_queue)
+                action.set_common_attrs(data_set, use_threads)
 
-    def _check_signal(self):
-        while not self.signal_queue.empty():
-            signal_ = self.signal_queue.get()
-            if signal_ == self.HALT:
-                raise _QuietInterrupt('sweep was halted')
-            elif signal_ == self.HALT_DEBUG:
-                raise _DebugInterrupt('sweep was halted')
-            else:
-                raise ValueError('unknown signal', signal_)
-
-    def get_data_set(self, data_manager=USE_MP, *args, **kwargs):
+    def get_data_set(self, *args, **kwargs):
         """
         Return the data set for this loop.
 
@@ -728,22 +612,12 @@ class ActiveLoop(Metadatable):
             a DataSet object that we can use to plot
         """
         if self.data_set is None:
-            if data_manager is False:
-                data_mode = DataMode.LOCAL
-            else:
-                # warnings.warn("Multiprocessing is in beta, use at own risk",
-                #               UserWarning)
-                data_mode = DataMode.PUSH_TO_SERVER
-
-            data_set = new_data(arrays=self.containers(), mode=data_mode,
-                                data_manager=data_manager, *args, **kwargs)
-
+            data_set = new_data(arrays=self.containers(), *args, **kwargs)
             self.data_set = data_set
 
         else:
             has_args = len(kwargs) or len(args)
-            uses_data_manager = (self.data_set.mode != DataMode.LOCAL)
-            if has_args or (uses_data_manager != data_manager):
+            if has_args:
                 raise RuntimeError(
                     'The DataSet for this loop already exists. '
                     'You can only provide DataSet attributes, such as '
@@ -758,23 +632,18 @@ class ActiveLoop(Metadatable):
         especially for use in composite parameters that need to run a Loop
         as part of their get method
         """
-        return self.run(background=False, quiet=True,
-                        data_manager=False, location=False, **kwargs)
+        return self.run(quiet=True, location=False, **kwargs)
 
-    def run(self, background=USE_MP, use_threads=False, quiet=False,
-            data_manager=USE_MP, station=None, progress_interval=False,
-            set_active=True, *args, **kwargs):
+    def run(self, use_threads=False, quiet=False, station=None,
+            progress_interval=False, set_active=True, *args, **kwargs):
         """
         Execute this loop.
 
         Args:
-            background: (default False) run this sweep in a separate process
-                so we can have live plotting and other analysis in the main process
             use_threads: (default False): whenever there are multiple `get` calls
                 back-to-back, execute them in separate threads so they run in
                 parallel (as long as they don't block each other)
             quiet: (default False): set True to not print anything except errors
-            data_manager: set to True to use a DataManager. Default to False.
             station: a Station instance for snapshots (omit to use a previously
                 provided Station, or the default Station)
             progress_interval (default None): show progress of the loop every x
@@ -807,23 +676,9 @@ class ActiveLoop(Metadatable):
         if progress_interval is not False:
             self.progress_interval = progress_interval
 
-        prev_loop = get_bg()
-        if prev_loop:
-            if not quiet:
-                print('Waiting for the previous background Loop to finish...',
-                      flush=True)
-            prev_loop.join()
+        data_set = self.get_data_set(*args, **kwargs)
 
-        data_set = self.get_data_set(data_manager, *args, **kwargs)
-
-        if background and not getattr(data_set, 'data_manager', None):
-            warnings.warn(
-                'With background=True you must also set data_manager=True '
-                'or you will not be able to sync your DataSet.',
-                UserWarning)
-
-        self.set_common_attrs(data_set=data_set, use_threads=use_threads,
-                              signal_queue=self.signal_queue)
+        self.set_common_attrs(data_set=data_set, use_threads=use_threads)
 
         station = station or self.station or Station.default
         if station:
@@ -835,47 +690,16 @@ class ActiveLoop(Metadatable):
         ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         data_set.add_metadata({'loop': {
             'ts_start': ts,
-            'background': background,
             'use_threads': use_threads,
-            'use_data_manager': (data_manager is not False)
         }})
 
         data_set.save_metadata()
 
-        if prev_loop and not quiet:
-            print('...done. Starting ' + (data_set.location or 'new loop'),
-                  flush=True)
-
         try:
-            if background:
-                # warnings.warn("Multiprocessing is in beta, use at own risk",
-                #               UserWarning)
-                p = QcodesProcess(target=self._run_wrapper, name=MP_NAME)
-                p.is_sweep = True
-                p.signal_queue = self.signal_queue
-                p.start()
-                self.process = p
-
-                # now that the data_set we created has been put in the loop
-                # process, this copy turns into a reader
-                # if you're not using a DataManager, it just stays local
-                # and sync() reads from disk
-                if self.data_set.mode == DataMode.PUSH_TO_SERVER:
-                    self.data_set.mode = DataMode.PULL_FROM_SERVER
-                self.data_set.sync()
-            else:
-                if hasattr(self, 'process'):
-                    # in case this ActiveLoop was run before in the background
-                    del self.process
-
-                self._run_wrapper(set_active=set_active)
-
-                if self.data_set.mode != DataMode.LOCAL:
-                    self.data_set.sync()
-
+            self._run_wrapper()
             ds = self.data_set
-
         finally:
+
             if not quiet:
                 print(repr(self.data_set))
                 print(datetime.now().strftime('started at %Y-%m-%d %H:%M:%S'))
@@ -919,23 +743,22 @@ class ActiveLoop(Metadatable):
             return action
 
     def _run_wrapper(self, set_active=True, *args, **kwargs):
-        try:
-            if set_active:
-                print('setting active')
-                ActiveLoop.active_loop = self
-            self._run_loop(*args, **kwargs)
-        except _QuietInterrupt:
-            pass
-        finally:
-            if set_active:
-                print('deactivating')
-                ActiveLoop.active_loop = None
-            if hasattr(self, 'data_set'):
-                # somehow this does not show up in the data_set returned by
-                # run(), but it is saved to the metadata
-                ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                self.data_set.add_metadata({'loop': {'ts_end': ts}})
-                self.data_set.finalize()
+        # try:
+        if set_active:
+            print('setting active')
+            ActiveLoop.active_loop = self
+        self._run_loop(*args, **kwargs)
+        # finally:
+        if set_active:
+            print('deactivating')
+            ActiveLoop.active_loop = None
+        if hasattr(self, 'data_set'):
+            # TODO (giulioungaretti) WTF?
+            # somehow this does not show up in the data_set returned by
+            # run(), but it is saved to the metadata
+            ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            self.data_set.add_metadata({'loop': {'ts_end': ts}})
+            self.data_set.finalize()
 
     def _run_loop(self, first_delay=0, action_indices=(),
                   loop_indices=(), current_values=(),
@@ -1028,13 +851,6 @@ class ActiveLoop(Metadatable):
 
                     last_task = t
 
-        if self.progress_interval is not None:
-            # final progress note: set dt=-1 so it *always* prints
-            tprint('loop %s DONE: %d/%d (%.1f [s])' % (
-
-                   self.sweep_values.name, i + 1, imax, time.time() - t0),
-                   dt=-1, tag='outerloop')
-
         # run the background task one last time to catch the last setpoint(s)
         if self.bg_task is not None:
             self.bg_task()
@@ -1050,26 +866,5 @@ class ActiveLoop(Metadatable):
     def _wait(self, delay):
         if delay:
             finish_clock = time.perf_counter() + delay
-
-            if self._monitor:
-                # TODO - perhpas pass self._check_signal in here
-                # so that we can halt within monitor.call if it
-                # lasts a very long time?
-                self._monitor.call(finish_by=finish_clock)
-
-            while True:
-                self._check_signal()
-                t = wait_secs(finish_clock)
-                time.sleep(min(t, self.signal_period))
-                if t <= self.signal_period:
-                    break
-        else:
-            self._check_signal()
-
-
-class _QuietInterrupt(Exception):
-    pass
-
-
-class _DebugInterrupt(Exception):
-    pass
+            t = wait_secs(finish_clock)
+            time.sleep(t)

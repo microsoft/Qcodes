@@ -167,6 +167,10 @@ class TestPermissiveRange(TestCase):
                 permissive_range(*args)
 
     def test_good_calls(self):
+        # TODO(giulioungaretti)
+        # not sure what we are testing here.
+        # in pyhton 1.0 and 1 are actually the same
+        # https://docs.python.org/3.5/library/functions.html#hash
         good_args = {
             (1, 7, 2): [1, 3, 5],
             (1, 7, 4): [1, 5],
