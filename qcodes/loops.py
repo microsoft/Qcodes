@@ -764,7 +764,8 @@ class ActiveLoop(Metadatable):
         signal_queue: queue to communicate with main process directly
         ignore_kwargs: for compatibility with other loop tasks
         """
-
+        
+        #JMN test commit change
         # at the beginning of the loop, the time to wait after setting
         # the loop parameter may be increased if an outer loop requested longer
         delay = max(self.delay, first_delay)
