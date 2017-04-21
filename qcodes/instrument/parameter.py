@@ -625,7 +625,7 @@ class MultiParameter(_BaseParameter):
     def __init__(self, name, names, shapes, instrument=None,
                  labels=None, units=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
-                 setpoint_units=None,
+                 setpoint_units=None, docstring=None,
                  snapshot_get=True, snapshot_value=True, metadata=None):
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
