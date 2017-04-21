@@ -34,18 +34,19 @@ class D5a(Instrument):
         self._span_get_map = {v: k for k, v in self._span_set_map.items()}
 
         self.add_function('set_dacs_zero', call_cmd=self._set_dacs_zero)
+        self.add_function('update', call_cmd=self.d5a.update)
 
         for i in range(16):
             self.add_parameter('dac{}'.format(i + 1),
                                label='DAC {}'.format(i + 1),
                                get_cmd=partial(self._get_dac, i),
                                set_cmd=partial(self.d5a.set_voltage, i),
-                               unit='V',
+                               units='V',
                                delay=0.1)
 
             self.add_parameter('stepsize{}'.format(i + 1),
                                get_cmd=partial(self.d5a.get_stepsize, i),
-                               unit='V')
+                               units='V')
 
             self.add_parameter('span{}'.format(i + 1),
                                get_cmd=partial(self._get_span, i),
