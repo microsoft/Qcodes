@@ -13,10 +13,14 @@ class F1d(Instrument):
 
         self.f1d = F1d_module(spi_rack, module)
 
+        self.add_parameter('remote_settings',
+                           label='Remote settings',
+                           get_cmd=self.get_remote_settings)
+
         self.add_parameter('IQ_filter',
                            label='IQ filter',
                            set_cmd=self.f1d.set_IQ_filter,
-                           unit='MHz',
+                           units='MHz',
                            vals=Ints(1, 3, 10, 20))
 
         self.add_parameter('I_gain',
@@ -32,12 +36,16 @@ class F1d(Instrument):
         self.add_parameter('RF_level',
                            label='RF level',
                            set_cmd=self.f1d.get_RF_level,
-                           unit='dBm')
+                           units='dBm')
 
         self.add_parameter('LO_level',
                            label='LO level',
                            set_cmd=self.f1d.get_LO_level,
-                           unit='dBm')
+                           units='dBm')
 
         self.add_function('enable_remote', self.f1d.enable_remote)
+        self.add_function('clear_rf_clip', self.f1d.clear_rf_clip)
         self.add_function('is_rf_clipped', self.f1d.rf_clipped)
+
+    def get_remote_settings(self):
+        return self.f1d.remote_settings
