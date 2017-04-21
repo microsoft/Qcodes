@@ -65,9 +65,9 @@ class BasePlot:
                 If the last one is 1D, may be `y` or `x`, `y`
                 If the last one is 2D, may be `z` or `x`, `y`, `z`
 
-            updater: a callable (with no args) that updates the data in this trace
-                if omitted, we will look for DataSets referenced in this data, and
-                call their sync methods.
+            updater ([Union[callable, string]]): If callable (with no args) callable that
+                updates the data in this trace. If string 'sync', we will look for DataSets
+                referenced in this data, and call their sync methods. If None no update is performed.
 
             kwargs: after inserting info found in args and possibly in set_arrays
                 into `x`, `y`, and optionally `z`, these are passed along to
@@ -104,23 +104,26 @@ class BasePlot:
         Add an updater to the plot.
 
         Args:
-            updater (callable): callable (with no args) that updates the data in this trace
-                if omitted, we will look for DataSets referenced in this data, and
-                call their sync methods.
+            updater ([Union[callable, string]]): If callable (with no args) callable that
+                updates the data in this trace. If string 'sync', we will look for DataSets
+                referenced in this data, and call their sync methods. If None no update is performed.
             plot_config (dict): this is a dictionary that gets populated inside
                 add() via expand_trace().
                 The reason this is here is to fetch from the data_set the sync method
                 to use it as an updater.
+        Raises:
+            ValueError: if updater is not callable, the string 'sync' or None.
         """
-        if updater is not None:
-            self.data_updaters.add(updater)
-        else:
+        if updater == 'sync':
             for key in self.data_keys:
                 data_array = plot_config.get(key, '')
                 if hasattr(data_array, 'data_set'):
                     if data_array.data_set is not None:
                         self.data_updaters.add(data_array.data_set.sync)
-
+        elif callable(updater):
+            self.data_updaters.add(updater)
+        elif updater is not None:
+            raise ValueError("Updater must be callable on the string sync got {}".format)
         # If previous data on this plot became static, perhaps because
         # its measurement loop finished, the updater may have been halted.
         # If we have new update functions, re-activate the updater
