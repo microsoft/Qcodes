@@ -93,8 +93,6 @@ class Config():
     _diff_config = {}
     _diff_schema = {}
 
-    subconfigs = {}
-
     def __init__(self):
         self.defaults, self.defaults_schema = self.load_default()
         self.current_config = self.update_config()
@@ -156,11 +154,6 @@ class Config():
             config = update(config, custom_config)
             self.validate(config, self.current_schema,
                           self.schema_custom_file_name)
-
-        for subconfig_key, subconfig_dir in self.subconfigs.items():
-            with open(subconfig_dir, "r") as fp:
-                subconfig = json.load(fp)
-            config["user"].update({subconfig_key: subconfig})
 
         return config
 
@@ -338,13 +331,13 @@ class Config():
         self.save_config(self.cwd_file_name)
         self.save_schema(self.schema_cwd_file_name)
 
-    def save_subconfigs(self):
-        """ Save subconfigs to their respective files
-        """
-        for subconfig_key, path in self.subconfigs.items():
-            with open(path, "w") as fp:
-                subconfig = self.current_config['user'][subconfig_key]
-                json.dump(subconfig, fp, indent=4)
+    # def save_subconfigs(self):
+    #     """ Save subconfigs to their respective files
+    #     """
+    #     for subconfig_key, path in self.subconfigs.items():
+    #         with open(path, "w") as fp:
+    #             subconfig = self.current_config['user'][subconfig_key]
+    #             json.dump(subconfig, fp, indent=4)
 
     def save_to_custom(self):
         """ Save files to custom dir (defined in self.custom_file_name)
@@ -435,7 +428,11 @@ class DotDict(dict):
 
     # dot acces baby
     __setattr__ = __setitem__
-    __getattr__ = __getitem__
+    def __getattr__(self, key):
+        try:
+            return self.__getitem__(key)
+        except KeyError:
+            return AttributeError('Attribute {} not found'.format(key))
 
 
 def update(d, u):
