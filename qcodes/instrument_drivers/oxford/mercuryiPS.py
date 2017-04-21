@@ -211,6 +211,11 @@ class MercuryiPS(IPInstrument):
             fld = getattr(self, ax.lower()+'_fld')
             fld.set(setpoint)
 
+    def _ramp_to_setpoint_and_hold(self, ax, cmd, setpoint):
+        self._ramp_to_setpoint(ax, cmd, setpoint)
+        while not all(['HOLD' == getattr(self, a.lower() + '_ACTN')() for a in ax]):
+            time.sleep(0.1)
+
     def _set_fld(self, ax, cmd, setpoint):
         # Could be FSET for setpoint
         #          RFST for rate
