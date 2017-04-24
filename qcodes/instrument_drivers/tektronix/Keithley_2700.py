@@ -163,50 +163,14 @@ class Keithley_2700(VisaInstrument):
                                       'To get the integrationtime as a Number '
                                       'of PowerLine Cycles, use get_nplc().'))
 
-        '''
-        self.add_parameter('trigger_source',
-            flags=Instrument.FLAG_GETSET,
-            units='')
-        self.add_parameter('trigger_timer',
-            flags=Instrument.FLAG_GETSET,
-            units='s', minval=0.001, maxval=99999.999, type=float)
-        self.add_parameter('readval', flags=Instrument.FLAG_GET,
-            units='arb.unit',
-            type=float,
-            tags=['measure'])
-        self.add_parameter('readlastval', flags=Instrument.FLAG_GET,
-            units='arb.unit',
-            type=float,
-            tags=['measure'])
-        self.add_parameter('readnextval', flags=Instrument.FLAG_GET,
-            units='arb.unit',
-            type=float,
-            tags=['measure'])
-        self.add_parameter('autozero', flags=Instrument.FLAG_GETSET,
-            type=bool)
-        self.add_parameter('averaging_window',
-            flags=Instrument.FLAG_GETSET,
-            units='%', type=float, minval=0, maxval=10)
-        self.add_parameter('averaging_count',
-            flags=Instrument.FLAG_GETSET,
-            units='#', type=int, minval=1, maxval=100)
-        self.add_parameter('averaging_type',
-            flags=Instrument.FLAG_GETSET,
-            type=bytes, units='')
-        self.add_parameter('autorange',
-            flags=Instrument.FLAG_GETSET,
-            units='',
-            type=bool)
-        '''
-
         # add functions
         self.add_parameter('amplitude',
-                           units='arb.unit',
+                           unit='arb.unit',
                            label=name,
                            get_cmd=':DATA:FRESH?',
                            get_parser=float)
         self.add_parameter('readnext',
-                           units='arb.unit',
+                           unit='arb.unit',
                            label=name,
                            get_cmd=':DATA:FRESH?',
                            get_parser=float)
