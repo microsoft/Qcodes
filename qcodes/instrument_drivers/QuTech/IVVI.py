@@ -13,8 +13,6 @@ class IVVI(VisaInstrument):
     '''
     Status: Alpha version, tested for basic get-set commands
         TODO:
-            - Add individual parameters for channel polarities
-            - Test polarities different from BIP
             - Add adjustable range and rate protection per channel
             - Add error handling for the specific error messages in the
               protocol
@@ -31,9 +29,9 @@ class IVVI(VisaInstrument):
     Halfrange = Fullrange / 2
 
     def __init__(self, name, address, reset=False, numdacs=16, dac_step=10,
-                 dac_delay=.1, dac_max_delay=0.2, safe_version=True, **kwargs):
-                 # polarity=['BIP', 'BIP', 'BIP', 'BIP']):
-                 # commented because still on the todo list
+                 dac_delay=.1, dac_max_delay=0.2, safe_version=True,
+                 polarity=['BIP', 'BIP', 'BIP', 'BIP'], **kwargs):
+
         '''
         Initialzes the IVVI, and communicates with the wrapper
 
@@ -45,11 +43,11 @@ class IVVI(VisaInstrument):
             polarity (string[4]) : list of polarities of each set of 4 dacs
                                    choose from 'BIP', 'POS', 'NEG',
                                    default=['BIP', 'BIP', 'BIP', 'BIP']
-            dac_step (float)         : max step size for dac parameter
-            dac_delay (float)        : delay (in seconds) for dac
-            dac_max_delay (float)    : maximum delay before emitting a warning
-            safe_version (bool)    : if True then do not send version commands
-                                     to the IVVI controller
+            dac_step (float)     : max step size for dac parameter
+            dac_delay (float)    : delay (in seconds) for dac
+            dac_max_delay (float): maximum delay before emitting a warning
+            safe_version (bool)  : if True then do not send version commands
+                                   to the IVVI controller
         '''
         t0 = time.time()
         super().__init__(name, address, **kwargs)
@@ -108,14 +106,21 @@ class IVVI(VisaInstrument):
                            label='Dac voltages',
                            get_cmd=self._get_dacs)
 
+        #initialize pol_num, the voltage offset due to the polarity
+        self.pol_num = np.zeros(self._numdacs)
+        for i in range(int(self._numdacs/4)):
+            self.set_pol_dacrack(polarity[i], np.arange(1+i*4,1+(i+1)*4),
+                                 get_all=False)
+
         for i in range(1, numdacs + 1):
             self.add_parameter(
                 'dac{}'.format(i),
-                label='Dac {} (mV)'.format(i),
+                label='Dac {}'.format(i),
                 unit='mV',
                 get_cmd=self._gen_ch_get_func(self._get_dac, i),
                 set_cmd=self._gen_ch_set_func(self._set_dac, i),
-                vals=vals.Numbers(-2000, 2000),
+                vals=vals.Numbers(self.pol_num[i-1],
+                                  self.pol_num[i-1]+self.Fullrange),
                 step=dac_step,
                 delay=dac_delay,
                 max_delay=dac_max_delay,
@@ -123,9 +128,6 @@ class IVVI(VisaInstrument):
 
         self._update_time = 5  # seconds
         self._time_last_update = 0  # ensures first call will always update
-
-        self.pol_num = np.zeros(self._numdacs)  # corresponds to POS polarity
-        self.set_pol_dacrack('BIP', range(self._numdacs), get_all=False)
 
         t1 = time.time()
 
@@ -174,7 +176,7 @@ class IVVI(VisaInstrument):
 
     def set_dacs_zero(self):
         for i in range(self._numdacs):
-            self._set_dac(i + 1, 0)
+            self.set('dac{}'.format(i+1),0)
 
     # Conversion of data
     def _mvoltage_to_bytes(self, mvoltage):
@@ -288,7 +290,7 @@ class IVVI(VisaInstrument):
                 except Exception as ex:
                     logging.warning('IVVI communication error trying again')
             if i + 1 == max_tries:  # +1 because range goes stops before end
-                raise('IVVI Communication error')
+                raise ex
         return self._mvoltages
 
     def write(self, message, raw=False):
