@@ -46,6 +46,14 @@ class Keysight_33500B(VisaInstrument):
                                vals=vals.Numbers(1e-6, 30e6)
                                )
 
+            self.add_parameter('ch{}_phase'.format(chan),
+                               label='Channel {} phase'.format(chan),
+                               set_cmd=setcmd(chan, 'PHASe'),
+                               get_cmd=getcmd(chan, 'PHASe'),
+                               get_parser=float,
+                               unit='deg',
+                               vals=vals.Numbers(0, 360)
+                               )
             self.add_parameter('ch{}_amplitude_unit'.format(chan),
                                label='Channel {} amplitude unit'.format(chan),
                                set_cmd=setcmd(chan, 'VOLTage:UNIT'),

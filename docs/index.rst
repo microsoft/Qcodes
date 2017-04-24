@@ -65,6 +65,7 @@ Documentation
    api/generated/qcodes.instrument_drivers
    roadmap
    changes/index
+   examples/index
 
 
 Indices and tables

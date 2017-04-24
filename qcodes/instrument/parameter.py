@@ -57,6 +57,7 @@ import time
 import logging
 import os
 import collections
+import warnings
 
 import numpy
 
@@ -620,8 +621,8 @@ class MultiParameter(_BaseParameter):
         super().__init__(name, instrument, snapshot_get, metadata)
 
         if self.has_set:  # TODO (alexcjohnson): can we support, ala Combine?
-            raise AttributeError('MultiParameters do not support set '
-                                 'at this time.')
+            warnings.warn('MultiParameters do not fully support set '
+                          'at this time.')
 
         self._meta_attrs.extend(['setpoint_names', 'setpoint_labels', 'setpoint_units',
                                  'names', 'labels', 'units'])
