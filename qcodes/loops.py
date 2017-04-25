@@ -63,6 +63,8 @@ from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
 
 log = logging.getLogger(__name__)
 
+def active_loop():
+    return ActiveLoop.active_loop
 
 class Loop(Metadatable):
     """
@@ -320,6 +322,8 @@ class ActiveLoop(Metadatable):
     The *ActiveLoop* determines what *DataArray*\s it will need to hold the data
     it collects, and it creates a *DataSet* holding these *DataArray*\s
     """
+
+    active_loop = None
 
     def __init__(self, sweep_values, delay, *actions, then_actions=(),
                  station=None, progress_interval=None, bg_task=None,
@@ -631,7 +635,7 @@ class ActiveLoop(Metadatable):
         return self.run(quiet=True, location=False, **kwargs)
 
     def run(self, use_threads=False, quiet=False, station=None,
-            progress_interval=False, *args, **kwargs):
+            progress_interval=False, set_active=True, *args, **kwargs):
         """
         Execute this loop.
 
@@ -738,10 +742,16 @@ class ActiveLoop(Metadatable):
         else:
             return action
 
-    def _run_wrapper(self, *args, **kwargs):
+    def _run_wrapper(self, set_active=True, *args, **kwargs):
         # try:
+        if set_active:
+            print('setting active')
+            ActiveLoop.active_loop = self
         self._run_loop(*args, **kwargs)
         # finally:
+        if set_active:
+            print('deactivating')
+            ActiveLoop.active_loop = None
         if hasattr(self, 'data_set'):
             # TODO (giulioungaretti) WTF?
             # somehow this does not show up in the data_set returned by

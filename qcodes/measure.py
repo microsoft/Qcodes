@@ -31,7 +31,8 @@ class Measure(Metadatable):
         """
         return self.run(quiet=True, location=False, **kwargs)
 
-    def run(self, use_threads=False, quiet=False, station=None, **kwargs):
+    def run(self, use_threads=False, quiet=False, station=None,
+            set_active=False, **kwargs):
         """
         Run the actions in this measurement and return their data as a DataSet
 
@@ -78,12 +79,12 @@ class Measure(Metadatable):
 
         # run the measurement as if it were a Loop
         self._dummyLoop.run(use_threads=use_threads,
-                            station=station, quiet=True)
+                            station=station, quiet=True, set_active=set_active)
 
         # look for arrays that are unnecessarily nested, and un-nest them
         all_unnested = True
         for array in data_set.arrays.values():
-            if array.ndim == 1:
+            if not hasattr(array, 'ndim') or array.ndim == 1:
                 if array.is_setpoint:
                     dummy_setpoint = array
                 else:

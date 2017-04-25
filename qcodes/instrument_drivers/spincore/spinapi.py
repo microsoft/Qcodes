@@ -16,6 +16,7 @@
 # 2. Altered source versions must be plainly marked as such, and must not be
 # misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
+
 #
 # Modified by Mark Johnson
 
@@ -34,6 +35,9 @@ except:
 
 def enum(**enums):
     return type('Enum', (), enums)
+  
+PULSE_PROGRAM = 0
+FREQ_REGS = 1 
 
 
 ns = 1.0
@@ -89,7 +93,7 @@ spinapi.pb_reset.restype = (ctypes.c_int)
 spinapi.pb_close.restype = (ctypes.c_int)
 
 spinapi.pb_inst_dds2.argtype = (
-	ctypes.c_int,  # Frequency register DDS0
+  	ctypes.c_int,  # Frequency register DDS0
     ctypes.c_int,  # Phase register DDS0
     ctypes.c_int,  # Amplitude register DDS0
     ctypes.c_int,  # Output enable DDS0
@@ -135,75 +139,65 @@ spinapi.pb_set_amp.argtype = (
     ctypes.c_float,  # amplitude
     ctypes.c_int,  # address of amplitude register
 )
-
-
 def pb_get_version():
-    """Return library version as UTF-8 encoded string."""
-    ret = spinapi.pb_get_version()
-    return str(ctypes.c_char_p(ret).value.decode("utf-8"))
-
+	"""Return library version as UTF-8 encoded string."""
+	ret = spinapi.pb_get_version()
+	return str(ctypes.c_char_p(ret).value.decode("utf-8"))
 
 def pb_get_error():
-    """Return library error as UTF-8 encoded string."""
-    ret = spinapi.pb_get_error()
-    return str(ctypes.c_char_p(ret).value.decode("utf-8"))
-
-
+	"""Return library error as UTF-8 encoded string."""
+	ret = spinapi.pb_get_error()
+	return str(ctypes.c_char_p(ret).value.decode("utf-8"))
+	
 def pb_count_boards():
-    """Return the number of boards detected in the system."""
-    return spinapi.pb_count_boards()
-
-
+	"""Return the number of boards detected in the system."""
+	return spinapi.pb_count_boards()
+	
 def pb_init():
-    """Initialize currently selected board."""
-    return spinapi.pb_init()
-
-
+	"""Initialize currently selected board."""
+	return spinapi.pb_init()
+	
 def pb_set_debug(debug):
-    return spinapi.pb_set_debug(debug)
-
-
+	return spinapi.pb_set_debug(debug)
+	
 def pb_select_board(board_number):
-    """Select a specific board number"""
-    return spinapi.pb_select_board(board_number)
-
-
+	"""Select a specific board number"""
+	return spinapi.pb_select_board(board_number)
+	
 def pb_set_defaults():
-    """Set board defaults. Must be called before using any other board functions."""
-    return spinapi.pb_set_defaults()
-
-
+	"""Set board defaults. Must be called before using any other board functions."""
+	return spinapi.pb_set_defaults()
+	
 def pb_core_clock(clock):
-    return spinapi.pb_core_clock(ctypes.c_double(clock))
-
-
+	return spinapi.pb_core_clock(ctypes.c_double(clock))
+	
 def pb_write_register(address, value):
-    return spinapi.pb_write_register(address, value)
-
-
+	return spinapi.pb_write_register(address, value)
+	
 def pb_start_programming(target):
-    return spinapi.pb_start_programming(target)
-
+	return spinapi.pb_start_programming(target)
 
 def pb_stop_programming():
-    return spinapi.pb_stop_programming()
-
+	return spinapi.pb_stop_programming()
+	
+def pb_inst_dds2(*args):
+	t = list(args)
+	#Argument 13 must be a double
+	t[13] = ctypes.c_double(t[13])
+	args = tuple(t)
+	return spinapi.pb_inst_dds2(*args)
 
 def pb_start():
-    return spinapi.pb_start()
-
-
+	return spinapi.pb_start()
+	
 def pb_stop():
-    return spinapi.pb_stop()
-
-
-def pb_reset():
-    return spinapi.pb_reset()
-
-
+	return spinapi.pb_stop()
+	
+def pb_reset(): 
+	return spinapi.pb_reset()
+	
 def pb_close():
-    return spinapi.pb_close()
-
+	return spinapi.pb_close()
 
 ################################################################################
 ###                                 DDS.h                                    ###

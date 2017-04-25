@@ -81,6 +81,9 @@ class Config():
     schema_cwd_file_name = cwd_file_name.replace(config_file_name,
                                                  schema_file_name)
 
+    # SilQ upgrade: add a custom file name, which can be anywhere
+    custom_file_name = ''
+
     current_schema = None
     current_config = None
 
@@ -93,6 +96,13 @@ class Config():
     def __init__(self):
         self.defaults, self.defaults_schema = self.load_default()
         self.current_config = self.update_config()
+
+    @property
+    def schema_custom_file_name(self):
+        # We make this a dependent property as you don't want to also update
+        # this when you update self.custom_file_name
+        return self.custom_file_name.replace(self.config_file_name,
+                                             self.schema_file_name)
 
     def load_default(self):
         defaults = self.load_config(self.default_file_name)
@@ -138,6 +148,12 @@ class Config():
             config = update(config, cwd_config)
             self.validate(config, self.current_schema,
                           self.schema_cwd_file_name)
+
+        if os.path.isfile(self.custom_file_name):
+            custom_config = self.load_config(self.custom_file_name)
+            config = update(config, custom_config)
+            self.validate(config, self.current_schema,
+                          self.schema_custom_file_name)
 
         return config
 
@@ -315,6 +331,20 @@ class Config():
         self.save_config(self.cwd_file_name)
         self.save_schema(self.schema_cwd_file_name)
 
+    # def save_subconfigs(self):
+    #     """ Save subconfigs to their respective files
+    #     """
+    #     for subconfig_key, path in self.subconfigs.items():
+    #         with open(path, "w") as fp:
+    #             subconfig = self.current_config['user'][subconfig_key]
+    #             json.dump(subconfig, fp, indent=4)
+
+    def save_to_custom(self):
+        """ Save files to custom dir (defined in self.custom_file_name)
+        """
+        self.save_config(self.custom_file_name)
+        self.save_schema(self.schema_custom_file_name)
+
     def describe(self, name):
         """
         Describe a configuration entry
@@ -369,7 +399,8 @@ class DotDict(dict):
                 self.__setitem__(key, value[key])
 
     def __setitem__(self, key, value):
-        if '.' in key:
+        # string type must be checked, as key could be other datatype
+        if type(key)==str and '.' in key:
             myKey, restOfKey = key.split('.', 1)
             target = self.setdefault(myKey, DotDict())
             target[restOfKey] = value
@@ -379,7 +410,7 @@ class DotDict(dict):
             dict.__setitem__(self, key, value)
 
     def __getitem__(self, key):
-        if '.' not in key:
+        if type(key) != str or '.' not in key:
             return dict.__getitem__(self, key)
         myKey, restOfKey = key.split('.', 1)
         target = dict.__getitem__(self, myKey)
@@ -397,7 +428,11 @@ class DotDict(dict):
 
     # dot acces baby
     __setattr__ = __setitem__
-    __getattr__ = __getitem__
+    def __getattr__(self, key):
+        try:
+            return self.__getitem__(key)
+        except KeyError:
+            return AttributeError('Attribute {} not found'.format(key))
 
 
 def update(d, u):

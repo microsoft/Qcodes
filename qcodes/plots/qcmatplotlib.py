@@ -3,6 +3,7 @@ Live plotting in Jupyter notebooks
 using the nbagg backend and matplotlib
 """
 from collections import Mapping
+from functools import partial
 
 import matplotlib.pyplot as plt
 from matplotlib.transforms import Bbox
@@ -11,6 +12,9 @@ from numpy.ma import masked_invalid, getmask
 
 from .base import BasePlot
 
+from qcodes import config
+
+matplot_config = config['user'].get('matplot', {})
 
 class MatPlot(BasePlot):
     """
@@ -44,21 +48,38 @@ class MatPlot(BasePlot):
         if args or kwargs:
             self.add(*args, **kwargs)
 
+        self.tight_layout()
+
+    def __getitem__(self, key):
+        return self.subplots[key]
+
     def _init_plot(self, subplots=None, figsize=None, num=None):
-        if figsize is None:
-            figsize = (8, 5)
-
-        if subplots is None:
-            subplots = (1, 1)
-
         if isinstance(subplots, Mapping):
+            if figsize is None:
+                figsize = (6, 4)
             self.fig, self.subplots = plt.subplots(figsize=figsize, num=num,
                                                    **subplots)
         else:
+            if subplots is None:
+                subplots = (1, 1)
+            elif isinstance(subplots, int):
+                subplots = (1, subplots)
+
+            if figsize is None:
+                figsize = (min(3 + 3 * subplots[1], 12), 1 + 3 * subplots[0])
+
             self.fig, self.subplots = plt.subplots(*subplots, num=num,
                                                    figsize=figsize)
-        if not hasattr(self.subplots, '__len__'):
-            self.subplots = (self.subplots,)
+
+        # Test if subplots is actually a single axis
+        if not isinstance(self.subplots, np.ndarray):
+            self.subplots = np.array([self.subplots])
+
+        # Flatten subplots in case it is a 2D array
+        self.subplots = np.ndarray.flatten(self.subplots)
+        for k, subplot in enumerate(self.subplots):
+            subplot.add = partial(self.add, subplot=k)
+
 
         self.title = self.fig.suptitle('')
 
@@ -71,27 +92,27 @@ class MatPlot(BasePlot):
         self.fig.clf()
         self._init_plot(subplots, figsize, num=self.fig.number)
 
-    def add_to_plot(self, **kwargs):
+    def add_to_plot(self, use_offset=False, **kwargs):
         """
         adds one trace to this MatPlot.
-
+        use_offset (bool, Optional): Whether or not axes can have an offset
         kwargs: with the following exceptions (mostly the data!), these are
             passed directly to the matplotlib plotting routine.
-
             `subplot`: the 1-based axes number to append to (default 1)
-
             if kwargs include `z`, we will draw a heatmap (ax.pcolormesh):
                 `x`, `y`, and `z` are passed as positional args to pcolormesh
-
             without `z` we draw a scatter/lines plot (ax.plot):
                 `x`, `y`, and `fmt` (if present) are passed as positional args
         """
         # TODO some way to specify overlaid axes?
-        ax = self._get_axes(kwargs)
+        ax = self._get_axes(**kwargs)
         if 'z' in kwargs:
             plot_object = self._draw_pcolormesh(ax, **kwargs)
         else:
             plot_object = self._draw_plot(ax, **kwargs)
+
+        # Specify if axes can have offset or not
+        ax.ticklabel_format(useOffset=use_offset)
 
         self._update_labels(ax, kwargs)
         prev_default_title = self.get_default_title()
@@ -105,8 +126,10 @@ class MatPlot(BasePlot):
             # in case the user has updated title, don't change it anymore
             self.title.set_text(self.get_default_title())
 
-    def _get_axes(self, config):
-        return self.subplots[config.get('subplot', 1) - 1]
+        self.tight_layout()
+
+    def _get_axes(self, subplot=0, **kwargs):
+        return self.subplots[subplot]
 
     def _update_labels(self, ax, config):
         for axletter in ("x", "y"):
@@ -160,7 +183,7 @@ class MatPlot(BasePlot):
                 if plot_object:
                     plot_object.remove()
 
-                ax = self._get_axes(config)
+                ax = self._get_axes(**config)
                 plot_object = self._draw_pcolormesh(ax, **config)
                 trace['plot_object'] = plot_object
 
@@ -203,7 +226,10 @@ class MatPlot(BasePlot):
         # didn't want to strip it out of kwargs earlier because it should stay
         # part of trace['config'].
         args = [arg for arg in [x, y, fmt] if arg is not None]
-        line, = ax.plot(*args, **kwargs)
+
+        config_settings = matplot_config.get('1D_settings', {})
+        settings = {**kwargs, **config_settings}
+        line, = ax.plot(*args, **settings)
         return line
 
     def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1,
@@ -213,20 +239,74 @@ class MatPlot(BasePlot):
                          xunit=None,
                          yunit=None,
                          zunit=None,
+                         nticks=None,
                          **kwargs):
         # NOTE(alexj)stripping out subplot because which subplot we're in is already
         # described by ax, and it's not a kwarg to matplotlib's ax.plot. But I
         # didn't want to strip it out of kwargs earlier because it should stay
         # part of trace['config'].
-        args = [masked_invalid(arg) for arg in [x, y, z]
-                if arg is not None]
+        args_masked = [masked_invalid(arg) for arg in [x, y, z]
+                      if arg is not None]
 
-        for arg in args:
-            if np.all(getmask(arg)):
-                # if any entire array is masked, don't draw at all
-                # there's nothing to draw, and anyway it throws a warning
-                return False
-        pc = ax.pcolormesh(*args, **kwargs)
+        if np.any([np.all(getmask(arg)) for arg in args_masked]):
+            # if the z array is masked, don't draw at all
+            # there's nothing to draw, and anyway it throws a warning
+            # pcolormesh does not accept masked x and y axes, so we do not need
+            # to check for them.
+            return False
+
+        if x is not None and y is not None:
+            # If x and y are provided, modify the arrays such that they
+            # correspond to grid corners instead of grid centers.
+            # This is to ensure that pcolormesh centers correctly and
+            # does not ignore edge points.
+            args = []
+            for k, arr in enumerate(args_masked[:-1]):
+                # If a two-dimensional array is provided, only consider the
+                # first row/column, depending on the axis
+                if arr.ndim > 1:
+                    arr = arr[0] if k == 0 else arr[:,0]
+
+                if np.ma.is_masked(arr[1]):
+                    # Only the first element is not nan, in this case pad with
+                    # a value, and separate their values by 1
+                    arr_pad = np.pad(arr, (1, 0), mode='symmetric')
+                    arr_pad[:2] += [-0.5, 0.5]
+                else:
+                    # Add padding on both sides equal to endpoints
+                    arr_pad = np.pad(arr, (1, 1), mode='symmetric')
+                    # Add differences to edgepoints (may be nan)
+                    arr_pad[0] += arr_pad[1] - arr_pad[2]
+                    arr_pad[-1] += arr_pad[-2] - arr_pad[-3]
+
+                    diff = np.ma.diff(arr_pad) / 2
+                    # Insert value at beginning and end of diff to ensure same
+                    # length
+                    diff = np.insert(diff, 0, diff[0])
+
+                    arr_pad += diff
+                    # Ignore final value
+                    arr_pad = arr_pad[:-1]
+                args.append(masked_invalid(arr_pad))
+            args.append(args_masked[-1])
+        else:
+            # Only the masked value of z is used as a mask
+            args = args_masked[-1:]
+
+        # Include default plotting kwargs, which can be overwritten by given
+        # kwargs
+        config_settings = matplot_config.get('2D_settings', {})
+        settings = {**kwargs, **config_settings}
+        pc = ax.pcolormesh(*args, **settings)
+
+        # Set x and y limits if arrays are provided
+        if x is not None and y is not None:
+            ax.set_xlim(np.nanmin(args[0]), np.nanmax(args[0]))
+            ax.set_ylim(np.nanmin(args[1]), np.nanmax(args[1]))
+
+        # Specify preferred number of ticks with labels
+        if nticks and ax.get_xscale() != 'log' and ax.get_yscale != 'log':
+            ax.locator_params(nbins=nticks)
 
         if getattr(ax, 'qcodes_colorbar', None):
             # update_normal doesn't seem to work...
@@ -251,6 +331,11 @@ class MatPlot(BasePlot):
             label = "{} ({})".format(zlabel, zunit)
             ax.qcodes_colorbar.set_label(label)
 
+        # Scale colors if z has elements
+        cmin = np.nanmin(args_masked[-1])
+        cmax = np.nanmax(args_masked[-1])
+        ax.qcodes_colorbar.set_clim(cmin, cmax)
+
         return pc
 
     def save(self, filename=None):
@@ -265,3 +350,6 @@ class MatPlot(BasePlot):
         default = "{}.png".format(self.get_default_title())
         filename = filename or default
         self.fig.savefig(filename)
+
+    def tight_layout(self):
+        self.fig.tight_layout(rect=[0, 0, 1, 0.95])

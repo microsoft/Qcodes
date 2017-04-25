@@ -33,6 +33,8 @@ class NumpyJSONEncoder(json.JSONEncoder):
                 're': float(obj.real),
                 'im': float(obj.imag)
             }
+        elif hasattr(obj, '_JSONEncoder'):
+            return obj._JSONEncoder()
         else:
             try:
                 s = super(NumpyJSONEncoder, self).default(obj)
@@ -231,10 +233,7 @@ def wait_secs(finish_clock):
     Does NOT wait for this time.
     """
     delay = finish_clock - time.perf_counter()
-    if delay < 0:
-        logging.warning('negative delay {:.6f} sec'.format(delay))
-        return 0
-    return delay
+    return max(delay, 0)
 
 
 class LogCapture():
