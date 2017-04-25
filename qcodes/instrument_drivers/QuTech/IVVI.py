@@ -329,11 +329,6 @@ class IVVI(VisaInstrument):
         Raises an error if one occurred
         Returns a list of bytes
         '''
-        '''
-        Send <message> to the device and read answer.
-        Raises an error if one occurred
-        Returns a list of bytes
-        '''
         if self.lock:
             max_tries = 10
             for i in range(max_tries):
