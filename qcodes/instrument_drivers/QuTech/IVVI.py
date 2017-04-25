@@ -32,7 +32,7 @@ class IVVI(VisaInstrument):
     def __init__(self, name, address, reset=False, numdacs=16, dac_step=10,
                  dac_delay=.1, dac_max_delay=0.2, safe_version=True,
                  polarity=['BIP', 'BIP', 'BIP', 'BIP'],
-                 use_locks = False, **kwargs):
+                 use_locks=False, **kwargs):
         '''
         Initialzes the IVVI, and communicates with the wrapper
 
@@ -116,10 +116,10 @@ class IVVI(VisaInstrument):
                            label='Dac voltages',
                            get_cmd=self._get_dacs)
 
-        #initialize pol_num, the voltage offset due to the polarity
+        # initialize pol_num, the voltage offset due to the polarity
         self.pol_num = np.zeros(self._numdacs)
-        for i in range(int(self._numdacs/4)):
-            self.set_pol_dacrack(polarity[i], np.arange(1+i*4,1+(i+1)*4),
+        for i in range(int(self._numdacs / 4)):
+            self.set_pol_dacrack(polarity[i], np.arange(1 + i * 4, 1 + (i + 1) * 4),
                                  get_all=False)
 
         for i in range(1, numdacs + 1):
@@ -129,8 +129,8 @@ class IVVI(VisaInstrument):
                 unit='mV',
                 get_cmd=self._gen_ch_get_func(self._get_dac, i),
                 set_cmd=self._gen_ch_set_func(self._set_dac, i),
-                vals=vals.Numbers(self.pol_num[i-1],
-                                  self.pol_num[i-1]+self.Fullrange),
+                vals=vals.Numbers(self.pol_num[i - 1],
+                                  self.pol_num[i - 1] + self.Fullrange),
                 step=dac_step,
                 delay=dac_delay,
                 max_delay=dac_max_delay,
@@ -186,7 +186,7 @@ class IVVI(VisaInstrument):
 
     def set_dacs_zero(self):
         for i in range(self._numdacs):
-            self.set('dac{}'.format(i+1),0)
+            self.set('dac{}'.format(i + 1), 0)
 
     # Conversion of data
     def _mvoltage_to_bytes(self, mvoltage):
