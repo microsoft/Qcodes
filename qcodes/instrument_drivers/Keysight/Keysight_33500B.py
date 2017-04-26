@@ -6,8 +6,18 @@ log = logging.getLogger(__name__)
 
 
 class Keysight_33500B(VisaInstrument):
+    """
+    QCoDeS driver for the Keysight 33500B Waveform Generator
+    """
 
-    def __init__(self, name, address, **kwargs):
+    def __init__(self, name, address, silent=False, **kwargs):
+        """
+        Args:
+            name (string): The name of the instrument used internally
+                by QCoDeS. Must be unique.
+            address (string): The VISA resource name.
+            silent (Optional[bool]): If True, no connect message is printed.
+        """
 
         super().__init__(name, address, **kwargs)
 
@@ -105,3 +115,6 @@ class Keysight_33500B(VisaInstrument):
                            val_mapping={'ON': 1, 'OFF': 0},
                            vals=vals.Enum('ON', 'OFF')
                            )
+
+        if not silent:
+            self.connect_message()
