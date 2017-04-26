@@ -1,5 +1,5 @@
 from qcodes import Instrument
-from qcodes.utils.validators import Enum
+from qcodes.utils.validators import Enum, Numbers
 
 from spirack import D5a_module
 
@@ -20,7 +20,8 @@ class D5a(Instrument):
 
     where N is the DAC number from 1 up to 16
     """
-    def __init__(self, name, spi_rack, module, **kwargs):
+
+    def __init__(self, name, spi_rack, module, dac_delay=0.1, **kwargs):
         super().__init__(name, **kwargs)
 
         self.d5a = D5a_module(spi_rack, module)
@@ -34,19 +35,20 @@ class D5a(Instrument):
         self._span_get_map = {v: k for k, v in self._span_set_map.items()}
 
         self.add_function('set_dacs_zero', call_cmd=self._set_dacs_zero)
-        self.add_function('update', call_cmd=self.d5a.update)
 
         for i in range(16):
+            validator = self._get_validator(i)
             self.add_parameter('dac{}'.format(i + 1),
                                label='DAC {}'.format(i + 1),
                                get_cmd=partial(self._get_dac, i),
                                set_cmd=partial(self.d5a.set_voltage, i),
-                               units='V',
-                               delay=0.1)
+                               unit='V',
+                               validator=validator,
+                               dac_delay=dac_delay)
 
             self.add_parameter('stepsize{}'.format(i + 1),
                                get_cmd=partial(self.d5a.get_stepsize, i),
-                               units='V')
+                               unit='V')
 
             self.add_parameter('span{}'.format(i + 1),
                                get_cmd=partial(self._get_span, i),
@@ -65,3 +67,14 @@ class D5a(Instrument):
 
     def _set_span(self, dac, span_str):
         self.d5a.change_span_update(dac, self._span_set_map[span_str])
+
+    def _get_validator(self, dac):
+        span = self.d5a.span[dac]
+        if span == D5a_module.range_2V_bi:
+            validator = Numbers(-1, 1)
+        elif span == D5a_module.range_4V_bi:
+            validator = Numbers(-2, 2)
+        elif span == D5a_module.range_4V_uni:
+            validator = Numbers(0, 4)
+        else:
+            raise Exception('nu such span')
