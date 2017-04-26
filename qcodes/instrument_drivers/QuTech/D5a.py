@@ -78,3 +78,5 @@ class D5a(Instrument):
             validator = Numbers(0, 4)
         else:
             raise Exception('nu such span')
+
+        return validator
