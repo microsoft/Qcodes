@@ -919,7 +919,8 @@ class Tektronix_AWG5014(VisaInstrument):
         # the return value of the parameter is different from what goes
         # into the .awg file, so we translate it
         filtertrans = {20e6: 1, 100e6: 3, 9.9e37: 10,
-                       'INF': 10, 'INFinity': 10, None: None}
+                       'INF': 10, 'INFinity': 10,
+                       float('inf'): 10, None: None}
         filters = [filtertrans[self.ch1_filter.get_latest()],
                    filtertrans[self.ch2_filter.get_latest()],
                    filtertrans[self.ch3_filter.get_latest()],
