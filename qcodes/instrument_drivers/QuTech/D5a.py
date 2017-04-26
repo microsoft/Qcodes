@@ -1,7 +1,7 @@
 from qcodes import Instrument
 from qcodes.utils.validators import Enum
 
-from .D5a_module import D5a_module
+from spirack import D5a_module
 
 from functools import partial
 

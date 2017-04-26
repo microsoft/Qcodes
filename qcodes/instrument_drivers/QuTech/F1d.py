@@ -1,7 +1,7 @@
 from qcodes import Instrument
 from qcodes.utils.validators import Enum
 
-from .F1d_module import F1d_module
+from spirack import F1d_module
 
 
 class F1d(Instrument):

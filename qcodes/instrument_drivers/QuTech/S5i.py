@@ -1,7 +1,7 @@
 from qcodes import Instrument
 from qcodes.utils.validators import Bool, Numbers
 
-from .S5i_module import S5i_module
+from spirack import S5i_module
 
 
 class S5i(Instrument):
