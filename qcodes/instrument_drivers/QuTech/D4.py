@@ -1,6 +1,6 @@
 from qcodes import Instrument
 
-from .D4_module import D4_module
+from spirack import D4_module
 
 from functools import partial
 
