@@ -1,5 +1,5 @@
 from qcodes import Instrument
-from qcodes.utils.validators import Ints, Enum
+from qcodes.utils.validators import Enum
 
 from .F1d_module import F1d_module
 
@@ -21,7 +21,7 @@ class F1d(Instrument):
                            label='IQ filter',
                            set_cmd=self.f1d.set_IQ_filter,
                            units='MHz',
-                           vals=Ints(1, 3, 10, 20))
+                           vals=Enum(1, 3, 10, 20))
 
         self.add_parameter('I_gain',
                            label='I gain',
