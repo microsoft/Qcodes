@@ -102,8 +102,8 @@ class Triton(IPInstrument):
         try:
             self._get_named_channels()
         except:
-            logging.warn('Ignored an error in _get_named_channels\n' +
-                         format_exc())
+            logging.warning('Ignored an error in _get_named_channels\n' +
+                            format_exc())
 
         self.connect_message()
 
@@ -235,7 +235,7 @@ class Triton(IPInstrument):
     def _parse_pres(self, msg):
         if 'NOT_FOUND' in msg:
             return None
-        return float(msg.split('SIG:PRES:')[-1].strip('mB'))*1e3
+        return float(msg.split('SIG:PRES:')[-1].strip('mB'))*1e-3
 
     def _recv(self):
         return super()._recv().rstrip()
