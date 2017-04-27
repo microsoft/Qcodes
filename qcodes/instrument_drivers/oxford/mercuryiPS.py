@@ -3,8 +3,8 @@ import re
 import time
 import numpy as np
 
-from qcodes import IPInstrument, MultiParameter
-from qcodes.utils.validators import Enum
+from qcodes import IPInstrument, MultiParameter, ManualParameter
+from qcodes.utils.validators import Enum, Bool
 
 class MercuryiPSArray(MultiParameter):
     """
@@ -77,6 +77,15 @@ class MercuryiPS(IPInstrument):
         if axes is None:
             self._determine_magnet_axes()
         self._determine_current_to_field()
+
+
+        self.add_parameter('hold_after_set',
+                           parameter_class=ManualParameter,
+                           validator=Bool(),
+                           initial_value=False,
+                           docstring='Should the driver block while waiting for the Magnet power supply '
+                                     'to go into hold mode.'
+                           )
 
         self.add_parameter('setpoint',
                            names=tuple('B' + ax.lower() + '_setpoint' for ax in self.axes),
@@ -197,6 +206,9 @@ class MercuryiPS(IPInstrument):
     def _ramp_to_setpoint(self, ax, cmd, setpoint):
         self._set_fld(ax, cmd, setpoint)
         self.rtos()
+        if self.hold_after_set():
+            while not all(['HOLD' == getattr(self, a.lower() + '_ACTN')() for a in ax]):
+                time.sleep(0.1)
 
     def _ramp_to_setpoint_and_wait(self, ax, cmd, setpoint):
         error = 0.2e-3
