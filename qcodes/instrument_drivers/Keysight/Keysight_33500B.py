@@ -268,7 +268,7 @@ class Keysight_33500B(VisaInstrument):
     def flush_error_queue(self, verbose=True):
         """
         Clear the instrument error queue.
-        
+xs
         Args:
             verbose (Optional[bool]): If true, the error messages are printed.
                 Default: True.
