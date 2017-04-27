@@ -31,11 +31,11 @@ class Keysight_33500B(VisaInstrument):
 
         def errorparser(rawmssg):
             """
-            Parses the error message. 
+            Parses the error message.
             
             Args:
                 rawmssg (str): The raw return value of 'SYSTem:ERRor?'
-                
+
             Returns:
                 tuple (int, str): The error code and the error message.
             """
@@ -49,7 +49,7 @@ class Keysight_33500B(VisaInstrument):
             Parses return values from instrument. Meant to be used when a query
             can return a meaningful finite number or a numeric representation
             of infinity
-            
+
             Args:
                 inputstring (str): The raw return value
                 parser (type): Either int or float, what to return in finite
@@ -280,7 +280,7 @@ class Keysight_33500B(VisaInstrument):
         log.debug('    {}, {}'.format(err_code, err_message))
         if verbose:
             print(err_code, err_message)
-            
+
         while err_code != 0:
             err_code, err_message = self.error()
             log.debug('    {}, {}'.format(err_code, err_message))
@@ -288,4 +288,3 @@ class Keysight_33500B(VisaInstrument):
                 print(err_code, err_message)
 
         log.debug('...flushing complete')
-
