@@ -32,7 +32,7 @@ class Keysight_33500B(VisaInstrument):
         def errorparser(rawmssg):
             """
             Parses the error message.
-            
+
             Args:
                 rawmssg (str): The raw return value of 'SYSTem:ERRor?'
 
