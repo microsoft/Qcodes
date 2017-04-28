@@ -4,6 +4,9 @@ from qcodes import validators as validator
 from functools import partial
 import warnings
 import json
+import math
+from timeit import default_timer as timer
+from time import sleep
 
 try:
     import nidaqmx
@@ -22,17 +25,21 @@ class PXIe_4322(Instrument):
     the nidaqmx package need to be installed in order to use this QCoDeS driver.
     """
 
-    def __init__(self, name, device_name, **kwargs):
+    def __init__(self, name, device_name, step_size=0.01, step_rate=10, **kwargs):
         super().__init__(name, **kwargs)
 
         self.device_name = device_name
 
         self.channels = 8
 
+        self.step_size = step_size
+        self.step_rate = step_rate
+        self.step_delay = 1/step_rate
+
         try:
             with open('NI_voltages_{}.json'.format(device_name)) as data_file:
                 self.__voltage = json.load(data_file)
-        except (FileNotFoundError, json.decoder.JSONDecodeError) as e:
+        except (FileNotFoundError, json.decoder.JSONDecodeError):
             self.__voltage = [0] * self.channels
 
         print('Please read the following warning message:')
@@ -54,7 +61,19 @@ class PXIe_4322(Instrument):
         with nidaqmx.Task() as task:
             task.ao_channels.add_ao_voltage_chan('{}/ao{}'.format(self.device_name, channel),
                                                  min_val=-16.0, max_val=16.0)
-            task.write(voltage, auto_start=True)
+
+            if abs(voltage - self.__voltage[channel]) > self.step_size:
+                if (voltage - self.__voltage[channel]) < 0:
+                    step = -self.step_size
+                else:
+                    step = self.step_size
+                for voltage_step in frange(self.__voltage[channel], voltage, step):
+                    t_start = timer()
+                    task.write(voltage_step)
+                    t_stop = timer()
+                    sleep(max(self.step_delay-(t_stop-t_start), 0.0))
+
+            task.write(voltage)
             self.__voltage[channel] = voltage
             if save_to_file:
                 with open('NI_voltages_{}.json'.format(self.device_name), 'w') as output_file:
@@ -62,3 +81,14 @@ class PXIe_4322(Instrument):
 
     def get_voltage(self, channel):
         return self.__voltage[channel]
+
+
+def frange(start, stop, step):
+    if stop is None:
+        stop, start = start, 0.
+    else:
+        start = float(start)
+
+    count = int(math.ceil((stop - start) / step))
+    return [start + n * step for n in range(count)]
+
