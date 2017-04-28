@@ -783,7 +783,7 @@ class M4i(Instrument):
 
         return voltages
 
-    def blockavg_hardware_trigger_acquisition(self, mV_range, nr_averages=10, verbose=1):
+    def blockavg_hardware_trigger_acquisition(self, mV_range, nr_averages=10, verbose=0):
     
         #self.available_card_modes()
         if nr_averages<2:
