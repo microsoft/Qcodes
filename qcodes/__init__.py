@@ -11,6 +11,19 @@ config = Config()
 from qcodes.version import __version__
 from qcodes.utils.helpers import in_notebook
 
+from qcodes.utils.config import QCodesConfig
+config = QCodesConfig()
+
+# add default config values
+config.add_entry('general.verbosity', 1)
+config.add_entry('logging.useZMQ', 0)
+config.add_entry('logging.zmq_port', 5502)
+config.add_entry('general.frontend', 0)
+
+# load user-defined options from file
+config.load_defaults()
+
+
 # code that should only be imported into the main (notebook) thread
 # in particular, importing matplotlib in the side processes takes a long
 # time and spins up other processes in order to try and get a front end
