@@ -82,6 +82,30 @@ class PXIe_4322(Instrument):
     def get_voltage(self, channel):
         return self.__voltage[channel]
 
+    def set_gates_simultaneously(self, gate_values):
+        assert len(gate_values) == self.channels, 'number of values in gate_values list ({}) must be same as number ' \
+                                                  'of channels: {}'.format(len(gate_values), self.channels)
+
+        diff = [gate_values[i] - self.__voltage[i] for i in range(len(self.__voltage))]
+        step = [self.step_size if diff_i >= 0 else -self.step_size for diff_i in diff]
+        volt_steps = [frange(self.__voltage[i], gate_values[i], step[i]) for i in range(len(self.__voltage))]
+        number_of_steps = [len(volt_steps[i]) for i in range(len(volt_steps))]
+
+        channel_mask = [True] * self.channels
+
+        for i in range(max(number_of_steps)):
+            for chan in range(self.channels):
+                if channel_mask[chan]:
+                    try:
+                        voltage = volt_steps[chan][i]
+                        self.set_voltage(voltage, chan)
+                    except IndexError:
+                        channel_mask[chan] = False
+                        pass
+
+        for i in range(self.channels):
+            self.set_voltage(gate_values[i], i)
+
 
 def frange(start, stop, step):
     if stop is None:
