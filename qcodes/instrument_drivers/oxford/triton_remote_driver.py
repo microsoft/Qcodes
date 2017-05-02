@@ -108,13 +108,22 @@ class RemoteTriton(Instrument):
         self._session.close()
         super().close()
 
+
     def ask_raw(self, cmd):
-        result = self._session.get('http://localhost:8000/{}'.format(cmd)).text
-        return result
+        response = self._session.get('http://localhost:8000/{}'.format(cmd))
+        if response.status_code != requests.codes.ok:
+            raise ValueError("Could not get value with command {}".format(cmd))
+        return response.text
 
     def write_raw(self, cmd):
-        response = self._session.post('http://localhost:8000/{}'.format(cmd))
+        response = self._session.get('http://localhost:8000/{}'.format(cmd))
+        if response.status_code != requests.codes.ok:
+            raise ValueError("Could not get value with command {}".format(cmd))
 
     def set_with_post(self, parameter, value):
         data = {"setpoint": value}
         response = self._session.post('http://localhost:8000/{}'.format(parameter), json=data)
+        if response.status_code == 405:
+            raise ValueError("Could not set {} to {}, Is value valid?".format(parameter, value))
+        elif response.status_code != requests.codes.ok:
+            raise ValueError("Could not set {} to {}, Check settings".format(parameter, value))
