@@ -56,7 +56,7 @@ class SD_DIG(SD_Module):
         # For channelPrescalerConfig
         self.__prescaler = [0] * self.n_channels  # By default, no prescaling
         # For channelTriggerConfig
-        self.__trigger_mode = [keysightSD1.SD_AIN_TriggerMode.RISING_EDGE] * self.n_channels
+        self.__trigger_edge = [keysightSD1.SD_AIN_TriggerMode.RISING_EDGE] * self.n_channels
         self.__trigger_threshold = [0] * self.n_channels  # By default, threshold at 0V
         # For DAQ config
         self.__points_per_cycle = [0] * self.n_channels
@@ -156,9 +156,9 @@ class SD_DIG(SD_Module):
 
             # For channelTriggerConfig
             self.add_parameter(
-                'trigger_mode_{}'.format(n), label='Trigger mode for channel {}'.format(n),
-                vals=Enum(0, 1, 2, 3, 4, 5, 6, 7),
-                set_cmd=partial(self.set_trigger_mode, channel=n),
+                'trigger_edge{}'.format(n), label='Trigger mode for channel {}'.format(n),
+                vals=Enum(1, 2, 3),
+                set_cmd=partial(self.set_trigger_edge, channel=n),
                 docstring='The trigger mode for channel {}'.format(n)
             )
 
@@ -198,7 +198,7 @@ class SD_DIG(SD_Module):
             self.add_parameter(
                 'DAQ_trigger_mode_{}'.format(n),
                 label='Trigger mode for for DAQ {}'.format(n),
-                vals=Ints(),
+                vals=Enum(0,1,2,3,4,5,6,7),
                 set_cmd=partial(self.set_daq_trigger_mode, channel=n),
                 docstring='The trigger mode for DAQ {}'.format(n)
             )
@@ -523,26 +523,26 @@ class SD_DIG(SD_Module):
         return result_parser(value, value_name, verbose)
 
     # channelTriggerConfig
-    def set_trigger_mode(self, mode, channel, verbose=False):
+    def set_trigger_edge(self, mode, channel, verbose=False):
         """ Sets the current trigger mode from those defined in SD_AIN_TriggerMode
 
         Args:
             channel (int)       : the input channel you are configuring
             mode (int)          : the trigger mode drawn from the class SD_AIN_TriggerMode
         """
-        self.__trigger_mode[channel] = mode
+        self.__trigger_edge[channel] = mode
         value = self.SD_AIN.channelTriggerConfig(channel, self.__analog_trigger_mask[channel],
                                                  self.__trigger_threshold[channel])
-        value_name = 'set_trigger_mode {}'.format(mode)
+        value_name = 'set_trigger_edge {}'.format(mode)
         return result_parser(value, value_name, verbose)
 
-    def get_trigger_mode(self, channel):
+    def get_trigger_edge(self, channel):
         """ Returns the current trigger mode
 
         Args:
             channel (int)       : the input channel you are observing
         """
-        return self.__trigger_mode[channel]
+        return self.__trigger_edge[channel]
 
     def set_trigger_threshold(self, threshold, channel, verbose=False):
         """ Sets the current trigger threshold, in the range of -3V and 3V
