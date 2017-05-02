@@ -47,6 +47,11 @@ class FridgeHttpServer:
     async def index(self, request):
         return web.Response(text="Usage ip/parameter?attribute=value i.e. ip/T1/attribute=value")
 
+    async def handle_hostname(self, request):
+        import socket
+        host =  socket.gethostname()
+        return web.Response(text=host)
+
 
     def run_app(self, loop):
         app = web.Application()
@@ -58,6 +63,7 @@ class FridgeHttpServer:
 
         parameter_regex = parameter_regex[0:-1]
         app.router.add_get('/{{parametername:{}}}'.format(parameter_regex), self.handle)
+        app.router.add_get('/hostname', self.handle_hostname)
         app.router.add_post('/{{parametername:{}}}'.format(parameter_regex), self.handle)
         return app
 
