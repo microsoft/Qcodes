@@ -142,6 +142,7 @@ def _plot_setup(data, inst_meas, useQT=True):
                 rasterized = xlen*ylen > 5000
                 plot.add(inst_meas_data, subplot=j + k + 1, rasterized=rasterized)
             else:
+                rasterized = False
                 plot.add(inst_meas_data, subplot=j + k + 1, color=color)
                 plot.subplots[j + k].grid()
             if j == 0:
@@ -196,6 +197,7 @@ def _save_individual_plots(data, inst_meas):
             rasterized = xlen * ylen > 5000
             plot.add(inst_meas_data, rasterized=rasterized)
         else:
+            rasterized = False
             plot.add(inst_meas_data, color=color)
             plot.subplots[0].grid()
         if rasterized:
