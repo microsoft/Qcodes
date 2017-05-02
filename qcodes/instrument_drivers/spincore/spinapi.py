@@ -22,8 +22,6 @@
 
 import ctypes
 
-c_float_p = ctypes.POINTER(ctypes.c_float),  # create a float pointer type
-
 try:
     spinapi = ctypes.CDLL("spinapi64")
 except:
@@ -124,7 +122,7 @@ spinapi.pb_select_dds.argtype = (ctypes.c_int)
 
 spinapi.pb_dds_load.restype = (ctypes.c_int)
 spinapi.pb_dds_load.argtype = (
-    c_float_p,  # *data
+    ctypes.c_void_p,  # *data
     ctypes.c_int  # device number
 )
 
@@ -236,7 +234,8 @@ def pb_select_dds(dds_num):
 
 
 def pb_dds_load(data, device):
-    return spinapi.pb_dds_load(c_float_p(data), device)
+    arr = (ctypes.c_float * len(data))(*data)
+    return spinapi.pb_dds_load(arr, device)
 
 
 def pb_dds_set_envelope_freq(freq, n):

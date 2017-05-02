@@ -30,8 +30,8 @@ class PB_KEYWORDS():
     START_LOCATION  = BASE_ADDR + 0x7
 
     # pb_dds_load options
-    DEVICE_DDS   = 0
-    DEVICE_SHAPE = 1
+    DEVICE_DDS   = 0x099000
+    DEVICE_SHAPE = 0x099001
 
 
 
@@ -237,7 +237,7 @@ class PB_DDS(Instrument):
             device (int) : Either DEVICE_DDS (the default shape for all output)
                                or DEVICE_SHAPE (an alternative shape register)
         """
-        return self.error_parse(pb_dds_load())
+        return self.error_parse(pb_dds_load(), device)
 
     def stop_programming(self):
         """ End a programming sequence """
