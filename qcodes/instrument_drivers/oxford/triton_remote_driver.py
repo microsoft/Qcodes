@@ -102,7 +102,13 @@ class RemoteTriton(Instrument):
                                get_parser=float,
                                get_cmd='{}?attribute=value'.format(pressure))
 
-        # TODO Add alias parameters
+        named_temperatures = ["COOL", 'MC', "PT1", "PT2", "STIL"]
+        for temperature in named_temperatures:
+            self.add_parameter(temperature,
+                               label=temperature,
+                               unit="K",
+                               get_parser=float,
+                               get_cmd='{}?attribute=value'.format(temperature))
 
     def close(self):
         self._session.close()
