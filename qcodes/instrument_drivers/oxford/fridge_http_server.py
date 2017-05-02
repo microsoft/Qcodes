@@ -1,8 +1,10 @@
 import asyncio
+import aiohttp
 from aiohttp import web
 from qcodes.instrument_drivers.oxford.triton import Triton
 from aiohttp.hdrs import METH_POST
 from qcodes.instrument_drivers.oxford.mock_triton import MockTriton
+import time
 
 class FridgeHttpServer:
 
@@ -20,7 +22,10 @@ class FridgeHttpServer:
             parameter = getattr(self.triton, parametername)
             if request.method == METH_POST:
                 data = await request.json()
-                parameter.set(data['setpoint'])
+                try:
+                    parameter.set(data['setpoint'])
+                except ValueError:
+                    return web.Response(status=405)
                 return web.Response(text='OK')
             attribute = query.get('attribute', None)
             if attribute in valid_attributes:
@@ -55,6 +60,7 @@ class FridgeHttpServer:
         app.router.add_get('/{{parametername:{}}}'.format(parameter_regex), self.handle)
         app.router.add_post('/{{parametername:{}}}'.format(parameter_regex), self.handle)
         return app
+
 
 def create_app(loop):
     fridgehttpserver = FridgeHttpServer()
