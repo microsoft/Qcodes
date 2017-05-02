@@ -1,7 +1,11 @@
 from qcodes import Instrument
 from qcodes.utils.validators import Enum, Numbers
 
-from spirack import D5a_module
+try:
+    from spirack import D5a_module
+except ImportError:
+    raise ImportError(('The D5a_module class could not be found. '
+                       'Try installing it using pip install spirack'))
 
 from functools import partial
 
@@ -19,6 +23,17 @@ class D5a(Instrument):
     -   spanN       get and set the DAC span: '4v uni', '4v bi', or '2.5v bi'
 
     where N is the DAC number from 1 up to 16
+
+    Args:
+        name (str): name of the instrument.
+
+        spi_rack (SPI_rack): instance of the SPI_rack class as defined in
+            the spirack package. This class manages communication with the
+            individual modules.
+
+        module (int): module number as set on the hardware.
+
+        dac_delay (float): TODO
     """
 
     def __init__(self, name, spi_rack, module, dac_delay=0.1, **kwargs):
@@ -38,17 +53,18 @@ class D5a(Instrument):
 
         for i in range(16):
             validator = self._get_validator(i)
+
             self.add_parameter('dac{}'.format(i + 1),
                                label='DAC {}'.format(i + 1),
                                get_cmd=partial(self._get_dac, i),
                                set_cmd=partial(self.d5a.set_voltage, i),
-                               unit='V',
+                               units='V',
                                validator=validator,
                                dac_delay=dac_delay)
 
             self.add_parameter('stepsize{}'.format(i + 1),
                                get_cmd=partial(self.d5a.get_stepsize, i),
-                               unit='V')
+                               units='V')
 
             self.add_parameter('span{}'.format(i + 1),
                                get_cmd=partial(self._get_span, i),
@@ -77,6 +93,7 @@ class D5a(Instrument):
         elif span == D5a_module.range_4V_uni:
             validator = Numbers(0, 4)
         else:
-            raise Exception('nu such span')
+            msg = 'The found DAC span of {} does not correspond to a known one'
+            raise Exception(msg.format(span))
 
         return validator
