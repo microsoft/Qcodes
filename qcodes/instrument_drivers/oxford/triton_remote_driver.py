@@ -1,10 +1,22 @@
 from functools import partial
 import requests
 
-from qcodes.utils.validators import Numbers, Enum, Ints
+from qcodes.utils.validators import Enum, Ints
 from qcodes.instrument.base import Instrument
 class RemoteTriton(Instrument):
+    """
+    Remote Proxy Triton Driver. This is intended to replicate all the functionality of the regular
+    driver but communicates via a HTTP Proxy. This makes it possible for multiple clients to communicate with
+    the Triton at the same time. I.e. we can monitor the Triton status centrally and and send notifications via
+    text/email in case of issues and control the Triton from QCoDeS at the same time. With time it also makes it
+    possible to expose parameters that are only accessible on the fridge computer via reg database.
 
+    Args:
+        name: Name to use for the instrument.
+        address: ip address  of Triton proxy server. Typically this will be the Triton computer
+        port: port to communicate with Triton proxy server over. In general different from the Triton port
+
+    """
     def __init__(self, name, address, port, timeout=5,
                  terminator='\n', persistent=True, write_confirmation=True,
                  **kwargs):
