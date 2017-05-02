@@ -13,6 +13,8 @@ class Triton(IPInstrument):
     Triton Driver
 
     Args:
+        local_triton bool: Is the Triton software running on the same computer as the driver? 
+                           In this case channel names can be read directly from the windows registry database
         tmpfile: Optional: an exported windows registry file from the registry
             path:
             `[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry]`
@@ -24,7 +26,7 @@ class Triton(IPInstrument):
         fetch registry directly from fridge-computer
     """
 
-    def __init__(self, name, address=None, port=None, terminator='\r\n',
+    def __init__(self, name, local_triton=False, address=None, port=None, terminator='\r\n',
                  tmpfile=None, timeout=20, **kwargs):
         super().__init__(name, address=address, port=port,
                          terminator=terminator, timeout=timeout, **kwargs)
@@ -92,6 +94,30 @@ class Triton(IPInstrument):
                            get_cmd=partial(self._get_control_param, 'RANGE'),
                            set_cmd=partial(self._set_control_param, 'RANGE'),
                            vals=Enum(*self._heater_range_curr))
+
+        # Needs testing and integration on the actual fridge computer
+        if local_triton:
+            chan_names = {}
+            import winreg
+            mainreg = winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER)
+            reg_path = r"Software\Oxford Instruments\Triton System Control\Thermometry"
+            triton_temp_reg = winreg.OpenKey(mainreg, reg_path)
+            for i in range(1,17):
+                chan_reg_path = reg_path + 'chan[{}].format(i)'
+                chan_reg = winreg.OpenKey(triton_temp_reg, chan_reg_path)
+                j = 0
+                while 1:
+                    try:
+                        data = winreg.EnumValue(chan_reg, j)
+                        if data[0] == 'm_lpszname':
+                            chan_names[i] = data[1]
+                        j+= 1
+                    except OSError:
+                        # no more data
+                        chan_reg.close()
+                        break
+            triton_temp_reg.close()
+            mainreg.close()
 
         self.chan_alias = {}
         self.chan_temp_names = {}
