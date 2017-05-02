@@ -60,7 +60,8 @@ setup(name='qcodes',
           'ipython>=4.1.0',
           'ipykernel!=4.6.0', # https://github.com/ipython/ipykernel/issues/240 in 4.6
           'jupyter>=1.0.0',
-          'h5py>=2.6'
+          'h5py>=2.6',
+          'requests>=2.13.0'
       ],
 
       test_suite='qcodes.tests',
