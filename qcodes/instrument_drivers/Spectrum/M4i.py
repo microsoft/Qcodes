@@ -751,7 +751,15 @@ class M4i(Instrument):
         return voltages
 
     def single_software_trigger_acquisition(self, mV_range, memsize, posttrigger_size):
+        """ Acquire a single data trace
 
+        Args:
+            mV_range
+            memsize (int): size of data trace
+            posttrigger_size (int): size of data trace after triggering
+        Returns:
+            voltages (array)
+        """
         self.card_mode(pyspcm.SPC_REC_STD_SINGLE)  # single
 
         self.data_memory_size(memsize)
@@ -776,7 +784,7 @@ class M4i(Instrument):
         # convert buffer to numpy array
         data = ct.cast(data_pointer, ct.POINTER(buffer_size))
         output = np.frombuffer(data.contents, dtype=ct.c_int16)
-        self._debug=output
+        self._debug = output
         self._stop_acquisition()
 
         voltages = self.convert_to_voltage(output, mV_range / 1000)
@@ -784,47 +792,57 @@ class M4i(Instrument):
         return voltages
 
     def blockavg_hardware_trigger_acquisition(self, mV_range, nr_averages=10, verbose=0):
-    
-        #self.available_card_modes()
-        if nr_averages<2:
-            raise Exception('no no no!')
+        """ Acquire data using block averaging and hardware triggering
+
+        Args:
+            mV_range
+            nr_averages (int): number of averages to take
+            verbose (int): output level
+        Returns:
+            voltages (array)
+        """
+        # self.available_card_modes()
+        if nr_averages < 2:
+            raise Exception('averaging for less than 2 times is not supported')
         self.card_mode(pyspcm.SPC_REC_STD_AVERAGE)  # single
-        memsize=self.data_memory_size()
+        memsize = self.data_memory_size()
         self.segment_size(memsize)
         self._set_param32bit(pyspcm.SPC_AVERAGES, nr_averages)
-    
-        
+
         if verbose:
-            print('blockavg_hardware_trigger_acquisition: errors %s' % (self.get_error_info32bit(), ))
-            print('blockavg_hardware_trigger_acquisition: card_status %s' % (self.card_status(), ))
-    
+            print('blockavg_hardware_trigger_acquisition: errors %s' %
+                  (self.get_error_info32bit(), ))
+            print('blockavg_hardware_trigger_acquisition: card_status %s' %
+                  (self.card_status(), ))
+
         self.external_trigger_mode(pyspcm.SPC_TM_POS)
         self.trigger_or_mask(pyspcm.SPC_TMASK_EXT0)
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
-    
+
         # setup software buffer
-        sizeof32bit=4
+        sizeof32bit = 4
         buffer_size = ct.c_int32 * memsize
         data_buffer = (buffer_size)()
         data_pointer = ct.cast(data_buffer, ct.c_void_p)
-    
+
         # data acquisition
         self._def_transfer64bit(
             pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, sizeof32bit * memsize)
         self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
                              pyspcm.M2CMD_DATA_WAITDMA)
-    
+
         # convert buffer to numpy array
         data = ct.cast(data_pointer, ct.POINTER(buffer_size))
-        output = np.frombuffer(data.contents, dtype=ct.c_int32)/nr_averages
-    
+        output = np.frombuffer(data.contents, dtype=ct.c_int32) / nr_averages
+        self._debug = output
+
         self._stop_acquisition()
-    
+
         voltages = self.convert_to_voltage(output, mV_range / 1000)
-    
-        return voltages, output
-        
+
+        return voltages
+
     def close(self):
         """Close handle to the card."""
         if self.hCard is not None:
