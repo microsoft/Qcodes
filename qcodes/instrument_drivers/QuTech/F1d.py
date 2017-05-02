@@ -1,12 +1,25 @@
 from qcodes import Instrument
 from qcodes.utils.validators import Enum
 
-from spirack import F1d_module
+try:
+    from spirack import F1d_module
+except ImportError:
+    raise ImportError(('The F1d_module class could not be found. '
+                       'Try installing it using pip install spirack'))
 
 
 class F1d(Instrument):
     """
     Qcodes driver for the F1d IQ-Mixer SPI-rack module.
+
+    Args:
+        name (str): name of the instrument.
+
+        spi_rack (SPI_rack): instance of the SPI_rack class as defined in
+            the spirack package. This class manages communication with the
+            individual modules.
+
+        module (int): module number as set on the hardware.
     """
     def __init__(self, name, spi_rack, module, **kwargs):
         super().__init__(name, **kwargs)
