@@ -4,57 +4,66 @@ from qcodes.instrument_drivers.oxford.triton import Triton
 from aiohttp.hdrs import METH_POST
 from qcodes.instrument_drivers.oxford.mock_triton import MockTriton
 
-async def handle(request):
-    parametername = request.match_info.get('parametername', None)
-    query = request.query
-    valid_attributes = ('value', 'unit', 'name', 'label')
-    if parametername in triton.parameters:
-        parameter = getattr(triton, parametername)
-        if request.method == METH_POST:
-            data = await request.json()
-            parameter.set(data['setpoint'])
-            return web.Response(text='OK')
-        attribute = query.get('attribute', None)
-        if attribute in valid_attributes:
-            if attribute == 'value':
-                data = parameter()
-            else:
-                data = getattr(parameter, attribute)
+class FridgeHttpServer:
 
-            return web.Response(text=str(data))
-        elif attribute == None:
-            return web.Response(status=404, text="Usage ip/parameter?attribute=attributes i.e. "
-                                                 "ip/T1/attribute=value. "
-                                                 "Valid attributes are {}".format(valid_attributes))
+    def __init__(self, name='triton', tritonaddress='http://localhost', use_mock_triton=True):
+        if use_mock_triton:
+            self.triton = MockTriton()
         else:
-            return web.Response(status=404, text="Parameter {} does not have attribute {}".format(parameter, attribute))
-    else:
-        return web.Response(status=404, text="Parameter {} not found".format(parametername))
+            self.triton = Triton(name=name, address=tritonaddress)
 
-async def index(request):
-    return web.Response(text="Usage ip/parameter?attribute=value i.e. ip/T1/attribute=value")
+    async def handle(self, request):
+        parametername = request.match_info.get('parametername', None)
+        query = request.query
+        valid_attributes = ('value', 'unit', 'name', 'label')
+        if parametername in self.triton.parameters:
+            parameter = getattr(self.triton, parametername)
+            if request.method == METH_POST:
+                data = await request.json()
+                parameter.set(data['setpoint'])
+                return web.Response(text='OK')
+            attribute = query.get('attribute', None)
+            if attribute in valid_attributes:
+                if attribute == 'value':
+                    data = parameter()
+                else:
+                    data = getattr(parameter, attribute)
 
+                return web.Response(text=str(data))
+            elif attribute == None:
+                return web.Response(status=404, text="Usage ip/parameter?attribute=attributes i.e. "
+                                                     "ip/T1/attribute=value. "
+                                                     "Valid attributes are {}".format(valid_attributes))
+            else:
+                return web.Response(status=404, text="Parameter {} does not have attribute {}".format(parameter, attribute))
+        else:
+            return web.Response(status=404, text="Parameter {} not found".format(parametername))
+
+    async def index(self, request):
+        return web.Response(text="Usage ip/parameter?attribute=value i.e. ip/T1/attribute=value")
+
+
+    def run_app(self, loop):
+        app = web.Application()
+        app.router.add_get('/', self.index)
+        parameter_regex = ""
+        for parameter in self.triton.parameters:
+            parameter_regex += parameter
+            parameter_regex += "|"
+
+        parameter_regex = parameter_regex[0:-1]
+        app.router.add_get('/{{parametername:{}}}'.format(parameter_regex), self.handle)
+        app.router.add_post('/{{parametername:{}}}'.format(parameter_regex), self.handle)
+        return app
 
 def create_app(loop):
-    global triton
-    app = web.Application()
-    app.router.add_get('/', index)
-    #app.router.add_get('/{parameter}', handle_get)
-    #app.router.add_post('/{parameter}', handle_post)
-
-    #triton = Triton(name = 'Triton 10', address='172.20.2.203', port=33576, tmpfile='t10-thermometry.reg')
-    triton = MockTriton()
-    parameter_regex = ""
-    for parameter in triton.parameters:
-        parameter_regex += parameter
-        parameter_regex += "|"
-
-    parameter_regex = parameter_regex[0:-1]
-    app.router.add_get('/{{parametername:{}}}'.format(parameter_regex), handle)
-    app.router.add_post('/{{parametername:{}}}'.format(parameter_regex), handle)
+    fridgehttpserver = FridgeHttpServer()
+    app = fridgehttpserver.run_app(loop)
     return app
+
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
-    app = create_app(loop)
+    fridgehttpserver = FridgeHttpServer()
+    app = fridgehttpserver.run_app(loop)
     web.run_app(app, port=8000)
