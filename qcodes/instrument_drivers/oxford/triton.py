@@ -136,8 +136,7 @@ class Triton(IPInstrument):
 
     def _set_control_channel(self, channel):
         self._control_channel = channel
-        self.write('SET:DEV:T%s:TEMP:LOOP:HTR:H1' %
-                   self._get_control_channel())
+        self.write('SET:DEV:T{}:TEMP:LOOP:HTR:H1'.format(channel))
 
     def _get_control_param(self, param):
         chan = self._get_control_channel()
