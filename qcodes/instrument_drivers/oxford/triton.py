@@ -5,7 +5,7 @@ import logging
 from traceback import format_exc
 
 from qcodes import IPInstrument
-from qcodes.utils.validators import Enum
+from qcodes.utils.validators import Enum, Ints
 
 
 class Triton(IPInstrument):
@@ -53,7 +53,8 @@ class Triton(IPInstrument):
         self.add_parameter(name='pid_control_channel',
                            label='PID control channel',
                            get_cmd=self._get_control_channel,
-                           set_cmd=self._set_control_channel)
+                           set_cmd=self._set_control_channel,
+                           vals=Ints(1,16))
 
         self.add_parameter(name='pid_mode',
                            label='PID Mode',
