@@ -2,7 +2,7 @@ import asyncio
 from aiohttp import web
 from qcodes.instrument_drivers.oxford.triton import Triton
 from aiohttp.hdrs import METH_POST
-from mock_triton import MockTriton
+from qcodes.instrument_drivers.oxford.mock_triton import MockTriton
 
 async def handle(request):
     parametername = request.match_info.get('parametername', None)
@@ -22,8 +22,11 @@ async def handle(request):
                 data = getattr(parameter, attribute)
 
             return web.Response(text=str(data))
+        elif attribute == None:
+            return web.Response(status=404, text="Usage ip/parameter?attribute=attributes i.e. "
+                                                 "ip/T1/attribute=value. "
+                                                 "Valid attributes are {}".format(valid_attributes))
         else:
-            # TODO proper 404
             return web.Response(status=404, text="Parameter {} does not have attribute {}".format(parameter, attribute))
     else:
         return web.Response(status=404, text="Parameter {} not found".format(parametername))
