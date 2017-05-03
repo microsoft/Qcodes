@@ -64,7 +64,7 @@ class FridgeHttpServer:
         for parameter in self.triton.parameters:
             parameter_regex += parameter
             parameter_regex += "|"
-            if parameter.has_set:
+            if getattr(self.triton, parameter).has_set:
                 settable_parameter_regex += parameter
                 settable_parameter_regex += '|'
         parameter_regex = parameter_regex[0:-1]
