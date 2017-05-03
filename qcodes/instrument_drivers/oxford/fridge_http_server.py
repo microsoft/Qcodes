@@ -59,7 +59,7 @@ class FridgeHttpServer:
         """
         Handle websocket requests to serve the qcodes monitor
         """
-        ws = web.WebSocketResponse()
+        ws = web.WebSocketResponse(autoping=False)
         await ws.prepare(request)
         i = 0
         while True:
@@ -72,12 +72,19 @@ class FridgeHttpServer:
             # https://vorpus.org/blog/some-thoughts-on-asynchronous-api-design-in-a-post-asyncawait-world/#websocket-servers
             # We could try hacking in use of the pypi websockets packages which seems to be much more sane.
             # and what is used in the monitor. Such as https://gist.github.com/amirouche/a5da3cf6f0f11eaeb976
-            
+
+            # trying to solve this by sending a ping pong from the client
+            # which we can await. However due to the 'design' of aiohttp we cant await a
+            # ping with receive without either disabling autoping (as above) and sent the pong
+            # manually or send a different message afterwards
             meta = self.prepare_monitor_data(self.triton)
+            i += 1
             await ws.send_json(meta)
             await asyncio.sleep(1)
-
-            await ws.drain()
+            print("awaing ping")
+            msg = await ws.receive()
+            ws.pong(msg.data)
+            print("sent pong")
         return ws
 
     def prepare_monitor_data(self, triton) -> Dict[str, Union[list, float]]:
