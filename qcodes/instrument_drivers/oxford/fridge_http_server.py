@@ -1,6 +1,10 @@
 import asyncio
 from aiohttp import web
 from aiohttp.hdrs import METH_POST
+import aiohttp
+import time
+import json
+from typing import Dict, Union
 
 from qcodes.instrument_drivers.oxford.triton import Triton
 from qcodes.instrument_drivers.oxford.mock_triton import MockTriton
@@ -51,6 +55,66 @@ class FridgeHttpServer:
         host =  socket.gethostname()
         return web.Response(text=host)
 
+    async def handle_monitor(self, request):
+        """
+        Handle websocket requests to serve the qcodes monitor
+        """
+        ws = web.WebSocketResponse()
+        await ws.prepare(request)
+        i = 0
+        while True:
+            # Idealy we would only send a message if the last one has been received. However,
+            # with the aiohttp api there is no good way of detecting
+            # that the client goes offline. await send_json only awaits coping to buffer,
+            # so we can have hundreds of buffered messages. Drain only ensures that the buffer
+            # is below some (non configurable) high level mark.
+            # See blog post below for more details.
+            # https://vorpus.org/blog/some-thoughts-on-asynchronous-api-design-in-a-post-asyncawait-world/#websocket-servers
+            # We could try hacking in use of the pypi websockets packages which seems to be much more sane.
+            # and what is used in the monitor. Such as https://gist.github.com/amirouche/a5da3cf6f0f11eaeb976
+            
+            meta = self.prepare_monitor_data(self.triton)
+            await ws.send_json(meta)
+            await asyncio.sleep(1)
+
+            await ws.drain()
+        return ws
+
+    def prepare_monitor_data(self, triton) -> Dict[str, Union[list, float]]:
+        """
+        Return a dict that contains the parameter from the Triton to be monitored.
+        """
+
+        def get_data(triton, parametername):
+            parameter = getattr(triton, parametername)
+            parameter.get()
+            temp = parameter._latest()
+            temp['unit'] = parameter.unit
+            # replace with reading directly from reg database once running on fridge computer
+            namedict = triton.chan_temp_names.get(parametername, None)
+            if namedict:
+                fullname = namedict['name']
+            else:
+                fullname = None
+            temp['name'] = fullname or parameter.label or parameter.name
+            temp['value'] = str(temp['value'])
+            if temp["ts"] is not None:
+                temp["ts"] = time.mktime(temp["ts"].timetuple())
+
+            return temp
+
+        triton_parameters = []
+        for parametername in triton.parameters:
+            temp = get_data(triton, parametername)
+            triton_parameters.append(temp)
+
+        triton_parameters.append(get_data(triton, 'action'))
+        triton_parameters.append(get_data(triton, 'status'))
+
+        parameters_dict = {"instrument": triton.name, "parameters": triton_parameters}
+        state = {"ts": time.time(), "parameters": [parameters_dict]}
+
+        return state
 
     def run_app(self, loop):
         app = web.Application()
@@ -77,8 +141,8 @@ class FridgeHttpServer:
         app.router.add_post('/{{parametername:{}}}'.format(settable_parameter_regex), self.handle_parameter)
         app.router.add_get('/', self.index)
         app.router.add_get('/hostname', self.handle_hostname)
+        app.router.add_route('*', '/monitor', self.handle_monitor)
         return app
-
 
 def create_app(loop):
     fridgehttpserver = FridgeHttpServer()
@@ -90,4 +154,4 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     fridgehttpserver = FridgeHttpServer()
     app = fridgehttpserver.run_app(loop)
-    web.run_app(app, port=8000)
+    web.run_app(app, port=5678)
