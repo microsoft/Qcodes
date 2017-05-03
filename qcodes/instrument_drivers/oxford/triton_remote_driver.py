@@ -17,14 +17,8 @@ class RemoteTriton(Instrument):
         port: port to communicate with Triton proxy server over. In general different from the Triton port
 
     """
-    def __init__(self, name, address, port, timeout=5,
-                 terminator='\n', persistent=True, write_confirmation=True,
-                 **kwargs):
-        self._address = address
-        self._port = port
-        self._timeout = timeout
-        self._terminator = terminator
-        self._confirmation = write_confirmation
+    def __init__(self, name, address='http://localhost', port=8000, **kwargs):
+        self._ipaddress = "{}:{}".format(address, port)
         self._session = requests.Session()
         super().__init__(name, **kwargs)
 
@@ -116,19 +110,19 @@ class RemoteTriton(Instrument):
 
 
     def ask_raw(self, cmd):
-        response = self._session.get('http://localhost:8000/{}'.format(cmd))
+        response = self._session.get('{}/{}'.format(self._ipaddress, cmd))
         if response.status_code != requests.codes.ok:
             raise ValueError("Could not get value with command {}".format(cmd))
         return response.text
 
     def write_raw(self, cmd):
-        response = self._session.get('http://localhost:8000/{}'.format(cmd))
+        response = self._session.get('{}/{}'.format(self._ipaddress, cmd))
         if response.status_code != requests.codes.ok:
             raise ValueError("Could not get value with command {}".format(cmd))
 
     def set_with_post(self, parameter, value):
         data = {"setpoint": value}
-        response = self._session.post('http://localhost:8000/{}'.format(parameter), json=data)
+        response = self._session.post('{}/{}'.format(self._ipaddress, parameter), json=data)
         if response.status_code == 405:
             raise ValueError("Could not set {} to {}, Is value valid?".format(parameter, value))
         elif response.status_code != requests.codes.ok:
