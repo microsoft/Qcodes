@@ -582,12 +582,15 @@ class M4i(Instrument):
             channels (list): list of channels to setup
             mV_range, input_path, termination, coupling, compensation: passed to the 					set_channel_settings function
         """
+        allchannels = 0
         if channels is None:
             channels = range(4)
         for ch in channels:
             self.set_channel_settings(ch, mV_range, input_path=input_path,
                                       termination=termination, coupling=coupling, compensation=compensation)
-            self.enable_channels(getattr(pyspcm, 'CHANNEL%d' % ch))
+            allchannels = allchannels + getattr(pyspcm, 'CHANNEL%d' % ch)
+            
+        self.enable_channels(allchannels)
 
     def _read_channel(self, channel, memsize=2**11):
         """ Helper function to read out a channel
@@ -656,18 +659,19 @@ class M4i(Instrument):
         self.data_memory_size(memsize)
         self.segment_size(seg_size)
         self.posttrigger_memory_size(posttrigger_size)
+        numch = bin(self.enable_channels()).count("1")
 
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
         # setup software buffer
-        buffer_size = ct.c_int16 * memsize
+        buffer_size = ct.c_int16 * memsize * numch
         data_buffer = (buffer_size)()
         data_pointer = ct.cast(data_buffer, ct.c_void_p)
 
         # data acquisition
         self._def_transfer64bit(
-            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize)
+            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
         self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
                              pyspcm.M2CMD_DATA_WAITDMA)
 
@@ -688,18 +692,19 @@ class M4i(Instrument):
         # set memsize and posttrigger
         self.data_memory_size(memsize)
         self.posttrigger_memory_size(posttrigger_size)
+        numch = bin(self.enable_channels()).count("1")
 
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
         # setup software buffer
-        buffer_size = ct.c_int16 * memsize
+        buffer_size = ct.c_int16 * memsize * numch
         data_buffer = (buffer_size)()
         data_pointer = ct.cast(data_buffer, ct.c_void_p)
 
         # data acquisition
         self._def_transfer64bit(
-            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize)
+            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
         self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
                              pyspcm.M2CMD_DATA_WAITDMA)
 
@@ -725,18 +730,19 @@ class M4i(Instrument):
         self.data_memory_size(memsize)
         self.pretrigger_memory_size(pretrigger_size)
         self.posttrigger_memory_size(posttrigger_size)
+        numch = bin(self.enable_channels()).count("1")
 
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
         # setup software buffer
-        buffer_size = ct.c_int16 * memsize
+        buffer_size = ct.c_int16 * memsize * numch
         data_buffer = (buffer_size)()
         data_pointer = ct.cast(data_buffer, ct.c_void_p)
 
         # data acquisition
         self._def_transfer64bit(
-            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize)
+            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
         self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
                              pyspcm.M2CMD_DATA_WAITDMA)
 
@@ -764,6 +770,7 @@ class M4i(Instrument):
 
         self.data_memory_size(memsize)
         self.posttrigger_memory_size(posttrigger_size)
+        numch = bin(self.enable_channels()).count("1")
 
         # start/enable trigger/wait ready
         self.trigger_or_mask(pyspcm.SPC_TMASK_SOFTWARE)  # software trigger
@@ -771,13 +778,13 @@ class M4i(Instrument):
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
         # setup software buffer
-        buffer_size = ct.c_int16 * memsize
+        buffer_size = ct.c_int16 * memsize * numch
         data_buffer = (buffer_size)()
         data_pointer = ct.cast(data_buffer, ct.c_void_p)
 
         # data acquisition
         self._def_transfer64bit(
-            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize)
+            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
         self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
                              pyspcm.M2CMD_DATA_WAITDMA)
 
@@ -808,7 +815,8 @@ class M4i(Instrument):
         memsize = self.data_memory_size()
         self.segment_size(memsize)
         self._set_param32bit(pyspcm.SPC_AVERAGES, nr_averages)
-
+        numch = bin(self.enable_channels()).count("1")
+            
         if verbose:
             print('blockavg_hardware_trigger_acquisition: errors %s' %
                   (self.get_error_info32bit(), ))
@@ -821,14 +829,14 @@ class M4i(Instrument):
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
         # setup software buffer
-        sizeof32bit = 4
-        buffer_size = ct.c_int32 * memsize
+        sizeof32bit=4
+        buffer_size = ct.c_int32 * memsize * numch
         data_buffer = (buffer_size)()
         data_pointer = ct.cast(data_buffer, ct.c_void_p)
 
         # data acquisition
         self._def_transfer64bit(
-            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, sizeof32bit * memsize)
+            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, sizeof32bit * memsize * numch)
         self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
                              pyspcm.M2CMD_DATA_WAITDMA)
 
