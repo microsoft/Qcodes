@@ -13,7 +13,7 @@ class Triton(IPInstrument):
     Triton Driver
 
     Args:
-        local_triton bool: Is the Triton software running on the same computer as the driver? 
+        local_triton bool: Is the Triton software running on the same computer as the driver?
                            In this case channel names can be read directly from the windows registry database
         tmpfile: Optional: an exported windows registry file from the registry
             path:
