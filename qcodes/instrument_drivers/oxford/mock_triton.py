@@ -47,6 +47,7 @@ class MockTriton(Instrument):
     def __init__(self, name='dummy', **kwargs):
 
         super().__init__(name, **kwargs)
+        self.chan_temp_names = {}
         self._heater_range_curr = [0.316, 1, 3.16, 10, 31.6, 100]
         temperatures = ['T' + str(i) for i in range(1, 17)]
         pressures = ['P' + str(i) for i in range(1, 7)]
