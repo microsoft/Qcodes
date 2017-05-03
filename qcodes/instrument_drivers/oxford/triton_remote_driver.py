@@ -1,5 +1,6 @@
 from functools import partial
 import requests
+import json
 
 from qcodes.utils.validators import Enum, Ints
 from qcodes.instrument.base import Instrument
@@ -103,6 +104,12 @@ class RemoteTriton(Instrument):
                                unit="K",
                                get_parser=float,
                                get_cmd='{}?attribute=value'.format(temperature))
+
+    def get_idn(self):
+        IDN = self.ask_raw("IDN?attribute=value")
+        IDNjson = IDN.replace("'", "\"").replace("None", "null")
+        data = json.loads(IDNjson)
+        return data
 
     def close(self):
         self._session.close()
