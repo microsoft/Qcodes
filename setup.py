@@ -27,7 +27,8 @@ def readme():
 extras = {
     'MatPlot': ('matplotlib', '1.5'),
     'QtPlot': ('pyqtgraph', '0.10.0'),
-    'coverage tests': ('coverage', '4.0')
+    'coverage tests': ('coverage', '4.0'),
+    'triton_server': ('aiohttp', '2.0.7')
 }
 extras_require = {k: '>='.join(v) for k, v in extras.items()}
 
