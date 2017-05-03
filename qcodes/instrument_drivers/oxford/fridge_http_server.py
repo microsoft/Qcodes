@@ -14,7 +14,7 @@ class FridgeHttpServer:
         else:
             self.triton = Triton(name=name, address=tritonaddress)
 
-    async def handle(self, request):
+    async def handle_parameter(self, request):
         parametername = request.match_info.get('parametername', None)
         query = request.query
         valid_attributes = ('value', 'unit', 'name', 'label')
@@ -56,15 +56,24 @@ class FridgeHttpServer:
     def run_app(self, loop):
         app = web.Application()
         app.router.add_get('/', self.index)
+
+        # construct a regex matching all parameters that the
+        # triton driver exposes.
         parameter_regex = ""
         for parameter in self.triton.parameters:
             parameter_regex += parameter
             parameter_regex += "|"
 
         parameter_regex = parameter_regex[0:-1]
-        app.router.add_get('/{{parametername:{}}}'.format(parameter_regex), self.handle)
+
+        # route all parameters to handle_parameter.
+        # The slightly cryptic syntax below means {{parametername:paramregex}}.
+        # means route all matching the paramregex and make the parameter known
+        # to the handler as parametername. {{ is needed for literal { in format strings
+        app.router.add_get('/{{parametername:{}}}'.format(parameter_regex), self.handle_parameter)
+        app.router.add_post('/{{parametername:{}}}'.format(parameter_regex), self.handle_parameter)
+        app.router.add_get('/', self.index)
         app.router.add_get('/hostname', self.handle_hostname)
-        app.router.add_post('/{{parametername:{}}}'.format(parameter_regex), self.handle)
         return app
 
 
