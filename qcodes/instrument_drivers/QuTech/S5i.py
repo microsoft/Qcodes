@@ -32,14 +32,13 @@ class S5i(Instrument):
                            set_cmd=self.s5i.use_external_reference,
                            vals=Bool())
 
-        self.add_parameter('stepsize',
-                           label='Stepsize',
+        self.add_parameter('frequency_stepsize',
+                           label='Frequency stepsize',
                            get_cmd=self._get_stepsize,
                            set_cmd=self.s5i.set_stepsize,
                            units='Hz',
                            vals=Numbers())
 
-        # TODO create 2 functions and 1 get parameter?
         self.add_parameter('frequency',
                            label='Frequency',
                            get_cmd=self._get_rf_frequency,
@@ -47,12 +46,7 @@ class S5i(Instrument):
                            units='Hz',
                            vals=Numbers())
 
-        self.add_parameter('frequency_optimal',
-                           label='Frequency',
-                           get_cmd=self._get_rf_frequency,
-                           set_cmd=self.s5i.set_frequency,
-                           units='Hz',
-                           vals=Numbers())
+        self.add_function('optimize_for_frequency', call_cmd=self._optimize)
 
     def _use_external_reference(self):
         return self.s5i.use_external
@@ -61,4 +55,7 @@ class S5i(Instrument):
         return self.s5i.stepsize
 
     def _get_rf_frequency(self):
-        return self.s5i.rfFrequency
+        return self.s5i.rf_frequency
+
+    def _optimize(self):
+        self.s5i.set_frequency_optimally(self.s5i.rf_frequency)
