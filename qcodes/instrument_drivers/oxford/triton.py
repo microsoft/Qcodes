@@ -126,12 +126,19 @@ class Triton(IPInstrument):
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
-    def _get_control_channel(self, force_get=True):
-        if force_get or (not self._control_channel):
-            for i in range(1,17):
-                tempval = self.ask('READ:DEV:T%s:TEMP:LOOP:MODE' % (i))
-                if not tempval.endswith('NOT_FOUND'):
-                    self._control_channel = i
+    def _get_control_channel(self):
+
+        # verify current channel
+        if self._control_channel:
+            tempval = self.ask('READ:DEV:T{}:TEMP:LOOP:MODE'.format(self._control_channel))
+            if not tempval.endswith('NOT_FOUND'):
+                return self._control_channel
+
+        # either _control_channel is not set or wrong
+        for i in range(1,17):
+            tempval = self.ask('READ:DEV:T{}:TEMP:LOOP:MODE'.format(i))
+            if not tempval.endswith('NOT_FOUND'):
+                self._control_channel = i
 
         return self._control_channel
 
