@@ -1,7 +1,8 @@
 import asyncio
 from aiohttp import web
-from qcodes.instrument_drivers.oxford.triton import Triton
 from aiohttp.hdrs import METH_POST
+
+from qcodes.instrument_drivers.oxford.triton import Triton
 from qcodes.instrument_drivers.oxford.mock_triton import MockTriton
 
 class FridgeHttpServer:
