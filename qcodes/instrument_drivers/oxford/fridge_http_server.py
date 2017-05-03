@@ -60,18 +60,22 @@ class FridgeHttpServer:
         # construct a regex matching all parameters that the
         # triton driver exposes.
         parameter_regex = ""
+        settable_parameter_regex = ""
         for parameter in self.triton.parameters:
             parameter_regex += parameter
             parameter_regex += "|"
-
+            if parameter.has_set:
+                settable_parameter_regex += parameter
+                settable_parameter_regex += '|'
         parameter_regex = parameter_regex[0:-1]
+        settable_parameter_regex = parameter_regex[0:-1]
 
         # route all parameters to handle_parameter.
         # The slightly cryptic syntax below means {{parametername:paramregex}}.
         # means route all matching the paramregex and make the parameter known
         # to the handler as parametername. {{ is needed for literal { in format strings
         app.router.add_get('/{{parametername:{}}}'.format(parameter_regex), self.handle_parameter)
-        app.router.add_post('/{{parametername:{}}}'.format(parameter_regex), self.handle_parameter)
+        app.router.add_post('/{{parametername:{}}}'.format(settable_parameter_regex), self.handle_parameter)
         app.router.add_get('/', self.index)
         app.router.add_get('/hostname', self.handle_hostname)
         return app
