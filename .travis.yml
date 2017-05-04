@@ -37,8 +37,14 @@ script:
 
 after_success:
     # install dependencies for docs build
-    - pip install -r docs_requirements.txt
+    - pip install -r ../docs_requirements.txt
     - python-codacy-coverage -r coverage.xml
     - cd ..
     # build the docs
-    - make -f docs/Makefile gh-pages
+    - |
+      if [[ $TRAVIS_REPO_SLUG == "qcodes/qcodes" && $TRAVIS_BRANCH == 'master' ]]; then
+        make -f docs/Makefile gh-pages
+      else
+        cd docs
+        make html-api
+      fi
