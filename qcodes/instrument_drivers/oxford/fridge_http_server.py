@@ -1,9 +1,8 @@
 import asyncio
 from aiohttp import web
 from aiohttp.hdrs import METH_POST
-import aiohttp
+import socket
 import time
-import json
 from typing import Dict, Union
 
 from qcodes.instrument_drivers.oxford.triton import Triton
@@ -51,7 +50,6 @@ class FridgeHttpServer:
         return web.Response(text="Usage ip/parameter?attribute=value i.e. ip/T1/attribute=value")
 
     async def handle_hostname(self, request):
-        import socket
         host =  socket.gethostname()
         return web.Response(text=host)
 
@@ -78,6 +76,44 @@ class FridgeHttpServer:
             # ping with receive without either disabling autoping (as above) and sent the pong
             # manually or send a different message afterwards
             meta = self.prepare_monitor_data(self.triton)
+
+            await ws.send_json(meta)
+            msg = await ws.receive()
+            if ws.closed:
+                # send will happy send on a closed socket, receive should abort if the socket is closed
+                # or with a timeout
+                # but pong tries to send will raise a typeerror as the message is empty
+                # if the receive failed so check if the socket is closed before trying to send
+                # It still seems likely that this can fail if the client goes offline at the wrong point
+                # but hard to do better with the current limited api.
+                break
+            ws.pong(msg.data)
+            await asyncio.sleep(1)
+        return ws
+
+    async def handle_ws(self, request):
+        """
+        Handle websocket requests to serve the qcodes monitor
+        """
+        ws = web.WebSocketResponse(autoping=False, receive_timeout=10.0)
+        await ws.prepare(request)
+        i = 0
+        while True:
+            # Idealy we would only send a message if the last one has been received. However,
+            # with the aiohttp api there is no good way of detecting
+            # that the client goes offline. await send_json only awaits coping to buffer,
+            # so we can have hundreds of buffered messages. Drain only ensures that the buffer
+            # is below some (non configurable) high level mark.
+            # See blog post below for more details.
+            # https://vorpus.org/blog/some-thoughts-on-asynchronous-api-design-in-a-post-asyncawait-world/#websocket-servers
+            # We could try hacking in use of the pypi websockets packages which seems to be much more sane.
+            # and what is used in the monitor. Such as https://gist.github.com/amirouche/a5da3cf6f0f11eaeb976
+
+            # trying to solve this by sending a ping pong from the client
+            # which we can await. However due to the 'design' of aiohttp we cant await a
+            # ping with receive without either disabling autoping (as above) and sent the pong
+            # manually or send a different message afterwards
+            meta = self.prepare_ws_data(self.triton)
 
             await ws.send_json(meta)
             msg = await ws.receive()
@@ -130,6 +166,26 @@ class FridgeHttpServer:
 
         return state
 
+    @staticmethod
+    def prepare_ws_data(triton) -> Dict[str, Union[list, float]]:
+        """
+        Return a dict that contains the parameter from the Triton to be exported via WS
+        """
+
+        triton_parameters = []
+        for parametername in triton.parameters:
+            parameter = getattr(triton, parametername)
+            temp = {}
+            temp['value'] = parameter.get()
+            temp['name'] = parameter.name
+            temp['label'] = parameter.label
+            temp['unit'] = parameter.unit
+            triton_parameters.append(temp)
+        hostname = socket.gethostname()
+        state = {"ts": time.time(), "parameters": triton_parameters, 'hostname': hostname}
+
+        return state
+
     def run_app(self, loop):
         app = web.Application()
         app.router.add_get('/', self.index)
@@ -156,6 +212,7 @@ class FridgeHttpServer:
         app.router.add_get('/', self.index)
         app.router.add_get('/hostname', self.handle_hostname)
         app.router.add_route('*', '/monitor', self.handle_monitor)
+        app.router.add_route('*', '/ws', self.handle_ws)
         return app
 
 def create_app(loop):
