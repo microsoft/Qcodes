@@ -139,6 +139,7 @@ class Triton(IPInstrument):
             tempval = self.ask('READ:DEV:T{}:TEMP:LOOP:MODE'.format(i))
             if not tempval.endswith('NOT_FOUND'):
                 self._control_channel = i
+                break
 
         return self._control_channel
 
