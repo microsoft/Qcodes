@@ -59,7 +59,7 @@ class FridgeHttpServer:
         """
         Handle websocket requests to serve the qcodes monitor
         """
-        ws = web.WebSocketResponse(autoping=False)
+        ws = web.WebSocketResponse(autoping=False, receive_timeout=10.0)
         await ws.prepare(request)
         i = 0
         while True:
@@ -78,16 +78,23 @@ class FridgeHttpServer:
             # ping with receive without either disabling autoping (as above) and sent the pong
             # manually or send a different message afterwards
             meta = self.prepare_monitor_data(self.triton)
-            i += 1
+
             await ws.send_json(meta)
-            await asyncio.sleep(1)
-            print("awaing ping")
             msg = await ws.receive()
+            if ws.closed:
+                # send will happy send on a closed socket, receive should abort if the socket is closed
+                # or with a timeout
+                # but pong tries to send will raise a typeerror as the message is empty
+                # if the receive failed so check if the socket is closed before trying to send
+                # It still seems likely that this can fail if the client goes offline at the wrong point
+                # but hard to do better with the current limited api.
+                break
             ws.pong(msg.data)
-            print("sent pong")
+            await asyncio.sleep(1)
         return ws
 
-    def prepare_monitor_data(self, triton) -> Dict[str, Union[list, float]]:
+    @staticmethod
+    def prepare_monitor_data(triton) -> Dict[str, Union[list, float]]:
         """
         Return a dict that contains the parameter from the Triton to be monitored.
         """
