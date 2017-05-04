@@ -4,7 +4,7 @@ import numpy as np
 
 from qcodes.utils.validators import (Validator, Anything, Bool, Strings,
                                      Numbers, Ints, Enum, MultiType,
-                                     Arrays, Multiples)
+                                     Arrays, Multiples, Lists)
 
 
 class AClass:
@@ -480,3 +480,24 @@ class TestArrays(TestCase):
         m.validate(v)
         v = np.array([[2, 0], [1, 2]])
         m.validate(v)
+
+class TestLists(TestCase):
+    def test_type(self):
+        l = Lists()
+        v1 = ['a', 'b', 5]
+        l.validate(v1)
+
+        v2 = 234
+        with self.assertRaises(TypeError):
+            l.validate(v2)
+
+    def test_elt_vals(self):
+        l = Lists(Ints(max_value=10))
+        v1 = [0, 1, 5]
+        l.validate(v1)
+
+        v2 = [0, 1, 11]
+        with self.assertRaises(ValueError):
+            l.validate(v2)
+
+
