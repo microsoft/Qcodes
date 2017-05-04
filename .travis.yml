@@ -42,7 +42,7 @@ after_success:
     - cd ..
     # build the docs
     - |
-      if [[ $TRAVIS_REPO_SLUG == "QCoDeS/Qcodes" && $TRAVIS_BRANCH == 'master' ]]; then
+      if [[ $TRAVIS_REPO_SLUG == "qcodes/qcodes" && $TRAVIS_BRANCH == "master" && $TRAVIS_PULL_REQUEST == "false" ]]; then
         make -f docs/Makefile gh-pages
       else
         cd docs
