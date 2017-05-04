@@ -2,7 +2,6 @@ import time
 import logging
 import numpy as np
 from functools import partial
-
 try:
     import zhinst.utils
 except ImportError:
@@ -290,6 +289,38 @@ class Scope(MultiParameter):
                       'AU Cartesian 2': 'arb. un',
                       'AU Polar 1': 'arb. un.',
                       'AU Polar 2': 'arb. un.',
+                      'Demod 1 X': 'V',
+                      'Demod 1 Y': 'V',
+                      'Demod 1 R': 'V',
+                      'Demod 1 Phase':  '°',
+                      'Demod 2 X': 'V',
+                      'Demod 2 Y': 'V',
+                      'Demod 2 R': 'V',
+                      'Demod 2 Phase': '°',
+                      'Demod 3 X': 'V',
+                      'Demod 3 Y': 'V',
+                      'Demod 3 R': 'V',
+                      'Demod 3 Phase': '°',
+                      'Demod 4 X': 'V',
+                      'Demod 4 Y': 'V',
+                      'Demod 4 R': 'V',
+                      'Demod 4 Phase': '°',
+                      'Demod 5 X': 'V',
+                      'Demod 5 Y': 'V',
+                      'Demod 5 R': 'V',
+                      'Demod 5 Phase': '°',
+                      'Demod 6 X': 'V',
+                      'Demod 6 Y': 'V',
+                      'Demod 6 R': 'V',
+                      'Demod 6 Phase': '°',
+                      'Demod 7 X': 'V',
+                      'Demod 7 Y': 'V',
+                      'Demod 7 R': 'V',
+                      'Demod 7 Phase': '°',
+                      'Demod 8 X': 'V',
+                      'Demod 8 Y': 'V',
+                      'Demod 8 R': 'V',
+                      'Demod 8 Phase': '°',
                       }
 
         #TODO: what are good names?
@@ -309,7 +340,40 @@ class Scope(MultiParameter):
                       'AU Cartesian 2': 'AU Cartesian 2',
                       'AU Polar 1': 'AU Polar 1',
                       'AU Polar 2': 'AU Polar 2',
+                      'Demod 1 X': 'Demodulator 1 X',
+                      'Demod 1 Y': 'Demodulator 1 Y',
+                      'Demod 1 R': 'Demodulator 1 R',
+                      'Demod 1 Phase':  'Demodulator 1 Phase',
+                      'Demod 2 X': 'Demodulator 2 X',
+                      'Demod 2 Y': 'Demodulator 2 Y',
+                      'Demod 2 R': 'Demodulator 2 R',
+                      'Demod 2 Phase': 'Demodulator 2 Phase',
+                      'Demod 3 X': 'Demodulator 3 X',
+                      'Demod 3 Y': 'Demodulator 3 Y',
+                      'Demod 3 R': 'Demodulator 3 R',
+                      'Demod 3 Phase': 'Demodulator 3 Phase',
+                      'Demod 4 X': 'Demodulator 4 X',
+                      'Demod 4 Y': 'Demodulator 4 Y',
+                      'Demod 4 R': 'Demodulator 4 R',
+                      'Demod 4 Phase': 'Demodulator 4 Phase',
+                      'Demod 5 X': 'Demodulator 5 X',
+                      'Demod 5 Y': 'Demodulator 5 Y',
+                      'Demod 5 R': 'Demodulator 5 R',
+                      'Demod 5 Phase': 'Demodulator 5 Phase',
+                      'Demod 6 X': 'Demodulator 6 X',
+                      'Demod 6 Y': 'Demodulator 6 Y',
+                      'Demod 6 R': 'Demodulator 6 R',
+                      'Demod 6 Phase': 'Demodulator 6 Phase',
+                      'Demod 7 X': 'Demodulator 7 X',
+                      'Demod 7 Y': 'Demodulator 7 Y',
+                      'Demod 7 R': 'Demodulator 7 R',
+                      'Demod 7 Phase': 'Demodulator 7 Phase',
+                      'Demod 8 X': 'Demodulator 8 X',
+                      'Demod 8 Y': 'Demodulator 8 Y',
+                      'Demod 8 R': 'Demodulator 8 R',
+                      'Demod 8 Phase': 'Demodulator 8 Phase',
                       }
+
         # Make the basic setpoints (the x-axis)
         duration = params['scope_duration'].get()
         delay = params['scope_trig_delay'].get()
@@ -392,8 +456,6 @@ class Scope(MultiParameter):
 
             scope = self._instrument.scope # There are issues reusing the scope.
             scope.set('scopeModule/clearhistory', 1)
-            # Subscribe to the relevant... publisher?
-            scope.subscribe('/{}/scopes/0/wave'.format(self._instrument.device))
 
             # Start the scope triggering/acquiring
             params['scope_runstop'].set('run') # set /dev/scopes/0/enable to 1
@@ -418,6 +480,8 @@ class Scope(MultiParameter):
             if not (timedout or zi_error):
                 log.info('[+] ZI scope acquisition completed OK')
                 rawdata = scope.read()
+                if 'error' in rawdata:
+                    zi_error = bool(rawdata['error'][0])
                 data = self._scopedataparser(rawdata, self._instrument.device,
                                              npts, segs, channels)
             else:
@@ -430,7 +494,6 @@ class Scope(MultiParameter):
 
             # cleanup and make ready for next scope acquisition
             scope.finish()
-            scope.unsubscribe('/{}/scopes/0/wave'.format(self._instrument.device))
             if error_counter >= num_retries:
                 log.warning('[+] ZI scope acquisition failed, maximum number'
                             'of retries performed. No data returned')
@@ -501,7 +564,7 @@ class ZIUHFLI(Instrument):
         self.sweeper = self.daq.sweep()
         self.sweeper.set('sweep/device', self.device)
         self.scope = self.daq.scopeModule()
-        
+        self.scope.subscribe('/{}/scopes/0/wave'.format(self.device))
         ########################################
         # INSTRUMENT PARAMETERS
 
@@ -1448,11 +1511,9 @@ class ZIUHFLI(Instrument):
             nonlocal value
             nonlocal number
             range_val = params['signal_output{}_range'.format(number+1)].get()
-            range_val = round(val, 3)
+            range_val = round(range_val, 3)
             amp_val = params['signal_output{}_amplitude'.format(number+1)].get()
             amp_val = round(amp_val, 3)
-            toget = params['signal_output{}_autorange'.format(number+1)]
-            autorange_val = toget.get()
             if -range_val< value+amp_val > range_val:
                 raise ValueError('Signal Output: Offset too high for '
                                  'chosen range.')
@@ -1941,6 +2002,7 @@ class ZIUHFLI(Instrument):
         """
         Override of the base class' close function
         """
+        self.scope.unsubscribe('/{}/scopes/0/wave'.format(self.device))
         self.scope.clear()
         self.sweeper.clear()
         self.daq.disconnect()

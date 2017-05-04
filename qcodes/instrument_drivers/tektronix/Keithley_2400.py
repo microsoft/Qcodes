@@ -101,7 +101,7 @@ class Keithley_2400(VisaInstrument):
 
             Cancels all pending commands.
 
-            Cancels all previously send '*OPC' and '*OPC?'
+            Cancels all previously send `*OPC` and `*OPC?`
         """
         self.write(':*RST')
 
