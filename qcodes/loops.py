@@ -579,7 +579,7 @@ class ActiveLoop(Metadatable):
             if hasattr(action, 'set_common_attrs'):
                 action.set_common_attrs(data_set, use_threads)
 
-    def get_data_set(self, *args, **kwargs):
+    def get_data_set(self, print_data_set=True, *args, **kwargs):
         """
         Return the data set for this loop.
 
@@ -591,6 +591,7 @@ class ActiveLoop(Metadatable):
         Args:
             data_manager: a DataManager instance (omit to use default,
                 False to store locally)
+            print_data_set (True): print data_set
 
         kwargs are passed along to data_set.new_data. The key ones are:
 
@@ -623,6 +624,9 @@ class ActiveLoop(Metadatable):
                     'You can only provide DataSet attributes, such as '
                     'data_manager, location, name, formatter, io, '
                     'write_period, when the DataSet is first created.')
+
+        if print_data_set:
+            print(self.data_set)
 
         return self.data_set
 
@@ -745,12 +749,10 @@ class ActiveLoop(Metadatable):
     def _run_wrapper(self, set_active=True, *args, **kwargs):
         # try:
         if set_active:
-            print('setting active')
             ActiveLoop.active_loop = self
         self._run_loop(*args, **kwargs)
         # finally:
         if set_active:
-            print('deactivating')
             ActiveLoop.active_loop = None
         if hasattr(self, 'data_set'):
             # TODO (giulioungaretti) WTF?
