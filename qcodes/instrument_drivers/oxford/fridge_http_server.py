@@ -10,7 +10,8 @@ from qcodes.instrument_drivers.oxford.mock_triton import MockTriton
 
 class FridgeHttpServer:
 
-    def __init__(self, name='triton', tritonaddress='http://localhost', use_mock_triton=True):
+    def __init__(self, name='triton', tritonaddress='http://localhost', use_mock_triton=True, websocket_wait_time=1):
+        self._websocket_wait_time = websocket_wait_time
         if use_mock_triton:
             self.triton = MockTriton()
         else:
@@ -84,7 +85,9 @@ class FridgeHttpServer:
             await ws.send_json(meta)
             await ws.drain()
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(self._websocket_wait_time)
+            if ws.closed():
+                break
         return ws
 
     async def handle_ws(self, request):
@@ -108,7 +111,9 @@ class FridgeHttpServer:
 
             await ws.send_json(meta)
             await ws.drain()
-            await asyncio.sleep(1)
+            await asyncio.sleep(self._websocket_wait_time)
+            if ws.closed():
+                break
         return ws
 
     @staticmethod
