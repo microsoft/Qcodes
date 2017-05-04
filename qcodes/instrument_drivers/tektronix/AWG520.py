@@ -48,7 +48,7 @@ class Tektronix_AWG520(VisaInstrument):
         '''
         Initializes the AWG520.
 
-        Input:
+        Args:
             name (string)    : name of the instrument
             address (string) : GPIB address (Note: 520 cannot be controlled
                                via ethernet)

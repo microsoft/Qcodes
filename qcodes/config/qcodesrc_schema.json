@@ -7,10 +7,10 @@
             "description": "controls core settings of qcodes",
             "type" : "object",
             "properties" : {
-                "legacy_mp": {
-                    "type" : "boolean",
-                    "description": "control legacy buggy multiprocess",
-                    "default": false
+                "default_fmt": {
+                    "type" : "string",
+                    "description": "default location formatter",
+                    "default": "data/{date}/#{counter}_{name}_{time}"
                 },
                 "loglevel" :{
                     "type" : "string",
@@ -25,7 +25,7 @@
                     ]
                 }
             },
-            "required":[ "legacy_mp", "loglevel" ]
+            "required":["loglevel" ]
         },
         "gui" : {
             "type" : "object",

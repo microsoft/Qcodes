@@ -3,8 +3,6 @@
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import make_unique, DelegateAttributes
 
-from qcodes.instrument.remote import RemoteInstrument
-from qcodes.instrument.remote import RemoteParameter
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.parameter import ManualParameter
@@ -86,13 +84,12 @@ class Station(Metadatable, DelegateAttributes):
         }
 
         for name, itm in self.components.items():
-            if isinstance(itm, (RemoteInstrument,
-                                Instrument)):
+            if isinstance(itm, (Instrument)):
                 snap['instruments'][name] = itm.snapshot(update=update)
             elif isinstance(itm, (Parameter,
                                   ManualParameter,
-                                  StandardParameter,
-                                  RemoteParameter)):
+                                  StandardParameter
+                                  )):
                 snap['parameters'][name] = itm.snapshot(update=update)
             else:
                 snap['components'][name] = itm.snapshot(update=update)

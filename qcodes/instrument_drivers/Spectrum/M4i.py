@@ -89,17 +89,17 @@ class M4i(Instrument):
                            docstring='The card ID')
         self.add_parameter('max_sample_rate',
                            label='max sample rate',
-                           units='Hz',
+                           unit='Hz',
                            get_cmd=self.get_max_sample_rate,
                            docstring='The maximumum sample rate')
         self.add_parameter('memory',
                            label='memory',
-                           units='bytes',
+                           unit='bytes',
                            get_cmd=self.get_card_memory,
                            docstring='Amount of memory on card')
         self.add_parameter('resolution',
                            label='resolution',
-                           units='bits',
+                           unit='bits',
                            get_cmd=partial(self._param32bit,
                                            pyspcm.SPC_MIINST_BITSPERSAMPLE),
                            docstring='Resolution of the card')
@@ -144,7 +144,7 @@ class M4i(Instrument):
                                            pyspcm.SPC_M2STATUS),
                            docstring='Return a bitmap for the status information')
         self.add_parameter('read_range_min_0',
-                           label='read range min 0', units='mV',
+                           label='read range min 0', unit='mV',
                            get_cmd=partial(self._param32bit,
                                            pyspcm.SPC_READRANGEMIN0),
                            docstring='Return the lower border of input range 0')
@@ -199,19 +199,19 @@ class M4i(Instrument):
                            docstring='bitmask showing all available trigger modes for external 0 (main analog trigger input)')
         self.add_parameter('external_trigger_min_level',
                            label='external trigger min level',
-                           units='mV',
+                           unit='mV',
                            get_cmd=partial(self._param32bit,
                                            pyspcm.SPC_TRIG_EXT_AVAIL0_MIN),
                            docstring='returns the minimum trigger level')
         self.add_parameter('external_trigger_max_level',
                            label='external trigger max level',
-                           units='mV',
+                           unit='mV',
                            get_cmd=partial(self._param32bit,
                                            pyspcm.SPC_TRIG_EXT_AVAIL0_MAX),
                            docstring='returns the maximum trigger level')
         self.add_parameter('external_trigger_level_step_size',
                            label='external trigger level step size',
-                           units='mV',
+                           unit='mV',
                            get_cmd=partial(self._param32bit,
                                            pyspcm.SPC_TRIG_EXT_AVAIL0_STEP),
                            docstring='returns the step size of the trigger level')
@@ -343,6 +343,11 @@ class M4i(Instrument):
                                vals=Enum(0, 1),
                                docstring='if 1 selects bandwidth limit, if 0 sets to full bandwidth for channel {}'.format(i))
 
+            self.add_parameter('channel_{}'.format(i),
+                               label='channel {}'.format(i),
+                               unit='a.u.',
+                               get_cmd=partial(self._read_channel, i))
+
         # acquisition modes
         # TODO: If required, the other acquisition modes can be added to the
         # validator
@@ -361,7 +366,7 @@ class M4i(Instrument):
                            label='timeout',
                            get_cmd=partial(self._param32bit,
                                            pyspcm.SPC_TIMEOUT),
-                           units='ms',
+                           unit='ms',
                            set_cmd=partial(self._set_param32bit,
                                            pyspcm.SPC_TIMEOUT),
                            docstring='defines the timeout for wait commands')
@@ -421,7 +426,7 @@ class M4i(Instrument):
                            label='sample rate',
                            get_cmd=partial(self._param32bit,
                                            pyspcm.SPC_SAMPLERATE),
-                           units='Hz',
+                           unit='Hz',
                            set_cmd=partial(self._set_param32bit,
                                            pyspcm.SPC_SAMPLERATE),
                            docstring='write the sample rate for internal sample generation or read rate nearest to desired')
@@ -429,7 +434,7 @@ class M4i(Instrument):
                            label='special clock',
                            get_cmd=partial(self._param32bit,
                                            pyspcm.SPC_SPECIALCLOCK),
-                           units='Hz',
+                           unit='Hz',
                            set_cmd=partial(self._set_param32bit,
                                            pyspcm.SPC_SPECIALCLOCK),
                            docstring='Activate/Deactivate the special clock mode (lower and more sampling clock rates)')
@@ -568,7 +573,35 @@ class M4i(Instrument):
         resolution = self.ADC_to_voltage()
         return data * input_range / resolution
 
-    def set_channel_settings(self, i, mV_range, input_path, termination, coupling, compensation):
+    def initialize_channels(self, channels=None, mV_range=1000, input_path=0, termination=0, coupling=0, compensation=None):
+        """ Setup channels of the digitizer for simple readout using Parameters
+
+        The channels can be read out using the Parmeters `channel_0`, `channel_1`, ...
+
+        Args:
+            channels (list): list of channels to setup
+            mV_range, input_path, termination, coupling, compensation: passed to the 					set_channel_settings function
+        """
+        if channels is None:
+            channels = range(4)
+        for ch in channels:
+            self.set_channel_settings(ch, mV_range, input_path=input_path,
+                                      termination=termination, coupling=coupling, compensation=compensation)
+            self.enable_channels(getattr(pyspcm, 'CHANNEL%d' % ch))
+
+    def _read_channel(self, channel, memsize=2**11):
+        """ Helper function to read out a channel
+
+        Before a channel is measured it is explicitly enabled.
+        """
+        posttrigger_size = int(memsize / 2)
+        mV_range = getattr(self, 'range_channel_%d' % channel).get()
+        self.enable_channels(getattr(pyspcm, 'CHANNEL{}'.format(channel)))
+        value = np.mean(self.single_software_trigger_acquisition(
+            mV_range, memsize, posttrigger_size))
+        return value
+
+    def set_channel_settings(self, i, mV_range, input_path, termination, coupling, compensation=None):
         # initialize
         getattr(self, 'input_path_{}'.format(i))(input_path)  # 0: 1 MOhm
         getattr(self, 'termination_{}'.format(i))(termination)  # 0: DC
@@ -576,7 +609,8 @@ class M4i(Instrument):
         getattr(self, 'range_channel_{}'.format(i))(
             mV_range)  # note: set after voltage range
         # can only be used with DC coupling and 50 Ohm path (hf)
-        getattr(self, 'ACDC_offs_compensation_{}'.format(i))(compensation)
+        if compensation is not None:
+            getattr(self, 'ACDC_offs_compensation_{}'.format(i))(compensation)
 
     def set_ext0_OR_trigger_settings(self, trig_mode, termination, coupling, level0, level1=None):
 
@@ -790,7 +824,8 @@ class M4i(Instrument):
         return (data.value)
 
     def _set_param32bit(self, param, value):
-        """Read a 32-bit parameter from the device."""
+        """ Set a 32-bit parameter on the device."""
+        value = int(value)  # convert floating point to int if necessary
         pyspcm.spcm_dwSetParam_i32(self.hCard, param, value)
 
     def _invalidate_buf(self, buf_type):

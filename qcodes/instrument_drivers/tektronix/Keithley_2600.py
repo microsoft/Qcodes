@@ -19,20 +19,26 @@ class Keithley_2600(VisaInstrument):
         super().__init__(name, address, terminator='\n', **kwargs)
         self._channel = channel
 
-        self.add_parameter('volt', get_cmd='measure.v()',
-                           get_parser=float, set_cmd='source.levelv={:.8f}',
+        self.add_parameter('volt',
+                           get_cmd='measure.v()',
+                           get_parser=float,
+                           set_cmd='source.levelv={:.12f}',
                            label='Voltage',
                            unit='V')
-        self.add_parameter('curr', get_cmd='measure.i()',
-                           get_parser=float, set_cmd='source.leveli={:.8f}',
+        self.add_parameter('curr',
+                           get_cmd='measure.i()',
+                           get_parser=float,
+                           set_cmd='source.leveli={:.12f}',
                            label='Current',
                            unit='A')
         self.add_parameter('mode',
                            get_cmd='source.func',
+                           get_parser=float,
                            set_cmd='source.func={:d}',
                            val_mapping={'current': 0, 'voltage': 1})
         self.add_parameter('output',
                            get_cmd='source.output',
+                           get_parser=float,
                            set_cmd='source.output={:d}',
                            val_mapping={'on':  1, 'off': 0})
         # Source range

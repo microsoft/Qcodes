@@ -1,7 +1,7 @@
 {
     "core":{
-        "legacy_mp": false,
-        "loglevel": "DEBUG"
+        "loglevel": "DEBUG",
+        "default_fmt": "data/{date}/#{counter}_{name}_{time}"
     },
     "gui" :{
         "notebook": true,
