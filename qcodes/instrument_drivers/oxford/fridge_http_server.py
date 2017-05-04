@@ -68,7 +68,6 @@ class FridgeHttpServer:
         """
         ws = web.WebSocketResponse(autoping=False, receive_timeout=10.0)
         await ws.prepare(request)
-        i = 0
         while True:
             # Idealy we would only send a message if the last one has been received. However,
             # with the aiohttp api there is no good way of detecting
@@ -106,7 +105,6 @@ class FridgeHttpServer:
         """
         ws = web.WebSocketResponse(autoping=False, receive_timeout=10.0)
         await ws.prepare(request)
-        i = 0
         while True:
             # Idealy we would only send a message if the last one has been received. However,
             # with the aiohttp api there is no good way of detecting
