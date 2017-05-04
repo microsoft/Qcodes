@@ -17,6 +17,10 @@ class FridgeHttpServer:
             self.triton = Triton(name=name, address=tritonaddress)
 
     async def handle_parameter(self, request):
+        """
+        Handler for qcodes parameters, Can expose the value, unit, name and label of a parameter via get
+        or allow the setting of a parameter via a POST request.
+        """
         parametername = request.match_info.get('parametername', None)
         query = request.query
         valid_attributes = ('value', 'unit', 'name', 'label')
@@ -47,6 +51,9 @@ class FridgeHttpServer:
             return web.Response(status=404, text="Parameter {} not found".format(parametername))
 
     async def index(self, request):
+        """
+        Handler for a very basic index page that just tells you how to use the html api.
+        """
         return web.Response(text="Usage ip/parameter?attribute=value i.e. ip/T1/attribute=value")
 
     async def handle_hostname(self, request):
@@ -55,7 +62,9 @@ class FridgeHttpServer:
 
     async def handle_monitor(self, request):
         """
-        Handle websocket requests to serve the qcodes monitor
+        Handle websocket requests to serve the qcodes monitor. This is not compltly compatible due to the extra
+        need for a ping/pong below to prevent aiohttp from floding the output in case a client is slow or
+        goes offline.
         """
         ws = web.WebSocketResponse(autoping=False, receive_timeout=10.0)
         await ws.prepare(request)
@@ -93,7 +102,7 @@ class FridgeHttpServer:
 
     async def handle_ws(self, request):
         """
-        Handle websocket requests to serve the qcodes monitor
+        Handle websocket requests to serve the endpoint that will be useful for qdev automatic monitoring.
         """
         ws = web.WebSocketResponse(autoping=False, receive_timeout=10.0)
         await ws.prepare(request)
@@ -169,7 +178,8 @@ class FridgeHttpServer:
     @staticmethod
     def prepare_ws_data(triton) -> Dict[str, Union[list, float]]:
         """
-        Return a dict that contains the parameter from the Triton to be exported via WS
+        Return a dict that contains the parameter from the Triton to be exported via WS. This includes a read only copy
+        of all parametes exposed by the driver.
         """
 
         triton_parameters = []
