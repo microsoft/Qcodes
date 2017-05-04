@@ -9,6 +9,9 @@ async def hello():
         while True:
             data = await websocket.recv()
             print(data)
-            await websocket.ping()
+            print("sending ping")
+            pong = await websocket.ping()
+            print("send ping")
+            await pong
             print("got pong")
 asyncio.get_event_loop().run_until_complete(hello())
