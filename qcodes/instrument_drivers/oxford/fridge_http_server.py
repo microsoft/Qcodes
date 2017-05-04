@@ -79,23 +79,11 @@ class FridgeHttpServer:
             # We could try hacking in use of the pypi websockets packages which seems to be much more sane.
             # and what is used in the monitor. Such as https://gist.github.com/amirouche/a5da3cf6f0f11eaeb976
 
-            # trying to solve this by sending a ping pong from the client
-            # which we can await. However due to the 'design' of aiohttp we cant await a
-            # ping with receive without either disabling autoping (as above) and sent the pong
-            # manually or send a different message afterwards
             meta = self.prepare_monitor_data(self.triton)
 
             await ws.send_json(meta)
-            msg = await ws.receive()
-            if ws.closed:
-                # send will happy send on a closed socket, receive should abort if the socket is closed
-                # or with a timeout
-                # but pong tries to send will raise a typeerror as the message is empty
-                # if the receive failed so check if the socket is closed before trying to send
-                # It still seems likely that this can fail if the client goes offline at the wrong point
-                # but hard to do better with the current limited api.
-                break
-            ws.pong(msg.data)
+            await ws.drain()
+
             await asyncio.sleep(1)
         return ws
 
@@ -116,23 +104,10 @@ class FridgeHttpServer:
             # We could try hacking in use of the pypi websockets packages which seems to be much more sane.
             # and what is used in the monitor. Such as https://gist.github.com/amirouche/a5da3cf6f0f11eaeb976
 
-            # trying to solve this by sending a ping pong from the client
-            # which we can await. However due to the 'design' of aiohttp we cant await a
-            # ping with receive without either disabling autoping (as above) and sent the pong
-            # manually or send a different message afterwards
             meta = self.prepare_ws_data(self.triton)
 
             await ws.send_json(meta)
-            msg = await ws.receive()
-            if ws.closed:
-                # send will happy send on a closed socket, receive should abort if the socket is closed
-                # or with a timeout
-                # but pong tries to send will raise a typeerror as the message is empty
-                # if the receive failed so check if the socket is closed before trying to send
-                # It still seems likely that this can fail if the client goes offline at the wrong point
-                # but hard to do better with the current limited api.
-                break
-            ws.pong(msg.data)
+            await ws.drain()
             await asyncio.sleep(1)
         return ws
 
