@@ -56,6 +56,7 @@ from qcodes.data.data_set import new_data
 from qcodes.data.data_array import DataArray
 from qcodes.utils.helpers import wait_secs, full_class, tprint
 from qcodes.utils.metadata import Metadatable
+from qcodes.plots.qcmatplotlib import MatPlot
 
 from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
                       BreakIf, _QcodesBreak)
@@ -200,6 +201,13 @@ class Loop(Metadatable):
                 through the loop.
         """
         return _attach_bg_task(self, task, bg_final_task, min_delay)
+
+    def plot(self, min_delay=0.5, *args, figsize=None, subplots=None,
+             num=None, **kwargs):
+        plot = MatPlot(*args, figsize=figsize, subplots=subplots, num=num,
+                       **kwargs)
+        self.with_bg_task(plot.update, min_delay=min_delay)
+        return plot
 
     @staticmethod
     def validate_actions(*actions):
@@ -383,6 +391,13 @@ class ActiveLoop(Metadatable):
                 only run between passes through the loop.
         """
         return _attach_bg_task(self, task, bg_final_task, min_delay)
+
+    def plot(self, min_delay=0.5, *args, figsize=None, subplots=None,
+             num=None, **kwargs):
+        plot = MatPlot(*args, figsize=figsize, subplots=subplots, num=num,
+                       **kwargs)
+        self.with_bg_task(plot.update, min_delay=min_delay)
+        return plot
 
     def snapshot_base(self, update=False):
         """Snapshot of this ActiveLoop's definition."""
