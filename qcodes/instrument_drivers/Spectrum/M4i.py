@@ -589,7 +589,7 @@ class M4i(Instrument):
             self.set_channel_settings(ch, mV_range, input_path=input_path,
                                       termination=termination, coupling=coupling, compensation=compensation)
             allchannels = allchannels + getattr(pyspcm, 'CHANNEL%d' % ch)
-            
+
         self.enable_channels(allchannels)
 
     def _read_channel(self, channel, memsize=2**11):
@@ -801,12 +801,14 @@ class M4i(Instrument):
     def blockavg_hardware_trigger_acquisition(self, mV_range, nr_averages=10, verbose=0):
         """ Acquire data using block averaging and hardware triggering
 
+        To read out multiple channels, use `initialize_channels`    
+
         Args:
             mV_range
             nr_averages (int): number of averages to take
             verbose (int): output level
         Returns:
-            voltages (array)
+            voltages (array): if multiple channels are read, then the data is interleaved
         """
         # self.available_card_modes()
         if nr_averages < 2:
@@ -816,7 +818,7 @@ class M4i(Instrument):
         self.segment_size(memsize)
         self._set_param32bit(pyspcm.SPC_AVERAGES, nr_averages)
         numch = bin(self.enable_channels()).count("1")
-            
+
         if verbose:
             print('blockavg_hardware_trigger_acquisition: errors %s' %
                   (self.get_error_info32bit(), ))
@@ -829,7 +831,7 @@ class M4i(Instrument):
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
         # setup software buffer
-        sizeof32bit=4
+        sizeof32bit = 4
         buffer_size = ct.c_int32 * memsize * numch
         data_buffer = (buffer_size)()
         data_pointer = ct.cast(data_buffer, ct.c_void_p)
