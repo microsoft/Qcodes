@@ -598,8 +598,8 @@ class DataSet(DelegateAttributes):
         """Rich information about the DataSet and contained arrays."""
         out = type(self).__name__ + ':'
 
-        attrs = [['location', repr(self.location)]]
-        attr_template = '\n   {:8} = {}'
+        attrs = [['data', repr(self.location)]]
+        attr_template = '\n   {:4} = load_data({})'
         for var, val in attrs:
             out += attr_template.format(var, val)
 
