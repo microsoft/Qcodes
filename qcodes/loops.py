@@ -594,7 +594,7 @@ class ActiveLoop(Metadatable):
             if hasattr(action, 'set_common_attrs'):
                 action.set_common_attrs(data_set, use_threads)
 
-    def get_data_set(self, print_data_set=True, *args, **kwargs):
+    def get_data_set(self, *args, **kwargs):
         """
         Return the data set for this loop.
 
@@ -639,9 +639,6 @@ class ActiveLoop(Metadatable):
                     'You can only provide DataSet attributes, such as '
                     'data_manager, location, name, formatter, io, '
                     'write_period, when the DataSet is first created.')
-
-        if print_data_set:
-            print(self.data_set)
 
         return self.data_set
 
@@ -696,6 +693,9 @@ class ActiveLoop(Metadatable):
             self.progress_interval = progress_interval
 
         data_set = self.get_data_set(*args, **kwargs)
+        if not quiet:
+            print(repr(self.data_set))
+            print(datetime.now().strftime('started at %Y-%m-%d %H:%M:%S'))
 
         self.set_common_attrs(data_set=data_set, use_threads=use_threads)
 
@@ -719,9 +719,6 @@ class ActiveLoop(Metadatable):
             ds = self.data_set
         finally:
 
-            if not quiet:
-                print(repr(self.data_set))
-                print(datetime.now().strftime('started at %Y-%m-%d %H:%M:%S'))
 
             # After normal loop execution we clear the data_set so we can run
             # again. But also if something went wrong during the loop execution
