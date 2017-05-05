@@ -5,7 +5,7 @@ import logging
 from traceback import format_exc
 
 from qcodes import IPInstrument
-from qcodes.utils.validators import Enum
+from qcodes.utils.validators import Enum, Ints
 
 
 class Triton(IPInstrument):
@@ -13,10 +13,10 @@ class Triton(IPInstrument):
     Triton Driver
 
     Args:
-        tmpfile: Expects an exported windows registry file from the registry
+        tmpfile: Optional: an exported windows registry file from the registry
             path:
             `[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry]`
-            and is used to extract the available temperature channels.
+            It is used to extract the names of temperature channels if set.
 
 
     Status: beta-version.
@@ -53,7 +53,8 @@ class Triton(IPInstrument):
         self.add_parameter(name='pid_control_channel',
                            label='PID control channel',
                            get_cmd=self._get_control_channel,
-                           set_cmd=self._set_control_channel)
+                           set_cmd=self._set_control_channel,
+                           vals=Ints(1,16))
 
         self.add_parameter(name='pid_mode',
                            label='PID Mode',
@@ -93,16 +94,17 @@ class Triton(IPInstrument):
                            vals=Enum(*self._heater_range_curr))
 
         self.chan_alias = {}
-        self.chan_temps = {}
+        self.chan_temp_names = {}
         if tmpfile is not None:
-            self._get_temp_channels(tmpfile)
+            self._get_temp_channel_names(tmpfile)
+        self._get_temp_channels()
         self._get_pressure_channels()
 
         try:
             self._get_named_channels()
         except:
-            logging.warn('Ignored an error in _get_named_channels\n' +
-                         format_exc())
+            logging.warning('Ignored an error in _get_named_channels\n' +
+                            format_exc())
 
         self.connect_message()
 
@@ -124,19 +126,26 @@ class Triton(IPInstrument):
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
-    def _get_control_channel(self, force_get=False):
-        if force_get or (not self._control_channel):
-            for i in range(20):
-                tempval = self.ask('READ:DEV:T%s:TEMP:LOOP:MODE' % (i))
-                if not tempval.endswith('NOT_FOUND'):
-                    self._control_channel = i
+    def _get_control_channel(self):
+
+        # verify current channel
+        if self._control_channel:
+            tempval = self.ask('READ:DEV:T{}:TEMP:LOOP:MODE'.format(self._control_channel))
+            if not tempval.endswith('NOT_FOUND'):
+                return self._control_channel
+
+        # either _control_channel is not set or wrong
+        for i in range(1,17):
+            tempval = self.ask('READ:DEV:T{}:TEMP:LOOP:MODE'.format(i))
+            if not tempval.endswith('NOT_FOUND'):
+                self._control_channel = i
+                break
 
         return self._control_channel
 
     def _set_control_channel(self, channel):
         self._control_channel = channel
-        self.write('SET:DEV:T%s:TEMP:LOOP:HTR:H1' %
-                   self._get_control_channel())
+        self.write('SET:DEV:T{}:TEMP:LOOP:HTR:H1'.format(channel))
 
     def _get_control_param(self, param):
         chan = self._get_control_channel()
@@ -154,7 +163,7 @@ class Triton(IPInstrument):
         for ch in allchans:
             msg = 'READ:SYS:DR:CHAN:%s' % ch
             rep = self.ask(msg)
-            if 'INVALID' not in rep:
+            if 'INVALID' not in rep and 'NONE' not in rep:
                 alias, chan = rep.split(':')[-2:]
                 self.chan_alias[alias] = chan
                 self.add_parameter(name=alias,
@@ -163,16 +172,19 @@ class Triton(IPInstrument):
                                    get_parser=self._parse_temp)
 
     def _get_pressure_channels(self):
+        self.chan_pressure = []
         for i in range(1, 7):
             chan = 'P%d' % i
+            self.chan_pressure.append(chan)
             self.add_parameter(name=chan,
                                unit='bar',
                                get_cmd='READ:DEV:%s:PRES:SIG:PRES' % chan,
                                get_parser=self._parse_pres)
+        self.chan_pressure = set(self.chan_pressure)
 
-    def _get_temp_channels(self, file):
+    def _get_temp_channel_names(self, file):
         config = configparser.ConfigParser()
-        with open(file, 'r') as f:
+        with open(file, 'r', encoding='utf16') as f:
             next(f)
             config.read_file(f)
 
@@ -180,13 +192,23 @@ class Triton(IPInstrument):
             options = config.options(section)
             namestr = '"m_lpszname"'
             if namestr in options:
-                chan = 'T'+section.split('\\')[-1].split('[')[-1]
+                chan_number = int(section.split('\\')[-1].split('[')[-1]) + 1
+                # the names used in the register file are base 0 but the api and the gui
+                # uses base one names so add one
+                chan = 'T'+ str(chan_number)
                 name = config.get(section, '"m_lpszname"').strip("\"")
-                self.chan_temps[chan] = {'name': name, 'value': None}
-                self.add_parameter(name=chan,
-                                   unit='K',
-                                   get_cmd='READ:DEV:%s:TEMP:SIG:TEMP' % chan,
-                                   get_parser=self._parse_temp)
+                self.chan_temp_names[chan] = {'name': name, 'value': None}
+
+    def _get_temp_channels(self):
+        self.chan_temps = []
+        for i in range(1, 17):
+            chan = 'T%d' % i
+            self.chan_temps.append(chan)
+            self.add_parameter(name=chan,
+                               unit = 'K',
+                               get_cmd = 'READ:DEV:%s:TEMP:SIG:TEMP' % chan,
+                               get_parser = self._parse_temp)
+        self.chan_temps = set(self.chan_temps)
 
     def _parse_action(self, msg):
         action = msg[17:]
@@ -221,7 +243,7 @@ class Triton(IPInstrument):
     def _parse_pres(self, msg):
         if 'NOT_FOUND' in msg:
             return None
-        return float(msg.split('SIG:PRES:')[-1].strip('mB'))*1e3
+        return float(msg.split('SIG:PRES:')[-1].strip('mB'))*1e-3
 
     def _recv(self):
         return super()._recv().rstrip()

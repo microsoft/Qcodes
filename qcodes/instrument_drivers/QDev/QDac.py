@@ -10,6 +10,7 @@ from functools import partial
 from operator import xor
 from collections import OrderedDict
 
+from qcodes.instrument.parameter import ManualParameter
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
 
@@ -31,7 +32,7 @@ class QDac(VisaInstrument):
     # set nonzero value (seconds) to accept older status when reading settings
     max_status_age = 1
 
-    def __init__(self, name, address, num_chans=48):
+    def __init__(self, name, address, num_chans=48, update_currents=True):
         """
         Instantiates the instrument.
 
@@ -39,6 +40,8 @@ class QDac(VisaInstrument):
             name (str): The instrument name used by qcodes
             address (str): The VISA name of the resource
             num_chans (int): Number of channels to assign. Default: 48
+            update_currents (bool): Whether to query all channels for their
+                current current value on startup. Default: True.
 
         Returns:
             QDac object
@@ -57,6 +60,9 @@ class QDac(VisaInstrument):
         # TODO: do we need a query delay for robust operation?
         self._write_response = ''
 
+        # The following bool is used in self.write
+        self.debugmode = False
+
         if self._get_firmware_version() < 0.170202:
             raise RuntimeError('''
                                Obsolete QDAC Software version detected.
@@ -66,8 +72,13 @@ class QDac(VisaInstrument):
 
         self.num_chans = num_chans
 
-        # Assigned slopes. Entries will eventually be [chan, slope] (V/s)
+        # Assigned slopes. Entries will eventually be [chan, slope]
         self._slopes = []
+        # Function generators (used in _set_voltage)
+        self._fgs = set(range(1, 9))
+        self._assigned_fgs = {}  # {chan: fg}
+        # Sync channels
+        self._syncoutputs = []  # Entries: [chan, syncchannel]
 
         self.chan_range = range(1, 1 + self.num_chans)
         self.channel_validator = vals.Ints(1, self.num_chans)
@@ -77,7 +88,6 @@ class QDac(VisaInstrument):
             self.add_parameter(name='ch{:02}_v'.format(i),
                                label='Channel ' + stri,
                                unit='V',
-                               # TO-DO: implement max slope for setting
                                set_cmd=partial(self._set_voltage, i),
                                vals=vals.Numbers(-10, 10),
                                get_cmd=partial(self.read_state, i, 'v')
@@ -99,10 +109,30 @@ class QDac(VisaInstrument):
                                )
             self.add_parameter(name='ch{:02}_slope'.format(i),
                                label='Maximum voltage slope',
+                               unit='V/s',
                                set_cmd=partial(self._setslope, i),
                                get_cmd=partial(self._getslope, i),
-                               vals=vals.Anything()
+                               vals=vals.MultiType(vals.Enum('Inf'),
+                                                   vals.Numbers(1e-3, 100))
                                )
+            self.add_parameter(name='ch{:02}_sync'.format(i),
+                               label='Channel {} sync output',
+                               set_cmd=partial(self._setsync, i),
+                               get_cmd=partial(self._getsync, i),
+                               vals=vals.Ints(0, 5)
+                               )
+
+            self.add_parameter(name='ch{:02}_sync_delay'.format(i),
+                               label='Channel {} sync pulse delay'.format(i),
+                               unit='s',
+                               parameter_class=ManualParameter,
+                               initial_value=0)
+
+            self.add_parameter(name='ch{:02}_sync_duration'.format(i),
+                               label='Channel {} sync pulse duration'.format(i),
+                               unit='s',
+                               parameter_class=ManualParameter,
+                               initial_value=0.01)
 
         for board in range(6):
             for sensor in range(3):
@@ -122,16 +152,15 @@ class QDac(VisaInstrument):
                            set_cmd='ver {}',
                            val_mapping={True: 1, False: 0})
 
-        # Initialise the instrument, all channels DC, no attenuation
+        # Initialise the instrument, all channels DC (unbind func. generators)
         for chan in self.chan_range:
             # Note: this call does NOT change the voltage on the channel
             self.write('wav {} 0 1 0'.format(chan))
-            self.write('vol {} 0'.format(chan))
 
         self.verbose.set(False)
         self.connect_message()
         log.info('[*] Querying all channels for voltages and currents...')
-        self._get_status(readcurrents=True)
+        self._get_status(readcurrents=update_currents)
         log.info('[+] Done')
 
     #########################
@@ -156,12 +185,17 @@ class QDac(VisaInstrument):
 
         slopechans = [sl[0] for sl in self._slopes]
         if chan in slopechans:
-            slope = [sl[1] for sl in self._slopes if sl[0]==chan][0]
-            fg = self._slopes.index([chan, slope]) + 1
-            v_start = self.parameters['ch{:02}_v'.format(chan)].get_latest()
+            slope = [sl[1] for sl in self._slopes if sl[0] == chan][0]
+            # find and assign fg
+            fg = min(self._fgs.difference(set(self._assigned_fgs.values())))
+            self._assigned_fgs[chan] = fg
+            # We need .get and not get_latest in case a ramp was interrupted
+            v_start = self.parameters['ch{:02}_v'.format(chan)].get()
             time = abs(v_set-v_start)/slope
-            # Attenuation compensation takes place inside _rampvoltage
-            self._rampvoltage(chan, fg, v_set, time)
+            log.info('Slope: {}, time: {}'.format(slope, time))
+            # Attenuation compensation and syncing take place
+            # inside _rampvoltage
+            self._rampvoltage(chan, fg, v_start, v_set, time)
         else:
             # compensate for the 0.1 multiplier, if it's on
             if self.parameters['ch{:02}_vrange'.format(chan)].get_latest() == 1:
@@ -315,6 +349,55 @@ class QDac(VisaInstrument):
         self._status_ts = datetime.now()
         return chans
 
+    def _setsync(self, chan, sync):
+        """
+        set_cmd for the chXX_sync parameter.
+
+        Args:
+            chan (int): The channel number (1-48)
+            sync (int): The associated sync output. 0 means 'unassign'
+        """
+
+        if chan not in range(1, 49):
+            raise ValueError('Channel number must be 1-48.')
+
+        if sync == 0:
+            # try to remove the sync from internal bookkeeping
+            try:
+                sc = self._syncoutputs
+                to_remove = [sc.index(syn) for syn in sc if syn[0] == chan][0]
+                self._syncoutputs.remove(sc[to_remove])
+            except IndexError:
+                pass
+            # free the previously assigned sync
+            oldsync = self.parameters['ch{:02d}_sync'.format(chan)].get_latest()
+            if oldsync is not None:
+                self.write('syn {} 0 0 0'.format(oldsync))
+            return
+
+        if sync in [syn[1] for syn in self._syncoutputs]:
+            oldchan = [syn[0] for syn in self._syncoutputs if syn[1] == sync][0]
+            self._syncoutputs.remove([oldchan, sync])
+
+        if chan in [syn[0] for syn in self._syncoutputs]:
+            oldsyn = [syn[1] for syn in self._syncoutputs if syn[0] == chan][0]
+            self._syncoutputs[self._syncoutputs.index([chan, oldsyn])] = [chan,
+                                                                          sync]
+            return
+
+        self._syncoutputs.append([chan, sync])
+        return
+
+    def _getsync(self, chan):
+        """
+        get_cmd of the chXX_sync parameter
+        """
+        if chan in [syn[0] for syn in self._syncoutputs]:
+            sync = [syn[1] for syn in self._syncoutputs if syn[0]==chan][0]
+            return sync
+        else:
+            return 0
+
     def _setslope(self, chan, slope):
         """
         set_cmd for the chXX_slope parameter, the maximum slope of a channel.
@@ -328,18 +411,29 @@ class QDac(VisaInstrument):
             raise ValueError('Channel number must be 1-48.')
 
         if slope == 'Inf':
+            self.write('wav {} 0 0 0'.format(chan))
+
+            # Now clear the assigned slope and function generator (if possible)
+            try:
+                self._assigned_fgs.pop(chan)
+            except KeyError:
+                pass
+            # Remove a sync output, if one was assigned
+            syncchans = [syn[0] for syn in self._syncoutputs]
+            if chan in syncchans:
+                self.parameters['ch{:02d}_sync'.format(chan)].set(0)
             try:
                 sls = self._slopes
-                to_remove = [sls.index(sl) for sl in sls if sl[0]==chan][0]
+                to_remove = [sls.index(sl) for sl in sls if sl[0] == chan][0]
                 self._slopes.remove(sls[to_remove])
                 return
             # If the value was already 'Inf', the channel was not
             # in the list and nothing happens
-            except ValueError:
+            except IndexError:
                 return
 
         if chan in [sl[0] for sl in self._slopes]:
-            oldslope = [sl[1] for sl in self._slopes if sl[0]==chan][0]
+            oldslope = [sl[1] for sl in self._slopes if sl[0] == chan][0]
             self._slopes[self._slopes.index([chan, oldslope])] = [chan, slope]
             return
 
@@ -362,13 +456,6 @@ class QDac(VisaInstrument):
         else:
             return 'Inf'
 
-    def slopes(self):
-        """
-        unit the slopes assigned to each channel
-        """
-        for (chan, slope) in self._slopes:
-            print('Channel {}, slope: {} (V/s)'.format(chan, slope))
-
     def printslopes(self):
         """
         Print the finite slopes assigned to channels
@@ -376,7 +463,7 @@ class QDac(VisaInstrument):
         for sl in self._slopes:
             print('Channel {}, slope: {} (V/s)'.format(sl[0], sl[1]))
 
-    def _rampvoltage(self, chan, fg, setvoltage, ramptime):
+    def _rampvoltage(self, chan, fg, v_start, setvoltage, ramptime):
         """
         Smoothly ramp the voltage of a channel by the means of a function
         generator. Helper function used by _set_voltage.
@@ -388,7 +475,12 @@ class QDac(VisaInstrument):
             ramptime (float): The ramp time in seconds.
         """
 
-        v_start = self.parameters['ch{:02}_v'.format(chan)].get_latest()
+        # Crazy stuff happens if the period is too small, e.g. the channel
+        # can jump to its max voltage
+        if ramptime <= 0.002:
+            ramptime = 0
+            log.warning('Cancelled a ramp with a ramptime of '
+                        '{} s'.format(ramptime) + '. Voltage not changed.')
 
         offset = v_start
         amplitude = setvoltage-v_start
@@ -399,6 +491,18 @@ class QDac(VisaInstrument):
         chanmssg = 'wav {} {} {} {}'.format(chan, fg,
                                             amplitude,
                                             offset)
+
+        if chan in [syn[0] for syn in self._syncoutputs]:
+            #syncing = True
+            sync = [syn[1] for syn in self._syncoutputs if syn[0] == chan][0]
+            chstr = 'ch{:02}_sync'.format(chan)
+            sync_duration = 1000*self.parameters[chstr+'_duration'].get()
+            sync_delay = 1000*self.parameters[chstr+'_delay'].get()
+            self.write('syn {} {} {} {}'.format(sync, fg,
+                                                sync_delay,
+                                                sync_duration))
+        else:
+            syncing = False
 
         typedict = {'SINE': 1, 'SQUARE': 2, 'RAMP': 3}
 
@@ -414,6 +518,7 @@ class QDac(VisaInstrument):
         self.write(funmssg)
         self.parameters['ch{:02}_v'.format(chan)]._save_val(setvoltage)
 
+
     def write(self, cmd):
         """
         QDac always returns something even from set commands, even when
@@ -424,7 +529,12 @@ class QDac(VisaInstrument):
         Note that this procedure makes it very cumbersome to handle the returned
         messages from concatenated commands, e.g. 'wav 1 1 1 0;fun 2 1 100 1 1'
         Please don't use concatenated commands
+
+        TODO (WilliamHPNielsen): add automatic de-concatenation of commands.
         """
+        if self.debugmode:
+            log.info('Sending command string: {}'.format(cmd))
+
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
         self._write_response = self.visa_handle.read()
