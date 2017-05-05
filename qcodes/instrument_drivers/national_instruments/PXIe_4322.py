@@ -57,12 +57,13 @@ class PXIe_4322(Instrument):
                                docstring='The DC output voltage of channel {}'.format(i),
                                vals=validator.Numbers(-16, 16))
 
-    def set_voltage(self, voltage, channel, save_to_file=True):
+    def set_voltage(self, voltage, channel, save_to_file=True, verbose=True):
         with nidaqmx.Task() as task:
             task.ao_channels.add_ao_voltage_chan('{}/ao{}'.format(self.device_name, channel),
                                                  min_val=-16.0, max_val=16.0)
 
-            if abs(voltage - self.__voltage[channel]) > self.step_size:
+            if abs(voltage - self.__voltage[channel]) > self.step_size and not \
+                    math.isclose(abs(voltage - self.__voltage[channel]), self.step_size, rel_tol=1e-5):
                 if (voltage - self.__voltage[channel]) < 0:
                     step = -self.step_size
                 else:
@@ -70,10 +71,14 @@ class PXIe_4322(Instrument):
                 for voltage_step in frange(self.__voltage[channel], voltage, step):
                     t_start = timer()
                     task.write(voltage_step)
+                    if verbose:
+                        print('Current gate {} value: {:.2f}'.format(channel, voltage_step), end='\r', flush=True)
                     t_stop = timer()
                     sleep(max(self.step_delay-(t_stop-t_start), 0.0))
 
             task.write(voltage)
+            if verbose:
+                print('Current gate {} value: {:.2f}'.format(channel, voltage), end='\r', flush=True)
             self.__voltage[channel] = voltage
             if save_to_file:
                 with open('NI_voltages_{}.json'.format(self.device_name), 'w') as output_file:
@@ -94,17 +99,34 @@ class PXIe_4322(Instrument):
         channel_mask = [True] * self.channels
 
         for i in range(max(number_of_steps)):
+            t_start = timer()
             for chan in range(self.channels):
                 if channel_mask[chan]:
                     try:
                         voltage = volt_steps[chan][i]
-                        self.set_voltage(voltage, chan)
+                        self.set_voltage(voltage, chan, verbose=False)
                     except IndexError:
                         channel_mask[chan] = False
                         pass
+            t_stop = timer()
+            voltage_str = ''
+            for item in self.__voltage:
+                voltage_str += '{:.2f}, '.format(item)
+            voltage_str = voltage_str[:-2]
+            print('Current gate values: {}'.format(voltage_str), end='\r', flush=True)
+            sleep(max(self.step_delay - (t_stop - t_start), 0.0))
 
         for i in range(self.channels):
-            self.set_voltage(gate_values[i], i)
+            self.set_voltage(gate_values[i], i, verbose=False)
+        voltage_str = ''
+        for item in self.__voltage:
+            voltage_str += '{:.2f}, '.format(item)
+        voltage_str = voltage_str[:-2]
+        print('Current gate values: {}'.format(voltage_str), end='\r', flush=True)
+
+    def ramp_all_to_zero(self):
+        gate_values = [0.0]*self.channels
+        self.set_gates_simultaneously(gate_values)
 
 
 def frange(start, stop, step):
