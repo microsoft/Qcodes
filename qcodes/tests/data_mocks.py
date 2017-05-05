@@ -1,32 +1,8 @@
 import numpy
-import multiprocessing as mp
 
 from qcodes.data.data_array import DataArray
 from qcodes.data.data_set import new_data
 from qcodes.data.io import DiskIO
-
-
-class MockDataManager:
-    query_lock = mp.RLock()
-
-    def __init__(self):
-        self.needs_restart = False
-
-    def ask(self, *args, timeout=None):
-        if args == ('get_data', 'location'):
-            return self.location
-        elif args == ('get_data',):
-            return self.live_data
-        elif args[0] == 'new_data' and len(args) == 2:
-            if self.needs_restart:
-                raise AttributeError('data_manager needs a restart')
-            else:
-                self.data_set = args[1]
-        else:
-            raise Exception('unexpected query to MockDataManager')
-
-    def restart(self):
-        self.needs_restart = False
 
 
 class MockFormatter:
