@@ -156,7 +156,7 @@ class SD_DIG(SD_Module):
 
             # For channelTriggerConfig
             self.add_parameter(
-                'trigger_edge{}'.format(n), label='Trigger mode for channel {}'.format(n),
+                'trigger_edge_{}'.format(n), label='Trigger mode for channel {}'.format(n),
                 vals=Enum(1, 2, 3),
                 set_cmd=partial(self.set_trigger_edge, channel=n),
                 docstring='The trigger mode for channel {}'.format(n)
