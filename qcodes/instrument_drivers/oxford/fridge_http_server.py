@@ -86,7 +86,7 @@ class FridgeHttpServer:
             await ws.drain()
 
             await asyncio.sleep(self._websocket_wait_time)
-            if ws.closed():
+            if ws.closed:
                 break
         return ws
 
@@ -112,7 +112,7 @@ class FridgeHttpServer:
             await ws.send_json(meta)
             await ws.drain()
             await asyncio.sleep(self._websocket_wait_time)
-            if ws.closed():
+            if ws.closed:
                 break
         return ws
 
