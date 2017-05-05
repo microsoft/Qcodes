@@ -1,21 +1,18 @@
 """Instrument base class."""
 import logging
+import numpy as np
 import time
 import warnings
 import weakref
-import numpy as np
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
-from qcodes.utils.nested_attrs import NestedAttrAccess
 from qcodes.utils.validators import Anything
 from .parameter import StandardParameter
 from .function import Function
-from .metaclass import InstrumentMetaclass
 
 
-class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
-                 metaclass=InstrumentMetaclass):
+class Instrument(Metadatable, DelegateAttributes):
 
     """
     Base class for all QCodes instruments.
@@ -24,47 +21,9 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
         name (str): an identifier for this instrument, particularly for
             attaching it to a Station.
 
-        server_name (Optional[str]): If not ``None``, this instrument starts a
-            separate server process (or connects to one, if one already exists
-            with the same name) and all hardware calls are made there.
-
-            Default '', then we call classmethod ``default_server_name``,
-            passing in all the constructor kwargs, to determine the name.
-            If not overridden, this just gives 'Instruments'.
-
-            **see subclass constructors below for more on ``server_name``**
-
-            Use None to operate without a server - but then this Instrument
-            will not work with qcodes Loops or other multiprocess procedures.
-
-            If a server is used, the ``Instrument`` you asked for is
-            instantiated on the server, and the object you get in the main
-            process is actually a ``RemoteInstrument`` that proxies all method
-            calls, ``Parameters``, and ``Functions`` to the server.
-
-            The metaclass ``InstrumentMetaclass`` handles making either the
-            requested class or its RemoteInstrument proxy.
-
         metadata (Optional[Dict]): additional static metadata to add to this
             instrument's JSON snapshot.
 
-
-    Any unpicklable objects that are inputs to the constructor must be set
-    on server initialization, and must be shared between all instruments
-    that reside on the same server. To make this happen, set the
-    ``shared_kwargs`` class attribute to a tuple of kwarg names that should
-    be treated this way.
-
-    It is an error to initialize two instruments on the same server with
-    different keys or values for ``shared_kwargs``, unless the later
-    instruments have NO ``shared_kwargs`` at all.
-
-    subclass constructors: ``server_name`` and any ``shared_kwargs`` must be
-    available as kwargs and kwargs ONLY (not positional) in all subclasses,
-    and not modified in the inheritance chain. This is because we need to
-    create the server before instantiating the actual instrument. The easiest
-    way to manage this is to accept ``**kwargs`` in your subclass and pass them
-    on to ``super().__init()``.
 
     Attributes:
         name (str): an identifier for this instrument, particularly for
@@ -81,8 +40,11 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
 
     _all_instruments = {}
 
-    def __init__(self, name, server_name=None, **kwargs):
+    def __init__(self, name, **kwargs):
         self._t0 = time.time()
+        if kwargs.pop('server_name', False):
+            warnings.warn("server_name argument not supported any more",
+                          stacklevel=0)
         super().__init__(**kwargs)
         self.parameters = {}
         self.functions = {}
@@ -94,7 +56,7 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
 
         self._meta_attrs = ['name']
 
-        self._no_proxy_methods = {'__getstate__'}
+        self.record_instance(self)
 
     def get_idn(self):
         """
@@ -127,29 +89,14 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
             if len(idparts) < 4:
                 idparts += [None] * (4 - len(idparts))
         except:
-            logging.warn('Error getting or interpreting *IDN?: ' + repr(idstr))
-            idparts = [None, None, None, None]
+            logging.debug('Error getting or interpreting *IDN?: ' + repr(idstr))
+            idparts = [None, self.name, None, None]
 
         # some strings include the word 'model' at the front of model
         if str(idparts[1]).lower().startswith('model'):
             idparts[1] = str(idparts[1])[5:].strip()
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
-
-    @classmethod
-    def default_server_name(cls, **kwargs):
-        """
-        Generate a default name for the server to host this instrument.
-
-        Args:
-            **kwargs: the constructor kwargs, used if necessary to choose a
-                name.
-
-        Returns:
-            str: The default server name for the specific instrument instance
-                we are constructing.
-        """
-        return 'Instruments'
 
     def connect_message(self, idn_param='IDN', begin_time=None):
         """
@@ -181,7 +128,7 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
         """Close the instrument and remove its instance record."""
         try:
             wr = weakref.ref(self)
-            if wr in getattr(self, '_instances', {}):
+            if wr in getattr(self, '_instances', []):
                 self._instances.remove(wr)
             self.close()
         except:
@@ -209,17 +156,13 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
         that there are no other instruments with the same name.
 
         Args:
-            instance (Union[Instrument, RemoteInstrument]): Note: we *do not*
-                check that instance is actually an instance of ``cls``. This is
-                important, because a ``RemoteInstrument`` should function as an
-                instance of the instrument it proxies.
+            instance (Instrument): Instance to record
 
         Raises:
             KeyError: if another instance with the same name is already present
         """
         wr = weakref.ref(instance)
         name = instance.name
-
         # First insert this instrument in the record of *all* instruments
         # making sure its name is unique
         existing_wr = cls._all_instruments.get(name)
@@ -243,12 +186,8 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
         You can use this to get the objects back if you lose track of them,
         and it's also used by the test system to find objects to test against.
 
-        Note:
-            Will also include ``RemoteInstrument`` instances that proxy
-            instruments of this class.
-
         Returns:
-            List[Union[Instrument, RemoteInstrument]]
+            List[Instrument]]
         """
         if getattr(cls, '_type', None) is not cls:
             # only instances of a superclass - we want instances of this
@@ -262,7 +201,7 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
         Remove a particular instance from the record.
 
         Args:
-            instance (Union[Instrument, RemoteInstrument])
+            instance (Union[Instrument])
         """
         wr = weakref.ref(instance)
         if wr in cls._instances:
@@ -286,7 +225,7 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
                 you are looking for.
 
         Returns:
-            Union[Instrument, RemoteInstrument]
+            Union[Instrument]
 
         Raises:
             KeyError: if no instrument of that name was found, or if its
@@ -307,34 +246,6 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
                         name, type(ins), instrument_class))
 
         return ins
-
-    @classmethod
-    def find_component(cls, name_attr, instrument_class=None):
-        """
-        Find a component of an existing instrument by name and attribute.
-
-        Args:
-            name_attr (str): A string in nested attribute format:
-                <name>.<attribute>[.<subattribute>] and so on.
-                For example, <attribute> can be a parameter name,
-                or a method name.
-            instrument_class (Optional[class]): The type of instrument
-                you are looking for this component within.
-
-        Returns:
-            Any: The component requested.
-        """
-
-        if '.' in name_attr:
-            name, attr = name_attr.split('.', 1)
-            ins = cls.find_instrument(name, instrument_class=instrument_class)
-            return ins.getattr(attr)
-
-        else:
-            # allow find_component to return the whole instrument,
-            # if no attribute was specified, for maximum generality.
-            return cls.find_instrument(name_attr,
-                                       instrument_class=instrument_class)
 
     def add_parameter(self, name, parameter_class=StandardParameter,
                       **kwargs):
@@ -357,11 +268,6 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
 
             **kwargs: constructor arguments for ``parameter_class``.
 
-        Returns:
-            dict: attribute information. Only used if you add parameters
-                from the ``RemoteInstrument`` rather than at construction, to
-                properly construct the proxy for this parameter.
-
         Raises:
             KeyError: if this instrument already has a parameter with this
                 name.
@@ -370,10 +276,6 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
             raise KeyError('Duplicate parameter name {}'.format(name))
         param = parameter_class(name=name, instrument=self, **kwargs)
         self.parameters[name] = param
-
-        # for use in RemoteInstruments to add parameters to the server
-        # we return the info they need to construct their proxy
-        return param.get_attrs()
 
     def add_function(self, name, **kwargs):
         """
@@ -395,11 +297,6 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
 
             **kwargs: constructor kwargs for ``Function``
 
-        Returns:
-            A dict of attribute information. Only used if you add functions
-            from the ``RemoteInstrument`` rather than at construction, to
-            properly construct the proxy for this function.
-
         Raises:
             KeyError: if this instrument already has a function with this
                 name.
@@ -408,10 +305,6 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
             raise KeyError('Duplicate function name {}'.format(name))
         func = Function(name=name, instrument=self, **kwargs)
         self.functions[name] = func
-
-        # for use in RemoteInstruments to add functions to the server
-        # we return the info they need to construct their proxy
-        return func.get_attrs()
 
     def snapshot_base(self, update=False):
         """
@@ -463,7 +356,8 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
         print('{0:<{1}}'.format('\tparameter ', par_field_len) + 'value')
         print('-'*80)
         for par in sorted(snapshot['parameters']):
-            msg = '{0:<{1}}:'.format(snapshot['parameters'][par]['name'], par_field_len)
+            name = snapshot['parameters'][par]['name']
+            msg = '{0:<{1}}:'.format(name, par_field_len)
             val = snapshot['parameters'][par]['value']
             unit = snapshot['parameters'][par]['unit']
             if isinstance(val, floating_types):
@@ -473,7 +367,7 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
             if unit is not '':  # corresponds to no unit
                 msg += '({})'.format(unit)
             # Truncate the message if it is longer than max length
-            if len(msg) > max_chars and not max_chars==-1:
+            if len(msg) > max_chars and not max_chars == -1:
                 msg = msg[0:max_chars-3] + '...'
             print(msg)
 
@@ -608,60 +502,6 @@ class Instrument(Metadatable, DelegateAttributes, NestedAttrAccess,
             any: The return value of the function.
         """
         return self.functions[func_name].call(*args)
-
-    #
-    # info about what's in this instrument, to help construct the remote     #
-    #
-
-    def connection_attrs(self, new_id):
-        """
-        Collect info to reconstruct the instrument API in the RemoteInstrument.
-
-        Args:
-            new_id (int): The ID of this instrument on its server.
-                This is how the RemoteInstrument points its calls to the
-                correct server instrument when it calls the server.
-
-        Returns:
-            dict: Dictionary of name: str, id: int, parameters: dict,
-                functions: dict, _methods: dict
-                parameters, functions, and _methods are dictionaries of
-                name: List(str) of attributes to be proxied in the remote.
-        """
-        return {
-            'name': self.name,
-            'id': new_id,
-            'parameters': {name: p.get_attrs()
-                           for name, p in self.parameters.items()},
-            'functions': {name: f.get_attrs()
-                          for name, f in self.functions.items()},
-            '_methods': self._get_method_attrs()
-        }
-
-    def _get_method_attrs(self):
-        """
-        Construct a dict of methods this instrument has.
-
-        Returns:
-            dict: Dictionary of method names : list of attributes each method
-                has that should be proxied. As of now, this is just its
-                docstring, if it has one.
-        """
-        out = {}
-
-        for attr in dir(self):
-            value = getattr(self, attr)
-            if ((not callable(value)) or
-                    value is self.parameters.get(attr) or
-                    value is self.functions.get(attr) or
-                    attr in self._no_proxy_methods):
-                # Functions and Parameters are callable and they show up in
-                # dir(), but they have their own listing.
-                continue
-
-            out[attr] = ['__doc__'] if hasattr(value, '__doc__') else []
-
-        return out
 
     def __getstate__(self):
         """Prevent pickling instruments, and give a nice error message."""
