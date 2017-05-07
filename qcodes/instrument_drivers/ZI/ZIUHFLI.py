@@ -2,7 +2,6 @@ import time
 import logging
 import numpy as np
 from functools import partial
-
 try:
     import zhinst.utils
 except ImportError:
@@ -112,7 +111,7 @@ class Sweep(MultiParameter):
         # TODO: support non-sequential sweep mode
         if not sweepdict['scan'] == 0:
             raise NotImplementedError('Only sequential scanning is supported.')
-        if sweepdict['xmapping'] == 'lin':
+        if sweepdict['xmapping'] == 0:
             sw = tuple(np.linspace(start, stop, npts))
         else:
             logstart = np.log10(start)
@@ -341,7 +340,40 @@ class Scope(MultiParameter):
                       'AU Cartesian 2': 'AU Cartesian 2',
                       'AU Polar 1': 'AU Polar 1',
                       'AU Polar 2': 'AU Polar 2',
+                      'Demod 1 X': 'Demodulator 1 X',
+                      'Demod 1 Y': 'Demodulator 1 Y',
+                      'Demod 1 R': 'Demodulator 1 R',
+                      'Demod 1 Phase':  'Demodulator 1 Phase',
+                      'Demod 2 X': 'Demodulator 2 X',
+                      'Demod 2 Y': 'Demodulator 2 Y',
+                      'Demod 2 R': 'Demodulator 2 R',
+                      'Demod 2 Phase': 'Demodulator 2 Phase',
+                      'Demod 3 X': 'Demodulator 3 X',
+                      'Demod 3 Y': 'Demodulator 3 Y',
+                      'Demod 3 R': 'Demodulator 3 R',
+                      'Demod 3 Phase': 'Demodulator 3 Phase',
+                      'Demod 4 X': 'Demodulator 4 X',
+                      'Demod 4 Y': 'Demodulator 4 Y',
+                      'Demod 4 R': 'Demodulator 4 R',
+                      'Demod 4 Phase': 'Demodulator 4 Phase',
+                      'Demod 5 X': 'Demodulator 5 X',
+                      'Demod 5 Y': 'Demodulator 5 Y',
+                      'Demod 5 R': 'Demodulator 5 R',
+                      'Demod 5 Phase': 'Demodulator 5 Phase',
+                      'Demod 6 X': 'Demodulator 6 X',
+                      'Demod 6 Y': 'Demodulator 6 Y',
+                      'Demod 6 R': 'Demodulator 6 R',
+                      'Demod 6 Phase': 'Demodulator 6 Phase',
+                      'Demod 7 X': 'Demodulator 7 X',
+                      'Demod 7 Y': 'Demodulator 7 Y',
+                      'Demod 7 R': 'Demodulator 7 R',
+                      'Demod 7 Phase': 'Demodulator 7 Phase',
+                      'Demod 8 X': 'Demodulator 8 X',
+                      'Demod 8 Y': 'Demodulator 8 Y',
+                      'Demod 8 R': 'Demodulator 8 R',
+                      'Demod 8 Phase': 'Demodulator 8 Phase',
                       }
+
         # Make the basic setpoints (the x-axis)
         duration = params['scope_duration'].get()
         delay = params['scope_trig_delay'].get()
@@ -424,8 +456,6 @@ class Scope(MultiParameter):
 
             scope = self._instrument.scope # There are issues reusing the scope.
             scope.set('scopeModule/clearhistory', 1)
-            # Subscribe to the relevant... publisher?
-            scope.subscribe('/{}/scopes/0/wave'.format(self._instrument.device))
 
             # Start the scope triggering/acquiring
             params['scope_runstop'].set('run') # set /dev/scopes/0/enable to 1
@@ -450,6 +480,8 @@ class Scope(MultiParameter):
             if not (timedout or zi_error):
                 log.info('[+] ZI scope acquisition completed OK')
                 rawdata = scope.read()
+                if 'error' in rawdata:
+                    zi_error = bool(rawdata['error'][0])
                 data = self._scopedataparser(rawdata, self._instrument.device,
                                              npts, segs, channels)
             else:
@@ -462,7 +494,6 @@ class Scope(MultiParameter):
 
             # cleanup and make ready for next scope acquisition
             scope.finish()
-            scope.unsubscribe('/{}/scopes/0/wave'.format(self._instrument.device))
             if error_counter >= num_retries:
                 log.warning('[+] ZI scope acquisition failed, maximum number'
                             'of retries performed. No data returned')
@@ -533,7 +564,7 @@ class ZIUHFLI(Instrument):
         self.sweeper = self.daq.sweep()
         self.sweeper.set('sweep/device', self.device)
         self.scope = self.daq.scopeModule()
-        
+        self.scope.subscribe('/{}/scopes/0/wave'.format(self.device))
         ########################################
         # INSTRUMENT PARAMETERS
 
@@ -1106,7 +1137,7 @@ class ZIUHFLI(Instrument):
                             vals=vals.Enum('Time Domain', 'Freq Domain FFT')
                             )
 
-        # 1: Channel 1 on, Channel 2 off. 
+        # 1: Channel 1 on, Channel 2 off.
         # 2: Channel 1 off, Channel 2 on,
         # 3: Channel 1 on, Channel 2 on.
         self.add_parameter('scope_channels',
@@ -1166,8 +1197,8 @@ class ZIUHFLI(Instrument):
                            unit='s'
                            )
 
-        # Map the possible input sources to LabOne's IDs. 
-        # The IDs can be seen in log file of LabOne UI 
+        # Map the possible input sources to LabOne's IDs.
+        # The IDs can be seen in log file of LabOne UI
         inputselect = {'Signal Input 1': 0,
                        'Signal Input 2': 1,
                        'Trig Input 1': 2,
@@ -1185,9 +1216,9 @@ class ZIUHFLI(Instrument):
                        'AU Polar 1': 128,
                        'AU Polar 2': 129,
                        }
-        # Add all 8 demodulators and their respective parameters 
-        # to inputselect as well. 
-        # Numbers correspond to LabOne IDs, taken from UI log. 
+        # Add all 8 demodulators and their respective parameters
+        # to inputselect as well.
+        # Numbers correspond to LabOne IDs, taken from UI log.
         for demod in range(1,9):
             inputselect['Demod {} X'.format(demod)] = 15+demod
             inputselect['Demod {} Y'.format(demod)] = 31+demod
@@ -1971,6 +2002,7 @@ class ZIUHFLI(Instrument):
         """
         Override of the base class' close function
         """
+        self.scope.unsubscribe('/{}/scopes/0/wave'.format(self.device))
         self.scope.clear()
         self.sweeper.clear()
         self.daq.disconnect()

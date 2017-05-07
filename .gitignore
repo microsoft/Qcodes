@@ -58,6 +58,7 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+docs/_notebooks
 docs/api/generated/
 docs/_auto
 
