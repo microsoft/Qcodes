@@ -19,20 +19,26 @@ class Keithley_2600(VisaInstrument):
         super().__init__(name, address, terminator='\n', **kwargs)
         self._channel = channel
 
-        self.add_parameter('volt', get_cmd='measure.v()',
-                           get_parser=float, set_cmd='source.levelv={:.8f}',
+        self.add_parameter('volt',
+                           get_cmd='measure.v()',
+                           get_parser=float,
+                           set_cmd='source.levelv={:.12f}',
                            label='Voltage',
-                           units='V')
-        self.add_parameter('curr', get_cmd='measure.i()',
-                           get_parser=float, set_cmd='source.leveli={:.8f}',
+                           unit='V')
+        self.add_parameter('curr',
+                           get_cmd='measure.i()',
+                           get_parser=float,
+                           set_cmd='source.leveli={:.12f}',
                            label='Current',
-                           units='A')
+                           unit='A')
         self.add_parameter('mode',
                            get_cmd='source.func',
+                           get_parser=float,
                            set_cmd='source.func={:d}',
                            val_mapping={'current': 0, 'voltage': 1})
         self.add_parameter('output',
                            get_cmd='source.output',
+                           get_parser=float,
                            set_cmd='source.output={:d}',
                            val_mapping={'on':  1, 'off': 0})
         # Source range
@@ -41,26 +47,26 @@ class Keithley_2600(VisaInstrument):
                            get_cmd='source.rangev',
                            get_parser=float,
                            set_cmd='source.rangev={:.4f}',
-                           units='V')
+                           unit='V')
         # Measure range
         # needs get after set
         self.add_parameter('rangei',
                            get_cmd='source.rangei',
                            get_parser=float,
                            set_cmd='source.rangei={:.4f}',
-                           units='A')
+                           unit='A')
         # Compliance limit
         self.add_parameter('limitv',
                            get_cmd='source.limitv',
                            get_parser=float,
                            set_cmd='source.limitv={:.4f}',
-                           units='V')
+                           unit='V')
         # Compliance limit
         self.add_parameter('limiti',
                            get_cmd='source.limiti',
                            get_parser=float,
                            set_cmd='source.limiti={:.4f}',
-                           units='A')
+                           unit='A')
 
         self.connect_message()
 

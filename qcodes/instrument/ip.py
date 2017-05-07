@@ -28,12 +28,6 @@ class IPInstrument(Instrument):
         write_confirmation (bool): Whether the instrument acknowledges writes
             with some response we should read. Default True.
 
-        server_name (str): Name of the InstrumentServer to use. Defaults to
-            'IPInstruments'.
-
-            Use ``None`` to run locally - but then this instrument will not
-            work with qcodes Loops or other multiprocess procedures.
-
         metadata (Optional[Dict]): additional static metadata to add to this
             instrument's JSON snapshot.
 
@@ -58,19 +52,6 @@ class IPInstrument(Instrument):
         self._socket = None
 
         self.set_persistent(persistent)
-
-    @classmethod
-    def default_server_name(cls, **kwargs):
-        """
-        Get the default server name for this instrument.
-
-        Args:
-            **kwargs: All the kwargs supplied in the constructor.
-
-        Returns:
-            str: By default all IPInstruments go on the server 'IPInstruments'.
-        """
-        return 'IPInstruments'
 
     def set_address(self, address=None, port=None):
         """

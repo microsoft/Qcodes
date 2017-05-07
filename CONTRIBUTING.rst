@@ -5,7 +5,7 @@ Hi, thanks for your interest in the project! We welcome pull requests
 from developers of all skill levels.
 
 Alex Johnson (alexcjohnson) & and Giulio Ungaretti
-(giulio.ungaretti@gmail.com) are the creators and current maintainers of
+(unga@nbi.ku.dk) are the creators and current maintainers of
 Qcodes (aka core developers), along with a group of talented and smart
 volunteers. Please don't hesitate to reach out if you have any
 questions, or just need a little help getting started.
@@ -19,31 +19,21 @@ Bugs reports and feature requests
 ---------------------------------
 
 We use github's `issues <https://github.com/qdev-dk/Qcodes/issues>`__.
-Search for existing and closed issues. If your problem or idea is not
-yet addressed, `please open a new
-issue <https://github.com/qdev-dk/Qcodes/issues/new>`__
-
-Choose a label for your issue - please try to use an existing one rather
-than making a new label. If it involves new functionality, it's an
-``enhancement``. If it should work but it doesn't, it's a ``bug``. Bug
-reports must be accompanied by a reproducible example.
+Search for existing and closed issues. If your problem or idea is not yet
+addressed, `please open a new issue
+<https://github.com/qdev-dk/Qcodes/issues/new>`__
 
 The github GUI will show you a template both for bugs and features.
 Delete the wrong part and try to follow the template. Writing a good
-issue helps you in the first place.
+issue helps you in the first place.Bug reports must be accompanied by a
+reproducible example.
 
 Have an idea about future directions to go with Qcodes? Visions of
 data-utopia that would take more than a few weeks to add or might change
-some core ideas in the package? We can use issues for this too. Pick the
-``long-term`` or ``discussion`` labels, but maybe ping on slack before
-doing so!
+some core ideas in the package? We can use issues for this too. We will pick the
+``long-term`` or ``discussion`` labels.
 
-Please do not assign issues, but instead mention a core developer. If
-somebody is assigned to an issue it means that somebody is working on
-it.
-
-Use p1, p2, p3 to suggest a priority, but do not be surprised if the
-core team changes it.
+ If somebody is assigned to an issue it means that somebody is working on it.
 
 Clever usage
 ------------
@@ -69,13 +59,18 @@ Setup
 Running Tests
 ~~~~~~~~~~~~~
 
-The core test runner is in ``qcodes/test.py``:
+We don't want to reinvent the wheel, and thus use py.test.
+It's easy to install:
 
 ::
 
-    python qcodes/test.py
-    # optional extra verbosity and fail fast
-    python qcodes/test.py -v -f
+    pip install coverage pytest-cov pytest
+
+Then to test and view the coverage:
+
+::
+    py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
+
 
 You can also run single tests with:
 
@@ -87,92 +82,6 @@ You can also run single tests with:
     python -m unittest qcodes.tests.test_metadata
     # or
     python -m unittest qcodes.tests.test_metadata.TestMetadatable.test_snapshot
-
-If you run the core test runner, you should see output that looks
-something like this:
-
-::
-
-    .........***** found one MockMock, testing *****
-    ............................................Timing resolution:
-    startup time: 0.000e+00
-    min/med/avg/max dev: 9.260e-07, 9.670e-07, 1.158e-06, 2.109e-03
-    async sleep delays:
-    startup time: 2.069e-04
-    min/med/avg/max dev: 3.372e-04, 6.376e-04, 6.337e-04, 1.007e-03
-    multiprocessing startup delay and regular sleep delays:
-    startup time: 1.636e-02
-    min/med/avg/max dev: 3.063e-05, 2.300e-04, 2.232e-04, 1.743e-03
-    should go to stdout;should go to stderr;.stdout stderr stdout stderr ..[10:44:09.063 A Queue] should get printed
-    ...................................
-    ----------------------------------------------------------------------
-    Ran 91 tests in 4.192s
-
-    OK
-    Name                         Stmts   Miss  Cover   Missing
-    ----------------------------------------------------------
-    data/data_array.py             104      0   100%
-    data/data_set.py               179    140    22%   38-55, 79-94, 99-104, 123-135, 186-212, 215-221, 224-244, 251-254, 257-264, 272, 280-285, 300-333, 347-353, 360-384, 395-399, 405-407, 414-420, 426-427, 430, 433-438
-    data/format.py                 225    190    16%   44-55, 61-62, 70, 78-97, 100, 114-148, 157-188, 232, 238, 246, 258-349, 352, 355-358, 361-368, 375-424, 427-441, 444, 447-451
-    data/io.py                      76     50    34%   71-84, 90-91, 94, 97, 103, 109-110, 119-148, 154-161, 166, 169, 172, 175-179, 182, 185-186
-    data/manager.py                124     89    28%   15-20, 31, 34, 48-62, 65-67, 70, 76-77, 80-84, 90-102, 108-110, 117-121, 142-151, 154-182, 185, 188, 207-208, 215-221, 227-229, 237, 243, 249
-    instrument/base.py              74      0   100%
-    instrument/function.py          45      1    98%   77
-    instrument/ip.py                20     12    40%   10-16, 19-20, 24-25, 29-38
-    instrument/mock.py              63      0   100%
-    instrument/parameter.py        200      2    99%   467, 470
-    instrument/sweep_values.py     107     33    69%   196-207, 220-227, 238-252, 255-277
-    instrument/visa.py              36     24    33%   10-25, 28-32, 35-36, 40-41, 47-48, 57-58, 62-64, 68
-    loops.py                       285    239    16%   65-74, 81-91, 120-122, 133-141, 153-165, 172-173, 188-207, 216-240, 243-313, 316-321, 324-350, 354-362, 371-375, 378-381, 414-454, 457-474, 477-484, 487-491, 510-534, 537-543, 559-561, 564, 577, 580, 590-608, 611-618, 627-628, 631
-    station.py                      35     24    31%   17-32, 35, 45-50, 60, 67-82, 88
-    utils/helpers.py                95      0   100%
-    utils/metadata.py               13      0   100%
-    utils/multiprocessing.py        95      2    98%   125, 134
-    utils/sync_async.py            114      8    93%   166, 171-173, 176, 180, 184, 189-191
-    utils/timing.py                 72      0   100%
-    utils/validators.py            110      0   100%
-    ----------------------------------------------------------
-    TOTAL                         2072    814    61%
-
-The key is ``OK`` in the middle (that means all the tests passed), and
-the presence of the coverage report after it. If any tests fail, we do
-not show a coverage report, and the end of the output will contain
-tracebacks and messages about what failed, for example:
-
-::
-
-    ======================================================================
-    FAIL: test_sweep_steps_edge_case (tests.test_instrument.TestParameters)
-    ----------------------------------------------------------------------
-    Traceback (most recent call last):
-      File "/Users/alex/qdev/Qcodes/qcodes/tests/test_instrument.py", line 360, in test_sweep_steps_edge_case
-        self.check_set_amplitude2('Off', log_count=1, history_count=2)
-      File "/Users/alex/qdev/Qcodes/qcodes/tests/test_instrument.py", line 345, in check_set_amplitude2
-        self.assertTrue(line.startswith('negative delay'), line)
-    AssertionError: False is not true : cannot sweep amplitude2 from 0.1 to Off - jumping.
-
-    ----------------------------------------------------------------------
-    Ran 91 tests in 4.177s
-
-    FAILED (failures=1)
-
-The coverage report is only useful if you have been adding new code, to
-see whether your tests visit all of your code. Look at the file(s) you
-have been working on, and ensure that the "missing" section does not
-contain the line numbers of any of the blocks you have touched.
-Currently the core still has a good deal of untested code - eventually
-we will have all of this tested, but for now you can ignore all the rest
-of the missing coverage.
-
-You can also run these tests from inside python. The output is similar
-except that a) you don't get coverage reporting, and b) one test has to
-be skipped because it does not apply within a notebook, so the output
-will end ``OK (skipped=1)``:
-
-.. code:: python
-
-    import qcodes
-    qcodes.test_core()  # optional verbosity = 1 (default) or 2
 
 If the tests pass, you should be ready to start developing!
 
@@ -207,9 +116,8 @@ before your fix, so we can be sure the bug does not reappear later!
 
 New code and testing
 ~~~~~~~~~~~~~~~~~~~~
-
--  Make a branch within this repo, rather than making your own fork
-   (unless you know what you are doing).
+-  Fork the repo into your github account
+-  Make a branch within this repo
 -  branch naming matters:
 
    -  always select a prefix:
@@ -325,15 +233,6 @@ and then unit testing should be run on pull-request, using CI. Maybe
 simplify to a one command that says: if there's enough cover, and all
 good or fail and where it fails.
 
--  The standard test commands are listed above under
-   :ref:`runnningtests`. More notes on different test runners can
-   be found in  :ref:`testing`.
-
--  Core tests live in
-   `qcodes/tests <https://github.com/qdev-dk/Qcodes/tree/master/qcodes/tests>`__
-   and instrument tests live in the same directories as the instrument
-   drivers.
-
 -  We should have a *few* high-level "integration" tests, but simple
    unit tests (that just depend on code in one module) are more valuable
    for several reasons:
@@ -341,7 +240,6 @@ good or fail and where it fails.
 -  When features change it is likely that more tests will need to change
 -  Unit tests can cover many scenarios much faster than integration
    tests.
-
 -  If you're having difficulty making unit tests, first consider whether
    your code could be restructured to make it less dependent on other
    modules. Often, however, extra techniques are needed to break down a
@@ -350,9 +248,8 @@ good or fail and where it fails.
 -  Patching, one of the most useful parts of the
    `unittest.mock <https://docs.python.org/3/library/unittest.mock.html>`__
    library. This lets you specify exactly how other functions/objects
-   should behave when they're called by the code you are testing. For a
-   simple example, see
-   `test\_multiprocessing.py <https://github.com/qdev-dk/Qcodes/blob/58a8692bed55272f4c5865d6ec37f846154ead16/qcodes/tests/test_multiprocessing.py#L63-L65>`__
+   should behave when they're called by the code you are testing.
+
 -  Supporting files / data: Lets say you have a test of data acquisition
    and analysis. You can break that up into an acquisition test and an
    analysis by saving the intermediate state, namely the data file, in
@@ -404,6 +301,7 @@ NOTE(giulioungaretti): is this enough ?
 -  A lot of editors have plugins that will check this for you
    automatically as you type. Sublime Text for example has
    sublimelinter-pep8 and the even more powerful sublimelinter-flake8.
+   For Emacs, the elpy package is strongly recommended (https://github.com/jorgenschaefer/elpy).
 -  BUT: do not change someone else's code to make it pep8-compliant
    unless that code is fully tested.
 -  BUT: remove all trailing spaces.
@@ -417,7 +315,7 @@ Pull requests
 ~~~~~~~~~~~~~
 
 -  Push your branch back to github and make a pull request (PR). If you
-   visit the repo `home page <https://github.com/qdev-dk/Qcodes>`__ soon
+   visit the repo `home page <ht://github.com/qdev-dk/Qcodes>`__ soon
    after pushing to a branch, github will automatically ask you if you
    want to make a PR and help you with it.
 
@@ -445,10 +343,6 @@ Pull requests
    github conversations. The most important one is :dancer: which means
    "approved" - typically one of the core contributors should give the
    dancer. Ideally this person was also tagged when you opened the PR.
-
--  You, the initiator of the pull request, should do the actual merge
-   into master after receiving the :dancer: because you will know best
-   if there is anything left you want to add.
 
 -  Delete your branch once you have merged (using the helpful button
    provided by github after the merge) to keep the repository clean.

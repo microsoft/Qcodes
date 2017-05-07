@@ -38,11 +38,13 @@ Broader adoption within stationQ
 -  raw data (as raw as feasible)
 -  analyzed data
 -  metadata, including both:
+
    -  experiment data: all electronic settings and any available manual
       settings, timestamp
    -  information on the code state: git commit id and/or version of
       this package, traceback at the point of execution, and potentially
       information about the other scripts involved in the sweep?
+
 -  automatic logging of monitor parameters (eg fridge and magnet
    information) as a function of time
 -  Instrument drivers: all drivers group members have used in their
