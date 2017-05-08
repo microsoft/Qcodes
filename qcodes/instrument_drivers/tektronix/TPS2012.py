@@ -4,10 +4,16 @@ import binascii
 import numpy as np
 from pyvisa.errors import VisaIOError
 from functools import partial
+
 from qcodes import VisaInstrument, validators as vals
 from qcodes import ArrayParameter
 
 log = logging.getLogger(__name__)
+
+
+class TraceNotReady(Exception):
+    pass
+
 
 class ScopeArray(ArrayParameter):
     def __init__(self, name, instrument, channel):
@@ -16,13 +22,13 @@ class ScopeArray(ArrayParameter):
                          unit='V ',
                          setpoint_names=('Time', ),
                          setpoint_labels=('Time', ),
+                         setpoint_units=('s',),
                          docstring='holds an array from scope')
         self.channel = channel
         self._instrument = instrument
 
     def calc_set_points(self):
-        message = self._instrument.ask('WAVFrm?')
-        self._instrument.write('*WAI')
+        message = self._instrument.ask('WFMPre?')
         preamble = self._preambleparser(message)
         xstart = preamble['x_zero']
         xinc = preamble['x_incr']
@@ -30,15 +36,31 @@ class ScopeArray(ArrayParameter):
         xdata = np.linspace(xstart, no_of_points * xinc + xstart, no_of_points)
         return xdata, no_of_points
 
+    def prepare_curvedata(self):
+        """
+        Prepare the scope for returning curve data
+        """
+        # To calculate set points, we must have the full preamble
+        # For the instrument to return the full preamble, the channel
+        # in question must be displayed
 
-    def set_set_points(self):
+        states = [self._instrument.parameters['ch1_state'].set,
+                  self._instrument.parameters['ch2_state'].set]
+        states[self.channel-1]('ON')
+        self._instrument.data_source('CH{}'.format(self.channel))
+
         xdata, no_of_points = self.calc_set_points()
         self.setpoints = (tuple(xdata), )
         self.shape = (no_of_points, )
 
+        self._instrument.trace_ready = True
+
     def get(self):
+        if not self._instrument.trace_ready:
+            raise TraceNotReady('Please run prepare_curvedata to prepare '
+                                'the scope for giving a trace.')
         message = self._curveasker(self.channel)
-        xdata, ydata, npoints = self._curveparameterparser(message)
+        _, ydata, _ = self._curveparameterparser(message)
         # Due to the limitations in the current api the below solution
         # to change setpoints does nothing because the setpoints have
         # already been copied to the dataset when get is called.
@@ -132,8 +154,10 @@ class ScopeArray(ArrayParameter):
 
         preamble = self._preambleparser(preamblestr)
         # the raw curve data starts with a header containing the char #
-        # followed by on digit giving the number of digits in the len of the array in bytes
-        # and the length of the array. I.e. the string #45000 is 5000 bytes represented by 4 digits.
+        # followed by on digit giving the number of digits in the len of the
+        # array in bytes
+        # and the length of the array. I.e. the string #45000 is 5000 bytes
+        # represented by 4 digits.
         total_number_of_bytes = preamble['no_of_bytes']*preamble['no_of_points']
         raw_data_offset = 2 + len(str(total_number_of_bytes))
         curvestr = curvestr[raw_data_offset:-1]
@@ -168,6 +192,9 @@ class TPS2012(VisaInstrument):
 
         super().__init__(name, address, timeout=timeout, **kwargs)
         self.connect_message()
+
+        # Scope trace boolean
+        self.trace_ready = False
 
         # functions
 
@@ -207,12 +234,17 @@ class TPS2012(VisaInstrument):
                            set_cmd='TRIGger:MAIn:LEVel {}',
                            vals=vals.Numbers()
                            )
-
+        self.add_parameter('data_source',
+                           label='Data source',
+                           get_cmd='DATa:SOUrce?',
+                           set_cmd='DATa:SOURce {}',
+                           vals=vals.Enum('CH1', 'CH2')
+                           )
         self.add_parameter('horizontal_scale',
                            label='Horizontal scale',
                            unit='s',
                            get_cmd='HORizontal:SCAle?',
-                           set_cmd='HORizontal:SCAle {}',
+                           set_cmd=self._set_timescale,
                            get_parser=float,
                            vals=vals.Enum(5e-9, 10e-9, 25e-9, 50e-9, 100e-9,
                                           250e-9, 500e-9, 1e-6, 2.5e-6, 5e-6,
@@ -238,17 +270,23 @@ class TPS2012(VisaInstrument):
                                set_cmd='CH{}:SCAle {}'.format(ch, '{}'),
                                get_parser=float
                                )
-
             self.add_parameter('ch{}_position'.format(ch),
                                label='Channel {} Position'.format(ch),
                                unit='div',
                                get_cmd='CH{}:POSition?'.format(ch),
                                set_cmd='CH{}:POSition {}'.format(ch, '{}'),
-                               get_parser=float)
-
+                               get_parser=float
+                               )
             self.add_parameter('ch{}_curvedata'.format(ch),
                                channel=ch,
                                parameter_class=ScopeArray,
+                               )
+            self.add_parameter('ch{}_state'.format(ch),
+                               label='Channel {} display state'.format(ch),
+                               set_cmd='SELect:CH{} {}'.format(ch, '{}'),
+                               get_cmd=partial(self._get_state, ch),
+                               val_mapping={'ON': 1, 'OFF': 0},
+                               vals=vals.Enum('ON', 'OFF')
                                )
 
         # Necessary settings for parsing the binary curve data
@@ -263,6 +301,23 @@ class TPS2012(VisaInstrument):
         # significantly to transfer times. The maximal length
         # of an array in one transfer is 2500 points.
 
+    def _get_state(self, ch):
+        """
+        get_cmd for the chX_state parameter
+        """
+        # 'SELect?' returns a ';'-separated string of 0s and 1s
+        # denoting state display state of ch1, ch2, ?, ?, ?
+        # (maybe ch1, ch2, math, ref1, ref2 ..?)
+        selected = list(map(int, self.ask('SELect?').split(';')))
+        state = selected[ch-1]
+        return state
+
+    def _set_timescale(self, scale):
+        """
+        set_cmd for the horizontal_scale
+        """
+        self.trace_ready = False
+        self.write('HORizontal:SCAle {}'.format(scale))
 
     ##################################################
     # METHODS FOR THE USER                           #
