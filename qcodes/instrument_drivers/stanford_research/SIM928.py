@@ -1,11 +1,13 @@
+from functools import partial
 import logging
 import numpy as np
-from functools import partial
 import time
+
+from qcodes.instrument.parameter import ManualParameter
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
-from qcodes.instrument.parameter import ManualParameter
 
+log = logging.getLogger(__name__)
 
 class SIM928(VisaInstrument):
     """
@@ -79,32 +81,12 @@ class SIM928(VisaInstrument):
         Returns:
             A dict containing vendor, model, serial, and firmware.
         """
-        if type(i) != int:
+        if not isinstance(i, int):
             i = self.module_nr[i]
-
-        idstr = ''  # in case self.ask fails
-        idparts = [None, None, None, None]
-        try:
-            idstr = self.ask_module(i, '*IDN?')
-            # form is supposed to be comma-separated, but we've seen
-            # other separators occasionally
-            for separator in ',;:':
-                # split into no more than 4 parts, so we don't lose info
-                idparts = [p.strip() for p in idstr.split(separator, 3)]
-                if len(idparts) > 1:
-                    break
-            # in case parts at the end are missing, fill in None
-            if len(idparts) < 4:
-                idparts += [None] * (4 - len(idparts))
-        except:
-            logging.warning('Error getting or interpreting *IDN?: ' +
-                            repr(idstr))
-            idparts = [None, None, None, None]
-
-        # some strings include the word 'model' at the front of model
-        if str(idparts[1]).lower().startswith('model'):
-            idparts[1] = str(idparts[1])[5:].strip()
-
+        idstr = self.ask_module(i, '*IDN?')
+        idparts = [p.strip() for p in idstr.split(',', 3)]
+        if len(idparts) < 4:
+            idparts += [None] * (4 - len(idparts))
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
     def find_modules(self):
@@ -136,7 +118,7 @@ class SIM928(VisaInstrument):
         Returns:
             The response string from the module.
         """
-        if type(i) != int:
+        if not isinstance(i, int):
             i = self.module_nr[i]
         msg = 'SNDT {},"{}"'.format(i, cmd)
         self.write(msg)
@@ -161,7 +143,7 @@ class SIM928(VisaInstrument):
                 of the module to write to.
             cmd (str): The VISA command string.
         """
-        if type(i) != int:
+        if not isinstance(i, int):
             i = self.module_nr[i]
         self.write('SNDT {},"{}"'.format(i, cmd))
 
@@ -174,7 +156,7 @@ class SIM928(VisaInstrument):
                 of the module to set the voltage of.
             voltage (float): The value to set the voltage to.
         """
-        if type(i) != int:
+        if not isinstance(i, int):
             name = i
             i = self.module_nr[i]
         else:
@@ -193,7 +175,7 @@ class SIM928(VisaInstrument):
         Returns:
             The current voltage of module ``i`` as a ``float``.
         """
-        if type(i) != int:
+        if not isinstance(i, int):
             i = self.module_nr[i]
         return float(self.ask_module(i, 'VOLT?'))
 
@@ -214,7 +196,7 @@ class SIM928(VisaInstrument):
         # convert voltagedict to contain module names only and validate inputs
         vdict = {}
         for i in voltagedict:
-            if type(i) != int:
+            if not isinstance(i, int):
                 if self.module_nr[i] not in self.modules:
                     raise KeyError('There is no module named {}'.format(i))
                 name = i
@@ -297,7 +279,7 @@ class SIM928(VisaInstrument):
             i (int/str): Slot number or module name (as in ``slot_names``)
                 of the module to reset.
         """
-        if type(i) != int:
+        if not isinstance(i, int):
             i = self.module_nr[i]
         self.write('SRST {}'.format(i))
 
@@ -391,8 +373,8 @@ class SIM928(VisaInstrument):
                 raise Exception(' '.join(errors + warnings))
         return errors + warnings
 
-    @classmethod
-    def byte_to_bits(cls, x):
+    @staticmethod
+    def byte_to_bits(x):
         """
         Convert an integer to a list of bits
 
@@ -404,7 +386,7 @@ class SIM928(VisaInstrument):
             represents 1 and ``False`` 0.
         """
         bits = []
-        for i in range(8):
+        for _ in range(8):
             if x & 1 != 0:
                 bits.append(True)
             else:

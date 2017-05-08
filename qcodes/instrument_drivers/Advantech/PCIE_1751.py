@@ -1,12 +1,13 @@
 import cffi
-from functools import partial
 import collections
-import os
+from functools import partial
 import logging
+import os
 
 from qcodes.instrument.base import Instrument
 from qcodes.utils import validators as vals
 
+log = logging.getLogger(__name__)
 
 class DAQNaviException(Exception):
     """
@@ -117,8 +118,8 @@ class Advantech_PCIE_1751(Instrument):
         else:
             vallist = [value]
         data = self.ffi.new('uint8[]', vallist)
-        logging.debug('PCIE-1751: Write({}, {}, {})'.format(i, len(vallist),
-                                                            vallist))
+        log.debug('PCIE-1751: Write({}, {}, {})'.format(i, len(vallist),
+                                                        vallist))
         self.check(self.dll.InstantDoCtrl_WriteAny(self.do, i, len(vallist),
                                                    data))
     
