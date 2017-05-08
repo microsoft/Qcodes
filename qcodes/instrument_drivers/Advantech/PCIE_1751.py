@@ -9,6 +9,7 @@ from qcodes.utils import validators as vals
 
 log = logging.getLogger(__name__)
 
+
 class DAQNaviException(Exception):
     """
     Exception raised if one of the Advantech's DAQNavi library's functions
@@ -49,9 +50,9 @@ class Advantech_PCIE_1751(Instrument):
 
     def __init__(self, name, device_description="PCIE-1751,BID#0", **kw):
         super().__init__(name, **kw)
-        
+
         self.device_description = device_description
-        
+
         # parse the header for function and structure declarations
         self.ffi = cffi.FFI()
         package_directory = os.path.dirname(os.path.abspath(__file__))
@@ -59,14 +60,14 @@ class Advantech_PCIE_1751(Instrument):
         with open(header_file) as h:
             self.ffi.cdef(h.read())
         self.dll = self.ffi.dlopen("biodaq.dll")
-        
+
         # create the digital input and output devices
         self.info = self.ffi.new("DeviceInformation *")
         self.info.Description = self.device_description
         self.info.DeviceNumber = -1
         self.info.DeviceMode = self.dll.ModeWriteWithReset
         self.info.ModuleIndex = 0
-        
+
         self.di = self.dll.AdxInstantDiCtrlCreate()
         self.check(self.dll.InstantDiCtrl_setSelectedDevice(self.di, self.info))
         self.do = self.dll.AdxInstantDoCtrlCreate()
@@ -90,7 +91,7 @@ class Advantech_PCIE_1751(Instrument):
                           "as inputs and pins 4 to 7 as outputs\n"
                           "    0xff indicating that all pins are configured as "
                           "outputs".format(i))
-        
+
         self.connect_message()
 
     def read_port(self, i, n=1):
@@ -105,7 +106,7 @@ class Advantech_PCIE_1751(Instrument):
             return values[0]
         else:
             return list(values)
-        
+
     def write_port(self, i, value):
         """
         Writes values to output ports. If value is an integer, writes its
@@ -122,7 +123,7 @@ class Advantech_PCIE_1751(Instrument):
                                                         vallist))
         self.check(self.dll.InstantDoCtrl_WriteAny(self.do, i, len(vallist),
                                                    data))
-    
+
     def read_pin(self, port, pin):
         """
         Reads and returns the value pin pin of port port.
@@ -163,7 +164,7 @@ class Advantech_PCIE_1751(Instrument):
         self.dll.InstantDoCtrl_Dispose(self.do)
         self.dll.InstantDiCtrl_Dispose(self.di)
         super().close()
-        
+
     def _get_port_direction(self, i):
         """
         Returns the direction of port i as a 8-bit number where for each bit,
@@ -173,7 +174,7 @@ class Advantech_PCIE_1751(Instrument):
         pcoll = self.dll.InstantDoCtrl_getPortDirection(self.do)
         port_objs = self._ICollection_to_list(pcoll, 'PortDirection *')
         return self.dll.PortDirection_getDirection(port_objs[i])
-    
+
     def _set_port_direction(self, i, direction):
         """
         i is the number of the port to configure
@@ -188,7 +189,7 @@ class Advantech_PCIE_1751(Instrument):
         pcoll = self.dll.InstantDoCtrl_getPortDirection(self.do)
         port_objs = self._ICollection_to_list(pcoll, 'PortDirection *')
         self.check(self.dll.PortDirection_setDirection(port_objs[i], direction))
-       
+
     def _ICollection_to_list(self, collection, ctype='void *'):
         """
         collection is a cffi object of type 'ICollection *'
