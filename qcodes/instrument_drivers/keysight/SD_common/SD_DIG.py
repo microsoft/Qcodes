@@ -51,7 +51,7 @@ class SD_DIG(SD_Module):
 
         # For channelInputConfig
         self.__full_scale = [1] * self.n_channels  # By default, full scale = 1V
-        self.__impedance = [0] * self.n_channels  # By default, Hi-z
+        self.__impedance = [1] * self.n_channels  # By default, 50 ohm
         self.__coupling = [0] * self.n_channels  # By default, DC coupling
         # For channelPrescalerConfig
         self.__prescaler = [0] * self.n_channels  # By default, no prescaling
@@ -60,7 +60,7 @@ class SD_DIG(SD_Module):
         self.__trigger_threshold = [0] * self.n_channels  # By default, threshold at 0V
         # For DAQ config
         self.__points_per_cycle = [0] * self.n_channels
-        self.__n_cycles = [0] * self.n_channels
+        self.__n_cycles = [-1] * self.n_channels
         self.__trigger_delay = [0] * self.n_channels
         self.__trigger_mode = [0] * self.n_channels
         # For DAQ trigger Config
