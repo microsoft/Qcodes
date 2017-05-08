@@ -93,7 +93,7 @@ class ScopeArray(ArrayParameter):
         # TODO: Add support for data width = 1 mode?
         output = np.zeros(int(len(curve)/2))  # data width 2
         # output = np.zeros(int(len(curve)))  # data width 1
-        for ii in range(len(output)):
+        for ii, _ in enumerate(output):
             # casting FTWs
             temp = curve[2*ii:2*ii+1].encode('latin-1')  # data width 2
             temp = binascii.b2a_hex(temp)
@@ -254,12 +254,6 @@ class TPS2012(VisaInstrument):
                                           1, 2.5, 5, 10, 25, 50))
 
         # channel-specific parameters
-
-        def curveasker(ch):
-            self.write('DATa:SOURce CH{}'.format(ch))
-            message = self.ask('WAVFrm?')
-            self.write('*WAI')
-            return message
 
         for ch in range(1, 3):
 
