@@ -1,0 +1,4 @@
+coverage
+pytest-cov
+pytest
+codacy-coverage
