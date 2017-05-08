@@ -110,6 +110,9 @@ class Loop(Metadatable):
         self.bg_min_delay = None
         self.progress_interval = progress_interval
 
+    def __getitem__(self, key):
+        return self.actions[key]
+
     def loop(self, sweep_values, delay=0):
         """
         Nest another loop inside this one.
@@ -352,6 +355,9 @@ class ActiveLoop(Metadatable):
         # happen - the outer delay happens *after* the inner var gets
         # set to its initial value
         self._nest_first = hasattr(actions[0], 'containers')
+
+    def __getitem__(self, key):
+        return self.actions[key]
 
     def then(self, *actions, overwrite=False):
         """
