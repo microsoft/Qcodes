@@ -23,7 +23,7 @@ class FrequencySweep(MultiParameter):
       stop: ending frequency of sweep
       npts: numper of points in frequency sweep
 
-     Methods:
+    Methods:
         set_sweep(start, stop, npts): sets the shapes and
             setpoint arrays of the parameter to correspond with the sweep
         get(): executes a sweep and returns magnitude and phase arrays
