@@ -2,6 +2,7 @@ import numpy as np
 import logging
 import h5py
 import os
+import json
 
 from .data_array import DataArray
 from .format import Formatter
@@ -279,7 +280,7 @@ class HDF5Format(Formatter):
                         elif isinstance(item[0], str):
                             dt = h5py.special_dtype(vlen=str)
                             data = np.array(item)
-                            data = data.reshape( (-1,1))
+                            data = data.reshape((-1, 1))
                             ds = entry_point.create_dataset(
                                 key, (len(data), 1), dtype=dt)
                             ds[:] = data
@@ -387,3 +388,55 @@ def str_to_bool(s):
         return False
     else:
         raise ValueError("Cannot covert {} to a bool".format(s))
+
+from qcodes.utils.helpers import deep_update, NumpyJSONEncoder
+
+
+class HDF5FormatMetadata(HDF5Format):
+
+    metadata_file = 'snapshot.json'
+
+    def write_metadata(self, data_set, io_manager=None, location=None, read_first=False):
+        """
+        Write all metadata in this DataSet to storage.
+
+        Args:
+            data_set (DataSet): the data we're storing
+
+            io_manager (io_manager): the base location to write to
+
+            location (str): the file location within io_manager
+
+            read_first (bool, optional): read previously saved metadata before
+                writing? The current metadata will still be the used if
+                there are changes, but if the saved metadata has information
+                not present in the current metadata, it will be retained.
+                Default True.
+        """
+
+        # this statement is here to make the linter happy
+        if io_manager is None or location is None:
+            raise Exception('please set io_manager and location arguments ')
+
+        if read_first:
+            # In case the saved file has more metadata than we have here,
+            # read it in first. But any changes to the in-memory copy should
+            # override the saved file data.
+            memory_metadata = data_set.metadata
+            data_set.metadata = {}
+            self.read_metadata(data_set)
+            deep_update(data_set.metadata, memory_metadata)
+
+        fn = io_manager.join(location, self.metadata_file)
+        with io_manager.open(fn, 'w', encoding='utf8') as snap_file:
+            json.dump(data_set.metadata, snap_file, sort_keys=True,
+                      indent=4, ensure_ascii=False, cls=NumpyJSONEncoder)
+
+    def read_metadata(self, data_set):
+        io_manager = data_set.io
+        location = data_set.location
+        fn = io_manager.join(location, self.metadata_file)
+        if io_manager.list(fn):
+            with io_manager.open(fn, 'r') as snap_file:
+                metadata = json.load(snap_file, encoding='utf8')
+            data_set.metadata.update(metadata)
