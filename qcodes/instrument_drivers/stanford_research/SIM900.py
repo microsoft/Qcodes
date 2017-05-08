@@ -31,7 +31,7 @@ class SIM928(StandardParameter):
                          unit='V',
                          get_cmd=self.get_voltage,
                          set_cmd=self.send_cmd + '"VOLT {:.4f}"',
-                         step=0.005,
+                         step=0.01,
                          delay=0.035,
                          vals=vals.Numbers(-max_voltage, max_voltage),
                          **kwargs)

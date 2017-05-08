@@ -205,7 +205,7 @@ class Loop(Metadatable):
         """
         return _attach_bg_task(self, task, bg_final_task, min_delay)
 
-    def plot(self, min_delay=0.5, *args, figsize=None, subplots=None,
+    def plot(self, *args, min_delay=0.5, figsize=None, subplots=None,
              num=None, **kwargs):
         plot = MatPlot(*args, figsize=figsize, subplots=subplots, num=num,
                        **kwargs)
@@ -398,7 +398,7 @@ class ActiveLoop(Metadatable):
         """
         return _attach_bg_task(self, task, bg_final_task, min_delay)
 
-    def plot(self, min_delay=0.5, *args, figsize=None, subplots=None,
+    def plot(self, *args, min_delay=0.5, figsize=None, subplots=None,
              num=None, **kwargs):
         plot = MatPlot(*args, figsize=figsize, subplots=subplots, num=num,
                        **kwargs)
