@@ -198,7 +198,7 @@ class SD_DIG(SD_Module):
             self.add_parameter(
                 'DAQ_trigger_mode_{}'.format(n),
                 label='Trigger mode for for DAQ {}'.format(n),
-                vals=Enum(0,1,2,3,4,5,6,7),
+                vals=Enum(0, 1, 2, 3),
                 set_cmd=partial(self.set_daq_trigger_mode, channel=n),
                 docstring='The trigger mode for DAQ {}'.format(n)
             )
@@ -531,7 +531,7 @@ class SD_DIG(SD_Module):
             mode (int)          : the trigger mode drawn from the class SD_AIN_TriggerMode
         """
         self.__trigger_edge[channel] = mode
-        value = self.SD_AIN.channelTriggerConfig(channel, self.__analog_trigger_mask[channel],
+        value = self.SD_AIN.channelTriggerConfig(channel, self.__trigger_edge[channel],
                                                  self.__trigger_threshold[channel])
         value_name = 'set_trigger_edge {}'.format(mode)
         return result_parser(value, value_name, verbose)
@@ -552,7 +552,7 @@ class SD_DIG(SD_Module):
             threshold (float)   : the value in volts for the trigger threshold
         """
         self.__trigger_threshold[channel] = threshold
-        value = self.SD_AIN.channelTriggerConfig(channel, self.__analog_trigger_mask[channel],
+        value = self.SD_AIN.channelTriggerConfig(channel, self.__trigger_edge[channel],
                                                  self.__trigger_threshold[channel])
         value_name = 'set_trigger_threshold {}'.format(threshold)
         return result_parser(value, value_name, verbose)
@@ -664,9 +664,7 @@ class SD_DIG(SD_Module):
             mask  (int)         : the trigger mask you are using
         """
         self.__analog_trigger_mask[channel] = mask
-        value = self.SD_AIN.DAQtriggerConfig(channel, self.__digital_trigger_mode[channel],
-                                             self.__digital_trigger_source[channel],
-                                             self.__analog_trigger_mask[channel])
+        value = self.SD_AIN.DAQanalogTriggerConfig(channel, self.__analog_trigger_mask[channel])
         value_name = 'set_analog_trigger_mask {}'.format(mask)
         return result_parser(value, value_name, verbose)
 
