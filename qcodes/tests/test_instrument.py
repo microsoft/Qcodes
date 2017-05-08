@@ -95,16 +95,16 @@ class TestInstrument(TestCase):
                              Instrument.find_instrument(instrument.name))
 
     def test_snapshot_value(self):
-        self.source.add_parameter('has_snapshot_value',
-                            parameter_class=ManualParameter,
-                            initial_value=42,
-                            snapshot_value=True)
-        self.source.add_parameter('no_snapshot_value',
-                            parameter_class=ManualParameter,
-                            initial_value=42,
-                            snapshot_value=False)
+        self.instrument.add_parameter('has_snapshot_value',
+                                      parameter_class=ManualParameter,
+                                      initial_value=42,
+                                      snapshot_value=True)
+        self.instrument.add_parameter('no_snapshot_value',
+                                      parameter_class=ManualParameter,
+                                      initial_value=42,
+                                      snapshot_value=False)
 
-        snapshot = self.source.snapshot()
+        snapshot = self.instrument.snapshot()
 
         self.assertIn('value', snapshot['parameters']['has_snapshot_value'])
         self.assertEquals(42,
