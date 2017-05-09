@@ -1,11 +1,12 @@
 from qcodes import VisaInstrument, validators as vals
-from numpy import pi
-from qcodes.utils.validators import Numbers, Ints, Enum
+import numpy as np
+from qcodes.utils.validators import Numbers
+
 
 
 
 class E8267(VisaInstrument):
-    """
+    """  
     This is the code for Agilent E8267 Signal Generator 
     """
 
@@ -42,7 +43,7 @@ class E8267(VisaInstrument):
                                         max_value=20e-9))
         self.add_parameter(name='phase',
                            label='Phase',
-                           unit='rad',
+                           unit='deg',
                            get_cmd='PHAS?',
                            set_cmd='PHAS {}',
                            get_parser=self.rad_to_deg,
@@ -83,13 +84,12 @@ class E8267(VisaInstrument):
 
 # functions to convert between rad and deg
 
-    def deg_to_rad(self, angle_deg):
-            angle_rad = float(angle_deg) / 360 * 2 * pi
-            return angle_rad
+    @staticmethod
+    def deg_to_rad(angle_deg):
+            return np.deg2rad(float(angle_deg))
 
-    def rad_to_deg(self, angle_rad):
-            angle_deg = float(angle_rad) / (2 * pi) * 360
-            return angle_deg
-
+    @staticmethod
+    def rad_to_deg(angle_rad):
+            return np.rad2deg(float(angle_rad))
 
 
