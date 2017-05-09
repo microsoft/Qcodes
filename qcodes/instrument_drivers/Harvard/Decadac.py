@@ -101,11 +101,11 @@ class Decadac(VisaInstrument):
         # initialise hardware settings
         self.mode.set(2)
 
-    def _setmode(slot, mode):
+    def _setmode(self, slot, mode):
         """
         set_cmd for the mode parameter
         """
-        self.visa_handle.write('B {}; M {};'.format(slot, mode)
+        self.visa_handle.write('B {}; M {};'.format(slot, mode))
         self.visa_handle.read()
 
     def _getoffset(self, n):
