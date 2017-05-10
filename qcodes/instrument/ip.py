@@ -92,9 +92,13 @@ class IPInstrument(Instrument):
         if self._socket is not None:
             self._disconnect()
 
-        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._socket.connect((self._address, self._port))
-        self.set_timeout(self._timeout)
+        try:
+            self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._socket.connect((self._address, self._port))
+            self.set_timeout(self._timeout)
+        except ConnectionRefusedError:
+            self._socket.close()
+            self._socket = None
 
     def _disconnect(self):
         if getattr(self, '_socket', None) is None:
