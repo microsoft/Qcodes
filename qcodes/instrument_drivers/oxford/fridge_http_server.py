@@ -4,18 +4,20 @@ from aiohttp.hdrs import METH_POST
 import socket
 import time
 from typing import Dict, Union
+import websockets
+import json
 
 from qcodes.instrument_drivers.oxford.triton import Triton
 from qcodes.instrument_drivers.oxford.mock_triton import MockTriton
 
 class FridgeHttpServer:
 
-    def __init__(self, name='triton', tritonaddress='http://localhost', use_mock_triton=True, websocket_wait_time=1):
+    def __init__(self, name='triton', tritonaddress='http://localhost', use_mock_triton=True, tritonport=33576, websocket_wait_time=10):
         self._websocket_wait_time = websocket_wait_time
         if use_mock_triton:
             self.triton = MockTriton()
         else:
-            self.triton = Triton(name=name, address=tritonaddress)
+            self.triton = Triton(name=name, address=tritonaddress, port=tritonport)
 
     async def handle_parameter(self, request):
         """
@@ -60,61 +62,6 @@ class FridgeHttpServer:
     async def handle_hostname(self, request):
         host =  socket.gethostname()
         return web.Response(text=host)
-
-    async def handle_monitor(self, request):
-        """
-        Handle websocket requests to serve the qcodes monitor. This is not compltly compatible due to the extra
-        need for a ping/pong below to prevent aiohttp from floding the output in case a client is slow or
-        goes offline.
-        """
-        ws = web.WebSocketResponse(autoping=False, receive_timeout=10.0)
-        await ws.prepare(request)
-        while True:
-            # Idealy we would only send a message if the last one has been received. However,
-            # with the aiohttp api there is no good way of detecting
-            # that the client goes offline. await send_json only awaits coping to buffer,
-            # so we can have hundreds of buffered messages. Drain only ensures that the buffer
-            # is below some (non configurable) high level mark.
-            # See blog post below for more details.
-            # https://vorpus.org/blog/some-thoughts-on-asynchronous-api-design-in-a-post-asyncawait-world/#websocket-servers
-            # We could try hacking in use of the pypi websockets packages which seems to be much more sane.
-            # and what is used in the monitor. Such as https://gist.github.com/amirouche/a5da3cf6f0f11eaeb976
-
-            meta = self.prepare_monitor_data(self.triton)
-
-            await ws.send_json(meta)
-            await ws.drain()
-
-            await asyncio.sleep(self._websocket_wait_time)
-            if ws.closed:
-                break
-        return ws
-
-    async def handle_ws(self, request):
-        """
-        Handle websocket requests to serve the endpoint that will be useful for qdev automatic monitoring.
-        """
-        ws = web.WebSocketResponse(autoping=False, receive_timeout=10.0)
-        await ws.prepare(request)
-        while True:
-            # Idealy we would only send a message if the last one has been received. However,
-            # with the aiohttp api there is no good way of detecting
-            # that the client goes offline. await send_json only awaits coping to buffer,
-            # so we can have hundreds of buffered messages. Drain only ensures that the buffer
-            # is below some (non configurable) high level mark.
-            # See blog post below for more details.
-            # https://vorpus.org/blog/some-thoughts-on-asynchronous-api-design-in-a-post-asyncawait-world/#websocket-servers
-            # We could try hacking in use of the pypi websockets packages which seems to be much more sane.
-            # and what is used in the monitor. Such as https://gist.github.com/amirouche/a5da3cf6f0f11eaeb976
-
-            meta = self.prepare_ws_data(self.triton)
-
-            await ws.send_json(meta)
-            await ws.drain()
-            await asyncio.sleep(self._websocket_wait_time)
-            if ws.closed:
-                break
-        return ws
 
     @staticmethod
     def prepare_monitor_data(triton) -> Dict[str, Union[list, float]]:
@@ -199,9 +146,26 @@ class FridgeHttpServer:
         app.router.add_post('/{{parametername:{}}}'.format(settable_parameter_regex), self.handle_parameter)
         app.router.add_get('/', self.index)
         app.router.add_get('/hostname', self.handle_hostname)
-        app.router.add_route('*', '/monitor', self.handle_monitor)
-        app.router.add_route('*', '/ws', self.handle_ws)
         return app
+
+    async def websocket_client(self):
+        while True:
+            print("connecting")
+            try:
+                async with websockets.connect('ws://localhost:8765') as websocket:
+                    while True:
+                        data = self.prepare_ws_data(self.triton)
+                        jsondata = json.dumps(data)
+                        print("sending")
+                        await websocket.send(jsondata)
+                        await asyncio.sleep(1)
+            except OSError:
+                print("Server is offline will retry later")
+                await asyncio.sleep(10)
+            except websockets.exceptions.ConnectionClosed:
+                print("connection lost")
+                await asyncio.sleep(10)
+
 
 def create_app(loop):
     fridgehttpserver = FridgeHttpServer()
@@ -212,5 +176,7 @@ def create_app(loop):
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     fridgehttpserver = FridgeHttpServer()
+    #fridgehttpserver = FridgeHttpServer(name='Triton t10', use_mock_triton=False, tritonaddress='172.20.2.203', tritonport=33576)
+    loop.create_task(fridgehttpserver.websocket_client())
     app = fridgehttpserver.run_app(loop)
     web.run_app(app, port=5678)
