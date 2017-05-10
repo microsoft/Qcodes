@@ -13,7 +13,6 @@ from qcodes.instrument_drivers.oxford.triton import Triton
 from qcodes.instrument_drivers.oxford.mock_triton import MockTriton
 
 log = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
 
 class FridgeHttpServer:
 
