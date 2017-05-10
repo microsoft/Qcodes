@@ -390,6 +390,7 @@ class DotDict(dict):
     """
     Wrapper dict that allows to get dotted attributes
     """
+    exclude_from_dict = []
     def __init__(self, value=None):
         if value is None:
             pass
@@ -427,6 +428,7 @@ class DotDict(dict):
 
     # dot acces baby
     def __setattr__(self, key, val):
+        if key in self.exclude_from_dict:
             self.__dict__[key] = val
         else:
             self.__setitem__(key, val)
