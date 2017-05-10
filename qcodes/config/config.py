@@ -390,7 +390,6 @@ class DotDict(dict):
     """
     Wrapper dict that allows to get dotted attributes
     """
-
     def __init__(self, value=None):
         if value is None:
             pass
@@ -427,7 +426,11 @@ class DotDict(dict):
         return DotDict(copy.deepcopy(dict(self)))
 
     # dot acces baby
-    __setattr__ = __setitem__
+    def __setattr__(self, key, val):
+            self.__dict__[key] = val
+        else:
+            self.__setitem__(key, val)
+
     def __getattr__(self, key):
         try:
             return self.__getitem__(key)
