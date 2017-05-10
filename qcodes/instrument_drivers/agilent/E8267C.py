@@ -6,8 +6,8 @@ from qcodes.utils.validators import Numbers
 
 
 class E8267(VisaInstrument):
-    """  
-    This is the code for Agilent E8267 Signal Generator 
+    """
+    This is the code for Agilent E8267 Signal Generator
     """
 
     def __init__(self, name, address, reset=False,  **kwargs):
