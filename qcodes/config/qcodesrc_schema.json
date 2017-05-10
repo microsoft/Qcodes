@@ -45,6 +45,52 @@
             },
             "required":[ "notebook", "plotlib" ]
         },
+        "fridgeserver" : {
+            "type" : "object",
+            "description": "controls Triton fridge server settings",
+            "properties" : {
+                "htppport" : {
+                    "description": "Port to use for http communication",
+                    "type": "integer",
+                    "default": 8000
+                },
+                "wsport" : {
+                    "description": "Port to use for Websocket communication",
+                    "type": "integer",
+                    "default": 8765
+                },
+                "wsserver" : {
+                    "description": "Websocket endpoint to connect to",
+                    "type": "string",
+                    "default": "ws://localhost"
+                },
+                "wssendinterval" : {
+                    "description": "Time to wait (in sec) between sending websocket data",
+                    "type": "number",
+                    "default": 1.0
+                },
+                "wsconnectinterval" : {
+                    "description": "Time to wait (in sec) between between attempting to reconnect to ws server",
+                    "type": "number",
+                    "default": 10.0
+                },
+                "usemocktriton" : {
+                    "description": "Use a mock Triton to emulate connections",
+                    "type": "boolean",
+                    "default": false
+                },
+                "tritonaddress" : {
+                    "description": "Address of the triton to communicate with",
+                    "type": "string",
+                    "default": "http://localhost"
+                },
+                "tritonname" : {
+                    "description": "Instrument name to use for Triton",
+                    "type": "string",
+                    "default": "Triton"
+                }
+            }
+        },
         "user":{
             "type" : "object",
             "description": "controls user settings of qcodes",

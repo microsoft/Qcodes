@@ -7,5 +7,15 @@
         "notebook": true,
         "plotlib": "matplotlib"
     },
+    "fridgeserver": {
+        "wsport": 8765,
+        "wsserver": "ws://localhost",
+        "httpport": 8000,
+        "wssendinterval": 1.0,
+        "wsconnectinterval": 10.0,
+        "tritonaddress": "http://localhost",
+        "usemocktriton": false,
+        "tritonname": "Triton"
+    },
     "user": {}
 }

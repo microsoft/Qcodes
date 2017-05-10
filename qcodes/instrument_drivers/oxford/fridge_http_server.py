@@ -9,6 +9,7 @@ from aiohttp import web
 from aiohttp.hdrs import METH_POST
 import websockets
 
+import qcodes
 from qcodes.instrument_drivers.oxford.triton import Triton
 from qcodes.instrument_drivers.oxford.mock_triton import MockTriton
 
@@ -16,12 +17,11 @@ log = logging.getLogger(__name__)
 
 class FridgeHttpServer:
 
-    def __init__(self, name='triton', tritonaddress='http://localhost', use_mock_triton=True, tritonport=33576, websocket_wait_time=10):
-        self._websocket_wait_time = websocket_wait_time
+    def __init__(self, name='triton', triton_address='http://localhost', use_mock_triton=True, triton_port=33576):
         if use_mock_triton:
             self.triton = MockTriton()
         else:
-            self.triton = Triton(name=name, address=tritonaddress, port=tritonport)
+            self.triton = Triton(name=name, address=triton_address, port=triton_port)
 
     async def handle_parameter(self, request):
         """
@@ -153,22 +153,27 @@ class FridgeHttpServer:
         return app
 
     async def websocket_client(self):
+        ws_addr = qcodes.config['fridgeserver']['wsserver']
+        ws_port = qcodes.config['fridgeserver']['wsport']
+        ws_server = '{}:{}'.format(ws_addr, ws_port)
+        ws_sleep = qcodes.config['fridgeserver']['wssendinterval']
+        ws_connect_sleep = qcodes.config['fridgeserver']['wsconnectinterval']
         while True:
             try:
-                log.debug("Connecting via websockets")
-                async with websockets.connect('ws://localhost:8765') as websocket:
+                log.debug("Connecting via websockets to {}".format(ws_server))
+                async with websockets.connect(ws_server) as websocket:
                     while True:
                         data = self.prepare_ws_data(self.triton)
                         jsondata = json.dumps(data)
                         log.debug("Sending data on websocket")
                         await websocket.send(jsondata)
-                        await asyncio.sleep(1)
+                        await asyncio.sleep(ws_sleep)
             except OSError:
                 log.info("Websocket server is offline will retry later")
-                await asyncio.sleep(10)
+                await asyncio.sleep(ws_connect_sleep)
             except websockets.exceptions.ConnectionClosed:
                 log.info("Websocket closed. Will try to reconnect later")
-                await asyncio.sleep(10)
+                await asyncio.sleep(ws_connect_sleep)
 
 
 def create_app(loop):
@@ -179,8 +184,13 @@ def create_app(loop):
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
-    fridgehttpserver = FridgeHttpServer()
-    #fridgehttpserver = FridgeHttpServer(name='Triton t10', use_mock_triton=False, tritonaddress='172.20.2.203', tritonport=33576)
+    use_mock_triton = qcodes.config['fridgeserver']['usemocktriton']
+    triton_address = qcodes.config['fridgeserver']['tritonaddress']
+    triton_name = qcodes.config['fridgeserver']['tritonname']
+    fridgehttpserver = FridgeHttpServer(name=triton_name,
+                                        use_mock_triton=use_mock_triton,
+                                        triton_address=triton_address)
     loop.create_task(fridgehttpserver.websocket_client())
     app = fridgehttpserver.run_app(loop)
-    web.run_app(app, port=5678)
+    http_port = qcodes.config['fridgeserver']['httpport']
+    web.run_app(app, port=http_port)
