@@ -1,14 +1,19 @@
 import asyncio
+import socket
+from typing import Dict, Union
+import time
+import json
+import logging
+
 from aiohttp import web
 from aiohttp.hdrs import METH_POST
-import socket
-import time
-from typing import Dict, Union
 import websockets
-import json
 
 from qcodes.instrument_drivers.oxford.triton import Triton
 from qcodes.instrument_drivers.oxford.mock_triton import MockTriton
+
+log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
 class FridgeHttpServer:
 
@@ -150,20 +155,20 @@ class FridgeHttpServer:
 
     async def websocket_client(self):
         while True:
-            print("connecting")
             try:
+                log.debug("Connecting via websockets")
                 async with websockets.connect('ws://localhost:8765') as websocket:
                     while True:
                         data = self.prepare_ws_data(self.triton)
                         jsondata = json.dumps(data)
-                        print("sending")
+                        log.debug("Sending data on websocket")
                         await websocket.send(jsondata)
                         await asyncio.sleep(1)
             except OSError:
-                print("Server is offline will retry later")
+                log.info("Websocket server is offline will retry later")
                 await asyncio.sleep(10)
             except websockets.exceptions.ConnectionClosed:
-                print("connection lost")
+                log.info("Websocket closed. Will try to reconnect later")
                 await asyncio.sleep(10)
 
 
