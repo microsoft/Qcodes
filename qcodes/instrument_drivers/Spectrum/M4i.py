@@ -833,7 +833,7 @@ class M4i(Instrument):
     def blockavg_hardware_trigger_acquisition(self, mV_range, nr_averages=10, verbose=0):
         """ Acquire data using block averaging and hardware triggering
 
-        To read out multiple channels, use `initialize_channels`    
+        To read out multiple channels, use `initialize_channels`
 
         Args:
             mV_range
