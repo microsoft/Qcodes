@@ -219,6 +219,17 @@ def _save_individual_plots(data, inst_meas):
             counter_two += 1
 
 
+def _flush_buffers(*insts):
+    """
+    Flush the VISA buffer of the provided insts.
+
+    Supposed to be called inside doNd like so:
+    _flush_buffers(inst_set, *inst_meas)
+    """
+    for inst in insts:
+        if hasattr(inst, 'visa_handle'):
+            inst.visa_handle.clear()
+
 
 def save_device_image(sweeptparameters):
     counter = CURRENT_EXPERIMENT['provider'].counter
@@ -250,6 +261,10 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas):
         plot, data : returns the plot and the dataset
 
     """
+
+    # try to flush VISA buffers at the beginning of a measurement
+    _flush_buffers(inst_set, *inst_meas)
+
     loop = qc.Loop(inst_set.sweep(start,
                                   stop, num=num_points), delay).each(*inst_meas)
     data = loop.get_data_set()
