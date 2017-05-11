@@ -59,6 +59,11 @@
                     "type": "integer",
                     "default": 8765
                 },
+                "wsenableport" : {
+                    "description": "Port to use for Websocket communication to enable and disable sending of data",
+                    "type": "integer",
+                    "default": 8766
+                },
                 "wsserver" : {
                     "description": "Websocket endpoint to connect to",
                     "type": "string",

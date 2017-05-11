@@ -9,6 +9,7 @@
     },
     "fridgeserver": {
         "wsport": 8765,
+        "wsenableport": 8766,
         "wsserver": "ws://localhost",
         "httpport": 8000,
         "wssendinterval": 1.0,
