@@ -546,6 +546,9 @@ class M4i(Instrument):
                                            pyspcm.SPC_M2CMD),
                            docstring='executes a command for the card or data transfer')
 
+        # memsize used for simple channel read-out
+        self._channel_memsize = 2**12
+
     # checks if requirements for the compensation get and set functions are met
     def _get_compensation(self, i):
         # if HF enabled
@@ -565,6 +568,11 @@ class M4i(Instrument):
             logging.warning(
                 "M4i: HF path not set, ignoring ACDC offset compensation set\n")
 
+    def active_channels(self):
+        """ Return a list with the indices of the active channels """
+        x = bin(self.enable_channels())[2:]
+        return [i for i in range(len(x)) if x[i]]
+
     def get_idn(self):
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), ('Spectrum_GMBH', szTypeToName(self.get_card_type()), self.serial_number(), ' ')))
 
@@ -573,16 +581,20 @@ class M4i(Instrument):
         resolution = self.ADC_to_voltage()
         return data * input_range / resolution
 
-    def initialize_channels(self, channels=None, mV_range=1000, input_path=0, termination=0, coupling=0, compensation=None):
+    def initialize_channels(self, channels=None, mV_range=1000, input_path=0,
+                            termination=0, coupling=0, compensation=None, memsize=2**12):
         """ Setup channels of the digitizer for simple readout using Parameters
 
         The channels can be read out using the Parmeters `channel_0`, `channel_1`, ...
 
         Args:
             channels (list): list of channels to setup
-            mV_range, input_path, termination, coupling, compensation: passed to the 					set_channel_settings function
+            mV_range, input_path, termination, coupling, compensation: passed
+                to the set_channel_settings function
+            memsize (int): memory size to use for simple channel readout
         """
         allchannels = 0
+        self._channel_memsize = memsize
         if channels is None:
             channels = range(4)
         for ch in channels:
@@ -592,16 +604,36 @@ class M4i(Instrument):
 
         self.enable_channels(allchannels)
 
-    def _read_channel(self, channel, memsize=2**11):
+    def _channel_mask(self, channels=range(4)):
+        """ Return mask for specified channels
+
+        Args:
+            channels (list): list of channel indices
+        Returns:
+            cx (int): channel mask
+        """
+        cx = 0
+        for c in channels:
+            cx += getattr(pyspcm, 'CHANNEL{}'.format(c))
+        return cx
+
+    def _read_channel(self, channel, memsize=None):
         """ Helper function to read out a channel
 
-        Before a channel is measured it is explicitly enabled.
+        Before a channel is measured all channels are enabled to ensure we can
+        read out channels without the overhead of changing channels.
         """
+        if memsize is None:
+            memsize = self._channel_memsize
         posttrigger_size = int(memsize / 2)
         mV_range = getattr(self, 'range_channel_%d' % channel).get()
-        self.enable_channels(getattr(pyspcm, 'CHANNEL{}'.format(channel)))
-        value = np.mean(self.single_software_trigger_acquisition(
-            mV_range, memsize, posttrigger_size))
+        cx = self._channel_mask()
+        self.enable_channels(cx)
+        data = self.single_software_trigger_acquisition(
+            mV_range, memsize, posttrigger_size)
+        active = self.active_channels()
+        data = data.reshape((-1, len(active)))
+        value = np.mean(data[:, channel])
         return value
 
     def set_channel_settings(self, i, mV_range, input_path, termination, coupling, compensation=None):
