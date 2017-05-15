@@ -38,7 +38,7 @@ script:
     - |
       cd ../docs
       make html-api
-      cd ..
+    - cd ..
 
 after_success:
     # install dependencies for docs build
