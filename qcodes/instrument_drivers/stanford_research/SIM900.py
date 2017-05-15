@@ -1,6 +1,7 @@
 
 from functools import partial
 import logging
+import numpy as np
 
 from qcodes import VisaInstrument
 from qcodes.instrument.parameter import StandardParameter, ManualParameter
@@ -128,3 +129,60 @@ class SIM900(VisaInstrument):
     def reset_slot(self, channel):
         self.write(cmdbase + 'SRST {}'.format(channel))
 
+
+def get_voltages():
+    """ Get scaled parameter voltages as dict """
+    # TODO find way to not have to use variable SIM900_scaled_parameters
+    global SIM900_scaled_parameters
+    return {param.name: param() for param in SIM900_scaled_parameters}
+
+
+def ramp_voltages(target_voltage=None, channels=None, use_scaled=True,
+                  **kwargs):
+    """
+    Ramp multiple gates in multiple steps.
+    
+    Note that SIM900_scaled_parameters must be defined in your global 
+    namespace as a list containing scaled SIM928 parameters
+    
+    Usage:
+        ramp_voltages(target_voltage)
+            Ramp voltages of all gates to target_voltage
+        ramp_voltages(target_voltage, channels)
+            Ramp voltages of gates with names in channels to target_voltage
+        ramp_voltages(gate1=val1, gate2=val2, ...)
+            Ramp voltage of gate1 to val1, gate2 to val2, etc.
+            
+    Args:
+        target_voltage (int): target voltage (can be omitted)
+        channels (str list): Names of gates to be ramped (can be omitted)
+        use_scaled: Use scaled SIM parameter (SIM900_scaled_parameters)
+        **kwargs: 
+
+    Returns:
+        None
+    """
+    if use_scaled:
+        global SIM900_scaled_parameters
+        parameters = {param.name: param for param in SIM900_scaled_parameters}
+    else:
+        global SIM900
+        parameters = {parameter_name: parameter
+                      for [parameter_name, parameter] in SIM900.parameters.items()
+                      if hasattr(parameter, 'channel')}
+
+    if target_voltage is not None:
+        if channels is None:
+            channels = kwargs.keys()
+        target_voltages = {parameters[channel]: target_voltage
+                           for channel in channels}
+    elif kwargs:
+        target_voltages = {parameters[key]: val for key, val in kwargs.items()}
+
+    initial_voltages = {channel: parameters[channel]() for channel in channels}
+
+    for ratio in np.linspace(0, 1, 11):
+        for channel in target_voltages:
+            voltage = (1 - ratio) * initial_voltages[channel] + \
+                      ratio * target_voltages[channel]
+            parameters[channel](voltage)
