@@ -229,7 +229,7 @@ dummy:
 	@echo "Build finished. Dummy builder generates no files."
 
 html-api:
-	sphinx-apidoc  -o  _auto  -d 10 ../qcodes/
+	sphinx-apidoc  -o  _auto  -d 10 ../qcodes/ ../qcodes/instrument_drivers/Spectrum/pyspcm.py
 	mkdir -p api/generated/
 	mkdir -p _notebooks
 	mkdir -p _notebooks/driver_examples
