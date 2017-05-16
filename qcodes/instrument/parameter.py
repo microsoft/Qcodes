@@ -766,10 +766,6 @@ class StandardParameter(Parameter):
             the *start* of each set, whether part of a sweep or not. Can be
             set to 0 to go maximum speed with no errors.
 
-        max_delay (Optional[Union[int, float]]): If > delay, we don't emit a
-            warning unless the time taken during a single set is greater than
-            this, even though we aim for delay.
-
         step (Optional[Union[int, float]]): max increment of parameter value.
             Larger changes are broken into multiple steps this size.
 
@@ -785,7 +781,7 @@ class StandardParameter(Parameter):
     def __init__(self, name, instrument=None,
                  get_cmd=None, get_parser=None,
                  set_cmd=None, set_parser=None,
-                 delay=None, max_delay=None, step=None, max_val_age=3600,
+                 delay=None, step=None, max_val_age=3600,
                  vals=None, val_mapping=None, **kwargs):
         # handle val_mapping before super init because it impacts
         # vals / validation in the base class
@@ -822,7 +818,7 @@ class StandardParameter(Parameter):
 
         self._set_get(get_cmd, get_parser)
         self._set_set(set_cmd, set_parser)
-        self.set_delay(delay, max_delay)
+        self.set_delay(delay)
         self.set_step(step, max_val_age)
 
         if not (self.has_get or self.has_set):
@@ -921,17 +917,9 @@ class StandardParameter(Parameter):
         return permissive_range(start_value, value, self._step)[1:]
 
     def _update_set_ts(self, step_clock):
-        # calculate the delay time to the *max* delay,
-        # then take off up to the tolerance
-        tolerance = self._delay_tolerance
-        step_clock += self._delay
-        remainder = wait_secs(step_clock + tolerance)
-        if remainder <= tolerance:
-            # don't allow extra delays to compound
-            step_clock = time.perf_counter()
-            remainder = 0
-        else:
-            remainder -= tolerance
+        # TODO(nulinspiratie) remove function alltogether
+        step_clock = time.perf_counter()
+        remainder = 0
         return step_clock, remainder
 
     def _validate_and_sweep(self, value):
@@ -1015,52 +1003,28 @@ class StandardParameter(Parameter):
         """Return the delay time of this parameter. Also see `set_delay` """
         return self._delay
 
-    def set_delay(self, delay, max_delay=None):
+    def set_delay(self, delay):
         """
         Configure this parameter with a delay between set operations.
 
         Typically used in conjunction with set_step to create an effective
         ramp rate, but can also be used without a step to enforce a delay
         after every set.
-        If delay and max_delay are both None or 0, we never emit warnings
-        no matter how long the set takes.
 
         Args:
             delay(Union[int, float]): the target time between set calls. The
                 actual time will not be shorter than this, but may be longer
                 if the underlying set call takes longer.
 
-            max_delay(Optional[Union[int, float]]): if given, the longest time
-                allowed for the underlying set call before we emit a warning.
-
         Raises:
             TypeError: If delay is not int nor float
-            TypeError: If max_delay is not int nor float
             ValueError: If delay is negative
-            ValueError: If max_delay is smaller than delay
         """
-        if delay is None:
-            delay = 0
         if not isinstance(delay, (int, float)):
             raise TypeError('delay must be a number')
         if delay < 0:
             raise ValueError('delay must not be negative')
         self._delay = delay
-
-        if max_delay is not None:
-            if not isinstance(max_delay, (int, float)):
-                raise TypeError(
-                    'max_delay must be a either  int or a float')
-            if max_delay < delay:
-                raise ValueError('max_delay must be no shorter than delay')
-            self._delay_tolerance = max_delay - delay
-        else:
-            self._delay_tolerance = 0
-
-        if not (self._delay or self._delay_tolerance):
-            # denotes that we shouldn't follow the wait code or
-            # emit any warnings
-            self._delay = None
 
 
 class ManualParameter(Parameter):
