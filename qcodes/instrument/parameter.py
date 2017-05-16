@@ -818,7 +818,7 @@ class StandardParameter(Parameter):
 
         self._set_get(get_cmd, get_parser)
         self._set_set(set_cmd, set_parser)
-        self.set_delay(delay)
+        self.delay = delay
         self.set_step(step, max_val_age)
 
         if not (self.has_get or self.has_set):
@@ -999,11 +999,13 @@ class StandardParameter(Parameter):
             self._step = step
             self.set = self._validate_and_sweep
 
-    def get_delay(self):
-        """Return the delay time of this parameter. Also see `set_delay` """
+    @property
+    def delay(self):
+        """Property that returns the delay time of this parameter"""
         return self._delay
 
-    def set_delay(self, delay):
+    @delay.setter
+    def delay(self, delay):
         """
         Configure this parameter with a delay between set operations.
 
