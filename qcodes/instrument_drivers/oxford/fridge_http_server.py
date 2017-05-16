@@ -14,10 +14,13 @@ from qcodes.instrument_drivers.oxford.triton import Triton
 from qcodes.instrument_drivers.oxford.mock_triton import MockTriton
 
 log = logging.getLogger(__name__)
+use_mock_triton = qcodes.config['fridgeserver']['usemocktriton']
+triton_address = qcodes.config['fridgeserver']['tritonaddress']
+triton_name = qcodes.config['fridgeserver']['tritonname']
 
 class FridgeHttpServer:
 
-    def __init__(self, name='triton', triton_address='http://localhost', use_mock_triton=True, triton_port=33576):
+    def __init__(self, name=triton_name, triton_address=triton_address, use_mock_triton=use_mock_triton, triton_port=33576):
 
         self._send_websockets = False
         if use_mock_triton:
