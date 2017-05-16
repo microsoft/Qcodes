@@ -814,12 +814,19 @@ class StandardParameter(Parameter):
         # stored value from last .set() or .get()
         # normally only used by set with a sweep, to avoid
         # having to call .get() for every .set()
+        # TODO(nulinspiratie) Figure out why this is needed
         self._max_val_age = 0
 
         self._set_get(get_cmd, get_parser)
         self._set_set(set_cmd, set_parser)
         self.delay = delay
-        self.set_step(step, max_val_age)
+        self.step = step
+
+        # TODO(nulinspiratie) Create single set function
+        if self.step is None:
+            self.set = self._validate_and_set
+        else:
+            self.set = self._validate_and_sweep
 
         if not (self.has_get or self.has_set):
             raise NoCommandError('neither set nor get cmd found in' +
@@ -945,7 +952,12 @@ class StandardParameter(Parameter):
                 'setting {} to {}'.format(self.full_name, repr(value)),)
             raise e
 
-    def set_step(self, step, max_val_age=None):
+    @property
+    def step(self):
+        return self._step
+
+    @step.setter
+    def step(self, step):
         """
         Configure whether this Parameter uses steps during set operations.
         If step is a positive number, this is the maximum value change
@@ -956,7 +968,27 @@ class StandardParameter(Parameter):
             step (Union[int, float]): A positive number, the largest change
                 allowed in one call. All but the final change will attempt to
                 change by +/- step exactly
+                
+        Raises:
+            TypeError: if step is not numeric
+            ValueError: if step is negative
+            TypeError:  if step is not integer for an integer parameter
+            TypeError: if step is not a number
+        """
+        if not self._vals.is_numeric:
+            raise TypeError('you can only step numeric parameters')
+        elif step <= 0:
+            raise ValueError('step must be positive')
+        elif (isinstance(self._vals, Ints) and
+                not isinstance(step, int)):
+            raise TypeError('step must be a positive int for an Ints parameter')
+        elif not isinstance(step, (int, float)):
+            raise TypeError('step must be a number')
+        else:
+            self._step = step
 
+            #TODO(nulinspiratie) Move max_val_age to GetLatest
+            """
             max_val_age (Optional[int]): Only used with stepping, the max time
                 (in seconds) to trust a saved value. If this parameter has not
                 been set or measured more recently than this, it will be
@@ -964,40 +996,16 @@ class StandardParameter(Parameter):
                 value we're starting from.
 
         Raises:
-            TypeError: if step is not numeric
-            ValueError: if step is negative
-            TypeError:  if step is not integer for an integer parameter
-            TypeError: if step is not a number
             TypeError: if max_val_age is not numeric
             ValueError: if max_val_age is negative
-        """
-        if not step:
-            # single-command setting
-            self.set = self._validate_and_set
-
-        elif not self._vals.is_numeric:
-            raise TypeError('you can only step numeric parameters')
-        elif step <= 0:
-            raise ValueError('step must be positive')
-        elif (isinstance(self._vals, Ints) and
-                not isinstance(step, int)):
-            raise TypeError(
-                'step must be a positive int for an Ints parameter')
-        elif not isinstance(step, (int, float)):
-            raise TypeError('step must be a number')
-
-        else:
-            # stepped setting
-            if max_val_age is not None:
-                if not isinstance(max_val_age, (int, float)):
-                    raise TypeError(
-                        'max_val_age must be a number')
-                if max_val_age < 0:
-                    raise ValueError('max_val_age must be non-negative')
-                self._max_val_age = max_val_age
-
-            self._step = step
-            self.set = self._validate_and_sweep
+            """
+            # if max_val_age is not None:
+            #     if not isinstance(max_val_age, (int, float)):
+            #         raise TypeError(
+            #             'max_val_age must be a number')
+            #     if max_val_age < 0:
+            #         raise ValueError('max_val_age must be non-negative')
+            #     self._max_val_age = max_val_age
 
     @property
     def delay(self):
