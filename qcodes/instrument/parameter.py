@@ -782,7 +782,7 @@ class StandardParameter(Parameter):
     def __init__(self, name, instrument=None,
                  get_cmd=None, get_parser=None,
                  set_cmd=None, set_parser=None,
-                 post_delay=None, step=None, max_val_age=3600,
+                 post_delay=0, step=None, max_val_age=3600,
                  vals=None, val_mapping=None, **kwargs):
         # handle val_mapping before super init because it impacts
         # vals / validation in the base class
@@ -822,12 +822,6 @@ class StandardParameter(Parameter):
         self._set_set(set_cmd, set_parser)
         self.post_delay = post_delay
         self.step = step
-
-        # TODO(nulinspiratie) Create single set function
-        if self.step is None:
-            self.set = self._validate_and_set
-        else:
-            self.set = self._validate_and_sweep
 
         if not (self.has_get or self.has_set):
             raise NoCommandError('neither set nor get cmd found in' +
@@ -887,20 +881,6 @@ class StandardParameter(Parameter):
 
         self.has_set = set_cmd is not None
 
-    def _validate_and_set(self, value):
-        try:
-            clock = time.perf_counter()
-            self.validate(value)
-            self._set(value)
-            self._save_val(value)
-            if self._delay is not None:
-                clock, remainder = self._update_set_ts(clock)
-                time.sleep(remainder)
-        except Exception as e:
-            e.args = e.args + (
-                'setting {} to {}'.format(self.full_name, repr(value)),)
-            raise e
-
     def _sweep_steps(self, value):
         oldest_ok_val = datetime.now() - timedelta(seconds=self._max_val_age)
         state = self._latest()
@@ -930,24 +910,28 @@ class StandardParameter(Parameter):
         remainder = 0
         return step_clock, remainder
 
-    def _validate_and_sweep(self, value):
+    def set(self, value):
         try:
             self.validate(value)
-            step_clock = time.perf_counter()
 
-            for step_val in self._sweep_steps(value):
-                self._set(step_val)
-                self._save_val(step_val)
-                if self._delay is not None:
-                    step_clock, remainder = self._update_set_ts(step_clock)
-                    time.sleep(remainder)
+            if self.step is not None:
+                # Multiple intermediate steps used to reach target value
+                sweep_vals = self._sweep_steps(value) + [value]
+            else:
+                # Immediately set to target value
+                sweep_vals = [value]
 
-            self._set(value)
-            self._save_val(value)
+            for sweep_val in sweep_vals:
+                t0 = time.perf_counter()
 
-            if self._delay is not None:
-                step_clock, remainder = self._update_set_ts(step_clock)
-                time.sleep(remainder)
+                self._set(sweep_val)
+                self._save_val(sweep_val)
+
+                t_elapsed = time.perf_counter() - t0
+                if t_elapsed < self.post_delay:
+                    # Sleep until total time is larger than self.post_delay
+                    time.sleep(self.post_delay - t_elapsed)
+
         except Exception as e:
             e.args = e.args + (
                 'setting {} to {}'.format(self.full_name, repr(value)),)
