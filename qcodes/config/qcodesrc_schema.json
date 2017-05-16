@@ -87,7 +87,7 @@
                 "tritonaddress" : {
                     "description": "Address of the triton to communicate with",
                     "type": "string",
-                    "default": "http://localhost"
+                    "default": "localhost"
                 },
                 "tritonname" : {
                     "description": "Instrument name to use for Triton",

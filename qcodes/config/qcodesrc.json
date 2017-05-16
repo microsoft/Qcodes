@@ -14,7 +14,7 @@
         "httpport": 8000,
         "wssendinterval": 1.0,
         "wsconnectinterval": 10.0,
-        "tritonaddress": "http://localhost",
+        "tritonaddress": "localhost",
         "usemocktriton": false,
         "tritonname": "Triton"
     },
