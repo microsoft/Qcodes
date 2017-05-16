@@ -762,9 +762,10 @@ class StandardParameter(Parameter):
 
         vals (Optional[Validator]): a Validator object for this parameter
 
-        delay (Optional[Union[int, float]]): time (in seconds) to wait after
-            the *start* of each set, whether part of a sweep or not. Can be
-            set to 0 to go maximum speed with no errors.
+        post_delay (Optional[Union[int, float]]): time (in seconds) to wait 
+            after the *start* of each set, whether part of a sweep or not. 
+            Can be set to 0 to go maximum speed with no errors. Any time 
+            taken by the actual set operation is subtracted from the delay.
 
         step (Optional[Union[int, float]]): max increment of parameter value.
             Larger changes are broken into multiple steps this size.
@@ -781,7 +782,7 @@ class StandardParameter(Parameter):
     def __init__(self, name, instrument=None,
                  get_cmd=None, get_parser=None,
                  set_cmd=None, set_parser=None,
-                 delay=None, step=None, max_val_age=3600,
+                 post_delay=None, step=None, max_val_age=3600,
                  vals=None, val_mapping=None, **kwargs):
         # handle val_mapping before super init because it impacts
         # vals / validation in the base class
@@ -819,7 +820,7 @@ class StandardParameter(Parameter):
 
         self._set_get(get_cmd, get_parser)
         self._set_set(set_cmd, set_parser)
-        self.delay = delay
+        self.post_delay = post_delay
         self.step = step
 
         # TODO(nulinspiratie) Create single set function
@@ -1008,12 +1009,12 @@ class StandardParameter(Parameter):
             #     self._max_val_age = max_val_age
 
     @property
-    def delay(self):
+    def post_delay(self):
         """Property that returns the delay time of this parameter"""
-        return self._delay
+        return self._post_delay
 
-    @delay.setter
-    def delay(self, delay):
+    @post_delay.setter
+    def post_delay(self, post_delay):
         """
         Configure this parameter with a delay between set operations.
 
@@ -1022,19 +1023,19 @@ class StandardParameter(Parameter):
         after every set.
 
         Args:
-            delay(Union[int, float]): the target time between set calls. The
-                actual time will not be shorter than this, but may be longer
+            post_delay(Union[int, float]): the target time between set calls. 
+                The actual time will not be shorter than this, but may be longer
                 if the underlying set call takes longer.
 
         Raises:
             TypeError: If delay is not int nor float
             ValueError: If delay is negative
         """
-        if not isinstance(delay, (int, float)):
+        if not isinstance(post_delay, (int, float)):
             raise TypeError('delay must be a number')
-        if delay < 0:
+        if post_delay < 0:
             raise ValueError('delay must not be negative')
-        self._delay = delay
+        self._post_delay = post_delay
 
 
 class ManualParameter(Parameter):
