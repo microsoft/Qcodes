@@ -26,7 +26,7 @@ class Triton(IPInstrument):
         fetch registry directly from fridge-computer
     """
 
-    def __init__(self, name, local_triton=False, address=None, port=None, terminator='\r\n',
+    def __init__(self, name, local_triton=False, address=None, port=33576, terminator='\r\n',
                  tmpfile=None, timeout=20, **kwargs):
         super().__init__(name, address=address, port=port,
                          terminator=terminator, timeout=timeout, **kwargs)
