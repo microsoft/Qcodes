@@ -818,8 +818,8 @@ class StandardParameter(Parameter):
         # TODO(nulinspiratie) Figure out why this is needed
         self._max_val_age = 0
 
-        self._set_get(get_cmd, get_parser)
-        self._set_set(set_cmd, set_parser)
+        self._initialize_get(get_cmd, get_parser)
+        self._initialize_set(set_cmd, set_parser)
         self.post_delay = post_delay
         self.step = step
 
@@ -862,7 +862,7 @@ class StandardParameter(Parameter):
     def _valmapping_with_preparser(self, val):
         return self._valmapping_get_parser(self._get_preparser(val))
 
-    def _set_get(self, get_cmd, get_parser):
+    def _initialize_get(self, get_cmd, get_parser):
         exec_str = self._instrument.ask if self._instrument else None
         self._get = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str,
                             output_parser=get_parser,
@@ -870,7 +870,7 @@ class StandardParameter(Parameter):
 
         self.has_get = (get_cmd is not None)
 
-    def _set_set(self, set_cmd, set_parser):
+    def _initialize_set(self, set_cmd, set_parser):
         # note: this does not set the final setter functions. that's handled
         # in self.set_sweep, when we choose a swept or non-swept setter.
         # TODO(giulioungaretti) lies! that method does not exis.
