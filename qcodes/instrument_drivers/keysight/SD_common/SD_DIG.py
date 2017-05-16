@@ -3,7 +3,6 @@ from functools import partial
 
 from .SD_Module import *
 
-
 class SD_DIG(SD_Module):
     """
     This is the qcodes driver for a generic Signadyne Digitizer of the M32/33XX series.
@@ -14,7 +13,7 @@ class SD_DIG(SD_Module):
 
     This driver makes use of the Python library provided by Keysight as part of the SD1 Software package (v.2.01.00).
     """
-
+    
     def __init__(self, name, chassis, slot, channels, triggers, **kwargs):
         """ Initialises a generic Signadyne digitizer and its parameters
 
@@ -707,9 +706,10 @@ class SD_DIG(SD_Module):
 
     def set_timeout(self, timeout, channel):
         """ Sets the trigger source
-
+        
         Args:
             channel (int)       : the input channel you are configuring
             timeout (int)       : the read timeout in ms for the specified DAQ
         """
         self.__timeout[channel] = timeout
+
