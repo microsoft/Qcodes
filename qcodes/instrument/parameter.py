@@ -827,6 +827,90 @@ class StandardParameter(Parameter):
             raise NoCommandError('neither set nor get cmd found in' +
                                  ' Parameter {}'.format(self.name))
 
+    @property
+    def step(self):
+        return self._step
+
+    @step.setter
+    def step(self, step):
+        """
+        Configure whether this Parameter uses steps during set operations.
+        If step is a positive number, this is the maximum value change
+        allowed in one hardware call, so a single set can result in many
+        calls to the hardware if the starting value is far from the target.
+
+        Args:
+            step (Union[int, float]): A positive number, the largest change
+                allowed in one call. All but the final change will attempt to
+                change by +/- step exactly
+
+        Raises:
+            TypeError: if step is not numeric
+            ValueError: if step is negative
+            TypeError:  if step is not integer for an integer parameter
+            TypeError: if step is not a number
+        """
+        if not self._vals.is_numeric:
+            raise TypeError('you can only step numeric parameters')
+        elif step <= 0:
+            raise ValueError('step must be positive')
+        elif (isinstance(self._vals, Ints) and
+                  not isinstance(step, int)):
+            raise TypeError('step must be a positive int for an Ints parameter')
+        elif not isinstance(step, (int, float)):
+            raise TypeError('step must be a number')
+        else:
+            self._step = step
+
+            # TODO(nulinspiratie) Move max_val_age to GetLatest
+            """
+            max_val_age (Optional[int]): Only used with stepping, the max time
+                (in seconds) to trust a saved value. If this parameter has not
+                been set or measured more recently than this, it will be
+                measured before starting to step, so we're confident in the
+                value we're starting from.
+
+        Raises:
+            TypeError: if max_val_age is not numeric
+            ValueError: if max_val_age is negative
+            """
+            # if max_val_age is not None:
+            #     if not isinstance(max_val_age, (int, float)):
+            #         raise TypeError(
+            #             'max_val_age must be a number')
+            #     if max_val_age < 0:
+            #         raise ValueError('max_val_age must be non-negative')
+            #     self._max_val_age = max_val_age
+
+    @property
+    def post_delay(self):
+        """Property that returns the delay time of this parameter"""
+        return self._post_delay
+
+    @post_delay.setter
+    def post_delay(self, post_delay):
+        """
+        Configure this parameter with a delay between set operations.
+
+        Typically used in conjunction with set_step to create an effective
+        ramp rate, but can also be used without a step to enforce a delay
+        after every set.
+
+        Args:
+            post_delay(Union[int, float]): the target time between set calls. 
+                The actual time will not be shorter than this, but may be longer
+                if the underlying set call takes longer.
+
+        Raises:
+            TypeError: If delay is not int nor float
+            ValueError: If delay is negative
+        """
+        if not isinstance(post_delay, (int, float)):
+            raise TypeError('delay must be a number')
+        if post_delay < 0:
+            raise ValueError('delay must not be negative')
+        self._post_delay = post_delay
+
     def get(self):
         try:
             value = self._get()
@@ -834,6 +918,33 @@ class StandardParameter(Parameter):
             return value
         except Exception as e:
             e.args = e.args + ('getting {}'.format(self.full_name),)
+            raise e
+
+    def set(self, value):
+        try:
+            self.validate(value)
+
+            if self.step is not None:
+                # Multiple intermediate steps used to reach target value
+                sweep_vals = self._sweep_steps(value) + [value]
+            else:
+                # Immediately set to target value
+                sweep_vals = [value]
+
+            for sweep_val in sweep_vals:
+                t0 = time.perf_counter()
+
+                self._set(sweep_val)
+                self._save_val(sweep_val)
+
+                t_elapsed = time.perf_counter() - t0
+                if t_elapsed < self.post_delay:
+                    # Sleep until total time is larger than self.post_delay
+                    time.sleep(self.post_delay - t_elapsed)
+
+        except Exception as e:
+            e.args = e.args + (
+                'setting {} to {}'.format(self.full_name, repr(value)),)
             raise e
 
     def _valmapping_get_parser(self, val):
@@ -903,123 +1014,6 @@ class StandardParameter(Parameter):
 
         # drop the initial value, we're already there
         return permissive_range(start_value, value, self._step)[1:]
-
-    def _update_set_ts(self, step_clock):
-        # TODO(nulinspiratie) remove function alltogether
-        step_clock = time.perf_counter()
-        remainder = 0
-        return step_clock, remainder
-
-    def set(self, value):
-        try:
-            self.validate(value)
-
-            if self.step is not None:
-                # Multiple intermediate steps used to reach target value
-                sweep_vals = self._sweep_steps(value) + [value]
-            else:
-                # Immediately set to target value
-                sweep_vals = [value]
-
-            for sweep_val in sweep_vals:
-                t0 = time.perf_counter()
-
-                self._set(sweep_val)
-                self._save_val(sweep_val)
-
-                t_elapsed = time.perf_counter() - t0
-                if t_elapsed < self.post_delay:
-                    # Sleep until total time is larger than self.post_delay
-                    time.sleep(self.post_delay - t_elapsed)
-
-        except Exception as e:
-            e.args = e.args + (
-                'setting {} to {}'.format(self.full_name, repr(value)),)
-            raise e
-
-    @property
-    def step(self):
-        return self._step
-
-    @step.setter
-    def step(self, step):
-        """
-        Configure whether this Parameter uses steps during set operations.
-        If step is a positive number, this is the maximum value change
-        allowed in one hardware call, so a single set can result in many
-        calls to the hardware if the starting value is far from the target.
-
-        Args:
-            step (Union[int, float]): A positive number, the largest change
-                allowed in one call. All but the final change will attempt to
-                change by +/- step exactly
-                
-        Raises:
-            TypeError: if step is not numeric
-            ValueError: if step is negative
-            TypeError:  if step is not integer for an integer parameter
-            TypeError: if step is not a number
-        """
-        if not self._vals.is_numeric:
-            raise TypeError('you can only step numeric parameters')
-        elif step <= 0:
-            raise ValueError('step must be positive')
-        elif (isinstance(self._vals, Ints) and
-                not isinstance(step, int)):
-            raise TypeError('step must be a positive int for an Ints parameter')
-        elif not isinstance(step, (int, float)):
-            raise TypeError('step must be a number')
-        else:
-            self._step = step
-
-            #TODO(nulinspiratie) Move max_val_age to GetLatest
-            """
-            max_val_age (Optional[int]): Only used with stepping, the max time
-                (in seconds) to trust a saved value. If this parameter has not
-                been set or measured more recently than this, it will be
-                measured before starting to step, so we're confident in the
-                value we're starting from.
-
-        Raises:
-            TypeError: if max_val_age is not numeric
-            ValueError: if max_val_age is negative
-            """
-            # if max_val_age is not None:
-            #     if not isinstance(max_val_age, (int, float)):
-            #         raise TypeError(
-            #             'max_val_age must be a number')
-            #     if max_val_age < 0:
-            #         raise ValueError('max_val_age must be non-negative')
-            #     self._max_val_age = max_val_age
-
-    @property
-    def post_delay(self):
-        """Property that returns the delay time of this parameter"""
-        return self._post_delay
-
-    @post_delay.setter
-    def post_delay(self, post_delay):
-        """
-        Configure this parameter with a delay between set operations.
-
-        Typically used in conjunction with set_step to create an effective
-        ramp rate, but can also be used without a step to enforce a delay
-        after every set.
-
-        Args:
-            post_delay(Union[int, float]): the target time between set calls. 
-                The actual time will not be shorter than this, but may be longer
-                if the underlying set call takes longer.
-
-        Raises:
-            TypeError: If delay is not int nor float
-            ValueError: If delay is negative
-        """
-        if not isinstance(post_delay, (int, float)):
-            raise TypeError('delay must be a number')
-        if post_delay < 0:
-            raise ValueError('delay must not be negative')
-        self._post_delay = post_delay
 
 
 class ManualParameter(Parameter):
