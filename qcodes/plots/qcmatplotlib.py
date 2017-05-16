@@ -53,12 +53,16 @@ class MatPlot(BasePlot):
 
         if isinstance(subplots, Mapping):
             self.fig, self.subplots = plt.subplots(figsize=figsize, num=num,
-                                                   **subplots)
+                                                   **subplots, squeeze=False)
         else:
             self.fig, self.subplots = plt.subplots(*subplots, num=num,
-                                                   figsize=figsize)
-        if not hasattr(self.subplots, '__len__'):
-            self.subplots = (self.subplots,)
+                                                   figsize=figsize, squeeze=False)
+
+        # squeeze=False ensures that subplots is always a 2D array independent of the number
+        # of subplots.
+        # However the qcodes api assumes that subplots is always a 1D array
+        # so flatten here
+        self.subplots = self.subplots.flatten()
 
         self.title = self.fig.suptitle('')
 
