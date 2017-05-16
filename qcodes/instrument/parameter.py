@@ -93,12 +93,17 @@ class _BaseParameter(Metadatable, DeferredOperations):
             parameter during a snapshot, even if the snapshot was called with
             ``update=True``, for example if it takes too long to update.
             Default True.
+            
+        max_val_age (Optional[int]): The max time (in seconds) to trust a 
+            saved value obtained from get_latest(). If this parameter has not
+            been set or measured more recently than this, perform an 
+            additional measurement.
 
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
     def __init__(self, name, instrument, snapshot_get, metadata,
-                 snapshot_value=True):
+                 snapshot_value=True, max_val_age=None):
         super().__init__(metadata)
         self._snapshot_get = snapshot_get
         self.name = str(name)
@@ -117,7 +122,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         # but they all use the same attributes so snapshot is consistent.
         self._latest_value = None
         self._latest_ts = None
-        self.get_latest = GetLatest(self)
+        self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
@@ -782,7 +787,7 @@ class StandardParameter(Parameter):
     def __init__(self, name, instrument=None,
                  get_cmd=None, get_parser=None,
                  set_cmd=None, set_parser=None,
-                 post_delay=0, step=None, max_val_age=3600,
+                 post_delay=0, step=None,
                  vals=None, val_mapping=None, **kwargs):
         # handle val_mapping before super init because it impacts
         # vals / validation in the base class
@@ -811,12 +816,6 @@ class StandardParameter(Parameter):
 
         self._meta_attrs.extend(['sweep_step', 'sweep_delay',
                                  'max_sweep_delay'])
-
-        # stored value from last .set() or .get()
-        # normally only used by set with a sweep, to avoid
-        # having to call .get() for every .set()
-        # TODO(nulinspiratie) Figure out why this is needed
-        self._max_val_age = 0
 
         self._initialize_get(get_cmd, get_parser)
         self._initialize_set(set_cmd, set_parser)
@@ -861,26 +860,6 @@ class StandardParameter(Parameter):
             raise TypeError('step must be a number')
         else:
             self._step = step
-
-            # TODO(nulinspiratie) Move max_val_age to GetLatest
-            """
-            max_val_age (Optional[int]): Only used with stepping, the max time
-                (in seconds) to trust a saved value. If this parameter has not
-                been set or measured more recently than this, it will be
-                measured before starting to step, so we're confident in the
-                value we're starting from.
-
-        Raises:
-            TypeError: if max_val_age is not numeric
-            ValueError: if max_val_age is negative
-            """
-            # if max_val_age is not None:
-            #     if not isinstance(max_val_age, (int, float)):
-            #         raise TypeError(
-            #             'max_val_age must be a number')
-            #     if max_val_age < 0:
-            #         raise ValueError('max_val_age must be non-negative')
-            #     self._max_val_age = max_val_age
 
     @property
     def post_delay(self):
@@ -993,12 +972,7 @@ class StandardParameter(Parameter):
         self.has_set = set_cmd is not None
 
     def _sweep_steps(self, value):
-        oldest_ok_val = datetime.now() - timedelta(seconds=self._max_val_age)
-        state = self._latest()
-        if state['ts'] is None or state['ts'] < oldest_ok_val:
-            start_value = self.get()
-        else:
-            start_value = state['value']
+        start_value = self.get_latest()
 
         self.validate(start_value)
 
@@ -1068,16 +1042,32 @@ class GetLatest(DelegateAttributes, DeferredOperations):
 
     Args:
         parameter (Parameter): Parameter to be wrapped
+            
+        max_val_age (Optional[int]): The max time (in seconds) to trust a 
+            saved value obtained from get_latest(). If this parameter has not
+            been set or measured more recently than this, perform an 
+            additional measurement.
     """
-    def __init__(self, parameter):
+    def __init__(self, parameter, max_val_age=None):
         self.parameter = parameter
+        self.max_val_age = max_val_age
 
     delegate_attr_objects = ['parameter']
     omit_delegate_attrs = ['set']
 
     def get(self):
-        """ Return latest value"""
-        return self.parameter._latest()['value']
+        """Return latest value if time since get was less than 
+        `self.max_val_age`, otherwise perform `get()` and return result""""
+        state = self.parameter._latest()
+        if self.max_val_age is None:
+            # Return last value since max_val_age is not specified
+            return state
+        else:
+            oldest_ok_val = datetime.now() - timedelta(seconds=self.max_val_age)
+            if state['ts'] is None or state['ts'] < oldest_ok_val:
+                return self.get()
+            else:
+                return state['value']
 
     def __call__(self):
         return self.get()
