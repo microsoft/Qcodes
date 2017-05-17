@@ -109,22 +109,22 @@ class ZNB20(VisaInstrument):
         self.add_parameter(name='start',
                            get_cmd='SENS:FREQ:START?',
                            set_cmd=self._set_start,
-                           get_parser=int)
+                           get_parser=float)
 
         self.add_parameter(name='stop',
                            get_cmd='SENS:FREQ:STOP?',
                            set_cmd=self._set_stop,
-                           get_parser=int)
+                           get_parser=float)
 
         self.add_parameter(name='center',
                            get_cmd = 'SENS:FREQ:CENT?',
                            set_cmd = self._set_center,
-                           get_parser = int)
+                           get_parser=float)
 
         self.add_parameter(name='span',
                            get_cmd = 'SENS:FREQ:SPAN?',
                            set_cmd=self._set_span,
-                           get_parser = int)
+                           get_parser=float)
 
         self.add_parameter(name='npts',
                            get_cmd='SENS:SWE:POIN?',
