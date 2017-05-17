@@ -8,7 +8,6 @@ from qcodes.instrument.parameter import StandardParameter, ManualParameter
 from qcodes.utils import validators as vals
 from time import sleep
 
-
 cmdbase = "TERM LF\nFLSH\nFLOQ\n"
 
 class SIM928(StandardParameter):
@@ -130,20 +129,17 @@ class SIM900(VisaInstrument):
         self.write(cmdbase + 'SRST {}'.format(channel))
 
 
+voltage_parameters = []
+
 def get_voltages():
     """ Get scaled parameter voltages as dict """
-    # TODO find way to not have to use variable SIM900_scaled_parameters
-    global SIM900_scaled_parameters
-    return {param.name: param() for param in SIM900_scaled_parameters}
+    return {param.name: param() for param in voltage_parameters}
 
-
-def ramp_voltages(target_voltage=None, channels=None, use_scaled=True,
-                  **kwargs):
+def ramp_voltages(target_voltage=None, gate_names=None, **kwargs):
     """
     Ramp multiple gates in multiple steps.
     
-    Note that SIM900_scaled_parameters must be defined in your global 
-    namespace as a list containing scaled SIM928 parameters
+    Note that voltage_parameters must contain the parameters to be varied
     
     Usage:
         ramp_voltages(target_voltage)
@@ -155,34 +151,29 @@ def ramp_voltages(target_voltage=None, channels=None, use_scaled=True,
             
     Args:
         target_voltage (int): target voltage (can be omitted)
-        channels (str list): Names of gates to be ramped (can be omitted)
+        gate_names (str list): Names of gates to be ramped (can be omitted)
         use_scaled: Use scaled SIM parameter (SIM900_scaled_parameters)
         **kwargs: 
 
     Returns:
         None
     """
-    if use_scaled:
-        global SIM900_scaled_parameters
-        parameters = {param.name: param for param in SIM900_scaled_parameters}
-    else:
-        global SIM900
-        parameters = {parameter_name: parameter
-                      for [parameter_name, parameter] in SIM900.parameters.items()
-                      if hasattr(parameter, 'channel')}
+    parameters = {param.name: param for param in voltage_parameters}
 
     if target_voltage is not None:
-        if channels is None:
-            channels = kwargs.keys()
-        target_voltages = {parameters[channel]: target_voltage
-                           for channel in channels}
+        if gate_names is None:
+            gate_names = kwargs.keys()
+        target_voltages = {gate_name: target_voltage
+                           for gate_name in gate_names}
     elif kwargs:
-        target_voltages = {parameters[key]: val for key, val in kwargs.items()}
+        gate_names = kwargs.keys()
+        target_voltages = {gate_name: val for gate_name, val in kwargs.items()}
 
-    initial_voltages = {channel: parameters[channel]() for channel in channels}
+    initial_voltages = {gate_name: parameters[gate_name]()
+                        for gate_name in gate_names}
 
     for ratio in np.linspace(0, 1, 11):
-        for channel in target_voltages:
-            voltage = (1 - ratio) * initial_voltages[channel] + \
-                      ratio * target_voltages[channel]
-            parameters[channel](voltage)
+        for gate_name in gate_names:
+            voltage = (1 - ratio) * initial_voltages[gate_name] + \
+                      ratio * target_voltages[gate_name]
+            parameters[gate_name](voltage)
