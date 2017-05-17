@@ -47,3 +47,4 @@ after_success:
     - |
       if [[ $TRAVIS_REPO_SLUG == "QCoDeS/Qcodes" && $TRAVIS_BRANCH == "master" && $TRAVIS_PULL_REQUEST == "false" ]]; then
         make -f docs/Makefile gh-pages
+      fi
