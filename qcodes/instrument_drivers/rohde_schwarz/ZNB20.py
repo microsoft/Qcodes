@@ -116,6 +116,16 @@ class ZNB20(VisaInstrument):
                            set_cmd=self._set_stop,
                            get_parser=int)
 
+        self.add_parameter(name='center',
+                           get_cmd = 'SENS:FREQ:CENT?',
+                           set_cmd = self._set_center,
+                           get_parser = int)
+
+        self.add_parameter(name='span',
+                           get_cmd = 'SENS:FREQ:SPAN?',
+                           set_cmd=self._set_span,
+                           get_parser = int)
+
         self.add_parameter(name='npts',
                            get_cmd='SENS:SWE:POIN?',
                            set_cmd=self._set_npts,
@@ -155,6 +165,14 @@ class ZNB20(VisaInstrument):
         self.write('SENS:SWE:POIN {:.4f}'.format(val))
         # update setpoints for FrequencySweep param
         self.trace.set_sweep(self.start(), self.stop(), val)
+
+    def _set_span(self, val):
+        self.write('SENS:FREQ:SPAN {:.4f}'.format(val))
+        self.trace.set_sweep(self.start(), self.stop(), self.npts())
+
+    def _set_center(self, val):
+        self.write('SENS:FREQ:CENT {:.4f}'.format(val))
+        self.trace.set_sweep(self.start(), self.stop(), self.npts())
 
     def initialise(self):
         self.write('*RST')
