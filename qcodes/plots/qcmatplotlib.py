@@ -69,16 +69,6 @@ class MatPlot(BasePlot):
                 figsize = (min(3 + 3 * subplots[1], 12), 1 + 3 * subplots[0])
 
             self.fig, self.subplots = plt.subplots(*subplots, num=num,
-#                                                    figsize=figsize)
-#
-#         # Test if subplots is actually a single axis
-#         if not isinstance(self.subplots, np.ndarray):
-#             self.subplots = np.array([self.subplots])
-#
-#         # Flatten subplots in case it is a 2D array
-#         self.subplots = np.ndarray.flatten(self.subplots)
-#         for k, subplot in enumerate(self.subplots):
-#             subplot.add = partial(self.add, subplot=k)
                                                    figsize=figsize, squeeze=False)
 
         # squeeze=False ensures that subplots is always a 2D array independent of the number
@@ -86,6 +76,9 @@ class MatPlot(BasePlot):
         # However the qcodes api assumes that subplots is always a 1D array
         # so flatten here
         self.subplots = self.subplots.flatten()
+
+        for k, subplot in enumerate(self.subplots):
+            subplot.add = partial(self.add, subplot=k)
 
         self.title = self.fig.suptitle('')
 
