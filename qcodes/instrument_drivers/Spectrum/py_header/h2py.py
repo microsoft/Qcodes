@@ -103,8 +103,7 @@ def pytify(body):
         m = p_hex.search(body, start)
         if not m: break
         s,e = m.span()
-        # QCoDes python3 long -> int
-        val = int(body[slice(*m.span(1))], 16)
+        val = long(body[slice(*m.span(1))], 16)
         if val > sys.maxint:
             val -= UMAX
             body = body[:s] + "(" + str(val) + ")" + body[e:]
@@ -148,8 +147,7 @@ def process(fp, outfp, env = {}):
             body = pytify(body)
             stmt = 'def %s(%s): return %s\n' % (macro, arg, body)
             try:
-                # QCoDeS patch for python 3 support exec from statement to function.
-                exec(stmt, env)
+                exec stmt in env
             except:
                 sys.stderr.write('Skipping: %s' % stmt)
             else:
