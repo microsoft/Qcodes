@@ -110,10 +110,6 @@ class Loop(Metadatable):
         self.bg_min_delay = None
         self.progress_interval = progress_interval
 
-<<<<<<< HEAD
-    def __getitem__(self, key):
-        return self.actions[key]
-=======
     def __getitem__(self, item):
         """
         Retrieves action with index `item`
@@ -124,7 +120,6 @@ class Loop(Metadatable):
             loop.actions[item]
         """
         return self.actions[item]
->>>>>>> refs/remotes/QCoDeS/master
 
     def loop(self, sweep_values, delay=0):
         """
