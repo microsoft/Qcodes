@@ -110,8 +110,21 @@ class Loop(Metadatable):
         self.bg_min_delay = None
         self.progress_interval = progress_interval
 
+<<<<<<< HEAD
     def __getitem__(self, key):
         return self.actions[key]
+=======
+    def __getitem__(self, item):
+        """
+        Retrieves action with index `item`
+        Args:
+            item: actions index
+
+        Returns:
+            loop.actions[item]
+        """
+        return self.actions[item]
+>>>>>>> refs/remotes/QCoDeS/master
 
     def loop(self, sweep_values, delay=0):
         """
@@ -356,8 +369,16 @@ class ActiveLoop(Metadatable):
         # set to its initial value
         self._nest_first = hasattr(actions[0], 'containers')
 
-    def __getitem__(self, key):
-        return self.actions[key]
+    def __getitem__(self, item):
+        """
+        Retrieves action with index `item`
+        Args:
+            item: actions index
+
+        Returns:
+            loop.actions[item]
+        """
+        return self.actions[item]
 
     def then(self, *actions, overwrite=False):
         """
@@ -721,10 +742,13 @@ class ActiveLoop(Metadatable):
         data_set.save_metadata()
 
         try:
+            if not quiet:
+                print(datetime.now().strftime('Started at %Y-%m-%d %H:%M:%S'))
             self._run_wrapper()
             ds = self.data_set
         finally:
-
+            if not quiet:
+                print(datetime.now().strftime('Finished at %Y-%m-%d %H:%M:%S'))
 
             # After normal loop execution we clear the data_set so we can run
             # again. But also if something went wrong during the loop execution
