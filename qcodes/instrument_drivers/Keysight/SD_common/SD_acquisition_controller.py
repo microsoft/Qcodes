@@ -2,7 +2,7 @@ import warnings
 
 from .SD_DIG import *
 from qcodes.instrument.base import Instrument
-from numpy import ndarray
+import numpy as np
 
 class AcquisitionController(Instrument):
     """
@@ -121,9 +121,8 @@ class AcquisitionController(Instrument):
         Returns:
             None
         """
-        records = self._keysight.acquire(acquisition_controller=self,
-                                       **self._acquisition_settings)
-        return records
+        raise NotImplementedError(
+            'This method should be implemented in a subclass')
 
     def pre_start_capture(self):
         """
@@ -156,7 +155,7 @@ class AcquisitionController(Instrument):
 
 class Triggered_Controller(AcquisitionController):
     def __init__(self, name, chassis, slot, channels, triggers, **kwargs):
-        """ Initialises a generic Signadyne digitizer and its parameters
+        """ Initialises a generic Keysight digitizer and its parameters
 
             Args:
                 name (str)      : the name of the digitizer card
@@ -173,6 +172,33 @@ class Triggered_Controller(AcquisitionController):
         # Set the average mode of the device
         self.average_mode.set(kwargs.pop('average_mode', 'none'))
         super().__init__(name, chassis, slot, **kwargs)
+
+        self.add_parameter(
+            'channel_selection',
+            parameter_class = ManualParameter,
+            docstring='A mask of the channels to be acquired'
+        )    
+
+        self.add_parameter(
+            'samples_per_record',
+            parameter_class = ManualParameter,
+            vals=Int(),
+            set_cmd=self._set_all_points_per_cycle,
+            docstring='The number of points to capture per trace'
+        )
+
+        self.add_parameter(
+            'traces_per_acquisition',
+            parameter_class = ManualParameter,
+            vals=Int(),
+            set_cmd=self._set_all_n_cycles,
+            docstring='The number of traces to capture per acquisition'
+        )
+
+        self.read_timeout = dict()
+        for ch in range(channels):
+            self.read_timeout[ch] = self._keysight.parameters['timeout_{}'.format(ch)]
+
 
     def _get_keysight(self):
         """
@@ -269,16 +295,50 @@ class Triggered_Controller(AcquisitionController):
 #        This method is called immediately after 'daq_start' is called
 #        """
 
-#    def post_acquire(self):
-#        """
-#        This method should return any information you want to save from this
-#        acquisition. The acquisition method from the Keysight driver will use
-#        this data as its own return value
-#
-#        Returns:
-#            this function should return all relevant data that you want
-#            to get from the acquisition
-#        """
+    def post_acquire(self):
+        """
+        This method should return any information you want to save from this
+        acquisition. The acquisition method from the Keysight driver will use
+        this data as its own return value
+
+        Returns:
+            this function should return all relevant data that you want
+            to get from the acquisition
+        """
+        if self.average_mode() == 'none':
+            data = self.buffers
+        elif self.average_mode() == 'trace':
+            data = [np.mean(buf, axis=0) for buf in self.buffers]
+        elif self.average_mode() == 'point':
+            data = [np.mean(buf) for buf in self.buffers]
+
+        return data
+
+    def _set_all_points_per_cycle(self, n_points):
+        """
+        This method sets the channelised parameters for data acquisition 
+        all at once. This must be set after channel_selection is modified.
+
+        Args:
+            n_points (int)  : the number of points to capture per trace
+
+        """
+        for ch in self.channel_selection:
+            self._keysight.parameters['points_per_cycle_{}'.format(ch)].set(n_points)
+
+
+
+    def _set_all_n_cycles(self, n_cycles):
+        """
+        This method sets the channelised parameters for data acquisition 
+        all at once. This must be set after channel_selection is modified.
+
+        Args:
+            n_cycles (int)  : the number of traces to capture
+
+        """
+        for ch in self.channel_selection:
+            self._keysight.parameters['n_cycles_{}'.format(ch)].set(n_cycles)
 
 
 class KeysightAcquisitionParameter(MultiParameter):
