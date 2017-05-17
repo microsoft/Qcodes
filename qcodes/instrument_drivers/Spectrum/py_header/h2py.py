@@ -136,8 +136,7 @@ def process(fp, outfp, env = {}):
             ok = 0
             stmt = '%s = %s\n' % (name, body)
             try:
-                # QCoDeS patch for python 3 support exec from statement to function.
-                exec(stmt, env)
+                exec stmt in env
             except:
                 sys.stderr.write('Skipping: %s' % stmt)
             else:
