@@ -34,6 +34,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
                 'im': float(obj.imag)
             }
         elif hasattr(obj, '_JSONEncoder'):
+            # Use object's custom JSON encoder
             return obj._JSONEncoder()
         else:
             try:

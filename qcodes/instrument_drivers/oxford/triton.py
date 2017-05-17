@@ -5,7 +5,7 @@ import logging
 from traceback import format_exc
 
 from qcodes import IPInstrument
-from qcodes.utils.validators import Enum
+from qcodes.utils.validators import Enum, Ints
 
 
 class Triton(IPInstrument):
@@ -53,7 +53,8 @@ class Triton(IPInstrument):
         self.add_parameter(name='pid_control_channel',
                            label='PID control channel',
                            get_cmd=self._get_control_channel,
-                           set_cmd=self._set_control_channel)
+                           set_cmd=self._set_control_channel,
+                           vals=Ints(1,16))
 
         self.add_parameter(name='pid_mode',
                            label='PID Mode',
@@ -102,8 +103,8 @@ class Triton(IPInstrument):
         try:
             self._get_named_channels()
         except:
-            logging.warn('Ignored an error in _get_named_channels\n' +
-                         format_exc())
+            logging.warning('Ignored an error in _get_named_channels\n' +
+                            format_exc())
 
         self.connect_message()
 
@@ -125,19 +126,26 @@ class Triton(IPInstrument):
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
-    def _get_control_channel(self, force_get=True):
-        if force_get or (not self._control_channel):
-            for i in range(1,17):
-                tempval = self.ask('READ:DEV:T%s:TEMP:LOOP:MODE' % (i))
-                if not tempval.endswith('NOT_FOUND'):
-                    self._control_channel = i
+    def _get_control_channel(self):
+
+        # verify current channel
+        if self._control_channel:
+            tempval = self.ask('READ:DEV:T{}:TEMP:LOOP:MODE'.format(self._control_channel))
+            if not tempval.endswith('NOT_FOUND'):
+                return self._control_channel
+
+        # either _control_channel is not set or wrong
+        for i in range(1,17):
+            tempval = self.ask('READ:DEV:T{}:TEMP:LOOP:MODE'.format(i))
+            if not tempval.endswith('NOT_FOUND'):
+                self._control_channel = i
+                break
 
         return self._control_channel
 
     def _set_control_channel(self, channel):
         self._control_channel = channel
-        self.write('SET:DEV:T%s:TEMP:LOOP:HTR:H1' %
-                   self._get_control_channel())
+        self.write('SET:DEV:T{}:TEMP:LOOP:HTR:H1'.format(channel))
 
     def _get_control_param(self, param):
         chan = self._get_control_channel()
@@ -235,7 +243,7 @@ class Triton(IPInstrument):
     def _parse_pres(self, msg):
         if 'NOT_FOUND' in msg:
             return None
-        return float(msg.split('SIG:PRES:')[-1].strip('mB'))*1e3
+        return float(msg.split('SIG:PRES:')[-1].strip('mB'))*1e-3
 
     def _recv(self):
         return super()._recv().rstrip()
