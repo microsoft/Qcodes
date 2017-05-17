@@ -29,22 +29,21 @@ install:
     - pip install --upgrade pip
     - pip install -r requirements.txt
     - pip install -r test_requirements.txt --upgrade
+    - pip install -r docs_requirements.txt
     - pip install -e .
 # command to run tests
 script:
     - cd qcodes
     - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
+    - |
+      cd ../docs
+      make html-api
+    - cd ..
 
 after_success:
     # install dependencies for docs build
-    - pip install -r ../docs_requirements.txt
-    - python-codacy-coverage -r coverage.xml
-    - cd ..
-    # build the docs
+    - python-codacy-coverage -r qcodes/coverage.xml
+    # upload the docs
     - |
       if [[ $TRAVIS_REPO_SLUG == "QCoDeS/Qcodes" && $TRAVIS_BRANCH == "master" && $TRAVIS_PULL_REQUEST == "false" ]]; then
         make -f docs/Makefile gh-pages
-      else
-        cd docs
-        make html-api
-      fi
