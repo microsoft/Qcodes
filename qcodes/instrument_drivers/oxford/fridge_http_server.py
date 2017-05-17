@@ -153,6 +153,7 @@ class FridgeHttpServer:
         # to the handler as parametername. {{ is needed for literal { in format strings
         app.router.add_get('/{{parametername:{}}}'.format(parameter_regex), self.handle_parameter)
         app.router.add_post('/{{parametername:{}}}'.format(settable_parameter_regex), self.handle_parameter)
+        app.router.add_post('/enablewebsocket', self.handle_websocket_enable)
         app.router.add_get('/', self.index)
         app.router.add_get('/hostname', self.handle_hostname)
         return app
@@ -182,31 +183,18 @@ class FridgeHttpServer:
                 log.info("Websocket closed. Will try to reconnect later")
                 await asyncio.sleep(ws_connect_sleep)
 
-    async def websocket_enable(self):
-        ws_addr = qcodes.config['fridgeserver']['wsserver']
-        ws_port = qcodes.config['fridgeserver']['wsport'] + 1
-        ws_server = '{}:{}'.format(ws_addr, ws_port)
-        ws_sleep = qcodes.config['fridgeserver']['wssendinterval']
-        ws_connect_sleep = qcodes.config['fridgeserver']['wsconnectinterval']
-        while True:
-            try:
-                log.debug("Connecting via websockets to {}".format(ws_server))
-                async with websockets.connect(ws_server) as websocket:
-                    log.debug("connected from receiver to {}".format(ws_server))
-                    while True:
-                        log.debug("waiting for websocket data")
-                        data = await websocket.recv()
-                        log.debug("got websocket data")
-                        data = json.loads(data)
-                        log.debug("data {}".format(data))
-                        self._send_websockets = data['enable']
-                        await asyncio.sleep(ws_sleep)
-            except OSError:
-                log.info("Websocket server is offline will retry later")
-                await asyncio.sleep(ws_connect_sleep)
-            except websockets.exceptions.ConnectionClosed:
-                log.info("Websocket closed. Will try to reconnect later")
-                await asyncio.sleep(ws_connect_sleep)
+    async def handle_websocket_enable(self, request):
+        """
+        Handler for qcodes parameters, Can expose the value, unit, name and label of a parameter via get
+        or allow the setting of a parameter via a POST request.
+        """
+        data = await request.json()
+        enable_websockets = data.get('enable', None)
+        if enable_websockets is None:
+            return web.Response(status=404, text="Incorrect post message")
+        else:
+            self._send_websockets = enable_websockets
+            return web.Response(text="Websocket sending of Fridge data set to {}".format(enable_websockets))
 
 
 def create_app(loop):
@@ -225,7 +213,6 @@ if __name__ == '__main__':
                                         use_mock_triton=use_mock_triton,
                                         triton_address=triton_address)
     loop.create_task(fridgehttpserver.websocket_client())
-    loop.create_task(fridgehttpserver.websocket_enable())
     app = fridgehttpserver.run_app(loop)
     http_port = qcodes.config['fridgeserver']['httpport']
     web.run_app(app, port=http_port)

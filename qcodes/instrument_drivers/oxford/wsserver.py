@@ -2,15 +2,11 @@
 import asyncio
 import websockets
 import json
-import logging
-
-import numpy as np
-
-#myarray = tuple(np.zeros((10000)))
-# logger = logging.getLogger('websockets')
-# logger.setLevel(logging.DEBUG)
-# logger.addHandler(logging.StreamHandler())
-
+"""
+This is a simple example of lisining for websocket data from a remote triton.
+It requires a post message to first be sent to the Triton to the enablewebsockets endpoint.
+An example of how this can be done is in enable_websockets.py
+"""
 async def getdata(websocket, path):
 
     while True:
@@ -20,25 +16,8 @@ async def getdata(websocket, path):
         print(data)
 
 
-async def start_sending(websocket, path):
-    send_data = {}
-    while True:
-        send_data['enable'] = True
-        print("enabling data")
-        await websocket.send(json.dumps(send_data))
-        await asyncio.sleep(5)
-        print("disable data")
-        send_data['enable'] = False
-        await websocket.send(json.dumps(send_data))
-        await asyncio.sleep(5)
-
-
-
 print("Starting server")
 start_server = websockets.serve(getdata, 'localhost', 8765)
-start_server2 = websockets.serve(start_sending, 'localhost', 8766)
 print("run event loop 1")
 asyncio.get_event_loop().create_task(start_server)
-print("run event loop 2")
-asyncio.get_event_loop().create_task(start_server2)
 asyncio.get_event_loop().run_forever()
