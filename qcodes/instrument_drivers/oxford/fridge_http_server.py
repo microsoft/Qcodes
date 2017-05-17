@@ -73,43 +73,6 @@ class FridgeHttpServer:
         return web.Response(text=host)
 
     @staticmethod
-    def prepare_monitor_data(triton) -> Dict[str, Union[list, float]]:
-        """
-        Return a dict that contains the parameter from the Triton to be monitored.
-        """
-
-        def get_data(triton, parametername):
-            parameter = getattr(triton, parametername)
-            parameter.get()
-            temp = parameter._latest()
-            temp['unit'] = parameter.unit
-            # replace with reading directly from reg database once running on fridge computer
-            namedict = triton.chan_temp_names.get(parametername, None)
-            if namedict:
-                fullname = namedict['name']
-            else:
-                fullname = None
-            temp['name'] = fullname or parameter.label or parameter.name
-            temp['value'] = str(temp['value'])
-            if temp["ts"] is not None:
-                temp["ts"] = time.mktime(temp["ts"].timetuple())
-
-            return temp
-
-        triton_parameters = []
-        for parametername in triton.parameters:
-            temp = get_data(triton, parametername)
-            triton_parameters.append(temp)
-
-        triton_parameters.append(get_data(triton, 'action'))
-        triton_parameters.append(get_data(triton, 'status'))
-
-        parameters_dict = {"instrument": triton.name, "parameters": triton_parameters}
-        state = {"ts": time.time(), "parameters": [parameters_dict]}
-
-        return state
-
-    @staticmethod
     def prepare_ws_data(triton) -> Dict[str, Union[list, float]]:
         """
         Return a dict that contains the parameter from the Triton to be exported via WS. This includes a read only copy
