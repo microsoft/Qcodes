@@ -1,4 +1,4 @@
-sphinx
+Sphinx<=1.6.0
 sphinx_rtd_theme
 jsonschema
 sphinxcontrib-jsonschema
