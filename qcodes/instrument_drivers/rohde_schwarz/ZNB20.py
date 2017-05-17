@@ -12,6 +12,21 @@ class FrequencySweep(MultiParameter):
     Instrument returns an list of transmission data in the form of a list of
     complex numbers taken from a frequency sweep.
 
+    Args:
+        name: parameter name
+        instrument: instrument the parameter belongs to
+        start: starting frequency of sweep
+        stop: ending frequency of sweep
+        npts: numper of points in frequency sweep
+
+    Methods:
+          set_sweep(start, stop, npts): sets the shapes and
+              setpoint arrays of the parameter to correspond with the sweep
+          get(): executes a sweep and returns magnitude and phase arrays
+
+          get_ramping: Queries the value of self.ramp_state and
+              self.ramp_time. Returns a string.
+
     TODO:
       - ability to choose for abs or db in magnitude return
     """
@@ -24,7 +39,7 @@ class FrequencySweep(MultiParameter):
         self.setpoint_names = (('frequency',), ('frequency',))
 
     def set_sweep(self, start, stop, npts):
-        #  needed to update config of the software parameter on sweep chage
+        #  needed to update config of the software parameter on sweep change
         # freq setpoints tuple as needs to be hashable for look up
         f = tuple(np.linspace(int(start), int(stop), num=npts))
         self.setpoints = ((f,), (f,))
