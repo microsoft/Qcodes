@@ -138,6 +138,13 @@ class Triggered_Controller(AcquisitionController):
             docstring='The channel which acquisition is triggered on.'
         )
 
+        self.add_parameter(
+            'sample_rate',
+            vals=Numbers(),
+            set_cmd=self._set_all_prescalers,
+            docstring='Sets the sample rate for all channels.'
+        )
+
 
         self.add_parameter(
             'samples_per_record',
@@ -159,15 +166,22 @@ class Triggered_Controller(AcquisitionController):
         def trigger_edge(self):
             return self._keysight.parameters['trigger_edge_{}'.format(
                                              self.trigger_channel.get_latest())]
+        self.add_parameter(
+            'read_timeout',
+            vals=Ints(),
+            set_cmd=self._set_all_read_timeout,
+            docstring='The maximum time (s) spent trying to read a single channel.'
+        )
+
+        # Set all channels to trigger by hardware
+        for ch in range(8):
+            self._keysight.parameters['DAQ_trigger_mode_{}'.format(ch)].set(3)
 
         @property
         def trigger_threshold(self, threshold):
             return self._keysight.parameters['trigger_threshold_{}'.format(
                                              self.trigger_channel.get_latest())]
 
-        self.read_timeout = dict()
-        for ch in range(channels):
-            self.read_timeout[ch] = self._keysight.parameters['timeout_{}'.format(ch)]
     
     def set_trigger_channel(self, tch):
         """
@@ -239,6 +253,21 @@ class Triggered_Controller(AcquisitionController):
             
         return data
 
+    def _set_all_prescalers(self, sample_rate):
+        """
+            This method sets the channelised parameters for data acquisition
+            all at once. This must be set after channel_selection is modified.
+
+            Args:
+                n_points (int)  : the number of points to capture per trace
+        """
+        prescaler = 100e6/sample_rate - 1
+        real_rate = 100e6/(round(prescaler)+1)
+        if abs(sample_rate - real_rate)/sample_rate > 0.1:
+            warnings.warn('The chosen sample rate deviates by more than 10% from the closest achievable rate, real sample rate will be {}'.format(real_rate))
+        for ch in self.channel_selection:
+            self._keysight.parameters['prescaler_{}'.format(ch)].set(int(prescaler))
+
     def _set_all_points_per_cycle(self, n_points):
         """
         This method sets the channelised parameters for data acquisition 
@@ -265,6 +294,16 @@ class Triggered_Controller(AcquisitionController):
         for ch in self.channel_selection:
             self._keysight.parameters['n_cycles_{}'.format(ch)].set(n_cycles)
 
+    def _set_all_read_timeout(self, timeout):
+        """
+        This method sets the channelised parameters for data acquisition
+        all at once. This must be set after channel_selection is modified.
+
+        Args:
+            timeout (int)  : the maximum time (ms) to wait for single channel read.
+        """
+        for ch in self.channel_selection:
+            self._keysight.parameters['timeout_{}'.format(ch)].set(timeout)
 
 class KeysightAcquisitionParameter(MultiParameter):
     def __init__(self, acquisition_controller=None, **kwargs):
