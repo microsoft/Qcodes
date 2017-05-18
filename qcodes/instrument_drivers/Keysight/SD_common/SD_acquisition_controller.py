@@ -91,12 +91,13 @@ class AcquisitionController(Instrument):
 
 class Triggered_Controller(AcquisitionController):
     def __init__(self, name, chassis, slot, channels, triggers, **kwargs):
-        """ Initialises a generic Keysight digitizer and its parameters
+        """ 
+        Initialises a generic Keysight digitizer and its parameters
 
-            Args:
-                name (str)      : the name of the digitizer card
-                channels (int)  : the number of input channels the specified card has
-                triggers (int)  : the number of trigger inputs the specified card has
+        Args:
+            name (str)      : the name of the digitizer card
+            channels (int)  : the number of input channels the specified card has
+            triggers (int)  : the number of trigger inputs the specified card has
         """
         self.add_parameter(
             'average_mode',
@@ -149,7 +150,7 @@ class Triggered_Controller(AcquisitionController):
         """
         Performs an acquisition using the acquisition settings
         Returns:
-            None
+            records : a numpy array of channelized data
         """
         records = self._keysight.acquire(acquisition_controller=self,
                                        **self._acquisition_settings)
