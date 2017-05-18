@@ -158,10 +158,6 @@ class Triggered_Controller(AcquisitionController):
             docstring='The number of traces to capture per acquisition'
         )
 
-        @property
-        def trigger_edge(self):
-            return self._keysight.parameters['trigger_edge_{}'.format(
-                                             self.trigger_channel.get_latest())]
         self.add_parameter(
             'read_timeout',
             vals=Ints(),
@@ -173,10 +169,15 @@ class Triggered_Controller(AcquisitionController):
         for ch in range(8):
             self._keysight.parameters['DAQ_trigger_mode_{}'.format(ch)].set(3)
 
-        @property
-        def trigger_threshold(self, threshold):
-            return self._keysight.parameters['trigger_threshold_{}'.format(
-                                             self.trigger_channel.get_latest())]
+    @property
+    def trigger_edge(self):
+        return self._keysight.parameters['trigger_edge_{}'.format(
+                                         self.trigger_channel.get_latest())]
+
+    @property
+    def trigger_threshold(self):
+        return self._keysight.parameters['trigger_threshold_{}'.format(
+                                         self.trigger_channel.get_latest())]
 
     
     def set_trigger_channel(self, tch):
