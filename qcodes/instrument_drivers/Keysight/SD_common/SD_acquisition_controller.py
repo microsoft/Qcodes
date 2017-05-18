@@ -193,9 +193,18 @@ class Triggered_Controller(AcquisitionController):
         Returns:
             records : a numpy array of channelized data
         """
-        records = self._keysight.acquire(acquisition_controller=self,
-                                       **self._acquisition_settings)
-        return records
+        self.pre_start_capture()
+        self._keysight.daq_start_multiple(self._ch_array_to_mask(self.channel_selection))
+        self.pre_acquire()
+        self.buffers = [np.zeros((self.traces_per_acquisition(),
+                                 self.samples_per_record()))
+                        for ch in self.channel_selection]
+        
+        for trace in self.traces_per_acquisition():
+            for sample in self.samples_per_record():
+                for ch in self.channel_selection:
+                    buffers[trace][sample][ch] = self._keysight.daq_read(ch)
+        return self.post_acquire()
 
 #    def pre_start_capture(self):
 #        """
