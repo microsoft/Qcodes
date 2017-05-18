@@ -31,11 +31,6 @@ class AcquisitionController(Instrument):
         self._keysight = self.find_instrument(keysight_name,
                                             instrument_class=SD_DIG)
 
-        self._acquisition_settings = {}
-        self._fixed_acquisition_settings = {}
-        self.add_parameter(name="acquisition_settings",
-                           get_cmd=lambda: self._acquisition_settings)
-
         # Names and shapes must have initial value, even through they will be
         # overwritten in set_acquisition_settings. If we don't do this, the
         # remoteInstrument will not recognize that it returns multiple values.
@@ -219,17 +214,20 @@ class Triggered_Controller(AcquisitionController):
                     self.buffers[ch][trace] = ch_data
         return self.post_acquire()
 
-#    def pre_start_capture(self):
-#        """
-#        Use this method to prepare yourself for the data acquisition
-#        The Keysight instrument will call this method right before
-#        'daq_start' is called
-#        """
+    def pre_start_capture(self):
+        """
+        Use this method to prepare yourself for the data acquisition
+        The Keysight instrument will call this method right before
+        'daq_start' is called
+        """
+        self._keysight.daq_stop_multiple(self._ch_array_to_mask(self.channel_selection))
+        self._keysight.daq_flush_multiple(self._ch_array_to_mask(self.channel_selection))
 
-#    def pre_acquire(self):
-#        """
-#        This method is called immediately after 'daq_start' is called
-#        """
+    def pre_acquire(self):
+        """
+        This method is called immediately after 'daq_start' is called
+        """
+        pass
 
     def post_acquire(self):
         """
