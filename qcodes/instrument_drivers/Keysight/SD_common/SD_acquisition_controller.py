@@ -197,14 +197,15 @@ class Triggered_Controller(AcquisitionController):
         self.pre_start_capture()
         self._keysight.daq_start_multiple(self._ch_array_to_mask(self.channel_selection))
         self.pre_acquire()
-        self.buffers = [np.zeros((self.traces_per_acquisition(),
-                                 self.samples_per_record()))
-                        for ch in self.channel_selection]
+        self.buffers = {ch : np.zeros((self.traces_per_acquisition.get_latest(),
+                                 self.samples_per_record.get_latest()))
+                        for ch in self.channel_selection}
         
-        for trace in self.traces_per_acquisition():
-            for sample in self.samples_per_record():
-                for ch in self.channel_selection:
-                    buffers[trace][sample][ch] = self._keysight.daq_read(ch)
+        for trace in range(self.traces_per_acquisition.get_latest()):
+            for ch in self.channel_selection:
+                ch_data = self._keysight.daq_read(ch)
+                if (len(ch_data) != 0):
+                    self.buffers[ch][trace] = ch_data
         return self.post_acquire()
 
 #    def pre_start_capture(self):
@@ -232,10 +233,10 @@ class Triggered_Controller(AcquisitionController):
         if self.average_mode() == 'none':
             data = self.buffers
         elif self.average_mode() == 'trace':
-            data = [np.mean(buf, axis=0) for buf in self.buffers]
+            data = {ch : np.mean(self.buffers[ch], axis=0) for ch in self.channel_selection}
         elif self.average_mode() == 'point':
-            data = [np.mean(buf) for buf in self.buffers]
-
+            data = {ch: np.mean(self.buffers[ch]) for ch in self.channel_selection}
+            
         return data
 
     def _set_all_points_per_cycle(self, n_points):
@@ -325,4 +326,5 @@ class KeysightAcquisitionParameter(MultiParameter):
         pass
 
     def get(self):
-        return self.acquisition_controller.do_acquisition()
+        data = self.acquisition_controller.do_acquisition()
+        return [data[ch] for ch in self.acquisition_controller.channel_selection]
