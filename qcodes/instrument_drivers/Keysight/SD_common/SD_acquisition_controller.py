@@ -125,11 +125,7 @@ class Triggered_Controller(AcquisitionController):
             docstring='The averaging mode used for acquisition, either none, point or trace'
         )
 
-        self.add_parameter(
-            'channel_selection',
-            parameter_class = ManualParameter,
-            docstring='A mask of the channels to be acquired'
-        )    
+        self.channel_selection = []
 
         self.add_parameter(
             'trigger_channel',
