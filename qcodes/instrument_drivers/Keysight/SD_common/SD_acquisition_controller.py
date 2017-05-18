@@ -88,6 +88,20 @@ class AcquisitionController(Instrument):
         """
         raise NotImplementedError(
             'This method should be implemented in a subclass')
+    
+    def _ch_array_to_mask(self, channel_selection):
+        """
+        This method is a helper function to translate an array of channel numbers
+        into a binary mask.
+
+        Returns:
+            a binary mask of channels
+        """
+        mask = 0
+        for ch in channel_selection:
+            mask |= 1 << ch
+        return mask
+        self.pre_start_capture()
 
 class Triggered_Controller(AcquisitionController):
     def __init__(self, name, chassis, slot, channels, triggers, **kwargs):
@@ -117,6 +131,14 @@ class Triggered_Controller(AcquisitionController):
         )    
 
         self.add_parameter(
+            'trigger_channel',
+            parameter_class = ManualParameter,
+            set_cmd=self.set_trigger_channel,
+            docstring='The channel which acquisition is triggered on.'
+        )
+
+
+        self.add_parameter(
             'samples_per_record',
             parameter_class = ManualParameter,
             vals=Int(),
@@ -132,10 +154,29 @@ class Triggered_Controller(AcquisitionController):
             docstring='The number of traces to capture per acquisition'
         )
 
+        @property
+        def trigger_edge(self):
+            return self._keysight.parameters['trigger_edge_{}'.format(
+                                             self.trigger_channel.get_latest())]
+
+        @property
+        def trigger_threshold(self, threshold):
+            return self._keysight.parameters['trigger_threshold_{}'.format(
+                                             self.trigger_channel.get_latest())]
+
         self.read_timeout = dict()
         for ch in range(channels):
             self.read_timeout[ch] = self._keysight.parameters['timeout_{}'.format(ch)]
+    
+    def set_trigger_channel(self, tch):
+        """
+        Sets the source channel with which to trigger acquisition on.
 
+        Args:
+            tch (int)   : the number of the trigger channel
+        """
+        for ch in self.channel_selection:
+            self._keysight.parameters['analog_trigger_mask_{}'.format(ch)].set(1<<tch)
 
     def _get_keysight(self):
         """
