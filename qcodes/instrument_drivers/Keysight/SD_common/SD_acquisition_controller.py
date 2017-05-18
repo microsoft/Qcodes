@@ -275,6 +275,7 @@ class Triggered_Controller(AcquisitionController):
         """
         for ch in self.channel_selection:
             self._keysight.parameters['points_per_cycle_{}'.format(ch)].set(n_points)
+            self._keysight.parameters['n_points_{}'.format(ch)].set(n_points)
 
 
 
