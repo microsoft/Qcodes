@@ -113,16 +113,17 @@ class Triggered_Controller(AcquisitionController):
             channels (int)  : the number of input channels the specified card has
             triggers (int)  : the number of trigger inputs the specified card has
         """
+        # Set the average mode of the device
+        self._average_mode = kwargs.pop('average_mode', 'none')
+        super().__init__(name, keysight_name, **kwargs)
+
         self.add_parameter(
             'average_mode',
-            parameter_class = ManualParameter,
-            initial_value='none',
+            parameter_class=ManualParameter,
+            initial_value=self._average_mode,
             vals=Enum('none', 'point', 'trace'),
             docstring='The averaging mode used for acquisition, either none, point or trace'
         )
-        # Set the average mode of the device
-        self.average_mode.set(kwargs.pop('average_mode', 'none'))
-        super().__init__(name, chassis, slot, **kwargs)
 
         self.add_parameter(
             'channel_selection',
