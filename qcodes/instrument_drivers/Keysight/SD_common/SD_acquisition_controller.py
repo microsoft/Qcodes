@@ -346,11 +346,11 @@ class KeysightAcquisitionParameter(MultiParameter):
             if average_mode == 'point':
                 shape = ()
             elif average_mode == 'trace':
-                shape = (self.acquisition_controller.samples_per_record,)
+                shape = (self.acquisition_controller.samples_per_record.get_latest(),)
             else:
-                shape = (self.acquisition_controller.traces_per_acquisition,
-                         self.acquisition_controller.samples_per_record)
-            return tuple([shape] * self.acquisition_controller.number_of_channels)
+                shape = (self.acquisition_controller.traces_per_acquisition.get_latest(),
+                         self.acquisition_controller.samples_per_record.get_latest())
+            return tuple([shape] * len(self.acquisition_controller.channel_selection))
         else:
             return tuple(() * len(self.names))
 
