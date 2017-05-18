@@ -104,7 +104,7 @@ class AcquisitionController(Instrument):
         self.pre_start_capture()
 
 class Triggered_Controller(AcquisitionController):
-    def __init__(self, name, chassis, slot, channels, triggers, **kwargs):
+    def __init__(self, name, keysight_name, **kwargs):
         """ 
         Initialises a generic Keysight digitizer and its parameters
 
