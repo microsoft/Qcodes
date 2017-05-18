@@ -1,6 +1,7 @@
 import warnings
 
 from .SD_DIG import *
+from qcodes.instrument.parameter import MultiParameter, ManualParameter
 from qcodes.instrument.base import Instrument
 import numpy as np
 
@@ -124,7 +125,7 @@ class Triggered_Controller(AcquisitionController):
 
         self.add_parameter(
             'trigger_channel',
-            parameter_class = ManualParameter,
+            vals=Enum(0, 1, 2, 3, 4, 5, 6, 7),
             set_cmd=self.set_trigger_channel,
             docstring='The channel which acquisition is triggered on.'
         )
@@ -139,16 +140,14 @@ class Triggered_Controller(AcquisitionController):
 
         self.add_parameter(
             'samples_per_record',
-            parameter_class = ManualParameter,
-            vals=Int(),
+            vals=Ints(),
             set_cmd=self._set_all_points_per_cycle,
             docstring='The number of points to capture per trace'
         )
 
         self.add_parameter(
             'traces_per_acquisition',
-            parameter_class = ManualParameter,
-            vals=Int(),
+            vals=Ints(),
             set_cmd=self._set_all_n_cycles,
             docstring='The number of traces to capture per acquisition'
         )
