@@ -36,6 +36,7 @@ class FrequencySweep(MultiParameter):
         self.set_sweep(start, stop, npts)
         self.names = ('magnitude', 'phase')
         self.units = ('dBm', 'rad')
+        self.setpoint_units = (('Hz',), ('Hz',))
         self.setpoint_names = (('frequency',), ('frequency',))
 
     def set_sweep(self, start, stop, npts):
