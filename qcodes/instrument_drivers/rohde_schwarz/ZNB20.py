@@ -152,12 +152,19 @@ class ZNB20(VisaInstrument):
         self.add_function('update_display_once', call_cmd='SYST:DISP:UPD ONCE')
         self.add_function('update_display_on', call_cmd='SYST:DISP:UPD ON')
         self.add_function('update_display_off', call_cmd='SYST:DISP:UPD OFF')
+        self.add_function('display_sij_split', call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 2,2')
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
         self.add_function('rf_on', call_cmd='OUTP1 ON')
 
         self.initialise()
         self._setup_s_channels()
+        self.autoscale_all()
         self.connect_message()
+
+
+    def autoscale_all(self):
+        for i in range(1,5):
+            self.write('DISPlay:TRACe1:Y:SCALe:AUTO ONCE, "Trc{}"'.format(i))
 
     def _setup_s_channels(self):
         """
