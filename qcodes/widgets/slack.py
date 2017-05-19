@@ -77,7 +77,7 @@ class Slack:
         notify/task {cmd} *args: register task with name `cmd` that is
             performed every time `update()` is called.
     """
-    def __init__(self, interval=5, config=None):
+    def __init__(self, interval=5, config=None, **commands):
         """
         Initializes Slack bot, including auto-updating widget if in notebook
         and using multiprocessing.
@@ -105,7 +105,8 @@ class Slack:
                          'msmt': self.print_measurement_information,
                          'measurement': self.print_measurement_information,
                          'notify': self.add_task,
-                         'task': self.add_task}
+                         'task': self.add_task,
+                         **commands}
         self.task_commands = {'finished': self.check_msmt_finished}
 
         self.interval = interval

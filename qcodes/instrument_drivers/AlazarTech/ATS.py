@@ -1249,7 +1249,7 @@ class ATSAcquisitionParameter(MultiParameter):
             elif average_mode == 'trace':
                 shape = (self.acquisition_controller.samples_per_record,)
             else:
-                shape = (self.acquisition_controller.traces_per_acquisition,
+                shape = (self.acquisition_controller.traces_per_acquisition(),
                          self.acquisition_controller.samples_per_record)
             return tuple([shape] * self.acquisition_controller.number_of_channels)
         else:

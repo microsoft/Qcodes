@@ -715,9 +715,6 @@ class ActiveLoop(Metadatable):
             self.progress_interval = progress_interval
 
         data_set = self.get_data_set(*args, **kwargs)
-        if not quiet:
-            print(repr(self.data_set))
-            print(datetime.now().strftime('started at %Y-%m-%d %H:%M:%S'))
 
         self.set_common_attrs(data_set=data_set, use_threads=use_threads)
 
@@ -738,6 +735,7 @@ class ActiveLoop(Metadatable):
 
         try:
             if not quiet:
+                print(repr(self.data_set))
                 print(datetime.now().strftime('Started at %Y-%m-%d %H:%M:%S'))
             self._run_wrapper()
             ds = self.data_set
