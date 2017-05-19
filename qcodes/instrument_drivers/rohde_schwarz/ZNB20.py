@@ -1,3 +1,5 @@
+from functools import partial
+
 from qcodes import VisaInstrument
 from qcodes.utils import validators as vals
 from cmath import phase
@@ -30,10 +32,11 @@ class FrequencySweep(MultiParameter):
     TODO:
       - ability to choose for abs or db in magnitude return
     """
-    def __init__(self, name, instrument, start, stop, npts):
+    def __init__(self, name, instrument, start, stop, npts, channel):
         super().__init__(name, names=("", ""), shapes=((), ()))
         self._instrument = instrument
         self.set_sweep(start, stop, npts)
+        self._channel = channel
         self.names = ('magnitude', 'phase')
         self.units = ('dBm', 'rad')
         self.setpoint_units = (('Hz',), ('Hz',))
@@ -47,15 +50,15 @@ class FrequencySweep(MultiParameter):
         self.shapes = ((npts,), (npts,))
 
     def get(self):
-        self._instrument.write('SENS1:AVER:STAT ON')
-        self._instrument.write('AVER:CLE')
+        self._instrument.write('SENS{}:AVER:STAT ON'.format(self._channel))
+        self._instrument.write('SENS{}:AVER:CLE'.format(self._channel))
         self._instrument.cont_meas_off()
 
         # instrument averages over its last 'avg' number of sweeps
         # need to ensure averaged result is returned
         for avgcount in range(self._instrument.avg()):
             self._instrument.write('INIT:IMM; *WAI')
-        data_str = self._instrument.ask('CALC:DATA? SDAT').split(',')
+        data_str = self._instrument.ask('CALC{}:DATA? SDAT'.format(self._channel)).split(',')
         data_list = [float(v) for v in data_str]
 
         # data_list of complex numbers [re1,im1,re2,im2...]
@@ -82,56 +85,52 @@ class ZNB20(VisaInstrument):
     def __init__(self, name, address, **kwargs):
 
         super().__init__(name=name, address=address, **kwargs)
+        n = 0
 
-        self.add_parameter(name='power',
-                           label='Power',
-                           unit='dBm',
-                           get_cmd='SOUR:POW?',
-                           set_cmd='SOUR:POW {:.4f}',
-                           get_parser=int,
-                           vals=vals.Numbers(-150, 25))
-
-        self.add_parameter(name='bandwidth',
-                           label='Bandwidth',
-                           unit='Hz',
-                           get_cmd='SENS:BAND?',
-                           set_cmd='SENS:BAND {:.4f}',
-                           get_parser=int,
-                           vals=vals.Numbers(1, 1e6))
-
-        self.add_parameter(name='avg',
-                           label='Averages',
-                           unit='',
-                           get_cmd='AVER:COUN?',
-                           set_cmd='AVER:COUN {:.4f}',
-                           get_parser=int,
-                           vals=vals.Numbers(1, 5000))
-
-        self.add_parameter(name='start',
-                           get_cmd='SENS:FREQ:START?',
-                           set_cmd=self._set_start,
-                           get_parser=float)
-
-        self.add_parameter(name='stop',
-                           get_cmd='SENS:FREQ:STOP?',
-                           set_cmd=self._set_stop,
-                           get_parser=float)
-
-        self.add_parameter(name='center',
-                           get_cmd = 'SENS:FREQ:CENT?',
-                           set_cmd = self._set_center,
-                           get_parser=float)
-
-        self.add_parameter(name='span',
-                           get_cmd = 'SENS:FREQ:SPAN?',
-                           set_cmd=self._set_span,
-                           get_parser=float)
-
-        self.add_parameter(name='npts',
-                           get_cmd='SENS:SWE:POIN?',
-                           set_cmd=self._set_npts,
-                           get_parser=int)
-
+        for i in range(2):
+            for j in range(2):
+                self.add_parameter(name='power{}{}'.format(i, j),
+                                   label='Power{}{}'.format(i, j),
+                                   unit='dBm',
+                                   get_cmd='SOUR{}:POW?'.format(n),
+                                   set_cmd='SOUR{}:POW {:.4f}'.format(n),
+                                   get_parser=int,
+                                   vals=vals.Numbers(-150, 25))
+                self.add_parameter(name='bandwidth{}{}.format(i, j)',
+                                   label='Bandwidth{}{}.format(i, j)',
+                                   unit='Hz',
+                                   get_cmd='SENS{}:BAND?'.format(n),
+                                   set_cmd='SENS{}:BAND {:.4f}'.format(n),
+                                   get_parser=int,
+                                   vals=vals.Numbers(1, 1e6))
+                self.add_parameter(name='avg{}{}'.format(i ,j),
+                                   label='Averages{}{}'.format(i ,j),
+                                   unit='',
+                                   get_cmd='SENS{}:AVER:COUN?'.format(n),
+                                   set_cmd='SENS{}:AVER:COUN {:.4f}'.format(n),
+                                   get_parser=int,
+                                   vals=vals.Numbers(1, 5000))
+                self.add_parameter(name='start{}{}'.format(i ,j),
+                                   get_cmd='SENS{}:FREQ:START?'.format(n),
+                                   set_cmd=partial(self._set_start, channel=n),
+                                   get_parser=float)
+                self.add_parameter(name='stop{}{}'.format(i ,j),
+                                   get_cmd='SENS{}:FREQ:STOP?'.format(n),
+                                   set_cmd=partial(self._set_stop, channel=n),
+                                   get_parser=float)
+                self.add_parameter(name='center{}{}'.format(i ,j),
+                                   get_cmd='SENS{}:FREQ:CENT?'.format(n),
+                                   set_cmd=partial(self._set_center, channel=n),
+                                   get_parser=float)
+                self.add_parameter(name='span{}{}'.format(i ,j),
+                                   get_cmd = 'SENS{}:FREQ:SPAN?'.format(n),
+                                   set_cmd=partial(self._set_span, channel=n),
+                                   get_parser=float)
+                self.add_parameter(name='npts{}{}'.format(i ,j),
+                                   get_cmd='SENS:SWE:POIN?',
+                                   set_cmd=partial(self._set_npts, channel=n),
+                                   get_parser=int)
+            n += 1
         self.add_parameter(name='trace',
                            start=self.start(),
                            stop=self.stop(),
@@ -152,27 +151,38 @@ class ZNB20(VisaInstrument):
         self.initialise()
         self.connect_message()
 
-    def _set_start(self, val):
-        self.write('SENS:FREQ:START {:.4f}'.format(val))
+    def _setup_s_channels(self):
+        """
+        Sets up 4 channels with a single trace in each.
+        Each channel will contain one trace.
+        """
+        n = 0
+        for i in range(2):
+            for j in range(2):
+                self.write("CALC{}:PAR:SDEF 'Trc1', 'S{}{}".format(n, i, j))
+                n += 1
+
+    def _set_start(self, val, channel):
+        self.write('SENS{}:FREQ:START {:.4f}'.format(channel, val))
         # update setpoints for FrequencySweep param
         self.trace.set_sweep(val, self.stop(), self.npts())
 
-    def _set_stop(self, val):
-        self.write('SENS:FREQ:STOP {:.4f}'.format(val))
+    def _set_stop(self, val, channel):
+        self.write('SENS{}:FREQ:STOP {:.4f}'.format(channel, val))
         # update setpoints for FrequencySweep param
         self.trace.set_sweep(self.start(), val, self.npts())
 
-    def _set_npts(self, val):
-        self.write('SENS:SWE:POIN {:.4f}'.format(val))
+    def _set_npts(self, val, channel):
+        self.write('SENS{}:SWE:POIN {:.4f}'.format(channel, val))
         # update setpoints for FrequencySweep param
         self.trace.set_sweep(self.start(), self.stop(), val)
 
-    def _set_span(self, val):
-        self.write('SENS:FREQ:SPAN {:.4f}'.format(val))
+    def _set_span(self, val, channel):
+        self.write('SENS{}:FREQ:SPAN {:.4f}'.format(channel, val))
         self.trace.set_sweep(self.start(), self.stop(), self.npts())
 
-    def _set_center(self, val):
-        self.write('SENS:FREQ:CENT {:.4f}'.format(val))
+    def _set_center(self, val, channel):
+        self.write('SENS{}:FREQ:CENT {:.4f}'.format(channel, val))
         self.trace.set_sweep(self.start(), self.stop(), self.npts())
 
     def initialise(self):
