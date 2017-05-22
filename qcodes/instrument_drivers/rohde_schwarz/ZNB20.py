@@ -89,6 +89,8 @@ class ZNB20(VisaInstrument):
         n = 1
         self._sindex_to_channel = {}
         self._channel_to_sindex = {}
+        self._max_freq = 20e9
+        self._min_freq = 100e3
         for i in range(1,3):
             self._sindex_to_channel[i] = {}
             for j in range(1,3):
@@ -116,19 +118,23 @@ class ZNB20(VisaInstrument):
                 self.add_parameter(name='start{}{}'.format(i ,j),
                                    get_cmd='SENS{}:FREQ:START?'.format(n),
                                    set_cmd=partial(self._set_start, channel=n),
-                                   get_parser=float)
+                                   get_parser=float,
+                                   vals=vals.Numbers(self._min_freq, self._max_freq-10))
                 self.add_parameter(name='stop{}{}'.format(i ,j),
                                    get_cmd='SENS{}:FREQ:STOP?'.format(n),
                                    set_cmd=partial(self._set_stop, channel=n),
-                                   get_parser=float)
+                                   get_parser=float,
+                                   vals = vals.Numbers(self._min_freq+1, self._max_freq))
                 self.add_parameter(name='center{}{}'.format(i ,j),
                                    get_cmd='SENS{}:FREQ:CENT?'.format(n),
                                    set_cmd=partial(self._set_center, channel=n),
-                                   get_parser=float)
+                                   get_parser=float,
+                                   vals=vals.Numbers(self._min_freq + 0.5, self._max_freq-10))
                 self.add_parameter(name='span{}{}'.format(i ,j),
                                    get_cmd = 'SENS{}:FREQ:SPAN?'.format(n),
                                    set_cmd=partial(self._set_span, channel=n),
-                                   get_parser=float)
+                                   get_parser=float,
+                                   vals = vals.Numbers(1, self._max_freq - self._min_freq))
                 self.add_parameter(name='npts{}{}'.format(i ,j),
                                    get_cmd='SENS:SWE:POIN?',
                                    set_cmd=partial(self._set_npts, channel=n),
@@ -153,6 +159,7 @@ class ZNB20(VisaInstrument):
         self.add_function('update_display_on', call_cmd='SYST:DISP:UPD ON')
         self.add_function('update_display_off', call_cmd='SYST:DISP:UPD OFF')
         self.add_function('display_sij_split', call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 2,2')
+        self.add_function('display_sij_overlay', call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 1,1')
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
         self.add_function('rf_on', call_cmd='OUTP1 ON')
 
