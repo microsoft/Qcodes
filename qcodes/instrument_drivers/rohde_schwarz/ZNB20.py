@@ -238,9 +238,10 @@ class ZNB20(VisaInstrument):
 
     def initialise(self):
         self.write('*RST')
-        self.write('SENS1:SWE:TYPE LIN')
-        self.write('SENS1:SWE:TIME:AUTO ON')
-        self.write('TRIG1:SEQ:SOUR IMM')
-        self.write('SENS1:AVER:STAT ON')
+        for n in range(1,5):
+            self.write('SENS{}:SWE:TYPE LIN'.format(n))
+            self.write('SENS{}:SWE:TIME:AUTO ON'.format(n))
+            self.write('TRIG{}:SEQ:SOUR IMM'.format(n))
+            self.write('SENS{}:AVER:STAT ON'.format(n))
         self.update_display_on()
         self._set_default_values()
