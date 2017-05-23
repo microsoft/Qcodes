@@ -4,6 +4,7 @@ from .SD_DIG import *
 from qcodes.instrument.parameter import MultiParameter, ManualParameter
 from qcodes.instrument.base import Instrument
 import numpy as np
+from qcodes import MultiParameter
 
 class AcquisitionController(Instrument):
     """
