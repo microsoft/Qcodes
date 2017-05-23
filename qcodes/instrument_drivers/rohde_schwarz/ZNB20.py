@@ -1,4 +1,5 @@
 from functools import partial
+import logging
 
 from qcodes import VisaInstrument
 from qcodes.utils import validators as vals
@@ -6,6 +7,7 @@ from cmath import phase
 import numpy as np
 from qcodes import MultiParameter, Parameter
 
+log = logging.getLogger(__name__)
 
 class FrequencySweep(MultiParameter):
     """
@@ -193,6 +195,8 @@ class ZNB20(VisaInstrument):
             raise ValueError("Stop frequency must be larger than start frequency.")
         # we get start as the vna may not be able to set it to the exact value provided
         start = getattr(self, 'start{}{}'.format(i, j))()
+        if val != start:
+            log.warning("Could not set start to {} setting it to {}".format(val, start))
         # update setpoints for FrequencySweep param
         trace.set_sweep(start, stop, npts)
 
@@ -206,6 +210,8 @@ class ZNB20(VisaInstrument):
         self.write('SENS{}:FREQ:STOP {:.4f}'.format(channel, val))
         # we get stop as the vna may not be able to set it to the exact value provided
         stop = getattr(self, 'stop{}{}'.format(i, j))()
+        if val != stop:
+            log.warning("Could not set stop to {} setting it to {}".format(val, stop))
         # update setpoints for FrequencySweep param
         trace.set_sweep(start, stop, npts)
 
