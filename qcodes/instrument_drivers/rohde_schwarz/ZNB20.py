@@ -189,17 +189,25 @@ class ZNB20(VisaInstrument):
         stop = getattr(self, 'stop{}{}'.format(i, j))()
         npts = getattr(self, 'npts{}{}'.format(i, j))()
         trace = getattr(self, 'trace{}{}'.format(i, j))
+        if val >= stop:
+            raise ValueError("Stop frequency must be larger than start frequency.")
+        # we get start as the vna may not be able to set it to the exact value provided
+        start = getattr(self, 'start{}{}'.format(i, j))()
         # update setpoints for FrequencySweep param
-        trace.set_sweep(val, stop, npts)
+        trace.set_sweep(start, stop, npts)
 
     def _set_stop(self, val, channel):
-        self.write('SENS{}:FREQ:STOP {:.4f}'.format(channel, val))
         i, j = self._channel_to_sindex[channel]
         start = getattr(self, 'start{}{}'.format(i, j))()
         npts = getattr(self, 'npts{}{}'.format(i, j))()
         trace = getattr(self, 'trace{}{}'.format(i, j))
+        if val <= start:
+            raise ValueError("Stop frequency must be larger than start frequency.")
+        self.write('SENS{}:FREQ:STOP {:.4f}'.format(channel, val))
+        # we get stop as the vna may not be able to set it to the exact value provided
+        stop = getattr(self, 'stop{}{}'.format(i, j))()
         # update setpoints for FrequencySweep param
-        trace.set_sweep(start, val, npts)
+        trace.set_sweep(start, stop, npts)
 
     def _set_npts(self, val, channel):
         self.write('SENS{}:SWE:POIN {:.4f}'.format(channel, val))
