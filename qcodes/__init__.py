@@ -10,19 +10,22 @@ config = Config()
 
 from qcodes.version import __version__
 
-try:
-    from qcodes.plots.qcmatplotlib import MatPlot
-except Exception:
-    print('matplotlib plotting not supported, '
-          'try "from qcodes.plots.qcmatplotlib import MatPlot" '
-          'to see the full error')
 
-try:
-    from qcodes.plots.pyqtgraph import QtPlot
-except Exception:
-    print('pyqtgraph plotting not supported, '
-          'try "from qcodes.plots.pyqtgraph import QtPlot" '
-          'to see the full error')
+if config.get("gui.plotlib"):
+    # load both because you never know what scientists actually want
+    try:
+        from qcodes.plots.qcmatplotlib import MatPlot
+    except Exception:
+        print('matplotlib plotting not supported, '
+              'try "from qcodes.plots.qcmatplotlib import MatPlot" '
+              'to see the full error')
+
+    try:
+        from qcodes.plots.pyqtgraph import QtPlot
+    except Exception:
+        print('pyqtgraph plotting not supported, '
+              'try "from qcodes.plots.pyqtgraph import QtPlot" '
+              'to see the full error')
 
 from qcodes.station import Station
 from qcodes.loops import Loop, active_loop, active_data_set
