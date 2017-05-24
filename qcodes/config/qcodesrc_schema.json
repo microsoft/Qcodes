@@ -37,9 +37,9 @@
                     "default": true
                 },
                 "plotlib": {
-                    "description": "Plotting library",
-                    "type": "string",
-                    "enum": ["QT", "matplotlib" ],
+                    "description": "Plotting library set to null to run without plotting",
+                    "type": ["string", "null"],
+                    "enum": ["QT", "matplotlib", null],
                     "default": "matplotlib"
                 }
             },
