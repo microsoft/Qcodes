@@ -301,6 +301,9 @@ class Triggered_Controller(AcquisitionController):
         for ch in self.channel_selection:
             self._keysight.parameters['timeout_{}'.format(ch)].set(timeout)
 
+    def __call__(self, *args, **kwargs):
+        return "Triggered"
+
 class KeysightAcquisitionParameter(MultiParameter):
     def __init__(self, acquisition_controller=None, **kwargs):
         self.acquisition_controller = acquisition_controller
