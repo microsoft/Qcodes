@@ -257,8 +257,8 @@ class ZNB20(VisaInstrument):
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
         self.add_function('rf_on', call_cmd='OUTP1 ON')
 
-        self.initialise()
         self._setup_s_channels()
+        self.initialise()
         self.autoscale_all()
         self.connect_message()
 
@@ -362,3 +362,5 @@ class ZNB20(VisaInstrument):
             self.write('SENS{}:AVER:STAT ON'.format(n))
         self.update_display_on()
         self._set_default_values()
+        self.rf_off()
+        self.display_sij_split()
