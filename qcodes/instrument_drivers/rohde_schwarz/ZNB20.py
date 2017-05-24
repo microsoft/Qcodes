@@ -28,11 +28,8 @@ class FrequencySweep(MultiParameter):
               setpoint arrays of the parameter to correspond with the sweep
           get(): executes a sweep and returns magnitude and phase arrays
 
-          get_ramping: Queries the value of self.ramp_state and
-              self.ramp_time. Returns a string.
-
     TODO:
-      - ability to choose for abs or db in magnitude return
+      - ability to choose for linear or db in magnitude return
     """
     def __init__(self, name, instrument, start, stop, npts, channel, sindex):
         super().__init__(name, names=("", ""), shapes=((), ()))
@@ -40,8 +37,10 @@ class FrequencySweep(MultiParameter):
         self.set_sweep(start, stop, npts)
         self._channel = channel
         self._sindex = sindex
-        self.names = ('magnitude', 'phase')
-        self.units = ('dBm', 'rad')
+        sname = 's' + str(sindex[0]) + str(sindex[1])
+        self.names = ('{}_magnitude'.format(sname) , '{}_phase'.format(sname))
+        self.labels = ('{} magnitude'.format(sname), '{} phase'.format(sname))
+        self.units = ('', 'rad')
         self.setpoint_units = (('Hz',), ('Hz',))
         self.setpoint_names = (('frequency',), ('frequency',))
 
@@ -53,6 +52,8 @@ class FrequencySweep(MultiParameter):
         self.shapes = ((npts,), (npts,))
 
     def get(self):
+        if not self._instrument.rf_power():
+            log.warning("RF output is off")
         self._instrument.write('SENS{}:AVER:STAT ON'.format(self._channel))
         self._instrument.write('SENS{}:AVER:CLE'.format(self._channel))
         self._instrument.cont_meas_off()
@@ -151,6 +152,10 @@ class ZNB20(VisaInstrument):
                 self._sindex_to_channel[i][j] = n
                 self._channel_to_sindex[n] = (i, j)
                 n += 1
+        self.add_parameter(name='rf_power',
+                           get_cmd='OUTP1?',
+                           set_cmd='OUTP1 {}',
+                           val_mapping={True: '1\n', False: '0\n'})
 
         self.add_function('reset', call_cmd='*RST')
         self.add_function('tooltip_on', call_cmd='SYST:ERR:DISP ON')
