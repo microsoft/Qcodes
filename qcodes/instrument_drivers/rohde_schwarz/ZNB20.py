@@ -5,23 +5,25 @@ from qcodes import VisaInstrument
 from qcodes.utils import validators as vals
 from cmath import phase
 import numpy as np
-from qcodes import MultiParameter, Parameter
+from qcodes import MultiParameter, ArrayParameter
 
 log = logging.getLogger(__name__)
 
-class FrequencySweep(MultiParameter):
+class FrequencySweepMagPhase(MultiParameter):
     """
     Hardware controlled parameter class for Rohde Schwarz RSZNB20 trace.
 
     Instrument returns an list of transmission data in the form of a list of
     complex numbers taken from a frequency sweep.
 
+    This is a multiparameter containing both amplitude and phase
+
     Args:
         name: parameter name
         instrument: instrument the parameter belongs to
         start: starting frequency of sweep
         stop: ending frequency of sweep
-        npts: numper of points in frequency sweep
+        npts: number of points in frequency sweep
 
     Methods:
           set_sweep(start, stop, npts): sets the shapes and
@@ -75,6 +77,66 @@ class FrequencySweep(MultiParameter):
         self._instrument.cont_meas_on()
         return mag_array, phase_array
 
+
+class FrequencySweep(ArrayParameter):
+    """
+    Hardware controlled parameter class for Rohde Schwarz RSZNB20 trace.
+
+    Instrument returns an array of transmission or reflection data depending on the
+    active measurement.
+
+    Args:
+        name: parameter name
+        instrument: instrument the parameter belongs to
+        start: starting frequency of sweep
+        stop: ending frequency of sweep
+        npts: number of points in frequency sweep
+
+    Methods:
+          set_sweep(start, stop, npts): sets the shapes and
+              setpoint arrays of the parameter to correspond with the sweep
+          get(): executes a sweep and returns magnitude and phase arrays
+
+    """
+    def __init__(self, name, instrument, start, stop, npts, channel, sindex):
+        sname = 's' + str(sindex[0]) + str(sindex[1])
+        super().__init__(name, shape=(npts,),
+                         instrument=instrument,
+                         unit='dB',
+                         label='{} magnitude'.format(sname),
+                         setpoint_units=('Hz',),
+                         setpoint_names=('frequency',))
+        self.set_sweep(start, stop, npts)
+        self._channel = channel
+        self._sindex = sindex
+
+    def set_sweep(self, start, stop, npts):
+        #  needed to update config of the software parameter on sweep change
+        # freq setpoints tuple as needs to be hashable for look up
+        f = tuple(np.linspace(int(start), int(stop), num=npts))
+        self.setpoints = (f,)
+        self.shape = (npts,)
+
+    def get(self):
+        if not self._instrument.rf_power():
+            log.warning("RF output is off")
+        format_param = getattr(self._instrument, 'format{}{}'.format(*self._sindex))
+        old_format = format_param()
+        format_param('dB')
+        self._instrument.write('SENS{}:AVER:STAT ON'.format(self._channel))
+        self._instrument.write('SENS{}:AVER:CLE'.format(self._channel))
+        self._instrument.cont_meas_off()
+
+        # instrument averages over its last 'avg' number of sweeps
+        # need to ensure averaged result is returned
+        for avgcount in range(getattr(self._instrument, 'avg{}{}'.format(*self._sindex))()):
+            self._instrument.write('INIT:IMM; *WAI')
+        data_str = self._instrument.ask('CALC{}:DATA? FDAT'.format(self._channel))
+        data = np.array(data_str.rstrip().split(',')).astype('float64')
+
+        self._instrument.cont_meas_on()
+        format_param(old_format)
+        return data
 
 class ZNB20(VisaInstrument):
     """
@@ -142,7 +204,31 @@ class ZNB20(VisaInstrument):
                                    get_cmd='SENS:SWE:POIN?',
                                    set_cmd=partial(self._set_npts, channel=n),
                                    get_parser=int)
+                self.add_parameter(name='format{}{}'.format(i ,j),
+                                   get_cmd='CALC{}:FORM?'.format(n),
+                                   set_cmd='CALC{}:FORM {{}}'.format(n),
+                                   val_mapping={'dB': 'MLOG\n',
+                                                'Linear Magnitude': 'MLIN\n',
+                                                'Phase': 'PHAS\n',
+                                                'Unwr Phase': 'UPH\n',
+                                                'Polar': 'POL\n',
+                                                'Smith': 'SMIT\n',
+                                                'Inverse Smith': 'ISM\n',
+                                                'SWR': 'SWR\n',
+                                                'Real': 'REAL\n',
+                                                'Imaginary': 'IMAG\n',
+                                                'Delay': "GDEL\n",
+                                                'Complex': "COMP\n"
+                                                })
+
                 self.add_parameter(name='trace{}{}'.format(i, j),
+                                   start=getattr(self, 'start{}{}'.format(i, j))(),
+                                   stop=getattr(self, 'stop{}{}'.format(i, j))(),
+                                   npts=getattr(self, 'npts{}{}'.format(i, j))(),
+                                   channel=n,
+                                   sindex=(i, j),
+                                   parameter_class=FrequencySweepMagPhase)
+                self.add_parameter(name='tracedb{}{}'.format(i, j),
                                    start=getattr(self, 'start{}{}'.format(i, j))(),
                                    stop=getattr(self, 'stop{}{}'.format(i, j))(),
                                    npts=getattr(self, 'npts{}{}'.format(i, j))(),
@@ -152,6 +238,7 @@ class ZNB20(VisaInstrument):
                 self._sindex_to_channel[i][j] = n
                 self._channel_to_sindex[n] = (i, j)
                 n += 1
+
         self.add_parameter(name='rf_power',
                            get_cmd='OUTP1?',
                            set_cmd='OUTP1 {}',
@@ -195,7 +282,7 @@ class ZNB20(VisaInstrument):
         i, j = self._channel_to_sindex[channel]
         stop = getattr(self, 'stop{}{}'.format(i, j))()
         npts = getattr(self, 'npts{}{}'.format(i, j))()
-        trace = getattr(self, 'trace{}{}'.format(i, j))
+
         if val >= stop:
             raise ValueError("Stop frequency must be larger than start frequency.")
         # we get start as the vna may not be able to set it to the exact value provided
@@ -203,7 +290,10 @@ class ZNB20(VisaInstrument):
         if val != start:
             log.warning("Could not set start to {} setting it to {}".format(val, start))
         # update setpoints for FrequencySweep param
+        trace = getattr(self, 'trace{}{}'.format(i, j))
         trace.set_sweep(start, stop, npts)
+        tracedb = getattr(self, 'tracedb{}{}'.format(i, j))
+        tracedb.set_sweep(start, stop, npts)
 
     def _set_stop(self, val, channel):
         i, j = self._channel_to_sindex[channel]
@@ -219,6 +309,8 @@ class ZNB20(VisaInstrument):
             log.warning("Could not set stop to {} setting it to {}".format(val, stop))
         # update setpoints for FrequencySweep param
         trace.set_sweep(start, stop, npts)
+        tracedb = getattr(self, 'tracedb{}{}'.format(i, j))
+        tracedb.set_sweep(start, stop, npts)
 
     def _set_npts(self, val, channel):
         self.write('SENS{}:SWE:POIN {:.4f}'.format(channel, val))
@@ -228,6 +320,8 @@ class ZNB20(VisaInstrument):
         trace = getattr(self, 'trace{}{}'.format(i, j))
         # update setpoints for FrequencySweep param
         trace.set_sweep(start, stop, val)
+        tracedb = getattr(self, 'tracedb{}{}'.format(i, j))
+        tracedb.set_sweep(start, stop, val)
 
     def _set_span(self, val, channel):
         self.write('SENS{}:FREQ:SPAN {:.4f}'.format(channel, val))
@@ -237,6 +331,8 @@ class ZNB20(VisaInstrument):
         npts = getattr(self, 'npts{}{}'.format(i, j))()
         trace = getattr(self, 'trace{}{}'.format(i, j))
         trace.set_sweep(start, stop, npts)
+        tracedb = getattr(self, 'tracedb{}{}'.format(i, j))
+        tracedb.set_sweep(start, stop, npts)
 
     def _set_center(self, val, channel):
         self.write('SENS{}:FREQ:CENT {:.4f}'.format(channel, val))
@@ -246,6 +342,8 @@ class ZNB20(VisaInstrument):
         npts = getattr(self, 'npts{}{}'.format(i, j))()
         trace = getattr(self, 'trace{}{}'.format(i, j))
         trace.set_sweep(start, stop, npts)
+        tracedb = getattr(self, 'tracedb{}{}'.format(i, j))
+        tracedb.set_sweep(start, stop, npts)
 
     def _set_default_values(self):
         for i in range(1,3):
