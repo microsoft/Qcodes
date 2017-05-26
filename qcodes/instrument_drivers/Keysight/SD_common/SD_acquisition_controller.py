@@ -29,7 +29,6 @@ class AcquisitionController(Instrument):
         :return: nothing
         """
         super().__init__(name, **kwargs)
-        #TODO FIX finding of instrument
         self._keysight = self.find_instrument(keysight_name,
                                             instrument_class=SD_DIG)
 
@@ -132,7 +131,7 @@ class Triggered_Controller(AcquisitionController):
             'trigger_channel',
             vals=Enum(0, 1, 2, 3, 4, 5, 6, 7),
             set_cmd=self.set_trigger_channel,
-            docstring='The channel which acquisition is triggered on.'
+            docstring='The channel on which acquisition is triggered.'
         )
 
         self.add_parameter(
@@ -155,14 +154,14 @@ class Triggered_Controller(AcquisitionController):
             'samples_per_record',
             vals=Ints(),
             set_cmd=self._set_all_points_per_cycle,
-            docstring='The number of points to capture per trace'
+            docstring='The number of points to capture per trace.'
         )
 
         self.add_parameter(
             'traces_per_acquisition',
             vals=Ints(),
             set_cmd=self._set_all_n_cycles,
-            docstring='The number of traces to capture per acquisition'
+            docstring='The number of traces to capture per acquisition.'
         )
 
         self.add_parameter(
