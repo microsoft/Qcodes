@@ -199,6 +199,10 @@ class Triggered_Controller(AcquisitionController):
         """
         for ch in self.channel_selection():
             self._keysight.parameters['analog_trigger_mask_{}'.format(ch)].set(1<<tch)
+        # Ensure latest trigger edge setting for the current trigger channel
+        self.trigger_channel._save_val(tch)
+        self.trigger_edge(self.trigger_edge.get_latest() or 'rising')
+        self.trigger_threshold(self.trigger_threshold.get_latest() or 0)
 
     def _get_keysight(self):
         """
