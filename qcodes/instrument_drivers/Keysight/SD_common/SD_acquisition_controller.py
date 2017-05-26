@@ -95,10 +95,9 @@ class AcquisitionController(Instrument):
             a binary mask of channels
         """
         mask = 0
-        for ch in channel_selection:
+        for ch in channel_selection():
             mask |= 1 << ch
         return mask
-        self.pre_start_capture()
 
 class Triggered_Controller(AcquisitionController):
     def __init__(self, name, keysight_name, **kwargs):
@@ -122,7 +121,12 @@ class Triggered_Controller(AcquisitionController):
             docstring='The averaging mode used for acquisition, either none, point or trace'
         )
 
-        self.channel_selection = []
+        self.add_parameter(
+            'channel_selection',
+            parameter_class=ManualParameter,
+            vals=Anything(),
+            docstring='The list of channels on which to acquire data.'
+        )
 
         self.add_parameter(
             'trigger_channel',
@@ -182,7 +186,7 @@ class Triggered_Controller(AcquisitionController):
         Args:
             tch (int)   : the number of the trigger channel
         """
-        for ch in self.channel_selection:
+        for ch in self.channel_selection():
             self._keysight.parameters['analog_trigger_mask_{}'.format(ch)].set(1<<tch)
 
     def _get_keysight(self):
@@ -260,7 +264,7 @@ class Triggered_Controller(AcquisitionController):
         real_rate = 100e6/(round(prescaler)+1)
         if abs(sample_rate - real_rate)/sample_rate > 0.1:
             warnings.warn('The chosen sample rate deviates by more than 10% from the closest achievable rate, real sample rate will be {}'.format(real_rate))
-        for ch in self.channel_selection:
+        for ch in self.channel_selection():
             self._keysight.parameters['prescaler_{}'.format(ch)].set(int(prescaler))
 
     def _set_all_points_per_cycle(self, n_points):
@@ -272,7 +276,7 @@ class Triggered_Controller(AcquisitionController):
             n_points (int)  : the number of points to capture per trace
 
         """
-        for ch in self.channel_selection:
+        for ch in self.channel_selection():
             self._keysight.parameters['points_per_cycle_{}'.format(ch)].set(n_points)
             self._keysight.parameters['n_points_{}'.format(ch)].set(n_points)
 
@@ -287,7 +291,7 @@ class Triggered_Controller(AcquisitionController):
             n_cycles (int)  : the number of traces to capture
 
         """
-        for ch in self.channel_selection:
+        for ch in self.channel_selection():
             self._keysight.parameters['n_cycles_{}'.format(ch)].set(n_cycles)
 
     def _set_all_read_timeout(self, timeout):
@@ -298,7 +302,7 @@ class Triggered_Controller(AcquisitionController):
         Args:
             timeout (int)  : the maximum time (ms) to wait for single channel read.
         """
-        for ch in self.channel_selection:
+        for ch in self.channel_selection():
             self._keysight.parameters['timeout_{}'.format(ch)].set(timeout)
 
     def __call__(self, *args, **kwargs):
