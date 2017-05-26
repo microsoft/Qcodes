@@ -142,6 +142,14 @@ class Triggered_Controller(AcquisitionController):
             docstring='Sets the sample rate for all channels.'
         )
 
+        self.add_parameter(
+            'trigger_edge',
+            vals=Enum('rising', 'falling', 'both'),
+            val_mapping={'rising' : 1, 'falling' : 2, 'both' : 3},
+            set_cmd=self.set_trigger_edge,
+            docstring='Sets the trigger edge sensitivity for the active acquisition controller.'
+        )
+
 
         self.add_parameter(
             'samples_per_record',
@@ -169,16 +177,19 @@ class Triggered_Controller(AcquisitionController):
             self._keysight.parameters['DAQ_trigger_mode_{}'.format(ch)].set(3)
 
     @property
-    def trigger_edge(self):
-        return self._keysight.parameters['trigger_edge_{}'.format(
-                                         self.trigger_channel.get_latest())]
-
-    @property
     def trigger_threshold(self):
         return self._keysight.parameters['trigger_threshold_{}'.format(
                                          self.trigger_channel.get_latest())]
 
-    
+    def set_trigger_edge(self, edge):
+        """
+        Sets the trigger edge for the given trigger channel.
+
+        Args:
+            edge (int) : the edge to trigger on
+        """
+        self._keysight.parameters['trigger_edge_{}'.format(self.trigger_channel.get_latest())](edge)
+
     def set_trigger_channel(self, tch):
         """
         Sets the source channel with which to trigger acquisition on.
