@@ -862,13 +862,8 @@ class M4i(Instrument):
         memsize = self.data_memory_size()
         self.segment_size(memsize)
 
-        if post_trigger is None:
-            pre_trigger = min(2**13, memsize / 2)
-            post_trigger = memsize - pre_trigger
-        else:
-            pre_trigger = memsize - post_trigger
-        self.posttrigger_memory_size(post_trigger)
-        self.pretrigger_memory_size(pre_trigger)
+        if post_trigger is not None:
+            self.posttrigger_memory_size(np.ceil(post_trigger/16)*16)
 
         self._check_buffers()
 
