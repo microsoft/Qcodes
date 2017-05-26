@@ -213,6 +213,21 @@ class Triggered_Controller(AcquisitionController):
         """
         return self._keysight
 
+    def acquire(self):
+        buffers = {ch: np.zeros((self.traces_per_acquisition.get_latest(),
+                                      self.samples_per_record.get_latest()))
+                        for ch in self.channel_selection()}
+
+        for trace in range(self.traces_per_acquisition.get_latest()):
+            for ch in self.channel_selection():
+                ch_data = self._keysight.daq_read(ch)
+                if (len(ch_data) != 0):
+                    buffers[ch][trace] = ch_data
+        return buffers
+
+    def start(self):
+        self._keysight.daq_start_multiple(self._ch_array_to_mask(self.channel_selection))
+
     def do_acquisition(self):
         """
         Performs an acquisition using the acquisition settings
@@ -220,18 +235,10 @@ class Triggered_Controller(AcquisitionController):
             records : a numpy array of channelized data
         """
         self.pre_start_capture()
-        self._keysight.daq_start_multiple(self._ch_array_to_mask(self.channel_selection))
+        self.start()
         self.pre_acquire()
-        self.buffers = {ch : np.zeros((self.traces_per_acquisition.get_latest(),
-                                 self.samples_per_record.get_latest()))
-                        for ch in self.channel_selection}
-        
-        for trace in range(self.traces_per_acquisition.get_latest()):
-            for ch in self.channel_selection:
-                ch_data = self._keysight.daq_read(ch)
-                if (len(ch_data) != 0):
-                    self.buffers[ch][trace] = ch_data
-        return self.post_acquire()
+        data = self.acquire()
+        return self.post_acquire(data)
 
     def pre_start_capture(self):
         """
@@ -248,7 +255,7 @@ class Triggered_Controller(AcquisitionController):
         """
         pass
 
-    def post_acquire(self):
+    def post_acquire(self, buffers):
         """
         This method should return any information you want to save from this
         acquisition. The acquisition method from the Keysight driver will use
@@ -258,12 +265,13 @@ class Triggered_Controller(AcquisitionController):
             this function should return all relevant data that you want
             to get from the acquisition
         """
+
         if self.average_mode() == 'none':
-            data = self.buffers
+            data = buffers
         elif self.average_mode() == 'trace':
-            data = {ch : np.mean(self.buffers[ch], axis=0) for ch in self.channel_selection}
+            data = {ch : np.mean(buffers[ch], axis=0) for ch in self.channel_selection()}
         elif self.average_mode() == 'point':
-            data = {ch: np.mean(self.buffers[ch]) for ch in self.channel_selection}
+            data = {ch: np.mean(buffers[ch]) for ch in self.channel_selection()}
             
         return data
 
