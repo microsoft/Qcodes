@@ -1,18 +1,10 @@
 import re
 import logging
-logging.basicConfig(level="DEBUG")
+import json
 
 import zmq
-# TODO(giulioungaretti)
-# What you don’t want to collect 	How to avoid collecting it
-# Information about where calls were made from.
-# Set logging._srcfile to None. This avoids calling sys._getframe(), which
-# may help to speed up your code in environments like PyPy (which can’t
-# speed up code that uses sys._getframe()), if and when PyPy
-# supports Python 3.x.
-# TODO(giulioungaretti) review formatters
 
-
+logging.basicConfig(level="DEBUG")
 DEBUGF = "%(levelname)s:%(name)s:%(lineno)d:%(asctime)s%(message)s"
 DATEFMT = "%H:%M:%S"
 
@@ -24,15 +16,10 @@ class QPUBHandler(logging.Handler):
 
         handler = PUBHandler('inproc://loc')
 
-    Log messages handled by this handler are broadcast with ZMQ topics
-    ``this.root_topic`` comes first, followed by the log level
-    (DEBUG,INFO,etc.), followed by any additional subtopics specified in the
-    message by: log.debug("subtopic.subsub::the real message")
+    Log messages handled by this handler are broadcast with ZMQ topic
+    ``log.name`` (which is the name of the module, when logging is done right) 
     """
-    root_topic=""
-    socket = None
-
-    # add more info to debug it's not cheap but more informative
+    # note that if we want zmq topcis the format MUST include name
     formatters = {
         logging.DEBUG: logging.Formatter(DEBUGF, datefmt=DATEFMT),
         logging.INFO: logging.Formatter("%(levelname)s:%(name)s:%(message)s\n", datefmt=DATEFMT),
@@ -41,7 +28,8 @@ class QPUBHandler(logging.Handler):
         logging.ERROR: logging.Formatter(
             "%(levelname)s:%(filename)s:%(name)s:%(lineno)d - %(message)s - %(exc_info)s\n", datefmt=DATEFMT),
         logging.CRITICAL: logging.Formatter(
-        "%(levelname)s:%(filename)s:%(lineno)d - %(message)s\n",  datefmt=DATEFMT)}
+            "%(levelname)s:%(filename)s:%(name)s:%(lineno)d - %(message)s - %(exc_info)s\n", datefmt=DATEFMT),
+       }
 
     def __init__(self, interface_or_socket, context=None):
         logging.Handler.__init__(self)
@@ -51,19 +39,25 @@ class QPUBHandler(logging.Handler):
 
     def format(self, record):
         """Format a record."""
+        fmt_msg = self.formatters[record.levelno].format(record)
         values = parse(self.formatters[record.levelno]._fmt)
         json_out = {}
         for key in values:
             json_out[key] = getattr(record, key)
         return json_out
 
-
     def emit(self, record):
         """Emit a record message
         Args:
             record (logging.record): record to shovel on the socket
         """
-        self.socket.send_json(self.format(record))
+        msg = self.format(record)
+        _logger_name = msg.get("name", "")
+        if _logger_name:
+            topic = "logger"+"."+_logger_name
+        else:
+            topic = "logger"
+        self.socket.send_multipart([topic.encode(), json.dumps(msg).encode()])
 
 
 def parse(string):
