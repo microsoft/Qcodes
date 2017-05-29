@@ -41,11 +41,16 @@ class MatPlot(BasePlot):
     """
     def __init__(self, *args, figsize=None, interval=1, subplots=None, num=None,
                  **kwargs):
-
         super().__init__(interval)
 
+        if len(args) > 1 and subplots is None:
+            subplots = (1, len(args))
+
         self._init_plot(subplots, figsize, num=num)
-        if args or kwargs:
+        if len(args) > 1 and not kwargs:
+            for k, arg in enumerate(args):
+                self.add(arg, subplot=k)
+        elif args or kwargs:
             self.add(*args, **kwargs)
 
         self.tight_layout()
