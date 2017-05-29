@@ -20,6 +20,7 @@ class Measure(Metadatable):
     """
     dummy_parameter = ManualParameter(name='single',
                                       label='Single Measurement')
+    active_measurement = None
 
     def __init__(self, *actions):
         super().__init__()
@@ -32,7 +33,7 @@ class Measure(Metadatable):
         return self.run(quiet=True, location=False, **kwargs)
 
     def run(self, use_threads=False, quiet=False, station=None,
-            set_active=False, **kwargs):
+            set_active=True, **kwargs):
         """
         Run the actions in this measurement and return their data as a DataSet
 
@@ -74,8 +75,10 @@ class Measure(Metadatable):
 
         # set the DataSet to local for now so we don't save it, since
         # we're going to massage it afterward
-        original_location = data_set.location
+        # Keep location as private attribute
+        data_set._location = data_set.location
         data_set.location = False
+
 
         # run the measurement as if it were a Loop
         self._dummyLoop.run(use_threads=use_threads,
@@ -116,7 +119,7 @@ class Measure(Metadatable):
                 del data_set.action_id_map[dummy_setpoint.action_indices]
 
         # now put back in the DataSet location and save it
-        data_set.location = original_location
+        data_set.location = data_set._location
         data_set.write()
 
         # metadata: ActiveLoop already provides station snapshot, but also

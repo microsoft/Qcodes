@@ -50,6 +50,7 @@ from datetime import datetime
 import logging
 import time
 import numpy as np
+import threading
 
 from qcodes.station import Station
 from qcodes.data.data_set import new_data
@@ -672,8 +673,9 @@ class ActiveLoop(Metadatable):
         """
         return self.run(quiet=True, location=False, **kwargs)
 
-    def run(self, use_threads=False, quiet=False, station=None,
-            progress_interval=False, set_active=True, *args, **kwargs):
+    def run(self, thread=False, use_threads=False, quiet=False, station=None,
+            progress_interval=False, set_active=True, *args,
+            **kwargs):
         """
         Execute this loop.
 
@@ -714,7 +716,24 @@ class ActiveLoop(Metadatable):
         if progress_interval is not False:
             self.progress_interval = progress_interval
 
+        if self.data_set is not None:
+            kwargs.pop('name', None)
         data_set = self.get_data_set(*args, **kwargs)
+
+        if thread:
+            if any(t.name == 'qcodes_loop' for t in threading.enumerate()):
+                raise RuntimeError('QCoDeS loop already running. Exiting')
+            t = threading.Thread(target=self.run, name='qcodes_loop',
+                                 args=args,
+                                 kwargs={'use_threads': use_threads,
+                                         'name': None,
+                                         'quiet': quiet,
+                                         'station': station,
+                                         'progress_interval': progress_interval,
+                                         'set_active': set_active,
+                                         **kwargs})
+            t.start()
+            return data_set
 
         self.set_common_attrs(data_set=data_set, use_threads=use_threads)
 
@@ -737,7 +756,7 @@ class ActiveLoop(Metadatable):
             if not quiet:
                 print(repr(self.data_set))
                 print(datetime.now().strftime('Started at %Y-%m-%d %H:%M:%S'))
-            self._run_wrapper()
+            self._run_wrapper(set_active=set_active)
             ds = self.data_set
         finally:
             if not quiet:
