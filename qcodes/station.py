@@ -172,4 +172,6 @@ class Station(Metadatable, DelegateAttributes):
         """Shortcut to components dict."""
         return self.components[key]
 
+    def __contains__(self, key):
+        return key in self.components
     delegate_attr_dicts = ['components']
