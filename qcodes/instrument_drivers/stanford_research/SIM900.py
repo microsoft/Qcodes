@@ -63,10 +63,13 @@ class SIM928(StandardParameter):
         # A small wait is needed before the actual voltage can be retrieved
         sleep(0.05)
         return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
-        if return_str == '#3000\n':
-            self._instrument.reset_slot(self.channel)
-            sleep(1)
-            return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
+        for k in range(5):
+            if return_str == '#3000\n':
+                self._instrument.reset_slot(self.channel)
+                sleep(1)
+                return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
+            else:
+                break
         return float(return_str[5:-3])
 
 
@@ -135,12 +138,13 @@ def get_voltages():
     """ Get scaled parameter voltages as dict """
     return {param.name: param() for param in voltage_parameters}
 
+
 def ramp_voltages(target_voltage=None, gate_names=None, **kwargs):
     """
     Ramp multiple gates in multiple steps.
-    
+
     Note that voltage_parameters must contain the parameters to be varied
-    
+
     Usage:
         ramp_voltages(target_voltage)
             Ramp voltages of all gates to target_voltage
@@ -148,7 +152,7 @@ def ramp_voltages(target_voltage=None, gate_names=None, **kwargs):
             Ramp voltages of gates with names in channels to target_voltage
         ramp_voltages(gate1=val1, gate2=val2, ...)
             Ramp voltage of gate1 to val1, gate2 to val2, etc.
-            
+
     Args:
         target_voltage (int): target voltage (can be omitted)
         gate_names (str list): Names of gates to be ramped (can be omitted)
@@ -162,7 +166,7 @@ def ramp_voltages(target_voltage=None, gate_names=None, **kwargs):
 
     if target_voltage is not None:
         if gate_names is None:
-            gate_names = kwargs.keys()
+            gate_names = parameters.keys()
         target_voltages = {gate_name: target_voltage
                            for gate_name in gate_names}
     elif kwargs:
