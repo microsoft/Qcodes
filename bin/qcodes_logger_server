@@ -48,4 +48,5 @@ def broker(frontend_addres="tcp://*:5559", backend_address="tcp://*:5560"):
         return
 
 
-broker()
+if __name__ == "__main__":
+    broker()
