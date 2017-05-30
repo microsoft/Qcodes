@@ -97,13 +97,17 @@ class ChannelList(Metadatable):
         chan_list (Iterable[chan_type]): An optional iterable of channels of type chan_type.
             This will create a list and immediately lock the ChannelList.
 
+        snapshotable (bool): Optionally disables taking of snapshots for a given channel list.
+            This is used when objects stored inside a channel list are accessible in multiple ways
+            and should not be repeated in an instrument snapshot.
+
     Attributes:
         parameters (Dict[Parameter]): All the parameters supported by this group of channels.
 
         functions (Dict[Function]): All the functions supported by this group of channels
     """
 
-    def __init__(self, parent, name, chan_type, chan_list=None):
+    def __init__(self, parent, name, chan_type, chan_list=None, snapshotable=True):
         super().__init__()
 
         self._parent = parent
@@ -112,6 +116,7 @@ class ChannelList(Metadatable):
             print(chan_type, InstrumentChannel)
             raise ValueError("Channel Lists can only hold instances of type InstrumentChannel")
         self._chan_type = chan_type
+        self._snapshotable = snapshotable
 
         # If a list of channels is not provided, define a list to store channels.
         # This will eventually become a locked tuple.
@@ -227,21 +232,30 @@ class ChannelList(Metadatable):
         self._channels = tuple(self._channels)
         self._locked = True
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update=False, force=False):
         """
         State of the instrument as a JSON-compatible dict.
 
         Args:
             update (bool): If True, update the state by querying the
-                instrument. If False, just use the latest values in memory.
+                instrument. If False, just use the latest values in memory..
+
+            force (bool): When true, force a snapshot to be taken even if
+                the channel list is marked as not snapshotable.
 
         Returns:
             dict: base snapshot
         """
-        snap = {'channels': dict((chan.name, chan.snapshot(update=update))
-                                   for chan in self._channels),
-                '__class__': full_class(self),
-                }
+        if self._snapshotable or force:
+            snap = {'channels': dict((chan.name, chan.snapshot(update=update))
+                                       for chan in self._channels),
+                    'snapshotable': self._snapshotable,
+                    '__class__': full_class(self),
+                    }
+        else:
+            snap = {'snapshotable': self._snapshotable,
+                    '__class__': full_class(self),
+                    }
         return snap
 
     def __getattr__(self, name):
