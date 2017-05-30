@@ -112,8 +112,7 @@ class ChannelList(Metadatable):
 
         self._parent = parent
         self._name = name
-        if not isinstance(chan_type, type) != type or not issubclass(chan_type, InstrumentChannel):
-            print(chan_type, InstrumentChannel)
+        if not isinstance(chan_type, type) or not issubclass(chan_type, InstrumentChannel):
             raise ValueError("Channel Lists can only hold instances of type InstrumentChannel")
         self._chan_type = chan_type
         self._snapshotable = snapshotable
