@@ -387,13 +387,15 @@ class Decadac(VisaInstrument, DacReader):
         self._feature_detect()
 
         # Create channels
-        self.channels = ChannelList(self, "Channels", DacChannel)
-        self.slots = ChannelList(self, "Slots", DacSlot)
+        channels = ChannelList(self, "Channels", DacChannel, snapshotable=False)
+        slots = ChannelList(self, "Slots", DacSlot)
         for i in range(6): # Create the 6 DAC slots
-            self.slots.append(DacSlot(self, "Slot{}".format(i), i, min_val, max_val))
-            self.channels.extend(self.slots[i].channels)
-        self.slots.lock()
-        self.channels.lock()
+            slots.append(DacSlot(self, "Slot{}".format(i), i, min_val, max_val))
+            channels.extend(self.slots[i].channels)
+        slots.lock()
+        channels.lock()
+        self.add_submodule("slots", slots)
+        self.add_submodule("channels", channels)
 
         # Custom connect message, since we can't identify
         t = time() - (self._t0)

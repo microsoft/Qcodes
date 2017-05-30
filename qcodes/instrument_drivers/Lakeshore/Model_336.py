@@ -42,9 +42,16 @@ class Model_336(VisaInstrument):
 	def __init__(self, name, address, **kwargs):
 		super().__init__(name, address, terminator="\r\n", **kwargs)
 
-		self.channels = ChannelList(self, "TempSensors", SensorChannel)
-		for chan in ('A', 'B', 'C', 'D'):
-			self.channels.append(SensorChannel(self, 'Chan{}'.format(chan), chan))
-		self.channels.lock()
+		# Allow access to channels either by referring to the channel name
+		# or through a channel list.
+		# i.e. Model_336.A.temperature() and Model_336.channels[0].temperature()
+		# refer to the same parameter.
+		channels = ChannelList(self, "TempSensors", SensorChannel, snapshotable=False)
+		for chan_name in ('A', 'B', 'C', 'D'):
+			channel = SensorChannel(self, 'Chan{}'.format(chan_name), chan_name)
+			channels.append(channel)
+			self.add_submodule(chan_name, channel)
+		channels.lock()
+		self.add_submodule("channels", channels)
 
 		self.connect_message()
