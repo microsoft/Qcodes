@@ -232,7 +232,7 @@ class ChannelList(Metadatable):
         self._channels = tuple(self._channels)
         self._locked = True
 
-    def snapshot_base(self, update=False, force=False):
+    def snapshot_base(self, update=False):
         """
         State of the instrument as a JSON-compatible dict.
 
@@ -240,13 +240,10 @@ class ChannelList(Metadatable):
             update (bool): If True, update the state by querying the
                 instrument. If False, just use the latest values in memory..
 
-            force (bool): When true, force a snapshot to be taken even if
-                the channel list is marked as not snapshotable.
-
         Returns:
             dict: base snapshot
         """
-        if self._snapshotable or force:
+        if self._snapshotable:
             snap = {'channels': dict((chan.name, chan.snapshot(update=update))
                                        for chan in self._channels),
                     'snapshotable': self._snapshotable,
