@@ -1,9 +1,10 @@
 """Visa instrument driver based on pyvisa."""
 import visa
+import pyvisa.constants as vi_const
+import pyvisa.resources
 
 from .base import Instrument
 import qcodes.utils.validators as vals
-
 
 class VisaInstrument(Instrument):
 
@@ -74,6 +75,13 @@ class VisaInstrument(Instrument):
 
         self.visa_handle = resource_manager.open_resource(address)
 
+        # Serial instruments have a separate flush method to clear their buffers
+        # which behaves differently to clear. This is particularly important
+        # for instruments which do not support SCPI commands.
+        if isinstance(self.visa_handle, pyvisa.resources.SerialInstrument):
+            self.visa_handle.flush(vi_const.VI_READ_BUF_DISCARD | vi_const.VI_WRITE_BUF_DISCARD)
+        else:
+            self.visa_handle.clear()
         self._address = address
 
     def set_terminator(self, terminator):
