@@ -27,10 +27,24 @@ class TestChannels(TestCase):
         channel_to_label = {0: 'A', 1: 'B', 2: 'C', 3: "D"}
         label = channel_to_label[channel]
         channel_via_label = getattr(self.instrument, label)
+        # set via labeled channel
         channel_via_label.temperature(value)
         self.assertEqual(channel_via_label.temperature(), value)
         self.assertEqual(self.instrument.channels[channel].temperature(), value)
         self.assertEqual(self.instrument.channels.temperature()[channel], value)
+        # reset
+        channel_via_label.temperature(0)
+        self.assertEqual(channel_via_label.temperature(), 0)
+        self.assertEqual(self.instrument.channels[channel].temperature(), 0)
+        self.assertEqual(self.instrument.channels.temperature()[channel], 0)
+        # set via index into list
+        self.instrument.channels[channel].temperature(value)
+        self.assertEqual(channel_via_label.temperature(), value)
+        self.assertEqual(self.instrument.channels[channel].temperature(), value)
+        self.assertEqual(self.instrument.channels.temperature()[channel], value)
+        # it's not possible to set via self.instrument.channels.temperature as this is a multi parameter
+        # that currently does not support set.
+
 
     def test_add_channel(self):
         name = 'foo'
@@ -39,4 +53,4 @@ class TestChannels(TestCase):
         self.instrument.add_submodule(name, channel)
 
         self.assertEqual(len(self.instrument.channels), 5)
-        
+
