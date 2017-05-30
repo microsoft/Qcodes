@@ -383,9 +383,6 @@ class Decadac(VisaInstrument, DacReader):
 
         super().__init__(name, address, **kwargs)
 
-        # Flush the input and output buffers, in case there is any remaining junk
-        self.visa_handle.flush(vi_const.VI_READ_BUF_DISCARD | vi_const.VI_WRITE_BUF_DISCARD)
-
         # Do feature detection
         self._feature_detect()
 
