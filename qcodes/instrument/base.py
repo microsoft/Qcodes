@@ -35,7 +35,7 @@ class Instrument(Metadatable, DelegateAttributes):
         functions (Dict[Function]): All the functions supported by this
             instrument. Usually populated via ``add_function``
 
-        submodules (Dict[Instrument]): All the submodules of this instrument
+        submodules (Dict[Metadatable]): All the submodules of this instrument
             such as channel lists or logical groupings of parameters.
             Usually populated via ``add_submodule``
     """
@@ -327,18 +327,18 @@ class Instrument(Metadatable, DelegateAttributes):
             name (str): how the submodule will be stored within ``instrument.submodules``
             and also how it can be addressed.
 
-            submodule (Instrument): The submodule to be stored.
+            submodule (Metadatable): The submodule to be stored.
 
         Raises:
             KeyError: if this instrument already contains a submodule with this
                 name.
             TypeError: if the submodule that we are trying to add is not an instance
-                of an instrument.
+                of an Metadatable object.
         """
         if name in self.submodules:
             raise KeyError('Duplicate submodule name {}'.format(name))
-        if not isinstance(submodule, Instrument):
-            raise TypeError('Submodules must be subclasses of instrument.')
+        if not isinstance(submodule, Metadatable):
+            raise TypeError('Submodules must be metadatable.')
         self.submodules[name] = submodule
 
     def snapshot_base(self, update=False):
