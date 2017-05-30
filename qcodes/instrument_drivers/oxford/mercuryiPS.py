@@ -81,7 +81,7 @@ class MercuryiPS(IPInstrument):
 
         self.add_parameter('hold_after_set',
                            parameter_class=ManualParameter,
-                           validator=Bool(),
+                           vals=Bool(),
                            initial_value=False,
                            docstring='Should the driver block while waiting for the Magnet power supply '
                                      'to go into hold mode.'
