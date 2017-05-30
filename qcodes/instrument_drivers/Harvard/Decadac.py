@@ -2,7 +2,6 @@ from time import time
 from functools import partial
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList, ManualParameter
 from qcodes.utils import validators as vals
-from visa import constants as vi_const
 
 class DACException(Exception):
     pass
