@@ -626,7 +626,7 @@ class M4i(Instrument):
         """
         if memsize is None:
             memsize = self._channel_memsize
-        posttrigger_size = int(memsize / 2)
+        posttrigger_size = int(np.ceil((memsize / 2)/16)*16)
         mV_range = getattr(self, 'range_channel_%d' % channel).get()
         cx = self._channel_mask()
         self.enable_channels(cx)
