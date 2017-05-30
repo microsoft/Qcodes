@@ -3,7 +3,7 @@ import numpy as np
 from qcodes.instrument.base import Instrument
 from qcodes.utils.validators import Numbers
 from qcodes.instrument.parameter import MultiParameter, ManualParameter
-
+from qcodes.instrument.channel import InstrumentChannel, ChannelList
 
 class MockParabola(Instrument):
     '''
@@ -107,6 +107,38 @@ class DummyInstrument(Instrument):
                                unit="V",
                                vals=Numbers(-800, 400))
 
+class DummyChannel(InstrumentChannel):
+    """
+    A single dummy channel implementation
+    """
+
+    def __init__(self, parent, name, channel):
+        super().__init__(parent, name)
+
+        self._channel = channel
+
+        # Add the various channel parameters
+        self.add_parameter('temperature',
+                           parameter_class=ManualParameter,
+                           initial_value=0,
+                           label="Temperature_{}".format(channel),
+                           unit='K',
+                           vals=Numbers(0, 300))
+
+class DummyChannelInstrument(Instrument):
+    """
+    Dummy instrument with channels
+    """
+
+    def __init__(self, name, **kwargs):
+        super().__init__(name, **kwargs)
+
+        channels = ChannelList(self, "TempSensors", DummyChannel, snapshotable=False)
+        for chan_name in ('A', 'B', 'C', 'D'):
+            channel = DummyChannel(self, 'Chan{}'.format(chan_name), chan_name)
+            channels.append(channel)
+            self.add_submodule(chan_name, channel)
+        self.add_submodule("channels", channels)
 
 class MultiGetter(MultiParameter):
     """
