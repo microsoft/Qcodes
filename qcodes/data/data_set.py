@@ -12,6 +12,8 @@ from .location import FormatLocation
 from qcodes.utils.helpers import DelegateAttributes, full_class, deep_update
 
 
+logger = logging.getLogger(__name__)
+
 def new_data(location=None, loc_record=None, name=None, overwrite=False,
              io=None, **kwargs):
     """
@@ -246,14 +248,14 @@ class DataSet(DelegateAttributes):
         Args:
             delay (float): seconds between iterations. Default 1.5
         """
-        logging.info(
+        logger.info(
             'waiting for DataSet <{}> to complete'.format(self.location))
 
         failing = {key: False for key in self.background_functions}
 
         completed = False
         while True:
-            logging.info('DataSet: {:.0f}% complete'.format(
+            logger.info('DataSet: {:.0f}% complete'.format(
                 self.fraction_complete() * 100))
 
             # first check if we're done
@@ -264,13 +266,13 @@ class DataSet(DelegateAttributes):
             # because we want things like live plotting to get the final data
             for key, fn in list(self.background_functions.items()):
                 try:
-                    logging.debug('calling {}: {}'.format(key, repr(fn)))
+                    logger.debug('calling {}: {}'.format(key, repr(fn)))
                     fn()
                     failing[key] = False
                 except Exception:
-                    logging.info(format_exc())
+                    logger.info(format_exc())
                     if failing[key]:
-                        logging.warning(
+                        logger.warning(
                             'background function {} failed twice in a row, '
                             'removing it'.format(key))
                         del self.background_functions[key]
@@ -282,7 +284,7 @@ class DataSet(DelegateAttributes):
             # but only sleep if we're not already finished
             time.sleep(delay)
 
-        logging.info('DataSet <{}> is complete'.format(self.location))
+        logger.info('DataSet <{}> is complete'.format(self.location))
 
     def get_changes(self, synced_indices):
         """
