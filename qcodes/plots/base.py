@@ -157,7 +157,8 @@ class BasePlot:
                             title_parts.append(location)
         return ', '.join(title_parts)
 
-    def get_label(self, data_array):
+    @staticmethod
+    def get_label(data_array):
         """
         Look for a label in data_array falling back on name.
 
@@ -174,7 +175,8 @@ class BasePlot:
         unit = getattr(data_array, 'unit', '')
         return  name, unit
 
-    def expand_trace(self, args, kwargs):
+    @staticmethod
+    def expand_trace(args, kwargs):
         """
         Complete the x, y (and possibly z) data definition for a trace.
 

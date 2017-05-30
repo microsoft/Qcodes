@@ -3,6 +3,8 @@
 Tutorial
 ========
 
+.. _driver :
+
 Writing a Driver
 ----------------
 

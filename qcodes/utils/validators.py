@@ -134,7 +134,7 @@ class Strings(Validator):
 class Numbers(Validator):
     """
     Args:
-        min_value (Optional[Union[float, int]):  Min value allowed, default inf
+        min_value (Optional[Union[float, int]):  Min value allowed, default -inf
         max_value:  (Optional[Union[float, int]): Max  value allowed, default inf
 
     Raises:

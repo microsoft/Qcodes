@@ -57,6 +57,7 @@ import time
 import logging
 import os
 import collections
+import warnings
 
 import numpy
 
@@ -96,11 +97,13 @@ class _BaseParameter(Metadatable, DeferredOperations):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
-    def __init__(self, name, instrument, snapshot_get, metadata):
+    def __init__(self, name, instrument, snapshot_get, metadata,
+                 snapshot_value=True):
         super().__init__(metadata)
         self._snapshot_get = snapshot_get
         self.name = str(name)
         self._instrument = instrument
+        self._snapshot_value = snapshot_value
 
         self.has_get = hasattr(self, 'get')
         self.has_set = hasattr(self, 'set')
@@ -181,11 +184,15 @@ class _BaseParameter(Metadatable, DeferredOperations):
             dict: base snapshot
         """
 
-        if self.has_get and self._snapshot_get and update:
+        if self.has_get and self._snapshot_get and self._snapshot_value and \
+                update:
             self.get()
 
         state = self._latest()
         state['__class__'] = full_class(self)
+
+        if not self._snapshot_value:
+            state.pop('value')
 
         if isinstance(state['ts'], datetime):
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
@@ -276,8 +283,9 @@ class Parameter(_BaseParameter):
     """
     def __init__(self, name, instrument=None, label=None,
                  unit=None, units=None, vals=None, docstring=None,
-                 snapshot_get=True, metadata=None):
-        super().__init__(name, instrument, snapshot_get, metadata)
+                 snapshot_get=True, snapshot_value=True, metadata=None):
+        super().__init__(name, instrument, snapshot_get, metadata,
+                         snapshot_value=snapshot_value)
 
         self._meta_attrs.extend(['label', 'unit', '_vals'])
 
@@ -450,8 +458,10 @@ class ArrayParameter(_BaseParameter):
     def __init__(self, name, shape, instrument=None,
                  label=None, unit=None, units=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
-                 setpoint_units=None, docstring=None, snapshot_get=True, metadata=None):
-        super().__init__(name, instrument, snapshot_get, metadata)
+                 setpoint_units=None, docstring=None,
+                 snapshot_get=True, snapshot_value=True, metadata=None):
+        super().__init__(name, instrument, snapshot_get, metadata,
+                         snapshot_value=snapshot_value)
 
         if self.has_set:  # TODO (alexcjohnson): can we support, ala Combine?
             raise AttributeError('ArrayParameters do not support set '
@@ -615,13 +625,14 @@ class MultiParameter(_BaseParameter):
     def __init__(self, name, names, shapes, instrument=None,
                  labels=None, units=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
-                 setpoint_units=None,
-                 docstring=None, snapshot_get=True, metadata=None):
-        super().__init__(name, instrument, snapshot_get, metadata)
+                 setpoint_units=None, docstring=None,
+                 snapshot_get=True, snapshot_value=True, metadata=None):
+        super().__init__(name, instrument, snapshot_get, metadata,
+                         snapshot_value=snapshot_value)
 
         if self.has_set:  # TODO (alexcjohnson): can we support, ala Combine?
-            raise AttributeError('MultiParameters do not support set '
-                                 'at this time.')
+            warnings.warn('MultiParameters do not fully support set '
+                          'at this time.')
 
         self._meta_attrs.extend(['setpoint_names', 'setpoint_labels', 'setpoint_units',
                                  'names', 'labels', 'units'])

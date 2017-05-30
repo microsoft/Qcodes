@@ -80,7 +80,7 @@ class Keithley_2400(VisaInstrument):
                            get_cmd=':READ?',
                            get_parser=self._resistance_parser,
                            label='Resistance',
-                           units='Ohm')
+                           unit='Ohm')
 
     def _set_mode_and_sense(self, msg):
         # This helps set the correct read out curr/volt
@@ -101,7 +101,7 @@ class Keithley_2400(VisaInstrument):
 
             Cancels all pending commands.
 
-            Cancels all previously send '*OPC' and '*OPC?'
+            Cancels all previously send `*OPC` and `*OPC?`
         """
         self.write(':*RST')
 
