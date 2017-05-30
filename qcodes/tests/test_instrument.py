@@ -93,3 +93,20 @@ class TestInstrument(TestCase):
             # check that we can find this instrument from the base class
             self.assertEqual(instrument,
                              Instrument.find_instrument(instrument.name))
+
+    def test_snapshot_value(self):
+        self.instrument.add_parameter('has_snapshot_value',
+                                      parameter_class=ManualParameter,
+                                      initial_value=42,
+                                      snapshot_value=True)
+        self.instrument.add_parameter('no_snapshot_value',
+                                      parameter_class=ManualParameter,
+                                      initial_value=42,
+                                      snapshot_value=False)
+
+        snapshot = self.instrument.snapshot()
+
+        self.assertIn('value', snapshot['parameters']['has_snapshot_value'])
+        self.assertEquals(42,
+                          snapshot['parameters']['has_snapshot_value']['value'])
+        self.assertNotIn('value', snapshot['parameters']['no_snapshot_value'])

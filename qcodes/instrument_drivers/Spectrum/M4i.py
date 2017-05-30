@@ -343,6 +343,11 @@ class M4i(Instrument):
                                vals=Enum(0, 1),
                                docstring='if 1 selects bandwidth limit, if 0 sets to full bandwidth for channel {}'.format(i))
 
+            self.add_parameter('channel_{}'.format(i),
+                               label='channel {}'.format(i),
+                               unit='a.u.',
+                               get_cmd=partial(self._read_channel, i))
+
         # acquisition modes
         # TODO: If required, the other acquisition modes can be added to the
         # validator
@@ -353,7 +358,7 @@ class M4i(Instrument):
                            set_cmd=partial(self._set_param32bit,
                                            pyspcm.SPC_CARDMODE),
                            vals=Enum(pyspcm.SPC_REC_STD_SINGLE, pyspcm.SPC_REC_STD_MULTI, pyspcm.SPC_REC_STD_GATE, pyspcm.SPC_REC_STD_ABA,
-                                     pyspcm.SPC_REC_FIFO_SINGLE, pyspcm.SPC_REC_FIFO_MULTI, pyspcm.SPC_REC_FIFO_GATE, pyspcm.SPC_REC_FIFO_ABA),
+                                     pyspcm.SPC_REC_FIFO_SINGLE, pyspcm.SPC_REC_FIFO_MULTI, pyspcm.SPC_REC_FIFO_GATE, pyspcm.SPC_REC_FIFO_ABA, pyspcm.SPC_REC_STD_AVERAGE),
                            docstring='defines the used operating mode')
 
         # wait command
@@ -541,6 +546,9 @@ class M4i(Instrument):
                                            pyspcm.SPC_M2CMD),
                            docstring='executes a command for the card or data transfer')
 
+        # memsize used for simple channel read-out
+        self._channel_memsize = 2**12
+
     # checks if requirements for the compensation get and set functions are met
     def _get_compensation(self, i):
         # if HF enabled
@@ -560,6 +568,11 @@ class M4i(Instrument):
             logging.warning(
                 "M4i: HF path not set, ignoring ACDC offset compensation set\n")
 
+    def active_channels(self):
+        """ Return a list with the indices of the active channels """
+        x = bin(self.enable_channels())[2:]
+        return [i for i in range(len(x)) if x[i]]
+
     def get_idn(self):
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), ('Spectrum_GMBH', szTypeToName(self.get_card_type()), self.serial_number(), ' ')))
 
@@ -568,7 +581,63 @@ class M4i(Instrument):
         resolution = self.ADC_to_voltage()
         return data * input_range / resolution
 
-    def set_channel_settings(self, i, mV_range, input_path, termination, coupling, compensation):
+    def initialize_channels(self, channels=None, mV_range=1000, input_path=0,
+                            termination=0, coupling=0, compensation=None, memsize=2**12):
+        """ Setup channels of the digitizer for simple readout using Parameters
+
+        The channels can be read out using the Parmeters `channel_0`, `channel_1`, ...
+
+        Args:
+            channels (list): list of channels to setup
+            mV_range, input_path, termination, coupling, compensation: passed
+                to the set_channel_settings function
+            memsize (int): memory size to use for simple channel readout
+        """
+        allchannels = 0
+        self._channel_memsize = memsize
+        self.data_memory_size(memsize)
+        if channels is None:
+            channels = range(4)
+        for ch in channels:
+            self.set_channel_settings(ch, mV_range, input_path=input_path,
+                                      termination=termination, coupling=coupling, compensation=compensation)
+            allchannels = allchannels + getattr(pyspcm, 'CHANNEL%d' % ch)
+
+        self.enable_channels(allchannels)
+
+    def _channel_mask(self, channels=range(4)):
+        """ Return mask for specified channels
+
+        Args:
+            channels (list): list of channel indices
+        Returns:
+            cx (int): channel mask
+        """
+        cx = 0
+        for c in channels:
+            cx += getattr(pyspcm, 'CHANNEL{}'.format(c))
+        return cx
+
+    def _read_channel(self, channel, memsize=None):
+        """ Helper function to read out a channel
+
+        Before a channel is measured all channels are enabled to ensure we can
+        read out channels without the overhead of changing channels.
+        """
+        if memsize is None:
+            memsize = self._channel_memsize
+        posttrigger_size = int(memsize / 2)
+        mV_range = getattr(self, 'range_channel_%d' % channel).get()
+        cx = self._channel_mask()
+        self.enable_channels(cx)
+        data = self.single_software_trigger_acquisition(
+            mV_range, memsize, posttrigger_size)
+        active = self.active_channels()
+        data = data.reshape((-1, len(active)))
+        value = np.mean(data[:, channel])
+        return value
+
+    def set_channel_settings(self, i, mV_range, input_path, termination, coupling, compensation=None):
         # initialize
         getattr(self, 'input_path_{}'.format(i))(input_path)  # 0: 1 MOhm
         getattr(self, 'termination_{}'.format(i))(termination)  # 0: DC
@@ -576,7 +645,8 @@ class M4i(Instrument):
         getattr(self, 'range_channel_{}'.format(i))(
             mV_range)  # note: set after voltage range
         # can only be used with DC coupling and 50 Ohm path (hf)
-        getattr(self, 'ACDC_offs_compensation_{}'.format(i))(compensation)
+        if compensation is not None:
+            getattr(self, 'ACDC_offs_compensation_{}'.format(i))(compensation)
 
     def set_ext0_OR_trigger_settings(self, trig_mode, termination, coupling, level0, level1=None):
 
@@ -622,18 +692,19 @@ class M4i(Instrument):
         self.data_memory_size(memsize)
         self.segment_size(seg_size)
         self.posttrigger_memory_size(posttrigger_size)
+        numch = bin(self.enable_channels()).count("1")
 
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
         # setup software buffer
-        buffer_size = ct.c_int16 * memsize
+        buffer_size = ct.c_int16 * memsize * numch
         data_buffer = (buffer_size)()
         data_pointer = ct.cast(data_buffer, ct.c_void_p)
 
         # data acquisition
         self._def_transfer64bit(
-            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize)
+            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
         self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
                              pyspcm.M2CMD_DATA_WAITDMA)
 
@@ -654,18 +725,19 @@ class M4i(Instrument):
         # set memsize and posttrigger
         self.data_memory_size(memsize)
         self.posttrigger_memory_size(posttrigger_size)
+        numch = bin(self.enable_channels()).count("1")
 
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
         # setup software buffer
-        buffer_size = ct.c_int16 * memsize
+        buffer_size = ct.c_int16 * memsize * numch
         data_buffer = (buffer_size)()
         data_pointer = ct.cast(data_buffer, ct.c_void_p)
 
         # data acquisition
         self._def_transfer64bit(
-            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize)
+            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
         self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
                              pyspcm.M2CMD_DATA_WAITDMA)
 
@@ -691,18 +763,19 @@ class M4i(Instrument):
         self.data_memory_size(memsize)
         self.pretrigger_memory_size(pretrigger_size)
         self.posttrigger_memory_size(posttrigger_size)
+        numch = bin(self.enable_channels()).count("1")
 
         self.general_command(pyspcm.M2CMD_CARD_START |
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
         # setup software buffer
-        buffer_size = ct.c_int16 * memsize
+        buffer_size = ct.c_int16 * memsize * numch
         data_buffer = (buffer_size)()
         data_pointer = ct.cast(data_buffer, ct.c_void_p)
 
         # data acquisition
         self._def_transfer64bit(
-            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize)
+            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
         self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
                              pyspcm.M2CMD_DATA_WAITDMA)
 
@@ -717,11 +790,20 @@ class M4i(Instrument):
         return voltages
 
     def single_software_trigger_acquisition(self, mV_range, memsize, posttrigger_size):
+        """ Acquire a single data trace
 
+        Args:
+            mV_range
+            memsize (int): size of data trace
+            posttrigger_size (int): size of data trace after triggering
+        Returns:
+            voltages (array)
+        """
         self.card_mode(pyspcm.SPC_REC_STD_SINGLE)  # single
 
         self.data_memory_size(memsize)
         self.posttrigger_memory_size(posttrigger_size)
+        numch = bin(self.enable_channels()).count("1")
 
         # start/enable trigger/wait ready
         self.trigger_or_mask(pyspcm.SPC_TMASK_SOFTWARE)  # software trigger
@@ -729,19 +811,97 @@ class M4i(Instrument):
                              pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
 
         # setup software buffer
-        buffer_size = ct.c_int16 * memsize
+        buffer_size = ct.c_int16 * memsize * numch
         data_buffer = (buffer_size)()
         data_pointer = ct.cast(data_buffer, ct.c_void_p)
 
         # data acquisition
         self._def_transfer64bit(
-            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize)
+            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
         self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
                              pyspcm.M2CMD_DATA_WAITDMA)
 
         # convert buffer to numpy array
         data = ct.cast(data_pointer, ct.POINTER(buffer_size))
         output = np.frombuffer(data.contents, dtype=ct.c_int16)
+        self._debug = output
+        self._stop_acquisition()
+
+        voltages = self.convert_to_voltage(output, mV_range / 1000)
+
+        return voltages
+
+    def _check_buffers(self):
+        """ Check validity of buffers
+
+        See: manual section "Limits of pre trigger, post trigger, memory size"
+        """
+
+        pretrigger = self.data_memory_size() - self.posttrigger_memory_size()
+        if pretrigger > 2**13:
+            raise Exception('value of SPC_PRETRIGGER is invalid')
+
+    def blockavg_hardware_trigger_acquisition(self, mV_range, nr_averages=10,
+                                              verbose=0, post_trigger=None):
+        """ Acquire data using block averaging and hardware triggering
+
+        To read out multiple channels, use `initialize_channels`
+
+        Args:
+            mV_range (float)
+            nr_averages (int): number of averages to take
+            verbose (int): output level
+            post_trigger (None or int): optional size of post_trigger buffer
+        Returns:
+            voltages (array): if multiple channels are read, then the data is interleaved
+        """
+        # self.available_card_modes()
+        if nr_averages < 2:
+            raise Exception('averaging for less than 2 times is not supported')
+        self.card_mode(pyspcm.SPC_REC_STD_AVERAGE)  # single
+        memsize = self.data_memory_size()
+        self.segment_size(memsize)
+
+        if post_trigger is None:
+            pre_trigger = min(2**13, memsize / 2)
+            post_trigger = memsize - pre_trigger
+        else:
+            pre_trigger = memsize - post_trigger
+        self.posttrigger_memory_size(post_trigger)
+        self.pretrigger_memory_size(pre_trigger)
+
+        self._check_buffers()
+
+        self._set_param32bit(pyspcm.SPC_AVERAGES, nr_averages)
+        numch = bin(self.enable_channels()).count("1")
+
+        if verbose:
+            print('blockavg_hardware_trigger_acquisition: errors %s' %
+                  (self.get_error_info32bit(), ))
+            print('blockavg_hardware_trigger_acquisition: card_status %s' %
+                  (self.card_status(), ))
+
+        self.external_trigger_mode(pyspcm.SPC_TM_POS)
+        self.trigger_or_mask(pyspcm.SPC_TMASK_EXT0)
+        self.general_command(pyspcm.M2CMD_CARD_START |
+                             pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
+
+        # setup software buffer
+        sizeof32bit = 4
+        buffer_size = ct.c_int32 * memsize * numch
+        data_buffer = (buffer_size)()
+        data_pointer = ct.cast(data_buffer, ct.c_void_p)
+
+        # data acquisition
+        self._def_transfer64bit(
+            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, sizeof32bit * memsize * numch)
+        self.general_command(pyspcm.M2CMD_DATA_STARTDMA |
+                             pyspcm.M2CMD_DATA_WAITDMA)
+
+        # convert buffer to numpy array
+        data = ct.cast(data_pointer, ct.POINTER(buffer_size))
+        output = np.frombuffer(data.contents, dtype=ct.c_int32) / nr_averages
+        self._debug = output
 
         self._stop_acquisition()
 
@@ -790,7 +950,8 @@ class M4i(Instrument):
         return (data.value)
 
     def _set_param32bit(self, param, value):
-        """Read a 32-bit parameter from the device."""
+        """ Set a 32-bit parameter on the device."""
+        value = int(value)  # convert floating point to int if necessary
         pyspcm.spcm_dwSetParam_i32(self.hCard, param, value)
 
     def _invalidate_buf(self, buf_type):

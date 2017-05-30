@@ -90,15 +90,23 @@ class Decadac(VisaInstrument):
 
         self.add_parameter('mode',
                            label='Output mode',
-                           set_cmd='B {}; M {};'.format(self.slot, '{}'),
-                           vals=vals.Enum(0, 1),
+                           set_cmd=partial(self._setmode, self.slot),
+                           vals=vals.Enum(0, 2),
                            docstring="""
                                      The operational mode of the slot.
-                                     0: output off, 1: output on.
+                                     0: output off,
+                                     2: 4-channel (low res) mode.
                                      """)
 
         # initialise hardware settings
-        self.mode.set(1)
+        self.mode.set(2)
+
+    def _setmode(self, slot, mode):
+        """
+        set_cmd for the mode parameter
+        """
+        self.visa_handle.write('B {}; M {};'.format(slot, mode))
+        self.visa_handle.read()
 
     def _getoffset(self, n):
         return self._offsets[n]
@@ -256,4 +264,3 @@ class Decadac(VisaInstrument):
                            3: lambda x: 2**16/10*(x-2**-16+10)}
         voltage_float = translationdict[self._voltranges[channel]](voltage)
         return str(int(voltage_float))
-

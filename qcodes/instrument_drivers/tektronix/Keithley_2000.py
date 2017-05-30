@@ -161,6 +161,10 @@ class Keithley_2000(VisaInstrument):
         if reset:
             self.reset()
 
+        # Set the data format to have only ascii data without units and channels
+        self.write('FORM:DATA ASCII')
+        self.write('FORM:ELEM READ')
+
         self.connect_message()
 
     def trigger(self):

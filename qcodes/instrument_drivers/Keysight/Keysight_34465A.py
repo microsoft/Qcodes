@@ -7,6 +7,7 @@ import logging
 from qcodes.instrument.parameter import ArrayParameter
 import qcodes.utils.validators as vals
 from qcodes import VisaInstrument
+from pyvisa import VisaIOError
 
 log = logging.getLogger(__name__)
 
@@ -75,7 +76,11 @@ class ArrayMeasurement(ArrayParameter):
         self._instrument.display_text('Acquiring {} samples'.format(N))
 
         self._instrument.init_measurement()
-        rawvals = self._instrument.ask('FETCH?')
+        try:
+            rawvals = self._instrument.ask('FETCH?')
+        except VisaIOError:
+            rawvals = None
+            log.error('Could not pull data from DMM. Perhaps no trigger?')
 
         self._instrument.visa_handle.timeout = old_timeout
 
@@ -338,7 +343,7 @@ class Keysight_34465A(VisaInstrument):
         # The 'READ?' command will return anything the instrument is set up
         # to return, i.e. not necessarily a voltage (might be current or
         # or resistance) and not necessarily a single value. This function
-        # should be aware of the configuration. 
+        # should be aware of the configuration.
 
         response = self.ask('READ?')
 
