@@ -111,7 +111,7 @@ class Sweep(MultiParameter):
         # TODO: support non-sequential sweep mode
         if not sweepdict['scan'] == 0:
             raise NotImplementedError('Only sequential scanning is supported.')
-        if sweepdict['xmapping'] == 'lin':
+        if sweepdict['xmapping'] == 0:
             sw = tuple(np.linspace(start, stop, npts))
         else:
             logstart = np.log10(start)
@@ -1137,7 +1137,7 @@ class ZIUHFLI(Instrument):
                             vals=vals.Enum('Time Domain', 'Freq Domain FFT')
                             )
 
-        # 1: Channel 1 on, Channel 2 off. 
+        # 1: Channel 1 on, Channel 2 off.
         # 2: Channel 1 off, Channel 2 on,
         # 3: Channel 1 on, Channel 2 on.
         self.add_parameter('scope_channels',
@@ -1197,8 +1197,8 @@ class ZIUHFLI(Instrument):
                            unit='s'
                            )
 
-        # Map the possible input sources to LabOne's IDs. 
-        # The IDs can be seen in log file of LabOne UI 
+        # Map the possible input sources to LabOne's IDs.
+        # The IDs can be seen in log file of LabOne UI
         inputselect = {'Signal Input 1': 0,
                        'Signal Input 2': 1,
                        'Trig Input 1': 2,
@@ -1216,9 +1216,9 @@ class ZIUHFLI(Instrument):
                        'AU Polar 1': 128,
                        'AU Polar 2': 129,
                        }
-        # Add all 8 demodulators and their respective parameters 
-        # to inputselect as well. 
-        # Numbers correspond to LabOne IDs, taken from UI log. 
+        # Add all 8 demodulators and their respective parameters
+        # to inputselect as well.
+        # Numbers correspond to LabOne IDs, taken from UI log.
         for demod in range(1,9):
             inputselect['Demod {} X'.format(demod)] = 15+demod
             inputselect['Demod {} Y'.format(demod)] = 31+demod

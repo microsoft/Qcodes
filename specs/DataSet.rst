@@ -77,7 +77,8 @@ Writing
 ----------
 
 #. It should be possible to add a single result or a sequence of results to an in-progress DataSet.
-#. It should be able to add an array of values for a new parameter to an in-progress DataSet.
+#. It should be possible to add an array of values for a new parameter to an in-progress DataSet.
+#. It should be possible to modify a single result or a sequence of results in an in-progress DataSet.
 #. A DataSet should maintain the order in which results were added.
 #. An in-progress DataSet may be marked as completed.
 
@@ -185,6 +186,8 @@ DataSet.add_result(**kwargs)
     Adds a result to the DataSet.
     Keyword parameters should have the name of a parameter as the keyword and the value to associate as the value.
     If there is only one positional parameter and it is a dictionary, then it is interpreted as a map from parameter name to parameter value.
+
+    Returns the zero-based index in the DataSet that the result was stored at; that is, it returns the length of the DataSet before the addition.
     
     It is an error to provide a value for a key or keyword that is not the name of a parameter in this DataSet.
     
@@ -196,7 +199,43 @@ DataSet.add_results(args)
     See the add_result method for a description of such a dictionary.
     The order of dictionaries in the sequence will be the same as the order in which they are added to the DataSet.
     
+    Returns the zero-based index in the DataSet that the first result was stored at; that is, it returns the length of the DataSet before the addition.
+    
+    It is an error to provide a value for a key or keyword that is not the name of a parameter in this DataSet.
+    
     It is an error to add results to a completed DataSet.
+
+DataSet.modify_result(index, **kwargs)
+    Modifies a result in the DataSet.
+    The index should be the zero-based index of the result to be modified.
+    Keyword parameters should have the name of a parameter as the keyword and the updated value to associate as the value.
+    If there is only one positional parameter and it is a dictionary, then it is interpreted as a map from parameter name to updated parameter value.
+
+    Any parameters that were specified in the original result that do not appear in the modification are left unchanged.
+    To remove a parameter from a result, map it to None.
+
+    It is an error to modify a result at an index less than zero or beyond the end of the DataSet.
+    
+    It is an error to provide a value for a key or keyword that is not the name of a parameter in this DataSet.
+    
+    It is an error to modify a result in a completed DataSet.
+
+DataSet.modify_results(start_index, updates)
+    Modifies a sequence of results in the DataSet.
+    The start_index should be the zero-based index of the first result of the sequence to be modified.
+    The updates argument should be a sequence of dictionaries, where each dictionary provides modified values for parameters 
+    as a map from parameter name to parameter value.
+    See the modify_result method for a description of such a dictionary.
+    The order of dictionaries in the sequence will be the same as the order in which they are applied to the DataSet.
+    
+    Any parameters that were specified in a original result that do not appear in the corresponding modification are left unchanged.
+    To remove a parameter from a result, map it to None.
+
+    It is an error to modify a result at an index less than zero or beyond the end of the DataSet.
+    
+    It is an error to provide a value for a key or keyword that is not the name of a parameter in this DataSet.
+    
+    It is an error to modify results in a completed DataSet.
 
 DataSet.add_parameter_values(spec, values)
 	Adds a parameter to the DataSet and associates result values with the new parameter.
