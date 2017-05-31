@@ -88,6 +88,10 @@ class Broker():
 if __name__ == "__main__":
     import logging
     import atexit
+    from os import environ
+    debug_mode = environ.get("debug", False)
+    if debug_mode:
+        logging.basicConfig(level=logging.DEBUG)
     broker = Broker()
     atexit.register(broker.close)
     broker.serve_forever()
