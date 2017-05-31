@@ -13,7 +13,7 @@ CRITICALF = "%(levelname)s:%(filename)s:%(name)s:%(lineno)d - %(message)s - %(ex
 DATEFMT = "%H:%M:%S"
 
 _ALMOST_RANDOM_GUESS_LOG_MSG_SIZE = 120  # B per log message
-_ZMQ_HWM = int( 5e8 / 120 ) # 500MB max memory for the logger
+_ZMQ_HWM = int(5e8 / 120) # 500MB max memory for the logger
 _LINGER = 1000  # milliseconds
 
 
@@ -149,7 +149,7 @@ class UnboundedPublisher():
         self.socket.send_multipart([self.topic, json.dumps(msg).encode()])
 
 
-class Publisher(Publisher):
+class Publisher(UnboundedPublisher):
     """
     Publisher.
     Allows for a publisher that will not use all the memory.
@@ -167,7 +167,8 @@ class Publisher(Publisher):
         Args:
             interface_or_socket:  Interface or socket to connect to
             topic: Topic of this publisher
-            timeout: time in millisecond to wait before destroying this published and the messages it caches
+            timeout: time in millisecond to wait before destroying this
+                    published and the messages it caches
             hwm: number of messages to keep in the cache
             context: Context to reuse if desired
         """
