@@ -6,10 +6,10 @@ import logging
 from qcodes.config import Config
 config = Config()
 
-from qcodes.utils.zmqlogger import check_broker
+from qcodes.utils.zmq_helpers import check_broker
 haz_broker = check_broker()
 if haz_broker:
-    from qcodes.utils.zmqlogger import QPUBHandler
+    from qcodes.utils.zmq_helpers import QPUBHandler
     import logging.config
     import pkg_resources as pkgr
     logger_config = pkgr.resource_filename(__name__, "./config/logging.conf")
