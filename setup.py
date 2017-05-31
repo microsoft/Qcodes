@@ -66,8 +66,8 @@ setup(name='qcodes',
           'h5py>=2.6'
       ],
       # scripts to include
-      # broker for logging
-      scripts=['bin/qcodes_logger_server'],
+      # broker
+      scripts=['bin/broker'],
       test_suite='qcodes.tests',
       extras_require=extras_require,
 
