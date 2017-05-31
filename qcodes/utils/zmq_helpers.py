@@ -13,7 +13,7 @@ CRITICALF = "%(levelname)s:%(filename)s:%(name)s:%(lineno)d - %(message)s - %(ex
 DATEFMT = "%H:%M:%S"
 
 _ALMOST_RANDOM_GUESS_LOG_MSG_SIZE = 120  # B per log message
-_ZMQ_HWM = 5e8 / 120  # 500MB max memory for the logger
+_ZMQ_HWM = int( 5e8 / 120 ) # 500MB max memory for the logger
 _LINGER = 1000  # milliseconds
 
 
@@ -131,7 +131,8 @@ class Publisher():
     Use with care as it will use as much memory as needed (meaning all of it)
     """
 
-    def __init__(self, interface_or_socket: str, topic: str, context: zmq.Context = None):
+    def __init__(self, interface_or_socket: str,
+                 topic: str, context: zmq.Context = None):
         """
 
         Args:
@@ -155,7 +156,8 @@ class ThottledPublisher(Publisher):
     Tune the timeout and hwm to fit the needs of the situation.
     """
 
-    def __init__(self, interface_or_socket: str, topic: str,timeout: int = _LINGER,
+    def __init__(self, interface_or_socket: str, topic: str,
+                 timeout: int = _LINGER,
                  hwm: int = _ZMQ_HWM,  context: zmq.Context = None):
         """
 
