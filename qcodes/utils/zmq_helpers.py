@@ -125,9 +125,9 @@ def check_broker(frontend_addres="tcp://*:5559", backend_address="tcp://*:5560")
     return f and b
 
 
-class Publisher():
+class UnboundedPublisher():
     """
-    Unthrottled publisher.
+    UnBounded publisher.
     Use with care as it will use as much memory as needed (meaning all of it)
     """
 
@@ -149,16 +149,19 @@ class Publisher():
         self.socket.send_multipart([self.topic, json.dumps(msg).encode()])
 
 
-class ThottledPublisher(Publisher):
+class Publisher(Publisher):
     """
-    Trottled publisher.
+    Publisher.
     Allows for a publisher that will not use all the memory.
     Tune the timeout and hwm to fit the needs of the situation.
+    We start with very permissive defaults:
+        - 10 seconds linger
+        - 2.5 GB cache
     """
 
     def __init__(self, interface_or_socket: str, topic: str,
-                 timeout: int = _LINGER,
-                 hwm: int = _ZMQ_HWM,  context: zmq.Context = None):
+                 timeout: int = _LINGER*10,
+                 hwm: int = _ZMQ_HWM*5,  context: zmq.Context = None):
         """
 
         Args:
