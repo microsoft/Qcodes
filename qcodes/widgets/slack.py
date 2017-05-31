@@ -1,9 +1,10 @@
 import os
 import tempfile
 from functools import partial
-from IPython.display import display
+from time import sleep
 import inspect
 from slacker import Slacker
+from silq.tools.general_tools import Singleton
 
 from qcodes.plots.base import BasePlot
 from qcodes.data.data_set import DataSet
@@ -46,7 +47,8 @@ def convert_command(text):
             args.append(val)
     return command, args, kwargs
 
-class Slack:
+
+class Slack(metaclass=Singleton):
     """
     Slack bot used to send information about qcodes via Slack IMs.
     Some default commands are provided, and custom commands/tasks can be
@@ -77,7 +79,8 @@ class Slack:
         notify/task {cmd} *args: register task with name `cmd` that is
             performed every time `update()` is called.
     """
-    def __init__(self, interval=5, config=None, **commands):
+    def __init__(self, interval=5, config=None, auto_start=False,
+                 **commands):
         """
         Initializes Slack bot, including auto-updating widget if in notebook
         and using multiprocessing.
@@ -94,7 +97,7 @@ class Slack:
         if config is not None:
             self.config = config
         else:
-            self.config = qc_config['user']['slack']
+            self.config = qc_config.user.slack
 
         self.slack = Slacker(self.config['token'])
         self.bot_id = self.slack.users.get_user_id(self.config['bot_name'])
@@ -110,12 +113,16 @@ class Slack:
         self.task_commands = {'finished': self.check_msmt_finished}
 
         self.interval = interval
-        if qc_config['gui']['notebook'] and qc_config['core']['legacy_mp']:
-            from qcodes.widgets.widgets import HiddenUpdateWidget
-            self.update_widget = HiddenUpdateWidget(self.update, interval)
-            display(self.update_widget)
-
         self.tasks = []
+
+        if auto_start:
+            self.start()
+
+    def start(self):
+        while True:
+            # Repeatedly check for updates
+            self.update()
+            sleep(self.interval)
 
     def user_from_id(self, user_id):
         """
