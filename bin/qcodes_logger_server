@@ -6,19 +6,24 @@ import zmq
 
 class Broker():
 
-    def __init__(self, frontend_addres="tcp://*:5559", backend_address="tcp://*:5560"):
+    def __init__(self, frontend_addres="tcp://*:5559",
+                 backend_address="tcp://*:5560",
+                 monitor=False, monitor_address="tcp://*:5561"):
         """
-        Simple XPUB/XSUB broker.
+        XPUB/XSUB broker with optional monitoring
         Listens for messages on the frontend and transparently pushes them to a
         backend.
-        This allows to have centralized logging, from multiple processes
-        and to multiple consumers.
-        Messages sent but never forwarded (f.e.x if there aren't subscribers) are
-        quietly dropped.
+        This allows to have a centralized broker sending from multiple
+        processes and to forwarding multiple consumers.  
+        Messages sent but never forwarded (f.e.x if there aren't subscribers)
+        are quietly cached on the sender-side.
+        This means that it's the sender's responsabilty to avoid memory leaks.
 
         Args:
             frontend_addres (str): Interface to which the frontend is bound
             backend_address (str): Interface to which the backend is bound
+            monitor_address (str): Interface to which the monitor is bound
+
 
         """
         self.context = zmq.Context()
@@ -28,7 +33,8 @@ class Broker():
             self.frontend.bind(frontend_addres)
             logging.info("XSUB listening at {}".format(frontend_addres))
         except zmq.error.ZMQError:
-            logging.debug("Exiting. Broker is already running")
+            logging.Info("Exiting. Another broker is already running")
+            logging.debug("ZMQ erorr: %s", e)
             return
 
         # Socket facing services
@@ -36,19 +42,43 @@ class Broker():
         try:
             self.backend.bind(backend_address)
             logging.info("XPUB publishing at {}".format(backend_address))
-        except zmq.error.ZMQError:
-            logging.debug("Exiting. Broker is already running")
+        except zmq.error.ZMQError as e:
+            logging.Info("Exiting. Another broker is already running")
+            logging.debug("ZMQ erorr: %s", e)
             return
 
+        if monitor:
+            self.monitor = self.context.socket(zmq.PUB)
+            try:
+                self.monitor.bind(monitor_address)
+                logging.info("PUB monitor at {}".format(monitor_address))
+            except zmq.error.ZMQError as e:
+                logging.Info("Exiting. Another broker is already running")
+                logging.debug("ZMQ erorr: %s", e)
+        else:
+            self.monitor = None
+
     def close(self):
+        """
+        Close cleanly this broker
+        """
         self.frontend.close()
         self.backend.close()
+        if self.monitor:
+            self.monitor.close()
         self.context.term()
         self.context.destroy()
 
     def serve_forever(self):
+        """
+        Start forwarding forever.
+        Interrput and close by raising KeyboardInterrupt.
+        """
         try:
-            zmq.proxy(self.frontend, self.backend)
+            if self.monitor:
+                zmq.proxy(self.frontend, self.backend, self.monitor)
+            else:
+                zmq.proxy(self.frontend, self.backend)
         except KeyboardInterrupt:
             self.close()
             logging.debug("Exiting. Broker got <C-c>")
@@ -56,11 +86,8 @@ class Broker():
 
 
 if __name__ == "__main__":
-
     import logging
     import atexit
-
-    logging.basicConfig(level="DEBUG")
     broker = Broker()
     atexit.register(broker.close)
     broker.serve_forever()
