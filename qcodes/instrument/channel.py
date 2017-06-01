@@ -266,7 +266,7 @@ class ChannelList(Metadatable):
         if name in self._channels[0].parameters:
             # We need to construct a MultiParameter object to get each of the
             # values our of each parameter in our list
-            names = tuple("{}.{}".format(chan.name, name) for chan in self._channels)
+            names = tuple("{}_{}".format(chan.name, name) for chan in self._channels)
             shapes = tuple(() for chan in self._channels) #TODO: Pull shapes intelligently
             labels = tuple(chan.parameters[name].label for chan in self._channels)
             units = tuple(chan.parameters[name].unit for chan in self._channels)
@@ -309,3 +309,12 @@ class MultiChannelInstrumentParameter(MultiParameter):
         Return a tuple containing the data from each of the channels in the list
         """
         return tuple(chan.parameters[self._param_name].get() for chan in self._channels)
+
+    @property
+    def full_names(self):
+        """Overwrite full_names because the instument name is already included in the name.
+           This happens because the instument name is included in the channel name merged into the
+           parameter name above.
+        """
+
+        return self.names
