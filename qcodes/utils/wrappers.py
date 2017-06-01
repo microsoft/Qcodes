@@ -273,6 +273,7 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas):
     # try to flush VISA buffers at the beginning of a measurement
     _flush_buffers(inst_set, *inst_meas)
 
+    interrupted = False
     loop = qc.Loop(inst_set.sweep(start,
                                   stop, num=num_points), delay).each(*inst_meas)
     data = loop.get_data_set()
@@ -281,6 +282,7 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas):
     try:
         _ = loop.with_bg_task(plot.update).run()
     except KeyboardInterrupt:
+        interrupted = True
         print("Measurement Interrupted")
     plot.save()
     pdfplot, num_subplots = _plot_setup(data, plottables, useQT=False)
@@ -298,6 +300,8 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas):
     with open(CURRENT_EXPERIMENT['logfile'], 'a') as fid:
         print("#[QCoDeS]# Saved dataset to: {}".format(data.location),
               file=fid)
+    if interrupted:
+        raise KeyboardInterrupt
     return plot, data
 
 
@@ -324,6 +328,7 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, num_points, delay, start2, sl
     # try to flush VISA buffers at the beginning of a measurement
     _flush_buffers(inst_set, inst2_set, *inst_meas)
 
+    interrupted = False
     loop = qc.Loop(inst_set.sweep(start, stop, num=num_points), delay).each(
         qc.Task(inst2_set, (inst_set) * slope + (slope * start - start2)), *inst_meas, inst2_set)
     data = loop.get_data_set()
@@ -333,6 +338,7 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, num_points, delay, start2, sl
         _ = loop.with_bg_task(plot.update).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
+        interrupted = True
     plot.save()
     pdfplot, num_subplots = _plot_setup(data, plottables, useQT=False)
     # pad a bit more to prevent overlap between
@@ -349,7 +355,8 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, num_points, delay, start2, sl
     with open(CURRENT_EXPERIMENT['logfile'], 'a') as fid:
         print("#[QCoDeS]# Saved dataset to: {}".format(data.location),
               file=fid)
-
+    if interrupted:
+        raise KeyboardInterrupt
     return plot, data
 
 
@@ -377,6 +384,7 @@ def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num
     # try to flush VISA buffers at the beginning of a measurement
     _flush_buffers(inst_set, inst_set2, *inst_meas)
 
+    interrupted = False
     for inst in inst_meas:
         if getattr(inst, "setpoints", False):
             raise ValueError("3d plotting is not supported")
@@ -389,6 +397,7 @@ def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num
     try:
         _ = loop.with_bg_task(plot.update).run()
     except KeyboardInterrupt:
+        interrupted = True
         print("Measurement Interrupted")
     plot.save()
     pdfplot, num_subplots = _plot_setup(data, plottables, useQT=False)
@@ -406,7 +415,8 @@ def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num
     with open(CURRENT_EXPERIMENT['logfile'], 'a') as fid:
         print("#[QCoDeS]# Saved dataset to: {}".format(data.location),
               file=fid)
-
+    if interrupted:
+        raise KeyboardInterrupt
     return plot, data
 
 
