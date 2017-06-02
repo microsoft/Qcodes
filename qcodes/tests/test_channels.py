@@ -10,8 +10,8 @@ import hypothesis.strategies as hst
 from hypothesis.strategies import floats, integers
 from qcodes.loops import Loop
 
-
-from numpy.testing import assert_array_equal
+import numpy as np
+from numpy.testing import assert_array_equal, assert_allclose
 
 class TestChannels(TestCase):
 
@@ -126,20 +126,30 @@ class TestChannelsLoop(TestCase):
         for i,chan in enumerate(['A', 'B', 'C', 'D']):
             self.assertEqual(getattr(data, 'testchanneldummy_Chan{}_temperature'.format(chan)).ndarray.shape, (21,))
             self.assertEqual(getattr(data, 'testchanneldummy_Chan{}_temperature'.format(chan)).ndarray.max(), values[i])
-    #
-    # @given(loop_channel=hst.lists(integers(0, 3), measure_channel=integers(0, 3))
-    # @settings(max_examples=10)
-    def test_nested_loop_over_channels(self, loop_channels=(0,1), measure_channel=2):
+
+    @given(loop_channels=hst.lists(integers(0, 3), min_size=2, max_size=2, unique=True), measure_channel=integers(0, 3))
+    @settings(max_examples=10)
+    def test_nested_loop_over_channels(self, loop_channels, measure_channel):
         channel_to_label = {0: 'A', 1: 'B', 2: 'C', 3: "D"}
-        loop = Loop(self.instrument.channels[loop_channels[0]].temperature.sweep(0,10,1))
-        loop = loop.loop(self.instrument.channels[loop_channels[1]].temperature.sweep(50,51,0.1))
+        loop = Loop(self.instrument.channels[loop_channels[0]].temperature.sweep(0, 10, 0.5))
+        loop = loop.loop(self.instrument.channels[loop_channels[1]].temperature.sweep(50, 51, 0.1))
         loop = loop.each(self.instrument.channels[measure_channel].temperature)
         data = loop.run()
-        # for i,chan in enumerate(['A', 'B', 'C', 'D']):
-        #     self.assertEqual(getattr(data, 'testchanneldummy_Chan{}_temperature'.format(chan)).ndarray.shape, (21,))
-        #     self.assertEqual(getattr(data, 'testchanneldummy_Chan{}_temperature'.format(chan)).ndarray.max(), values[i])
 
+        self.assertEqual(getattr(data, 'testchanneldummy_Chan{}_temperature_set'.format(
+            channel_to_label[loop_channels[0]])).ndarray.shape, (21,))
+        self.assertEqual(getattr(data, 'testchanneldummy_Chan{}_temperature_set'.format(
+            channel_to_label[loop_channels[1]])).ndarray.shape, (21,11,))
+        self.assertEqual(getattr(data, 'testchanneldummy_Chan{}_temperature'.format(
+            channel_to_label[measure_channel])).ndarray.shape, (21,11))
 
+        assert_array_equal(getattr(data, 'testchanneldummy_Chan{}_temperature_set'.format(
+            channel_to_label[loop_channels[0]])).ndarray,
+                           np.arange(0,10.1,0.5))
+
+        expected_array = np.repeat(np.arange(50, 51.01, 0.1).reshape(1, 11), 21, axis=0)
+        array = getattr(data, 'testchanneldummy_Chan{}_temperature_set'.format(channel_to_label[loop_channels[1]])).ndarray
+        assert_allclose(array, expected_array)
 
 if __name__ == '__main__':
     unittest.main()
