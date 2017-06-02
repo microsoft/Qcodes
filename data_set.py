@@ -59,18 +59,17 @@ class ParamSpec(Metadatable):
 # types are cool
 SPECS = List[ParamSpec]
 
+
 class CompletedError(RuntimeError):
     pass
 
-class DataSet(Metadatable):
 
+class DataSet(Metadatable):
 
     def __init__(self, name,
                  specs: SPECS= None,
                  values=None,
                  metadata=None) -> None:
-
-
         self.name = name
         self.id = hashlib.sha1(name.encode("utf-8")).hexdigest()
 
