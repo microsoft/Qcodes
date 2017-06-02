@@ -4,12 +4,14 @@ from functools import partial
 from time import sleep
 import inspect
 from slacker import Slacker
-from silq.tools.general_tools import Singleton
+import threading
 
 from qcodes.plots.base import BasePlot
 from qcodes.data.data_set import DataSet
 from qcodes import config as qc_config
-from qcodes.instrument.parameter import Parameter
+from qcodes.instrument.parameter import _BaseParameter
+
+
 def convert_command(text):
     def try_convert_str(string):
         try:
@@ -48,7 +50,7 @@ def convert_command(text):
     return command, args, kwargs
 
 
-class Slack(metaclass=Singleton):
+class Slack(threading.Thread):
     """
     Slack bot used to send information about qcodes via Slack IMs.
     Some default commands are provided, and custom commands/tasks can be
@@ -79,8 +81,7 @@ class Slack(metaclass=Singleton):
         notify/task {cmd} *args: register task with name `cmd` that is
             performed every time `update()` is called.
     """
-    def __init__(self, interval=5, config=None, auto_start=False,
-                 **commands):
+    def __init__(self, interval=3, config=None, auto_start=True, **commands):
         """
         Initializes Slack bot, including auto-updating widget if in notebook
         and using multiprocessing.
@@ -92,6 +93,7 @@ class Slack(metaclass=Singleton):
                     'bot_name': Name of the bot
                     'bot_token': Token from bot (obtained from slack website)
                     'names': Usernames to periodically check for IM messages
+            auto_start (Bool=True)
 
         """
         if config is not None:
@@ -115,14 +117,57 @@ class Slack(metaclass=Singleton):
         self.interval = interval
         self.tasks = []
 
+        # Flag that exits loop when set to True (called via self.exit())
+        self._exit = False
+
+        # Flag that enables actions to be performed in the event loop
+        # Enabled via self.start(), disabled via self.stop()
+        self._is_active = False
+
+        # Call Thread init
+        super().__init__()
+
         if auto_start:
             self.start()
 
     def start(self):
-        while True:
-            # Repeatedly check for updates
-            self.update()
+        self._is_active = True
+        try:
+            # Start thread, can only be called once
+            super().start()
+        except RuntimeError:
+            # Thread already started, ignoring
+            pass
+
+    def run(self):
+        """
+        Thread event loop that periodically checks for updates.
+        Can be stopped via self.stop(), after which the Thread is stopped
+        Returns:
+            None
+        """
+        while not self._exit:
+            # Continue event loop
+            if self._is_active:
+                # check for updates
+                self.update()
             sleep(self.interval)
+
+    def stop(self):
+        """
+        Stop checking for updates. Can be started again via self.start()
+        Returns:
+            None
+        """
+        self._is_active = False
+
+    def exit(self):
+        """
+        Exit event loop, stop Thread.
+        Returns:
+            None
+        """
+        self._stop = True
 
     def user_from_id(self, user_id):
         """
@@ -252,7 +297,7 @@ class Slack(metaclass=Singleton):
                     self.slack.chat.post_message(text=msg, channel=channel)
 
                     func = self.commands[command]
-                    if isinstance(func, Parameter):
+                    if isinstance(func, _BaseParameter):
                         func(*args, **kwargs)
                     else:
                         # Only add channel and Slack if they are explicit kwargs
