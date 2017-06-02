@@ -134,7 +134,7 @@ class DummyChannelInstrument(Instrument):
         super().__init__(name, **kwargs)
 
         channels = ChannelList(self, "TempSensors", DummyChannel, snapshotable=False)
-        for chan_name in ('A', 'B', 'C', 'D'):
+        for chan_name in ('A', 'B', 'C', 'D', 'E', 'F'):
             channel = DummyChannel(self, 'Chan{}'.format(chan_name), chan_name)
             channels.append(channel)
             self.add_submodule(chan_name, channel)
