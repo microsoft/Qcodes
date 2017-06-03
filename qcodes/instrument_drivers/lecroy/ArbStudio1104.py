@@ -11,6 +11,7 @@ from qcodes.utils import validators as vals
 
 
 class ArbStudio1104(Instrument):
+    optimize = []
     def __init__(self, name, dll_path, **kwargs):
         super().__init__(name, **kwargs)
 
@@ -202,52 +203,38 @@ class ArbStudio1104(Instrument):
             channel = self._channels[ch-1]
             channel_sequence = eval(f"self.ch{ch}_sequence()")
 
-            # # Check if sequence consists of repetitions of a subsequence
-            # #TODO add try except
-            # try:
-            #     N = len(channel_sequence)
-            #     divisors = [n for n in reversed(np.arange(2, N+1))
-            #                                     if N % n == 0]
-            #     for divisor in divisors:
-            #         sequence_arr = np.array(channel_sequence)
-            #         reshaped_arr = sequence_arr.reshape(divisor, int(N/divisor))
-            #         if (reshaped_arr == reshaped_arr[0]).all():
-            #             channel_sequence = reshaped_arr[0]
-            #             break
-            # except:
-            #     pass
+            # Check if sequence consists of repetitions of a subsequence
+            if 'divisors' in self.optimize:
+                try:
+                    N = len(channel_sequence)
+                    divisors = [n for n in reversed(np.arange(2, N+1))
+                                                    if N % n == 0]
+                    for divisor in divisors:
+                        sequence_arr = np.array(channel_sequence)
+                        reshaped_arr = sequence_arr.reshape(divisor, int(N/divisor))
+                        if (reshaped_arr == reshaped_arr[0]).all():
+                            channel_sequence = reshaped_arr[0]
+                            break
+                except:
+                    pass
 
-            # Format channel sequence elements to be of form (idx, repetitions)
-            new_channel_sequence = []
-            prev_idx = None
-            counter = 0
-            for idx in channel_sequence:
-                if isinstance(prev_idx, tuple):
-                    counter = 1
-                    new_channel_sequence.append(prev_idx)
-                elif prev_idx != idx and prev_idx is not None:
-                    new_channel_sequence.append((prev_idx, counter))
-                    counter = 1
-                else:
-                    counter += 1
-                prev_idx = idx
-            else:
-                if isinstance(prev_idx, tuple):
-                    new_channel_sequence.append(prev_idx)
-                else:
-                    new_channel_sequence.append((prev_idx, counter))
-
-            # Update channel sequence to new value
-            exec(f"self.ch{ch}_sequence(new_channel_sequence)")
-            channel_sequence = new_channel_sequence
             exec(f"self.ch{ch}_sequence(channel_sequence)")
 
-            # Initialize sequence array
             sequence = Array.CreateInstance(self._api.GenerationSequenceStruct,len(channel_sequence))
-            for k, (waveform_index, repetitions) in enumerate(channel_sequence):
+            for k, subsequence_info in enumerate(channel_sequence):
                 subsequence = self._api.GenerationSequenceStruct()
-                subsequence.WaveformIndex = waveform_index
-                subsequence.Repetitions = repetitions
+                # Must compare with Integral since np.int32 is not an int
+                if isinstance(subsequence_info, numbers.Integral):
+                    subsequence.WaveformIndex = subsequence_info
+                    # Set repetitions to 1 (default) if subsequence info is an int
+                    subsequence.Repetitions = 1
+                elif isinstance(subsequence_info, tuple):
+                    assert len(subsequence_info) == 2, \
+                        'A subsequence tuple must be of the form (WaveformIndex, Repetitions)'
+                    subsequence.WaveformIndex = subsequence_info[0]
+                    subsequence.Repetitions = subsequence_info[1]
+                else:
+                    raise TypeError("A subsequence must be either an int or (int, int) tuple")
                 sequence[k] = subsequence
 
             sequence_list.append(sequence)
