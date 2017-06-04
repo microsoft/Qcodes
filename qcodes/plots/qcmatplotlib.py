@@ -6,6 +6,7 @@ from collections import Mapping
 
 import matplotlib.pyplot as plt
 from matplotlib.transforms import Bbox
+from matplotlib import cm
 import numpy as np
 from numpy.ma import masked_invalid, getmask
 
@@ -230,6 +231,14 @@ class MatPlot(BasePlot):
                 # if any entire array is masked, don't draw at all
                 # there's nothing to draw, and anyway it throws a warning
                 return False
+        if 'cmap' not in kwargs:
+            kwargs['cmap'] = cm.hot
+        if 'edgecolors' not in kwargs:
+            # Matplotlib pcolormesh per default are drawn as individual patches lined up next to each other
+            # due to rounding this produces visible gaps in some pdf viewers. To prevent this we draw each
+            # mesh with a visible edge (slightly overlapping) this assumes alpha=1 or it will produce artifacts
+            # at the overlaps
+            kwargs['edgecolors'] = 'face'
         pc = ax.pcolormesh(*args, **kwargs)
 
         if getattr(ax, 'qcodes_colorbar', None):
