@@ -222,6 +222,9 @@ class Triggered_Controller(AcquisitionController):
                 ch_data = self._keysight.daq_read(ch)
                 if (len(ch_data) != 0):
                     buffers[ch][trace] = ch_data
+                else:
+                    raise RuntimeError('Could not acquire data on ch {} with read timeout {} ms'.format(ch,
+                                        self.read_timeout.get_latest()))
         return buffers
 
     def start(self):
@@ -285,7 +288,8 @@ class Triggered_Controller(AcquisitionController):
         prescaler = 100e6/sample_rate - 1
         real_rate = 100e6/(round(prescaler)+1)
         if abs(sample_rate - real_rate)/sample_rate > 0.1:
-            warnings.warn('The chosen sample rate deviates by more than 10% from the closest achievable rate, real sample rate will be {}'.format(real_rate))
+            warnings.warn('The chosen sample rate deviates by more than 10% from the closest achievable rate,\
+                           real sample rate will be {}'.format(real_rate))
         for ch in self.channel_selection():
             self._keysight.parameters['prescaler_{}'.format(ch)].set(int(prescaler))
 
