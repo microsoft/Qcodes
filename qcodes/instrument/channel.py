@@ -1,9 +1,11 @@
 """ Base class for the channel of an instrument """
+from typing import List, Tuple, Union
 
 from .base import Instrument
 from .parameter import MultiParameter
 from ..utils.metadata import Metadatable
 from ..utils.helpers import full_class
+
 
 class InstrumentChannel(Instrument):
     """
@@ -39,8 +41,10 @@ class InstrumentChannel(Instrument):
 
     def __repr__(self):
         """Custom repr to give parent information"""
-        return '<{}: {} of {}: {}>'.format(type(self).__name__, self.name,
-            type(self._parent).__name__, self._parent.name)
+        return '<{}: {} of {}: {}>'.format(type(self).__name__,
+                                           self.name,
+                                           type(self._parent).__name__,
+                                           self._parent.name)
 
     # We aren't a member of the global list of instruments, don't try and remove ourself
     def __del__(self):
@@ -74,13 +78,16 @@ class InstrumentChannel(Instrument):
     # Pass any commands to read or write from the instrument up to the parent
     def write(self, cmd):
         return self._parent.write(cmd)
+
     def write_raw(self, cmd):
         return self._parent.write_raw(cmd)
 
     def ask(self, cmd):
         return self._parent.ask(cmd)
+
     def ask_raw(self, cmd):
         return self._parent.ask_raw(cmd)
+
 
 class ChannelList(Metadatable):
     """
@@ -128,6 +135,8 @@ class ChannelList(Metadatable):
             if not all(isinstance(chan, chan_type) for chan in self._channels):
                 raise TypeError("All items in this channel list must be of type {}.".format(chan_type.__name__))
 
+
+
     def __getitem__(self, i):
         """
         Return either a single channel, or a new ChannelList containing only the specified channels
@@ -162,8 +171,8 @@ class ChannelList(Metadatable):
                 type(self).__name__, type(other).__name__))
         if self._chan_type != other._chan_type:
             raise TypeError("Both l and r arguments to add must contain channels of the same type."
-                " Adding channels of type {} and {}.".format(self._chan_type.__name__,
-                    other._chan_type.__name__))
+                            " Adding channels of type {} and {}.".format(self._chan_type.__name__,
+                                                                         other._chan_type.__name__))
         if self._parent != other._parent:
             raise ValueError("Can only add channels from the same parent together.")
 
@@ -174,13 +183,14 @@ class ChannelList(Metadatable):
         When initially constructing the channel list, a new channel to add to the end of the list
 
         Args:
-            object(chan_type): New channel to add to the list.
+            obj(chan_type): New channel to add to the list.
         """
         if self._locked:
             raise AttributeError("Cannot append to a locked channel list")
         if not isinstance(obj, self._chan_type):
             raise TypeError("All items in a channel list must be of the same type."
-                " Adding {} to a list of {}.".format(type(obj).__name__, self._chan_type.__name__))
+                            " Adding {} to a list of {}.".format(type(obj).__name__,
+                                                                 self._chan_type.__name__))
         return self._channels.append(obj)
 
     def extend(self, objects):
@@ -192,7 +202,7 @@ class ChannelList(Metadatable):
         """
         if self._locked:
             raise AttributeError("Cannot extend a locked channel list")
-        if not all(isinstance(object, self._chan_type) for object in objects):
+        if not all(isinstance(obj, self._chan_type) for obj in objects):
             raise TypeError("All items in a channel list must be of the same type.")
         return self._channels.extend(objects)
 
@@ -201,7 +211,7 @@ class ChannelList(Metadatable):
         Return the index of the given object
 
         Args:
-            object(chan_type): The object to find in the channel list.
+            obj(chan_type): The object to find in the channel list.
         """
         return self._channels.index(obj)
 
@@ -212,13 +222,14 @@ class ChannelList(Metadatable):
         Args:
             index(int): Index to insert object.
 
-            object(chan_type): Object of type chan_type to insert.
+            obj(chan_type): Object of type chan_type to insert.
         """
         if self._locked:
             raise AttributeError("Cannot insert into a locked channel list")
         if not isinstance(obj, self._chan_type):
             raise TypeError("All items in a channel list must be of the same type."
-                " Adding {} to a list of {}.".format(type(obj).__name__, self._chan_type.__name__))
+                            " Adding {} to a list of {}.".format(type(obj).__name__,
+                                                                 self._chan_type.__name__))
         return self._channels.insert(index, obj)
 
     def lock(self):
@@ -244,7 +255,7 @@ class ChannelList(Metadatable):
         """
         if self._snapshotable:
             snap = {'channels': dict((chan.name, chan.snapshot(update=update))
-                                       for chan in self._channels),
+                                     for chan in self._channels),
                     'snapshotable': self._snapshotable,
                     '__class__': full_class(self),
                     }
@@ -267,14 +278,18 @@ class ChannelList(Metadatable):
             # We need to construct a MultiParameter object to get each of the
             # values our of each parameter in our list
             names = tuple("{}_{}".format(chan.name, name) for chan in self._channels)
-            shapes = tuple(() for chan in self._channels) #TODO: Pull shapes intelligently
+            shapes = tuple(() for chan in self._channels)  # TODO: Pull shapes intelligently
             labels = tuple(chan.parameters[name].label for chan in self._channels)
             units = tuple(chan.parameters[name].unit for chan in self._channels)
 
-            param = MultiChannelInstrumentParameter(self._channels, name,
-                name="Multi_{}".format(name),
-                names=names, shapes=shapes, instrument=self._parent,
-                labels=labels, units=units)
+            param = MultiChannelInstrumentParameter(self._channels,
+                                                    param_name=name,
+                                                    name="Multi_{}".format(name),
+                                                    names=names,
+                                                    shapes=shapes,
+                                                    instrument=self._parent,
+                                                    labels=labels,
+                                                    units=units)
             return param
 
         # Check if this is a valid function
@@ -288,6 +303,7 @@ class ChannelList(Metadatable):
 
         raise AttributeError('\'{}\' object has no attribute \'{}\''.format(self.__class__.__name__, name))
 
+
 class MultiChannelInstrumentParameter(MultiParameter):
     """
     Parameter to get or set multiple channels simultaneously.
@@ -299,7 +315,7 @@ class MultiChannelInstrumentParameter(MultiParameter):
 
         param_name(str): Name of the multichannel parameter
     """
-    def __init__(self, channels, param_name, *args, **kwargs):
+    def __init__(self, channels: Union[List, Tuple], param_name, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._channels = channels
         self._param_name = param_name
