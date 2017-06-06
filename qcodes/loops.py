@@ -350,6 +350,8 @@ class ActiveLoop(Metadatable):
     it collects, and it creates a *DataSet* holding these *DataArray*\s
     """
 
+    # Currently active loop, is set when calling loop.run(set_active=True)
+    # is reset to None when active measurement is finished
     active_loop = None
 
     def __init__(self, sweep_values, delay, *actions, then_actions=(),
@@ -681,8 +683,7 @@ class ActiveLoop(Metadatable):
         return self.run(quiet=True, location=False, **kwargs)
 
     def run(self, thread=False, use_threads=False, quiet=False, station=None,
-            progress_interval=False, set_active=True, *args,
-            **kwargs):
+            progress_interval=False, set_active=True, *args, **kwargs):
         """
         Execute this loop.
 
