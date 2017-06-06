@@ -68,6 +68,13 @@ log = logging.getLogger(__name__)
 def active_loop():
     return ActiveLoop.active_loop
 
+def active_data_set():
+    loop = active_loop()
+    if loop is not None and loop.data_set is not None:
+        return loop.data_set
+    else:
+        return None
+
 class Loop(Metadatable):
     """
     The entry point for creating measurement loops
@@ -752,6 +759,9 @@ class ActiveLoop(Metadatable):
 
         data_set.save_metadata()
 
+        if set_active:
+            ActiveLoop.active_loop = self
+
         try:
             if not quiet:
                 print(repr(self.data_set))
@@ -767,6 +777,8 @@ class ActiveLoop(Metadatable):
             # we want to clear the data_set attribute so we don't try to reuse
             # this one later.
             self.data_set = None
+            if set_active:
+                ActiveLoop.active_loop = None
 
         return ds
 
@@ -802,12 +814,8 @@ class ActiveLoop(Metadatable):
 
     def _run_wrapper(self, set_active=True, *args, **kwargs):
         # try:
-        if set_active:
-            ActiveLoop.active_loop = self
         self._run_loop(*args, **kwargs)
         # finally:
-        if set_active:
-            ActiveLoop.active_loop = None
         if hasattr(self, 'data_set'):
             # TODO (giulioungaretti) WTF?
             # somehow this does not show up in the data_set returned by
