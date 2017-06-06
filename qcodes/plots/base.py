@@ -1,9 +1,7 @@
 """
 Live plotting in Jupyter notebooks
 """
-from IPython.display import display
 
-from qcodes import config
 
 class BasePlot:
     latest_plot = None
@@ -25,13 +23,7 @@ class BasePlot:
         self.data_keys = data_keys
         self.traces = []
         self.data_updaters = set()
-        # only import in name space if the gui is set to noebook
-        # and there is multiprocessing
         self.interval = interval
-        if config['gui']['notebook'] and config['core']['legacy_mp']:
-            from qcodes.widgets.widgets import HiddenUpdateWidget
-            self.update_widget = HiddenUpdateWidget(self.update, interval)
-            display(self.update_widget)
 
     def clear(self):
         """
@@ -80,7 +72,13 @@ class BasePlot:
 
             kwargs: after inserting info found in args and possibly in set_arrays
                 into `x`, `y`, and optionally `z`, these are passed along to
-                self.add_to_plot
+                self.add_to_plot.
+                To use custom labels and units pass for example:
+                    plot.add(x=set, y=amplitude,
+                             xlabel="set"
+                             xunit="V",
+                             ylabel= "Amplitude",
+                             yunit ="V")
 
         Array shapes for 2D plots:
             x:(1D-length m), y:(1D-length n), z: (2D- n*m array)
@@ -105,6 +103,7 @@ class BasePlot:
     def add_updater(self, updater, plot_config):
         """
         Add an updater to the plot.
+
         Args:
             updater (callable): callable (with no args) that updates the data in this trace
                 if omitted, we will look for DataSets referenced in this data, and
@@ -159,7 +158,8 @@ class BasePlot:
                             title_parts.append(location)
         return ', '.join(title_parts)
 
-    def get_label(self, data_array):
+    @staticmethod
+    def get_label(data_array):
         """
         Look for a label in data_array falling back on name.
 
@@ -171,28 +171,31 @@ class BasePlot:
 
         """
         # TODO this should really be a static method
-        return (getattr(data_array, 'label', '') or
+        name = (getattr(data_array, 'label', '') or
                 getattr(data_array, 'name', ''))
+        unit = getattr(data_array, 'unit', '')
+        return  name, unit
 
-    def expand_trace(self, args, kwargs):
+    @staticmethod
+    def expand_trace(args, kwargs):
         """
         Complete the x, y (and possibly z) data definition for a trace.
 
         Also modifies kwargs in place so that all the data needed to fully specify the
-                trace is present (ie either x and y or x and y and z)
+        trace is present (ie either x and y or x and y and z)
 
         Both ``__init__`` (for the first trace) and the ``add`` method support multiple
         ways to specify the data in the trace:
 
-            As *args:
-                ``add(y)`` or ``add(z)`` specify just the main 1D or 2D data, with the setpoint
-                    axis or axes implied.
-                ``add(x, y)`` or ``add(x, y, z)`` specify all axes of the data.
-            And as **kwargs:
-                ``add(x=x, y=y, z=z)`` you specify exactly the data you want on each axis.
-                    Any but the last (y or z) can be omitted, which allows for all of the same
-                    forms as with *args, plus x and z or y and z, with just one axis implied from
-                    the setpoints of the z data.
+        As \*args:
+            - ``add(y)`` or ``add(z)`` specify just the main 1D or 2D data, with the setpoint
+              axis or axes implied.
+            - ``add(x, y)`` or ``add(x, y, z)`` specify all axes of the data.
+        And as \*\*kwargs:
+            - ``add(x=x, y=y, z=z)`` you specify exactly the data you want on each axis.
+              Any but the last (y or z) can be omitted, which allows for all of the same
+              forms as with \*args, plus x and z or y and z, with just one axis implied from
+              the setpoints of the z data.
 
         This method takes any of those forms and converts them into a complete set of
         kwargs, containing all of the explicit or implied data to be used in plotting this trace.

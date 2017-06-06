@@ -93,7 +93,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '_templates', '_auto']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -347,11 +347,10 @@ texinfo_show_urls = 'footnote'
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    'statsmodels': ('http://statsmodels.sourceforge.net/devel/', None),
     'matplotlib': ('http://matplotlib.org/', None),
-    'python': ('http://docs.python.org/3', None),
-    'numpy': ('http://docs.scipy.org/doc/numpy', None),
-    'py': ('http://pylib.readthedocs.org/en/latest/', None)
+    'python': ('https://docs.python.org/3.5', None),
+    'numpy': ('https://docs.scipy.org/doc/numpy', None),
+    'py': ('http://pylib.readthedocs.io/en/stable/', None)
 }
 # theming
 import sphinx_rtd_theme
@@ -361,7 +360,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 extensions.append('sphinx.ext.todo')
 todo_include_todos=True
 
-# basically hack to avoid having __init__() when we want just 
+# basically hack to avoid having __init__() when we want just
 autoclass_content = "init"
 # try to limit  auto sumamry and extensive auto doc only to the api part of the docs
 with open("index.rst") as f:
@@ -370,17 +369,28 @@ with open("index.rst") as f:
 autosummary_generate = False
 
 if any([re.match("\s*api\s*",l) for l in index_rst_lines]):
-    autoclass_content = "class" # classes should include both the class' and the __init__ method's docstring
+    autoclass_content = "both" # classes should include both the class' and the __init__ method's docstring
     autosummary_generate = True
     autodoc_default_flags = [ 'members', 'undoc-members', 'inherited-members', 'show-inheritance' ]
 
 autodoc_default_flags = []
 # we have to do this, do avoid sideeffects when importing matplotlib
+autodoc_mock_imports = []
 try:
     import matplotlib
     matplotlib.use('PS')
-    autodoc_mock_imports = [ 'matplotlib']
+    autodoc_mock_imports.append('matplotlib')
 except ImportError as e:
         print(e)
+autodoc_mock_imports.append('pyspcm')
+autodoc_mock_imports.append('zhinst')
+autodoc_mock_imports.append('zhinst.utils')
+autodoc_mock_imports.append('keysightSD1')
+autodoc_mock_imports.append('cffi')
+
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['../_templates']
+templates_path = []
+
+# we are using non local images for badges. These will change so we dont
+# want to store them locally.
+suppress_warnings = ['image.nonlocal_uri']

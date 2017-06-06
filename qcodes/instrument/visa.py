@@ -1,10 +1,10 @@
 """Visa instrument driver based on pyvisa."""
 import visa
-import logging
+import pyvisa.constants as vi_const
+import pyvisa.resources
 
 from .base import Instrument
 import qcodes.utils.validators as vals
-
 
 class VisaInstrument(Instrument):
 
@@ -15,23 +15,16 @@ class VisaInstrument(Instrument):
         name (str): What this instrument is called locally.
 
         address (str): The visa resource name to use to connect.
-             Optionally includes '@<backend>' at the end. For example,
+            Optionally includes '@<backend>' at the end. For example,
             'ASRL2' will open COM2 with the default NI backend, but
             'ASRL2@py' will open COM2 using pyvisa-py. Note that qcodes
             does not install (or even require) ANY backends, it is up to
-            the user to do that.
-            see eg: http://pyvisa.readthedocs.org/en/stable/names.html
+            the user to do that. see eg:
+            http://pyvisa.readthedocs.org/en/stable/names.html
 
         timeout (number): seconds to allow for responses. Default 5.
 
         terminator: Read termination character(s) to look for. Default ''.
-
-        server_name (str): Name of the InstrumentServer to use. By default
-            uses 'GPIBServer' for all GPIB instruments, 'SerialServer' for
-            serial port instruments, and 'VisaServer' for all others.
-
-            Use ``None`` to run locally - but then this instrument will not
-            work with qcodes Loops or other multiprocess procedures.
 
         metadata (Optional[Dict]): additional static metadata to add to this
             instrument's JSON snapshot.
@@ -49,33 +42,13 @@ class VisaInstrument(Instrument):
         self.add_parameter('timeout',
                            get_cmd=self._get_visa_timeout,
                            set_cmd=self._set_visa_timeout,
-                           units='s',
+                           unit='s',
                            vals=vals.MultiType(vals.Numbers(min_value=0),
                                                vals.Enum(None)))
 
         self.set_address(address)
         self.set_terminator(terminator)
         self.timeout.set(timeout)
-
-    @classmethod
-    def default_server_name(cls, **kwargs):
-        """
-        Get the default server name for this instrument.
-
-        Args:
-            **kwargs: All the kwargs supplied in the constructor.
-
-        Returns:
-            str: The default server name, either 'GPIBServer', 'SerialServer',
-                or 'VisaServer' depending on ``kwargs['address']``.
-        """
-        upper_address = kwargs.get('address', '').upper()
-        if 'GPIB' in upper_address:
-            return 'GPIBServer'
-        elif 'ASRL' in upper_address:
-            return 'SerialServer'
-
-        return 'VisaServer'
 
     def set_address(self, address):
         """
@@ -102,7 +75,13 @@ class VisaInstrument(Instrument):
 
         self.visa_handle = resource_manager.open_resource(address)
 
-        self.visa_handle.clear()
+        # Serial instruments have a separate flush method to clear their buffers
+        # which behaves differently to clear. This is particularly important
+        # for instruments which do not support SCPI commands.
+        if isinstance(self.visa_handle, pyvisa.resources.SerialInstrument):
+            self.visa_handle.flush(vi_const.VI_READ_BUF_DISCARD | vi_const.VI_WRITE_BUF_DISCARD)
+        else:
+            self.visa_handle.clear()
         self._address = address
 
     def set_terminator(self, terminator):

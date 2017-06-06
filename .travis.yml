@@ -4,14 +4,21 @@ notifications:
     # send all notifcations to slack
   slack: qcodes:tNlhSminOHdt2fZf6x6hyT24
 
+cache: pip
+
+addons:
+  apt_packages:
+    - pandoc
+
 python:
   - "3.5"
+  - "3.6"
   # whitelist
 branches:
   only:
     - master
 
-# singal that we are on travis
+# signal that we are on travis
 # to disable things that expect an
 # X Display
 #
@@ -21,17 +28,23 @@ env:
 install:
     - pip install --upgrade pip
     - pip install -r requirements.txt
-    - python setup.py develop
+    - pip install -r test_requirements.txt --upgrade
+    - pip install -r docs_requirements.txt
+    - pip install -e .
 # command to run tests
-script: 
-    - python  qcodes/test.py --skip-coverage
+script:
+    - cd qcodes
+    - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
+    - |
+      cd ../docs
+      make html-api
+    - cd ..
 
 after_success:
-    # install codacy coverage plugin only on traivs
-    - pip install codacy-coverage
-    - cd qcodes
-    - coverage xml
-    - python-codacy-coverage -r coverage.xml
-    # build the docs, one dir up
-    - cd ../ 
-    - make -f docs/Makefile gh-pages
+    # install dependencies for docs build
+    - python-codacy-coverage -r qcodes/coverage.xml
+    # upload the docs
+    - |
+      if [[ $TRAVIS_REPO_SLUG == "QCoDeS/Qcodes" && $TRAVIS_BRANCH == "master" && $TRAVIS_PULL_REQUEST == "false" ]]; then
+        make -f docs/Makefile gh-pages
+      fi

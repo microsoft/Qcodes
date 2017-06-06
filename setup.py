@@ -25,7 +25,7 @@ def readme():
         return f.read()
 
 extras = {
-    'MatPlot': ('matplotlib', '1.5'),
+    'MatPlot': ('matplotlib', '2.0.2'),
     'QtPlot': ('pyqtgraph', '0.10.0'),
     'coverage tests': ('coverage', '4.0')
 }
@@ -58,6 +58,7 @@ setup(name='qcodes',
           'numpy>=1.10',
           'pyvisa>=1.8',
           'ipython>=4.1.0',
+          'ipykernel!=4.6.0', # https://github.com/ipython/ipykernel/issues/240 in 4.6
           'jupyter>=1.0.0',
           'h5py>=2.6'
       ],

@@ -49,6 +49,8 @@ help:
 .PHONY: clean
 clean:
 	rm -rf $(BUILDDIR)/*
+	rm -rf _auto
+	rm -rf _notebooks
 
 .PHONY: html
 html:
@@ -227,8 +229,16 @@ dummy:
 	@echo "Build finished. Dummy builder generates no files."
 
 html-api:
-	sphinx-apidoc  -o  docs/auto  qcodes -d 10
-	cd docs && make html
+	sphinx-apidoc  -o  _auto  -d 10 ../qcodes/ ../qcodes/instrument_drivers/Spectrum/pyspcm.py  ../qcodes/instrument_drivers/Spectrum/py_header/h2py.py
+	mkdir -p api/generated/
+	mkdir -p _notebooks
+	mkdir -p _notebooks/driver_examples
+	mkdir -p _notebooks/benchmarking
+	cp _auto/qcodes.instrument_drivers.* api/generated/
+	jupyter-nbconvert --to rst 'examples/*.ipynb' --output-dir=_notebooks
+	jupyter-nbconvert --to rst 'examples/driver_examples/*.ipynb' --output-dir=_notebooks/driver_examples
+	jupyter-nbconvert --to rst 'examples/benchmarking/*.ipynb' --output-dir=_notebooks/benchmarking
+	make html
 
 gh-pages:
 	git config --global user.email "bot@travics.com"
@@ -239,8 +249,7 @@ gh-pages:
 	rm -rf ./*
 	git checkout master $(GH_PAGES_SOURCES)
 	git reset HEAD
-	sphinx-apidoc  -o  docs/auto  qcodes -d 10
-	cd docs && make html && \
+	cd docs && make html-api && \
 	mv -fv $(BUILDDIR)/html/* ../
 	rm -rf $(GH_PAGES_SOURCES) build
 	git add -A

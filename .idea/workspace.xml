@@ -1,0 +1,478 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="3c6f29dc-b31d-4c80-8ec1-303e2effa067" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/_static/readme" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/changes/0.1.3.rst" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/changes/0.1.4.rst" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/examples/Creating Instrument Drivers.ipynb" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/examples/Parameters.ipynb" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/examples/benchmarking/Agilent 34411A versus Keysight 34465A.ipynb" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/examples/benchmarking/QDac and Keysight 34465 sync and buffer.ipynb" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/examples/driver_examples/Qcodes example with Decadac.ipynb" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/examples/driver_examples/Qcodes example with Keysight 33500B.ipynb" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/examples/driver_examples/Qcodes example with QDac.ipynb" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/examples/driver_examples/Qcodes example with TPS2012.ipynb" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/examples/driver_examples/Qcodes example with Tektronix AWG5014C.ipynb" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/examples/driver_examples/Qcodes example with ZI UHF-LI.ipynb" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/examples/index.rst" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs_requirements.txt" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/Advantech/PCIE_1751.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/Advantech/_bdaqctrl.h" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/HP/HP8133A.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/HP/HP_83650A.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/HP/__init__.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/Keysight/Keysight_33500B.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/Keysight/Keysight_34465A.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/QDev/QDac.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/QDev/__init__.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/Spectrum/M4i.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/Spectrum/README.md" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/Spectrum/__init__.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/Spectrum/py_header/__init__.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/Spectrum/py_header/h2py.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/Spectrum/py_header/regs.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/Spectrum/py_header/spcerr.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/Spectrum/pyspcm.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/ZI/ZIUHFLI.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/ZI/__init__.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/agilent/E8267C.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/american_magnetics/AMI430.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/american_magnetics/__init__.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/cryocon/cryocon_26.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/devices.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/keysight/M3201A.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/keysight/M3300A.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/keysight/SD_common/SD_AWG.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/keysight/SD_common/SD_DIG.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/keysight/SD_common/SD_Module.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/keysight/__init__.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/keysight/test_suite.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/stanford_research/SG384.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/stanford_research/SIM928.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/tektronix/AWGFileParser.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/tektronix/Keithley_2400.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/tektronix/TPS2012.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/yokogawa/GS200.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/yokogawa/__init__.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/qcodes/tests/test_generic_formatter.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/specs/DataSet.rst" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/test_requirements.txt" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/benchmarking/mptest.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/benchmarking/mptest_results_mac.txt" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/benchmarking/mptest_results_windows.txt" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/benchmarking/thread_test.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/community/testing.rst" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/examples/Qcodes example with Decadac.ipynb" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/examples/adaptive_sweep.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/examples/testsweep/gates_chan0_set.dat" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/examples/testsweep/snapshot.json" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/examples/toymodel.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/data/manager.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/instrument/metaclass.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/instrument/mock.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/instrument/remote.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/instrument/server.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/process/helpers.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/process/qcodes_process.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/process/server.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/process/stream_queue.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/test.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/tests/test_driver_testcase.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/tests/test_instrument_server.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/tests/test_multiprocessing.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/tests/test_nested_attrs.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/utils/nested_attrs.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/utils/reload_code.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/utils/timing.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/widgets/display.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/widgets/widgets.css" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/widgets/widgets.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/qcodes/widgets/widgets.py" afterPath="" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/docs/examples/Keithley_example.ipynb" afterPath="$PROJECT_DIR$/docs/examples/driver_examples/Keithley_example.ipynb" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/docs/examples/Qcodes example ATS_ONWORK.ipynb" afterPath="$PROJECT_DIR$/docs/examples/driver_examples/Qcodes example ATS_ONWORK.ipynb" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/docs/examples/Qcodes example with Agilent 34400A.ipynb" afterPath="$PROJECT_DIR$/docs/examples/driver_examples/Qcodes example with Agilent 34400A.ipynb" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/docs/examples/Qcodes example with Ithaco.ipynb" afterPath="$PROJECT_DIR$/docs/examples/driver_examples/Qcodes example with Ithaco.ipynb" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/docs/examples/Qcodes example with Keithley 2600.ipynb" afterPath="$PROJECT_DIR$/docs/examples/driver_examples/Qcodes example with Keithley 2600.ipynb" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/docs/examples/Qcodes example with Mercury IPS (Magnet).ipynb" afterPath="$PROJECT_DIR$/docs/examples/driver_examples/Qcodes example with Mercury IPS (Magnet).ipynb" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/docs/examples/Qcodes example with Rohde Schwarz ZN20.ipynb" afterPath="$PROJECT_DIR$/docs/examples/driver_examples/Qcodes example with Rohde Schwarz ZN20.ipynb" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/docs/examples/Qcodes example with Triton.ipynb" afterPath="$PROJECT_DIR$/docs/examples/driver_examples/Qcodes example with Triton.ipynb" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/docs/examples/Triton1_thermometry.reg" afterPath="$PROJECT_DIR$/docs/examples/driver_examples/Triton1_thermometry.reg" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/qcodes/process/__init__.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/Advantech/__init__.py" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/qcodes/widgets/__init__.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/Keysight/__init__.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.travis.yml" afterPath="$PROJECT_DIR$/.travis.yml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/CONTRIBUTING.rst" afterPath="$PROJECT_DIR$/CONTRIBUTING.rst" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/README.rst" afterPath="$PROJECT_DIR$/README.rst" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/Makefile" afterPath="$PROJECT_DIR$/docs/Makefile" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/api/private.rst" afterPath="$PROJECT_DIR$/docs/api/private.rst" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/api/public.rst" afterPath="$PROJECT_DIR$/docs/api/public.rst" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/changes/index.rst" afterPath="$PROJECT_DIR$/docs/changes/index.rst" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/community/objects.rst" afterPath="$PROJECT_DIR$/docs/community/objects.rst" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/conf.py" afterPath="$PROJECT_DIR$/docs/conf.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/examples/Combined Parameters.ipynb" afterPath="$PROJECT_DIR$/docs/examples/Combined Parameters.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/examples/Datasaving examples.ipynb" afterPath="$PROJECT_DIR$/docs/examples/Datasaving examples.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/examples/Measure without a Loop.ipynb" afterPath="$PROJECT_DIR$/docs/examples/Measure without a Loop.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/examples/Metadata with instruments.ipynb" afterPath="$PROJECT_DIR$/docs/examples/Metadata with instruments.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/examples/Metadata.ipynb" afterPath="$PROJECT_DIR$/docs/examples/Metadata.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/examples/Qcodes location-format example.ipynb" afterPath="$PROJECT_DIR$/docs/examples/Qcodes location-format example.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/examples/Tutorial.ipynb" afterPath="$PROJECT_DIR$/docs/examples/Tutorial.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/index.rst" afterPath="$PROJECT_DIR$/docs/index.rst" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/user/configuration.rst" afterPath="$PROJECT_DIR$/docs/user/configuration.rst" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/user/index.rst" afterPath="$PROJECT_DIR$/docs/user/index.rst" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/user/intro.rst" afterPath="$PROJECT_DIR$/docs/user/intro.rst" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/user/tutorial.rst" afterPath="$PROJECT_DIR$/docs/user/tutorial.rst" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/__init__.py" afterPath="$PROJECT_DIR$/qcodes/__init__.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/config/config.py" afterPath="$PROJECT_DIR$/qcodes/config/config.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/config/qcodesrc.json" afterPath="$PROJECT_DIR$/qcodes/config/qcodesrc.json" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/config/qcodesrc_schema.json" afterPath="$PROJECT_DIR$/qcodes/config/qcodesrc_schema.json" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/data/data_array.py" afterPath="$PROJECT_DIR$/qcodes/data/data_array.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/data/data_set.py" afterPath="$PROJECT_DIR$/qcodes/data/data_set.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/data/format.py" afterPath="$PROJECT_DIR$/qcodes/data/format.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/data/gnuplot_format.py" afterPath="$PROJECT_DIR$/qcodes/data/gnuplot_format.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/data/hdf5_format.py" afterPath="$PROJECT_DIR$/qcodes/data/hdf5_format.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/data/io.py" afterPath="$PROJECT_DIR$/qcodes/data/io.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/data/location.py" afterPath="$PROJECT_DIR$/qcodes/data/location.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument/base.py" afterPath="$PROJECT_DIR$/qcodes/instrument/base.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument/function.py" afterPath="$PROJECT_DIR$/qcodes/instrument/function.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument/ip.py" afterPath="$PROJECT_DIR$/qcodes/instrument/ip.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument/parameter.py" afterPath="$PROJECT_DIR$/qcodes/instrument/parameter.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument/visa.py" afterPath="$PROJECT_DIR$/qcodes/instrument/visa.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/AlazarTech/ATS.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/AlazarTech/ATS.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/AlazarTech/ATS_acquisition_controllers.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/AlazarTech/ATS_acquisition_controllers.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/Harvard/Decadac.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/Harvard/Decadac.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/QuTech/IVVI.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/QuTech/IVVI.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/__init__.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/__init__.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/agilent/Agilent_34400A.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/agilent/Agilent_34400A.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/agilent/E8527D.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/agilent/E8527D.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/agilent/HP33210A.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/agilent/HP33210A.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/ithaco/Ithaco_1211.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/ithaco/Ithaco_1211.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/oxford/mercuryiPS.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/oxford/mercuryiPS.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/oxford/triton.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/oxford/triton.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/rigol/DG4000.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/rigol/DG4000.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/rohde_schwarz/SGS100A.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/rohde_schwarz/SGS100A.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/rohde_schwarz/SMR40.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/rohde_schwarz/SMR40.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/rohde_schwarz/ZNB20.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/rohde_schwarz/ZNB20.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/signal_hound/USB_SA124B.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/signal_hound/USB_SA124B.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/stanford_research/SR560.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/stanford_research/SR560.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/stanford_research/SR830.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/stanford_research/SR830.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/stanford_research/SR865.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/stanford_research/SR865.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/tektronix/AWG5014.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/tektronix/AWG5014.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/tektronix/AWG520.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/tektronix/AWG520.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/tektronix/Keithley_2000.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/tektronix/Keithley_2000.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/tektronix/Keithley_2600.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/tektronix/Keithley_2600.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/tektronix/Keithley_2700.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/tektronix/Keithley_2700.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/instrument_drivers/weinschel/Weinschel_8320.py" afterPath="$PROJECT_DIR$/qcodes/instrument_drivers/weinschel/Weinschel_8320.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/loops.py" afterPath="$PROJECT_DIR$/qcodes/loops.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/measure.py" afterPath="$PROJECT_DIR$/qcodes/measure.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/plots/base.py" afterPath="$PROJECT_DIR$/qcodes/plots/base.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/plots/pyqtgraph.py" afterPath="$PROJECT_DIR$/qcodes/plots/pyqtgraph.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/plots/qcmatplotlib.py" afterPath="$PROJECT_DIR$/qcodes/plots/qcmatplotlib.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/station.py" afterPath="$PROJECT_DIR$/qcodes/station.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/tests/data_mocks.py" afterPath="$PROJECT_DIR$/qcodes/tests/data_mocks.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/tests/instrument_mocks.py" afterPath="$PROJECT_DIR$/qcodes/tests/instrument_mocks.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/tests/test_combined_par.py" afterPath="$PROJECT_DIR$/qcodes/tests/test_combined_par.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/tests/test_data.py" afterPath="$PROJECT_DIR$/qcodes/tests/test_data.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/tests/test_format.py" afterPath="$PROJECT_DIR$/qcodes/tests/test_format.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/tests/test_hdf5formatter.py" afterPath="$PROJECT_DIR$/qcodes/tests/test_hdf5formatter.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/tests/test_helpers.py" afterPath="$PROJECT_DIR$/qcodes/tests/test_helpers.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/tests/test_instrument.py" afterPath="$PROJECT_DIR$/qcodes/tests/test_instrument.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/tests/test_location_provider.py" afterPath="$PROJECT_DIR$/qcodes/tests/test_location_provider.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/tests/test_loop.py" afterPath="$PROJECT_DIR$/qcodes/tests/test_loop.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/tests/test_measure.py" afterPath="$PROJECT_DIR$/qcodes/tests/test_measure.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/tests/test_parameter.py" afterPath="$PROJECT_DIR$/qcodes/tests/test_parameter.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/tests/test_plots.py" afterPath="$PROJECT_DIR$/qcodes/tests/test_plots.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/tests/test_validators.py" afterPath="$PROJECT_DIR$/qcodes/tests/test_validators.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/tests/test_visa.py" afterPath="$PROJECT_DIR$/qcodes/tests/test_visa.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/utils/command.py" afterPath="$PROJECT_DIR$/qcodes/utils/command.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/utils/deferred_operations.py" afterPath="$PROJECT_DIR$/qcodes/utils/deferred_operations.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/utils/helpers.py" afterPath="$PROJECT_DIR$/qcodes/utils/helpers.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/utils/threading.py" afterPath="$PROJECT_DIR$/qcodes/utils/threading.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/utils/validators.py" afterPath="$PROJECT_DIR$/qcodes/utils/validators.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/qcodes/version.py" afterPath="$PROJECT_DIR$/qcodes/version.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/requirements.txt" afterPath="$PROJECT_DIR$/requirements.txt" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/setup.py" afterPath="$PROJECT_DIR$/setup.py" />
+    </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="TRACKING_ENABLED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
+  <component name="FileEditorManager">
+    <leaf>
+      <file leaf-file-name="data_set.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/qcodes/data/data_set.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="0">
+              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/qcodes/data/data_set.py" />
+      </list>
+    </option>
+  </component>
+  <component name="JsBuildToolGruntFileManager" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsBuildToolPackageJson" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsGulpfileManager">
+    <detection-done>true</detection-done>
+    <sorting>DEFINITION_ORDER</sorting>
+  </component>
+  <component name="ProjectFrameBounds">
+    <option name="x" value="1672" />
+    <option name="y" value="-35" />
+    <option name="width" value="1936" />
+    <option name="height" value="1096" />
+  </component>
+  <component name="ProjectView">
+    <navigator currentView="ProjectPane" proportions="" version="1">
+      <flattenPackages />
+      <showMembers />
+      <showModules />
+      <showLibraryContents />
+      <hideEmptyPackages />
+      <abbreviatePackageNames />
+      <autoscrollToSource />
+      <autoscrollFromSource />
+      <sortByType />
+      <manualOrder />
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="Scratches" />
+      <pane id="ProjectPane" />
+      <pane id="Scope" />
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager">
+    <configuration default="true" type="DjangoTestsConfigurationType" factoryName="Django tests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="Qcodes" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="TARGET" value="" />
+      <option name="SETTINGS_FILE" value="" />
+      <option name="CUSTOM_SETTINGS" value="false" />
+      <option name="USE_OPTIONS" value="false" />
+      <option name="OPTIONS" value="" />
+      <method />
+    </configuration>
+    <configuration default="true" type="JavaScriptTestRunnerJest" factoryName="Jest">
+      <node-interpreter value="project" />
+      <working-dir value="" />
+      <envs />
+      <scope-kind value="ALL" />
+      <method />
+    </configuration>
+    <configuration default="true" type="JavaScriptTestRunnerProtractor" factoryName="Protractor">
+      <config-file value="" />
+      <node-interpreter value="project" />
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="true" type="JavascriptDebugType" factoryName="JavaScript Debug">
+      <method />
+    </configuration>
+    <configuration default="true" type="PyBehaveRunConfigurationType" factoryName="Behave">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="Qcodes" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="ADDITIONAL_ARGS" value="" />
+      <method />
+    </configuration>
+    <configuration default="true" type="PyLettuceRunConfigurationType" factoryName="Lettuce">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="Qcodes" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="ADDITIONAL_ARGS" value="" />
+      <method />
+    </configuration>
+    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="Qcodes" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="Tox" factoryName="Tox">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <module name="Qcodes" />
+      <method />
+    </configuration>
+    <configuration default="true" type="js.build_tools.gulp" factoryName="Gulp.js">
+      <method />
+    </configuration>
+    <configuration default="true" type="js.build_tools.npm" factoryName="npm">
+      <command value="run" />
+      <scripts />
+      <node-interpreter value="project" />
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Doctests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="Qcodes" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Unittests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="Qcodes" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" enabled="false" sample_coverage="true" runner="coverage.py" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;.&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method />
+    </configuration>
+  </component>
+  <component name="ShelveChangesManager" show_recycled="false">
+    <option name="remove_strategy" value="false" />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="3c6f29dc-b31d-4c80-8ec1-303e2effa067" name="Default" comment="" />
+      <created>1496736067394</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1496736067394</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="1672" y="-35" width="1936" height="1096" extended-state="6" />
+    <editor active="true" />
+    <layout>
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="true" content_ui="tabs" />
+      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="true" content_ui="tabs" />
+      <window_info id="Data View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
+      <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
+      <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+    </layout>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="processedProjectFiles" value="true" />
+  </component>
+  <component name="VcsContentAnnotationSettings">
+    <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager />
+    <watches-manager />
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/qcodes/data/data_set.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>

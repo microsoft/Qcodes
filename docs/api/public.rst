@@ -24,6 +24,8 @@ Config
 
    Config
 
+.. _station:
+
 Station
 ~~~~~~~
 
@@ -32,14 +34,14 @@ Station
 
    station.Station
 
+.. _loops:
+
 Loops
 ~~~~~
 
 .. autosummary::
    :toctree: generated/
 
-   get_bg
-   halt_bg
    Loop
 
 Measure
@@ -66,8 +68,6 @@ Data
 .. autosummary::
    :toctree: generated/
 
-    get_data_manager
-    DataMode
     DataSet
     new_data
     load_data
@@ -97,8 +97,6 @@ Instrument
    Instrument
    IPInstrument
    VisaInstrument
-   MockInstrument
-   MockModel
 
 
 Plot
@@ -113,13 +111,10 @@ Note that the plotting modules may not be available if their dependencies were n
 
 Utils & misc
 ~~~~~~~~~~~~
-.. automodule::
 
 .. autosummary::
    :toctree: generated/
 
    qcodes.utils.validators
-   qcodes.process.helpers.set_mp_method
    qcodes.utils.helpers.in_notebook
-   qcodes.widgets.widgets.show_subprocess_widget
 

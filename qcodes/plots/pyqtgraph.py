@@ -19,7 +19,7 @@ class QtPlot(BasePlot):
     Plot x/y lines or x/y/z heatmap data. The first trace may be included
     in the constructor, other traces can be added with QtPlot.add().
 
-    For information on how x/y/z *args are handled see add() in the base
+    For information on how x/y/z \*args are handled see add() in the base
     plotting class.
 
     Args:
@@ -39,9 +39,14 @@ class QtPlot(BasePlot):
     rpg = None
 
     def __init__(self, *args, figsize=(1000, 600), interval=0.25,
-                 windowTitle='', theme=((60, 60, 60), 'w'), show_window=True, remote=True, **kwargs):
+                 window_title='', theme=((60, 60, 60), 'w'), show_window=True, remote=True, **kwargs):
         super().__init__(interval)
 
+        if 'windowTitle' in kwargs.keys():
+            warnings.warn("windowTitle argument has been changed to window_title. Please update your call to QtPlot")
+            temp_wt = kwargs.pop('windowTitle')
+            if not window_title:
+                window_title = temp_wt
         self.theme = theme
 
         if remote:
@@ -50,7 +55,7 @@ class QtPlot(BasePlot):
         else:
             # overrule the remote pyqtgraph class
             self.rpg = pg
-        self.win = self.rpg.GraphicsWindow(title=windowTitle)
+        self.win = self.rpg.GraphicsWindow(title=window_title)
         self.win.setBackground(theme[1])
         self.win.resize(*figsize)
         self.subplots = [self.add_subplot()]
@@ -93,6 +98,10 @@ class QtPlot(BasePlot):
             for i in range(subplot - len(self.subplots)):
                 self.subplots.append(self.add_subplot())
         subplot_object = self.subplots[subplot - 1]
+
+        if 'name' in kwargs:
+            if subplot_object.legend is None:
+                subplot_object.addLegend(offset=(-30,30))
 
         if 'z' in kwargs:
             plot_object = self._draw_image(subplot_object, **kwargs)
@@ -146,6 +155,8 @@ class QtPlot(BasePlot):
         return [self._clean_array(arg) for arg in [x, y] if arg is not None]
 
     def _draw_image(self, subplot_object, z, x=None, y=None, cmap='hot',
+                    zlabel=None,
+                    zunit=None,
                     **kwargs):
         img = self.rpg.ImageItem()
         subplot_object.addItem(img)
@@ -153,10 +164,14 @@ class QtPlot(BasePlot):
         hist = self.rpg.HistogramLUTItem()
         hist.setImageItem(img)
         hist.axis.setPen(self.theme[0])
-        if 'zlabel' in kwargs:  # used to specify a custom zlabel
-            hist.axis.setLabel(kwargs['zlabel'])
-        else:  # otherwise extracts the label from the dataarray
-            hist.axis.setLabel(self.get_label(z))
+
+        if zunit is None:
+            _, zunit = self.get_label(z)
+        if zlabel is None:
+            zlabel, _ = self.get_label(z)
+
+        hist.axis.setLabel(zlabel, zunit)
+
         # TODO - ensure this goes next to the correct subplot?
         self.win.addItem(hist)
 
@@ -337,22 +352,42 @@ class QtPlot(BasePlot):
         """
         Updates x and y labels, by default tries to extract label from
         the DataArray objects located in the trace config. Custom labels
-        can be specified the **kwargs "xlabel" and "ylabel"
+        can be specified the **kwargs "xlabel" and "ylabel". Custom units
+        can be specified using the kwargs xunit, ylabel
         """
         for axletter, side in (('x', 'bottom'), ('y', 'left')):
             ax = subplot_object.getAxis(side)
+            # danger: 🍝
+            # find if any kwarg from plot.add in the base class
+            # matches xlabel or ylabel, signaling a custom label
+            if axletter+'label' in config and not ax._qcodes_label:
+                label = config[axletter+'label']
+            else:
+                label = None
+
+            # find if any kwarg from plot.add in the base class
+            # matches xunit or yunit, signaling a custom unit
+            if axletter+'unit' in config and not ax._qcodes_label:
+                unit = config[axletter+'unit']
+            else:
+                unit = None
+
+            #  find ( more hope to) unit and label from
+            # the data array inside the config
+            if axletter in config and not ax._qcodes_label:
+                # now if we did not have any kwark gor label or unit
+                # fallback to the data_array
+                if unit is  None:
+                    _, unit = self.get_label(config[axletter])
+                if label is None:
+                    label, _ = self.get_label(config[axletter])
+
             # pyqtgraph doesn't seem able to get labels, only set
             # so we'll store it in the axis object and hope the user
             # doesn't set it separately before adding all traces
-            if axletter+'label' in config and not ax._qcodes_label:
-                label = config[axletter+'label']
-                ax._qcodes_label = label
-                ax.setLabel(label)
-            if axletter in config and not ax._qcodes_label:
-                label = self.get_label(config[axletter])
-                if label:
-                    ax._qcodes_label = label
-                    ax.setLabel(label)
+            ax._qcodes_label = label
+            ax._qcodes_unit = unit
+            ax.setLabel(label, unit)
 
     def update_plot(self):
         for trace in self.traces:
@@ -394,11 +429,11 @@ class QtPlot(BasePlot):
         image.save(buffer, 'PNG')
         buffer.close()
         return bytes(byte_array._getValue())
-    
+
     def save(self, filename=None):
         """
         Save current plot to filename, by default
-        to the location corresponding to the default 
+        to the location corresponding to the default
         title.
 
         Args:
@@ -408,3 +443,7 @@ class QtPlot(BasePlot):
         filename = filename or default
         image = self.win.grab()
         image.save(filename, "PNG", 0)
+
+    def setGeometry(self, x, y, w, h):
+        """ Set geometry of the plotting window """
+        self.win.setGeometry(x, y, w, h)
