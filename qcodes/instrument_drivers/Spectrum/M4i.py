@@ -595,6 +595,7 @@ class M4i(Instrument):
         """
         allchannels = 0
         self._channel_memsize = memsize
+        self.data_memory_size(memsize)
         if channels is None:
             channels = range(4)
         for ch in channels:
@@ -830,15 +831,27 @@ class M4i(Instrument):
 
         return voltages
 
-    def blockavg_hardware_trigger_acquisition(self, mV_range, nr_averages=10, verbose=0):
+    def _check_buffers(self):
+        """ Check validity of buffers
+
+        See: manual section "Limits of pre trigger, post trigger, memory size"
+        """
+
+        pretrigger = self.data_memory_size() - self.posttrigger_memory_size()
+        if pretrigger > 2**13:
+            raise Exception('value of SPC_PRETRIGGER is invalid')
+
+    def blockavg_hardware_trigger_acquisition(self, mV_range, nr_averages=10,
+                                              verbose=0, post_trigger=None):
         """ Acquire data using block averaging and hardware triggering
 
         To read out multiple channels, use `initialize_channels`
 
         Args:
-            mV_range
+            mV_range (float)
             nr_averages (int): number of averages to take
             verbose (int): output level
+            post_trigger (None or int): optional size of post_trigger buffer
         Returns:
             voltages (array): if multiple channels are read, then the data is interleaved
         """
@@ -848,6 +861,17 @@ class M4i(Instrument):
         self.card_mode(pyspcm.SPC_REC_STD_AVERAGE)  # single
         memsize = self.data_memory_size()
         self.segment_size(memsize)
+
+        if post_trigger is None:
+            pre_trigger = min(2**13, memsize / 2)
+            post_trigger = memsize - pre_trigger
+        else:
+            pre_trigger = memsize - post_trigger
+        self.posttrigger_memory_size(post_trigger)
+        self.pretrigger_memory_size(pre_trigger)
+
+        self._check_buffers()
+
         self._set_param32bit(pyspcm.SPC_AVERAGES, nr_averages)
         numch = bin(self.enable_channels()).count("1")
 
