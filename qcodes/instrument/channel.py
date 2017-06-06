@@ -200,6 +200,9 @@ class ChannelList(Metadatable):
         Args:
             objects(Iterable[chan_type]): A list of objects to add into the ChannelList.
         """
+        # objects may be a generator but we need to iterate over it twice below so
+        # copy it into a tuple just in case.
+        objects = tuple(objects)
         if self._locked:
             raise AttributeError("Cannot extend a locked channel list")
         if not all(isinstance(obj, self._chan_type) for obj in objects):

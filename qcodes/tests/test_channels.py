@@ -72,6 +72,15 @@ class TestChannels(TestCase):
             self.instrument.channels.append(channel)
             self.instrument.add_submodule(name, channel)
 
+    def test_add_channels_from_generator(self):
+        n_channels = len(self.instrument.channels)
+        names = ('foo', 'bar', 'foobar')
+        channels = (DummyChannel(self.instrument, 'Chan'+name, name) for name in names)
+        self.instrument.channels.extend(channels)
+
+        self.assertEqual(len(self.instrument.channels), n_channels + len(names))
+
+
     @given(setpoints=hst.lists(hst.floats(0, 300), min_size=4, max_size=4))
     def test_combine_channels(self, setpoints):
         self.assertEqual(len(self.instrument.channels), 6)
