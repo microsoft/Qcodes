@@ -1,6 +1,7 @@
 import os
 import clr  # Import pythonnet to talk to dll
 from System import Array
+import numpy as np
 import numbers
 from time import sleep
 from functools import partial
@@ -10,6 +11,7 @@ from qcodes.utils import validators as vals
 
 
 class ArbStudio1104(Instrument):
+    optimize = []
     def __init__(self, name, dll_path, **kwargs):
         super().__init__(name, **kwargs)
 
@@ -184,7 +186,8 @@ class ArbStudio1104(Instrument):
             waveforms_array = self._waveforms[ch]
             # Initialize array of waves
             waveforms = Array.CreateInstance(self._api.WaveformStruct,len(waveforms_array))
-            # We have to create separate wave instances and load them into the waves array one by one
+            # We have to create separate wave instances and load them into
+            # the waves array one by one
             for k, waveform_array in enumerate(waveforms_array):
                 wave = self._api.WaveformStruct()
                 wave.Sample = waveform_array
@@ -199,8 +202,25 @@ class ArbStudio1104(Instrument):
         sequence_list = []
         for ch in channels:
             channel = self._channels[ch-1]
-            channel_sequence = eval("self.ch{}_sequence()".format(ch))
-            # Initialize sequence array
+            channel_sequence = eval(f"self.ch{ch}_sequence()")
+
+            # Check if sequence consists of repetitions of a subsequence
+            if 'divisors' in self.optimize:
+                try:
+                    N = len(channel_sequence)
+                    divisors = [n for n in reversed(np.arange(2, N+1))
+                                                    if N % n == 0]
+                    for divisor in divisors:
+                        sequence_arr = np.array(channel_sequence)
+                        reshaped_arr = sequence_arr.reshape(divisor, int(N/divisor))
+                        if (reshaped_arr == reshaped_arr[0]).all():
+                            channel_sequence = reshaped_arr[0]
+                            break
+                except:
+                    pass
+
+            exec(f"self.ch{ch}_sequence(channel_sequence)")
+
             sequence = Array.CreateInstance(self._api.GenerationSequenceStruct,len(channel_sequence))
             for k, subsequence_info in enumerate(channel_sequence):
                 subsequence = self._api.GenerationSequenceStruct()
