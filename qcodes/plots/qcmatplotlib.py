@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib.transforms import Bbox
 import numpy as np
 from numpy.ma import masked_invalid, getmask
+from collections import Sequence
 
 from .base import BasePlot
 
@@ -49,7 +50,12 @@ class MatPlot(BasePlot):
         self._init_plot(subplots, figsize, num=num)
         if len(args) > 1 and not kwargs:
             for k, arg in enumerate(args):
-                self.add(arg, subplot=k)
+                if isinstance(arg, Sequence):
+                    # Add each element in iterable to same subplot
+                    for subarg in arg:
+                        self[k].add(subarg)
+                else:
+                    self[k].add(arg)
         elif args or kwargs:
             self.add(*args, **kwargs)
 
@@ -74,10 +80,11 @@ class MatPlot(BasePlot):
                 figsize = (min(3 + 3 * subplots[1], 12), 1 + 3 * subplots[0])
 
             self.fig, self.subplots = plt.subplots(*subplots, num=num,
-                                                   figsize=figsize, squeeze=False)
+                                                   figsize=figsize,
+                                                   squeeze=False)
 
-        # squeeze=False ensures that subplots is always a 2D array independent of the number
-        # of subplots.
+        # squeeze=False ensures that subplots is always a 2D array independent
+        # of the number of subplots.
         # However the qcodes api assumes that subplots is always a 1D array
         # so flatten here
         self.subplots = self.subplots.flatten()
