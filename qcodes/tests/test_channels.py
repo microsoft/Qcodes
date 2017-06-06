@@ -57,12 +57,13 @@ class TestChannels(TestCase):
         # that currently does not support set.
 
     def test_add_channel(self):
+        n_channels = len(self.instrument.channels)
         name = 'foo'
         channel = DummyChannel(self.instrument, 'Chan'+name, name)
         self.instrument.channels.append(channel)
         self.instrument.add_submodule(name, channel)
 
-        self.assertEqual(len(self.instrument.channels), 7)
+        self.assertEqual(len(self.instrument.channels), n_channels+1)
 
         self.instrument.channels.lock()
         # after locking the channels it's not possible to add any more channels
@@ -70,7 +71,7 @@ class TestChannels(TestCase):
             name = 'bar'
             channel = DummyChannel(self.instrument, 'Chan' + name, name)
             self.instrument.channels.append(channel)
-            self.instrument.add_submodule(name, channel)
+        self.assertEqual(len(self.instrument.channels), n_channels + 1)
 
     def test_add_channels_from_generator(self):
         n_channels = len(self.instrument.channels)
@@ -80,6 +81,30 @@ class TestChannels(TestCase):
 
         self.assertEqual(len(self.instrument.channels), n_channels + len(names))
 
+    def test_add_channels_from_tuple(self):
+        n_channels = len(self.instrument.channels)
+        names = ('foo', 'bar', 'foobar')
+        channels = tuple(DummyChannel(self.instrument, 'Chan'+name, name) for name in names)
+        self.instrument.channels.extend(channels)
+
+        self.assertEqual(len(self.instrument.channels), n_channels + len(names))
+
+    def test_insert_channel(self):
+        n_channels = len(self.instrument.channels)
+        name = 'foo'
+        channel = DummyChannel(self.instrument, 'Chan'+name, name)
+        self.instrument.channels.insert(1, channel)
+        self.instrument.add_submodule(name, channel)
+
+        self.assertEqual(len(self.instrument.channels), n_channels+1)
+        self.assertIs(self.instrument.channels[1], channel)
+        self.instrument.channels.lock()
+        # after locking the channels it's not possible to add any more channels
+        with self.assertRaises(AttributeError):
+            name = 'bar'
+            channel = DummyChannel(self.instrument, 'Chan' + name, name)
+            self.instrument.channels.insert(2, channel)
+        self.assertEqual(len(self.instrument.channels), n_channels + 1)
 
     @given(setpoints=hst.lists(hst.floats(0, 300), min_size=4, max_size=4))
     def test_combine_channels(self, setpoints):
