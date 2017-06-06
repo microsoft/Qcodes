@@ -110,11 +110,13 @@ class ChannelList(Metadatable):
 
     Attributes:
         parameters (Dict[Parameter]): All the parameters supported by this group of channels.
+            This is implemented as a reference to the parameters in the first channel so if you
+            dynamically modify one or more channels this will not be accurate.
 
         functions (Dict[Function]): All the functions supported by this group of channels
     """
 
-    def __init__(self, parent, name, chan_type, chan_list=None, snapshotable=True):
+    def __init__(self, parent, name, chan_type: type, chan_list=None, snapshotable=True):
         super().__init__()
 
         self._parent = parent
@@ -124,6 +126,8 @@ class ChannelList(Metadatable):
         self._chan_type = chan_type
         self._snapshotable = snapshotable
 
+        self.parameters = {}
+        self.functions = {}
         # If a list of channels is not provided, define a list to store channels.
         # This will eventually become a locked tuple.
         if chan_list is None:
@@ -132,10 +136,10 @@ class ChannelList(Metadatable):
         else:
             self._locked = True
             self._channels = tuple(chan_list)
+            self.parameters = self._channels[0].parameters
+            self.functions = self._channels[0].functions
             if not all(isinstance(chan, chan_type) for chan in self._channels):
                 raise TypeError("All items in this channel list must be of type {}.".format(chan_type.__name__))
-
-
 
     def __getitem__(self, i):
         """
@@ -178,7 +182,7 @@ class ChannelList(Metadatable):
 
         return ChannelList(self._parent, self._name, self._chan_type, self._channels + other._channels)
 
-    def append(self, obj):
+    def append(self, obj: InstrumentChannel):
         """
         When initially constructing the channel list, a new channel to add to the end of the list
 
@@ -191,9 +195,13 @@ class ChannelList(Metadatable):
             raise TypeError("All items in a channel list must be of the same type."
                             " Adding {} to a list of {}.".format(type(obj).__name__,
                                                                  self._chan_type.__name__))
+        if not self.parameters:
+            self.parameters = obj.parameters
+        if not self.functions:
+            self.functions = obj.functions
         return self._channels.append(obj)
 
-    def extend(self, objects):
+    def extend(self, objects: InstrumentChannel):
         """
         Insert an iterable of objects into the list of channels.
 
@@ -207,9 +215,13 @@ class ChannelList(Metadatable):
             raise AttributeError("Cannot extend a locked channel list")
         if not all(isinstance(obj, self._chan_type) for obj in objects):
             raise TypeError("All items in a channel list must be of the same type.")
+        if not self.parameters:
+            self.parameters = objects[0].parameters
+        if not self.functions:
+            self.functions = objects[0].functions
         return self._channels.extend(objects)
 
-    def index(self, obj):
+    def index(self, obj: InstrumentChannel):
         """
         Return the index of the given object
 
@@ -218,7 +230,7 @@ class ChannelList(Metadatable):
         """
         return self._channels.index(obj)
 
-    def insert(self, index, obj):
+    def insert(self, index, obj: InstrumentChannel):
         """
         Insert an object into the channel list at a specific index.
 
@@ -233,6 +245,10 @@ class ChannelList(Metadatable):
             raise TypeError("All items in a channel list must be of the same type."
                             " Adding {} to a list of {}.".format(type(obj).__name__,
                                                                  self._chan_type.__name__))
+        if not self.parameters:
+            self.parameters = obj.parameters
+        if not self.functions:
+            self.functions = obj.functions
         return self._channels.insert(index, obj)
 
     def lock(self):
