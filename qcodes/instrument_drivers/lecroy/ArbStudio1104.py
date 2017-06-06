@@ -186,7 +186,8 @@ class ArbStudio1104(Instrument):
             waveforms_array = self._waveforms[ch]
             # Initialize array of waves
             waveforms = Array.CreateInstance(self._api.WaveformStruct,len(waveforms_array))
-            # We have to create separate wave instances and load them into the waves array one by one
+            # We have to create separate wave instances and load them into
+            # the waves array one by one
             for k, waveform_array in enumerate(waveforms_array):
                 wave = self._api.WaveformStruct()
                 wave.Sample = waveform_array
