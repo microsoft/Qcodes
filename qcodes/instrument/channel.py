@@ -108,10 +108,6 @@ class ChannelList(Metadatable):
             This is used when objects stored inside a channel list are accessible in multiple ways
             and should not be repeated in an instrument snapshot.
 
-    Attributes:
-        parameters (Dict[Parameter]): All the parameters supported by this group of channels.
-
-        functions (Dict[Function]): All the functions supported by this group of channels
     """
 
     def __init__(self, parent, name, chan_type, chan_list=None, snapshotable=True):
