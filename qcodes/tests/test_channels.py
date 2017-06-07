@@ -114,10 +114,10 @@ class TestChannels(TestCase):
         mychannels = self.instrument.channels[0:2] + self.instrument.channels[4:]
 
         self.assertEqual(len(mychannels), 4)
-        assert mychannels[0] is self.instrument.A
-        assert mychannels[1] is self.instrument.B
-        assert mychannels[2] is self.instrument.E
-        assert mychannels[3] is self.instrument.F
+        self.assertIs(mychannels[0], self.instrument.A)
+        self.assertIs(mychannels[1], self.instrument.B)
+        self.assertIs(mychannels[2], self.instrument.E)
+        self.assertIs(mychannels[3], self.instrument.F)
 
         for i in range(len(mychannels)):
             mychannels[i].temperature(setpoints[i])
