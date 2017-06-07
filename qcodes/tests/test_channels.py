@@ -118,15 +118,14 @@ class TestChannels(TestCase):
         self.assertIs(mychannels[2], self.instrument.E)
         self.assertIs(mychannels[3], self.instrument.F)
 
-        for i in range(len(mychannels)):
-            mychannels[i].temperature(setpoints[i])
+        for i, chan in enumerate(mychannels):
+            chan.temperature(setpoints[i])
 
         expected = tuple(setpoints[0:2] + [0, 0] + setpoints[2:])
         self.assertEquals(self.instrument.channels.temperature(), expected)
 
 
 class TestChannelsLoop(TestCase):
-    pass
 
     def setUp(self):
         self.instrument = DummyChannelInstrument(name='testchanneldummy')
@@ -148,7 +147,7 @@ class TestChannelsLoop(TestCase):
         data = loop.run()
         self.assertEqual(data.p1_set.ndarray.shape, (21, ))
         self.assertEqual(len(data.arrays), 7)
-        for i, chan in enumerate(['A', 'B', 'C', 'D', 'E', 'F']):
+        for chan in ['A', 'B', 'C', 'D', 'E', 'F']:
             self.assertEqual(getattr(data, 'testchanneldummy_Chan{}_temperature'.format(chan)).ndarray.shape, (21,))
 
     def test_loop_measure_channels_individually(self):
@@ -159,7 +158,7 @@ class TestChannelsLoop(TestCase):
                                                      self.instrument.channels[3].temperature)
         data = loop.run()
         self.assertEqual(data.p1_set.ndarray.shape, (21, ))
-        for i, chan in enumerate(['A', 'B', 'C', 'D']):
+        for chan in ['A', 'B', 'C', 'D']:
             self.assertEqual(getattr(data, 'testchanneldummy_Chan{}_temperature'.format(chan)).ndarray.shape, (21,))
 
     @given(values=hst.lists(hst.floats(0, 300), min_size=4, max_size=4))
