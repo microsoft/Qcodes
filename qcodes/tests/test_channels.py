@@ -124,11 +124,9 @@ class TestChannels(TestCase):
         expected = tuple(setpoints[0:2] + [0, 0] + setpoints[2:])
         self.assertEquals(self.instrument.channels.temperature(), expected)
 
-    def test_channel_parameters(self):
-            self.assertTrue('temperature' in self.instrument.channels.parameters)
-            self.assertEqual(len(self.instrument.channels.parameters), 1)
 
 class TestChannelsLoop(TestCase):
+    pass
 
     def setUp(self):
         self.instrument = DummyChannelInstrument(name='testchanneldummy')
