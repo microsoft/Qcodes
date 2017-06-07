@@ -166,7 +166,7 @@ class Triggered_Controller(AcquisitionController):
 
         self.add_parameter(
             'read_timeout',
-            vals=Ints(),
+            vals=Numbers(),
             set_cmd=self._set_all_read_timeout,
             docstring='The maximum time (s) spent trying to read a single channel.'
         )
@@ -223,7 +223,7 @@ class Triggered_Controller(AcquisitionController):
                 if (len(ch_data) != 0):
                     buffers[ch][trace] = ch_data
                 else:
-                    raise RuntimeError('Could not acquire data on ch {} with read timeout {} ms'.format(ch,
+                    raise RuntimeError('Could not acquire data on ch {} with read timeout {} s'.format(ch,
                                         self.read_timeout.get_latest()))
         return buffers
 
@@ -326,10 +326,14 @@ class Triggered_Controller(AcquisitionController):
         all at once. This must be set after channel_selection is modified.
 
         Args:
-            timeout (int)  : the maximum time (ms) to wait for single channel read.
+            timeout (float)  : the maximum time (s) to wait for single channel read.
         """
+        timeout_ms = int(timeout*1000.0)
+        if timeout_ms == 0:
+            warnings.warn('Timeout of {} is too small, setting to 0 which disables'
+                          .format(timeout*1000.0) + 'timeout')
         for ch in self.channel_selection():
-            self._keysight.parameters['timeout_{}'.format(ch)].set(timeout)
+            self._keysight.parameters['timeout_{}'.format(ch)].set(timeout_ms)
 
     def __call__(self, *args, **kwargs):
         return "Triggered"
