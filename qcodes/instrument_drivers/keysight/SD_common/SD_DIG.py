@@ -276,8 +276,11 @@ class SD_DIG(SD_Module):
             timeout
         """
         value = self.SD_AIN.DAQread(daq, self.__n_points[daq], self.__timeout[daq])
+        # Scale signal to volts
+        if (type(value) != type(None)):
+            scaled_value = value * 2 * self.__full_scale[daq]/ (1 << 16)
         value_name = 'DAQ_read channel {}'.format(daq)
-        return result_parser(value, value_name, verbose)
+        return result_parser(scaled_value, value_name, verbose)
 
     def daq_start(self, daq, verbose=False):
         """ Start acquiring data or waiting for a trigger on the specified DAQ
