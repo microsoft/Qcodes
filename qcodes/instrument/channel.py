@@ -2,7 +2,7 @@
 from typing import List, Tuple, Union
 
 from .base import Instrument
-from .parameter import MultiParameter
+from .parameter import MultiParameter, ArrayParameter
 from ..utils.metadata import Metadatable
 from ..utils.helpers import full_class
 
@@ -274,12 +274,32 @@ class ChannelList(Metadatable):
         """
         # Check if this is a valid parameter
         if name in self._channels[0].parameters:
+            setpoints = None
+            setpoint_names = None
+            setpoint_labels = None
+            setpoint_units = None
             # We need to construct a MultiParameter object to get each of the
-            # values our of each parameter in our list
+            # values our of each parameter in our list, we don't currently try to
+            # construct a multiparameter from a list of multi parameters
+            if isinstance(self._channels[0].parameters[name], MultiParameter):
+                raise NotImplementedError("Slicing is currently not supported for MultiParameters")
             names = tuple("{}_{}".format(chan.name, name) for chan in self._channels)
-            shapes = tuple(() for chan in self._channels)  # TODO: Pull shapes intelligently
             labels = tuple(chan.parameters[name].label for chan in self._channels)
             units = tuple(chan.parameters[name].unit for chan in self._channels)
+
+            if isinstance(self._channels[0].parameters[name], ArrayParameter):
+                shapes = tuple(chan.parameters[name].shape for chan in self._channels)
+
+                if self._channels[0].parameters[name].setpoints:
+                    setpoints = tuple(chan.parameters[name].setpoints for chan in self._channels)
+                if self._channels[0].parameters[name].setpoint_names:
+                    setpoint_names = tuple(chan.parameters[name].setpoint_names for chan in self._channels)
+                if self._channels[0].parameters[name].setpoint_labels:
+                    setpoint_labels = tuple(chan.parameters[name].setpoint_labels for chan in self._channels)
+                if self._channels[0].parameters[name].setpoint_units:
+                    setpoint_units = tuple(chan.parameters[name].setpoint_units for chan in self._channels)
+            else:
+                shapes = tuple(() for chan in self._channels)
 
             param = MultiChannelInstrumentParameter(self._channels,
                                                     param_name=name,
@@ -288,7 +308,11 @@ class ChannelList(Metadatable):
                                                     shapes=shapes,
                                                     instrument=self._parent,
                                                     labels=labels,
-                                                    units=units)
+                                                    units=units,
+                                                    setpoints=setpoints,
+                                                    setpoint_names=setpoint_names,
+                                                    setpoint_units=setpoint_units,
+                                                    setpoint_labels=setpoint_labels)
             return param
 
         # Check if this is a valid function
