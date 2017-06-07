@@ -13,9 +13,6 @@ from collections import Sequence
 
 from .base import BasePlot
 
-from qcodes import config
-
-matplot_config = config['user'].get('matplot', {})
 
 class MatPlot(BasePlot):
     """
@@ -23,10 +20,12 @@ class MatPlot(BasePlot):
     in the constructor, other traces can be added with MatPlot.add()
 
     Args:
-        *args: shortcut to provide the x/y/z data. See BasePlot.add
+        *args: Sequence of data to plot. Each element will have its own subplot.
+            An element can be a single array, or a sequence of arrays. In the 
+            latter case, all arrays will be plotted in the same subplot.
 
-        figsize (Tuple[Float, Float]): (width, height) tuple in inches to pass to plt.figure
-            default (8, 5)
+        figsize (Tuple[Float, Float]): (width, height) tuple in inches to pass 
+            to plt.figure. default (6, 4)
 
         interval: period in seconds between update checks
 
@@ -40,28 +39,48 @@ class MatPlot(BasePlot):
 
         **kwargs: passed along to MatPlot.add() to add the first data trace
     """
+
+    # Maximum default number of subplot columns. Used when an instance is
+    # created without explicitly passing subplots
+    max_subplot_columns = 3
+
     def __init__(self, *args, figsize=None, interval=1, subplots=None, num=None,
                  **kwargs):
         super().__init__(interval)
 
-        if len(args) > 1 and subplots is None:
-            subplots = (1, len(args))
+        if subplots is None:
+            # Subplots is equal to number of args, or 1 if no args provided
+            subplots = max(len(args), 1)
 
         self._init_plot(subplots, figsize, num=num)
-        if len(args) > 1 and not kwargs:
+
+        # Add data to plot if passed in args
+        if len(args) > 1:
+            # Multiple args passed, add each arg to separate subplot
             for k, arg in enumerate(args):
                 if isinstance(arg, Sequence):
-                    # Add each element in iterable to same subplot
+                    # Arg consists of multiple elements, add all to same subplot
                     for subarg in arg:
                         self[k].add(subarg)
                 else:
+                    # Arg is single element, add to subplot
                     self[k].add(arg)
-        elif args or kwargs:
+        elif args:
+            # Single arg, which indicates the data, additional x and y vals
+            # can be passed as kwargs.
             self.add(*args, **kwargs)
 
         self.tight_layout()
 
     def __getitem__(self, key):
+        """
+        Subplots can be accessed via indices.
+        Args:
+            key: subplot idx 
+
+        Returns:
+            Subplot with idx key
+        """
         return self.subplots[key]
 
     def _init_plot(self, subplots=None, figsize=None, num=None):
@@ -71,13 +90,18 @@ class MatPlot(BasePlot):
             self.fig, self.subplots = plt.subplots(figsize=figsize, num=num,
                                                    **subplots, squeeze=False)
         else:
-            if subplots is None:
-                subplots = (1, 1)
-            elif isinstance(subplots, int):
-                subplots = (1, subplots)
+            # Format subplots as tuple (nrows, ncols)
+            if isinstance(subplots, int):
+                # self.max_subplot_columns defines the limit on how many
+                # subplots can be in one row. Adjust subplot rows and columns
+                #  accordingly
+                nrows = int(np.ceil(subplots / self.max_subplot_columns))
+                ncols = min(subplots, self.max_subplot_columns)
+                subplots = (nrows, ncols)
 
             if figsize is None:
-                figsize = (min(3 + 3 * subplots[1], 12), 1 + 3 * subplots[0])
+                # Adjust figsize depending on rows and columns in subplots
+                figsize = self.default_figsize(subplots)
 
             self.fig, self.subplots = plt.subplots(*subplots, num=num,
                                                    figsize=figsize,
@@ -90,6 +114,8 @@ class MatPlot(BasePlot):
         self.subplots = self.subplots.flatten()
 
         for k, subplot in enumerate(self.subplots):
+            # Include `add` method to subplots, making it easier to add data to
+            # subplots.
             subplot.add = partial(self.add, subplot=k)
 
         self.title = self.fig.suptitle('')
@@ -106,14 +132,19 @@ class MatPlot(BasePlot):
     def add_to_plot(self, use_offset=False, **kwargs):
         """
         adds one trace to this MatPlot.
-        use_offset (bool, Optional): Whether or not axes can have an offset
-        kwargs: with the following exceptions (mostly the data!), these are
-            passed directly to the matplotlib plotting routine.
-            `subplot`: the 1-based axes number to append to (default 1)
-            if kwargs include `z`, we will draw a heatmap (ax.pcolormesh):
-                `x`, `y`, and `z` are passed as positional args to pcolormesh
-            without `z` we draw a scatter/lines plot (ax.plot):
-                `x`, `y`, and `fmt` (if present) are passed as positional args
+        
+        Args:
+            use_offset (bool, Optional): Whether or not ticks can have an offset
+            
+            kwargs: with the following exceptions (mostly the data!), these are
+                passed directly to the matplotlib plotting routine.
+                `subplot`: the 1-based axes number to append to (default 1)
+                if kwargs include `z`, we will draw a heatmap (ax.pcolormesh):
+                    `x`, `y`, and `z` are passed as positional args to
+                     pcolormesh
+                without `z` we draw a scatter/lines plot (ax.plot):
+                    `x`, `y`, and `fmt` (if present) are passed as positional 
+                    args
         """
         # TODO some way to specify overlaid axes?
         ax = self._get_axes(**kwargs)
@@ -122,7 +153,7 @@ class MatPlot(BasePlot):
         else:
             plot_object = self._draw_plot(ax, **kwargs)
 
-        # Specify if axes can have offset or not
+        # Specify if axes ticks can have offset or not
         ax.ticklabel_format(useOffset=use_offset)
 
         self._update_labels(ax, kwargs)
@@ -136,8 +167,6 @@ class MatPlot(BasePlot):
         if prev_default_title == self.title.get_text():
             # in case the user has updated title, don't change it anymore
             self.title.set_text(self.get_default_title())
-
-        self.tight_layout()
 
     def _get_axes(self, subplot=0, **kwargs):
         return self.subplots[subplot]
@@ -175,6 +204,20 @@ class MatPlot(BasePlot):
                 return
             axsetter = getattr(ax, "set_{}label".format(axletter))
             axsetter("{} ({})".format(label, unit))
+
+    def default_figsize(self, subplots):
+        """
+        Provides default figsize for given subplots.
+        Args:
+            subplots (Tuple[Int, Int]): shape (nrows, ncols) of subplots
+
+        Returns:
+            Figsize (Tuple[Float, Float])): (width, height) of default figsize
+              for given subplot shape
+        """
+        if not isinstance(subplots, tuple):
+            raise TypeError('Subplots {} must be a tuple'.format(subplots))
+        return (min(3 + 3 * subplots[1], 12), 1 + 3 * subplots[0])
 
     def update_plot(self):
         """
@@ -232,15 +275,13 @@ class MatPlot(BasePlot):
                    yunit=None,
                     zunit=None,
                    **kwargs):
-        # NOTE(alexj)stripping out subplot because which subplot we're in is already
-        # described by ax, and it's not a kwarg to matplotlib's ax.plot. But I
-        # didn't want to strip it out of kwargs earlier because it should stay
-        # part of trace['config'].
+        # NOTE(alexj)stripping out subplot because which subplot we're in is
+        # already described by ax, and it's not a kwarg to matplotlib's ax.plot.
+        # But I didn't want to strip it out of kwargs earlier because it should
+        # stay part of trace['config'].
         args = [arg for arg in [x, y, fmt] if arg is not None]
 
-        config_settings = matplot_config.get('1D_settings', {})
-        settings = {**kwargs, **config_settings}
-        line, = ax.plot(*args, **settings)
+        line, = ax.plot(*args, **kwargs)
         return line
 
     def _draw_pcolormesh(self, ax, z, x=None, y=None, subplot=1,
@@ -304,11 +345,7 @@ class MatPlot(BasePlot):
             # Only the masked value of z is used as a mask
             args = args_masked[-1:]
 
-        # Include default plotting kwargs, which can be overwritten by given
-        # kwargs
-        config_settings = matplot_config.get('2D_settings', {})
-        settings = {**kwargs, **config_settings}
-        pc = ax.pcolormesh(*args, **settings)
+        pc = ax.pcolormesh(*args, **kwargs)
 
         # Set x and y limits if arrays are provided
         if x is not None and y is not None:
@@ -363,4 +400,8 @@ class MatPlot(BasePlot):
         self.fig.savefig(filename)
 
     def tight_layout(self):
+        """
+        Perform a tight layout on the figure. A bit of additional spacing at 
+        the top is also added for the title.
+        """
         self.fig.tight_layout(rect=[0, 0, 1, 0.95])
