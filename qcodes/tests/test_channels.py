@@ -2,7 +2,6 @@ from unittest import TestCase
 import unittest
 
 from qcodes.tests.instrument_mocks import DummyChannelInstrument, DummyChannel
-from qcodes.instrument.channel import ChannelList
 from qcodes.utils.validators import Numbers
 from qcodes.instrument.parameter import ManualParameter
 
@@ -126,17 +125,8 @@ class TestChannels(TestCase):
         self.assertEquals(self.instrument.channels.temperature(), expected)
 
     def test_channel_parameters(self):
-        self.assertTrue('temperature' in self.instrument.channels.parameters)
-        self.assertEqual(len(self.instrument.channels.parameters), 1)
-
-
-    def test_channel_functions(self):
-        dc = DummyChannel(self.instrument, 'Chan' + 'bar', 'bar')
-        dc.add_function('dummyfunc', call_cmd='foobar')
-        self.assertTrue('dummyfunc' in dc.functions)
-        dcl = ChannelList(self.instrument, 'DummyChannelList', DummyChannel)
-        dcl.append(dc)
-        self.assertTrue('dummyfunc' in dcl.functions)
+            self.assertTrue('temperature' in self.instrument.channels.parameters)
+            self.assertEqual(len(self.instrument.channels.parameters), 1)
 
 class TestChannelsLoop(TestCase):
 
