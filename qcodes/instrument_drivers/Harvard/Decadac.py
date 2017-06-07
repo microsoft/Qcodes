@@ -435,7 +435,7 @@ class Decadac(VisaInstrument, DacReader):
 
     def get_idn(self):
         """
-        Attempt to identify the dac. Since we don't have standard SCPI commands, *IDN will
+        Attempt to identify the dac. Since we don't have standard SCPI commands, ``*IDN`` will
         do nothing on this DAC.
 
         Returns:
@@ -447,7 +447,7 @@ class Decadac(VisaInstrument, DacReader):
 
     def connect_message(self, idn_param='IDN', begin_time=None):
         """
-        Print a connect message, taking into account the lack of a standard *IDN on
+        Print a connect message, taking into account the lack of a standard ``*IDN`` on
         the Harvard DAC
 
         Args:
