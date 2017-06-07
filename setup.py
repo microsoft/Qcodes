@@ -25,9 +25,10 @@ def readme():
         return f.read()
 
 extras = {
-    'MatPlot': ('matplotlib', '1.5'),
+    'MatPlot': ('matplotlib', '2.0.2'),
     'QtPlot': ('pyqtgraph', '0.10.0'),
-    'coverage tests': ('coverage', '4.0')
+    'coverage tests': ('coverage', '4.0'),
+    'Slack': ('slacker', '0.9.42')
 }
 extras_require = {k: '>='.join(v) for k, v in extras.items()}
 

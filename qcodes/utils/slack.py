@@ -5,11 +5,12 @@ from time import sleep
 import inspect
 from slacker import Slacker
 import threading
+import traceback
 
 from qcodes.plots.base import BasePlot
-from qcodes.data.data_set import DataSet
 from qcodes import config as qc_config
 from qcodes.instrument.parameter import _BaseParameter
+from qcodes import active_loop, active_data_set
 
 
 def convert_command(text):
@@ -297,16 +298,27 @@ class Slack(threading.Thread):
                     self.slack.chat.post_message(text=msg, channel=channel)
 
                     func = self.commands[command]
-                    if isinstance(func, _BaseParameter):
-                        func(*args, **kwargs)
-                    else:
-                        # Only add channel and Slack if they are explicit kwargs
-                        func_sig = inspect.signature(func)
-                        if 'channel' in func_sig.parameters:
-                            kwargs['channel'] = channel
-                        if 'slack' in func_sig.parameters:
-                            kwargs['slack'] = self
-                        func(*args, **kwargs)
+                    try:
+                        if isinstance(func, _BaseParameter):
+                            results = func(*args, **kwargs)
+                        else:
+                            # Only add channel and Slack if they are explicit kwargs
+                            func_sig = inspect.signature(func)
+                            if 'channel' in func_sig.parameters:
+                                kwargs['channel'] = channel
+                            if 'slack' in func_sig.parameters:
+                                kwargs['slack'] = self
+                            results = func(*args, **kwargs)
+
+                        if results is not None:
+                            self.slack.chat.post_message(
+                                text='Results: {}'.format(results),
+                                channel=channel)
+
+                    except:
+                        self.slack.chat.post_message(
+                            text='Error: {}'.format(traceback.format_exc()),
+                            channel=channel)
                 else:
                     self.slack.chat.post_message(
                         text='Command {} not understood'.format(command),
@@ -374,9 +386,8 @@ class Slack(threading.Thread):
         Returns:
             None
         """
-        dataset = DataSet.latest_dataset
+        dataset = active_data_set()
         if dataset is not None:
-            dataset.sync()
             self.slack.chat.post_message(
                 text='Measurement is {:.0f}% complete'.format(
                     100 * dataset.fraction_complete()),
@@ -398,18 +409,10 @@ class Slack(threading.Thread):
         Returns:
             is_finished (Bool): True if measurement is finished, False otherwise
         """
-        dataset = DataSet.latest_dataset
-        if dataset is None:
+        if active_loop() is None:
             self.slack.chat.post_message(
-                text='No latest dataset found',
+                text='Measurement complete',
                 channel=channel)
             return True
-
-        if dataset.sync():
-            # Measurement is still running
+        else:
             return False
-
-        self.slack.chat.post_message(
-            text='Measurement complete\n' + repr(dataset),
-            channel=channel)
-        return True
