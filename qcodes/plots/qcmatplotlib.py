@@ -25,7 +25,8 @@ class MatPlot(BasePlot):
             latter case, all arrays will be plotted in the same subplot.
 
         figsize (Tuple[Float, Float]): (width, height) tuple in inches to pass 
-            to plt.figure. default (6, 4)
+            to plt.figure. If not provided, figsize is determined from 
+            subplots shape
 
         interval: period in seconds between update checks
 
@@ -40,8 +41,8 @@ class MatPlot(BasePlot):
         **kwargs: passed along to MatPlot.add() to add the first data trace
     """
 
-    # Maximum default number of subplot columns. Used when an instance is
-    # created without explicitly passing subplots
+    # Maximum default number of subplot columns. Used to determine shape of
+    # subplots when not explicitly provided
     max_subplot_columns = 3
 
     def __init__(self, *args, figsize=None, interval=1, subplots=None, num=None,
@@ -168,9 +169,6 @@ class MatPlot(BasePlot):
             # in case the user has updated title, don't change it anymore
             self.title.set_text(self.get_default_title())
 
-    def _get_axes(self, subplot=0, **kwargs):
-        return self.subplots[subplot]
-
     def _update_labels(self, ax, config):
         for axletter in ("x", "y"):
             if axletter+'label' in config:
@@ -237,7 +235,7 @@ class MatPlot(BasePlot):
                 if plot_object:
                     plot_object.remove()
 
-                ax = self._get_axes(**config)
+                ax = self[config.get('subplot', 0)]
                 plot_object = self._draw_pcolormesh(ax, **config)
                 trace['plot_object'] = plot_object
 
