@@ -215,10 +215,10 @@ class TestChannelsLoop(TestCase):
         self.assertIn('this_setpoint_set', data.arrays.keys())
         assert_array_equal(data.arrays['this_setpoint_set'].ndarray,
                            np.repeat(np.arange(5., 10).reshape(1, 5), 11, axis=0))
-        self.assertIn('this', data.arrays.keys())
-        assert_array_equal(data.arrays['this'].ndarray, np.zeros((11, 5)))
-        self.assertIn('that', data.arrays.keys())
-        assert_array_equal(data.arrays['that'].ndarray, np.ones((11, 5)))
+        self.assertIn('testchanneldummy_ChanA_this', data.arrays.keys())
+        assert_array_equal(data.arrays['testchanneldummy_ChanA_this'].ndarray, np.zeros((11, 5)))
+        self.assertIn('testchanneldummy_ChanA_that', data.arrays.keys())
+        assert_array_equal(data.arrays['testchanneldummy_ChanA_that'].ndarray, np.ones((11, 5)))
         self.assertIn('testchanneldummy_ChanA_temperature_set', data.arrays.keys())
         assert_array_equal(data.arrays['testchanneldummy_ChanA_temperature_set'].ndarray, np.arange(0, 10.1, 1))
 
@@ -228,10 +228,10 @@ class TestChannelsLoop(TestCase):
         self.assertIn('this_setpoint_set', data.arrays.keys())
         assert_array_equal(data.arrays['this_setpoint_set'].ndarray,
                            np.repeat(np.arange(5., 10).reshape(1, 5), 11, axis=0))
-        self.assertIn('this', data.arrays.keys())
-        assert_array_equal(data.arrays['this'].ndarray, np.zeros((11, 5)))
-        self.assertIn('that', data.arrays.keys())
-        assert_array_equal(data.arrays['that'].ndarray, np.ones((11, 5)))
+        self.assertIn('testchanneldummy_ChanA_this', data.arrays.keys())
+        assert_array_equal(data.arrays['testchanneldummy_ChanA_this'].ndarray, np.zeros((11, 5)))
+        self.assertIn('testchanneldummy_ChanA_that', data.arrays.keys())
+        assert_array_equal(data.arrays['testchanneldummy_ChanA_that'].ndarray, np.ones((11, 5)))
         self.assertIn('testchanneldummy_ChanA_temperature_set', data.arrays.keys())
         assert_array_equal(data.arrays['testchanneldummy_ChanA_temperature_set'].ndarray, np.arange(0, 10.1, 1))
 
@@ -254,8 +254,8 @@ class TestChannelsLoop(TestCase):
         self.assertIn('this_setpoint_set', data.arrays.keys())
         assert_array_equal(data.arrays['this_setpoint_set'].ndarray,
                            np.repeat(np.arange(5., 10).reshape(1, 5), 11, axis=0))
-        self.assertIn('testparameter', data.arrays.keys())
-        assert_array_equal(data.arrays['testparameter'].ndarray, np.ones((11, 5))+1)
+        self.assertIn('testchanneldummy_ChanA_dummy_array_parameter', data.arrays.keys())
+        assert_array_equal(data.arrays['testchanneldummy_ChanA_dummy_array_parameter'].ndarray, np.ones((11, 5))+1)
         self.assertIn('testchanneldummy_ChanA_temperature_set', data.arrays.keys())
         assert_array_equal(data.arrays['testchanneldummy_ChanA_temperature_set'].ndarray, np.arange(0, 10.1, 1))
 
@@ -265,8 +265,8 @@ class TestChannelsLoop(TestCase):
         self.assertIn('this_setpoint_set', data.arrays.keys())
         assert_array_equal(data.arrays['this_setpoint_set'].ndarray,
                            np.repeat(np.arange(5., 10).reshape(1, 5), 11, axis=0))
-        self.assertIn('testparameter', data.arrays.keys())
-        assert_array_equal(data.arrays['testparameter'].ndarray, np.ones((11, 5)) + 1)
+        self.assertIn('testchanneldummy_ChanA_dummy_array_parameter', data.arrays.keys())
+        assert_array_equal(data.arrays['testchanneldummy_ChanA_dummy_array_parameter'].ndarray, np.ones((11, 5)) + 1)
         self.assertIn('testchanneldummy_ChanA_temperature_set', data.arrays.keys())
         assert_array_equal(data.arrays['testchanneldummy_ChanA_temperature_set'].ndarray, np.arange(0, 10.1, 1))
 

@@ -176,7 +176,7 @@ class MultiSetPointParam(MultiParameter):
     Multiparameter which only purpose it to test that units, setpoints
     and so on are copied correctly to the individual arrays in the datarray.
     """
-    def __init__(self, instrument='DummyInst', name='testparameter'):
+    def __init__(self, instrument=None, name='testparameter'):
         shapes = ((5,), (5,))
         names = ('this', 'that')
         labels = ('this label', 'that label')
@@ -187,6 +187,7 @@ class MultiSetPointParam(MultiParameter):
         setpoint_labels = (('this setpoint',), ('this setpoint',))
         setpoint_units = (('this setpointunit',), ('this setpointunit',))
         super().__init__(name, names, shapes,
+                         instrument=instrument,
                          labels=labels,
                          units=units,
                          setpoints=setpoints,
@@ -203,8 +204,7 @@ class ArraySetPointParam(ArrayParameter):
     and so on are copied correctly to the individual arrays in the datarray.
     """
 
-    def __init__(self, instrument, name):
-        name = 'testparameter'
+    def __init__(self, instrument=None, name='testparameter'):
         shape = (5,)
         label = 'this label'
         unit = 'this unit'
@@ -215,6 +215,7 @@ class ArraySetPointParam(ArrayParameter):
         setpoint_units = ('this setpointunit',)
         super().__init__(name,
                          shape,
+                         instrument,
                          label=label,
                          unit=unit,
                          setpoints=setpoints,
