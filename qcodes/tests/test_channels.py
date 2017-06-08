@@ -212,19 +212,15 @@ class TestChannelsLoop(TestCase):
     def test_loop_multiparameter_by_name(self):
         loop = Loop(self.instrument.A.temperature.sweep(0, 10, 1), 0.1)
         data = loop.each(self.instrument.A.dummy_multi_parameter).run()
+        self._verify_multiparam_data(data)
         self.assertIn('this_setpoint_set', data.arrays.keys())
-        assert_array_equal(data.arrays['this_setpoint_set'].ndarray,
-                           np.repeat(np.arange(5., 10).reshape(1, 5), 11, axis=0))
-        self.assertIn('testchanneldummy_ChanA_this', data.arrays.keys())
-        assert_array_equal(data.arrays['testchanneldummy_ChanA_this'].ndarray, np.zeros((11, 5)))
-        self.assertIn('testchanneldummy_ChanA_that', data.arrays.keys())
-        assert_array_equal(data.arrays['testchanneldummy_ChanA_that'].ndarray, np.ones((11, 5)))
-        self.assertIn('testchanneldummy_ChanA_temperature_set', data.arrays.keys())
-        assert_array_equal(data.arrays['testchanneldummy_ChanA_temperature_set'].ndarray, np.arange(0, 10.1, 1))
 
     def test_loop_multiparameter_by_index(self):
         loop = Loop(self.instrument.channels[0].temperature.sweep(0, 10, 1), 0.1)
         data = loop.each(self.instrument.A.dummy_multi_parameter).run()
+        self._verify_multiparam_data(data)
+
+    def _verify_multiparam_data(self, data):
         self.assertIn('this_setpoint_set', data.arrays.keys())
         assert_array_equal(data.arrays['this_setpoint_set'].ndarray,
                            np.repeat(np.arange(5., 10).reshape(1, 5), 11, axis=0))
@@ -238,35 +234,26 @@ class TestChannelsLoop(TestCase):
     def test_loop_slicing_arrayparameter(self):
         loop = Loop(self.instrument.A.temperature.sweep(0, 10, 1), 0.1)
         data = loop.each(self.instrument.channels[0:2].dummy_array_parameter).run()
-        self.assertIn('this_setpoint_set', data.arrays.keys())
-        assert_array_equal(data.arrays['this_setpoint_set'].ndarray,
-                           np.repeat(np.arange(5., 10).reshape(1, 5), 11, axis=0))
-        self.assertIn('testchanneldummy_ChanA_dummy_array_parameter', data.arrays.keys())
-        assert_array_equal(data.arrays['testchanneldummy_ChanA_dummy_array_parameter'].ndarray, np.ones((11, 5))+1)
-        self.assertIn('testchanneldummy_ChanB_dummy_array_parameter', data.arrays.keys())
-        assert_array_equal(data.arrays['testchanneldummy_ChanB_dummy_array_parameter'].ndarray, np.ones((11, 5))+1)
-        self.assertIn('testchanneldummy_ChanA_temperature_set', data.arrays.keys())
-        assert_array_equal(data.arrays['testchanneldummy_ChanA_temperature_set'].ndarray, np.arange(0, 10.1, 1))
+        self._verify_array_data(data, channels=('A', 'B'))
 
     def test_loop_arrayparameter_by_name(self):
         loop = Loop(self.instrument.A.temperature.sweep(0, 10, 1), 0.1)
         data = loop.each(self.instrument.A.dummy_array_parameter).run()
-        self.assertIn('this_setpoint_set', data.arrays.keys())
-        assert_array_equal(data.arrays['this_setpoint_set'].ndarray,
-                           np.repeat(np.arange(5., 10).reshape(1, 5), 11, axis=0))
-        self.assertIn('testchanneldummy_ChanA_dummy_array_parameter', data.arrays.keys())
-        assert_array_equal(data.arrays['testchanneldummy_ChanA_dummy_array_parameter'].ndarray, np.ones((11, 5))+1)
-        self.assertIn('testchanneldummy_ChanA_temperature_set', data.arrays.keys())
-        assert_array_equal(data.arrays['testchanneldummy_ChanA_temperature_set'].ndarray, np.arange(0, 10.1, 1))
+        self._verify_array_data(data)
 
     def test_loop_arrayparameter_by_index(self):
         loop = Loop(self.instrument.channels[0].temperature.sweep(0, 10, 1), 0.1)
         data = loop.each(self.instrument.A.dummy_array_parameter).run()
+        self._verify_array_data(data)
+
+    def _verify_array_data(self, data, channels=('A',)):
         self.assertIn('this_setpoint_set', data.arrays.keys())
         assert_array_equal(data.arrays['this_setpoint_set'].ndarray,
                            np.repeat(np.arange(5., 10).reshape(1, 5), 11, axis=0))
-        self.assertIn('testchanneldummy_ChanA_dummy_array_parameter', data.arrays.keys())
-        assert_array_equal(data.arrays['testchanneldummy_ChanA_dummy_array_parameter'].ndarray, np.ones((11, 5)) + 1)
+        for channel in channels:
+            aname = 'testchanneldummy_Chan{}_dummy_array_parameter'.format(channel)
+            self.assertIn(aname, data.arrays.keys())
+            assert_array_equal(data.arrays[aname].ndarray, np.ones((11, 5))+1)
         self.assertIn('testchanneldummy_ChanA_temperature_set', data.arrays.keys())
         assert_array_equal(data.arrays['testchanneldummy_ChanA_temperature_set'].ndarray, np.arange(0, 10.1, 1))
 
