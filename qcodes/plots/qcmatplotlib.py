@@ -148,7 +148,7 @@ class MatPlot(BasePlot):
                     args
         """
         # TODO some way to specify overlaid axes?
-        ax = self._get_axes(**kwargs)
+        ax = self[kwargs.get('subplot', 0)]
         if 'z' in kwargs:
             plot_object = self._draw_pcolormesh(ax, **kwargs)
         else:
