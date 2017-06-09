@@ -349,6 +349,17 @@ class MultiChannelInstrumentParameter(MultiParameter):
         """
         return tuple(chan.parameters[self._param_name].get() for chan in self._channels)
 
+    def set(self, value):
+        """
+        Set all parameters to this value
+
+        Args:
+            value (unknown): The value to set to. The type is given by the
+            underlying parameter.
+        """
+        for chan in self._channels:
+            getattr(chan, self._param_name).set(value)
+
     @property
     def full_names(self):
         """Overwrite full_names because the instument name is already included in the name.
