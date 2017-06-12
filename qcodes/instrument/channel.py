@@ -1,13 +1,13 @@
 """ Base class for the channel of an instrument """
 from typing import List, Tuple, Union
 
-from .base import Instrument
+from .base import InstrumentBase, Instrument
 from .parameter import MultiParameter, ArrayParameter
 from ..utils.metadata import Metadatable
 from ..utils.helpers import full_class
 
 
-class InstrumentChannel(Instrument):
+class InstrumentChannel(InstrumentBase):
     """
     Base class for a channel in an instrument
 
@@ -45,35 +45,6 @@ class InstrumentChannel(Instrument):
                                            self.name,
                                            type(self._parent).__name__,
                                            self._parent.name)
-
-    # We aren't a member of the global list of instruments, don't try and remove ourself
-    def __del__(self):
-        """ Does nothing for an instrument channel """
-        pass
-
-    def close(self):
-        """ Doesn't make sense to just close a channel by default, raise NotImplemented """
-        raise NotImplementedError("Can't close a channel. Close my parent instead.")
-
-    @classmethod
-    def record_instance(cls, instance):
-        """ Instances should not be recorded for channels. This should happen for the parent instrument. """
-        pass
-
-    @classmethod
-    def instances(cls):
-        """ Instances should not be recorded for channels. This should happen for the parent instrument. """
-        pass
-
-    @classmethod
-    def remove_instances(cls, instance):
-        """ It doesn't make sense to remove a channel from an instrument, raise NotImplemented"""
-        raise NotImplementedError("Can't remove a channel.")
-
-    # This method doesn't make sense for a channel, raise NotImplemented
-    @classmethod
-    def find_instruments(cls, name, instrument_class=None):
-        raise NotImplementedError("Can't find instruments in a channel")
 
     # Pass any commands to read or write from the instrument up to the parent
     def write(self, cmd):
