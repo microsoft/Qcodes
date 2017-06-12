@@ -4,6 +4,7 @@ matplotlib==2.0.2
 pyqtgraph==0.10.0
 PyVISA==1.8
 PyQt5==5.7.1
+pyzmq>=16.0.2
 sip==4.19
 QtPy==1.2.0
 h5py==2.7.0
