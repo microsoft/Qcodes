@@ -37,6 +37,9 @@ class QPUBHandler(logging.Handler):
         - if more than 500MB are cached, NEW messages are dropped
         - if nobody reads the messages after a second the socket will close
            wihtout waiting
+
+    NOTE that this offers no guarantees on message delivery.
+    If there is no reciever the message is LOST.
     """
     # note that if we want zmq topcis the format MUST include name
     formatters = {
@@ -88,12 +91,12 @@ def parse(string):
     return standard_formatters.findall(string)
 
 
-def check_broker(frontend_addres="tcp://*:5559", backend_address="tcp://*:5560"):
+def check_broker(frontend_address="tcp://*:5559", backend_address="tcp://*:5560"):
     """
     Simple and dumb check to see if  a  XPUB/XSUB broker exists.
 
     Args:
-        frontend_addres (str): Interface to which the frontend is bound
+        frontend_address (str): Interface to which the frontend is bound
         backend_address (str): Interface to which the backend is bound
 
     Returns:
@@ -106,7 +109,7 @@ def check_broker(frontend_addres="tcp://*:5559", backend_address="tcp://*:5560")
     f = True
     b = True
     try:
-        frontend.bind(frontend_addres)
+        frontend.bind(frontend_address)
         f = False
     except zmq.error.ZMQError:
         pass
@@ -128,7 +131,9 @@ def check_broker(frontend_addres="tcp://*:5559", backend_address="tcp://*:5560")
 class UnboundedPublisher():
     """
     UnBounded publisher.
-    Use with care as it will use as much memory as needed (meaning all of it)
+    Use with care as it will use as much memory as needed (meaning all of it).
+    NOTE that this offers no guarantees on message delivery.
+    If there is no reciever the message is LOST.
     """
 
     def __init__(self, interface_or_socket: str,
@@ -157,6 +162,9 @@ class Publisher(UnboundedPublisher):
     We start with very permissive defaults:
         - 10 seconds linger
         - 2.5 GB cache
+
+    NOTE that this offers no guarantees on message delivery.
+    If there is no reciever the message is LOST.
     """
 
     def __init__(self, interface_or_socket: str, topic: str,
