@@ -1,8 +1,10 @@
 """ Base class for the channel of an instrument """
 from typing import List, Tuple, Union
+from collections import namedtuple
 
 from .base import InstrumentBase, Instrument
 from .parameter import MultiParameter, ArrayParameter
+from qcodes.utils.helpers import DelegateAttributes
 from ..utils.metadata import Metadatable
 from ..utils.helpers import full_class
 
@@ -35,6 +37,7 @@ class InstrumentChannel(InstrumentBase):
         self.functions = {}
 
         self.name = "{}_{}".format(parent.name, str(name))
+        self.short_name = str(name)
         self._meta_attrs = ['name']
 
         self._parent = parent
@@ -276,7 +279,9 @@ class ChannelList(Metadatable):
         """
         if self._locked:
             return
-        self._channels = tuple(self._channels)
+
+        channeltuple = namedtuple('channels', [channel.short_name for channel in self._channels])
+        self._channels = channeltuple(*self._channels)
         self._locked = True
 
     def snapshot_base(self, update=False):
@@ -310,7 +315,7 @@ class ChannelList(Metadatable):
         Params:
             name(str): The name of the parameter or function that we want to operate on.
         """
-        # Check if this is a valid parameter
+        # Check if this is a valid parametervx
         if name in self._channels[0].parameters:
             setpoints = None
             setpoint_names = None
@@ -362,4 +367,18 @@ class ChannelList(Metadatable):
                     chan.functions[name](*args, **kwargs)
             return multi_func
 
+        try:
+            return getattr(self._channels, name)
+        except:
+            pass
+
         raise AttributeError('\'{}\' object has no attribute \'{}\''.format(self.__class__.__name__, name))
+
+    def __dir__(self):
+        names = super().__dir__()
+        if self._channels:
+            names += list(self._channels[0].parameters.keys())
+            names += list(self._channels[0].functions.keys())
+            if self._locked:
+                names += [channel.short_name for channel in self._channels]
+        return sorted(set(names))
