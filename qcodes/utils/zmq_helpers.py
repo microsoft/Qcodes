@@ -1,6 +1,7 @@
 import re
 import logging
 import json
+import time
 
 import zmq
 
@@ -136,8 +137,10 @@ class UnboundedPublisher():
     If there is no reciever the message is LOST.
     """
 
-    def __init__(self, interface_or_socket: str,
-                 topic: str, context: zmq.Context = None):
+    def __init__(self,
+                 topic: str,
+                 interface_or_socket: str="tcp://localhost:5559",
+                 context: zmq.Context = None):
         """
 
         Args:
@@ -167,7 +170,8 @@ class Publisher(UnboundedPublisher):
     If there is no reciever the message is LOST.
     """
 
-    def __init__(self, interface_or_socket: str, topic: str,
+    def __init__(self, topic: str,
+                 interface_or_socket: str="tcp://localhost:5559",
                  timeout: int = _LINGER*10,
                  hwm: int = _ZMQ_HWM*5,  context: zmq.Context = None):
         """
@@ -180,9 +184,14 @@ class Publisher(UnboundedPublisher):
             hwm: number of messages to keep in the cache
             context: Context to reuse if desired
         """
-        super().__init__(interface_or_socket, topic, context)
+        super().__init__(topic, interface_or_socket)
         self.socket.setsockopt(zmq.LINGER, timeout)
         self.socket.set_hwm(hwm)
 
     def send(self, msg: object):
+        # Sleep for a nS to avoid going at max speed
+        # the reason for this sleep is to "try" to not lose messages
+        # realistically nothing will send small messages at an higher frequency
+        # if it happens, then we may as well stop using python!
+        time.sleep(1e-09)
         self.socket.send_multipart([self.topic, json.dumps(msg).encode()])
