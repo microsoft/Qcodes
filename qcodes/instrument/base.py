@@ -168,6 +168,14 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 msg = msg[0:max_chars-3] + '...'
             print(msg)
 
+        for submodule in self.submodules.values():
+            if hasattr(submodule, '_channels'):
+                if submodule._snapshotable:
+                    for channel in submodule._channels:
+                        channel.print_readable_snapshot()
+            else:
+                submodule.print_readable_snapshot(update, max_chars)
+
     #
     # shortcuts to parameters & setters & getters                            #
     #
