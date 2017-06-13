@@ -143,7 +143,8 @@ class ChannelList(Metadatable):
 
     def __init__(self, parent, name, chan_type: type, chan_list=None,
                  snapshotable=True,
-                 multichan_paramclass: type=MultiChannelInstrumentParameter):
+                 multichan_paramclass: type = MultiChannelInstrumentParameter,
+                 oneindexed=False):
         super().__init__()
 
         self._parent = parent
@@ -160,6 +161,7 @@ class ChannelList(Metadatable):
         self._chan_type = chan_type
         self._snapshotable = snapshotable
         self._paramclass = multichan_paramclass
+        self._oneindexed = oneindexed
 
         # If a list of channels is not provided, define a list to store channels.
         # This will eventually become a locked tuple.
@@ -180,9 +182,18 @@ class ChannelList(Metadatable):
             i (int/slice): Either a single channel index or a slice of channels to get
         """
         if isinstance(i, slice):
+            if self._oneindexed:
+                if i.start < 1 or i.stop < 1:
+                    raise IndexError("1 indexed channel lists only support positive indexes")
+                i = slice(i.start-1, i.stop-1, i.step)
             return ChannelList(self._parent, self._name, self._chan_type,
                                self._channels[i],
-                               multichan_paramclass=self._paramclass)
+                               multichan_paramclass=self._paramclass,
+                               oneindexed=self._oneindexed)
+        elif self._oneindexed:
+            if i<1:
+                raise IndexError("1 indexed channel lists only support positive indexes")
+            i += -1
         return self._channels[i]
 
     def __iter__(self):
@@ -213,7 +224,8 @@ class ChannelList(Metadatable):
         if self._parent != other._parent:
             raise ValueError("Can only add channels from the same parent together.")
 
-        return ChannelList(self._parent, self._name, self._chan_type, self._channels + other._channels)
+        return ChannelList(self._parent, self._name, self._chan_type, self._channels + other._channels,
+                           oneindexed=self._oneindexed)
 
     def append(self, obj):
         """
@@ -253,7 +265,7 @@ class ChannelList(Metadatable):
         Args:
             obj(chan_type): The object to find in the channel list.
         """
-        return self._channels.index(obj)
+        return self._channels.index(obj)+ self._oneindexed
 
     def insert(self, index, obj):
         """
@@ -270,6 +282,11 @@ class ChannelList(Metadatable):
             raise TypeError("All items in a channel list must be of the same type."
                             " Adding {} to a list of {}.".format(type(obj).__name__,
                                                                  self._chan_type.__name__))
+        if self._oneindexed:
+            if index < 1:
+                raise IndexError("1 based channel lists only support positive indexes")
+            index += 1
+
         return self._channels.insert(index, obj)
 
     def lock(self):
