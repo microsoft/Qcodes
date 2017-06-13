@@ -54,7 +54,7 @@ def init(mainfolder:str, sample_name: str, station, plot_x_position=0.66,
     log.info("experiment started at {}".format(path_to_experiment_folder))
 
     loc_provider = qc.FormatLocation(
-        fmt= path_to_experiment_folder + '{counter}')
+        fmt=path_to_experiment_folder + '{counter}')
     qc.data.data_set.DataSet.location_provider = loc_provider
     CURRENT_EXPERIMENT["provider"] = loc_provider
 
@@ -122,7 +122,6 @@ def _plot_setup(data, inst_meas, useQT=True):
     else:
         plot = MatPlot(subplots=(1,num_subplots))
 
-
     def _create_plot(plot, i, name, data, counter_two, j, k):
         color = 'C' + str(counter_two)
         counter_two += 1
@@ -136,6 +135,18 @@ def _plot_setup(data, inst_meas, useQT=True):
                 plot.subplots[0].setTitle(title)
             else:
                 plot.subplots[j + k].setTitle("")
+
+            # Avoid SI rescaling if units are not standard units
+            standardunits = ['V', 's', 'J', 'W', 'm', 'eV', 'A', 'K', 'g',
+                             'Hz', 'rad', 'T', 'H', 'F', 'Pa', 'C', 'Ω', 'Ohm',
+                             'S']
+            for arr in data.arrays.values():
+                if arr.unit not in standardunits:
+                    subplot = plot.subplots[j + k]
+                    if arr.is_setpoint:  # setpoints on bottom axis
+                        subplot.getAxis('bottom').enableAutoSIPrefix(False)
+                    else:  # measured values to the left
+                        subplot.getAxis('left').enableAutoSIPrefix(False)
         else:
             if 'z' in inst_meta_data:
                 xlen, ylen = inst_meta_data['z'].shape
@@ -170,6 +181,7 @@ def _plot_setup(data, inst_meas, useQT=True):
             counter_two += 1
     return plot, num_subplots
 
+
 def __get_plot_type(data, plot):
     # this is a hack because expand_trace works
     # in place. Also it should probably * expand its args and kwargs. N
@@ -178,6 +190,7 @@ def __get_plot_type(data, plot):
     metadata = {}
     plot.expand_trace((data_copy,), kwargs=metadata)
     return metadata
+
 
 def _save_individual_plots(data, inst_meas):
 
