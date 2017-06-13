@@ -89,6 +89,49 @@ class InstrumentChannel(Instrument):
         return self._parent.ask_raw(cmd)
 
 
+class MultiChannelInstrumentParameter(MultiParameter):
+    """
+    Parameter to get or set multiple channels simultaneously.
+
+    Will normally be created by a ChannelList and not directly by anything else.
+
+    Args:
+        channels(list[chan_type]): A list of channels which we can operate on simultaneously.
+
+        param_name(str): Name of the multichannel parameter
+    """
+    def __init__(self, channels: Union[List, Tuple], param_name, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._channels = channels
+        self._param_name = param_name
+
+    def get(self):
+        """
+        Return a tuple containing the data from each of the channels in the list
+        """
+        return tuple(chan.parameters[self._param_name].get() for chan in self._channels)
+
+    def set(self, value):
+        """
+        Set all parameters to this value
+
+        Args:
+            value (unknown): The value to set to. The type is given by the
+            underlying parameter.
+        """
+        for chan in self._channels:
+            getattr(chan, self._param_name).set(value)
+
+    @property
+    def full_names(self):
+        """Overwrite full_names because the instument name is already included in the name.
+           This happens because the instument name is included in the channel name merged into the
+           parameter name above.
+        """
+
+        return self.names
+
+
 class ChannelList(Metadatable):
     """
     Container for channelized parameters that allows for sweeps over
@@ -155,8 +198,6 @@ class ChannelList(Metadatable):
             if not all(isinstance(chan, chan_type) for chan in self._channels):
                 raise TypeError("All items in this channel list must be of type {}.".format(chan_type.__name__))
 
-
-
     def __getitem__(self, i):
         """
         Return either a single channel, or a new ChannelList containing only the specified channels
@@ -165,7 +206,9 @@ class ChannelList(Metadatable):
             i (int/slice): Either a single channel index or a slice of channels to get
         """
         if isinstance(i, slice):
-            return ChannelList(self._parent, self._name, self._chan_type, self._channels[i])
+            return ChannelList(self._parent, self._name, self._chan_type,
+                               self._channels[i],
+                               paramclass=self._paramclass)
         return self._channels[i]
 
     def __iter__(self):
@@ -349,46 +392,3 @@ class ChannelList(Metadatable):
             return multi_func
 
         raise AttributeError('\'{}\' object has no attribute \'{}\''.format(self.__class__.__name__, name))
-
-
-class MultiChannelInstrumentParameter(MultiParameter):
-    """
-    Parameter to get or set multiple channels simultaneously.
-
-    Will normally be created by a ChannelList and not directly by anything else.
-
-    Args:
-        channels(list[chan_type]): A list of channels which we can operate on simultaneously.
-
-        param_name(str): Name of the multichannel parameter
-    """
-    def __init__(self, channels: Union[List, Tuple], param_name, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._channels = channels
-        self._param_name = param_name
-
-    def get(self):
-        """
-        Return a tuple containing the data from each of the channels in the list
-        """
-        return tuple(chan.parameters[self._param_name].get() for chan in self._channels)
-
-    def set(self, value):
-        """
-        Set all parameters to this value
-
-        Args:
-            value (unknown): The value to set to. The type is given by the
-            underlying parameter.
-        """
-        for chan in self._channels:
-            getattr(chan, self._param_name).set(value)
-
-    @property
-    def full_names(self):
-        """Overwrite full_names because the instument name is already included in the name.
-           This happens because the instument name is included in the channel name merged into the
-           parameter name above.
-        """
-
-        return self.names

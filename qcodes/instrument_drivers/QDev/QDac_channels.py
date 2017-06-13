@@ -11,6 +11,7 @@ from operator import xor
 from collections import OrderedDict
 
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
+from qcodes.instrument.channel import MultiChannelInstrumentParameter
 from qcodes.instrument.parameter import ManualParameter
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
@@ -104,6 +105,36 @@ class QDacChannel(InstrumentChannel):
                            )
 
 
+class QDacMultiChannelParameter(MultiChannelInstrumentParameter):
+    """
+    The class to be returned by __getattr__ of the ChannelList. Here customised
+    for fast multi-readout of voltages.
+    """
+    def __init__(self, channels, param_name, *args, **kwargs):
+        super().__init__(channels, param_name, *args, **kwargs)
+
+    def get(self):
+        """
+        Return a tuple containing the data from each of the channels in the
+        list.
+        """
+        # For voltages, we can do something slightly faster than the naive
+        # approach
+
+        if self._param_name == 'v':
+            qdac = self._channels[0]._parent
+            qdac._get_status(readcurrents=False)
+            output = tuple(chan.parameters[self._param_name].get_latest()
+                           for chan in self._channels)
+
+            # call _instrument.get_status() once and then get_latest
+        else:
+            output = tuple(chan.parameters[self._param_name].get()
+                           for chan in self._channels)
+
+        return output
+
+
 class QDac(VisaInstrument):
     """
     Channelised driver for the QDev digital-analog converter QDac
@@ -171,7 +202,8 @@ class QDac(VisaInstrument):
         self.channel_validator = vals.Ints(1, self.num_chans)
 
         channels = ChannelList(self, "Channels", QDacChannel,
-                               snapshotable=False)
+                               snapshotable=False,
+                               paramclass=QDacMultiChannelParameter)
 
         for i in self.chan_range:
             channel = QDacChannel(self, 'chan{}'.format(i), i)
