@@ -217,14 +217,15 @@ class Triggered_Controller(AcquisitionController):
                                       self.samples_per_record.get_latest()))
                         for ch in self.channel_selection()}
 
-        for trace in range(self.traces_per_acquisition.get_latest()):
-            for ch in self.channel_selection():
-                ch_data = self._keysight.daq_read(ch)
-                if (len(ch_data) != 0):
-                    buffers[ch][trace] = ch_data
-                else:
-                    raise RuntimeError('Could not acquire data on ch {} with read timeout {} s'.format(ch,
-                                        self.read_timeout.get_latest()))
+        for ch in self.channel_selection():
+            ch_data = self._keysight.daq_read(ch)
+            if (len(ch_data) != 0):
+                for k, trace in enumerate(np.split(ch_data,
+                                      self.traces_per_acquisition.get_latest())):
+                    buffers[ch][k] = trace
+            else:
+                raise RuntimeError('Could not acquire data on ch {} with read \
+                timeout {} s'.format(ch, self.read_timeout.get_latest()))
         return buffers
 
     def start(self):
@@ -255,7 +256,10 @@ class Triggered_Controller(AcquisitionController):
         """
         This method is called immediately after 'daq_start' is called
         """
-        pass
+        n_points = self.traces_per_acquisition.get_latest() * \
+                   self.samples_per_record.get_latest()
+        for ch in self.channel_selection():
+            self._keysight.parameters['n_points_{}'.format(ch)].set(n_points)
 
     def post_acquire(self, buffers):
         """
@@ -304,8 +308,6 @@ class Triggered_Controller(AcquisitionController):
         """
         for ch in self.channel_selection():
             self._keysight.parameters['points_per_cycle_{}'.format(ch)].set(n_points)
-            self._keysight.parameters['n_points_{}'.format(ch)].set(n_points)
-
 
 
     def _set_all_n_cycles(self, n_cycles):
