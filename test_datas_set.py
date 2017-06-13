@@ -8,6 +8,7 @@
 import unittest
 
 from data_set import ParamSpec, DataSet, CompletedError
+from qcodes.tests.instrument_mocks import  MockParabola
 
 NAME = "name"
 HASH = "6ae999552a0d2dca14d62e2bc8b764d377b1dd6c"
@@ -104,4 +105,43 @@ class TestDataSet(unittest.TestCase):
         setpoints = dataSet.get_param_setpoints("z")
         self.assertEqual(setpoints,[y,x])
 
+    def test_modify(self):
+        x = ParamSpec("x")
+        y = ParamSpec("y")
+        y.setpoints = x.id
+        z = ParamSpec("z")
+        z.setpoints = y.id
+        values = [[1, 2, 3],[3,4,6], [7,8,9]]
+        dataSet = DataSet(NAME, [x,y,z], values)
+        self.assertEqual(dataSet.get_parameter("x").data[0], 1)
+        # set 0th point of result x to 0
+        dataSet.modify_result(0,"x", 0)
+        self.assertEqual(dataSet.get_parameter("x").data[0], 0)
+
+    def test_modify_remove(self):
+        x = ParamSpec("x")
+        y = ParamSpec("y")
+        y.setpoints = x.id
+        z = ParamSpec("z")
+        z.setpoints = y.id
+        values = [[1, 2, 3],[3,4,6], [7,8,9]]
+        dataSet = DataSet(NAME, [x,y,z], values)
+        self.assertEqual(dataSet.get_parameter("x").data[0], 1)
+        # remove x
+        dataSet.modify_result(0,"x", None)
+        with self.assertRaises(KeyError):
+            dataSet.get_parameter("x")
+
+    def test_get_data(self):
+        qc_param = MockParabola("parabola")
+        x = ParamSpec("x")
+        y = ParamSpec("y")
+        y.setpoints = x.id
+        z = ParamSpec("z")
+        z.setpoints = y.id
+        values = [[1, 2, 3],[3,4,6], [7,8,9]]
+        dataSet = DataSet(NAME, [x,y,z], values)
+        dataSet.modify_result(0,"x", None)
+        with self.assertRaises(KeyError):
+            dataSet.get_parameter("x")
 
