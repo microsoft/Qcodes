@@ -307,6 +307,10 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True):
         interrupted = True
         print("Measurement Interrupted")
     if do_plots:
+        # Ensure the correct scaling before saving
+        for subplot in plot.subplots:
+            vBox = subplot.getViewBox()
+            vBox.enableAutoRange(vBox.XYAxes)
         plot.save()
         pdfplot, num_subplots = _plot_setup(data, plottables, useQT=False)
         # pad a bit more to prevent overlap between
@@ -372,6 +376,10 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, num_points, delay, start2, sl
         print("Measurement Interrupted")
         interrupted = True
     if do_plots:
+        # Ensure the correct scaling before saving
+        for subplot in plot.subplots:
+            vBox = subplot.getViewBox()
+            vBox.enableAutoRange(vBox.XYAxes)
         plot.save()
         pdfplot, num_subplots = _plot_setup(data, plottables, useQT=False)
         # pad a bit more to prevent overlap between
@@ -442,6 +450,10 @@ def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num
         interrupted = True
         print("Measurement Interrupted")
     if do_plots:
+        # Ensure the correct scaling before saving
+        for subplot in plot.subplots:
+            vBox = subplot.getViewBox()
+            vBox.enableAutoRange(vBox.XYAxes)
         plot.save()
         pdfplot, num_subplots = _plot_setup(data, plottables, useQT=False)
         # pad a bit more to prevent overlap between
