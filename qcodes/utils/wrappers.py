@@ -5,6 +5,7 @@ from os import makedirs
 import os
 import logging
 from copy import deepcopy
+from collections import namedtuple
 import matplotlib.pyplot as plt
 
 from qcodes.plots.pyqtgraph import QtPlot
@@ -107,7 +108,7 @@ def _select_plottables(tasks):
     return tuple(plottables)
 
 
-def _plot_setup(data, inst_meas, useQT=True):
+def _plot_setup(data, inst_meas, useQT=True, startranges=None):
     title = "{} #{:03d}".format(CURRENT_EXPERIMENT["sample_name"],
                                 data.location_provider.counter)
     rasterized_note = " rasterized plot"
@@ -121,7 +122,7 @@ def _plot_setup(data, inst_meas, useQT=True):
     if useQT:
         plot = QtPlot(fig_x_position=CURRENT_EXPERIMENT['plot_x_position'])
     else:
-        plot = MatPlot(subplots=(1,num_subplots))
+        plot = MatPlot(subplots=(1, num_subplots))
 
     def _create_plot(plot, i, name, data, counter_two, j, k):
         color = 'C' + str(counter_two)
@@ -148,6 +149,15 @@ def _plot_setup(data, inst_meas, useQT=True):
                         subplot.getAxis('bottom').enableAutoSIPrefix(False)
                     else:  # measured values to the left
                         subplot.getAxis('left').enableAutoSIPrefix(False)
+
+            # Avoid misleading default xrange (TODO: how to generalise to 2D?)
+            if startranges is not None:
+                subplot = plot.subplots[j + k]
+                rangefuns = ['setXRange', 'setYRange']
+                for (prange, rangefun) in zip(startranges, rangefuns):
+                    getattr(subplot.getViewBox(), rangefun)(prange[0],
+                                                            prange[1])
+
         else:
             if 'z' in inst_meta_data:
                 xlen, ylen = inst_meta_data['z'].shape
@@ -289,13 +299,16 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True):
     # try to flush VISA buffers at the beginning of a measurement
     _flush_buffers(inst_set, *inst_meas)
 
+    # make a variable for aute pre-scaling the plot
+    startranges = ((start, stop),)
+
     interrupted = False
     loop = qc.Loop(inst_set.sweep(start,
                                   stop, num=num_points), delay).each(*inst_meas)
     data = loop.get_data_set()
     plottables = _select_plottables(inst_meas)
     if do_plots:
-        plot, _ = _plot_setup(data, plottables)
+        plot, _ = _plot_setup(data, plottables, startranges=startranges)
     else:
         plot = None
     try:
@@ -355,6 +368,9 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, num_points, delay, start2, sl
 
     """
 
+    # make a variable for aute pre-scaling the plot
+    startranges = ((start, stop),)
+
     # try to flush VISA buffers at the beginning of a measurement
     _flush_buffers(inst_set, inst2_set, *inst_meas)
 
@@ -364,7 +380,7 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, num_points, delay, start2, sl
     data = loop.get_data_set()
     plottables = _select_plottables(inst_meas)
     if do_plots:
-        plot, _ = _plot_setup(data, plottables)
+        plot, _ = _plot_setup(data, plottables, startranges=startranges)
     else:
         plot = None
     try:
@@ -425,6 +441,9 @@ def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num
 
     """
 
+    # make a variable for aute pre-scaling the plot
+    startranges = ((start2, stop2), (start, stop))
+
     # try to flush VISA buffers at the beginning of a measurement
     _flush_buffers(inst_set, inst_set2, *inst_meas)
 
@@ -438,7 +457,7 @@ def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num
     data = loop.get_data_set()
     plottables = _select_plottables(inst_meas)
     if do_plots:
-        plot, _ = _plot_setup(data, plottables)
+        plot, _ = _plot_setup(data, plottables, startranges=startranges)
     else:
         plot = None
     try:
