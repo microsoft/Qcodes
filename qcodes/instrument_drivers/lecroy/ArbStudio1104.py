@@ -184,6 +184,9 @@ class ArbStudio1104(Instrument):
         waveforms_list = []
         for ch, channel in enumerate(self._channels):
             waveforms_array = self._waveforms[ch]
+            if not waveforms_array:
+                # Must have at least one waveform, add one with 0V
+                waveforms_array = [np.array([0, 0, 0, 0])]
             # Initialize array of waves
             waveforms = Array.CreateInstance(self._api.WaveformStruct,len(waveforms_array))
             # We have to create separate wave instances and load them into
