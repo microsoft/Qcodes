@@ -157,14 +157,14 @@ class ZNB20Channel(InstrumentChannel):
                            label='Power',
                            unit='dBm',
                            get_cmd='SOUR{}:POW?'.format(n),
-                           set_cmd='SOUR{}'.format(n) + ':POW {:.4f}',
+                           set_cmd='SOUR{}:POW {{:.4f}}'.format(n),
                            get_parser=int,
                            vals=vals.Numbers(-150, 25))
         self.add_parameter(name='bandwidth',
                            label='Bandwidth',
                            unit='Hz',
                            get_cmd='SENS{}:BAND?'.format(n),
-                           set_cmd='SENS{}'.format(n) + ':BAND {:.4f}',
+                           set_cmd='SENS{}:BAND {{:.4f}}'.format(n),
                            get_parser=int,
                            vals=vals.Numbers(1, 1e6))
         self.add_parameter(name='avg',
