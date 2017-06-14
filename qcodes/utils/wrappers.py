@@ -434,7 +434,10 @@ def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num
     else:
         plot = None
     try:
-        _ = loop.run()
+        if do_plots:
+            _ = loop.with_bg_task(plot.update).run()
+        else:
+            _ = loop.run()
     except KeyboardInterrupt:
         interrupted = True
         print("Measurement Interrupted")
