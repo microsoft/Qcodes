@@ -4,7 +4,6 @@ from collections import namedtuple
 
 from .base import InstrumentBase, Instrument
 from .parameter import MultiParameter, ArrayParameter
-from qcodes.utils.helpers import DelegateAttributes
 from ..utils.metadata import Metadatable
 from ..utils.helpers import full_class
 
@@ -141,7 +140,7 @@ class ChannelList(Metadatable):
 
     """
 
-    def __init__(self, parent, name, chan_type: type, chan_list=None,
+    def __init__(self, parent: Instrument, name, chan_type: type, chan_list=None,
                  snapshotable=True,
                  multichan_paramclass: type = MultiChannelInstrumentParameter,
                  oneindexed=False):
@@ -191,7 +190,7 @@ class ChannelList(Metadatable):
                                multichan_paramclass=self._paramclass,
                                oneindexed=self._oneindexed)
         elif self._oneindexed:
-            if i<1:
+            if i < 1:
                 raise IndexError("1 indexed channel lists only support positive indexes")
             i += -1
         return self._channels[i]
@@ -265,7 +264,7 @@ class ChannelList(Metadatable):
         Args:
             obj(chan_type): The object to find in the channel list.
         """
-        return self._channels.index(obj)+ self._oneindexed
+        return self._channels.index(obj) + self._oneindexed
 
     def insert(self, index, obj):
         """
@@ -359,7 +358,7 @@ class ChannelList(Metadatable):
                 if self._channels[0].parameters[name].setpoint_units:
                     setpoint_units = tuple(chan.parameters[name].setpoint_units for chan in self._channels)
             else:
-                shapes = tuple(() for chan in self._channels)
+                shapes = tuple(() for _ in self._channels)
 
             param = self._paramclass(self._channels,
                                      param_name=name,
@@ -386,7 +385,7 @@ class ChannelList(Metadatable):
 
         try:
             return getattr(self._channels, name)
-        except:
+        except AttributeError:
             pass
 
         raise AttributeError('\'{}\' object has no attribute \'{}\''.format(self.__class__.__name__, name))
