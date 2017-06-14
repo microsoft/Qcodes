@@ -126,8 +126,6 @@ class QDacMultiChannelParameter(MultiChannelInstrumentParameter):
             qdac._get_status(readcurrents=False)
             output = tuple(chan.parameters[self._param_name].get_latest()
                            for chan in self._channels)
-
-            # call _instrument.get_status() once and then get_latest
         else:
             output = tuple(chan.parameters[self._param_name].get()
                            for chan in self._channels)
