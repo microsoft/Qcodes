@@ -5,7 +5,6 @@ from os import makedirs
 import os
 import logging
 from copy import deepcopy
-import matplotlib.pyplot as plt
 
 from qcodes.plots.pyqtgraph import QtPlot
 from qcodes.plots.qcmatplotlib import MatPlot
@@ -267,7 +266,7 @@ def save_device_image(sweeptparameters):
                             '{:03d}'.format(counter)), title)
 
 
-def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True):
+def do1d(inst_set, start, stop, num_points, delay, *inst_meas):
     """
 
     Args:
@@ -277,9 +276,7 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True):
         num_points:  Number of steps to perform
         delay:  Delay at every step
         *inst_meas:  any number of instrument to measure and/or tasks to
-          perform at each step of the sweep
-        do_plots: Default True: If False no plots are produced. Data is still saved
-          and can be displayed with show_num.
+            perform at each step of the sweep
 
     Returns:
         plot, data : returns the plot and the dataset
@@ -294,28 +291,20 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True):
                                   stop, num=num_points), delay).each(*inst_meas)
     data = loop.get_data_set()
     plottables = _select_plottables(inst_meas)
-    if do_plots:
-        plot, _ = _plot_setup(data, plottables)
-    else:
-        plot = None
+    plot, _ = _plot_setup(data, plottables)
     try:
-        if do_plots:
-            _ = loop.with_bg_task(plot.update).run()
-        else:
-            _ = loop.run()
+        _ = loop.with_bg_task(plot.update).run()
     except KeyboardInterrupt:
         interrupted = True
         print("Measurement Interrupted")
-    if do_plots:
-        plot.save()
-        pdfplot, num_subplots = _plot_setup(data, plottables, useQT=False)
-        # pad a bit more to prevent overlap between
-        # suptitle and title
-        pdfplot.fig.tight_layout(pad=3)
-        pdfplot.save("{}.pdf".format(plot.get_default_title()))
-
-        if num_subplots > 1:
-            _save_individual_plots(data, plottables)
+    plot.save()
+    pdfplot, num_subplots = _plot_setup(data, plottables, useQT=False)
+    # pad a bit more to prevent overlap between
+    # suptitle and title
+    pdfplot.fig.tight_layout(pad=3)
+    pdfplot.save("{}.pdf".format(plot.get_default_title()))
+    if num_subplots > 1:
+        _save_individual_plots(data, plottables)
     if CURRENT_EXPERIMENT.get('device_image'):
         log.debug('Saving device image')
         save_device_image((inst_set,))
@@ -329,7 +318,7 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True):
     return plot, data
 
 
-def do1dDiagonal(inst_set, inst2_set, start, stop, num_points, delay, start2, slope, *inst_meas, do_plots=True):
+def do1dDiagonal(inst_set, inst2_set, start, stop, num_points, delay, start2, slope, *inst_meas):
     """
     Perform diagonal sweep in 1 dimension, given two instruments
 
@@ -343,8 +332,6 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, num_points, delay, start2, sl
         start2:  Second start point
         slope:  slope of the diagonal cut
         *inst_meas:  any number of instrument to measure
-        do_plots: Default True: If False no plots are produced. Data is still saved
-          and can be displayed with show_num.
 
     Returns:
         plot, data : returns the plot and the dataset
@@ -359,28 +346,21 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, num_points, delay, start2, sl
         qc.Task(inst2_set, (inst_set) * slope + (slope * start - start2)), *inst_meas, inst2_set)
     data = loop.get_data_set()
     plottables = _select_plottables(inst_meas)
-    if do_plots:
-        plot, _ = _plot_setup(data, plottables)
-    else:
-        plot = None
+    plot, _ = _plot_setup(data, plottables)
     try:
-        if do_plots:
-            _ = loop.with_bg_task(plot.update).run()
-        else:
-            _ = loop.run()
+        _ = loop.with_bg_task(plot.update).run()
     except KeyboardInterrupt:
         print("Measurement Interrupted")
         interrupted = True
-    if do_plots:
-        plot.save()
-        pdfplot, num_subplots = _plot_setup(data, plottables, useQT=False)
-        # pad a bit more to prevent overlap between
-        # suptitle and title
-        pdfplot.fig.tight_layout(pad=3)
-        pdfplot.save("{}.pdf".format(plot.get_default_title()))
-        if num_subplots > 1:
-            _save_individual_plots(data, plottables)
-        pdfplot.save("{}.pdf".format(plot.get_default_title()))
+    plot.save()
+    pdfplot, num_subplots = _plot_setup(data, plottables, useQT=False)
+    # pad a bit more to prevent overlap between
+    # suptitle and title
+    pdfplot.fig.tight_layout(pad=3)
+    pdfplot.save("{}.pdf".format(plot.get_default_title()))
+    if num_subplots > 1:
+        _save_individual_plots(data, plottables)
+    pdfplot.save("{}.pdf".format(plot.get_default_title()))
     if CURRENT_EXPERIMENT.get('device_image'):
         save_device_image((inst_set, inst2_set))
 
@@ -393,8 +373,7 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, num_points, delay, start2, sl
     return plot, data
 
 
-def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num_points2, delay2,
-         *inst_meas, do_plots=True):
+def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num_points2, delay2, *inst_meas):
     """
 
     Args:
@@ -409,8 +388,6 @@ def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num
         num_points2:  Number of steps to perform
         delay2:  Delay at every step for second instrument
         *inst_meas:
-        do_plots: Default True: If False no plots are produced. Data is still saved
-          and can be displayed with show_num.
 
     Returns:
         plot, data : returns the plot and the dataset
@@ -429,25 +406,21 @@ def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num
         *inst_meas)
     data = loop.get_data_set()
     plottables = _select_plottables(inst_meas)
-    if do_plots:
-        plot, _ = _plot_setup(data, plottables)
-    else:
-        plot = None
+    plot, _ = _plot_setup(data, plottables)
     try:
-        _ = loop.run()
+        _ = loop.with_bg_task(plot.update).run()
     except KeyboardInterrupt:
         interrupted = True
         print("Measurement Interrupted")
-    if do_plots:
-        plot.save()
-        pdfplot, num_subplots = _plot_setup(data, plottables, useQT=False)
-        # pad a bit more to prevent overlap between
-        # suptitle and title
-        pdfplot.fig.tight_layout(pad=3)
-        pdfplot.save("{}.pdf".format(plot.get_default_title()))
-        if num_subplots > 1:
-            _save_individual_plots(data, plottables)
-        pdfplot.save("{}.pdf".format(plot.get_default_title()))
+    plot.save()
+    pdfplot, num_subplots = _plot_setup(data, plottables, useQT=False)
+    # pad a bit more to prevent overlap between
+    # suptitle and title
+    pdfplot.fig.tight_layout(pad=3)
+    pdfplot.save("{}.pdf".format(plot.get_default_title()))
+    if num_subplots > 1:
+        _save_individual_plots(data, plottables)
+    pdfplot.save("{}.pdf".format(plot.get_default_title()))
     if CURRENT_EXPERIMENT.get('device_image'):
         save_device_image((inst_set, inst_set2))
 
