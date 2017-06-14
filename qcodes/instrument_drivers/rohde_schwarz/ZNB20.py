@@ -34,15 +34,15 @@ class FrequencySweepMagPhase(MultiParameter):
     TODO:
       - ability to choose for linear or db in magnitude return
     """
-    def __init__(self, name, instrument, start, stop, npts, channel, sindex):
+    def __init__(self, name, instrument, start, stop, npts, channel):
         super().__init__(name, names=("", ""), shapes=((), ()))
         self._instrument = instrument
         self.set_sweep(start, stop, npts)
         self._channel = channel
-        self._sindex = sindex
-        sname = 'S' + str(sindex[0]) + str(sindex[1])
-        self.names = ('{}_magnitude'.format(sname), '{}_phase'.format(sname))
-        self.labels = ('{} magnitude'.format(sname), '{} phase'.format(sname))
+        self.names = ('{}_magnitude'.format(instrument._vna_parameter),
+                      '{}_phase'.format(instrument._vna_parameter))
+        self.labels = ('{} magnitude'.format(instrument._vna_parameter),
+                       '{} phase'.format(instrument._vna_parameter))
         self.units = ('', 'rad')
         self.setpoint_units = (('Hz',), ('Hz',))
         self.setpoint_names = (('frequency',), ('frequency',))
@@ -99,17 +99,15 @@ class FrequencySweep(ArrayParameter):
           get(): executes a sweep and returns magnitude and phase arrays
 
     """
-    def __init__(self, name, instrument, start, stop, npts, channel, sindex):
-        sname = 'S' + str(sindex[0]) + str(sindex[1])
+    def __init__(self, name, instrument, start, stop, npts, channel):
         super().__init__(name, shape=(npts,),
                          instrument=instrument,
                          unit='dB',
-                         label='{} magnitude'.format(sname),
+                         label='{} magnitude'.format(instrument._vna_parameter),
                          setpoint_units=('Hz',),
                          setpoint_names=('frequency',))
         self.set_sweep(start, stop, npts)
         self._channel = channel
-        self._sindex = sindex
 
     def set_sweep(self, start, stop, npts):
         #  needed to update config of the software parameter on sweep change
@@ -141,17 +139,19 @@ class FrequencySweep(ArrayParameter):
 
 class ZNB20Channel(InstrumentChannel):
 
-    def __init__(self, parent, name, channel, indexes):
+    def __init__(self, parent, name, channel):
         n = channel
-        i = indexes[0]
-        j = indexes[1]
         self._instrument_channel = channel
+        self._tracename = "Ch{}Trc1".format(channel)
+        self._vna_parameter = name
         super().__init__(parent, name)
 
         # map hardware channel to measurement
         # hardware channels are mapped one to one to qcodes channels
         # we are not using sub traces within channels.
-        self.write("CALC{}:PAR:SDEF 'Trc{}', '{}'".format(n, n, name))
+        self.write("CALC{}:PAR:SDEF '{}', '{}'".format(self._instrument_channel,
+                                                       self._tracename,
+                                                       self._vna_parameter))
 
         self.add_parameter(name='power',
                            label='Power',
@@ -220,17 +220,16 @@ class ZNB20Channel(InstrumentChannel):
                            stop=self.stop(),
                            npts=self.npts(),
                            channel=n,
-                           sindex=(i, j),
                            parameter_class=FrequencySweepMagPhase)
         self.add_parameter(name='tracedb',
                            start=self.start(),
                            stop=self.stop(),
                            npts=self.npts(),
                            channel=n,
-                           sindex=(i, j),
                            parameter_class=FrequencySweep)
 
-        self.add_function('autoscale', call_cmd='DISPlay:TRACe1:Y:SCALe:AUTO ONCE, "Trc{}"'.format(n))
+        self.add_function('autoscale',
+                          call_cmd='DISPlay:TRACe1:Y:SCALe:AUTO ONCE, "{}"'.format(self._tracename))
 
     def _set_start(self, val):
         channel = self._instrument_channel
@@ -308,12 +307,13 @@ class ZNB20(VisaInstrument):
         self._channel_to_sindex = {}
         self._max_freq = 20e9
         self._min_freq = 100e3
-        channels = ChannelList(self, "VNAChannels", ZNB20Channel, snapshotable=False, oneindexed=True)
+        channels = ChannelList(self, "VNAChannels", ZNB20Channel,
+                               snapshotable=True, oneindexed=True)
         for i in range(1, 3):
             self._sindex_to_channel[i] = {}
             for j in range(1, 3):
                 ch_name = 'S' + str(i) + str(j)
-                channel = ZNB20Channel(self, ch_name, n, indexes=(i, j))
+                channel = ZNB20Channel(self, ch_name, n)
                 channels.append(channel)
                 self._sindex_to_channel[i][j] = n
                 self._channel_to_sindex[n] = (i, j)
