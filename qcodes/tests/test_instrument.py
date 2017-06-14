@@ -107,6 +107,6 @@ class TestInstrument(TestCase):
         snapshot = self.instrument.snapshot()
 
         self.assertIn('value', snapshot['parameters']['has_snapshot_value'])
-        self.assertEquals(42,
-                          snapshot['parameters']['has_snapshot_value']['value'])
+        self.assertEqual(42,
+                         snapshot['parameters']['has_snapshot_value']['value'])
         self.assertNotIn('value', snapshot['parameters']['no_snapshot_value'])
