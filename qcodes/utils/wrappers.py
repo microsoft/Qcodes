@@ -150,7 +150,7 @@ def _plot_setup(data, inst_meas, useQT=True, startranges=None):
                     else:  # measured values to the left
                         subplot.getAxis('left').enableAutoSIPrefix(False)
 
-            # Avoid misleading default xrange (TODO: how to generalise to 2D?)
+            # Avoid misleading default xrange
             if startranges is not None:
                 subplot = plot.subplots[j + k]
                 rangefuns = ['setXRange', 'setYRange']
