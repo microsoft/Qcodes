@@ -116,8 +116,9 @@ class MatPlot(BasePlot):
 
         for k, subplot in enumerate(self.subplots):
             # Include `add` method to subplots, making it easier to add data to
-            # subplots.
-            subplot.add = partial(self.add, subplot=k)
+            # subplots. Note that subplot kwarg is 1-based, to adhere to
+            # Matplotlib standards
+            subplot.add = partial(self.add, subplot=k+1)
 
         self.title = self.fig.suptitle('')
 
@@ -148,7 +149,9 @@ class MatPlot(BasePlot):
                     args
         """
         # TODO some way to specify overlaid axes?
-        ax = self[kwargs.get('subplot', 0)]
+        # Note that there is a conversion from subplot kwarg, which is
+        # 1-based, to subplot idx, which is 0-based.
+        ax = self[kwargs.get('subplot', 1) - 1]
         if 'z' in kwargs:
             plot_object = self._draw_pcolormesh(ax, **kwargs)
         else:
