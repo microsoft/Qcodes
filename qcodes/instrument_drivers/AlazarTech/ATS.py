@@ -418,7 +418,7 @@ class AlazarTech_ATS(Instrument):
 
         # handle that external clock and internal clock uses
         # two different ways of setting the sample rate.
-        # We use the matching one and make the order one
+        # We use the matching one and mark the order one
         # as up to date since it's not being pushed to
         # the instrument at any time and is never used
         if clock_source == 'EXTERNAL_CLOCK_10MHz_REF':
