@@ -155,9 +155,9 @@ class ChannelList(Metadatable):
             stored inside a channel list are accessible in multiple
             ways and should not be repeated in an instrument snapshot.
 
-        paramclass (unknown): The class of the object to be returned by
-            the ChanneList's __getattr__ method. Should be a subclass of
-            MultiChannelInstrumentParameter.
+        paramclass (MultiChannelInstrumentParameter): The class of the object
+            to be returned by the ChanneList's __getattr__ method. Should be a
+            subclass of MultiChannelInstrumentParameter.
 
     Raises:
         ValueError: If chan_type is not a subclass of InstrumentChannel
