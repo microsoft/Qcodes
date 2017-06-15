@@ -47,7 +47,7 @@ class DacReader(object):
         """
         resp = self.ask_raw("B{};".format(self._slot))
         if int(self._dac_parse(resp)) != self._slot:
-            raise DACException("Unexpected return from DAC when setting slot: {}. DAC slot may not have been set.".format(response))
+            raise DACException("Unexpected return from DAC when setting slot: {}. DAC slot may not have been set.".format(resp))
 
     def _set_channel(self):
         """
@@ -55,7 +55,7 @@ class DacReader(object):
         """
         resp = self.ask_raw("B{};C{};".format(self._slot, self._channel))
         if resp.strip() != "B{}!C{}!".format(self._slot, self._channel):
-            raise DACException("Unexpected return from DAC when setting channel: {}. DAC channel may not have been set.".format(response))
+            raise DACException("Unexpected return from DAC when setting channel: {}. DAC channel may not have been set.".format(resp))
 
     def _query_address(self, addr, count=1, versa_eeprom=False):
         """
@@ -211,7 +211,7 @@ class DacChannel(InstrumentChannel, DacReader):
                 get_cmd=partial(self._query_address, _INITIAL_ADDR[self._channel], versa_eeprom=True),
                 get_parser=self._dac_code_to_v,
                 set_cmd=partial(self._write_address, _INITIAL_ADDR[self._channel], versa_eeprom=True),
-                set_parser=set._dac_v_to_code, vals=vals.Numbers(self.min_val, self.max_val))
+                set_parser=self._dac_v_to_code, vals=vals.Numbers(self.min_val, self.max_val))
 
     def _ramp(self, val, rate, block=True):
         """
@@ -396,10 +396,7 @@ class Decadac(VisaInstrument, DacReader):
         self.add_submodule("slots", slots)
         self.add_submodule("channels", channels)
 
-        # Custom connect message, since we can't identify
-        t = time() - (self._t0)
-        print("Connected to Harvard DecaDAC (hw ver: {}, serial: {}) in {:.2f}s".format(
-            self.version, self.serial_no, t))
+        self.connect_message()
 
     def set_all(self, volt):
         """
@@ -443,7 +440,7 @@ class Decadac(VisaInstrument, DacReader):
         """
         self._feature_detect()
 
-        return {serial: self.serial_no, hardware_version: self.version}
+        return {"serial": self.serial_no, "hardware_version": self.version}
 
     def connect_message(self, idn_param='IDN', begin_time=None):
         """
@@ -456,7 +453,7 @@ class Decadac(VisaInstrument, DacReader):
         """
         # start with an empty dict, just in case an instrument doesn't
         # heed our request to return all 4 fields.
-        t = time.time() - (begin_time or self._t0)
+        t = time() - (begin_time or self._t0)
 
         con_msg = ("Connected to Harvard DecaDAC "
                    "(hw ver: {}, serial: {}) in {:.2f}s".format(
