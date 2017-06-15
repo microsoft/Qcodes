@@ -155,13 +155,13 @@ class ChannelList(Metadatable):
             stored inside a channel list are accessible in multiple
             ways and should not be repeated in an instrument snapshot.
 
-        paramclass (MultiChannelInstrumentParameter): The class of the object
+        multichan_paramclass (MultiChannelInstrumentParameter): The class of the object
             to be returned by the ChanneList's __getattr__ method. Should be a
             subclass of MultiChannelInstrumentParameter.
 
     Raises:
         ValueError: If chan_type is not a subclass of InstrumentChannel
-        ValueError: If paramclass if not a subclass of
+        ValueError: If multichan_paramclass if not a subclass of
             MultiChannelInstrumentParameter (note that a class is a subclass
             of itself).
 
@@ -169,7 +169,7 @@ class ChannelList(Metadatable):
 
     def __init__(self, parent, name, chan_type, chan_list=None,
                  snapshotable=True,
-                 paramclass=MultiChannelInstrumentParameter):
+                 multichan_paramclass=MultiChannelInstrumentParameter):
         super().__init__()
 
         self._parent = parent
@@ -178,14 +178,14 @@ class ChannelList(Metadatable):
                 not issubclass(chan_type, InstrumentChannel)):
             raise ValueError("Channel Lists can only hold instances of type"
                              " InstrumentChannel")
-        if (not isinstance(paramclass, type) or
-                not issubclass(paramclass, MultiChannelInstrumentParameter)):
-            raise ValueError("Paramclass must be a (subclass of) "
+        if (not isinstance(multichan_paramclass, type) or
+                not issubclass(multichan_paramclass, MultiChannelInstrumentParameter)):
+            raise ValueError("multichan_paramclass must be a (subclass of) "
                              "MultiChannelInstrumentParameter")
 
         self._chan_type = chan_type
         self._snapshotable = snapshotable
-        self._paramclass = paramclass
+        self._paramclass = multichan_paramclass
 
         # If a list of channels is not provided, define a list to store channels.
         # This will eventually become a locked tuple.
@@ -208,7 +208,7 @@ class ChannelList(Metadatable):
         if isinstance(i, slice):
             return ChannelList(self._parent, self._name, self._chan_type,
                                self._channels[i],
-                               paramclass=self._paramclass)
+                               multichan_paramclass=self._paramclass)
         return self._channels[i]
 
     def __iter__(self):

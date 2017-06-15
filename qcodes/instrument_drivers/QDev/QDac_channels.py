@@ -201,7 +201,7 @@ class QDac(VisaInstrument):
 
         channels = ChannelList(self, "Channels", QDacChannel,
                                snapshotable=False,
-                               paramclass=QDacMultiChannelParameter)
+                               multichan_paramclass=QDacMultiChannelParameter)
 
         for i in self.chan_range:
             channel = QDacChannel(self, 'chan{}'.format(i), i)
