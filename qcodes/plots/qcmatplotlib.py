@@ -21,11 +21,11 @@ class MatPlot(BasePlot):
 
     Args:
         *args: Sequence of data to plot. Each element will have its own subplot.
-            An element can be a single array, or a sequence of arrays. In the 
+            An element can be a single array, or a sequence of arrays. In the
             latter case, all arrays will be plotted in the same subplot.
 
-        figsize (Tuple[Float, Float]): (width, height) tuple in inches to pass 
-            to plt.figure. If not provided, figsize is determined from 
+        figsize (Tuple[Float, Float]): (width, height) tuple in inches to pass
+            to plt.figure. If not provided, figsize is determined from
             subplots shape
 
         interval: period in seconds between update checks
@@ -77,7 +77,7 @@ class MatPlot(BasePlot):
         """
         Subplots can be accessed via indices.
         Args:
-            key: subplot idx 
+            key: subplot idx
 
         Returns:
             Subplot with idx key
@@ -134,7 +134,7 @@ class MatPlot(BasePlot):
     def add_to_plot(self, use_offset=False, **kwargs):
         """
         adds one trace to this MatPlot.
-        
+
         Args:
             use_offset (bool, Optional): Whether or not ticks can have an offset
             
@@ -145,7 +145,7 @@ class MatPlot(BasePlot):
                     `x`, `y`, and `z` are passed as positional args to
                      pcolormesh
                 without `z` we draw a scatter/lines plot (ax.plot):
-                    `x`, `y`, and `fmt` (if present) are passed as positional 
+                    `x`, `y`, and `fmt` (if present) are passed as positional
                     args
         """
         # TODO some way to specify overlaid axes?
@@ -206,7 +206,8 @@ class MatPlot(BasePlot):
             axsetter = getattr(ax, "set_{}label".format(axletter))
             axsetter("{} ({})".format(label, unit))
 
-    def default_figsize(self, subplots):
+    @staticmethod
+    def default_figsize(subplots):
         """
         Provides default figsize for given subplots.
         Args:
@@ -402,7 +403,7 @@ class MatPlot(BasePlot):
 
     def tight_layout(self):
         """
-        Perform a tight layout on the figure. A bit of additional spacing at 
+        Perform a tight layout on the figure. A bit of additional spacing at
         the top is also added for the title.
         """
         self.fig.tight_layout(rect=[0, 0, 1, 0.95])
