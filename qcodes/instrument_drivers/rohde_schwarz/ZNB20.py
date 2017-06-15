@@ -24,6 +24,8 @@ class FrequencySweepMagPhase(MultiParameter):
         start: starting frequency of sweep
         stop: ending frequency of sweep
         npts: number of points in frequency sweep
+        channel: channel number. This maps to a hardware channel on znb
+        sindex: (tuple of ints) Which s'parameter this corresponds to. Only used for labels
 
     Methods:
           set_sweep(start, stop, npts): sets the shapes and
@@ -91,6 +93,8 @@ class FrequencySweep(ArrayParameter):
         start: starting frequency of sweep
         stop: ending frequency of sweep
         npts: number of points in frequency sweep
+        channel: channel number. This maps to a hardware channel on znb
+        sindex: (tuple of ints) Which s'parameter this corresponds to. Only used for labels
 
     Methods:
           set_sweep(start, stop, npts): sets the shapes and
