@@ -18,12 +18,12 @@ def convert_command(text):
         try:
             val = int(string)
             return val
-        except:
+        except ValueError:
             pass
         try:
             val = float(string)
             return val
-        except:
+        except ValueError:
             pass
 
         return string
