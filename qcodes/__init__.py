@@ -30,7 +30,7 @@ if in_notebook():  # pragma: no cover
               'to see the full error')
 
 from qcodes.station import Station
-from qcodes.loops import Loop
+from qcodes.loops import Loop, active_loop, active_data_set
 from qcodes.measure import Measure
 from qcodes.actions import Task, Wait, BreakIf
 
