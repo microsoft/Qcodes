@@ -240,6 +240,7 @@ class QDac(VisaInstrument):
         self._get_status(readcurrents=update_currents)
         log.info('[+] Done')
 
+        self._output_n_lines = 50
     #########################
     # Channel gets/sets
     #########################
@@ -639,14 +640,14 @@ class QDac(VisaInstrument):
                                                       self.visa_handle.read()))
 
         # take care of the rest of the output
-        for ii in range(50):
+        for ii in range(self._output_n_lines):
             self.visa_handle.read()
 
     def _get_firmware_version(self):
         self.write('status')
         FW_str = self._write_response
         FW_version = float(FW_str.replace('Software Version: ', ''))
-        for ii in range(50):
+        for ii in range(self._output_n_lines):
             self.read()
         return FW_version
 
