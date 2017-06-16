@@ -69,8 +69,8 @@ class QDacChannel(InstrumentChannel):
 
         self.add_parameter('irange',
                            label='Channel {} irange'.format(channum),
-                           set_cmd='cur {} {}'.format(channum, '{}'),
-                           get_cmd='cur {}'.format(channum, '{}'),
+                           set_cmd='cur {} {{}}'.format(channum),
+                           get_cmd='cur {}'.format(channum),
                            get_parser=int
                            )
 
@@ -90,7 +90,7 @@ class QDacChannel(InstrumentChannel):
                            vals=vals.Ints(0, 5)
                            )
 
-        self.add_parameter(name='sync_delay'.format(channum),
+        self.add_parameter(name='sync_delay',
                            label='Channel {} sync pulse delay'.format(channum),
                            unit='s',
                            parameter_class=ManualParameter,
@@ -347,7 +347,6 @@ class QDac(VisaInstrument):
 
         self._get_status(readcurrents=False)
 
-        parameter = 'ch{:02}_{}'.format(chan, param)
         value = getattr(self.channels[chan-1], param).get_latest()
 
         returnmap = {'vrange': {1: 1, 10: 0},
@@ -359,7 +358,7 @@ class QDac(VisaInstrument):
         return value
 
     def _get_status(self, readcurrents=False):
-        r'''
+        r"""
         Function to query the instrument and get the status of all channels.
         Takes a while to finish.
 
@@ -376,7 +375,7 @@ class QDac(VisaInstrument):
         returns a list of dicts [{v, vrange, irange}]
         NOTE - channels are 1-based, but the return is a list, so of course
         0-based, ie chan1 is out[0]
-        '''
+        """
 
         # Status call
 
@@ -395,7 +394,7 @@ class QDac(VisaInstrument):
         if headers != expected_headers:
             raise ValueError('unrecognized header line: ' + header_line)
 
-        chans = [{} for i in self.chan_range]
+        chans = [{} for _ in self.chan_range]
         chans_left = set(self.chan_range)
         while chans_left:
             line = self.read().strip()
@@ -403,7 +402,6 @@ class QDac(VisaInstrument):
                 continue
             chanstr, v, _, vrange, _, irange = line.split('\t')
             chan = int(chanstr)
-            chanstr = '{:02}'.format(chan)
 
             irange_trans = {'hi cur': 1, 'lo cur': 0}
 
@@ -578,15 +576,12 @@ class QDac(VisaInstrument):
                                             offset)
 
         if chan in [syn[0] for syn in self._syncoutputs]:
-            #syncing = True
             sync = [syn[1] for syn in self._syncoutputs if syn[0] == chan][0]
             sync_duration = 1000*self.channels[chan-1].sync_duration.get()
             sync_delay = 1000*self.channels[chan-1].sync_delay.get()
             self.write('syn {} {} {} {}'.format(sync, fg,
                                                 sync_delay,
                                                 sync_duration))
-        else:
-            syncing = False
 
         typedict = {'SINE': 1, 'SQUARE': 2, 'RAMP': 3}
 
@@ -640,14 +635,14 @@ class QDac(VisaInstrument):
                                                       self.visa_handle.read()))
 
         # take care of the rest of the output
-        for ii in range(self._output_n_lines):
+        for _ in range(self._output_n_lines):
             self.visa_handle.read()
 
     def _get_firmware_version(self):
         self.write('status')
         FW_str = self._write_response
         FW_version = float(FW_str.replace('Software Version: ', ''))
-        for ii in range(self._output_n_lines):
+        for _ in range(self._output_n_lines):
             self.read()
         return FW_version
 
