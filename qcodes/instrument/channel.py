@@ -2,7 +2,7 @@
 from typing import List, Tuple, Union
 
 from .base import Instrument
-from .parameter import MultiParameter
+from .parameter import MultiParameter, ArrayParameter
 from ..utils.metadata import Metadatable
 from ..utils.helpers import full_class
 
@@ -89,36 +89,103 @@ class InstrumentChannel(Instrument):
         return self._parent.ask_raw(cmd)
 
 
-class ChannelList(Metadatable):
+class MultiChannelInstrumentParameter(MultiParameter):
     """
-    Container for channelized parameters that allows for sweeps over all channels, as well
-    as addressing of individual channels.
+    Parameter to get or set multiple channels simultaneously.
+
+    Will normally be created by a ChannelList and not directly by anything else.
 
     Args:
-        parent (Instrument): the instrument to which this channel should be attached
+        channels(list[chan_type]): A list of channels which we can operate on simultaneously.
+
+        param_name(str): Name of the multichannel parameter
+    """
+    def __init__(self, channels: Union[List, Tuple], param_name, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._channels = channels
+        self._param_name = param_name
+
+    def get(self):
+        """
+        Return a tuple containing the data from each of the channels in the list
+        """
+        return tuple(chan.parameters[self._param_name].get() for chan in self._channels)
+
+    def set(self, value):
+        """
+        Set all parameters to this value
+
+        Args:
+            value (unknown): The value to set to. The type is given by the
+            underlying parameter.
+        """
+        for chan in self._channels:
+            getattr(chan, self._param_name).set(value)
+
+    @property
+    def full_names(self):
+        """Overwrite full_names because the instument name is already included in the name.
+           This happens because the instument name is included in the channel name merged into the
+           parameter name above.
+        """
+
+        return self.names
+
+
+class ChannelList(Metadatable):
+    """
+    Container for channelized parameters that allows for sweeps over
+    all channels, as well as addressing of individual channels.
+
+    Args:
+        parent (Instrument): the instrument to which this channel
+            should be attached
 
         name (string): the name of the channel list
 
-        chan_type (InstrumentChannel): the type of channel contained within this list
+        chan_type (InstrumentChannel): the type of channel contained
+            within this list
 
-        chan_list (Iterable[chan_type]): An optional iterable of channels of type chan_type.
-            This will create a list and immediately lock the ChannelList.
+        chan_list (Iterable[chan_type]): An optional iterable of
+            channels of type chan_type.  This will create a list and
+            immediately lock the ChannelList.
 
-        snapshotable (bool): Optionally disables taking of snapshots for a given channel list.
-            This is used when objects stored inside a channel list are accessible in multiple ways
-            and should not be repeated in an instrument snapshot.
+        snapshotable (bool): Optionally disables taking of snapshots
+            for a given channel list.  This is used when objects
+            stored inside a channel list are accessible in multiple
+            ways and should not be repeated in an instrument snapshot.
+
+        multichan_paramclass (MultiChannelInstrumentParameter): The class of the object
+            to be returned by the ChanneList's __getattr__ method. Should be a
+            subclass of MultiChannelInstrumentParameter.
+
+    Raises:
+        ValueError: If chan_type is not a subclass of InstrumentChannel
+        ValueError: If multichan_paramclass if not a subclass of
+            MultiChannelInstrumentParameter (note that a class is a subclass
+            of itself).
 
     """
 
-    def __init__(self, parent, name, chan_type, chan_list=None, snapshotable=True):
+    def __init__(self, parent, name, chan_type, chan_list=None,
+                 snapshotable=True,
+                 multichan_paramclass=MultiChannelInstrumentParameter):
         super().__init__()
 
         self._parent = parent
         self._name = name
-        if not isinstance(chan_type, type) or not issubclass(chan_type, InstrumentChannel):
-            raise ValueError("Channel Lists can only hold instances of type InstrumentChannel")
+        if (not isinstance(chan_type, type) or
+                not issubclass(chan_type, InstrumentChannel)):
+            raise ValueError("Channel Lists can only hold instances of type"
+                             " InstrumentChannel")
+        if (not isinstance(multichan_paramclass, type) or
+                not issubclass(multichan_paramclass, MultiChannelInstrumentParameter)):
+            raise ValueError("multichan_paramclass must be a (subclass of) "
+                             "MultiChannelInstrumentParameter")
+
         self._chan_type = chan_type
         self._snapshotable = snapshotable
+        self._paramclass = multichan_paramclass
 
         # If a list of channels is not provided, define a list to store channels.
         # This will eventually become a locked tuple.
@@ -131,8 +198,6 @@ class ChannelList(Metadatable):
             if not all(isinstance(chan, chan_type) for chan in self._channels):
                 raise TypeError("All items in this channel list must be of type {}.".format(chan_type.__name__))
 
-
-
     def __getitem__(self, i):
         """
         Return either a single channel, or a new ChannelList containing only the specified channels
@@ -141,7 +206,9 @@ class ChannelList(Metadatable):
             i (int/slice): Either a single channel index or a slice of channels to get
         """
         if isinstance(i, slice):
-            return ChannelList(self._parent, self._name, self._chan_type, self._channels[i])
+            return ChannelList(self._parent, self._name, self._chan_type,
+                               self._channels[i],
+                               multichan_paramclass=self._paramclass)
         return self._channels[i]
 
     def __iter__(self):
@@ -274,21 +341,45 @@ class ChannelList(Metadatable):
         """
         # Check if this is a valid parameter
         if name in self._channels[0].parameters:
+            setpoints = None
+            setpoint_names = None
+            setpoint_labels = None
+            setpoint_units = None
             # We need to construct a MultiParameter object to get each of the
-            # values our of each parameter in our list
+            # values our of each parameter in our list, we don't currently try to
+            # construct a multiparameter from a list of multi parameters
+            if isinstance(self._channels[0].parameters[name], MultiParameter):
+                raise NotImplementedError("Slicing is currently not supported for MultiParameters")
             names = tuple("{}_{}".format(chan.name, name) for chan in self._channels)
-            shapes = tuple(() for chan in self._channels)  # TODO: Pull shapes intelligently
             labels = tuple(chan.parameters[name].label for chan in self._channels)
             units = tuple(chan.parameters[name].unit for chan in self._channels)
 
-            param = MultiChannelInstrumentParameter(self._channels,
-                                                    param_name=name,
-                                                    name="Multi_{}".format(name),
-                                                    names=names,
-                                                    shapes=shapes,
-                                                    instrument=self._parent,
-                                                    labels=labels,
-                                                    units=units)
+            if isinstance(self._channels[0].parameters[name], ArrayParameter):
+                shapes = tuple(chan.parameters[name].shape for chan in self._channels)
+
+                if self._channels[0].parameters[name].setpoints:
+                    setpoints = tuple(chan.parameters[name].setpoints for chan in self._channels)
+                if self._channels[0].parameters[name].setpoint_names:
+                    setpoint_names = tuple(chan.parameters[name].setpoint_names for chan in self._channels)
+                if self._channels[0].parameters[name].setpoint_labels:
+                    setpoint_labels = tuple(chan.parameters[name].setpoint_labels for chan in self._channels)
+                if self._channels[0].parameters[name].setpoint_units:
+                    setpoint_units = tuple(chan.parameters[name].setpoint_units for chan in self._channels)
+            else:
+                shapes = tuple(() for chan in self._channels)
+
+            param = self._paramclass(self._channels,
+                                     param_name=name,
+                                     name="Multi_{}".format(name),
+                                     names=names,
+                                     shapes=shapes,
+                                     instrument=self._parent,
+                                     labels=labels,
+                                     units=units,
+                                     setpoints=setpoints,
+                                     setpoint_names=setpoint_names,
+                                     setpoint_units=setpoint_units,
+                                     setpoint_labels=setpoint_labels)
             return param
 
         # Check if this is a valid function
@@ -301,35 +392,3 @@ class ChannelList(Metadatable):
             return multi_func
 
         raise AttributeError('\'{}\' object has no attribute \'{}\''.format(self.__class__.__name__, name))
-
-
-class MultiChannelInstrumentParameter(MultiParameter):
-    """
-    Parameter to get or set multiple channels simultaneously.
-
-    Will normally be created by a ChannelList and not directly by anything else.
-
-    Args:
-        channels(list[chan_type]): A list of channels which we can operate on simultaneously.
-
-        param_name(str): Name of the multichannel parameter
-    """
-    def __init__(self, channels: Union[List, Tuple], param_name, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._channels = channels
-        self._param_name = param_name
-
-    def get(self):
-        """
-        Return a tuple containing the data from each of the channels in the list
-        """
-        return tuple(chan.parameters[self._param_name].get() for chan in self._channels)
-
-    @property
-    def full_names(self):
-        """Overwrite full_names because the instument name is already included in the name.
-           This happens because the instument name is included in the channel name merged into the
-           parameter name above.
-        """
-
-        return self.names

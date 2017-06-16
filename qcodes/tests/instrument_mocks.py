@@ -2,7 +2,7 @@ import numpy as np
 
 from qcodes.instrument.base import Instrument
 from qcodes.utils.validators import Numbers
-from qcodes.instrument.parameter import MultiParameter, ManualParameter
+from qcodes.instrument.parameter import MultiParameter, ManualParameter, ArrayParameter
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 
 class MockParabola(Instrument):
@@ -125,6 +125,12 @@ class DummyChannel(InstrumentChannel):
                            unit='K',
                            vals=Numbers(0, 300))
 
+        self.add_parameter(name='dummy_multi_parameter',
+                           parameter_class=MultiSetPointParam)
+
+        self.add_parameter(name='dummy_array_parameter',
+                           parameter_class=ArraySetPointParam)
+
 class DummyChannelInstrument(Instrument):
     """
     Dummy instrument with channels
@@ -170,8 +176,7 @@ class MultiSetPointParam(MultiParameter):
     Multiparameter which only purpose it to test that units, setpoints
     and so on are copied correctly to the individual arrays in the datarray.
     """
-    def __init__(self):
-        name = 'testparameter'
+    def __init__(self, instrument=None, name='testparameter'):
         shapes = ((5,), (5,))
         names = ('this', 'that')
         labels = ('this label', 'that label')
@@ -182,6 +187,7 @@ class MultiSetPointParam(MultiParameter):
         setpoint_labels = (('this setpoint',), ('this setpoint',))
         setpoint_units = (('this setpointunit',), ('this setpointunit',))
         super().__init__(name, names, shapes,
+                         instrument=instrument,
                          labels=labels,
                          units=units,
                          setpoints=setpoints,
@@ -191,3 +197,32 @@ class MultiSetPointParam(MultiParameter):
 
     def get(self):
         return np.zeros(5), np.ones(5)
+
+class ArraySetPointParam(ArrayParameter):
+    """
+    Arrayparameter which only purpose it to test that units, setpoints
+    and so on are copied correctly to the individual arrays in the datarray.
+    """
+
+    def __init__(self, instrument=None, name='testparameter'):
+        shape = (5,)
+        label = 'this label'
+        unit = 'this unit'
+        sp_base = tuple(np.linspace(5, 9, 5))
+        setpoints = (sp_base,)
+        setpoint_names = ('this_setpoint',)
+        setpoint_labels = ('this setpoint',)
+        setpoint_units = ('this setpointunit',)
+        super().__init__(name,
+                         shape,
+                         instrument,
+                         label=label,
+                         unit=unit,
+                         setpoints=setpoints,
+                         setpoint_labels=setpoint_labels,
+                         setpoint_names=setpoint_names,
+                         setpoint_units=setpoint_units)
+
+    def get(self):
+        return np.ones(5) + 1
+
