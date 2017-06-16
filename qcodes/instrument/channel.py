@@ -331,7 +331,7 @@ class ChannelList(Metadatable):
         Params:
             name(str): The name of the parameter or function that we want to operate on.
         """
-        # Check if this is a valid parametervx
+        # Check if this is a valid parameter
         if name in self._channels[0].parameters:
             setpoints = None
             setpoint_names = None
