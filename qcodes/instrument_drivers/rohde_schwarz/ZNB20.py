@@ -76,6 +76,7 @@ class FrequencySweepMagPhase(MultiParameter):
             mag_array.append(abs(complex_num))
             phase_array.append(phase(complex_num))
         self._instrument._parent.cont_meas_on()
+        self._save_val((mag_array, phase_array))
         return mag_array, phase_array
 
 
@@ -134,6 +135,7 @@ class FrequencySweep(ArrayParameter):
 
         self._instrument._parent.cont_meas_on()
         self._instrument.format(old_format)
+        self._save_val(data)
         return data
 
 
