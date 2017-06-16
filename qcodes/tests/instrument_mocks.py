@@ -227,5 +227,5 @@ class ArraySetPointParam(ArrayParameter):
 
     def get(self):
         item = np.ones(5) + 1
-        self._save_val(item
+        self._save_val(item)
         return item
