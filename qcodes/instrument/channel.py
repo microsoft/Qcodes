@@ -167,9 +167,9 @@ class ChannelList(Metadatable):
 
     """
 
-    def __init__(self, parent, name, chan_type, chan_list=None,
+    def __init__(self, parent, name, chan_type: type, chan_list=None,
                  snapshotable=True,
-                 multichan_paramclass=MultiChannelInstrumentParameter):
+                 multichan_paramclass: type=MultiChannelInstrumentParameter):
         super().__init__()
 
         self._parent = parent
