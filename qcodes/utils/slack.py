@@ -111,6 +111,7 @@ class Slack(threading.Thread):
                          'msmt': self.print_measurement_information,
                          'measurement': self.print_measurement_information,
                          'notify': self.add_task,
+                         'help': self.help_message,
                          'task': self.add_task,
                          **commands}
         self.task_commands = {'finished': self.check_msmt_finished}
@@ -235,9 +236,13 @@ class Slack(threading.Thread):
         Returns:
             List of IM messages
         """
-        response = self.slack.im.history(channel=self.users[username]['im_id'],
+        channel=self.users[username].get('im_id', None)
+        if channel is None:
+            return []
+        else:
+            response = self.slack.im.history(channel=channel,
                                          **kwargs)
-        return response.body['messages']
+            return response.body['messages']
 
     def get_new_im_messages(self):
         """
@@ -276,6 +281,11 @@ class Slack(threading.Thread):
         new_messages = self.get_new_im_messages()
         self.handle_messages(new_messages)
 
+    def help_message(self):
+        """ Return simple help message """        
+        cc=', '.join( ['`' + str(k)+ '`' for k in self.commands.keys()])
+        return '\nAvailable commands: %s' % cc
+    
     def handle_messages(self, messages):
         """
         Performs commands depending on messages.
@@ -321,7 +331,7 @@ class Slack(threading.Thread):
                             channel=channel)
                 else:
                     self.slack.chat.post_message(
-                        text='Command {} not understood'.format(command),
+                        text='Command {} not understood. Try `help`'.format(command),
                         channel=channel)
 
     def add_task(self, command, *args, channel, **kwargs):
