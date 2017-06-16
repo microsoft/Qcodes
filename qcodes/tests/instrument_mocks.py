@@ -196,7 +196,9 @@ class MultiSetPointParam(MultiParameter):
                          setpoint_units=setpoint_units)
 
     def get(self):
-        return np.zeros(5), np.ones(5)
+        items = (np.zeros(5), np.ones(5))
+        self._save_val(items)
+        return items
 
 class ArraySetPointParam(ArrayParameter):
     """
@@ -224,5 +226,6 @@ class ArraySetPointParam(ArrayParameter):
                          setpoint_units=setpoint_units)
 
     def get(self):
-        return np.ones(5) + 1
-
+        item = np.ones(5) + 1
+        self._save_val(item
+        return item
