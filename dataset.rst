@@ -21,13 +21,13 @@ Metadata
     Many items in this spec have metadata associated with them.
     In all cases, we expect metadata to be represented as a dictionary with string keys.
     While the values are arbitrary and up to the user, in many cases we expect metadata to be nested, string-keyed dictionaries
-    with scalars (strings or numbers) as the final values.
+    with scalars (strings or numbers as the final values.
     In some cases, we specify particular keys or paths in the metadata that other QCoDeS components may rely on.
 
 Parameter
     A logically-single value input to or produced by a measurement.
     A parameter need not be a scalar, but can be an array or a tuple or an array of tuples, etc.
-    A DataSet parameter corresponds conceptually to a QCoDeS parameter, but does not have to be defined by or associated with a QCoDeS Parameter . 
+    A DataSet parametr corresponds conceptually to a QCoDeS parameter, but does not have to be defined by or associated with a QCoDeS Parameter . 
     Roughly, a parameter represents a column in a table of experimental data.
     
 Result
@@ -60,8 +60,7 @@ Creation
 
 #. It should be possible to create a DataSet without knowing the final item count of the various values it stores. 
    In particular, the number of loop iterations for a sweep should not be required to create the DataSet.
-#. The list of parameters in each result to be stored in a DataSet may be specified at creation time.
-   This includes the name, role (set-point or output), and type of each parameter.
+#. The list of parameters in each result to be stored in a DataSet may be specified at creation time.   This includes the name, role (set-point or output), and type of each parameter.
    Parameters may be marked as optional, in which case they are not required for each result.
 #. It should be possible to add a new parameter to an in-progress DataSet.
 #. It should be possible to define a result parameter that is independent of any QCoDeSParameter or Instrument.
@@ -181,61 +180,19 @@ DataSet.add_metadata(tag=, metadata=)
 
 Writing
 -------
+ISSUES:
 
+The analogy row -- > result is not really 1:1 because 
+A result may be a row, that does not have all the columns (yet, or ever).
 DataSet.add_result(**kwargs)
-    Adds a result to the DataSet.
-    Keyword parameters should have the name of a parameter as the keyword and the value to associate as the value.
-    If there is only one positional parameter and it is a dictionary, then it is interpreted as a map from parameter name to parameter value.
-
-    Returns the zero-based index in the DataSet that the result was stored at; that is, it returns the length of the DataSet before the addition.
-    
-    It is an error to provide a value for a key or keyword that is not the name of a parameter in this DataSet.
-    
-    It is an error to add a result to a completed DataSet.
-
-DataSet.add_results(args)
-    Adds a sequence of results to the DataSet.
-    The single argument should be a sequence of dictionaries, where each dictionary provides the values for all of the parameters in that result.
-    See the add_result method for a description of such a dictionary.
-    The order of dictionaries in the sequence will be the same as the order in which they are added to the DataSet.
-    
-    Returns the zero-based index in the DataSet that the first result was stored at; that is, it returns the length of the DataSet before the addition.
-    
-    It is an error to provide a value for a key or keyword that is not the name of a parameter in this DataSet.
-    
-    It is an error to add results to a completed DataSet.
-
-DataSet.modify_result(index, **kwargs)
-    Modifies a result in the DataSet.
-    The index should be the zero-based index of the result to be modified.
-    Keyword parameters should have the name of a parameter as the keyword and the updated value to associate as the value.
-    If there is only one positional parameter and it is a dictionary, then it is interpreted as a map from parameter name to updated parameter value.
-
-    Any parameters that were specified in the original result that do not appear in the modification are left unchanged.
-    To remove a parameter from a result, map it to None.
-
-    It is an error to modify a result at an index less than zero or beyond the end of the DataSet.
-    
-    It is an error to provide a value for a key or keyword that is not the name of a parameter in this DataSet.
-    
-    It is an error to modify a result in a completed DataSet.
-
+    DIFF: use name, value instead of kwargs
+DataSet.add_results(dict):
+    Adds reults to the data set (read add many columns, one row per column)
+DataSet.add_many(args)
+    DIFF:name change
+DataSet.modify_result(start_index, name, value)
 DataSet.modify_results(start_index, updates)
-    Modifies a sequence of results in the DataSet.
-    The start_index should be the zero-based index of the first result of the sequence to be modified.
-    The updates argument should be a sequence of dictionaries, where each dictionary provides modified values for parameters 
-    as a map from parameter name to parameter value.
-    See the modify_result method for a description of such a dictionary.
-    The order of dictionaries in the sequence will be the same as the order in which they are applied to the DataSet.
-    
-    Any parameters that were specified in a original result that do not appear in the corresponding modification are left unchanged.
-    To remove a parameter from a result, map it to None.
-
-    It is an error to modify a result at an index less than zero or beyond the end of the DataSet.
-    
-    It is an error to provide a value for a key or keyword that is not the name of a parameter in this DataSet.
-    
-    It is an error to modify results in a completed DataSet.
+DataSet.modify_many(start_index, updates)
 
 DataSet.add_parameter_values(spec, values)
 	Adds a parameter to the DataSet and associates result values with the new parameter.
