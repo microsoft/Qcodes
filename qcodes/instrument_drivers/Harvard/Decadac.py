@@ -3,8 +3,10 @@ from functools import partial
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList, ManualParameter
 from qcodes.utils import validators as vals
 
+
 class DACException(Exception):
     pass
+
 
 class DacReader(object):
     @staticmethod
@@ -26,9 +28,9 @@ class DacReader(object):
         """
         frac = (volt - self.min_val) / (self.max_val - self.min_val)
         val = int(round(frac * 65536))
-        if val >= 65536: # Check limits. For example setting max_val will cause an overflow
+        if val >= 65536:  # Check limits. For example setting max_val will cause an overflow
             return 65535
-        if val < 0: # Ensure no negative values
+        if val < 0:  # Ensure no negative values
             return 0
         return val
 
@@ -47,7 +49,8 @@ class DacReader(object):
         """
         resp = self.ask_raw("B{};".format(self._slot))
         if int(self._dac_parse(resp)) != self._slot:
-            raise DACException("Unexpected return from DAC when setting slot: {}. DAC slot may not have been set.".format(resp))
+            raise DACException("Unexpected return from DAC when setting slot: "
+                               "{}. DAC slot may not have been set.".format(resp))
 
     def _set_channel(self):
         """
@@ -55,7 +58,8 @@ class DacReader(object):
         """
         resp = self.ask_raw("B{};C{};".format(self._slot, self._channel))
         if resp.strip() != "B{}!C{}!".format(self._slot, self._channel):
-            raise DACException("Unexpected return from DAC when setting channel: {}. DAC channel may not have been set.".format(resp))
+            raise DACException("Unexpected return from DAC when setting channel: "
+                               "{}. DAC channel may not have been set.".format(resp))
 
     def _query_address(self, addr, count=1, versa_eeprom=False):
         """
@@ -140,6 +144,7 @@ class DacReader(object):
         if int(self._dac_parse(self.ask_raw(query_command))) != val:
             raise DACException("Failed to write value ({}) to address {}.".format(val, addr))
 
+
 class DacChannel(InstrumentChannel, DacReader):
     """
     A single DAC channel of the DECADAC
@@ -173,31 +178,31 @@ class DacChannel(InstrumentChannel, DacReader):
         # 'd' command for backwards compatibility
         self._volt_val = vals.Numbers(self.min_val, self.max_val)
         self.add_parameter("volt", get_cmd=partial(self._query_address, self._base_addr+9, 1),
-            get_parser=self._dac_code_to_v,
-            set_cmd=self._set_dac, set_parser=self._dac_v_to_code, vals=self._volt_val,
-            label="Voltage", unit="V")
+                           get_parser=self._dac_code_to_v,
+                           set_cmd=self._set_dac, set_parser=self._dac_v_to_code, vals=self._volt_val,
+                           label="Voltage", unit="V")
         # The limit commands are used to sweep dac voltages. They are not safety features.
         self.add_parameter("lower_ramp_limit", get_cmd=partial(self._query_address, self._base_addr+5),
-            get_parser=self._dac_code_to_v,
-            set_cmd="L{};", set_parser=self._dac_v_to_code, vals=self._volt_val,
-            label="Lower_Ramp_Limit", unit="V")
+                           get_parser=self._dac_code_to_v,
+                           set_cmd="L{};", set_parser=self._dac_v_to_code, vals=self._volt_val,
+                           label="Lower_Ramp_Limit", unit="V")
         self.add_parameter("upper_ramp_limit", get_cmd=partial(self._query_address, self._base_addr+4),
-            get_parser=self._dac_code_to_v,
-            set_cmd="U{};", set_parser=self._dac_v_to_code, vals=self._volt_val,
-            label="Upper_Ramp_Limit", unit="V")
+                           get_parser=self._dac_code_to_v,
+                           set_cmd="U{};", set_parser=self._dac_v_to_code, vals=self._volt_val,
+                           label="Upper_Ramp_Limit", unit="V")
         self.add_parameter("update_period", get_cmd=partial(self._query_address, self._base_addr),
-            get_parser=int, set_cmd="T{};", set_parser=int, vals=vals.Ints(50, 65535),
-            label="Update_Period", unit="us")
+                           get_parser=int, set_cmd="T{};", set_parser=int, vals=vals.Ints(50, 65535),
+                           label="Update_Period", unit="us")
         self.add_parameter("slope", get_cmd=partial(self._query_address, self._base_addr+6, 2),
-            get_parser=int, set_cmd="S{};", set_parser=int, vals=vals.Ints(-(2**32), 2**32),
-            label="Ramp_Slope")
+                           get_parser=int, set_cmd="S{};", set_parser=int, vals=vals.Ints(-(2**32), 2**32),
+                           label="Ramp_Slope")
 
         # Manual parameters to control whether DAC channels should ramp to voltages or jump
         self._ramp_val = vals.Numbers(0, 10)
         self.add_parameter("enable_ramp", parameter_class=ManualParameter, initial_value=False,
-            vals=vals.Bool())
+                           vals=vals.Bool())
         self.add_parameter("ramp_rate", parameter_class=ManualParameter, initial_value=0.1,
-            vals=self._ramp_val, unit="V/s")
+                           vals=self._ramp_val, unit="V/s")
 
         # Add ramp function to the list of functions
         self.add_function("ramp", call_cmd=self._ramp, args=(self._volt_val, self._ramp_val))
@@ -208,10 +213,10 @@ class DacChannel(InstrumentChannel, DacReader):
         if self._parent._VERSA_EEPROM_available:
             _INITIAL_ADDR = [6, 8, 32774, 32776]
             self.add_parameter("initial_value",
-                get_cmd=partial(self._query_address, _INITIAL_ADDR[self._channel], versa_eeprom=True),
-                get_parser=self._dac_code_to_v,
-                set_cmd=partial(self._write_address, _INITIAL_ADDR[self._channel], versa_eeprom=True),
-                set_parser=self._dac_v_to_code, vals=vals.Numbers(self.min_val, self.max_val))
+                               get_cmd=partial(self._query_address, _INITIAL_ADDR[self._channel], versa_eeprom=True),
+                               get_parser=self._dac_code_to_v,
+                               set_cmd=partial(self._write_address, _INITIAL_ADDR[self._channel], versa_eeprom=True),
+                               set_parser=self._dac_v_to_code, vals=vals.Numbers(self.min_val, self.max_val))
 
     def _ramp(self, val, rate, block=True):
         """
@@ -226,13 +231,13 @@ class DacChannel(InstrumentChannel, DacReader):
         """
 
         # We need to know the current dac value (in raw units), as well as the update rate
-        c_volt = self.volt.get() # Current Voltage
-        if c_volt == val: # If we are already at the right voltage, we don't need to ramp
+        c_volt = self.volt.get()  # Current Voltage
+        if c_volt == val:  # If we are already at the right voltage, we don't need to ramp
             return
-        c_val = self._dac_v_to_code(c_volt) # Current voltage in DAC units
-        e_val = self._dac_v_to_code(val) # Endpoint in DAC units
-        t_rate = 1/(self.update_period.get() * 1e-6) # Number of refreshes per second
-        secs = abs((c_volt - val)/rate) # Number of seconds to ramp
+        c_val = self._dac_v_to_code(c_volt)  # Current voltage in DAC units
+        e_val = self._dac_v_to_code(val)  # Endpoint in DAC units
+        t_rate = 1/(self.update_period.get() * 1e-6)  # Number of refreshes per second
+        secs = abs((c_volt - val)/rate)  # Number of seconds to ramp
 
         # The formula to calculate the slope is: Number of DAC steps divided by the number of time
         # steps in the ramp multiplied by 65536
@@ -281,6 +286,7 @@ class DacChannel(InstrumentChannel, DacReader):
         self._set_channel()
         return self.ask_raw(cmd)
 
+
 class DacSlot(InstrumentChannel, DacReader):
     """
     A single DAC Slot of the DECADAC
@@ -317,7 +323,7 @@ class DacSlot(InstrumentChannel, DacReader):
         else:
             slot_modes = {"Off": 0, "Fine": 1, "Coarse": 2}
         self.add_parameter('slot_mode', get_cmd="m;", get_parser=self._dac_parse, set_cmd="M{};",
-            val_mapping=slot_modes)
+                           val_mapping=slot_modes)
 
         # Enable all slots in coarse mode.
         self.slot_mode.set("Coarse")
@@ -337,6 +343,7 @@ class DacSlot(InstrumentChannel, DacReader):
         """
         self._set_slot()
         return self.ask_raw(cmd)
+
 
 class Decadac(VisaInstrument, DacReader):
     """
@@ -388,7 +395,7 @@ class Decadac(VisaInstrument, DacReader):
         # Create channels
         channels = ChannelList(self, "Channels", DacChannel, snapshotable=False)
         slots = ChannelList(self, "Slots", DacSlot)
-        for i in range(6): # Create the 6 DAC slots
+        for i in range(6):  # Create the 6 DAC slots
             slots.append(DacSlot(self, "Slot{}".format(i), i, min_val, max_val))
             channels.extend(self.slots[i].channels)
         slots.lock()
