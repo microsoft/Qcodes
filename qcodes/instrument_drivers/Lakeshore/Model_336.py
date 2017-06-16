@@ -13,24 +13,24 @@ class SensorChannel(InstrumentChannel):
 
         # Validate the channel value
         self._CHANNEL_VAL.validate(channel)
-        self._channel = channel # Channel on the temperature controller. Can be A-D
+        self._channel = channel  # Channel on the temperature controller. Can be A-D
 
         # Add the various channel parameters
         self.add_parameter('temperature', get_cmd='KRDG? {}'.format(self._channel),
-            get_parser=float,
-            label='Temerature',
-            unit='K')
+                           get_parser=float,
+                           label='Temerature',
+                           unit='K')
         self.add_parameter('sensor_raw', get_cmd='SRDG? {}'.format(self._channel),
-            get_parser=float,
-            label='Raw_Reading',
-            unit='Ohms') # TODO: This will vary based on sensor type
+                           get_parser=float,
+                           label='Raw_Reading',
+                           unit='Ohms')  # TODO: This will vary based on sensor type
         self.add_parameter('sensor_status', get_cmd='RDGST? {}'.format(self._channel),
-            val_mapping={'OK': 0, 'Invalid Reading': 1, 'Temp Underrange': 16, 'Temp Overrange': 32,
-            'Sensor Units Zero': 64, 'Sensor Units Overrange': 128}, label='Sensor_Status')
+                           val_mapping={'OK': 0, 'Invalid Reading': 1, 'Temp Underrange': 16, 'Temp Overrange': 32,
+                           'Sensor Units Zero': 64, 'Sensor Units Overrange': 128}, label='Sensor_Status')
 
         self.add_parameter('sensor_name', get_cmd='INNAME? {}'.format(self._channel),
-            get_parser=str, set_cmd='INNAME {},\"{{}}\"'.format(self._channel), vals=Strings(15),
-            label='Sensor_Name')
+                           get_parser=str, set_cmd='INNAME {},\"{{}}\"'.format(self._channel), vals=Strings(15),
+                           label='Sensor_Name')
 
 
 class Model_336(VisaInstrument):
