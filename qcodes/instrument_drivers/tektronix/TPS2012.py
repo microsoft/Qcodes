@@ -18,7 +18,8 @@ class TraceNotReady(Exception):
 
 class ScopeArray(ArrayParameter):
     def __init__(self, name, instrument, channel):
-        super().__init__('scope_measurement', shape=(2500,),
+        super().__init__(name=name,
+                         shape=(2500,),
                          label='Voltage',
                          unit='V ',
                          setpoint_names=('Time', ),
