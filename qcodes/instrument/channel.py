@@ -27,7 +27,7 @@ class InstrumentChannel(InstrumentBase):
             Usually populated via ``add_function``
     """
 
-    def __init__(self, parent, name, **kwargs):
+    def __init__(self, parent: Instrument, name: str, **kwargs):
         # Initialize base classes of Instrument. We will overwrite what we want to do
         # in the Instrument initializer
         super().__init__(name=name, **kwargs)
@@ -73,7 +73,10 @@ class MultiChannelInstrumentParameter(MultiParameter):
 
         param_name(str): Name of the multichannel parameter
     """
-    def __init__(self, channels: Union[List, Tuple], param_name, *args, **kwargs):
+    def __init__(self,
+                 channels: Union[List, Tuple],
+                 param_name: str,
+                 *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._channels = channels
         self._param_name = param_name
@@ -140,10 +143,13 @@ class ChannelList(Metadatable):
 
     """
 
-    def __init__(self, parent: Instrument, name, chan_type: type, chan_list=None,
-                 snapshotable=True,
+    def __init__(self, parent: Instrument,
+                 name: str,
+                 chan_type: type,
+                 chan_list: Union[List, Tuple, None]=None,
+                 snapshotable: bool=True,
                  multichan_paramclass: type = MultiChannelInstrumentParameter,
-                 oneindexed=False):
+                 oneindexed: bool=False):
         super().__init__()
 
         self._parent = parent
@@ -226,7 +232,7 @@ class ChannelList(Metadatable):
         return ChannelList(self._parent, self._name, self._chan_type, self._channels + other._channels,
                            oneindexed=self._oneindexed)
 
-    def append(self, obj):
+    def append(self, obj: InstrumentChannel):
         """
         When initially constructing the channel list, a new channel to add to the end of the list
 
@@ -257,7 +263,7 @@ class ChannelList(Metadatable):
             raise TypeError("All items in a channel list must be of the same type.")
         return self._channels.extend(objects)
 
-    def index(self, obj):
+    def index(self, obj: InstrumentChannel):
         """
         Return the index of the given object
 
@@ -266,7 +272,7 @@ class ChannelList(Metadatable):
         """
         return self._channels.index(obj) + self._oneindexed
 
-    def insert(self, index, obj):
+    def insert(self, index: int, obj):
         """
         Insert an object into the channel list at a specific index.
 
@@ -300,7 +306,7 @@ class ChannelList(Metadatable):
         self._channels = channeltuple(*self._channels)
         self._locked = True
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update: bool=False):
         """
         State of the instrument as a JSON-compatible dict.
 
@@ -323,7 +329,7 @@ class ChannelList(Metadatable):
                     }
         return snap
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str):
         """
         Return a multi-channel function or parameter that we can use to get or set all items
         in a channel list simultaneously.
