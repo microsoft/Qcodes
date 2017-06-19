@@ -67,7 +67,7 @@ from qcodes.utils.helpers import (permissive_range, wait_secs, is_sequence,
                                   full_class, named_repr, warn_units)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.command import Command, NoCommandError
-from qcodes.utils.validators import Validator, Numbers, Ints, Enum
+from qcodes.utils.validators import Validator, Numbers, Ints, Enum, Strings
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
 
@@ -1323,7 +1323,7 @@ class InstrumentParameter(ManualParameter):
             vals (Validator):  validator to set
         """
         if vals is None:
-            self._vals = vals.Strings()
+            self._vals = Strings()
         elif isinstance(vals, Validator):
             self._vals = vals
         else:
