@@ -27,7 +27,7 @@ class PXIe_4322(Instrument):
     the nidaqmx package need to be installed in order to use this QCoDeS driver.
     """
 
-    def __init__(self, name, device_name, file_path, step_size=0.01, step_rate=10, **kwargs):
+    def __init__(self, name, device_name, file_path, file_update_period=10, step_size=0.01, step_rate=10, **kwargs):
         super().__init__(name, **kwargs)
 
         self.device_name = device_name
@@ -50,7 +50,8 @@ class PXIe_4322(Instrument):
         except (FileNotFoundError, json.decoder.JSONDecodeError):
             self.__voltage = [0] * self.channels
 
-        threading.Timer(10, self._write_voltages_to_file).start()
+        # t = threading.Timer(file_update_period, self._write_voltages_to_file)
+        # t.start()
 
         print('Please read the following warning message:')
 
@@ -66,6 +67,14 @@ class PXIe_4322(Instrument):
                                get_cmd=partial(self.get_voltage, channel=i),
                                docstring='The DC output voltage of channel {}'.format(i),
                                vals=validator.Numbers(-16, 16))
+
+        # Start writing voltages to disk
+        self._start_updating_file(file_update_period)
+
+    def _start_updating_file(self, update_period):
+        self._write_voltages_to_file()
+        t = threading.Timer(update_period, self._start_updating_file())
+        t.start()
 
     def set_voltage(self, voltage, channel, verbose=True):
         with nidaqmx.Task() as task:
