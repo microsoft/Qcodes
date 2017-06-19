@@ -40,7 +40,8 @@ class TestDataSet(unittest.TestCase):
     def test_constructor(self):
         dataSet = DataSet(NAME)
         self.assertEqual(dataSet.name, "name")
-        self.assertEqual(dataSet.metadata, {})
+        # always includes the paramter dict metadata
+        self.assertEqual(dataSet.metadata, {'parameters': {}})
         self.assertEqual(dataSet.id, HASH)
         self.assertEqual(dataSet.parameters, {})
         self.assertEqual(dataSet.completed, False)
