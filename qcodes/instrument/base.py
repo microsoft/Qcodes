@@ -492,7 +492,7 @@ class Instrument(InstrumentBase):
 
         print(self.name + ':')
         print('{0:<{1}}'.format('\tparameter ', par_field_len) + 'value')
-        print('-'*80)
+        print('-'*max_chars)
         for par in sorted(snapshot['parameters']):
             name = snapshot['parameters'][par]['name']
             msg = '{0:<{1}}:'.format(name, par_field_len)
