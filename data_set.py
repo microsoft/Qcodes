@@ -8,9 +8,10 @@
 
 import hashlib
 import numpy as np
+import time
 from functools import partial
 from itertools import count
-from typing import List, Any, Dict, Union
+from typing import List, Any, Dict, Union,  Callable, Optional
 
 
 from qcodes.utils.metadata import Metadatable
@@ -89,6 +90,8 @@ def param_spec(parameter: _BaseParameter) -> ParamSpec:
 
 # SPECS is a list of ParamSpec
 SPECS = List[ParamSpec]
+# Call signature of the function one can pass when subscribing
+CALLBACK = Callable[[DataSet, int, Optional[Any],None]
 
 
 class CompletedError(RuntimeError):
@@ -100,6 +103,8 @@ class DataSet(Metadatable):
                  metadata=None) -> None:
         self.name: str = name
         self.id: str = hash_from_parts(name)
+
+        self.subscribers = []
 
         self.completed: bool = False
 
@@ -162,8 +167,15 @@ class DataSet(Metadatable):
         self.metadata[tag] = metadata
 
     def mark_complete(self) -> None:
-        "Mark dataset as complete and thus read only"
+        "Mark dataset as complete and thus read only and notify the subscribers"
         self.completed = True
+
+        # TODO: this can be made more efficient
+        if len(self.subscribers) > 0:
+            for sub in self.subscribers:
+                # TODO: finish this :P 
+                # sub.done_callback()
+                pass
 
     def add_result(self, name: str, value: Any) -> int:
         """
@@ -372,6 +384,18 @@ class DataSet(Metadatable):
     def get_metadata(self, tag):
         return self.metadata[tag]
 
+    def subscribe(self, callback: CALLBACK, min_wait:int = 0, min_count: int=1, state=Optional[Any]=None) -> str:
+        """
+        """
+        sub_id = hash_from_parts(str(time.time()))
+        # TODO: finish this :P, we want to store the subscribers not the id
+        self.subscribers.append(sub_id)
+        retun sub_id
+
+    def unsubscribe(self, uuid: str):
+        # TODO: finish this :P, we want to stop the subscribers AND remove id
+        self.subscribers.remove(uuid)
+
     def snapshot_base(self, update=False):
         """
         override this with the primary information for a subclass
@@ -389,3 +413,41 @@ class DataSet(Metadatable):
         for _, param in self.parameters.items():
             out.append(param.__repr__())
         return "\n".join(out)
+
+
+class Subscriber():
+
+    def __init__(self, data: DataSet, sub_id:str, callback: CALLBACK,
+                state=Optional[Any]=None, min_wait:int=0,
+                min_count: int=1)->None:
+
+        self.min_wait = min_wait
+        self.min_count = min_count
+        self.sub_id = sub_id
+        self._send_queue: int = 0
+        self.data = data
+        self.callback = callback
+        self._stop = False
+
+    def _loop(self)->None:
+        while True:
+            if self._stop:
+                self._clean_up()
+                break
+            self._send_queue += len(self.data)
+            if self._send_queue > min_count:
+                self.callback(self.data, len(self.data), state)
+                self._send_queue = 0
+            # if nothing happens we let the word go foward
+            time.sleep(self.min_wait)
+
+    def done_callback(self)->None:
+        self.callback(self.data, len(self.data), state)
+    
+    def schedule_stop(self):
+        if not self._stop:
+            self._stop = True
+
+    def _clean_up(self)->None:
+        # TODO: cleanup
+        pass
