@@ -81,13 +81,13 @@ class ScopeArray(ArrayParameter):
 
         Args:
             curve (str): the return value of 'CURVe?' when
-            DATa:ENCdg is set to RPBinary.
-            Note: The header and final newline character
-            must be removed.
+              DATa:ENCdg is set to RPBinary.
+              Note: The header and final newline character
+              must be removed.
 
         Returns:
             nparray: the curve in units where the digitisation range
-            is mapped to (-32768, 32767).
+              is mapped to (-32768, 32767).
         """
         # TODO: Add support for data width = 1 mode?
         output = np.zeros(int(len(curve)/2))  # data width 2
