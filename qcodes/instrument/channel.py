@@ -189,7 +189,7 @@ class ChannelList(Metadatable):
         if isinstance(i, slice):
             if self._oneindexed:
                 if i.start < 1 or i.stop < 1:
-                    raise IndexError("1 indexed channel lists only support positive indexes")
+                    raise IndexError("1 indexed channel lists only support positive indices")
                 i = slice(i.start-1, i.stop-1, i.step)
             return ChannelList(self._parent, self._name, self._chan_type,
                                self._channels[i],
@@ -197,7 +197,7 @@ class ChannelList(Metadatable):
                                oneindexed=self._oneindexed)
         elif self._oneindexed:
             if i < 1:
-                raise IndexError("1 indexed channel lists only support positive indexes")
+                raise IndexError("1 indexed channel lists only support positive indices")
             i += -1
         return self._channels[i]
 
@@ -270,7 +270,7 @@ class ChannelList(Metadatable):
         Args:
             obj(chan_type): The object to find in the channel list.
         """
-        return self._channels.index(obj) + self._oneindexed
+        return self._channels.index(obj) + int(self._oneindexed)
 
     def insert(self, index: int, obj):
         """
@@ -289,7 +289,7 @@ class ChannelList(Metadatable):
                                                                  self._chan_type.__name__))
         if self._oneindexed:
             if index < 1:
-                raise IndexError("1 based channel lists only support positive indexes")
+                raise IndexError("1 based channel lists only support positive indices")
             index += 1
 
         return self._channels.insert(index, obj)
