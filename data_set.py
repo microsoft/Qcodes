@@ -6,9 +6,12 @@
 #
 # Distributed under terms of the MIT license.
 
+import atexit
 import hashlib
+import logging
 import numpy as np
 import time
+from threading import Thread
 from functools import partial
 from itertools import count
 from typing import List, Any, Dict, Union,  Callable, Optional
@@ -31,8 +34,11 @@ def hash_from_parts(*parts: str) -> str:
     return hashlib.sha1(combined.encode("utf-8")).hexdigest()
 
 
-# TODO: does it make sense to have the type here.
+# TODO: does it make sense to have the type here ?
 # the question is mostly how to specifiy (dtypes from numpy wont'work)
+# and as such there are just two types:
+# scalar and not scalar
+# TODO: units, unit, and all of that is not in the spec
 class ParamSpec(Metadatable):
     def __init__(self, name: str, metadata=None) -> None:
         self.name = name
@@ -65,7 +71,6 @@ class ParamSpec(Metadatable):
     def add(self, value):
         """ add value to paramSpec
 
-
         Args:
             value:  any data (scalar, or really anything)
         """
@@ -90,8 +95,6 @@ def param_spec(parameter: _BaseParameter) -> ParamSpec:
 
 # SPECS is a list of ParamSpec
 SPECS = List[ParamSpec]
-# Call signature of the function one can pass when subscribing
-CALLBACK = Callable[[DataSet, int, Optional[Any],None]
 
 
 class CompletedError(RuntimeError):
@@ -104,11 +107,13 @@ class DataSet(Metadatable):
         self.name: str = name
         self.id: str = hash_from_parts(name)
 
-        self.subscribers = []
+        self.subscribers: Dict[str, Subscriber] = {}
 
         self.completed: bool = False
 
         self.parameters: Dict[str, ParamSpec] = {}
+        # make sure we clean up on exit
+        atexit.register(self.unsubscribe_all)
 
         # counter to keep track of the lenght of the dataSet
         self.c = count(0)
@@ -154,7 +159,7 @@ class DataSet(Metadatable):
         for spec in specs:
             self.add_parameter(spec)
 
-    def add_metadata(self, tag: str, metadata: Dict[str, Any]):
+    def add_metadata(self, tag: str, metadata: Any):
         """
         Adds metadata to the DataSet. The metadata is stored under the
         provided tag.
@@ -167,15 +172,11 @@ class DataSet(Metadatable):
         self.metadata[tag] = metadata
 
     def mark_complete(self) -> None:
-        "Mark dataset as complete and thus read only and notify the subscribers"
+        """Mark dataset as complete and thus read only and notify the
+        subscribers"""
         self.completed = True
-
-        # TODO: this can be made more efficient
-        if len(self.subscribers) > 0:
-            for sub in self.subscribers:
-                # TODO: finish this :P 
-                # sub.done_callback()
-                pass
+        for sub in self.subscribers.values():
+            sub.done_callback()
 
     def add_result(self, name: str, value: Any) -> int:
         """
@@ -335,7 +336,7 @@ class DataSet(Metadatable):
     def get_data(self,
                  *params: Union[str, ParamSpec, _BaseParameter],
                  start: int=0,
-                 end: int=-1):
+                 end: int=-1)-> List[List[Any]]:
         """ Returns the values stored in the DataSet for the specified parameters.
         The values are returned as a list of parallel NumPy arrays, one array
         per parameter. The data type of each array is based on the data type
@@ -378,28 +379,35 @@ class DataSet(Metadatable):
                 data.append(self.get_parameter(name).data[start:end])
         return data
 
-    def get_parameters(self):
+    def get_parameters(self)->List[ParamSpec]:
         return list(self.parameters.values())
 
     def get_metadata(self, tag):
         return self.metadata[tag]
 
-    def subscribe(self, callback: CALLBACK, min_wait:int = 0, min_count: int=1, state=Optional[Any]=None) -> str:
-        """
-        """
+    #  NEED to pass Any for some reason
+    def subscribe(self, callback: Callable[[Any, int, Optional[Any]], None],
+                  min_wait: int = 0, min_count: int=1,
+                  state: Optional[Any]=None) -> str:
         sub_id = hash_from_parts(str(time.time()))
-        # TODO: finish this :P, we want to store the subscribers not the id
-        self.subscribers.append(sub_id)
-        retun sub_id
+        sub = Subscriber(self, sub_id, callback, state, min_wait, min_count)
+        sub.start()
+        self.subscribers[sub_id] = sub
+        return sub_id
 
-    def unsubscribe(self, uuid: str):
-        # TODO: finish this :P, we want to stop the subscribers AND remove id
-        self.subscribers.remove(uuid)
+    def unsubscribe(self, uuid: str)-> None:
+        sub = self.subscribers[uuid]
+        sub.schedule_stop()
+        sub.join()
+        del self.subscribers[uuid]
+
+    def unsubscribe_all(self):
+        for sub in self.subscribers.values():
+            sub.schedule_stop()
+            sub.join()
+        self.subscribers.clear()
 
     def snapshot_base(self, update=False):
-        """
-        override this with the primary information for a subclass
-        """
         return self.metadata
 
     def __len__(self):
@@ -415,39 +423,54 @@ class DataSet(Metadatable):
         return "\n".join(out)
 
 
-class Subscriber():
+# TODO: this is an example MINIMAL subscriber
+# the specs names dataset obejct, so only threading 
+# can be used, uneless one wants to end up again in 
+# the pickle-hell-situation
+class Subscriber(Thread):
 
-    def __init__(self, data: DataSet, sub_id:str, callback: CALLBACK,
-                state=Optional[Any]=None, min_wait:int=0,
-                min_count: int=1)->None:
-
+    def __init__(self, data: DataSet, sub_id: str,
+                 callback: Callable[[DataSet, int, Optional[Any]], None],
+                 state: Optional[Any]=None, min_wait: int=100,
+                 min_count: int=1)->None:
         self.min_wait = min_wait
         self.min_count = min_count
         self.sub_id = sub_id
         self._send_queue: int = 0
         self.data = data
+        self.state = state
         self.callback = callback
-        self._stop = False
+        self._stop_signal: bool = False
+        super().__init__()
+        self.log = logging.getLogger(f"Subscriber {self.sub_id}")
+
+    def run(self)->None:
+        self.log.debug("Starting subscriber")
+        self._loop()
 
     def _loop(self)->None:
         while True:
-            if self._stop:
+            if self._stop_signal:
                 self._clean_up()
                 break
             self._send_queue += len(self.data)
-            if self._send_queue > min_count:
-                self.callback(self.data, len(self.data), state)
+            if self._send_queue > self.min_count:
+                self.callback(self.data, len(self.data), self.state)
                 self._send_queue = 0
             # if nothing happens we let the word go foward
-            time.sleep(self.min_wait)
+            time.sleep(self.min_wait/1000)
+            if self.data.completed:
+                break
 
     def done_callback(self)->None:
-        self.callback(self.data, len(self.data), state)
-    
+        self.log.debug("Done callback")
+        self.callback(self.data, len(self.data), self.state)
+
     def schedule_stop(self):
-        if not self._stop:
-            self._stop = True
+        self.log.debug("Scheduling stop")
+        if not self._stop_signal:
+            self._stop_signal = True
 
     def _clean_up(self)->None:
-        # TODO: cleanup
-        pass
+        # TODO: just a temp implemation
+        self.log.debug("Stopped subscriber")
