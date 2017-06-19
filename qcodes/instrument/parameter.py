@@ -1288,3 +1288,43 @@ class CombinedParameter(Metadatable):
             meta_data[param.full_name] = param.snapshot()
 
         return meta_data
+
+
+class InstrumentParameter(ManualParameter):
+    """
+    Args:
+        name (string): the name of the instrument that one wants to add.
+
+        instrument (Optional[Instrument]): the "parent" instrument this
+            parameter is attached to, if any.
+
+        initial_value (Optional[string]): starting value, the
+            only invalid value allowed, and None is only allowed as an initial
+            value, it cannot be set later
+
+        **kwargs: Passed to InstrumentParameter parent class
+    """
+    def get_instr(self):
+        """
+        Returns the instance of the instrument with the name equal to the
+        value of this parameter.
+        """
+        instrument_name = self.get()
+        # note that _instrument refers to the instrument this parameter belongs
+        # to, while the instrument_name is the instrument that is the value
+        # of this parameter.
+        return self._instrument.find_instrument(instrument_name)
+
+    def set_validator(self, vals):
+        """
+        Set a validator `vals` for this parameter.
+
+        Args:
+            vals (Validator):  validator to set
+        """
+        if vals is None:
+            self._vals = vals.Strings()
+        elif isinstance(vals, Validator):
+            self._vals = vals
+        else:
+            raise TypeError('vals must be a Validator')
