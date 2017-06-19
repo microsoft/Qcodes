@@ -2,6 +2,7 @@ from qcodes.instrument.base import Instrument
 from qcodes import validators as validator
 
 from functools import partial
+import logging
 import warnings
 import json
 import math
@@ -16,6 +17,7 @@ except ImportError:
     raise ImportError('to use the National Instrument PXIe-4322 driver, please install the nidaqmx package'
                       '(https://github.com/ni/nidaqmx-python)')
 
+logger = logging.getLogger(__name__)
 
 class PXIe_4322(Instrument):
     """
@@ -76,7 +78,7 @@ class PXIe_4322(Instrument):
         t = threading.Timer(update_period, self._start_updating_file())
         t.start()
 
-    def set_voltage(self, voltage, channel, verbose=True):
+    def set_voltage(self, voltage, channel, verbose=False):
         with nidaqmx.Task() as task:
             task.ao_channels.add_ao_voltage_chan('{}/ao{}'.format(self.device_name, channel),
                                                  min_val=-16.0, max_val=16.0)
@@ -92,12 +94,16 @@ class PXIe_4322(Instrument):
                     task.write(voltage_step)
                     if verbose:
                         print('Current gate {} value: {:.2f}'.format(channel, voltage_step), end='\r', flush=True)
+                    else:
+                        logger.info('Current gate {} value: {:.2f}'.format(channel, voltage_step))
                     t_stop = timer()
                     sleep(max(self.step_delay-(t_stop-t_start), 0.0))
 
             task.write(voltage)
             if verbose:
                 print('Current gate {} value: {:.2f}'.format(channel, voltage), end='\r', flush=True)
+            else:
+                logger.info('Current gate {} value: {:.2f}'.format(channel, voltage))
             self.__voltage[channel] = voltage
 
     def get_voltage(self, channel):
@@ -143,6 +149,7 @@ class PXIe_4322(Instrument):
             voltage_str += '{:.2f}, '.format(item)
         voltage_str = voltage_str[:-2]
         print('Current gate values: {}'.format(voltage_str), end='\r', flush=True)
+        logger.info('Current gate values: {}'.format(voltage_str))
 
     def ramp_all_to_zero(self):
         gate_values = [0.0]*self.channels
