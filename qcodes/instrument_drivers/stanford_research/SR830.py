@@ -265,11 +265,70 @@ class SR830(VisaInstrument):
                            get_parser=float,
                            unit='deg')
 
+        # Data buffer settings
+        self.add_parameter('buffer_SR',
+                           label='Buffer sample rate',
+                           get_cmd='SRAT ?',
+                           set_cmd='SRAT {}',
+                           unit='Hz',
+                           val_mapping={62.5e-3: 0,
+                                        0.125: 1,
+                                        0.250: 2,
+                                        0.5: 3,
+                                        1: 4, 2: 5,
+                                        4: 6, 8: 7,
+                                        16: 8, 32: 9,
+                                        64: 10, 128: 11,
+                                        256: 12, 512: 13,
+                                        'Trigger': 14},
+                           get_parser=int
+                           )
+
+        self.add_parameter('buffer_acq_mode',
+                           label='Buffer acquistion mode',
+                           get_cmd='SEND ?',
+                           set_cmd='SEND {}',
+                           val_mapping={'single shot': 0,
+                                        'loop': 1},
+                           get_parser=int)
+
+        self.add_parameter('buffer_trig_mode',
+                           label='Buffer trigger start mode',
+                           get_cmd='TSTR ?',
+                           set_cmd='TSTR {}',
+                           val_mapping={'ON': 1, 'OFF': 0},
+                           get_parser=int)
+
         # Interface
         self.add_function('reset', call_cmd='*RST')
 
         self.add_function('disable_front_panel', call_cmd='OVRM 0')
         self.add_function('enable_front_panel', call_cmd='OVRM 1')
+
+        self.add_function('send_trigger', call_cmd='TRIG',
+                          docstring=("Send a software trigger. "
+                                     "This command has the same effect as a "
+                                     "trigger at the rear panel trigger"
+                                     " input."))
+
+        self.add_function('buffer_start', call_cmd='STRT',
+                          docstring=("The buffer_start command starts or "
+                                     "resumes data storage. buffer_start"
+                                     " is ignored if storage is already in"
+                                     " progress."))
+
+        self.add_function('buffer_pause', call_cmd='PAUS',
+                          docstring=("The buffer_pause command pauses data "
+                                     "storage. If storage is already paused "
+                                     "or reset then this command is ignored."))
+
+        self.add_function('buffer_reset', call_cmd='REST',
+                          docstring=("The buffer_reset command resets the data"
+                                     " buffers. The buffer_reset command can "
+                                     "be sent at any time - any storage in "
+                                     "progress, paused or not, will be reset."
+                                     " This command will erase the data "
+                                     "buffer."))
 
         # Initialize the proper units of the outputs and sensitivities
         self.input_config()
