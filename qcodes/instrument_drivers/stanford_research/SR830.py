@@ -1,5 +1,6 @@
 from qcodes import VisaInstrument
-from qcodes.utils.validators import Numbers, Ints, Enum, MultiType
+from qcodes.utils.validators import Numbers, Ints, Enum
+
 
 class SR830(VisaInstrument):
     """
@@ -60,7 +61,8 @@ class SR830(VisaInstrument):
                            val_mapping={
                                'external': 0,
                                'internal': 1,
-                           })
+                           },
+                           vals=Enum('external', 'internal'))
 
         self.add_parameter('frequency',
                            label='Frequency',
@@ -239,7 +241,8 @@ class SR830(VisaInstrument):
         self.add_function('auto_gain', call_cmd='AGAN')
         self.add_function('auto_reserve', call_cmd='ARSV')
         self.add_function('auto_phase', call_cmd='APHS')
-        self.add_function('auto_offset', call_cmd='AOFF {0}', args=[Enum(1, 2, 3)])
+        self.add_function('auto_offset', call_cmd='AOFF {0}',
+                          args=[Enum(1, 2, 3)])
 
         # Data transfer
         self.add_parameter('X',
