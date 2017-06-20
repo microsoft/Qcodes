@@ -3,6 +3,10 @@ import warnings
 from qcodes.instrument.base import Instrument
 from numpy import ndarray
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 try:
     import keysightSD1
 except ImportError:
@@ -29,6 +33,7 @@ def result_parser(value, name='result', verbose=False):
         or not a number
     """
     if isinstance(value, ndarray) or isinstance(value, str) or isinstance(value, bool) or (int(value) >= 0):
+        logger.debug('{}: {}'.format(name, value))
         if verbose:
             print('{}: {}'.format(name, value))
         return value
