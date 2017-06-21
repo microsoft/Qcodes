@@ -63,6 +63,15 @@ from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
 
 log = logging.getLogger(__name__)
 
+def active_loop():
+    return ActiveLoop.active_loop
+
+def active_data_set():
+    loop = active_loop()
+    if loop is not None and loop.data_set is not None:
+        return loop.data_set
+    else:
+        return None
 
 class Loop(Metadatable):
     """
@@ -331,6 +340,10 @@ class ActiveLoop(Metadatable):
     The *ActiveLoop* determines what *DataArray*\s it will need to hold the data
     it collects, and it creates a *DataSet* holding these *DataArray*\s
     """
+
+    # Currently active loop, is set when calling loop.run(set_active=True)
+    # is reset to None when active measurement is finished
+    active_loop = None
 
     def __init__(self, sweep_values, delay, *actions, then_actions=(),
                  station=None, progress_interval=None, bg_task=None,
@@ -653,7 +666,7 @@ class ActiveLoop(Metadatable):
         return self.run(quiet=True, location=False, **kwargs)
 
     def run(self, use_threads=False, quiet=False, station=None,
-            progress_interval=False, *args, **kwargs):
+            progress_interval=False, set_active=True, *args, **kwargs):
         """
         Execute this loop.
 
@@ -713,20 +726,26 @@ class ActiveLoop(Metadatable):
 
         data_set.save_metadata()
 
+        if set_active:
+            ActiveLoop.active_loop = self
+
         try:
+            if not quiet:
+            	print(datetime.now().strftime('Started at %Y-%m-%d %H:%M:%S'))
             self._run_wrapper()
             ds = self.data_set
         finally:
-
             if not quiet:
                 print(repr(self.data_set))
-                print(datetime.now().strftime('started at %Y-%m-%d %H:%M:%S'))
+                print(datetime.now().strftime('Finished at %Y-%m-%d %H:%M:%S'))
 
             # After normal loop execution we clear the data_set so we can run
             # again. But also if something went wrong during the loop execution
             # we want to clear the data_set attribute so we don't try to reuse
             # this one later.
             self.data_set = None
+            if set_active:
+                ActiveLoop.active_loop = None
 
         return ds
 
