@@ -233,7 +233,7 @@ class MatPlot(BasePlot):
                 if plot_object:
                     plot_object.remove()
 
-                ax = self[config.get('subplot', 0)]
+                ax = self[config.get('subplot', 1) - 1]
                 plot_object = self._draw_pcolormesh(ax, **config)
                 trace['plot_object'] = plot_object
 
