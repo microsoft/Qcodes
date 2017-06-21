@@ -11,7 +11,7 @@ Add experiment
 import logging
 import sqlite3
 import time
-from typing import Any, Optional, List
+from typing import Any, Optional, List, Tuple
 
 
 db = "/Users/unga/Desktop/experiment.db"
@@ -41,6 +41,16 @@ def connect(name: str, debug: bool=True) -> sqlite3.Connection:
     return conn
 
 
+def transaction(conn: sqlite3.Connection,
+                sql: str, *args: Any)->sqlite3.Cursor:
+    c = conn.cursor()
+    if len(args) > 0:
+        c.execute(sql, args)
+    else:
+        c.execute(sql)
+    return c
+
+
 def atomicTransaction(conn: sqlite3.Connection,
                       sql: str, *args: Any)->sqlite3.Cursor:
     c = conn.cursor()
@@ -48,10 +58,12 @@ def atomicTransaction(conn: sqlite3.Connection,
         if len(args) > 0:
             c.execute(sql, args)
         else:
-            c.execute(sql)
+          c.execute(sql)
     except Exception as e:
         logging.exception("Could not  execute transaction, rolling back")
         conn.rollback()
+        raise e
+
     conn.commit()
     return c
 
@@ -59,8 +71,7 @@ def atomicTransaction(conn: sqlite3.Connection,
 def insert_column(conn: sqlite3.Connection, table: str, name: str,
                   type: str)->None:
     atomicTransaction(conn,
-                      f"ALTER TABLE {table} ADD COLUMN {name} {type}",
-                      None)
+                      f"ALTER TABLE {table} ADD COLUMN {name} {type}")
 
 
 def new_experiment(conn: sqlite3.Connection,
@@ -137,7 +148,7 @@ def get_run_counter(conn: sqlite3.Connection, exp_id: int) -> int:
 
 
 def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
-               parameters, metadata):
+               parameters, metadata)-> Tuple[int, str]:
     # get run counter and formatter from experiments
     run_counter, format_string = _select_many_where(conn,
                                                     "experiments",
@@ -154,20 +165,32 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
     VALUES
         (?,?,?,?,?)
     """
-    curr = atomicTransaction(conn, query,
-                             name,
-                             exp_id,
-                             formatted_name,
-                             run_counter,
-                             time.time()
-                             )
-    query = """
-    UPDATE experiments
-    SET run_counter = ?
-    WHERE exp_id = ?
-    """
-    atomicTransaction(conn, query, run_counter, exp_id)
-    return curr.lastrowid
+    try:
+        curr = transaction(conn, query,
+                           name,
+                           exp_id,
+                           formatted_name,
+                           run_counter,
+                           time.time()
+                           )
+        query = """
+        UPDATE experiments
+        SET run_counter = ?
+        WHERE exp_id = ?
+        """
+        transaction(conn, query, run_counter, exp_id)
+        # and now create the table
+        query = f"""
+        CREATE TABLE "{formatted_name}" (
+            id INTEGER PRIMARY KEY
+        );
+        """
+        transaction(conn, query)
+    except Exception as e:
+        conn.rollback
+        raise e
+    conn.commit()
+    return curr.lastrowid, formatted_name
 
 
 def _example():

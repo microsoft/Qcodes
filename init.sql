@@ -49,16 +49,4 @@ CREATE TABLE runs (
     -- metadata fields are added dynamically
     FOREIGN KEY(exp_id) 
     REFERENCES 
-        experiments(exp_id)
-);
-
--- Template for run
--- CREATE TABLE majoarana (
---     measurement_id INTEGER,
---     measurement_timestamp INTEGER,
---     x INTEGER,
---     y INTEGER,
---     FOREIGN KEY(measurement_id, measurement_timestamp) 
---     REFERENCES 
---         dataSets(measurement_id, measurement_timestamp)
--- );
+        experiments(exp_id));
