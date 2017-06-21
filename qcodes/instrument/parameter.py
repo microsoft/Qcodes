@@ -1057,7 +1057,8 @@ class GetLatest(DelegateAttributes, DeferredOperations):
 
     def get(self):
         """Return latest value if time since get was less than 
-        `self.max_val_age`, otherwise perform `get()` and return result""""
+        `self.max_val_age`, otherwise perform `get()` and return result
+        """
         state = self.parameter._latest()
         if self.max_val_age is None:
             # Return last value since max_val_age is not specified
