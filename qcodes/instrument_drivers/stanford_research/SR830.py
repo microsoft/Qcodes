@@ -68,7 +68,6 @@ class ChannelBuffer(ArrayParameter):
             else:
                 self.unit = 'V'
 
-
         if self.channel == 1:
             self._instrument._buffer1_ready = True
         else:
