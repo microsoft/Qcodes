@@ -66,13 +66,21 @@ class ChannelBuffer(ArrayParameter):
             else:
                 self.unit = 'V'
 
-        self._instrument._buffer_ready = True
+        if self.channel == 1:
+            self._instrument._buffer1_ready = True
+        else:
+            self._instrument._buffer2_ready = True
 
     def get(self):
         """
         Get command. Returns numpy array
         """
-        if not self._instrument._buffer_ready:
+        if self.channel == 1:
+            ready = self._instrument._buffer1_ready
+        else:
+            ready = self._instrument._buffer2_ready
+
+        if not ready:
             raise RuntimeError('Buffer not ready. Please run '
                                'prepare_buffer_readout')
         N = self._instrument.buffer_npts()
@@ -446,13 +454,15 @@ class SR830(VisaInstrument):
         self.input_config()
 
         # start keeping track of buffer setpoints
-        self._buffer_ready = False
+        self._buffer1_ready = False
+        self._buffer2_ready = False
 
         self.connect_message()
 
     def _set_buffer_SR(self, SR):
         self.write('SRAT {}'.format(SR))
-        self._buffer_ready = False
+        self._buffer1_ready = False
+        self._buffer2_ready = False
 
     def _get_ch_ratio(self, channel):
         val_mapping = {1: {0: 'none',
