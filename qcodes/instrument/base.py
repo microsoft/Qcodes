@@ -34,6 +34,10 @@ class Instrument(Metadatable, DelegateAttributes):
 
         functions (Dict[Function]): All the functions supported by this
             instrument. Usually populated via ``add_function``
+
+        submodules (Dict[Metadatable]): All the submodules of this instrument
+            such as channel lists or logical groupings of parameters.
+            Usually populated via ``add_submodule``
     """
 
     shared_kwargs = ()
@@ -48,6 +52,7 @@ class Instrument(Metadatable, DelegateAttributes):
         super().__init__(**kwargs)
         self.parameters = {}
         self.functions = {}
+        self.submodules = {}
 
         self.name = str(name)
 
@@ -306,6 +311,36 @@ class Instrument(Metadatable, DelegateAttributes):
         func = Function(name=name, instrument=self, **kwargs)
         self.functions[name] = func
 
+    def add_submodule(self, name, submodule):
+        """
+        Bind one submodule to this instrument.
+
+        Instrument subclasses can call this repeatedly in their ``__init__``
+        method for every submodule of the instrument.
+
+        Submodules can effectively be considered as instruments within the main
+        instrument, and should at minimum be snapshottable. For example, they can
+        be used to either store logical groupings of parameters, which may or may
+        not be repeated, or channel lists.
+
+        Args:
+            name (str): how the submodule will be stored within ``instrument.submodules``
+            and also how it can be addressed.
+
+            submodule (Metadatable): The submodule to be stored.
+
+        Raises:
+            KeyError: if this instrument already contains a submodule with this
+                name.
+            TypeError: if the submodule that we are trying to add is not an instance
+                of an Metadatable object.
+        """
+        if name in self.submodules:
+            raise KeyError('Duplicate submodule name {}'.format(name))
+        if not isinstance(submodule, Metadatable):
+            raise TypeError('Submodules must be metadatable.')
+        self.submodules[name] = submodule
+
     def snapshot_base(self, update=False):
         """
         State of the instrument as a JSON-compatible dict.
@@ -321,6 +356,8 @@ class Instrument(Metadatable, DelegateAttributes):
                                    for name, param in self.parameters.items()),
                 'functions': dict((name, func.snapshot(update=update))
                                   for name, func in self.functions.items()),
+                'submodules': dict((name, subm.snapshot(update=update))
+                                  for name, subm in self.submodules.items()),
                 '__class__': full_class(self),
                 }
         for attr in set(self._meta_attrs):
@@ -459,7 +496,7 @@ class Instrument(Metadatable, DelegateAttributes):
     # etc...                                                                #
     #
 
-    delegate_attr_dicts = ['parameters', 'functions']
+    delegate_attr_dicts = ['parameters', 'functions', 'submodules']
 
     def __getitem__(self, key):
         """Delegate instrument['name'] to parameter or function 'name'."""
