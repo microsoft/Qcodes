@@ -109,6 +109,26 @@ class MatPlot(BasePlot):
             # in case the user has updated title, don't change it anymore
             self.title.set_text(self.get_default_title())
 
+    @staticmethod
+    def _calc_corners(array):
+        """
+        Extrapolate coordinates of between data points from a list of data points.
+        Needed because pcolor and friends take the list of edges as x and y rather 
+        than the center positions. This should handle general non linear axis.
+        """
+        myarray = array.copy()
+        # extrapolate points before and after array
+        # so we can find steps in the end/start
+        myarray_plusone = 2 * myarray[-1] - myarray[-2]
+        myarray_minusone = 2 * myarray[0] - myarray[1]
+        myarray = np.append(myarray, myarray_plusone)
+        myarray = np.insert(myarray, 0, myarray_minusone)
+        # find the difference between steps
+        stepsizes = np.diff(myarray)
+        # calculate edges
+        myarray_corners = myarray[0:-1] + stepsizes / 2
+        return myarray_corners
+
     def _get_axes(self, config):
         return self.subplots[config.get('subplot', 1) - 1]
 
@@ -218,6 +238,24 @@ class MatPlot(BasePlot):
                          yunit=None,
                          zunit=None,
                          **kwargs):
+
+        # Polormesh and friends expect coordinates of corners not the center of datapoints
+        # here we expands the x and y coordinates to match what pcolormesh expects.
+        # first we verify that the shapes are as expected
+
+        # x is the inner most index so it is 2 dimensional.
+        # however y is outer most so it is 1 dimensional
+        if x:
+            assert x.shape == z.shape
+            new_xshape = np.array(x.shape) + 1
+            new_x = np.zeros(new_xshape)
+            for i in range(len(x[:, 0])):
+                new_x[i] = self._calc_corners(x[i])
+            new_x[i+1] = new_x[i]
+            x = new_x
+        if y:
+            assert y.shape[0] == z.shape[0] and len(y.shape)==1
+            y = self._calc_corners(y)
         # NOTE(alexj)stripping out subplot because which subplot we're in is already
         # described by ax, and it's not a kwarg to matplotlib's ax.plot. But I
         # didn't want to strip it out of kwargs earlier because it should stay
