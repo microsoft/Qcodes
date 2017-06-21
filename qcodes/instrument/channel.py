@@ -1,5 +1,5 @@
 """ Base class for the channel of an instrument """
-from typing import List, Tuple, Union, Optional
+from typing import List, Tuple, Union
 from collections import namedtuple
 
 from .base import InstrumentBase, Instrument
@@ -151,7 +151,7 @@ class ChannelList(Metadatable):
     def __init__(self, parent: Instrument,
                  name: str,
                  chan_type: type,
-                 chan_list: Optional[List, Tuple]=None,
+                 chan_list: Union[List, Tuple, None]=None,
                  snapshotable: bool=True,
                  multichan_paramclass: type = MultiChannelInstrumentParameter):
         super().__init__()
