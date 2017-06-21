@@ -15,7 +15,7 @@ class ChannelBuffer(ArrayParameter):
         The instrument natively supports this in its TRCL call.
     """
 
-    def __init__(self, name: str, instrument: SR830, channel: int):
+    def __init__(self, name: str, instrument: 'SR830', channel: int):
         """
         Args:
             name (str): The name of the parameter
@@ -67,6 +67,7 @@ class ChannelBuffer(ArrayParameter):
                 self.unit = 'deg'
             else:
                 self.unit = 'V'
+
 
         if self.channel == 1:
             self._instrument._buffer1_ready = True
