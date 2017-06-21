@@ -105,10 +105,9 @@ class MultiChannelInstrumentParameter(MultiParameter):
 
     @property
     def full_names(self):
-        """Overwrite full_names because the instument name is already included
-        in the name. This happens because the instument name is included in
-        the channel name merged into the
-        parameter name above.
+        """Overwrite full_names because the instrument name is already included
+        in the name. This happens because the instrument name is included in
+        the channel name merged into the parameter name above.
         """
 
         return self.names
@@ -154,8 +153,7 @@ class ChannelList(Metadatable):
                  chan_type: type,
                  chan_list: Union[List, Tuple, None]=None,
                  snapshotable: bool=True,
-                 multichan_paramclass: type = MultiChannelInstrumentParameter,
-                 oneindexed: bool=False):
+                 multichan_paramclass: type = MultiChannelInstrumentParameter):
         super().__init__()
 
         self._parent = parent
@@ -173,7 +171,6 @@ class ChannelList(Metadatable):
         self._chan_type = chan_type
         self._snapshotable = snapshotable
         self._paramclass = multichan_paramclass
-        self._oneindexed = oneindexed
 
         # If a list of channels is not provided, define a list to store
         # channels. This will eventually become a locked tuple.
@@ -197,20 +194,9 @@ class ChannelList(Metadatable):
               to get
         """
         if isinstance(i, slice):
-            if self._oneindexed:
-                if i.start < 1 or i.stop < 1:
-                    raise IndexError("1 indexed channel lists only support "
-                                     "positive indices")
-                i = slice(i.start-1, i.stop-1, i.step)
             return ChannelList(self._parent, self._name, self._chan_type,
                                self._channels[i],
-                               multichan_paramclass=self._paramclass,
-                               oneindexed=self._oneindexed)
-        elif self._oneindexed:
-            if i < 1:
-                raise IndexError("1 indexed channel lists only support "
-                                 "positive indices")
-            i += -1
+                               multichan_paramclass=self._paramclass)
         return self._channels[i]
 
     def __iter__(self):
@@ -250,8 +236,7 @@ class ChannelList(Metadatable):
                              "together.")
 
         return ChannelList(self._parent, self._name, self._chan_type,
-                           self._channels + other._channels,
-                           oneindexed=self._oneindexed)
+                           self._channels + other._channels)
 
     def append(self, obj: InstrumentChannel):
         """
@@ -295,7 +280,7 @@ class ChannelList(Metadatable):
         Args:
             obj(chan_type): The object to find in the channel list.
         """
-        return self._channels.index(obj) + int(self._oneindexed)
+        return self._channels.index(obj)
 
     def insert(self, index: int, obj):
         """
@@ -313,11 +298,6 @@ class ChannelList(Metadatable):
                             "type. Adding {} to a list of {}"
                             ".".format(type(obj).__name__,
                                        self._chan_type.__name__))
-        if self._oneindexed:
-            if index < 1:
-                raise IndexError("1 based channel lists only support positive"
-                                 " indices")
-            index += 1
 
         return self._channels.insert(index, obj)
 
