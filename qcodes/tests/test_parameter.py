@@ -7,7 +7,7 @@ from unittest import TestCase
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter,
-    ManualParameter, StandardParameter, InstrumentParameter)
+    ManualParameter, StandardParameter, InstrumentRefParameter)
 from qcodes.utils.helpers import LogCapture
 from qcodes.utils.validators import Numbers
 from qcodes.tests.instrument_mocks import DummyInstrument
@@ -639,12 +639,11 @@ class TestStandardParam(TestCase):
         self.assertEqual(p(), 'on')
 
 
-class TestInstrumentParameter(TestCase):
+class TestInstrumentRefParameter(TestCase):
     def test_get_instr(self):
         a = DummyInstrument('dummy_holder')
         d = DummyInstrument('dummy')
-        a.add_parameter('test', parameter_class=InstrumentParameter)
-        # par = InstrumentParameter('test')
+        a.add_parameter('test', parameter_class=InstrumentRefParameter)
 
         a.test.set(d.name)
 

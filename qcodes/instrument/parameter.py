@@ -1073,9 +1073,9 @@ class ManualParameter(Parameter):
         instrument (Optional[Instrument]): the instrument this applies to,
             if any.
 
-        initial_value (Optional[str]): starting value, the
-            only invalid value allowed, and None is only allowed as an initial
-            value, it cannot be set later
+        initial_value (Optional[str]): starting value, may be None even if
+            None does not pass the validator. None is only allowed as an
+            initial value and cannot be set after initiation.
 
         **kwargs: Passed to Parameter parent class
     """
@@ -1290,30 +1290,37 @@ class CombinedParameter(Metadatable):
         return meta_data
 
 
-class InstrumentParameter(ManualParameter):
+class InstrumentRefParameter(ManualParameter):
     """
+    An InstrumentRefParameter
+
     Args:
-        name (string): the name of the instrument that one wants to add.
+        name (string): the name of the parameter that one wants to add.
 
         instrument (Optional[Instrument]): the "parent" instrument this
             parameter is attached to, if any.
 
-        initial_value (Optional[string]): starting value, the
-            only invalid value allowed, and None is only allowed as an initial
-            value, it cannot be set later
+        initial_value (Optional[str]): starting value, may be None even if
+            None does not pass the validator. None is only allowed as an
+            initial value and cannot be set after initiation.
 
-        **kwargs: Passed to InstrumentParameter parent class
+        **kwargs: Passed to InstrumentRefParameter parent class
+
+    This parameter is useful when one needs a reference to another instrument
+    from within an instrument, e.g., when creating a meta instrument that
+    sets parameters on instruments it contains.
     """
+
     def get_instr(self):
         """
         Returns the instance of the instrument with the name equal to the
         value of this parameter.
         """
-        instrument_name = self.get()
+        ref_instrument_name = self.get()
         # note that _instrument refers to the instrument this parameter belongs
-        # to, while the instrument_name is the instrument that is the value
+        # to, while the ref_instrument_name is the instrument that is the value
         # of this parameter.
-        return self._instrument.find_instrument(instrument_name)
+        return self._instrument.find_instrument(ref_instrument_name)
 
     def set_validator(self, vals):
         """
