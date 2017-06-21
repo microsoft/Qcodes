@@ -431,7 +431,7 @@ class Callable(Validator):
         pass
 
     def validate(self, value, context=''):
-        if not hasattr(value, '__call__'):
+        if not callable(value):
             raise TypeError(
                 '{} is not a callable; {}'.format(repr(value), context))
 
