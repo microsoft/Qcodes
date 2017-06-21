@@ -1,5 +1,5 @@
 """ Base class for the channel of an instrument """
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 from collections import namedtuple
 
 from .base import InstrumentBase, Instrument
@@ -68,7 +68,7 @@ class MultiChannelInstrumentParameter(MultiParameter):
     Parameter to get or set multiple channels simultaneously.
 
     Will normally be created by a ChannelList and not directly by anything
-      else.
+    else.
 
     Args:
         channels(list[chan_type]): A list of channels which we can operate on
@@ -84,7 +84,7 @@ class MultiChannelInstrumentParameter(MultiParameter):
         self._channels = channels
         self._param_name = param_name
 
-    def get(self):
+    def get(self) -> tuple:
         """
         Return a tuple containing the data from each of the channels in the
         list
@@ -151,7 +151,7 @@ class ChannelList(Metadatable):
     def __init__(self, parent: Instrument,
                  name: str,
                  chan_type: type,
-                 chan_list: Union[List, Tuple, None]=None,
+                 chan_list: Optional[List, Tuple]=None,
                  snapshotable: bool=True,
                  multichan_paramclass: type = MultiChannelInstrumentParameter):
         super().__init__()
@@ -184,7 +184,7 @@ class ChannelList(Metadatable):
                 raise TypeError("All items in this channel list must be of "
                                 "type {}.".format(chan_type.__name__))
 
-    def __getitem__(self, i):
+    def __getitem__(self, i: Union[int, slice]):
         """
         Return either a single channel, or a new ChannelList containing only
         the specified channels
@@ -210,7 +210,7 @@ class ChannelList(Metadatable):
                                                     self._chan_type.__name__,
                                                     self._channels)
 
-    def __add__(self, other):
+    def __add__(self, other: 'ChannelList'):
         """
         Return a new channel list containing the channels from both
         ChannelList self and r.
@@ -282,7 +282,7 @@ class ChannelList(Metadatable):
         """
         return self._channels.index(obj)
 
-    def insert(self, index: int, obj):
+    def insert(self, index: int, obj: InstrumentChannel):
         """
         Insert an object into the channel list at a specific index.
 
@@ -416,7 +416,7 @@ class ChannelList(Metadatable):
         raise AttributeError('\'{}\' object has no attribute \'{}\''
                              ''.format(self.__class__.__name__, name))
 
-    def __dir__(self):
+    def __dir__(self) -> list:
         names = super().__dir__()
         if self._channels:
             names += list(self._channels[0].parameters.keys())
