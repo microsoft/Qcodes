@@ -55,20 +55,19 @@ class MatPlot(BasePlot):
 
         self._init_plot(subplots, figsize, num=num)
 
-        # Add data to plot if passed in args
+        # Add data to plot if passed in args, kwargs are passed to all subplots
         if len(args) > 1:
             # Multiple args passed, add each arg to separate subplot
             for k, arg in enumerate(args):
                 if isinstance(arg, Sequence):
                     # Arg consists of multiple elements, add all to same subplot
                     for subarg in arg:
-                        self[k].add(subarg)
+                        self[k].add(subarg, **kwargs)
                 else:
                     # Arg is single element, add to subplot
-                    self[k].add(arg)
+                    self[k].add(arg, **kwargs)
         elif args:
-            # Single arg, which indicates the data, additional x and y vals
-            # can be passed as kwargs.
+            # Single data arg, which is added to the first subplot
             self.add(*args, **kwargs)
 
         self.tight_layout()
