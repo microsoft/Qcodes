@@ -310,7 +310,7 @@ class ZNB20(VisaInstrument):
         self._max_freq = 20e9
         self._min_freq = 100e3
         channels = ChannelList(self, "VNAChannels", ZNB20Channel,
-                               snapshotable=True, oneindexed=True)
+                               snapshotable=True)
         for i in range(1, 3):
             self._sindex_to_channel[i] = {}
             for j in range(1, 3):
