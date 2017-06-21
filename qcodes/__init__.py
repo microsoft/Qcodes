@@ -30,7 +30,7 @@ if in_notebook():  # pragma: no cover
               'to see the full error')
 
 from qcodes.station import Station
-from qcodes.loops import Loop
+from qcodes.loops import Loop, active_loop, active_data_set
 from qcodes.measure import Measure
 from qcodes.actions import Task, Wait, BreakIf
 
@@ -45,6 +45,7 @@ from qcodes.data.io import DiskIO
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.ip import IPInstrument
 from qcodes.instrument.visa import VisaInstrument
+from qcodes.instrument.channel import InstrumentChannel, ChannelList
 
 from qcodes.instrument.function import Function
 from qcodes.instrument.parameter import (
