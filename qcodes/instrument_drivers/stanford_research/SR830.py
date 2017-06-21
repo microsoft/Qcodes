@@ -15,7 +15,7 @@ class ChannelBuffer(ArrayParameter):
         The instrument natively supports this in its TRCL call.
     """
 
-    def __init__(self, name, instrument, channel):
+    def __init__(self, name: str, instrument: SR830, channel: int):
         """
         Args:
             name (str): The name of the parameter
@@ -23,7 +23,9 @@ class ChannelBuffer(ArrayParameter):
             channel (int): The relevant channel (1 or 2). The name should
                 should match this.
         """
-        if channel not in [1, 2]:
+        self._valid_channels = (1, 2)
+
+        if channel not in self._valid_channels:
             raise ValueError('Invalid channel specifier. SR830 only has '
                              'channels 1 and 2.')
 
