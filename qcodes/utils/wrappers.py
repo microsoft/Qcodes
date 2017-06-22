@@ -230,6 +230,7 @@ def _save_individual_plots(data, inst_meas):
             plot.subplots[0].set_title(title)
         plot.save("{}_{:03d}.pdf".format(plot.get_default_title(),
                                          counter_two))
+        plot.fig.canvas.draw()
 
     counter_two = 0
     for j, i in enumerate(inst_meas):
@@ -330,7 +331,7 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True):
         # suptitle and title
         pdfplot.fig.tight_layout(pad=3)
         pdfplot.save("{}.pdf".format(plot.get_default_title()))
-
+        pdfplot.fig.canvas.draw()
         if num_subplots > 1:
             _save_individual_plots(data, plottables)
     if CURRENT_EXPERIMENT.get('device_image'):
@@ -405,6 +406,7 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, num_points, delay, start2, sl
         if num_subplots > 1:
             _save_individual_plots(data, plottables)
         pdfplot.save("{}.pdf".format(plot.get_default_title()))
+        pdfplot.fig.canvas.draw()
     if CURRENT_EXPERIMENT.get('device_image'):
         save_device_image((inst_set, inst2_set))
 
@@ -481,6 +483,7 @@ def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num
         pdfplot.save("{}.pdf".format(plot.get_default_title()))
         if num_subplots > 1:
             _save_individual_plots(data, plottables)
+        pdfplot.fig.canvas.draw()
         pdfplot.save("{}.pdf".format(plot.get_default_title()))
     if CURRENT_EXPERIMENT.get('device_image'):
         save_device_image((inst_set, inst_set2))
