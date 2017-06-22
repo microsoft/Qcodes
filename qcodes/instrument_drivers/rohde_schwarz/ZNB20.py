@@ -57,6 +57,14 @@ class FrequencySweepMagPhase(MultiParameter):
     def get(self):
         if not self._instrument._parent.rf_power():
             log.warning("RF output is off")
+        # it is possible that the instrument and qcodes disagree about
+        # which parameter is measured on this channel
+        instrument_parameter = self._instrument.vna_parameter()[1:-2]
+        # trime quotes and newline
+        if  instrument_parameter != self._instrument._vna_parameter:
+            raise RuntimeError("Invalid parameter. Tried to measure "
+                               "{} got {}".format(self._instrument._vna_parameter,
+                                                  instrument_parameter))
         self._instrument.write('SENS{}:AVER:STAT ON'.format(self._channel))
         self._instrument.write('SENS{}:AVER:CLE'.format(self._channel))
         self._instrument._parent.cont_meas_off()
@@ -120,6 +128,14 @@ class FrequencySweep(ArrayParameter):
     def get(self):
         if not self._instrument._parent.rf_power():
             log.warning("RF output is off")
+        # it is possible that the instrument and qcodes disagree about
+        # which parameter is measured on this channel
+        instrument_parameter = self._instrument.vna_parameter()[1:-2]
+        # trime quotes and newline
+        if  instrument_parameter != self._instrument._vna_parameter:
+            raise RuntimeError("Invalid parameter. Tried to measure "
+                               "{} got {}".format(self._instrument._vna_parameter,
+                                                  instrument_parameter))
         old_format = self._instrument.format()
         self._instrument.format('dB')
         self._instrument.write('SENS{}:AVER:STAT ON'.format(self._channel))
@@ -144,7 +160,7 @@ class ZNB20Channel(InstrumentChannel):
     def __init__(self, parent, name, channel):
         n = channel
         self._instrument_channel = channel
-        self._tracename = "Ch{}Trc1".format(channel)
+        self._tracename = "Trc{}".format(channel)
         self._vna_parameter = name
         super().__init__(parent, name)
 
@@ -154,6 +170,11 @@ class ZNB20Channel(InstrumentChannel):
         self.write("CALC{}:PAR:SDEF '{}', '{}'".format(self._instrument_channel,
                                                        self._tracename,
                                                        self._vna_parameter))
+
+        self.add_parameter(name='vna_parameter',
+                           label='VNA parameter',
+                           get_cmd="CALC{}:PAR:MEAS? '{}'".format(self._instrument_channel,
+                                                                        self._tracename))
 
         self.add_parameter(name='power',
                            label='Power',
@@ -356,7 +377,6 @@ class ZNB20(VisaInstrument):
             channel.power(-50)
 
     def initialise(self):
-        self.write('*RST')
         for n in range(1, 5):
             self.write('SENS{}:SWE:TYPE LIN'.format(n))
             self.write('SENS{}:SWE:TIME:AUTO ON'.format(n))
