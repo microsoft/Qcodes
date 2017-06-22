@@ -28,7 +28,6 @@ def convert_command(text):
 
         return string
 
-
     # Format text to lowercase, and remove trailing whitespaces
     text = text.lower().rstrip(' ')
     command, *args_str = text.split(' ')
@@ -82,6 +81,7 @@ class Slack(threading.Thread):
         notify/task {cmd} *args: register task with name `cmd` that is
             performed every time `update()` is called.
     """
+
     def __init__(self, interval=3, config=None, auto_start=True, **commands):
         """
         Initializes Slack bot, including auto-updating widget if in notebook
@@ -111,6 +111,7 @@ class Slack(threading.Thread):
                          'msmt': self.print_measurement_information,
                          'measurement': self.print_measurement_information,
                          'notify': self.add_task,
+                         'help': self.help_message,
                          'task': self.add_task,
                          **commands}
         self.task_commands = {'finished': self.check_msmt_finished}
@@ -235,9 +236,13 @@ class Slack(threading.Thread):
         Returns:
             List of IM messages
         """
-        response = self.slack.im.history(channel=self.users[username]['im_id'],
-                                         **kwargs)
-        return response.body['messages']
+        channel = self.users[username].get('im_id', None)
+        if channel is None:
+            return []
+        else:
+            response = self.slack.im.history(channel=channel,
+                                             **kwargs)
+            return response.body['messages']
 
     def get_new_im_messages(self):
         """
@@ -276,6 +281,11 @@ class Slack(threading.Thread):
         new_messages = self.get_new_im_messages()
         self.handle_messages(new_messages)
 
+    def help_message(self):
+        """ Return simple help message """
+        cc = ', '.join(['`' + str(k) + '`' for k in self.commands.keys()])
+        return '\nAvailable commands: %s' % cc
+
     def handle_messages(self, messages):
         """
         Performs commands depending on messages.
@@ -302,7 +312,8 @@ class Slack(threading.Thread):
                         if isinstance(func, _BaseParameter):
                             results = func(*args, **kwargs)
                         else:
-                            # Only add channel and Slack if they are explicit kwargs
+                            # Only add channel and Slack if they are explicit
+                            # kwargs
                             func_sig = inspect.signature(func)
                             if 'channel' in func_sig.parameters:
                                 kwargs['channel'] = channel
@@ -321,7 +332,8 @@ class Slack(threading.Thread):
                             channel=channel)
                 else:
                     self.slack.chat.post_message(
-                        text='Command {} not understood'.format(command),
+                        text='Command {} not understood. Try `help`'.format(
+                            command),
                         channel=channel)
 
     def add_task(self, command, *args, channel, **kwargs):
