@@ -209,14 +209,14 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 submodule.print_readable_snapshot(update, max_chars)
 
     #
-    # shortcuts to parameters & setters & getters                            #
+    # shortcuts to parameters & setters & getters                           #
     #
     # instrument['someparam'] === instrument.parameters['someparam']        #
     # instrument.someparam === instrument.parameters['someparam']           #
     # instrument.get('someparam') === instrument['someparam'].get()         #
     # etc...                                                                #
     #
-    delegate_attr_dicts = ['parameters', 'functions']
+    delegate_attr_dicts = ['parameters', 'functions', 'submodules']
 
     def __getitem__(self, key):
         """Delegate instrument['name'] to parameter or function 'name'."""
@@ -599,6 +599,3 @@ class Instrument(InstrumentBase):
         raise NotImplementedError(
             'Instrument {} has not defined an ask method'.format(
                 type(self).__name__))
-
-    delegate_attr_dicts = ['parameters', 'functions', 'submodules']
-
