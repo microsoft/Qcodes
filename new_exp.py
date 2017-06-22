@@ -11,8 +11,9 @@ Add experiment
 import logging
 import sqlite3
 import time
-from typing import Any, Optional, List, Tuple
-
+from numbers import Number
+from numpy import Array
+from typing import Any, List, Optional, Tuple, Union, Dict
 
 db = "/Users/unga/Desktop/experiment.db"
 
@@ -186,19 +187,57 @@ def update_eperiment_run_counter(conn: sqlite3.Connection, exp_id: int,
     transaction(conn, query, run_counter, exp_id)
 
 
-def create_run_table(conn: sqlite3.Connection, formatted_name: str)->None:
+# this is what we accept
+PARAMETERS = None # shold be a list of pyton object that have .type that
+# represnt the type of sqlite coumn
+VALUES = List[Union[str, Number, List, Array, bool]]
+# TODO: do same for metadata maybe?
+
+
+class ParamSpec():
+    def __init__(self, name: str, type: str, **metadata) -> None:
+        self.name = name
+        self.type = type
+        if metadata:
+            self.metadata = metadata
+
+    def sql_repr(self):
+        return f"{self.name, self.type}"
+
+
+def create_run_table(conn: sqlite3.Connection,
+                     formatted_name: str,
+                     parameters: Optional[List[ParamSpec]]=None,
+                     values: Optional[VALUES]=None,
+                     metadata: Dict[str, Any]=None
+                     )->None:
     """Create run table with formatted_name as name
 
     Args:
         conn: database connection
         formatted_name: the name of the table to create
     """
-    query = f"""
-    CREATE TABLE "{formatted_name}" (
-        id INTEGER PRIMARY KEY
-    );
-    """
-    transaction(conn, query)
+    _parameters = ",".join([p.sql_repr() for p in parameters])
+    if parameters and values:
+        # TODO: can I create a table with values already ?
+        pass
+    elif parameters:
+        query = f"""
+        CREATE TABLE "{formatted_name}" (
+            id INTEGER PRIMARY KEY,
+            {_parameters}
+        );
+        """
+        transaction(conn, query)
+    else:
+        # look ma no parameters
+        # TODO: does this even make sense?
+        query = f"""
+        CREATE TABLE "{formatted_name}" (
+            id INTEGER PRIMARY KEY
+        );
+        """
+        transaction(conn, query)
 
 
 def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
