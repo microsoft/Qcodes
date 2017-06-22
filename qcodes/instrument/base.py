@@ -38,6 +38,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         self.name = str(name)
         self.parameters = {}
         self.functions = {}
+        self.submodules = {}
         super().__init__(**kwargs)
 
     def add_parameter(self, name, parameter_class=StandardParameter,
@@ -99,6 +100,36 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         func = Function(name=name, instrument=self, **kwargs)
         self.functions[name] = func
 
+    def add_submodule(self, name, submodule):
+        """
+        Bind one submodule to this instrument.
+
+        Instrument subclasses can call this repeatedly in their ``__init__``
+        method for every submodule of the instrument.
+
+        Submodules can effectively be considered as instruments within the main
+        instrument, and should at minimum be snapshottable. For example, they can
+        be used to either store logical groupings of parameters, which may or may
+        not be repeated, or channel lists.
+
+        Args:
+            name (str): how the submodule will be stored within ``instrument.submodules``
+            and also how it can be addressed.
+
+            submodule (Metadatable): The submodule to be stored.
+
+        Raises:
+            KeyError: if this instrument already contains a submodule with this
+                name.
+            TypeError: if the submodule that we are trying to add is not an instance
+                of an Metadatable object.
+        """
+        if name in self.submodules:
+            raise KeyError('Duplicate submodule name {}'.format(name))
+        if not isinstance(submodule, Metadatable):
+            raise TypeError('Submodules must be metadatable.')
+        self.submodules[name] = submodule
+
     def snapshot_base(self, update=False):
         """
         State of the instrument as a JSON-compatible dict.
@@ -114,12 +145,68 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                                    for name, param in self.parameters.items()),
                 'functions': dict((name, func.snapshot(update=update))
                                   for name, func in self.functions.items()),
+                'submodules': dict((name, subm.snapshot(update=update))
+                                   for name, subm in self.submodules.items()),
                 '__class__': full_class(self),
                 }
         for attr in set(self._meta_attrs):
             if hasattr(self, attr):
                 snap[attr] = getattr(self, attr)
         return snap
+
+    def print_readable_snapshot(self, update=False, max_chars=80):
+        """
+        Prints a readable version of the snapshot.
+        The readable snapshot includes the name, value and unit of each
+        parameter.
+        A convenience function to quickly get an overview of the status of an instrument.
+
+        Args:
+            update (bool)  : If True, update the state by querying the
+                instrument. If False, just use the latest values in memory.
+                This argument gets passed to the snapshot function.
+            max_chars (int) : the maximum number of characters per line. The
+                readable snapshot will be cropped if this value is exceeded.
+                Defaults to 80 to be consistent with default terminal width.
+        """
+        floating_types = (float, np.integer, np.floating)
+        snapshot = self.snapshot(update=update)
+
+        par_lengths = [len(p) for p in snapshot['parameters']]
+
+        # Min of 50 is to prevent a super long parameter name to break this
+        # function
+        par_field_len = min(max(par_lengths)+1, 50)
+
+        print(self.name + ':')
+        print('{0:<{1}}'.format('\tparameter ', par_field_len) + 'value')
+        print('-'*max_chars)
+        for par in sorted(snapshot['parameters']):
+            name = snapshot['parameters'][par]['name']
+            msg = '{0:<{1}}:'.format(name, par_field_len)
+            val = snapshot['parameters'][par]['value']
+            unit = snapshot['parameters'][par].get('unit', None)
+            if unit is None:
+                # this may be a multi parameter
+                unit = snapshot['parameters'][par].get('units', None)
+            if isinstance(val, floating_types):
+                msg += '\t{:.5g} '.format(val)
+            else:
+                msg += '\t{} '.format(val)
+            if unit is not '':  # corresponds to no unit
+                msg += '({})'.format(unit)
+            # Truncate the message if it is longer than max length
+            if len(msg) > max_chars and not max_chars == -1:
+                msg = msg[0:max_chars-3] + '...'
+            print(msg)
+
+        for submodule in self.submodules.values():
+            if hasattr(submodule, '_channels'):
+                if submodule._snapshotable:
+                    for channel in submodule._channels:
+                        channel.print_readable_snapshot()
+            else:
+                submodule.print_readable_snapshot(update, max_chars)
 
     #
     # shortcuts to parameters & setters & getters                            #
@@ -237,7 +324,6 @@ class Instrument(InstrumentBase):
             warnings.warn("server_name argument not supported any more",
                           stacklevel=0)
         super().__init__(name, **kwargs)
-        self.submodules = {}
 
         self.add_parameter('IDN', get_cmd=self.get_idn,
                            vals=Anything())
@@ -434,115 +520,6 @@ class Instrument(InstrumentBase):
                         name, type(ins), instrument_class))
 
         return ins
-
-
-    def add_submodule(self, name, submodule):
-        """
-        Bind one submodule to this instrument.
-
-        Instrument subclasses can call this repeatedly in their ``__init__``
-        method for every submodule of the instrument.
-
-        Submodules can effectively be considered as instruments within the main
-        instrument, and should at minimum be snapshottable. For example, they can
-        be used to either store logical groupings of parameters, which may or may
-        not be repeated, or channel lists.
-
-        Args:
-            name (str): how the submodule will be stored within ``instrument.submodules``
-            and also how it can be addressed.
-
-            submodule (Metadatable): The submodule to be stored.
-
-        Raises:
-            KeyError: if this instrument already contains a submodule with this
-                name.
-            TypeError: if the submodule that we are trying to add is not an instance
-                of an Metadatable object.
-        """
-        if name in self.submodules:
-            raise KeyError('Duplicate submodule name {}'.format(name))
-        if not isinstance(submodule, Metadatable):
-            raise TypeError('Submodules must be metadatable.')
-        self.submodules[name] = submodule
-
-    def print_readable_snapshot(self, update=False, max_chars=80):
-        """
-        Prints a readable version of the snapshot.
-        The readable snapshot includes the name, value and unit of each
-        parameter.
-        A convenience function to quickly get an overview of the status of an instrument.
-
-        Args:
-            update (bool)  : If True, update the state by querying the
-                instrument. If False, just use the latest values in memory.
-                This argument gets passed to the snapshot function.
-            max_chars (int) : the maximum number of characters per line. The
-                readable snapshot will be cropped if this value is exceeded.
-                Defaults to 80 to be consistent with default terminal width.
-        """
-        floating_types = (float, np.integer, np.floating)
-        snapshot = self.snapshot(update=update)
-
-        par_lengths = [len(p) for p in snapshot['parameters']]
-
-        # Min of 50 is to prevent a super long parameter name to break this
-        # function
-        par_field_len = min(max(par_lengths)+1, 50)
-
-        print(self.name + ':')
-        print('{0:<{1}}'.format('\tparameter ', par_field_len) + 'value')
-        print('-'*max_chars)
-        for par in sorted(snapshot['parameters']):
-            name = snapshot['parameters'][par]['name']
-            msg = '{0:<{1}}:'.format(name, par_field_len)
-            val = snapshot['parameters'][par]['value']
-            unit = snapshot['parameters'][par].get('unit', None)
-            if unit is None:
-                # this may be a multi parameter
-                unit = snapshot['parameters'][par].get('units', None)
-            if isinstance(val, floating_types):
-                msg += '\t{:.5g} '.format(val)
-            else:
-                msg += '\t{} '.format(val)
-            if unit is not '':  # corresponds to no unit
-                msg += '({})'.format(unit)
-            # Truncate the message if it is longer than max length
-            if len(msg) > max_chars and not max_chars == -1:
-                msg = msg[0:max_chars-3] + '...'
-            print(msg)
-
-        for submodule in self.submodules.values():
-            if hasattr(submodule, '_channels'):
-                if submodule._snapshotable:
-                    for channel in submodule._channels:
-                        channel.print_readable_snapshot()
-            else:
-                submodule.print_readable_snapshot(update, max_chars)
-
-    def snapshot_base(self, update=False):
-        """
-        State of the instrument as a JSON-compatible dict.
-
-        Args:
-            update (bool): If True, update the state by querying the
-                instrument. If False, just use the latest values in memory.
-
-        Returns:
-            dict: base snapshot
-        """
-        snap = {'parameters': dict((name, param.snapshot(update=update))
-                                   for name, param in self.parameters.items()),
-                'functions': dict((name, func.snapshot(update=update))
-                                  for name, func in self.functions.items()),
-                'submodules': dict((name, subm.snapshot(update=update))
-                                  for name, subm in self.submodules.items()),
-                '__class__': full_class(self),
-                }
-        for attr in set(self._meta_attrs):
-            if hasattr(self, attr):
-                snap[attr] = getattr(self, attr)
-        return snap
 
     # `write_raw` and `ask_raw` are the interface to hardware                #
     # `write` and `ask` are standard wrappers to help with error reporting   #
