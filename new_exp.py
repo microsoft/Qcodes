@@ -58,7 +58,7 @@ def atomicTransaction(conn: sqlite3.Connection,
         if len(args) > 0:
             c.execute(sql, args)
         else:
-          c.execute(sql)
+            c.execute(sql)
     except Exception as e:
         logging.exception("Could not  execute transaction, rolling back")
         conn.rollback()
@@ -82,7 +82,7 @@ def new_experiment(conn: sqlite3.Connection,
     """ Add new experiment to container
 
     Args:
-        conn: database
+        conn: database connection
         name: the name of the experiment
         sample_name: the name of the current sample
         format_string: TODO: write this
@@ -147,8 +147,7 @@ def get_run_counter(conn: sqlite3.Connection, exp_id: int) -> int:
                              "exp_id", exp_id)
 
 
-def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
-               parameters, metadata)-> Tuple[int, str]:
+def insert_run(conn: sqlite3.Connection, exp_id: int, name: str):
     # get run counter and formatter from experiments
     run_counter, format_string = _select_many_where(conn,
                                                     "experiments",
@@ -165,32 +164,75 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
     VALUES
         (?,?,?,?,?)
     """
+    curr = transaction(conn, query,
+                       name,
+                       exp_id,
+                       formatted_name,
+                       run_counter,
+                       time.time()
+                       )
+    return run_counter, formatted_name, curr.lastrowid
+
+
+def update_eperiment_run_counter(conn: sqlite3.Connection, exp_id: int,
+                                 run_counter: int)->None:
+    """ Update experiment with
+    """
+    query = """
+    UPDATE experiments
+    SET run_counter = ?
+    WHERE exp_id = ?
+    """
+    transaction(conn, query, run_counter, exp_id)
+
+
+def create_run_table(conn: sqlite3.Connection, formatted_name: str)->None:
+    """Create run table with formatted_name as name
+
+    Args:
+        conn: database connection
+        formatted_name: the name of the table to create
+    """
+    query = f"""
+    CREATE TABLE "{formatted_name}" (
+        id INTEGER PRIMARY KEY
+    );
+    """
+    transaction(conn, query)
+
+
+def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
+               *parameters, **metadata)-> Tuple[int, str]:
+    """ Create a single run for the experiment.
+
+
+    This will register the run in the runs table, the counter in the
+    experiments table and create a new table with the formatted name.
+    The operations are NOT atomic, but the function is.
+    NOTE: this function is not idempotent.
+
+    Args:
+        - conn: the connection to the sqlite database
+        - exp_id: the experiment id we want to create the run into
+        - name: a friendly name for this run
+        - paramters : TODO:
+        - metadata : TODO:
+
+    Returns:
+        - run_id: the row id of the newly created run
+        - formatted_name: the name of the newly created table
+    """
     try:
-        curr = transaction(conn, query,
-                           name,
-                           exp_id,
-                           formatted_name,
-                           run_counter,
-                           time.time()
-                           )
-        query = """
-        UPDATE experiments
-        SET run_counter = ?
-        WHERE exp_id = ?
-        """
-        transaction(conn, query, run_counter, exp_id)
-        # and now create the table
-        query = f"""
-        CREATE TABLE "{formatted_name}" (
-            id INTEGER PRIMARY KEY
-        );
-        """
-        transaction(conn, query)
+        run_counter, formatted_name, row_id = insert_run(conn,
+                                                         exp_id,
+                                                         name)
+        update_eperiment_run_counter(conn, exp_id, run_counter)
+        create_run_table(conn, formatted_name)
     except Exception as e:
         conn.rollback
         raise e
     conn.commit()
-    return curr.lastrowid, formatted_name
+    return row_id, formatted_name
 
 
 def _example():
