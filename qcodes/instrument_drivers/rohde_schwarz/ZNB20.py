@@ -197,7 +197,7 @@ class ZNB20Channel(InstrumentChannel):
                            get_parser=float,
                            vals=vals.Numbers(1, self._parent._max_freq - self._parent._min_freq))
         self.add_parameter(name='npts',
-                           get_cmd='SENS:SWE:POIN?',
+                           get_cmd='SENS{}:SWE:POIN?'.format(n),
                            set_cmd=self._set_npts,
                            get_parser=int)
         self.add_parameter(name='format',
