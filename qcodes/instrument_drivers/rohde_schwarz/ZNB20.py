@@ -328,8 +328,23 @@ class ZNB20(VisaInstrument):
         n = 1
         self._sindex_to_channel = {}
         self._channel_to_sindex = {}
-        self._max_freq = 20e9
-        self._min_freq = 100e3
+
+        # TODO(JHN) I could not find a way to get max and min freq from
+        # the API, if that is possible replace below with that
+        # See page 1025 in the manual. 7.3.15.10 for details of max/min freq
+        # no attempt to support ZNB40, not clear without one how the format
+        # is due to variants
+        model = self.get_idn()['model'].split('-')[0]
+        # format seems to be ZNB8-4Port
+        if model == 'ZNB4':
+            self._max_freq = 4.5e9
+            self._min_freq = 9e3
+        elif model == 'ZNB8':
+            self._max_freq = 8.5e9
+            self._min_freq = 9e3
+        elif model == 'ZNB20':
+            self._max_freq = 20e9
+            self._min_freq = 100e3
         self.add_parameter(name='num_ports',
                             get_cmd='INST:PORT:COUN?',
                             get_parser=int)
