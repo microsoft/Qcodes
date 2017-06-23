@@ -53,9 +53,20 @@ class ChannelBuffer(ArrayParameter):
 
         N = self._instrument.buffer_npts()  # problem if this is zero?
         # TODO (WilliamHPNielsen): what if SR was changed during acquisition?
-        dt = 1/self._instrument.buffer_SR()
+        SR = self._instrument.buffer_SR()
+        if SR == 'Trigger':
+            self.setpoint_units = ('',)
+            self.setpoint_names = ('trig_events',)
+            self.setpoint_labels = ('Trigger event number',)
+            self.setpoints = (tuple(np.arange(0, N)),)
+        else:
+            dt = 1/SR
+            self.setpoint_units = ('s',)
+            self.setpoint_names = ('Time',)
+            self.setpoint_labels = ('Time',)
+            self.setpoints = (tuple(np.linspace(0, N*dt, N)),)
+
         self.shape = (N,)
-        self.setpoints = (tuple(np.linspace(0, N*dt, N)),)
 
         params = self._instrument.parameters
         # YES, it should be: "is not 'none'" NOT "is not None"
