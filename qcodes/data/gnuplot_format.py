@@ -67,7 +67,7 @@ class GNUPlotFormat(Formatter):
     """
 
     def __init__(self, extension='dat', terminator='\n', separator='\t',
-                 comment='# ', number_format='g', metadata_file=None):
+                 comment='# ', number_format=':.16g', metadata_file=None):
         self.metadata_file = metadata_file or 'snapshot.json'
         # file extension: accept either with or without leading dot
         self.extension = '.' + extension.lstrip('.')
