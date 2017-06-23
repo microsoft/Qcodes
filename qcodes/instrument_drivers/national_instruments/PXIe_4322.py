@@ -1,6 +1,5 @@
 from qcodes.instrument.base import Instrument
 from qcodes import validators as validator
-
 from functools import partial
 import logging
 import warnings
@@ -75,7 +74,7 @@ class PXIe_4322(Instrument):
 
     def _start_updating_file(self, update_period):
         self._write_voltages_to_file()
-        t = threading.Timer(update_period, self._start_updating_file())
+        t = threading.Timer(update_period, partial(self._start_updating_file, update_period))
         t.start()
 
     def set_voltage(self, voltage, channel, verbose=False):
@@ -95,7 +94,7 @@ class PXIe_4322(Instrument):
                     if verbose:
                         print('Current gate {} value: {:.2f}'.format(channel, voltage_step), end='\r', flush=True)
                     else:
-                        logger.info('Current gate {} value: {:.2f}'.format(channel, voltage_step))
+                        logger.debug('Current gate {} value: {:.2f}'.format(channel, voltage_step))
                     t_stop = timer()
                     sleep(max(self.step_delay-(t_stop-t_start), 0.0))
 
@@ -103,7 +102,7 @@ class PXIe_4322(Instrument):
             if verbose:
                 print('Current gate {} value: {:.2f}'.format(channel, voltage), end='\r', flush=True)
             else:
-                logger.info('Current gate {} value: {:.2f}'.format(channel, voltage))
+                logger.debug('Current gate {} value: {:.2f}'.format(channel, voltage))
             self.__voltage[channel] = voltage
 
     def get_voltage(self, channel):
@@ -149,7 +148,7 @@ class PXIe_4322(Instrument):
             voltage_str += '{:.2f}, '.format(item)
         voltage_str = voltage_str[:-2]
         print('Current gate values: {}'.format(voltage_str), end='\r', flush=True)
-        logger.info('Current gate values: {}'.format(voltage_str))
+        logger.debug('Current gate values: {}'.format(voltage_str))
 
     def ramp_all_to_zero(self):
         gate_values = [0.0]*self.channels
