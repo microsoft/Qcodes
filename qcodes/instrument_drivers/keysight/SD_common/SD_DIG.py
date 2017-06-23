@@ -698,7 +698,7 @@ class SD_DIG(SD_Module):
         return result_parser(value, value_name, verbose)
 
     # DAQ read
-    def set_n_points(self, n_points, channel):
+    def set_n_points(self, n_points, channel, verbose=False):
         """ Sets the trigger source
 
         Args:
@@ -710,7 +710,7 @@ class SD_DIG(SD_Module):
         value_name = 'set_n_points ch{}'.format(channel)
         return result_parser(value, value_name, verbose)
 
-    def set_timeout(self, timeout, channel):
+    def set_timeout(self, timeout, channel, verbose=False):
         """ Sets the trigger source
         
         Args:
