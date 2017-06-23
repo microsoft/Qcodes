@@ -330,11 +330,15 @@ class ZNB20(VisaInstrument):
         self._channel_to_sindex = {}
         self._max_freq = 20e9
         self._min_freq = 100e3
+        self.add_parameter(name='num_ports',
+                            get_cmd='INST:PORT:COUN?',
+                            get_parser=int)
+        num_ports = self.num_ports()
         channels = ChannelList(self, "VNAChannels", ZNB20Channel,
                                snapshotable=True)
-        for i in range(1, 3):
+        for i in range(1, num_ports+1):
             self._sindex_to_channel[i] = {}
-            for j in range(1, 3):
+            for j in range(1, num_ports+1):
                 ch_name = 'S' + str(i) + str(j)
                 channel = ZNB20Channel(self, ch_name, n)
                 channels.append(channel)
@@ -343,6 +347,7 @@ class ZNB20(VisaInstrument):
                 n += 1
         self.add_submodule("channels", channels)
         self.channels.lock()
+
         self.add_parameter(name='rf_power',
                            get_cmd='OUTP1?',
                            set_cmd='OUTP1 {}',
@@ -356,7 +361,7 @@ class ZNB20(VisaInstrument):
         self.add_function('update_display_once', call_cmd='SYST:DISP:UPD ONCE')
         self.add_function('update_display_on', call_cmd='SYST:DISP:UPD ON')
         self.add_function('update_display_off', call_cmd='SYST:DISP:UPD OFF')
-        self.add_function('display_sij_split', call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 2,2')
+        self.add_function('display_sij_split', call_cmd='DISP:LAY GRID;:DISP:LAY:GRID {},{}'.format(num_ports, num_ports))
         self.add_function('display_sij_overlay', call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 1,1')
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
         self.add_function('rf_on', call_cmd='OUTP1 ON')
