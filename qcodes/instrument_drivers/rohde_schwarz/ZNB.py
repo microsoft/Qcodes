@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 class FrequencySweepMagPhase(MultiParameter):
     """
-    Hardware controlled parameter class for Rohde Schwarz RSZNB20 trace.
+    Hardware controlled parameter class for Rohde Schwarz ZNB trace.
 
     Instrument returns an list of transmission data in the form of a list of
     complex numbers taken from a frequency sweep.
@@ -39,8 +39,8 @@ class FrequencySweepMagPhase(MultiParameter):
         self._instrument = instrument
         self.set_sweep(start, stop, npts)
         self._channel = channel
-        self.names = ('{}_magnitude'.format(instrument._vna_parameter),
-                      '{}_phase'.format(instrument._vna_parameter))
+        self.names = ('magnitude',
+                      'phase')
         self.labels = ('{} magnitude'.format(instrument._vna_parameter),
                        '{} phase'.format(instrument._vna_parameter))
         self.units = ('', 'rad')
@@ -72,7 +72,7 @@ class FrequencySweepMagPhase(MultiParameter):
         # instrument averages over its last 'avg' number of sweeps
         # need to ensure averaged result is returned
         for avgcount in range(self._instrument.avg()):
-            self._instrument.write('INIT:IMM; *WAI')
+            self._instrument.write('INIT{}:IMM; *WAI'.format(self._channel))
         data_str = self._instrument.ask('CALC{}:DATA? SDAT'.format(self._channel)).split(',')
         data_list = [float(v) for v in data_str]
 
@@ -90,10 +90,10 @@ class FrequencySweepMagPhase(MultiParameter):
 
 class FrequencySweep(ArrayParameter):
     """
-    Hardware controlled parameter class for Rohde Schwarz RSZNB20 trace.
+    Hardware controlled parameter class for Rohde Schwarz ZNB trace.
 
-    Instrument returns an array of transmission or reflection data depending on the
-    active measurement.
+    Instrument returns an array of transmission or reflection data depending
+    on the active measurement.
 
     Args:
         name: parameter name
@@ -145,7 +145,7 @@ class FrequencySweep(ArrayParameter):
         # instrument averages over its last 'avg' number of sweeps
         # need to ensure averaged result is returned
         for avgcount in range(self._instrument.avg()):
-            self._instrument.write('INIT:IMM; *WAI')
+            self._instrument.write('INIT{}:IMM; *WAI'.format(self._channel))
         data_str = self._instrument.ask('CALC{}:DATA? FDAT'.format(self._channel))
         data = np.array(data_str.rstrip().split(',')).astype('float64')
 
@@ -155,7 +155,7 @@ class FrequencySweep(ArrayParameter):
         return data
 
 
-class ZNB20Channel(InstrumentChannel):
+class ZNBChannel(InstrumentChannel):
 
     def __init__(self, parent, name, channel):
         n = channel
@@ -194,7 +194,7 @@ class ZNB20Channel(InstrumentChannel):
                            label='Averages',
                            unit='',
                            get_cmd='SENS{}:AVER:COUN?'.format(n),
-                           set_cmd='SENS{}'.format(n) + ':AVER:COUN {:.4f}',
+                           set_cmd='SENS{}:AVER:COUN {{:.4f}}'.format(n),
                            get_parser=int,
                            vals=vals.Numbers(1, 5000))
         self.add_parameter(name='start',
@@ -313,9 +313,11 @@ class ZNB20Channel(InstrumentChannel):
         self.tracedb.set_sweep(start, stop, npts)
 
 
-class ZNB20(VisaInstrument):
+class ZNB(VisaInstrument):
     """
-    qcodes driver for the Rohde & Schwarz ZNB20 virtual network analyser
+    qcodes driver for the Rohde & Schwarz ZNB8 and ZNB20
+    virtual network analyser. It can probably be extended to ZNB4 and 40
+    without too much work.
 
     Requires FrequencySweep parameter for taking a trace
 
@@ -349,13 +351,13 @@ class ZNB20(VisaInstrument):
                             get_cmd='INST:PORT:COUN?',
                             get_parser=int)
         num_ports = self.num_ports()
-        channels = ChannelList(self, "VNAChannels", ZNB20Channel,
+        channels = ChannelList(self, "VNAChannels", ZNBChannel,
                                snapshotable=True)
         for i in range(1, num_ports+1):
             self._sindex_to_channel[i] = {}
             for j in range(1, num_ports+1):
                 ch_name = 'S' + str(i) + str(j)
-                channel = ZNB20Channel(self, ch_name, n)
+                channel = ZNBChannel(self, ch_name, n)
                 channels.append(channel)
                 self._sindex_to_channel[i][j] = n
                 self._channel_to_sindex[n] = (i, j)
