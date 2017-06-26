@@ -48,39 +48,32 @@ class PulseBlaster_DDS(Instrument):
     DEVICE_DDS   = 0x099000
     DEVICE_SHAPE = 0x099001
 
-    def __init__(self, name,  raise_errors=False, **kwargs):
+    N_CHANNELS = 2
+    N_FREQ_REGS = 16
+    N_PHASE_REGS = 8
+    N_AMPLITUDE_REGS = 4
+
+    DEFAULT_DDS_INST = (0, 0, 0, 0, 0)
+
+    def __init__(self, name,  **kwargs):
         """
         Initialize the pulseblaster DDS
         
         Args:
             name: Name of instrument 
-            raise_errors: Whether to raise errors or simply log them
             **kwargs: Additional keyword arguments passed to Instrument
         """
-        self.raise_errors = raise_errors
-
         super().__init__(name, **kwargs)
 
-        self.N_CHANNELS = 2
-        self.N_FREQ_REGS = 16
-        self.N_PHASE_REGS = 8
-        self.N_AMPLITUDE_REGS = 4
-
-        
-        self.DEFAULT_DDS_INST = (0, 0, 0, 0, 0)
-            
         # Initialise the DDS
-        # NOTE: Hard coded value for board may want to be part of initalize
+        # NOTE: Hard coded value for board may want to be part of initialize
         if self.count_boards() > 0:
             self.initialize()
             self.select_board(0)
             # Call set defaults to give board a well defined state
             api.pb_set_defaults()
         else:
-            if self.raise_errors:
-                raise IOError('PB Error: Can\'t find board')
-            else:
-                logger.error('Error: Can\'t find board, will continue anyway')
+            raise IOError("PB Error: Can't find board")
 
         # Internal State Variables, used when setting individual registers when
         # others may be undefined
@@ -138,15 +131,15 @@ class PulseBlaster_DDS(Instrument):
     ###########################################################################
     # Just wrapped from spinapi.py #
 
-    @error_parse
-    def get_version(self):
-        """ Return the current version of the spinapi library being used. """
-        return api.pb_get_version()
-
     @staticmethod
     def get_error():
         """ Print library error as UTF-8 encoded string. """
         return str(api.pb_get_error())
+
+    @error_parse
+    def get_version(self):
+        """ Return the current version of the spinapi library being used. """
+        return api.pb_get_version()
 
     @error_parse
     def count_boards(self):
@@ -287,7 +280,6 @@ class PulseBlaster_DDS(Instrument):
             
         """
         raise NotImplementedError('Warning: Unimplemented function')
-        pass
         # pb_start_programming()
         # n_inst = 0
         # # Find the longest set of instructions defined
@@ -323,7 +315,7 @@ class PulseBlaster_DDS(Instrument):
         return self.dds_load(data, device)
 
     @error_parse
-    def set_envelope_freq(self, freq, register, channel):
+    def set_envelope_freq(self, freq, channel, register):
         """ Sets the frequency for an envelope register
         
         Args:
@@ -351,10 +343,12 @@ class PulseBlaster_DDS(Instrument):
         # Scale the frequency to Hertz, as the underlying api assumes MHz
         frequency *= api.Hz
         self._frequency[channel][register] = frequency
+
+        # Update channel frequencies
         self.select_dds(channel)
         self.start_programming(api.FREQ_REGS)
-        for r in range(self.N_FREQ_REGS):
-            error_parse(api.pb_set_freq(self._frequency[channel][r]))
+        for frequency in self._frequency[channel]:
+            error_parse(api.pb_set_freq(frequency))
         self.stop_programming()
 
     def set_phase_register(self, phase, channel, register):
@@ -366,10 +360,11 @@ class PulseBlaster_DDS(Instrument):
             channel      (int) : Either DDS0 (0) or DDS1 (1)
         """
         self._phase[channel][register] = phase
+
         self.select_dds(channel)
         self.start_programming(self.TX_PHASE_REGS)
-        for r in range(self.N_PHASE_REGS):
-            error_parse(api.pb_set_phase(self._phase[channel][register]))
+        for phase in self._phase[channel]:
+            error_parse(api.pb_set_phase(phase))
         self.stop_programming()
 
     @error_parse
