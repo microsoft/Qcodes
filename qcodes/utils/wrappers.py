@@ -7,6 +7,9 @@ import logging
 from copy import deepcopy
 from collections import namedtuple
 import matplotlib.pyplot as plt
+import numpy as np
+
+from time import sleep
 
 from qcodes.plots.pyqtgraph import QtPlot
 from qcodes.plots.qcmatplotlib import MatPlot
@@ -19,7 +22,7 @@ CURRENT_EXPERIMENT = {}
 CURRENT_EXPERIMENT["logging_enabled"] = False
 
 
-def init(mainfolder:str, sample_name: str, station, plot_x_position=0.66,
+def init(mainfolder: str, sample_name: str, station, plot_x_position=0.66,
          annotate_image=True):
     """
 
@@ -41,7 +44,7 @@ def init(mainfolder:str, sample_name: str, station, plot_x_position=0.66,
 
     CURRENT_EXPERIMENT["mainfolder"] = mainfolder
     CURRENT_EXPERIMENT["sample_name"] = sample_name
-    CURRENT_EXPERIMENT['init']  = True
+    CURRENT_EXPERIMENT['init'] = True
 
     CURRENT_EXPERIMENT['plot_x_position'] = plot_x_position
 
@@ -66,7 +69,8 @@ def init(mainfolder:str, sample_name: str, station, plot_x_position=0.66,
     # turn on logging only if in ipython
     # else crash and burn
     if ipython is None:
-        raise RuntimeWarning("History can't be saved refusing to proceed (use IPython/jupyter)")
+        raise RuntimeWarning("History can't be saved. "
+                             "-Refusing to proceed (use IPython/jupyter)")
     else:
         logfile = "{}{}".format(path_to_experiment_folder, "commands.log")
         CURRENT_EXPERIMENT['logfile'] = logfile
@@ -142,27 +146,65 @@ def _plot_setup(data, inst_meas, useQT=True, startranges=None):
             standardunits = ['V', 's', 'J', 'W', 'm', 'eV', 'A', 'K', 'g',
                              'Hz', 'rad', 'T', 'H', 'F', 'Pa', 'C', 'Ω', 'Ohm',
                              'S']
-            for arr in data.arrays.values():
-                if arr.unit not in standardunits:
-                    subplot = plot.subplots[j + k]
-                    if arr.is_setpoint:  # setpoints on bottom axis
-                        subplot.getAxis('bottom').enableAutoSIPrefix(False)
-                    else:  # measured values to the left
-                        subplot.getAxis('left').enableAutoSIPrefix(False)
+            # make a dict mapping axis labels to axis positions
+            # TODO: will the labels for two axes ever be identical?
+            whatwhere = {}
+            for pos in ('bottom', 'left', 'right'):
+                whatwhere.update({plot.subplots[j+k].getAxis(pos).labelText:
+                                  pos})
+            tdict = {'bottom': 'setXRange', 'left': 'setYRange'}
+            # now find the data (not setpoint)
+            thedata = [d for d in data.arrays.values() if not d.is_setpoint][0]
 
-            # Avoid misleading default xrange
-            if startranges is not None:
-                subplot = plot.subplots[j + k]
-                rangefuns = ['setXRange', 'setYRange']
-                for (prange, rangefun) in zip(startranges, rangefuns):
-                    getattr(subplot.getViewBox(), rangefun)(prange[0],
-                                                            prange[1])
+            # Disable autoscale for the measured data
+            if thedata.unit not in standardunits:
+                subplot = plot.subplots[j+k]
+                try:
+                    # 1D measurement
+                    ax = subplot.getAxis(whatwhere[thedata.label])
+                    ax.enableAutoSIPrefix(False)
+                except KeyError:
+                    # 2D measurement
+                    # Then we should fetch the colorbar
+                    ax = plot.traces[0]['plot_object']['hist'].axis
+                    ax.enableAutoSIPrefix(False)
+                    ax.setLabel(text=thedata.label, unit=thedata.unit,
+                                unitPrefix='')
+
+            # Set up axis scaling
+            for setarr in thedata.set_arrays:
+                subplot = plot.subplots[j+k]
+                ax = subplot.getAxis(whatwhere[setarr.label])
+                # check for autoscaling
+                if setarr.unit not in standardunits:
+                    ax.enableAutoSIPrefix(False)
+                    # At this point, it has already been decided that
+                    # the scale is milli whatever
+                    # (the default empty plot is from -0.5 to 0.5)
+                    # so we must undo that
+                    ax.setScale(1e-3)
+                    ax.setLabel(text=setarr.label, unit=setarr.unit,
+                                unitPrefix='')
+                # set the axis ranges
+                if not(np.all(np.isnan(setarr))):
+                    # In this case the setpoints are "baked" into the parameter
+                    rangesetter = getattr(subplot.getViewBox(),
+                                          tdict[whatwhere[setarr.label]])
+                    rangesetter(setarr.min(), setarr.max())
+                else:
+                    # in this case someone must tell _create_plot what the
+                    # range should be. We get it from startranges
+                    rangesetter = getattr(subplot.getViewBox(),
+                                          tdict[whatwhere[setarr.label]])
+                    (rmin, rmax) = startranges[setarr.label]
+                    rangesetter(rmin, rmax)
 
         else:
             if 'z' in inst_meta_data:
                 xlen, ylen = inst_meta_data['z'].shape
                 rasterized = xlen*ylen > 5000
-                plot.add(inst_meas_data, subplot=j + k + 1, rasterized=rasterized)
+                plot.add(inst_meas_data, subplot=j + k + 1,
+                         rasterized=rasterized)
             else:
                 rasterized = False
                 plot.add(inst_meas_data, subplot=j + k + 1, color=color)
@@ -289,8 +331,9 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True):
         delay:  Delay at every step
         *inst_meas:  any number of instrument to measure and/or tasks to
           perform at each step of the sweep
-        do_plots: Default True: If False no plots are produced. Data is still saved
-          and can be displayed with show_num.
+        do_plots: Default True: If False no plots are produced.
+            Data is still saved
+             and can be displayed with show_num.
 
     Returns:
         plot, data : returns the plot and the dataset
@@ -300,13 +343,15 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True):
     # try to flush VISA buffers at the beginning of a measurement
     _flush_buffers(inst_set, *inst_meas)
 
-    # make a variable for aute pre-scaling the plot
-    startranges = ((start, stop),)
+    # make a variable for auto pre-scaling the plot
+    startranges = {inst_set.label: (start, stop)}
 
     interrupted = False
     loop = qc.Loop(inst_set.sweep(start,
-                                  stop, num=num_points), delay).each(*inst_meas)
+                                  stop,
+                                  num=num_points), delay).each(*inst_meas)
     data = loop.get_data_set()
+
     plottables = _select_plottables(inst_meas)
     if do_plots:
         plot, _ = _plot_setup(data, plottables, startranges=startranges)
@@ -370,7 +415,7 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, num_points, delay, start2, sl
     """
 
     # make a variable for aute pre-scaling the plot
-    startranges = ((start, stop),)
+    startranges = {inst_set.label: (start, stop)}
 
     # try to flush VISA buffers at the beginning of a measurement
     _flush_buffers(inst_set, inst2_set, *inst_meas)
@@ -444,7 +489,8 @@ def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num
     """
 
     # make a variable for aute pre-scaling the plot
-    startranges = ((start2, stop2), (start, stop))
+    startranges = {inst_set2.label: (start2, stop2),
+                   inst_set.label: (start, stop)}
 
     # try to flush VISA buffers at the beginning of a measurement
     _flush_buffers(inst_set, inst_set2, *inst_meas)
@@ -454,9 +500,16 @@ def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num
         if getattr(inst, "setpoints", False):
             raise ValueError("3d plotting is not supported")
 
-    loop = qc.Loop(inst_set.sweep(start, stop, num=num_points), delay).loop(inst_set2.sweep(start2,stop2,num=num_points2), delay2).each(
-        *inst_meas)
-    data = loop.get_data_set()
+    innerloop = qc.Loop(inst_set2.sweep(start2,
+                                        stop2,
+                                        num=num_points2),
+                        delay2).each(*inst_meas)
+    outerloop = qc.Loop(inst_set.sweep(start,
+                                       stop,
+                                       num=num_points),
+                        delay).each(innerloop)
+
+    data = outerloop.get_data_set()
     plottables = _select_plottables(inst_meas)
     if do_plots:
         plot, _ = _plot_setup(data, plottables, startranges=startranges)
@@ -464,9 +517,9 @@ def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num
         plot = None
     try:
         if do_plots:
-            _ = loop.with_bg_task(plot.update).run()
+            _ = outerloop.with_bg_task(plot.update).run()
         else:
-            _ = loop.run()
+            _ = outerloop.run()
     except KeyboardInterrupt:
         interrupted = True
         print("Measurement Interrupted")
