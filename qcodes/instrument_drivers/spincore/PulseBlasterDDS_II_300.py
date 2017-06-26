@@ -4,6 +4,7 @@ import numpy as np
 
 from qcodes.instrument.base import Instrument
 from qcodes.utils.validators import Numbers
+from qcodes.instrument.channel import InstrumentChannel, ChannelList
 
 try:
     from . import spinapi as api
@@ -95,37 +96,34 @@ class PulseBlaster_DDS(Instrument):
             vals=Numbers(),
             docstring='The core clock of the PulseBlasterDDS')
 
-        for n in range(self.N_CHANNELS):
-            # DDS Register Bank
-            for r in range(self.N_FREQ_REGS):
-                self.add_parameter(
-                    'frequency_n{}_r{}'.format(n, r),
-                    label='DDS Frequency for channel {}, '
-                          'register {}'.format(n, r),
-                    set_cmd=partial(self.set_frequency_register,
-                                    channel=n, register=r),
-                    vals=Numbers(),
-                    docstring='')
+        self.output_channels = ChannelList(self,
+                                           name='output_channels',
+                                           chan_type=InstrumentChannel)
 
-            for r in range(self.N_PHASE_REGS):
-                self.add_parameter(
-                    'phase_n{}_r{}'.format(n, r),
-                    label='DDS Phase for channel {}, '
-                          'register {}'.format(n, r),
-                    set_cmd=partial(self.set_phase_register,
-                                    channel=n, register=r),
-                    vals=Numbers(),
-                    docstring='')
+        for ch_idx in range(self.N_CHANNELS):
+            ch_name = f'ch{ch_idx}'
+            output_channel = InstrumentChannel(self, ch_name)
+            output_channel.idx = ch_idx
+            self.output_channels.append(output_channel)
 
-            for r in range(self.N_AMPLITUDE_REGS):
-                self.add_parameter(
-                    'amplitude_n{}_r{}'.format(n, r),
-                    label='DDS Amplitude for channel {}, '
-                          'register {}'.format(n, r),
-                    set_cmd=partial(self.set_amplitude_register,
-                                    channel=n, register=r),
-                    vals=Numbers(),
-                    docstring='')
+            output_channel.add_parameter(
+                'frequencies',
+                label=f'{ch_name} frequency',
+                unit='Hz',
+                set_cmd=partial(self.set_frequencies, ch_idx),
+                vals=Numbers())
+            output_channel.add_parameter(
+                'phases',
+                label=f'{ch_name} phase',
+                unit='deg',
+                set_cmd=partial(self.set_phases, ch_idx),
+                vals=Numbers())
+            output_channel.add_parameter(
+                'amplitudes',
+                label=f'{ch_name} amplitude',
+                unit='V',
+                set_cmd=partial(self.set_amplitudes, ch_idx),
+                vals=Numbers())
 
     ###########################################################################
     ###                         DDS Board commands                          ###
@@ -384,15 +382,16 @@ class PulseBlaster_DDS(Instrument):
             error_parse(api.pb_set_phase)(phase)
         self.stop_programming()
 
-    @error_parse
-    def set_amplitude_register(self, amplitude, channel, register):
+    def set_amplitudes(self, channel, amplitudes):
         """ Sets the DDS amplitude for the specified channel and register
         
         Args:
-            amplitude (double) : the amplitude in volts to write to the register
-            register     (int) : the register number
-            channel      (int) : Either DDS0 (0) or DDS1 (1)
+            channel (int) : Either DDS0 (0) or DDS1 (1)
+            amplitudes (list(double)): Register amplitudes in Volt for a 
+                channel 
         """
         self.select_dds(channel)
-        return api.pb_set_amp(amplitude, register)
+        # Amplitudes does not need to start programming
+        for register, amplitude in enumerate(amplitudes):
+            error_parse(api.pb_set_amp)(amplitude, register)
 
