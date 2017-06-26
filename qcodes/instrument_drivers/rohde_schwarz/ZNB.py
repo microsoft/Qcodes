@@ -355,18 +355,6 @@ class ZNB(VisaInstrument):
                             get_cmd='INST:PORT:COUN?',
                             get_parser=int)
         num_ports = self.num_ports()
-        channels = ChannelList(self, "VNAChannels", ZNBChannel,
-                               snapshotable=True)
-        self.add_submodule("channels", channels)
-        if init_s_params:
-            n = 1
-            for i in range(1, num_ports+1):
-                for j in range(1, num_ports+1):
-                    ch_name = 'S' + str(i) + str(j)
-                    self.add_channel(ch_name)
-                    n += 1
-
-            self.channels.lock()
 
         self.add_parameter(name='rf_power',
                            get_cmd='OUTP1?',
@@ -386,8 +374,21 @@ class ZNB(VisaInstrument):
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
         self.add_function('rf_on', call_cmd='OUTP1 ON')
 
+        channels = ChannelList(self, "VNAChannels", ZNBChannel,
+                               snapshotable=True)
+        self.add_submodule("channels", channels)
+        if init_s_params:
+            n = 1
+            for i in range(1, num_ports+1):
+                for j in range(1, num_ports+1):
+                    ch_name = 'S' + str(i) + str(j)
+                    self.add_channel(ch_name)
+                    n += 1
+            self.channels.lock()
+
         self.initialise()
         self.connect_message()
+
         if init_s_params:
             self.display_sij_split()
             self.channels.autoscale()
@@ -403,9 +404,7 @@ class ZNB(VisaInstrument):
         n_channels = len(self.channels)
         channel = ZNBChannel(self, vna_parameter, n_channels + 1)
         self.channels.append(channel)
-        if n_channels == 0:
-            # ensure that the new channel is displayed
-            self.display_single_window()
+
 
     def _set_default_values(self):
         for channel in self.channels:
