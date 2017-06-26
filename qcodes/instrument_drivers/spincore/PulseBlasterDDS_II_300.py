@@ -1,5 +1,6 @@
 from functools import partial, wraps
 import logging
+import numpy as np
 
 from qcodes.instrument.base import Instrument
 from qcodes.utils.validators import Numbers
@@ -77,8 +78,8 @@ class PulseBlaster_DDS(Instrument):
 
         # Internal State Variables, used when setting individual registers when
         # others may be undefined
-        self._frequency = [[0.0] * self.N_FREQ_REGS,  [0.0] * self.N_FREQ_REGS]
-        self._phase     = [[0.0] * self.N_PHASE_REGS, [0.0] * self.N_PHASE_REGS]
+        self.frequencies = [[0.0] * self.N_FREQ_REGS, [0.0] * self.N_FREQ_REGS]
+        self.phases     = [[0.0] * self.N_PHASE_REGS, [0.0] * self.N_PHASE_REGS]
 
         # Create an empty list of lists of instructions [[], [], ...]
         self.instructions = [[] for _ in range(self.N_CHANNELS)]
@@ -349,39 +350,38 @@ class PulseBlaster_DDS(Instrument):
     ###                  Set/Get commands for parameters                    ###
     ###########################################################################
 
-    def set_frequency_register(self, frequency, channel, register):
+    def set_frequencies(self, channel, frequencies):
         """ Sets the DDS frequency for the specified channel and register
         
         Args:
-            frequency (double) : the frequency in Hz to write to the register
-            register     (int) : the register number
+            frequency (list(double)): the frequency in Hz for a channel register
             channel      (int) : Either DDS0 (0) or DDS1 (1)
         """
         # Scale the frequency to Hertz, as the underlying api assumes MHz
-        frequency *= api.Hz
-        self._frequency[channel][register] = frequency
+
+        frequencies = np.array(frequencies) * api.Hz
+        self.frequencies[channel] = frequencies
 
         # Update channel frequencies
         self.select_dds(channel)
         self.start_programming(api.FREQ_REGS)
-        for frequency in self._frequency[channel]:
-            error_parse(api.pb_set_freq(frequency))
+        for frequency in self.frequencies[channel]:
+            error_parse(api.pb_set_freq)(frequency)
         self.stop_programming()
 
-    def set_phase_register(self, phase, channel, register):
+    def set_phases(self, channel, phases):
         """ Sets the DDS phase for the specified channel and register
         
         Args:
-            phase     (double) : the phase in degrees to write to the register
-            register     (int) : the register number
-            channel      (int) : Either DDS0 (0) or DDS1 (1)
+            phases (list(double)): List of phases for a channel register
+            channel        (int) : Either DDS0 (0) or DDS1 (1)
         """
-        self._phase[channel][register] = phase
+        self.phases[channel] = phases
 
         self.select_dds(channel)
         self.start_programming(self.TX_PHASE_REGS)
-        for phase in self._phase[channel]:
-            error_parse(api.pb_set_phase(phase))
+        for phase in self.phases[channel]:
+            error_parse(api.pb_set_phase)(phase)
         self.stop_programming()
 
     @error_parse
