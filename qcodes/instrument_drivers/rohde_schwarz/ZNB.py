@@ -114,7 +114,7 @@ class FrequencySweep(ArrayParameter):
                          unit='dB',
                          label='{} magnitude'.format(instrument._vna_parameter),
                          setpoint_units=('Hz',),
-                         setpoint_names=('frequency',))
+                         setpoint_names=('{} frequency'.format(instrument._vna_parameter),))
         self.set_sweep(start, stop, npts)
         self._channel = channel
 
@@ -384,12 +384,8 @@ class ZNB(VisaInstrument):
         self.add_function('rf_on', call_cmd='OUTP1 ON')
 
         self.initialise()
-        self.autoscale_all()
         self.connect_message()
-
-    def autoscale_all(self):
-        for channel in self.channels:
-            channel.autoscale()
+        self.channels.autoscale()
 
     def _set_default_values(self):
         for channel in self.channels:
