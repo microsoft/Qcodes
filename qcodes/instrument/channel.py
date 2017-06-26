@@ -1,6 +1,5 @@
 """ Base class for the channel of an instrument """
 from typing import List, Tuple, Union
-from collections import namedtuple
 
 from .base import InstrumentBase, Instrument
 from .parameter import MultiParameter, ArrayParameter
@@ -169,6 +168,7 @@ class ChannelList(Metadatable):
         self._snapshotable = snapshotable
         self._paramclass = multichan_paramclass
 
+        self._channel_mapping = {}  # provide lookup of channels by name
         # If a list of channels is not provided, define a list to store
         # channels. This will eventually become a locked tuple.
         if chan_list is None:
@@ -177,6 +177,8 @@ class ChannelList(Metadatable):
         else:
             self._locked = True
             self._channels = tuple(chan_list)
+            self._channel_mapping = {channel.short_name: channel
+                                     for channel in self._channels}
             if not all(isinstance(chan, chan_type) for chan in self._channels):
                 raise TypeError("All items in this channel list must be of "
                                 "type {}.".format(chan_type.__name__))
@@ -250,6 +252,7 @@ class ChannelList(Metadatable):
                             "type. Adding {} to a list of {}"
                             ".".format(type(obj).__name__,
                                        self._chan_type.__name__))
+        self._channel_mapping[obj.short_name] = obj
         return self._channels.append(obj)
 
     def extend(self, objects):
@@ -306,9 +309,7 @@ class ChannelList(Metadatable):
         if self._locked:
             return
 
-        channeltuple = namedtuple('channels', [channel.short_name for channel
-                                               in self._channels])
-        self._channels = channeltuple(*self._channels)
+        self._channels = tuple(self._channels)
         self._locked = True
 
     def snapshot_base(self, update: bool=False):
@@ -406,8 +407,8 @@ class ChannelList(Metadatable):
             return multi_func
 
         try:
-            return getattr(self._channels, name)
-        except AttributeError:
+            return self._channel_mapping[name]
+        except KeyError:
             pass
 
         raise AttributeError('\'{}\' object has no attribute \'{}\''
@@ -418,6 +419,5 @@ class ChannelList(Metadatable):
         if self._channels:
             names += list(self._channels[0].parameters.keys())
             names += list(self._channels[0].functions.keys())
-            if self._locked:
-                names += [channel.short_name for channel in self._channels]
+            names += [channel.short_name for channel in self._channels]
         return sorted(set(names))
