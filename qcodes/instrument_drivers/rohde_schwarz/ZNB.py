@@ -60,7 +60,7 @@ class FrequencySweepMagPhase(MultiParameter):
         # it is possible that the instrument and qcodes disagree about
         # which parameter is measured on this channel
         instrument_parameter = self._instrument.vna_parameter()[1:-2]
-        # trime quotes and newline
+        # trim quotes and newline
         if  instrument_parameter != self._instrument._vna_parameter:
             raise RuntimeError("Invalid parameter. Tried to measure "
                                "{} got {}".format(self._instrument._vna_parameter,
@@ -321,15 +321,19 @@ class ZNB(VisaInstrument):
 
     Requires FrequencySweep parameter for taking a trace
 
+    Args:
+        name: instrument name
+        address: Address of instrument probably in format
+            'TCPIP0::192.168.15.100::inst0::INSTR'
+        init_s_params: Automatically setup channels matching S parameters
+        **kwargs: passed to base class
+
     TODO:
     - check initialisation settings and test functions
     """
-    def __init__(self, name, address, **kwargs):
+    def __init__(self, name: str, address: str, init_s_params: bool=True, **kwargs):
 
         super().__init__(name=name, address=address, **kwargs)
-        n = 1
-        self._sindex_to_channel = {}
-        self._channel_to_sindex = {}
 
         # TODO(JHN) I could not find a way to get max and min freq from
         # the API, if that is possible replace below with that
@@ -353,17 +357,16 @@ class ZNB(VisaInstrument):
         num_ports = self.num_ports()
         channels = ChannelList(self, "VNAChannels", ZNBChannel,
                                snapshotable=True)
-        for i in range(1, num_ports+1):
-            self._sindex_to_channel[i] = {}
-            for j in range(1, num_ports+1):
-                ch_name = 'S' + str(i) + str(j)
-                channel = ZNBChannel(self, ch_name, n)
-                channels.append(channel)
-                self._sindex_to_channel[i][j] = n
-                self._channel_to_sindex[n] = (i, j)
-                n += 1
         self.add_submodule("channels", channels)
-        self.channels.lock()
+        if init_s_params:
+            n = 1
+            for i in range(1, num_ports+1):
+                for j in range(1, num_ports+1):
+                    ch_name = 'S' + str(i) + str(j)
+                    self.add_channel(ch_name)
+                    n += 1
+
+            self.channels.lock()
 
         self.add_parameter(name='rf_power',
                            get_cmd='OUTP1?',
@@ -379,13 +382,30 @@ class ZNB(VisaInstrument):
         self.add_function('update_display_on', call_cmd='SYST:DISP:UPD ON')
         self.add_function('update_display_off', call_cmd='SYST:DISP:UPD OFF')
         self.add_function('display_sij_split', call_cmd='DISP:LAY GRID;:DISP:LAY:GRID {},{}'.format(num_ports, num_ports))
-        self.add_function('display_sij_overlay', call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 1,1')
+        self.add_function('display_single_window', call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 1,1')
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
         self.add_function('rf_on', call_cmd='OUTP1 ON')
 
         self.initialise()
         self.connect_message()
-        self.channels.autoscale()
+        if init_s_params:
+            self.display_sij_split()
+            self.channels.autoscale()
+
+    def display_grid(self, rows: int, cols: int):
+        """
+        Display a grid of channels rows by cols
+        """
+        self.write('DISP:LAY GRID;:DISP:LAY:GRID {},{}'.format(rows, cols))
+
+
+    def add_channel(self, vna_parameter: str):
+        n_channels = len(self.channels)
+        channel = ZNBChannel(self, vna_parameter, n_channels + 1)
+        self.channels.append(channel)
+        if n_channels == 0:
+            # ensure that the new channel is displayed
+            self.display_single_window()
 
     def _set_default_values(self):
         for channel in self.channels:
@@ -395,7 +415,7 @@ class ZNB(VisaInstrument):
             channel.power(-50)
 
     def initialise(self):
-        for n in range(1, 5):
+        for n in range(1, len(self.channels)):
             self.write('SENS{}:SWE:TYPE LIN'.format(n))
             self.write('SENS{}:SWE:TIME:AUTO ON'.format(n))
             self.write('TRIG{}:SEQ:SOUR IMM'.format(n))
@@ -403,4 +423,3 @@ class ZNB(VisaInstrument):
         self.update_display_on()
         self._set_default_values()
         self.rf_off()
-        self.display_sij_split()
