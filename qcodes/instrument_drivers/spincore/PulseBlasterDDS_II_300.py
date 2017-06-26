@@ -3,14 +3,14 @@ import logging
 import numpy as np
 
 from qcodes.instrument.base import Instrument
-from qcodes.utils.validators import Numbers
+from qcodes.utils.validators import Lists, Numbers
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 
 try:
     from . import spinapi as api
 except:
-    raise ImportError('To use a SpinCore PulseBlaster, install the Python SpinAPI')
-
+    raise ImportError(
+        'To use a SpinCore PulseBlaster, install the Python SpinAPI')
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,7 @@ api.s = 1000000000.0
 
 def error_parse(f):
     """ Decorator for DLL communication that checks for errors"""
+
     @wraps(f)
     def error_wrapper(*args, **kwargs):
         value = f(*args, **kwargs)
@@ -27,6 +28,7 @@ def error_parse(f):
             logger.error('{}: {}'.format(value, api.pb_get_error()))
             raise IOError('{}: {}'.format(value, api.pb_get_error()))
         return value
+
     return error_wrapper
 
 
@@ -36,18 +38,18 @@ class PulseBlaster_DDS(Instrument):
     """
 
     # pb_start_programming options
-    TX_PHASE_REGS  = 2
-    RX_PHASE_REGS  = 3
+    TX_PHASE_REGS = 2
+    RX_PHASE_REGS = 3
     # COS_PHASE_REGS = 4 # RadioProcessor boards ONLY
     # SIN_PHASE_REGS = 5 # RadioProcessor boards ONLY
 
     # pb_write_register options
-    BASE_ADDR       = 0x40000
-    FLAG_STATES     = BASE_ADDR + 0x8
-    START_LOCATION  = BASE_ADDR + 0x7
+    BASE_ADDR = 0x40000
+    FLAG_STATES = BASE_ADDR + 0x8
+    START_LOCATION = BASE_ADDR + 0x7
 
     # pb_dds_load options
-    DEVICE_DDS   = 0x099000
+    DEVICE_DDS = 0x099000
     DEVICE_SHAPE = 0x099001
 
     N_CHANNELS = 2
@@ -57,34 +59,22 @@ class PulseBlaster_DDS(Instrument):
 
     DEFAULT_DDS_INST = (0, 0, 0, 0, 0)
 
-    def __init__(self, name,  **kwargs):
+    def __init__(self, name, **kwargs):
         """
         Initialize the pulseblaster DDS
-        
+
         Args:
             name: Name of instrument 
             **kwargs: Additional keyword arguments passed to Instrument
         """
         super().__init__(name, **kwargs)
 
-        # Initialise the DDS
-        # NOTE: Hard coded value for board may want to be part of initialize
-        if self.count_boards() > 0:
-            self.initialize()
-            self.select_board(0)
-            # Call set defaults to give board a well defined state
-            api.pb_set_defaults()
-        else:
-            raise IOError("PB Error: Can't find board")
-
-        # Internal State Variables, used when setting individual registers when
-        # others may be undefined
-        self.frequencies = [[0.0] * self.N_FREQ_REGS, [0.0] * self.N_FREQ_REGS]
-        self.phases     = [[0.0] * self.N_PHASE_REGS, [0.0] * self.N_PHASE_REGS]
-
         # Create an empty list of lists of instructions [[], [], ...]
         self.instructions = [[] for _ in range(self.N_CHANNELS)]
 
+        # Initialise the DDS
+        # NOTE: Hard coded value for board may want to be part of initialize
+        # self.setup(initialize=True)
 
         ########################################################################
         ###                              Parameters                          ###
@@ -111,19 +101,19 @@ class PulseBlaster_DDS(Instrument):
                 label=f'{ch_name} frequency',
                 unit='Hz',
                 set_cmd=partial(self.set_frequencies, ch_idx),
-                vals=Numbers())
+                vals=Lists(Numbers()))
             output_channel.add_parameter(
                 'phases',
                 label=f'{ch_name} phase',
                 unit='deg',
                 set_cmd=partial(self.set_phases, ch_idx),
-                vals=Numbers())
+                vals=Lists(Numbers()))
             output_channel.add_parameter(
                 'amplitudes',
                 label=f'{ch_name} amplitude',
                 unit='V',
                 set_cmd=partial(self.set_amplitudes, ch_idx),
-                vals=Numbers())
+                vals=Lists(Numbers()))
 
     ###########################################################################
     ###                         DDS Board commands                          ###
@@ -150,7 +140,7 @@ class PulseBlaster_DDS(Instrument):
     @staticmethod
     @error_parse
     def initialize():
-        """ Initialize currently selected board. """
+        """Initialize currently selected board."""
         return api.pb_init()
 
     @staticmethod
@@ -158,6 +148,12 @@ class PulseBlaster_DDS(Instrument):
     def set_debug(debug):
         """ Enables logging to a log.txt file in the current directory """
         return api.pb_set_debug(debug)
+
+    @staticmethod
+    @error_parse
+    def select_board(board_number):
+        """ Select a specific board number """
+        return api.pb_select_board(board_number)
 
     @staticmethod
     @error_parse
@@ -169,7 +165,7 @@ class PulseBlaster_DDS(Instrument):
     @staticmethod
     def set_core_clock(clock):
         """ Sets the core clock reference value
-        
+
         Note: This does not change anything in the device, it just provides 
         the library with the value given
         """
@@ -179,7 +175,7 @@ class PulseBlaster_DDS(Instrument):
     @error_parse
     def write_register(address, value):
         """ Write to one of two core registers in the DDS
-        
+
         Args:
             address (int) : the address of the register
             value   (int) : the value to be written to the register
@@ -189,6 +185,22 @@ class PulseBlaster_DDS(Instrument):
     ###########################################################################
     ###                        DDS Control commands                         ###
     ###########################################################################
+
+
+    def setup(self, initialize=False):
+        """
+        Sets up the DDS
+        Args:
+            initialize (Bool): Initialize the DDS (should only be done once 
+                at the start). False by default 
+
+        """
+        assert self.count_boards() > 0, "PB Error: Can't find board"
+        if initialize:
+            self.initialize()
+        self.select_board(0)
+        # Call set defaults to give board a well defined state
+        self.set_defaults()
 
     @staticmethod
     @error_parse
@@ -217,7 +229,7 @@ class PulseBlaster_DDS(Instrument):
     @error_parse
     def start_programming(mode):
         """ Start a programming sequence 
-        
+
         Args:
             mode    (int) : one of (PULSE_PROGRAM, FREQ_REGS, etc.)
         """
@@ -228,7 +240,7 @@ class PulseBlaster_DDS(Instrument):
     def inst_dds2(inst):
         """ During start_programming(PULSE_PROGRAM) 
             add an unshaped sine pulse to program
-        
+
         Args:
             inst  (tuple) : a tuple to program the board in the
                             (FREQ0, PHASE0, ...)
@@ -241,7 +253,7 @@ class PulseBlaster_DDS(Instrument):
     def inst_dds2_shape(inst):
         """ During start_programming(PULSE_PROGRAM) 
             add a shaped pulse to program, if desired
-        
+
         Args:
             inst  (tuple) : a tuple to program the board in the
                             (FREQ0, PHASE0, ...)
@@ -284,16 +296,16 @@ class PulseBlaster_DDS(Instrument):
         self.start_programming(api.PULSE_PROGRAM)
         for p in pulse_sequence:
             # convert last element from seconds to ns
-            p = p[:-1] + (p[-1]*api.s,)
-            # * breaks tuple into args, 
+            p = p[:-1] + (p[-1] * api.s,)
+            # * breaks tuple into args,
             self.inst_dds2(*p)
         self.stop_programming()
 
     def program_inst(self):
         """ Send the current instruction list to the board
-        
+
         Args:
-            
+
         """
         raise NotImplementedError('Warning: Unimplemented function')
         # pb_start_programming()
@@ -310,7 +322,7 @@ class PulseBlaster_DDS(Instrument):
     @error_parse
     def set_shape_defaults(self, channel):
         """ Resets the shape for the specified channel
-        
+
         Args:
             channel      (int) : Either DDS0 (0) or DDS1 (1)
         """
@@ -333,7 +345,7 @@ class PulseBlaster_DDS(Instrument):
     @error_parse
     def set_envelope_freq(self, freq, channel, register):
         """ Sets the frequency for an envelope register
-        
+
         Args:
             freq       (float) : the frequency in Hz for the envelope register
             register     (int) : the register number
@@ -350,7 +362,7 @@ class PulseBlaster_DDS(Instrument):
 
     def set_frequencies(self, channel, frequencies):
         """ Sets the DDS frequency for the specified channel and register
-        
+
         Args:
             frequency (list(double)): the frequency in Hz for a channel register
             channel      (int) : Either DDS0 (0) or DDS1 (1)
@@ -369,7 +381,7 @@ class PulseBlaster_DDS(Instrument):
 
     def set_phases(self, channel, phases):
         """ Sets the DDS phase for the specified channel and register
-        
+
         Args:
             phases (list(double)): List of phases for a channel register
             channel        (int) : Either DDS0 (0) or DDS1 (1)
@@ -384,7 +396,7 @@ class PulseBlaster_DDS(Instrument):
 
     def set_amplitudes(self, channel, amplitudes):
         """ Sets the DDS amplitude for the specified channel and register
-        
+
         Args:
             channel (int) : Either DDS0 (0) or DDS1 (1)
             amplitudes (list(double)): Register amplitudes in Volt for a 
