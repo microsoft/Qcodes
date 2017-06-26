@@ -2,7 +2,7 @@ from functools import partial, wraps
 import logging
 
 from qcodes.instrument.base import Instrument
-from qcodes.utils.validators import Numbers, Enum, Ints, Strings, Anything
+from qcodes.utils.validators import Numbers
 
 try:
     from . import spinapi as api
@@ -12,17 +12,17 @@ except:
 
 logger = logging.getLogger(__name__)
 
-# Add seconds to list of Pulseblaster keywords
+# Add seconds to list of PulseBlaster keywords
 api.s = 1000000000.0
-api.TX_PHASE_REGS  = 2
-api.RX_PHASE_REGS  = 3
 
 
 def error_parse(f):
+    """ Decorator for DLL communication that checks for errors"""
     @wraps(f)
     def error_wrapper(*args, **kwargs):
         value = f(*args, **kwargs)
         if not isinstance(value, str) and value < 0:
+            logger.error('{}: {}'.format(value, api.pb_get_error()))
             raise IOError('{}: {}'.format(value, api.pb_get_error()))
         return value
     return error_wrapper
@@ -36,8 +36,8 @@ class PulseBlaster_DDS(Instrument):
     # pb_start_programming options
     TX_PHASE_REGS  = 2
     RX_PHASE_REGS  = 3
-    #COS_PHASE_REGS = 4 # RadioProcessor boards ONLY
-    #SIN_PHASE_REGS = 5 # RadioProcessor boards ONLY
+    # COS_PHASE_REGS = 4 # RadioProcessor boards ONLY
+    # SIN_PHASE_REGS = 5 # RadioProcessor boards ONLY
 
     # pb_write_register options
     BASE_ADDR       = 0x40000
@@ -136,33 +136,39 @@ class PulseBlaster_DDS(Instrument):
         """ Print library error as UTF-8 encoded string. """
         return str(api.pb_get_error())
 
+    @staticmethod
     @error_parse
-    def get_version(self):
+    def get_version():
         """ Return the current version of the spinapi library being used. """
         return api.pb_get_version()
 
+    @staticmethod
     @error_parse
-    def count_boards(self):
+    def count_boards():
         """ Print the number of boards detected in the system. """
         return api.pb_count_boards()
 
+    @staticmethod
     @error_parse
-    def initialize(self):
+    def initialize():
         """ Initialize currently selected board. """
         return api.pb_init()
 
+    @staticmethod
     @error_parse
-    def set_debug(self, debug):
+    def set_debug(debug):
         """ Enables logging to a log.txt file in the current directory """
         return api.pb_set_debug(debug)
 
+    @staticmethod
     @error_parse
-    def set_defaults(self):
+    def set_defaults():
         """ Set board defaults. Must be called before using any other board 
         functions."""
         return api.pb_set_defaults()
 
-    def set_core_clock(self, clock):
+    @staticmethod
+    def set_core_clock(clock):
         """ Sets the core clock reference value
         
         Note: This does not change anything in the device, it just provides 
@@ -170,8 +176,9 @@ class PulseBlaster_DDS(Instrument):
         """
         api.pb_core_clock(clock)
 
+    @staticmethod
     @error_parse
-    def write_register(self, address, value):
+    def write_register(address, value):
         """ Write to one of two core registers in the DDS
         
         Args:
@@ -184,27 +191,32 @@ class PulseBlaster_DDS(Instrument):
     ###                        DDS Control commands                         ###
     ###########################################################################
 
+    @staticmethod
     @error_parse
-    def start(self):
+    def start():
         return api.pb_start()
 
+    @staticmethod
     @error_parse
-    def reset(self):
+    def reset():
         return api.pb_reset()
 
+    @staticmethod
     @error_parse
-    def stop(self):
+    def stop():
         return api.pb_stop()
 
+    @staticmethod
     @error_parse
-    def close(self):
+    def close():
         return api.pb_close()
 
     def add_instruction(self, inst, channel):
         self.instructions[channel].append(inst)
 
+    @staticmethod
     @error_parse
-    def start_programming(self, mode):
+    def start_programming(mode):
         """ Start a programming sequence 
         
         Args:
@@ -212,8 +224,9 @@ class PulseBlaster_DDS(Instrument):
         """
         return api.pb_start_programming(mode)
 
+    @staticmethod
     @error_parse
-    def inst_dds2(self, inst):
+    def inst_dds2(inst):
         """ During start_programming(PULSE_PROGRAM) 
             add an unshaped sine pulse to program
         
@@ -224,8 +237,9 @@ class PulseBlaster_DDS(Instrument):
         inst = inst[:-1] + (inst[-1] * api.s,)
         return api.pb_inst_dds2(*inst)
 
+    @staticmethod
     @error_parse
-    def inst_dds2_shape(self, inst):
+    def inst_dds2_shape(inst):
         """ During start_programming(PULSE_PROGRAM) 
             add a shaped pulse to program, if desired
         
@@ -236,8 +250,9 @@ class PulseBlaster_DDS(Instrument):
         inst = inst[:-1] + (inst[-1] * api.s,)
         return api.pb_inst_dds2_shape(*inst)
 
+    @staticmethod
     @error_parse
-    def dds_load(self, data, device):
+    def dds_load(data, device):
         """ Load a 1024 point waveform into one of two devices
 
         Args:
@@ -248,13 +263,15 @@ class PulseBlaster_DDS(Instrument):
         """
         return api.pb_dds_load(device)
 
+    @staticmethod
     @error_parse
-    def stop_programming(self):
+    def stop_programming():
         """ End a programming sequence """
         return api.pb_stop_programming()
 
+    @staticmethod
     @error_parse
-    def select_dds(self, channel):
+    def select_dds(channel):
         return api.pb_select_dds(channel)
 
     def program_pulse_sequence(self, pulse_sequence):
