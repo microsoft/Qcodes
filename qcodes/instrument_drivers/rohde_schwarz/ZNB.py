@@ -373,7 +373,7 @@ class ZNB(VisaInstrument):
         self.add_function('display_single_window', call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 1,1')
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
         self.add_function('rf_on', call_cmd='OUTP1 ON')
-
+        self.clear_channels()
         channels = ChannelList(self, "VNAChannels", ZNBChannel,
                                snapshotable=True)
         self.add_submodule("channels", channels)
@@ -404,6 +404,8 @@ class ZNB(VisaInstrument):
         n_channels = len(self.channels)
         channel = ZNBChannel(self, vna_parameter, n_channels + 1)
         self.channels.append(channel)
+        if n_channels == 0:
+            self.display_single_window()
 
 
     def _set_default_values(self):
@@ -422,3 +424,15 @@ class ZNB(VisaInstrument):
         self.update_display_on()
         self._set_default_values()
         self.rf_off()
+
+    def clear_channels(self):
+        """
+        Remove all channels from the instrument and channel list and
+        unlock the channel list.
+        """
+        self.write('CALCulate:PARameter:DELete:ALL')
+        for submodule in self.submodules.values():
+            if isinstance(submodule, ChannelList):
+                submodule._channels = []
+                submodule._channel_mapping = {}
+                submodule._locked = False
