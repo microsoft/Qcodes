@@ -166,8 +166,9 @@ class Triggered_Controller(AcquisitionController):
 
         self.add_parameter(
             'samples_per_read',
+            parameter_class=ManualParameter,
             vals=Ints(),
-            set_cmd=self._set_all_n_points,
+            # set_cmd=self._set_all_n_points,
             docstring='The number of points to get per read. '
                      'Can be use to break acquisition into multiple reads.'
         )
@@ -232,15 +233,16 @@ class Triggered_Controller(AcquisitionController):
             while (samples_retrieved < samples):
                 samples_to_get = min(self.samples_per_read.get_latest(), samples - samples_retrieved)
                 n_points = samples_to_get * self.samples_per_record.get_latest()
-                samples_retrieved += samples_to_get
                 self._keysight.parameters[f'n_points_{ch}'](n_points)
-
+                logger.info(f'Trying to acquire {n_points} points from DAQ{ch}.')
                 ch_data_retrieved = self._keysight.daq_read(ch)
+                logger.info('Done.')
                 if (len(ch_data_retrieved) != 0):
-                    if (ch_data == None):
+                    samples_retrieved += samples_to_get
+                    if (np.any(ch_data) == None):
                         ch_data = ch_data_retrieved
                     else:
-                        np.concatenate([ch_data, ch_data_retrieved], axis=1)
+                        ch_data = np.concatenate([ch_data, ch_data_retrieved], axis=0)
                 else:
                     raise RuntimeError(f'Could not acquire data on ch{ch} with read '
                     f'timeout {self.read_timeout.get_latest():.3f}s')
