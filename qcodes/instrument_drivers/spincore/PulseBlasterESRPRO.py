@@ -32,7 +32,7 @@ class PulseBlasterESRPRO(Instrument):
         'LONG_DELAY': 7,#inst_data=Number of desired repetitions
         'WAIT': 8}      #inst_data=Not used
 
-    def __init__(self, name, api_path, **kwargs):
+    def __init__(self, name, api_path, board_number=0, **kwargs):
         super().__init__(name, **kwargs)
 
         # It seems that the core_clock is not the same as the sampling rate.
@@ -43,6 +43,10 @@ class PulseBlasterESRPRO(Instrument):
                            unit='MHz',
                            set_cmd=api.pb_core_clock,
                            vals=vals.Numbers(0, 500))
+
+        self.add_parameter('board_number',
+                           parameter_class=ManualParameter,
+                           initial_value=board_number)
 
         self.add_function('initialize',
                           call_cmd=self.initialize)
@@ -82,7 +86,7 @@ class PulseBlasterESRPRO(Instrument):
                            initial_value=[],
                            vals=vals.Anything())
 
-        self.initialize()
+        self.setup(initialize=True)
 
     def initialize(self):
         '''
@@ -106,6 +110,21 @@ class PulseBlasterESRPRO(Instrument):
         return_msg = api.pb_count_boards()
         assert return_msg > 0, 'No boards detected'
         return return_msg
+
+    def setup(self, initialize=False):
+        """
+        Sets up the board, must be called before programming it
+        Args:
+            initialize: Whether to initialize (should only be done once at 
+            the start). False by default
+
+        Returns:
+
+        """
+        self.detect_boards()
+        self.select_board(self.board_number())
+        if initialize:
+            self.initialize()
 
     def start_programming(self):
         '''

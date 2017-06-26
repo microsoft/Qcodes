@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from collections import Iterable
 
 BIGSTRING = 1000000000
 BIGINT = int(1e18)
@@ -416,6 +417,31 @@ class Lists(Validator):
         if not isinstance(value, list):
             raise TypeError(
                 '{} is not a list; {}'.format(repr(value), context))
+        # Does not validate elements if not required to improve performance
+        if not isinstance(self._elt_validator, Anything):
+            for elt in value:
+                self._elt_validator.validate(elt)
+
+
+class Iterables(Validator):
+    """
+    Validator for Iterables (lists, sets, etc.)
+    Args:
+        elt_validator: used to validate the individual elements of the list
+    """
+
+    def __init__(self, elt_validator=Anything()):
+        self._elt_validator = elt_validator
+
+    def __repr__(self):
+        msg = '<Lists : '
+        msg += self._elt_validator.__repr__() + '>'
+        return msg
+
+    def validate(self, value, context=''):
+        if not isinstance(value, Iterable):
+            raise TypeError(
+                '{} is not a sequence; {}'.format(repr(value), context))
         # Does not validate elements if not required to improve performance
         if not isinstance(self._elt_validator, Anything):
             for elt in value:

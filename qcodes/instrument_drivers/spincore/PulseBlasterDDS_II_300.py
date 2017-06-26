@@ -2,7 +2,7 @@ from functools import partial, wraps
 import logging
 import numpy as np
 
-from qcodes.instrument.base import Instrument
+from qcodes import Instrument, ManualParameter
 from qcodes.utils.validators import Lists, Numbers
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 
@@ -32,7 +32,7 @@ def error_parse(f):
     return error_wrapper
 
 
-class PulseBlaster_DDS(Instrument):
+class PulseBlasterDDS(Instrument):
     """
     This is the qcodes driver for the SpinCore PulseBlasterDDS-II-300
     """
@@ -59,7 +59,7 @@ class PulseBlaster_DDS(Instrument):
 
     DEFAULT_DDS_INST = (0, 0, 0, 0, 0)
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, board_number=0, initialize=True, **kwargs):
         """
         Initialize the pulseblaster DDS
 
@@ -72,9 +72,6 @@ class PulseBlaster_DDS(Instrument):
         # Create an empty list of lists of instructions [[], [], ...]
         self.instructions = [[] for _ in range(self.N_CHANNELS)]
 
-        # Initialise the DDS
-        # NOTE: Hard coded value for board may want to be part of initialize
-        # self.setup(initialize=True)
 
         ########################################################################
         ###                              Parameters                          ###
@@ -86,12 +83,16 @@ class PulseBlaster_DDS(Instrument):
             vals=Numbers(),
             docstring='The core clock of the PulseBlasterDDS')
 
+        self.add_parameter('board_number',
+                           parameter_class=ManualParameter,
+                           initial_value=board_number)
+
         self.output_channels = ChannelList(self,
                                            name='output_channels',
                                            chan_type=InstrumentChannel)
 
         for ch_idx in range(self.N_CHANNELS):
-            ch_name = f'ch{ch_idx}'
+            ch_name = f'ch{ch_idx+1}'
             output_channel = InstrumentChannel(self, ch_name)
             output_channel.idx = ch_idx
             self.output_channels.append(output_channel)
@@ -100,20 +101,26 @@ class PulseBlaster_DDS(Instrument):
                 'frequencies',
                 label=f'{ch_name} frequency',
                 unit='Hz',
-                set_cmd=partial(self.set_frequencies, ch_idx),
+                # set_cmd=partial(self.set_frequencies, ch_idx),
+                parameter_class=ManualParameter,
                 vals=Lists(Numbers()))
             output_channel.add_parameter(
                 'phases',
                 label=f'{ch_name} phase',
                 unit='deg',
-                set_cmd=partial(self.set_phases, ch_idx),
+                # set_cmd=partial(self.set_phases, ch_idx),
+                parameter_class=ManualParameter,
                 vals=Lists(Numbers()))
             output_channel.add_parameter(
                 'amplitudes',
                 label=f'{ch_name} amplitude',
                 unit='V',
-                set_cmd=partial(self.set_amplitudes, ch_idx),
+                # set_cmd=partial(self.set_amplitudes, ch_idx),
+                parameter_class=ManualParameter,
                 vals=Lists(Numbers()))
+
+        # Initialize the DDS
+        self.setup(initialize=initialize)
 
     ###########################################################################
     ###                         DDS Board commands                          ###
@@ -196,11 +203,9 @@ class PulseBlaster_DDS(Instrument):
 
         """
         assert self.count_boards() > 0, "PB Error: Can't find board"
+        self.select_board(self.board_number())
         if initialize:
             self.initialize()
-        self.select_board(0)
-        # Call set defaults to give board a well defined state
-        self.set_defaults()
 
     @staticmethod
     @error_parse
@@ -370,12 +375,11 @@ class PulseBlaster_DDS(Instrument):
         # Scale the frequency to Hertz, as the underlying api assumes MHz
 
         frequencies = np.array(frequencies) * api.Hz
-        self.frequencies[channel] = frequencies
 
         # Update channel frequencies
         self.select_dds(channel)
         self.start_programming(api.FREQ_REGS)
-        for frequency in self.frequencies[channel]:
+        for frequency in self.output_channels[channel].frequencies():
             error_parse(api.pb_set_freq)(frequency)
         self.stop_programming()
 
@@ -386,11 +390,9 @@ class PulseBlaster_DDS(Instrument):
             phases (list(double)): List of phases for a channel register
             channel        (int) : Either DDS0 (0) or DDS1 (1)
         """
-        self.phases[channel] = phases
-
         self.select_dds(channel)
         self.start_programming(self.TX_PHASE_REGS)
-        for phase in self.phases[channel]:
+        for phase in self.output_channels[channel].phases():
             error_parse(api.pb_set_phase)(phase)
         self.stop_programming()
 
