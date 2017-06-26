@@ -12,6 +12,11 @@ except:
 
 logger = logging.getLogger(__name__)
 
+# Add seconds to list of Pulseblaster keywords
+api.s = 1000000000.0
+api.TX_PHASE_REGS  = 2
+api.RX_PHASE_REGS  = 3
+
 
 def error_parse(f):
     @wraps(f)
@@ -23,19 +28,12 @@ def error_parse(f):
     return error_wrapper
 
 
-class PB_KEYWORDS():
-    ns = 1.0
-    us = 1000.0
-    ms = 1000000.0
-    s  = 1000000000.0
-
-    MHz = 1.0
-    kHz = 0.001
-    Hz  = 0.000001
+class PulseBlaster_DDS(Instrument):
+    """
+    This is the qcodes driver for the SpinCore PulseBlasterDDS-II-300
+    """
 
     # pb_start_programming options
-    PULSE_PROGRAM  = 0
-    FREQ_REGS      = 1
     TX_PHASE_REGS  = 2
     RX_PHASE_REGS  = 3
     #COS_PHASE_REGS = 4 # RadioProcessor boards ONLY
@@ -50,17 +48,15 @@ class PB_KEYWORDS():
     DEVICE_DDS   = 0x099000
     DEVICE_SHAPE = 0x099001
 
-
-
-class PulseBlaster_DDS(Instrument):
-    """
-    This is the qcodes driver for the SpinCore PulseBlasterDDS-II-300
-
-    Args:
-        name (str): name for this instrument, passed to the base instrument
-    """
-
     def __init__(self, name,  raise_errors=False, **kwargs):
+        """
+        Initialize the pulseblaster DDS
+        
+        Args:
+            name: Name of instrument 
+            raise_errors: Whether to raise errors or simply log them
+            **kwargs: Additional keyword arguments passed to Instrument
+        """
         self.raise_errors = raise_errors
 
         super().__init__(name, **kwargs)
@@ -232,7 +228,7 @@ class PulseBlaster_DDS(Instrument):
             inst  (tuple) : a tuple to program the board in the
                             (FREQ0, PHASE0, ...)
         """
-        inst = inst[:-1] + (inst[-1] * PB_KEYWORDS.s,)
+        inst = inst[:-1] + (inst[-1] * api.s,)
         return api.pb_inst_dds2(*inst)
 
     @error_parse
@@ -244,7 +240,7 @@ class PulseBlaster_DDS(Instrument):
             inst  (tuple) : a tuple to program the board in the
                             (FREQ0, PHASE0, ...)
         """
-        inst = inst[:-1] + (inst[-1] * PB_KEYWORDS.s,)
+        inst = inst[:-1] + (inst[-1] * api.s,)
         return api.pb_inst_dds2_shape(*inst)
 
     @error_parse
@@ -276,10 +272,10 @@ class PulseBlaster_DDS(Instrument):
                                     the instructions should be tuples i.e.
                                     (FREQ0, PHASE0, ...)
         """
-        self.start_programming(PB_KEYWORDS.PULSE_PROGRAM)
+        self.start_programming(api.PULSE_PROGRAM)
         for p in pulse_sequence:
             # convert last element from seconds to ns
-            p = p[:-1] + (p[-1]*PB_KEYWORDS.s,)
+            p = p[:-1] + (p[-1]*api.s,)
             # * breaks tuple into args, 
             self.inst_dds2(*p)
         self.stop_programming()
@@ -336,7 +332,7 @@ class PulseBlaster_DDS(Instrument):
             channel      (int) : Either DDS0 (0) or DDS1 (1)
         """
         # Scale the frequency to Hertz, as the underlying api assumes MHz
-        freq *= PB_KEYWORDS.Hz 
+        freq *= api.Hz
         self.select_dds(channel)
         return api.pb_dds_set_envelope_freq(freq, register)
 
@@ -353,10 +349,10 @@ class PulseBlaster_DDS(Instrument):
             channel      (int) : Either DDS0 (0) or DDS1 (1)
         """
         # Scale the frequency to Hertz, as the underlying api assumes MHz
-        frequency *= PB_KEYWORDS.Hz 
+        frequency *= api.Hz
         self._frequency[channel][register] = frequency
         self.select_dds(channel)
-        self.start_programming(PB_KEYWORDS.FREQ_REGS)
+        self.start_programming(api.FREQ_REGS)
         for r in range(self.N_FREQ_REGS):
             error_parse(api.pb_set_freq(self._frequency[channel][r]))
         self.stop_programming()
@@ -371,7 +367,7 @@ class PulseBlaster_DDS(Instrument):
         """
         self._phase[channel][register] = phase
         self.select_dds(channel)
-        self.start_programming(PB_KEYWORDS.TX_PHASE_REGS)
+        self.start_programming(self.TX_PHASE_REGS)
         for r in range(self.N_PHASE_REGS):
             error_parse(api.pb_set_phase(self._phase[channel][register]))
         self.stop_programming()
