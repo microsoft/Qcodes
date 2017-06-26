@@ -196,7 +196,13 @@ class ChannelList(Metadatable):
             return ChannelList(self._parent, self._name, self._chan_type,
                                self._channels[i],
                                multichan_paramclass=self._paramclass)
-        return self._channels[i]
+        elif isinstance(i, int):
+            return self._channels[i]
+        elif isinstance(i, str):
+            channels = [ch for ch in self._channels if ch.short_name == i]
+            assert len(channels) == 1, f"Found {len(channels)} instead of 1 " \
+                                       f"that have name {i}"
+            return channels[0]
 
     def __iter__(self):
         return iter(self._channels)
