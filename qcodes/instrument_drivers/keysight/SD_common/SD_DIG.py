@@ -277,7 +277,7 @@ class SD_DIG(SD_Module):
         """
         value = self.SD_AIN.DAQread(daq, self.__n_points[daq], self.__timeout[daq])
         # Scale signal to volts
-        if (type(value) != type(None)):
+        if not isinstance(value, int):
             scaled_value = value * 2 * self.__full_scale[daq]/ (1 << 16)
         value_name = 'DAQ_read channel {}'.format(daq)
         return result_parser(scaled_value, value_name, verbose)
@@ -439,7 +439,7 @@ class SD_DIG(SD_Module):
         """
         self.__prescaler[channel] = prescaler
         value = self.SD_AIN.channelPrescalerConfig(channel, prescaler)
-        value_name = 'set_prescaler ch{}'.format(channel)
+        value_name = 'set_prescaler ch{} to {}'.format(channel, prescaler)
         return result_parser(value, value_name, verbose)
 
     # channelInputConfig
@@ -469,7 +469,7 @@ class SD_DIG(SD_Module):
         value = self.SD_AIN.channelInputConfig(channel, self.__full_scale[channel],
                                                self.__impedance[channel],
                                                self.__coupling[channel])
-        value_name = 'set_full_scale ch{}'.format(channel)
+        value_name = 'set_full_scale ch{} to {}'.format(channel, full_scale)
         return result_parser(value, value_name, verbose)
 
     def get_impedance(self, channel, verbose=False):
@@ -495,7 +495,7 @@ class SD_DIG(SD_Module):
         value = self.SD_AIN.channelInputConfig(channel, self.__full_scale[channel],
                                                self.__impedance[channel],
                                                self.__coupling[channel])
-        value_name = 'set_impedance ch{}'.format(channel)
+        value_name = 'set_impedance ch{} to {}'.format(channel, impedance)
         return result_parser(value, value_name, verbose)
 
     def get_coupling(self, channel, verbose=False):
@@ -521,7 +521,7 @@ class SD_DIG(SD_Module):
         value = self.SD_AIN.channelInputConfig(channel, self.__full_scale[channel],
                                                self.__impedance[channel],
                                                self.__coupling[channel])
-        value_name = 'set_coupling ch{}'.format(channel)
+        value_name = 'set_coupling ch{} to {}'.format(channel, coupling)
         return result_parser(value, value_name, verbose)
 
     # channelTriggerConfig
@@ -535,7 +535,7 @@ class SD_DIG(SD_Module):
         self.__trigger_edge[channel] = mode
         value = self.SD_AIN.channelTriggerConfig(channel, self.__trigger_edge[channel],
                                                  self.__trigger_threshold[channel])
-        value_name = 'set_trigger_edge ch{}'.format(channel)
+        value_name = 'set_trigger_edge ch{} to {}'.format(channel, mode)
         return result_parser(value, value_name, verbose)
 
     def get_trigger_edge(self, channel):
@@ -556,7 +556,7 @@ class SD_DIG(SD_Module):
         self.__trigger_threshold[channel] = threshold
         value = self.SD_AIN.channelTriggerConfig(channel, self.__trigger_edge[channel],
                                                  self.__trigger_threshold[channel])
-        value_name = 'set_trigger_threshold ch{}'.format(channel)
+        value_name = 'set_trigger_threshold ch{} to {}'.format(channel, threshold)
         return result_parser(value, value_name, verbose)
 
     def get_trigger_threshold(self, channel):
@@ -580,7 +580,7 @@ class SD_DIG(SD_Module):
                                       self.__n_cycles[channel],
                                       self.__trigger_delay[channel],
                                       self.__trigger_mode[channel])
-        value_name = 'set_points_per_cycle ch{}'.format(channel)
+        value_name = 'set_points_per_cycle ch{} to {}'.format(channel, n_points)
         return result_parser(value, value_name, verbose)
 
     def set_n_cycles(self, n_cycles, channel, verbose=False):
@@ -596,7 +596,7 @@ class SD_DIG(SD_Module):
                                       self.__n_cycles[channel],
                                       self.__trigger_delay[channel],
                                       self.__trigger_mode[channel])
-        value_name = 'set_n_cycles ch{}'.format(channel)
+        value_name = 'set_n_cycles ch{} to {}'.format(channel, n_cycles)
         return result_parser(value, value_name, verbose)
 
     def set_daq_trigger_delay(self, delay, channel, verbose=False):
@@ -611,7 +611,7 @@ class SD_DIG(SD_Module):
                                       self.__n_cycles[channel],
                                       self.__trigger_delay[channel],
                                       self.__trigger_mode[channel])
-        value_name = 'set_DAQ_trigger_delay ch{}'.format(channel)
+        value_name = 'set_DAQ_trigger_delay ch{} to {}'.format(channel, delay)
         return result_parser(value, value_name, verbose)
 
     def set_daq_trigger_mode(self, mode, channel, verbose=False):
@@ -626,7 +626,7 @@ class SD_DIG(SD_Module):
                                       self.__n_cycles[channel],
                                       self.__trigger_delay[channel],
                                       self.__trigger_mode[channel])
-        value_name = 'set_DAQ_trigger_mode ch{}'.format(channel)
+        value_name = 'set_DAQ_trigger_mode ch{} to {}'.format(channel, mode)
         return result_parser(value, value_name, verbose)
 
     # DAQ trigger Config
@@ -667,7 +667,7 @@ class SD_DIG(SD_Module):
         """
         self.__analog_trigger_mask[channel] = mask
         value = self.SD_AIN.DAQanalogTriggerConfig(channel, self.__analog_trigger_mask[channel])
-        value_name = 'set_analog_trigger_mask ch{}'.format(channel)
+        value_name = 'set_analog_trigger_mask ch{} to {}'.format(channel, mask)
         return result_parser(value, value_name, verbose)
 
     # DAQ trigger External Config
@@ -707,7 +707,7 @@ class SD_DIG(SD_Module):
         """
         self.__n_points[channel] = n_points
         value = 0 # No error
-        value_name = 'set_n_points ch{}'.format(channel)
+        value_name = 'set_n_points ch{} to {}'.format(channel, n_points)
         return result_parser(value, value_name, verbose)
 
     def set_timeout(self, timeout, channel, verbose=False):
@@ -719,6 +719,6 @@ class SD_DIG(SD_Module):
         """
         self.__timeout[channel] = timeout
         value = 0 # No error
-        value_name = 'set_timeout ch{}'.format(channel)
+        value_name = 'set_timeout ch{} to {}'.format(channel, timeout)
         return result_parser(value, value_name, verbose)
 
