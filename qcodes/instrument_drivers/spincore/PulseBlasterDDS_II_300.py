@@ -59,6 +59,17 @@ class PulseBlasterDDS(Instrument):
 
     DEFAULT_DDS_INST = (0, 0, 0, 0, 0)
 
+    PROGRAM_INSTRUCTIONS_MAP = {
+        'CONTINUE': 0,  #inst_data=Not used
+        'STOP': 1,      #inst_data=Not used
+        'LOOP': 2,      #inst_data=Number of desired loops
+        'END_LOOP': 3,  #inst_data=Address of instruction originating loop
+        'JSR': 4,       #inst_data=Address of first instruction in subroutine
+        'RTS': 5,       #inst_data=Not Used
+        'BRANCH': 6,    #inst_data=Address of instruction to branch to
+        'LONG_DELAY': 7,#inst_data=Number of desired repetitions
+        'WAIT': 8}      #inst_data=Not used
+
     def __init__(self, name, board_number=0, initialize=True, **kwargs):
         """
         Initialize the pulseblaster DDS
@@ -246,9 +257,11 @@ class PulseBlasterDDS(Instrument):
         """
         return api.pb_start_programming(mode)
 
-    @staticmethod
+    @classmethod
     @error_parse
-    def instruction_sine_pulse(*inst):
+    def instruction_sine_pulse(cls, freq0, phase0, amp0, dds_en0, phase_reset0,
+                               freq1, phase1, amp1, dds_en1, phase_reset1,
+                               flags, inst, inst_data, length):
         """ During start_programming(PULSE_PROGRAM) 
             add an unshaped sine pulse to program
 
@@ -262,8 +275,14 @@ class PulseBlasterDDS(Instrument):
                              
                              dds_en should be api.TX_ENABLE or api.TX_DISABLE 
         """
-        inst = inst[:-1] + (round(inst[-1] * api.s),)
-        return api.pb_inst_dds2(*inst)
+        length = round(length * api.s)
+
+        if isinstance(inst, str):
+            inst = cls.PROGRAM_INSTRUCTIONS_MAP[inst.upper()]
+
+        return api.pb_inst_dds2(freq0, phase0, amp0, dds_en0, phase_reset0,
+                                freq1, phase1, amp1, dds_en1, phase_reset1,
+                                flags, inst, inst_data, length)
 
     @staticmethod
     @error_parse
@@ -313,13 +332,10 @@ class PulseBlasterDDS(Instrument):
         """
         self.start_programming(api.PULSE_PROGRAM)
         for instruction in instruction_sequence:
-            # convert last element from seconds to ns
-            instruction = instruction[:-1] + (round(instruction[-1] * api.s),)
-            # * breaks tuple into args,
             self.instruction_sine_pulse(*instruction)
         self.stop_programming()
 
-        # Update instruction sequence
+        # Update instruction sequence parameter
         self.instruction_sequence(instruction_sequence)
 
     @error_parse
@@ -377,7 +393,7 @@ class PulseBlasterDDS(Instrument):
         # Update channel frequencies
         self.select_dds(channel)
         self.start_programming(api.FREQ_REGS)
-        for frequency in self.output_channels[channel].frequencies():
+        for frequency in frequencies:
             error_parse(api.pb_set_freq)(frequency)
         self.stop_programming()
 
@@ -390,7 +406,7 @@ class PulseBlasterDDS(Instrument):
         """
         self.select_dds(channel)
         self.start_programming(self.TX_PHASE_REGS)
-        for phase in self.output_channels[channel].phases():
+        for phase in phases:
             error_parse(api.pb_set_phase)(phase)
         self.stop_programming()
 
