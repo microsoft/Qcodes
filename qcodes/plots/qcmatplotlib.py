@@ -21,11 +21,11 @@ class MatPlot(BasePlot):
 
     Args:
         *args: Sequence of data to plot. Each element will have its own subplot.
-            An element can be a single array, or a sequence of arrays. In the 
+            An element can be a single array, or a sequence of arrays. In the
             latter case, all arrays will be plotted in the same subplot.
 
-        figsize (Tuple[Float, Float]): (width, height) tuple in inches to pass 
-            to plt.figure. If not provided, figsize is determined from 
+        figsize (Tuple[Float, Float]): (width, height) tuple in inches to pass
+            to plt.figure. If not provided, figsize is determined from
             subplots shape
 
         interval: period in seconds between update checks
@@ -54,22 +54,16 @@ class MatPlot(BasePlot):
             subplots = max(len(args), 1)
 
         self._init_plot(subplots, figsize, num=num)
-
-        # Add data to plot if passed in args
-        if len(args) > 1:
-            # Multiple args passed, add each arg to separate subplot
-            for k, arg in enumerate(args):
-                if isinstance(arg, Sequence):
-                    # Arg consists of multiple elements, add all to same subplot
-                    for subarg in arg:
-                        self[k].add(subarg)
-                else:
-                    # Arg is single element, add to subplot
-                    self[k].add(arg)
-        elif args:
-            # Single arg, which indicates the data, additional x and y vals
-            # can be passed as kwargs.
-            self.add(*args, **kwargs)
+        
+        # Add data to plot if passed in args, kwargs are passed to all subplots
+        for k, arg in enumerate(args):
+            if isinstance(arg, Sequence):
+                # Arg consists of multiple elements, add all to same subplot
+                for subarg in arg:
+                    self[k].add(subarg, **kwargs)
+            else:
+                # Arg is single element, add to subplot
+                self[k].add(arg, **kwargs)
 
         self.tight_layout()
 
@@ -77,7 +71,7 @@ class MatPlot(BasePlot):
         """
         Subplots can be accessed via indices.
         Args:
-            key: subplot idx 
+            key: subplot idx
 
         Returns:
             Subplot with idx key
@@ -116,8 +110,9 @@ class MatPlot(BasePlot):
 
         for k, subplot in enumerate(self.subplots):
             # Include `add` method to subplots, making it easier to add data to
-            # subplots.
-            subplot.add = partial(self.add, subplot=k)
+            # subplots. Note that subplot kwarg is 1-based, to adhere to
+            # Matplotlib standards
+            subplot.add = partial(self.add, subplot=k+1)
 
         self.title = self.fig.suptitle('')
 
@@ -133,7 +128,7 @@ class MatPlot(BasePlot):
     def add_to_plot(self, use_offset=False, **kwargs):
         """
         adds one trace to this MatPlot.
-        
+
         Args:
             use_offset (bool, Optional): Whether or not ticks can have an offset
             
@@ -144,11 +139,13 @@ class MatPlot(BasePlot):
                     `x`, `y`, and `z` are passed as positional args to
                      pcolormesh
                 without `z` we draw a scatter/lines plot (ax.plot):
-                    `x`, `y`, and `fmt` (if present) are passed as positional 
+                    `x`, `y`, and `fmt` (if present) are passed as positional
                     args
         """
         # TODO some way to specify overlaid axes?
-        ax = self[kwargs.get('subplot', 0)]
+        # Note that there is a conversion from subplot kwarg, which is
+        # 1-based, to subplot idx, which is 0-based.
+        ax = self[kwargs.get('subplot', 1) - 1]
         if 'z' in kwargs:
             plot_object = self._draw_pcolormesh(ax, **kwargs)
         else:
@@ -203,7 +200,8 @@ class MatPlot(BasePlot):
             axsetter = getattr(ax, "set_{}label".format(axletter))
             axsetter("{} ({})".format(label, unit))
 
-    def default_figsize(self, subplots):
+    @staticmethod
+    def default_figsize(subplots):
         """
         Provides default figsize for given subplots.
         Args:
@@ -235,7 +233,7 @@ class MatPlot(BasePlot):
                 if plot_object:
                     plot_object.remove()
 
-                ax = self[config.get('subplot', 0)]
+                ax = self[config.get('subplot', 1) - 1]
                 plot_object = self._draw_pcolormesh(ax, **config)
                 trace['plot_object'] = plot_object
 
@@ -399,7 +397,7 @@ class MatPlot(BasePlot):
 
     def tight_layout(self):
         """
-        Perform a tight layout on the figure. A bit of additional spacing at 
+        Perform a tight layout on the figure. A bit of additional spacing at
         the top is also added for the title.
         """
         self.fig.tight_layout(rect=[0, 0, 1, 0.95])

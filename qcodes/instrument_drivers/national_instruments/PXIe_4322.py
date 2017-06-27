@@ -39,7 +39,6 @@ class PXIe_4322(Instrument):
         self.step_rate = step_rate
         self.step_delay = 1/step_rate
         self.voltage_file = file_path + 'NI_voltages_{}.json'.format(device_name)
-
         try:
             os.mkdir(file_path)
         except:
@@ -56,9 +55,9 @@ class PXIe_4322(Instrument):
 
         print('Please read the following warning message:')
 
-        warnings.warn('The last known output values are: {} Please check these values and make sure they correspond '
+        logger.warning('The last known output values are: {} Please check these values and make sure they correspond '
                       'to the actual output of the PXIe-4322 module. Any difference between stored value and actual '
-                      'value WILL cause sudden jumps in output.'.format(self.__voltage), UserWarning)
+                      'value WILL cause sudden jumps in output.'.format(self.__voltage))
 
         for i in range(self.channels):
             self.add_parameter('voltage_channel_{}'.format(i),

@@ -1,13 +1,14 @@
 
-from functools import partial
-import logging
 import numpy as np
+import logging
 
 from qcodes import VisaInstrument
 from qcodes.instrument.parameter import StandardParameter, ManualParameter
 from qcodes.utils import validators as vals
 from time import sleep
 
+
+logger = logging.getLogger(__name__)
 cmdbase = "TERM LF\nFLSH\nFLOQ\n"
 
 class SIM928(StandardParameter):
@@ -47,7 +48,7 @@ class SIM928(StandardParameter):
         try:
             return int(return_str.rstrip()[5:])
         except:
-            logging.warning('Return string not understood: ' + return_str)
+            logger.warning('Return string not understood: ' + return_str)
             return -1
 
     def get_voltage(self):
@@ -65,8 +66,10 @@ class SIM928(StandardParameter):
         return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
         for k in range(5):
             if return_str == '#3000\n':
+                logger.warning('Received return string {}, '
+                               'resetting SIM {}'.format(self))
                 self._instrument.reset_slot(self.channel)
-                sleep(1)
+                sleep(5)
                 return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
             else:
                 break

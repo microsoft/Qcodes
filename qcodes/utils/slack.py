@@ -1,16 +1,21 @@
 import os
 import tempfile
+import logging
 from functools import partial
 from time import sleep
 import inspect
 from slacker import Slacker
 import threading
 import traceback
+from requests.adapters import ConnectTimeoutError
 
 from qcodes.plots.base import BasePlot
 from qcodes import config as qc_config
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes import active_loop, active_data_set
+
+
+logger = logging.getLogger(__name__)
 
 
 def convert_command(text):
@@ -27,7 +32,6 @@ def convert_command(text):
             pass
 
         return string
-
 
     # Format text to lowercase, and remove trailing whitespaces
     text = text.lower().rstrip(' ')
@@ -82,7 +86,8 @@ class Slack(threading.Thread):
         notify/task {cmd} *args: register task with name `cmd` that is
             performed every time `update()` is called.
     """
-    def __init__(self, interval=3, config=None, auto_start=True, **commands):
+    def __init__(self, interval=3, config=None, auto_start=True, max_timeouts=5,
+                 **commands):
         """
         Initializes Slack bot, including auto-updating widget if in notebook
         and using multiprocessing.
@@ -94,6 +99,8 @@ class Slack(threading.Thread):
                     'bot_name': Name of the bot
                     'bot_token': Token from bot (obtained from slack website)
                     'names': Usernames to periodically check for IM messages
+            max_timeouts (int): Maximum number of timeouts before raising an
+                exception
             auto_start (Bool=True)
 
         """
@@ -111,12 +118,14 @@ class Slack(threading.Thread):
                          'msmt': self.print_measurement_information,
                          'measurement': self.print_measurement_information,
                          'notify': self.add_task,
+                         'help': self.help_message,
                          'task': self.add_task,
                          **commands}
         self.task_commands = {'finished': self.check_msmt_finished}
 
         self.interval = interval
         self.tasks = []
+        self.max_timeout = max_timeouts
 
         # Flag that exits loop when set to True (called via self.exit())
         self._exit = False
@@ -148,10 +157,17 @@ class Slack(threading.Thread):
             None
         """
         while not self._exit:
-            # Continue event loop
-            if self._is_active:
-                # check for updates
-                self.update()
+            try:
+                # Continue event loop
+                if self._is_active:
+                    # check for updates
+                    self.update()
+                    self._timeouts = 0
+            except ConnectTimeoutError:
+                self._timeouts += 1
+                if self._timeouts < self.max_timeouts:
+                    logger.warning(
+                        f'Timeout {self._timeouts} of {self.max_timeouts}')
             sleep(self.interval)
 
     def stop(self):
@@ -235,9 +251,13 @@ class Slack(threading.Thread):
         Returns:
             List of IM messages
         """
-        response = self.slack.im.history(channel=self.users[username]['im_id'],
-                                         **kwargs)
-        return response.body['messages']
+        channel = self.users[username].get('im_id', None)
+        if channel is None:
+            return []
+        else:
+            response = self.slack.im.history(channel=channel,
+                                             **kwargs)
+            return response.body['messages']
 
     def get_new_im_messages(self):
         """
@@ -276,6 +296,11 @@ class Slack(threading.Thread):
         new_messages = self.get_new_im_messages()
         self.handle_messages(new_messages)
 
+    def help_message(self):
+        """ Return simple help message """
+        cc = ', '.join(['`' + str(k) + '`' for k in self.commands.keys()])
+        return '\nAvailable commands: %s' % cc
+
     def handle_messages(self, messages):
         """
         Performs commands depending on messages.
@@ -296,13 +321,15 @@ class Slack(threading.Thread):
                     if kwargs:
                         msg += ' {}'.format(kwargs)
                     self.slack.chat.post_message(text=msg, channel=channel)
+                    logger.info(msg)
 
                     func = self.commands[command]
                     try:
                         if isinstance(func, _BaseParameter):
                             results = func(*args, **kwargs)
                         else:
-                            # Only add channel and Slack if they are explicit kwargs
+                            # Only add channel and Slack if they are explicit
+                            # kwargs
                             func_sig = inspect.signature(func)
                             if 'channel' in func_sig.parameters:
                                 kwargs['channel'] = channel
@@ -321,7 +348,8 @@ class Slack(threading.Thread):
                             channel=channel)
                 else:
                     self.slack.chat.post_message(
-                        text='Command {} not understood'.format(command),
+                        text='Command {} not understood. Try `help`'.format(
+                            command),
                         channel=channel)
 
     def add_task(self, command, *args, channel, **kwargs):
