@@ -1426,13 +1426,13 @@ class Tektronix_AWG5014(VisaInstrument):
         # Input validation
         if (not((len(wf) == len(m1)) and ((len(m1) == len(m2))))):
             raise Exception('error: sizes of the waveforms do not match')
-        if min(wf) < -1 or max(wf) > 1:
+        if np.min(wf) < -1 or np.max(wf) > 1:
             raise TypeError('Waveform values out of bonds.' +
                             ' Allowed values: -1 to 1 (inclusive)')
-        if (list(m1).count(0)+list(m1).count(1)) != len(m1):
+        if not np.all(np.in1d(m1, np.array([0, 1]))):
             raise TypeError('Marker 1 contains invalid values.' +
                             ' Only 0 and 1 are allowed')
-        if (list(m2).count(0)+list(m2).count(1)) != len(m2):
+        if not np.all(np.in1d(m2, np.array([0, 1]))):
             raise TypeError('Marker 2 contains invalid values.' +
                             ' Only 0 and 1 are allowed')
 
