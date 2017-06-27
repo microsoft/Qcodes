@@ -15,7 +15,7 @@ except:
 logger = logging.getLogger(__name__)
 
 # Add seconds to list of PulseBlaster keywords
-api.s = 1000000000.0
+api.s = 1# TODO fix 1000000000.0
 
 
 def error_parse(f):
@@ -118,6 +118,12 @@ class PulseBlasterDDS(Instrument):
                 # set_cmd=partial(self.set_amplitudes, ch_idx),
                 parameter_class=ManualParameter,
                 vals=Lists(Numbers()))
+
+
+        self.add_parameter('instruction_sequence',
+                           parameter_class = ManualParameter,
+                           initial_value=[],
+                           vals=Lists())
 
         # Initialize the DDS
         self.setup(initialize=initialize)
@@ -242,20 +248,26 @@ class PulseBlasterDDS(Instrument):
 
     @staticmethod
     @error_parse
-    def inst_dds2(inst):
+    def instruction_sine_pulse(*inst):
         """ During start_programming(PULSE_PROGRAM) 
             add an unshaped sine pulse to program
 
         Args:
-            inst  (tuple) : a tuple to program the board in the
-                            (FREQ0, PHASE0, ...)
+            inst  (tuple) : a tuple to program the board, must be of form:
+            
+                            (int freq0, int phase0, int amp0, int dds_en0, 
+                             int phase_reset0, int freq1, int phase1, 
+                             int amp1, int dds_en1, int phase_reset1, int flags,
+                             int inst, int inst_data, double length)
+                             
+                             dds_en should be api.TX_ENABLE or api.TX_DISABLE 
         """
-        inst = inst[:-1] + (inst[-1] * api.s,)
+        inst = inst[:-1] + (round(inst[-1] * api.s),)
         return api.pb_inst_dds2(*inst)
 
     @staticmethod
     @error_parse
-    def inst_dds2_shape(inst):
+    def instruction_shaped_sine_pulse(*inst):
         """ During start_programming(PULSE_PROGRAM) 
             add a shaped pulse to program, if desired
 
@@ -263,7 +275,7 @@ class PulseBlasterDDS(Instrument):
             inst  (tuple) : a tuple to program the board in the
                             (FREQ0, PHASE0, ...)
         """
-        inst = inst[:-1] + (inst[-1] * api.s,)
+        inst = inst[:-1] + (round(inst[-1] * api.s),)
         return api.pb_inst_dds2_shape(*inst)
 
     @staticmethod
@@ -290,39 +302,25 @@ class PulseBlasterDDS(Instrument):
     def select_dds(channel):
         return api.pb_select_dds(channel)
 
-    def program_pulse_sequence(self, pulse_sequence):
-        """ An all-in-one function to send a pulse sequence to the board
+    def program_instruction_sequence(self, instruction_sequence):
+        """ An all-in-one method to send a sequence of instructions to the board
 
         Args:
-            pulse_sequence (list) : a list of instructions to program the board
+            instruction_sequence (list) : a list of instructions to program
+                                    the board
                                     the instructions should be tuples i.e.
                                     (FREQ0, PHASE0, ...)
         """
         self.start_programming(api.PULSE_PROGRAM)
-        for p in pulse_sequence:
+        for instruction in instruction_sequence:
             # convert last element from seconds to ns
-            p = p[:-1] + (p[-1] * api.s,)
+            instruction = instruction[:-1] + (round(instruction[-1] * api.s),)
             # * breaks tuple into args,
-            self.inst_dds2(*p)
+            self.instruction_sine_pulse(*instruction)
         self.stop_programming()
 
-    def program_inst(self):
-        """ Send the current instruction list to the board
-
-        Args:
-
-        """
-        raise NotImplementedError('Warning: Unimplemented function')
-        # pb_start_programming()
-        # n_inst = 0
-        # # Find the longest set of instructions defined
-        # for n in range(self.N_CHANNELS):
-        #    n_inst = max(n_inst, len(self.__chan_instructions[n]))
-        # for i in range(n_inst):
-        #    # TODO: use lambdas here for ease
-        #    #if (self.__chan_instructions[
-        #    pass
-        # pb_stop_programming()
+        # Update instruction sequence
+        self.instruction_sequence(instruction_sequence)
 
     @error_parse
     def set_shape_defaults(self, channel):
