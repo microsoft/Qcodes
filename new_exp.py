@@ -8,6 +8,7 @@
 """
 Add experiment
 """
+from contextlib import contextmanager
 import logging
 import sqlite3
 import time
@@ -54,14 +55,10 @@ def transaction(conn: sqlite3.Connection,
 
 def atomicTransaction(conn: sqlite3.Connection,
                       sql: str, *args: Any)->sqlite3.Cursor:
-    c = conn.cursor()
     try:
-        if len(args) > 0:
-            c.execute(sql, args)
-        else:
-            c.execute(sql)
+        c = transaction(conn, sql, *args)
     except Exception as e:
-        logging.exception("Could not  execute transaction, rolling back")
+        logging.exception("Could not execute transaction, rolling back")
         conn.rollback()
         raise e
 
@@ -219,7 +216,7 @@ def create_run_table(conn: sqlite3.Connection,
     """
     _parameters = ",".join([p.sql_repr() for p in parameters])
     if parameters and values:
-        # TODO: can I create a table with values already ?
+        # TODO: no need to create the table fisrt and then insert the values
         pass
     elif parameters:
         query = f"""
@@ -261,16 +258,12 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
         - run_id: the row id of the newly created run
         - formatted_name: the name of the newly created table
     """
-    try:
+    with atomic(conn):
         run_counter, formatted_name, row_id = insert_run(conn,
                                                          exp_id,
                                                          name)
         update_eperiment_run_counter(conn, exp_id, run_counter)
         create_run_table(conn, formatted_name)
-    except Exception as e:
-        conn.rollback
-        raise e
-    conn.commit()
     return row_id, formatted_name
 
 
@@ -281,3 +274,22 @@ def _example():
     new_experiment(conn, "qute majo", "mega kink")
     create_run(conn, "1", "sweep", "asd", "asd")
     finish_experiment(conn, "majorana_qubit")
+
+
+@contextmanager
+def atomic(conn: sqlite3.Connection):
+    """
+    Guard a series of transactions as atomic.
+    If one fails the transction is rolled back and no more transactions
+    are performed.
+
+    Args:
+        - conn: connection to
+    """
+    try:
+        yield
+    except Exception as e:
+        conn.rollback()
+        raise RuntimeError("Rolling back due to unhandled exceptio") from e
+    else:
+        conn.commit()

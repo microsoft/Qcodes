@@ -15,6 +15,7 @@ from threading import Thread
 from functools import partial
 from itertools import count
 from typing import List, Any, Dict, Union,  Callable, Optional
+from new_exp import *
 
 
 from qcodes.utils.metadata import Metadatable
@@ -32,6 +33,9 @@ def hash_from_parts(*parts: str) -> str:
     """
     combined = "".join(parts)
     return hashlib.sha1(combined.encode("utf-8")).hexdigest()
+
+
+
 
 
 # TODO: does it make sense to have the type here ?
@@ -424,8 +428,8 @@ class DataSet(Metadatable):
 
 
 # TODO: this is an example MINIMAL subscriber
-# the specs names dataset obejct, so only threading 
-# can be used, uneless one wants to end up again in 
+# the specs names dataset obejct, so only threading
+# can be used, uneless one wants to end up again in
 # the pickle-hell-situation
 class Subscriber(Thread):
 
