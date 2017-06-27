@@ -310,17 +310,32 @@ class DeviceImage:
         with open(filename, 'w') as fid:
             json.dump(self._data, fid)
 
-    def loadAnnotations(self):
+    def loadAnnotations(self) -> bool:
         """
         Get the annotations. Only call this if the files exist
         Need to load png/jpeg too
         """
+        json_filename = 'deviceimage_annotations.json'
+        raw_image_glob = 'deviceimage_raw.*'
+        json_full_filename = os.path.join(self.folder, json_filename)
+        json_found = os.path.exists(json_full_filename)
+        raw_files = glob.glob(os.path.join(self.folder, raw_image_glob))
+        if raw_files:
+            self.filename = raw_files[0]
+        else:
+            self.filename = None
 
-        json_filename = os.path.join(self.folder, 'deviceimage_annotations.json')
-        self.filename = glob.glob(os.path.join(self.folder, 'deviceimage_raw.*'))[0]
+        if json_found and not self.filename:
+            raise RuntimeError("{} found but no {} found. Not sure how to "
+                               "proceed, To continue either add raw image or "
+                               "delete json "
+                               "file".format(json_filename, raw_image_glob))
+        elif not json_found:
+            return False
         # this assumes there is only on of deviceimage_raw.*
-        with open(json_filename, 'r') as fid:
+        with open(json_full_filename, 'r') as fid:
             self._data = json.load(fid)
+        return True
 
     def updateValues(self, station, sweeptparameters=None):
         """
