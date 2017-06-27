@@ -89,9 +89,9 @@ def init(mainfolder: str, sample_name: str, station, plot_x_position=0.66,
 def _init_device_image(station):
 
     di = DeviceImage(CURRENT_EXPERIMENT["exp_folder"], station)
-    try:
-        di.loadAnnotations()
-    except:
+
+    success = di.loadAnnotations()
+    if not success:
         di.annotateImage()
     CURRENT_EXPERIMENT['device_image'] = di
 
