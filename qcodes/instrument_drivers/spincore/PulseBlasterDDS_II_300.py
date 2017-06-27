@@ -224,42 +224,51 @@ class PulseBlasterDDS(Instrument):
         if initialize:
             self.initialize()
 
-    @staticmethod
     @error_parse
-    def start():
+    def start(self):
+        self.setup(initialize=False)
+
+        # Reprogram instruction sequence as it may have been overwritten by stop
+        self.program_instruction_sequence(self.instruction_sequence())
+        self.reset()
+
         return api.pb_start()
 
-    @staticmethod
     @error_parse
-    def reset():
+    def reset(self):
+        self.select_board(self.board_number())
         return api.pb_reset()
 
-    @staticmethod
     @error_parse
-    def stop():
+    def stop(self):
+        self.reset()
+        self.setup(initialize=False)
+
+        # Must overwrite the sequence (api.pb_stop does not work)
+        stop_instruction = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'stop', 0, 20000)
+        self.program_instruction_sequence([stop_instruction])
         return api.pb_stop()
 
-    @staticmethod
     @error_parse
-    def close():
+    def close(self):
+        self.select_board(self.board_number())
         return api.pb_close()
 
     def add_instruction(self, inst, channel):
         self.instructions[channel].append(inst)
 
-    @staticmethod
     @error_parse
-    def start_programming(mode):
+    def start_programming(self, mode):
         """ Start a programming sequence 
 
         Args:
             mode    (int) : one of (PULSE_PROGRAM, FREQ_REGS, etc.)
         """
+        self.select_board(self.board_number())
         return api.pb_start_programming(mode)
 
-    @classmethod
     @error_parse
-    def instruction_sine_pulse(cls, freq0, phase0, amp0, dds_en0, phase_reset0,
+    def instruction_sine_pulse(self, freq0, phase0, amp0, dds_en0, phase_reset0,
                                freq1, phase1, amp1, dds_en1, phase_reset1,
                                flags, inst, inst_data, length):
         """ During start_programming(PULSE_PROGRAM) 
@@ -278,15 +287,15 @@ class PulseBlasterDDS(Instrument):
         length = round(length * api.s)
 
         if isinstance(inst, str):
-            inst = cls.PROGRAM_INSTRUCTIONS_MAP[inst.upper()]
+            inst = self.PROGRAM_INSTRUCTIONS_MAP[inst.upper()]
 
+        self.select_board(self.board_number())
         return api.pb_inst_dds2(freq0, phase0, amp0, dds_en0, phase_reset0,
                                 freq1, phase1, amp1, dds_en1, phase_reset1,
                                 flags, inst, inst_data, length)
 
-    @staticmethod
     @error_parse
-    def instruction_shaped_sine_pulse(*inst):
+    def instruction_shaped_sine_pulse(self, *inst):
         """ During start_programming(PULSE_PROGRAM) 
             add a shaped pulse to program, if desired
 
@@ -295,11 +304,11 @@ class PulseBlasterDDS(Instrument):
                             (FREQ0, PHASE0, ...)
         """
         inst = inst[:-1] + (round(inst[-1] * api.s),)
+        self.select_board(self.board_number())
         return api.pb_inst_dds2_shape(*inst)
 
-    @staticmethod
     @error_parse
-    def dds_load(data, device):
+    def dds_load(self, data, device):
         """ Load a 1024 point waveform into one of two devices
 
         Args:
@@ -308,17 +317,18 @@ class PulseBlasterDDS(Instrument):
             device (int) : Either DEVICE_DDS (the default shape for all output)
                                or DEVICE_SHAPE (an alternative shape register)
         """
+        self.select_board(self.board_number())
         return api.pb_dds_load(device)
 
-    @staticmethod
     @error_parse
-    def stop_programming():
+    def stop_programming(self):
         """ End a programming sequence """
+        self.select_board(self.board_number())
         return api.pb_stop_programming()
 
-    @staticmethod
     @error_parse
-    def select_dds(channel):
+    def select_dds(self, channel):
+        self.select_board(self.board_number())
         return api.pb_select_dds(channel)
 
     def program_instruction_sequence(self, instruction_sequence):
@@ -334,9 +344,6 @@ class PulseBlasterDDS(Instrument):
         for instruction in instruction_sequence:
             self.instruction_sine_pulse(*instruction)
         self.stop_programming()
-
-        # Update instruction sequence parameter
-        self.instruction_sequence(instruction_sequence)
 
     @error_parse
     def set_shape_defaults(self, channel):

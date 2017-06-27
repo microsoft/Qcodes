@@ -81,7 +81,7 @@ class PulseBlasterESRPRO(Instrument):
         self.add_function('get_error',
                           call_cmd=api.pb_get_error)
 
-        self.add_parameter('instructions',
+        self.add_parameter('instruction_sequence',
                            parameter_class = ManualParameter,
                            initial_value=[],
                            vals=vals.Anything())
@@ -96,6 +96,7 @@ class PulseBlasterESRPRO(Instrument):
         Returns:
             return_msg
         '''
+        self.select_board(self.board_number())
         return_msg = api.pb_init()
         assert return_msg == 0, 'Error initializing board: {}'.format(api.pb_get_error())
         return return_msg
@@ -122,7 +123,6 @@ class PulseBlasterESRPRO(Instrument):
 
         """
         self.detect_boards()
-        self.select_board(self.board_number())
         if initialize:
             self.initialize()
 
@@ -135,10 +135,12 @@ class PulseBlasterESRPRO(Instrument):
             return_msg
         '''
 
-        # Reset instructions
-        self.instructions([])
+        # Reset instruction sequence
+        self.instruction_sequence([])
 
         # Needs constant PULSE_PROGRAM, which is set to equal 0 in the api)
+
+        self.select_board(self.board_number())
         return_msg = api.pb_start_programming(api.PULSE_PROGRAM)
         assert return_msg == 0, 'Error starting programming: {}'.format(api.pb_get_error())
         return return_msg
@@ -164,11 +166,12 @@ class PulseBlasterESRPRO(Instrument):
         '''
 
         # Add instruction to log
-        self.instructions(self.instructions() +
+        self.instruction_sequence(self.instruction_sequence() +
                           [(flags, instruction, inst_args, length)])
 
         instruction_int = self.program_instructions_map[instruction.upper()]
         #Need to call underlying spinapi because function does not exist in wrapper
+        self.select_board(self.board_number())
         return_msg = api.spinapi.pb_inst_pbonly(ctypes.c_uint64(flags),
                                                 ctypes.c_int(instruction_int),
                                                 ctypes.c_int(inst_args),
@@ -185,6 +188,7 @@ class PulseBlasterESRPRO(Instrument):
         Returns:
             return_msg
         '''
+        self.select_board(self.board_number())
         return_msg = api.pb_stop_programming()
         assert return_msg == 0, 'Error stopping programming: {}'.format(api.pb_get_error())
         return return_msg
@@ -197,6 +201,7 @@ class PulseBlasterESRPRO(Instrument):
         Returns:
             return_msg
         '''
+        self.select_board(self.board_number())
         return_msg = api.pb_start()
         try:
             assert return_msg == 0, 'Error starting: {}'.format(api.pb_get_error())
@@ -215,6 +220,7 @@ class PulseBlasterESRPRO(Instrument):
         Returns:
             return_msg
         '''
+        self.select_board(self.board_number())
         return_msg = api.pb_stop()
         assert return_msg == 0, 'Error Stopping: {}'.format(api.pb_get_error())
         return return_msg
@@ -227,5 +233,6 @@ class PulseBlasterESRPRO(Instrument):
         Returns:
             None
         '''
+        self.select_board(self.board_number())
         api.pb_close()
         super().close()
