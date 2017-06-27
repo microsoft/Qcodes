@@ -9,6 +9,7 @@ import PyQt5.QtGui as gui
 import PyQt5.QtCore as core
 
 from shutil import copyfile
+import copy
 
 class MakeDeviceImage(qt.QWidget):
     """
@@ -30,18 +31,22 @@ class MakeDeviceImage(qt.QWidget):
 
         grid = qt.QGridLayout()
         self.setLayout(grid)
-
+        self.textfont = None
         self.imageCanvas = qt.QLabel()
-        self.imageCanvas.setToolTip("Left click to insert a label and right click to insert an annotation.")
+        self.imageCanvas.setToolTip("Left click to insert a label and right "
+                                    "click to insert an annotation.")
         self.loadButton = qt.QPushButton('Load image')
 
         self.okButton = qt.QPushButton('Save and close')
         self.removeButton = qt.QPushButton('Remove')
-        self.removeButton.setToolTip("Remove annotation and label for this parameter")
+        self.removeButton.setToolTip("Remove annotation and label for this "
+                                     "parameter")
+        self.fontButton = qt.QPushButton('Font')
         self.labeltitle = qt.QLabel('Label:')
         self.labelfield = qt.QLineEdit()
         self.labelfield.setText('')
-        self.labelfield.setToolTip("String to be used as label. Defaults to instrument_parameter")
+        self.labelfield.setToolTip("String to be used as label. Defaults to "
+                                   "instrument_parameter")
         self.formattertitle = qt.QLabel('Formatter:')
         self.formatterfield = qt.QLineEdit()
         self.formatterfield.setText('')
@@ -51,11 +56,13 @@ class MakeDeviceImage(qt.QWidget):
                                        "':.2e' exponential formatter with 2 digits after the decimal point\n"
                                        "Leave blank for default. \n"
                                        "See www.pyformat.info for more examples")
+
         self.loadButton.clicked.connect(self.loadimage)
         self.imageCanvas.mousePressEvent = self.set_label_or_annotation
         self.imageCanvas.setStyleSheet('background-color: white')
         self.okButton.clicked.connect(self.saveAndClose)
         self.removeButton.clicked.connect(self.remove_label_and_annotation)
+        self.fontButton.clicked.connect(self.select_font)
 
         self.treeView = qt.QTreeView()
         self.model = gui.QStandardItemModel()
@@ -65,20 +72,27 @@ class MakeDeviceImage(qt.QWidget):
         self.treeView.sortByColumn(0, core.Qt.AscendingOrder)
         self.treeView.setSortingEnabled(True)
         self.treeView.clicked.connect(self.selection_changed)
-        grid.addWidget(self.imageCanvas, 0, 0, 4, 6)
+        grid.addWidget(self.imageCanvas, 0, 0, 4, 7)
         grid.addWidget(self.loadButton, 4, 0)
         grid.addWidget(self.labeltitle, 4, 1)
         grid.addWidget(self.labelfield, 4, 2)
-        grid.addWidget(self.formattertitle, 4, 4)
-        grid.addWidget(self.formatterfield, 4, 5)
-        grid.addWidget(self.removeButton, 4, 8)
-        grid.addWidget(self.okButton, 4, 9)
-        grid.addWidget(self.treeView, 0, 6, 4, 4)
+        grid.addWidget(self.formattertitle, 4, 3)
+        grid.addWidget(self.formatterfield, 4, 4)
+        grid.addWidget(self.fontButton, 4, 6)
+        grid.addWidget(self.removeButton, 4, 9)
+        grid.addWidget(self.okButton, 4, 10)
+        grid.addWidget(self.treeView, 0, 7, 4, 4)
 
         self.resize(600, 400)
         self.move(100, 100)
         self.setWindowTitle('Generate annotated device image')
         self.show()
+
+    def select_font(self):
+
+        font, ok = qt.QFontDialog.getFont()
+        if ok:
+            self.textfont = font
 
     def addStation(self, parent, station):
 
@@ -154,6 +168,13 @@ class MakeDeviceImage(qt.QWidget):
             else:
                 self._data[selected_instrument][selected_parameter]['value'] = 'NaN'
 
+
+        self._data['font'] = {}
+        if not self.textfont:
+            self._data['font']['family'] = 'decorative'
+        else:
+            self._data['font']['family'] = self.textfont.family()
+            self._data['font']['label_size'] = self.textfont.pointSize()
         # draw it
         self.imageCanvas, _ = self._renderImage(self._data,
                                                 self.imageCanvas,
@@ -187,7 +208,7 @@ class MakeDeviceImage(qt.QWidget):
         self.close()
 
     @staticmethod
-    def _renderImage(data, canvas, filename, title=None):
+    def _renderImage(fulldata, canvas, filename, title=None):
         """
         Render an image
         """
@@ -200,10 +221,17 @@ class MakeDeviceImage(qt.QWidget):
         spacing = int(label_size * 0.2)
 
         painter = gui.QPainter(pixmap)
+        data = copy.deepcopy(fulldata)
+        try:
+            fontdict = data.pop('font')
+            label_size = fontdict.get('label_size', label_size)
+            textfont = gui.QFont(fontdict['family'], label_size)
+        except:
+            textfont = gui.QFont('Decorative', label_size)
+        fontmetric = gui.QFontMetrics(textfont)
         if title:
             painter.setBrush(gui.QColor(255, 255, 255, 100))
-            textfont = gui.QFont('Decorative', label_size)
-            textwidth = gui.QFontMetrics(textfont).width(title)
+            textwidth = fontmetric.width(title)
             rectangle_width = textwidth + 2 * spacing
             rectangle_height = label_size + 2 * spacing
             painter.drawRect(0,
@@ -229,8 +257,7 @@ class MakeDeviceImage(qt.QWidget):
                     else:
                         painter.setBrush(gui.QColor(255, 255, 255, 100))
                     (lx, ly) = paramsettings['labelpos']
-                    textfont = gui.QFont('Decorative', label_size)
-                    textwidth = gui.QFontMetrics(textfont).width(label_string)
+                    textwidth = fontmetric.width(label_string)
                     rectangle_start_x = lx - spacing
                     rectangle_start_y = ly - spacing
                     rectangle_width = textwidth+2*spacing
@@ -251,8 +278,7 @@ class MakeDeviceImage(qt.QWidget):
                     (ax, ay) = paramsettings['annotationpos']
                     annotationstring = paramsettings['value']
 
-                    textfont = gui.QFont('Decorative', label_size)
-                    textwidth = gui.QFontMetrics(textfont).width(annotationstring)
+                    textwidth = fontmetric.width(annotationstring)
                     rectangle_start_x = ax - spacing
                     rectangle_start_y = ay - spacing
                     rectangle_width = textwidth + 2 * spacing
@@ -341,8 +367,10 @@ class DeviceImage:
         """
         Update the data with actual voltages from the QDac
         """
-
         for instrument, parameters in self._data.items():
+            if instrument == 'font':
+                # skip font data
+                continue
             for parameter in parameters.keys():
                 value = station.components[instrument][parameter].get_latest()
                 try:
@@ -360,6 +388,7 @@ class DeviceImage:
                     for sweeptparameter in sweeptparameters:
                         if sweeptparameter._instrument.name == instrument and sweeptparameter.name == parameter:
                             self._data[instrument][parameter]['update'] = True
+
 
     def makePNG(self, counter, path=None, title=None):
         """
