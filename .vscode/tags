@@ -1,0 +1,178 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+Any	../data_set.py	/^from typing import List, Any, Dict, Union,  Callable, Optional$/;"	kind:namespace	line:17
+Any	../new_exp.py	/^from typing import Any, List, Optional, Tuple, Union, Dict$/;"	kind:namespace	line:17
+Array	../new_exp.py	/^from numpy import Array$/;"	kind:namespace	line:16
+Callable	../data_set.py	/^from typing import List, Any, Dict, Union,  Callable, Optional$/;"	kind:namespace	line:17
+CompletedError	../data_set.py	/^class CompletedError(RuntimeError):$/;"	kind:class	line:104
+CompletedError	../test_datas_set.py	/^from data_set import ParamSpec, DataSet, CompletedError, param_spec$/;"	kind:namespace	line:10
+DataSet	../data_set.py	/^class DataSet(Metadatable):$/;"	kind:class	line:108
+DataSet	../misc/example_data_set.py	/^from data_set import ParamSpec, DataSet,  param_spec$/;"	kind:namespace	line:1
+DataSet	../misc/junk.py	/^from data_set import ParamSpec, DataSet,  param_spec$/;"	kind:namespace	line:1
+DataSet	../test_datas_set.py	/^from data_set import ParamSpec, DataSet, CompletedError, param_spec$/;"	kind:namespace	line:10
+Dict	../data_set.py	/^from typing import List, Any, Dict, Union,  Callable, Optional$/;"	kind:namespace	line:17
+Dict	../new_exp.py	/^from typing import Any, List, Optional, Tuple, Union, Dict$/;"	kind:namespace	line:17
+HASH	../misc/junk.py	/^HASH = "6ae999552a0d2dca14d62e2bc8b764d377b1dd6c"$/;"	kind:variable	line:7
+HASH	../test_datas_set.py	/^HASH = "6ae999552a0d2dca14d62e2bc8b764d377b1dd6c"$/;"	kind:variable	line:14
+List	../data_set.py	/^from typing import List, Any, Dict, Union,  Callable, Optional$/;"	kind:namespace	line:17
+List	../new_exp.py	/^from typing import Any, List, Optional, Tuple, Union, Dict$/;"	kind:namespace	line:17
+Metadatable	../data_set.py	/^from qcodes.utils.metadata import Metadatable$/;"	kind:namespace	line:21
+MockParabola	../misc/example_data_set.py	/^from qcodes.tests.instrument_mocks import MockParabola, MultiSetPointParam$/;"	kind:namespace	line:2
+MockParabola	../misc/junk.py	/^from qcodes.tests.instrument_mocks import MockParabola$/;"	kind:namespace	line:2
+MockParabola	../test_datas_set.py	/^from qcodes.tests.instrument_mocks import MockParabola$/;"	kind:namespace	line:11
+MultiSetPointParam	../misc/example_data_set.py	/^from qcodes.tests.instrument_mocks import MockParabola, MultiSetPointParam$/;"	kind:namespace	line:2
+NAME	../misc/example_data_set.py	/^NAME = "name"$/;"	kind:variable	line:9
+NAME	../misc/example_data_set.py	/^NAME = "xyz"$/;"	kind:variable	line:52
+NAME	../misc/junk.py	/^NAME = "name"$/;"	kind:variable	line:6
+NAME	../test_datas_set.py	/^NAME = "name"$/;"	kind:variable	line:13
+Number	../new_exp.py	/^from numbers import Number$/;"	kind:namespace	line:15
+Optional	../data_set.py	/^from typing import List, Any, Dict, Union,  Callable, Optional$/;"	kind:namespace	line:17
+Optional	../new_exp.py	/^from typing import Any, List, Optional, Tuple, Union, Dict$/;"	kind:namespace	line:17
+PARAMETERS	../new_exp.py	/^PARAMETERS = None # shold be a list of pyton object that have .type that$/;"	kind:variable	line:188
+ParamSpec	../data_set.py	/^class ParamSpec(Metadatable):$/;"	kind:class	line:46
+ParamSpec	../misc/example_data_set.py	/^from data_set import ParamSpec, DataSet,  param_spec$/;"	kind:namespace	line:1
+ParamSpec	../misc/junk.py	/^from data_set import ParamSpec, DataSet,  param_spec$/;"	kind:namespace	line:1
+ParamSpec	../new_exp.py	/^class ParamSpec():$/;"	kind:class	line:194
+ParamSpec	../test_datas_set.py	/^from data_set import ParamSpec, DataSet, CompletedError, param_spec$/;"	kind:namespace	line:10
+SETPOINT_HASH	../misc/junk.py	/^SETPOINT_HASH = "7ae999552a0d2dca14d62e2bc8b764d377b1dd6c"$/;"	kind:variable	line:8
+SETPOINT_HASH	../test_datas_set.py	/^SETPOINT_HASH = "7ae999552a0d2dca14d62e2bc8b764d377b1dd6c"$/;"	kind:variable	line:15
+SPECS	../data_set.py	/^SPECS = List[ParamSpec]$/;"	kind:variable	line:101
+Subscriber	../data_set.py	/^class Subscriber(Thread):$/;"	kind:class	line:434
+TestDataSet	../test_datas_set.py	/^class TestDataSet(unittest.TestCase):$/;"	kind:class	line:39
+TestParam	../test_datas_set.py	/^class TestParam(unittest.TestCase):$/;"	kind:class	line:18
+Thread	../data_set.py	/^from threading import Thread$/;"	kind:namespace	line:14
+Tuple	../new_exp.py	/^from typing import Any, List, Optional, Tuple, Union, Dict$/;"	kind:namespace	line:17
+Union	../data_set.py	/^from typing import List, Any, Dict, Union,  Callable, Optional$/;"	kind:namespace	line:17
+Union	../new_exp.py	/^from typing import Any, List, Optional, Tuple, Union, Dict$/;"	kind:namespace	line:17
+VALUES	../new_exp.py	/^VALUES = List[Union[str, Number, List, Array, bool]]$/;"	kind:variable	line:190
+_BaseParameter	../data_set.py	/^from qcodes.instrument.parameter import _BaseParameter$/;"	kind:namespace	line:22
+__init__	../data_set.py	/^    def __init__(self, data: DataSet, sub_id: str,$/;"	kind:member	line:436
+__init__	../data_set.py	/^    def __init__(self, name, specs: SPECS=None, values=None,$/;"	kind:member	line:109
+__init__	../data_set.py	/^    def __init__(self, name: str, metadata=None) -> None:$/;"	kind:member	line:47
+__init__	../misc/example_data_set.py	/^    def __init__(self, d):$/;"	kind:member	line:20
+__init__	../new_exp.py	/^    def __init__(self, name: str, type: str, **metadata) -> None:$/;"	kind:member	line:195
+__len__	../data_set.py	/^    def __len__(self):$/;"	kind:member	line:417
+__len__	../data_set.py	/^    def __len__(self):$/;"	kind:member	line:83
+__repr__	../data_set.py	/^    def __repr__(self):$/;"	kind:member	line:421
+__repr__	../data_set.py	/^    def __repr__(self):$/;"	kind:member	line:86
+_clean_up	../data_set.py	/^    def _clean_up(self)->None:$/;"	kind:member	line:478
+_example	../new_exp.py	/^def _example():$/;"	kind:function	line:270
+_guess_shape	../data_set.py	/^    def _guess_shape(self, name):$/;"	kind:member	line:329
+_loop	../data_set.py	/^    def _loop(self)->None:$/;"	kind:member	line:455
+_pouplate_parameters	../data_set.py	/^    def _pouplate_parameters(self, specs: SPECS,$/;"	kind:member	line:134
+_select_many_where	../new_exp.py	/^def _select_many_where(conn: sqlite3.Connection, table: str, *columns: str,$/;"	kind:function	line:126
+_select_one_where	../new_exp.py	/^def _select_one_where(conn: sqlite3.Connection, table: str, column: str,$/;"	kind:function	line:112
+add	../data_set.py	/^    def add(self, value):$/;"	kind:member	line:75
+add_many	../data_set.py	/^    def add_many(self, results: List[Dict[str, Any]]) -> Dict[str, int]:$/;"	kind:member	line:231
+add_many	../test_datas_set.py	/^    def add_many(self):$/;"	kind:member	line:93
+add_metadata	../data_set.py	/^    def add_metadata(self, tag: str, metadata: Any):$/;"	kind:member	line:166
+add_parameter	../data_set.py	/^    def add_parameter(self, spec: ParamSpec):$/;"	kind:member	line:142
+add_parameter_values	../data_set.py	/^    def add_parameter_values(self, spec: ParamSpec, values: Any):$/;"	kind:member	line:309
+add_parameters	../data_set.py	/^    def add_parameters(self, specs: SPECS):$/;"	kind:member	line:162
+add_result	../data_set.py	/^    def add_result(self, name: str, value: Any) -> int:$/;"	kind:member	line:185
+add_results	../data_set.py	/^    def add_results(self, results: Dict[str, Any]) -> Dict[str, int]:$/;"	kind:member	line:208
+atexit	../data_set.py	/^import atexit$/;"	kind:namespace	line:9
+atomic	../new_exp.py	/^def atomic(conn: sqlite3.Connection):$/;"	kind:function	line:280
+atomicTransaction	../new_exp.py	/^def atomicTransaction(conn: sqlite3.Connection,$/;"	kind:function	line:56
+callback	../misc/example_data_set.py	/^    def callback(self, data, len, state):$/;"	kind:member	line:28
+callback	../misc/junk.py	/^def callback(data, id, state):$/;"	kind:function	line:23
+connect	../new_exp.py	/^def connect(name: str, debug: bool=True) -> sqlite3.Connection:$/;"	kind:function	line:38
+contextmanager	../new_exp.py	/^from contextlib import contextmanager$/;"	kind:namespace	line:11
+count	../data_set.py	/^from itertools import count$/;"	kind:namespace	line:16
+create_run	../new_exp.py	/^def create_run(conn: sqlite3.Connection, exp_id: int, name: str,$/;"	kind:function	line:240
+create_run_table	../new_exp.py	/^def create_run_table(conn: sqlite3.Connection,$/;"	kind:function	line:205
+d	../misc/example_data_set.py	/^d = DataSet(NAME, [x, qc_param])$/;"	kind:variable	line:14
+d	../misc/example_data_set.py	/^d = DataSet(NAME, [x, y, z])$/;"	kind:variable	line:59
+d	../misc/junk.py	/^d = DataSet(NAME, [qc_param, y, z], values)$/;"	kind:variable	line:19
+data	../data_set.py	/^    def data(self):$/;"	kind:member	line:68
+data	../data_set.py	/^    def data(self, data):$/;"	kind:member	line:72
+data_set.py	../data_set.py	1;"	kind:file	line:1
+db	../new_exp.py	/^db = "\/Users\/unga\/Desktop\/experiment.db"$/;"	kind:variable	line:19
+done_callback	../data_set.py	/^    def done_callback(self)->None:$/;"	kind:member	line:469
+example_data_set.py	../misc/example_data_set.py	1;"	kind:file	line:1
+finish_experiment	../new_exp.py	/^def finish_experiment(conn: sqlite3.Connection, exp_id: int):$/;"	kind:function	line:99
+get_data	../data_set.py	/^    def get_data(self,$/;"	kind:member	line:340
+get_metadata	../data_set.py	/^    def get_metadata(self, tag):$/;"	kind:member	line:389
+get_param_setpoints	../data_set.py	/^    def get_param_setpoints(self, name):$/;"	kind:member	line:317
+get_parameter	../data_set.py	/^    def get_parameter(self, name: str) -> ParamSpec:$/;"	kind:member	line:159
+get_parameters	../data_set.py	/^    def get_parameters(self)->List[ParamSpec]:$/;"	kind:member	line:386
+get_run_counter	../new_exp.py	/^def get_run_counter(conn: sqlite3.Connection, exp_id: int) -> int:$/;"	kind:function	line:143
+hash_from_parts	../data_set.py	/^def hash_from_parts(*parts: str) -> str:$/;"	kind:function	line:25
+hashlib	../data_set.py	/^import hashlib$/;"	kind:namespace	line:10
+in_mem	../misc/example_data_set.py	/^in_mem = memory_serializer(d)$/;"	kind:variable	line:38
+in_mem	../misc/example_data_set.py	/^in_mem = memory_serializer(d)$/;"	kind:variable	line:61
+insert_column	../new_exp.py	/^def insert_column(conn: sqlite3.Connection, table: str, name: str,$/;"	kind:function	line:69
+insert_run	../new_exp.py	/^def insert_run(conn: sqlite3.Connection, exp_id: int, name: str):$/;"	kind:function	line:148
+junk.py	../misc/junk.py	1;"	kind:file	line:1
+logging	../data_set.py	/^import logging$/;"	kind:namespace	line:11
+logging	../misc/example_data_set.py	/^import logging$/;"	kind:namespace	line:3
+logging	../misc/junk.py	/^import logging$/;"	kind:namespace	line:3
+logging	../new_exp.py	/^import logging$/;"	kind:namespace	line:12
+many	../new_exp.py	/^def many(curr: sqlite3.Cursor, *columns: str)->List[Any]:$/;"	kind:function	line:30
+mark_complete	../data_set.py	/^    def mark_complete(self) -> None:$/;"	kind:member	line:178
+memory_serializer	../misc/example_data_set.py	/^class memory_serializer():$/;"	kind:class	line:18
+modify_many	../data_set.py	/^    def modify_many(self, start_index: int,$/;"	kind:member	line:298
+modify_result	../data_set.py	/^    def modify_result(self, index: int, name: str, value: Any) -> None:$/;"	kind:member	line:251
+modify_results	../data_set.py	/^    def modify_results(self, index: int, updates: Dict[str, Any]):$/;"	kind:member	line:277
+new_exp.py	../new_exp.py	1;"	kind:file	line:1
+new_experiment	../new_exp.py	/^def new_experiment(conn: sqlite3.Connection,$/;"	kind:function	line:75
+np	../data_set.py	/^import numpy as np$/;"	kind:namespace	line:12
+one	../new_exp.py	/^def one(curr: sqlite3.Cursor, column: str)->Any:$/;"	kind:function	line:22
+p	../misc/example_data_set.py	/^p = MockParabola("parabola")$/;"	kind:variable	line:10
+param_spec	../data_set.py	/^def param_spec(parameter: _BaseParameter) -> ParamSpec:$/;"	kind:function	line:90
+param_spec	../misc/example_data_set.py	/^from data_set import ParamSpec, DataSet,  param_spec$/;"	kind:namespace	line:1
+param_spec	../misc/junk.py	/^from data_set import ParamSpec, DataSet,  param_spec$/;"	kind:namespace	line:1
+param_spec	../test_datas_set.py	/^from data_set import ParamSpec, DataSet, CompletedError, param_spec$/;"	kind:namespace	line:10
+partial	../data_set.py	/^from functools import partial$/;"	kind:namespace	line:15
+qc_param	../misc/example_data_set.py	/^qc_param = param_spec(p)$/;"	kind:variable	line:11
+qc_param	../misc/junk.py	/^    qc_param = param_spec(MockParabola("parabola"))$/;"	kind:variable	line:10
+run	../data_set.py	/^    def run(self)->None:$/;"	kind:member	line:451
+schedule_stop	../data_set.py	/^    def schedule_stop(self):$/;"	kind:member	line:473
+setpoints	../data_set.py	/^    def setpoints(self):$/;"	kind:member	line:58
+setpoints	../data_set.py	/^    def setpoints(self, id):$/;"	kind:member	line:62
+snapshot_base	../data_set.py	/^    def snapshot_base(self, update=False):$/;"	kind:member	line:414
+sql_repr	../new_exp.py	/^    def sql_repr(self):$/;"	kind:member	line:201
+sqlite3	../new_exp.py	/^import sqlite3$/;"	kind:namespace	line:13
+sub_id	../misc/example_data_set.py	/^sub_id = d.subscribe(in_mem.callback, state=d.metadata)$/;"	kind:variable	line:39
+sub_id	../misc/example_data_set.py	/^sub_id = d.subscribe(in_mem.callback, state=d.metadata)$/;"	kind:variable	line:62
+sub_id	../misc/junk.py	/^sub_id = d.subscribe(callback, min_wait=1000)$/;"	kind:variable	line:26
+subscribe	../data_set.py	/^    def subscribe(self, callback: Callable[[Any, int, Optional[Any]], None],$/;"	kind:member	line:393
+sys	../misc/junk.py	/^import sys$/;"	kind:namespace	line:32
+test_add_result	../test_datas_set.py	/^    def test_add_result(self):$/;"	kind:member	line:75
+test_add_results	../test_datas_set.py	/^    def test_add_results(self):$/;"	kind:member	line:85
+test_add_spec	../test_datas_set.py	/^    def test_add_spec(self):$/;"	kind:member	line:65
+test_constructor	../test_datas_set.py	/^    def test_constructor(self):$/;"	kind:member	line:19
+test_constructor	../test_datas_set.py	/^    def test_constructor(self):$/;"	kind:member	line:40
+test_data	../test_datas_set.py	/^    def test_data(self):$/;"	kind:member	line:32
+test_datas_set.py	../test_datas_set.py	1;"	kind:file	line:1
+test_get_data	../test_datas_set.py	/^    def test_get_data(self):$/;"	kind:member	line:189
+test_len_	../test_datas_set.py	/^    def test_len_(self):$/;"	kind:member	line:179
+test_modify	../test_datas_set.py	/^    def test_modify(self):$/;"	kind:member	line:114
+test_modify_many	../test_datas_set.py	/^    def test_modify_many(self):$/;"	kind:member	line:141
+test_modify_remove	../test_datas_set.py	/^    def test_modify_remove(self):$/;"	kind:member	line:165
+test_modify_results	../test_datas_set.py	/^    def test_modify_results(self):$/;"	kind:member	line:127
+test_set_points	../test_datas_set.py	/^    def test_set_points(self):$/;"	kind:member	line:103
+test_setpoints	../test_datas_set.py	/^    def test_setpoints(self):$/;"	kind:member	line:27
+test_specs	../test_datas_set.py	/^    def test_specs(self):$/;"	kind:member	line:49
+test_specs_values	../test_datas_set.py	/^    def test_specs_values(self):$/;"	kind:member	line:56
+time	../data_set.py	/^import time$/;"	kind:namespace	line:13
+time	../misc/example_data_set.py	/^import time$/;"	kind:namespace	line:4
+time	../misc/junk.py	/^import time$/;"	kind:namespace	line:27
+time	../new_exp.py	/^import time$/;"	kind:namespace	line:14
+to_array	../data_set.py	/^    def to_array(self, name, shape=None):$/;"	kind:member	line:334
+transaction	../new_exp.py	/^def transaction(conn: sqlite3.Connection,$/;"	kind:function	line:46
+unittest	../test_datas_set.py	/^import unittest$/;"	kind:namespace	line:8
+unsubscribe	../data_set.py	/^    def unsubscribe(self, uuid: str)-> None:$/;"	kind:member	line:402
+unsubscribe_all	../data_set.py	/^    def unsubscribe_all(self):$/;"	kind:member	line:408
+update_eperiment_run_counter	../new_exp.py	/^def update_eperiment_run_counter(conn: sqlite3.Connection, exp_id: int,$/;"	kind:function	line:175
+values	../misc/junk.py	/^values = [[1, 2, 3], [3, 4, 6], [7, 8, 9]]$/;"	kind:variable	line:18
+x	../misc/example_data_set.py	/^x = ParamSpec("x")$/;"	kind:variable	line:12
+x	../misc/example_data_set.py	/^x = ParamSpec("x")$/;"	kind:variable	line:53
+y	../misc/example_data_set.py	/^y = ParamSpec("y")$/;"	kind:variable	line:54
+y	../misc/junk.py	/^y = ParamSpec("y")$/;"	kind:variable	line:14
+z	../misc/example_data_set.py	/^z = ParamSpec("z")$/;"	kind:variable	line:56
+z	../misc/junk.py	/^z = ParamSpec("z")$/;"	kind:variable	line:16
