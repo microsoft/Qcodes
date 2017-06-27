@@ -59,8 +59,7 @@ class FrequencySweepMagPhase(MultiParameter):
             log.warning("RF output is off")
         # it is possible that the instrument and qcodes disagree about
         # which parameter is measured on this channel
-        instrument_parameter = self._instrument.vna_parameter()[1:-2]
-        # trim quotes and newline
+        instrument_parameter = self._instrument.vna_parameter()
         if  instrument_parameter != self._instrument._vna_parameter:
             raise RuntimeError("Invalid parameter. Tried to measure "
                                "{} got {}".format(self._instrument._vna_parameter,
@@ -130,14 +129,11 @@ class FrequencySweep(ArrayParameter):
             log.warning("RF output is off")
         # it is possible that the instrument and qcodes disagree about
         # which parameter is measured on this channel
-        instrument_parameter = self._instrument.vna_parameter()[1:-2]
-        # trime quotes and newline
+        instrument_parameter = self._instrument.vna_parameter()
         if  instrument_parameter != self._instrument._vna_parameter:
             raise RuntimeError("Invalid parameter. Tried to measure "
                                "{} got {}".format(self._instrument._vna_parameter,
                                                   instrument_parameter))
-        old_format = self._instrument.format()
-        self._instrument.format('dB')
         self._instrument.write('SENS{}:AVER:STAT ON'.format(self._channel))
         self._instrument.write('SENS{}:AVER:CLE'.format(self._channel))
         self._instrument._parent.cont_meas_off()
@@ -148,9 +144,12 @@ class FrequencySweep(ArrayParameter):
             self._instrument.write('INIT{}:IMM; *WAI'.format(self._channel))
         data_str = self._instrument.ask('CALC{}:DATA? FDAT'.format(self._channel))
         data = np.array(data_str.rstrip().split(',')).astype('float64')
-
+        if self._instrument.format() in ['Polar', 'Complex',
+                                         'Smith', 'Inverse Smith']:
+            log.warning("QCoDeS Dataset does not currently support Complex "
+                        "values. Will discard the imaginary part.")
+            data = data[0::2] + 1j*data[1::2]
         self._instrument._parent.cont_meas_on()
-        self._instrument.format(old_format)
         self._save_val(data)
         return data
 
@@ -174,8 +173,8 @@ class ZNBChannel(InstrumentChannel):
         self.add_parameter(name='vna_parameter',
                            label='VNA parameter',
                            get_cmd="CALC{}:PAR:MEAS? '{}'".format(self._instrument_channel,
-                                                                        self._tracename))
-
+                                                                        self._tracename),
+                           get_parser=self._strip)
         self.add_parameter(name='power',
                            label='Power',
                            unit='dBm',
@@ -223,7 +222,7 @@ class ZNBChannel(InstrumentChannel):
                            get_parser=int)
         self.add_parameter(name='format',
                            get_cmd='CALC{}:FORM?'.format(n),
-                           set_cmd='CALC{}:FORM {{}}'.format(n),
+                           set_cmd=self._set_format,
                            val_mapping={'dB': 'MLOG\n',
                                         'Linear Magnitude': 'MLIN\n',
                                         'Phase': 'PHAS\n',
@@ -238,13 +237,13 @@ class ZNBChannel(InstrumentChannel):
                                         'Complex': "COMP\n"
                                         })
 
-        self.add_parameter(name='trace',
+        self.add_parameter(name='full_trace',
                            start=self.start(),
                            stop=self.stop(),
                            npts=self.npts(),
                            channel=n,
                            parameter_class=FrequencySweepMagPhase)
-        self.add_parameter(name='tracedb',
+        self.add_parameter(name='trace',
                            start=self.start(),
                            stop=self.stop(),
                            npts=self.npts(),
@@ -253,6 +252,40 @@ class ZNBChannel(InstrumentChannel):
 
         self.add_function('autoscale',
                           call_cmd='DISPlay:TRACe1:Y:SCALe:AUTO ONCE, "{}"'.format(self._tracename))
+
+    def _set_format(self, val):
+        unit_mapping = {'MLOG\n': 'dB',
+                        'MLIN\n': '',
+                        'PHAS\n': 'rad',
+                        'UPH\n': 'rad',
+                        'POL\n': '',
+                        'SMIT\n': '',
+                        'ISM\n': '',
+                        'SWR\n': 'U',
+                        'REAL\n': 'U',
+                        'IMAG\n': 'U',
+                        'GDEL\n': 'S',
+                        'COMP\n': ''}
+        label_mapping = {'MLOG\n': 'Magnitude',
+                         'MLIN\n': 'Magnitude',
+                         'PHAS\n': 'Phase',
+                         'UPH\n': 'Unwrapped phase',
+                         'POL\n': 'Complex Magnitude',
+                         'SMIT\n': 'Complex Magnitude',
+                         'ISM\n': 'Complex Magnitude',
+                         'SWR\n': 'Standing Wave Ratio',
+                         'REAL\n': 'Real Magnitude',
+                         'IMAG\n': 'Imaginary Magnitude',
+                         'GDEL\n': 'Delay',
+                         'COMP\n': 'Complex Magnitude'}
+        channel = self._instrument_channel
+        self.write('CALC{}:FORM {}'.format(channel, val))
+        self.trace.unit = unit_mapping[val]
+        self.trace.label = "{} {}".format(self.vna_parameter(), label_mapping[val])
+
+    def _strip(self, var):
+        "Strip newline and quotes from instrument reply"
+        return var.rstrip()[1:-1]
 
     def _set_start(self, val):
         channel = self._instrument_channel
@@ -268,7 +301,7 @@ class ZNBChannel(InstrumentChannel):
             log.warning("Could not set start to {} setting it to {}".format(val, start))
         # update setpoints for FrequencySweep param
         self.trace.set_sweep(start, stop, npts)
-        self.tracedb.set_sweep(start, stop, npts)
+        self.full_trace.set_sweep(start, stop, npts)
 
     def _set_stop(self, val):
         channel = self._instrument_channel
@@ -283,7 +316,7 @@ class ZNBChannel(InstrumentChannel):
             log.warning("Could not set stop to {} setting it to {}".format(val, stop))
         # update setpoints for FrequencySweep param
         self.trace.set_sweep(start, stop, npts)
-        self.tracedb.set_sweep(start, stop, npts)
+        self.full_trace.set_sweep(start, stop, npts)
 
     def _set_npts(self, val):
         channel = self._instrument_channel
@@ -292,7 +325,7 @@ class ZNBChannel(InstrumentChannel):
         stop = self.stop()
         # update setpoints for FrequencySweep param
         self.trace.set_sweep(start, stop, val)
-        self.tracedb.set_sweep(start, stop, val)
+        self.full_trace.set_sweep(start, stop, val)
 
     def _set_span(self, val):
         channel = self._instrument_channel
@@ -301,7 +334,7 @@ class ZNBChannel(InstrumentChannel):
         stop = self.stop()
         npts = self.npts()
         self.trace.set_sweep(start, stop, npts)
-        self.tracedb.set_sweep(start, stop, npts)
+        self.full_trace.set_sweep(start, stop, npts)
 
     def _set_center(self, val):
         channel = self._instrument_channel
@@ -310,7 +343,7 @@ class ZNBChannel(InstrumentChannel):
         stop = self.stop()
         npts = self.npts()
         self.trace.set_sweep(start, stop, npts)
-        self.tracedb.set_sweep(start, stop, npts)
+        self.full_trace.set_sweep(start, stop, npts)
 
 
 class ZNB(VisaInstrument):
