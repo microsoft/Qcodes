@@ -439,7 +439,7 @@ class SD_DIG(SD_Module):
         """
         self.__prescaler[channel] = prescaler
         value = self.SD_AIN.channelPrescalerConfig(channel, prescaler)
-        value_name = 'set_prescaler {}'.format(prescaler)
+        value_name = 'set_prescaler ch{}'.format(channel)
         return result_parser(value, value_name, verbose)
 
     # channelInputConfig
@@ -469,7 +469,7 @@ class SD_DIG(SD_Module):
         value = self.SD_AIN.channelInputConfig(channel, self.__full_scale[channel],
                                                self.__impedance[channel],
                                                self.__coupling[channel])
-        value_name = 'set_full_scale {}'.format(full_scale)
+        value_name = 'set_full_scale ch{}'.format(channel)
         return result_parser(value, value_name, verbose)
 
     def get_impedance(self, channel, verbose=False):
@@ -495,7 +495,7 @@ class SD_DIG(SD_Module):
         value = self.SD_AIN.channelInputConfig(channel, self.__full_scale[channel],
                                                self.__impedance[channel],
                                                self.__coupling[channel])
-        value_name = 'set_impedance {}'.format(impedance)
+        value_name = 'set_impedance ch{}'.format(channel)
         return result_parser(value, value_name, verbose)
 
     def get_coupling(self, channel, verbose=False):
@@ -521,7 +521,7 @@ class SD_DIG(SD_Module):
         value = self.SD_AIN.channelInputConfig(channel, self.__full_scale[channel],
                                                self.__impedance[channel],
                                                self.__coupling[channel])
-        value_name = 'set_coupling {}'.format(coupling)
+        value_name = 'set_coupling ch{}'.format(channel)
         return result_parser(value, value_name, verbose)
 
     # channelTriggerConfig
@@ -535,7 +535,7 @@ class SD_DIG(SD_Module):
         self.__trigger_edge[channel] = mode
         value = self.SD_AIN.channelTriggerConfig(channel, self.__trigger_edge[channel],
                                                  self.__trigger_threshold[channel])
-        value_name = 'set_trigger_edge {}'.format(mode)
+        value_name = 'set_trigger_edge ch{}'.format(channel)
         return result_parser(value, value_name, verbose)
 
     def get_trigger_edge(self, channel):
@@ -556,7 +556,7 @@ class SD_DIG(SD_Module):
         self.__trigger_threshold[channel] = threshold
         value = self.SD_AIN.channelTriggerConfig(channel, self.__trigger_edge[channel],
                                                  self.__trigger_threshold[channel])
-        value_name = 'set_trigger_threshold {}'.format(threshold)
+        value_name = 'set_trigger_threshold ch{}'.format(channel)
         return result_parser(value, value_name, verbose)
 
     def get_trigger_threshold(self, channel):
@@ -580,7 +580,7 @@ class SD_DIG(SD_Module):
                                       self.__n_cycles[channel],
                                       self.__trigger_delay[channel],
                                       self.__trigger_mode[channel])
-        value_name = 'set_points_per_cycle {}'.format(n_points)
+        value_name = 'set_points_per_cycle ch{}'.format(channel)
         return result_parser(value, value_name, verbose)
 
     def set_n_cycles(self, n_cycles, channel, verbose=False):
@@ -596,7 +596,7 @@ class SD_DIG(SD_Module):
                                       self.__n_cycles[channel],
                                       self.__trigger_delay[channel],
                                       self.__trigger_mode[channel])
-        value_name = 'set_n_cycles {}'.format(n_cycles)
+        value_name = 'set_n_cycles ch{}'.format(channel)
         return result_parser(value, value_name, verbose)
 
     def set_daq_trigger_delay(self, delay, channel, verbose=False):
@@ -611,7 +611,7 @@ class SD_DIG(SD_Module):
                                       self.__n_cycles[channel],
                                       self.__trigger_delay[channel],
                                       self.__trigger_mode[channel])
-        value_name = 'set_DAQ_trigger_delay {}'.format(delay)
+        value_name = 'set_DAQ_trigger_delay ch{}'.format(channel)
         return result_parser(value, value_name, verbose)
 
     def set_daq_trigger_mode(self, mode, channel, verbose=False):
@@ -626,7 +626,7 @@ class SD_DIG(SD_Module):
                                       self.__n_cycles[channel],
                                       self.__trigger_delay[channel],
                                       self.__trigger_mode[channel])
-        value_name = 'set_DAQ_trigger_mode {}'.format(mode)
+        value_name = 'set_DAQ_trigger_mode ch{}'.format(channel)
         return result_parser(value, value_name, verbose)
 
     # DAQ trigger Config
@@ -641,7 +641,7 @@ class SD_DIG(SD_Module):
         value = self.SD_AIN.DAQtriggerConfig(channel, self.__digital_trigger_mode[channel],
                                              self.__digital_trigger_source[channel],
                                              self.__analog_trigger_mask[channel])
-        value_name = 'set_digital_trigger_mode {}'.format(mode)
+        value_name = 'set_digital_trigger_mode ch{}'.format(channel)
         return result_parser(value, value_name, verbose)
 
     def set_digital_trigger_source(self, source, channel, verbose=False):
@@ -655,7 +655,7 @@ class SD_DIG(SD_Module):
         value = self.SD_AIN.DAQtriggerConfig(channel, self.__digital_trigger_mode[channel],
                                              self.__digital_trigger_source[channel],
                                              self.__analog_trigger_mask[channel])
-        value_name = 'set_digital_trigger_source {}'.format(source)
+        value_name = 'set_digital_trigger_source ch{}'.format(channel)
         return result_parser(value, value_name, verbose)
 
     def set_analog_trigger_mask(self, mask, channel, verbose=False):
@@ -667,7 +667,7 @@ class SD_DIG(SD_Module):
         """
         self.__analog_trigger_mask[channel] = mask
         value = self.SD_AIN.DAQanalogTriggerConfig(channel, self.__analog_trigger_mask[channel])
-        value_name = 'set_analog_trigger_mask {}'.format(mask)
+        value_name = 'set_analog_trigger_mask ch{}'.format(channel)
         return result_parser(value, value_name, verbose)
 
     # DAQ trigger External Config
@@ -681,7 +681,7 @@ class SD_DIG(SD_Module):
         self.__external_source[channel] = source
         value = self.SD_AIN.DAQtriggerExternalConfig(channel, self.__external_source[channel],
                                                      self.__trigger_behaviour[channel])
-        value_name = 'set_ext_trigger_source {}'.format(source)
+        value_name = 'set_ext_trigger_source ch{}'.format(channel)
         return result_parser(value, value_name, verbose)
 
     def set_ext_trigger_behaviour(self, behaviour, channel, verbose=False):
@@ -694,7 +694,7 @@ class SD_DIG(SD_Module):
         self.__external_behaviour[channel] = behaviour
         value = self.SD_AIN.DAQtriggerExternalConfig(channel, self.__external_source[channel],
                                                      self.__trigger_behaviour[channel])
-        value_name = 'set_ext_trigger_behaviour {}'.format(behaviour)
+        value_name = 'set_ext_trigger_behaviour ch{}'.format(channel)
         return result_parser(value, value_name, verbose)
 
     # DAQ read
@@ -706,6 +706,9 @@ class SD_DIG(SD_Module):
             n_points  (int)     : the number of points to be read from specified DAQ
         """
         self.__n_points[channel] = n_points
+        value = 0 # No error
+        value_name = 'set_n_points ch{}'.format(channel)
+        return result_parser(value, value_name, verbose)
 
     def set_timeout(self, timeout, channel):
         """ Sets the trigger source
@@ -715,4 +718,7 @@ class SD_DIG(SD_Module):
             timeout (int)       : the read timeout in ms for the specified DAQ
         """
         self.__timeout[channel] = timeout
+        value = 0 # No error
+        value_name = 'set_timeout ch{}'.format(channel)
+        return result_parser(value, value_name, verbose)
 
