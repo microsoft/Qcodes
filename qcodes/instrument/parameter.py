@@ -130,7 +130,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
     def __repr__(self):
         return named_repr(self)
 
-    def __call__(self, *args):
+    def __call__(self, *args, **kwargs):
         if len(args) == 0:
             if hasattr(self, 'get'):
                 return self.get()
@@ -139,7 +139,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                                           ' Parameter {}'.format(self.name))
         else:
             if hasattr(self, 'set'):
-                self.set(*args)
+                self.set(*args, **kwargs)
             else:
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
