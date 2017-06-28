@@ -103,7 +103,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
             JSON snapshot of the parameter
     """
     def __init__(self, name, instrument, snapshot_get, metadata,
-                 step=None, inter_delay=0, post_delay=0,
+                 step=None, scale=None, inter_delay=0, post_delay=0,
                  val_mapping=None, get_parser=None, set_parser=None,
                  snapshot_value=True, max_val_age=None):
         super().__init__(metadata)
@@ -115,6 +115,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self.step = step
         self.inter_delay = inter_delay
         self.post_delay = post_delay
+        self.scale = scale
 
         # TODO (nulinspiratie) handle int vs string conversion
         self.val_mapping = val_mapping
@@ -256,6 +257,18 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 if self.get_parser is not None:
                     value = self.get_parser(value)
 
+                if self.scale is not None:
+                    # Scale values
+                    if isinstance(self.scale, collections.Iterable):
+                        # Scale contains multiple elements, one for each value
+                        value = tuple(value / scale for value, scale
+                                      in zip(value, self.scale))
+                    elif isinstance(value, collections.Iterable):
+                        # Use single scale for all values
+                        value = tuple(value / self.scale for value in value)
+                    else:
+                        value /= self.scale
+
                 if self.val_mapping is not None:
                     value = self.inverse_val_mapping[value]
 
@@ -277,8 +290,18 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     # Convert set values using val_mapping dictionary
                     values = tuple(self.val_mapping[value] for value in values)
 
+                if self.scale is not None:
+                    if isinstance(self.scale, collections.Iterable):
+                        # Scale contains multiple elements, one for each value
+                        values = tuple(value * scale for value, scale
+                                       in zip(values, self.scale))
+                    else:
+                        # Use single scale for all values
+                        values = tuple(value * self.scale for value in values)
+
                 if self.set_parser is not None:
-                    values = tuple(self.set_parser(value) for value in values)
+                    values = tuple(
+                        self.set_parser(value) for value in values)
 
                 # In some cases intermediate sweep values must be used.
                 # Unless `self.step` is defined, get_sweep_values will return
@@ -551,6 +574,7 @@ class Parameter(_BaseParameter):
         if not isinstance(vals, Validator):
             raise TypeError('vals must be a Validator')
         self.vals = vals
+
 
         if initial_value is not None:
             self._save_val(initial_value, validate=True)
