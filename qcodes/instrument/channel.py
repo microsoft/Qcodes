@@ -192,7 +192,8 @@ class ChannelList(Metadatable):
         # This will eventually become a locked tuple.
         if chan_list is None:
             self._locked = False
-            self._channels = [] # type: Union[List[InstrumentChannel],Tuple[InstrumentChannel]]
+            self._channels = [] # type: Union[List[InstrumentChannel],Tuple[InstrumentChannel], Tuple[InstrumentChannel, ...]]
+            # No idea why the last type is needed should never happen
         else:
             self._locked = True
             self._channels = tuple(chan_list)
