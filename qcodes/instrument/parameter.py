@@ -110,13 +110,6 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self._instrument = instrument
         self._snapshot_value = snapshot_value
 
-        self.has_get = hasattr(self, 'get')
-        self.has_set = hasattr(self, 'set')
-
-        if not (self.has_get or self.has_set):
-            raise AttributeError('A parameter must have either a get or a '
-                                 'set method, or both.')
-
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
         # but they all use the same attributes so snapshot is consistent.
@@ -133,17 +126,18 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
     def __call__(self, *args):
         if len(args) == 0:
-            if self.has_get:
+            if hasattr(self, 'get'):
                 return self.get()
             else:
                 raise NotImplementedError('no get cmd found in' +
                                           ' Parameter {}'.format(self.name))
         else:
-            if self.has_set:
+            if hasattr(self, 'set'):
                 self.set(*args)
             else:
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
+
 
     def _latest(self):
         return {
@@ -189,8 +183,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
             dict: base snapshot
         """
 
-        if self.has_get and self._snapshot_get and self._snapshot_value and \
-                update:
+        if hasattr(self, 'get') and self._snapshot_get \
+                and self._snapshot_value and update:
             self.get()
 
         state = self._latest()
@@ -287,12 +281,16 @@ class Parameter(_BaseParameter):
             JSON snapshot of the parameter
     """
     def __init__(self, name, instrument=None, label=None,
-                 unit=None, units=None, vals=None, docstring=None, 
+                 get_cmd=None, set_cmd=False,
+                 unit=None, units=None, vals=None, docstring=None,
                  snapshot_get=True, snapshot_value=True, metadata=None):
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
 
         self._meta_attrs.extend(['label', 'unit', '_vals'])
+
+
+
 
         self.label = name if label is None else label
 
@@ -468,7 +466,7 @@ class ArrayParameter(_BaseParameter):
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
 
-        if self.has_set:  # TODO (alexcjohnson): can we support, ala Combine?
+        if hasattr(self, 'set'):  # TODO (alexcjohnson): can we support, ala Combine?
             raise AttributeError('ArrayParameters do not support set '
                                  'at this time.')
 
@@ -635,7 +633,7 @@ class MultiParameter(_BaseParameter):
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
 
-        if self.has_set:  # TODO (alexcjohnson): can we support, ala Combine?
+        if hasattr(self, 'set'):  # TODO (alexcjohnson): can we support, ala Combine?
             warnings.warn('MultiParameters do not fully support set '
                           'at this time.')
 
@@ -822,7 +820,7 @@ class StandardParameter(Parameter):
         self.post_delay = post_delay
         self.step = step
 
-        if not (self.has_get or self.has_set):
+        if not (hasattr(self, 'get') or hasattr(self, 'set')):
             raise NoCommandError('neither set nor get cmd found in' +
                                  ' Parameter {}'.format(self.name))
 
@@ -958,8 +956,6 @@ class StandardParameter(Parameter):
                                     output_parser=get_parser,
                                     no_cmd_function=no_getter)
 
-        self.has_get = (get_cmd is not None)
-
     def _initialize_set(self, set_cmd, set_parser):
         # note: this does not set the final setter functions. that's handled
         # in self.set_sweep, when we choose a swept or non-swept setter.
@@ -968,8 +964,6 @@ class StandardParameter(Parameter):
         exec_str = self._instrument.write if self._instrument else None
         self._set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str,
                             input_parser=set_parser, no_cmd_function=no_setter)
-
-        self.has_set = set_cmd is not None
 
     def _sweep_steps(self, value):
         start_value = self.get_latest()
