@@ -396,7 +396,10 @@ class Instrument(Metadatable, DelegateAttributes):
             name = snapshot['parameters'][par]['name']
             msg = '{0:<{1}}:'.format(name, par_field_len)
             val = snapshot['parameters'][par]['value']
-            unit = snapshot['parameters'][par]['unit']
+            unit = snapshot['parameters'][par].get('unit', None)
+            if unit is None:
+                # this may be a multi parameter
+                unit = snapshot['parameters'][par].get('units', None)
             if isinstance(val, floating_types):
                 msg += '\t{:.5g} '.format(val)
             else:
