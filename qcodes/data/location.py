@@ -83,7 +83,9 @@ class FormatLocation:
         as '{date:%Y-%m-%d}' or '{counter:03}'
     """
 
-    default_fmt = config['core']['default_fmt'] # type: str
+    default_fmt = config['core']['default_fmt'] # type: ignore
+    # silence warning about the type of config, not sure how to do this
+    # correctly
 
     def __init__(self, fmt=None, fmt_date=None, fmt_time=None,
                  fmt_counter=None, record=None):
