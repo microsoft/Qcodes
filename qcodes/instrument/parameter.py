@@ -288,7 +288,6 @@ class _BaseParameter(Metadatable, DeferredOperations):
             # drop the initial value, we're already there
             return permissive_range(start_value, value, self._step)[1:]
 
-
     @property
     def full_name(self):
         """Include the instrument name with the Parameter name if possible."""
@@ -300,6 +299,40 @@ class _BaseParameter(Metadatable, DeferredOperations):
             pass
 
         return self.name
+
+    @property
+    def step(self):
+        return self._step
+
+    @step.setter
+    def step(self, step):
+        """
+        Configure whether this Parameter uses steps during set operations.
+        If step is a positive number, this is the maximum value change
+        allowed in one hardware call, so a single set can result in many
+        calls to the hardware if the starting value is far from the target.
+
+        Args:
+            step (Union[int, float]): A positive number, the largest change
+                allowed in one call. All but the final change will attempt to
+                change by +/- step exactly
+
+        Raises:
+            TypeError: if step is not numeric
+            ValueError: if step is negative
+            TypeError:  if step is not integer for an integer parameter
+            TypeError: if step is not a number
+        """
+        if not self._vals.is_numeric:
+            raise TypeError('you can only step numeric parameters')
+        elif not isinstance(step, (int, float)):
+            raise TypeError('step must be a number')
+        elif step <= 0:
+            raise ValueError('step must be positive')
+        elif (isinstance(self._vals, Ints) and not isinstance(step, int)):
+            raise TypeError('step must be a positive int for an Ints parameter')
+        else:
+            self._step = step
 
 
 class Parameter(_BaseParameter):
@@ -897,41 +930,6 @@ class StandardParameter(Parameter):
                                  ' Parameter {}'.format(self.name))
 
     @property
-    def step(self):
-        return self._step
-
-    @step.setter
-    def step(self, step):
-        """
-        Configure whether this Parameter uses steps during set operations.
-        If step is a positive number, this is the maximum value change
-        allowed in one hardware call, so a single set can result in many
-        calls to the hardware if the starting value is far from the target.
-
-        Args:
-            step (Union[int, float]): A positive number, the largest change
-                allowed in one call. All but the final change will attempt to
-                change by +/- step exactly
-
-        Raises:
-            TypeError: if step is not numeric
-            ValueError: if step is negative
-            TypeError:  if step is not integer for an integer parameter
-            TypeError: if step is not a number
-        """
-        if not self._vals.is_numeric:
-            raise TypeError('you can only step numeric parameters')
-        elif step <= 0:
-            raise ValueError('step must be positive')
-        elif (isinstance(self._vals, Ints) and
-                  not isinstance(step, int)):
-            raise TypeError('step must be a positive int for an Ints parameter')
-        elif not isinstance(step, (int, float)):
-            raise TypeError('step must be a number')
-        else:
-            self._step = step
-
-    @property
     def post_delay(self):
         """Property that returns the delay time of this parameter"""
         return self._post_delay
@@ -946,7 +944,7 @@ class StandardParameter(Parameter):
         after every set.
 
         Args:
-            post_delay(Union[int, float]): the target time between set calls. 
+            post_delay(Union[int, float]): the target time between set calls.
                 The actual time will not be shorter than this, but may be longer
                 if the underlying set call takes longer.
 
@@ -965,6 +963,9 @@ class StandardParameter(Parameter):
             value = self._get_command()
             self._save_val(value)
             return value
+        except Exception as e:
+            e.args = e.args + ('getting {}'.format(self.full_name),)
+            raise e
 
     def set(self, value):
         try:
