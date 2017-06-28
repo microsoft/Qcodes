@@ -518,7 +518,7 @@ class Parameter(_BaseParameter):
     def __init__(self, name, instrument=None, label=None,
                  get_cmd=None, set_cmd=False,
                  initial_value=None,
-                 unit=None, units=None, vals=Numbers(), docstring=None,
+                 unit=None, vals=Numbers(), docstring=None,
                  snapshot_get=True, snapshot_value=True, metadata=None,
                  **kwargs):
 
@@ -546,11 +546,6 @@ class Parameter(_BaseParameter):
         self._meta_attrs.extend(['label', 'unit', '_vals'])
 
         self.label = name if label is None else label
-
-        if units is not None:
-            warn_units('Parameter', self)
-            if unit is None:
-                unit = units
         self.unit = unit if unit is not None else ''
 
         if not isinstance(vals, Validator):
@@ -608,11 +603,6 @@ class Parameter(_BaseParameter):
         """
         return SweepFixedValues(self, start=start, stop=stop,
                                 step=step, num=num)
-
-    @property
-    def units(self):
-        warn_units('Parameter', self)
-        return self.unit
 
 
 class ArrayParameter(_BaseParameter):
@@ -687,7 +677,7 @@ class ArrayParameter(_BaseParameter):
             JSON snapshot of the parameter
     """
     def __init__(self, name, shape, instrument=None,
-                 label=None, unit=None, units=None,
+                 label=None, unit=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
                  setpoint_units=None, docstring=None,
                  snapshot_get=True, snapshot_value=True, metadata=None):
@@ -702,11 +692,6 @@ class ArrayParameter(_BaseParameter):
                                  'label', 'unit'])
 
         self.label = name if label is None else label
-
-        if units is not None:
-            warn_units('ArrayParameter', self)
-            if unit is None:
-                unit = units
         self.unit = unit if unit is not None else ''
 
         nt = type(None)
@@ -754,11 +739,6 @@ class ArrayParameter(_BaseParameter):
                 docstring,
                 '',
                 self.__doc__))
-
-    @property
-    def units(self):
-        warn_units('ArrayParameter', self)
-        return self.unit
 
 
 def _is_nested_sequence_or_none(obj, types, shapes):
