@@ -62,6 +62,7 @@ def connect(name: str, debug: bool=False) -> sqlite3.Connection:
     conn = sqlite3.connect(db, detect_types=sqlite3.PARSE_DECLTYPES)
     # sqlite3 options
     conn.row_factory = sqlite3.Row
+
     if debug:
         conn.set_trace_callback(print)
     return conn
@@ -127,6 +128,8 @@ def new_experiment(conn: sqlite3.Connection,
         name: the name of the experiment
         sample_name: the name of the current sample
         format_string: TODO: write this
+    Returns:
+        id: row-id of the created experiment
     """
     query = """
     INSERT INTO experiments
@@ -318,6 +321,8 @@ def get_last_run(conn: sqlite3.Connection, exp_id: int) -> str:
     """
     c = transaction(conn, query, exp_id)
     return one(c, 'result_table_name')
+
+
 def create_run_table(conn: sqlite3.Connection,
                      formatted_name: str,
                      parameters: Optional[List[ParamSpec]]=None,
@@ -325,6 +330,8 @@ def create_run_table(conn: sqlite3.Connection,
                      metadata: Dict[str, Any]=None
                      )->None:
     """Create run table with formatted_name as name
+
+    NOTE this need to be commited before closing the connection.
 
     Args:
         conn: database connection
@@ -354,12 +361,14 @@ def create_run_table(conn: sqlite3.Connection,
 
 
 def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
+
                *parameters, **metadata)-> Tuple[int, str]:
     """ Create a single run for the experiment.
 
 
     This will register the run in the runs table, the counter in the
     experiments table and create a new table with the formatted name.
+    experimente table and create a new table with the formatted name.
     The operations are NOT atomic, but the function is.
     NOTE: this function is not idempotent.
 
@@ -368,6 +377,7 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
         - exp_id: the experiment id we want to create the run into
         - name: a friendly name for this run
         - paramters : TODO:
+        - values: TODO:
         - metadata : TODO:
 
     Returns:
