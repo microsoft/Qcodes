@@ -155,6 +155,22 @@ def finish_experiment(conn: sqlite3.Connection, exp_id: int):
     atomicTransaction(conn, query, time.time(), exp_id)
 
 
+def data_sets(conn: sqlite3.Connection):
+    sql = """
+    SELECT * from runs
+    """
+    c = transaction(conn, sql)
+    return c.fetchall()
+
+
+def experiments(conn: sqlite3.Connection):
+    sql = """
+    SELECT * from experiments
+    """
+    c = transaction(conn, sql)
+    return c.fetchall()
+
+
 def _select_one_where(conn: sqlite3.Connection, table: str, column: str,
                       where_column: str, where_value: Any) -> Any:
     query = f"""
