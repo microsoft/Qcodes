@@ -1,17 +1,22 @@
 from qcodes.instrument_drivers.test import DriverTestCase
 import unittest
+from typing import Optional
+
 try:
     from .M3201A import Keysight_M3201A
-    from .M3300A import M3300A_AWG
-    from .SD_common.SD_Module import SD_Module
-    SD_Module_found = True
     Keysight_M3201A_found = True
+except ImportError:
+    Keysight_M3201A_found = False
+try:
+    from .M3300A import M3300A_AWG
     M3300A_AWG_found = True
 except ImportError:
-    SD_Module_found = False
-    Keysight_M3201A_found = False
     M3300A_AWG_found = False
-
+try:
+    from .SD_common.SD_Module import SD_Module
+    SD_Module_found = True
+except ImportError:
+    SD_Module_found = False
 
 @unittest.skipIf(not SD_Module_found, "SD_Module tests requires the keysightSD1 module")
 class TestSD_Module(DriverTestCase):
@@ -21,8 +26,8 @@ class TestSD_Module(DriverTestCase):
     This test suit is only used during the development of the general SD_Module driver. In a real-life scenario,
     no direct instances will be made from this class, but rather instances of either SD_AWG or SD_DIG.
     """
-
-    driver = SD_Module
+    if SD_Module_found:
+        driver = SD_Module
 
     @classmethod
     def setUpClass(cls):
@@ -62,8 +67,8 @@ class TestKeysight_M3201A(DriverTestCase):
 
     We can however test for ValueErrors which is a useful safety test.
     """
-
-    driver = Keysight_M3201A
+    if Keysight_M3201A_found:
+        driver = Keysight_M3201A
 
     @classmethod
     def setUpClass(cls):
@@ -301,8 +306,8 @@ class TestKeysight_M3300A(DriverTestCase):
 
     We can however test for ValueErrors which is a useful safety test.
     """
-
-    driver = M3300A_AWG
+    if M3300A_AWG_found:
+        driver = M3300A_AWG
 
     @classmethod
     def setUpClass(cls):
