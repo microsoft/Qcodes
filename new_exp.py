@@ -58,6 +58,7 @@ def connect(name: str, debug: bool=False) -> sqlite3.Connection:
     # register numpy->binary(TEXT) adapter
     sqlite3.register_adapter(np.ndarray, adapt_array)
     # register binary(TEXT) -> numpy converter
+    # for some reasons mypy complains about this
     sqlite3.register_converter("array", convert_array)
     conn = sqlite3.connect(db, detect_types=sqlite3.PARSE_DECLTYPES)
     # sqlite3 options
@@ -302,7 +303,7 @@ def insert_many_values(conn: sqlite3.Connection,
     """
     _parameters = ",".join([p.name for p in parameters])
     # TODO: none of the code below is not form PRADA SS-2017
-    # [a, b] -> (?,?), (?,?) 
+    # [a, b] -> (?,?), (?,?)
     # [[1,1], [2,2]]
     _values = "("+",".join(["?"]*len(parameters))+")"
     # NOTE: assume that all the values have same length
@@ -477,7 +478,7 @@ def get_data(conn: sqlite3.Connection,
     _parameters = ",".join([p.name for p in parameters])
     if start and end:
         query = f"""
-        SELECT {_parameters} 
+        SELECT {_parameters}
         FROM "{formatted_name}"
         WHERE rowid
             > {start} and
@@ -486,21 +487,21 @@ def get_data(conn: sqlite3.Connection,
         """
     elif start:
         query = f"""
-        SELECT {_parameters} 
+        SELECT {_parameters}
         FROM "{formatted_name}"
         WHERE rowid
             >= {start}
         """
     elif end:
         query = f"""
-        SELECT {_parameters} 
+        SELECT {_parameters}
         FROM "{formatted_name}"
         WHERE rowid
             <= {end}
         """
     else:
         query = f"""
-        SELECT {_parameters} 
+        SELECT {_parameters}
         FROM "{formatted_name}"
         """
     c = transaction(conn, query)
@@ -524,9 +525,10 @@ if __name__ == '__main__':
     # array value
     parameter_c = ParamSpec("c", "array")
     add_parameter(conn, data_set_name, parameter_c)
-    x = np.arange(10000).reshape(1000, 1000)
-    insert_values(conn, data_set_name, [parameter_a, parameter_b, parameter_c], [0, 0, x])
+    x = np.arange(100).reshape(10, 10)
+    insert_values(conn, data_set_name,
+                  [parameter_a, parameter_b, parameter_c], [0, 0, x])
     # now browse the results
-    get_data(conn, data_set_name, [parameter_a, parameter_c], 4,5)
+    get_data(conn, data_set_name, [parameter_a, parameter_c], 4, 5)
     # returns a scalar and numpy array
     finish_experiment(conn, exp_id)
