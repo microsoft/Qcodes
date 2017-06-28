@@ -336,11 +336,19 @@ def create_run_table(conn: sqlite3.Connection,
         conn: database connection
         formatted_name: the name of the table to create
     """
-    _parameters = ",".join([p.sql_repr() for p in parameters])
     if parameters and values:
-        # TODO: no need to create the table fisrt and then insert the values
-        pass
+        _parameters = ",".join([p.sql_repr() for p in parameters])
+        query = f"""
+        CREATE TABLE "{formatted_name}" (
+            id INTEGER PRIMARY KEY,
+            {_parameters}
+        );
+        """
+        transaction(conn, query)
+        # now insert values
+        insert_values(conn, formatted_name, parameters, values)
     elif parameters:
+        _parameters = ",".join([p.sql_repr() for p in parameters])
         query = f"""
         CREATE TABLE "{formatted_name}" (
             id INTEGER PRIMARY KEY,
