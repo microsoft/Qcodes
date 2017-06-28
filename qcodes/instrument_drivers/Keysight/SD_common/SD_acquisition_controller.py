@@ -165,6 +165,15 @@ class Triggered_Controller(AcquisitionController):
         )
 
         self.add_parameter(
+            'samples_per_read',
+            parameter_class=ManualParameter,
+            vals=Ints(),
+            # set_cmd=self._set_all_n_points,
+            docstring='The number of points to get per read. '
+                     'Can be use to break acquisition into multiple reads.'
+        )
+
+        self.add_parameter(
             'read_timeout',
             vals=Numbers(),
             set_cmd=self._set_all_read_timeout,
@@ -216,16 +225,29 @@ class Triggered_Controller(AcquisitionController):
         buffers = {ch: np.zeros((self.traces_per_acquisition.get_latest(),
                                       self.samples_per_record.get_latest()))
                         for ch in self.channel_selection()}
-
+        # total_points = self.traces_per_acquisition.get_latest() * self.samples_per_record.get_latest()
+        samples = self.traces_per_acquisition.get_latest()
         for ch in self.channel_selection():
-            ch_data = self._keysight.daq_read(ch)
-            if (len(ch_data) != 0):
-                for k, trace in enumerate(np.split(ch_data,
-                                      self.traces_per_acquisition.get_latest())):
-                    buffers[ch][k] = trace
-            else:
-                raise RuntimeError('Could not acquire data on ch {} with read \
-                timeout {} s'.format(ch, self.read_timeout.get_latest()))
+            samples_retrieved = 0
+            ch_data = None
+            while (samples_retrieved < samples):
+                samples_to_get = min(self.samples_per_read.get_latest(), samples - samples_retrieved)
+                n_points = samples_to_get * self.samples_per_record.get_latest()
+                self._keysight.parameters[f'n_points_{ch}'](n_points)
+                logger.info(f'Trying to acquire {n_points} points from DAQ{ch}.')
+                ch_data_retrieved = self._keysight.daq_read(ch)
+                logger.info('Done.')
+                if (len(ch_data_retrieved) != 0):
+                    samples_retrieved += samples_to_get
+                    if (np.any(ch_data) == None):
+                        ch_data = ch_data_retrieved
+                    else:
+                        ch_data = np.concatenate([ch_data, ch_data_retrieved], axis=0)
+                else:
+                    raise RuntimeError(f'Could not acquire data on ch{ch} with read '
+                    f'timeout {self.read_timeout.get_latest():.3f}s')
+            for k, trace in enumerate(np.split(ch_data, samples)):
+                buffers[ch][k] = trace
         return buffers
 
     def start(self):
@@ -256,10 +278,11 @@ class Triggered_Controller(AcquisitionController):
         """
         This method is called immediately after 'daq_start' is called
         """
-        n_points = self.traces_per_acquisition.get_latest() * \
-                   self.samples_per_record.get_latest()
-        for ch in self.channel_selection():
-            self._keysight.parameters['n_points_{}'.format(ch)].set(n_points)
+        # n_points = self.traces_per_acquisition.get_latest() * \
+        #            self.samples_per_record.get_latest()
+        # for ch in self.channel_selection():
+        #     self._keysight.parameters['n_points_{}'.format(ch)].set(n_points)
+        pass
 
     def post_acquire(self, buffers):
         """
@@ -309,6 +332,17 @@ class Triggered_Controller(AcquisitionController):
         for ch in self.channel_selection():
             self._keysight.parameters['points_per_cycle_{}'.format(ch)].set(n_points)
 
+    def _set_all_n_points(self, n_points):
+        """
+        This method sets the channelised parameters for data acquisition
+        all at once. This must be set after channel_selection is modified.
+
+        Args:
+            n_points (int)  : the number of points to read per daq_read call
+
+        """
+        for ch in self.channel_selection():
+            self._keysight.parameters['n_points_{}'.format(ch)].set(n_points)
 
     def _set_all_n_cycles(self, n_cycles):
         """
