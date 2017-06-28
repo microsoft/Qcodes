@@ -497,7 +497,6 @@ class Parameter(_BaseParameter):
 
         self._meta_attrs.extend(['label', 'unit', '_vals'])
 
-
         self.label = name if label is None else label
 
         if units is not None:
@@ -506,7 +505,9 @@ class Parameter(_BaseParameter):
                 unit = units
         self.unit = unit if unit is not None else ''
 
-        self.set_validator(vals)
+        if not isinstance(vals, Validator):
+            raise TypeError('vals must be a Validator')
+        self.vals = vals
 
         # generate default docstring
         self.__doc__ = os.linesep.join((
@@ -522,19 +523,6 @@ class Parameter(_BaseParameter):
                 docstring,
                 '',
                 self.__doc__))
-
-    def set_validator(self, vals):
-        """
-        Set a validator `vals` for this parameter.
-
-        Args:
-            vals (Validator):  validator to set
-        """
-
-        if not isinstance(vals, Validator):
-            raise TypeError('vals must be a Validator')
-        else:
-            self.vals = vals
 
     def validate(self, value):
         """
