@@ -112,7 +112,7 @@ def atomic(conn: sqlite3.Connection):
 def insert_column(conn: sqlite3.Connection, table: str, name: str,
                   type: str)->None:
     atomicTransaction(conn,
-                      f"ALTER TABLE {table} ADD COLUMN {name} {type}")
+                      f"""ALTER TABLE "{table}" ADD COLUMN {name} {type}""")
 
 
 def new_experiment(conn: sqlite3.Connection,
@@ -158,6 +158,7 @@ def _select_one_where(conn: sqlite3.Connection, table: str, column: str,
     SELECT {column}
     FROM
         experiments
+        {table}
     WHERE
         {where_column} = ?
     """
@@ -173,6 +174,7 @@ def _select_many_where(conn: sqlite3.Connection, table: str, *columns: str,
     SELECT {_columns}
     FROM
         experiments
+        {table}
     WHERE
         {where_column} = ?
     """
