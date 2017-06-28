@@ -58,8 +58,7 @@ import logging
 import os
 import collections
 import warnings
-import functools
-
+from functools import partial, wraps
 import numpy
 
 from qcodes.utils.deferred_operations import DeferredOperations
@@ -153,7 +152,6 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
 
-
     def _latest(self):
         return {
             'value': self._latest_value,
@@ -228,12 +226,14 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         return state
 
-    def _save_val(self, value):
+    def _save_val(self, value, validate=False):
+        if validate:
+            self.validate(value)
         self._latest_value = value
         self._latest_ts = datetime.now()
 
     def _get_wrapper(self, get_function):
-        @functools.wraps
+        @wraps
         def get_wrapper(*args, **kwargs):
             try:
                 # There might be cases where a .get also has args/kwargs
@@ -247,7 +247,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         return get_wrapper
 
     def _set_wrapper(self, set_function):
-        @functools.wraps
+        @wraps
         def set_wrapper(*values, **kwargs):
             try:
                 self.validate(*values)
@@ -315,6 +315,22 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
             # drop the initial value, we're already there
             return permissive_range(start_value, value, self._step)[1:]
+
+    def validate(self, value):
+        """
+        Validate value
+
+        Args:
+            value (any): value to validate
+
+        """
+        if self._instrument:
+            context = (getattr(self._instrument, 'name', '') or
+                       str(self._instrument.__class__)) + '.' + self.name
+        else:
+            context = self.name
+
+        self.vals.validate(value, 'Parameter: ' + context)
 
     @property
     def full_name(self):
@@ -480,17 +496,23 @@ class Parameter(_BaseParameter):
         # Enable set/get methods if get_cmd/set_cmd is given
         # Called first so super().__init__ can wrap get/set methods
         if not hasattr(self, 'get') and get_cmd is not False:
-            self.get = Command(arg_count=0,
-                               cmd=get_cmd,
-                               exec_str=instrument.ask if instrument else None,
-                               output_parser=get_parser,
-                               no_cmd_function=no_getter)
+            if get_cmd is None:
+                # TODO(nulinspiratie) handle if max_val_age is set
+                self.get = self.get_latest
+            else:
+                exec_str = instrument.ask if instrument else None
+                self.get = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str,
+                                   output_parser=get_parser,
+                                   no_cmd_function=no_getter)
+
         if not hasattr(self, 'set') and set_cmd is not False:
-            self.set = Command(arg_count=1,
-                               cmd=set_cmd,
-                               exec_str=instrument.ask if instrument else None,
-                                input_parser=set_parser,
-                               no_cmd_function=no_setter)
+            if set_cmd is None:
+                self.set = partial(self._save_val, validate=True)
+            else:
+                exec_str = instrument.ask if instrument else None
+                self.set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str,
+                                   input_parser=set_parser,
+                                   no_cmd_function=no_setter)
 
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
@@ -524,21 +546,12 @@ class Parameter(_BaseParameter):
                 '',
                 self.__doc__))
 
-    def validate(self, value):
+    def __getitem__(self, keys):
         """
-        Validate value
-
-        Args:
-            value (any): value to validate
-
+        Slice a Parameter to get a SweepValues object
+        to iterate over during a sweep
         """
-        if self._instrument:
-            context = (getattr(self._instrument, 'name', '') or
-                       str(self._instrument.__class__)) + '.' + self.name
-        else:
-            context = self.name
-
-        self.vals.validate(value, 'Parameter: ' + context)
+        return SweepFixedValues(self, keys)
 
     def sweep(self, start, stop, step=None, num=None):
         """
@@ -566,13 +579,6 @@ class Parameter(_BaseParameter):
         """
         return SweepFixedValues(self, start=start, stop=stop,
                                 step=step, num=num)
-
-    def __getitem__(self, keys):
-        """
-        Slice a Parameter to get a SweepValues object
-        to iterate over during a sweep
-        """
-        return SweepFixedValues(self, keys)
 
     @property
     def units(self):
@@ -1128,7 +1134,7 @@ class ManualParameter(Parameter):
 
         **kwargs: Passed to Parameter parent class
     """
-    def __init__(self, name, instrument=None, initial_value=None, **kwargs):
+    def __init__(self, name, instrument=None, **kwargs):
         super().__init__(name=name, instrument=instrument, **kwargs)
         self._meta_attrs.extend(['initial_value'])
 
