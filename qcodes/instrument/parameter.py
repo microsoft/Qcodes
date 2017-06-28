@@ -58,6 +58,7 @@ import logging
 import os
 import collections
 import warnings
+import functools
 
 import numpy
 
@@ -116,6 +117,11 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self._latest_value = None
         self._latest_ts = None
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
+
+        if hasattr(self, 'get'):
+            self.get = self._get_wrapper(self.get)
+        if hasattr(self, 'set'):
+            self.set = self._set_wrapper(self.set)
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
@@ -216,6 +222,72 @@ class _BaseParameter(Metadatable, DeferredOperations):
     def _save_val(self, value):
         self._latest_value = value
         self._latest_ts = datetime.now()
+
+    def _get_wrapper(self, get_function):
+        @functools.wraps
+        def get_wrapper(*args, **kwargs):
+            try:
+                # There might be cases where a .get also has args/kwargs
+                value = get_function(*args, **kwargs)
+                self._save_val(value)
+                return value
+            except Exception as e:
+                e.args = e.args + ('getting {}'.format(self.full_name),)
+                raise e
+
+        return get_wrapper
+
+    def _set_wrapper(self, set_function):
+        @functools.wraps
+        def set_wrapper(*values, **kwargs):
+            try:
+                self.validate(*values)
+
+                # In some cases intermediate sweep values must be used.
+                # Unless `self.step` is defined, get_sweep_values will return
+                # a list containing only `value`.
+                for val in self.get_sweep_values(*values):
+
+                    set_function(val, **kwargs)
+                    self._save_val(val)
+            except Exception as e:
+                e.args = e.args + ('setting {} to {}'.format(self.full_name,
+                                                             values),)
+                raise e
+
+        return set_wrapper
+
+    def get_sweep_values(self, value):
+        """
+        Sweep to a given value from a starting value
+        This method can be overridden to have a custom sweep behaviour.
+        It can even be overridden by a generator.
+        Args:
+            value:
+
+        Returns:
+
+        """
+        if self.step is None:
+            return [value]
+        else:
+            start_value = self.get_latest()
+
+            self.validate(start_value)
+
+            if not (isinstance(start_value, (int, float)) and
+                    isinstance(value, (int, float))):
+                # something weird... parameter is numeric but one of the ends
+                # isn't, even though it's valid.
+                # probably a MultiType with a mix of numeric and non-numeric types
+                # just set the endpoint and move on
+                logging.warning('cannot sweep {} from {} to {} - jumping.'.format(
+                    self.name, start_value, value))
+                return []
+
+            # drop the initial value, we're already there
+            return permissive_range(start_value, value, self._step)[1:]
+
 
     @property
     def full_name(self):
@@ -893,9 +965,6 @@ class StandardParameter(Parameter):
             value = self._get_command()
             self._save_val(value)
             return value
-        except Exception as e:
-            e.args = e.args + ('getting {}'.format(self.full_name),)
-            raise e
 
     def set(self, value):
         try:
