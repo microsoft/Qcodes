@@ -531,4 +531,8 @@ if __name__ == '__main__':
     # now browse the results
     get_data(conn, data_set_name, [parameter_a, parameter_c], 4, 5)
     # returns a scalar and numpy array
+    # modify result inplace
+    p = get_parameters(conn, data_set_name)
+    rows_modified = modify_values(conn, data_set_name, 0, p, [0]*len(p))
+    print(f"modified {rows_modified} rows")
     finish_experiment(conn, exp_id)
