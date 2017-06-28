@@ -1,6 +1,7 @@
 import os
 import platform
-import sys 
+import sys
+from ctypes import c_int8, c_int16, c_int32,c_int64, POINTER, c_uint8, c_uint16, c_uint32, c_uint64, c_void_p, windll, cdll, c_char_p
 from ctypes import *
 
 # load registers for easier access
