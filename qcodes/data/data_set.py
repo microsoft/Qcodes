@@ -166,7 +166,7 @@ class DataSet(DelegateAttributes):
     default_formatter = GNUPlotFormat()
     location_provider = FormatLocation()
 
-    background_functions = OrderedDict()
+    background_functions = OrderedDict()  # type: OrderedDict
 
     def __init__(self, location=None, arrays=None, formatter=None, io=None,
                  write_period=5):
