@@ -30,16 +30,18 @@ class MockVisaHandle:
     '''
     def __init__(self):
         self.state = 0
+        self.closed = False
 
     def clear(self):
         self.state = 0
 
     def close(self):
         # make it an error to ask or write after close
-        self.write = None
-        self.ask = None
+        self.closed = True
 
     def write(self, cmd):
+        if self.closed:
+            raise RuntimeError("Trying to write to a closed instrument")
         num = float(cmd.split(':')[-1])
         self.state = num
 
@@ -54,6 +56,8 @@ class MockVisaHandle:
         return len(cmd), ret_code
 
     def ask(self, cmd):
+        if self.closed:
+            raise RuntimeError("Trying to ask a closed instrument")
         if self.state > 10:
             raise ValueError("I'm out of fingers")
         return self.state
