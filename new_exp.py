@@ -320,5 +320,43 @@ def _example():
     create_run(conn, "1", "sweep", "asd", "asd")
     finish_experiment(conn, "majorana_qubit")
 
+def get_data(conn: sqlite3.Connection,
+             formatted_name: str,
+             parameters: List[ParamSpec],
+             start:int=None,
+             end:int=None,
+             )->Any:
+    _parameters = ",".join([p.name for p in parameters])
+    if start and end:
+        query = f"""
+        SELECT {_parameters} 
+        FROM "{formatted_name}"
+        WHERE rowid
+            > {start} and
+              rowid
+            <= {end}
+        """
+    elif start:
+        query = f"""
+        SELECT {_parameters} 
+        FROM "{formatted_name}"
+        WHERE rowid
+            >= {start}
+        """
+    elif end:
+        query = f"""
+        SELECT {_parameters} 
+        FROM "{formatted_name}"
+        WHERE rowid
+            <= {end}
+        """
+    else:
+        query = f"""
+        SELECT {_parameters} 
+        FROM "{formatted_name}"
+        """
+    c = transaction(conn, query)
+    res = many(c, *[p.name for p in parameters])
+    return res
 
 
