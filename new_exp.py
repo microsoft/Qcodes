@@ -14,9 +14,28 @@ import sqlite3
 import time
 from numbers import Number
 from numpy import Array
+import numpy as np
+import io
 from typing import Any, List, Optional, Tuple, Union, Dict
 
 db = "/Users/unga/Desktop/experiment.db"
+
+
+def adapt_array(arr: ndarray)->sqlite3.Binary:
+    """
+    See this:
+    https://stackoverflow.com/questions/3425320/sqlite3-programmingerror-you-must-not-use-8-bit-bytestrings-unless-you-use-a-te
+    """
+    out = io.BytesIO()
+    np.save(out, arr)
+    out.seek(0)
+    return sqlite3.Binary(out.read())
+
+
+def convert_array(text: bytes)->ndarray:
+    out = io.BytesIO(text)
+    out.seek(0)
+    return np.load(out)
 
 
 def one(curr: sqlite3.Cursor, column: str)->Any:
@@ -35,8 +54,13 @@ def many(curr: sqlite3.Cursor, *columns: str)->List[Any]:
         return [res[0][c] for c in columns]
 
 
-def connect(name: str, debug: bool=True) -> sqlite3.Connection:
-    conn = sqlite3.connect(db)
+def connect(name: str, debug: bool=False) -> sqlite3.Connection:
+    # register numpy->binary(TEXT) adapter
+    sqlite3.register_adapter(np.ndarray, adapt_array)
+    # register binary(TEXT) -> numpy converter
+    sqlite3.register_converter("array", convert_array)
+    conn = sqlite3.connect(db, detect_types=sqlite3.PARSE_DECLTYPES)
+    # sqlite3 options
     conn.row_factory = sqlite3.Row
     if debug:
         conn.set_trace_callback(print)
