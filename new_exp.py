@@ -90,6 +90,25 @@ def atomicTransaction(conn: sqlite3.Connection,
     return c
 
 
+@contextmanager
+def atomic(conn: sqlite3.Connection):
+    """
+    Guard a series of transactions as atomic.
+    If one fails the transaction is rolled back and no more transactions
+    are performed.
+
+    Args:
+        - conn: connection to guard
+    """
+    try:
+        yield
+    except Exception as e:
+        conn.rollback()
+        raise RuntimeError("Rolling back due to unhandled exception") from e
+    else:
+        conn.commit()
+
+
 def insert_column(conn: sqlite3.Connection, table: str, name: str,
                   type: str)->None:
     atomicTransaction(conn,
@@ -300,20 +319,4 @@ def _example():
     finish_experiment(conn, "majorana_qubit")
 
 
-@contextmanager
-def atomic(conn: sqlite3.Connection):
-    """
-    Guard a series of transactions as atomic.
-    If one fails the transction is rolled back and no more transactions
-    are performed.
 
-    Args:
-        - conn: connection to
-    """
-    try:
-        yield
-    except Exception as e:
-        conn.rollback()
-        raise RuntimeError("Rolling back due to unhandled exceptio") from e
-    else:
-        conn.commit()
