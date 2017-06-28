@@ -383,13 +383,6 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
     return row_id, formatted_name
 
 
-def _example():
-    """
-    """
-    conn = connect(db)
-    new_experiment(conn, "qute majo", "mega kink")
-    create_run(conn, "1", "sweep", "asd", "asd")
-    finish_experiment(conn, "majorana_qubit")
 
 def get_data(conn: sqlite3.Connection,
              formatted_name: str,
@@ -431,3 +424,25 @@ def get_data(conn: sqlite3.Connection,
     return res
 
 
+if __name__ == '__main__':
+    conn = connect(db)
+    exp_id = new_experiment(conn, "majo qbit", "suspended bridge")
+    data_set_id, data_set_name = create_run(conn, exp_id, "sweep")
+    # note that sqlite is dynamically typed hence the following type
+    # declaration does not generate runtime errors if one puts a stirng
+    # inside the DB
+    parameter_a = ParamSpec("a", "INTEGER")
+    parameter_b = ParamSpec("b", "INTEGER")
+    add_parameter(conn, data_set_name, parameter_a, parameter_b)
+    insert_values(conn, data_set_name, [parameter_a, parameter_b], [0, 0])
+    # moar values
+    insert_many_values(conn, data_set_name, [parameter_a], [[1, 2, 3]])
+    # array value
+    parameter_c = ParamSpec("c", "array")
+    add_parameter(conn, data_set_name, parameter_c)
+    x = np.arange(10000).reshape(1000, 1000)
+    insert_values(conn, data_set_name, [parameter_a, parameter_b, parameter_c], [0, 0, x])
+    # now browse the results
+    get_data(conn, data_set_name, [parameter_a, parameter_c], 4,5)
+    # returns a scalar and numpy array
+    finish_experiment(conn, exp_id)
