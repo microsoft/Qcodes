@@ -35,6 +35,7 @@ install:
 script:
     - cd qcodes
     - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
+    - mypy qcode --ignore-missing-imports --follow-imports=skip
     - |
       cd ../docs
       make html-api

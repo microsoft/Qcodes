@@ -3,3 +3,4 @@ pytest-cov
 pytest
 codacy-coverage
 hypothesis
+mypy
