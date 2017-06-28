@@ -143,7 +143,7 @@ def new_experiment(conn: sqlite3.Connection,
 
 
 def finish_experiment(conn: sqlite3.Connection, exp_id: int):
-    """ Finish experimen
+    """ Finish experiment
 
     Args:
         conn: database
@@ -203,7 +203,7 @@ def _select_many_where(conn: sqlite3.Connection, table: str, *columns: str,
 # TODO: can make many of those. Easier to use // enforce some types
 # but slower because make one query only
 def get_run_counter(conn: sqlite3.Connection, exp_id: int) -> int:
-    return _select_one_where(conn, "expereiments", "run_counter",
+    return _select_one_where(conn, "experiments", "run_counter",
                              where_column="exp_id",
                              where_value=exp_id)
 
@@ -235,7 +235,7 @@ def insert_run(conn: sqlite3.Connection, exp_id: int, name: str):
     return run_counter, formatted_name, curr.lastrowid
 
 
-def update_eperiment_run_counter(conn: sqlite3.Connection, exp_id: int,
+def update_experiment_run_counter(conn: sqlite3.Connection, exp_id: int,
                                  run_counter: int)->None:
     """ Update experiment with
     """
@@ -248,8 +248,8 @@ def update_eperiment_run_counter(conn: sqlite3.Connection, exp_id: int,
 
 
 # this is what we accept
-PARAMETERS = None  # shold be a list of pyton object that have .type that
-# represnt the type of sqlite coumn
+PARAMETERS = None  # should be a list of python object that have .type that
+# represent the type of sqlite column
 VALUES = List[Union[str, Number, List, ndarray, bool]]
 # TODO: do same for metadata maybe?
 
@@ -271,9 +271,9 @@ def insert_values(conn: sqlite3.Connection,
                   values: VALUES,
                   )->int:
     """
-    Inserts values for the corresponing paramSpec
+    Inserts values for the corresponding paramSpec
     Will pad with null if not all parameters are specified.
-    NOTE this need to be commited before closing the connection.
+    NOTE this need to be committed before closing the connection.
     """
     _parameters = ",".join([p.name for p in parameters])
     _values = ",".join(["?"]*len(parameters))
@@ -295,10 +295,10 @@ def insert_many_values(conn: sqlite3.Connection,
                        values: List[VALUES],
                        )->int:
     """
-    Inserts many values for the corresponing paramSpec.
+    Inserts many values for the corresponding paramSpec.
     Will pad with null if not all parameters are specified.
 
-    NOTE this need to be commited before closing the connection.
+    NOTE this need to be committed before closing the connection.
     """
     _parameters = ",".join([p.name for p in parameters])
     # TODO: none of the code below is not form PRADA SS-2017
@@ -346,7 +346,7 @@ def create_run_table(conn: sqlite3.Connection,
                      )->None:
     """Create run table with formatted_name as name
 
-    NOTE this need to be commited before closing the connection.
+    NOTE this need to be committed before closing the connection.
 
     Args:
         conn: database connection
@@ -390,7 +390,6 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
 
 
     This will register the run in the runs table, the counter in the
-    experimente table and create a new table with the formatted name.
     experiments table and create a new table with the formatted name.
     The operations are NOT atomic, but the function is.
     NOTE: this function is not idempotent.
@@ -399,7 +398,7 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
         - conn: the connection to the sqlite database
         - exp_id: the experiment id we want to create the run into
         - name: a friendly name for this run
-        - paramters : TODO:
+        - parameters : TODO:
         - values: TODO:
         - metadata : TODO:
 
@@ -411,10 +410,9 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
         run_counter, formatted_name, row_id = insert_run(conn,
                                                          exp_id,
                                                          name)
-        update_eperiment_run_counter(conn, exp_id, run_counter)
+        update_experiment_run_counter(conn, exp_id, run_counter)
         create_run_table(conn, formatted_name)
     return row_id, formatted_name
-
 
 
 def get_data(conn: sqlite3.Connection,
