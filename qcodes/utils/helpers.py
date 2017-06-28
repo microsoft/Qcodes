@@ -8,10 +8,11 @@ import time
 
 from collections import Iterator, Sequence, Mapping
 from copy import deepcopy
+from typing import Dict, List
 
 import numpy as np
 
-_tprint_times = {}
+_tprint_times= {} # type: Dict[str, float]
 
 
 class NumpyJSONEncoder(json.JSONEncoder):
@@ -319,9 +320,9 @@ class DelegateAttributes:
         2. keys of each dict in delegate_attr_dicts (in order)
         3. attributes of each object in delegate_attr_objects (in order)
     """
-    delegate_attr_dicts = []
-    delegate_attr_objects = []
-    omit_delegate_attrs = []
+    delegate_attr_dicts = [] # type: List[str]
+    delegate_attr_objects = [] # type: List[str]
+    omit_delegate_attrs = [] # type: List[str]
 
     def __getattr__(self, key):
         if key in self.omit_delegate_attrs:
