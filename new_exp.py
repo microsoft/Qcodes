@@ -160,7 +160,6 @@ def _select_one_where(conn: sqlite3.Connection, table: str, column: str,
     query = f"""
     SELECT {column}
     FROM
-        experiments
         {table}
     WHERE
         {where_column} = ?
@@ -176,7 +175,6 @@ def _select_many_where(conn: sqlite3.Connection, table: str, *columns: str,
     query = f"""
     SELECT {_columns}
     FROM
-        experiments
         {table}
     WHERE
         {where_column} = ?
@@ -190,7 +188,8 @@ def _select_many_where(conn: sqlite3.Connection, table: str, *columns: str,
 # but slower because make one query only
 def get_run_counter(conn: sqlite3.Connection, exp_id: int) -> int:
     return _select_one_where(conn, "expereiments", "run_counter",
-                             "exp_id", exp_id)
+                             where_column="exp_id",
+                             where_value=exp_id)
 
 
 def insert_run(conn: sqlite3.Connection, exp_id: int, name: str):
@@ -367,8 +366,8 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
 
 
     This will register the run in the runs table, the counter in the
-    experiments table and create a new table with the formatted name.
     experimente table and create a new table with the formatted name.
+    experiments table and create a new table with the formatted name.
     The operations are NOT atomic, but the function is.
     NOTE: this function is not idempotent.
 
