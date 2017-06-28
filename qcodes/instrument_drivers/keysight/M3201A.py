@@ -2,7 +2,7 @@
 # from functools import partial
 #
 # from .SD_common.SD_Module import *
-from .SD_common.SD_AWG import *
+from .SD_common.SD_AWG import SD_AWG
 
 
 class Keysight_M3201A(SD_AWG):
