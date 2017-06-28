@@ -9,6 +9,7 @@ from os.path import expanduser
 from pathlib import Path
 
 import jsonschema
+from typing import Dict, Union
 
 logger = logging.getLogger(__name__)
 
@@ -87,8 +88,8 @@ class Config():
     defaults = None
     defaults_schema = None
 
-    _diff_config = {}
-    _diff_schema = {}
+    _diff_config = {} # type: Dict[str, dict]
+    _diff_schema = {} # type: Dict[str, dict]
 
     def __init__(self):
         self.defaults, self.defaults_schema = self.load_default()
