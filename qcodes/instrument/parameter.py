@@ -1329,7 +1329,7 @@ class CombinedParameter(Metadatable):
         return meta_data
 
 
-class InstrumentRefParameter(ManualParameter):
+class InstrumentRefParameter(Parameter):
     """
     An InstrumentRefParameter
 
@@ -1349,7 +1349,7 @@ class InstrumentRefParameter(ManualParameter):
     from within an instrument, e.g., when creating a meta instrument that
     sets parameters on instruments it contains.
     """
-
+    # TODO(nulinspiratie) check class works now it's subclassed from Parameter
     def get_instr(self):
         """
         Returns the instance of the instrument with the name equal to the
