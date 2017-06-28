@@ -116,6 +116,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self.inter_delay = inter_delay
         self.post_delay = post_delay
 
+        # TODO (nulinspiratie) handle int vs string conversion
         self.val_mapping = val_mapping
         if val_mapping is None:
             self.inverse_val_mapping = None
@@ -252,6 +253,9 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 # There might be cases where a .get also has args/kwargs
                 value = get_function(*args, **kwargs)
 
+                if self.get_parser is not None:
+                    value = self.get_parser(value)
+
                 if self.val_mapping is not None:
                     value = self.inverse_val_mapping[value]
 
@@ -272,6 +276,9 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 if self.val_mapping is not None:
                     # Convert set values using val_mapping dictionary
                     values = tuple(self.val_mapping[value] for value in values)
+
+                if self.set_parser is not None:
+                    values = tuple(self.set_parser(value) for value in values)
 
                 # In some cases intermediate sweep values must be used.
                 # Unless `self.step` is defined, get_sweep_values will return
@@ -512,7 +519,8 @@ class Parameter(_BaseParameter):
                  get_cmd=None, set_cmd=False,
                  initial_value=None,
                  unit=None, units=None, vals=Numbers(), docstring=None,
-                 snapshot_get=True, snapshot_value=True, metadata=None):
+                 snapshot_get=True, snapshot_value=True, metadata=None,
+                 **kwargs):
 
         # Enable set/get methods if get_cmd/set_cmd is given
         # Called first so super().__init__ can wrap get/set methods
@@ -522,21 +530,18 @@ class Parameter(_BaseParameter):
                 self.get = self.get_latest
             else:
                 exec_str = instrument.ask if instrument else None
-                self.get = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str,
-                                   output_parser=self.get_parser,
-                                   no_cmd_function=no_getter)
+                self.get = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str)
 
         if not hasattr(self, 'set') and set_cmd is not False:
             if set_cmd is None:
                 self.set = partial(self._save_val, validate=True)
             else:
-                exec_str = instrument.ask if instrument else None
-                self.set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str,
-                                   input_parser=self.set_parser,
-                                   no_cmd_function=no_setter)
+                exec_str = instrument.write if instrument else None
+                self.set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str)
 
+        # TODO (nulinspiratie) make kwargs explicit
         super().__init__(name, instrument, snapshot_get, metadata,
-                         snapshot_value=snapshot_value)
+                         snapshot_value=snapshot_value, **kwargs)
 
         self._meta_attrs.extend(['label', 'unit', '_vals'])
 
