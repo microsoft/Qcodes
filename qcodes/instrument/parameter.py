@@ -287,7 +287,7 @@ class Parameter(_BaseParameter):
             JSON snapshot of the parameter
     """
     def __init__(self, name, instrument=None, label=None,
-                 unit=None, units=None, vals=None, docstring=None,
+                 unit=None, units=None, vals=None, docstring=None, 
                  snapshot_get=True, snapshot_value=True, metadata=None):
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
@@ -1066,7 +1066,9 @@ class GetLatest(DelegateAttributes, DeferredOperations):
         else:
             oldest_ok_val = datetime.now() - timedelta(seconds=self.max_val_age)
             if state['ts'] is None or state['ts'] < oldest_ok_val:
-                return self.get()
+                # Time of last get exceeds max_val_age seconds, need to
+                # perform new .get()
+                return self.parameter.get()
             else:
                 return state['value']
 
