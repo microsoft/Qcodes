@@ -230,9 +230,9 @@ def update_eperiment_run_counter(conn: sqlite3.Connection, exp_id: int,
 
 
 # this is what we accept
-PARAMETERS = None # shold be a list of pyton object that have .type that
+PARAMETERS = None  # shold be a list of pyton object that have .type that
 # represnt the type of sqlite coumn
-VALUES = List[Union[str, Number, List, Array, bool]]
+VALUES = List[Union[str, Number, List, ndarray, bool]]
 # TODO: do same for metadata maybe?
 
 
