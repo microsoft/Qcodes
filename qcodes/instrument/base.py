@@ -4,6 +4,7 @@ import numpy as np
 import time
 import warnings
 import weakref
+from typing import Dict
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
@@ -42,7 +43,7 @@ class Instrument(Metadatable, DelegateAttributes):
 
     shared_kwargs = ()
 
-    _all_instruments = {}
+    _all_instruments = {} # type: Dict[str, weakref.ref]
 
     def __init__(self, name, **kwargs):
         self._t0 = time.time()
