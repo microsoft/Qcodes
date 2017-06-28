@@ -40,7 +40,7 @@ p_char = re.compile(r"'(\\.[^\\]*|[^\\])'")
 
 p_hex = re.compile(r"0x([0-9a-fA-F]+)L?")
 
-filedict = {}
+filedict = {} # type: dict
 importable = {}
 
 try:
