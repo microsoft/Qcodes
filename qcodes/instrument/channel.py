@@ -1,5 +1,5 @@
 """ Base class for the channel of an instrument """
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 
 from .base import Instrument
 from .parameter import MultiParameter, ArrayParameter
@@ -100,7 +100,7 @@ class MultiChannelInstrumentParameter(MultiParameter):
 
         param_name(str): Name of the multichannel parameter
     """
-    def __init__(self, channels: Union[List, Tuple], param_name, *args, **kwargs):
+    def __init__(self, channels: Union[List, Tuple], param_name, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._channels = channels
         self._param_name = param_name
@@ -167,9 +167,10 @@ class ChannelList(Metadatable):
 
     """
 
-    def __init__(self, parent, name, chan_type: type, chan_list=None,
-                 snapshotable=True,
-                 multichan_paramclass: type=MultiChannelInstrumentParameter):
+    def __init__(self, parent, name, chan_type: type,
+                 chan_list: Optional[List[InstrumentChannel]]=None,
+                 snapshotable: bool=True,
+                 multichan_paramclass: type=MultiChannelInstrumentParameter) -> None:
         super().__init__()
 
         self._parent = parent
@@ -191,7 +192,7 @@ class ChannelList(Metadatable):
         # This will eventually become a locked tuple.
         if chan_list is None:
             self._locked = False
-            self._channels = []
+            self._channels = [] # type: Union[List[InstrumentChannel],Tuple[InstrumentChannel]]
         else:
             self._locked = True
             self._channels = tuple(chan_list)
