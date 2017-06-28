@@ -247,6 +247,77 @@ class ParamSpec():
         return f"{self.name, self.type}"
 
 
+def insert_values(conn: sqlite3.Connection,
+                  formatted_name: str,
+                  parameters: List[ParamSpec],
+                  values: VALUES,
+                  )->int:
+    """
+    Inserts values for the corresponing paramSpec
+    Will pad with null if not all parameters are specified.
+    NOTE this need to be commited before closing the connection.
+    """
+    _parameters = ",".join([p.name for p in parameters])
+    _values = ",".join(["?"]*len(parameters))
+    query = f"""INSERT INTO "{formatted_name}"
+        ({_parameters})
+    VALUES
+        ({_values})
+    """
+    # this will raise an error if there is a mismatch
+    # between the values and parameters length
+    # TODO: check inputs instead?
+    c = transaction(conn, query, *values)
+    return c.lastrowid
+
+
+def insert_many_values(conn: sqlite3.Connection,
+                       formatted_name: str,
+                       parameters: List[ParamSpec],
+                       values: List[VALUES],
+                       )->int:
+    """
+    Inserts many values for the corresponing paramSpec.
+    Will pad with null if not all parameters are specified.
+
+    NOTE this need to be commited before closing the connection.
+    """
+    _parameters = ",".join([p.name for p in parameters])
+    # TODO: none of the code below is not form PRADA SS-2017
+    # [a, b] -> (?,?), (?,?) 
+    # [[1,1], [2,2]]
+    _values = "("+",".join(["?"]*len(parameters))+")"
+    # NOTE: assume that all the values have same length
+    _values_x_params = ",".join([_values]*len(values[0]))
+    query = f"""INSERT INTO "{formatted_name}"
+        ({_parameters})
+    VALUES
+        {_values_x_params}
+    """
+    # this will raise an error if there is a mismatch
+    # between the values and parameters length
+    # TODO: check inputs instead?
+    # we need to make values a flat list from a list of list
+    flattened_values = [item for sublist in values for item in sublist]
+    c = transaction(conn, query, *flattened_values)
+    return c.lastrowid
+
+
+def add_parameter(conn: sqlite3.Connection,
+                  formatted_name: str,
+                  *parameter: ParamSpec):
+    for p in parameter:
+        insert_column(conn, formatted_name, p.name, p.type)
+
+
+def get_last_run(conn: sqlite3.Connection, exp_id: int) -> str:
+    query = """
+    SELECT result_table_name, max(run_timestamp), exp_id
+    FROM runs
+    WHERe exp_id = ?;
+    """
+    c = transaction(conn, query, exp_id)
+    return one(c, 'result_table_name')
 def create_run_table(conn: sqlite3.Connection,
                      formatted_name: str,
                      parameters: Optional[List[ParamSpec]]=None,
