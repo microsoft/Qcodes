@@ -472,15 +472,30 @@ class Parameter(_BaseParameter):
             JSON snapshot of the parameter
     """
     def __init__(self, name, instrument=None, label=None,
-                 get_cmd=None, set_cmd=False,
-                 unit=None, units=None, vals=None, docstring=None,
+                 get_cmd=None, get_parser=None,
+                 set_cmd=False, set_parser=None,
+                 unit=None, units=None, vals=Numbers(), docstring=None,
                  snapshot_get=True, snapshot_value=True, metadata=None):
+
+        # Enable set/get methods if get_cmd/set_cmd is given
+        # Called first so super().__init__ can wrap get/set methods
+        if not hasattr(self, 'get') and get_cmd is not False:
+            self.get = Command(arg_count=0,
+                               cmd=get_cmd,
+                               exec_str=instrument.ask if instrument else None,
+                               output_parser=get_parser,
+                               no_cmd_function=no_getter)
+        if not hasattr(self, 'set') and set_cmd is not False:
+            self.set = Command(arg_count=1,
+                               cmd=set_cmd,
+                               exec_str=instrument.ask if instrument else None,
+                                input_parser=set_parser,
+                               no_cmd_function=no_setter)
+
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
 
         self._meta_attrs.extend(['label', 'unit', '_vals'])
-
-
 
 
         self.label = name if label is None else label
@@ -500,7 +515,7 @@ class Parameter(_BaseParameter):
             '* `name` %s' % self.name,
             '* `label` %s' % self.label,
             '* `unit` %s' % self.unit,
-            '* `vals` %s' % repr(self._vals)))
+            '* `vals` %s' % repr(self.vals)))
 
         if docstring is not None:
             self.__doc__ = os.linesep.join((
@@ -515,12 +530,11 @@ class Parameter(_BaseParameter):
         Args:
             vals (Validator):  validator to set
         """
-        if vals is None:
-            self._vals = Numbers()
-        elif isinstance(vals, Validator):
-            self._vals = vals
-        else:
+
+        if not isinstance(vals, Validator):
             raise TypeError('vals must be a Validator')
+        else:
+            self.vals = vals
 
     def validate(self, value):
         """
@@ -536,7 +550,7 @@ class Parameter(_BaseParameter):
         else:
             context = self.name
 
-        self._vals.validate(value, 'Parameter: ' + context)
+        self.vals.validate(value, 'Parameter: ' + context)
 
     def sweep(self, start, stop, step=None, num=None):
         """
@@ -1396,8 +1410,8 @@ class InstrumentRefParameter(ManualParameter):
             vals (Validator):  validator to set
         """
         if vals is None:
-            self._vals = Strings()
+            self.vals = Strings()
         elif isinstance(vals, Validator):
-            self._vals = vals
+            self.vals = vals
         else:
             raise TypeError('vals must be a Validator')
