@@ -1,18 +1,18 @@
-import qcodes as qc
 from os.path import abspath
 from os.path import sep
 from os import makedirs
 import os
 import logging
 from copy import deepcopy
-from collections import namedtuple
-import matplotlib.pyplot as plt
 import numpy as np
+from typing import Optional, Tuple
 
-from time import sleep
-
+import qcodes as qc
+from qcodes.loops import Loop
+from qcodes.data.data_set import DataSet
 from qcodes.plots.pyqtgraph import QtPlot
 from qcodes.plots.qcmatplotlib import MatPlot
+from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils.qcodes_device_annotator import DeviceImage
 
 from IPython import get_ipython
@@ -35,7 +35,7 @@ def init(mainfolder: str, sample_name: str, station, plot_x_position=0.66,
 
     """
     if sep in sample_name:
-        raise TypeError("Use Relative names. That is wihtout {}".format(sep))
+        raise TypeError("Use Relative names. That is without {}".format(sep))
     # always remove trailing sep in the main folder
     if mainfolder[-1] == sep:
         mainfolder = mainfolder[:-1]
@@ -103,7 +103,7 @@ def _select_plottables(tasks):
     A task is here understood to be anything that the qc.Loop 'each' can eat.
     """
     # allow passing a single task
-    if not isinstance(tasks, tuple):
+    if not hasattr(tasks, '__iter__'):
         tasks = (tasks,)
 
     # is the following check necessary AND sufficient?
@@ -248,9 +248,11 @@ def __get_plot_type(data, plot):
 def _save_individual_plots(data, inst_meas):
 
     def _create_plot(i, name, data, counter_two):
-        # Step the color on all subplots no just on plots within the same axis/subplot
+        # Step the color on all subplots no just on plots
+        # within the same axis/subplot
         # this is to match the qcodes-pyqtplot behaviour.
-        title = "{} #{:03d}".format(CURRENT_EXPERIMENT["sample_name"], data.location_provider.counter)
+        title = "{} #{:03d}".format(CURRENT_EXPERIMENT["sample_name"],
+                                    data.location_provider.counter)
         rasterized_note = " rasterized plot full data available in datafile"
         color = 'C' + str(counter_two)
         counter_two += 1
@@ -289,7 +291,7 @@ def _save_individual_plots(data, inst_meas):
 def _flush_buffers(*params):
     """
     If possible, flush the VISA buffer of the instrument of the
-    provided parameters.
+    provided parameters. The params can be instruments as well.
 
     Supposed to be called inside doNd like so:
     _flush_buffers(inst_set, *inst_meas)
@@ -304,6 +306,13 @@ def _flush_buffers(*params):
                     log.warning("Cleared visa buffer on "
                                 "{} with status code {}".format(inst.name,
                                                                 status_code))
+        elif isinstance(param, VisaInstrument):
+            inst = param
+            status_code = inst.visa_handle.clear()
+            if status_code is not None:
+                log.warning("Cleared visa buffer on "
+                            "{} with status code {}".format(inst.name,
+                                                            status_code))
 
 
 def save_device_image(sweeptparameters):
@@ -318,6 +327,73 @@ def save_device_image(sweeptparameters):
     di.makePNG(CURRENT_EXPERIMENT["provider"].counter,
                os.path.join(CURRENT_EXPERIMENT["exp_folder"],
                             '{:03d}'.format(counter)), title)
+
+
+def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
+                    do_plots: Optional[bool]=True) -> Tuple[QtPlot, DataSet]:
+    """
+    The function to handle all the auxiliary magic of the T10 users, e.g.
+    their plotting specifications, the device image annotation etc.
+    The input loop should just be a loop ready to run and perform the desired
+    measurement. The two params tuple are used for plotting.
+
+    Args:
+        loop: The QCoDeS loop object describing the actual measurement
+        set_params: tuple of tuples. Each tuple is of the form
+            (param, start, stop)
+        meas_params: tuple of parameters to measure
+
+    Returns:
+        (plot, data)
+    """
+    parameters = [sp[0] for sp in set_params] + list(meas_params)
+    _flush_buffers(*parameters)
+
+    # startranges for _plot_setup
+    startranges = dict(zip((sp[0].label for sp in set_params),
+                           ((sp[1], sp[2]) for sp in set_params)))
+
+    interrupted = False
+
+    data = loop.get_data_set()
+
+    if do_plots:
+        plot, _ = _plot_setup(data, meas_params, startranges=startranges)
+    else:
+        plot = None
+    try:
+        if do_plots:
+            _ = loop.with_bg_task(plot.update).run()
+        else:
+            _ = loop.run()
+    except KeyboardInterrupt:
+        interrupted = True
+        print("Measurement Interrupted")
+    if do_plots:
+        # Ensure the correct scaling before saving
+        for subplot in plot.subplots:
+            vBox = subplot.getViewBox()
+            vBox.enableAutoRange(vBox.XYAxes)
+        plot.save()
+        pdfplot, num_subplots = _plot_setup(data, meas_params, useQT=False)
+        # pad a bit more to prevent overlap between
+        # suptitle and title
+        pdfplot.fig.tight_layout(pad=3)
+        pdfplot.save("{}.pdf".format(plot.get_default_title()))
+        pdfplot.fig.canvas.draw()
+        if num_subplots > 1:
+            _save_individual_plots(data, meas_params)
+    if CURRENT_EXPERIMENT.get('device_image'):
+        log.debug('Saving device image')
+        save_device_image(tuple(sp[0] for sp in set_params))
+
+    # add the measurement ID to the logfile
+    with open(CURRENT_EXPERIMENT['logfile'], 'a') as fid:
+        print("#[QCoDeS]# Saved dataset to: {}".format(data.location),
+              file=fid)
+    if interrupted:
+        raise KeyboardInterrupt
+    return plot, data
 
 
 def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True):
@@ -340,59 +416,21 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True):
 
     """
 
-    # try to flush VISA buffers at the beginning of a measurement
-    _flush_buffers(inst_set, *inst_meas)
-
-    # make a variable for auto pre-scaling the plot
-    startranges = {inst_set.label: (start, stop)}
-
-    interrupted = False
     loop = qc.Loop(inst_set.sweep(start,
                                   stop,
                                   num=num_points), delay).each(*inst_meas)
-    data = loop.get_data_set()
 
-    plottables = _select_plottables(inst_meas)
-    if do_plots:
-        plot, _ = _plot_setup(data, plottables, startranges=startranges)
-    else:
-        plot = None
-    try:
-        if do_plots:
-            _ = loop.with_bg_task(plot.update).run()
-        else:
-            _ = loop.run()
-    except KeyboardInterrupt:
-        interrupted = True
-        print("Measurement Interrupted")
-    if do_plots:
-        # Ensure the correct scaling before saving
-        for subplot in plot.subplots:
-            vBox = subplot.getViewBox()
-            vBox.enableAutoRange(vBox.XYAxes)
-        plot.save()
-        pdfplot, num_subplots = _plot_setup(data, plottables, useQT=False)
-        # pad a bit more to prevent overlap between
-        # suptitle and title
-        pdfplot.fig.tight_layout(pad=3)
-        pdfplot.save("{}.pdf".format(plot.get_default_title()))
-        pdfplot.fig.canvas.draw()
-        if num_subplots > 1:
-            _save_individual_plots(data, plottables)
-    if CURRENT_EXPERIMENT.get('device_image'):
-        log.debug('Saving device image')
-        save_device_image((inst_set,))
+    set_params = (inst_set, start, stop),
+    meas_params = _select_plottables(inst_meas)
 
-    # add the measurement ID to the logfile
-    with open(CURRENT_EXPERIMENT['logfile'], 'a') as fid:
-        print("#[QCoDeS]# Saved dataset to: {}".format(data.location),
-              file=fid)
-    if interrupted:
-        raise KeyboardInterrupt
+    plot, data = _do_measurement(loop, set_params, meas_params,
+                                 do_plots=do_plots)
+
     return plot, data
 
 
-def do1dDiagonal(inst_set, inst2_set, start, stop, num_points, delay, start2, slope, *inst_meas, do_plots=True):
+def do1dDiagonal(inst_set, inst2_set, start, stop, num_points,
+                 delay, start2, slope, *inst_meas, do_plots=True):
     """
     Perform diagonal sweep in 1 dimension, given two instruments
 
@@ -406,65 +444,32 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, num_points, delay, start2, sl
         start2:  Second start point
         slope:  slope of the diagonal cut
         *inst_meas:  any number of instrument to measure
-        do_plots: Default True: If False no plots are produced. Data is still saved
-          and can be displayed with show_num.
+        do_plots: Default True: If False no plots are produced.
+            Data is still saved and can be displayed with show_num.
 
     Returns:
         plot, data : returns the plot and the dataset
 
     """
 
-    # make a variable for aute pre-scaling the plot
-    startranges = {inst_set.label: (start, stop)}
+    # (WilliamHPNielsen) If I understand do1dDiagonal correctly, the inst2_set
+    # is supposed to be varied secretly in the background
+    set_params = ((inst_set, start, stop),)
+    meas_params = _select_plottables(inst_meas)
 
-    # try to flush VISA buffers at the beginning of a measurement
-    _flush_buffers(inst_set, inst2_set, *inst_meas)
+    slope_task = qc.Task(inst2_set, (inst_set)*slope+(slope*start-start2))
 
-    interrupted = False
-    loop = qc.Loop(inst_set.sweep(start, stop, num=num_points), delay).each(
-        qc.Task(inst2_set, (inst_set) * slope + (slope * start - start2)), *inst_meas, inst2_set)
-    data = loop.get_data_set()
-    plottables = _select_plottables(inst_meas)
-    if do_plots:
-        plot, _ = _plot_setup(data, plottables, startranges=startranges)
-    else:
-        plot = None
-    try:
-        if do_plots:
-            _ = loop.with_bg_task(plot.update).run()
-        else:
-            _ = loop.run()
-    except KeyboardInterrupt:
-        print("Measurement Interrupted")
-        interrupted = True
-    if do_plots:
-        # Ensure the correct scaling before saving
-        for subplot in plot.subplots:
-            vBox = subplot.getViewBox()
-            vBox.enableAutoRange(vBox.XYAxes)
-        plot.save()
-        pdfplot, num_subplots = _plot_setup(data, plottables, useQT=False)
-        # pad a bit more to prevent overlap between
-        # suptitle and title
-        pdfplot.fig.tight_layout(pad=3)
-        pdfplot.save("{}.pdf".format(plot.get_default_title()))
-        if num_subplots > 1:
-            _save_individual_plots(data, plottables)
-        pdfplot.save("{}.pdf".format(plot.get_default_title()))
-        pdfplot.fig.canvas.draw()
-    if CURRENT_EXPERIMENT.get('device_image'):
-        save_device_image((inst_set, inst2_set))
+    loop = qc.Loop(inst_set.sweep(start, stop, num=num_points),
+                   delay).each(slope_task, *inst_meas, inst2_set)
 
-    # add the measurement ID to the logfile
-    with open(CURRENT_EXPERIMENT['logfile'], 'a') as fid:
-        print("#[QCoDeS]# Saved dataset to: {}".format(data.location),
-              file=fid)
-    if interrupted:
-        raise KeyboardInterrupt
+    plot, data = _do_measurement(loop, set_params, meas_params,
+                                 do_plots=do_plots)
+
     return plot, data
 
 
-def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num_points2, delay2,
+def do2d(inst_set, start, stop, num_points, delay,
+         inst_set2, start2, stop2, num_points2, delay2,
          *inst_meas, do_plots=True):
     """
 
@@ -480,22 +485,14 @@ def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num
         num_points2:  Number of steps to perform
         delay2:  Delay at every step for second instrument
         *inst_meas:
-        do_plots: Default True: If False no plots are produced. Data is still saved
-          and can be displayed with show_num.
+        do_plots: Default True: If False no plots are produced.
+            Data is still saved and can be displayed with show_num.
 
     Returns:
         plot, data : returns the plot and the dataset
 
     """
 
-    # make a variable for aute pre-scaling the plot
-    startranges = {inst_set2.label: (start2, stop2),
-                   inst_set.label: (start, stop)}
-
-    # try to flush VISA buffers at the beginning of a measurement
-    _flush_buffers(inst_set, inst_set2, *inst_meas)
-
-    interrupted = False
     for inst in inst_meas:
         if getattr(inst, "setpoints", False):
             raise ValueError("3d plotting is not supported")
@@ -509,44 +506,13 @@ def do2d(inst_set, start, stop, num_points, delay, inst_set2, start2, stop2, num
                                        num=num_points),
                         delay).each(innerloop)
 
-    data = outerloop.get_data_set()
-    plottables = _select_plottables(inst_meas)
-    if do_plots:
-        plot, _ = _plot_setup(data, plottables, startranges=startranges)
-    else:
-        plot = None
-    try:
-        if do_plots:
-            _ = outerloop.with_bg_task(plot.update).run()
-        else:
-            _ = outerloop.run()
-    except KeyboardInterrupt:
-        interrupted = True
-        print("Measurement Interrupted")
-    if do_plots:
-        # Ensure the correct scaling before saving
-        for subplot in plot.subplots:
-            vBox = subplot.getViewBox()
-            vBox.enableAutoRange(vBox.XYAxes)
-        plot.save()
-        pdfplot, num_subplots = _plot_setup(data, plottables, useQT=False)
-        # pad a bit more to prevent overlap between
-        # suptitle and title
-        pdfplot.fig.tight_layout(pad=3)
-        pdfplot.save("{}.pdf".format(plot.get_default_title()))
-        if num_subplots > 1:
-            _save_individual_plots(data, plottables)
-        pdfplot.fig.canvas.draw()
-        pdfplot.save("{}.pdf".format(plot.get_default_title()))
-    if CURRENT_EXPERIMENT.get('device_image'):
-        save_device_image((inst_set, inst_set2))
+    set_params = ((inst_set, start, stop),
+                  (inst_set2, start2, stop2))
+    meas_params = _select_plottables(inst_meas)
 
-    # add the measurement ID to the logfile
-    with open(CURRENT_EXPERIMENT['logfile'], 'a') as fid:
-        print("#[QCoDeS]# Saved dataset to: {}".format(data.location),
-              file=fid)
-    if interrupted:
-        raise KeyboardInterrupt
+    plot, data = _do_measurement(outerloop, set_params, meas_params,
+                                 do_plots=do_plots)
+
     return plot, data
 
 
