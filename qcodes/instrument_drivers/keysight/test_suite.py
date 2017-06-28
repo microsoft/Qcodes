@@ -4,13 +4,16 @@ try:
     from .M3201A import Keysight_M3201A
     from .M3300A import M3300A_AWG
     from .SD_common.SD_Module import SD_Module
+    SD_Module_found = True
+    Keysight_M3201A_found = True
+    M3300A_AWG_found = True
 except ImportError:
-    SD_Module = None
-    Keysight_M3201A = None
-    M3300A_AWG = None
+    SD_Module_found = False
+    Keysight_M3201A_found = False
+    M3300A_AWG_found = False
 
 
-@unittest.skipIf(not SD_Module, "SD_Module tests requires the keysightSD1 module")
+@unittest.skipIf(not SD_Module_found, "SD_Module tests requires the keysightSD1 module")
 class TestSD_Module(DriverTestCase):
     """
     Tis is a test suite for testing the general Keysight SD_Module driver.
@@ -40,7 +43,7 @@ class TestSD_Module(DriverTestCase):
         self.assertEqual(serial_number_test, serial_number)
 
 
-@unittest.skipIf(not Keysight_M3201A, "Keysight_M3201A tests requires the keysightSD1 module")
+@unittest.skipIf(not Keysight_M3201A_found, "Keysight_M3201A tests requires the keysightSD1 module")
 class TestKeysight_M3201A(DriverTestCase):
     """
     This is a test suite for testing the Signadyne M3201A AWG card driver.
@@ -279,7 +282,7 @@ class TestKeysight_M3201A(DriverTestCase):
         self.instrument.pxi_trigger_number_0.set(cur_pxi)
 
 
-@unittest.skipIf(not M3300A_AWG, "M3300A_AWG tests requires the keysightSD1 module")
+@unittest.skipIf(not M3300A_AWG_found, "M3300A_AWG tests requires the keysightSD1 module")
 class TestKeysight_M3300A(DriverTestCase):
     """
     This is a test suite for testing the Signadyne M3201A AWG card driver.
