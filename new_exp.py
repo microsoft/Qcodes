@@ -321,6 +321,29 @@ def insert_many_values(conn: sqlite3.Connection,
     return c.lastrowid
 
 
+def get_parameters(conn: sqlite3.Connection,
+                   formatted_name: str) -> List[ParamSpec]:
+    """
+    gets the list of param specs for run
+
+    Args:
+        - conn: Connection to the db
+        - formatted_name: name of the table
+
+    Returns:
+        - A list of param specs for this table
+    """
+    # TODO: FIX mapping of types
+    c = conn.execute(f"""pragma table_info('{formatted_name}')""")
+    params: List[ParamSpec] = []
+    for row in c.fetchall():
+        if row['name'] == 'id':
+            continue
+        else:
+            params.append(ParamSpec(row['name'], row['type']))
+    return params
+
+
 def add_parameter(conn: sqlite3.Connection,
                   formatted_name: str,
                   *parameter: ParamSpec):
