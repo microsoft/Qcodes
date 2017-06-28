@@ -15,7 +15,7 @@ class ChannelBuffer(ArrayParameter):
         The instrument natively supports this in its TRCL call.
     """
 
-    def __init__(self, name: str, instrument: 'SR830', channel: int):
+    def __init__(self, name: str, instrument: 'SR830', channel: int) -> None:
         """
         Args:
             name (str): The name of the parameter
