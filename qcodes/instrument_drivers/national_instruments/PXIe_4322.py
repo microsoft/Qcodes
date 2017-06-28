@@ -1,12 +1,14 @@
 from qcodes.instrument.base import Instrument
 from qcodes import validators as validator
-
 from functools import partial
+import logging
 import warnings
 import json
 import math
 from timeit import default_timer as timer
 from time import sleep
+from os import mkdir
+import threading
 
 try:
     import nidaqmx
@@ -14,6 +16,7 @@ except ImportError:
     raise ImportError('to use the National Instrument PXIe-4322 driver, please install the nidaqmx package'
                       '(https://github.com/ni/nidaqmx-python)')
 
+logger = logging.getLogger(__name__)
 
 class PXIe_4322(Instrument):
     """
@@ -25,7 +28,7 @@ class PXIe_4322(Instrument):
     the nidaqmx package need to be installed in order to use this QCoDeS driver.
     """
 
-    def __init__(self, name, device_name, step_size=0.01, step_rate=10, **kwargs):
+    def __init__(self, name, device_name, file_path, file_update_period=10, step_size=0.01, step_rate=10, **kwargs):
         super().__init__(name, **kwargs)
 
         self.device_name = device_name
@@ -35,18 +38,26 @@ class PXIe_4322(Instrument):
         self.step_size = step_size
         self.step_rate = step_rate
         self.step_delay = 1/step_rate
+        self.voltage_file = file_path + 'NI_voltages_{}.json'.format(device_name)
+        try:
+            os.mkdir(file_path)
+        except:
+            pass
 
         try:
-            with open('NI_voltages_{}.json'.format(device_name)) as data_file:
+            with open(self.voltage_file) as data_file:
                 self.__voltage = json.load(data_file)
         except (FileNotFoundError, json.decoder.JSONDecodeError):
             self.__voltage = [0] * self.channels
 
+        # t = threading.Timer(file_update_period, self._write_voltages_to_file)
+        # t.start()
+
         print('Please read the following warning message:')
 
-        warnings.warn('The last known output values are: {} Please check these values and make sure they correspond '
+        logger.warning('The last known output values are: {} Please check these values and make sure they correspond '
                       'to the actual output of the PXIe-4322 module. Any difference between stored value and actual '
-                      'value WILL cause sudden jumps in output.'.format(self.__voltage), UserWarning)
+                      'value WILL cause sudden jumps in output.'.format(self.__voltage))
 
         for i in range(self.channels):
             self.add_parameter('voltage_channel_{}'.format(i),
@@ -57,7 +68,15 @@ class PXIe_4322(Instrument):
                                docstring='The DC output voltage of channel {}'.format(i),
                                vals=validator.Numbers(-16, 16))
 
-    def set_voltage(self, voltage, channel, save_to_file=True, verbose=True):
+        # Start writing voltages to disk
+        self._start_updating_file(file_update_period)
+
+    def _start_updating_file(self, update_period):
+        self._write_voltages_to_file()
+        t = threading.Timer(update_period, partial(self._start_updating_file, update_period))
+        t.start()
+
+    def set_voltage(self, voltage, channel, verbose=False):
         with nidaqmx.Task() as task:
             task.ao_channels.add_ao_voltage_chan('{}/ao{}'.format(self.device_name, channel),
                                                  min_val=-16.0, max_val=16.0)
@@ -73,19 +92,24 @@ class PXIe_4322(Instrument):
                     task.write(voltage_step)
                     if verbose:
                         print('Current gate {} value: {:.2f}'.format(channel, voltage_step), end='\r', flush=True)
+                    else:
+                        logger.debug('Current gate {} value: {:.2f}'.format(channel, voltage_step))
                     t_stop = timer()
                     sleep(max(self.step_delay-(t_stop-t_start), 0.0))
 
             task.write(voltage)
             if verbose:
                 print('Current gate {} value: {:.2f}'.format(channel, voltage), end='\r', flush=True)
+            else:
+                logger.debug('Current gate {} value: {:.2f}'.format(channel, voltage))
             self.__voltage[channel] = voltage
-            if save_to_file:
-                with open('NI_voltages_{}.json'.format(self.device_name), 'w') as output_file:
-                    json.dump(self.__voltage, output_file, ensure_ascii=False)
 
     def get_voltage(self, channel):
         return self.__voltage[channel]
+
+    def _write_voltages_to_file(self):
+        with open(self.voltage_file, 'w') as output_file:
+            json.dump(self.__voltage, output_file, ensure_ascii=False)
 
     def set_gates_simultaneously(self, gate_values):
         assert len(gate_values) == self.channels, 'number of values in gate_values list ({}) must be same as number ' \
@@ -123,6 +147,7 @@ class PXIe_4322(Instrument):
             voltage_str += '{:.2f}, '.format(item)
         voltage_str = voltage_str[:-2]
         print('Current gate values: {}'.format(voltage_str), end='\r', flush=True)
+        logger.debug('Current gate values: {}'.format(voltage_str))
 
     def ramp_all_to_zero(self):
         gate_values = [0.0]*self.channels
