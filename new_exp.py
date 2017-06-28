@@ -321,6 +321,36 @@ def insert_many_values(conn: sqlite3.Connection,
     return c.lastrowid
 
 
+def modify_values(conn: sqlite3.Connection,
+                  formatted_name: str,
+                  index: int,
+                  parameters: List[ParamSpec],
+                  values: VALUES,
+                  )->int:
+    """
+    Modify values for the corresponding paramSpec
+    If a parameter is in the table but not in the parameter list is
+    left untouched.
+    If a parameter is mapped to None, it will be a null value.
+    """
+    name_val_template = []
+    for name, value in zip([p.name for p in parameters], values):
+        name_val_template.append(f"{name}=?")
+    name_val_templates = ",".join(name_val_template)
+    query = f"""
+    UPDATE "{formatted_name}"
+    SET
+        {name_val_templates}
+    WHERE
+        rowid = {index+1}
+    """
+    # this will raise an error if there is a mismatch
+    # between the values and parameters length
+    # TODO: check inputs instead?
+    c = atomicTransaction(conn, query, *values)
+    return c.rowcount
+
+
 def get_parameters(conn: sqlite3.Connection,
                    formatted_name: str) -> List[ParamSpec]:
     """
