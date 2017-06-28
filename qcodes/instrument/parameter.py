@@ -892,7 +892,7 @@ class StandardParameter(Parameter):
 
     def get(self):
         try:
-            value = self._get()
+            value = self._get_command()
             self._save_val(value)
             return value
         except Exception as e:
@@ -954,9 +954,9 @@ class StandardParameter(Parameter):
 
     def _initialize_get(self, get_cmd, get_parser):
         exec_str = self._instrument.ask if self._instrument else None
-        self._get = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str,
-                            output_parser=get_parser,
-                            no_cmd_function=no_getter)
+        self._get_command = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str,
+                                    output_parser=get_parser,
+                                    no_cmd_function=no_getter)
 
         self.has_get = (get_cmd is not None)
 
