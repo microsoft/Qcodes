@@ -1188,6 +1188,7 @@ class CombinedParameter(Metadatable):
             if unit is None:
                 unit = units
         self.parameter.unit = unit
+        self.setpoints=[]
         # endhack
         self.parameters = parameters
         self.sets = [parameter.set for parameter in self.parameters]
@@ -1246,14 +1247,14 @@ class CombinedParameter(Metadatable):
                         {} dimensional array, got a {} dimensional array. \
                         """
         try:
-            if array.shape[1] != self.dimensionality:
+            if array.shape[1] != self.dimensionality: # type: ignore
                 raise ValueError(_error_msg.format(self.dimensionality,
-                                                   array.shape[1]))
+                                                   array.shape[1])) # type: ignore
         except KeyError:
             # this means the array is 1d
             raise ValueError(_error_msg.format(self.dimensionality, 1))
 
-        new.setpoints = array.tolist()
+        new.setpoints = array.tolist() # type: ignore
         return new
 
     def _aggregate(self, *vals):
