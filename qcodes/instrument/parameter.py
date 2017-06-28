@@ -104,12 +104,17 @@ class _BaseParameter(Metadatable, DeferredOperations):
             JSON snapshot of the parameter
     """
     def __init__(self, name, instrument, snapshot_get, metadata,
+                 step=None, inter_delay=0, post_delay=0,
                  snapshot_value=True, max_val_age=None):
         super().__init__(metadata)
         self._snapshot_get = snapshot_get
         self.name = str(name)
         self._instrument = instrument
         self._snapshot_value = snapshot_value
+
+        self.step = step
+        self.inter_delay = inter_delay
+        self.post_delay = post_delay
 
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
@@ -126,6 +131,10 @@ class _BaseParameter(Metadatable, DeferredOperations):
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
         self._meta_attrs = ['name', 'instrument']
+
+        # Specify time of last set operation, used when comparing to delay to
+        # check if additional waiting time is needed before next set
+        self._t_last_set = time.perf_counter()
 
     def __repr__(self):
         return named_repr(self)
@@ -248,8 +257,27 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 # a list containing only `value`.
                 for val in self.get_sweep_values(*values):
 
+                    # Check if delay between set operations is required
+                    t_elapsed = time.perf_counter() - self._t_last_set
+                    if t_elapsed < self.inter_delay:
+                        # Sleep until time since last set is larger than
+                        # self.post_delay
+                        time.sleep(self.inter_delay - t_elapsed)
+
+                    # Start timer to measure execution time of set_function
+                    t0 = time.perf_counter()
+
                     set_function(val, **kwargs)
                     self._save_val(val)
+
+                    # Update last set time (used for calculating delays)
+                    self._t_last_set = time.perf_counter()
+
+                    # Check if any delay after setting is required
+                    t_elapsed = self._t_last_set - t0
+                    if t_elapsed < self.post_delay:
+                        # Sleep until total time is larger than self.post_delay
+                        time.sleep(self.post_delay - t_elapsed)
             except Exception as e:
                 e.args = e.args + ('setting {} to {}'.format(self.full_name,
                                                              values),)
@@ -333,6 +361,64 @@ class _BaseParameter(Metadatable, DeferredOperations):
             raise TypeError('step must be a positive int for an Ints parameter')
         else:
             self._step = step
+
+    @property
+    def post_delay(self):
+        """Property that returns the delay time of this parameter"""
+        return self._post_delay
+
+    @post_delay.setter
+    def post_delay(self, post_delay):
+        """
+        Configure this parameter with a delay between set operations.
+
+        Typically used in conjunction with set_step to create an effective
+        ramp rate, but can also be used without a step to enforce a delay
+        after every set.
+
+        Args:
+            post_delay(Union[int, float]): the target time between set calls.
+                The actual time will not be shorter than this, but may be longer
+                if the underlying set call takes longer.
+
+        Raises:
+            TypeError: If delay is not int nor float
+            ValueError: If delay is negative
+        """
+        if not isinstance(post_delay, (int, float)):
+            raise TypeError('delay must be a number')
+        if post_delay < 0:
+            raise ValueError('delay must not be negative')
+        self._post_delay = post_delay
+
+    @property
+    def inter_delay(self):
+        """Property that returns the delay time of this parameter"""
+        return self._inter_delay
+
+    @inter_delay.setter
+    def inter_delay(self, inter_delay):
+        """
+        Configure this parameter with a delay between set operations.
+
+        Typically used in conjunction with set_step to create an effective
+        ramp rate, but can also be used without a step to enforce a delay
+        between sets.
+
+        Args:
+            inter_delay(Union[int, float]): the target time between set calls.
+                The actual time will not be shorter than this, but may be longer
+                if the underlying set call takes longer.
+
+        Raises:
+            TypeError: If delay is not int nor float
+            ValueError: If delay is negative
+        """
+        if not isinstance(inter_delay, (int, float)):
+            raise TypeError('delay must be a number')
+        if inter_delay < 0:
+            raise ValueError('delay must not be negative')
+        self._inter_delay = inter_delay
 
 
 class Parameter(_BaseParameter):
@@ -890,7 +976,6 @@ class StandardParameter(Parameter):
     def __init__(self, name, instrument=None,
                  get_cmd=None, get_parser=None,
                  set_cmd=None, set_parser=None,
-                 post_delay=0, step=None,
                  vals=None, val_mapping=None, **kwargs):
         # handle val_mapping before super init because it impacts
         # vals / validation in the base class
@@ -922,41 +1007,11 @@ class StandardParameter(Parameter):
 
         self._initialize_get(get_cmd, get_parser)
         self._initialize_set(set_cmd, set_parser)
-        self.post_delay = post_delay
-        self.step = step
 
         if not (hasattr(self, 'get') or hasattr(self, 'set')):
             raise NoCommandError('neither set nor get cmd found in' +
                                  ' Parameter {}'.format(self.name))
 
-    @property
-    def post_delay(self):
-        """Property that returns the delay time of this parameter"""
-        return self._post_delay
-
-    @post_delay.setter
-    def post_delay(self, post_delay):
-        """
-        Configure this parameter with a delay between set operations.
-
-        Typically used in conjunction with set_step to create an effective
-        ramp rate, but can also be used without a step to enforce a delay
-        after every set.
-
-        Args:
-            post_delay(Union[int, float]): the target time between set calls.
-                The actual time will not be shorter than this, but may be longer
-                if the underlying set call takes longer.
-
-        Raises:
-            TypeError: If delay is not int nor float
-            ValueError: If delay is negative
-        """
-        if not isinstance(post_delay, (int, float)):
-            raise TypeError('delay must be a number')
-        if post_delay < 0:
-            raise ValueError('delay must not be negative')
-        self._post_delay = post_delay
 
     def get(self):
         try:
@@ -984,6 +1039,7 @@ class StandardParameter(Parameter):
                 self._set(sweep_val)
                 self._save_val(sweep_val)
 
+                # Check if any delay after setting is required
                 t_elapsed = time.perf_counter() - t0
                 if t_elapsed < self.post_delay:
                     # Sleep until total time is larger than self.post_delay
