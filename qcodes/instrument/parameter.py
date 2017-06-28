@@ -104,6 +104,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
     """
     def __init__(self, name, instrument, snapshot_get, metadata,
                  step=None, inter_delay=0, post_delay=0,
+                 val_mapping=None, get_parser=None, set_parser=None,
                  snapshot_value=True, max_val_age=None):
         super().__init__(metadata)
         self._snapshot_get = snapshot_get
@@ -114,6 +115,16 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self.step = step
         self.inter_delay = inter_delay
         self.post_delay = post_delay
+
+        self.val_mapping = val_mapping
+        if val_mapping is None:
+            self.inverse_val_mapping = None
+        else:
+            self.inverse_val_mapping = {v: k for k, v in val_mapping.items()}
+
+        # TODO (nulinspiratie) implement
+        self.get_parser = get_parser
+        self.set_parser = set_parser
 
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
@@ -134,6 +145,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
         # Specify time of last set operation, used when comparing to delay to
         # check if additional waiting time is needed before next set
         self._t_last_set = time.perf_counter()
+
+        # TODO(nulinspiratie) add vals
 
     def __repr__(self):
         return named_repr(self)
@@ -238,6 +251,10 @@ class _BaseParameter(Metadatable, DeferredOperations):
             try:
                 # There might be cases where a .get also has args/kwargs
                 value = get_function(*args, **kwargs)
+
+                if self.val_mapping is not None:
+                    value = self.inverse_val_mapping[value]
+
                 self._save_val(value)
                 return value
             except Exception as e:
@@ -252,10 +269,14 @@ class _BaseParameter(Metadatable, DeferredOperations):
             try:
                 self.validate(*values)
 
+                if self.val_mapping is not None:
+                    # Convert set values using val_mapping dictionary
+                    values = tuple(self.val_mapping[value] for value in values)
+
                 # In some cases intermediate sweep values must be used.
                 # Unless `self.step` is defined, get_sweep_values will return
                 # a list containing only `value`.
-                for val in self.get_sweep_values(*values):
+                for val in self.get_sweep_values(*values, step=self.step):
 
                     # Check if delay between set operations is required
                     t_elapsed = time.perf_counter() - self._t_last_set
@@ -285,7 +306,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         return set_wrapper
 
-    def get_sweep_values(self, value):
+    def get_sweep_values(self, value, step=None):
         """
         Sweep to a given value from a starting value
         This method can be overridden to have a custom sweep behaviour.
@@ -296,7 +317,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         Returns:
 
         """
-        if self.step is None:
+        if step is None:
             return [value]
         else:
             start_value = self.get_latest()
@@ -314,7 +335,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 return []
 
             # drop the initial value, we're already there
-            return permissive_range(start_value, value, self._step)[1:]
+            return permissive_range(start_value, value, step)[1:]
 
     def validate(self, value):
         """
@@ -488,8 +509,7 @@ class Parameter(_BaseParameter):
             JSON snapshot of the parameter
     """
     def __init__(self, name, instrument=None, label=None,
-                 get_cmd=None, get_parser=None,
-                 set_cmd=False, set_parser=None,
+                 get_cmd=None, set_cmd=False,
                  initial_value=None,
                  unit=None, units=None, vals=Numbers(), docstring=None,
                  snapshot_get=True, snapshot_value=True, metadata=None):
@@ -503,7 +523,7 @@ class Parameter(_BaseParameter):
             else:
                 exec_str = instrument.ask if instrument else None
                 self.get = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str,
-                                   output_parser=get_parser,
+                                   output_parser=self.get_parser,
                                    no_cmd_function=no_getter)
 
         if not hasattr(self, 'set') and set_cmd is not False:
@@ -512,7 +532,7 @@ class Parameter(_BaseParameter):
             else:
                 exec_str = instrument.ask if instrument else None
                 self.set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str,
-                                   input_parser=set_parser,
+                                   input_parser=self.set_parser,
                                    no_cmd_function=no_setter)
 
         super().__init__(name, instrument, snapshot_get, metadata,
@@ -918,210 +938,6 @@ def no_getter(*args, **kwargs):
         'set value.')
 
 
-class StandardParameter(Parameter):
-    """
-    Define one measurement parameter.
-
-    Args:
-        name (str): the local name of this parameter
-
-        instrument (Optional[Instrument]): the instrument this parameter
-            belongs to, if any
-
-        get_cmd (Optional[Union[str, function]]): a string or function to
-            get this parameter. You can only use a string if an instrument is
-            provided, then this string will be passed to instrument.ask
-
-        get_parser ( Optional[function]): function to transform the response
-            from get to the final output value.
-            See also val_mapping
-
-        set_cmd (Optional[Union[str, function]]): command to set this
-            parameter, either:
-
-            - a string (containing one field to .format, like "{}" etc)
-              you can only use a string if an instrument is provided,
-              this string will be passed to instrument.write
-            - a function (of one parameter)
-
-        set_parser (Optional[function]): function to transform the input set
-            value to an encoded value sent to the instrument.
-            See also val_mapping
-
-        val_mapping (Optional[dict]): a bidirectional map data/readable values
-            to instrument codes, expressed as a dict:
-            ``{data_val: instrument_code}``
-            For example, if the instrument uses '0' to mean 1V and '1' to mean
-            10V, set val_mapping={1: '0', 10: '1'} and on the user side you
-            only see 1 and 10, never the coded '0' and '1'
-
-            If vals is omitted, will also construct a matching Enum validator.
-            NOTE: only applies to get if get_cmd is a string, and to set if
-            set_cmd is a string.
-
-            You can use ``val_mapping`` with ``get_parser``, in which case
-            ``get_parser`` acts on the return value from the instrument first,
-            then ``val_mapping`` is applied (in reverse).
-
-            You CANNOT use ``val_mapping`` and ``set_parser`` together - that
-            would just provide too many ways to do the same thing.
-
-        vals (Optional[Validator]): a Validator object for this parameter
-
-        post_delay (Optional[Union[int, float]]): time (in seconds) to wait 
-            after the *start* of each set, whether part of a sweep or not. 
-            Can be set to 0 to go maximum speed with no errors. Any time 
-            taken by the actual set operation is subtracted from the delay.
-
-        step (Optional[Union[int, float]]): max increment of parameter value.
-            Larger changes are broken into multiple steps this size.
-
-        max_val_age (Optional[Union[int, float]]): max time (in seconds) to
-            trust a saved value from this parameter as the starting point of
-            a sweep.
-
-        **kwargs: Passed to Parameter parent class
-
-    Raises:
-        NoCommandError: if get and set are not found
-    """
-    def __init__(self, name, instrument=None,
-                 get_cmd=None, get_parser=None,
-                 set_cmd=None, set_parser=None,
-                 vals=None, val_mapping=None, **kwargs):
-        # handle val_mapping before super init because it impacts
-        # vals / validation in the base class
-        if val_mapping:
-            if vals is None:
-                vals = Enum(*val_mapping.keys())
-
-            self._get_mapping = {v: k for k, v in val_mapping.items()}
-
-            if get_parser is None:
-                get_parser = self._valmapping_get_parser
-            else:
-                # First run get_parser, then run the result through
-                # val_mapping
-                self._get_preparser = get_parser
-                get_parser = self._valmapping_with_preparser
-
-            if set_parser is None:
-                self._set_mapping = val_mapping
-                set_parser = self._set_mapping.__getitem__
-            else:
-                raise TypeError(
-                    'You cannot use set_parser and val_mapping together.')
-
-        super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
-
-        self._meta_attrs.extend(['sweep_step', 'sweep_delay',
-                                 'max_sweep_delay'])
-
-        self._initialize_get(get_cmd, get_parser)
-        self._initialize_set(set_cmd, set_parser)
-
-        if not (hasattr(self, 'get') or hasattr(self, 'set')):
-            raise NoCommandError('neither set nor get cmd found in' +
-                                 ' Parameter {}'.format(self.name))
-
-
-    def get(self):
-        try:
-            value = self._get_command()
-            self._save_val(value)
-            return value
-        except Exception as e:
-            e.args = e.args + ('getting {}'.format(self.full_name),)
-            raise e
-
-    def set(self, value):
-        try:
-            self.validate(value)
-
-            if self.step is not None:
-                # Multiple intermediate steps used to reach target value
-                sweep_vals = self._sweep_steps(value) + [value]
-            else:
-                # Immediately set to target value
-                sweep_vals = [value]
-
-            for sweep_val in sweep_vals:
-                t0 = time.perf_counter()
-
-                self._set(sweep_val)
-                self._save_val(sweep_val)
-
-                # Check if any delay after setting is required
-                t_elapsed = time.perf_counter() - t0
-                if t_elapsed < self.post_delay:
-                    # Sleep until total time is larger than self.post_delay
-                    time.sleep(self.post_delay - t_elapsed)
-
-        except Exception as e:
-            e.args = e.args + (
-                'setting {} to {}'.format(self.full_name, repr(value)),)
-            raise e
-
-    def _valmapping_get_parser(self, val):
-        """
-        Get parser to be used in the case that a val_mapping is defined
-        and a separate get_parser is not defined.
-
-        Tries to match against defined strings in the mapping dictionary. If
-        there are no matches, we try to convert the val into an integer.
-        """
-
-        # Try and match the raw value from the instrument directly
-        try:
-            return self._get_mapping[val]
-        except KeyError:
-            pass
-
-        # If there is no match, we can try to convert the parameter into a
-        # numeric value
-        try:
-            val = int(val)
-            return self._get_mapping[val]
-        except (ValueError, KeyError):
-            raise KeyError('Unmapped value from instrument: {!r}'.format(val))
-
-    def _valmapping_with_preparser(self, val):
-        return self._valmapping_get_parser(self._get_preparser(val))
-
-    def _initialize_get(self, get_cmd, get_parser):
-        exec_str = self._instrument.ask if self._instrument else None
-        self._get_command = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str,
-                                    output_parser=get_parser,
-                                    no_cmd_function=no_getter)
-
-    def _initialize_set(self, set_cmd, set_parser):
-        # note: this does not set the final setter functions. that's handled
-        # in self.set_sweep, when we choose a swept or non-swept setter.
-        # TODO(giulioungaretti) lies! that method does not exis.
-        # probably alexj left it out :(
-        exec_str = self._instrument.write if self._instrument else None
-        self._set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str,
-                            input_parser=set_parser, no_cmd_function=no_setter)
-
-    def _sweep_steps(self, value):
-        start_value = self.get_latest()
-
-        self.validate(start_value)
-
-        if not (isinstance(start_value, (int, float)) and
-                isinstance(value, (int, float))):
-            # something weird... parameter is numeric but one of the ends
-            # isn't, even though it's valid.
-            # probably a MultiType with a mix of numeric and non-numeric types
-            # just set the endpoint and move on
-            logging.warning('cannot sweep {} from {} to {} - jumping.'.format(
-                self.name, start_value, value))
-            return []
-
-        # drop the initial value, we're already there
-        return permissive_range(start_value, value, self._step)[1:]
-
-
 class GetLatest(DelegateAttributes, DeferredOperations):
     """
     Wrapper for a Parameter that just returns the last set or measured value
@@ -1362,6 +1178,7 @@ class InstrumentRefParameter(Parameter):
         return self._instrument.find_instrument(ref_instrument_name)
 
     def set_validator(self, vals):
+        # TODO(nulinspiratie) Remove
         """
         Set a validator `vals` for this parameter.
 
