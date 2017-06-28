@@ -490,6 +490,7 @@ class Parameter(_BaseParameter):
     def __init__(self, name, instrument=None, label=None,
                  get_cmd=None, get_parser=None,
                  set_cmd=False, set_parser=None,
+                 initial_value=None,
                  unit=None, units=None, vals=Numbers(), docstring=None,
                  snapshot_get=True, snapshot_value=True, metadata=None):
 
@@ -530,6 +531,9 @@ class Parameter(_BaseParameter):
         if not isinstance(vals, Validator):
             raise TypeError('vals must be a Validator')
         self.vals = vals
+
+        if initial_value is not None:
+            self._save_val(initial_value, validate=True)
 
         # generate default docstring
         self.__doc__ = os.linesep.join((
@@ -1116,45 +1120,6 @@ class StandardParameter(Parameter):
 
         # drop the initial value, we're already there
         return permissive_range(start_value, value, self._step)[1:]
-
-
-class ManualParameter(Parameter):
-    """
-    Define one parameter that reflects a manual setting / configuration.
-
-    Args:
-        name (str): the local name of this parameter
-
-        instrument (Optional[Instrument]): the instrument this applies to,
-            if any.
-
-        initial_value (Optional[str]): starting value, may be None even if
-            None does not pass the validator. None is only allowed as an
-            initial value and cannot be set after initiation.
-
-        **kwargs: Passed to Parameter parent class
-    """
-    def __init__(self, name, instrument=None, **kwargs):
-        super().__init__(name=name, instrument=instrument, **kwargs)
-        self._meta_attrs.extend(['initial_value'])
-
-        if initial_value is not None:
-            self.validate(initial_value)
-            self._save_val(initial_value)
-
-    def set(self, value):
-        """
-        Validate and saves value
-
-        Args:
-            value (any): value to validate and save
-        """
-        self.validate(value)
-        self._save_val(value)
-
-    def get(self):
-        """ Return latest value"""
-        return self._latest()['value']
 
 
 class GetLatest(DelegateAttributes, DeferredOperations):
