@@ -186,13 +186,13 @@ class PulseBlasterDDS(Instrument):
         functions."""
         return api.pb_set_defaults()
 
-    @staticmethod
-    def set_core_clock(clock):
+    def set_core_clock(self, clock):
         """ Sets the core clock reference value
 
         Note: This does not change anything in the device, it just provides 
         the library with the value given
         """
+        self.select_board(self.board_number())
         api.pb_core_clock(clock)
 
     @staticmethod
@@ -232,6 +232,7 @@ class PulseBlasterDDS(Instrument):
         self.program_instruction_sequence(self.instruction_sequence())
         self.reset()
 
+        # This api function does not seem to do much
         return api.pb_start()
 
     @error_parse
@@ -241,12 +242,15 @@ class PulseBlasterDDS(Instrument):
 
     @error_parse
     def stop(self):
-        self.reset()
         self.setup(initialize=False)
 
         # Must overwrite the sequence (api.pb_stop does not work)
         stop_instruction = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'stop', 0, 20000)
         self.program_instruction_sequence([stop_instruction])
+        self.reset()
+
+        # This api function does not seem to do much, might be due to
+        # firmware (see manual)
         return api.pb_stop()
 
     @error_parse
@@ -428,5 +432,9 @@ class PulseBlasterDDS(Instrument):
         self.select_dds(channel)
         # Amplitudes does not need to start programming
         for register, amplitude in enumerate(amplitudes):
+            # Looking at the DDS output, an amplitude of 1 apparently
+            # corresponds to 0.6V output. This further decreases if the
+            # frequency is below 1 MHz,  but above 1MHz it is fairly constant.
+            amplitude /= 0.6
             error_parse(api.pb_set_amp)(amplitude, register)
 

@@ -41,7 +41,7 @@ class PulseBlasterESRPRO(Instrument):
         self.add_parameter('core_clock',
                            label='Core clock',
                            unit='MHz',
-                           set_cmd=api.pb_core_clock,
+                           set_cmd=self.set_core_clock,
                            vals=vals.Numbers(0, 500))
 
         self.add_parameter('board_number',
@@ -125,6 +125,12 @@ class PulseBlasterESRPRO(Instrument):
         self.detect_boards()
         if initialize:
             self.initialize()
+
+
+    def set_core_clock(self, core_clock):
+        self.select_board(self.board_number())
+        # Does not return value
+        api.pb_core_clock(core_clock)
 
     def start_programming(self):
         '''
