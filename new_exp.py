@@ -75,7 +75,7 @@ def insert_column(conn: sqlite3.Connection, table: str, name: str,
 def new_experiment(conn: sqlite3.Connection,
                    name: str,
                    sample_name: str,
-                   format_string: Optional[str] = "{}-{}"
+                   format_string: Optional[str] = "{}-{}-{}"
                    )->int:
     """ Add new experiment to container
 
@@ -154,7 +154,7 @@ def insert_run(conn: sqlite3.Connection, exp_id: int, name: str):
                                                     where_column="exp_id",
                                                     where_value=exp_id)
     run_counter += 1
-    formatted_name = format_string.format(name, run_counter)
+    formatted_name = format_string.format(name, exp_id, run_counter)
     table = "runs"
     query = f"""
     INSERT INTO {table}
