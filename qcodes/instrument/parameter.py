@@ -111,6 +111,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self.name = str(name)
         self._instrument = instrument
         self._snapshot_value = snapshot_value
+        self.raw_value = None
 
         self.step = step
         self.inter_delay = inter_delay
@@ -142,7 +143,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
-        self._meta_attrs = ['name', 'instrument']
+        # TODO (nulinspiratie) add other relevant meta_attrs
+        self._meta_attrs = ['name', 'instrument', 'raw_value']
 
         # Specify time of last set operation, used when comparing to delay to
         # check if additional waiting time is needed before next set
@@ -253,6 +255,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
             try:
                 # There might be cases where a .get also has args/kwargs
                 value = get_function(*args, **kwargs)
+                self.raw_value = value
 
                 if self.get_parser is not None:
                     value = self.get_parser(value)
@@ -319,6 +322,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     t0 = time.perf_counter()
 
                     set_function(val, **kwargs)
+                    self.raw_value = val
                     self._save_val(val)
 
                     # Update last set time (used for calculating delays)
