@@ -352,6 +352,22 @@ def modify_values(conn: sqlite3.Connection,
     return c.rowcount
 
 
+def length(conn: sqlite3.Connection,
+           formatted_name: str
+           )-> int:
+    """
+    Return the lenght of the table
+
+    Args:
+        - conn: the connection to the sqlite database
+        - formatted_name: name of the table
+
+    Returns:
+        -the lenght of the table
+    """
+    query = f"select MAX(id) from '{formatted_name}'"
+    c = transaction(conn, query)
+    return c.fetchall()[0][0]
 def get_parameters(conn: sqlite3.Connection,
                    formatted_name: str) -> List[ParamSpec]:
     """
