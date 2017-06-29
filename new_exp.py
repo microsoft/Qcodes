@@ -368,6 +368,34 @@ def length(conn: sqlite3.Connection,
     query = f"select MAX(id) from '{formatted_name}'"
     c = transaction(conn, query)
     return c.fetchall()[0][0]
+
+
+def modify_many_values(conn: sqlite3.Connection,
+                       formatted_name: str,
+                       start_index: int,
+                       parameters: List[ParamSpec],
+                       values: List[VALUES],
+                       )->None:
+    """
+    Modify many values for the corresponding paramSpec
+    If a parameter is in the table but not in the parameter list is
+    left untouched.
+    If a parameter is mapped to None, it will be a null value.
+    """
+    _len = length(conn, formatted_name)
+    len_requested = start_index + len(values)
+    available = _len - start_index
+    if len_requested > _len:
+        reason = f""""Modify operation Out of bounds.
+        Trying to modify {len(values)} results,
+        but therere are only {available} retulst.
+        """
+        raise ValueError(reason)
+    for value in values:
+        modify_values(conn, formatted_name, start_index, parameters, value)
+        start_index += 1
+
+
 def get_parameters(conn: sqlite3.Connection,
                    formatted_name: str) -> List[ParamSpec]:
     """
