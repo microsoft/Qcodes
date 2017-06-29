@@ -341,7 +341,47 @@ class DataArray(DelegateAttributes):
         self.ndarray.__setitem__(loop_indices, value)
 
     def __getitem__(self, loop_indices):
-        return self.ndarray[loop_indices]
+        """
+        Get a sub_array, which is also a DataArray.
+        The behaviour is similar to np.array slicing, e.g.
+            arr[4,:2] gets row 4, columns 0:2
+        Set arrays, etc. are also included in the new DataArray
+        Args:
+            loop_indices: array slice
+
+        Returns:
+            Sliced DataArray
+        """
+        if not isinstance(loop_indices, tuple):
+            # Return single element in first dimension
+            loop_indices = loop_indices,
+
+        # Generate new set arrays
+        sub_set_arrays = []
+        for k, set_array in enumerate(self.set_arrays):
+            if set_array == self:
+                sub_set_array = self
+            else:
+                sub_set_array = set_array[loop_indices[:set_array.ndim]]
+            sub_set_arrays.append(sub_set_array)
+
+        sub_array = self.ndarray[loop_indices]
+        return DataArray(name=self.name, label=self.label, unit=self.unit,
+                         is_setpoint=self.is_setpoint, preset_data=sub_array,
+                         set_arrays=sub_set_arrays)
+
+    def array_slice(self, slice):
+        """
+        Get a numpy sub_array, as opposed to __getitem__ notation,
+        which transforms the sub_array to a DataArray.
+        This method may be preferred for speed optimization
+        Args:
+            slice: array slice
+
+        Returns:
+            numpy ndarray slice
+        """
+        return self.ndarray[slice]
 
     delegate_attr_objects = ['ndarray']
 

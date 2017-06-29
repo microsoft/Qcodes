@@ -2,6 +2,8 @@
 Live plotting in Jupyter notebooks
 """
 
+import numpy as np
+
 
 class BasePlot:
     latest_plot = None
@@ -213,7 +215,7 @@ class BasePlot:
         # return the new kwargs  instead of modifying in place
         # TODO this should really be a static method
         if args:
-            if hasattr(args[-1][0], '__len__'):
+            if np.size(args[-1][0]) > 1:
                 # 2D (or higher... but ignore this for now)
                 # this test works for both numpy arrays and bare sequences
                 axletters = 'xyz'

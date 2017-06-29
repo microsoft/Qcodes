@@ -369,7 +369,8 @@ class GNUPlotFormat(Formatter):
 
     def _data_point(self, group, indices):
         for array in group.set_arrays:
-            yield self.number_format.format(array[indices[:array.ndim]])
+            yield self.number_format.format(
+                array.array_slice(indices[:array.ndim]))
 
         for array in group.data:
-            yield self.number_format.format(array[indices])
+            yield self.number_format.format(array.array_slice(indices))
