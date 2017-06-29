@@ -374,7 +374,7 @@ def get_parameters(conn: sqlite3.Connection,
     gets the list of param specs for run
 
     Args:
-        - conn: Connection to the db
+        - conn: the connection to the sqlite database
         - formatted_name: name of the table
 
     Returns:
