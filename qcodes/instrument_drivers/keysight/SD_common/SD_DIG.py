@@ -1,5 +1,6 @@
 from qcodes.utils.validators import Numbers, Enum, Ints, Anything
 from functools import partial
+from scipy.interpolate import interp1d
 
 from .SD_Module import *
 
@@ -277,8 +278,11 @@ class SD_DIG(SD_Module):
         """
         value = self.SD_AIN.DAQread(daq, self.__n_points[daq], self.__timeout[daq])
         # Scale signal to volts
+        v_min = - self.__full_scale[daq];
+        v_max = self.__full_scale[daq]
+        m = interp1d([-0x8000, 0x7FFF], [v_min, v_max])
         if not isinstance(value, int):
-            scaled_value = value * 2 * self.__full_scale[daq]/ (1 << 16)
+            scaled_value = m(value)
         value_name = 'DAQ_read channel {}'.format(daq)
         return result_parser(scaled_value, value_name, verbose)
 
