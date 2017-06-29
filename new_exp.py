@@ -516,8 +516,8 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
 def get_data(conn: sqlite3.Connection,
              formatted_name: str,
              parameters: List[ParamSpec],
-             start:int=None,
-             end:int=None,
+             start: int=None,
+             end: int=None,
              )->Any:
     _parameters = ",".join([p.name for p in parameters])
     if start and end:
