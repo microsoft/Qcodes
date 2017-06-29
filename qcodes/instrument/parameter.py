@@ -137,9 +137,9 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
         if hasattr(self, 'get'):
-            self.get = self._get_wrapper(self.get)
+            self.get = self._wrap_get(self.get)
         if hasattr(self, 'set'):
-            self.set = self._set_wrapper(self.set)
+            self.set = self._wrap_set(self.set)
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
@@ -249,7 +249,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self._latest_value = value
         self._latest_ts = datetime.now()
 
-    def _get_wrapper(self, get_function):
+    def _wrap_get(self, get_function):
         @wraps
         def get_wrapper(*args, **kwargs):
             try:
@@ -283,7 +283,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         return get_wrapper
 
-    def _set_wrapper(self, set_function):
+    def _wrap_set(self, set_function):
         @wraps
         def set_wrapper(*values, **kwargs):
             try:
