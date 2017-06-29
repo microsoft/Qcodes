@@ -7,6 +7,7 @@ import pyqtgraph.multiprocess as pgmp
 from pyqtgraph.multiprocess.remoteproxy import ClosedError
 import warnings
 from collections import namedtuple
+import uuid
 
 from .base import BasePlot
 from .colors import color_cycle, colorscales
@@ -38,6 +39,7 @@ class QtPlot(BasePlot):
     """
     proc = None
     rpg = None
+    plots = {}
 
     def __init__(self, *args, figsize=(1000, 600), interval=0.25,
                  window_title='', theme=((60, 60, 60), 'w'), show_window=True, remote=True, **kwargs):
@@ -75,6 +77,17 @@ class QtPlot(BasePlot):
 
         if not show_window:
             self.win.hide()
+        self._id = uuid.uuid1()
+        self.plots[self._id] = self
+        self.win.closeEvent = self.mycloseEvent
+
+    def mycloseEvent(self, event):
+        try:
+            self.plots.pop(self._id)
+        except KeyError as e:
+            print("failed to remove plot")
+            print(e)
+            print(self.plots)
 
     @classmethod
     def _init_qt(cls):
