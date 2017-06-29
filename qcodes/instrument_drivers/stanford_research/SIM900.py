@@ -66,10 +66,12 @@ class SIM928(StandardParameter):
         return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
         for k in range(5):
             if return_str == '#3000\n':
-                logger.warning('Received return string {}, '
-                               'resetting SIM {}'.format(self))
+                logger.warning('Received return string #3000, '
+                               'resetting SIM {}'.format(return_str, self))
                 self._instrument.reset_slot(self.channel)
-                sleep(5)
+                sleep(1)
+                self._instrument.write(self.send_cmd + '"VOLT?"')
+                sleep(1)
                 return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
             else:
                 break

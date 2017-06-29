@@ -140,10 +140,13 @@ class DiskIO:
         Returns:
             location (str): the location string corresponding to this path.
         """
-        if self.base_location:
+        if os.path.isabs(path):
+            return path
+        elif self.base_location:
             return os.path.relpath(path, self.base_location)
         else:
-            return path
+            raise SyntaxError('Must either give absolute path or specify '
+                              'base_location')
 
     def __repr__(self):
         """Show the base location in the repr."""
