@@ -548,6 +548,9 @@ class Parameter(_BaseParameter):
                  unit=None, vals=Numbers(), docstring=None,
                  snapshot_get=True, snapshot_value=True, metadata=None,
                  **kwargs):
+        # TODO (nulinspiratie) make kwargs explicit
+        super().__init__(name, instrument, snapshot_get, metadata,
+                         snapshot_value=snapshot_value, **kwargs)
 
         # Enable set/get methods if get_cmd/set_cmd is given
         # Called first so super().__init__ can wrap get/set methods
@@ -558,6 +561,7 @@ class Parameter(_BaseParameter):
             else:
                 exec_str = instrument.ask if instrument else None
                 self.get = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str)
+            self.get = self.wrap_get(self.get)
 
         if not hasattr(self, 'set') and set_cmd is not False:
             if set_cmd is None:
@@ -565,10 +569,7 @@ class Parameter(_BaseParameter):
             else:
                 exec_str = instrument.write if instrument else None
                 self.set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str)
-
-        # TODO (nulinspiratie) make kwargs explicit
-        super().__init__(name, instrument, snapshot_get, metadata,
-                         snapshot_value=snapshot_value, **kwargs)
+            self.set = self.wrap_set(self.set)
 
         self._meta_attrs.extend(['label', 'unit', '_vals'])
 
