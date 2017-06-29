@@ -1212,19 +1212,19 @@ class StandardParameter(Parameter):
                  set_cmd=False, set_parser=None,
                  delay=None, max_delay=None, step=None, max_val_age=3600,
                  vals=None, val_mapping=None, **kwargs):
-        logging.warning('`StandardParameter` is deprecated, '
-                        'use `Parameter` instead. {}'.format(self))
         super().__init__(self, name, instrument=instrument,
                  get_cmd=get_cmd, get_parser=get_parser,
                  set_cmd=set_cmd, set_parser=set_parser,
                  post_delay=delay, step=step, max_val_age=max_val_age,
                  vals=vals, val_mapping=val_mapping, **kwargs)
+        logging.warning('`StandardParameter` is deprecated, '
+                        'use `Parameter` instead. {}'.format(self))
 
 
 class ManualParameter(Parameter):
     def __init__(self, name, instrument=None, initial_value=None, **kwargs):
-        logging.warning('`ManualParameter` is deprecated, use `Parameter` '
-                        'instead with `set_cmd=None`. {}'.format(self))
         super().__init__(name=name, instrument=instrument,
                          get_cmd=None, set_cmd=None,
                          initial_value=initial_value, **kwargs)
+        logging.warning('`ManualParameter` is deprecated, use `Parameter` '
+                        'instead with `set_cmd=None`. {}'.format(self))
