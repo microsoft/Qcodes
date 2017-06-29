@@ -4,6 +4,7 @@ Live plotting using pyqtgraph
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as pgmp
+from pyqtgraph.multiprocess.remoteproxy import ClosedError
 import warnings
 from collections import namedtuple
 
@@ -55,7 +56,16 @@ class QtPlot(BasePlot):
         else:
             # overrule the remote pyqtgraph class
             self.rpg = pg
-        self.win = self.rpg.GraphicsWindow(title=window_title)
+        try:
+            self.win = self.rpg.GraphicsWindow(title=window_title)
+        except ClosedError as err:
+            # the remote process may have crashed. In that case try restarting
+            # it
+            if remote:
+                self._init_qt()
+                self.win = self.rpg.GraphicsWindow(title=window_title)
+            else:
+                raise err
         self.win.setBackground(theme[1])
         self.win.resize(*figsize)
         self.subplots = [self.add_subplot()]
@@ -66,13 +76,14 @@ class QtPlot(BasePlot):
         if not show_window:
             self.win.hide()
 
-    def _init_qt(self):
+    @classmethod
+    def _init_qt(cls):
         # starting the process for the pyqtgraph plotting
         # You do not want a new process to be created every time you start a
         # run, so this only starts once and stores the process in the class
         pg.mkQApp()
-        self.__class__.proc = pgmp.QtProcess()  # pyqtgraph multiprocessing
-        self.__class__.rpg = self.proc._import('pyqtgraph')
+        cls.proc = pgmp.QtProcess()  # pyqtgraph multiprocessing
+        cls.rpg = cls.proc._import('pyqtgraph')
 
     def clear(self):
         """
