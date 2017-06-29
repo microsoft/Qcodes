@@ -16,9 +16,29 @@ from numbers import Number
 from numpy import ndarray
 import numpy as np
 import io
+import socket
 from typing import Any, List, Optional, Tuple, Union, Dict
 
+
 db = "/Users/unga/Desktop/experiment.db"
+
+
+# this is what we accept
+PARAMETERS = None  # should be a list of python object that have .type that
+# represent the type of sqlite column
+VALUES = List[Union[str, Number, List, ndarray, bool]]
+# TODO: do same for metadata maybe?
+
+
+class ParamSpec():
+    def __init__(self, name: str, type: str, **metadata) -> None:
+        self.name = name
+        self.type = type
+        if metadata:
+            self.metadata = metadata
+
+    def sql_repr(self):
+        return f"{self.name} {self.type}"
 
 
 def adapt_array(arr: ndarray)->sqlite3.Binary:
@@ -112,9 +132,13 @@ def atomic(conn: sqlite3.Connection):
 
 
 def insert_column(conn: sqlite3.Connection, table: str, name: str,
-                  type: str)->None:
-    atomicTransaction(conn,
-                      f"""ALTER TABLE "{table}" ADD COLUMN {name} {type}""")
+                  type: Optional[str]=None)->None:
+    if type:
+        atomicTransaction(conn,
+                          f'ALTER TABLE "{table}" ADD COLUMN "{name}" {type}')
+    else:
+        atomicTransaction(conn,
+                          f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
 
 
 def new_experiment(conn: sqlite3.Connection,
@@ -209,7 +233,50 @@ def get_run_counter(conn: sqlite3.Connection, exp_id: int) -> int:
                              where_value=exp_id)
 
 
-def insert_run(conn: sqlite3.Connection, exp_id: int, name: str):
+def insert_meta_data(conn: sqlite3.Connection, run_id: int,
+                     metadata: Dict[str, Any])->None:
+    """
+    Creates new medata data (they must exist already)
+    """
+    for key, value in metadata.items():
+        print(key)
+        insert_column(conn, "runs", key)
+        sql = f"""
+            UPDATE runs set '{key}'=? WHERE rowid=?;
+        """
+        transaction(conn, sql, value, run_id)
+
+
+def update_meta_data(conn: sqlite3.Connection, run_id: int,
+                     metadata: Dict[str, Any])->None:
+    """
+    Updates medata data (they must exist already)
+    """
+    for key, value in metadata.items():
+        sql = f"""
+            UPDATE runs set '{key}'=? WHERE rowid=?;
+        """
+        transaction(conn, sql, value, run_id)
+
+
+def add_meta_data(conn: sqlite3.Connection, run_id: int,
+                  metadata: Dict[str, Any])->None:
+    """
+    Add medata data (updates if exists, create otherwise)
+    """
+    with atomic(conn):
+        try:
+            insert_meta_data(conn, run_id, metadata)
+        except sqlite3.OperationalError as e:
+            # this means that the column already exists
+            # so just insert the new value
+            if str(e).startswith("duplicate"):
+                update_meta_data(conn, run_id, metadata)
+
+
+def insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
+               parameters: Optional[List[ParamSpec]]=None,
+               ):
     # get run counter and formatter from experiments
     run_counter, format_string = _select_many_where(conn,
                                                     "experiments",
@@ -220,24 +287,40 @@ def insert_run(conn: sqlite3.Connection, exp_id: int, name: str):
     run_counter += 1
     formatted_name = format_string.format(name, exp_id, run_counter)
     table = "runs"
-    query = f"""
-    INSERT INTO {table}
-        (name,exp_id,result_table_name,result_counter, run_timestamp)
-    VALUES
-        (?,?,?,?,?)
-    """
-    curr = transaction(conn, query,
-                       name,
-                       exp_id,
-                       formatted_name,
-                       run_counter,
-                       time.time()
-                       )
+    if parameters:
+        query = f"""
+        INSERT INTO {table}
+            (name,exp_id,result_table_name,result_counter,run_timestamp,parameters)
+        VALUES
+            (?,?,?,?,?,?)
+        """
+        curr = transaction(conn, query,
+                           name,
+                           exp_id,
+                           formatted_name,
+                           run_counter,
+                           time.time(),
+                           ",".join([p.name for p in parameters])
+                           )
+    else:
+        query = f"""
+        INSERT INTO {table}
+            (name,exp_id,result_table_name,result_counter,run_timestamp)
+        VALUES
+            (?,?,?,?,?,?)
+        """
+        curr = transaction(conn, query,
+                           name,
+                           exp_id,
+                           formatted_name,
+                           run_counter,
+                           time.time()
+                           )
     return run_counter, formatted_name, curr.lastrowid
 
 
 def update_experiment_run_counter(conn: sqlite3.Connection, exp_id: int,
-                                 run_counter: int)->None:
+                                  run_counter: int)->None:
     """ Update experiment with
     """
     query = """
@@ -246,24 +329,6 @@ def update_experiment_run_counter(conn: sqlite3.Connection, exp_id: int,
     WHERE exp_id = ?
     """
     transaction(conn, query, run_counter, exp_id)
-
-
-# this is what we accept
-PARAMETERS = None  # should be a list of python object that have .type that
-# represent the type of sqlite column
-VALUES = List[Union[str, Number, List, ndarray, bool]]
-# TODO: do same for metadata maybe?
-
-
-class ParamSpec():
-    def __init__(self, name: str, type: str, **metadata) -> None:
-        self.name = name
-        self.type = type
-        if metadata:
-            self.metadata = metadata
-
-    def sql_repr(self):
-        return f"{self.name, self.type}"
 
 
 def insert_values(conn: sqlite3.Connection,
@@ -439,8 +504,7 @@ def get_last_run(conn: sqlite3.Connection, exp_id: int) -> str:
 def create_run_table(conn: sqlite3.Connection,
                      formatted_name: str,
                      parameters: Optional[List[ParamSpec]]=None,
-                     values: Optional[VALUES]=None,
-                     metadata: Dict[str, Any]=None
+                     values: Optional[VALUES]=None
                      )->None:
     """Create run table with formatted_name as name
 
@@ -469,6 +533,7 @@ def create_run_table(conn: sqlite3.Connection,
             {_parameters}
         );
         """
+        print(query)
         transaction(conn, query)
     else:
         # look ma no parameters
@@ -482,8 +547,8 @@ def create_run_table(conn: sqlite3.Connection,
 
 
 def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
-
-               *parameters, **metadata)-> Tuple[int, str]:
+               *parameters: ParamSpec,
+               metadata: Optional[Dict[str, Any]]=None)-> Tuple[int, str]:
     """ Create a single run for the experiment.
 
 
@@ -497,7 +562,6 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
         - exp_id: the experiment id we want to create the run into
         - name: a friendly name for this run
         - parameters : TODO:
-        - values: TODO:
         - metadata : TODO:
 
     Returns:
@@ -505,12 +569,15 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
         - formatted_name: the name of the newly created table
     """
     with atomic(conn):
-        run_counter, formatted_name, row_id = insert_run(conn,
+        run_counter, formatted_name, run_id = insert_run(conn,
                                                          exp_id,
-                                                         name)
+                                                         name,
+                                                         list(parameters))
+        add_meta_data(conn, run_id, metadata)
         update_experiment_run_counter(conn, exp_id, run_counter)
-        create_run_table(conn, formatted_name)
-    return row_id, formatted_name
+        # NOTE: cast to list to make mypy happy (my bug, mypy bug?)
+        create_run_table(conn, formatted_name, list(parameters))
+    return run_id, formatted_name
 
 
 def get_data(conn: sqlite3.Connection,
@@ -553,30 +620,55 @@ def get_data(conn: sqlite3.Connection,
     return res
 
 
+
 if __name__ == '__main__':
-    conn = connect(db)
-    exp_id = new_experiment(conn, "majo qbit", "suspended bridge")
-    data_set_id, data_set_name = create_run(conn, exp_id, "sweep")
+    conn = connect(db, debug=True)
+    exp_name = "majo qbit"
+    sample = "suspended bridge"
+    exp_id = new_experiment(conn, exp_name, sample)
     # note that sqlite is dynamically typed hence the following type
     # declaration does not generate runtime errors if one puts a stirng
     # inside the DB
     parameter_a = ParamSpec("a", "INTEGER")
-    parameter_b = ParamSpec("b", "INTEGER")
-    add_parameter(conn, data_set_name, parameter_a, parameter_b)
-    insert_values(conn, data_set_name, [parameter_a, parameter_b], [0, 0])
-    # moar values
-    insert_many_values(conn, data_set_name, [parameter_a], [[1, 2, 3]])
-    # array value
+    # metadata with key="value", and number=1
+    parameter_b = ParamSpec("b", "INTEGER", key="value", number=1)
+    # this would be a new data set
+    data_set_id, data_set_name = create_run(conn, exp_id, "sweep",
+                                            parameter_a, parameter_b,
+                                            metadata={"key": "value"})
+    # can add metadata
+    add_meta_data(conn, data_set_id, {"hostname": socket.gethostname()})
+    # cann add new parameter: an array 
     parameter_c = ParamSpec("c", "array")
     add_parameter(conn, data_set_name, parameter_c)
-    x = np.arange(100).reshape(10, 10)
-    insert_values(conn, data_set_name,
-                  [parameter_a, parameter_b, parameter_c], [0, 0, x])
-    # now browse the results
-    get_data(conn, data_set_name, [parameter_a, parameter_c], 4, 5)
-    # returns a scalar and numpy array
-    # modify result inplace
-    p = get_parameters(conn, data_set_name)
-    rows_modified = modify_values(conn, data_set_name, 0, p, [0]*len(p))
-    print(f"modified {rows_modified} rows")
+    for _ in range(100):
+        insert_values(conn, data_set_name, [parameter_a, parameter_b], [0, 0])
+        # moar values
+        insert_many_values(conn, data_set_name, [parameter_a], [[1, 2, 3]])
+        x = np.arange(100).reshape(10, 10)
+        insert_values(conn, data_set_name,
+                      [parameter_a, parameter_b, parameter_c], [0, 0, x])
+        # now browse the results
+        get_data(conn, data_set_name, [parameter_a, parameter_c], 4, 5)
+        # returns a scalar and numpy array
+        # modify result inplace
+        p = get_parameters(conn, data_set_name)
+        rows_modified = modify_values(conn, data_set_name, 0, p, [0]*len(p))
+        print(f"modified {rows_modified} rows")
+    # new dataset!
+    parameter_a = ParamSpec("x", "INTEGER")
+    # metadata with key="value", and number=1
+    parameter_b = ParamSpec("y", "INTEGER", key="value", number=1)
+    # this would be a new data set
+    data_set_id, data_set_name = create_run(conn, exp_id, "sweep",
+                                            parameter_a, parameter_b,
+                                            metadata={"key": "value"})
+    # can add metadata
+    add_meta_data(conn, data_set_id, {"hostname": socket.gethostname()})
+    for i in range(100):
+        insert_values(conn, data_set_name,
+                      [parameter_a, parameter_b], [i, i*100])
+        # moar values
+        insert_many_values(conn, data_set_name, [parameter_a], [[1, 2, 3]])
+        print(f"modified {rows_modified} rows")
     finish_experiment(conn, exp_id)
