@@ -6,9 +6,7 @@ from .SD_Module import *
 
 class SD_DIG(SD_Module):
     """
-    This is the qcodes driver for a generic Signadyne Digitizer of the M32/33XX series.
-
-    Status: beta
+    This is the qcodes driver for a generic Keysight Digitizer of the M32/33XX series.
 
     This driver is written with the M3300A in mind.
 
