@@ -236,17 +236,23 @@ def get_run_counter(conn: sqlite3.Connection, exp_id: int) -> int:
                              where_value=exp_id)
 
 
-def insert_meta_data(conn: sqlite3.Connection, run_id: int,
+def insert_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
                      metadata: Dict[str, Any])->None:
     """
-    Creates new medata data (they must exist already)
+    Creates new metadata column and add values
+
+    Args:
+        - conn: the connection to the sqlite database
+        - row_id: the row to add the metadata at
+        - table_name: the table to add to, defaults to runs
+        - metadata: the metadata to add
     """
     for key, value in metadata.items():
         insert_column(conn, "runs", key)
         sql = f"""
-            UPDATE runs set '{key}'=? WHERE rowid=?;
+            UPDATE {table_name} set '{key}'=? WHERE rowid=?;
         """
-        transaction(conn, sql, value, run_id)
+        transaction(conn, sql, value, row_id)
 
 
 def _massage_medata(metadata: Dict[str, Any])-> Tuple[str, List[Any]]:
@@ -258,32 +264,46 @@ def _massage_medata(metadata: Dict[str, Any])-> Tuple[str, List[Any]]:
     return ','.join(template), values
 
 
-def update_meta_data(conn: sqlite3.Connection, run_id: int,
+def update_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
                      metadata: Dict[str, Any])->None:
     """
-    Updates medata data (they must exist already)
+    Updates metadata (they must exist already)
+
+    Args:
+        - conn: the connection to the sqlite database
+        - row_id: the row to add the metadata at
+        - table_name: the table to add to, defaults to runs
+        - metadata: the metadata to add
     """
     template, values = _massage_medata(metadata)
     sql = f"""
-    UPDATE runs set
+    UPDATE {table_name} set
         {template}
     WHERE rowid=?;
     """
-    transaction(conn, sql, *values, run_id)
+    transaction(conn, sql, *values, row_id)
 
 
-def add_meta_data(conn: sqlite3.Connection, run_id: int,
-                  metadata: Dict[str, Any])->None:
+def add_meta_data(conn: sqlite3.Connection,
+                  row_id: int,
+                  metadata: Dict[str, Any],
+                  table_name: Optional[str]="runs")->None:
     """
-    Add medata data (updates if exists, create otherwise)
+    Add medata data (updates if exists, create otherwise),
+
+    Args:
+        - conn: the connection to the sqlite database
+        - row_id: the row to add the metadata at
+        - metadata: the metadata to add
+        - table_name: the table to add to, defaults to runs
     """
     try:
-        insert_meta_data(conn, run_id, metadata)
+        insert_meta_data(conn, row_id, table_name, metadata)
     except sqlite3.OperationalError as e:
         # this means that the column already exists
         # so just insert the new value
         if str(e).startswith("duplicate"):
-            update_meta_data(conn, run_id, metadata)
+            update_meta_data(conn, row_id, table_name, metadata)
         else:
             raise e
 
