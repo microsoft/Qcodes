@@ -16,7 +16,6 @@ from numbers import Number
 from numpy import ndarray
 import numpy as np
 import io
-import socket
 from typing import Any, List, Optional, Tuple, Union, Dict
 
 
