@@ -26,4 +26,4 @@ class Keysight_M3201A_FPGA(SD_FPGA):
     """
 
     def __init__(self, name, chassis=1, slot=7, **kwargs):
-        super().__init__(name, chassis, slot, channels=4, triggers=8, **kwargs)
+        super().__init__(name, chassis, slot, **kwargs)

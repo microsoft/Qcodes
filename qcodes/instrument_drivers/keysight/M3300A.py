@@ -53,4 +53,4 @@ class Keysight_M3300_FPGA(SD_FPGA):
         """
 
     def __init__(self, name, chassis=1, slot=8, **kwargs):
-        super().__init__(name, chassis, slot, channels=8, triggers=8, **kwargs)
+        super().__init__(name, chassis, slot, **kwargs)
