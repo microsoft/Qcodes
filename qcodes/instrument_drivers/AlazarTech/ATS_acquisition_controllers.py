@@ -49,6 +49,9 @@ class Triggered_AcquisitionController(AcquisitionController):
                                            self.records_per_buffer,
                            vals=vals.Ints())
 
+        self.channel_selection = None
+        self.samples_per_record = None
+
     def setup(self, **kwargs):
         """
         Setup the ATS controller by updating most current ATS values and setting
@@ -166,6 +169,9 @@ class Continuous_AcquisitionController(AcquisitionController):
         self.trace_idx = None
         self.buffer_start_idx = None
 
+        self.channel_selection = None
+        self.samples_per_record = None
+
     def setup(self, **kwargs):
         """
         Setup the ATS controller by updating most current ATS values and setting
@@ -178,6 +184,7 @@ class Continuous_AcquisitionController(AcquisitionController):
         # Update acquisition parameter values. These depend on the average mode
         for attr in ['channel_selection', 'samples_per_record']:
             setattr(self, attr, self.get_acquisition_setting(attr))
+
         self.number_of_channels = len(self.channel_selection)
         self.buffers_per_trace = round(self.samples_per_trace() / \
                                        self.samples_per_record)
