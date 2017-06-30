@@ -277,13 +277,13 @@ def add_meta_data(conn: sqlite3.Connection, run_id: int,
     """
     Add medata data (updates if exists, create otherwise)
     """
-    with atomic(conn):
-        try:
-            insert_meta_data(conn, run_id, metadata)
-        except sqlite3.OperationalError as e:
-            # this means that the column already exists
-            # so just insert the new value
-            if str(e).startswith("duplicate"):
+    try:
+        insert_meta_data(conn, run_id, metadata)
+    except sqlite3.OperationalError as e:
+        # this means that the column already exists
+        # so just insert the new value
+        if str(e).startswith("duplicate"):
+            update_meta_data(conn, run_id, metadata)
         else:
             raise e
 
@@ -654,6 +654,3 @@ def get_data(conn: sqlite3.Connection,
     c = transaction(conn, query)
     res = many(c, *[p.name for p in parameters])
     return res
-
-
-
