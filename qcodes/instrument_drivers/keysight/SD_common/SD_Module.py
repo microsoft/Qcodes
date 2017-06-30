@@ -219,41 +219,6 @@ class SD_Module(Instrument):
         return result_parser(result, value_name, verbose)
 
     #
-    # FPGA related functions
-    #
-
-    def get_fpga_pc_port(self, port, data_size, address, address_mode, access_mode, verbose=False):
-        """
-        Reads data at the PCport FPGA Block
-
-        Args:
-            port (int): PCport number
-            data_size (int): number of 32-bit words to read (maximum is 128 words)
-            address (int): address that will appear at the PCport interface
-            address_mode (int): 0 (auto-increment) or 1 (fixed)
-            access_mode (int): 0 (non-DMA) or 1 (DMA)
-        """
-        data = self.SD_module.FPGAreadPCport(port, data_size, address, address_mode, access_mode)
-        value_name = 'data at PCport {}'.format(port)
-        return result_parser(data, value_name, verbose)
-
-    def set_fpga_pc_port(self, port, data, address, address_mode, access_mode, verbose=False):
-        """
-        Writes data at the PCport FPGA Block
-
-        Args:
-            port (int): PCport number
-            data (array): array of integers containing the data
-            address (int): address that wil appear at the PCport interface
-            address_mode (int): 0 (auto-increment) or 1 (fixed)
-            access_mode (int): 0 (non-DMA) or 1 (DMA)
-        """
-        result = self.SD_module.FPGAwritePCport(port, data, address, address_mode, access_mode)
-        value_name = 'set fpga PCport {} to data:{}, address:{}, address_mode:{}, access_mode:{}'\
-            .format(port, data, address, address_mode, access_mode)
-        return result_parser(result, value_name, verbose)
-
-    #
     # The methods below are not used for setting or getting parameters, but can be used in the test functions of the
     # test suite e.g. The main reason they are defined is to make this driver more complete
     #
