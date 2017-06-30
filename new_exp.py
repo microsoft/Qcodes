@@ -134,11 +134,11 @@ def atomic(conn: sqlite3.Connection):
 def insert_column(conn: sqlite3.Connection, table: str, name: str,
                   type: Optional[str]=None)->None:
     if type:
-        atomicTransaction(conn,
-                          f'ALTER TABLE "{table}" ADD COLUMN "{name}" {type}')
+        transaction(conn,
+                    f'ALTER TABLE "{table}" ADD COLUMN "{name}" {type}')
     else:
-        atomicTransaction(conn,
-                          f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
+        transaction(conn,
+                    f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
 
 
 def new_experiment(conn: sqlite3.Connection,
@@ -430,7 +430,16 @@ def length(conn: sqlite3.Connection,
         -the lenght of the table
     """
     query = f"select MAX(id) from '{formatted_name}'"
-    c = transaction(conn, query)
+    c = atomicTransaction(conn, query)
+    return c.fetchall()[0][0]
+
+
+def last_experiment(conn: sqlite3.Connection) -> int:
+    """
+    Return last started experiment id
+    """
+    query = "select MAX(exp_id) from experiments"
+    c = atomicTransaction(conn, query)
     return c.fetchall()[0][0]
 
 
@@ -486,8 +495,9 @@ def get_parameters(conn: sqlite3.Connection,
 def add_parameter(conn: sqlite3.Connection,
                   formatted_name: str,
                   *parameter: ParamSpec):
-    for p in parameter:
-        insert_column(conn, formatted_name, p.name, p.type)
+    with atomic(conn):
+        for p in parameter:
+            insert_column(conn, formatted_name, p.name, p.type)
 
 
 def get_last_run(conn: sqlite3.Connection, exp_id: int) -> str:
