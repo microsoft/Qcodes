@@ -20,6 +20,10 @@ import socket
 from typing import Any, List, Optional, Tuple, Union, Dict
 
 
+# TODO: need to do run init.sql somewhere somehow
+# maybe move the sql script into a giant string here
+
+# TODO: this clearly should be configurable
 db = "/Users/unga/Desktop/experiment.db"
 
 
