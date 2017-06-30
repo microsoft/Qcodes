@@ -67,9 +67,6 @@ class SD_DIG(SD_Module):
         self.__digital_trigger_mode = [0] * self.n_channels
         self.__digital_trigger_source = [0] * self.n_channels
         self.__analog_trigger_mask = [0] * self.n_channels
-        # For DAQ trigger External Config
-        self.__external_source = [0] * self.n_channels
-        self.__trigger_behaviour = [0] * self.n_channels
         # For DAQ read
         self.__n_points = [0] * self.n_channels
         self.__timeout = [-1] * self.n_channels
@@ -226,23 +223,6 @@ class SD_DIG(SD_Module):
                 vals=Ints(),
                 set_cmd=partial(self.set_analog_trigger_mask, channel=n),
                 docstring='The analog trigger mask for DAQ {}'.format(n)
-            )
-
-            # For DAQ trigger External Config
-            self.add_parameter(
-                'ext_trigger_source_{}'.format(n),
-                label='External trigger source for DAQ {}'.format(n),
-                vals=Ints(),
-                set_cmd=partial(self.set_ext_trigger_source, channel=n),
-                docstring='The trigger source for DAQ {}'.format(n)
-            )
-
-            self.add_parameter(
-                'ext_trigger_behaviour_{}'.format(n),
-                label='External trigger behaviour for DAQ {}'.format(n),
-                vals=Ints(),
-                set_cmd=partial(self.set_ext_trigger_behaviour, channel=n),
-                docstring='The trigger behaviour for DAQ {}'.format(n)
             )
 
             # For DAQ read
