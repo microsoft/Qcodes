@@ -250,14 +250,9 @@ class SD_AWG(SD_Module):
         """
 
         for i in range(self.channels):
-            awg_response = self.awg.AWGstop(i)
-            if isinstance(awg_response, int) and awg_response < 0:
-                raise Exception('Error in call to Signadyne AWG '
-                                'error code {}'.format(awg_response))
-            channel_response = self.awg.channelWaveShape(i, 0)
-            if isinstance(channel_response, int) and channel_response < 0:
-                raise Exception('Error in call to Signadyne AWG '
-                                'error code {}'.format(channel_response))
+            self.awg_stop(i)
+            self.set_channel_wave_shape(i, 0)
+
 
     def reset_clock_phase(self, trigger_behaviour, trigger_source, skew=0.0, verbose=False):
         """

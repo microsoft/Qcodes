@@ -76,38 +76,47 @@ class SD_Module(Instrument):
                            label='module count',
                            get_cmd=self.get_module_count,
                            docstring='The number of Signadyne modules installed in the system')
+
         self.add_parameter('product_name',
                            label='product name',
                            get_cmd=self.get_product_name,
                            docstring='The product name of the device')
+
         self.add_parameter('serial_number',
                            label='serial number',
                            get_cmd=self.get_serial_number,
                            docstring='The serial number of the device')
+
         self.add_parameter('chassis_number',
                            label='chassis number',
                            get_cmd=self.get_chassis,
                            docstring='The chassis number where the device is located')
+
         self.add_parameter('slot_number',
                            label='slot number',
                            get_cmd=self.get_slot,
                            docstring='The slot number where the device is located')
+
         self.add_parameter('status',
                            label='status',
                            get_cmd=self.get_status,
                            docstring='The status of the device')
+
         self.add_parameter('firmware_version',
                            label='firmware version',
                            get_cmd=self.get_firmware_version,
                            docstring='The firmware version of the device')
+
         self.add_parameter('hardware_version',
                            label='hardware version',
                            get_cmd=self.get_hardware_version,
                            docstring='The hardware version of the device')
+
         self.add_parameter('instrument_type',
                            label='type',
                            get_cmd=self.get_type,
                            docstring='The type of the device')
+
         self.add_parameter('open',
                            label='open',
                            get_cmd=self.get_open,
@@ -220,9 +229,9 @@ class SD_Module(Instrument):
         Args:
             port (int): PCport number
             data_size (int): number of 32-bit words to read (maximum is 128 words)
-            address (int): address that wil appear at the PCport interface
-            address_mode (int): ?? not in the docs
-            access_mode (int): ?? not in the docs
+            address (int): address that will appear at the PCport interface
+            address_mode (int): 0 (auto-increment) or 1 (fixed)
+            access_mode (int): 0 (non-DMA) or 1 (DMA)
         """
         data = self.SD_module.FPGAreadPCport(port, data_size, address, address_mode, access_mode)
         value_name = 'data at PCport {}'.format(port)
@@ -236,8 +245,8 @@ class SD_Module(Instrument):
             port (int): PCport number
             data (array): array of integers containing the data
             address (int): address that wil appear at the PCport interface
-            address_mode (int): ?? not in the docs
-            access_mode (int): ?? not in the docs
+            address_mode (int): 0 (auto-increment) or 1 (fixed)
+            access_mode (int): 0 (non-DMA) or 1 (DMA)
         """
         result = self.SD_module.FPGAwritePCport(port, data, address, address_mode, access_mode)
         value_name = 'set fpga PCport {} to data:{}, address:{}, address_mode:{}, access_mode:{}'\
