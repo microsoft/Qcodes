@@ -356,6 +356,10 @@ class DataArray(DelegateAttributes):
             # Return single element in first dimension
             loop_indices = loop_indices,
 
+        sub_array = self.ndarray[loop_indices]
+        if not sub_array.shape:
+            # Single element
+            return sub_array
         # Generate new set arrays
         sub_set_arrays = []
         for k, set_array in enumerate(self.set_arrays):
@@ -365,7 +369,6 @@ class DataArray(DelegateAttributes):
                 sub_set_array = set_array[loop_indices[:set_array.ndim]]
             sub_set_arrays.append(sub_set_array)
 
-        sub_array = self.ndarray[loop_indices]
         return DataArray(name=self.name, label=self.label, unit=self.unit,
                          is_setpoint=self.is_setpoint, preset_data=sub_array,
                          set_arrays=sub_set_arrays)
