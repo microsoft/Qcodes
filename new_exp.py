@@ -285,7 +285,8 @@ def add_meta_data(conn: sqlite3.Connection, run_id: int,
             # this means that the column already exists
             # so just insert the new value
             if str(e).startswith("duplicate"):
-                update_meta_data(conn, run_id, metadata)
+        else:
+            raise e
 
 
 def insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
