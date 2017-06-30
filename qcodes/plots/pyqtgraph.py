@@ -10,7 +10,7 @@ from collections import namedtuple, deque
 
 from .base import BasePlot
 from .colors import color_cycle, colorscales
-
+import qcodes.config
 
 TransformState = namedtuple('TransformState', 'translate scale revisit')
 
@@ -46,7 +46,7 @@ class QtPlot(BasePlot):
     # close event on win but this is difficult with remote proxy process
     # as the list of plots lives in the main process and the plot locally
     # in a remote process
-    plots = deque(maxlen=100)
+    plots = deque(maxlen=qcodes.config['gui']['pyqtmaxplots'])
 
     def __init__(self, *args, figsize=(1000, 600), interval=0.25,
                  window_title='', theme=((60, 60, 60), 'w'), show_window=True, remote=True, **kwargs):
