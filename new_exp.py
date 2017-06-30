@@ -246,16 +246,27 @@ def insert_meta_data(conn: sqlite3.Connection, run_id: int,
         transaction(conn, sql, value, run_id)
 
 
+def _massage_medata(metadata: Dict[str, Any])-> Tuple[str, List[Any]]:
+    template = []
+    values = []
+    for key, value in metadata.items():
+        template.append(f"{key} = ?")
+        values.append(value)
+    return ','.join(template), values
+
+
 def update_meta_data(conn: sqlite3.Connection, run_id: int,
                      metadata: Dict[str, Any])->None:
     """
     Updates medata data (they must exist already)
     """
-    for key, value in metadata.items():
-        sql = f"""
-            UPDATE runs set '{key}'=? WHERE rowid=?;
-        """
-        transaction(conn, sql, value, run_id)
+    template, values = _massage_medata(metadata)
+    sql = f"""
+    UPDATE runs set
+        {template}
+    WHERE rowid=?;
+    """
+    transaction(conn, sql, *values, run_id)
 
 
 def add_meta_data(conn: sqlite3.Connection, run_id: int,
