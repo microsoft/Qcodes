@@ -239,7 +239,6 @@ def insert_meta_data(conn: sqlite3.Connection, run_id: int,
     Creates new medata data (they must exist already)
     """
     for key, value in metadata.items():
-        print(key)
         insert_column(conn, "runs", key)
         sql = f"""
             UPDATE runs set '{key}'=? WHERE rowid=?;
@@ -533,7 +532,6 @@ def create_run_table(conn: sqlite3.Connection,
             {_parameters}
         );
         """
-        print(query)
         transaction(conn, query)
     else:
         # look ma no parameters
