@@ -1,5 +1,6 @@
 # Module containing the config file reader class
 
+from configparser import ConfigParser
 
 class Config:
     """
