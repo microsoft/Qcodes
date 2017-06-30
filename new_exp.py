@@ -23,11 +23,8 @@ from typing import Any, List, Optional, Tuple, Union, Dict
 db = "/Users/unga/Desktop/experiment.db"
 
 
-# this is what we accept
-PARAMETERS = None  # should be a list of python object that have .type that
-# represent the type of sqlite column
+# represent the type of  data we can/want map to sqlite column
 VALUES = List[Union[str, Number, List, ndarray, bool]]
-# TODO: do same for metadata maybe?
 
 
 class ParamSpec():
