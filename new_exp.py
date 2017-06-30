@@ -546,6 +546,19 @@ def create_run_table(conn: sqlite3.Connection,
         transaction(conn, query)
 
 
+def remove_run(conn: sqlite3.Connection, formatted_name: str)->None:
+    """ Delete run from experiment
+
+    Args:
+        - conn: the connection to the sqlite database
+        - formatted_name: the name of the run to remove
+    """
+    sql = f"""
+    DROP TABLE [IF EXISTS] {formatted_name}
+    """
+    atomicTransaction(conn, sql)
+
+
 def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
                *parameters: ParamSpec,
                metadata: Optional[Dict[str, Any]]=None)-> Tuple[int, str]:
