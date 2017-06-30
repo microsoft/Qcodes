@@ -41,6 +41,9 @@ class ParamSpec():
     def sql_repr(self):
         return f"{self.name} {self.type}"
 
+    def __repr__(self):
+        return f"{self.name} ({self.type})"
+
 
 def adapt_array(arr: ndarray)->sqlite3.Binary:
     """
