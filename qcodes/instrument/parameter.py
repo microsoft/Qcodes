@@ -1126,7 +1126,7 @@ class CombinedParameter(Metadatable):
         meta_data['__class__'] = full_class(self)
         meta_data['unit'] = self.parameter.unit
         meta_data['label'] = self.parameter.label
-        meta_data['aggreagator'] = repr(getattr(self, 'f', None))
+        meta_data['aggregator'] = repr(getattr(self, 'f', None))
         for param in self.parameters:
             meta_data[str(param)] = param.snapshot()
 
