@@ -6,7 +6,7 @@ import numbers
 import sys
 import time
 
-from collections import Iterator, Sequence, Mapping
+from collections import Iterable, Sequence, Mapping
 from copy import deepcopy
 
 import numpy as np
@@ -72,7 +72,7 @@ def is_sequence(obj):
     We do not consider strings or unordered collections like sets to be
     sequences, but we do accept iterators (such as generators)
     """
-    return (isinstance(obj, (Iterator, Sequence)) and
+    return (isinstance(obj, (Iterable, Sequence)) and
             not isinstance(obj, (str, bytes, io.IOBase)))
 
 
