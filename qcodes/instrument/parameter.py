@@ -93,10 +93,10 @@ class _BaseParameter(Metadatable, DeferredOperations):
             parameter during a snapshot, even if the snapshot was called with
             ``update=True``, for example if it takes too long to update.
             Default True.
-            
-        max_val_age (Optional[int]): The max time (in seconds) to trust a 
+
+        max_val_age (Optional[int]): The max time (in seconds) to trust a
             saved value obtained from get_latest(). If this parameter has not
-            been set or measured more recently than this, perform an 
+            been set or measured more recently than this, perform an
             additional measurement.
 
         metadata (Optional[dict]): extra information to include with the
@@ -261,31 +261,30 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
     def _wrap_set(self, set_function):
         @wraps
-        def set_wrapper(*values, **kwargs):
+        def set_wrapper(value, **kwargs):
             try:
-                self.validate(*values)
+                self.validate(value)
 
                 if self.val_mapping is not None:
                     # Convert set values using val_mapping dictionary
-                    values = tuple(self.val_mapping[value] for value in values)
+                    value = self.val_mapping[value]
 
                 if self.scale is not None:
                     if isinstance(self.scale, collections.Iterable):
                         # Scale contains multiple elements, one for each value
-                        values = tuple(value * scale for value, scale
-                                       in zip(values, self.scale))
+                        value = tuple(val * scale for val, scale
+                                       in zip(value, self.scale))
                     else:
                         # Use single scale for all values
-                        values = tuple(value * self.scale for value in values)
+                        value *= self.scale
 
                 if self.set_parser is not None:
-                    values = tuple(
-                        self.set_parser(value) for value in values)
+                    value = self.set_parser(value)
 
                 # In some cases intermediate sweep values must be used.
                 # Unless `self.step` is defined, get_sweep_values will return
                 # a list containing only `value`.
-                for val in self.get_sweep_values(*values, step=self.step):
+                for val in self.get_sweep_values(value, step=self.step):
 
                     # Check if delay between set operations is required
                     t_elapsed = time.perf_counter() - self._t_last_set
@@ -310,7 +309,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                         # Sleep until total time is larger than self.post_delay
                         time.sleep(self.post_delay - t_elapsed)
             except Exception as e:
-                e.args = e.args + ('setting {} to {}'.format(self, values),)
+                e.args = e.args + ('setting {} to {}'.format(self, value),)
                 raise e
 
         return set_wrapper
@@ -327,7 +326,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         """
         if step is None:
-            return [value]
+            return value
         else:
             start_value = self.get_latest()
 
