@@ -107,25 +107,24 @@ class _BaseParameter(Metadatable, DeferredOperations):
                  val_mapping=None, get_parser=None, set_parser=None,
                  snapshot_value=True, max_val_age=None):
         super().__init__(metadata)
-        self._snapshot_get = snapshot_get
         self.name = str(name)
         self._instrument = instrument
+        self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
-        self.raw_value = None
 
         self.step = step
+        self.scale = scale
+        self.raw_value = None
         self.inter_delay = inter_delay
         self.post_delay = post_delay
-        self.scale = scale
 
-        # TODO (nulinspiratie) handle int vs string conversion
+        # TODO (nulinspiratie) handle int vs string conversion in val_mapping
         self.val_mapping = val_mapping
         if val_mapping is None:
             self.inverse_val_mapping = None
         else:
             self.inverse_val_mapping = {v: k for k, v in val_mapping.items()}
 
-        # TODO (nulinspiratie) implement
         self.get_parser = get_parser
         self.set_parser = set_parser
 
@@ -685,8 +684,8 @@ class ArrayParameter(_BaseParameter):
             raise AttributeError('ArrayParameters do not support set '
                                  'at this time.')
 
-        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels', 'setpoint_units',
-                                 'label', 'unit'])
+        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
+                                 'setpoint_units', 'label', 'unit'])
 
         self.label = name if label is None else label
         self.unit = unit if unit is not None else ''
@@ -736,7 +735,6 @@ class ArrayParameter(_BaseParameter):
                 docstring,
                 '',
                 self.__doc__))
-
 
 def _is_nested_sequence_or_none(obj, types, shapes):
     """Validator for MultiParameter setpoints/names/labels"""
