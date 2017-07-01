@@ -152,8 +152,6 @@ class _BaseParameter(Metadatable, DeferredOperations):
         # check if additional waiting time is needed before next set
         self._t_last_set = time.perf_counter()
 
-        # TODO(nulinspiratie) add vals
-
     def __str__(self):
         """Include the instrument name with the Parameter name if possible."""
         inst_name = getattr(self._instrument, 'name', None)
@@ -519,16 +517,19 @@ class Parameter(_BaseParameter):
                  initial_value=None,
                  unit=None, vals=Numbers(), docstring=None,
                  snapshot_get=True, snapshot_value=True, metadata=None,
-                 **kwargs):
+                 max_val_age=None, **kwargs):
         # TODO (nulinspiratie) make kwargs explicit
         super().__init__(name, instrument, snapshot_get, metadata,
-                         snapshot_value=snapshot_value, vals=vals, **kwargs)
+                         snapshot_value=snapshot_value, vals=vals,
+                         max_val_age=max_val_age, **kwargs)
 
         # Enable set/get methods if get_cmd/set_cmd is given
         # Called first so super().__init__ can wrap get/set methods
         if not hasattr(self, 'get') and get_cmd is not False:
             if get_cmd is None:
-                # TODO(nulinspiratie) handle if max_val_age is set
+                if max_val_age is not None:
+                    raise SyntaxError('Must have get method or specify get_cmd '
+                                      'when max_val_age is set')
                 self.get = self.get_latest
             else:
                 exec_str = instrument.ask if instrument else None
