@@ -62,12 +62,12 @@ from functools import wraps
 import numpy
 
 from qcodes.utils.deferred_operations import DeferredOperations
-from qcodes.utils.helpers import (permissive_range, wait_secs, is_sequence,
-                                  is_sequence_of, DelegateAttributes,
-                                  full_class, named_repr, warn_units)
+from qcodes.utils.helpers import (permissive_range, is_sequence_of,
+                                  DelegateAttributes, full_class, named_repr,
+                                  warn_units)
 from qcodes.utils.metadata import Metadatable
-from qcodes.utils.command import Command, NoCommandError
-from qcodes.utils.validators import Validator, Numbers, Ints, Enum, Strings
+from qcodes.utils.command import Command
+from qcodes.utils.validators import Validator, Numbers, Ints, Strings
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
 
@@ -908,16 +908,6 @@ class MultiParameter(_BaseParameter):
             pass
 
         return self.names
-
-
-def no_setter(*args, **kwargs):
-    raise NotImplementedError('This Parameter has no setter defined.')
-
-
-def no_getter(*args, **kwargs):
-    raise NotImplementedError(
-        'This Parameter has no getter, use .get_latest to get the most recent '
-        'set value.')
 
 
 class GetLatest(DelegateAttributes, DeferredOperations):
