@@ -132,8 +132,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
         # but they all use the same attributes so snapshot is consistent.
-        self._latest_value = None
-        self._latest_ts = None
+        self._latest = {'value': None, 'ts': None}
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
         if hasattr(self, 'get'):
@@ -177,12 +176,6 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
 
-    def _latest(self):
-        return {
-            'value': self._latest_value,
-            'ts': self._latest_ts
-        }
-
     def snapshot_base(self, update=False):
         """
         State of the parameter as a JSON-compatible dict.
@@ -200,7 +193,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 and self._snapshot_value and update:
             self.get()
 
-        state = self._latest()
+        state = self._latest
         state['__class__'] = full_class(self)
 
         if not self._snapshot_value:
@@ -229,8 +222,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
     def _save_val(self, value, validate=False):
         if validate:
             self.validate(value)
-        self._latest_value = value
-        self._latest_ts = datetime.now()
+        self._latest = {'value': value, 'ts': datetime.now()}
 
     def _wrap_get(self, get_function):
         @wraps
@@ -957,7 +949,7 @@ class GetLatest(DelegateAttributes, DeferredOperations):
         """Return latest value if time since get was less than 
         `self.max_val_age`, otherwise perform `get()` and return result
         """
-        state = self.parameter._latest()
+        state = self.parameter._latest
         if self.max_val_age is None:
             # Return last value since max_val_age is not specified
             return state
