@@ -248,9 +248,9 @@ def insert_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
         - metadata: the metadata to add
     """
     for key, value in metadata.items():
-        insert_column(conn, "runs", key)
+        insert_column(conn, '{table_name}', key)
         sql = f"""
-            UPDATE {table_name} set '{key}'=? WHERE rowid=?;
+            UPDATE '{table_name}' set '{key}'=? WHERE rowid=?;
         """
         transaction(conn, sql, value, row_id)
 
