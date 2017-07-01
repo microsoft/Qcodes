@@ -219,7 +219,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         return state
 
-    def _save_val(self, value, validate=False):
+    def _save_val(self, value, validate=True):
         if validate:
             self.validate(value)
         self._latest = {'value': value, 'ts': datetime.now()}
@@ -250,7 +250,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 if self.val_mapping is not None:
                     value = self.inverse_val_mapping[value]
 
-                self._save_val(value)
+                self._save_val(value, validate=False)
                 return value
             except Exception as e:
                 e.args = e.args + ('getting {}'.format(self),)
@@ -533,7 +533,7 @@ class Parameter(_BaseParameter):
 
         if not hasattr(self, 'set') and set_cmd is not False:
             if set_cmd is None:
-                self.set = partial(self._save_val, validate=True)
+                self.set = self._save_val
             else:
                 exec_str = instrument.write if instrument else None
                 self.set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str)
@@ -549,7 +549,7 @@ class Parameter(_BaseParameter):
         self.vals = vals
 
         if initial_value is not None:
-            self._save_val(initial_value, validate=True)
+            self._save_val(initial_value)
 
         # generate default docstring
         self.__doc__ = os.linesep.join((
