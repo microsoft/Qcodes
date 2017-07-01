@@ -112,15 +112,16 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
 
+        if not isinstance(vals, (Validator, type(None))):
+            raise TypeError('vals must be None or a Validator')
+        self.vals = vals
+        
         self.step = step
         self.scale = scale
         self.raw_value = None
         self.inter_delay = inter_delay
         self.post_delay = post_delay
 
-        if not isinstance(vals, (Validator, type(None))):
-            raise TypeError('vals must be None or a Validator')
-        self.vals = vals
 
         # TODO (nulinspiratie) handle int vs string conversion in val_mapping
         self.val_mapping = val_mapping
