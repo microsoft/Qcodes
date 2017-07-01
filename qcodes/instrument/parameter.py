@@ -115,13 +115,12 @@ class _BaseParameter(Metadatable, DeferredOperations):
         if not isinstance(vals, (Validator, type(None))):
             raise TypeError('vals must be None or a Validator')
         self.vals = vals
-        
+
         self.step = step
         self.scale = scale
         self.raw_value = None
         self.inter_delay = inter_delay
         self.post_delay = post_delay
-
 
         # TODO (nulinspiratie) handle int vs string conversion in val_mapping
         self.val_mapping = val_mapping
@@ -338,7 +337,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     isinstance(value, (int, float))):
                 # something weird... parameter is numeric but one of the ends
                 # isn't, even though it's valid.
-                # probably a MultiType with a mix of numeric and non-numeric types
+                # probably MultiType with a mix of numeric and non-numeric types
                 # just set the endpoint and move on
                 logging.warning('cannot sweep {} from {} to {} - jumping.'.format(
                     self.name, start_value, value))
@@ -839,14 +838,13 @@ class MultiParameter(_BaseParameter):
                          snapshot_value=snapshot_value)
 
         if hasattr(self, 'set'):  # TODO (alexcjohnson): can we support, ala Combine?
-            warnings.warn('MultiParameters do not fully support set '
-                          'at this time.')
+            warnings.warn('MultiParameters do not support set at this time.')
 
-        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels', 'setpoint_units',
-                                 'names', 'labels', 'units'])
+        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
+                                 'setpoint_units', 'names', 'labels', 'units'])
 
         if not is_sequence_of(names, str):
-            raise ValueError('names must be a tuple of strings, not' +
+            raise ValueError('names must be a tuple of strings, not ' +
                              repr(names))
 
         self.names = names
@@ -862,7 +860,7 @@ class MultiParameter(_BaseParameter):
         self.shapes = shapes
 
         sp_types = (nt, DataArray, collections.Sequence,
-                    collections.Iterator)
+                    collections.Iterable)
         if not _is_nested_sequence_or_none(setpoints, sp_types, shapes):
             raise ValueError('setpoints must be a tuple of tuples of arrays')
 
