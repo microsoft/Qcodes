@@ -922,10 +922,10 @@ class GetLatest(DelegateAttributes, DeferredOperations):
 
     Args:
         parameter (Parameter): Parameter to be wrapped
-            
-        max_val_age (Optional[int]): The max time (in seconds) to trust a 
+
+        max_val_age (Optional[int]): The max time (in seconds) to trust a
             saved value obtained from get_latest(). If this parameter has not
-            been set or measured more recently than this, perform an 
+            been set or measured more recently than this, perform an
             additional measurement.
     """
     def __init__(self, parameter, max_val_age=None):
