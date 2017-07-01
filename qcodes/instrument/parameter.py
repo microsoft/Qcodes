@@ -384,6 +384,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
             TypeError:  if step is not integer for an integer parameter
             TypeError: if step is not a number
         """
+        if step is None:
+            self._step = step
         if not getattr(self.vals, 'is_numeric', True):
             raise TypeError('you can only step numeric parameters')
         elif not isinstance(step, (int, float)):
@@ -934,7 +936,7 @@ class GetLatest(DelegateAttributes, DeferredOperations):
     omit_delegate_attrs = ['set']
 
     def get(self):
-        """Return latest value if time since get was less than 
+        """Return latest value if time since get was less than
         `self.max_val_age`, otherwise perform `get()` and return result
         """
         state = self.parameter._latest
