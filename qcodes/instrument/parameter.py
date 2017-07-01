@@ -183,31 +183,6 @@ class _BaseParameter(Metadatable, DeferredOperations):
             'ts': self._latest_ts
         }
 
-    # get_attrs ignores leading underscores, unless they're in this list
-    _keep_attrs = ['__doc__', '_vals']
-
-    def get_attrs(self):
-        """
-        Attributes recreated as properties in the RemoteParameter proxy.
-
-        Grab the names of all attributes that the RemoteParameter needs
-        to function like the main one (in loops etc)
-
-        Returns:
-            list: All public attribute names, plus docstring and _vals
-        """
-        out = []
-
-        for attr in dir(self):
-            # while we're keeping units as a deprecated attribute in some
-            # classes, avoid calling it here so we don't get spurious errors
-            if ((attr[0] == '_' and attr not in self._keep_attrs) or
-                    (attr != 'units' and callable(getattr(self, attr)))):
-                continue
-            out.append(attr)
-
-        return out
-
     def snapshot_base(self, update=False):
         """
         State of the parameter as a JSON-compatible dict.
@@ -286,7 +261,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 self._save_val(value)
                 return value
             except Exception as e:
-                e.args = e.args + ('getting {}'.format(self.full_name),)
+                e.args = e.args + ('getting {}'.format(self),)
                 raise e
 
         return get_wrapper
@@ -342,8 +317,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                         # Sleep until total time is larger than self.post_delay
                         time.sleep(self.post_delay - t_elapsed)
             except Exception as e:
-                e.args = e.args + ('setting {} to {}'.format(self.full_name,
-                                                             values),)
+                e.args = e.args + ('setting {} to {}'.format(self, values),)
                 raise e
 
         return set_wrapper
@@ -1152,10 +1126,9 @@ class CombinedParameter(Metadatable):
         meta_data['__class__'] = full_class(self)
         meta_data['unit'] = self.parameter.unit
         meta_data['label'] = self.parameter.label
-        meta_data['full_name'] = self.parameter.full_name
         meta_data['aggreagator'] = repr(getattr(self, 'f', None))
         for param in self.parameters:
-            meta_data[param.full_name] = param.snapshot()
+            meta_data[str(param)] = param.snapshot()
 
         return meta_data
 
