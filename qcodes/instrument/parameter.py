@@ -1153,6 +1153,11 @@ class InstrumentRefParameter(Parameter):
     from within an instrument, e.g., when creating a meta instrument that
     sets parameters on instruments it contains.
     """
+
+    def __init__(self, *args, **kwargs):
+        kwargs['vals'] = kwargs.get('vals', Strings())
+        super().__init__(*args, **kwargs)
+
     # TODO(nulinspiratie) check class works now it's subclassed from Parameter
     def get_instr(self):
         """
@@ -1164,21 +1169,6 @@ class InstrumentRefParameter(Parameter):
         # to, while the ref_instrument_name is the instrument that is the value
         # of this parameter.
         return self._instrument.find_instrument(ref_instrument_name)
-
-    def set_validator(self, vals):
-        # TODO(nulinspiratie) Remove
-        """
-        Set a validator `vals` for this parameter.
-
-        Args:
-            vals (Validator):  validator to set
-        """
-        if vals is None:
-            self.vals = Strings()
-        elif isinstance(vals, Validator):
-            self.vals = vals
-        else:
-            raise TypeError('vals must be a Validator')
 
 
 # Deprecated parameters
