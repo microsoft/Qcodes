@@ -141,8 +141,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
-        # TODO (nulinspiratie) add other relevant meta_attrs
-        self._meta_attrs = ['name', 'instrument', 'raw_value']
+        self._meta_attrs = ['name', 'instrument', 'step', 'scale','raw_value',
+                            'inter_delay', 'post_delay', 'val_mapping']
 
         # Specify time of last set operation, used when comparing to delay to
         # check if additional waiting time is needed before next set
@@ -208,13 +208,15 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     'instrument_name': self._instrument.name
                 })
 
-            elif hasattr(self, attr):
-                val = getattr(self, attr)
-                attr_strip = attr.lstrip('_')  # eg _vals - do not include _
-                if isinstance(val, Validator):
-                    state[attr_strip] = repr(val)
-                else:
-                    state[attr_strip] = val
+
+            else:
+                val = getattr(self, attr, None)
+                if val is not None:
+                    attr_strip = attr.lstrip('_')  # eg _vals - do not include _
+                    if isinstance(val, Validator):
+                        state[attr_strip] = repr(val)
+                    else:
+                        state[attr_strip] = val
 
         return state
 
