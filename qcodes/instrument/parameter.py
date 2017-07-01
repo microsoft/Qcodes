@@ -58,7 +58,7 @@ import logging
 import os
 import collections
 import warnings
-from functools import partial, wraps
+from functools import wraps
 import numpy
 
 from qcodes.utils.deferred_operations import DeferredOperations
@@ -362,12 +362,6 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self.vals.validate(value, 'Parameter: ' + context)
 
     @property
-    def full_name(self):
-        warnings.warn('Attribute `full_name` is deprecated, please use '
-                      'str(parameter)')
-        return str(self)
-
-    @property
     def step(self):
         return self._step
 
@@ -458,6 +452,13 @@ class _BaseParameter(Metadatable, DeferredOperations):
         if inter_delay < 0:
             raise ValueError('delay must not be negative')
         self._inter_delay = inter_delay
+
+    # Deprecated
+    @property
+    def full_name(self):
+        warnings.warn('Attribute `full_name` is deprecated, please use '
+                      'str(parameter)')
+        return str(self)
 
 
 class Parameter(_BaseParameter):
