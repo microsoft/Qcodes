@@ -192,7 +192,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 and self._snapshot_value and update:
             self.get()
 
-        state = self._latest
+        state = copy(self._latest)
         state['__class__'] = full_class(self)
 
         if not self._snapshot_value:
