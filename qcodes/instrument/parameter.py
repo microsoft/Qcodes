@@ -152,6 +152,14 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         # TODO(nulinspiratie) add vals
 
+    def __str__(self):
+        """Include the instrument name with the Parameter name if possible."""
+        inst_name = getattr(self._instrument, 'name', None)
+        if inst_name is not None:
+            return '{}_{}'.format(inst_name, self.name)
+        else:
+            return self.name
+
     def __repr__(self):
         return named_repr(self)
 
@@ -389,15 +397,9 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
     @property
     def full_name(self):
-        """Include the instrument name with the Parameter name if possible."""
-        try:
-            inst_name = self._instrument.name
-            if inst_name:
-                return inst_name + '_' + self.name
-        except AttributeError:
-            pass
-
-        return self.name
+        warnings.warn('Attribute `full_name` is deprecated, please use '
+                      'str(parameter)')
+        return str(self)
 
     @property
     def step(self):
