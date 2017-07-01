@@ -105,7 +105,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
     def __init__(self, name, instrument, snapshot_get, metadata,
                  step=None, scale=None, inter_delay=0, post_delay=0,
                  val_mapping=None, get_parser=None, set_parser=None,
-                 snapshot_value=True, max_val_age=None):
+                 snapshot_value=True, max_val_age=None, vals=None):
         super().__init__(metadata)
         self.name = str(name)
         self._instrument = instrument
@@ -117,6 +117,10 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self.raw_value = None
         self.inter_delay = inter_delay
         self.post_delay = post_delay
+
+        if not isinstance(vals, (Validator, type(None))):
+            raise TypeError('vals must be None or a Validator')
+        self.vals = vals
 
         # TODO (nulinspiratie) handle int vs string conversion in val_mapping
         self.val_mapping = val_mapping
@@ -142,7 +146,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
         self._meta_attrs = ['name', 'instrument', 'step', 'scale','raw_value',
-                            'inter_delay', 'post_delay', 'val_mapping']
+                            'inter_delay', 'post_delay', 'val_mapping', 'vals']
 
         # Specify time of last set operation, used when comparing to delay to
         # check if additional waiting time is needed before next set
@@ -207,12 +211,10 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     'instrument': full_class(self._instrument),
                     'instrument_name': self._instrument.name
                 })
-
-
             else:
                 val = getattr(self, attr, None)
                 if val is not None:
-                    attr_strip = attr.lstrip('_')  # eg _vals - do not include _
+                    attr_strip = attr.lstrip('_')  # strip leading underscores
                     if isinstance(val, Validator):
                         state[attr_strip] = repr(val)
                     else:
@@ -359,8 +361,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
                        str(self._instrument.__class__)) + '.' + self.name
         else:
             context = self.name
-
-        self.vals.validate(value, 'Parameter: ' + context)
+        if self.vals is not None:
+            self.vals.validate(value, 'Parameter: ' + context)
 
     @property
     def step(self):
@@ -385,13 +387,13 @@ class _BaseParameter(Metadatable, DeferredOperations):
             TypeError:  if step is not integer for an integer parameter
             TypeError: if step is not a number
         """
-        if not self._vals.is_numeric:
+        if not getattr(self.vals, 'is_numeric', True):
             raise TypeError('you can only step numeric parameters')
         elif not isinstance(step, (int, float)):
             raise TypeError('step must be a number')
         elif step <= 0:
             raise ValueError('step must be positive')
-        elif (isinstance(self._vals, Ints) and not isinstance(step, int)):
+        elif isinstance(self.vals, Ints) and not isinstance(step, int):
             raise TypeError('step must be a positive int for an Ints parameter')
         else:
             self._step = step
@@ -520,7 +522,7 @@ class Parameter(_BaseParameter):
                  **kwargs):
         # TODO (nulinspiratie) make kwargs explicit
         super().__init__(name, instrument, snapshot_get, metadata,
-                         snapshot_value=snapshot_value, **kwargs)
+                         snapshot_value=snapshot_value, vals=vals, **kwargs)
 
         # Enable set/get methods if get_cmd/set_cmd is given
         # Called first so super().__init__ can wrap get/set methods
@@ -541,14 +543,10 @@ class Parameter(_BaseParameter):
                 self.set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str)
             self.set = self.wrap_set(self.set)
 
-        self._meta_attrs.extend(['label', 'unit', '_vals'])
+        self._meta_attrs.extend(['label', 'unit', 'vals'])
 
         self.label = name if label is None else label
         self.unit = unit if unit is not None else ''
-
-        if not isinstance(vals, Validator):
-            raise TypeError('vals must be a Validator')
-        self.vals = vals
 
         if initial_value is not None:
             self._save_val(initial_value, validate=True)
