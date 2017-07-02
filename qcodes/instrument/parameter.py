@@ -226,7 +226,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self._latest = {'value': value, 'ts': datetime.now()}
 
     def _wrap_get(self, get_function):
-        @wraps
+        @wraps(get_function)
         def get_wrapper(*args, **kwargs):
             try:
                 # There might be cases where a .get also has args/kwargs
@@ -260,7 +260,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         return get_wrapper
 
     def _wrap_set(self, set_function):
-        @wraps
+        @wraps(set_function)
         def set_wrapper(value, **kwargs):
             try:
                 self.validate(value)
@@ -535,7 +535,7 @@ class Parameter(_BaseParameter):
             else:
                 exec_str = instrument.ask if instrument else None
                 self.get = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str)
-            self.get = self.wrap_get(self.get)
+            self.get = self._wrap_get(self.get)
 
         if not hasattr(self, 'set') and set_cmd is not False:
             if set_cmd is None:
@@ -543,7 +543,7 @@ class Parameter(_BaseParameter):
             else:
                 exec_str = instrument.write if instrument else None
                 self.set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str)
-            self.set = self.wrap_set(self.set)
+            self.set = self._wrap_set(self.set)
 
         self._meta_attrs.extend(['label', 'unit', 'vals'])
 
