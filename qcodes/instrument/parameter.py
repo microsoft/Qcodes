@@ -154,8 +154,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
     def __str__(self):
         """Include the instrument name with the Parameter name if possible."""
-        inst_name = getattr(self._instrument, 'name', None)
-        if inst_name is not None:
+        inst_name = getattr(self._instrument, 'name', '')
+        if inst_name:
             return '{}_{}'.format(inst_name, self.name)
         else:
             return self.name
