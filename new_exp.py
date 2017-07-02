@@ -77,6 +77,14 @@ def many(curr: sqlite3.Cursor, *columns: str)->List[Any]:
         return [res[0][c] for c in columns]
 
 
+def many_many(curr: sqlite3.Cursor, *columns: str)->List[Any]:
+    res = curr.fetchall()
+    results = []
+    for r in res:
+        results.append([r[c] for c in columns])
+    return results
+
+
 def connect(name: str, debug: bool=False) -> sqlite3.Connection:
     # register numpy->binary(TEXT) adapter
     sqlite3.register_adapter(np.ndarray, adapt_array)
@@ -341,7 +349,7 @@ def insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
         INSERT INTO {table}
             (name,exp_id,result_table_name,result_counter,run_timestamp)
         VALUES
-            (?,?,?,?,?,?)
+            (?,?,?,?,?)
         """
         curr = transaction(conn, query,
                            name,
@@ -530,9 +538,31 @@ def get_parameters(conn: sqlite3.Connection,
 def add_parameter(conn: sqlite3.Connection,
                   formatted_name: str,
                   *parameter: ParamSpec):
+    """ Add parameters to the dataset
+    NOTE: two parameters with the same name are not allowed
+    Args:
+        - conn: the connection to the sqlite database
+        - formatted_name: name of the table
+        - parameter: the paraemters to add
+    """
     with atomic(conn):
+        p_names = []
         for p in parameter:
             insert_column(conn, formatted_name, p.name, p.type)
+            p_names.append(p.name)
+        # get old parameters column from run table
+        sql = f"""
+        SELECT parameters from runs
+        WHERE result_table_name=?
+        """
+        c = transaction(conn, sql, formatted_name)
+        old_parameters = one(c, 'parameters')
+        if old_parameters:
+            new_parameters = ",".join([old_parameters]+p_names)
+        else:
+            new_parameters = ",".join(p_names)
+        sql = "UPDATE runs SET parameters=? WHERE result_table_name=?"
+        transaction(conn, sql, new_parameters, formatted_name)
 
 
 def get_last_run(conn: sqlite3.Connection, exp_id: int) -> str:
@@ -629,7 +659,8 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
                                                          exp_id,
                                                          name,
                                                          list(parameters))
-        add_meta_data(conn, run_id, metadata)
+        if metadata:
+            add_meta_data(conn, run_id, metadata)
         update_experiment_run_counter(conn, exp_id, run_counter)
         # NOTE: cast to list to make mypy happy (my bug, mypy bug?)
         create_run_table(conn, formatted_name, list(parameters))
@@ -671,6 +702,12 @@ def get_data(conn: sqlite3.Connection,
         SELECT {_parameters}
         FROM "{formatted_name}"
         """
+        c = transaction(conn, query)
+        res = many(c, *[p.name for p in parameters])
+        return res
     c = transaction(conn, query)
-    res = many(c, *[p.name for p in parameters])
+    if (end-start)>1:
+        res = many_many(c, *[p.name for p in parameters])
+    else:
+        res = many(c, *[p.name for p in parameters])
     return res
