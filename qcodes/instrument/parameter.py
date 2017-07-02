@@ -386,7 +386,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         """
         if step is None:
             self._step = step
-        if not getattr(self.vals, 'is_numeric', True):
+        elif not getattr(self.vals, 'is_numeric', True):
             raise TypeError('you can only step numeric parameters')
         elif not isinstance(step, (int, float)):
             raise TypeError('step must be a number')
