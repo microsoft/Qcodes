@@ -8,7 +8,7 @@ import weakref
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
 from qcodes.utils.validators import Anything
-from .parameter import StandardParameter
+from .parameter import Parameter
 from .function import Function
 
 
@@ -252,8 +252,7 @@ class Instrument(Metadatable, DelegateAttributes):
 
         return ins
 
-    def add_parameter(self, name, parameter_class=StandardParameter,
-                      **kwargs):
+    def add_parameter(self, name, parameter_class=Parameter, **kwargs):
         """
         Bind one Parameter to this instrument.
 

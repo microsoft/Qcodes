@@ -326,7 +326,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         """
         if step is None:
-            return value
+            return [value]
         else:
             start_value = self.get_latest()
 
@@ -1160,7 +1160,7 @@ class StandardParameter(Parameter):
                  set_cmd=False, set_parser=None,
                  delay=None, max_delay=None, step=None, max_val_age=3600,
                  vals=None, val_mapping=None, **kwargs):
-        super().__init__(self, name, instrument=instrument,
+        super().__init__(name, instrument=instrument,
                  get_cmd=get_cmd, get_parser=get_parser,
                  set_cmd=set_cmd, set_parser=set_parser,
                  post_delay=delay, step=step, max_val_age=max_val_age,
