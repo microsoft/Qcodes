@@ -284,7 +284,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 # In some cases intermediate sweep values must be used.
                 # Unless `self.step` is defined, get_sweep_values will return
                 # a list containing only `value`.
-                for val in self.get_sweep_values(value, step=self.step):
+                for val in self.get_ramp_values(value, step=self.step):
 
                     # Check if delay between set operations is required
                     t_elapsed = time.perf_counter() - self._t_last_set
@@ -314,7 +314,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         return set_wrapper
 
-    def get_sweep_values(self, value, step=None):
+    def get_ramp_values(self, value, step=None):
         """
         Sweep to a given value from a starting value
         This method can be overridden to have a custom sweep behaviour.
