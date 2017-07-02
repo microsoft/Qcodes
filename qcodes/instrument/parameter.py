@@ -46,7 +46,7 @@ This file defines four classes of parameters:
     stepped ``write`` calls from a single ``set``. Does not need to be
     subclassed, just instantiated.
 
-- ``ManualParameter`` is for valAues you want to keep track of but cannot
+- ``ManualParameter`` is for values you want to keep track of but cannot
     set or get electronically. Holds the last value it was ``set`` to, and
     returns it on ``get``.
 """
