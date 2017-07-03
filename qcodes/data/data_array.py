@@ -367,7 +367,9 @@ class DataArray(DelegateAttributes):
                 sub_set_array = self
             else:
                 sub_set_array = set_array[loop_indices[:set_array.ndim]]
-            sub_set_arrays.append(sub_set_array)
+
+            if len(loop_indices) <= k or isinstance(loop_indices[k], slice):
+                sub_set_arrays.append(sub_set_array)
 
         return DataArray(name=self.name, label=self.label, unit=self.unit,
                          is_setpoint=self.is_setpoint, preset_data=sub_array,
