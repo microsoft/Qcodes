@@ -559,6 +559,35 @@ def get_parameters(conn: sqlite3.Connection,
     return params
 
 
+def add_parameter_(conn: sqlite3.Connection,
+                   formatted_name: str,
+                   *parameter: ParamSpec):
+    """ Add parameters to the dataset
+    NOTE: two parameters with the same name are not allowed
+    Args:
+        - conn: the connection to the sqlite database
+        - formatted_name: name of the table
+        - parameter: the paraemters to add
+    """
+    p_names = []
+    for p in parameter:
+        insert_column(conn, formatted_name, p.name, p.type)
+        p_names.append(p.name)
+    # get old parameters column from run table
+    sql = f"""
+    SELECT parameters from runs
+    WHERE result_table_name=?
+    """
+    c = transaction(conn, sql, formatted_name)
+    old_parameters = one(c, 'parameters')
+    if old_parameters:
+        new_parameters = ",".join([old_parameters]+p_names)
+    else:
+        new_parameters = ",".join(p_names)
+    sql = "UPDATE runs SET parameters=? WHERE result_table_name=?"
+    transaction(conn, sql, new_parameters, formatted_name)
+
+
 def add_parameter(conn: sqlite3.Connection,
                   formatted_name: str,
                   *parameter: ParamSpec):
@@ -570,23 +599,7 @@ def add_parameter(conn: sqlite3.Connection,
         - parameter: the paraemters to add
     """
     with atomic(conn):
-        p_names = []
-        for p in parameter:
-            insert_column(conn, formatted_name, p.name, p.type)
-            p_names.append(p.name)
-        # get old parameters column from run table
-        sql = f"""
-        SELECT parameters from runs
-        WHERE result_table_name=?
-        """
-        c = transaction(conn, sql, formatted_name)
-        old_parameters = one(c, 'parameters')
-        if old_parameters:
-            new_parameters = ",".join([old_parameters]+p_names)
-        else:
-            new_parameters = ",".join(p_names)
-        sql = "UPDATE runs SET parameters=? WHERE result_table_name=?"
-        transaction(conn, sql, new_parameters, formatted_name)
+        add_parameter_(conn, formatted_name, *parameter)
 
 
 def get_last_run(conn: sqlite3.Connection, exp_id: int) -> str:
