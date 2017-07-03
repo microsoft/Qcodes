@@ -129,6 +129,17 @@ def _plot_setup(data, inst_meas, useQT=True, startranges=None):
         plot = MatPlot(subplots=(1, num_subplots))
 
     def _create_plot(plot, i, name, data, counter_two, j, k):
+        """
+        Args:
+            plot: The plot object, either QtPlot() or MatPlot()
+            i: The parameter to measure
+            name: -
+            data: The DataSet of the current measurement
+            counter_two: The sub-measurement counter. Each measurement has a
+                number and each sub-measurement has a counter.
+            j: The current sub-measurement
+            k: -
+        """
         color = 'C' + str(counter_two)
         counter_two += 1
         inst_meas_name = "{}_{}".format(i._instrument.name, name)
@@ -154,7 +165,10 @@ def _plot_setup(data, inst_meas, useQT=True, startranges=None):
                                   pos})
             tdict = {'bottom': 'setXRange', 'left': 'setYRange'}
             # now find the data (not setpoint)
-            thedata = [d for d in data.arrays.values() if not d.is_setpoint][0]
+            checkstring = '{}_{}'.format(i._instrument.name, i.name)
+
+            thedata = [data.arrays[d] for d in data.arrays.keys()
+                       if d == checkstring][0]
 
             # Disable autoscale for the measured data
             if thedata.unit not in standardunits:
@@ -166,7 +180,7 @@ def _plot_setup(data, inst_meas, useQT=True, startranges=None):
                 except KeyError:
                     # 2D measurement
                     # Then we should fetch the colorbar
-                    ax = plot.traces[0]['plot_object']['hist'].axis
+                    ax = plot.traces[j]['plot_object']['hist'].axis
                     ax.enableAutoSIPrefix(False)
                     ax.setLabel(text=thedata.label, unit=thedata.unit,
                                 unitPrefix='')
@@ -187,7 +201,7 @@ def _plot_setup(data, inst_meas, useQT=True, startranges=None):
                                 unitPrefix='')
                 # set the axis ranges
                 if not(np.all(np.isnan(setarr))):
-                    # In this case the setpoints are "baked" into the parameter
+                    # In this case the setpoints are "baked" into the param
                     rangesetter = getattr(subplot.getViewBox(),
                                           tdict[whatwhere[setarr.label]])
                     rangesetter(setarr.min(), setarr.max())
