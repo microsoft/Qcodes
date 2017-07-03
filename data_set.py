@@ -18,10 +18,6 @@ from typing import List, Any, Dict, Union,  Callable, Optional
 from new_exp import *
 
 
-from qcodes.utils.metadata import Metadatable
-from qcodes.instrument.parameter import _BaseParameter
-
-
 def hash_from_parts(*parts: str) -> str:
     """
     Args:
@@ -33,68 +29,6 @@ def hash_from_parts(*parts: str) -> str:
     """
     combined = "".join(parts)
     return hashlib.sha1(combined.encode("utf-8")).hexdigest()
-
-
-
-
-
-# TODO: does it make sense to have the type here ?
-# the question is mostly how to specifiy (dtypes from numpy wont'work)
-# and as such there are just two types:
-# scalar and not scalar
-# TODO: units, unit, and all of that is not in the spec
-class ParamSpec(Metadatable):
-    def __init__(self, name: str, metadata=None) -> None:
-        self.name = name
-        self.id: str = hash_from_parts(name)
-        # actual data
-        self._data: List[Any] = []
-        # id of associated setpoints if any
-        self._setpoints = None
-
-        super().__init__(metadata)
-
-    @property
-    def setpoints(self):
-        return self._setpoints
-
-    @setpoints.setter
-    def setpoints(self, id):
-        self._setpoints = id
-
-    # TODO: data here or not? this is slightly confusing in the spec
-    # as we call parameter the entity that hold the "row-like" result
-    @property
-    def data(self):
-        return self._data
-
-    @data.setter
-    def data(self, data):
-        self._data = data
-
-    def add(self, value):
-        """ add value to paramSpec
-
-        Args:
-            value:  any data (scalar, or really anything)
-        """
-        self._data.append(value)
-
-    def __len__(self):
-        return len(self.data)
-
-    def __repr__(self):
-        return "{}:{}".format(self.name, len(self.data))
-
-
-def param_spec(parameter: _BaseParameter) -> ParamSpec:
-    """ Generates a ParamSpec from a qcodes parameter
-
-    Args:
-        - parameter: the qcodes parameter to make a spec
-
-    """
-    return ParamSpec(parameter.name, parameter.metadata)
 
 
 # SPECS is a list of ParamSpec

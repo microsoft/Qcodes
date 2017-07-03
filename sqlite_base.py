@@ -30,21 +30,6 @@ db = "/Users/unga/Desktop/experiment.db"
 VALUES = List[Union[str, Number, List, ndarray, bool]]
 
 
-#TODO: we should validate type somehow
-# we can't accept everything (or we can but crash at runtime?)
-# we only support the types in VALUES type
-class ParamSpec():
-    def __init__(self, name: str, type: str, **metadata) -> None:
-        self.name = name
-        self.type = type
-        if metadata:
-            self.metadata = metadata
-
-    def sql_repr(self):
-        return f"{self.name} {self.type}"
-
-    def __repr__(self):
-        return f"{self.name} ({self.type})"
 
 
 def adapt_array(arr: ndarray)->sqlite3.Binary:
