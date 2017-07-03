@@ -357,7 +357,11 @@ class DataArray(DelegateAttributes):
             loop_indices = loop_indices,
 
         sub_array = self.ndarray[loop_indices]
-        if not sub_array.shape:
+
+        if np.shape(loop_indices[0]) == self.shape and \
+                isinstance(loop_indices[0], np.ndarray):
+            return sub_array
+        elif not sub_array.shape:
             # Single element
             return sub_array
         # Generate new set arrays
