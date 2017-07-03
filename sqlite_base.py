@@ -19,9 +19,6 @@ import io
 from typing import Any, List, Optional, Tuple, Union, Dict
 
 
-# TODO: need to do run init.sql somewhere somehow
-# maybe move the sql script into a giant string here
-
 # TODO: this clearly should be configurable
 db = "/Users/unga/Desktop/experiment.db"
 
@@ -29,7 +26,46 @@ db = "/Users/unga/Desktop/experiment.db"
 # represent the type of  data we can/want map to sqlite column
 VALUES = List[Union[str, Number, List, ndarray, bool]]
 
+BASESQL="""
+CREATE TABLE experiments (
+    -- this will autoncrement by default if
+    -- no value is specified on insert
+    exp_id INTEGER PRIMARY KEY,
+    name TEXT,
+    sample_name TEXT,
+    start_time INTEGER,
+    end_time INTEGER,
+    -- this is the last counter registered
+    -- 1 based
+    run_counter INTEGER,
+    -- this is the formatter strin used to cosntruct
+    -- the run name
+    format_string TEXT
+-- TODO: maybe I had a good reason for this doulbe primary key
+--    PRIMARY KEY (exp_id, start_time, sample_name)
+);
 
+CREATE TABLE runs (
+    -- this will autoncrement by default if
+    -- no value is specified on insert
+    run_id INTEGER PRIMARY KEY,
+    exp_id INTEGER,
+    -- friendly name for the run
+    name TEXT,
+    -- the name of the table which stores
+    -- the actual results
+    result_table_name TEXT,
+    -- this is the run counter in its experiment 0 based
+    result_counter INTEGER,
+    ---
+    run_timestamp INTEGER,
+    parameters TEXT,
+    -- metadata fields are added dynamically
+    FOREIGN KEY(exp_id)
+    REFERENCES
+        experiments(exp_id)
+);
+"""
 
 
 def adapt_array(arr: ndarray)->sqlite3.Binary:
