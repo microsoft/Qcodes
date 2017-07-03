@@ -36,7 +36,7 @@ class Keysight_E8267D(VisaInstrument):
                            set_cmd='POW:AMPL' + ' {:.4f}',
                            get_parser=float,
                            set_parser=float,
-                           vals=vals.Numbers(-150, 10))
+                           vals=vals.Numbers(-150, 25))
         self.add_parameter('RF_output',
                            get_cmd=':OUTP?',
                            set_cmd='OUTP {}',
