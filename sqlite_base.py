@@ -407,7 +407,7 @@ def insert_values(conn: sqlite3.Connection,
     Will pad with null if not all parameters are specified.
     NOTE this need to be committed before closing the connection.
     """
-    _parameters = ",".join([p.name for p in parameters])
+    _parameters = ",".join(parameters)
     _values = ",".join(["?"]*len(parameters))
     query = f"""INSERT INTO "{formatted_name}"
         ({_parameters})
@@ -423,7 +423,7 @@ def insert_values(conn: sqlite3.Connection,
 
 def insert_many_values(conn: sqlite3.Connection,
                        formatted_name: str,
-                       parameters: List[ParamSpec],
+                       parameters: List[str],
                        values: List[VALUES],
                        )->int:
     """
@@ -432,7 +432,7 @@ def insert_many_values(conn: sqlite3.Connection,
 
     NOTE this need to be committed before closing the connection.
     """
-    _parameters = ",".join([p.name for p in parameters])
+    _parameters = ",".join(parameters)
     # TODO: none of the code below is not form PRADA SS-2017
     # [a, b] -> (?,?), (?,?)
     # [[1,1], [2,2]]
