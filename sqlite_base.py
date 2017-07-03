@@ -115,7 +115,7 @@ def connect(name: str, debug: bool=False) -> sqlite3.Connection:
     # register binary(TEXT) -> numpy converter
     # for some reasons mypy complains about this
     sqlite3.register_converter("array", convert_array)
-    conn = sqlite3.connect(db, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn = sqlite3.connect(name, detect_types=sqlite3.PARSE_DECLTYPES)
     # sqlite3 options
     conn.row_factory = sqlite3.Row
 
