@@ -234,9 +234,9 @@ class Triggered_Controller(AcquisitionController):
                 samples_to_get = min(self.samples_per_read.get_latest(), samples - samples_retrieved)
                 n_points = samples_to_get * self.samples_per_record.get_latest()
                 self._keysight.parameters[f'n_points_{ch}'](n_points)
-                logger.info(f'Trying to acquire {n_points} points from DAQ{ch}.')
+                logger.debug(f'Trying to acquire {n_points} points from DAQ{ch}.')
                 ch_data_retrieved = self._keysight.daq_read(ch)
-                logger.info('Done.')
+                logger.debug('Done.')
                 if (len(ch_data_retrieved) != 0):
                     samples_retrieved += samples_to_get
                     if (np.any(ch_data) == None):

@@ -33,7 +33,11 @@ def result_parser(value, name='result', verbose=False):
         or not a number
     """
     if isinstance(value, ndarray) or isinstance(value, str) or isinstance(value, bool) or (int(value) >= 0):
-        logger.debug('{}: {}'.format(name, value))
+        if isinstance(value, ndarray):
+            logger.debug('{}: {} pts'.format(name, len(value)))
+        else:
+            logger.debug('{}: {}'.format(name, value))
+
         if verbose:
             print('{}: {}'.format(name, value))
         return value
