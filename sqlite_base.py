@@ -19,15 +19,13 @@ import io
 from typing import Any, List, Optional, Tuple, Union, Dict
 
 
-# TODO: this clearly should be configurable
-db = "/Users/unga/Desktop/experiment.db"
-
+from param_spec import ParamSpec
 
 # represent the type of  data we can/want map to sqlite column
 VALUES = List[Union[str, Number, List, ndarray, bool]]
 
 BASESQL="""
-CREATE TABLE experiments (
+CREATE  TABLE IF NOT EXISTS experiments (
     -- this will autoncrement by default if
     -- no value is specified on insert
     exp_id INTEGER PRIMARY KEY,
@@ -45,7 +43,7 @@ CREATE TABLE experiments (
 --    PRIMARY KEY (exp_id, start_time, sample_name)
 );
 
-CREATE TABLE runs (
+CREATE TABLE IF NOT EXIST runs (
     -- this will autoncrement by default if
     -- no value is specified on insert
     run_id INTEGER PRIMARY KEY,
@@ -260,6 +258,12 @@ def _select_many_where(conn: sqlite3.Connection, table: str, *columns: str,
     return res
 
 
+def get_metadata(conn: sqlite3.Connection, tag: str, table_name: str):
+    """ Get metadata under the tag from table
+    """
+    _select_one_where(conn, "runs", tag, "formatted_name", table_name)
+
+
 # TODO: can make many of those. Easier to use // enforce some types
 # but slower because make one query only
 def get_run_counter(conn: sqlite3.Connection, exp_id: int) -> int:
@@ -321,7 +325,7 @@ def add_meta_data(conn: sqlite3.Connection,
                   metadata: Dict[str, Any],
                   table_name: Optional[str]="runs")->None:
     """
-    Add medata data (updates if exists, create otherwise),
+    Add medata data (updates if exists, create otherwise).
 
     Args:
         - conn: the connection to the sqlite database
@@ -399,7 +403,7 @@ def update_experiment_run_counter(conn: sqlite3.Connection, exp_id: int,
 
 def insert_values(conn: sqlite3.Connection,
                   formatted_name: str,
-                  parameters: List[ParamSpec],
+                  parameters: List[str],
                   values: VALUES,
                   )->int:
     """
@@ -456,7 +460,7 @@ def insert_many_values(conn: sqlite3.Connection,
 def modify_values(conn: sqlite3.Connection,
                   formatted_name: str,
                   index: int,
-                  parameters: List[ParamSpec],
+                  parameters: List[str],
                   values: VALUES,
                   )->int:
     """
@@ -466,7 +470,7 @@ def modify_values(conn: sqlite3.Connection,
     If a parameter is mapped to None, it will be a null value.
     """
     name_val_template = []
-    for name, value in zip([p.name for p in parameters], values):
+    for name, value in zip(parameters, values):
         name_val_template.append(f"{name}=?")
     name_val_templates = ",".join(name_val_template)
     query = f"""
@@ -481,6 +485,32 @@ def modify_values(conn: sqlite3.Connection,
     # TODO: check inputs instead?
     c = atomicTransaction(conn, query, *values)
     return c.rowcount
+
+
+def modify_many_values(conn: sqlite3.Connection,
+                       formatted_name: str,
+                       start_index: int,
+                       parameters: List[str],
+                       values: List[VALUES],
+                       )->None:
+    """
+    Modify many values for the corresponding paramSpec
+    If a parameter is in the table but not in the parameter list is
+    left untouched.
+    If a parameter is mapped to None, it will be a null value.
+    """
+    _len = length(conn, formatted_name)
+    len_requested = start_index + len(values)
+    available = _len - start_index
+    if len_requested > _len:
+        reason = f""""Modify operation Out of bounds.
+        Trying to modify {len(values)} results,
+        but therere are only {available} retulst.
+        """
+        raise ValueError(reason)
+    for value in values:
+        modify_values(conn, formatted_name, start_index, parameters, value)
+        start_index += 1
 
 
 def length(conn: sqlite3.Connection,
@@ -508,33 +538,6 @@ def last_experiment(conn: sqlite3.Connection) -> int:
     query = "select MAX(exp_id) from experiments"
     c = atomicTransaction(conn, query)
     return c.fetchall()[0][0]
-
-
-def modify_many_values(conn: sqlite3.Connection,
-                       formatted_name: str,
-                       start_index: int,
-                       parameters: List[ParamSpec],
-                       values: List[VALUES],
-                       )->None:
-    """
-    Modify many values for the corresponding paramSpec
-    If a parameter is in the table but not in the parameter list is
-    left untouched.
-    If a parameter is mapped to None, it will be a null value.
-    """
-    _len = length(conn, formatted_name)
-    len_requested = start_index + len(values)
-    available = _len - start_index
-    if len_requested > _len:
-        reason = f""""Modify operation Out of bounds.
-        Trying to modify {len(values)} results,
-        but therere are only {available} retulst.
-        """
-        raise ValueError(reason)
-    for value in values:
-        modify_values(conn, formatted_name, start_index, parameters, value)
-        start_index += 1
-
 
 def get_parameters(conn: sqlite3.Connection,
                    formatted_name: str) -> List[ParamSpec]:
@@ -564,7 +567,7 @@ def add_parameter_(conn: sqlite3.Connection,
                    *parameter: ParamSpec):
     """ Add parameters to the dataset
     NOTE: two parameters with the same name are not allowed
-    Args:
+ 2   Args:
         - conn: the connection to the sqlite database
         - formatted_name: name of the table
         - parameter: the paraemters to add
@@ -706,11 +709,11 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
 
 def get_data(conn: sqlite3.Connection,
              formatted_name: str,
-             parameters: List[ParamSpec],
+             parameters: List[str],
              start: int=None,
              end: int=None,
              )->Any:
-    _parameters = ",".join([p.name for p in parameters])
+    _parameters = ",".join(parameters)
     if start and end:
         query = f"""
         SELECT {_parameters}

@@ -6,17 +6,34 @@
 #
 # Distributed under terms of the MIT license.
 
-import atexit
 import hashlib
+# import json
 import logging
-import numpy as np
 import time
-from threading import Thread
 from functools import partial
-from itertools import count
-from typing import List, Any, Dict, Union,  Callable, Optional
-from new_exp import *
+from threading import Thread
+from typing import Any, Callable, Dict, List, Optional, Union, Sized
 
+import numpy as np
+
+from param_spec import ParamSpec
+from qcodes.instrument.parameter import _BaseParameter
+from sqlite_base import (BASESQL, add_meta_data, atomic, add_parameter,
+                         atomicTransaction, connect, create_run,
+                         get_parameters, last_experiment, transaction,
+                         length, modify_values, modify_many_values,
+                         insert_values, insert_many_values, VALUES,
+                         get_data, get_meta_data)
+
+
+# TODO: as of now every time a result is inserted with add_result the db is
+# saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
+
+# TODO: storing parameters in separate table 
+
+# TODO: fixix  a subset of metadata that we define well known (and create them)
+# i.e. no dynamic creation of metadata columns, but add stuff to 
+# a json inside a 'metadata' column
 
 def hash_from_parts(*parts: str) -> str:
     """
@@ -39,63 +56,41 @@ class CompletedError(RuntimeError):
     pass
 
 
-class DataSet(Metadatable):
-    def __init__(self, name, specs: SPECS=None, values=None,
+# TODO: this clearly should be configurable
+DB = "/Users/unga/Desktop/experiment.db"
+
+
+class DataSet(Sized):
+    def __init__(self, name, exp_id: Optional[int]= None,
+                 specs: SPECS=None, values=None,
                  metadata=None) -> None:
-        self.name: str = name
-        self.id: str = hash_from_parts(name)
+        # TODO: handle fail here by defaulting to
+        # a standard db
+        self.conn = connect(DB)
+        # a standard experiment (f.ex. experiment, sample)
+        if exp_id:
+            self.exp_id = exp_id
+        else:
+            self.exp_id = last_experiment(self.conn)
+        self.name = name
+        id, table_name = create_run(self.conn, self.exp_id, self.name,
+                                    *specs, metadata)
+        self.table_name = table_name
+        self.id = id
+        # TODO: implement this how/how ??
+        if values:
+            raise NotImplementedError
 
-        self.subscribers: Dict[str, Subscriber] = {}
-
-        self.completed: bool = False
-
-        self.parameters: Dict[str, ParamSpec] = {}
-        # make sure we clean up on exit
-        atexit.register(self.unsubscribe_all)
-
-        # counter to keep track of the lenght of the dataSet
-        self.c = count(0)
-        # init here so we have the metadata dictionary
-        super().__init__(metadata)
-
-        # add empty parameter entry
-        self.metadata['parameters'] = {}
-        if specs and values:
-            self._pouplate_parameters(specs, values)
-        elif specs:
-            self.add_parameters(specs)
-
-    def _pouplate_parameters(self, specs: SPECS,
-                             values: List[list]) -> None:
-        if len(specs) != len(values):
-            raise ValueError("Expected same number of specs and values")
-        for spec, value in zip(specs, values):
-            spec.data = value
-            self.add_parameter(spec)
+        self.completed = False
 
     def add_parameter(self, spec: ParamSpec):
-        """
-        Mutates internal paraemter dictioanry
-        """
-        if self.completed:
-            raise CompletedError
-        else:
-            # NOTE: (giulioungaretti)
-            # don't think this will be nice json
-            # but that's the spec people wanted
-            self.parameters[spec.id] = spec
-            self.metadata["parameters"].update({
-                spec.name: {
-                    'metadata': spec.metadata
-                }
-            })
+        add_parameter(self.conn, self.table_name, spec)
 
-    def get_parameter(self, name: str) -> ParamSpec:
-        return self.parameters[hash_from_parts(name)]
+    def get_parameters(self) -> SPECS:
+        return get_parameters(self.conn, self.table_name)
 
     def add_parameters(self, specs: SPECS):
-        for spec in specs:
-            self.add_parameter(spec)
+        add_parameter(self.conn, self.table_name, *specs)
 
     def add_metadata(self, tag: str, metadata: Any):
         """
@@ -107,62 +102,52 @@ class DataSet(Metadatable):
             metadata: actual metadata
 
         """
-        self.metadata[tag] = metadata
+        # TODO: this should follow the spec
+        # option one:
+        # add_meta_data(self.conn, self.id, {tag: metadata})
+        # option two:
+        # json_meta_data = json.dumps(metadata)
+        # add_meta_data(self.conn, self.id, {"metadata": json_meta_data})
+        # adding meta-data does not commit
+        # self.conn.commit()
+        raise NotImplemented
 
     def mark_complete(self) -> None:
         """Mark dataset as complete and thus read only and notify the
         subscribers"""
         self.completed = True
-        for sub in self.subscribers.values():
-            sub.done_callback()
+        # TODO: implement suscribers
+        # for sub in self.subscribers.values():
+        # sub.done_callback()
 
-    def add_result(self, name: str, value: Any) -> int:
+    def add_result(self, results: Dict[str, VALUES]) -> int:
         """
-        Add a logically single result to an existing parameter
+        Add a logically single result to existing parameters
 
         Args:
-            - name: name of existing parameter
-            - value: value to associate
+            - results: dictionary with name of a parameter as the key and the
+               value to associate as the value.
 
         Returns:
+
             - index in the DataSet that the result was stored at
 
+        If a parameter exist in the dataset and it's not in the results
+        dictionary Null values are inserted.
         It is an error to provide a value for a key or keyword that is not
         the name of a parameter in this DataSet.
         It is an error to add results to a completed DataSet.
         """
         if self.completed:
             raise CompletedError
-        else:
-            result = self.parameters[hash_from_parts(name)]
-            _len = len(result)
-            result.add(value)
-            return _len
+        index = insert_values(self.conn, self.table_name,
+                              list(results.keys()),
+                              list(results.values())
+                              )
+        self.conn.commit()
+        return index
 
-    def add_results(self, results: Dict[str, Any]) -> Dict[str, int]:
-        """
-        Add a logically single result to existing parameters
-
-        Args:
-            - results: dictionary with name of a parameter as the key and the
-              value to associate as the value.
-
-        Returns:
-
-            - dictionary with name of a parameter as the key and the
-              the index in the DataSet that the result were stored at
-
-        It is an error to provide a value for a key or keyword that is not
-        the name of a parameter in this DataSet.
-        It is an error to add results to a completed DataSet.
-        """
-        items = results.items()
-        length = [(name, self.add_result(name, value))
-                  for name, value in items]
-        return dict(length)
-
-    # TODO: name feels horrible, but see notes on the spec file.
-    def add_many(self, results: List[Dict[str, Any]]) -> Dict[str, int]:
+    def add_results(self, results: List[Dict[str, VALUES]]) -> int:
         """
         Adds a sequence of results to the DataSet.
 
@@ -172,24 +157,29 @@ class DataSet(Metadatable):
               that result.
 
         Returns:
-            - dictionary with name of a parameter as the key and the
-              the index in the DataSet that the **first** result was stored at
+            - the index in the DataSet that the **first** result was stored at
 
         It is an error to provide a value for a key or keyword that is not
         the name of a parameter in this DataSet.
         It is an error to add results to a completed DataSet.
         """
-        indices = map(self.add_results, results)
-        return list(indices)[0]
+        keys = [list(val.keys()) for val in results]
+        flattened_keys = [item for sublist in keys for item in sublist]
+        values = [list(val.values()) for val in results]
+        flattened_values = [item for sublist in values for item in sublist]
+        len_before_add = length(self.conn, self.table_name)
+        insert_many_values(self.conn, self.table_name, flattened_keys,
+                           flattened_values)
+        self.conn.commit()
+        return len_before_add
 
-    def modify_result(self, index: int, name: str, value: Any) -> None:
-        """ Modify a logically single result of  an existing parameter
+    def modify_result(self, index: int, results: Dict[str, VALUES]) -> None:
+        """ Modify a logically single result of existing parameters
 
         Args:
             - index: zero-based index of the result to be modified.
-            - name: name of paramSpec to modify
-            - value: new value to assign,
-                     set to None to remvoe form dataset
+            - results: dictionary of updates with name of a parameter as the
+               key and the value to associate as the value.
 
 
         It is an error to modify a result at an index less than zero or
@@ -201,21 +191,19 @@ class DataSet(Metadatable):
         if self.completed:
             raise CompletedError
 
-        param = self.get_parameter(name)
+        modify_values(self.conn, self.table_name, index,
+                      list(results.keys()),
+                      list(results.values())
+                      )
 
-        if value is None:
-            self.parameters.pop(hash_from_parts(name))
-        else:
-            param.data[index] = value
-
-    def modify_results(self, index: int, updates: Dict[str, Any]):
-        """ Modify a logically single result of existing parameters
+    def modify_results(self, start_index: int,
+                       updates: List[Dict[str, VALUES]]):
+        """ Modify a sequence of results in the DataSet.
 
         Args:
             - index: zero-based index of the result to be modified.
-            - name: name of paramSpec to modify
-            - value: new value to assign,
-                        set to None to remvoe form dataset
+            - results: sequence of dictionares of updates with name of a
+                parameter as the key and the value to associate as the value.
 
 
         It is an error to modify a result at an index less than zero or
@@ -224,57 +212,48 @@ class DataSet(Metadatable):
         the name of a parameter in this DataSet.
         It is an error to modify a result in a completed DataSet.
         """
-        items = updates.items()
-        _partial = partial(self.modify_result, index)
-        for name, value in items:
-            _partial(name, value)
+        keys = [list(val.keys()) for val in updates]
+        flattened_keys = [item for sublist in keys for item in sublist]
+        values = [list(val.values()) for val in updates]
+        flattened_values = [item for sublist in values for item in sublist]
+        modify_many_values(self.conn,
+                           self.table_name,
+                           start_index,
+                           flattened_keys,
+                           flattened_values)
 
-    def modify_many(self, start_index: int,
-                    updates: List[Dict[str, Any]]) -> None:
-        """ Modifies a sequence of results in the DataSet.
-        """
-        # TODO: this is not a fast implematation 🦄
-        if start_index + len(updates) > len(self):
-            msg = "Modification excedes the boundary of this dataset"
-            raise RuntimeError(msg)
-        for i, update in enumerate(updates):
-            self.modify_results(start_index + i, update)
-
-    def add_parameter_values(self, spec: ParamSpec, values: Any):
+    def add_parameter_values(self, spec: ParamSpec, values: List[VALUES]):
         """
         Add a parameter to the DataSet and associates result values with the
         new parameter.
-        """
-        spec.add(values)
-        self.add_parameter(spec)
 
-    def get_param_setpoints(self, name):
-        """
-        Get all setpoints (nested) of this param
-        """
-        param = self.get_parameter(name)
-        setpoints = []
-        while param.setpoints:
-            setpoint = self.parameters[param.setpoints]
-            setpoints.append(setpoint)
-            param = self.get_parameter(setpoint.name)
-        return setpoints
+        Adds a parameter to the DataSet and associates result values with the
+        new parameter.
+        If the DataSet is not empty, then the count of provided
+        values must equal the current count of results in the DataSet, or an
+        error will result.
 
-    def _guess_shape(self, name):
-        setpoints = self.get_param_setpoints(name)
-        shape = list([len(setpoint) for setpoint in setpoints[::-1]])
-        return shape
-
-    def to_array(self, name, shape=None):
-        if shape is None:
-            shape = self._guess_shape(name)
-        values = np.array(self.get_data(name))
-        return values.reshape(shape)
+        It is an error to add parameters to a completed DataSet.
+        # TODO: fix type cheking
+        """
+        # first check that the len of values (if dataset is not empty)
+        # is the right size i.e. the same as the dataset
+        if len(self) > 0:
+            if len(values) != len(self):
+                raise ValueError("Need to have {} values but got {}.".format(
+                                  len(self),
+                                  len(values)
+                                  ))
+        with atomic(self.conn):
+            add_parameter(self.conn, self.table_name, spec)
+            # now add values!
+            results = [{spec.name: value} for value in values]
+            self.add_results(results)
 
     def get_data(self,
                  *params: Union[str, ParamSpec, _BaseParameter],
-                 start: int=0,
-                 end: int=-1)-> List[List[Any]]:
+                 start: Optional[int]= None,
+                 end: Optional[int]= None)-> List[List[Any]]:
         """ Returns the values stored in the DataSet for the specified parameters.
         The values are returned as a list of parallel NumPy arrays, one array
         per parameter. The data type of each array is based on the data type
@@ -309,106 +288,17 @@ class DataSet(Metadatable):
                     raise ValueError(
                         "This parameter does not have  a name") from e
             valid_param_names.append(maybeParam)
-        data = []
-        for name in valid_param_names:
-            if end == -1:
-                data.append(self.get_parameter(name).data[start:])
-            else:
-                data.append(self.get_parameter(name).data[start:end])
+        data = get_data(self.conn, self.table_name, valid_param_names,
+                        start, end)
         return data
 
-    def get_parameters(self)->List[ParamSpec]:
-        return list(self.parameters.values())
-
     def get_metadata(self, tag):
-        return self.metadata[tag]
-
-    #  NEED to pass Any for some reason
-    def subscribe(self, callback: Callable[[Any, int, Optional[Any]], None],
-                  min_wait: int = 0, min_count: int=1,
-                  state: Optional[Any]=None) -> str:
-        sub_id = hash_from_parts(str(time.time()))
-        sub = Subscriber(self, sub_id, callback, state, min_wait, min_count)
-        sub.start()
-        self.subscribers[sub_id] = sub
-        return sub_id
-
-    def unsubscribe(self, uuid: str)-> None:
-        sub = self.subscribers[uuid]
-        sub.schedule_stop()
-        sub.join()
-        del self.subscribers[uuid]
-
-    def unsubscribe_all(self):
-        for sub in self.subscribers.values():
-            sub.schedule_stop()
-            sub.join()
-        self.subscribers.clear()
-
-    def snapshot_base(self, update=False):
-        return self.metadata
+        reutrn get_meta_data(self.conn, tag, self.name)
 
     def __len__(self):
-        vals = self.parameters.values()
-        return max(map(len, vals))
+        return length(self.conn, self.table_name)
 
     def __repr__(self):
         out = []
         out.append(self.name)
         out.append("-" * len(self.name))
-        for _, param in self.parameters.items():
-            out.append(param.__repr__())
-        return "\n".join(out)
-
-
-# TODO: this is an example MINIMAL subscriber
-# the specs names dataset obejct, so only threading
-# can be used, uneless one wants to end up again in
-# the pickle-hell-situation
-class Subscriber(Thread):
-
-    def __init__(self, data: DataSet, sub_id: str,
-                 callback: Callable[[DataSet, int, Optional[Any]], None],
-                 state: Optional[Any]=None, min_wait: int=100,
-                 min_count: int=1)->None:
-        self.min_wait = min_wait
-        self.min_count = min_count
-        self.sub_id = sub_id
-        self._send_queue: int = 0
-        self.data = data
-        self.state = state
-        self.callback = callback
-        self._stop_signal: bool = False
-        super().__init__()
-        self.log = logging.getLogger(f"Subscriber {self.sub_id}")
-
-    def run(self)->None:
-        self.log.debug("Starting subscriber")
-        self._loop()
-
-    def _loop(self)->None:
-        while True:
-            if self._stop_signal:
-                self._clean_up()
-                break
-            self._send_queue += len(self.data)
-            if self._send_queue > self.min_count:
-                self.callback(self.data, len(self.data), self.state)
-                self._send_queue = 0
-            # if nothing happens we let the word go foward
-            time.sleep(self.min_wait/1000)
-            if self.data.completed:
-                break
-
-    def done_callback(self)->None:
-        self.log.debug("Done callback")
-        self.callback(self.data, len(self.data), self.state)
-
-    def schedule_stop(self):
-        self.log.debug("Scheduling stop")
-        if not self._stop_signal:
-            self._stop_signal = True
-
-    def _clean_up(self)->None:
-        # TODO: just a temp implemation
-        self.log.debug("Stopped subscriber")
