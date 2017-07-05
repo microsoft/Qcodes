@@ -673,7 +673,7 @@ def remove_run(conn: sqlite3.Connection, formatted_name: str)->None:
 
 
 def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
-               *parameters: ParamSpec,
+               parameters: List[ParamSpec],
                metadata: Optional[Dict[str, Any]]=None)-> Tuple[int, str]:
     """ Create a single run for the experiment.
 
@@ -698,12 +698,11 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
         run_counter, formatted_name, run_id = insert_run(conn,
                                                          exp_id,
                                                          name,
-                                                         list(parameters))
+                                                         parameters)
         if metadata:
             add_meta_data(conn, run_id, metadata)
         update_experiment_run_counter(conn, exp_id, run_counter)
-        # NOTE: cast to list to make mypy happy (my bug, mypy bug?)
-        create_run_table(conn, formatted_name, list(parameters))
+        create_run_table(conn, formatted_name, parameters)
     return run_id, formatted_name
 
 
