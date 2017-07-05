@@ -8,31 +8,24 @@
 
 import hashlib
 # import json
-import logging
-import time
-from functools import partial
-from threading import Thread
-from typing import Any, Callable, Dict, List, Optional, Union, Sized
-
-import numpy as np
+from typing import Any, Dict, List, Optional, Union, Sized
 
 from param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
-from sqlite_base import (BASESQL, add_meta_data, atomic, add_parameter,
-                         atomicTransaction, connect, create_run,
-                         get_parameters, last_experiment, transaction,
-                         length, modify_values, modify_many_values,
-                         insert_values, insert_many_values, VALUES,
-                         get_data, get_meta_data)
+from sqlite_base import (atomic, add_parameter, connect, create_run,
+                         get_parameters, last_experiment,
+                         length, modify_values,
+                         modify_many_values, insert_values, insert_many_values,
+                         VALUES, get_data, get_metadata)
 
 
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
 
-# TODO: storing parameters in separate table 
+# TODO: storing parameters in separate table
 
 # TODO: fixix  a subset of metadata that we define well known (and create them)
-# i.e. no dynamic creation of metadata columns, but add stuff to 
+# i.e. no dynamic creation of metadata columns, but add stuff to
 # a json inside a 'metadata' column
 
 def hash_from_parts(*parts: str) -> str:
@@ -66,7 +59,8 @@ class DataSet(Sized):
                  metadata=None) -> None:
         # TODO: handle fail here by defaulting to
         # a standard db
-        self.conn = connect(DB)
+        self.location = DB
+        self.conn = connect(self.location)
         # a standard experiment (f.ex. experiment, sample)
         if exp_id:
             self.exp_id = exp_id
@@ -74,7 +68,7 @@ class DataSet(Sized):
             self.exp_id = last_experiment(self.conn)
         self.name = name
         id, table_name = create_run(self.conn, self.exp_id, self.name,
-                                    *specs, metadata)
+                                    specs, metadata)
         self.table_name = table_name
         self.id = id
         # TODO: implement this how/how ??
@@ -293,12 +287,19 @@ class DataSet(Sized):
         return data
 
     def get_metadata(self, tag):
-        reutrn get_meta_data(self.conn, tag, self.name)
+        return get_metadata(self.conn, tag, self.name)
 
     def __len__(self):
         return length(self.conn, self.table_name)
 
-    def __repr__(self):
+    def __repr__(self)->str:
         out = []
-        out.append(self.name)
-        out.append("-" * len(self.name))
+        heading = f"{self.name} #{self.id}@{self.location}"
+        out.append(heading)
+        out.append("-" * len(heading))
+        ps = self.get_parameters()
+        if len(ps) > 0:
+            for p in ps:
+                out.append(f"{p.name} - {p.type}")
+
+        return "\n".join(out)
