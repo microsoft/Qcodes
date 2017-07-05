@@ -742,12 +742,6 @@ def get_data(conn: sqlite3.Connection,
         SELECT {_parameters}
         FROM "{formatted_name}"
         """
-        c = transaction(conn, query)
-        res = many(c, *[p.name for p in parameters])
-        return res
     c = transaction(conn, query)
-    if (end-start)>1:
-        res = many_many(c, *[p.name for p in parameters])
-    else:
-        res = many(c, *[p.name for p in parameters])
+    res = many_many(c, *parameters)
     return res
