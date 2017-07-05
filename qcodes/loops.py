@@ -760,6 +760,9 @@ class ActiveLoop(Metadatable):
 
         data_set.save_metadata()
 
+        if hasattr(data_set, 'save_config'):
+            data_set.save_config()
+
         if set_active:
             ActiveLoop.active_loop = self
 
