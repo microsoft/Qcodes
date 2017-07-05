@@ -5,8 +5,6 @@
 # Copyright © 2017 unga <giulioungaretti@me.com>
 #
 # Distributed under terms of the MIT license.
-
-import hashlib
 # import json
 from typing import Any, Dict, List, Optional, Union, Sized
 
@@ -22,23 +20,19 @@ from sqlite_base import (atomic, add_parameter, connect, create_run,
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
 
-# TODO: storing parameters in separate table
+# TODO: storing parameters in separate table as an extension (dropping
+# the column parametenrs would be much nicer
+
+# TODO: metadata split between well known columns and maybe something else is
+# not such a good idea. The problem is if we allow for specific columns then
+# how do the user/us know which are metatadata?  I THINK the only sane solution
+# is to store JSON in a column called metadata
+
+# TODO: we cant have parameters with the same name in the same dataset/run
 
 # TODO: fixix  a subset of metadata that we define well known (and create them)
 # i.e. no dynamic creation of metadata columns, but add stuff to
 # a json inside a 'metadata' column
-
-def hash_from_parts(*parts: str) -> str:
-    """
-    Args:
-        *parts:  parts to use to create hash
-
-    Returns:
-        hash created with the given parts
-
-    """
-    combined = "".join(parts)
-    return hashlib.sha1(combined.encode("utf-8")).hexdigest()
 
 
 # SPECS is a list of ParamSpec
