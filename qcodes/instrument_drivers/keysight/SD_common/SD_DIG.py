@@ -13,7 +13,7 @@ class SD_DIG(SD_Module):
     This driver makes use of the Python library provided by Keysight as part of the SD1 Software package (v.2.01.00).
     """
     
-    def __init__(self, name, chassis, slot, channels, triggers, **kwargs):
+    def __init__(self, name, chassis, slot, channels, triggers=8, **kwargs):
         """ Initialises a generic Signadyne digitizer and its parameters
 
             Args:
@@ -21,14 +21,13 @@ class SD_DIG(SD_Module):
                 channels (int)  : the number of input channels the specified card has
                 triggers (int)  : the number of trigger inputs the specified card has
         """
-        super().__init__(name, chassis, slot, **kwargs)
+        super().__init__(name, chassis, slot, triggers, **kwargs)
 
         # Create instance of keysight SD_AIN class
         self.SD_AIN = keysightSD1.SD_AIN()
 
         # store card-specifics
         self.n_channels = channels
-        self.n_triggers = triggers
 
         # Open the device, using the specified chassis and slot number
         dig_name = self.SD_AIN.getProductNameBySlot(chassis, slot)
