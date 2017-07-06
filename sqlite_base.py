@@ -528,7 +528,11 @@ def length(conn: sqlite3.Connection,
     """
     query = f"select MAX(id) from '{formatted_name}'"
     c = atomicTransaction(conn, query)
-    return c.fetchall()[0][0]
+    _len = c.fetchall()[0][0]
+    if _len is None:
+        return 0
+    else:
+        return _len
 
 
 def last_experiment(conn: sqlite3.Connection) -> int:
@@ -538,6 +542,7 @@ def last_experiment(conn: sqlite3.Connection) -> int:
     query = "select MAX(exp_id) from experiments"
     c = atomicTransaction(conn, query)
     return c.fetchall()[0][0]
+
 
 def get_parameters(conn: sqlite3.Connection,
                    formatted_name: str) -> List[ParamSpec]:
