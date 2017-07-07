@@ -16,8 +16,8 @@ class SD_AWG(SD_Module):
     This driver makes use of the Python library provided by Keysight as part of the SD1 Software package (v.2.01.00).
     """
 
-    def __init__(self, name, chassis, slot, channels, triggers, **kwargs):
-        super().__init__(name, chassis, slot, **kwargs)
+    def __init__(self, name, chassis, slot, channels, triggers=8, **kwargs):
+        super().__init__(name, chassis, slot, triggers, **kwargs)
 
         # Create instance of keysight SD_AOU class
         self.awg = keysightSD1.SD_AOU()
@@ -26,8 +26,7 @@ class SD_AWG(SD_Module):
         self.wave = keysightSD1.SD_Wave()
 
         # store card-specifics
-        self.channels = channels
-        self.triggers = triggers
+        self.n_channels = channels
 
         # Open the device, using the specified chassis and slot number
         awg_name = self.awg.getProductNameBySlot(chassis, slot)
@@ -58,14 +57,6 @@ class SD_AWG(SD_Module):
                            unit='Hz',
                            get_cmd=self.get_clock_sync_frequency,
                            docstring='The frequency of the internal CLKsync in Hz')
-
-        for i in range(triggers):
-            self.add_parameter('pxi_trigger_number_{}'.format(i),
-                               label='pxi trigger number {}'.format(i),
-                               get_cmd=partial(self.get_pxi_trigger, pxi_trigger=(4000 + i)),
-                               set_cmd=partial(self.set_pxi_trigger, pxi_trigger=(4000 + i)),
-                               docstring='The digital value of pxi trigger no. {}, 0 (ON) of 1 (OFF)'.format(i),
-                               vals=validator.Enum(0, 1))
 
         for i in range(channels):
             self.add_parameter('frequency_channel_{}'.format(i),
@@ -249,7 +240,7 @@ class SD_AWG(SD_Module):
         Stops the AWGs and sets the waveform of all channels to 'No Signal'
         """
 
-        for i in range(self.channels):
+        for i in range(self.n_channels):
             self.awg_stop(i)
             self.set_channel_wave_shape(i, 0)
 
