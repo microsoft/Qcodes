@@ -9,7 +9,8 @@ from collections import OrderedDict
 from .gnuplot_format import GNUPlotFormat
 from .io import DiskIO
 from .location import FormatLocation
-from qcodes.utils.helpers import DelegateAttributes, full_class, deep_update
+from qcodes.utils.helpers import DelegateAttributes, full_class, deep_update, \
+    get_last_input_cells
 
 
 logger = logging.getLogger(__name__)
@@ -579,6 +580,13 @@ class DataSet(DelegateAttributes):
             'formatter': full_class(self.formatter),
             'io': repr(self.io)
         })
+
+        # Add last iPython input cells
+        # try:
+        #     self.metadata['last_input_cells'] = get_last_input_cells(10)
+        # except:
+        #     raise
+
         return deepcopy(self.metadata)
 
     def get_array_metadata(self, array_id):

@@ -459,3 +459,18 @@ def compare_dictionaries(dict_1, dict_2,
 def warn_units(class_name, instance):
     logging.warning('`units` is deprecated for the `' + class_name +
                     '` class, use `unit` instead. ' + repr(instance))
+
+
+def get_last_input_cells(cells=3):
+    """
+    Get last input cell. Note that get_last_input_cell.globals must be set to 
+    the ipython globals
+    Returns:
+        last cell input if successful, else None
+    """
+    globals = sys._getframe(1).f_globals
+    try:
+        return globals['In'][-cells:]
+    except Exception as e:
+        logging.warning('Error getting last input cells: {}'.format(e.args))
+        raise
