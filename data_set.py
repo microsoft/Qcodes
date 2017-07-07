@@ -6,12 +6,16 @@
 #
 # Distributed under terms of the MIT license.
 # import json
-from typing import Any, Dict, List, Optional, Union, Sized
-
+from typing import Any, Dict, List, Optional, Union, Sized, Callable
+from threading import Thread
+import time
+import logging
+import hashlib
+from queue import Queue, Empty
 from param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
-from sqlite_base import (atomic, add_parameter, connect, create_run,
-                         get_parameters, last_experiment,
+from sqlite_base import (atomic, atomicTransaction, transaction, add_parameter,
+                         connect, create_run, get_parameters, last_experiment,
                          length, modify_values,
                          modify_many_values, insert_values, insert_many_values,
                          VALUES, get_data, get_metadata)
@@ -47,6 +51,95 @@ class CompletedError(RuntimeError):
 DB = "/Users/unga/Desktop/experiment.db"
 
 
+class Subscriber(Thread):
+    def __init__(self, dataSet, id: str,
+                 callback: Callable[[List[Any], int, Optional[Any]], None],
+                 state: Optional[Any]=None, min_wait: int=100,
+                 min_count: int=1)->None:
+        self.sub_id = id
+        # wether or not this is actually thread safe I am not sure :P
+        self.dataSet = dataSet
+        self.table_name = dataSet.table_name
+        self.conn = dataSet.conn
+        self.log = logging.getLogger(f"Subscriber {self.sub_id}")
+
+        self.state = state
+        self.min_wait = min_wait
+        self.min_count = min_count
+        self._send_queue: int = 0
+        self.callback = callback
+        self._stop_signal: bool = False
+
+        parameters = dataSet.get_parameters()
+        param_sql = ",".join([f"NEW.{p.name}" for p in parameters])
+        self.callbackid = f"callback{self.sub_id}"
+
+        self.conn.create_function(self.callbackid, -1, self.cache)
+        sql = f"""
+        CREATE TRIGGER sub{self.sub_id}
+            AFTER INSERT ON '{self.table_name}'
+        BEGIN
+            SELECT {self.callbackid}({param_sql});
+        END;"""
+        atomicTransaction(self.conn, sql)
+        self.data: Queue = Queue()
+        self._data_set_len = len(dataSet)
+        super().__init__()
+
+    def cache(self, *args)->None:
+        self.log.debug(f"{self.callbackid} called with args:{args}")
+        self.data.put(args)
+        self._data_set_len += 1
+        self._send_queue += 1
+
+    def run(self)->None:
+        self.log.debug("Starting subscriber")
+        self._loop()
+
+    @staticmethod
+    def _exhaust_queue(queue)->List:
+        result_list = []
+        while True:
+            try:
+                result_list.append(queue.get(block=False))
+            except Empty:
+                break
+        return result_list
+
+    def _send(self) -> List:
+        result_list = self._exhaust_queue(self.data)
+        self.callback(result_list, self._data_set_len, self.state)
+        return result_list
+
+    def _loop(self)->None:
+        while True:
+            if self._stop_signal:
+                self._clean_up()
+                break
+            if self._send_queue > self.min_count:
+                self._send()
+                self._send_queue = 0
+
+            # if nothing happens we let the word go foward
+            time.sleep(self.min_wait/1000)
+            if self.dataSet.completed:
+                self._send()
+                break
+
+    def done_callback(self)->None:
+        self.log.debug("Done callback")
+        self._send()
+
+    def schedule_stop(self):
+        self.log.debug("Scheduling stop")
+        if not self._stop_signal:
+            self._stop_signal = True
+
+    def _clean_up(self)->None:
+        # TODO: just a temp implemation (reomve?)
+        self.log.debug("Stopped subscriber")
+
+
 class DataSet(Sized):
     def __init__(self, name, exp_id: Optional[int]= None,
                  specs: SPECS=None, values=None,
@@ -70,6 +163,8 @@ class DataSet(Sized):
             raise NotImplementedError
 
         self.completed = False
+
+        self.subscribers: Dict[str, Subscriber] = {}
 
     def add_parameter(self, spec: ParamSpec):
         add_parameter(self.conn, self.table_name, spec)
@@ -280,10 +375,49 @@ class DataSet(Sized):
                         start, end)
         return data
 
+    # NEED to pass Any for some reason
+    def subscribe(self, callback: Callable[[Any, int, Optional[Any]], None],
+                  min_wait: int = 0, min_count: int=1,
+                  state: Optional[Any]=None,
+                  subscriber_class=Subscriber) -> str:
+        sub_id = hash_from_parts(str(time.time()))
+        sub = Subscriber(self, sub_id, callback, state, min_wait, min_count)
+        self.subscribers[sub_id] = sub
+        sub.start()
+        return sub.sub_id
+
+    def unsubscribe(self, uuid: str)-> None:
+        """
+        Remov subscriber with the provided uuid
+        """
+        with atomic(self.conn):
+            self._remove_trigger(uuid)
+            sub = self.subscribers[uuid]
+            sub.schedule_stop()
+            sub.join()
+            del self.subscribers[uuid]
+
+    def _remove_trigger(self, name):
+        transaction(self.conn, f"DROP TRIGGER IF EXISTS name;")
+
+    def unsubscribe_all(self):
+        """
+        Remove all subscribers
+        """
+        sql = "select * from sqlite_master where type = 'trigger';"
+        triggers = atomicTransaction(self.conn, sql).fetchall()
+        with atomic(self.conn):
+            for trigger in triggers:
+                self._remove_trigger(trigger['name'])
+            for sub in self.subscribers.values():
+                sub.schedule_stop()
+                sub.join()
+            self.subscribers.clear()
+
     def get_metadata(self, tag):
         return get_metadata(self.conn, tag, self.name)
 
-    def __len__(self):
+    def __len__(self)->int:
         return length(self.conn, self.table_name)
 
     def __repr__(self)->str:
@@ -297,3 +431,14 @@ class DataSet(Sized):
                 out.append(f"{p.name} - {p.type}")
 
         return "\n".join(out)
+
+
+def hash_from_parts(*parts: str) -> str:
+    """
+    Args:
+        *parts:  parts to use to create hash
+    Returns:
+        hash created with the given parts
+    """
+    combined = "".join(parts)
+    return hashlib.sha1(combined.encode("utf-8")).hexdigest()
