@@ -582,10 +582,9 @@ class DataSet(DelegateAttributes):
         })
 
         # Add last iPython input cells
-        # try:
-        #     self.metadata['last_input_cells'] = get_last_input_cells(10)
-        # except:
-        #     raise
+        last_input_cells = get_last_input_cells(cells=15)
+        if last_input_cells is not None:
+            self.metadata['last_input_cells'] = last_input_cells
 
         return deepcopy(self.metadata)
 
