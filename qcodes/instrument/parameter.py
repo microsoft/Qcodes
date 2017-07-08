@@ -421,9 +421,11 @@ class _BaseParameter(Metadatable, DeferredOperations):
             ValueError: If delay is negative
         """
         if not isinstance(post_delay, (int, float)):
-            raise TypeError('delay must be a number')
+            raise TypeError(
+                'post_delay ({}) must be a number'.format(post_delay))
         if post_delay < 0:
-            raise ValueError('delay must not be negative')
+            raise ValueError(
+                'post_delay ({}) must not be negative'.format(post_delay))
         self._post_delay = post_delay
 
     @property
@@ -450,9 +452,11 @@ class _BaseParameter(Metadatable, DeferredOperations):
             ValueError: If delay is negative
         """
         if not isinstance(inter_delay, (int, float)):
-            raise TypeError('delay must be a number')
+            raise TypeError(
+                'inter_delay ({}) must be a number'.format(inter_delay))
         if inter_delay < 0:
-            raise ValueError('delay must not be negative')
+            raise ValueError(
+                'inter_delay ({}) must not be negative'.format(inter_delay))
         self._inter_delay = inter_delay
 
     # Deprecated
@@ -703,7 +707,7 @@ class ArrayParameter(_BaseParameter):
         sp_shape = (len(shape),)
 
         sp_types = (nt, DataArray, collections.Sequence,
-                    collections.Iterable)
+                    collections.Iterator, numpy.ndarray)
         if (setpoints is not None and
                 not is_sequence_of(setpoints, sp_types, shape=sp_shape)):
             raise ValueError('setpoints must be a tuple of arrays')
@@ -861,7 +865,7 @@ class MultiParameter(_BaseParameter):
         self.shapes = shapes
 
         sp_types = (nt, DataArray, collections.Sequence,
-                    collections.Iterable)
+                    collections.Iterator, numpy.ndarray)
         if not _is_nested_sequence_or_none(setpoints, sp_types, shapes):
             raise ValueError('setpoints must be a tuple of tuples of arrays')
 
@@ -942,7 +946,7 @@ class GetLatest(DelegateAttributes, DeferredOperations):
         state = self.parameter._latest
         if self.max_val_age is None:
             # Return last value since max_val_age is not specified
-            return state
+            return state['value']
         else:
             oldest_ok_val = datetime.now() - timedelta(seconds=self.max_val_age)
             if state['ts'] is None or state['ts'] < oldest_ok_val:
@@ -1138,7 +1142,7 @@ class InstrumentRefParameter(Parameter):
 
     def __init__(self, *args, **kwargs):
         kwargs['vals'] = kwargs.get('vals', Strings())
-        super().__init__(*args, **kwargs)
+        super().__init__(set_cmd=None, *args, **kwargs)
 
     # TODO(nulinspiratie) check class works now it's subclassed from Parameter
     def get_instr(self):
@@ -1158,7 +1162,7 @@ class StandardParameter(Parameter):
     def __init__(self, name, instrument=None,
                  get_cmd=False, get_parser=None,
                  set_cmd=False, set_parser=None,
-                 delay=None, max_delay=None, step=None, max_val_age=3600,
+                 delay=0, max_delay=None, step=None, max_val_age=3600,
                  vals=None, val_mapping=None, **kwargs):
         super().__init__(name, instrument=instrument,
                  get_cmd=get_cmd, get_parser=get_parser,
@@ -1174,5 +1178,5 @@ class ManualParameter(Parameter):
         super().__init__(name=name, instrument=instrument,
                          get_cmd=None, set_cmd=None,
                          initial_value=initial_value, **kwargs)
-        logging.warning('`ManualParameter` is deprecated, use `Parameter` '
-                        'instead with `set_cmd=None`. {}'.format(self))
+        logging.warning('Parameter {}: `ManualParameter` is deprecated, use '
+                        '`Parameter` instead with `set_cmd=None`.'.format(self))
