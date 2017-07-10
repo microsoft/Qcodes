@@ -1,13 +1,3 @@
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
-# vim:fenc=utf-8
-#
-# Copyright © 2017 unga <giulioungaretti@me.com>
-#
-# Distributed under terms of the MIT license.
-"""
-Add experiment
-"""
 from contextlib import contextmanager
 import logging
 import sqlite3
@@ -23,7 +13,7 @@ from param_spec import ParamSpec
 # represent the type of  data we can/want map to sqlite column
 VALUES = List[Union[str, Number, List, ndarray, bool]]
 
-_BASESQL = """
+_experiment_table_schema = """
 CREATE  TABLE IF NOT EXISTS experiments (
     -- this will autoncrement by default if
     -- no value is specified on insert
@@ -41,7 +31,9 @@ CREATE  TABLE IF NOT EXISTS experiments (
 -- TODO: maybe I had a good reason for this doulbe primary key
 --    PRIMARY KEY (exp_id, start_time, sample_name)
 );
+"""
 
+_runs_table_schema = """
 CREATE TABLE IF NOT EXISTS runs (
     -- this will autoncrement by default if
     -- no value is specified on insert
@@ -56,6 +48,8 @@ CREATE TABLE IF NOT EXISTS runs (
     result_counter INTEGER,
     ---
     run_timestamp INTEGER,
+    completed_timestamp INTEGER,
+    is_completed BOOL,
     parameters TEXT,
     -- metadata fields are added dynamically
     FOREIGN KEY(exp_id)
@@ -229,6 +223,12 @@ def atomic(conn: sqlite3.Connection):
         conn.commit()
 
 
+def init_db(conn: sqlite3.Connection)->None:
+    with atomic(conn):
+        transaction(conn, _experiment_table_schema)
+        transaction(conn, _runs_table_schema)
+
+
 def insert_column(conn: sqlite3.Connection, table: str, name: str,
                   type: Optional[str] = None) -> None:
     """Insert new column to a table
@@ -245,76 +245,6 @@ def insert_column(conn: sqlite3.Connection, table: str, name: str,
     else:
         transaction(conn,
                     f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
-
-
-def new_experiment(conn: sqlite3.Connection,
-                   name: str,
-                   sample_name: str,
-                   format_string: Optional[str] = "{}-{}-{}"
-                   ) -> int:
-    """ Add new experiment to container
-
-    Args:
-        conn: database connection
-        name: the name of the experiment
-        sample_name: the name of the current sample
-        format_string: basic format string for table-name
-            must contain 3 placeholders.
-    Returns:
-        id: row-id of the created experiment
-    """
-    query = """
-    INSERT INTO experiments
-        (name, sample_name, start_time, format_string, run_counter)
-    VALUES
-        (?,?,?,?,?)
-    """
-    curr = atomicTransaction(conn, query, name, sample_name,
-                             time.time(), format_string, 0)
-    return curr.lastrowid
-
-
-def finish_experiment(conn: sqlite3.Connection, exp_id: int):
-    """ Finish experiment
-
-    Args:
-        conn: database connection
-        name: the name of the experiment
-    """
-    query = """
-    UPDATE experiments SET end_time=? WHERE exp_id=?;
-    """
-    atomicTransaction(conn, query, time.time(), exp_id)
-
-
-def data_sets(conn: sqlite3.Connection) -> List[sqlite3.Row]:
-    """ Get a list of datasets
-    Args:
-        conn: database connection
-
-    Returns:
-        list of rows
-    """
-    sql = """
-    SELECT * FROM runs
-    """
-    c = transaction(conn, sql)
-    return c.fetchall()
-
-
-def experiments(conn: sqlite3.Connection) -> List[sqlite3.Row]:
-    """ Get a list of experiments
-     Args:
-         conn: database connection
-
-     Returns:
-         list of rows
-     """
-    sql = """
-    SELECT * FROM experiments
-    """
-    c = transaction(conn, sql)
-    return c.fetchall()
 
 
 def _select_one_where(conn: sqlite3.Connection, table: str, column: str,
@@ -346,50 +276,10 @@ def _select_many_where(conn: sqlite3.Connection, table: str, *columns: str,
     return res
 
 
-def get_metadata(conn: sqlite3.Connection, tag: str, table_name: str):
-    """ Get metadata under the tag from table
+def _massage_dict(metadata: Dict[str, Any]) -> Tuple[str, List[Any]]:
     """
-    _select_one_where(conn, "runs", tag, "formatted_name", table_name)
-
-
-# TODO: can make many of those. Easier to use // enforce some types
-# but slower because make one query only
-def get_run_counter(conn: sqlite3.Connection, exp_id: int) -> int:
-    """ Get the experiment run counter
-
-    Args:
-        conn: the connection to the sqlite database
-        exp_id: experiment identifier
-
-    Returns:
-        the exepriment run counter
-
+    {key:value, key2:value} -> ["key=?, key2=?", [value, value]]
     """
-    return _select_one_where(conn, "experiments", "run_counter",
-                             where_column="exp_id",
-                             where_value=exp_id)
-
-# TODO: this thre methods shoul have better names
-def insert_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
-                     metadata: Dict[str, Any]) -> None:
-    """
-    Insert new metadata column and add values
-
-    Args:
-        - conn: the connection to the sqlite database
-        - row_id: the row to add the metadata at
-        - table_name: the table to add to, defaults to runs
-        - metadata: the metadata to add
-    """
-    for key, value in metadata.items():
-        insert_column(conn, table_name, key)
-        sql = f"""
-            UPDATE '{table_name}' set '{key}'=? WHERE rowid=?;
-        """
-        transaction(conn, sql, value, row_id)
-
-
-def _massage_medata(metadata: Dict[str, Any]) -> Tuple[str, List[Any]]:
     template = []
     values = []
     for key, value in metadata.items():
@@ -398,155 +288,64 @@ def _massage_medata(metadata: Dict[str, Any]) -> Tuple[str, List[Any]]:
     return ','.join(template), values
 
 
-def update_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
-                     metadata: Dict[str, Any]) -> None:
+def _update_where(conn: sqlite3.Connection, table: str,
+                  where_column: str, where_value: Any, **updates) -> None:
+    _updates, values = _massage_dict(updates)
+    query = f"""
+    UPDATE
+        '{table}'
+    SET
+        {_updates}
+    WHERE
+        {where_column} = ?
     """
-    Updates metadata (they must exist already)
-
-    Args:
-        - conn: the connection to the sqlite database
-        - row_id: the row to add the metadata at
-        - table_name: the table to add to, defaults to runs
-        - metadata: the metadata to add
-    """
-    template, values = _massage_medata(metadata)
-    sql = f"""
-    UPDATE {table_name} set
-        {template}
-    WHERE rowid=?;
-    """
-    transaction(conn, sql, *values, row_id)
-
-
-def add_meta_data(conn: sqlite3.Connection,
-                  row_id: int,
-                  metadata: Dict[str, Any],
-                  table_name: Optional[str] = "runs") -> None:
-    """
-    Add medata data (updates if exists, create otherwise).
-
-    Args:
-        - conn: the connection to the sqlite database
-        - row_id: the row to add the metadata at
-        - metadata: the metadata to add
-        - table_name: the table to add to, defaults to runs
-    """
-    try:
-        insert_meta_data(conn, row_id, table_name, metadata)
-    except sqlite3.OperationalError as e:
-        # this means that the column already exists
-        # so just insert the new value
-        if str(e).startswith("duplicate"):
-            update_meta_data(conn, row_id, table_name, metadata)
-        else:
-            raise e
-
-
-def _insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
-                parameters: Optional[List[ParamSpec]] = None,
-                ):
-    # get run counter and formatter from experiments
-    run_counter, format_string = _select_many_where(conn,
-                                                    "experiments",
-                                                    "run_counter",
-                                                    "format_string",
-                                                    where_column="exp_id",
-                                                    where_value=exp_id)
-    run_counter += 1
-    formatted_name = format_string.format(name, exp_id, run_counter)
-    table = "runs"
-    if parameters:
-        query = f"""
-        INSERT INTO {table}
-            (name,exp_id,result_table_name,result_counter,run_timestamp,parameters)
-        VALUES
-            (?,?,?,?,?,?)
-        """
-        curr = transaction(conn, query,
-                           name,
-                           exp_id,
-                           formatted_name,
-                           run_counter,
-                           time.time(),
-                           ",".join([p.name for p in parameters])
-                           )
-    else:
-        query = f"""
-        INSERT INTO {table}
-            (name,exp_id,result_table_name,result_counter,run_timestamp)
-        VALUES
-            (?,?,?,?,?)
-        """
-        curr = transaction(conn, query,
-                           name,
-                           exp_id,
-                           formatted_name,
-                           run_counter,
-                           time.time()
-                           )
-    return run_counter, formatted_name, curr.lastrowid
-
-
-def _update_experiment_run_counter(conn: sqlite3.Connection, exp_id: int,
-                                   run_counter: int) -> None:
-    query = """
-    UPDATE experiments
-    SET run_counter = ?
-    WHERE exp_id = ?
-    """
-    transaction(conn, query, run_counter, exp_id)
+    transaction(conn, query, *values, where_value)
 
 
 def insert_values(conn: sqlite3.Connection,
                   formatted_name: str,
-                  parameters: List[str],
+                  columns: List[str],
                   values: VALUES,
                   ) -> int:
     """
-    Inserts values for the corresponding paramSpec
+    Inserts values for the specified columns.
     Will pad with null if not all parameters are specified.
     NOTE this need to be committed before closing the connection.
     """
-    _parameters = ",".join(parameters)
-    _values = ",".join(["?"] * len(parameters))
+    _columns = ",".join(columns)
+    _values = ",".join(["?"] * len(columns))
     query = f"""INSERT INTO "{formatted_name}"
-        ({_parameters})
+        ({_columns})
     VALUES
         ({_values})
     """
-    # this will raise an error if there is a mismatch
-    # between the values and parameters length
-    # TODO: check inputs instead?
     c = transaction(conn, query, *values)
     return c.lastrowid
 
 
 def insert_many_values(conn: sqlite3.Connection,
                        formatted_name: str,
-                       parameters: List[str],
+                       columns: List[str],
                        values: List[VALUES],
                        ) -> int:
     """
-    Inserts many values for the corresponding paramSpec.
-    Will pad with null if not all parameters are specified.
+    Inserts many values for the specified columns.
+    Will pad with null if not all columns are specified.
 
     NOTE this need to be committed before closing the connection.
     """
-    _parameters = ",".join(parameters)
+    _columns = ",".join(columns)
     # TODO: none of the code below is not form PRADA SS-2017
     # [a, b] -> (?,?), (?,?)
     # [[1,1], [2,2]]
-    _values = "(" + ",".join(["?"] * len(parameters)) + ")"
+    _values = "(" + ",".join(["?"] * len(columns)) + ")"
     # NOTE: assume that all the values have same length
     _values_x_params = ",".join([_values] * len(values[0]))
     query = f"""INSERT INTO "{formatted_name}"
-        ({_parameters})
+        ({_columns})
     VALUES
         {_values_x_params}
     """
-    # this will raise an error if there is a mismatch
-    # between the values and parameters length
-    # TODO: check inputs instead?
     # we need to make values a flat list from a list of list
     flattened_values = [item for sublist in values for item in sublist]
     c = transaction(conn, query, *flattened_values)
@@ -556,17 +355,17 @@ def insert_many_values(conn: sqlite3.Connection,
 def modify_values(conn: sqlite3.Connection,
                   formatted_name: str,
                   index: int,
-                  parameters: List[str],
+                  columns: List[str],
                   values: VALUES,
                   ) -> int:
     """
-    Modify values for the corresponding paramSpec
-    If a parameter is in the table but not in the parameter list is
+    Modify values for the specified columns.
+    If a column is in the table but not in the columns list is
     left untouched.
-    If a parameter is mapped to None, it will be a null value.
+    If a column is mapped to None, it will be a null value.
     """
     name_val_template = []
-    for name, value in zip(parameters, values):
+    for name, value in zip(columns, values):
         name_val_template.append(f"{name}=?")
     name_val_templates = ",".join(name_val_template)
     query = f"""
@@ -576,24 +375,21 @@ def modify_values(conn: sqlite3.Connection,
     WHERE
         rowid = {index+1}
     """
-    # this will raise an error if there is a mismatch
-    # between the values and parameters length
-    # TODO: check inputs instead?
-    c = atomicTransaction(conn, query, *values)
+    c = transaction(conn, query, *values)
     return c.rowcount
 
 
 def modify_many_values(conn: sqlite3.Connection,
                        formatted_name: str,
                        start_index: int,
-                       parameters: List[str],
+                       columns: List[str],
                        values: List[VALUES],
                        ) -> None:
     """
-    Modify many values for the corresponding paramSpec
-    If a parameter is in the table but not in the parameter list is
+    Modify many values for the specified columns.
+    If a column is in the table but not in the column list is
     left untouched.
-    If a parameter is mapped to None, it will be a null value.
+    If a column is mapped to None, it will be a null value.
     """
     _len = length(conn, formatted_name)
     len_requested = start_index + len(values)
@@ -601,11 +397,11 @@ def modify_many_values(conn: sqlite3.Connection,
     if len_requested > _len:
         reason = f""""Modify operation Out of bounds.
         Trying to modify {len(values)} results,
-        but therere are only {available} retulst.
+        but therere are only {available} results.
         """
         raise ValueError(reason)
     for value in values:
-        modify_values(conn, formatted_name, start_index, parameters, value)
+        modify_values(conn, formatted_name, start_index, columns, value)
         start_index += 1
 
 
@@ -631,13 +427,269 @@ def length(conn: sqlite3.Connection,
         return _len
 
 
-def last_experiment(conn: sqlite3.Connection) -> int:
+def get_data(conn: sqlite3.Connection,
+             table_name: str,
+             columns: List[str],
+             start: int = None,
+             end: int = None,
+             ) -> List[List[Any]]:
+    """
+    Get data from the columns of a table.
+    Allows to specfiy a range.
+
+    Args:
+        conn: database connection
+        table_name: name of the table
+        columns: list of columns
+        start: start of range (1 indedex)
+        end: start of range (1 indedex)
+
+    Returns:
+        the data requested
+    """
+    _columns = ",".join(columns)
+    if start and end:
+        query = f"""
+        SELECT {_columns}
+        FROM "{table_name}"
+        WHERE rowid
+            > {start} and
+              rowid
+            <= {end}
+        """
+    elif start:
+        query = f"""
+        SELECT {_columns}
+        FROM "{table_name}"
+        WHERE rowid
+            >= {start}
+        """
+    elif end:
+        query = f"""
+        SELECT {_columns}
+        FROM "{table_name}"
+        WHERE rowid
+            <= {end}
+        """
+    else:
+        query = f"""
+        SELECT {_columns}
+        FROM "{table_name}"
+        """
+    c = transaction(conn, query)
+    res = many_many(c, *columns)
+    return res
+
+# Higher level Wrappers
+
+
+def new_experiment(conn: sqlite3.Connection,
+                   name: str,
+                   sample_name: str,
+                   format_string: Optional[str] = "{}-{}-{}"
+                   ) -> int:
+    """ Add new experiment to container
+
+    Args:
+        conn: database connection
+        name: the name of the experiment
+        sample_name: the name of the current sample
+        format_string: basic format string for table-name
+            must contain 3 placeholders.
+    Returns:
+        id: row-id of the created experiment
+    """
+    query = """
+    INSERT INTO experiments
+        (name, sample_name, start_time, format_string, run_counter)
+    VALUES
+        (?,?,?,?,?)
+    """
+    curr = atomicTransaction(conn, query, name, sample_name,
+                             time.time(), format_string, 0)
+    return curr.lastrowid
+
+
+def mark_run(conn: sqlite3.Connection, run_id: int, complete: bool):
+    """ Mark run complete
+
+    Args:
+        conn: database connection
+        run_id: id of the run to mark complete
+        complete: wether the run is completed or not
+    """
+    query = """
+    UPDATE
+        runs
+    SET
+        completed_timestamp=?,
+        is_completed=?
+    WHERE run_id=?;
+    """
+    atomicTransaction(conn, query, time.time(), complete, run_id)
+
+
+def completed(conn: sqlite3.Connection, run_id)->bool:
+    """ Check if the run scomplete
+
+    Args:
+        conn: database connection
+        run_id: id of the run to check
+    """
+    return bool(_select_one_where(conn, "runs", "is_completed",
+                                  "run_id", run_id))
+
+
+def finish_experiment(conn: sqlite3.Connection, exp_id: int):
+    """ Finish experiment
+
+    Args:
+        conn: database connection
+        name: the name of the experiment
+    """
+    query = """
+    UPDATE experiments SET end_time=? WHERE exp_id=?;
+    """
+    atomicTransaction(conn, query, time.time(), exp_id)
+
+
+def get_run_counter(conn: sqlite3.Connection, exp_id: int) -> int:
+    """ Get the experiment run counter
+
+    Args:
+        conn: the connection to the sqlite database
+        exp_id: experiment identifier
+
+    Returns:
+        the exepriment run counter
+
+    """
+    return _select_one_where(conn, "experiments", "run_counter",
+                             where_column="exp_id",
+                             where_value=exp_id)
+
+
+def get_experiments(conn: sqlite3.Connection) -> List[sqlite3.Row]:
+    """ Get a list of experiments
+     Args:
+         conn: database connection
+
+     Returns:
+         list of rows
+     """
+    sql = """
+    SELECT * FROM experiments
+    """
+    c = transaction(conn, sql)
+    return c.fetchall()
+
+
+def get_last_experiment(conn: sqlite3.Connection) -> int:
     """
     Return last started experiment id
     """
     query = "SELECT MAX(exp_id) FROM experiments"
     c = atomicTransaction(conn, query)
     return c.fetchall()[0][0]
+
+
+def get_runs(conn: sqlite3.Connection)->List[sqlite3.Row]:
+    """ Get a list of experiments, if exp_id is specified
+    we use it as filter
+
+     Args:
+         conn: database connection
+
+     Returns:
+         list of rows
+     """
+    sql = """
+    SELECT * FROM runs
+    """
+    c = transaction(conn, sql)
+    return c.fetchall()
+
+
+def get_last_run(conn: sqlite3.Connection, exp_id: int) -> str:
+    query = """
+    SELECT run_id, max(run_timestamp), exp_id
+    FROM runs
+    WHERE exp_id = ?;
+    """
+    c = transaction(conn, query, exp_id)
+    return one(c, 'run_id')
+
+
+def data_sets(conn: sqlite3.Connection) -> List[sqlite3.Row]:
+    """ Get a list of datasets
+    Args:
+        conn: database connection
+
+    Returns:
+        list of rows
+    """
+    sql = """
+    SELECT * FROM runs
+    """
+    c = transaction(conn, sql)
+    return c.fetchall()
+
+
+def _insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
+                parameters: Optional[List[ParamSpec]] = None,
+                ):
+    # get run counter and formatter from experiments
+    run_counter, format_string = _select_many_where(conn,
+                                                    "experiments",
+                                                    "run_counter",
+                                                    "format_string",
+                                                    where_column="exp_id",
+                                                    where_value=exp_id)
+    run_counter += 1
+    formatted_name = format_string.format(name, exp_id, run_counter)
+    table = "runs"
+    if parameters:
+        query = f"""
+        INSERT INTO {table}
+            (name,exp_id,result_table_name,result_counter,run_timestamp,parameters,is_completed)
+        VALUES
+            (?,?,?,?,?,?,?)
+        """
+        curr = transaction(conn, query,
+                           name,
+                           exp_id,
+                           formatted_name,
+                           run_counter,
+                           time.time(),
+                           ",".join([p.name for p in parameters]),
+                           False
+                           )
+    else:
+        query = f"""
+        INSERT INTO {table}
+            (name,exp_id,result_table_name,result_counter,run_timestamp,is_completed)
+        VALUES
+            (?,?,?,?,?,?)
+        """
+        curr = transaction(conn, query,
+                           name,
+                           exp_id,
+                           formatted_name,
+                           run_counter,
+                           time.time(),
+                           False
+                           )
+    return run_counter, formatted_name, curr.lastrowid
+
+
+def _update_experiment_run_counter(conn: sqlite3.Connection, exp_id: int,
+                                   run_counter: int) -> None:
+    query = """
+    UPDATE experiments
+    SET run_counter = ?
+    WHERE exp_id = ?
+    """
+    transaction(conn, query, run_counter, exp_id)
 
 
 def get_parameters(conn: sqlite3.Connection,
@@ -706,16 +758,6 @@ def add_parameter(conn: sqlite3.Connection,
         add_parameter_(conn, formatted_name, *parameter)
 
 
-def get_last_run(conn: sqlite3.Connection, exp_id: int) -> str:
-    query = """
-    SELECT result_table_name, max(run_timestamp), exp_id
-    FROM runs
-    WHERE exp_id = ?;
-    """
-    c = transaction(conn, query, exp_id)
-    return one(c, 'result_table_name')
-
-
 def _create_run_table(conn: sqlite3.Connection,
                       formatted_name: str,
                       parameters: Optional[List[ParamSpec]] = None,
@@ -739,7 +781,8 @@ def _create_run_table(conn: sqlite3.Connection,
         """
         transaction(conn, query)
         # now insert values
-        insert_values(conn, formatted_name, parameters, values)
+        insert_values(conn, formatted_name,
+                      [p.name for p in parameters], values)
     elif parameters:
         _parameters = ",".join([p.sql_repr() for p in parameters])
         query = f"""
@@ -750,8 +793,6 @@ def _create_run_table(conn: sqlite3.Connection,
         """
         transaction(conn, query)
     else:
-        # look ma no parameters
-        # TODO: does this even make sense?
         query = f"""
         CREATE TABLE "{formatted_name}" (
             id INTEGER PRIMARY KEY
@@ -760,38 +801,26 @@ def _create_run_table(conn: sqlite3.Connection,
         transaction(conn, query)
 
 
-def remove_run(conn: sqlite3.Connection, formatted_name: str) -> None:
-    """ Delete run from experiment
-
-    Args:
-        - conn: the connection to the sqlite database
-        - formatted_name: the name of the run to remove
-    """
-    sql = f"""
-    DROP TABLE [IF EXISTS] {formatted_name}
-    """
-    atomicTransaction(conn, sql)
-
-
 def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
                parameters: List[ParamSpec],
-               metadata: Optional[Dict[str, Any]] = None) -> Tuple[int, str]:
+               values:  List[Any] = None,
+               metadata: Optional[Dict[str, Any]] = None) -> Tuple[int, int, str]:
     """ Create a single run for the experiment.
 
 
     This will register the run in the runs table, the counter in the
     experiments table and create a new table with the formatted name.
-    The operations are NOT atomic, but the function is.
-    NOTE: this function is not idempotent.
 
     Args:
         - conn: the connection to the sqlite database
         - exp_id: the experiment id we want to create the run into
         - name: a friendly name for this run
-        - parameters : TODO:
-        - metadata : TODO:
+        - parameters: optional list of parameters this run has
+        - values:  optional list of values for the parameters
+        - metadata: optional metadata dictionary
 
     Returns:
+        - run_counter: the id of the newly created run (not unique)
         - run_id: the row id of the newly created run
         - formatted_name: the name of the newly created table
     """
@@ -803,45 +832,66 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
         if metadata:
             add_meta_data(conn, run_id, metadata)
         _update_experiment_run_counter(conn, exp_id, run_counter)
-        _create_run_table(conn, formatted_name, parameters)
-    return run_id, formatted_name
+        _create_run_table(conn, formatted_name, parameters, values)
+    return run_counter, run_id, formatted_name
 
 
-def get_data(conn: sqlite3.Connection,
-             formatted_name: str,
-             parameters: List[str],
-             start: int = None,
-             end: int = None,
-             ) -> Any:
-    _parameters = ",".join(parameters)
-    if start and end:
-        query = f"""
-        SELECT {_parameters}
-        FROM "{formatted_name}"
-        WHERE rowid
-            > {start} and
-              rowid
-            <= {end}
-        """
-    elif start:
-        query = f"""
-        SELECT {_parameters}
-        FROM "{formatted_name}"
-        WHERE rowid
-            >= {start}
-        """
-    elif end:
-        query = f"""
-        SELECT {_parameters}
-        FROM "{formatted_name}"
-        WHERE rowid
-            <= {end}
-        """
-    else:
-        query = f"""
-        SELECT {_parameters}
-        FROM "{formatted_name}"
-        """
-    c = transaction(conn, query)
-    res = many_many(c, *parameters)
-    return res
+def get_metadata(conn: sqlite3.Connection, tag: str, table_name: str):
+    """ Get metadata under the tag from table
+    """
+    return _select_one_where(conn, "runs", tag,
+                             "result_table_name", table_name)
+
+
+def insert_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
+                     metadata: Dict[str, Any]) -> None:
+    """
+    Insert new metadata column and add values
+
+    Args:
+        - conn: the connection to the sqlite database
+        - row_id: the row to add the metadata at
+        - table_name: the table to add to, defaults to runs
+        - metadata: the metadata to add
+    """
+    for key, value in metadata.items():
+        insert_column(conn, table_name, key)
+    update_meta_data(conn, row_id, table_name, metadata)
+
+
+def update_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
+                     metadata: Dict[str, Any]) -> None:
+    """
+    Updates metadata (they must exist already)
+
+    Args:
+        - conn: the connection to the sqlite database
+        - row_id: the row to add the metadata at
+        - table_name: the table to add to, defaults to runs
+        - metadata: the metadata to add
+    """
+    _update_where(conn, table_name, 'rowid', row_id, **metadata)
+
+
+def add_meta_data(conn: sqlite3.Connection,
+                  row_id: int,
+                  metadata: Dict[str, Any],
+                  table_name: Optional[str] = "runs") -> None:
+    """
+    Add medata data (updates if exists, create otherwise).
+
+    Args:
+        - conn: the connection to the sqlite database
+        - row_id: the row to add the metadata at
+        - metadata: the metadata to add
+        - table_name: the table to add to, defaults to runs
+    """
+    try:
+        insert_meta_data(conn, row_id, table_name, metadata)
+    except sqlite3.OperationalError as e:
+        # this means that the column already exists
+        # so just insert the new value
+        if str(e).startswith("duplicate"):
+            update_meta_data(conn, row_id, table_name, metadata)
+        else:
+            raise e

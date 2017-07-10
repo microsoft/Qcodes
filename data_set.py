@@ -15,8 +15,9 @@ from queue import Queue, Empty
 from param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
 from sqlite_base import (atomic, atomicTransaction, transaction, add_parameter,
-                         connect, create_run, get_parameters, last_experiment,
-                         length, modify_values,
+                         connect, create_run, get_parameters,
+                         get_last_experiment, _select_one_where,
+                         length, modify_values, add_meta_data, mark_run,
                          modify_many_values, insert_values, insert_many_values,
                          VALUES, get_data, get_metadata)
 
@@ -131,40 +132,70 @@ class Subscriber(Thread):
         self._send()
 
     def schedule_stop(self):
-        self.log.debug("Scheduling stop")
         if not self._stop_signal:
+            self.log.debug("Scheduling stop")
             self._stop_signal = True
 
     def _clean_up(self)->None:
-        # TODO: just a temp implemation (reomve?)
+        # TODO: just a temp implemation (remove?)
         self.log.debug("Stopped subscriber")
 
 
 class DataSet(Sized):
-    def __init__(self, name, exp_id: Optional[int]= None,
-                 specs: SPECS=None, values=None,
-                 metadata=None) -> None:
+    def __init__(self, path_to_db: str) -> None:
         # TODO: handle fail here by defaulting to
         # a standard db
-        self.location = DB
-        self.conn = connect(self.location)
-        # a standard experiment (f.ex. experiment, sample)
-        if exp_id:
-            self.exp_id = exp_id
-        else:
-            self.exp_id = last_experiment(self.conn)
-        self.name = name
-        id, table_name = create_run(self.conn, self.exp_id, self.name,
-                                    specs, metadata)
-        self.table_name = table_name
+        self.path_to_db = path_to_db
+        self.conn = connect(self.path_to_db)
+        self._debug = False
+
+    def _new(self, name, exp_id, specs: SPECS=None, values=None,
+             metadata=None) -> None:
+        """
+        Actually perform all the side effects needed for
+        the creation of a new dataset.
+        # TODO: default to last experiment good or bad?
+        """
+
+        if exp_id is None:
+            exp_id = get_last_experiment(self.conn)
+
+        counter, id, table_name = create_run(self.conn, exp_id, name,
+                                             specs, values, metadata)
+
+        # this is really the UUID (an ever incresing count in the db)
         self.id = id
-        # TODO: implement this how/how ??
-        if values:
-            raise NotImplementedError
-
-        self.completed = False
-
         self.subscribers: Dict[str, Subscriber] = {}
+        self._completed = False
+
+    @property
+    def name(self):
+        return _select_one_where(self.conn, "runs",
+                                 "name", "run_id", self.id)
+
+    @property
+    def table_name(self):
+        return _select_one_where(self.conn, "runs",
+                                 "result_table_name", "run_id", self.id)
+
+    @property
+    def counter(self):
+        return _select_one_where(self.conn, "runs",
+                                 "result_counter", "run_id", self.id)
+
+    @property
+    def exp_id(self):
+        return _select_one_where(self.conn, "runs",
+                                 "exp_id", "run_id", self.id)
+
+    def toggle_debug(self):
+        """
+        Toggle debug mode, if debug mode is on
+        all the queries made are echoed back.
+        """
+        self._debug = not self._debug
+        self.conn.close()
+        self.conn = connect(self.path_to_db, self._debug)
 
     def add_parameter(self, spec: ParamSpec):
         add_parameter(self.conn, self.table_name, spec)
@@ -185,23 +216,29 @@ class DataSet(Sized):
             metadata: actual metadata
 
         """
-        # TODO: this should follow the spec
-        # option one:
-        # add_meta_data(self.conn, self.id, {tag: metadata})
-        # option two:
+        # TODO: this follows the spec but another option:
         # json_meta_data = json.dumps(metadata)
         # add_meta_data(self.conn, self.id, {"metadata": json_meta_data})
+
+        add_meta_data(self.conn, self.id, {tag: metadata})
         # adding meta-data does not commit
-        # self.conn.commit()
-        raise NotImplemented
+        self.conn.commit()
+
+    @property
+    def completed(self)->bool:
+        return self._completed
+
+    @completed.setter
+    def completed(self, value):
+        self._completed = value
+        mark_run(self.conn, self.id, value)
 
     def mark_complete(self) -> None:
         """Mark dataset as complete and thus read only and notify the
         subscribers"""
         self.completed = True
-        # TODO: implement suscribers
-        # for sub in self.subscribers.values():
-        # sub.done_callback()
+        for sub in self.subscribers.values():
+            sub.done_callback()
 
     def add_result(self, results: Dict[str, VALUES]) -> int:
         """
@@ -273,11 +310,11 @@ class DataSet(Sized):
         """
         if self.completed:
             raise CompletedError
-
-        modify_values(self.conn, self.table_name, index,
-                      list(results.keys()),
-                      list(results.values())
-                      )
+        with atomic(self.conn):
+            modify_values(self.conn, self.table_name, index,
+                          list(results.keys()),
+                          list(results.values())
+                          )
 
     def modify_results(self, start_index: int,
                        updates: List[Dict[str, VALUES]]):
@@ -299,11 +336,12 @@ class DataSet(Sized):
         flattened_keys = [item for sublist in keys for item in sublist]
         values = [list(val.values()) for val in updates]
         flattened_values = [item for sublist in values for item in sublist]
-        modify_many_values(self.conn,
-                           self.table_name,
-                           start_index,
-                           flattened_keys,
-                           flattened_values)
+        with atomic(self.conn):
+                modify_many_values(self.conn,
+                                   self.table_name,
+                                   start_index,
+                                   flattened_keys,
+                                   flattened_values)
 
     def add_parameter_values(self, spec: ParamSpec, values: List[VALUES]):
         """
@@ -415,14 +453,14 @@ class DataSet(Sized):
             self.subscribers.clear()
 
     def get_metadata(self, tag):
-        return get_metadata(self.conn, tag, self.name)
+        return get_metadata(self.conn, tag, self.table_name)
 
     def __len__(self)->int:
         return length(self.conn, self.table_name)
 
     def __repr__(self)->str:
         out = []
-        heading = f"{self.name} #{self.id}@{self.location}"
+        heading = f"{self.name} #{self.id}@{self.path_to_db}"
         out.append(heading)
         out.append("-" * len(heading))
         ps = self.get_parameters()
@@ -433,6 +471,30 @@ class DataSet(Sized):
         return "\n".join(out)
 
 
+# public api
+def load_by_id(id):
+    d = DataSet(DB)
+    d.id = id
+    return d
+
+
+def load_by_counter(counter, exp_id):
+    d = DataSet(DB)
+    d.id = id
+    return d
+
+
+def new_data_set(name, exp_id: Optional[int]= None,
+                 specs: SPECS=None, values=None,
+                 metadata=None) -> DataSet:
+    """ Create a new dataset
+    """
+    d = DataSet(DB)
+    d._new(name, exp_id, specs, values, metadata)
+    return d
+
+
+# helpers
 def hash_from_parts(*parts: str) -> str:
     """
     Args:
