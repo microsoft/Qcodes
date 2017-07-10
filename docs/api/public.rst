@@ -6,7 +6,7 @@ Public
 ======
 
 Classes and Functions
-----------------------
+---------------------
 
 This page lists the entrypoints to the plubic qcodes API.
 
@@ -88,6 +88,9 @@ Instrument
    Function
    Parameter
    StandardParameter
+   ArrayParameter
+   MultiParameter
+   ManualParameter
    SweepFixedValues
    SweepValues
    combine

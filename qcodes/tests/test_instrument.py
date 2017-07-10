@@ -17,6 +17,8 @@ class TestInstrument(TestCase):
 
     def tearDown(self):
         # force gc run
+        self.instrument.close()
+        self.instrument2.close()
         del self.instrument
         del self.instrument2
         gc.collect()
@@ -36,6 +38,7 @@ class TestInstrument(TestCase):
         self.assertEqual(Instrument.instances(), [])
         self.assertEqual(DummyInstrument.instances(), [self.instrument])
         self.assertEqual(self.instrument.instances(), [self.instrument])
+
 
     def test_attr_access(self):
         instrument = self.instrument
@@ -93,3 +96,20 @@ class TestInstrument(TestCase):
             # check that we can find this instrument from the base class
             self.assertEqual(instrument,
                              Instrument.find_instrument(instrument.name))
+
+    def test_snapshot_value(self):
+        self.instrument.add_parameter('has_snapshot_value',
+                                      parameter_class=ManualParameter,
+                                      initial_value=42,
+                                      snapshot_value=True)
+        self.instrument.add_parameter('no_snapshot_value',
+                                      parameter_class=ManualParameter,
+                                      initial_value=42,
+                                      snapshot_value=False)
+
+        snapshot = self.instrument.snapshot()
+
+        self.assertIn('value', snapshot['parameters']['has_snapshot_value'])
+        self.assertEqual(42,
+                         snapshot['parameters']['has_snapshot_value']['value'])
+        self.assertNotIn('value', snapshot['parameters']['no_snapshot_value'])
