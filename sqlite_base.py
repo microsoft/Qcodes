@@ -43,7 +43,7 @@ CREATE  TABLE IF NOT EXISTS experiments (
 --    PRIMARY KEY (exp_id, start_time, sample_name)
 );
 
-CREATE TABLE IF NOT EXIST runs (
+CREATE TABLE IF NOT EXISTS runs (
     -- this will autoncrement by default if
     -- no value is specified on insert
     run_id INTEGER PRIMARY KEY,
