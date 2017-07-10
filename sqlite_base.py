@@ -18,13 +18,12 @@ import numpy as np
 import io
 from typing import Any, List, Optional, Tuple, Union, Dict
 
-
 from param_spec import ParamSpec
 
 # represent the type of  data we can/want map to sqlite column
 VALUES = List[Union[str, Number, List, ndarray, bool]]
 
-BASESQL="""
+_BASESQL = """
 CREATE  TABLE IF NOT EXISTS experiments (
     -- this will autoncrement by default if
     -- no value is specified on insert
@@ -66,7 +65,9 @@ CREATE TABLE IF NOT EXISTS runs (
 """
 
 
-def adapt_array(arr: ndarray)->sqlite3.Binary:
+# utility function to allow sqlite/numpy type
+
+def _adapt_array(arr: ndarray) -> sqlite3.Binary:
     """
     See this:
     https://stackoverflow.com/questions/3425320/sqlite3-programmingerror-you-must-not-use-8-bit-bytestrings-unless-you-use-a-te
@@ -77,29 +78,53 @@ def adapt_array(arr: ndarray)->sqlite3.Binary:
     return sqlite3.Binary(out.read())
 
 
-def convert_array(text: bytes)->ndarray:
+def _convert_array(text: bytes) -> ndarray:
     out = io.BytesIO(text)
     out.seek(0)
     return np.load(out)
 
 
-def one(curr: sqlite3.Cursor, column: str)->Any:
+def one(curr: sqlite3.Cursor, column: str) -> Any:
+    """Get the value of one column from one row
+    Args:
+        curr: cursor to operate on
+        column: name of the column
+
+    Returns:
+        the value
+    """
     res = curr.fetchall()
     if len(res) > 1:
-        raise RuntimeError("Expected only one result")
+        raise RuntimeError("Expected only one row")
     else:
         return res[0][column]
 
 
-def many(curr: sqlite3.Cursor, *columns: str)->List[Any]:
+def many(curr: sqlite3.Cursor, *columns: str) -> List[Any]:
+    """Get the values of many columns from one row
+    Args:
+        curr: cursor to operate on
+        columns: names of the columns
+
+    Returns:
+        list of  values
+    """
     res = curr.fetchall()
     if len(res) > 1:
-        raise RuntimeError("Expected only one result")
+        raise RuntimeError("Expected only one row")
     else:
         return [res[0][c] for c in columns]
 
 
-def many_many(curr: sqlite3.Cursor, *columns: str)->List[Any]:
+def many_many(curr: sqlite3.Cursor, *columns: str) -> List[List[Any]]:
+    """Get all values of many columns
+    Args:
+        curr: cursor to operate on
+        columns: names of the columns
+
+    Returns:
+        list of lists of values
+    """
     res = curr.fetchall()
     results = []
     for r in res:
@@ -107,12 +132,25 @@ def many_many(curr: sqlite3.Cursor, *columns: str)->List[Any]:
     return results
 
 
-def connect(name: str, debug: bool=False) -> sqlite3.Connection:
+def connect(name: str, debug: bool = False) -> sqlite3.Connection:
+    """Connect or create  database. If debug the queries will be echoed back.
+    This function takes care of registering the numpy/sqlite type
+    converters that we need.
+
+
+    Args:
+        name: name or path to the sqlite file
+        debug: whether or not to turn on tracing
+
+    Returns:
+        conn: connection object to the database
+
+    """
     # register numpy->binary(TEXT) adapter
-    sqlite3.register_adapter(np.ndarray, adapt_array)
+    sqlite3.register_adapter(np.ndarray, _adapt_array)
     # register binary(TEXT) -> numpy converter
     # for some reasons mypy complains about this
-    sqlite3.register_converter("array", convert_array)
+    sqlite3.register_converter("array", _convert_array)
     conn = sqlite3.connect(name, detect_types=sqlite3.PARSE_DECLTYPES)
     # sqlite3 options
     conn.row_factory = sqlite3.Row
@@ -123,7 +161,20 @@ def connect(name: str, debug: bool=False) -> sqlite3.Connection:
 
 
 def transaction(conn: sqlite3.Connection,
-                sql: str, *args: Any)->sqlite3.Cursor:
+                sql: str, *args: Any) -> sqlite3.Cursor:
+    """Perform a transaction.
+    The transaction needs to be committed or rolled back.
+
+
+    Args:
+        conn: database connection
+        sql: formatted string
+        *args: arguments to use for parameter substitution
+
+    Returns:
+        sqlite cursor
+
+    """
     c = conn.cursor()
     if len(args) > 0:
         c.execute(sql, args)
@@ -133,7 +184,21 @@ def transaction(conn: sqlite3.Connection,
 
 
 def atomicTransaction(conn: sqlite3.Connection,
-                      sql: str, *args: Any)->sqlite3.Cursor:
+                      sql: str, *args: Any) -> sqlite3.Cursor:
+    """Perform an **atomic** transaction.
+    The transaction is committed if there are no exceptions else the
+    transaction is rolled back.
+
+
+    Args:
+        conn: database connection
+        sql: formatted string
+        *args: arguments to use for parameter substitution
+
+    Returns:
+        sqlite cursor
+
+    """
     try:
         c = transaction(conn, sql, *args)
     except Exception as e:
@@ -165,7 +230,15 @@ def atomic(conn: sqlite3.Connection):
 
 
 def insert_column(conn: sqlite3.Connection, table: str, name: str,
-                  type: Optional[str]=None)->None:
+                  type: Optional[str] = None) -> None:
+    """Insert new column to a table
+
+    Args:
+        conn: database connection
+        table: destination for the insertion
+        name: column name
+        type: sqlite type of the column
+    """
     if type:
         transaction(conn,
                     f'ALTER TABLE "{table}" ADD COLUMN "{name}" {type}')
@@ -178,14 +251,15 @@ def new_experiment(conn: sqlite3.Connection,
                    name: str,
                    sample_name: str,
                    format_string: Optional[str] = "{}-{}-{}"
-                   )->int:
+                   ) -> int:
     """ Add new experiment to container
 
     Args:
         conn: database connection
         name: the name of the experiment
         sample_name: the name of the current sample
-        format_string: TODO: write this
+        format_string: basic format string for table-name
+            must contain 3 placeholders.
     Returns:
         id: row-id of the created experiment
     """
@@ -204,7 +278,7 @@ def finish_experiment(conn: sqlite3.Connection, exp_id: int):
     """ Finish experiment
 
     Args:
-        conn: database
+        conn: database connection
         name: the name of the experiment
     """
     query = """
@@ -213,17 +287,31 @@ def finish_experiment(conn: sqlite3.Connection, exp_id: int):
     atomicTransaction(conn, query, time.time(), exp_id)
 
 
-def data_sets(conn: sqlite3.Connection):
+def data_sets(conn: sqlite3.Connection) -> List[sqlite3.Row]:
+    """ Get a list of datasets
+    Args:
+        conn: database connection
+
+    Returns:
+        list of rows
+    """
     sql = """
-    SELECT * from runs
+    SELECT * FROM runs
     """
     c = transaction(conn, sql)
     return c.fetchall()
 
 
-def experiments(conn: sqlite3.Connection):
+def experiments(conn: sqlite3.Connection) -> List[sqlite3.Row]:
+    """ Get a list of experiments
+     Args:
+         conn: database connection
+
+     Returns:
+         list of rows
+     """
     sql = """
-    SELECT * from experiments
+    SELECT * FROM experiments
     """
     c = transaction(conn, sql)
     return c.fetchall()
@@ -267,15 +355,25 @@ def get_metadata(conn: sqlite3.Connection, tag: str, table_name: str):
 # TODO: can make many of those. Easier to use // enforce some types
 # but slower because make one query only
 def get_run_counter(conn: sqlite3.Connection, exp_id: int) -> int:
+    """ Get the experiment run counter
+
+    Args:
+        conn: the connection to the sqlite database
+        exp_id: experiment identifier
+
+    Returns:
+        the exepriment run counter
+
+    """
     return _select_one_where(conn, "experiments", "run_counter",
                              where_column="exp_id",
                              where_value=exp_id)
 
-
+# TODO: this thre methods shoul have better names
 def insert_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
-                     metadata: Dict[str, Any])->None:
+                     metadata: Dict[str, Any]) -> None:
     """
-    Creates new metadata column and add values
+    Insert new metadata column and add values
 
     Args:
         - conn: the connection to the sqlite database
@@ -291,7 +389,7 @@ def insert_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
         transaction(conn, sql, value, row_id)
 
 
-def _massage_medata(metadata: Dict[str, Any])-> Tuple[str, List[Any]]:
+def _massage_medata(metadata: Dict[str, Any]) -> Tuple[str, List[Any]]:
     template = []
     values = []
     for key, value in metadata.items():
@@ -301,7 +399,7 @@ def _massage_medata(metadata: Dict[str, Any])-> Tuple[str, List[Any]]:
 
 
 def update_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
-                     metadata: Dict[str, Any])->None:
+                     metadata: Dict[str, Any]) -> None:
     """
     Updates metadata (they must exist already)
 
@@ -323,7 +421,7 @@ def update_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
 def add_meta_data(conn: sqlite3.Connection,
                   row_id: int,
                   metadata: Dict[str, Any],
-                  table_name: Optional[str]="runs")->None:
+                  table_name: Optional[str] = "runs") -> None:
     """
     Add medata data (updates if exists, create otherwise).
 
@@ -344,9 +442,9 @@ def add_meta_data(conn: sqlite3.Connection,
             raise e
 
 
-def insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
-               parameters: Optional[List[ParamSpec]]=None,
-               ):
+def _insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
+                parameters: Optional[List[ParamSpec]] = None,
+                ):
     # get run counter and formatter from experiments
     run_counter, format_string = _select_many_where(conn,
                                                     "experiments",
@@ -389,10 +487,8 @@ def insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
     return run_counter, formatted_name, curr.lastrowid
 
 
-def update_experiment_run_counter(conn: sqlite3.Connection, exp_id: int,
-                                  run_counter: int)->None:
-    """ Update experiment with
-    """
+def _update_experiment_run_counter(conn: sqlite3.Connection, exp_id: int,
+                                   run_counter: int) -> None:
     query = """
     UPDATE experiments
     SET run_counter = ?
@@ -405,14 +501,14 @@ def insert_values(conn: sqlite3.Connection,
                   formatted_name: str,
                   parameters: List[str],
                   values: VALUES,
-                  )->int:
+                  ) -> int:
     """
     Inserts values for the corresponding paramSpec
     Will pad with null if not all parameters are specified.
     NOTE this need to be committed before closing the connection.
     """
     _parameters = ",".join(parameters)
-    _values = ",".join(["?"]*len(parameters))
+    _values = ",".join(["?"] * len(parameters))
     query = f"""INSERT INTO "{formatted_name}"
         ({_parameters})
     VALUES
@@ -429,7 +525,7 @@ def insert_many_values(conn: sqlite3.Connection,
                        formatted_name: str,
                        parameters: List[str],
                        values: List[VALUES],
-                       )->int:
+                       ) -> int:
     """
     Inserts many values for the corresponding paramSpec.
     Will pad with null if not all parameters are specified.
@@ -440,9 +536,9 @@ def insert_many_values(conn: sqlite3.Connection,
     # TODO: none of the code below is not form PRADA SS-2017
     # [a, b] -> (?,?), (?,?)
     # [[1,1], [2,2]]
-    _values = "("+",".join(["?"]*len(parameters))+")"
+    _values = "(" + ",".join(["?"] * len(parameters)) + ")"
     # NOTE: assume that all the values have same length
-    _values_x_params = ",".join([_values]*len(values[0]))
+    _values_x_params = ",".join([_values] * len(values[0]))
     query = f"""INSERT INTO "{formatted_name}"
         ({_parameters})
     VALUES
@@ -462,7 +558,7 @@ def modify_values(conn: sqlite3.Connection,
                   index: int,
                   parameters: List[str],
                   values: VALUES,
-                  )->int:
+                  ) -> int:
     """
     Modify values for the corresponding paramSpec
     If a parameter is in the table but not in the parameter list is
@@ -492,7 +588,7 @@ def modify_many_values(conn: sqlite3.Connection,
                        start_index: int,
                        parameters: List[str],
                        values: List[VALUES],
-                       )->None:
+                       ) -> None:
     """
     Modify many values for the corresponding paramSpec
     If a parameter is in the table but not in the parameter list is
@@ -515,7 +611,7 @@ def modify_many_values(conn: sqlite3.Connection,
 
 def length(conn: sqlite3.Connection,
            formatted_name: str
-           )-> int:
+           ) -> int:
     """
     Return the lenght of the table
 
@@ -539,7 +635,7 @@ def last_experiment(conn: sqlite3.Connection) -> int:
     """
     Return last started experiment id
     """
-    query = "select MAX(exp_id) from experiments"
+    query = "SELECT MAX(exp_id) FROM experiments"
     c = atomicTransaction(conn, query)
     return c.fetchall()[0][0]
 
@@ -547,7 +643,7 @@ def last_experiment(conn: sqlite3.Connection) -> int:
 def get_parameters(conn: sqlite3.Connection,
                    formatted_name: str) -> List[ParamSpec]:
     """
-    gets the list of param specs for run
+    Get the list of param specs for run
 
     Args:
         - conn: the connection to the sqlite database
@@ -572,7 +668,7 @@ def add_parameter_(conn: sqlite3.Connection,
                    *parameter: ParamSpec):
     """ Add parameters to the dataset
     NOTE: two parameters with the same name are not allowed
- 2   Args:
+    Args:
         - conn: the connection to the sqlite database
         - formatted_name: name of the table
         - parameter: the paraemters to add
@@ -583,13 +679,13 @@ def add_parameter_(conn: sqlite3.Connection,
         p_names.append(p.name)
     # get old parameters column from run table
     sql = f"""
-    SELECT parameters from runs
+    SELECT parameters FROM runs
     WHERE result_table_name=?
     """
     c = transaction(conn, sql, formatted_name)
     old_parameters = one(c, 'parameters')
     if old_parameters:
-        new_parameters = ",".join([old_parameters]+p_names)
+        new_parameters = ",".join([old_parameters] + p_names)
     else:
         new_parameters = ",".join(p_names)
     sql = "UPDATE runs SET parameters=? WHERE result_table_name=?"
@@ -614,17 +710,17 @@ def get_last_run(conn: sqlite3.Connection, exp_id: int) -> str:
     query = """
     SELECT result_table_name, max(run_timestamp), exp_id
     FROM runs
-    WHERe exp_id = ?;
+    WHERE exp_id = ?;
     """
     c = transaction(conn, query, exp_id)
     return one(c, 'result_table_name')
 
 
-def create_run_table(conn: sqlite3.Connection,
-                     formatted_name: str,
-                     parameters: Optional[List[ParamSpec]]=None,
-                     values: Optional[VALUES]=None
-                     )->None:
+def _create_run_table(conn: sqlite3.Connection,
+                      formatted_name: str,
+                      parameters: Optional[List[ParamSpec]] = None,
+                      values: Optional[VALUES] = None
+                      ) -> None:
     """Create run table with formatted_name as name
 
     NOTE this need to be committed before closing the connection.
@@ -664,7 +760,7 @@ def create_run_table(conn: sqlite3.Connection,
         transaction(conn, query)
 
 
-def remove_run(conn: sqlite3.Connection, formatted_name: str)->None:
+def remove_run(conn: sqlite3.Connection, formatted_name: str) -> None:
     """ Delete run from experiment
 
     Args:
@@ -679,7 +775,7 @@ def remove_run(conn: sqlite3.Connection, formatted_name: str)->None:
 
 def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
                parameters: List[ParamSpec],
-               metadata: Optional[Dict[str, Any]]=None)-> Tuple[int, str]:
+               metadata: Optional[Dict[str, Any]] = None) -> Tuple[int, str]:
     """ Create a single run for the experiment.
 
 
@@ -700,23 +796,23 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
         - formatted_name: the name of the newly created table
     """
     with atomic(conn):
-        run_counter, formatted_name, run_id = insert_run(conn,
-                                                         exp_id,
-                                                         name,
-                                                         parameters)
+        run_counter, formatted_name, run_id = _insert_run(conn,
+                                                          exp_id,
+                                                          name,
+                                                          parameters)
         if metadata:
             add_meta_data(conn, run_id, metadata)
-        update_experiment_run_counter(conn, exp_id, run_counter)
-        create_run_table(conn, formatted_name, parameters)
+        _update_experiment_run_counter(conn, exp_id, run_counter)
+        _create_run_table(conn, formatted_name, parameters)
     return run_id, formatted_name
 
 
 def get_data(conn: sqlite3.Connection,
              formatted_name: str,
              parameters: List[str],
-             start: int=None,
-             end: int=None,
-             )->Any:
+             start: int = None,
+             end: int = None,
+             ) -> Any:
     _parameters = ",".join(parameters)
     if start and end:
         query = f"""
