@@ -2,6 +2,7 @@ appnope==0.1.0
 astroid==1.5.3
 bleach==2.0.0
 coverage==4.4.1
+cycler==0.10.0
 decorator==4.0.11
 entrypoints==0.2.3
 flake8==3.3.0
@@ -21,6 +22,7 @@ jupyter-console==5.1.0
 jupyter-core==4.3.0
 lazy-object-proxy==1.3.1
 MarkupSafe==1.0
+matplotlib==2.0.2
 mccabe==0.6.1
 mistune==0.7.4
 mypy==0.511
@@ -37,11 +39,13 @@ py==1.4.34
 pycodestyle==2.3.1
 pyflakes==1.5.0
 Pygments==2.2.0
+pyparsing==2.2.0
 pytest==3.1.2
 python-dateutil==2.6.0
+pytz==2017.2
 PyVISA==1.8
 pyzmq==16.0.2
-qcodes==0.1.4
+-e git+git@github.com:QCoDeS/Qcodes.git@5438c2dbf76579ac6e172375137219ea537bb662#egg=qcodes
 qtconsole==4.3.0
 simplegeneric==0.8.1
 six==1.10.0
