@@ -1,6 +1,7 @@
-
 import numpy as np
 import logging
+import json
+import pyperclip
 
 from qcodes import VisaInstrument
 from qcodes.instrument.parameter import StandardParameter, ManualParameter
@@ -66,8 +67,8 @@ class SIM928(StandardParameter):
         return_str = self._instrument.ask('GETN?{:d},100'.format(self.channel))
         for k in range(5):
             if return_str == '#3000\n':
-                logger.warning('Received return string #3000, '
-                               'resetting SIM {}'.format(return_str, self))
+                logger.warning('Received return string {}, '
+                               'resetting SIM {}'.format(return_str, self.name))
                 self._instrument.reset_slot(self.channel)
                 sleep(1)
                 self._instrument.write(self.send_cmd + '"VOLT?"')
@@ -139,9 +140,13 @@ class SIM900(VisaInstrument):
 
 voltage_parameters = []
 
-def get_voltages():
+def get_voltages(copy=True):
     """ Get scaled parameter voltages as dict """
-    return {param.name: param() for param in voltage_parameters}
+    voltage_dict = {param.name: param() for param in voltage_parameters}
+    if copy:
+        voltage_json = json.dumps(voltage_dict)
+        pyperclip.copy(voltage_json)
+    return voltage_dict
 
 
 def ramp_voltages(target_voltage=None, gate_names=None, **kwargs):
