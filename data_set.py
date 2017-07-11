@@ -154,16 +154,11 @@ class DataSet(Sized):
         """
         Actually perform all the side effects needed for
         the creation of a new dataset.
-        # TODO: default to last experiment good or bad?
         """
-
-        if exp_id is None:
-            exp_id = get_last_experiment(self.conn)
-
         counter, id, table_name = create_run(self.conn, exp_id, name,
                                              specs, values, metadata)
 
-        # this is really the UUID (an ever incresing count in the db)
+        # this is really the UUID (an ever increasing count in the db)
         self.id = id
         self.subscribers: Dict[str, Subscriber] = {}
         self._completed = False
@@ -487,9 +482,20 @@ def load_by_counter(counter, exp_id):
 def new_data_set(name, exp_id: Optional[int]= None,
                  specs: SPECS=None, values=None,
                  metadata=None) -> DataSet:
-    """ Create a new dataset
+    """ Create a new dataset.
+    If exp_id is not specified the last experiment will be loaded by default.
+
+    Args:
+        name: the name of the new dataset
+        exp_id:  the id of the experiments this dataset belongs to
+            defaults to the last experiment
+        specs: list of parameters to create this data_set with
+        values: the values to associate with the parameters
+        metadata:  the values to associate with the dataset
     """
     d = DataSet(DB)
+    if exp_id is None:
+        exp_id = get_last_experiment(d.conn)
     d._new(name, exp_id, specs, values, metadata)
     return d
 
