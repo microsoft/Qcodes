@@ -8,7 +8,7 @@ import numpy as np
 import io
 from typing import Any, List, Optional, Tuple, Union, Dict
 
-from param_spec import ParamSpec
+from qcodes.dataset.param_spec import ParamSpec
 
 # represent the type of  data we can/want map to sqlite column
 VALUES = List[Union[str, Number, List, ndarray, bool]]

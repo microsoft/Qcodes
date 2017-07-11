@@ -61,3 +61,10 @@ from qcodes.instrument.sweep_values import SweepFixedValues, SweepValues
 from qcodes.utils import validators
 
 from qcodes.instrument_drivers.test import test_instruments, test_instrument
+from qcodes.dataset.data_set import new_data_set, load_by_counter, load_by_id
+from qcodes.dataset.param_spec import ParamSpec
+# TODO: do we want this?
+import qcodes.dataset.sqlite_base
+_c = qcodes.dataset.sqlite_base.connect(qcodes.config["core"]["db_location"], qcodes.config["core"]["loglevel"])
+# init is actually idempotent so it's safe to always call!
+qcodes.dataset.sqlite_base.init_db(_c)

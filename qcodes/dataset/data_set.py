@@ -12,15 +12,16 @@ import time
 import logging
 import hashlib
 from queue import Queue, Empty
-from param_spec import ParamSpec
-from qcodes.instrument.parameter import _BaseParameter
-from sqlite_base import (atomic, atomicTransaction, transaction, add_parameter,
-                         connect, create_run, get_parameters,
-                         get_last_experiment, _select_one_where,
-                         length, modify_values, add_meta_data, mark_run,
-                         modify_many_values, insert_values, insert_many_values,
-                         VALUES, get_data, get_metadata)
 
+import qcodes.config
+from qcodes.dataset.param_spec import ParamSpec
+from qcodes.instrument.parameter import _BaseParameter
+from qcodes.dataset.sqlite_base import (atomic, atomicTransaction, transaction, add_parameter,
+                                        connect, create_run, get_parameters,
+                                        get_last_experiment, _select_one_where,
+                                        length, modify_values, add_meta_data, mark_run,
+                                        modify_many_values, insert_values, insert_many_values,
+                                        VALUES, get_data, get_metadata)
 
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
@@ -48,15 +49,14 @@ class CompletedError(RuntimeError):
     pass
 
 
-# TODO: this clearly should be configurable
-DB = "/Users/unga/Desktop/experiment.db"
+DB =  qcodes.config["core"]["db_location"]
 
 
 class Subscriber(Thread):
     def __init__(self, dataSet, id: str,
                  callback: Callable[[List[Any], int, Optional[Any]], None],
-                 state: Optional[Any]=None, min_wait: int=100,
-                 min_count: int=1)->None:
+                 state: Optional[Any] = None, min_wait: int = 100,
+                 min_count: int = 1) -> None:
         self.sub_id = id
         # wether or not this is actually thread safe I am not sure :P
         self.dataSet = dataSet
@@ -87,18 +87,18 @@ class Subscriber(Thread):
         self._data_set_len = len(dataSet)
         super().__init__()
 
-    def cache(self, *args)->None:
+    def cache(self, *args) -> None:
         self.log.debug(f"{self.callbackid} called with args:{args}")
         self.data.put(args)
         self._data_set_len += 1
         self._send_queue += 1
 
-    def run(self)->None:
+    def run(self) -> None:
         self.log.debug("Starting subscriber")
         self._loop()
 
     @staticmethod
-    def _exhaust_queue(queue)->List:
+    def _exhaust_queue(queue) -> List:
         result_list = []
         while True:
             try:
@@ -112,7 +112,7 @@ class Subscriber(Thread):
         self.callback(result_list, self._data_set_len, self.state)
         return result_list
 
-    def _loop(self)->None:
+    def _loop(self) -> None:
         while True:
             if self._stop_signal:
                 self._clean_up()
@@ -122,12 +122,12 @@ class Subscriber(Thread):
                 self._send_queue = 0
 
             # if nothing happens we let the word go foward
-            time.sleep(self.min_wait/1000)
+            time.sleep(self.min_wait / 1000)
             if self.dataSet.completed:
                 self._send()
                 break
 
-    def done_callback(self)->None:
+    def done_callback(self) -> None:
         self.log.debug("Done callback")
         self._send()
 
@@ -136,7 +136,7 @@ class Subscriber(Thread):
             self.log.debug("Scheduling stop")
             self._stop_signal = True
 
-    def _clean_up(self)->None:
+    def _clean_up(self) -> None:
         # TODO: just a temp implemation (remove?)
         self.log.debug("Stopped subscriber")
 
@@ -149,7 +149,7 @@ class DataSet(Sized):
         self.conn = connect(self.path_to_db)
         self._debug = False
 
-    def _new(self, name, exp_id, specs: SPECS=None, values=None,
+    def _new(self, name, exp_id, specs: SPECS = None, values=None,
              metadata=None) -> None:
         """
         Actually perform all the side effects needed for
@@ -220,7 +220,7 @@ class DataSet(Sized):
         self.conn.commit()
 
     @property
-    def completed(self)->bool:
+    def completed(self) -> bool:
         return self._completed
 
     @completed.setter
@@ -332,11 +332,11 @@ class DataSet(Sized):
         values = [list(val.values()) for val in updates]
         flattened_values = [item for sublist in values for item in sublist]
         with atomic(self.conn):
-                modify_many_values(self.conn,
-                                   self.table_name,
-                                   start_index,
-                                   flattened_keys,
-                                   flattened_values)
+            modify_many_values(self.conn,
+                               self.table_name,
+                               start_index,
+                               flattened_keys,
+                               flattened_values)
 
     def add_parameter_values(self, spec: ParamSpec, values: List[VALUES]):
         """
@@ -357,9 +357,9 @@ class DataSet(Sized):
         if len(self) > 0:
             if len(values) != len(self):
                 raise ValueError("Need to have {} values but got {}.".format(
-                                  len(self),
-                                  len(values)
-                                  ))
+                    len(self),
+                    len(values)
+                ))
         with atomic(self.conn):
             add_parameter(self.conn, self.table_name, spec)
             # now add values!
@@ -368,8 +368,8 @@ class DataSet(Sized):
 
     def get_data(self,
                  *params: Union[str, ParamSpec, _BaseParameter],
-                 start: Optional[int]= None,
-                 end: Optional[int]= None)-> List[List[Any]]:
+                 start: Optional[int] = None,
+                 end: Optional[int] = None) -> List[List[Any]]:
         """ Returns the values stored in the DataSet for the specified parameters.
         The values are returned as a list of parallel NumPy arrays, one array
         per parameter. The data type of each array is based on the data type
@@ -410,8 +410,8 @@ class DataSet(Sized):
 
     # NEED to pass Any for some reason
     def subscribe(self, callback: Callable[[Any, int, Optional[Any]], None],
-                  min_wait: int = 0, min_count: int=1,
-                  state: Optional[Any]=None,
+                  min_wait: int = 0, min_count: int = 1,
+                  state: Optional[Any] = None,
                   subscriber_class=Subscriber) -> str:
         sub_id = hash_from_parts(str(time.time()))
         sub = Subscriber(self, sub_id, callback, state, min_wait, min_count)
@@ -419,7 +419,7 @@ class DataSet(Sized):
         sub.start()
         return sub.sub_id
 
-    def unsubscribe(self, uuid: str)-> None:
+    def unsubscribe(self, uuid: str) -> None:
         """
         Remov subscriber with the provided uuid
         """
@@ -450,10 +450,10 @@ class DataSet(Sized):
     def get_metadata(self, tag):
         return get_metadata(self.conn, tag, self.table_name)
 
-    def __len__(self)->int:
+    def __len__(self) -> int:
         return length(self.conn, self.table_name)
 
-    def __repr__(self)->str:
+    def __repr__(self) -> str:
         out = []
         heading = f"{self.name} #{self.id}@{self.path_to_db}"
         out.append(heading)
@@ -479,8 +479,8 @@ def load_by_counter(counter, exp_id):
     return d
 
 
-def new_data_set(name, exp_id: Optional[int]= None,
-                 specs: SPECS=None, values=None,
+def new_data_set(name, exp_id: Optional[int] = None,
+                 specs: SPECS = None, values=None,
                  metadata=None) -> DataSet:
     """ Create a new dataset.
     If exp_id is not specified the last experiment will be loaded by default.
