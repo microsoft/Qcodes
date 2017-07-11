@@ -18,7 +18,7 @@ from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.dataset.sqlite_base import (atomic, atomicTransaction, transaction, add_parameter,
                                         connect, create_run, get_parameters,
-                                        get_last_experiment, _select_one_where,
+                                        get_last_experiment, select_one_where,
                                         length, modify_values, add_meta_data, mark_run,
                                         modify_many_values, insert_values, insert_many_values,
                                         VALUES, get_data, get_metadata)
@@ -165,22 +165,22 @@ class DataSet(Sized):
 
     @property
     def name(self):
-        return _select_one_where(self.conn, "runs",
+        return select_one_where(self.conn, "runs",
                                  "name", "run_id", self.id)
 
     @property
     def table_name(self):
-        return _select_one_where(self.conn, "runs",
+        return select_one_where(self.conn, "runs",
                                  "result_table_name", "run_id", self.id)
 
     @property
     def counter(self):
-        return _select_one_where(self.conn, "runs",
+        return select_one_where(self.conn, "runs",
                                  "result_counter", "run_id", self.id)
 
     @property
     def exp_id(self):
-        return _select_one_where(self.conn, "runs",
+        return select_one_where(self.conn, "runs",
                                  "exp_id", "run_id", self.id)
 
     def toggle_debug(self):

@@ -247,8 +247,8 @@ def insert_column(conn: sqlite3.Connection, table: str, name: str,
                     f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
 
 
-def _select_one_where(conn: sqlite3.Connection, table: str, column: str,
-                      where_column: str, where_value: Any) -> Any:
+def select_one_where(conn: sqlite3.Connection, table: str, column: str,
+                     where_column: str, where_value: Any) -> Any:
     query = f"""
     SELECT {column}
     FROM
@@ -261,8 +261,8 @@ def _select_one_where(conn: sqlite3.Connection, table: str, column: str,
     return res
 
 
-def _select_many_where(conn: sqlite3.Connection, table: str, *columns: str,
-                       where_column: str, where_value: Any) -> Any:
+def select_many_where(conn: sqlite3.Connection, table: str, *columns: str,
+                      where_column: str, where_value: Any) -> Any:
     _columns = ",".join(columns)
     query = f"""
     SELECT {_columns}
@@ -288,8 +288,8 @@ def _massage_dict(metadata: Dict[str, Any]) -> Tuple[str, List[Any]]:
     return ','.join(template), values
 
 
-def _update_where(conn: sqlite3.Connection, table: str,
-                  where_column: str, where_value: Any, **updates) -> None:
+def update_where(conn: sqlite3.Connection, table: str,
+                 where_column: str, where_value: Any, **updates) -> None:
     _updates, values = _massage_dict(updates)
     query = f"""
     UPDATE
@@ -536,7 +536,7 @@ def completed(conn: sqlite3.Connection, run_id)->bool:
         conn: database connection
         run_id: id of the run to check
     """
-    return bool(_select_one_where(conn, "runs", "is_completed",
+    return bool(select_one_where(conn, "runs", "is_completed",
                                   "run_id", run_id))
 
 
@@ -564,9 +564,9 @@ def get_run_counter(conn: sqlite3.Connection, exp_id: int) -> int:
         the exepriment run counter
 
     """
-    return _select_one_where(conn, "experiments", "run_counter",
-                             where_column="exp_id",
-                             where_value=exp_id)
+    return select_one_where(conn, "experiments", "run_counter",
+                            where_column="exp_id",
+                            where_value=exp_id)
 
 
 def get_experiments(conn: sqlite3.Connection) -> List[sqlite3.Row]:
@@ -639,12 +639,12 @@ def _insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
                 parameters: Optional[List[ParamSpec]] = None,
                 ):
     # get run counter and formatter from experiments
-    run_counter, format_string = _select_many_where(conn,
+    run_counter, format_string = select_many_where(conn,
                                                     "experiments",
                                                     "run_counter",
                                                     "format_string",
-                                                    where_column="exp_id",
-                                                    where_value=exp_id)
+                                                   where_column="exp_id",
+                                                   where_value=exp_id)
     run_counter += 1
     formatted_name = format_string.format(name, exp_id, run_counter)
     table = "runs"
@@ -839,7 +839,7 @@ def create_run(conn: sqlite3.Connection, exp_id: int, name: str,
 def get_metadata(conn: sqlite3.Connection, tag: str, table_name: str):
     """ Get metadata under the tag from table
     """
-    return _select_one_where(conn, "runs", tag,
+    return select_one_where(conn, "runs", tag,
                              "result_table_name", table_name)
 
 
@@ -870,7 +870,7 @@ def update_meta_data(conn: sqlite3.Connection, row_id: int, table_name: str,
         - table_name: the table to add to, defaults to runs
         - metadata: the metadata to add
     """
-    _update_where(conn, table_name, 'rowid', row_id, **metadata)
+    update_where(conn, table_name, 'rowid', row_id, **metadata)
 
 
 def add_meta_data(conn: sqlite3.Connection,
