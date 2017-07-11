@@ -2,7 +2,8 @@
     "core":{
         "loglevel": "DEBUG",
         "default_fmt": "data/{date}/#{counter}_{name}_{time}",
-        "db_location": "./experiments.db"
+        "db_location": "./experiments.db",
+        "db_debug": false
     },
     "gui" :{
         "notebook": true,

@@ -24,6 +24,11 @@
                         "DEBUG"
                     ]
                 },
+                "db_debugjk": {
+                    "description": "Use debugging mode in sqlite ",
+                    "type" : "boolean",
+                    "default": false
+                },
                 "db_location":
                 {
                     "type": "string",
