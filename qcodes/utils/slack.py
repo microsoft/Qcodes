@@ -8,6 +8,7 @@ from slacker import Slacker
 import threading
 import traceback
 from requests.adapters import ConnectTimeoutError
+from requests.exceptions import HTTPError
 
 from qcodes.plots.base import BasePlot
 from qcodes import config as qc_config
@@ -163,11 +164,14 @@ class Slack(threading.Thread):
                     # check for updates
                     self.update()
                     self._timeouts = 0
-            except ConnectTimeoutError:
+            except (ConnectTimeoutError, HTTPError):
                 self._timeouts += 1
                 if self._timeouts < self.max_timeouts:
                     logger.warning(
                         f'Timeout {self._timeouts} of {self.max_timeouts}')
+                    sleep(30)
+                else:
+                    raise
             sleep(self.interval)
 
     def stop(self):
