@@ -593,20 +593,26 @@ def get_last_experiment(conn: sqlite3.Connection) -> int:
     return c.fetchall()[0][0]
 
 
-def get_runs(conn: sqlite3.Connection)->List[sqlite3.Row]:
-    """ Get a list of experiments, if exp_id is specified
-    we use it as filter
+def get_runs(conn: sqlite3.Connection, exp_id:Optional[int] = None)->List[sqlite3.Row]:
+    """ Get a list of runs.
 
-     Args:
-         conn: database connection
+    Args:
+        conn: database connection
 
-     Returns:
-         list of rows
-     """
-    sql = """
-    SELECT * FROM runs
+    Returns:
+        list of rows
     """
-    c = transaction(conn, sql)
+    if exp_id:
+        sql = """
+        SELECT * FROM runs
+        where exp_id = ?
+        """
+        c = transaction(conn, sql, exp_id)
+    else:
+        sql = """
+        SELECT * FROM runs
+        """
+        c = transaction(conn, sql)
     return c.fetchall()
 
 

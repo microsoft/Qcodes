@@ -17,11 +17,11 @@ import qcodes.config
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes.dataset.sqlite_base import (atomic, atomicTransaction, transaction, add_parameter,
-                                        connect, create_run, get_parameters,
+                                        connect, create_run, get_parameters, get_experiments,
                                         get_last_experiment, select_one_where,
                                         length, modify_values, add_meta_data, mark_run,
                                         modify_many_values, insert_values, insert_many_values,
-                                        VALUES, get_data, get_metadata)
+                                        VALUES, get_data, get_metadata, one)
 
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
@@ -177,6 +177,10 @@ class DataSet(Sized):
     def counter(self):
         return select_one_where(self.conn, "runs",
                                  "result_counter", "run_id", self.id)
+    @property
+    def parameters(self)->str:
+        return select_one_where(self.conn, "runs",
+                                "parameters", "run_id", self.id)
 
     @property
     def exp_id(self):
@@ -467,15 +471,42 @@ class DataSet(Sized):
 
 
 # public api
-def load_by_id(id):
+def load_by_id(id)->DataSet:
+    """ Load dataset by id
+
+    Args:
+        id: id of the dataset
+
+    Returns:
+        the datasets
+
+    """
     d = DataSet(DB)
     d.id = id
     return d
 
 
 def load_by_counter(counter, exp_id):
+    """
+    Load a dataset given its counter in one experiment
+    Args:
+        counter: Counter of the dataset
+        exp_id:  Experiment the dataset belongs to
+
+    Returns:
+        the dataset
+    """
     d = DataSet(DB)
-    d.id = id
+    sql = """
+    SELECT run_id
+    FROM
+      runs
+    WHERE
+      result_counter= ? AND
+      exp_id = ?
+    """
+    c = transaction(d.conn, sql, counter, exp_id)
+    d.id = one(c, 'run_id')
     return d
 
 
@@ -495,7 +526,11 @@ def new_data_set(name, exp_id: Optional[int] = None,
     """
     d = DataSet(DB)
     if exp_id is None:
-        exp_id = get_last_experiment(d.conn)
+        if len(get_experiments(d.conn)) >0:
+            exp_id = get_last_experiment(d.conn)
+        else:
+            raise  ValueError("No experiments found."
+                              "You can start a new one with: new_experiment(name, sample_name)")
     d._new(name, exp_id, specs, values, metadata)
     return d
 
