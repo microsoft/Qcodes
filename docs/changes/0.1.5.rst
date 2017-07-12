@@ -1,0 +1,27 @@
+Changelog for QCoDeS 0.1.5
+==========================
+
+New & Improved
+--------------
+
+- Improved drivers:
+
+    - Voltage Divider takes an instrument (#644)
+    - Stanford Research SR830 buffered readout (#653)
+    - Keightley 2000 fix readout for old firmware (#635)
+    - Tektronix AWG5014 improved performance (#656)
+    - Improved Decadac driver with channels (#640)
+    - Improved QDac with channels
+    - Improved TPS driver with channels (#642)
+    - Imprroved Keysight 33500 driver with channels (#665)
+
+
+- Features:
+
+    - Slack bot (#427, #646)
+    - Support for instrument channels (#640, #641)
+    - Validator for callables (#650)
+    - Validator for dicts (#657)
+    - Improved MatPlot (#636)
+    - InstrumentRefParameter (#649)
+    - PyQtGraph fix to keep plots open (#662)
