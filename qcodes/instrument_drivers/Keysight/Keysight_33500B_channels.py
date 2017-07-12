@@ -1,7 +1,6 @@
 from qcodes import VisaInstrument, validators as vals
 from functools import partial
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
-from pyvisa.errors import VisaIOError
 import logging
 
 log = logging.getLogger(__name__)
@@ -242,13 +241,6 @@ class Keysight_33500B_channels(VisaInstrument):
         """
 
         super().__init__(name, address, **kwargs)
-
-        # convenient little helper functions
-        def setcmd(channel, setting):
-            return 'SOURce{}:'.format(channel) + setting + ' {}'
-
-        def getcmd(channel, setting):
-            return 'SOURce{}:'.format(channel) + setting + '?'
 
         def errorparser(rawmssg):
             """
