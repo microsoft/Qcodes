@@ -5,6 +5,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
+
 class KeysightChannel(InstrumentChannel):
     """
 
@@ -226,9 +227,11 @@ class KeysightChannel(InstrumentChannel):
                                       'bursts when trigger is immediate.')
                            )
 
-class Keysight_33500B_channels(VisaInstrument):
+
+class Keysight_33500B_Channels(VisaInstrument):
     """
-    QCoDeS driver for the Keysight 33500B Waveform Generator using QCoDeS channels
+    QCoDeS driver for the Keysight 33500B Waveform Generator using QCoDeS
+    channels
     """
 
     def __init__(self, name, address, silent=False, **kwargs):
@@ -259,7 +262,7 @@ class Keysight_33500B_channels(VisaInstrument):
 
         channels = ChannelList(self, "Channels", KeysightChannel,
                                snapshotable=False)
-        for i in range(1,3):
+        for i in range(1, 3):
             channel = KeysightChannel(self, 'ch{}'.format(i), i)
             channels.append(channel)
         channels.lock()
