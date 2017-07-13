@@ -4,7 +4,7 @@ import numpy as np
 
 from qcodes.utils.validators import (Validator, Anything, Bool, Strings,
                                      Numbers, Ints, Enum, MultiType,
-                                     Arrays, Multiples, Lists, Callable)
+                                     Arrays, Multiples, Lists, Callable, Dict)
 
 
 class AClass:
@@ -510,6 +510,7 @@ class TestLists(TestCase):
 
 
 class TestCallable(TestCase):
+
     def test_callable(self):
         c = Callable()
 
@@ -520,3 +521,13 @@ class TestCallable(TestCase):
         with self.assertRaises(TypeError):
             c.validate(test_int)
 
+
+class TestDict(TestCase):
+
+    def test_callable(self):
+        d = Dict()
+        test_dict = {}
+        d.validate(test_dict)
+        test_int = 5
+        with self.assertRaises(TypeError):
+            d.validate(test_int)

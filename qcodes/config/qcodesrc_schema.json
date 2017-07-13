@@ -46,9 +46,14 @@
                     "type": "string",
                     "enum": ["QT", "matplotlib" ],
                     "default": "matplotlib"
+                },
+                "pyqtmaxplots": {
+                    "description": "Maximum number of PyQtPlots to automatically keep in memory",
+                    "type": "integer",
+                    "default": 100
                 }
             },
-            "required":[ "notebook", "plotlib" ]
+            "required":[ "notebook", "plotlib", "pyqtmaxplots" ]
         },
         "user":{
             "type" : "object",
