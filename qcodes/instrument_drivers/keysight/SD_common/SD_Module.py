@@ -59,11 +59,13 @@ class SD_Module(Instrument):
     This driver makes use of the Python library provided by Keysight as part of the SD1 Software package (v.2.01.00).
     """
 
-    def __init__(self, name, chassis, slot, **kwargs):
+    def __init__(self, name, chassis, slot, triggers, **kwargs):
         super().__init__(name, **kwargs)
 
         # Create instance of keysight SD_Module class
         self.SD_module = keysightSD1.SD_Module()
+
+        self.n_triggers = triggers
 
         # Open the device, using the specified chassis and slot number
         module_name = self.SD_module.getProductNameBySlot(chassis, slot)
@@ -75,6 +77,14 @@ class SD_Module(Instrument):
         else:
             raise Exception('No SD Module found at '
                             'chassis {}, slot {}'.format(chassis, slot))
+
+        for i in range(triggers):
+            self.add_parameter('pxi_trigger_number_{}'.format(i),
+                               label='pxi trigger number {}'.format(i),
+                               get_cmd=partial(self.get_pxi_trigger, pxi_trigger=(4000 + i)),
+                               set_cmd=partial(self.set_pxi_trigger, pxi_trigger=(4000 + i)),
+                               docstring='The digital value of pxi trigger no. {}, 0 (ON) of 1 (OFF)'.format(i),
+                               vals=validator.Enum(0, 1))
 
         self.add_parameter('module_count',
                            label='module count',
@@ -220,41 +230,6 @@ class SD_Module(Instrument):
         """
         result = self.SD_module.PXItriggerWrite(pxi_trigger, value)
         value_name = 'set pxi_trigger {} to {}'.format(pxi_trigger, value)
-        return result_parser(result, value_name, verbose)
-
-    #
-    # FPGA related functions
-    #
-
-    def get_fpga_pc_port(self, port, data_size, address, address_mode, access_mode, verbose=False):
-        """
-        Reads data at the PCport FPGA Block
-
-        Args:
-            port (int): PCport number
-            data_size (int): number of 32-bit words to read (maximum is 128 words)
-            address (int): address that will appear at the PCport interface
-            address_mode (int): 0 (auto-increment) or 1 (fixed)
-            access_mode (int): 0 (non-DMA) or 1 (DMA)
-        """
-        data = self.SD_module.FPGAreadPCport(port, data_size, address, address_mode, access_mode)
-        value_name = 'data at PCport {}'.format(port)
-        return result_parser(data, value_name, verbose)
-
-    def set_fpga_pc_port(self, port, data, address, address_mode, access_mode, verbose=False):
-        """
-        Writes data at the PCport FPGA Block
-
-        Args:
-            port (int): PCport number
-            data (array): array of integers containing the data
-            address (int): address that wil appear at the PCport interface
-            address_mode (int): 0 (auto-increment) or 1 (fixed)
-            access_mode (int): 0 (non-DMA) or 1 (DMA)
-        """
-        result = self.SD_module.FPGAwritePCport(port, data, address, address_mode, access_mode)
-        value_name = 'set fpga PCport {} to data:{}, address:{}, address_mode:{}, access_mode:{}'\
-            .format(port, data, address, address_mode, access_mode)
         return result_parser(result, value_name, verbose)
 
     #
