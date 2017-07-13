@@ -39,6 +39,7 @@ class PXIe_4322(Instrument):
         self.step_rate = step_rate
         self.step_delay = 1/step_rate
         self.voltage_file = file_path + 'NI_voltages_{}.json'.format(device_name)
+        self._voltages_changed = False
         try:
             os.mkdir(file_path)
         except:
@@ -72,7 +73,9 @@ class PXIe_4322(Instrument):
         self._start_updating_file(file_update_period)
 
     def _start_updating_file(self, update_period):
-        self._write_voltages_to_file()
+        if (self._voltages_changed):
+            self._voltages_changed = False
+            self._write_voltages_to_file()
         t = threading.Timer(update_period, partial(self._start_updating_file, update_period))
         t.start()
 
@@ -103,6 +106,7 @@ class PXIe_4322(Instrument):
             else:
                 logger.debug('Current gate {} value: {:.2f}'.format(channel, voltage))
             self.__voltage[channel] = voltage
+            self._voltages_changed = True
 
     def get_voltage(self, channel):
         return self.__voltage[channel]
