@@ -251,7 +251,7 @@ class SD_AWG(SD_Module):
 
         for i in range(self.channels):
             self.awg_stop(i)
-            self.set_channel_wave_shape(i, 0)
+            self.set_channel_wave_shape(0, i)
 
 
     def reset_clock_phase(self, trigger_behaviour, trigger_source, skew=0.0, verbose=False):
