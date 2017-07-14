@@ -4,6 +4,9 @@ import unittest
 from unittest.mock import patch
 from unittest.mock import call
 
+from hypothesis import given, settings
+import hypothesis.strategies as hst
+
 import numpy as np
 
 from qcodes.instrument.parameter import combine
@@ -72,8 +75,17 @@ class TestMultiPar(unittest.TestCase):
                 ]
             )
 
-    def testAggregator(self):
-        setpoints = np.array([[1, 1, 1], [1, 1, 1]])
+
+    @given(npoints=hst.integers(1, 100),
+           x_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted),
+           y_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted),
+           z_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted))
+    def testAggregator(self, npoints, x_start_stop, y_start_stop, z_start_stop):
+
+        x_set = np.linspace(x_start_stop[0], x_start_stop[1], npoints).reshape(npoints, 1)
+        y_set = np.linspace(y_start_stop[0], y_start_stop[1], npoints).reshape(npoints, 1)
+        z_set = np.linspace(z_start_stop[0], z_start_stop[1], npoints).reshape(npoints, 1)
+        setpoints = np.hstack((x_set, y_set, z_set))
         expected_results = [linear(*set) for set in setpoints]
         sweep_values = combine(*self.parameters,
                                name="combined",
