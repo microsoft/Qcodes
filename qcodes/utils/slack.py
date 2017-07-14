@@ -126,7 +126,7 @@ class Slack(threading.Thread):
 
         self.interval = interval
         self.tasks = []
-        self.max_timeout = max_timeouts
+        self.max_timeouts = max_timeouts
 
         # Flag that exits loop when set to True (called via self.exit())
         self._exit = False
