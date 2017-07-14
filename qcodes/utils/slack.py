@@ -278,7 +278,12 @@ class Slack(threading.Thread):
                 new_tasks.append(task)
         self.tasks = new_tasks
 
-        new_messages = self.get_new_im_messages()
+        new_messages = {}
+        try:
+            new_messages = self.get_new_im_messages()
+        except Exception as ex:
+            # catch any timeouts caused by network delays
+            pass
         self.handle_messages(new_messages)
 
     def help_message(self):
