@@ -459,3 +459,22 @@ def compare_dictionaries(dict_1, dict_2,
 def warn_units(class_name, instance):
     logging.warning('`units` is deprecated for the `' + class_name +
                     '` class, use `unit` instead. ' + repr(instance))
+
+
+def get_last_input_cells(cells=3):
+    """
+    Get last input cell. Note that get_last_input_cell.globals must be set to 
+    the ipython globals
+    Returns:
+        last cell input if successful, else None
+    """
+    for k in range(50):
+        try:
+            frame = sys._getframe(k)
+            global_vars = frame.f_globals
+            if 'In' in global_vars:
+                return global_vars['In'][-cells:]
+                break
+        except ValueError:
+            logging.warning('No input cells found in first 50 frames')
+            break
