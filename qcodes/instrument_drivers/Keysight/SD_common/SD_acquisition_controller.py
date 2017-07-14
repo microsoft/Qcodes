@@ -236,7 +236,6 @@ class Triggered_Controller(AcquisitionController):
                 self._keysight.parameters[f'n_points_{ch}'](n_points)
                 logger.debug(f'Trying to acquire {n_points} points from DAQ{ch}.')
                 ch_data_retrieved = self._keysight.daq_read(ch)
-                logger.debug('Done.')
                 if (len(ch_data_retrieved) != 0):
                     samples_retrieved += samples_to_get
                     if (np.any(ch_data) == None):

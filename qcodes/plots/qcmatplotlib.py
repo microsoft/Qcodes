@@ -11,6 +11,8 @@ import numpy as np
 from numpy.ma import masked_invalid, getmask
 from collections import Sequence
 
+from qcodes.data.data_array import DataArray
+
 from .base import BasePlot
 
 
@@ -198,7 +200,10 @@ class MatPlot(BasePlot):
                 # at least one axis
                 return
             axsetter = getattr(ax, "set_{}label".format(axletter))
-            axsetter("{} ({})".format(label, unit))
+            if unit:
+                axsetter("{} ({})".format(label, unit))
+            else:
+                axsetter(str(label))
 
     @staticmethod
     def default_figsize(subplots):
@@ -271,6 +276,10 @@ class MatPlot(BasePlot):
                    yunit=None,
                     zunit=None,
                    **kwargs):
+        # Add labels if DataArray is passed
+        if 'label' not in kwargs and isinstance(y, DataArray):
+            kwargs['label'] = y.label
+
         # NOTE(alexj)stripping out subplot because which subplot we're in is
         # already described by ax, and it's not a kwarg to matplotlib's ax.plot.
         # But I didn't want to strip it out of kwargs earlier because it should
@@ -289,6 +298,11 @@ class MatPlot(BasePlot):
                          zunit=None,
                          nticks=None,
                          **kwargs):
+
+        # Add labels if DataArray is passed
+        if 'label' not in kwargs and isinstance(z, DataArray):
+            kwargs['label'] = z.label
+
         # NOTE(alexj)stripping out subplot because which subplot we're in is already
         # described by ax, and it's not a kwarg to matplotlib's ax.plot. But I
         # didn't want to strip it out of kwargs earlier because it should stay
@@ -372,7 +386,10 @@ class MatPlot(BasePlot):
             if zlabel is None:
                 zlabel, _ = self.get_label(z)
 
-            label = "{} ({})".format(zlabel, zunit)
+            if zunit:
+                label = "{} ({})".format(zlabel, zunit)
+            else:
+                label = "{}".format(zlabel)
             ax.qcodes_colorbar.set_label(label)
 
         # Scale colors if z has elements

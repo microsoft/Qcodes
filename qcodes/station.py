@@ -4,9 +4,7 @@ from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import make_unique, DelegateAttributes
 
 from qcodes.instrument.base import Instrument
-from qcodes.instrument.parameter import Parameter
-from qcodes.instrument.parameter import ManualParameter
-from qcodes.instrument.parameter import StandardParameter
+from qcodes.instrument.parameter import _BaseParameter
 
 from qcodes.actions import _actions_snapshot
 
@@ -86,10 +84,7 @@ class Station(Metadatable, DelegateAttributes):
         for name, itm in self.components.items():
             if isinstance(itm, (Instrument)):
                 snap['instruments'][name] = itm.snapshot(update=update)
-            elif isinstance(itm, (Parameter,
-                                  ManualParameter,
-                                  StandardParameter
-                                  )):
+            elif isinstance(itm, _BaseParameter):
                 snap['parameters'][name] = itm.snapshot(update=update)
             else:
                 snap['components'][name] = itm.snapshot(update=update)

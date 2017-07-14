@@ -1,11 +1,11 @@
 # Copyright (c) 2015 SpinCore Technologies, Inc.
 # http://www.spincore.com
 #
-# This software is provided 'as-is', without any express or implied warranty. 
-# In no event will the authors be held liable for any damages arising from the 
+# This software is provided 'as-is', without any express or implied warranty.
+# In no event will the authors be held liable for any damages arising from the
 # use of this software.
 #
-# Permission is granted to anyone to use this software for any purpose, 
+# Permission is granted to anyone to use this software for any purpose,
 # including commercial applications, and to alter it and redistribute it
 # freely, subject to the following restrictions:
 #
@@ -33,9 +33,9 @@ except:
 
 def enum(**enums):
     return type('Enum', (), enums)
-  
+
 PULSE_PROGRAM = 0
-FREQ_REGS = 1 
+FREQ_REGS = 1
 
 
 ns = 1.0
@@ -146,38 +146,38 @@ def pb_get_error():
 	"""Return library error as UTF-8 encoded string."""
 	ret = spinapi.pb_get_error()
 	return str(ctypes.c_char_p(ret).value.decode("utf-8"))
-	
+
 def pb_count_boards():
 	"""Return the number of boards detected in the system."""
 	return spinapi.pb_count_boards()
-	
+
 def pb_init():
 	"""Initialize currently selected board."""
 	return spinapi.pb_init()
-	
+
 def pb_set_debug(debug):
 	return spinapi.pb_set_debug(debug)
-	
+
 def pb_select_board(board_number):
 	"""Select a specific board number"""
 	return spinapi.pb_select_board(board_number)
-	
+
 def pb_set_defaults():
 	"""Set board defaults. Must be called before using any other board functions."""
 	return spinapi.pb_set_defaults()
-	
+
 def pb_core_clock(clock):
 	return spinapi.pb_core_clock(ctypes.c_double(clock))
-	
+
 def pb_write_register(address, value):
 	return spinapi.pb_write_register(address, value)
-	
+
 def pb_start_programming(target):
 	return spinapi.pb_start_programming(target)
 
 def pb_stop_programming():
 	return spinapi.pb_stop_programming()
-	
+
 def pb_inst_dds2(*args):
 	t = list(args)
 	#Argument 13 must be a double
@@ -187,13 +187,13 @@ def pb_inst_dds2(*args):
 
 def pb_start():
 	return spinapi.pb_start()
-	
+
 def pb_stop():
 	return spinapi.pb_stop()
-	
-def pb_reset(): 
+
+def pb_reset():
 	return spinapi.pb_reset()
-	
+
 def pb_close():
 	return spinapi.pb_close()
 

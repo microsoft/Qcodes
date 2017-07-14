@@ -1210,7 +1210,8 @@ class ATSAcquisitionParameter(MultiParameter):
     @property
     def names(self):
         if self.acquisition_controller is None or \
-                not hasattr(self.acquisition_controller, 'channel_selection'):
+                not hasattr(self.acquisition_controller, 'channel_selection')\
+                or self.acquisition_controller.channel_selection is None:
             return ['']
         else:
             return tuple(['ch{}_signal'.format(ch) for ch in
