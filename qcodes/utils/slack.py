@@ -283,7 +283,7 @@ class Slack(threading.Thread):
             new_messages = self.get_new_im_messages()
         except Exception as ex:
             # catch any timeouts caused by network delays
-            pass
+            print(ex)
         self.handle_messages(new_messages)
 
     def help_message(self):
