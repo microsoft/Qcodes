@@ -126,15 +126,17 @@ class RTO1024_scope_test(visa.VisaInstrument):
     # test these functions
 
     def get_y_range(self):
+      self.visa_handle.ask('CHANnel%:RANGe?'%str(self.signal_ch))
 
-    def set_y_range(self):
+    def set_y_range(self, val):
         # get the float here correctly
-        self.visa_handle.write('CHANnel%:RANGe{:.4f}'.format(val)%str(self.signal_ch))
+        self.visa_handle.write('CHANnel%:RANGe{:.4f}'.format(str(self.signal_ch), val))
 
     
-
+    def get_y_scale(self):
+        self.visa_handle.ask('CHANnel%s:SCALe?'%str(self.signal_ch))
     def set_y_scale(self, val):
-        self.visa_handle.write('CHANnel%:SCALe{:.4f}'.format(val)%str(self.signal_ch))
+        self.visa_handle.write('CHANnel%s:SCALe{:.4f}'.format(str(self.signal_ch),val))
 
     
 
