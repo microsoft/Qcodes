@@ -576,6 +576,13 @@ class M4i(Instrument):
     def get_idn(self):
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), ('Spectrum_GMBH', szTypeToName(self.get_card_type()), self.serial_number(), ' ')))
 
+    def reset(self):
+        """ Reset the card
+
+        The pyspcm.M2CMD_CARD_RESET command is executed.
+        """
+        self.general_command(pyspcm.M2CMD_CARD_RESET)
+
     def convert_to_voltage(self, data, input_range):
         """convert an array of numbers to an array of voltages."""
         resolution = self.ADC_to_voltage()
