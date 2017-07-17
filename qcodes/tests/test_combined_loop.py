@@ -17,6 +17,12 @@ class TestLoopCombined(TestCase):
 
         cls.dmm.somethingelse.get = lambda: 1
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.dac.close()
+        cls.dmm.close()
+        del cls.dac
+        del cls.dmm
 
     @given(npoints=hst.integers(2, 100),
            x_start_stop=hst.lists(hst.integers(min_value=-800, max_value=400),
