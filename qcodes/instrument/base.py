@@ -33,7 +33,6 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         functions (Dict[Function]): All the functions supported by this
             instrument. Usually populated via ``add_function``
-
         submodules (Dict[Metadatable]): All the submodules of this instrument
             such as channel lists or logical groupings of parameters.
             Usually populated via ``add_submodule``
