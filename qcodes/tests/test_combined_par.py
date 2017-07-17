@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import patch
 from unittest.mock import call
 
-from hypothesis import given, settings
+from hypothesis import given
 import hypothesis.strategies as hst
 
 import numpy as np
