@@ -265,15 +265,15 @@ class ExpandingAlazarArrayMultiParameter(MultiParameter):
 
     def set_base_setpoints(self, base_name=None, base_label=None, base_unit=None,
                            setpoints_start=None, setpoints_stop=None):
-        if base_name:
+        if base_name is not None:
             self.setpoint_names_base = (base_name,)
-        if base_label:
+        if base_label is not None:
             self.setpoint_labels_base = (base_label,)
-        if base_unit:
+        if base_unit is not None:
             self.setpoint_units_base = (base_unit,)
-        if setpoints_start:
+        if setpoints_start is not None:
             self.setpoints_start = setpoints_start
-        if setpoints_stop:
+        if setpoints_stop is not None:
             self.setpoints_stop = setpoints_stop
         self.set_setpoints_and_labels()
 

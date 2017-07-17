@@ -189,7 +189,7 @@ class ATS9360Controller(AcquisitionController):
             self.allocated_buffers._save_val(1)
         else:
             self.buffers_per_acquisition._save_val(value)
-            self.allocated_buffers._save_val(value)
+            self.allocated_buffers._save_val(2)
 
     def _int_delay_default(self):
         """
