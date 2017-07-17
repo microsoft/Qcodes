@@ -1,7 +1,9 @@
 import warnings
 
 from qcodes.instrument.base import Instrument
+import qcodes.utils.validators as validators
 from numpy import ndarray
+from functools import partial
 
 import logging
 logger = logging.getLogger(__name__)
@@ -84,7 +86,7 @@ class SD_Module(Instrument):
                                get_cmd=partial(self.get_pxi_trigger, pxi_trigger=(4000 + i)),
                                set_cmd=partial(self.set_pxi_trigger, pxi_trigger=(4000 + i)),
                                docstring='The digital value of pxi trigger no. {}, 0 (ON) of 1 (OFF)'.format(i),
-                               vals=validator.Enum(0, 1))
+                               vals=validators.Enum(0, 1))
 
         self.add_parameter('module_count',
                            label='module count',

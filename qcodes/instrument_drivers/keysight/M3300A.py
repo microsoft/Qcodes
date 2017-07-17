@@ -11,7 +11,7 @@
 
 from .SD_common.SD_AWG import SD_AWG
 from .SD_common.SD_DIG import SD_DIG
-
+from .SD_common.SD_FPGA import SD_FPGA
 
 class Keysight_M3300A_AWG(SD_AWG):
     """ Driver for the AWG of the Keysight M3300A card.

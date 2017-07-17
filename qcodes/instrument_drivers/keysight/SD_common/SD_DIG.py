@@ -259,9 +259,9 @@ class SD_DIG(SD_Module):
         v_max = self.__full_scale[daq]
         m = interp1d([-0x8000, 0x7FFF], [v_min, v_max])
         if not isinstance(value, int):
-            scaled_value = m(value)
+            value = m(value)
         value_name = 'DAQ_read channel {}'.format(daq)
-        return result_parser(scaled_value, value_name, verbose)
+        return result_parser(value, value_name, verbose)
 
     def daq_start(self, daq, verbose=False):
         """ Start acquiring data or waiting for a trigger on the specified DAQ

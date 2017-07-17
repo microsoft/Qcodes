@@ -232,11 +232,14 @@ class Triggered_Controller(AcquisitionController):
             ch_data = None
             while (samples_retrieved < samples):
                 samples_to_get = min(self.samples_per_read.get_latest(), samples - samples_retrieved)
-                n_points = samples_to_get * self.samples_per_record.get_latest()
+                make_even = 1 if (self.samples_per_record.get_latest() % 2 == 1) else 0
+                n_points = samples_to_get * (self.samples_per_record.get_latest() + make_even)
                 self._keysight.parameters[f'n_points_{ch}'](n_points)
                 logger.debug(f'Trying to acquire {n_points} points from DAQ{ch}.')
                 ch_data_retrieved = self._keysight.daq_read(ch)
                 if (len(ch_data_retrieved) != 0):
+                    if (make_even == 1):
+                        ch_data_retrieved = ch_data_retrieved[:-1]
                     samples_retrieved += samples_to_get
                     if (np.any(ch_data) == None):
                         ch_data = ch_data_retrieved
@@ -328,6 +331,9 @@ class Triggered_Controller(AcquisitionController):
             n_points (int)  : the number of points to capture per trace
 
         """
+        # Acquisition hardly works with an odd number of samples
+        if (n_points % 2 == 1):
+            n_points += 1
         for ch in self.channel_selection():
             self._keysight.parameters['points_per_cycle_{}'.format(ch)].set(n_points)
 
