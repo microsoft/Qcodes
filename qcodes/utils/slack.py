@@ -4,8 +4,10 @@ from functools import partial
 from time import sleep
 import inspect
 from slacker import Slacker
+import logging
 import threading
 import traceback
+from requests.exceptions import ReadTimeout
 
 from qcodes.plots.base import BasePlot
 from qcodes import config as qc_config
@@ -281,9 +283,9 @@ class Slack(threading.Thread):
         new_messages = {}
         try:
             new_messages = self.get_new_im_messages()
-        except Exception as ex:
+        except ReadTimeout as ex:
             # catch any timeouts caused by network delays
-            print(ex)
+            logging.exception(ex)
         self.handle_messages(new_messages)
 
     def help_message(self):
