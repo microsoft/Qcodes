@@ -437,3 +437,20 @@ class Callable(Validator):
 
     def __repr__(self):
         return '<Callable>'
+
+
+class Dict(Validator):
+    """
+    Validator for dictionaries
+    """
+    def __init__(self):
+        # exists only to overwrite parent class
+        pass
+
+    def validate(self, value, context=''):
+        if not isinstance(value, dict):
+            raise TypeError(
+                '{} is not a dictionary; {}'.format(repr(value), context))
+
+    def __repr__(self):
+        return '<Dict>'
