@@ -168,7 +168,7 @@ class RTO1024_scope_test(visa.VisaInstrument):
       self.visa_handle.ask('STOP;*OPC?')
       self.visa_handle.write('EXPort:WAVeform:FASTexport ON')
       self.visa_handle.write('EXPort:WAVeform:INCXvalues ON')
-      self.visa_handle.write('CHANnel1:WAVeform1:STATe 1')
+      self.visa_handle.write('CHANnel%s:WAVeform1:STATe 1'.format(str(self.signal_ch)))
     
     def get_waveform(self):
       
@@ -191,9 +191,9 @@ class RTO1024_scope_test(visa.VisaInstrument):
       # Wait until measurement finishes before extracting data.
       
       sleep(self.num_averages() * self.trigger_interval() + 1)
-      self.visa_handle.write('EXPort:WAVeform:SOURce C1W1')
-      self.visa_handle.write('CHANnel2:ARIThmetics AVERage')
-      ret_str = self.visa_handle.ask('CHANNEL2:WAVEFORM1:DATA?')
+      self.visa_handle.write('EXPort:WAVeform:SOURce C%sW1'.format(str(self.signal_ch)))
+      self.visa_handle.write('CHANnel1:ARIThmetics AVERage'.fomat(str(self.signal_ch)))
+      ret_str = self.visa_handle.ask('CHANNEL%s:WAVEFORM1:DATA?'.format(str(self.signal_ch)))
       array = ret_str.split(',')
       array = np.double(array)
       x_values = array[::2]
