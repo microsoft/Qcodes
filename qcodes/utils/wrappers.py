@@ -388,6 +388,22 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
         for subplot in plot.subplots:
             vBox = subplot.getViewBox()
             vBox.enableAutoRange(vBox.XYAxes)
+        cmap = None
+        # resize histogram
+        for trace in plot.traces:
+            if 'plot_object' in trace.keys():
+                print(type(trace['plot_object']))
+                if (isinstance(trace['plot_object'], dict) and
+                            'hist' in trace['plot_object'].keys()):
+                    cmap = trace['plot_object']['cmap']
+                    max = trace['config']['z'].max()
+                    min = trace['config']['z'].min()
+                    trace['plot_object']['hist'].setLevels(min, max)
+                    trace['plot_object']['hist'].vb.autoRange()
+        if cmap:
+            plot.set_cmap(cmap)
+        # set window back to original size
+        plot.win.resize(1000, 600)
         plot.save()
         pdfplot, num_subplots = _plot_setup(data, meas_params, useQT=False)
         # pad a bit more to prevent overlap between
