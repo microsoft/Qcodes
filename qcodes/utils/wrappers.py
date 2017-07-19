@@ -165,7 +165,7 @@ def _plot_setup(data, inst_meas, useQT=True, startranges=None):
                                   pos})
             tdict = {'bottom': 'setXRange', 'left': 'setYRange'}
             # now find the data (not setpoint)
-            checkstring = '{}_{}'.format(i._instrument.name, i.name)
+            checkstring = '{}_{}'.format(i._instrument.name, name)
 
             thedata = [data.arrays[d] for d in data.arrays.keys()
                        if d == checkstring][0]
@@ -180,7 +180,7 @@ def _plot_setup(data, inst_meas, useQT=True, startranges=None):
                 except KeyError:
                     # 2D measurement
                     # Then we should fetch the colorbar
-                    ax = plot.traces[j]['plot_object']['hist'].axis
+                    ax = plot.traces[j+k]['plot_object']['hist'].axis
                     ax.enableAutoSIPrefix(False)
                     ax.setLabel(text=thedata.label, unit=thedata.unit,
                                 unitPrefix='')
@@ -392,7 +392,6 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
         # resize histogram
         for trace in plot.traces:
             if 'plot_object' in trace.keys():
-                print(type(trace['plot_object']))
                 if (isinstance(trace['plot_object'], dict) and
                             'hist' in trace['plot_object'].keys()):
                     cmap = trace['plot_object']['cmap']
