@@ -331,7 +331,7 @@ class Parameter(_BaseParameter):
             raise TypeError('vals must be a Validator')
 
     def increment(self, value):
-        """ Increment the parameter with a value 
+        """ Increment the parameter with a value
 
         Args:
             value (float): value to be added to the parameter
