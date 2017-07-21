@@ -65,7 +65,6 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
                            get_cmd='SOUR:PULM:SOUR?',
                            set_cmd=self.set_pulsemod_source,
                            vals=vals.Strings())
-
         self.add_parameter('ref_osc_source',
                            label='Reference oscillator source',
                            get_cmd='SOUR:ROSC:SOUR?',
