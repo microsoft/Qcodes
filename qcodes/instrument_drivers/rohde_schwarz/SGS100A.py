@@ -2,8 +2,7 @@ from qcodes import VisaInstrument, validators as vals
 
 
 class RohdeSchwarz_SGS100A(VisaInstrument):
-
-    '''
+    """
     This is the qcodes driver for the Rohde & Schwarz SGS100A signal generator
 
     Status: beta-version.
@@ -26,7 +25,7 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
 
     This driver does not contain all commands available for the RS_SGS100A but
     only the ones most commonly used.
-    '''
+    """
 
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, **kwargs)
@@ -72,13 +71,13 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
                            get_cmd='SOUR:ROSC:SOUR?',
                            set_cmd='SOUR:ROSC:SOUR {}',
                            vals=vals.Enum('INT', 'EXT'))
-        # Frequency it outputs when used as a reference
+        # Frequency mw_source outputs when used as a reference
         self.add_parameter('ref_osc_output_freq',
                            label='Reference oscillator output frequency',
                            get_cmd='SOUR:ROSC:OUTP:FREQ?',
                            set_cmd='SOUR:ROSC:OUTP:FREQ {}',
                            vals=vals.Enum('10MHz', '100MHz', '1000MHz'))
-        # Frequency of the external reference it uses
+        # Frequency of the external reference mw_source uses
         self.add_parameter('ref_osc_external_freq',
                            label='Reference oscillator external frequency',
                            get_cmd='SOUR:ROSC:EXT:FREQ?',
