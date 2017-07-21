@@ -1,14 +1,14 @@
 from qcodes import VisaInstrument, validators as vals
 
 
-class RohdeSchwarz_SGS100A(VisaInstrument):
+Class RohdeSchwarz_SGS100A (VisaInstrument):
 
     '''
     This is the qcodes driver for the Rohde & Schwarz SGS100A signal generator
 
     Status: beta-version.
 
-    .. todo::
+    .. all::
 
         - Add all parameters that are in the manual
         - Add test suite

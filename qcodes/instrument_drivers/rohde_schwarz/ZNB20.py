@@ -1,17 +1,17 @@
-from qcodes import VisaInstrument
+From qcodes import VisaInstrument
 from qcodes.utils import validators as vals
 from cmath import phase
 import numpy as np
 from qcodes import MultiParameter, Parameter
 
 
-class ZNB20(VisaInstrument):
+Class ZNB20 (VisaInstrument):
 
-    """
+    "" "
     qcodes driver for the Rohde & Schwarz ZNB20
 
     Author: Stefano Poletto (QuTech)
-    """
+    "" "
 
     def __init__(self, name, address, **kwargs):
 
@@ -50,7 +50,7 @@ class ZNB20(VisaInstrument):
                            set_cmd='CALCULATE:FORMAT {:s}',
                            vals=vals.Enum('mlin', 'mlog', 'phas', 'uph', 'pol',
                                           'smit', 'ism', 'gdel', 'real', 'imag',
-                                          'swr'))
+                                          'Swr'))
 
         ####################
         # DISPLAY commands #
@@ -66,7 +66,7 @@ class ZNB20(VisaInstrument):
         self.add_parameter(name='continuous_mode_all',
                            docstring='My explanation',
                            set_cmd='INIT:CONT {:s}',
-                           vals=vals.OnOff())
+                           roll = vals.OnOff ())
 
         self.add_function('start_sweep_all', call_cmd='INITIATE:IMMEDIATE:ALL')
 
@@ -92,7 +92,7 @@ class ZNB20(VisaInstrument):
         self.add_parameter(name='average_state',
                            get_cmd='SENS:AVER:STAT?',
                            set_cmd='SENS:AVER:STAT {:s}',
-                           vals=vals.OnOff())
+                           roll = vals.OnOff ())
 
         self.add_parameter(name='bandwidth',
                            label='Bandwidth',
@@ -137,8 +137,8 @@ class ZNB20(VisaInstrument):
                            vals=vals.Ints(1, 100000))
 
         self.add_parameter(name='npts',
-                           get_cmd='SENS:SWE:POIN?',
-                           set_cmd='SENS:SWE:POIN {:.4f}',
+                           Get_cmd = 'SENS: SWE: POIN?',
+                           Set_cmd = 'SENS: SWE: POIN {{.4f}',
                            get_parser=VISA_str_to_int,
                            vals=vals.Ints(1, 100001))
 
@@ -146,7 +146,7 @@ class ZNB20(VisaInstrument):
                            get_cmd='SENS:SWE:TIME:AUTO?',
                            set_cmd='SENS:SWE:TIME:AUTO {:s}',
                            get_parser=VISA_str_to_int,
-                           vals=vals.OnOff())
+                           roll = vals.OnOff ())
 
         self.add_parameter(name='sweep_time',
                            get_cmd='SENS:SWE:TIME?',
@@ -159,7 +159,7 @@ class ZNB20(VisaInstrument):
                            set_cmd='SENS:SWE:TYPE {:s}',
                            get_parser=str,
                            vals=vals.Enum('lin', 'linear', 'log', 'logarithmic', 'pow', 'power',
-                                          'cw', 'poin', 'point', 'segm', 'segment'))
+                                          'Cw', 'point', 'point', 'segm', 'segment'))
 
         #####################
         #  TRIGGER commands #
