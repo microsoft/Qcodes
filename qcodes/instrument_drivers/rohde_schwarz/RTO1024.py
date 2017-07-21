@@ -126,11 +126,11 @@ class RTO1024_scope_test(visa.VisaInstrument):
     # test these functions
 
     def get_y_range(self):
-      self.visa_handle.ask('CHANnel%:RANGe?'%str(self.signal_ch))
+      self.visa_handle.ask('CHANnel%s:RANGe?'%str(self.signal_ch))
 
     def set_y_range(self, val):
         # get the float here correctly
-        self.visa_handle.write('CHANnel%:RANGe{:.4f}'.format(str(self.signal_ch), val))
+        self.visa_handle.write('CHANnel%s:RANGe{:.4f}'.format(str(self.signal_ch), val))
 
     
     def get_y_scale(self):
@@ -192,7 +192,7 @@ class RTO1024_scope_test(visa.VisaInstrument):
       
       sleep(self.num_averages() * self.trigger_interval() + 1)
       self.visa_handle.write('EXPort:WAVeform:SOURce C%sW1'.format(str(self.signal_ch)))
-      self.visa_handle.write('CHANnel1:ARIThmetics AVERage'.fomat(str(self.signal_ch)))
+      self.visa_handle.write('CHANnel%s:ARIThmetics AVERage'.fomat(str(self.signal_ch)))
       ret_str = self.visa_handle.ask('CHANNEL%s:WAVEFORM1:DATA?'.format(str(self.signal_ch)))
       array = ret_str.split(',')
       array = np.double(array)
