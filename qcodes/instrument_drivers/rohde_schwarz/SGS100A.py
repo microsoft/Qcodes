@@ -2,44 +2,52 @@ from qcodes import VisaInstrument, validators as vals
 
 
 class RohdeSchwarz_SGS100A(VisaInstrument):
+
     '''
     This is the qcodes driver for the Rohde & Schwarz SGS100A signal generator
 
     Status: beta-version.
-        TODO:
+
+    .. todo::
+
         - Add all parameters that are in the manual
         - Add test suite
         - See if there can be a common driver for RS mw sources from which
           different models inherit
+
     This driver will most likely work for multiple Rohde & Schwarz sources.
     it would be a good idea to group all similar RS drivers together in one
     module.
-        Tested working with
-            - RS_SGS100A
-            - RS_SMB100A
+
+    Tested working with
+
+    - RS_SGS100A
+    - RS_SMB100A
+
     This driver does not contain all commands available for the RS_SGS100A but
     only the ones most commonly used.
     '''
+
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, **kwargs)
 
         self.add_parameter(name='frequency',
                            label='Frequency',
-                           units='Hz',
+                           unit='Hz',
                            get_cmd='SOUR:FREQ' + '?',
                            set_cmd='SOUR:FREQ' + ' {:.2f}',
                            get_parser=float,
-                           vals=vals.Numbers(1e9, 20e9))
+                           vals=vals.Numbers(1e6, 20e9))
         self.add_parameter(name='phase',
                            label='Phase',
-                           units='deg',
+                           unit='deg',
                            get_cmd='SOUR:PHAS' + '?',
                            set_cmd='SOUR:PHAS' + ' {:.2f}',
                            get_parser=float,
                            vals=vals.Numbers(0, 360))
         self.add_parameter(name='power',
                            label='Power',
-                           units='dBm',
+                           unit='dBm',
                            get_cmd='SOUR:POW' + '?',
                            set_cmd='SOUR:POW' + ' {:.2f}',
                            get_parser=float,
@@ -58,6 +66,25 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
                            get_cmd='SOUR:PULM:SOUR?',
                            set_cmd=self.set_pulsemod_source,
                            vals=vals.Strings())
+
+        self.add_parameter('ref_osc_source',
+                           label='Reference oscillator source',
+                           get_cmd='SOUR:ROSC:SOUR?',
+                           set_cmd='SOUR:ROSC:SOUR {}',
+                           vals=vals.Enum('INT', 'EXT'))
+        # Frequency it outputs when used as a reference
+        self.add_parameter('ref_osc_output_freq',
+                           label='Reference oscillator output frequency',
+                           get_cmd='SOUR:ROSC:OUTP:FREQ?',
+                           set_cmd='SOUR:ROSC:OUTP:FREQ {}',
+                           vals=vals.Enum('10MHz', '100MHz', '1000MHz'))
+        # Frequency of the external reference it uses
+        self.add_parameter('ref_osc_external_freq',
+                           label='Reference oscillator external frequency',
+                           get_cmd='SOUR:ROSC:EXT:FREQ?',
+                           set_cmd='SOUR:ROSC:EXT:FREQ {}',
+                           vals=vals.Enum('10MHz', '100MHz', '1000MHz'))
+
         self.add_function('reset', call_cmd='*RST')
         self.add_function('run_self_tests', call_cmd='*TST?')
 
