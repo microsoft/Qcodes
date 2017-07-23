@@ -281,7 +281,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         """
         for k, p in self.parameters.items():
-            if p.has_get and p.has_set:
+            if hasattr(p, 'get') and hasattr(p, 'set'):
                 value = p.get()
                 if verbose:
                     print('validate_status: param %s: %s' % (k, value))
