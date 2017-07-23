@@ -101,6 +101,8 @@ Instrument
    IPInstrument
    VisaInstrument
 
+   InstrumentChannel
+   ChannelList
 
 Plot
 ~~~~
