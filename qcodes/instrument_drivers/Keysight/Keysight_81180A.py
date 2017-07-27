@@ -47,10 +47,10 @@ class AWGChannel(InstrumentChannel):
             get_cmd='INITIATE:CONTINUOUS:ENABLE?',
             set_cmd='INITIATE:CONTINUOUS:ENABLE {}',
             vals=EnumVisa('SELF', 'ARMed'),
-            docstring='Possible enable modes are: '
-                      'self: In continuous run mode, waveforms are generated '
-                      'at the output connector as soon as they are selected. '
-                      'armed: The 81180A generates waveforms at the output '
+            docstring='Possible enable modes are:\n'
+                      '\tself: In continuous run mode, generates waveforms '
+                      'at the output connector as soon as they are selected.\n'
+                      '\tarmed: The 81180A generates waveforms at the output '
                       'connector only after calling enable.')
 
         self.add_parameter(
@@ -78,29 +78,30 @@ class AWGChannel(InstrumentChannel):
             vals=EnumVisa('FIXed', 'USER', 'SEQuenced', 'ASEQuenced',
                           'MODulated', 'PULSe'),
             docstring='Run mode defines the type of waveform that is '
-                      'available. Possible run modes are: '
-                      'fixed: standard waveform shapes. '
-                      'user: arbitrary waveform shapes. '
-                      'sequenced: sequence of arbitrary waveforms. '
-                      'asequenced: advanced sequence of arbitrary waveforms. '
-                      'modulated: modulated (standard) waveforms. '
-                      'pulse: digital pulse function')
+                      'available. Possible run modes are:\n'
+                      '\tfixed: standard waveform shapes.\n'
+                      '\tuser: arbitrary waveform shapes.\n'
+                      '\tsequenced: sequence of arbitrary waveforms.\n'
+                      '\tasequenced: advanced sequence of arbitrary '
+                      'waveforms.\n'
+                      '\tmodulated: modulated (standard) waveforms.\n'
+                      '\tpulse: digital pulse function')
 
         self.add_parameter(
             'output_coupling',
             get_cmd='OUTPUT:COUPLING?',
             set_cmd='OUTPUT:COUPLING {}',
-            vals=vals.Enum('DC, DAC', 'AC'),
-            docstring='Possible output couplings are: '
-                      'DC: optimized for pulse response at high amplitudes. '
-                      'DAC: optimized for bandwidth but low amplitude. '
-                      'AC: optimized for bandwidth.'
+            vals=vals.Enum('DC', 'DAC', 'AC'),
+            docstring='Possible output couplings are:\n'
+                      '\tDC: optimized for pulses at high amplitudes.\n'
+                      '\tDAC: optimized for bandwidth but low amplitude.\n'
+                      '\tAC: optimized for bandwidth.\n'
                       'Note that DC and DAC use the DC output, and AC uses '
                       'the AC output. DC and DAC couplings also allow '
                       'control of amplitude and offset')
 
         self.add_parameter(
-            'output_state',
+            'output',
             get_cmd='OUTPUT?',
             set_cmd='OUTPUT {}',
             vals=EnumVisa('ON', 'OFF'))
@@ -120,7 +121,7 @@ class AWGChannel(InstrumentChannel):
             get_cmd='VOLTAGE?',
             set_cmd='VOLTAGE {:.8f}',
             get_parser=float,
-            vals=vals.Numbers(50e-3, 2),
+            vals=vals.Numbers(50e-3, 0.5),
             docstring='Waveform amplitude when routed through the DC path')
 
         self.add_parameter(
@@ -147,26 +148,31 @@ class AWGChannel(InstrumentChannel):
             'trigger_input',
             set_cmd='TRIGGER:{}',
             vals=vals.Enum('ECL', 'TTL'),
-            docstring='Set trigger input. Possible inputs are'
-                      'ECL: negative signal at fixed -1.3V.'
-                      'TTL: variable trigger_level')
+            docstring='Set trigger input. Possible inputs are:\n'
+                      '\tECL: negative signal at fixed -1.3V.\n'
+                      '\tTTL: variable trigger_level')
 
         self.add_parameter(
             'trigger_source',
             get_cmd='TRIGGER:SOURCE:ADVANCE?',
             set_cmd='TRIGGER:SOURCE:ADVANCE {}',
-            vals=EnumVisa('EXTernal', 'BUS', 'TIMer', 'EVENt'))
+            vals=EnumVisa('EXTernal', 'BUS', 'TIMer', 'EVENt'),
+            docstring='Possible trigger sources are:\n'
+                      '\texternal: Use TRIG IN port exclusively.\n'
+                      '\tbus: Use remote commands exclusively.\n'
+                      '\ttimer: Use internal trigger generator exclusively.\n'
+                      '\tevent: Use EVENT IN port exclusively.')
 
         self.add_parameter(
             'trigger_mode',
             get_cmd='TRIGGER:MODE?',
             set_cmd='TRIGGER:MODE {}',
             vals=EnumVisa('NORMal', 'OVERride'),
-            docstring='Possible trigger modes are:'
-                      'normal:  the first trigger activates the output and '
+            docstring='Possible trigger modes are:\n'
+                      '\tnormal:  the first trigger activates the output and '
                       'consecutive triggers are ignored for the duration of '
-                      'the output waveform. '
-                      'override:  the first trigger activates  the output '
+                      'the output waveform.\n'
+                      '\toverride:  the first trigger activates  the output '
                       'and consecutive triggers  restart the output waveform, '
                       'regardless if the current waveform has been completed '
                       'or not.')
@@ -176,9 +182,9 @@ class AWGChannel(InstrumentChannel):
             get_cmd='TRIGGER:TIMER:MODE?',
             set_cmd='TRIGGER:TIMER:MODE {}',
             vals=EnumVisa('TIME', 'DELay'),
-            docstring='Possible modes of internal trigger are:'
-                      'time: Perform trigger at fixed time interval.'
-                      'delay: Perform trigger at fixed time intervals after '
+            docstring='Possible modes of internal trigger are:\n'
+                      '\ttime: Perform trigger at fixed time interval.\n'
+                      '\tdelay: Perform trigger at fixed time intervals after '
                       'previous waveform finished.')
 
         self.add_parameter(
@@ -234,9 +240,9 @@ class AWGChannel(InstrumentChannel):
             get_cmd='TRACE:SELECT:TIMING?',
             set_cmd='TRACE:SELECT:TIMING {}',
             vals=EnumVisa('COHerent', 'IMMediate'),
-            docstring='Possible waveform timings are: ' 
-                      'coherent: finish current waveform before continuing. '
-                      'immediate: immediately skip to next waveform')
+            docstring='Possible waveform timings are:\n' 
+                      '\tcoherent: finish current waveform before next.\n'
+                      '\timmediate: immediately skip to next waveform')
 
 
         # Sequence parameters
@@ -250,14 +256,14 @@ class AWGChannel(InstrumentChannel):
             get_cmd='SEQUENCE:ADVANCE?',
             set_cmd='SEQUENCE:ADVANCE {}',
             vals=EnumVisa('AUTOmatic', 'ONCE', 'STEPped'),
-            docstring='Possible sequence modes are: '
-                      'automatic: Automatically continue to next waveform, '
+            docstring='Possible sequence modes are:\n'
+                      '\tautomatic: Automatically continue to next waveform, '
                       'and repeat sequence from start when finished. When '
                       'encountering jump command, wait for event input '
-                      'before continuing. '
-                      'once: Automatically continue to next waveform. Stop '
-                      'when sequence completed. '
-                      'stepped: wait for event input after each waveform. '
+                      'before continuing.\n'
+                      '\tonce: Automatically continue to next waveform. Stop '
+                      'when sequence completed.\n'
+                      '\tstepped: wait for event input after each waveform. '
                       'Repeat sequence when completed.')
 
         self.add_parameter(
@@ -267,18 +273,20 @@ class AWGChannel(InstrumentChannel):
             vals=EnumVisa('BUS', 'EVENt'),
             docstring='Determines the trigger source that will cause the '
                       'sequence to advance after a jump bit. '
-                      'Possible jump modes are: '
-                      'bus: only advance after a remote trigger command. '
-                      'event: only advance after an event input.')
+                      'Possible jump modes are:\n'
+                      '\tbus: only advance after a remote trigger command.\n'
+                      '\tevent: only advance after an event input.')
 
         self.add_parameter(
             'sequence_select_source',
             get_cmd='SEQUENCE:SELECT:SOURCE?',
             set_cmd='SEUQENCE:SELECT:SOURCE {}',
             vals=EnumVisa('BUS', 'EXTernal'),
-            docstring='Possible sources that can select active sequence: '
-                      'bus: sequence switches when remote command is called. '
-                      'external: rear panel connector can dynamically choose '
+            docstring='Possible sources that can select active sequence:\n'
+                      '\tbus: sequence switches when remote command is '
+                      'called.\n'
+                      '\texternal: rear panel connector can dynamically '
+                      'choose '
                       'next sequence.')
 
         self.add_parameter(
@@ -287,9 +295,10 @@ class AWGChannel(InstrumentChannel):
             set_cmd='SEQUENCE:SELECT:TIMING {}',
             vals=EnumVisa('COHerent', 'IMMediate'),
             docstring='Possible ways in which the generator transitions from '
-                      'sequence to sequence: '
-                      'coherent: transition once current sequence is done. '
-                      'immediate: abort current sequence and progress to next')
+                      'sequence to sequence:\n'
+                      'c\toherent: transition once current sequence is done.\n'
+                      '\timmediate: abort current sequence and progress to '
+                      'next')
 
 
         # Functions
@@ -310,6 +319,16 @@ class AWGChannel(InstrumentChannel):
             call_cmd=f'INST {self.id};TRIGGER',
             docstring='Perform software trigger')
 
+        self.add_function(
+            'on',
+            call_cmd=f'INST {self.id};OUTPUT ON',
+            docstring='Turn output on')
+
+        self.add_function(
+            'off',
+            call_cmd=f'ISNT {self.id};OUTPUT OFF',
+            docstring='Turn output off')
+
     def add_parameter(self, name, parameter_class=ChannelVisaParameter,
                       **kwargs):
         # Override add_parameter such that it uses ChannelVisaParameter
@@ -325,29 +344,45 @@ class AWGChannel(InstrumentChannel):
             segment_number = len(self.uploaded_waveforms()) + 1
 
         assert len(waveform) >= 320, 'Waveform must have at least 320 points'
-        assert not len(waveform) % 32, 'Waveform points must be divisible by 32'
+        assert not len(
+            waveform) % 32, 'Waveform points must be divisible by 32'
         assert segment_number <= len(self.uploaded_waveforms()) + 1, \
             "segment number is larger than number of uploaded waveforms + 1"
+        if self.output_coupling.get_latest() == 'DAC':
+            assert max(abs(waveform)) <= 0.5, \
+                "In DAC run mode, waveform voltage cannot exceed +-0.5V"
+        else:
+            assert max(abs(waveform)) <= 2, \
+                "In DC/AC run mode, waveform voltage cannot exceed +-2V"
 
         # Set active channel to current channel if necessary
         if self._parent.active_channel.get_latest() != self.id:
             self._parent.active_channel(self.id)
 
-        self.write(f'TRACE:DELETE {segment_number}')
+        if segment_number - 1 < len(self.uploaded_waveforms()):
+            # Waveform already exists
+            # TODO check that new waveform does not have more points than previous
+            self.write(f'TRACE:DELETE {segment_number}')
+
         self.write(f'TRACE:DEFINE {segment_number},{len(waveform)}')
         self.write(f'TRACE:SELECT {segment_number}')
 
         # Waveform points are 12 bits, which are converted to 2 bytes
         number_of_bytes = len(waveform) * 2
-        waveform_DAC = (2**13 - 1) + (2**12 - 1) * waveform
-        waveform_DAC = waveform_DAC.astype('int')
+        # Convert waveform to 12bit (min = 0, max = 2**12 - 1)
+        if self.output_coupling.get_latest() == 'DAC':
+            # Voltage limits are +- 0.5V.
+            waveform_12bit = (2 ** 11 - 1) + (2 ** 12 - 1) * waveform
+        else:
+            waveform_12bit = (2 ** 11 - 1) + (2 ** 10 - 1) * waveform
+        waveform_12bit = waveform_12bit.astype('int')
 
         # Add stop bytes (set 15th bit of last 32 words to 1)
-        waveform_DAC[-32:] += 2**14
+        waveform_12bit[-32:] += 2 ** 14
 
         # Convert waveform to bytes (note that Endianness is important,
         # might not work on Mac/Linux)
-        waveform_bytes = array.array('H', waveform_DAC).tobytes()
+        waveform_bytes = array.array('H', waveform_12bit).tobytes()
 
         # Send header, format is #{digits in number of bytes}{number of bytes}
         # followed by the binary waveform data.
@@ -370,7 +405,7 @@ class AWGChannel(InstrumentChannel):
         else:
             self.uploaded_waveforms().append(waveform)
 
-        return waveform_DAC
+        return waveform_12bit
 
 
     def clear_waveforms(self):
@@ -425,14 +460,13 @@ class AWGChannel(InstrumentChannel):
         # Delete any previous sequence
         self.write('SEQUENCE:DELETE:ALL')
         # Select sequence id
-        self.write(f'SEQUENCE SELECT {id}')
+        self.write(f'SEQUENCE:SELECT {id}')
         # Specify length of sequence
         self.write(f'SEQUENCE:LENGTH {len(sequence)}')
 
         # TODO program sequence via binary code. This speeds up programming
         for step, (segment_number, loop, jump) in enumerate(sequence):
             step += 1 # Step is 1-based
-
             self.write(f'SEQ:DEFINE {step},{segment_number},{loop},{jump}')
 
         if run_mode == 'sequenced':
