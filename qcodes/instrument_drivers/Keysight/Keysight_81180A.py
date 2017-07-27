@@ -2,7 +2,7 @@ import array
 import warnings
 
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList, \
-    StandardParameter
+    StandardParameter, ManualParameter
 from qcodes import validators as vals
 
 
@@ -38,6 +38,9 @@ class AWGChannel(InstrumentChannel):
         super().__init__(parent, name, **kwargs)
 
         self.id = id
+
+        self.write = self._parent.write
+        self.visa_handle = self._parent.visa_handle
 
         self.add_parameter(
             'enable_mode',
@@ -220,6 +223,13 @@ class AWGChannel(InstrumentChannel):
 
         # Waveform parameters
         self.add_parameter(
+            'uploaded_waveforms',
+            parameter_class=ManualParameter,
+            initial_value=[],
+            vals=vals.Lists(),
+            docstring='List of uploaded waveforms')
+
+        self.add_parameter(
             'waveform_timing',
             get_cmd='TRACE:SELECT:TIMING?',
             set_cmd='TRACE:SELECT:TIMING {}',
@@ -230,6 +240,11 @@ class AWGChannel(InstrumentChannel):
 
 
         # Sequence parameters
+        self.add_parameter(
+            'uploaded_sequence',
+            parameter_class=ManualParameter,
+            vals=vals.Iterables())
+
         self.add_parameter(
             'sequence_mode',
             get_cmd='SEQUENCE:ADVANCE?',
@@ -295,23 +310,24 @@ class AWGChannel(InstrumentChannel):
             call_cmd=f'INST {self.id};TRIGGER',
             docstring='Perform software trigger')
 
-        self.add_function(
-            'delete_all_waveforms',
-            call_cmd=f'INST {self.id};TRACE:DELETE:ALL',
-            docstring='Delete all waveforms')
-
-    def add_parameter(self, name, **kwargs):
+    def add_parameter(self, name, parameter_class=ChannelVisaParameter,
+                      **kwargs):
         # Override add_parameter such that it uses ChannelVisaParameter
+        if parameter_class == ChannelVisaParameter:
+            kwargs['channel_id'] = self.id
+
         super().add_parameter(name,
-                              parameter_class=ChannelVisaParameter,
-                              channel_id=self.id,
+                              parameter_class=parameter_class,
                               **kwargs)
 
-    def add_waveform(self, segment_number, waveform):
-        if len(waveform) < 320:
-            raise SyntaxError('Waveform must have at least 320 points')
-        elif len(waveform) % 32:
-            raise SyntaxError('Waveform points must be divisible by 32')
+    def add_waveform(self, waveform, segment_number=None):
+        if segment_number is None:
+            segment_number = len(self.uploaded_waveforms()) + 1
+
+        assert len(waveform) >= 320, 'Waveform must have at least 320 points'
+        assert not len(waveform) % 32, 'Waveform points must be divisible by 32'
+        assert segment_number <= len(self.uploaded_waveforms()) + 1, \
+            "segment number is larger than number of uploaded waveforms + 1"
 
         # Set active channel to current channel if necessary
         if self._parent.active_channel.get_latest() != self.id:
@@ -323,7 +339,7 @@ class AWGChannel(InstrumentChannel):
 
         # Waveform points are 12 bits, which are converted to 2 bytes
         number_of_bytes = len(waveform) * 2
-        waveform_DAC = (2**13 - 1) * (1 + waveform)
+        waveform_DAC = (2**13 - 1) + (2**12 - 1) * waveform
         waveform_DAC = waveform_DAC.astype('int')
 
         # Add stop bytes (set 15th bit of last 32 words to 1)
@@ -344,9 +360,26 @@ class AWGChannel(InstrumentChannel):
         # If this stage fails the instrument can freeze and need a power cycle
         return_bytes, _ = self.visa_handle.write_raw(waveform_bytes)
 
-        if return_bytes != waveform_bytes:
+        if return_bytes != len(waveform_bytes):
             warnings.warn(f'Unsuccessful waveform transmission. Transmitted '
-                          f'{return_bytes} instead of {waveform_bytes}')
+                          f'{return_bytes} instead of {len(waveform_bytes)}')
+
+        # Add waveform to parameter
+        if segment_number - 1 < len(self.uploaded_waveforms()):
+            self.uploaded_waveforms()[segment_number - 1] = waveform
+        else:
+            self.uploaded_waveforms().append(waveform)
+
+        return waveform_DAC
+
+
+    def clear_waveforms(self):
+        # Set active channel to current channel if necessary
+        if self._parent.active_channel.get_latest() != self.id:
+            self._parent.active_channel(self.id)
+
+        self.write('TRACE:DELETE:ALL')
+        self.uploaded_waveforms([])
 
     def set_sequence(self, sequence, id=1):
         """
@@ -405,6 +438,8 @@ class AWGChannel(InstrumentChannel):
         if run_mode == 'sequenced':
             # Restore sequenced run mode
             self.run_mode(run_mode)
+
+        self.uploaded_sequence(sequence)
 
 class Keysight_81180A(VisaInstrument):
     def __init__(self, name, address, **kwargs):
