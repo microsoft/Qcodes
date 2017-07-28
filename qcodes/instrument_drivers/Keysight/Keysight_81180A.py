@@ -107,6 +107,13 @@ class AWGChannel(InstrumentChannel):
             vals=EnumVisa('ON', 'OFF'))
 
         self.add_parameter(
+            'sync',
+            get_cmd='OUTPUT:SYNC?',
+            set_cmd='OUTPUT:SYNC {}',
+            vals=EnumVisa('ON', 'OFF')
+        )
+
+        self.add_parameter(
             'power',
             unit='dBm',
             get_cmd='POWER?',
@@ -186,6 +193,15 @@ class AWGChannel(InstrumentChannel):
                       '\ttime: Perform trigger at fixed time interval.\n'
                       '\tdelay: Perform trigger at fixed time intervals after '
                       'previous waveform finished.')
+
+        self.add_parameter(
+            'trigger_timer_time',
+            get_cmd='TRIGGER:TIMER:TIME?',
+            set_cmd='TRIGGER:TIMER:TIME {:f}',
+            get_parser=float,
+            unit='s',
+            vals=vals.Numbers(100e-9, 20),
+            docstring='Triggering period when in timer trigger mode')
 
         self.add_parameter(
             'trigger_timer_delay',
