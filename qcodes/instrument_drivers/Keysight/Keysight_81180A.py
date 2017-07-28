@@ -421,7 +421,7 @@ class AWGChannel(InstrumentChannel):
         else:
             self.uploaded_waveforms().append(waveform)
 
-        return waveform_12bit
+        return segment_number
 
 
     def clear_waveforms(self):
