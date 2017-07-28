@@ -13,7 +13,11 @@ class PNA_parameter(MultiParameter):
         self.get_cmd = get_cmd
         self.call_func = get_cmd
         self.args = []
-        super().__init__(names=self.names, shapes=self.shapes, *args, **kwargs)
+        super().__init__(names=self.names, shapes=self.shapes,
+                         setpoint_names=(('frequency',),('frequency',)),
+                         setpoint_labels=(('Frequency',),('Frequency',)),
+                         setpoint_units=(('Hz',),('Hz',)),
+                         *args, **kwargs)
 
     @property
     def shapes(self):
@@ -29,6 +33,15 @@ class PNA_parameter(MultiParameter):
 
     @names.setter
     def names(self, names):
+        pass
+
+    @property
+    def setpoints(self):
+        return ((tuple(self.ins.frequencies()[:]), ),
+                (tuple(self.ins.frequencies()[:]), ))
+
+    @setpoints.setter
+    def setpoints(self, vals):
         pass
 
     def get(self):
@@ -134,11 +147,10 @@ class Keysight_PNAL(VisaInstrument):
 
         number_of_traces = int(len(self.ask("CALC:PAR:CAT:EXT?")[1:-2].split(',')) / 2)  # number of displayed traces
         data_array = np.zeros(self.data_dimensions())
-        data_array[0, :] = self.frequencies()[:]
 
         for i in range(number_of_traces):
             self.active_trace(i + 1)
-            data_array[i + 1, :] = [float(x) for x in self.ask("CALC:DATA? FDATA").split(",")]  # get data and parse
+            data_array[i, :] = [float(x) for x in self.ask("CALC:DATA? FDATA").split(",")]  # get data and parse
 
         self.write("INITiate:CONTinuous ON")  # back to continuous tritriggering
         if DEBUG: print("data values OK")
@@ -149,20 +161,18 @@ class Keysight_PNAL(VisaInstrument):
 
     def data_dimensions(self):
         if DEBUG: print("data dimensions...")
-        r = (int(len(self.ask("CALC:PAR:CAT:EXT?")[1:-2].split(',')) / 2) + 1, len(self.frequencies()))
+        r = (int(len(self.ask("CALC:PAR:CAT:EXT?")[1:-2].split(',')) / 2), len(self.frequencies()))
         if DEBUG: print("data dimensions OK")
         return r
 
     def data_names(self):
         if DEBUG: print("data names...")
         number_of_traces = int(len(self.ask("CALC:PAR:CAT:EXT?")[1:-2].split(',')) / 2)  # number of displayed traces
-        names = [''] * (number_of_traces + 1)
-
-        names[0] = "Frequency"
+        names = [''] * (number_of_traces)
 
         for j in range(number_of_traces):
             self.active_trace(j + 1)
-            names[j + 1] = self.display_format()[:-1]
+            names[j] = self.display_format()[:-1]
         if DEBUG: print("data names OK")
         return names
 
