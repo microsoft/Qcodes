@@ -163,6 +163,7 @@ class QDac(VisaInstrument):
             QDac object
         """
         super().__init__(name, address)
+        self._output_n_lines = 50
         handle = self.visa_handle
 
         # This is the baud rate on power-up. It can be changed later but
@@ -240,7 +241,6 @@ class QDac(VisaInstrument):
         self._get_status(readcurrents=update_currents)
         log.info('[+] Done')
 
-        self._output_n_lines = 50
     #########################
     # Channel gets/sets
     #########################
