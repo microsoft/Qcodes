@@ -4,16 +4,22 @@ from functools import partial
 from time import sleep
 import inspect
 from slacker import Slacker
+import warnings
 import logging
 import threading
 import traceback
-from requests.exceptions import ReadTimeout, HTTPError
+from requests.exceptions import ReadTimeout, HTTPError, ConnectTimeout
 from requests.packages.urllib3.exceptions import ReadTimeoutError
+
 
 from qcodes.plots.base import BasePlot
 from qcodes import config as qc_config
 from qcodes.instrument.parameter import _BaseParameter
 from qcodes import active_loop, active_data_set
+
+
+class SlackTimeoutWarning(UserWarning):
+    pass
 
 
 def convert_command(text):
@@ -284,9 +290,11 @@ class Slack(threading.Thread):
         new_messages = {}
         try:
             new_messages = self.get_new_im_messages()
-        except (ReadTimeout, HTTPError, ReadTimeoutError) as ex:
+        except (ReadTimeout, HTTPError, ConnectTimeout, ReadTimeoutError) as ex:
             # catch any timeouts caused by network delays
-            logging.exception(ex)
+            warnings.warn('error retrieving slack messages',
+                          SlackTimeoutWarning)
+            logging.info(ex)
         self.handle_messages(new_messages)
 
     def help_message(self):
