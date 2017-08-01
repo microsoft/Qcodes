@@ -494,8 +494,10 @@ class Scope(MultiParameter):
 
             # cleanup and make ready for next scope acquisition
             scope.finish()
-            if error_counter >= num_retries:
-                log.warning('[+] ZI scope acquisition failed, maximum number'
+            if error_counter >= num_retries and data == (None, None):
+                log.error('[+] ZI scope acquisition failed, maximum number'
+                            'of retries performed. No data returned')
+                raise RuntimeError('[+] ZI scope acquisition failed, maximum number'
                             'of retries performed. No data returned')
         return data
 
