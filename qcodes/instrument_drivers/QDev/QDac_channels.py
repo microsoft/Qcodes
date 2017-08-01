@@ -10,6 +10,7 @@ from functools import partial
 from operator import xor
 from collections import OrderedDict
 
+from qcodes.utils.helpers import full_class
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.instrument.channel import MultiChannelInstrumentParameter
 from qcodes.instrument.parameter import ManualParameter
@@ -103,6 +104,27 @@ class QDacChannel(InstrumentChannel):
                            parameter_class=ManualParameter,
                            initial_value=0.01
                            )
+
+    def snapshot_base(self, update=False):
+        # we special case this to not update a few parameters
+        # that are both slow to update and can be updated faster`
+        # by calling _get_status of the instrument which is done below
+        snap = {'functions': dict((name, func.snapshot(update=update))
+                                  for name, func in self.functions.items()),
+                'submodules': dict((name, subm.snapshot(update=update))
+                                   for name, subm in self.submodules.items()),
+                '__class__': full_class(self),
+                }
+        snap['parameters'] = {}
+        for name, param in self.parameters.items():
+            update = True
+            if name in ['v', 'vrange', 'i', 'irange']:
+                update = False
+            snap['parameters'][name] = param.snapshot(update=update)
+        for attr in set(self._meta_attrs):
+            if hasattr(self, attr):
+                snap[attr] = getattr(self, attr)
+        return snap
 
 
 class QDacMultiChannelParameter(MultiChannelInstrumentParameter):
@@ -239,11 +261,22 @@ class QDac(VisaInstrument):
         self.connect_message()
         log.info('[*] Querying all channels for voltages and currents...')
         self._get_status(readcurrents=update_currents)
+        self._update_currents = update_currents
         log.info('[+] Done')
 
     #########################
     # Channel gets/sets
     #########################
+    def snapshot_base(self, update=False):
+        # call get_status here if updates are requested
+        # this is much faster than updateing the individual channels
+        # We take care of not updating the matching parameters (i, v, vrange,
+        # irange) in the channel.
+        update_currents = self._update_currents and update
+        if update:
+            self._get_status(readcurrents=update_currents)
+        snap = super().snapshot_base(update=update)
+        return snap
 
     def _set_voltage(self, chan, v_set):
         """
