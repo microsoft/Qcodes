@@ -106,24 +106,8 @@ class QDacChannel(InstrumentChannel):
                            )
 
     def snapshot_base(self, update=False):
-        # we special case this to not update a few parameters
-        # that are both slow to update and can be updated faster`
-        # by calling _get_status of the instrument which is done below
-        snap = {'functions': dict((name, func.snapshot(update=update))
-                                  for name, func in self.functions.items()),
-                'submodules': dict((name, subm.snapshot(update=update))
-                                   for name, subm in self.submodules.items()),
-                '__class__': full_class(self),
-                }
-        snap['parameters'] = {}
-        for name, param in self.parameters.items():
-            update = True
-            if name in ['v', 'vrange', 'i', 'irange']:
-                update = False
-            snap['parameters'][name] = param.snapshot(update=update)
-        for attr in set(self._meta_attrs):
-            if hasattr(self, attr):
-                snap[attr] = getattr(self, attr)
+        params = ('v', 'i', 'irange', 'vrange')
+        snap = super().snapshot_base(update=update, params_to_skip_update=params)
         return snap
 
 
