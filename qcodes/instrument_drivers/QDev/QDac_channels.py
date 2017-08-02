@@ -10,7 +10,6 @@ from functools import partial
 from operator import xor
 from collections import OrderedDict
 
-from qcodes.utils.helpers import full_class
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.instrument.channel import MultiChannelInstrumentParameter
 from qcodes.instrument.parameter import ManualParameter
