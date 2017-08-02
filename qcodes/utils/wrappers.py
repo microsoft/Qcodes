@@ -6,6 +6,7 @@ import logging
 from copy import deepcopy
 import numpy as np
 from typing import Optional, Tuple
+import matplotlib.pyplot as plt
 
 import qcodes as qc
 from qcodes.loops import Loop
@@ -20,10 +21,10 @@ from IPython import get_ipython
 log = logging.getLogger(__name__)
 CURRENT_EXPERIMENT = {}
 CURRENT_EXPERIMENT["logging_enabled"] = False
-
+pdfdisplay = {}
 
 def init(mainfolder: str, sample_name: str, station, plot_x_position=0.66,
-         annotate_image=True):
+         annotate_image=True, display_pdf=True, display_individual_pdf=False):
     """
 
     Args:
@@ -34,6 +35,9 @@ def init(mainfolder: str, sample_name: str, station, plot_x_position=0.66,
                          1 is all the way to the right.
 
     """
+    plt.ioff()
+    pdfdisplay['individual'] = display_individual_pdf
+    pdfdisplay['combined'] = display_pdf
     if sep in sample_name:
         raise TypeError("Use Relative names. That is without {}".format(sep))
     # always remove trailing sep in the main folder
@@ -259,9 +263,9 @@ def __get_plot_type(data, plot):
     return metadata
 
 
-def _save_individual_plots(data, inst_meas):
+def _save_individual_plots(data, inst_meas, display_plot=True):
 
-    def _create_plot(i, name, data, counter_two):
+    def _create_plot(i, name, data, counter_two, display_plot=True):
         # Step the color on all subplots no just on plots
         # within the same axis/subplot
         # this is to match the qcodes-pyqtplot behaviour.
@@ -288,17 +292,21 @@ def _save_individual_plots(data, inst_meas):
             plot.subplots[0].set_title(title)
         plot.save("{}_{:03d}.pdf".format(plot.get_default_title(),
                                          counter_two))
-        plot.fig.canvas.draw()
+        if display_plot:
+            plot.fig.canvas.draw()
+            plt.show()
+        else:
+            plt.close(plot.fig)
 
     counter_two = 0
     for j, i in enumerate(inst_meas):
         if getattr(i, "names", False):
             # deal with multidimensional parameter
             for k, name in enumerate(i.names):
-                _create_plot(i, name, data, counter_two)
+                _create_plot(i, name, data, counter_two, display_plot)
                 counter_two += 1
         else:
-            _create_plot(i, i.name, data, counter_two)
+            _create_plot(i, i.name, data, counter_two, display_plot)
             counter_two += 1
 
 
@@ -409,9 +417,13 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
         # suptitle and title
         pdfplot.fig.tight_layout(pad=3)
         pdfplot.save("{}.pdf".format(plot.get_default_title()))
-        pdfplot.fig.canvas.draw()
+        if pdfdisplay['combined'] or (num_subplots == 1 and pdfdisplay['individual']):
+            pdfplot.fig.canvas.draw()
+            plt.show()
+        else:
+            plt.close(pdfplot.fig)
         if num_subplots > 1:
-            _save_individual_plots(data, meas_params)
+            _save_individual_plots(data, meas_params, pdfdisplay['individual'])
     if CURRENT_EXPERIMENT.get('device_image'):
         log.debug('Saving device image')
         save_device_image(tuple(sp[0] for sp in set_params))
