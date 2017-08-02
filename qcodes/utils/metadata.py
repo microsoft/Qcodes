@@ -35,7 +35,7 @@ class Metadatable:
 
         return snap
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update=False, params_to_skip_update=None):
         """
         override this with the primary information for a subclass
         """
