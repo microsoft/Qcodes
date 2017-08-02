@@ -257,9 +257,9 @@ class QDac(VisaInstrument):
         log.info('[+] Done')
 
     def snapshot_base(self, update=False, params_to_skip_update=None):
-        update_currents = self._parent._update_currents and update
+        update_currents = self._update_currents and update
         if update:
-            self._parent._get_status(readcurrents=update_currents)
+            self._get_status(readcurrents=update_currents)
         self._get_status_performed = True
         # call get_status rather than getting the status individually for
         # each parameter. We set _get_status_performed to True
