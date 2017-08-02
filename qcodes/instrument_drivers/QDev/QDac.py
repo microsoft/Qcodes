@@ -163,6 +163,19 @@ class QDac(VisaInstrument):
         self._get_status(readcurrents=update_currents)
         log.info('[+] Done')
 
+    def snapshot_base(self, update=False, params_to_skip_update=None):
+        # call get_status here if updates are requested
+        # this is much faster than updating the individual channels
+        update_currents = self._update_currents and update
+        if update:
+            self._get_status(readcurrents=update_currents)
+        if params_to_skip_update is None:
+            params_to_skip_update = ('v', 'vrange', 'i', 'irange')
+        supfun = super().snapshot_base
+        snap = supfun(update=update,
+                      params_to_skip_update=params_to_skip_update)
+        return snap
+
     #########################
     # Channel gets/sets
     #########################
