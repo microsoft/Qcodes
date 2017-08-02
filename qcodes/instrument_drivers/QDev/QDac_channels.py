@@ -106,8 +106,17 @@ class QDacChannel(InstrumentChannel):
                            )
 
     def snapshot_base(self, update=False):
+        update_currents = self._parent._update_currents and update
+        if update:
+            self._parent._get_status(readcurrents=update_currents)
+        # call get_status rather than getting the status individually for
+        # each paramter. This is slower than it needs to be when getting
+        # all channels because _get_status is called once per channel
+        # Need to find a good way to ensure that _get_status is called exactly
+        # once per shapshot
         params = ('v', 'i', 'irange', 'vrange')
-        snap = super().snapshot_base(update=update, params_to_skip_update=params)
+        snap = super().snapshot_base(update=update,
+                                     params_to_skip_update=params)
         return snap
 
 
@@ -247,17 +256,6 @@ class QDac(VisaInstrument):
         self._get_status(readcurrents=update_currents)
         self._update_currents = update_currents
         log.info('[+] Done')
-
-    def snapshot_base(self, update=False):
-        # call get_status here if updates are requested
-        # this is much faster than updating the individual channels
-        # We take care of not updating the matching parameters (i, v, vrange,
-        # irange) in the channel.
-        update_currents = self._update_currents and update
-        if update:
-            self._get_status(readcurrents=update_currents)
-        snap = super().snapshot_base(update=update)
-        return snap
 
     #########################
     # Channel gets/sets
