@@ -113,7 +113,7 @@ class FrequencySweep(ArrayParameter):
                          unit='dB',
                          label='{} magnitude'.format(instrument._vna_parameter),
                          setpoint_units=('Hz',),
-                         setpoint_names=('{} frequency'.format(instrument._vna_parameter),))
+                         setpoint_names=('{}_frequency'.format(instrument._vna_parameter),))
         self.set_sweep(start, stop, npts)
         self._channel = channel
 
