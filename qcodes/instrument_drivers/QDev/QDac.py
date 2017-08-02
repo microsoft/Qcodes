@@ -69,7 +69,7 @@ class QDac(VisaInstrument):
                                QCoDeS only supports version 0.170202 or newer.
                                Contact rikke.lutge@nbi.ku.dk for an update.
                                ''')
-
+        self._update_currents = update_currents
         self.num_chans = num_chans
 
         # Assigned slopes. Entries will eventually be [chan, slope]
@@ -82,8 +82,12 @@ class QDac(VisaInstrument):
 
         self.chan_range = range(1, 1 + self.num_chans)
         self.channel_validator = vals.Ints(1, self.num_chans)
-
+        self._params_to_skip_update = []
         for i in self.chan_range:
+            self._params_to_skip_update.append('ch{:02}_v'.format(i))
+            self._params_to_skip_update.append('ch{:02}_i'.format(i))
+            self._params_to_skip_update.append('ch{:02}_vrange'.format(i))
+            self._params_to_skip_update.append('ch{:02}_irange'.format(i))
             stri = str(i)
             self.add_parameter(name='ch{:02}_v'.format(i),
                                label='Channel ' + stri,
@@ -170,7 +174,7 @@ class QDac(VisaInstrument):
         if update:
             self._get_status(readcurrents=update_currents)
         if params_to_skip_update is None:
-            params_to_skip_update = ('v', 'vrange', 'i', 'irange')
+            params_to_skip_update = self._params_to_skip_update
         supfun = super().snapshot_base
         snap = supfun(update=update,
                       params_to_skip_update=params_to_skip_update)
