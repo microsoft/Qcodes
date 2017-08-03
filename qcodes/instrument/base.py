@@ -158,7 +158,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
                 }
         snap['parameters'] = {}
         for name, param in self.parameters.items():
-            update = True
+            update = update
             if params_to_skip_update and name in params_to_skip_update:
                 update = False
             snap['parameters'][name] = param.snapshot(update=update)
