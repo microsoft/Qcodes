@@ -469,7 +469,7 @@ class IVVI(VisaInstrument):
         return get_func
 
     def round_dac(self, value, dacname=None):
-        """ Round a value to the interal precision of the instrument 
+        """ Round a value to the interal precision of the instrument
 
         Args:
             value (float): value to be rounded
@@ -503,7 +503,7 @@ class IVVI(VisaInstrument):
         Args:
             param (StandardParameter): a dac of the IVVI instrument
         """
-        if type(param._vals) is not Numbers:
+        if not isinstance(param._vals, Numbers):
             raise Exception('Only the Numbers validator is supported.')
         min_val = param._vals._min_value
         max_val = param._vals._max_value
