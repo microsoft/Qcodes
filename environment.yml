@@ -1,10 +1,17 @@
 name: qcodes
 channels: 
  - conda-forge
+ - dsdale24
 dependencies:
- - h5py
- - matplotlib
+ - h5py=2.6.0
+ - matplotlib=2.0.0
  - pyqtgraph 
- - python=3.6
+ - python=3.4
  - jsonschema
  - pyvisa
+ - QtPy=1.2.0
+ - sip
+ - PyQt5
+ - numpy=1.11.3
+ - jupyter=1.0.0
+ - typing 
