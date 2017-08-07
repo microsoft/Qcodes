@@ -12,7 +12,6 @@ from qcodes.version import __version__
 
 plotlib = config.gui.plotlib
 if plotlib in {'QT', 'all'}:
-    print("loading qt")
     try:
         from qcodes.plots.pyqtgraph import QtPlot
     except Exception:
@@ -21,7 +20,6 @@ if plotlib in {'QT', 'all'}:
               'to see the full error')
 
 if plotlib in {'matplotlib', 'all'}:
-    print("loading matplotlib")
     try:
         from qcodes.plots.qcmatplotlib import MatPlot
     except Exception:
