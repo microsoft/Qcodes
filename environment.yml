@@ -1,0 +1,10 @@
+name: qcodes
+channels: 
+ - conda-forge
+dependencies:
+ - h5py
+ - matplotlib
+ - pyqtgraph 
+ - python=3.6
+ - jsonschema
+ - pyvisa
