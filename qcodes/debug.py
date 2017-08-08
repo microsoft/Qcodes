@@ -5,6 +5,7 @@ which is why we need to mock it.
 import os
 import sys
 import traceback
+import numpy as np
 
 # Load the mock instrument servers
 from qcodes.instrument.mock_ip import MockAMI430
@@ -33,6 +34,17 @@ def start_mock_instruments(ip_address, ports):
             sys.exit(1)
 
     return mock_instruments
+
+
+def spherical_to_cartesian(r, theta, phi):
+
+    phi, theta = np.radians(phi), np.radians(theta)
+
+    x = r * np.sin(theta) * np.cos(phi)
+    y = r * np.sin(theta) * np.sin(phi)
+    z = r * np.cos(theta)
+
+    return x, y, z
 
 
 def main():
@@ -78,7 +90,13 @@ def main():
 
     # Lets try to do something useful with the driver...
     try:
-        current_driver._set_spherical((0.4, 0.1, 0.2))
+        field, theta, phi = 0.4, 3.0, 10.0
+        current_driver._set_spherical((field, theta, phi))
+
+        print(spherical_to_cartesian(field, theta, phi))
+        print(current_driver._get_measured(*("x", "y", "z")))
+
+
     except:
         traceback.print_exc()
     finally:

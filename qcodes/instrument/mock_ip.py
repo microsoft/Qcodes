@@ -126,7 +126,7 @@ class MockAMI430(MockIPInstrument):
             "PERS": "0",  # We do not start out in the persistent mode
             "PAUSE": self._do_pause,
             "CONF:FIELD:TARG": self._do_set_field_target,
-            "FIELD:TARG": "0", # The initial ramp target is zero
+            "FIELD:TARG": "0",  # The initial ramp target is zero
             "PS": "0",  # The heater is off in the beginning
             "RAMP": self._do_ramp
         }
@@ -177,4 +177,5 @@ class MockAMI430(MockIPInstrument):
         self.internal_state["STATE"] = MockAMI430.states["RAMPING to target field/current"]
         # Lets pretend to be ramping for a bit
         time.sleep(5.0)
+        self.internal_state["FIELD:MAG"] = self.internal_state["FIELD:TARG"]
         self.internal_state["STATE"] = MockAMI430.states["HOLDING at the target field/current"]
