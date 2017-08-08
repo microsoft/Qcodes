@@ -535,9 +535,14 @@ class AMI430_3D(Instrument):
         Set the internal setpoints to the measured field values.
         This can be done in case the magnets have been adjusted manually.
         """
-        self.__x = self._magnet_x.field()
-        self.__y = self._magnet_y.field()
-        self.__z = self._magnet_z.field()
+        phi, theta, field, rho = self._cartesian_to_other(
+            self._magnet_x.field(),
+            self._magnet_y.field(),
+            self._magnet_z.field()
+        )
+        self._field = field
+        self._theta = theta
+        self._phi = phi
 
     def _request_field_change(self, magnet, value):
         """
@@ -555,6 +560,16 @@ class AMI430_3D(Instrument):
             msg = 'This magnet doesnt belong to its specified parent {}'
 
             raise NameError(msg.format(self))
+
+    def _spherical_to_cartesian(self, field, theta, phi):
+
+        phi, theta = np.radians(phi), np.radians(theta)
+
+        x = field * np.sin(theta) * np.cos(phi)
+        y = field * np.sin(theta) * np.sin(phi)
+        z = field * np.cos(theta)
+
+        return x, y, z
 
     def _cartesian_to_other(self, x, y, z):
         """ Convert a cartesian set of coordinates to values of interest. """
@@ -606,16 +621,20 @@ class AMI430_3D(Instrument):
 
     def _get_setpoints(self, *names):
         """ Return the setpoints specified in names. """
-        return self._from_xyz(self.__x, self.__y, self.__z, *names)
+        x, y, z = self._spherical_to_cartesian(self._field, self._theta, self._phi)
+        return self._from_xyz(x, y, z, *names)
 
     def _set_x(self, value):
-        self._set_fields((value, self.__y, self.__z))
+        x, y, z = self._spherical_to_cartesian(self._field, self._theta, self._phi)
+        self._set_fields((value, y, z))
 
     def _set_y(self, value):
-        self._set_fields((self.__x, value, self.__z))
+        x, y, z = self._spherical_to_cartesian(self._field, self._theta, self._phi)
+        self._set_fields((x, value, z))
 
     def _set_z(self, value):
-        self._set_fields((self.__x, self.__y, value))
+        x, y, z = self._spherical_to_cartesian(self._field, self._theta, self._phi)
+        self._set_fields((x, y, value))
 
     def _set_spherical(self, values):
         field, theta, phi = values
@@ -628,30 +647,24 @@ class AMI430_3D(Instrument):
 
         self._set_fields((x, y, z))
 
+        self._field = field
+        self._theta = theta
+        self._phi = phi
+
     def _set_phi(self, value):
-        field, theta, phi = self._get_setpoints('field', 'theta', 'phi')
-
         phi = np.radians(value)
-
-        self._set_spherical((field, theta, phi))
+        self._set_spherical((self._field, self._theta, phi))
 
     def _set_theta(self, value):
-        field, theta, phi = self._get_setpoints('field', 'theta', 'phi')
-
         theta = np.radians(value)
-
-        self._set_spherical((field, theta, phi))
+        self._set_spherical((self._field, theta, self._phi))
 
     def _set_field(self, value):
-        field, theta, phi = self._get_setpoints('field', 'theta', 'phi')
-
         field = value
-
-        self._set_spherical((field, theta, phi))
+        self._set_spherical((field, self._theta, self._phi))
 
     def _set_cylindrical(self, values):
         phi, rho, z = values
-
         phi = np.radians(phi)
 
         x = rho * np.cos(phi)
@@ -659,12 +672,17 @@ class AMI430_3D(Instrument):
 
         self._set_fields((x, y, z))
 
+        phi, theta, field, rho = self._cartesian_to_other(x, y, z)
+        self._field = field
+        self._theta = theta
+        self._phi = phi
+
     def _set_rho(self, value):
         phi, rho = self._get_setpoints('phi', 'rho')
-
         rho = value
+        z = self._field * np.cos(self._theta)
 
-        self._set_cylindrical((phi, rho, self.__z))
+        self._set_cylindrical((phi, rho, z))
 
     def _set_fields(self, values):
         """
@@ -701,19 +719,21 @@ class AMI430_3D(Instrument):
         # First ramp the coils that are decreasing in field strength
         # If the new setpoint is practically equal to the current one
         # then leave it be
-        if np.isclose(self.__x, x, rtol=0, atol=1e-8):
+        xm, ym, zm = self._get_measured("x", "y", "z")
+
+        if np.isclose(xm, x, rtol=0, atol=1e-8):
             swept_x = True
         elif np.abs(self._magnet_x.field()) > np.abs(x):
             self._magnet_x._set_field(x, perform_safety_check=False)
             swept_x = True
 
-        if np.isclose(self.__y, y, rtol=0, atol=1e-8):
+        if np.isclose(ym, y, rtol=0, atol=1e-8):
             swept_y = True
         elif np.abs(self._magnet_y.field()) > np.abs(y):
             self._magnet_y._set_field(y, perform_safety_check=False)
             swept_y = True
 
-        if np.isclose(self.__z, z, rtol=0, atol=1e-8):
+        if np.isclose(zm, z, rtol=0, atol=1e-8):
             swept_z = True
         elif np.abs(self._magnet_z.field()) > np.abs(z):
             self._magnet_z._set_field(z, perform_safety_check=False)
@@ -728,8 +748,3 @@ class AMI430_3D(Instrument):
 
         if not swept_z:
             self._magnet_z._set_field(z, perform_safety_check=False)
-
-        # Set the new actual setpoints
-        self.__x = x
-        self.__y = y
-        self.__z = z

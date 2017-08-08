@@ -4,7 +4,6 @@ which is why we need to mock it.
 """
 import os
 import sys
-import traceback
 import numpy as np
 
 # Load the mock instrument servers
@@ -36,23 +35,7 @@ def start_mock_instruments(ip_address, ports):
     return mock_instruments
 
 
-def spherical_to_cartesian(r, theta, phi):
-
-    phi, theta = np.radians(phi), np.radians(theta)
-
-    x = r * np.sin(theta) * np.cos(phi)
-    y = r * np.sin(theta) * np.sin(phi)
-    z = r * np.cos(theta)
-
-    return x, y, z
-
-
-def main():
-
-    ip_address = "127.0.0.1"
-    ports = {"x": 1000, "y": 1001, "z": 1002}
-
-    mock_instruments = start_mock_instruments(ip_address, ports)
+def instantiate_driver(ip_address, ports):
 
     coil_constant = 1  # [T/A]
     current_rating = 10  # [A]
@@ -88,21 +71,82 @@ def main():
         field_limit
     )
 
-    # Lets try to do something useful with the driver...
-    try:
-        field, theta, phi = 0.4, 3.0, 10.0
-        current_driver._set_spherical((field, theta, phi))
-
-        print(spherical_to_cartesian(field, theta, phi))
-        print(current_driver._get_measured(*("x", "y", "z")))
+    return current_driver
 
 
-    except:
-        traceback.print_exc()
-    finally:
-        # Stop the mock instruments
-        for mocker in mock_instruments:
-            mocker.stop()
+def test_cylindrical_coordinates(current_driver):
+
+    phi, rho, z = 30.0, 0.4, 0.5
+
+    for count, set_function in enumerate(
+            [current_driver._set_phi, current_driver._set_rho, current_driver._set_z]):
+
+        args = [phi, rho, z]
+        #arg = args[count]
+        #args[count] = 0
+
+        current_driver._set_cylindrical(tuple(args))
+        #set_function(arg)
+
+        phi_m, rho_m, z_m = current_driver._get_measured("phi", "rho", "z")
+        phi_m = np.degrees(phi_m)
+
+        assert np.allclose([phi_m, rho_m, z_m], [phi, rho, z])
+
+
+def test_spherical_coordinates(current_driver):
+    """
+    We test a function call like "current_driver.set_spherical((field, theta, phi)" is equivalent to:
+
+        current_driver.set_spherical((0.0, theta, phi)
+        current_driver.set_field(field)
+
+    In fact, all of the following should be equivalent:
+
+        current_driver.set_spherical((field, 0.0, phi)
+        current_driver.set_theta(theta)
+
+    and
+
+        current_driver.set_spherical((field, theta, 0.0)
+        current_driver.set_phi(phi)
+
+    The old version of the AMI430 driver did not display this equivalence. We test here if this bug has been solved.
+
+    :param current_driver: The current driver to be tested
+    """
+
+    field, theta, phi = 0.5, 30.0, 50.0
+
+    for count, set_function in enumerate(
+            [current_driver._set_field, current_driver._set_theta, current_driver._set_phi]):
+
+        args = [field, theta, phi]
+        arg = args[count]
+        args[count] = 0
+
+        current_driver._set_spherical(tuple(args))
+        set_function(arg)
+
+        field_m, theta_m, phi_m = current_driver._get_measured("field", "theta", "phi")
+        theta_m = np.degrees(theta_m)
+        phi_m = np.degrees(phi_m)
+
+        assert np.allclose([field_m, theta_m, phi_m], [field, theta, phi])
+
+
+def main():
+    ip_address = "127.0.0.1"
+    ports = {"x": 1000, "y": 1001, "z": 1002}
+
+    mock_instruments = start_mock_instruments(ip_address, ports)
+    current_driver = instantiate_driver(ip_address, ports)
+
+    #test_spherical_coordinates(current_driver)
+    test_cylindrical_coordinates(current_driver)
+
+    for mocker in mock_instruments:
+        mocker.stop()
 
 if __name__ == "__main__":
     main()
