@@ -1,5 +1,6 @@
 numpy==1.13.3
 matplotlib==2.0.2
+mplcursors==0.1
 pyqtgraph==0.10.0
 PyVISA==1.8
 PyQt5==5.9
