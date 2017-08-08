@@ -35,7 +35,6 @@ def init(mainfolder: str, sample_name: str, station, plot_x_position=0.66,
                          1 is all the way to the right.
 
     """
-    plt.ioff()
     pdfdisplay['individual'] = display_individual_pdf
     pdfdisplay['combined'] = display_pdf
     if sep in sample_name:
@@ -412,6 +411,7 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
         # set window back to original size
         plot.win.resize(1000, 600)
         plot.save()
+        plt.ioff()
         pdfplot, num_subplots = _plot_setup(data, meas_params, useQT=False)
         # pad a bit more to prevent overlap between
         # suptitle and title
@@ -424,6 +424,7 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
             plt.close(pdfplot.fig)
         if num_subplots > 1:
             _save_individual_plots(data, meas_params, pdfdisplay['individual'])
+        plt.ion()
     if CURRENT_EXPERIMENT.get('device_image'):
         log.debug('Saving device image')
         save_device_image(tuple(sp[0] for sp in set_params))
