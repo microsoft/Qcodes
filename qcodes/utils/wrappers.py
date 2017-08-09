@@ -16,6 +16,7 @@ from qcodes.plots.qcmatplotlib import MatPlot
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils.qcodes_device_annotator import DeviceImage
 
+from matplotlib import ticker
 from IPython import get_ipython
 
 log = logging.getLogger(__name__)
@@ -53,12 +54,16 @@ def init(mainfolder: str, sample_name: str, station, plot_x_position=0.66,
 
     path_to_experiment_folder = sep.join([mainfolder, sample_name, ""])
     CURRENT_EXPERIMENT["exp_folder"] = path_to_experiment_folder
-
+    CURRENT_EXPERIMENT['pdf_subfolder'] = 'pdf'
     try:
         makedirs(path_to_experiment_folder)
     except FileExistsError:
         pass
-
+    try:
+        makedirs(sep.join([mainfolder, sample_name,
+                           CURRENT_EXPERIMENT['pdf_subfolder']]))
+    except FileExistsError:
+        pass
     log.info("experiment started at {}".format(path_to_experiment_folder))
 
     loc_provider = qc.FormatLocation(
@@ -289,7 +294,12 @@ def _save_individual_plots(data, inst_meas, display_plot=True):
             plot.subplots[0].set_title(title + rasterized_note)
         else:
             plot.subplots[0].set_title(title)
-        plot.save("{}_{:03d}.pdf".format(plot.get_default_title(),
+        title_list = plot.get_default_title().split(sep)
+        title_list.insert(-1 , CURRENT_EXPERIMENT['pdf_subfolder'])
+        title = sep.join(title_list)
+        _rescale_mpl_axes(plot)
+        plot.tight_layout()
+        plot.save("{}_{:03d}.pdf".format(title,
                                          counter_two))
         if display_plot:
             plot.fig.canvas.draw()
@@ -415,8 +425,14 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
         pdfplot, num_subplots = _plot_setup(data, meas_params, useQT=False)
         # pad a bit more to prevent overlap between
         # suptitle and title
+        _rescale_mpl_axes(pdfplot)
         pdfplot.fig.tight_layout(pad=3)
-        pdfplot.save("{}.pdf".format(plot.get_default_title()))
+        title_list = plot.get_default_title().split(sep)
+        title_list.insert(-1 , CURRENT_EXPERIMENT['pdf_subfolder'])
+        title = sep.join(title_list)
+
+
+        pdfplot.save("{}.pdf".format(title))
         if pdfdisplay['combined'] or (num_subplots == 1 and pdfdisplay['individual']):
             pdfplot.fig.canvas.draw()
             plt.show()
@@ -437,6 +453,17 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
         raise KeyboardInterrupt
     return plot, data
 
+def _rescale_mpl_axes(plot):
+    for i, subplot in enumerate(plot.subplots):
+        for axis in 'x', 'y':
+            unit = plot.traces[i]['config'][axis].unit
+            label = plot.traces[i]['config'][axis].label
+            maxval = abs(plot.traces[0]['config'][axis].ndarray).max()
+            if unit == 'V' and maxval < 0.1:
+                unit = 'mV'
+                tx = ticker.FuncFormatter(lambda i, pos: '{0:g}'.format(i*1e3))
+                getattr(subplot, "{}axis".format(axis)).set_major_formatter(tx)
+                getattr(subplot, "set_{}label".format(axis))("{} ({})".format(label, unit))
 
 def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True):
     """
