@@ -451,52 +451,56 @@ class Scope(MultiParameter):
         while (zi_error or timedout) and error_counter < num_retries:
             # one shot per trigger. This needs to be set every time
             # a the scope is enabled as below using scope_runstop
-            self._instrument.daq.setInt('/{}/scopes/0/single'.format(self._instrument.device), 1)
-            self._instrument.daq.sync()
+            try:
+                # we wrap this in try finally to ensure that scope.finish is always called
+                # even if the measurement is interrupted
+                self._instrument.daq.setInt('/{}/scopes/0/single'.format(self._instrument.device), 1)
+                self._instrument.daq.sync()
 
-            scope = self._instrument.scope # There are issues reusing the scope.
-            scope.set('scopeModule/clearhistory', 1)
+                scope = self._instrument.scope # There are issues reusing the scope.
+                scope.set('scopeModule/clearhistory', 1)
 
-            # Start the scope triggering/acquiring
-            params['scope_runstop'].set('run') # set /dev/scopes/0/enable to 1
+                # Start the scope triggering/acquiring
+                params['scope_runstop'].set('run') # set /dev/scopes/0/enable to 1
 
-            log.info('[*] Starting ZI scope acquisition.')
-            # Start something... hauling data from the scopeModule?
-            scope.execute()
-            starttime = time.time()
-            timedout = False
+                log.info('[*] Starting ZI scope acquisition.')
+                # Start something... hauling data from the scopeModule?
+                scope.execute()
+                starttime = time.time()
+                timedout = False
 
-            while scope.progress() < 1:
-                time.sleep(0.1)  # This while+sleep is how ZI engineers do it
-                if (time.time()-starttime) > 2 * meas_time:
-                    timedout = True
-                    break
-            metadata = scope.get("scopeModule/*")
-            zi_error = bool(metadata['error'][0])
+                while scope.progress() < 1:
+                    time.sleep(0.1)  # This while+sleep is how ZI engineers do it
+                    if (time.time()-starttime) > 20*meas_time+1:
+                        timedout = True
+                        break
+                metadata = scope.get("scopeModule/*")
+                zi_error = bool(metadata['error'][0])
 
-            # Stop the scope from running
-            params['scope_runstop'].set('stop')
+                # Stop the scope from running
+                params['scope_runstop'].set('stop')
 
-            if not (timedout or zi_error):
-                log.info('[+] ZI scope acquisition completed OK')
-                rawdata = scope.read()
-                if 'error' in rawdata:
-                    zi_error = bool(rawdata['error'][0])
-                data = self._scopedataparser(rawdata, self._instrument.device,
-                                             npts, segs, channels)
-            else:
-                log.warning('[-] ZI scope acquisition attempt {} '
-                            'failed, Timeout: {}, Error: {}, '
-                            'retrying'.format(error_counter, timedout, zi_error))
-                rawdata = None
-                data = (None, None)
-                error_counter += 1
+                if not (timedout or zi_error):
+                    log.info('[+] ZI scope acquisition completed OK')
+                    rawdata = scope.read()
+                    if 'error' in rawdata:
+                        zi_error = bool(rawdata['error'][0])
+                    data = self._scopedataparser(rawdata, self._instrument.device,
+                                                 npts, segs, channels)
+                else:
+                    log.warning('[-] ZI scope acquisition attempt {} '
+                                'failed, Timeout: {}, Error: {}, '
+                                'retrying'.format(error_counter, timedout, zi_error))
+                    rawdata = None
+                    data = (None, None)
+                    error_counter += 1
 
-            # cleanup and make ready for next scope acquisition
-            scope.finish()
-            if error_counter >= num_retries:
-                log.warning('[+] ZI scope acquisition failed, maximum number'
-                            'of retries performed. No data returned')
+                if error_counter >= num_retries:
+                    log.warning('[+] ZI scope acquisition failed, maximum number'
+                                'of retries performed. No data returned')
+            finally:
+                # cleanup and make ready for next scope acquisition
+                scope.finish()
         return data
 
     @staticmethod
