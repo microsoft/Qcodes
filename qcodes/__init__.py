@@ -9,12 +9,10 @@ from qcodes.config import Config
 config = Config()
 
 from qcodes.version import __version__
-from qcodes.utils.helpers import in_notebook
 
-# code that should only be imported into the main (notebook) thread
-# in particular, importing matplotlib in the side processes takes a long
-# time and spins up other processes in order to try and get a front end
-if in_notebook():  # pragma: no cover
+
+if config.get("gui.plotlib"):
+    # load both because you never know what scientists actually want
     try:
         from qcodes.plots.qcmatplotlib import MatPlot
     except Exception:
