@@ -12,7 +12,7 @@ import select
 
 
 class MockIPInstrument(object):
-    def __init__(self, name, ip_address, port, log_file, max_connections=5, silent=False):
+    def __init__(self, name, ip_address, port, log_file=None, max_connections=5, silent=False):
         self.name = name
         self.ip_address = ip_address
         self.port = port
@@ -46,8 +46,9 @@ class MockIPInstrument(object):
         if not self.silent:
             print(log_msg)
 
-        with open(self.log_file, "a") as fh:
-            fh.write(log_msg + "\n")
+        if self.log_file is not None:
+            with open(self.log_file, "a") as fh:
+                fh.write(log_msg + "\n")
 
     def _main_thread_(self):
 
@@ -114,7 +115,7 @@ class MockAMI430(MockIPInstrument):
 
     quench_state = {False: "0", True: "1"}
 
-    def __init__(self, name, ip_address, port, log_file, max_connections=5, silent=False):
+    def __init__(self, name, ip_address, port, log_file=None, max_connections=5, silent=False):
 
         self.internal_state = {
             "RAMP:RATE:UNITS": MockAMI430.ramp_rate_units["A/s"],
@@ -131,7 +132,7 @@ class MockAMI430(MockIPInstrument):
             "RAMP": self._do_ramp
         }
 
-        super(MockAMI430, self).__init__(name, ip_address, port, log_file, max_connections=max_connections,
+        super(MockAMI430, self).__init__(name, ip_address, port, log_file=log_file, max_connections=max_connections,
                                          silent=silent)
 
     def _response(self, msg):
@@ -176,6 +177,6 @@ class MockAMI430(MockIPInstrument):
     def _do_ramp(self, _):
         self.internal_state["STATE"] = MockAMI430.states["RAMPING to target field/current"]
         # Lets pretend to be ramping for a bit
-        time.sleep(5.0)
+        time.sleep(0.1)
         self.internal_state["FIELD:MAG"] = self.internal_state["FIELD:TARG"]
         self.internal_state["STATE"] = MockAMI430.states["HOLDING at the target field/current"]
