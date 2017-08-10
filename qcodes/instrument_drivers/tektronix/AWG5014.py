@@ -157,12 +157,20 @@ class Tektronix_AWG5014(VisaInstrument):
                            vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'),
                            get_parser=self.newlinestripper
                            )
-        self.add_parameter('ref_clock_source',
-                           label='Reference clock source',
+        self.add_parameter('clock_source',
+                           label='Clock source',
                            get_cmd='AWGControl:CLOCk:SOURce?',
                            set_cmd='AWGControl:CLOCk:SOURce ' + '{}',
                            vals=vals.Enum('INT', 'EXT'),
                            get_parser=self.newlinestripper)
+
+        self.add_parameter('ref_source',
+                           label='Reference source',
+                           get_cmd='SOURce1:ROSCillator:SOURce?',
+                           set_cmd='SOURce1:ROSCillator:SOURce ' + '{}',
+                           vals=vals.Enum('INT', 'EXT'),
+                           get_parser=self.newlinestripper)
+
         self.add_parameter('DC_output',
                            label='DC Output (ON/OFF)',
                            get_cmd='AWGControl:DC:STATe?',
@@ -331,8 +339,9 @@ class Tektronix_AWG5014(VisaInstrument):
                                get_cmd=filter_cmd + '?',
                                set_cmd=filter_cmd + ' {}',
                                vals=vals.Enum(20e6, 100e6, 9.9e37,
+                                              np.float('inf'),
                                               'INF', 'INFinity'),
-                               get_parser=float)
+                               get_parser=self._tek_outofrange_get_parser)
             self.add_parameter('ch{}_DC_out'.format(i),
                                label='DC output level channel {}'.format(i),
                                unit='V',
@@ -352,7 +361,7 @@ class Tektronix_AWG5014(VisaInstrument):
                 self.add_parameter(
                     'ch{}_m{}_del'.format(i, j),
                     label='Channel {} Marker {} delay'.format(i, j),
-                    units='ns',
+                    unit='ns',
                     get_cmd=m_del_cmd + '?',
                     set_cmd=m_del_cmd + ' {:.3f}e-9',
                     vals=vals.Numbers(0, 1),
@@ -386,6 +395,14 @@ class Tektronix_AWG5014(VisaInstrument):
                 return string[:-1]
             else:
                 return string
+
+    def _tek_outofrange_get_parser(self, string):
+        val = float(string)
+        # note that 9.9e37 is used as a generic out of range value
+        # in tektronix instruments
+        if val >= 9.9e37:
+            val = np.float('INF')
+        return val
 
     # Functions
     def get_all(self, update=True):
@@ -902,7 +919,8 @@ class Tektronix_AWG5014(VisaInstrument):
         # the return value of the parameter is different from what goes
         # into the .awg file, so we translate it
         filtertrans = {20e6: 1, 100e6: 3, 9.9e37: 10,
-                       'INF': 10, 'INFinity': 10, None: None}
+                       'INF': 10, 'INFinity': 10,
+                       float('inf'): 10, None: None}
         filters = [filtertrans[self.ch1_filter.get_latest()],
                    filtertrans[self.ch2_filter.get_latest()],
                    filtertrans[self.ch3_filter.get_latest()],
@@ -1408,13 +1426,13 @@ class Tektronix_AWG5014(VisaInstrument):
         # Input validation
         if (not((len(wf) == len(m1)) and ((len(m1) == len(m2))))):
             raise Exception('error: sizes of the waveforms do not match')
-        if min(wf) < -1 or max(wf) > 1:
+        if np.min(wf) < -1 or np.max(wf) > 1:
             raise TypeError('Waveform values out of bonds.' +
                             ' Allowed values: -1 to 1 (inclusive)')
-        if (list(m1).count(0)+list(m1).count(1)) != len(m1):
+        if not np.all(np.in1d(m1, np.array([0, 1]))):
             raise TypeError('Marker 1 contains invalid values.' +
                             ' Only 0 and 1 are allowed')
-        if (list(m2).count(0)+list(m2).count(1)) != len(m2):
+        if not np.all(np.in1d(m2, np.array([0, 1]))):
             raise TypeError('Marker 2 contains invalid values.' +
                             ' Only 0 and 1 are allowed')
 

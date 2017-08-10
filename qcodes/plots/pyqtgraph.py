@@ -4,12 +4,13 @@ Live plotting using pyqtgraph
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as pgmp
+from pyqtgraph.multiprocess.remoteproxy import ClosedError
 import warnings
-from collections import namedtuple
+from collections import namedtuple, deque
 
 from .base import BasePlot
 from .colors import color_cycle, colorscales
-
+import qcodes.config
 
 TransformState = namedtuple('TransformState', 'translate scale revisit')
 
@@ -37,6 +38,15 @@ class QtPlot(BasePlot):
     """
     proc = None
     rpg = None
+    # we store references to plots to keep the garbage collections from
+    # destroying the windows. To keep memory consumption within bounds we
+    # limit this to an arbitrary number of plots here using a deque
+    # The issue is that even when closing a window it's difficult to
+    # remove it from the list. This could potentially be done with a
+    # close event on win but this is difficult with remote proxy process
+    # as the list of plots lives in the main process and the plot locally
+    # in a remote process
+    plots = deque(maxlen=qcodes.config['gui']['pyqtmaxplots'])
 
     def __init__(self, *args, figsize=(1000, 600), interval=0.25,
                  window_title='', theme=((60, 60, 60), 'w'), show_window=True, remote=True, **kwargs):
@@ -55,7 +65,16 @@ class QtPlot(BasePlot):
         else:
             # overrule the remote pyqtgraph class
             self.rpg = pg
-        self.win = self.rpg.GraphicsWindow(title=window_title)
+        try:
+            self.win = self.rpg.GraphicsWindow(title=window_title)
+        except ClosedError as err:
+            # the remote process may have crashed. In that case try restarting
+            # it
+            if remote:
+                self._init_qt()
+                self.win = self.rpg.GraphicsWindow(title=window_title)
+            else:
+                raise err
         self.win.setBackground(theme[1])
         self.win.resize(*figsize)
         self.subplots = [self.add_subplot()]
@@ -66,13 +85,16 @@ class QtPlot(BasePlot):
         if not show_window:
             self.win.hide()
 
-    def _init_qt(self):
+        self.plots.append(self)
+
+    @classmethod
+    def _init_qt(cls):
         # starting the process for the pyqtgraph plotting
         # You do not want a new process to be created every time you start a
         # run, so this only starts once and stores the process in the class
         pg.mkQApp()
-        self.__class__.proc = pgmp.QtProcess()  # pyqtgraph multiprocessing
-        self.__class__.rpg = self.proc._import('pyqtgraph')
+        cls.proc = pgmp.QtProcess()  # pyqtgraph multiprocessing
+        cls.rpg = cls.proc._import('pyqtgraph')
 
     def clear(self):
         """
@@ -98,6 +120,10 @@ class QtPlot(BasePlot):
             for i in range(subplot - len(self.subplots)):
                 self.subplots.append(self.add_subplot())
         subplot_object = self.subplots[subplot - 1]
+
+        if 'name' in kwargs:
+            if subplot_object.legend is None:
+                subplot_object.addLegend(offset=(-30,30))
 
         if 'z' in kwargs:
             plot_object = self._draw_image(subplot_object, **kwargs)
@@ -425,11 +451,11 @@ class QtPlot(BasePlot):
         image.save(buffer, 'PNG')
         buffer.close()
         return bytes(byte_array._getValue())
-    
+
     def save(self, filename=None):
         """
         Save current plot to filename, by default
-        to the location corresponding to the default 
+        to the location corresponding to the default
         title.
 
         Args:

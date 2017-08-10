@@ -33,6 +33,9 @@ class NumpyJSONEncoder(json.JSONEncoder):
                 're': float(obj.real),
                 'im': float(obj.imag)
             }
+        elif hasattr(obj, '_JSONEncoder'):
+            # Use object's custom JSON encoder
+            return obj._JSONEncoder()
         else:
             try:
                 s = super(NumpyJSONEncoder, self).default(obj)
@@ -48,18 +51,6 @@ def tprint(string, dt=1, tag='default'):
     if (time.time() - ptime) > dt:
         print(string)
         _tprint_times[tag] = time.time()
-
-
-def in_notebook():
-    """
-    Check if inside a notebook.
-    This could mean we are connected to a notebook, but this is not guaranteed.
-    see: http://stackoverflow.com/questions/15411967
-    Returns:
-        bool: True if the code is running with a ipython or jypyter
-
-    """
-    return 'ipy' in repr(sys.stdout)
 
 
 def is_sequence(obj):

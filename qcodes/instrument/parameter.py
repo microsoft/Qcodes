@@ -57,6 +57,7 @@ import time
 import logging
 import os
 import collections
+import warnings
 
 import numpy
 
@@ -66,7 +67,7 @@ from qcodes.utils.helpers import (permissive_range, wait_secs, is_sequence,
                                   full_class, named_repr, warn_units)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.command import Command, NoCommandError
-from qcodes.utils.validators import Validator, Numbers, Ints, Enum
+from qcodes.utils.validators import Validator, Numbers, Ints, Enum, Strings
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
 
@@ -96,11 +97,13 @@ class _BaseParameter(Metadatable, DeferredOperations):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
-    def __init__(self, name, instrument, snapshot_get, metadata):
+    def __init__(self, name, instrument, snapshot_get, metadata,
+                 snapshot_value=True):
         super().__init__(metadata)
         self._snapshot_get = snapshot_get
         self.name = str(name)
         self._instrument = instrument
+        self._snapshot_value = snapshot_value
 
         self.has_get = hasattr(self, 'get')
         self.has_set = hasattr(self, 'set')
@@ -181,11 +184,15 @@ class _BaseParameter(Metadatable, DeferredOperations):
             dict: base snapshot
         """
 
-        if self.has_get and self._snapshot_get and update:
+        if self.has_get and self._snapshot_get and self._snapshot_value and \
+                update:
             self.get()
 
         state = self._latest()
         state['__class__'] = full_class(self)
+
+        if not self._snapshot_value:
+            state.pop('value')
 
         if isinstance(state['ts'], datetime):
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
@@ -276,8 +283,9 @@ class Parameter(_BaseParameter):
     """
     def __init__(self, name, instrument=None, label=None,
                  unit=None, units=None, vals=None, docstring=None,
-                 snapshot_get=True, metadata=None):
-        super().__init__(name, instrument, snapshot_get, metadata)
+                 snapshot_get=True, snapshot_value=True, metadata=None):
+        super().__init__(name, instrument, snapshot_get, metadata,
+                         snapshot_value=snapshot_value)
 
         self._meta_attrs.extend(['label', 'unit', '_vals'])
 
@@ -433,7 +441,9 @@ class ArrayParameter(_BaseParameter):
             per setpoint array. Ignored if a setpoint is a DataArray, which
             already has a label.
 
-            TODO (alexcjohnson) we need setpoint_units (and in MultiParameter)
+        setpoint_units (Optional[Tuple[str]]): one label (like ``v``)
+            per setpoint array. Ignored if a setpoint is a DataArray, which
+            already has a unit.
 
         docstring (Optional[str]): documentation string for the __doc__
             field of the object. The __doc__ field of the instance is used by
@@ -448,14 +458,16 @@ class ArrayParameter(_BaseParameter):
     def __init__(self, name, shape, instrument=None,
                  label=None, unit=None, units=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
-                 docstring=None, snapshot_get=True, metadata=None):
-        super().__init__(name, instrument, snapshot_get, metadata)
+                 setpoint_units=None, docstring=None,
+                 snapshot_get=True, snapshot_value=True, metadata=None):
+        super().__init__(name, instrument, snapshot_get, metadata,
+                         snapshot_value=snapshot_value)
 
         if self.has_set:  # TODO (alexcjohnson): can we support, ala Combine?
             raise AttributeError('ArrayParameters do not support set '
                                  'at this time.')
 
-        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
+        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels', 'setpoint_units',
                                  'label', 'unit'])
 
         self.label = name if label is None else label
@@ -488,10 +500,15 @@ class ArrayParameter(_BaseParameter):
                 not is_sequence_of(setpoint_labels, (nt, str),
                                    shape=sp_shape)):
             raise ValueError('setpoint_labels must be a tuple of strings')
+        if (setpoint_units is not None and
+                not is_sequence_of(setpoint_units, (nt, str),
+                                   shape=sp_shape)):
+            raise ValueError('setpoint_units must be a tuple of strings')
 
         self.setpoints = setpoints
         self.setpoint_names = setpoint_names
         self.setpoint_labels = setpoint_labels
+        self.setpoint_units = setpoint_units
 
         self.__doc__ = os.linesep.join((
             'Parameter class:',
@@ -591,6 +608,10 @@ class MultiParameter(_BaseParameter):
             ``labels``) per setpoint array. Ignored if a setpoint is a
             DataArray, which already has a label.
 
+        setpoint_units (Optional[Tuple[Tuple[str]]]): one unit (like
+            ``V``) per setpoint array. Ignored if a setpoint is a
+            DataArray, which already has a unit.
+
         docstring (Optional[str]): documentation string for the __doc__
             field of the object. The __doc__ field of the instance is used by
             some help systems, but not all
@@ -604,14 +625,16 @@ class MultiParameter(_BaseParameter):
     def __init__(self, name, names, shapes, instrument=None,
                  labels=None, units=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
-                 docstring=None, snapshot_get=True, metadata=None):
-        super().__init__(name, instrument, snapshot_get, metadata)
+                 setpoint_units=None, docstring=None,
+                 snapshot_get=True, snapshot_value=True, metadata=None):
+        super().__init__(name, instrument, snapshot_get, metadata,
+                         snapshot_value=snapshot_value)
 
         if self.has_set:  # TODO (alexcjohnson): can we support, ala Combine?
-            raise AttributeError('MultiParameters do not support set '
-                                 'at this time.')
+            warnings.warn('MultiParameters do not fully support set '
+                          'at this time.')
 
-        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
+        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels', 'setpoint_units',
                                  'names', 'labels', 'units'])
 
         if not is_sequence_of(names, str):
@@ -643,9 +666,14 @@ class MultiParameter(_BaseParameter):
             raise ValueError(
                 'setpoint_labels must be a tuple of tuples of strings')
 
+        if not _is_nested_sequence_or_none(setpoint_units, (nt, str), shapes):
+            raise ValueError(
+                'setpoint_units must be a tuple of tuples of strings')
+
         self.setpoints = setpoints
         self.setpoint_names = setpoint_names
         self.setpoint_labels = setpoint_labels
+        self.setpoint_units = setpoint_units
 
         self.__doc__ = os.linesep.join((
             'MultiParameter class:',
@@ -1045,9 +1073,9 @@ class ManualParameter(Parameter):
         instrument (Optional[Instrument]): the instrument this applies to,
             if any.
 
-        initial_value (Optional[str]): starting value, the
-            only invalid value allowed, and None is only allowed as an initial
-            value, it cannot be set later
+        initial_value (Optional[str]): starting value, may be None even if
+            None does not pass the validator. None is only allowed as an
+            initial value and cannot be set after initiation.
 
         **kwargs: Passed to Parameter parent class
     """
@@ -1260,3 +1288,50 @@ class CombinedParameter(Metadatable):
             meta_data[param.full_name] = param.snapshot()
 
         return meta_data
+
+
+class InstrumentRefParameter(ManualParameter):
+    """
+    An InstrumentRefParameter
+
+    Args:
+        name (string): the name of the parameter that one wants to add.
+
+        instrument (Optional[Instrument]): the "parent" instrument this
+            parameter is attached to, if any.
+
+        initial_value (Optional[str]): starting value, may be None even if
+            None does not pass the validator. None is only allowed as an
+            initial value and cannot be set after initiation.
+
+        **kwargs: Passed to InstrumentRefParameter parent class
+
+    This parameter is useful when one needs a reference to another instrument
+    from within an instrument, e.g., when creating a meta instrument that
+    sets parameters on instruments it contains.
+    """
+
+    def get_instr(self):
+        """
+        Returns the instance of the instrument with the name equal to the
+        value of this parameter.
+        """
+        ref_instrument_name = self.get()
+        # note that _instrument refers to the instrument this parameter belongs
+        # to, while the ref_instrument_name is the instrument that is the value
+        # of this parameter.
+        return self._instrument.find_instrument(ref_instrument_name)
+
+    def set_validator(self, vals):
+        """
+        Set a validator `vals` for this parameter.
+
+        Args:
+            vals (Validator):  validator to set
+        """
+        if vals is None:
+            self._vals = Strings()
+        elif isinstance(vals, Validator):
+            self._vals = vals
+        else:
+            raise TypeError('vals must be a Validator')

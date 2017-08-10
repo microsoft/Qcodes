@@ -161,6 +161,10 @@ class Keithley_2000(VisaInstrument):
         if reset:
             self.reset()
 
+        # Set the data format to have only ascii data without units and channels
+        self.write('FORM:DATA ASCII')
+        self.write('FORM:ELEM READ')
+
         self.connect_message()
 
     def trigger(self):
@@ -175,7 +179,7 @@ class Keithley_2000(VisaInstrument):
 
         self._trigger_sent = False
 
-        return float(self.ask('DATA:FRESH?'))
+        return float(self.ask('SENSE:DATA:FRESH?'))
 
     def _get_mode_param(self, parameter, parser):
         """ Read the current Keithley mode and ask for a parameter """

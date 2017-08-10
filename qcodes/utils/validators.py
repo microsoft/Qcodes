@@ -51,6 +51,7 @@ class Validator:
 
     is_numeric: is this a numeric type (so it can be swept)?
     """
+
     def __init__(self):
         raise NotImplementedError
 
@@ -62,6 +63,7 @@ class Validator:
 
 class Anything(Validator):
     """allow any value to pass"""
+
     def __init__(self):
         pass
 
@@ -80,11 +82,12 @@ class Bool(Validator):
     """
     requires a boolean
     """
+
     def __init__(self):
         pass
 
     def validate(self, value, context=''):
-        if not isinstance(value, bool):
+        if not isinstance(value, bool) and not isinstance(value, np.bool8):
             raise TypeError(
                 '{} is not Boolean; {}'.format(repr(value), context))
 
@@ -131,7 +134,7 @@ class Strings(Validator):
 class Numbers(Validator):
     """
     Args:
-        min_value (Optional[Union[float, int]):  Min value allowed, default inf
+        min_value (Optional[Union[float, int]):  Min value allowed, default -inf
         max_value:  (Optional[Union[float, int]): Max  value allowed, default inf
 
     Raises:
@@ -246,6 +249,7 @@ class OnOff(Validator):
     """
     requires either the string 'on' or 'off'
     """
+
     def __init__(self):
         self._validator = Enum('on', 'off')
 
@@ -391,3 +395,62 @@ class Arrays(Validator):
         maxv = self._max_value if math.isfinite(self._max_value) else None
         return '<Arrays{}, shape: {}>'.format(range_str(minv, maxv, 'v'),
                                               self._shape)
+
+
+class Lists(Validator):
+    """
+    Validator for lists
+    Args:
+        elt_validator: used to validate the individual elements of the list
+    """
+
+    def __init__(self, elt_validator=Anything()):
+        self._elt_validator = elt_validator
+
+    def __repr__(self):
+        msg = '<Lists : '
+        msg += self._elt_validator.__repr__() + '>'
+        return msg
+
+    def validate(self, value, context=''):
+        if not isinstance(value, list):
+            raise TypeError(
+                '{} is not a list; {}'.format(repr(value), context))
+        # Does not validate elements if not required to improve performance
+        if not isinstance(self._elt_validator, Anything):
+            for elt in value:
+                self._elt_validator.validate(elt)
+
+
+class Callable(Validator):
+    """
+    Validator for callables such as functions.
+    """
+    def __init__(self):
+        # exists only to overwrite parent class
+        pass
+
+    def validate(self, value, context=''):
+        if not callable(value):
+            raise TypeError(
+                '{} is not a callable; {}'.format(repr(value), context))
+
+    def __repr__(self):
+        return '<Callable>'
+
+
+class Dict(Validator):
+    """
+    Validator for dictionaries
+    """
+    def __init__(self):
+        # exists only to overwrite parent class
+        pass
+
+    def validate(self, value, context=''):
+        if not isinstance(value, dict):
+            raise TypeError(
+                '{} is not a dictionary; {}'.format(repr(value), context))
+
+    def __repr__(self):
+        return '<Dict>'

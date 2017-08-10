@@ -7,9 +7,10 @@ from unittest import TestCase
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter,
-    ManualParameter, StandardParameter)
+    ManualParameter, StandardParameter, InstrumentRefParameter)
 from qcodes.utils.helpers import LogCapture
 from qcodes.utils.validators import Numbers
+from qcodes.tests.instrument_mocks import DummyInstrument
 
 
 class GettableParam(Parameter):
@@ -378,8 +379,10 @@ class SimpleMultiParam(MultiParameter):
 
 
 class SettableMulti(SimpleMultiParam):
-    # this is not allowed - just created to raise an error in the test below
+    # this is not fully suported - just created to raise a warning in the test below.
+    # We test that the warning is raised
     def set(self, v):
+        print("Calling set")
         self.v = v
 
 
@@ -481,8 +484,9 @@ class TestMultiParameter(TestCase):
 
         self.assertTrue(p.has_get)
         self.assertFalse(p.has_set)
-
-        with self.assertRaises(AttributeError):
+        # We allow creation of Multiparameters with set to support
+        # instruments that already make use of them.
+        with self.assertWarns(UserWarning):
             SettableMulti([0, [1, 2, 3], [[4, 5], [6, 7]]],
                           name, names, shapes)
 
@@ -633,3 +637,15 @@ class TestStandardParam(TestCase):
 
         self._p = 'PVAL: 1'
         self.assertEqual(p(), 'on')
+
+
+class TestInstrumentRefParameter(TestCase):
+    def test_get_instr(self):
+        a = DummyInstrument('dummy_holder')
+        d = DummyInstrument('dummy')
+        a.add_parameter('test', parameter_class=InstrumentRefParameter)
+
+        a.test.set(d.name)
+
+        self.assertEqual(a.test.get(), d.name)
+        self.assertEqual(a.test.get_instr(), d)

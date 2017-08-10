@@ -1,6 +1,6 @@
 from typing import Union
 
-from qcodes import Parameter, StandardParameter
+from qcodes import Parameter, StandardParameter, Instrument
 
 
 class VoltageDivider(Parameter):
@@ -47,7 +47,8 @@ class VoltageDivider(Parameter):
                  v1: StandardParameter,
                  division_value: Union[int, float],
                  name: str=None,
-                 label: str=None) -> None:
+                 label: str=None,
+                 instrument: Union[None, Instrument]=None) -> None:
         self.v1 = v1
         self.division_value = division_value
         if label:
@@ -59,16 +60,17 @@ class VoltageDivider(Parameter):
             self.name = name
         else:
             self.name = "{}_attenuated".format(self.v1.name)
-
+        if not instrument:
+            instrument = getattr(self.v1, "_instrument", None)
         super().__init__(
             name=self.name,
-            instrument=getattr(self.v1, "_instrument", None),
+            instrument=instrument,
             label=self.label,
             unit=self.v1.unit,
             metadata=self.v1.metadata)
 
         # extend metadata
-        self._meta_attrs.extend(['v1', 'division_value'])
+        self._meta_attrs.extend(["division_value"])
 
     def set(self, value: Union[int, float]) -> None:
         instrument_value = value * self.division_value

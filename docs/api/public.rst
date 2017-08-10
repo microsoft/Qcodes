@@ -6,7 +6,7 @@ Public
 ======
 
 Classes and Functions
-----------------------
+---------------------
 
 This page lists the entrypoints to the plubic qcodes API.
 
@@ -42,8 +42,6 @@ Loops
 .. autosummary::
    :toctree: generated/
 
-   get_bg
-   halt_bg
    Loop
 
 Measure
@@ -70,9 +68,6 @@ Data
 .. autosummary::
    :toctree: generated/
 
-    get_data_manager
-    qcodes.data.manager.DataManager
-    DataMode
     DataSet
     new_data
     load_data
@@ -93,6 +88,9 @@ Instrument
    Function
    Parameter
    StandardParameter
+   ArrayParameter
+   MultiParameter
+   ManualParameter
    SweepFixedValues
    SweepValues
    combine
@@ -102,9 +100,9 @@ Instrument
    Instrument
    IPInstrument
    VisaInstrument
-   MockInstrument
-   MockModel
 
+   InstrumentChannel
+   ChannelList
 
 Plot
 ~~~~
@@ -123,7 +121,3 @@ Utils & misc
    :toctree: generated/
 
    qcodes.utils.validators
-   qcodes.process.helpers.set_mp_method
-   qcodes.utils.helpers.in_notebook
-   qcodes.widgets.widgets.show_subprocess_widget
-

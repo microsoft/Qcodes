@@ -1,10 +1,12 @@
 """Visa instrument driver based on pyvisa."""
+from typing import Sequence
+
 import visa
-import logging
+import pyvisa.constants as vi_const
+import pyvisa.resources
 
 from .base import Instrument
 import qcodes.utils.validators as vals
-
 
 class VisaInstrument(Instrument):
 
@@ -25,13 +27,6 @@ class VisaInstrument(Instrument):
         timeout (number): seconds to allow for responses. Default 5.
 
         terminator: Read termination character(s) to look for. Default ''.
-
-        server_name (str): Name of the InstrumentServer to use. By default
-            uses 'GPIBServer' for all GPIB instruments, 'SerialServer' for
-            serial port instruments, and 'VisaServer' for all others.
-
-            Use ``None`` to run locally - but then this instrument will not
-            work with qcodes Loops or other multiprocess procedures.
 
         metadata (Optional[Dict]): additional static metadata to add to this
             instrument's JSON snapshot.
@@ -56,26 +51,6 @@ class VisaInstrument(Instrument):
         self.set_address(address)
         self.set_terminator(terminator)
         self.timeout.set(timeout)
-
-    @classmethod
-    def default_server_name(cls, **kwargs):
-        """
-        Get the default server name for this instrument.
-
-        Args:
-            **kwargs: All the kwargs supplied in the constructor.
-
-        Returns:
-            str: The default server name, either 'GPIBServer', 'SerialServer',
-                or 'VisaServer' depending on ``kwargs['address']``.
-        """
-        upper_address = kwargs.get('address', '').upper()
-        if 'GPIB' in upper_address:
-            return 'GPIBServer'
-        elif 'ASRL' in upper_address:
-            return 'SerialServer'
-
-        return 'VisaServer'
 
     def set_address(self, address):
         """
@@ -102,7 +77,13 @@ class VisaInstrument(Instrument):
 
         self.visa_handle = resource_manager.open_resource(address)
 
-        self.visa_handle.clear()
+        # Serial instruments have a separate flush method to clear their buffers
+        # which behaves differently to clear. This is particularly important
+        # for instruments which do not support SCPI commands.
+        if isinstance(self.visa_handle, pyvisa.resources.SerialInstrument):
+            self.visa_handle.flush(vi_const.VI_READ_BUF_DISCARD | vi_const.VI_WRITE_BUF_DISCARD)
+        else:
+            self.visa_handle.clear()
         self._address = address
 
     def set_terminator(self, terminator):
@@ -178,18 +159,23 @@ class VisaInstrument(Instrument):
         """
         return self.visa_handle.ask(cmd)
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update: bool=False,
+                      params_to_skip_update: Sequence[str] = None):
         """
         State of the instrument as a JSON-compatible dict.
 
         Args:
             update (bool): If True, update the state by querying the
                 instrument. If False, just use the latest values in memory.
-
+            params_to_skip_update: List of parameter names that will be skipped
+                in update even if update is True. This is useful if you have
+                parameters that are slow to update but can be updated in a
+                different way (as in the qdac)
         Returns:
             dict: base snapshot
         """
-        snap = super().snapshot_base(update=update)
+        snap = super().snapshot_base(update=update,
+                                     params_to_skip_update=params_to_skip_update)
 
         snap['address'] = self._address
         snap['terminator'] = self._terminator

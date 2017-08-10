@@ -70,9 +70,11 @@ $QCODES_INSTALL_DIR is the folder where you want to have the source code.
     cd $QCODES_INSTALL_DIR
     pyenv install 3.5.2
     pyenv virtualenv 3.5.2 qcodes-dev
+    pyenv activate qcodes-dev
     pip install -r requirements.txt
+    pip install coverage pytest-cov pytest --upgrade
     pip install -e .
-    python qcodes/test.py -f
+    py.test --cov=qcodes --cov-config=.coveragerc
 
 If the tests pass you are ready to hack!
 This is the reference setup one needs to have to contribute, otherwise
@@ -136,5 +138,5 @@ See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE.rst>`__.
     :target: https://travis-ci.org/QCoDeS/Qcodes
 .. |DOCS| image:: https://img.shields.io/badge/read%20-thedocs-ff66b4.svg
    :target: http://qcodes.github.io/Qcodes
-.. |DOI| image:: https://zenodo.org/badge/37137879.svg
-   :target: https://zenodo.org/badge/latestdoi/37137879
+.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.826079.svg
+   :target: https://doi.org/10.5281/zenodo.826079
