@@ -2,24 +2,11 @@ import logging
 import numpy as np
 import time
 
-from qcodes import Instrument, VisaInstrument, IPInstrument
-from qcodes.utils.validators import Numbers, Anything
-
 from functools import partial
 
-
-def R_y(theta):
-    """ Construct rotation matrix around y-axis. """
-    return np.array([[np.cos(theta), 0, np.sin(theta)],
-                     [0, 1, 0],
-                     [-np.sin(theta), 0, np.cos(theta)]])
-
-
-def R_z(theta):
-    """ Construct rotation matrix around z-axis. """
-    return np.array([[np.cos(theta), -np.sin(theta), 0],
-                     [np.sin(theta), np.cos(theta), 0],
-                     [0, 0, 1]])
+from qcodes import Instrument, VisaInstrument, IPInstrument
+from qcodes.utils.validators import Numbers, Anything
+from qcodes.math.field_vector import FieldVector
 
 
 class AMI430(IPInstrument):
@@ -157,6 +144,9 @@ class AMI430(IPInstrument):
 
         return False
 
+    def set_field(self, value, *, perform_safety_check=True):
+        self._set_field(value, perform_safety_check=perform_safety_check)
+
     def _set_field(self, value, *, perform_safety_check=True):
         """
         Blocking method to ramp to a certain field
@@ -282,407 +272,192 @@ class AMI430(IPInstrument):
         super()._connect()
         print(self._recv())
 
-class AMI430_2D(Instrument):
-    """
-    Virtual driver for a system of two AMI430 magnet power supplies.
-    This driver provides methods that simplify setting fields as vectors.
-
-    Args:
-        name (string): a name for the instrument
-        magnet_x (AMI430): magnet for the x component
-        magnet_y (AMI430): magnet for the y component
-    """
-    def __init__(self, name, magnet_x, magnet_y, **kwargs):
-        super().__init__(name, **kwargs)
-
-        self.magnet_x, self.magnet_y = magnet_x, magnet_y
-
-        self._angle_offset = 0.0
-        self._angle = 0.0
-        self._field = 0.0
-
-        self.add_parameter('angle_offset',
-                           get_cmd=self._get_angle_offset,
-                           set_cmd=self._set_angle_offset,
-                           unit='deg',
-                           vals=Numbers())
-
-        self.add_parameter('angle',
-                           get_cmd=self._get_angle,
-                           set_cmd=self._set_angle,
-                           unit='deg',
-                           vals=Numbers())
-
-        self.add_parameter('field',
-                           get_cmd=self._get_field,
-                           set_cmd=self._set_field,
-                           unit='T',
-                           vals=Numbers())
-
-    def _get_angle_offset(self):
-        return np.degrees(self._angle_offset)
-
-    def _set_angle_offset(self, angle):
-        # Adjust the field if the offset angle is changed
-        if self._angle_offset != np.radians(angle):
-            self._angle_offset = np.radians(angle)
-            self._set_field(self._field)
-
-    def _get_angle(self):
-        angle = np.arctan2(self.magnet_y.field(), self.magnet_x.field())
-
-        return np.degrees(angle - self._angle_offset)
-
-    def _set_angle(self, angle):
-        self._angle = np.radians(angle)
-
-        self._set_field(self._field)
-
-    def _get_field(self):
-        x = self.magnet_x.field()
-        y = self.magnet_y.field()
-
-        return np.sqrt(x**2 + y**2)
-
-    def _set_field(self, field):
-        self._field = field
-
-        B_x = field * np.cos(self._angle + self._angle_offset)
-        B_y = field * np.sin(self._angle + self._angle_offset)
-
-        # First ramp the magnet that is decreasing in field strength
-        if np.abs(self.magnet_x.field()) < np.abs(B_x):
-            self.magnet_x.field(B_x)
-            self.magnet_y.field(B_y)
-        else:
-            self.magnet_y.field(B_y)
-            self.magnet_x.field(B_x)
-
 
 class AMI430_3D(Instrument):
-    """
-    Virtual driver for a system of three AMI430 magnet power supplies.
-    This driver provides methods that simplify setting fields in
-    different coordinate systems.
-
-    Cartesian, spherical and cylindrical coordinates are supported, with
-    the following parameters:
-
-    Carthesian:     x,      y,      z
-    Spherical:      phi,    theta,  field
-    Cylindrical:    phi,    rho,    z
-
-    For the spherical system theta is the polar angle from the positive
-    z-axis to the negative z-axis (0 to pi). Phi is the azimuthal angle
-    starting at the positive x-axis in the direction of the positive
-    y-axis (0 to 2*pi).
-
-    In the cylindrical system phi is identical to that in the spherical
-    system, and z is identical to that in the cartesian system.
-
-    All angles are set and returned in units of degrees and are automatically
-    phase-wrapped.
-
-    If you want to control the magnets in this virtual driver individually,
-    one can set the _parent_instrument parameter of the magnet to None.
-    This is done at your own risk, as it skips field strength checks and
-    might result in a magnet quench.
-
-    Example of instantiation:
-
-    magnet = AMI430_3D('AMI430_3D',
-        AMI430('AMI430_X', '192.168.2.3', 0.0146, 68.53, 0.2),
-        AMI430('AMI430_Y', '192.168.2.2', 0.0426, 70.45, 0.05),
-        AMI430('AMI430_Z', '192.168.2.1', 0.1107, 81.33, 0.08),
-        field_limit=1.0)
-
-    Args:
-        name (string): a name for the instrument
-        magnet_x (AMI430): magnet driver for the x component
-        magnet_y (AMI430): magnet driver for the y component
-        magnet_z (AMI430): magnet driver for the z component
-    """
-    def __init__(self, name, magnet_x, magnet_y, magnet_z, field_limit,
-                 **kwargs):
+    def __init__(self, name, instrument_x, instrument_y, instrument_z, field_limit, **kwargs):
         super().__init__(name, **kwargs)
 
-        # Register this instrument as the parent of the individual magnets
-        for m in [magnet_x, magnet_y, magnet_z]:
-            m._parent_instrument = self
+        self._instrument_x = instrument_x
+        self._instrument_y = instrument_y
+        self._instrument_z = instrument_z
 
-        self._magnet_x = magnet_x
-        self._magnet_y = magnet_y
-        self._magnet_z = magnet_z
-
-        # Make this into a parameter?
         self._field_limit = field_limit
-
-        # Initialize the internal magnet field setpoints
-        self.update_internal_setpoints()
+        self._set_point = FieldVector(
+            x=self._instrument_x.field(),
+            y=self._instrument_y.field(),
+            z=self._instrument_z.field()
+        )
 
         # Get-only parameters that return a measured value
-        self.add_parameter('cartesian_measured',
-                           get_cmd=partial(self._get_measured, 'x', 'y', 'z'),
-                           unit='T')
-
-        self.add_parameter('x_measured',
-                           get_cmd=partial(self._get_measured, 'x'),
-                           unit='T')
-
-        self.add_parameter('y_measured',
-                           get_cmd=partial(self._get_measured, 'y'),
-                           unit='T')
-
-        self.add_parameter('z_measured',
-                           get_cmd=partial(self._get_measured, 'z'),
-                           unit='T')
-
-        self.add_parameter('spherical_measured',
-                           get_cmd=partial(self._get_measured, 'field',
-                                                               'theta',
-                                                               'phi'),
-                           unit='T')
-
-        self.add_parameter('phi_measured',
-                           get_cmd=partial(self._get_measured, 'phi'),
-                           unit='deg')
-
-        self.add_parameter('theta_measured',
-                           get_cmd=partial(self._get_measured, 'theta'),
-                           unit='deg')
-
-        self.add_parameter('field_measured',
-                           get_cmd=partial(self._get_measured, 'field'),
-                           unit='T')
-
-        self.add_parameter('cylindrical_measured',
-                           get_cmd=partial(self._get_measured, 'rho',
-                                                               'phi',
-                                                               'z'),
-                           unit='T')
-
-        self.add_parameter('rho_measured',
-                           get_cmd=partial(self._get_measured, 'rho'),
-                           unit='T')
-
-        # Get and set parameters for the setpoints of the coordinates
-        self.add_parameter('cartesian',
-                           get_cmd=partial(self._get_setpoints, 'x', 'y', 'z'),
-                           set_cmd=self._set_fields,
-                           unit='T',
-                           vals=Anything())
-
-        self.add_parameter('x',
-                           get_cmd=partial(self._get_setpoints, 'x'),
-                           set_cmd=self._set_x,
-                           unit='T',
-                           vals=Numbers())
-
-        self.add_parameter('y',
-                           get_cmd=partial(self._get_setpoints, 'y'),
-                           set_cmd=self._set_y,
-                           unit='T',
-                           vals=Numbers())
-
-        self.add_parameter('z',
-                           get_cmd=partial(self._get_setpoints, 'z'),
-                           set_cmd=self._set_z,
-                           unit='T',
-                           vals=Numbers())
-
-        self.add_parameter('spherical',
-                           get_cmd=partial(self._get_setpoints, 'field',
-                                                                'theta',
-                                                                'phi'),
-                           set_cmd=self._set_spherical,
-                           unit='tuple?',
-                           vals=Anything())
-
-        self.add_parameter('phi',
-                           get_cmd=partial(self._get_setpoints, 'phi'),
-                           set_cmd=self._set_phi,
-                           unit='deg',
-                           vals=Numbers())
-
-        self.add_parameter('theta',
-                           get_cmd=partial(self._get_setpoints, 'theta'),
-                           set_cmd=self._set_theta,
-                           unit='deg',
-                           vals=Numbers())
-
-        self.add_parameter('field',
-                           get_cmd=partial(self._get_setpoints, 'field'),
-                           set_cmd=self._set_field,
-                           unit='T',
-                           vals=Numbers())
-
-        self.add_parameter('cylindrical',
-                           get_cmd=partial(self._get_setpoints, 'rho',
-                                                                'phi',
-                                                                'z'),
-                           set_cmd=self._set_cylindrical,
-                           unit='tuple?',
-                           vals=Anything())
-
-        self.add_parameter('rho',
-                           get_cmd=partial(self._get_setpoints, 'rho'),
-                           set_cmd=self._set_rho,
-                           unit='T',
-                           vals=Numbers())
-
-    def update_internal_setpoints(self):
-        """
-        Set the internal setpoints to the measured field values.
-        This can be done in case the magnets have been adjusted manually.
-        """
-        phi, theta, field, rho = self._cartesian_to_other(
-            self._magnet_x.field(),
-            self._magnet_y.field(),
-            self._magnet_z.field()
+        self.add_parameter(
+            'cartesian_measured',
+            get_cmd=partial(self._get_measured, 'x', 'y', 'z'),
+            unit='T'
         )
-        self._field = field
-        self._theta = theta
-        self._phi = phi
 
-    def _request_field_change(self, magnet, value):
-        """
-        This method is called by the child x/y/z magnets if they are set
-        individually. It results in additional safety checks being
-        performed by this 3D driver.
-        """
-        if magnet is self._magnet_x:
-            self.x(value)
-        elif magnet is self._magnet_y:
-            self.y(value)
-        elif magnet is self._magnet_z:
-            self.z(value)
-        else:
-            msg = 'This magnet doesnt belong to its specified parent {}'
+        self.add_parameter(
+            'x_measured',
+            get_cmd=partial(self._get_measured, 'x'),
+            unit='T'
+        )
 
-            raise NameError(msg.format(self))
+        self.add_parameter(
+            'y_measured',
+            get_cmd=partial(self._get_measured, 'y'),
+            unit='T'
+        )
 
-    def _spherical_to_cartesian(self, field, theta, phi):
+        self.add_parameter(
+            'z_measured',
+            get_cmd=partial(self._get_measured, 'z'),
+            unit='T'
+        )
 
-        phi, theta = np.radians(phi), np.radians(theta)
+        self.add_parameter(
+            'spherical_measured',
+            get_cmd=partial(
+                self._get_measured,
+                'field',
+                'theta',
+                'phi'
+            ),
+            unit='T'
+        )
 
-        x = field * np.sin(theta) * np.cos(phi)
-        y = field * np.sin(theta) * np.sin(phi)
-        z = field * np.cos(theta)
+        self.add_parameter(
+            'phi_measured',
+            get_cmd=partial(self._get_measured, 'phi'),
+            unit='deg'
+        )
 
-        return x, y, z
+        self.add_parameter(
+            'theta_measured',
+            get_cmd=partial(self._get_measured, 'theta'),
+            unit='deg'
+        )
 
-    def _cartesian_to_other(self, x, y, z):
-        """ Convert a cartesian set of coordinates to values of interest. """
-        field = np.sqrt(x**2 + y**2 + z**2)
-        phi = np.arctan2(y, x)
-        rho = np.sqrt(x**2 + y**2)
+        self.add_parameter(
+            'field_measured',
+            get_cmd=partial(self._get_measured, 'r'),
+            unit='T')
 
-        # Define theta to be 0 for zero field
-        theta = 0.0
-        if field > 0.0:
-            theta = np.arccos(z / field)
+        self.add_parameter(
+            'cylindrical_measured',
+            get_cmd=partial(self._get_measured,
+                            'rho',
+                            'phi',
+                            'z'),
+            unit='T')
 
-        return phi, theta, field, rho
+        self.add_parameter(
+            'rho_measured',
+            get_cmd=partial(self._get_measured, 'rho'),
+            unit='T'
+        )
 
-    def _from_xyz(self, x, y, z, *names):
-        """
-        Convert x/y/z values into the other coordinates and return a
-        tuple of the requested values.
+        # Get and set parameters for the set points of the coordinates
+        self.add_parameter(
+            'cartesian',
+            get_cmd=partial(self._get_setpoints, 'x', 'y', 'z'),
+            set_cmd=self._set_fields,
+            unit='T',
+            vals=Anything()
+        )
 
-        Args:
-            *names: a series of coordinate names as specified in the function.
-        """
-        phi, theta, field, rho = self._cartesian_to_other(x, y, z)
+        self.add_parameter(
+            'x',
+            get_cmd=partial(self._get_setpoints, 'x'),
+            set_cmd=self.set_x,
+            unit='T',
+            vals=Numbers()
+        )
 
-        coords = {
-            'x': x,
-            'y': y,
-            'z': z,
-            'field': field,
-            'phi': np.degrees(phi),
-            'theta': np.degrees(theta),
-            'rho': rho
-        }
+        self.add_parameter(
+            'y',
+            get_cmd=partial(self._get_setpoints, 'y'),
+            set_cmd=self.set_y,
+            unit='T',
+            vals=Numbers()
+        )
 
-        returned = tuple(coords[name] for name in names)
+        self.add_parameter(
+            'z',
+            get_cmd=partial(self._get_setpoints, 'z'),
+            set_cmd=self.set_z,
+            unit='T',
+            vals=Numbers()
+        )
 
-        if len(returned) == 1:
-            return returned[0]
-        else:
-            return returned
+        self.add_parameter(
+            'spherical',
+            get_cmd=partial(
+                self._get_setpoints,
+                'r',
+                'theta',
+                'phi'
+            ),
+            set_cmd=self.set_spherical,
+            unit='tuple?',
+            vals=Anything()
+        )
 
-    def _get_measured(self, *names):
+        self.add_parameter(
+            'phi',
+            get_cmd=partial(self.get_setpoints, 'phi'),
+            set_cmd=self.set_phi,
+            unit='deg',
+            vals=Numbers()
+        )
+
+        self.add_parameter(
+            'theta',
+            get_cmd=partial(self.get_setpoints, 'theta'),
+            set_cmd=self.set_theta,
+            unit='deg',
+            vals=Numbers()
+        )
+
+        self.add_parameter(
+            'field',
+            get_cmd=partial(self.get_setpoints, 'field'),
+            set_cmd=self.set_r,
+            unit='T',
+            vals=Numbers()
+        )
+
+        self.add_parameter(
+            'cylindrical',
+            get_cmd=partial(
+                self.get_setpoints,
+                'rho',
+                'phi',
+                'z'
+            ),
+            set_cmd=self.set_cylindrical,
+            unit='tuple?',
+            vals=Anything()
+        )
+
+        self.add_parameter(
+            'rho',
+            get_cmd=partial(self.get_setpoints, 'rho'),
+            set_cmd=self.set_rho,
+            unit='T',
+            vals=Numbers()
+        )
+
+        # TODO: Add the rest of the stuff
+
+    def _get_measured(self, names):
         """ Return the measured coordinates specified in names. """
-        x = self._magnet_x.field()
-        y = self._magnet_y.field()
-        z = self._magnet_z.field()
+        x = self._instrument_x.field()
+        y = self._instrument_y.field()
+        z = self._instrument_z.field()
+        return FieldVector(x=x, y=y, z=z).get_components(*names)
 
-        return self._from_xyz(x, y, z, *names)
-
-    def _get_setpoints(self, *names):
-        """ Return the setpoints specified in names. """
-        x, y, z = self._spherical_to_cartesian(self._field, self._theta, self._phi)
-        return self._from_xyz(x, y, z, *names)
-
-    def _set_x(self, value):
-        x, y, z = self._spherical_to_cartesian(self._field, self._theta, self._phi)
-        self._set_fields((value, y, z))
-
-    def _set_y(self, value):
-        x, y, z = self._spherical_to_cartesian(self._field, self._theta, self._phi)
-        self._set_fields((x, value, z))
-
-    def _set_z(self, value):
-        x, y, z = self._spherical_to_cartesian(self._field, self._theta, self._phi)
-        self._set_fields((x, y, value))
-
-    def _set_spherical(self, values):
-        field, theta, phi = values
-
-        phi, theta = np.radians(phi), np.radians(theta)
-
-        x = field * np.sin(theta) * np.cos(phi)
-        y = field * np.sin(theta) * np.sin(phi)
-        z = field * np.cos(theta)
-
-        self._set_fields((x, y, z))
-
-        self._field = field
-        self._theta = theta
-        self._phi = phi
-
-    def _set_phi(self, value):
-        phi = np.radians(value)
-        self._set_spherical((self._field, self._theta, phi))
-
-    def _set_theta(self, value):
-        theta = np.radians(value)
-        self._set_spherical((self._field, theta, self._phi))
-
-    def _set_field(self, value):
-        field = value
-        self._set_spherical((field, self._theta, self._phi))
-
-    def _set_cylindrical(self, values):
-        phi, rho, z = values
-        phi = np.radians(phi)
-
-        x = rho * np.cos(phi)
-        y = rho * np.sin(phi)
-
-        self._set_fields((x, y, z))
-
-        phi, theta, field, rho = self._cartesian_to_other(x, y, z)
-        self._field = field
-        self._theta = theta
-        self._phi = phi
-
-    def _set_rho(self, value):
-        phi, rho = self._get_setpoints('phi', 'rho')
-        rho = value
-        z = self._field * np.cos(self._theta)
-
-        self._set_cylindrical((phi, rho, z))
+    def _get_setpoints(self, names):
+        """Get the set point coordinates of the specified names. """
+        return self._set_point.get_components(names)
 
     def _set_fields(self, values):
         """
@@ -693,58 +468,121 @@ class AMI430_3D(Instrument):
         Args:
             values (tuple): a tuple of cartesian coordinates (x, y, z).
         """
-        x, y, z = values
-
-        # Check if exceeding an individual magnet field limit
-        # These will throw a ValueError on an invalid value
-        self._magnet_x.field.validate(x)
-        self._magnet_y.field.validate(y)
-        self._magnet_z.field.validate(z)
 
         # Check if exceeding the global field limit
-        if np.sqrt(x**2 + y**2 + z**2) > self._field_limit:
+        if np.linalg.norm(values) > self._field_limit:
             msg = '_set_fields aborted; field would exceed limit of {} T'
-
             raise ValueError(msg.format(self._field_limit))
 
-        # Check if the individual magnet are not already ramping
-        for m in [self._magnet_x, self._magnet_y, self._magnet_z]:
-            if m.ramping_state() == 'ramping':
+        # Check if the individual instruments are ready
+        for name, value in zip(["x", "y", "z"], values):
+
+            instrument = getattr(self, "_instrument_{}".format(name))
+            instrument.field.validate(value)
+            if instrument.ramping_state() == "ramping":
                 msg = '_set_fields aborted; magnet {} is already ramping'
+                raise ValueError(msg.format(instrument))
 
-                raise ValueError(msg.format(m))
+        # Now that we know we can proceed, call the individual instruments
 
-        swept_x, swept_y, swept_z = False, False, False
+        for operator in [np.less, np.greater]:
+            # First ramp the coils that are decreasing in field strength.
+            # TODO: Add comments explaining why we do this
+            for name, value in zip(["x", "y", "z"], values):
 
-        # First ramp the coils that are decreasing in field strength
-        # If the new setpoint is practically equal to the current one
-        # then leave it be
-        xm, ym, zm = self._get_measured("x", "y", "z")
+                instrument = getattr(self, "_instrument_{}".format(name))
+                current_actual = instrument.field()
+                # If the new set point is practically equal to the current one then do nothing
+                if np.isclose(value, current_actual, rtol=0, atol=1e-8):
+                    continue
+                # evaluate if the new set point is lesser or greater then the current value
+                if not operator(abs(value), abs(current_actual)):
+                    continue
 
-        if np.isclose(xm, x, rtol=0, atol=1e-8):
-            swept_x = True
-        elif np.abs(self._magnet_x.field()) > np.abs(x):
-            self._magnet_x._set_field(x, perform_safety_check=False)
-            swept_x = True
+                instrument.set_field(value, perform_safety_check=False)
 
-        if np.isclose(ym, y, rtol=0, atol=1e-8):
-            swept_y = True
-        elif np.abs(self._magnet_y.field()) > np.abs(y):
-            self._magnet_y._set_field(y, perform_safety_check=False)
-            swept_y = True
+    # ###########   Public Interface Functions ###########
 
-        if np.isclose(zm, z, rtol=0, atol=1e-8):
-            swept_z = True
-        elif np.abs(self._magnet_z.field()) > np.abs(z):
-            self._magnet_z._set_field(z, perform_safety_check=False)
-            swept_z = True
+    def request_field_change(self, instrument, value):
+        """
+        This method is called by the child x/y/z magnets if they are set
+        individually. It results in additional safety checks being
+        performed by this 3D driver.
+        """
+        if instrument is self._instrument_x:
+            self.set_x(value)
+        elif instrument is self._instrument_y:
+            self.set_y(value)
+        elif instrument is self._instrument_z:
+            self.set_z(value)
+        else:
+            msg = 'This magnet doesnt belong to its specified parent {}'
+            raise NameError(msg.format(self))
 
-        # Finally, ramp up the coils that are increasing
-        if not swept_x:
-            self._magnet_x._set_field(x, perform_safety_check=False)
+    def get_measured(self, names):
+        measured_values = self._get_measured(names)
 
-        if not swept_y:
-            self._magnet_y._set_field(y, perform_safety_check=False)
+        # Convert angles from radians to degrees
+        d = dict(zip(names, measured_values))
+        for angle_name in ["phi", "theta"]:
+            if angle_name in names:
+                d[angle_name] = np.degrees(d[angle_name])
 
-        if not swept_z:
-            self._magnet_z._set_field(z, perform_safety_check=False)
+        return [d[name] for name in names]  # Do not do "return list(d.values())", because then there is no
+        # guaranty that the order in which the values are returned is the same as the original intention
+
+    def get_setpoints(self, names):
+
+        measured_values = self._get_setpoints(names)
+
+        # Convert angles from radians to degrees
+        d = dict(zip(names, measured_values))
+        for angle_name in ["phi", "theta"]:
+            if angle_name in names:
+                d[angle_name] = np.degrees(d[angle_name])
+
+        return [d[name] for name in names]  # Do not do "return list(d.values())", because then there is no
+        # guaranty that the order in which the values are returned is the same as the original intention
+
+    def set_cartesian(self, values):
+        x, y, z = values
+        self._set_point.set_vector(x=x, y=y, z=z)
+        self._set_fields(self._set_point.get_components("x", "y", "z"))
+
+    def set_x(self, x):
+        self._set_point.set_component(x=x)
+        self._set_fields(self._set_point.get_components("x", "y", "z"))
+
+    def set_y(self, y):
+        self._set_point.set_component(y=y)
+        self._set_fields(self._set_point.get_components("x", "y", "z"))
+
+    def set_z(self, z):
+        self._set_point.set_component(z=z)
+        self._set_fields(self._set_point.get_components("x", "y", "z"))
+
+    def set_spherical(self, values):
+        r, theta, phi = values
+        self._set_point.set_vector(r=r, theta=np.radians(theta), phi=np.radians(phi))
+        self._set_fields(self._set_point.get_components("x", "y", "z"))
+
+    def set_r(self, r):
+        self._set_point.set_component(r=r)
+        self._set_fields(self._set_point.get_components("x", "y", "z"))
+
+    def set_theta(self, theta):
+        self._set_point.set_component(theta=np.radians(theta))
+        self._set_fields(self._set_point.get_components("x", "y", "z"))
+
+    def set_phi(self, phi):
+        self._set_point.set_component(phi=np.radians(phi))
+        self._set_fields(self._set_point.get_components("x", "y", "z"))
+
+    def set_cylindrical(self, values):
+        phi, rho, z = values
+        self._set_point.set_vector(phi=np.radians(phi), rho=rho, z=z)
+        self._set_fields(self._set_point.get_components("x", "y", "z"))
+
+    def set_rho(self, rho):
+        self._set_point.set_component(rho=rho)
+        self._set_fields(self._set_point.get_components("x", "y", "z"))

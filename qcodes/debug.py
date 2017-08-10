@@ -79,17 +79,16 @@ def test_cylindrical_coordinates(current_driver):
     phi, rho, z = 30.0, 0.4, 0.5
 
     for count, set_function in enumerate(
-            [current_driver._set_phi, current_driver._set_rho, current_driver._set_z]):
+            [current_driver.set_phi, current_driver.set_rho, current_driver.set_z]):
 
         args = [phi, rho, z]
-        #arg = args[count]
-        #args[count] = 0
+        arg = args[count]
+        args[count] = 0.1
 
-        current_driver._set_cylindrical(tuple(args))
-        #set_function(arg)
+        current_driver.set_cylindrical(tuple(args))
+        set_function(arg)
 
-        phi_m, rho_m, z_m = current_driver._get_measured("phi", "rho", "z")
-        phi_m = np.degrees(phi_m)
+        phi_m, rho_m, z_m = current_driver.get_measured(["phi", "rho", "z"])
 
         assert np.allclose([phi_m, rho_m, z_m], [phi, rho, z])
 
@@ -119,19 +118,16 @@ def test_spherical_coordinates(current_driver):
     field, theta, phi = 0.5, 30.0, 50.0
 
     for count, set_function in enumerate(
-            [current_driver._set_field, current_driver._set_theta, current_driver._set_phi]):
+            [current_driver.set_r, current_driver.set_theta, current_driver.set_phi]):
 
         args = [field, theta, phi]
         arg = args[count]
         args[count] = 0
 
-        current_driver._set_spherical(tuple(args))
+        current_driver.set_spherical(tuple(args))
         set_function(arg)
 
-        field_m, theta_m, phi_m = current_driver._get_measured("field", "theta", "phi")
-        theta_m = np.degrees(theta_m)
-        phi_m = np.degrees(phi_m)
-
+        field_m, theta_m, phi_m = current_driver.get_measured(["r", "theta", "phi"])
         assert np.allclose([field_m, theta_m, phi_m], [field, theta, phi])
 
 
@@ -142,8 +138,8 @@ def main():
     mock_instruments = start_mock_instruments(ip_address, ports)
     current_driver = instantiate_driver(ip_address, ports)
 
-    #test_spherical_coordinates(current_driver)
-    test_cylindrical_coordinates(current_driver)
+    test_spherical_coordinates(current_driver)
+    #test_cylindrical_coordinates(current_driver)
 
     for mocker in mock_instruments:
         mocker.stop()
