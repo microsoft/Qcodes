@@ -61,7 +61,7 @@ class OxfordInstruments_ILM200(VisaInstrument):
         self.add_parameter('level',
                            label='level',
                            get_cmd=self._do_get_level,
-                           units='%')
+                           unit='%')
         self.add_parameter('status',
                            get_cmd=self._do_get_status)
         self.add_parameter('rate',
