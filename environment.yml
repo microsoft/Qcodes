@@ -5,7 +5,7 @@ channels:
  - dsdale24
 dependencies:
  - h5py=2.6.0
- - matplotlib=2.0.0
+ - matplotlib=2.0.2
  - pyqtgraph 
  - python=3.4
  - jsonschema
@@ -13,6 +13,9 @@ dependencies:
  - QtPy=1.2.0
  - sip
  - pyqt=5.6.0
- - numpy=1.11.3
+ - numpy
  - jupyter=1.0.0
- - typing 
+ - typing
+ - hypothesis
+ - pytest
+ - pytest-runner

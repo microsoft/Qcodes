@@ -1,12 +1,12 @@
 import logging
-import numpy as np
 import time
-
 from functools import partial
 
-from qcodes import Instrument, VisaInstrument, IPInstrument
-from qcodes.utils.validators import Numbers, Anything
+import numpy as np
+
+from qcodes import Instrument, IPInstrument
 from qcodes.math.field_vector import FieldVector
+from qcodes.utils.validators import Numbers, Anything
 
 
 class AMI430(IPInstrument):
@@ -28,7 +28,8 @@ class AMI430(IPInstrument):
     """
     def __init__(self, name, address, port, coil_constant, current_rating,
                  current_ramp_limit, persistent_switch=True,
-                 reset=False, terminator='\r\n', **kwargs):
+                 reset=False, terminator='\r\n', testing=False, **kwargs):
+
         super().__init__(name, address, port, terminator=terminator,
                          write_confirmation=False, **kwargs)
 
@@ -41,6 +42,9 @@ class AMI430(IPInstrument):
 
         self._field_rating = coil_constant * current_rating
         self._field_ramp_limit = coil_constant * current_ramp_limit
+
+        # If we are in testing mode there is no need to have pauses built-in when setting field values.
+        self._testing = testing
 
         # Make sure the ramp rate time unit is seconds
         if int(self.ask('RAMP:RATE:UNITS?')) == 1:
@@ -107,17 +111,22 @@ class AMI430(IPInstrument):
                            })
 
         self.add_function('get_error', call_cmd='SYST:ERR?')
-
         self.add_function('ramp', call_cmd='RAMP')
         self.add_function('pause', call_cmd='PAUSE')
         self.add_function('zero', call_cmd='ZERO')
-
         self.add_function('reset', call_cmd='*RST')
 
         if reset:
             self.reset()
 
         self.connect_message()
+
+    def _sleep(self, t):
+        """Sleep for a number of seconds t. If we are in testing mode, commit this"""
+        if self._testing:
+            return
+        else:
+            time.sleep(t)
 
     def _can_start_ramping(self):
         """
@@ -164,7 +173,6 @@ class AMI430(IPInstrument):
 
         if self._parent_instrument is not None and perform_safety_check:
             self._parent_instrument._request_field_change(self, value)
-
             return
 
         if self._can_start_ramping():
@@ -180,13 +188,13 @@ class AMI430(IPInstrument):
 
             self.ramp()
 
-            time.sleep(0.5)
+            self._sleep(0.5)
 
             # Wait until no longer ramping
             while self.ramping_state() == 'ramping':
-                time.sleep(0.3)
+                self._sleep(0.3)
 
-            time.sleep(2.0)
+            self._sleep(2.0)
 
             state = self.ramping_state()
 
@@ -249,19 +257,19 @@ class AMI430(IPInstrument):
         if on:
             self.write('PS 1')
 
-            time.sleep(0.5)
+            self._sleep(0.5)
 
             # Wait until heating is finished
             while self.ramping_state() == 'heating switch':
-                time.sleep(0.3)
+                self._sleep(0.3)
         else:
             self.write('PS 0')
 
-            time.sleep(0.5)
+            self._sleep(0.5)
 
             # Wait until cooling is finished
             while self.ramping_state() == 'cooling switch':
-                time.sleep(0.3)
+                self._sleep(0.3)
 
     def _connect(self):
         """
@@ -367,7 +375,7 @@ class AMI430_3D(Instrument):
         self.add_parameter(
             'x',
             get_cmd=partial(self._get_setpoints, 'x'),
-            set_cmd=self.set_x,
+            set_cmd=self._set_x,
             unit='T',
             vals=Numbers()
         )
@@ -375,7 +383,7 @@ class AMI430_3D(Instrument):
         self.add_parameter(
             'y',
             get_cmd=partial(self._get_setpoints, 'y'),
-            set_cmd=self.set_y,
+            set_cmd=self._set_y,
             unit='T',
             vals=Numbers()
         )
@@ -383,7 +391,7 @@ class AMI430_3D(Instrument):
         self.add_parameter(
             'z',
             get_cmd=partial(self._get_setpoints, 'z'),
-            set_cmd=self.set_z,
+            set_cmd=self._set_z,
             unit='T',
             vals=Numbers()
         )
@@ -396,31 +404,31 @@ class AMI430_3D(Instrument):
                 'theta',
                 'phi'
             ),
-            set_cmd=self.set_spherical,
+            set_cmd=self._set_spherical,
             unit='tuple?',
             vals=Anything()
         )
 
         self.add_parameter(
             'phi',
-            get_cmd=partial(self.get_setpoints, 'phi'),
-            set_cmd=self.set_phi,
+            get_cmd=partial(self._get_setpoints, 'phi'),
+            set_cmd=self._set_phi,
             unit='deg',
             vals=Numbers()
         )
 
         self.add_parameter(
             'theta',
-            get_cmd=partial(self.get_setpoints, 'theta'),
-            set_cmd=self.set_theta,
+            get_cmd=partial(self._get_setpoints, 'theta'),
+            set_cmd=self._set_theta,
             unit='deg',
             vals=Numbers()
         )
 
         self.add_parameter(
             'field',
-            get_cmd=partial(self.get_setpoints, 'field'),
-            set_cmd=self.set_r,
+            get_cmd=partial(self._get_setpoints, 'r'),
+            set_cmd=self._set_r,
             unit='T',
             vals=Numbers()
         )
@@ -428,36 +436,23 @@ class AMI430_3D(Instrument):
         self.add_parameter(
             'cylindrical',
             get_cmd=partial(
-                self.get_setpoints,
+                self._get_setpoints,
                 'rho',
                 'phi',
                 'z'
             ),
-            set_cmd=self.set_cylindrical,
+            set_cmd=self._set_cylindrical,
             unit='tuple?',
             vals=Anything()
         )
 
         self.add_parameter(
             'rho',
-            get_cmd=partial(self.get_setpoints, 'rho'),
-            set_cmd=self.set_rho,
+            get_cmd=partial(self._get_setpoints, 'rho'),
+            set_cmd=self._set_rho,
             unit='T',
             vals=Numbers()
         )
-
-        # TODO: Add the rest of the stuff
-
-    def _get_measured(self, names):
-        """ Return the measured coordinates specified in names. """
-        x = self._instrument_x.field()
-        y = self._instrument_y.field()
-        z = self._instrument_z.field()
-        return FieldVector(x=x, y=y, z=z).get_components(*names)
-
-    def _get_setpoints(self, names):
-        """Get the set point coordinates of the specified names. """
-        return self._set_point.get_components(names)
 
     def _set_fields(self, values):
         """
@@ -501,9 +496,7 @@ class AMI430_3D(Instrument):
 
                 instrument.set_field(value, perform_safety_check=False)
 
-    # ###########   Public Interface Functions ###########
-
-    def request_field_change(self, instrument, value):
+    def _request_field_change(self, instrument, value):
         """
         This method is called by the child x/y/z magnets if they are set
         individually. It results in additional safety checks being
@@ -519,8 +512,12 @@ class AMI430_3D(Instrument):
             msg = 'This magnet doesnt belong to its specified parent {}'
             raise NameError(msg.format(self))
 
-    def get_measured(self, names):
-        measured_values = self._get_measured(names)
+    def _get_measured(self, names):
+
+        x = self._instrument_x.field()
+        y = self._instrument_y.field()
+        z = self._instrument_z.field()
+        measured_values = FieldVector(x=x, y=y, z=z).get_components(*names)
 
         # Convert angles from radians to degrees
         d = dict(zip(names, measured_values))
@@ -531,9 +528,9 @@ class AMI430_3D(Instrument):
         return [d[name] for name in names]  # Do not do "return list(d.values())", because then there is no
         # guaranty that the order in which the values are returned is the same as the original intention
 
-    def get_setpoints(self, names):
+    def _get_setpoints(self, *names):
 
-        measured_values = self._get_setpoints(names)
+        measured_values = self._set_point.get_components(*names)
 
         # Convert angles from radians to degrees
         d = dict(zip(names, measured_values))
@@ -544,45 +541,45 @@ class AMI430_3D(Instrument):
         return [d[name] for name in names]  # Do not do "return list(d.values())", because then there is no
         # guaranty that the order in which the values are returned is the same as the original intention
 
-    def set_cartesian(self, values):
+    def _set_cartesian(self, values):
         x, y, z = values
         self._set_point.set_vector(x=x, y=y, z=z)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
-    def set_x(self, x):
+    def _set_x(self, x):
         self._set_point.set_component(x=x)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
-    def set_y(self, y):
+    def _set_y(self, y):
         self._set_point.set_component(y=y)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
-    def set_z(self, z):
+    def _set_z(self, z):
         self._set_point.set_component(z=z)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
-    def set_spherical(self, values):
+    def _set_spherical(self, values):
         r, theta, phi = values
         self._set_point.set_vector(r=r, theta=np.radians(theta), phi=np.radians(phi))
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
-    def set_r(self, r):
+    def _set_r(self, r):
         self._set_point.set_component(r=r)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
-    def set_theta(self, theta):
+    def _set_theta(self, theta):
         self._set_point.set_component(theta=np.radians(theta))
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
-    def set_phi(self, phi):
+    def _set_phi(self, phi):
         self._set_point.set_component(phi=np.radians(phi))
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
-    def set_cylindrical(self, values):
+    def _set_cylindrical(self, values):
         phi, rho, z = values
         self._set_point.set_vector(phi=np.radians(phi), rho=rho, z=z)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
-    def set_rho(self, rho):
+    def _set_rho(self, rho):
         self._set_point.set_component(rho=rho)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
