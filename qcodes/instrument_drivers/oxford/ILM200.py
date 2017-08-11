@@ -1,21 +1,12 @@
 # OxfordInstruments_ILM200.py class, to perform the communication between the Wrapper and the device
+# Copyright (c) 2017 QuTech (Delft)
+# Code is available under the available under the `MIT open-source license <https://opensource.org/licenses/MIT>`__
+#
+# Pieter Eendebak <pieter.eendebak@tno.nl>, 2017
 # Takafumi Fujita <t.fujita@tudelft.nl>, 2016
 # Guenevere Prawiroatmodjo <guen@vvtp.tudelft.nl>, 2009
 # Pieter de Groot <pieterdegroot@gmail.com>, 2009
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
 
 from time import time, sleep
 import visa
@@ -36,6 +27,7 @@ class OxfordInstruments_ILM200(VisaInstrument):
     which is sent to the device starts with '@n', where n is the ISOBUS instrument number.
 
     """
+
     def __init__(self, name, address, number=1, **kwargs):
         """
         Initializes the Oxford Instruments ILM 200 Helium Level Meter.
@@ -87,7 +79,8 @@ class OxfordInstruments_ILM200(VisaInstrument):
         Output:
             None
         """
-        logging.info(__name__ + ' : Send the following command to the device: %s' % message)
+        logging.info(
+            __name__ + ' : Send the following command to the device: %s' % message)
         self.visa_handle.write('@%s%s' % (self._number, message))
         sleep(70e-3)  # wait for the device to be able to respond
         result = self._read()
@@ -113,7 +106,8 @@ class OxfordInstruments_ILM200(VisaInstrument):
         with(self.visa_handle.ignore_warning(visa.constants.VI_SUCCESS_MAX_CNT)):
             mes = self.visa_handle.visalib.read(
                 self.visa_handle.session, bytes_in_buffer)
-        mes = str(mes[0].decode())  # cannot be done on same line for some reason
+        # cannot be done on same line for some reason
+        mes = str(mes[0].decode())
         # if mes[1] != 0:
         #     # see protocol descriptor for error codes
         #     raise Exception('IVVI rack exception "%s"' % mes[1])
@@ -293,7 +287,8 @@ class OxfordInstruments_ILM200(VisaInstrument):
             2: "Local and unlocked",
             3: "Remote and unlocked",
         }
-        logging.info(__name__ + ' : Setting remote control status to %s' % status.get(mode, "Unknown"))
+        logging.info(__name__ + ' : Setting remote control status to %s' %
+                     status.get(mode, "Unknown"))
         self._execute('C%s' % mode)
 
     # Functions: Control commands (only recognised when in REMOTE control)
