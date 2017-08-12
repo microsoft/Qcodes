@@ -1,23 +1,13 @@
 # OxfordInstruments_IPS120.py class, to perform the communication between the Wrapper and the device
+# Copyright (c) 2017 QuTech (Delft)
+# Code is available under the available under the `MIT open-source license <https://opensource.org/licenses/MIT>`_
+
 # Sjaak van Diepen <c.j.vandiepen@gmail.com>, 2017
 # Takafumi Fujita <t.fujita@tudelft.nl>, 2016
 # Mohammad Shafiei <m.shafiei@tudelft.nl>, 2011
 # Guenevere Prawiroatmodjo <guen@vvtp.tudelft.nl>, 2009
 # Pieter de Groot <pieterdegroot@gmail.com>, 2009
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
 
 import logging
 from qcodes import VisaInstrument
@@ -30,15 +20,14 @@ class OxfordInstruments_IPS120(VisaInstrument):
     """This is the python driver for the Oxford Instruments IPS 120 Magnet Power Supply
 
     Usage:
-    Initialize with
-    <name> = instruments.create('name', 'OxfordInstruments_IPS120', address='<Instrument address>')
-    <Instrument address> = ASRL1::INSTR
+    Initialize with:
+    magnet = qcodes.instrument_drivers.oxford.IPS120.OxfordInstruments_IPS120(name='magnet', address='ASRL4::INSTR')
 
     Note: Since the ISOBUS allows for several instruments to be managed in parallel, the command
     which is sent to the device starts with '@n', where n is the ISOBUS instrument number.
     """
 
-    def __init__(self, name, address, number=2, verbose=1, reset=False, **kwargs):
+    def __init__(self, name, address, number=2, **kwargs):
         """Initializes the Oxford Instruments IPS 120 Magnet Power Supply.
 
         Args:
@@ -46,7 +35,6 @@ class OxfordInstruments_IPS120(VisaInstrument):
             address (string) : instrument address
             number (int)     : ISOBUS instrument number
         """
-        self.verbose = verbose
         logging.debug(__name__ + ' : Initializing instrument')
         super().__init__(name, address, **kwargs)
 
@@ -169,7 +157,6 @@ class OxfordInstruments_IPS120(VisaInstrument):
         logging.info(__name__ + ' : reading all settings from instrument')
         self.snapshot(update=True)
 
-    # Functions
     def _execute(self, message):
         """
         Write a command to the device
@@ -196,17 +183,11 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             message (str)
         """
-        # because protocol has no termination chars the read reads the number
-        # of bytes in the buffer
         bytes_in_buffer = self.visa_handle.bytes_in_buffer
-        # a workaround for a timeout error in the pyvsia read_raw() function
         with(self.visa_handle.ignore_warning(visa.constants.VI_SUCCESS_MAX_CNT)):
             mes = self.visa_handle.visalib.read(
                 self.visa_handle.session, bytes_in_buffer)
-        mes = str(mes[0].decode())  # cannot be done on same line for some reason
-        # if mes[1] != 0:
-        #     # see protocol descriptor for error codes
-        #     raise Exception('IVVI rack exception "%s"' % mes[1])
+        mes = str(mes[0].decode())
         return mes
 
     def identify(self):
@@ -737,7 +718,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Puts magnet into persistent mode
 
         Note: After turning of the switch heater we will wait for additional 20
-        seconds before we put the current to zero. This is done to make sure 
+        seconds before we put the current to zero. This is done to make sure
         that the switch heater is cold enough and becomes superconducting.
         """
         if self.mode2() == 0:
@@ -757,14 +738,14 @@ class OxfordInstruments_IPS120(VisaInstrument):
         and switch on heater
         """
         if self.switch_heater() == 2:
-            current_in_magnet = self.persistent_current()
-            current_in_leads = self.current()
+            field_in_magnet = self.persistent_field()
+            field_in_leads = self.field()
             self.hold()
-            self.current_setpoint(current_in_magnet)
+            self.field_setpoint(field_in_magnet)
             self.to_setpoint()
 
-            while current_in_leads != current_in_magnet:
-                current_in_leads = self.current()
+            while field_in_leads != field_in_magnet:
+                field_in_leads = self.field()
             self.heater_on()
             self.hold()
 
