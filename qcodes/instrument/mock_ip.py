@@ -4,21 +4,26 @@ A simple module for mocking IP instruments. We will be referring a lot to:
 [1] http://www.americanmagnetics.com/support/manuals/mn-4Q06125PS-430.pdf
 """
 
-from datetime import datetime
-import socket
-from threading import Thread
-import time
 import select
+import socket
+import sys
+import time
+from datetime import datetime
+from threading import Thread
 
 
 class MockIPInstrument(object):
-    def __init__(self, name, ip_address, port, log_file=None, max_connections=5, silent=False):
+    def __init__(self, name, ip_address, port, log_file=None, max_connections=5, output_stream=None):
         self.name = name
         self.ip_address = ip_address
         self.port = port
         self.log_file = log_file
         self.max_connections = max_connections
-        self.silent = silent
+
+        if output_stream == "stdout":
+            self.output_stream = sys.stdout
+        else:
+            self.output_stream = output_stream
 
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -43,8 +48,8 @@ class MockIPInstrument(object):
         now = datetime.now()
         log_msg = "[{} {}: {}]".format(now, self.name, msg)
 
-        if not self.silent:
-            print(log_msg)
+        if self.output_stream is not None:
+            self.output_stream.write("{}: {}".format(self.name, msg))
 
         if self.log_file is not None:
             with open(self.log_file, "a") as fh:
@@ -115,7 +120,7 @@ class MockAMI430(MockIPInstrument):
 
     quench_state = {False: "0", True: "1"}
 
-    def __init__(self, name, ip_address, port, log_file=None, max_connections=5, silent=False):
+    def __init__(self, name, ip_address, port, log_file=None, max_connections=5, output_stream="stdout"):
 
         self.internal_state = {
             "RAMP:RATE:UNITS": MockAMI430.ramp_rate_units["A/s"],
@@ -133,7 +138,7 @@ class MockAMI430(MockIPInstrument):
         }
 
         super(MockAMI430, self).__init__(name, ip_address, port, log_file=log_file, max_connections=max_connections,
-                                         silent=silent)
+                                         output_stream=output_stream)
 
     def _response(self, msg):
 
@@ -175,6 +180,8 @@ class MockAMI430(MockIPInstrument):
         self.internal_state["FIELD:TARG"] = value
 
     def _do_ramp(self, _):
+        self._log("Ramping to {}".format(self.internal_state["FIELD:TARG"]))
+
         self.internal_state["STATE"] = MockAMI430.states["RAMPING to target field/current"]
         # Lets pretend to be ramping for a bit
         time.sleep(0.1)

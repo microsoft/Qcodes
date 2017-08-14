@@ -128,12 +128,6 @@ class AMI430(IPInstrument):
         else:
             time.sleep(t)
 
-    def write(self, msg):
-        if self._testing:
-            return
-        else:
-            super().write(msg)
-
     def _can_start_ramping(self):
         """
         Check the current state of the magnet to see if we can start ramping
@@ -174,7 +168,6 @@ class AMI430(IPInstrument):
         # If part of a parent driver, set the value using that driver
         if np.abs(value) > self._field_rating:
             msg = 'Aborted _set_field; {} is higher than limit of {}'
-
             raise ValueError(msg.format(value, self._field_rating))
 
         if self._parent_instrument is not None and perform_safety_check:
@@ -202,7 +195,7 @@ class AMI430(IPInstrument):
             self._sleep(2.0)
             state = self.ramping_state()
 
-            # If we are now holding, it was succesful
+            # If we are now holding, it was successful
             if state == 'holding':
                 self.pause()
             else:
@@ -368,7 +361,7 @@ class AMI430_3D(Instrument):
         self.add_parameter(
             'cartesian',
             get_cmd=partial(self._get_setpoints, 'x', 'y', 'z'),
-            set_cmd=self._set_fields,
+            set_cmd=self._set_cartesian,
             unit='T',
             vals=Anything()
         )
@@ -522,10 +515,6 @@ class AMI430_3D(Instrument):
 
         # Convert angles from radians to degrees
         d = dict(zip(names, measured_values))
-        for angle_name in ["phi", "theta"]:
-            if angle_name in names:
-                d[angle_name] = np.degrees(d[angle_name])
-
         return [d[name] for name in names]  # Do not do "return list(d.values())", because then there is no
         # guaranty that the order in which the values are returned is the same as the original intention
 
@@ -535,10 +524,6 @@ class AMI430_3D(Instrument):
 
         # Convert angles from radians to degrees
         d = dict(zip(names, measured_values))
-        for angle_name in ["phi", "theta"]:
-            if angle_name in names:
-                d[angle_name] = np.degrees(d[angle_name])
-
         return [d[name] for name in names]  # Do not do "return list(d.values())", because then there is no
         # guaranty that the order in which the values are returned is the same as the original intention
 
@@ -561,7 +546,7 @@ class AMI430_3D(Instrument):
 
     def _set_spherical(self, values):
         r, theta, phi = values
-        self._set_point.set_vector(r=r, theta=np.radians(theta), phi=np.radians(phi))
+        self._set_point.set_vector(r=r, theta=theta, phi=phi)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
     def _set_r(self, r):
@@ -569,16 +554,16 @@ class AMI430_3D(Instrument):
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
     def _set_theta(self, theta):
-        self._set_point.set_component(theta=np.radians(theta))
+        self._set_point.set_component(theta=theta)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
     def _set_phi(self, phi):
-        self._set_point.set_component(phi=np.radians(phi))
+        self._set_point.set_component(phi=phi)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
     def _set_cylindrical(self, values):
-        phi, rho, z = values
-        self._set_point.set_vector(phi=np.radians(phi), rho=rho, z=z)
+        rho, phi, z = values
+        self._set_point.set_vector(rho=rho, phi=phi, z=z)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
 
     def _set_rho(self, rho):

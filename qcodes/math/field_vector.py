@@ -23,8 +23,15 @@ class FieldVector(object):
         self._z = z
 
         self._r = r
-        self._theta = theta
-        self._phi = phi
+        if theta is not None:
+            self._theta = np.radians(theta)
+        else:
+            self._theta = theta
+
+        if phi is not None:
+            self._phi = np.radians(phi)
+        else:
+            self._phi = phi
 
         self._rho = rho
 
@@ -146,7 +153,12 @@ class FieldVector(object):
 
         items = list(new_values.items())
         component_name = items[0][0]
-        value = items[0][1]
+
+        if component_name in ["theta", "phi"]:
+            # convert angles to radians
+            value = np.radians(items[0][1])
+        else:
+            value = items[0][1]
 
         setattr(self, "_" + component_name, value)
         # Setting x (for example), we will keep y and z untouched, but set r, theta, phi and rho to None
@@ -166,7 +178,31 @@ class FieldVector(object):
 
     def get_components(self, *names):
         """Get field components by name"""
-        return [getattr(self, "_" + name) for name in names]
+
+        def convert_angle_to_degrees(name, value):
+            # Convert all angles to degrees
+            if name in ["theta", "phi"]:
+                return np.degrees(value)
+            else:
+                return value
+
+        components = [convert_angle_to_degrees(
+            name, getattr(self, "_" + name)
+        ) for name in names]
+
+        return components
+
+    def is_equal(self, other):
+        """
+        Returns True if other is equivalent to self, False otherwise
+        """
+        for name in ["x", "y", "z"]:
+            self_value = getattr(self, name)
+            other_value = getattr(other, name)
+            if not np.isclose(self_value, other_value):
+                return False
+
+        return True
 
     # A method property allows us to confidently retrieve values but disallows modifying them
     # We can do this:
@@ -193,7 +229,7 @@ class FieldVector(object):
 
     @property
     def theta(self):
-        return self._theta
+        return np.degrees(self._theta)
 
     @property
     def r(self):
@@ -201,4 +237,4 @@ class FieldVector(object):
 
     @property
     def phi(self):
-        return self._phi
+        return np.degrees(self._phi)
