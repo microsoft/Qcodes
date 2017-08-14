@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 
 class OxfordInstruments_Kelvinox_IGH(VisaInstrument):
     """
-    This is the python driver for the Oxford Instruments Kelvinox IGH Dilution Refrigerator and 
+    This is the python driver for the Oxford Instruments Kelvinox IGH Dilution Refrigerator and
     Intelligent Dilution Refrigerator Power Supply (IDR PS).
 
     Usage:
@@ -294,7 +294,7 @@ class OxfordInstruments_Kelvinox_IGH(VisaInstrument):
 
     def _set_mix_chamber_temp(self, temperature):
         """
-        Temperature in kelvin 
+        Temperature in kelvin
         Between 0 and 2K
         """
         T = round(temperature / 0.1e-3)
@@ -357,7 +357,7 @@ class OxfordInstruments_Kelvinox_IGH(VisaInstrument):
         return float(result.replace('R', ''))
 
     def _get_valve_status(self, valve):
-        """ 
+        """
         Return the status of the valve number "valve" where valve must be a number between 1 and 20 (self._map_valve)
 
         Output: 'On' or 'off'
@@ -371,7 +371,7 @@ class OxfordInstruments_Kelvinox_IGH(VisaInstrument):
         return val_mapping[int(status)]
 
     def _set_valve_status(self, status, valve):
-        """ 
+        """
         Return the status of the valve number "valve" where valve must be a number between 1 and 20 (self._map_valve)
         status: 0 for off and 1 for on
         """
@@ -390,7 +390,7 @@ class OxfordInstruments_Kelvinox_IGH(VisaInstrument):
         self.local()
 
     def _get_V6_valve(self):
-        """ 
+        """
         Return the opening of valve 6.
 
         Output:
@@ -409,7 +409,7 @@ class OxfordInstruments_Kelvinox_IGH(VisaInstrument):
         self.local()
 
     def _get_V12A_valve(self):
-        """ 
+        """
         Return the opening of valve V12A.
 
         Output:
