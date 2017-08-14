@@ -128,6 +128,12 @@ class AMI430(IPInstrument):
         else:
             time.sleep(t)
 
+    def write(self, msg):
+        if self._testing:
+            return
+        else:
+            super().write(msg)
+
     def _can_start_ramping(self):
         """
         Check the current state of the magnet to see if we can start ramping
@@ -187,7 +193,6 @@ class AMI430(IPInstrument):
                     self.switch_heater_enabled(True)
 
             self.ramp()
-
             self._sleep(0.5)
 
             # Wait until no longer ramping
@@ -195,7 +200,6 @@ class AMI430(IPInstrument):
                 self._sleep(0.3)
 
             self._sleep(2.0)
-
             state = self.ramping_state()
 
             # If we are now holding, it was succesful
@@ -203,7 +207,6 @@ class AMI430(IPInstrument):
                 self.pause()
             else:
                 msg = '_set_field({}) failed with state: {}'
-
                 raise Exception(msg.format(value, state))
 
     def _ramp_to(self, value):
@@ -256,7 +259,6 @@ class AMI430(IPInstrument):
         """
         if on:
             self.write('PS 1')
-
             self._sleep(0.5)
 
             # Wait until heating is finished
@@ -264,7 +266,6 @@ class AMI430(IPInstrument):
                 self._sleep(0.3)
         else:
             self.write('PS 0')
-
             self._sleep(0.5)
 
             # Wait until cooling is finished
@@ -503,11 +504,11 @@ class AMI430_3D(Instrument):
         performed by this 3D driver.
         """
         if instrument is self._instrument_x:
-            self.set_x(value)
+            self._set_x(value)
         elif instrument is self._instrument_y:
-            self.set_y(value)
+            self._set_y(value)
         elif instrument is self._instrument_z:
-            self.set_z(value)
+            self._set_z(value)
         else:
             msg = 'This magnet doesnt belong to its specified parent {}'
             raise NameError(msg.format(self))

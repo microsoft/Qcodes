@@ -20,7 +20,7 @@ def current_driver(request):
     Start three mock instruments representing current drivers for the x, y and z directions.
     """
     ip_address = "127.0.0.1"  # Should be local host
-    ports = {"x": 1000, "y": 1001, "z": 1002}
+    ports = {"x": 1025, "y": 1026, "z": 1027}  # Ports lower then 1024 are reserved under linux
     log_folder = None
 
     mock_instruments = []
