@@ -602,9 +602,14 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result(str) : "Hold", "Set point", "Zero" or "Clamp".
         """
-        result = self._execute('X')
         log.info('Get activity of the magnet.')
-        return int(result[4])
+        result = self._execute('X')
+        status = {
+            0: "Hold",
+            1: "To set point",
+            2: "To zero"
+        }
+        return status[int(result[4])]
 
     def _set_activity(self, mode):
         """
@@ -667,8 +672,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
             2: "Off magnet at field (switch closed)",
             5: "Heater fault (heater is on but current is low)",
             8: "No switch fitted"}
-        print(status[int(result[8])])
-        return int(result[8])
+        return status[int(result[8])]
 
     def _set_switch_heater(self, mode):
         """
@@ -825,8 +829,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
                   1: "Tesla, Magnet sweep: fast",
                   4: "Amps, Magnet sweep: slow",
                   5: "Tesla, Magnet sweep: slow"}
-        print(status[int(result[10])])
-        return int(result[10])
+        return status[int(result[10])]
 
     def _get_mode2(self):
         """
@@ -844,8 +847,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
                   1: "Sweeping",
                   2: "Sweep limiting",
                   3: "Sweeping & sweep limiting"}
-        print(status[int(result[11])])
-        return int(result[11])
+        return status[int(result[11])]
 
     def _set_mode(self, mode):
         """
