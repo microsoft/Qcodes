@@ -233,6 +233,33 @@ class OxfordInstruments_IPS120(VisaInstrument):
         self.local()
         super().close()
 
+    def get_idn(self):
+        """
+        Overides the function of Instrument since IPS120 does not support '*IDN?'
+
+        This string is supposed to be a comma-separated list of vendor, model,
+        serial, and firmware, but semicolon and colon are also common
+        separators so we accept them here as well.
+
+        Returns:
+            A dict containing vendor, model, serial, and firmware.
+        """
+        try:
+            idstr = ''  # in case self.ask fails
+            idstr = self._get_version().split()
+            # form is supposed to be comma-separated, but we've seen
+            # other separators occasionally
+            idparts = [idstr[3] + ' ' + idstr[4], idstr[0], idstr[5],
+                       idstr[1] + ' ' + idstr[2]]
+            # in case parts at the end are missing, fill in None
+            if len(idparts) < 4:
+                idparts += [None] * (4 - len(idparts))
+        except:
+            logging.warn('Error getting or interpreting *IDN?: ' + repr(idstr))
+            idparts = [None, None, None, None]
+
+        return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
+
     def _get_remote_status(self):
         """
         Get remote control status
