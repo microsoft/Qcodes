@@ -16,6 +16,8 @@ from time import sleep
 import visa
 
 
+log = logging.getLogger(__name__)
+
 class OxfordInstruments_IPS120(VisaInstrument):
     """This is the python driver for the Oxford Instruments IPS 120 Magnet Power Supply
 
@@ -35,7 +37,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
             address (string) : instrument address
             number (int)     : ISOBUS instrument number
         """
-        logging.debug(__name__ + ' : Initializing instrument')
+        log.debug('Initializing instrument')
         super().__init__(name, address, **kwargs)
 
         self._address = address
@@ -142,11 +144,12 @@ class OxfordInstruments_IPS120(VisaInstrument):
                            unit='A',
                            get_cmd=self._get_trip_current)
 
+        # to handle VisaIOError which occurs at first read
         try:
             self.visa_handle.write('@%s%s' % (self._number, 'V'))
-            sleep(100e-3)  # wait for the device to be able to respond
-            self._read()  # to flush the buffer
-        except:
+            sleep(100e-3)
+            self._read()
+        except visa.VisaIOError:
             pass
 
     def get_all(self):
@@ -154,7 +157,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Reads all implemented parameters from the instrument,
         and updates the wrapper.
         """
-        logging.info(__name__ + ' : reading all settings from instrument')
+        log.info('reading all settings from instrument')
         self.snapshot(update=True)
 
     def _execute(self, message):
@@ -164,9 +167,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Args:
             message (str) : write command for the device
         """
-        logging.info(
-            __name__ +
-            ' : Send the following command to the device: %s' %
+        log.info('Send the following command to the device: %s' %
             message)
         self.visa_handle.write('@%s%s' % (self._number, message))
         sleep(70e-3)  # wait for the device to be able to respond
@@ -192,12 +193,12 @@ class OxfordInstruments_IPS120(VisaInstrument):
 
     def identify(self):
         """Identify the device"""
-        logging.info(__name__ + ' : Identify the device')
+        log.info('Identify the device')
         return self._execute('V')
 
     def examine(self):
         """Examine the status of the device"""
-        logging.info(__name__ + ' : Examine status')
+        log.info('Examine status')
 
         print('System Status: ')
         print(self.system_status())
@@ -219,17 +220,17 @@ class OxfordInstruments_IPS120(VisaInstrument):
 
     def remote(self):
         """Set control to remote and unlocked"""
-        logging.info(__name__ + ' : Set control to remote and unlocked')
+        log.info('Set control to remote and unlocked')
         self.remote_status(3)
 
     def local(self):
         """Set control to local and unlocked"""
-        logging.info(__name__ + ' : Set control to local and unlocked')
+        log.info('Set control to local and unlocked')
         self.remote_status(2)
 
     def close(self):
         """Safely close connection"""
-        logging.info(__name__ + ' : Closing IPS120 connection')
+        log.info('Closing IPS120 connection')
         self.local()
         super().close()
 
@@ -244,19 +245,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             A dict containing vendor, model, serial, and firmware.
         """
-        try:
-            idstr = ''  # in case self.ask fails
-            idstr = self._get_version().split()
-            # form is supposed to be comma-separated, but we've seen
-            # other separators occasionally
-            idparts = [idstr[3] + ' ' + idstr[4], idstr[0], idstr[5],
-                       idstr[1] + ' ' + idstr[2]]
-            # in case parts at the end are missing, fill in None
-            if len(idparts) < 4:
-                idparts += [None] * (4 - len(idparts))
-        except:
-            logging.warn('Error getting or interpreting *IDN?: ' + repr(idstr))
-            idparts = [None, None, None, None]
+        idparts = ['Oxford Instruments', 'IPS120', None, None]
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
@@ -275,7 +264,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
             "Auto-run-down",
             "Auto-run-down"
         """
-        logging.info(__name__ + ' : Get remote control status')
+        log.info('Get remote control status')
         result = self._execute('X')
         val_mapping = {0: "Local and locked",
                        1: "Remote and locked",
@@ -304,9 +293,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
             3: "Remote and unlocked",
         }
         if status.__contains__(mode):
-            logging.info(
-                __name__ +
-                ' : Setting remote control status to %s' %
+            log.info('Setting remote control status to %s' %
                 status.get(
                     mode,
                     "Unknown"))
@@ -327,7 +314,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
             "Fault"
         """
         result = self._execute('X')
-        logging.info(__name__ + ' : Getting system status')
+        log.info('Getting system status')
         status = {0: "Normal",
                   1: "Quenched",
                   2: "Over Heated",
@@ -348,7 +335,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
             "Outside positive current limit"
         """
         result = self._execute('X')
-        logging.info(__name__ + ' : Getting system status')
+        log.info('Getting system status')
         status = {0: "Normal",
                   1: "On positive voltage limit",
                   2: "On negative voltage limit",
@@ -363,7 +350,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : output current in Amp
         """
-        logging.info(__name__ + ' : Read output current')
+        log.info('Read output current')
         result = self._execute('R0')
         return float(result.replace('R', ''))
 
@@ -374,7 +361,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : output voltage in Volt
         """
-        logging.info(__name__ + ' : Read output voltage')
+        log.info('Read output voltage')
         result = self._execute('R1')
         return float(result.replace('R', ''))
 
@@ -385,7 +372,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : measured magnet current in Amp
         """
-        logging.info(__name__ + ' : Read measured magnet current')
+        log.info('Read measured magnet current')
         result = self._execute('R2')
         return float(result.replace('R', ''))
 
@@ -396,7 +383,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : Target current in Amp
         """
-        logging.info(__name__ + ' : Read set point (target current)')
+        log.info('Read set point (target current)')
         result = self._execute('R5')
         return float(result.replace('R', ''))
 
@@ -407,7 +394,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Args:
             current (float) : target current in Amp
         """
-        logging.info(__name__ + ' : Setting target current to %s' % current)
+        log.info('Setting target current to %s' % current)
         self.remote()
         self._execute('I%s' % current)
         self.local()
@@ -420,7 +407,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : sweep rate in A/min
         """
-        logging.info(__name__ + ' : Read sweep rate (current)')
+        log.info('Read sweep rate (current)')
         result = self._execute('R6')
         return float(result.replace('R', ''))
 
@@ -432,10 +419,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
             sweeprate(float) : Sweep rate in A/min.
         """
         self.remote()
-        logging.info(
-            __name__ +
-            ' : Set sweep rate (current) to %s A/min' %
-            sweeprate)
+        log.info('Set sweep rate (current) to %s A/min' % sweeprate)
         self._execute('S%s' % sweeprate)
         self.local()
         self.sweeprate_field()
@@ -447,7 +431,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : magnetic field in Tesla
         """
-        logging.info(__name__ + ' : Read output field')
+        log.info('Read output field')
         result = self._execute('R7')
         return float(result.replace('R', ''))
 
@@ -458,7 +442,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : Field set point in Tesla
         """
-        logging.info(__name__ + ' : Read field set point')
+        log.info('Read field set point')
         result = self._execute('R8')
         return float(result.replace('R', ''))
 
@@ -469,7 +453,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Args:
             field (float) : target field in Tesla
         """
-        logging.info(__name__ + ' : Setting target field to %s' % field)
+        log.info('Setting target field to %s' % field)
         self.remote()
         self._execute('J%s' % field)
         self.local()
@@ -482,7 +466,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : sweep rate in Tesla/min
         """
-        logging.info(__name__ + ' : Read sweep rate (field)')
+        log.info('Read sweep rate (field)')
         result = self._execute('R9')
         return float(result.replace('R', ''))
 
@@ -493,10 +477,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Args:
             sweeprate(float) : Sweep rate in Tesla/min.
         """
-        logging.info(
-            __name__ +
-            ' : Set sweep rate (field) to %s Tesla/min' %
-            sweeprate)
+        log.info('Set sweep rate (field) to %s Tesla/min' % sweeprate)
         self.remote()
         self._execute('T%s' % sweeprate)
         self.local()
@@ -509,7 +490,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : voltage limit in Volt
         """
-        logging.info(__name__ + ' : Read voltage limit')
+        log.info('Read voltage limit')
         result = self._execute('R15')
         result = float(result.replace('R', ''))
         self.voltage._vals = vals.Numbers(-result, result)
@@ -522,7 +503,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : persistent magnet current in Amp
         """
-        logging.info(__name__ + ' : Read persistent magnet current')
+        log.info('Read persistent magnet current')
         result = self._execute('R16')
         return float(result.replace('R', ''))
 
@@ -533,7 +514,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : trip current om Amp
         """
-        logging.info(__name__ + ' : Read trip current')
+        log.info('Read trip current')
         result = self._execute('R17')
         return float(result.replace('R', ''))
 
@@ -544,7 +525,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : persistent magnet field in Tesla
         """
-        logging.info(__name__ + ' : Read persistent magnet field')
+        log.info('Read persistent magnet field')
         result = self._execute('R18')
         return float(result.replace('R', ''))
 
@@ -555,7 +536,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : trip field in Tesla
         """
-        logging.info(__name__ + ' : Read trip field')
+        log.info('Read trip field')
         result = self._execute('R19')
         return float(result.replace('R', ''))
 
@@ -566,7 +547,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : switch heater current in milliAmp
         """
-        logging.info(__name__ + ' : Read switch heater current')
+        log.info('Read switch heater current')
         result = self._execute('R20')
         return float(result.replace('R', ''))
 
@@ -577,7 +558,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : safe current limit, most positive in Amp
         """
-        logging.info(__name__ + ' : Read safe current limit, most positive')
+        log.info('Read safe current limit, most positive')
         result = self._execute('R22')
         return float(result.replace('R', ''))
 
@@ -588,7 +569,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : safe current limit, most negative in Amp
         """
-        logging.info(__name__ + ' : Read safe current limit, most negative')
+        log.info('Read safe current limit, most negative')
         result = self._execute('R21')
         return float(result.replace('R', ''))
 
@@ -599,7 +580,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : lead resistance in milliOhm
         """
-        logging.info(__name__ + ' : Read lead resistance')
+        log.info('Read lead resistance')
         result = self._execute('R23')
         return float(result.replace('R', ''))
 
@@ -610,7 +591,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
         Returns:
             result (float) : magnet inductance in Henry
         """
-        logging.info(__name__ + ' : Read magnet inductance')
+        log.info('Read magnet inductance')
         result = self._execute('R24')
         return float(result.replace('R', ''))
 
@@ -622,7 +603,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
             result(str) : "Hold", "Set point", "Zero" or "Clamp".
         """
         result = self._execute('X')
-        logging.info(__name__ + ' : Get activity of the magnet.')
+        log.info('Get activity of the magnet.')
         return int(result[4])
 
     def _set_activity(self, mode):
@@ -643,9 +624,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
             2: "To zero"
         }
         if status.__contains__(mode):
-            logging.info(
-                __name__ +
-                ' : Setting magnet activity to %s' %
+            log.info('Setting magnet activity to %s' %
                 status.get(
                     mode,
                     "Unknown"))
@@ -680,7 +659,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
                           "Heater fault (heater is on but current is low)"
                           "No switch fitted"
         """
-        logging.info(__name__ + ' : Get switch heater status')
+        log.info('Get switch heater status')
         result = self._execute('X')
         status = {
             0: "Off magnet at zero (switch closed)",
@@ -706,9 +685,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
             1: "On, if PSU = Magnet"
         }
         if status.__contains__(mode):
-            logging.info(
-                __name__ +
-                ' : Setting switch heater to %s' %
+            log.info('Setting switch heater to %s' %
                 status.get(
                     mode,
                     "Unknown"))
@@ -842,7 +819,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
             "Amps, Magnet sweep: slow",
             "Tesla, Magnet sweep: slow"
         """
-        logging.info(__name__ + ' : Get device mode')
+        log.info('Get device mode')
         result = self._execute('X')
         status = {0: "Amps, Magnet sweep: fast",
                   1: "Tesla, Magnet sweep: fast",
@@ -861,7 +838,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
             "Sweep limiting",
             "Sweeping & sweep limiting"
         """
-        logging.info(__name__ + ' : Get device mode')
+        log.info('Get device mode')
         result = self._execute('X')
         status = {0: "At rest",
                   1: "Sweeping",
@@ -890,9 +867,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
             9: "Tesla, (Magnet sweep: unaffected)"
         }
         if status.__contains__(mode):
-            logging.info(
-                __name__ +
-                ' : Setting device mode to %s' %
+            log.info('Setting device mode to %s' %
                 status.get(
                     mode,
                     "Unknown"))
@@ -933,7 +908,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
             3: "Both contactors open",
             4: "Both contactors closed"
         }
-        logging.info(__name__ + ' : Get device polarity')
+        log.info('Get device polarity')
         result = self._execute('X')
         return status1.get(int(result[13]), "Unknown") + \
             ", " + status2.get(int(result[14]), "Unknown")
