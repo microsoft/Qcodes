@@ -1,3 +1,4 @@
+import collections
 import logging
 import time
 from functools import partial
@@ -279,11 +280,21 @@ class AMI430_3D(Instrument):
     def __init__(self, name, instrument_x, instrument_y, instrument_z, field_limit, **kwargs):
         super().__init__(name, **kwargs)
 
+        if not isinstance(name, str):
+            raise ValueError("Name should be a string")
+
+        if not all([isinstance(instrument, Instrument) for instrument in [instrument_x, instrument_y, instrument_z]]):
+            raise ValueError("Instruments need to be instances of the class Instrument")
+
         self._instrument_x = instrument_x
         self._instrument_y = instrument_y
         self._instrument_z = instrument_z
 
-        self._field_limit = field_limit
+        if repr(field_limit).isnumeric() or isinstance(field_limit, collections.Iterable):
+            self._field_limit = field_limit
+        else:
+            raise ValueError("field limit should either be a number or an iterable")
+
         self._set_point = FieldVector(
             x=self._instrument_x.field(),
             y=self._instrument_y.field(),
@@ -448,6 +459,13 @@ class AMI430_3D(Instrument):
             vals=Numbers()
         )
 
+    def _verify_safe_setpoint(self, setpoint_values):
+
+        if repr(self._field_limit).isnumeric():
+            return np.linalg.norm(setpoint_values) < self._field_limit
+
+        return any([limit_function(*setpoint_values) for limit_function in self._field_limit])
+
     def _set_fields(self, values):
         """
         Set the fields of the x/y/z magnets. This function is called
@@ -459,9 +477,8 @@ class AMI430_3D(Instrument):
         """
 
         # Check if exceeding the global field limit
-        if np.linalg.norm(values) > self._field_limit:
-            msg = '_set_fields aborted; field would exceed limit of {} T'
-            raise ValueError(msg.format(self._field_limit))
+        if not self._verify_safe_setpoint(values):
+            raise ValueError("_set_fields aborted; field would exceed limit")
 
         # Check if the individual instruments are ready
         for name, value in zip(["x", "y", "z"], values):

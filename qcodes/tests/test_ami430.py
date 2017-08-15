@@ -20,7 +20,11 @@ from qcodes.math.field_vector import FieldVector
 coil_constant = 1  # [T/A]
 current_rating = 10  # [A]
 current_ramp_limit = 100  # [A/s]
-field_limit = 2  # [T]
+
+field_limit = [  # If any of the field limit functions are satisfied we are in the safe zone.
+    lambda x, y, z: x == 0 and y == 0 and z < 3,  # We can have higher field along the z-axis if x and y are zero.
+    lambda x, y, z: np.linalg.norm([x, y, z]) < 2
+]
 
 
 class StdOutQueue(Queue):
@@ -301,19 +305,25 @@ def test_field_limit_exception(current_driver):
     """
     Test that an exception is raised if we intentionally set the field beyond the limits. Together with the
     test_ramp_down_first test this should prevent us from ever exceeding set point limits.
+    In this test we generate a regular grid in three-D and assert that the driver can be set to a set point if
+    any of of the requirements given by field_limit is satisfied. An error *must* be raised if none of the
+    safety limits are satisfied.
     """
-    names = ["x", "y", "z"]
-    set_point = np.array([0.1, 0.1, 0.1])
-    current_driver.cartesian(set_point)  # Put the magnets in a well defined state
-    delta = np.array([field_limit, 0.0, 0.0])
+    x = np.linspace(-3, 3, 11)
+    y = np.copy(x)
+    z = np.copy(x)
+    set_points = zip(*[i.flatten() for i in np.meshgrid(x, y, z)])
 
-    for count, ramp_down_name in enumerate(names):
-        set_point += np.roll(delta, count)
+    for set_point in set_points:
+        should_not_raise = any([is_safe(*set_point) for is_safe in field_limit])
 
-        with pytest.raises(Exception) as excinfo:
+        if should_not_raise:
             current_driver.cartesian(set_point)
+        else:
+            with pytest.raises(Exception) as excinfo:
+                current_driver.cartesian(set_point)
 
-        assert "field would exceed limit" in excinfo.value.args[0]
+            assert "field would exceed limit" in excinfo.value.args[0]
 
 
 def test_cylindrical_poles(current_driver):
