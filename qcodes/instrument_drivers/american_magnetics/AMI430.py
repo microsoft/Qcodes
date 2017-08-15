@@ -476,7 +476,7 @@ class AMI430_3D(Instrument):
 
         for operator in [np.less, np.greater]:
             # First ramp the coils that are decreasing in field strength.
-            # TODO: Add comments explaining why we do this
+            # This will ensure that we are always in a save region as far as the quenching of the magnets is concerned
             for name, value in zip(["x", "y", "z"], values):
 
                 instrument = getattr(self, "_instrument_{}".format(name))

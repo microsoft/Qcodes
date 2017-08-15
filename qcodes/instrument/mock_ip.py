@@ -46,10 +46,10 @@ class MockIPInstrument(object):
 
     def _log(self, msg):
         now = datetime.now()
-        log_msg = "[{} {}: {}]".format(now, self.name, msg)
+        log_msg = "[{}] {}: {}".format(now.strftime("%d:%m:%Y-%H:%M:%S.%f"), self.name, msg)
 
         if self.output_stream is not None:
-            self.output_stream.write("{}: {}".format(self.name, msg))
+            self.output_stream.write(log_msg)
 
         if self.log_file is not None:
             with open(self.log_file, "a") as fh:
