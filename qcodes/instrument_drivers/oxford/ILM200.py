@@ -8,7 +8,7 @@
 # Pieter de Groot <pieterdegroot@gmail.com>, 2009
 
 
-from time import time, sleep
+from time import sleep
 import visa
 import logging
 from qcodes import VisaInstrument
@@ -65,8 +65,8 @@ class OxfordInstruments_ILM200(VisaInstrument):
             self.get_idn()
             sleep(70e-3)  # wait for the device to be able to respond
             self._read()  # to flush the buffer
-        except:
-            pass
+        except Exception as ex:
+            logging.debug(ex)
 
     def _execute(self, message):
         """
