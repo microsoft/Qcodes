@@ -69,7 +69,7 @@ class QDac(VisaInstrument):
                                QCoDeS only supports version 0.170202 or newer.
                                Contact rikke.lutge@nbi.ku.dk for an update.
                                ''')
-
+        self._update_currents = update_currents
         self.num_chans = num_chans
 
         # Assigned slopes. Entries will eventually be [chan, slope]
@@ -82,8 +82,12 @@ class QDac(VisaInstrument):
 
         self.chan_range = range(1, 1 + self.num_chans)
         self.channel_validator = vals.Ints(1, self.num_chans)
-
+        self._params_to_skip_update = []
         for i in self.chan_range:
+            self._params_to_skip_update.append('ch{:02}_v'.format(i))
+            self._params_to_skip_update.append('ch{:02}_i'.format(i))
+            self._params_to_skip_update.append('ch{:02}_vrange'.format(i))
+            self._params_to_skip_update.append('ch{:02}_irange'.format(i))
             stri = str(i)
             self.add_parameter(name='ch{:02}_v'.format(i),
                                label='Channel ' + stri,
@@ -162,6 +166,19 @@ class QDac(VisaInstrument):
         log.info('[*] Querying all channels for voltages and currents...')
         self._get_status(readcurrents=update_currents)
         log.info('[+] Done')
+
+    def snapshot_base(self, update=False, params_to_skip_update=None):
+        # call get_status here if updates are requested
+        # this is much faster than updating the individual channels
+        update_currents = self._update_currents and update
+        if update:
+            self._get_status(readcurrents=update_currents)
+        if params_to_skip_update is None:
+            params_to_skip_update = self._params_to_skip_update
+        supfun = super().snapshot_base
+        snap = supfun(update=update,
+                      params_to_skip_update=params_to_skip_update)
+        return snap
 
     #########################
     # Channel gets/sets

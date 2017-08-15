@@ -5,7 +5,7 @@
     },
     "gui" :{
         "notebook": true,
-        "plotlib": "matplotlib",
+        "plotlib": "all",
         "pyqtmaxplots": 100
     },
     "user": {}

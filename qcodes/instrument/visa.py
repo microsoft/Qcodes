@@ -1,4 +1,6 @@
 """Visa instrument driver based on pyvisa."""
+from typing import Sequence
+
 import visa
 import pyvisa.constants as vi_const
 import pyvisa.resources
@@ -157,18 +159,23 @@ class VisaInstrument(Instrument):
         """
         return self.visa_handle.ask(cmd)
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update: bool=False,
+                      params_to_skip_update: Sequence[str] = None):
         """
         State of the instrument as a JSON-compatible dict.
 
         Args:
             update (bool): If True, update the state by querying the
                 instrument. If False, just use the latest values in memory.
-
+            params_to_skip_update: List of parameter names that will be skipped
+                in update even if update is True. This is useful if you have
+                parameters that are slow to update but can be updated in a
+                different way (as in the qdac)
         Returns:
             dict: base snapshot
         """
-        snap = super().snapshot_base(update=update)
+        snap = super().snapshot_base(update=update,
+                                     params_to_skip_update=params_to_skip_update)
 
         snap['address'] = self._address
         snap['terminator'] = self._terminator

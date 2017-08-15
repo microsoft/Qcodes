@@ -4,6 +4,7 @@ import numpy as np
 import time
 import warnings
 import weakref
+from typing import Sequence
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
@@ -133,25 +134,34 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             raise TypeError('Submodules must be metadatable.')
         self.submodules[name] = submodule
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update: bool=False,
+                      params_to_skip_update: Sequence[str]=None):
         """
         State of the instrument as a JSON-compatible dict.
 
         Args:
             update (bool): If True, update the state by querying the
                 instrument. If False, just use the latest values in memory.
+            params_to_skip_update: List of parameter names that will be skipped
+                in update even if update is True. This is useful if you have
+                parameters that are slow to update but can be updated in a
+                different way (as in the qdac)
 
         Returns:
             dict: base snapshot
         """
-        snap = {'parameters': dict((name, param.snapshot(update=update))
-                                   for name, param in self.parameters.items()),
-                'functions': dict((name, func.snapshot(update=update))
+        snap = {'functions': dict((name, func.snapshot(update=update))
                                   for name, func in self.functions.items()),
                 'submodules': dict((name, subm.snapshot(update=update))
                                    for name, subm in self.submodules.items()),
                 '__class__': full_class(self),
                 }
+        snap['parameters'] = {}
+        for name, param in self.parameters.items():
+            update = update
+            if params_to_skip_update and name in params_to_skip_update:
+                update = False
+            snap['parameters'][name] = param.snapshot(update=update)
         for attr in set(self._meta_attrs):
             if hasattr(self, attr):
                 snap[attr] = getattr(self, attr)
