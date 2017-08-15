@@ -108,9 +108,6 @@ class OxfordInstruments_ILM200(VisaInstrument):
                 self.visa_handle.session, bytes_in_buffer)
         # cannot be done on same line for some reason
         mes = str(mes[0].decode())
-        # if mes[1] != 0:
-        #     # see protocol descriptor for error codes
-        #     raise Exception('IVVI rack exception "%s"' % mes[1])
         return mes
 
     def get_idn(self):
@@ -135,8 +132,9 @@ class OxfordInstruments_ILM200(VisaInstrument):
             # in case parts at the end are missing, fill in None
             if len(idparts) < 4:
                 idparts += [None] * (4 - len(idparts))
-        except:
+        except Exception as ex:
             logging.warn('Error getting or interpreting *IDN?: ' + repr(idstr))
+            logging.debug(ex)
             idparts = [None, None, None, None]
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
@@ -146,10 +144,10 @@ class OxfordInstruments_ILM200(VisaInstrument):
         Reads all implemented parameters from the instrument,
         and updates the wrapper.
 
-        Input:
+        Args:
             None
 
-        Output:
+        Returns:
             None
         """
         logging.info(__name__ + ' : reading all settings from instrument')
@@ -170,11 +168,11 @@ class OxfordInstruments_ILM200(VisaInstrument):
         """
         Identify the device
 
-        Input:
+        Args:
             None
 
-        Output:
-            'ILM200 Version 1.08 (c) OXFORD 1994\r'
+        Return:
+            identification (str): should be 'ILM200 Version 1.08 (c) OXFORD 1994\r'
         """
         logging.info(__name__ + ' : Identify the device')
         return self._execute('V')
@@ -185,7 +183,7 @@ class OxfordInstruments_ILM200(VisaInstrument):
         Input:
             None
 
-        Output:
+        Returns:
             result (float) : Helium level
         """
         logging.info(__name__ + ' : Read level of channel 1')
@@ -198,7 +196,7 @@ class OxfordInstruments_ILM200(VisaInstrument):
         Input:
             None
 
-        Output:
+        Returns:
             None
         """
         logging.info(__name__ + ' : Get status of the device.')
@@ -325,4 +323,4 @@ class OxfordInstruments_ILM200(VisaInstrument):
         elif rate == 1:
             self.set_to_fast()
         self.set_remote_status(3)
-        print(self._do_get_rate())
+        logging.info(self._do_get_rate())
