@@ -34,7 +34,7 @@ log = logging.getLogger(__name__)
 
 def _get_metadata(*parameters) -> Dict[float, list]:
     """
-    Return a dict that contains the paraemter metadata grouped by the
+    Return a dict that contains the parameter metadata grouped by the
     instrument it belongs to.
     """
     ts = time.time()
@@ -45,16 +45,20 @@ def _get_metadata(*parameters) -> Dict[float, list]:
         if _meta:
             meta = _meta()
         else:
-            raise ValueError("Input is not a paraemter; Refusing to proceed")
+            raise ValueError("Input is not a parameter; Refusing to proceed")
         # convert to string
         meta['value'] = str(meta['value'])
         if meta["ts"] is not None:
             meta["ts"] = time.mktime(meta["ts"].timetuple())
         meta["name"] = parameter.label or parameter.name
         meta["unit"] = parameter.unit
-        accumulator = metas.get(str(parameter._instrument), [])
+        # find the base instrument in case this is a channel parameter
+        baseinst = parameter._instrument
+        while hasattr(baseinst, '_parent'):
+            baseinst = baseinst._parent
+        accumulator = metas.get(str(baseinst), [])
         accumulator.append(meta)
-        metas[str(parameter._instrument)] = accumulator
+        metas[str(baseinst)] = accumulator
     parameters = []
     for instrument in metas:
         temp = {"instrument": instrument, "parameters": metas[instrument]}
@@ -117,7 +121,7 @@ class Monitor(Thread):
 
     def stop(self):
         """
-        Shutodwn the server, close the event loop and join the thread
+        Shutdown the server, close the event loop and join the thread
         """
         # this contains the server
         # or any exception
