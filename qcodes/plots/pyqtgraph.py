@@ -148,7 +148,9 @@ class QtPlot(BasePlot):
                 cycle = color_cycle
                 color = cycle[len(self.traces) % len(cycle)]
             if width is None:
-                width = 2
+                # there are currently very significant performance issues
+                # with a penwidth larger than one
+                width = 1
             kwargs['pen'] = self.rpg.mkPen(color, width=width)
 
         if antialias is None:
