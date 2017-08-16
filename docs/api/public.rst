@@ -6,7 +6,7 @@ Public
 ======
 
 Classes and Functions
-----------------------
+---------------------
 
 This page lists the entrypoints to the plubic qcodes API.
 
@@ -88,6 +88,9 @@ Instrument
    Function
    Parameter
    StandardParameter
+   ArrayParameter
+   MultiParameter
+   ManualParameter
    SweepFixedValues
    SweepValues
    combine
@@ -98,6 +101,8 @@ Instrument
    IPInstrument
    VisaInstrument
 
+   InstrumentChannel
+   ChannelList
 
 Plot
 ~~~~
@@ -116,5 +121,3 @@ Utils & misc
    :toctree: generated/
 
    qcodes.utils.validators
-   qcodes.utils.helpers.in_notebook
-

@@ -53,18 +53,6 @@ def tprint(string, dt=1, tag='default'):
         _tprint_times[tag] = time.time()
 
 
-def in_notebook():
-    """
-    Check if inside a notebook.
-    This could mean we are connected to a notebook, but this is not guaranteed.
-    see: http://stackoverflow.com/questions/15411967
-    Returns:
-        bool: True if the code is running with a ipython or jypyter
-
-    """
-    return 'ipy' in repr(sys.stdout)
-
-
 def is_sequence(obj):
     """
     Test if an object is a sequence.

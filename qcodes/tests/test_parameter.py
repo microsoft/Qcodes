@@ -7,9 +7,10 @@ from unittest import TestCase
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter,
-    ManualParameter, StandardParameter)
+    ManualParameter, StandardParameter, InstrumentRefParameter)
 from qcodes.utils.helpers import LogCapture
 from qcodes.utils.validators import Numbers
+from qcodes.tests.instrument_mocks import DummyInstrument
 
 
 class GettableParam(Parameter):
@@ -636,3 +637,15 @@ class TestStandardParam(TestCase):
 
         self._p = 'PVAL: 1'
         self.assertEqual(p(), 'on')
+
+
+class TestInstrumentRefParameter(TestCase):
+    def test_get_instr(self):
+        a = DummyInstrument('dummy_holder')
+        d = DummyInstrument('dummy')
+        a.add_parameter('test', parameter_class=InstrumentRefParameter)
+
+        a.test.set(d.name)
+
+        self.assertEqual(a.test.get(), d.name)
+        self.assertEqual(a.test.get_instr(), d)

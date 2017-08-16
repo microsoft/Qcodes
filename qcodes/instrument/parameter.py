@@ -67,7 +67,7 @@ from qcodes.utils.helpers import (permissive_range, wait_secs, is_sequence,
                                   full_class, named_repr, warn_units)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.command import Command, NoCommandError
-from qcodes.utils.validators import Validator, Numbers, Ints, Enum
+from qcodes.utils.validators import Validator, Numbers, Ints, Enum, Strings
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
 
@@ -97,6 +97,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
+
     def __init__(self, name, instrument, snapshot_get, metadata,
                  snapshot_value=True):
         super().__init__(metadata)
@@ -281,6 +282,7 @@ class Parameter(_BaseParameter):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
+
     def __init__(self, name, instrument=None, label=None,
                  unit=None, units=None, vals=None, docstring=None,
                  snapshot_get=True, snapshot_value=True, metadata=None):
@@ -327,6 +329,14 @@ class Parameter(_BaseParameter):
             self._vals = vals
         else:
             raise TypeError('vals must be a Validator')
+
+    def increment(self, value):
+        """ Increment the parameter with a value
+
+        Args:
+            value (float): value to be added to the parameter
+        """
+        self.set(self.get() + value)
 
     def validate(self, value):
         """
@@ -455,6 +465,7 @@ class ArrayParameter(_BaseParameter):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
+
     def __init__(self, name, shape, instrument=None,
                  label=None, unit=None, units=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
@@ -622,6 +633,7 @@ class MultiParameter(_BaseParameter):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
+
     def __init__(self, name, names, shapes, instrument=None,
                  labels=None, units=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
@@ -782,6 +794,7 @@ class StandardParameter(Parameter):
     Raises:
         NoCommandError: if get and set are not found
     """
+
     def __init__(self, name, instrument=None,
                  get_cmd=None, get_parser=None,
                  set_cmd=None, set_parser=None,
@@ -1073,12 +1086,13 @@ class ManualParameter(Parameter):
         instrument (Optional[Instrument]): the instrument this applies to,
             if any.
 
-        initial_value (Optional[str]): starting value, the
-            only invalid value allowed, and None is only allowed as an initial
-            value, it cannot be set later
+        initial_value (Optional[str]): starting value, may be None even if
+            None does not pass the validator. None is only allowed as an
+            initial value and cannot be set after initiation.
 
         **kwargs: Passed to Parameter parent class
     """
+
     def __init__(self, name, instrument=None, initial_value=None, **kwargs):
         super().__init__(name=name, instrument=instrument, **kwargs)
         self._meta_attrs.extend(['initial_value'])
@@ -1116,6 +1130,7 @@ class GetLatest(DelegateAttributes, DeferredOperations):
     Args:
         parameter (Parameter): Parameter to be wrapped
     """
+
     def __init__(self, parameter):
         self.parameter = parameter
 
@@ -1288,3 +1303,50 @@ class CombinedParameter(Metadatable):
             meta_data[param.full_name] = param.snapshot()
 
         return meta_data
+
+
+class InstrumentRefParameter(ManualParameter):
+    """
+    An InstrumentRefParameter
+
+    Args:
+        name (string): the name of the parameter that one wants to add.
+
+        instrument (Optional[Instrument]): the "parent" instrument this
+            parameter is attached to, if any.
+
+        initial_value (Optional[str]): starting value, may be None even if
+            None does not pass the validator. None is only allowed as an
+            initial value and cannot be set after initiation.
+
+        **kwargs: Passed to InstrumentRefParameter parent class
+
+    This parameter is useful when one needs a reference to another instrument
+    from within an instrument, e.g., when creating a meta instrument that
+    sets parameters on instruments it contains.
+    """
+
+    def get_instr(self):
+        """
+        Returns the instance of the instrument with the name equal to the
+        value of this parameter.
+        """
+        ref_instrument_name = self.get()
+        # note that _instrument refers to the instrument this parameter belongs
+        # to, while the ref_instrument_name is the instrument that is the value
+        # of this parameter.
+        return self._instrument.find_instrument(ref_instrument_name)
+
+    def set_validator(self, vals):
+        """
+        Set a validator `vals` for this parameter.
+
+        Args:
+            vals (Validator):  validator to set
+        """
+        if vals is None:
+            self._vals = Strings()
+        elif isinstance(vals, Validator):
+            self._vals = vals
+        else:
+            raise TypeError('vals must be a Validator')
