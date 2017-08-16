@@ -11,11 +11,10 @@ class SD_FPGA(SD_Module):
 
     def __init__(self, name, chassis, slot, **kwargs):
         super().__init__(name, chassis, slot, **kwargs)
-
         # Open the device, using the specified chassis and slot number
         FPGA_name = self.SD_module.getProductNameBySlot(chassis, slot) + '_FPGA'
         if isinstance(FPGA_name, str):
-            result_code = self.awg.openWithSlot(FPGA_name, chassis, slot)
+            result_code = self.SD_module.openWithSlot(FPGA_name, chassis, slot)
             if result_code <= 0:
                 raise Exception('Could not open FPGA '
                                 'error code {}'.format(result_code))
