@@ -435,6 +435,15 @@ class Instrument(InstrumentBase):
         self.remove_instance(self)
 
     @classmethod
+    def close_all(cls):
+        for inststr in list(cls._all_instruments):
+            try:
+                inst = cls.find_instrument(inststr)
+                inst.close()
+            except KeyError:
+                pass
+
+    @classmethod
     def record_instance(cls, instance):
         """
         Record (a weak ref to) an instance in a class's instance list.
