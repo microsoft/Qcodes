@@ -53,7 +53,7 @@ def current_driver(request):
     """
     ip_address = "127.0.0.1"  # Should be local host
     ports = {"x": 1025, "y": 1026, "z": 1027}  # Ports lower then 1024 are reserved under linux
-    log_folder = None
+    log_folder = None  # r"C:\Users\a-sochat\Desktop"
 
     mock_instruments = []
 
