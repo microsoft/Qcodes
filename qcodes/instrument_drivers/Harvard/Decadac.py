@@ -306,7 +306,8 @@ class DacSlot(InstrumentChannel, DacReader):
         # Create a list of channels in the slot
         self.channels = ChannelList(self, "Slot_Channels", DacChannel)
         for i in range(4):
-            self.channels.append(DacChannel(self, "Chan{}".format(i), i))
+            self.channels.append(DacChannel(self, "Chan{}".format(i), i,
+                                            min_val=min_val, max_val=max_val))
 
         # Set the slot mode. Valid modes are:
         #   Off: Channel outputs are disconnected from the input, grounded with 10MOhm.
