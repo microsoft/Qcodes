@@ -2,7 +2,6 @@
 A debug module for the AMI430 instrument driver. We cannot rely on the physical instrument to be present
 which is why we need to mock it.
 """
-import os
 import re
 import sys
 from datetime import datetime
@@ -16,10 +15,6 @@ from qcodes.instrument.mock_ip import MockAMI430
 # Load the instrument driver
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430, AMI430_3D
 from qcodes.math.field_vector import FieldVector
-
-coil_constant = 1  # [T/A]
-current_rating = 10  # [A]
-current_ramp_limit = 100  # [A/s]
 
 field_limit = [  # If any of the field limit functions are satisfied we are in the safe zone.
     lambda x, y, z: x == 0 and y == 0 and z < 3,  # We can have higher field along the z-axis if x and y are zero.
@@ -53,18 +48,12 @@ def current_driver(request):
     """
     ip_address = "127.0.0.1"  # Should be local host
     ports = {"x": 1025, "y": 1026, "z": 1027}  # Ports lower then 1024 are reserved under linux
-    log_folder = None  # r"C:\Users\a-sochat\Desktop"
 
     mock_instruments = []
 
     for axis, port in ports.items():
 
-        if log_folder is not None:
-            log_file = os.path.join(log_folder, "virtual_ip_log_{}.txt").format(axis)
-        else:
-            log_file = None
-
-        mock_instrument = MockAMI430(axis, ip_address, port, log_file=log_file, output_stream=msg_stream)
+        mock_instrument = MockAMI430(axis, port, output_stream=msg_stream)
         # Alternatively, if output_stream="stdout", messages will be printed to screen.
 
         if mock_instrument.error == "Ok":
@@ -91,27 +80,18 @@ def instantiate_driver(ip_address, ports):
             "AMI430_x",
             ip_address,
             ports["x"],
-            coil_constant,
-            current_rating,
-            current_ramp_limit,
             testing=True
         ),
         AMI430(
             "AMI430_y",
             ip_address,
             ports["y"],
-            coil_constant,
-            current_rating,
-            current_ramp_limit,
             testing=True
         ),
         AMI430(
             "AMI430_z",
             ip_address,
             ports["z"],
-            coil_constant,
-            current_rating,
-            current_ramp_limit,
             testing=True
         ),
         field_limit

@@ -8,21 +8,44 @@ import socket
 import sys
 import time
 from datetime import datetime
+from queue import Queue
 from threading import Thread
 
 
+class StdOutQueue(Queue):
+    """
+    This class will allow us to redirect stdout to a Queue, which can be handy to test if correct output is
+    printed to screen. This is also handy for inter-thread communication.
+    """
+
+    def __init__(self, *args, **kwargs):
+        Queue.__init__(self, *args, **kwargs)
+
+    def write(self, msg):
+        self.put(msg)
+
+    def flush(self):
+        sys.__stdout__.flush()
+
+
 class MockIPInstrument(object):
-    def __init__(self, name, ip_address, port, log_file=None, max_connections=5, output_stream=None):
+    def __init__(self, name, port, ip_address="127.0.0.1", output_stream=None):
         self.name = name
         self.ip_address = ip_address
         self.port = port
-        self.log_file = log_file
-        self.max_connections = max_connections
 
-        if output_stream == "stdout":
-            self.output_stream = sys.stdout
+        if output_stream in ["stdout", None]:
+            self._output_stream = sys.stdout
         else:
-            self.output_stream = output_stream
+            if hasattr(output_stream, "write"):
+                self._output_stream = output_stream
+                self._output_stream_is_file = False
+            else:
+                try:
+                    self._output_stream = open(output_stream, "w")
+                    self._output_stream_is_file = True
+                except FileNotFoundError:
+                    raise ValueError("output stream needs to either have a write method or be a file path")
 
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -42,6 +65,8 @@ class MockIPInstrument(object):
     def stop(self):
         self.quit = True
         self.__main__thread__.join()
+        if self._output_stream_is_file:
+            self._output_stream.close()
 
     def _getter(self, attribute):
         return lambda _: getattr(self, attribute)
@@ -53,16 +78,12 @@ class MockIPInstrument(object):
         now = datetime.now()
         log_msg = "[{}] {}: {}".format(now.strftime("%d:%m:%Y-%H:%M:%S.%f"), self.name, msg)
 
-        if self.output_stream is not None:
-            self.output_stream.write(log_msg)
-
-        if self.log_file is not None:
-            with open(self.log_file, "a") as fh:
-                fh.write(log_msg + "\n")
+        if self._output_stream is not None:
+            self._output_stream.write(log_msg)
 
     def _main_thread_(self):
 
-        self.socket.listen(self.max_connections)
+        self.socket.listen(1)
         socket_read_list = [self.socket]
 
         while not self.quit:
@@ -125,7 +146,7 @@ class MockAMI430(MockIPInstrument):
 
     quench_state = {False: "0", True: "1"}
 
-    def __init__(self, name, ip_address, port, log_file=None, max_connections=5, output_stream="stdout"):
+    def __init__(self, name, port, ip_address="127.0.0.1", output_stream="stdout"):
 
         self._field_mag = 0
         self._field_target = 0
@@ -184,11 +205,14 @@ class MockAMI430(MockIPInstrument):
             "RAMP:RATE:CURRENT": {
                 "get": "0.1000,50.0000",
                 "set": None
+            },
+            "COIL": {
+                "get": "1",
+                "set": None
             }
         }
 
-        super(MockAMI430, self).__init__(name, ip_address, port, log_file=log_file, max_connections=max_connections,
-                                         output_stream=output_stream)
+        super(MockAMI430, self).__init__(name, port, ip_address=ip_address, output_stream=output_stream)
 
     @staticmethod
     def message_parser(gs, msg_str, key):
@@ -201,6 +225,10 @@ class MockAMI430(MockIPInstrument):
         * If gs = "set"
         If key = "STATE" and msg_str = "STATE 2,1" then match = True and args = "2,1". If key="STATE" and
         msg_str =  STATE:ELSE 2,1 then match is False.
+
+        Consult [1] for a complete description of the AMI430 protocol.
+
+        [1] http://www.americanmagnetics.com/support/manuals/mn-4Q06125PS-430.pdf
 
         :param gs: string, "get", or "set"
         :param msg_str: string, the message string the mock instrument gets through the network socket.
@@ -233,11 +261,6 @@ class MockAMI430(MockIPInstrument):
 
     def _handle_messages(self, msg):
         """
-        This method needs to reside in the subclass as each instruments has its own communications protocol. Consult
-        [1] for a description of the AMI430 protocol.
-
-        [1] http://www.americanmagnetics.com/support/manuals/mn-4Q06125PS-430.pdf
-
         :param msg: string, a message received through the socket communication layer
         :return: string or None,    If the type of message requests a value (a get message) then this value is returned
                                     by this function. A set message will return a None value.
@@ -272,7 +295,6 @@ class MockAMI430(MockIPInstrument):
         return self._state == MockAMI430.states["PAUSED"]
 
     def _do_ramp(self, _):
-
         self._log("Ramping to {}".format(self._field_target))
         self._state = MockAMI430.states["RAMPING to target field/current"]
         time.sleep(0.1)  # Lets pretend to be ramping for a bit

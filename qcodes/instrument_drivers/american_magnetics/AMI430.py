@@ -6,6 +6,7 @@ from functools import partial
 import numpy as np
 
 from qcodes import Instrument, IPInstrument
+from qcodes.instrument.mock_ip import MockAMI430
 from qcodes.math.field_vector import FieldVector
 from qcodes.utils.validators import Numbers, Anything
 
@@ -27,25 +28,19 @@ class AMI430(IPInstrument):
         current_ramp_limit (float): current ramp limit in ampere per second
         persistent_switch (bool): whether this magnet has a persistent switch
     """
-    def __init__(self, name, address, port, coil_constant, current_rating,
-                 current_ramp_limit, persistent_switch=True,
+
+    mocker = MockAMI430
+
+    def __init__(self, name, address, port, persistent_switch=True,
                  reset=False, terminator='\r\n', testing=False, **kwargs):
+
+        self._testing = testing
 
         super().__init__(name, address, port, terminator=terminator,
                          write_confirmation=False, **kwargs)
 
         self._parent_instrument = None
-
-        self._coil_constant = coil_constant
-        self._current_rating = current_rating
-        self._current_ramp_limit = current_ramp_limit
-        self._persistent_switch = persistent_switch
-
-        self._field_rating = coil_constant * current_rating
-        self._field_ramp_limit = coil_constant * current_ramp_limit
-
         # If we are in testing mode there is no need to have pauses built-in when setting field values.
-        self._testing = testing
 
         # Make sure the ramp rate time unit is seconds
         if int(self.ask('RAMP:RATE:UNITS?')) == 1:
@@ -54,6 +49,20 @@ class AMI430(IPInstrument):
         # Make sure the field unit is Tesla
         if int(self.ask('FIELD:UNITS?')) == 0:
             self.write('CONF:FIELD:UNITS 1')
+
+        ramp_rate_reply = self.ask("RAMP:RATE:CURRENT:1?")  # NB: We assume that we do not have segments and that
+        # current ramp rate can always be known with the command "RAMP:RATE:CURRENT" with argument "1"
+        current_ramp_limit, current_rating = [float(i) for i in ramp_rate_reply.split(",")]
+
+        coil_constant = float(self.ask("COIL?"))
+        self._coil_constant = coil_constant
+        self._current_rating = current_rating
+
+        self._current_ramp_limit = current_ramp_limit
+        self._persistent_switch = persistent_switch
+
+        self._field_rating = coil_constant * current_rating
+        self._field_ramp_limit = coil_constant * current_ramp_limit
 
         self.add_parameter('field',
                            get_cmd='FIELD:MAG?',
