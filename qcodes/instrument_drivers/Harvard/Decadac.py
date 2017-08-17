@@ -397,7 +397,7 @@ class Decadac(VisaInstrument, DacReader):
         slots = ChannelList(self, "Slots", DacSlot)
         for i in range(6):  # Create the 6 DAC slots
             slots.append(DacSlot(self, "Slot{}".format(i), i, min_val, max_val))
-            channels.extend(self.slots[i].channels)
+            channels.extend(slots[i].channels)
         slots.lock()
         channels.lock()
         self.add_submodule("slots", slots)
