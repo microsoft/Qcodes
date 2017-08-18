@@ -29,17 +29,15 @@ class AMI430(IPInstrument):
         persistent_switch (bool): whether this magnet has a persistent switch
     """
 
+    mocker_class = MockAMI430
+
     def __init__(self, name, address=None, port=None, persistent_switch=True,
                  reset=False, terminator='\r\n', testing=False, **kwargs):
-
-        self._testing = testing
-        if testing:
-            self.mocker = MockAMI430(name)
 
         if None in [address, port] and not testing:
             raise ValueError("The port and address values need to be given if not in testing mode")
 
-        super().__init__(name, address, port, terminator=terminator,
+        super().__init__(name, address, port, terminator=terminator, testing=testing,
                          write_confirmation=False, **kwargs)
 
         self._parent_instrument = None
@@ -134,15 +132,9 @@ class AMI430(IPInstrument):
 
         self.connect_message()
 
-    def get_mocker_messages(self):
-        if not self._testing:
-            raise ValueError("Messages from the mocker are only available in testing mode")
-
-        return self.mocker.get_log_messages()
-
     def _sleep(self, t):
         """Sleep for a number of seconds t. If we are in testing mode, commit this"""
-        if self._testing:
+        if self.testing:
             return
         else:
             time.sleep(t)
@@ -290,17 +282,8 @@ class AMI430(IPInstrument):
         430 programmer
         :return: None
         """
-        if not self._testing:
-            super()._connect()
-            print(self._recv())
-
-    def is_testing(self):
-        return self._testing
-
-    def get_mock_messages(self):
-        if not self._testing:
-            raise ValueError("Cannot get mock messages if not in testing mode")
-        return self.mocker.get_log_messages()
+        super()._connect()
+        self.flush_connection()
 
 
 class AMI430_3D(Instrument):
