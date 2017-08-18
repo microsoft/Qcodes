@@ -6,7 +6,7 @@ from functools import partial
 import numpy as np
 
 from qcodes import Instrument, IPInstrument
-from qcodes.instrument.mock_ip import MockAMI430
+from qcodes.instrument.mockers.ami430 import MockAMI430
 from qcodes.math.field_vector import FieldVector
 from qcodes.utils.validators import Numbers, Anything
 
@@ -29,12 +29,15 @@ class AMI430(IPInstrument):
         persistent_switch (bool): whether this magnet has a persistent switch
     """
 
-    mocker = MockAMI430
-
-    def __init__(self, name, address, port, persistent_switch=True,
+    def __init__(self, name, address=None, port=None, persistent_switch=True,
                  reset=False, terminator='\r\n', testing=False, **kwargs):
 
         self._testing = testing
+        if testing:
+            self.mocker = MockAMI430(name)
+
+        if None in [address, port] and not testing:
+            raise ValueError("The port and address values need to be given if not in testing mode")
 
         super().__init__(name, address, port, terminator=terminator,
                          write_confirmation=False, **kwargs)
@@ -130,6 +133,12 @@ class AMI430(IPInstrument):
             self.reset()
 
         self.connect_message()
+
+    def get_mocker_messages(self):
+        if not self._testing:
+            raise ValueError("Messages from the mocker are only available in testing mode")
+
+        return self.mocker.get_log_messages()
 
     def _sleep(self, t):
         """Sleep for a number of seconds t. If we are in testing mode, commit this"""
@@ -281,8 +290,17 @@ class AMI430(IPInstrument):
         430 programmer
         :return: None
         """
-        super()._connect()
-        print(self._recv())
+        if not self._testing:
+            super()._connect()
+            print(self._recv())
+
+    def is_testing(self):
+        return self._testing
+
+    def get_mock_messages(self):
+        if not self._testing:
+            raise ValueError("Cannot get mock messages if not in testing mode")
+        return self.mocker.get_log_messages()
 
 
 class AMI430_3D(Instrument):
@@ -595,3 +613,12 @@ class AMI430_3D(Instrument):
     def _set_rho(self, rho):
         self._set_point.set_component(rho=rho)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
+
+    def get_mocker_messages(self):
+        messages = []
+        for name in ["x", "y", "z"]:
+            instrument = getattr(self, "_instrument_{}".format(name))
+            if instrument.is_testing():
+                messages += instrument.get_mock_messages()
+
+        return messages

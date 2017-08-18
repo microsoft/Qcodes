@@ -3,16 +3,11 @@ A debug module for the AMI430 instrument driver. We cannot rely on the physical 
 which is why we need to mock it.
 """
 import re
-import sys
 from datetime import datetime
-from queue import Queue
 
 import numpy as np
 import pytest
 
-# Load the mock instrument servers
-from qcodes.instrument.mock_ip import MockAMI430
-# Load the instrument driver
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430, AMI430_3D
 from qcodes.math.field_vector import FieldVector
 
@@ -22,101 +17,24 @@ field_limit = [  # If any of the field limit functions are satisfied we are in t
 ]
 
 
-class StdOutQueue(Queue):
-    """
-    This class will allow us to redirect stdout to a Queue, which can be handy to test if correct output is
-    printed to screen. This is also handy for inter-thread communication.
-    """
-
-    def __init__(self, *args, **kwargs):
-        Queue.__init__(self, *args, **kwargs)
-
-    def write(self, msg):
-        self.put(msg)
-
-    def flush(self):
-        sys.__stdout__.flush()
-
-
-msg_stream = StdOutQueue()  # Mock instrument output shall be available through this Queue
-
-
 @pytest.fixture(scope='module')
 def current_driver(request):
     """
     Start three mock instruments representing current drivers for the x, y and z directions.
     """
-    ip_address = "127.0.0.1"  # Should be local host
-    ports = {"x": 1025, "y": 1026, "z": 1027}  # Ports lower then 1024 are reserved under linux
-
-    mock_instruments = []
-
-    for axis, port in ports.items():
-
-        mock_instrument = MockAMI430(axis, port, output_stream=msg_stream)
-        # Alternatively, if output_stream="stdout", messages will be printed to screen.
-
-        if mock_instrument.error == "Ok":
-            mock_instrument.start()
-            mock_instruments.append(mock_instrument)
-        else:
-            print(mock_instrument.error)
-            sys.exit(1)
-
-    def stop_mock_instruments():
-        for mocker in mock_instruments:
-            mocker.stop()
-
-    request.addfinalizer(stop_mock_instruments)
-
-    return instantiate_driver(ip_address, ports)
-
-
-def instantiate_driver(ip_address, ports):
 
     driver = AMI430_3D(
         "AMI430-3D",
-        AMI430(
-            "AMI430_x",
-            ip_address,
-            ports["x"],
-            testing=True
-        ),
-        AMI430(
-            "AMI430_y",
-            ip_address,
-            ports["y"],
-            testing=True
-        ),
-        AMI430(
-            "AMI430_z",
-            ip_address,
-            ports["z"],
-            testing=True
-        ),
+        AMI430("x", testing=True),
+        AMI430("y", testing=True),
+        AMI430("z", testing=True),
         field_limit
     )
 
     return driver
 
 
-def get_instrument_logs():
-    """
-    Get output messages from the mock instruments. These are normally written to stdout, but are now redirected
-    to msg_stream
-    """
-    messages = []
-    while True:
-        try:
-            msg = msg_stream.get_nowait()
-            messages.append(msg)
-        except:  # The queue is empty
-            break
-
-    return messages
-
-
-def get_instruments_ramp_messages():
+def get_instruments_ramp_messages(current_driver):
     """
     Listen to the mock instruments and parse the messages to extract the ramping targets. This is useful in determining
     if the set targets arrive at the individual instruments correctly. The time stamps are useful to test that the
@@ -126,7 +44,7 @@ def get_instruments_ramp_messages():
     search_string = "\[(.*)\] ([x, y, z]): Ramping to (.*)"
     # We expect the log messages to be in the format "[<time stamp>] <name>: <message>", where name is either x, y or z
     reported_ramp_targets = {}
-    messages = get_instrument_logs()
+    messages = current_driver.get_mocker_messages()
 
     for msg in messages:
         result = re.search(search_string, msg)
@@ -205,7 +123,7 @@ def test_cartesian_setpoints(current_driver):
         set_target = [get_random_coordinate(name) for name in ["x", "y", "z"]]
         current_driver.cartesian(set_target)
 
-        reported_ramp_targets = get_instruments_ramp_messages()
+        reported_ramp_targets = get_instruments_ramp_messages(current_driver)
         get_target = {k: v["value"] for k, v in reported_ramp_targets.items()}
 
         set_vector = FieldVector(*set_target)
@@ -227,7 +145,7 @@ def test_spherical_setpoints(current_driver):
         set_target = {name: get_random_coordinate(name) for name in names}
         current_driver.spherical([set_target[name] for name in names])
 
-        reported_ramp_targets = get_instruments_ramp_messages()
+        reported_ramp_targets = get_instruments_ramp_messages(current_driver)
         get_target = {k: v["value"] for k, v in reported_ramp_targets.items()}
 
         set_vector = FieldVector(**set_target)
@@ -249,7 +167,7 @@ def test_cylindrical_setpoints(current_driver):
         set_target = {name: get_random_coordinate(name) for name in names}
         current_driver.cylindrical([set_target[name] for name in names])
 
-        reported_ramp_targets = get_instruments_ramp_messages()
+        reported_ramp_targets = get_instruments_ramp_messages(current_driver)
         get_target = {k: v["value"] for k, v in reported_ramp_targets.items()}
 
         set_vector = FieldVector(**set_target)
@@ -274,7 +192,8 @@ def test_ramp_down_first(current_driver):
         # Check if y is adjusted first. We will perform the same test with z in the third iteration
 
         current_driver.cartesian(set_point)
-        reported_ramp_targets = get_instruments_ramp_messages()  # get the logging outputs from the instruments.
+        reported_ramp_targets = get_instruments_ramp_messages(
+            current_driver)  # get the logging outputs from the instruments.
         times = {k: v["time"] for k, v in reported_ramp_targets.items()}  # extract the time stamps
 
         for ramp_up_name in np.delete(names, count):
