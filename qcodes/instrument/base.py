@@ -1,16 +1,17 @@
 """Instrument base class."""
 import logging
-import numpy as np
 import time
 import warnings
 import weakref
 from typing import Sequence
 
-from qcodes.utils.metadata import Metadatable
+import numpy as np
+
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
+from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
-from .parameter import StandardParameter
 from .function import Function
+from .parameter import StandardParameter
 
 
 class InstrumentBase(Metadatable, DelegateAttributes):
@@ -150,12 +151,13 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         Returns:
             dict: base snapshot
         """
-        snap = {'functions': dict((name, func.snapshot(update=update))
-                                  for name, func in self.functions.items()),
-                'submodules': dict((name, subm.snapshot(update=update))
-                                   for name, subm in self.submodules.items()),
-                '__class__': full_class(self),
-                }
+        
+        snap = {
+            "functions": {name: func.snapshot(update=update) for name, func in self.functions.items()},
+            "submodules": {name: subm.snapshot(update=update) for name, subm in self.submodules.items()},
+            "__class__": full_class(self)
+        }
+
         snap['parameters'] = {}
         for name, param in self.parameters.items():
             update = update
@@ -554,7 +556,10 @@ class Instrument(InstrumentBase):
                 including the command and the instrument.
         """
         try:
-            self.write_raw(cmd)
+            if hasattr(self, "_testing") and self._testing:
+                self.mocker.write(cmd)
+            else:
+                self.write_raw(cmd)
         except Exception as e:
             e.args = e.args + ('writing ' + repr(cmd) + ' to ' + repr(self),)
             raise e
@@ -593,7 +598,13 @@ class Instrument(InstrumentBase):
                 including the command and the instrument.
         """
         try:
-            return self.ask_raw(cmd)
+            if hasattr(self, "_testing") and self._testing:
+                answer = self.mocker.ask(cmd)
+            else:
+                answer = self.ask_raw(cmd)
+
+            return answer
+
         except Exception as e:
             e.args = e.args + ('asking ' + repr(cmd) + ' to ' + repr(self),)
             raise e
