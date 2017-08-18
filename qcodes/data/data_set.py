@@ -638,6 +638,7 @@ class _PrettyPrintDict(dict):
     simple wrapper for a dict to repr its items on separate lines
     with a bit of indentation
     """
+
     def __repr__(self):
         body = '\n  '.join([repr(k) + ': ' + self._indent(repr(v))
                             for k, v in self.items()])
