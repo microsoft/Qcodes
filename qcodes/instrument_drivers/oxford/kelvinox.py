@@ -1,4 +1,4 @@
-# OxfordInstruments_Kelvinox_IGH.py class, to perform the communication between the Wrapper and the device
+# OxfordInstruments_Kelvinox_IGH class, to perform the communication between the Wrapper and the device
 # Copyright (c) 2017 QuTech (Delft)
 # Code is available under the available under the `MIT open-source license <https://opensource.org/licenses/MIT>`_
 
@@ -99,8 +99,8 @@ class OxfordInstruments_Kelvinox_IGH(VisaInstrument):
                            set_cmd=self._set_V6_valve)
         self.add_parameter('V12A_valve',
                            unit='%',
-                           get_cmd=self._get_V6_valve,
-                           set_cmd=self._set_V6_valve)
+                           get_cmd=self._get_V12A_valve,
+                           set_cmd=self._set_V12A_valve)
         self.add_parameter('still_status',
                            get_cmd=self._get_still_status)
         self.add_parameter('sorb_status',
@@ -111,8 +111,8 @@ class OxfordInstruments_Kelvinox_IGH(VisaInstrument):
                            set_cmd=self._set_still_power)
         self.add_parameter('sorb_temp',
                            unit='K',
-                           get_cmd=self._get_still_power,
-                           set_cmd=self._set_still_power)
+                           get_cmd=self._get_sorb_temp,
+                           set_cmd=self._set_sorb_temp)
         self.add_parameter('remote_status',
                            get_cmd=self._get_remote_status,
                            set_cmd=self._set_remote_status,
@@ -163,7 +163,10 @@ class OxfordInstruments_Kelvinox_IGH(VisaInstrument):
         return mes
 
     def identify(self):
-        """Identify the device"""
+        """Identify the device
+        
+        Returns a string of the form `'IGH    Version 3.02 (c) OXFORD 1998\r'`
+        """
         log.info('Identify the device')
         return self._execute('V')
 
@@ -185,7 +188,7 @@ class OxfordInstruments_Kelvinox_IGH(VisaInstrument):
 
     def get_idn(self):
         """
-        Overides the function of Instrument since IPS120 does not support '*IDN?'
+        Overides the function of Instrument since IPS120 does not support `*IDN?`
 
         This string is supposed to be a comma-separated list of vendor, model,
         serial, and firmware, but semicolon and colon are also common
@@ -194,7 +197,8 @@ class OxfordInstruments_Kelvinox_IGH(VisaInstrument):
         Returns:
             A dict containing vendor, model, serial, and firmware.
         """
-        idparts = ['Oxford Instruments', 'Kelvinox IGH', None, None]
+        identity = self.identify()
+        idparts = [identity[24:30], identity[:3], None, identity[15:19]]
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
