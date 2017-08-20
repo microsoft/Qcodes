@@ -1,6 +1,7 @@
 # OxfordInstruments_Kelvinox_IGH class, to perform the communication between the Wrapper and the device
 # Copyright (c) 2017 QuTech (Delft)
-# Code is available under the available under the `MIT open-source license <https://opensource.org/licenses/MIT>`_
+# Code is available under the available under the `MIT open-source license
+# <https://opensource.org/licenses/MIT>`_
 
 # Sjaak van Diepen <c.j.vandiepen@gmail.com>, 2017
 # Guenevere Prawiroatmodjo <guen@vvtp.tudelft.nl>, 2009
@@ -31,6 +32,7 @@ class OxfordInstruments_Kelvinox_IGH(VisaInstrument):
     Note: Since the ISOBUS allows for several instruments to be managed in parallel, the command
     which is sent to the device starts with '@n', where n is the ISOBUS instrument number.
     """
+
     def __init__(self, name, address, number=5, **kwargs):
         """
         Initializes the Oxford Instruments Kelvinox IGH Dilution Refrigerator.
@@ -120,7 +122,8 @@ class OxfordInstruments_Kelvinox_IGH(VisaInstrument):
 
         for valve in self._valve_map:
             self.add_parameter('V%s_valve' % self._valve_map[valve],
-                               get_cmd=partial(self._get_valve_status, valve=valve),
+                               get_cmd=partial(
+                                   self._get_valve_status, valve=valve),
                                set_cmd=partial(self._set_valve_status, valve=valve))
 
     def get_all(self):
@@ -164,7 +167,7 @@ class OxfordInstruments_Kelvinox_IGH(VisaInstrument):
 
     def identify(self):
         """Identify the device
-        
+
         Returns a string of the form `'IGH    Version 3.02 (c) OXFORD 1998\r'`
         """
         log.info('Identify the device')
@@ -369,7 +372,8 @@ class OxfordInstruments_Kelvinox_IGH(VisaInstrument):
         result = self._execute('X')[7:15]
         # change the hexadecimal number to a 20 bit string
         full_status = numpy.binary_repr(int(result, 16), width=20)
-        full_status = full_status[::-1]  # reverse the order of the binary string
+        # reverse the order of the binary string
+        full_status = full_status[::-1]
         status = full_status[valve - 1]
         val_mapping = {0: 'off', 1: 'on'}
         return val_mapping[int(status)]
