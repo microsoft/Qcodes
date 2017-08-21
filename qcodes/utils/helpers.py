@@ -450,3 +450,23 @@ def compare_dictionaries(dict_1, dict_2,
 def warn_units(class_name, instance):
     logging.warning('`units` is deprecated for the `' + class_name +
                     '` class, use `unit` instead. ' + repr(instance))
+
+def forground_qt_window(window):
+    try:
+        from win32gui import SetWindowPos
+        import win32con
+        # use the idea from
+        # https://stackoverflow.com/questions/12118939/how-to-make-a-pyqt4-window-jump-to-the-front
+        SetWindowPos(window.winId(),
+                     win32con.HWND_TOPMOST, # = always on top. only reliable way to bring it to the front on windows
+                     0, 0, 0, 0,
+                     win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW)
+        SetWindowPos(window.winId(),
+                     win32con.HWND_NOTOPMOST, # disable the always on top, but leave window at its top position
+                     0, 0, 0, 0,
+                     win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW)
+    except ImportError:
+        pass
+    window.show()
+    window.raise_()
+    window.activateWindow()
