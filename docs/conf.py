@@ -383,6 +383,7 @@ try:
 except ImportError as e:
         print(e)
 autodoc_mock_imports.append('pyspcm')
+autodoc_mock_imports.append('scipy')
 autodoc_mock_imports.append('zhinst')
 autodoc_mock_imports.append('zhinst.utils')
 autodoc_mock_imports.append('keysightSD1')
