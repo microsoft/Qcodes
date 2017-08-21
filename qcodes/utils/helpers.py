@@ -451,7 +451,20 @@ def warn_units(class_name, instance):
     logging.warning('`units` is deprecated for the `' + class_name +
                     '` class, use `unit` instead. ' + repr(instance))
 
-def forground_qt_window(window):
+def foreground_qt_window(window):
+    """
+    Try as hard as possible to bring a qt window to the front. This
+    will use pywin32 if installed and running on windows as this
+    seems to be the only reliable way to foreground a window. The
+    build-in qt functions often doesn't work. Note that to use this
+    with pyqtgraphs remote process you should use the ref in that module
+    as in the example below.
+
+    Args:
+        window: handle to qt window to foreground
+    Examples:
+        >>> Qtplot.qt_helpers.foreground_qt_window(plot.win)
+    """
     try:
         from win32gui import SetWindowPos
         import win32con
