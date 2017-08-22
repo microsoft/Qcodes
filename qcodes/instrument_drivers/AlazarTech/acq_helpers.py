@@ -35,7 +35,18 @@ def filter_ls(rec, cutoff, sample_rate, numtaps, axis=-1):
     raise NotImplementedError
 
 
-def sample_to_volt_u12(raw_samples, bps):
+def filter_ham(rec, cutoff, sample_rate, numtaps):
+    raise NotImplementedError
+    # sample_rate = self.sample_rate
+    # nyq_rate = sample_rate / 2.
+    # fir_coef = signal.firwin(numtaps,
+    #                          cutoff / nyq_rate,
+    #                          window="hamming")
+    # filtered_rec = 2 * signal.lfilter(fir_coef, 1.0, rec)
+    # return filtered_rec
+
+
+def sample_to_volt_u12(raw_samples, bps, input_range_volts):
     """
     Applies volts conversion for 12 bit sample data stored
     in 2 bytes
@@ -52,8 +63,6 @@ def sample_to_volt_u12(raw_samples, bps):
     code_zero = (1 << (bps - 1)) - 0.5
     code_range = (1 << (bps - 1)) - 0.5
 
-    # TODO(nataliejpg) make this not hard coded
-    input_range_volts = 1
     # Convert to volts
     volt_samples = np.float64(input_range_volts *
                               (shifted_samples - code_zero) / code_range)

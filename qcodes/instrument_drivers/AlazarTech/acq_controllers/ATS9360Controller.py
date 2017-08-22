@@ -389,7 +389,7 @@ class ATS9360Controller(AcquisitionController):
         # convert rec to volts
         bps = self.board_info['bits_per_sample']
         if bps == 12:
-            volt_rec = helpers.sample_to_volt_u12(record, bps)
+            volt_rec = helpers.sample_to_volt_u12(record, bps, input_range_volts=0.4)
         else:
             logging.warning('sample to volt conversion does not exist for'
                             ' bps != 12, centered raw samples returned')
