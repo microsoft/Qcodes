@@ -98,7 +98,7 @@ class QtPlot(BasePlot):
         pg.mkQApp()
         cls.proc = pgmp.QtProcess()  # pyqtgraph multiprocessing
         cls.rpg = cls.proc._import('pyqtgraph')
-        cls.qc_helpers = QtPlot.proc._import('qcodes.utils.helpers')
+        cls.qc_helpers = cls.proc._import('qcodes.utils.helpers')
 
     def clear(self):
         """
