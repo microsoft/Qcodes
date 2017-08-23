@@ -340,7 +340,7 @@ class AMI430_3D(Instrument):
             'spherical_measured',
             get_cmd=partial(
                 self._get_measured,
-                'field',
+                'r',
                 'theta',
                 'phi'
             ),
@@ -533,7 +533,7 @@ class AMI430_3D(Instrument):
             msg = 'This magnet doesnt belong to its specified parent {}'
             raise NameError(msg.format(self))
 
-    def _get_measured(self, names):
+    def _get_measured(self, *names):
 
         x = self._instrument_x.field()
         y = self._instrument_y.field()
@@ -542,8 +542,12 @@ class AMI430_3D(Instrument):
 
         # Convert angles from radians to degrees
         d = dict(zip(names, measured_values))
-        return [d[name] for name in names]  # Do not do "return list(d.values())", because then there is no
+        return_value = [d[name] for name in names]  # Do not do "return list(d.values())", because then there is no
         # guaranty that the order in which the values are returned is the same as the original intention
+        if len(names) == 1:
+            return_value = return_value[0]
+
+        return return_value
 
     def _get_setpoints(self, *names):
 
@@ -551,8 +555,12 @@ class AMI430_3D(Instrument):
 
         # Convert angles from radians to degrees
         d = dict(zip(names, measured_values))
-        return [d[name] for name in names]  # Do not do "return list(d.values())", because then there is no
+        return_value = [d[name] for name in names]  # Do not do "return list(d.values())", because then there is no
         # guaranty that the order in which the values are returned is the same as the original intention
+        if len(names) == 1:
+            return_value = return_value[0]
+
+        return return_value
 
     def _set_cartesian(self, values):
         x, y, z = values

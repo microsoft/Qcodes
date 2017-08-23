@@ -81,6 +81,12 @@ def test_cartesian_sanity(current_driver):
 
         assert np.allclose(set_target, get_target)
 
+        # test that we can get the individual coordinates
+        x = current_driver.x()
+        y = current_driver.y()
+        z = current_driver.z()
+        assert np.allclose(set_target, [x, y, z])
+
 
 def test_spherical_sanity(current_driver):
     """
@@ -95,6 +101,12 @@ def test_spherical_sanity(current_driver):
 
         assert np.allclose(set_target, get_target)
 
+        # test that we can get the individual coordinates
+        r = current_driver.field()
+        theta = current_driver.theta()
+        phi = current_driver.phi()
+        assert np.allclose(set_target, [r, theta, phi])
+
 
 def test_cylindrical_sanity(current_driver):
     """
@@ -108,6 +120,12 @@ def test_cylindrical_sanity(current_driver):
         get_target = current_driver.cylindrical()
 
         assert np.allclose(set_target, get_target)
+
+        # test that we can get the individual coordinates
+        rho = current_driver.rho()
+        z = current_driver.z()
+        phi = current_driver.phi()
+        assert np.allclose(set_target, [rho, phi, z])
 
 
 def test_cartesian_setpoints(current_driver):
@@ -175,6 +193,43 @@ def test_cylindrical_setpoints(current_driver):
         assert set_vector.is_equal(get_vector)
 
 
+def test_measured(current_driver):
+    """
+    Simply call the measurement methods and verify that no exceptions are raised.
+    """
+    n_repeats = 10
+
+    for _ in range(n_repeats):
+        set_target = [get_random_coordinate(name) for name in ["x", "y", "z"]]
+        current_driver.cartesian(set_target)
+
+        cartesian = current_driver.cartesian_measured()
+        cartesian_x = current_driver.x_measured()
+        cartesian_y = current_driver.y_measured()
+        cartesian_z = current_driver.z_measured()
+
+        assert FieldVector(*set_target).is_equal(FieldVector(x=cartesian_x, y=cartesian_y, z=cartesian_z))
+        assert np.allclose(cartesian, [cartesian_x, cartesian_y, cartesian_z])
+
+        spherical = current_driver.spherical_measured()
+        spherical_field = current_driver.field_measured()
+        spherical_theta = current_driver.theta_measured()
+        spherical_phi = current_driver.phi_measured()
+
+        assert FieldVector(*set_target).is_equal(FieldVector(
+            r=spherical_field,
+            theta=spherical_theta,
+            phi=spherical_phi)
+        )
+        assert np.allclose(spherical, [spherical_field, spherical_theta, spherical_phi])
+
+        cylindrical = current_driver.cylindrical_measured()
+        cylindrical_rho = current_driver.rho_measured()
+
+        assert FieldVector(*set_target).is_equal(FieldVector(rho=cylindrical_rho, phi=spherical_phi, z=cartesian_z))
+        assert np.allclose(cylindrical, [cylindrical_rho, spherical_phi, cartesian_z])
+
+
 def test_ramp_down_first(current_driver):
     """
     To prevent quenching of the magnets, we need the driver to always be within the field limits. Part of the strategy
@@ -203,7 +258,7 @@ def test_ramp_down_first(current_driver):
 def test_field_limit_exception(current_driver):
     """
     Test that an exception is raised if we intentionally set the field beyond the limits. Together with the
-    test_ramp_down_first test this should prevent us from ever exceeding set point limits.
+    no_test_ramp_down_first test this should prevent us from ever exceeding set point limits.
     In this test we generate a regular grid in three-D and assert that the driver can be set to a set point if
     any of of the requirements given by field_limit is satisfied. An error *must* be raised if none of the
     safety limits are satisfied.
