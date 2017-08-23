@@ -460,6 +460,24 @@ class Instrument(InstrumentBase):
         self.remove_instance(self)
 
     @classmethod
+    def close_all(cls):
+        """
+        Try to close all instruments registered in
+        `_all_instruments` This is handy for use with atexit to
+        ensure that all instruments are closed when a python session is
+        closed.
+
+        Examples:
+            >>> atexit.register(qc.Instrument.close_all())
+        """
+        for inststr in list(cls._all_instruments):
+            try:
+                inst = cls.find_instrument(inststr)
+                inst.close()
+            except KeyError:
+                pass
+
+    @classmethod
     def record_instance(cls, instance):
         """
         Record (a weak ref to) an instance in a class's instance list.
