@@ -12,12 +12,17 @@ class FieldVector(object):
 
     def __init__(self, x=None, y=None, z=None, r=None, theta=None, phi=None, rho=None):
         """
-        All inputs are optional, however the user needs to either give (x, y, z) values,
-        (r, theta, phi) values or (phi, rho, z) values. It is in principle possible to
-        solve for all parameters if, for instance x, y, theta are known (this is a uniquely
-        defined coordinate), however, it is difficult to write elegant code to generalize this.
-        """
+        :param x: float
+        :param y: float
+        :param z: float
+        :param r: float, magnitude of the vector
+        :param theta: float, the angle between the vector and the positive z-axis
+        :param phi: float, the angle of the projection of the vector on the xy plane and the positive x-axis
+        :param rho: float, the magnitude of the projection of the vector on the xy plane
 
+        All inputs are optional, however the user needs to either give (x, y, z) values,
+        (r, theta, phi) values or (phi, rho, z) values.
+        """
         self._x = x
         self._y = y
         self._z = z

@@ -30,12 +30,24 @@ class AMI430(IPInstrument):
     """
 
     mocker_class = MockAMI430
+    default_current_ramp_limit = 0.06  # [A/s]
 
     def __init__(self, name, address=None, port=None, persistent_switch=True,
-                 reset=False, terminator='\r\n', testing=False, **kwargs):
+                 reset=False, current_ramp_limit=None, terminator='\r\n', testing=False, **kwargs):
 
         if None in [address, port] and not testing:
             raise ValueError("The port and address values need to be given if not in testing mode")
+
+        if current_ramp_limit is None:
+            current_ramp_limit = AMI430.default_current_ramp_limit
+
+        elif current_ramp_limit > AMI430.default_current_ramp_limit:
+            warning_message = "Increasing maximum ramp rate: we have a default current ramp rate limit of {dcrl} " \
+                              "A/s. We do not want to ramp faster then a set maximum so as to avoid quenching " \
+                              "the magnet. A value of {dcrl} A/s seems like a safe, conservative value for any " \
+                              "magnet. Change this value at your own responsibility after consulting the specs of " \
+                              "your particular magnet".format(dcrl=AMI430.default_current_ramp_limit)
+            raise Warning(warning_message)
 
         super().__init__(name, address, port, terminator=terminator, testing=testing,
                          write_confirmation=False, **kwargs)
@@ -51,9 +63,8 @@ class AMI430(IPInstrument):
         if int(self.ask('FIELD:UNITS?')) == 0:
             self.write('CONF:FIELD:UNITS 1')
 
-        ramp_rate_reply = self.ask("RAMP:RATE:CURRENT:1?")  # NB: We assume that we do not have segments and that
-        # current ramp rate can always be known with the command "RAMP:RATE:CURRENT" with argument "1"
-        current_ramp_limit, current_rating = [float(i) for i in ramp_rate_reply.split(",")]
+        ramp_rate_reply = self.ask("RAMP:RATE:CURRENT:1?")
+        current_rating = float(ramp_rate_reply.split(",")[1])
 
         coil_constant = float(self.ask("COIL?"))
         self._coil_constant = coil_constant
@@ -82,7 +93,7 @@ class AMI430(IPInstrument):
                            get_cmd=self._get_ramp_rate,
                            set_cmd=self._set_ramp_rate,
                            unit='T/s',
-                           vals=Numbers(0, self._field_ramp_limit))
+                           vals=Numbers(0, self._current_ramp_limit))
 
         self.add_parameter('setpoint',
                            get_cmd='FIELD:TARG?',

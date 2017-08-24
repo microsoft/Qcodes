@@ -258,7 +258,7 @@ def test_ramp_down_first(current_driver):
 def test_field_limit_exception(current_driver):
     """
     Test that an exception is raised if we intentionally set the field beyond the limits. Together with the
-    no_test_ramp_down_first test this should prevent us from ever exceeding set point limits.
+    test_ramp_down_first test this should prevent us from ever exceeding set point limits.
     In this test we generate a regular grid in three-D and assert that the driver can be set to a set point if
     any of of the requirements given by field_limit is satisfied. An error *must* be raised if none of the
     safety limits are satisfied.
@@ -307,3 +307,29 @@ def test_spherical_poles(current_driver):
     field_m, theta_m, phi_m = current_driver.spherical()  # after setting the field we should have the vector as
     # originally intended.
     assert np.allclose([field_m, theta_m, phi_m], [field, theta, phi])
+
+
+def test_warning_increased_max_ramp_rate():
+    """
+    Test that a warning is raised if we increase the maximum current ramp rate. We want the user to be really sure
+    what he or she is doing, as this could risk quenching the magnet
+    """
+    max_ramp_rate = AMI430.default_current_ramp_limit
+    target_ramp_rate = max_ramp_rate + 0.01  # Increasing the maximum ramp rate should raise a warning
+
+    with pytest.raises(Warning) as excinfo:
+        AMI430("testing_increased_max_ramp_rate", testing=True, current_ramp_limit=target_ramp_rate)
+
+    assert "Increasing maximum ramp rate" in excinfo.value.args[0]
+
+
+def test_ramp_rate_exception(current_driver):
+    """Test that an exception is raised if we try to set the ramp rate to a higher value then is allowed"""
+    max_ramp_rate = AMI430.default_current_ramp_limit
+    target_ramp_rate = max_ramp_rate + 0.01
+    ix = current_driver._instrument_x
+
+    with pytest.raises(Exception) as excinfo:
+        ix.ramp_rate(target_ramp_rate)
+
+    assert "must be between 0 and {} inclusive".format(max_ramp_rate) in excinfo.value.args[0]
