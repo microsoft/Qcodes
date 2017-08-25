@@ -1,8 +1,10 @@
 """Ethernet instrument driver class based on sockets."""
 import socket
+import logging
 
 from .base import Instrument
 
+log = logging.getLogger(__name__)
 
 class IPInstrument(Instrument):
 
@@ -142,7 +144,11 @@ class IPInstrument(Instrument):
         self._socket.send(data.encode())
 
     def _recv(self):
-        return self._socket.recv(self._buffer_size).decode()
+        result = self._socket.recv(self._buffer_size)
+        if result == b'':
+            log.warning("Got empty response from Socket recv() "
+                        "Connection broken.")
+        return result.decode()
 
     def close(self):
         """Disconnect and irreversibly tear down the instrument."""
