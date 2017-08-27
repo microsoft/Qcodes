@@ -662,7 +662,9 @@ class SD_AWG(SD_Module):
                 Rising Edge     :   3
                 Falling Edge    :   4
         """
-        self.awg.AWGtriggerExternalConfig(awg_number, external_source, trigger_behaviour)
+        result = self.awg.AWGtriggerExternalConfig(awg_number, external_source, trigger_behaviour)
+        result_name = 'AWG {} trigger external config: {} {} :'.format(awg_number, external_source, trigger_behaviour)
+        return result_parser(result, result_name)
 
     def awg_trigger(self, awg_number):
         """
