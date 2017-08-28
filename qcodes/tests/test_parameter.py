@@ -60,7 +60,7 @@ named_instrument = namedtuple('yesname', 'name')('astro')
 class TestParameter(TestCase):
     def test_no_name(self):
         with self.assertRaises(TypeError):
-            GettableParam()
+            Parameter()
 
     def test_default_attributes(self):
         # Test the default attributes, providing only a name
@@ -137,74 +137,42 @@ class TestParameter(TestCase):
                      'setpoint_labels', 'full_names']:
             self.assertFalse(hasattr(p, attr), attr)
 
-    def test_units(self):
-        with LogCapture() as logs:
-            p = GettableParam('p', units='V')
-
-        self.assertIn('deprecated', logs.value)
-        self.assertEqual(p.unit, 'V')
-
-        with LogCapture() as logs:
-            self.assertEqual(p.units, 'V')
-
-        self.assertIn('deprecated', logs.value)
-
-        with LogCapture() as logs:
-            p = GettableParam('p', unit='Tesla', units='Gauss')
-
-        self.assertIn('deprecated', logs.value)
-        self.assertEqual(p.unit, 'Tesla')
-
-        with LogCapture() as logs:
-            self.assertEqual(p.units, 'Tesla')
-
-        self.assertIn('deprecated', logs.value)
-
-    def test_repr(self):
-        for i in [0, "foo", "", "fåil"]:
-            with self.subTest(i=i):
-                param = GettableParam(name=i)
-                s = param.__repr__()
-                st = '<{}.{}: {} at {}>'.format(
-                    param.__module__, param.__class__.__name__,
-                    param.name, id(param))
-                self.assertEqual(s, st)
-
     def test_has_set_get(self):
-        # you can't instantiate a Parameter directly anymore, only a subclass,
-        # because you need a get or a set method.
-        with self.assertRaises(AttributeError):
-            Parameter('no_get_or_set')
-
-        gp = GettableParam('1')
-        self.assertTrue(gp.has_get)
-        self.assertFalse(gp.has_set)
+        # Create parameter that has no set_cmd, and get_cmd returns last value
+        gettable_parameter = Parameter('1', set_cmd=False, get_cmd=None)
+        self.assertTrue(hasattr(gettable_parameter, 'get'))
+        self.assertFalse(hasattr(gettable_parameter, 'set'))
         with self.assertRaises(NotImplementedError):
-            gp(1)
+            gettable_parameter(1)
+        # Initial value is None if not explicitly set
+        self.assertIsNone(gettable_parameter())
 
-        sp = SettableParam('2')
-        self.assertFalse(sp.has_get)
-        self.assertTrue(sp.has_set)
+        # Create parameter that saves value during set, and has no get_cmd
+        settable_parameter = Parameter('2', set_cmd=None, get_cmd=False)
+        self.assertFalse(hasattr(settable_parameter, 'get'))
+        self.assertTrue(hasattr(settable_parameter, 'set'))
         with self.assertRaises(NotImplementedError):
-            sp()
+            settable_parameter()
+        settable_parameter(42)
 
-        sgp = SimpleManualParam('3')
-        self.assertTrue(sgp.has_get)
-        self.assertTrue(sgp.has_set)
-        sgp(22)
-        self.assertEqual(sgp(), 22)
+        settable_gettable_parameter = Parameter('3', set_cmd=None, get_cmd=None)
+        self.assertTrue(hasattr(settable_gettable_parameter, 'set'))
+        self.assertTrue(hasattr(settable_gettable_parameter, 'get'))
+        self.assertIsNone(settable_gettable_parameter())
+        settable_gettable_parameter(22)
+        self.assertEqual(settable_gettable_parameter(), 22)
 
-    def test_full_name(self):
+    def test_str_representation(self):
         # three cases where only name gets used for full_name
         for instrument in blank_instruments:
-            p = GettableParam(name='fred')
+            p = Parameter(name='fred')
             p._instrument = instrument
-            self.assertEqual(p.full_name, 'fred')
+            self.assertEqual(str(p), 'fred')
 
         # and finally an instrument that really has a name
-        p = GettableParam(name='wilma')
+        p = Parameter(name='wilma')
         p._instrument = named_instrument
-        self.assertEqual(p.full_name, 'astro_wilma')
+        self.assertEqual(str(p), 'astro_wilma')
 
     def test_bad_validator(self):
         with self.assertRaises(TypeError):
