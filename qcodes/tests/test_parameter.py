@@ -14,6 +14,7 @@ from qcodes.tests.instrument_mocks import DummyInstrument
 
 
 class GettableParam(Parameter):
+    """ Parameter that keeps track of number of get operations"""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._get_count = 0
@@ -22,31 +23,6 @@ class GettableParam(Parameter):
         self._get_count += 1
         self._save_val(42)
         return 42
-
-
-class SimpleManualParam(Parameter):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._save_val(0)
-        self._v = 0
-
-    def get(self):
-        return self._v
-
-    def set(self, v):
-        self._save_val(v)
-        self._v = v
-
-
-class SettableParam(Parameter):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._save_val(0)
-        self._v = 0
-
-    def set(self, v):
-        self._save_val(v)
-        self._v = v
 
 
 blank_instruments = (
@@ -120,6 +96,7 @@ class TestParameter(TestCase):
 
         # test snapshot_get by looking at _get_count
         self.assertEqual(p._get_count, 0)
+        # Snapshot should not perform get since snapshot_get is False
         snap = p.snapshot(update=True)
         self.assertEqual(p._get_count, 0)
         snap_expected = {
@@ -136,6 +113,18 @@ class TestParameter(TestCase):
         for attr in ['names', 'labels', 'setpoints', 'setpoint_names',
                      'setpoint_labels', 'full_names']:
             self.assertFalse(hasattr(p, attr), attr)
+
+    def test_snapshot_value(self):
+        p_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
+                               snapshot_value=True)
+        p_snapshot(42)
+        snap = p_snapshot.snapshot()
+        self.assertIn('value', snap)
+        p_no_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
+                                  snapshot_value=False)
+        p_no_snapshot(42)
+        snap = p_no_snapshot.snapshot()
+        self.assertNotIn('value', snap)
 
     def test_has_set_get(self):
         # Create parameter that has no set_cmd, and get_cmd returns last value
@@ -176,7 +165,7 @@ class TestParameter(TestCase):
 
     def test_bad_validator(self):
         with self.assertRaises(TypeError):
-            GettableParam('p', vals=[1, 2, 3])
+            Parameter('p', vals=[1, 2, 3])
 
 
 class SimpleArrayParam(ArrayParameter):
@@ -269,30 +258,6 @@ class TestArrayParameter(TestCase):
 
         self.assertIn(name, p.__doc__)
         self.assertIn(docstring, p.__doc__)
-
-    def test_units(self):
-        with LogCapture() as logs:
-            p = SimpleArrayParam([6, 7], 'p', (2,), units='V')
-
-        self.assertIn('deprecated', logs.value)
-        self.assertEqual(p.unit, 'V')
-
-        with LogCapture() as logs:
-            self.assertEqual(p.units, 'V')
-
-        self.assertIn('deprecated', logs.value)
-
-        with LogCapture() as logs:
-            p = SimpleArrayParam([6, 7], 'p', (2,),
-                                 unit='Tesla', units='Gauss')
-
-        self.assertIn('deprecated', logs.value)
-        self.assertEqual(p.unit, 'Tesla')
-
-        with LogCapture() as logs:
-            self.assertEqual(p.units, 'Tesla')
-
-        self.assertIn('deprecated', logs.value)
 
     def test_has_set_get(self):
         name = 'array_param'
@@ -450,8 +415,8 @@ class TestMultiParameter(TestCase):
         p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]],
                              name, names, shapes)
 
-        self.assertTrue(p.has_get)
-        self.assertFalse(p.has_set)
+        self.assertTrue(hasattr(p, 'get'))
+        self.assertFalse(hasattr(p, 'set'))
         # We allow creation of Multiparameters with set to support
         # instruments that already make use of them.
         with self.assertWarns(UserWarning):
@@ -539,20 +504,18 @@ class TestStandardParam(TestCase):
         self.assertEqual(p(), 5)
 
     def test_settable(self):
-        p = StandardParameter('p', set_cmd=self.set_p)
+        p = Parameter('p', set_cmd=self.set_p, get_cmd=False)
 
         p(10)
         self.assertEqual(self._p, 10)
         with self.assertRaises(NotImplementedError):
             p()
-        with self.assertRaises(NotImplementedError):
-            p.get()
 
-        self.assertTrue(p.has_set)
-        self.assertFalse(p.has_get)
+        self.assertTrue(hasattr(p, 'set'))
+        self.assertFalse(hasattr(p, 'get'))
 
     def test_gettable(self):
-        p = StandardParameter('p', get_cmd=self.get_p)
+        p = Parameter('p', get_cmd=self.get_p)
         self._p = 21
 
         self.assertEqual(p(), 21)
@@ -560,15 +523,13 @@ class TestStandardParam(TestCase):
 
         with self.assertRaises(NotImplementedError):
             p(10)
-        with self.assertRaises(NotImplementedError):
-            p.set(10)
 
-        self.assertTrue(p.has_get)
-        self.assertFalse(p.has_set)
+        self.assertTrue(hasattr(p, 'get'))
+        self.assertFalse(hasattr(p, 'set'))
 
     def test_val_mapping_basic(self):
-        p = StandardParameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
-                              val_mapping={'off': 0, 'on': 1})
+        p = Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
+                      val_mapping={'off': 0, 'on': 1})
 
         p('off')
         self.assertEqual(self._p, 0)
@@ -587,17 +548,18 @@ class TestStandardParam(TestCase):
             p()
 
     def test_val_mapping_with_parsers(self):
+        # TODO change comments, this is now possible
         # you can't use set_parser with val_mapping... just too much
         # indirection since you also have set_cmd
         with self.assertRaises(TypeError):
-            StandardParameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
-                              val_mapping={'off': 0, 'on': 1},
-                              set_parser=self.parse_set_p)
+            Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
+                      val_mapping={'off': 0, 'on': 1},
+                      set_parser=self.parse_set_p)
 
         # but you *can* use get_parser with val_mapping
-        p = StandardParameter('p', set_cmd=self.set_p_prefixed,
-                              get_cmd=self.get_p, get_parser=self.strip_prefix,
-                              val_mapping={'off': 0, 'on': 1})
+        p = Parameter('p', set_cmd=self.set_p_prefixed,
+                      get_cmd=self.get_p, get_parser=self.strip_prefix,
+                      val_mapping={'off': 0, 'on': 1})
 
         p('off')
         self.assertEqual(self._p, 'PVAL: 0')
