@@ -1,6 +1,8 @@
 import logging
 from ..ATS import AcquisitionController
+from ..alazar_channel import AlazarChannel
 import numpy as np
+from qcodes import ChannelList, InstrumentChannel
 import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
 from ..acquisition_parameters import AcqVariablesParam, \
                                     ExpandingAlazarArrayMultiParameter, \
@@ -39,24 +41,14 @@ class ATS9360Controller(AcquisitionController):
 
     def __init__(self, name, alazar_name, filter: str = 'win',
                  numtaps: int =101, chan_b: bool = False,
-                 integrate_samples: bool = False,
-                 average_records: bool = True,
                  **kwargs):
+        super().__init__(name, alazar_name, **kwargs)
         self.filter_settings = {'filter': self.filter_dict[filter],
                                 'numtaps': numtaps}
-        self.chan_b = chan_b
         self.number_of_channels = 2
-        if not integrate_samples and not average_records:
-            raise RuntimeError("You need to either average records or integrate over samples")
 
-        super().__init__(name, alazar_name, **kwargs)
-
-        self.add_parameter(name='acquisition',
-                           integrate_samples=integrate_samples,
-                           average_records=average_records,
-                           parameter_class=ExpandingAlazarArrayMultiParameter)
-
-        self._integrate_samples = integrate_samples
+        channels = ChannelList(self, "Channels", AlazarChannel)
+        self.add_submodule("channels", channels)
 
         self.add_parameter(name='int_time',
                            check_and_update_fn=self._update_int_time,
@@ -73,25 +65,14 @@ class ATS9360Controller(AcquisitionController):
         self.add_parameter(name='allocated_buffers',
                            alternative='not controllable in this controller',
                            parameter_class=NonSettableDerivedParameter)
-        self.add_parameter(name='buffers_per_acquisition',
-                           alternative='not controllable in this controller',
-                           parameter_class=NonSettableDerivedParameter)
-        if average_records:
-            self.add_parameter(name='records_per_buffer',
-                               alternative='num_avg',
-                               parameter_class=NonSettableDerivedParameter)
-        else:
-            self.add_parameter(name='records_per_buffer',
+        # self.add_parameter(name='buffers_per_acquisition')
+        self.add_parameter(name='records_per_buffer',
                                parameter_class=AcqVariablesParam,
                                default_fn= lambda : 1,
                                check_and_update_fn=self._update_records_per_buffer)
         self.add_parameter(name='samples_per_record',
                            alternative='int_time and int_delay',
                            parameter_class=NonSettableDerivedParameter)
-
-        self.add_parameter(name='demod_freqs',
-                           shape=(),
-                           parameter_class=DemodFreqParameter)
 
         self.samples_divisor = self._get_alazar().samples_divisor
 
@@ -117,9 +98,9 @@ class ATS9360Controller(AcquisitionController):
 
         alazar = self._get_alazar()
         sample_rate = alazar.effective_sample_rate.get()
-        max_demod_freq = self.demod_freqs.get_max_demod_freq()
-        if max_demod_freq is not None:
-            self.demod_freqs._verify_demod_freq(max_demod_freq)
+        # max_demod_freq = self.demod_freqs.get_max_demod_freq()
+        # if max_demod_freq is not None:
+        #     self.demod_freqs._verify_demod_freq(max_demod_freq)
         if self.int_delay() is None:
             self.int_delay.to_default()
         int_delay = self.int_delay.get()
@@ -135,12 +116,12 @@ class ATS9360Controller(AcquisitionController):
         samples_per_record = helpers.roundup(
             samples_needed, self.samples_divisor)
         self.samples_per_record._save_val(samples_per_record)
-        self.acquisition.set_setpoints_and_labels()
+        # self.acquisition.set_setpoints_and_labels()
 
     def _update_records_per_buffer(self, value, **kwargs):
         # Hack store the value early so its useful for set_setpoints...
         self.records_per_buffer._save_val(value)
-        self.acquisition.set_setpoints_and_labels()
+        # self.acquisition.set_setpoints_and_labels()
 
     def _update_int_delay(self, value, **kwargs):
         """
@@ -283,7 +264,8 @@ class ATS9360Controller(AcquisitionController):
         max_samples = self._get_alazar().get_idn()['max_samples']
         samples_per_buffer = records_per_buffer * samples_per_record
         if samples_per_buffer > max_samples:
-            raise RuntimeError("Trying to acquire {} samples in one buffer maximum supported is {}".format(samples_per_buffer, max_samples))
+            raise RuntimeError("Trying to acquire {} samples in one buffer maximum"
+                               " supported is {}".format(samples_per_buffer, max_samples))
 
         self.board_info = alazar.get_idn()
         self.buffer = np.zeros(samples_per_record *
@@ -442,6 +424,8 @@ class ATS9360Controller(AcquisitionController):
         elif self.filter_settings['filter'] == 2:
             re_filtered = re_mat
             im_filtered = im_mat
+        else:
+            raise RuntimeError("Filter setting: {} not implemented".format(self.filter_settings['filter']))
 
         if self._integrate_samples:
             # apply integration limits
