@@ -20,7 +20,7 @@ class GS200(VisaInstrument):
 
         self.add_parameter('voltage',
                            label='Voltage',
-                           units='V',
+                           unit='V',
                            get_cmd=':SOURce:LEVel?',
                            set_cmd=':SOURce:LEVel:AUTO {:.4f}',
                            get_parser=float,

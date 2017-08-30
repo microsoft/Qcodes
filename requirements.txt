@@ -1,6 +1,6 @@
 jupyter==1.0.0
 numpy==1.12.1
-matplotlib==2.0.0
+matplotlib==2.0.2
 pyqtgraph==0.10.0
 PyVISA==1.8
 PyQt5==5.7.1

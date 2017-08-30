@@ -4,10 +4,11 @@ import numpy as np
 
 from qcodes.utils.validators import (Validator, Anything, Bool, Strings,
                                      Numbers, Ints, Enum, MultiType,
-                                     Arrays, Multiples, Lists)
+                                     Arrays, Multiples, Lists, Callable, Dict)
 
 
 class AClass:
+
     def method_a(self):
         raise RuntimeError('function should not get called')
 
@@ -17,12 +18,14 @@ def a_func():
 
 
 class TestBaseClass(TestCase):
+
     def test_instantiate(self):
         # you cannot instantiate the base class
         with self.assertRaises(NotImplementedError):
             Validator()
 
     class BrokenValidator(Validator):
+
         def __init__(self):
             pass
 
@@ -34,6 +37,7 @@ class TestBaseClass(TestCase):
 
 
 class TestAnything(TestCase):
+
     def test_real_anything(self):
         a = Anything()
         for v in [None, 0, 1, 0.0, 1.2, '', 'hi!', [1, 2, 3], [],
@@ -53,7 +57,7 @@ class TestAnything(TestCase):
 
 
 class TestBool(TestCase):
-    bools = [True, False]
+    bools = [True, False, np.bool8(True), np.bool8(False)]
     not_bools = [0, 1, 10, -1, 100, 1000000, int(-1e15), int(1e15),
                  0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
                  math.pi, math.e, '', None, float("nan"), float("inf"),
@@ -135,7 +139,7 @@ class TestStrings(TestCase):
 
         for v in self.strings:
             if 1 <= len(v) <= 10:
-                    s.validate(v)
+                s.validate(v)
             else:
                 with self.assertRaises(ValueError):
                     s.validate(v)
@@ -177,9 +181,9 @@ class TestNumbers(TestCase):
                True, False,
                # warning: +/- inf are allowed if max & min are not specified!
                -float("inf"), float("inf"),
-                # numpy scalars
+               # numpy scalars
                np.int64(36), np.float32(-1.123)
-                ]
+               ]
     not_numbers = ['', None, '1', [], {}, [1, 2], {1: 1},
                    b'good', AClass, AClass(), a_func]
 
@@ -320,7 +324,7 @@ class TestInts(TestCase):
 
         for v in self.ints:
             if 0 <= v <= 10:
-                    n.validate(v)
+                n.validate(v)
             else:
                 with self.assertRaises(ValueError):
                     n.validate(v)
@@ -383,15 +387,15 @@ class TestEnum(TestCase):
 class TestMultiples(TestCase):
     divisors = [3, 7, 11, 13]
     not_divisors = [0, -1, -5, -1e15, 0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
-                     math.pi, math.e, '', None, float("nan"), float("inf"),
-                     -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',
-                     AClass, AClass(), a_func]
+                    math.pi, math.e, '', None, float("nan"), float("inf"),
+                    -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',
+                    AClass, AClass(), a_func]
     multiples = [0, 1, 10, -1, 100, 1000000, int(-1e15), int(1e15),
-            # warning: True==1 and False==0 - we *could* prohibit these, using
-            # isinstance(v, bool)
-            True, False,
-            # numpy scalars
-            np.int64(2)]
+                 # warning: True==1 and False==0 - we *could* prohibit these, using
+                 # isinstance(v, bool)
+                 True, False,
+                 # numpy scalars
+                 np.int64(2)]
     not_multiples = [0.1, -0.1, 1.0, 3.5, -2.3e6, 5.5e15, 1.34e-10, -2.5e-5,
                      math.pi, math.e, '', None, float("nan"), float("inf"),
                      -float("inf"), '1', [], {}, [1, 2], {1: 1}, b'good',
@@ -423,6 +427,7 @@ class TestMultiples(TestCase):
 
 
 class TestMultiType(TestCase):
+
     def test_good(self):
         m = MultiType(Strings(2, 4), Ints(10, 1000))
 
@@ -448,6 +453,7 @@ class TestMultiType(TestCase):
 
 
 class TestArrays(TestCase):
+
     def test_type(self):
         m = Arrays(min_value=0.0, max_value=3.2, shape=(2, 2))
         for v in ['somestring', 4, 2, [[2, 0], [1, 2]]]:
@@ -481,7 +487,9 @@ class TestArrays(TestCase):
         v = np.array([[2, 0], [1, 2]])
         m.validate(v)
 
+
 class TestLists(TestCase):
+
     def test_type(self):
         l = Lists()
         v1 = ['a', 'b', 5]
@@ -501,3 +509,25 @@ class TestLists(TestCase):
             l.validate(v2)
 
 
+class TestCallable(TestCase):
+
+    def test_callable(self):
+        c = Callable()
+
+        def test_func():
+            return True
+        c.validate(test_func)
+        test_int = 5
+        with self.assertRaises(TypeError):
+            c.validate(test_int)
+
+
+class TestDict(TestCase):
+
+    def test_callable(self):
+        d = Dict()
+        test_dict = {}
+        d.validate(test_dict)
+        test_int = 5
+        with self.assertRaises(TypeError):
+            d.validate(test_int)

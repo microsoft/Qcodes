@@ -1,3 +1,4 @@
+from typing import Sequence
 from .helpers import deep_update
 
 
@@ -35,7 +36,8 @@ class Metadatable:
 
         return snap
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update: bool=False,
+                      params_to_skip_update: Sequence[str]=None):
         """
         override this with the primary information for a subclass
         """

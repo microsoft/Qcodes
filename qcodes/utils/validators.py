@@ -87,7 +87,7 @@ class Bool(Validator):
         pass
 
     def validate(self, value, context=''):
-        if not isinstance(value, bool):
+        if not isinstance(value, bool) and not isinstance(value, np.bool8):
             raise TypeError(
                 '{} is not Boolean; {}'.format(repr(value), context))
 
@@ -420,3 +420,37 @@ class Lists(Validator):
         if not isinstance(self._elt_validator, Anything):
             for elt in value:
                 self._elt_validator.validate(elt)
+
+
+class Callable(Validator):
+    """
+    Validator for callables such as functions.
+    """
+    def __init__(self):
+        # exists only to overwrite parent class
+        pass
+
+    def validate(self, value, context=''):
+        if not callable(value):
+            raise TypeError(
+                '{} is not a callable; {}'.format(repr(value), context))
+
+    def __repr__(self):
+        return '<Callable>'
+
+
+class Dict(Validator):
+    """
+    Validator for dictionaries
+    """
+    def __init__(self):
+        # exists only to overwrite parent class
+        pass
+
+    def validate(self, value, context=''):
+        if not isinstance(value, dict):
+            raise TypeError(
+                '{} is not a dictionary; {}'.format(repr(value), context))
+
+    def __repr__(self):
+        return '<Dict>'
