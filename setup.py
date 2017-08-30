@@ -36,8 +36,8 @@ setup(name='qcodes',
       version=get_version(),
       use_2to3=False,
 
-      maintainer='Giulio Ungaretti',
-      maintainer_email='unga@nbi.ku.dk',
+      maintainer='Jens H Nielsen',
+      maintainer_email='j.h.nielsen@nbi.ku.dk',
       description='Python-based data acquisition framework developed by the '
                   'Copenhagen / Delft / Sydney / Microsoft quantum computing '
                   'consortium',
