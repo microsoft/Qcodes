@@ -42,7 +42,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
     def __init__(self, name, testing=False, **kwargs):
         self.name = str(name)
-        self.testing = testing
+        self._testing = testing
 
         if testing:
             if hasattr(type(self), "mocker_class"):
@@ -58,14 +58,14 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
     def is_testing(self):
         """Return True if we are testing"""
-        return self.testing
+        return self._testing
 
     def get_mock_messages(self):
         """
         For testing purposes we might want to get log messages from the mocker.
         :return: mocker_messages: list, str
         """
-        if not self.testing:
+        if not self._testing:
             raise ValueError("Cannot get mock messages if not in testing mode")
         return self.mocker.get_log_messages()
 
@@ -597,7 +597,7 @@ class Instrument(InstrumentBase):
                 including the command and the instrument.
         """
         try:
-            if self.testing:
+            if self._testing:
                 self.mocker.write(cmd)
             else:
                 self.write_raw(cmd)
@@ -639,7 +639,7 @@ class Instrument(InstrumentBase):
                 including the command and the instrument.
         """
         try:
-            if self.testing:
+            if self._testing:
                 answer = self.mocker.ask(cmd)
             else:
                 answer = self.ask_raw(cmd)

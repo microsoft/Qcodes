@@ -145,7 +145,7 @@ class AMI430(IPInstrument):
 
     def _sleep(self, t):
         """Sleep for a number of seconds t. If we are in testing mode, commit this"""
-        if self.testing:
+        if self._testing:
             return
         else:
             time.sleep(t)

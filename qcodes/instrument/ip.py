@@ -89,11 +89,11 @@ class IPInstrument(Instrument):
             self._disconnect()
 
     def flush_connection(self):
-        if not self.testing:
+        if not self._testing:
             self._recv()
 
     def _connect(self):
-        if self.testing:
+        if self._testing:
             return
 
         if self._socket is not None:

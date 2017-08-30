@@ -7,6 +7,9 @@ from datetime import datetime
 
 import numpy as np
 import pytest
+from hypothesis import given, settings
+from hypothesis.strategies import floats
+from hypothesis.strategies import tuples
 
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430, AMI430_3D
 from qcodes.math.field_vector import FieldVector
@@ -56,178 +59,169 @@ def get_instruments_ramp_messages(current_driver):
     return reported_ramp_targets
 
 
-def get_random_coordinate(coordinate_name):
-    return {
-        "x": np.random.uniform(-1, 1),
-        "y": np.random.uniform(-1, 1),
-        "z": np.random.uniform(-1, 1),
-        "r": np.random.uniform(0, 2),
-        "theta": np.random.uniform(0, 180),
-        "phi": np.random.uniform(0, 360),
-        "rho": np.random.uniform(0, 1)
-    }[coordinate_name]
+random_coordinates = {
+    "cartesian": tuples(
+        floats(min_value=0, max_value=1),  # x
+        floats(min_value=0, max_value=1),  # y
+        floats(min_value=0, max_value=1)  # z
+    ),
+    "spherical": tuples(
+        floats(min_value=0, max_value=1),  # r
+        floats(min_value=0, max_value=180),  # theta
+        floats(min_value=0, max_value=180)  # phi
+    ),
+    "cylindrical": tuples(
+        floats(min_value=0, max_value=1),  # rho
+        floats(min_value=0, max_value=180),  # phi
+        floats(min_value=0, max_value=1)  # z
+    )
+}
 
 
-def test_cartesian_sanity(current_driver):
+@given(random_coordinates["cartesian"])
+@settings(max_examples=10)
+def test_cartesian_sanity(current_driver, set_target):
     """
     A sanity check to see if the driver remember vectors in any random configuration in cartesian coordinates
     """
-    n_repeats = 10
+    current_driver.cartesian(set_target)
+    get_target = current_driver.cartesian()
 
-    for _ in range(n_repeats):
-        set_target = [get_random_coordinate(name) for name in ["x", "y", "z"]]
-        current_driver.cartesian(set_target)
-        get_target = current_driver.cartesian()
+    assert np.allclose(set_target, get_target)
 
-        assert np.allclose(set_target, get_target)
-
-        # test that we can get the individual coordinates
-        x = current_driver.x()
-        y = current_driver.y()
-        z = current_driver.z()
-        assert np.allclose(set_target, [x, y, z])
+    # test that we can get the individual coordinates
+    x = current_driver.x()
+    y = current_driver.y()
+    z = current_driver.z()
+    assert np.allclose(set_target, [x, y, z])
 
 
-def test_spherical_sanity(current_driver):
+@given(random_coordinates["spherical"])
+@settings(max_examples=10)
+def test_spherical_sanity(current_driver, set_target):
     """
     A sanity check to see if the driver remember vectors in any random configuration in spherical coordinates
     """
-    n_repeats = 10
+    current_driver.spherical(set_target)
+    get_target = current_driver.spherical()
 
-    for _ in range(n_repeats):
-        set_target = [get_random_coordinate(name) for name in ["r", "theta", "phi"]]
-        current_driver.spherical(set_target)
-        get_target = current_driver.spherical()
+    assert np.allclose(set_target, get_target)
 
-        assert np.allclose(set_target, get_target)
-
-        # test that we can get the individual coordinates
-        r = current_driver.field()
-        theta = current_driver.theta()
-        phi = current_driver.phi()
-        assert np.allclose(set_target, [r, theta, phi])
+    # test that we can get the individual coordinates
+    r = current_driver.field()
+    theta = current_driver.theta()
+    phi = current_driver.phi()
+    assert np.allclose(set_target, [r, theta, phi])
 
 
-def test_cylindrical_sanity(current_driver):
+@given(random_coordinates["cylindrical"])
+@settings(max_examples=10)
+def test_cylindrical_sanity(current_driver, set_target):
     """
     A sanity check to see if the driver remember vectors in any random configuration in cylindrical coordinates
     """
-    n_repeats = 10
+    current_driver.cylindrical(set_target)
+    get_target = current_driver.cylindrical()
 
-    for _ in range(n_repeats):
-        set_target = [get_random_coordinate(name) for name in ["rho", "phi", "z"]]
-        current_driver.cylindrical(set_target)
-        get_target = current_driver.cylindrical()
+    assert np.allclose(set_target, get_target)
 
-        assert np.allclose(set_target, get_target)
-
-        # test that we can get the individual coordinates
-        rho = current_driver.rho()
-        z = current_driver.z()
-        phi = current_driver.phi()
-        assert np.allclose(set_target, [rho, phi, z])
+    # test that we can get the individual coordinates
+    rho = current_driver.rho()
+    z = current_driver.z()
+    phi = current_driver.phi()
+    assert np.allclose(set_target, [rho, phi, z])
 
 
-def test_cartesian_setpoints(current_driver):
+@given(random_coordinates["cartesian"])
+@settings(max_examples=10)
+def test_cartesian_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set points as intended. We can do this because the
     instruments are printing log messages to an IO stream. We intercept these messages and extract the log lines which
     mention that the instrument is ramping to certain values. These values should match the values of the input. In
     this test we are verifying this for cartesian coordinates.
     """
-    n_repeats = 10
+    current_driver.cartesian(set_target)
 
-    for _ in range(n_repeats):
-        set_target = [get_random_coordinate(name) for name in ["x", "y", "z"]]
-        current_driver.cartesian(set_target)
+    reported_ramp_targets = get_instruments_ramp_messages(current_driver)
+    get_target = {k: v["value"] for k, v in reported_ramp_targets.items()}
 
-        reported_ramp_targets = get_instruments_ramp_messages(current_driver)
-        get_target = {k: v["value"] for k, v in reported_ramp_targets.items()}
-
-        set_vector = FieldVector(*set_target)
-        get_vector = FieldVector(**get_target)
-        assert set_vector.is_equal(get_vector)
+    set_vector = FieldVector(*set_target)
+    get_vector = FieldVector(**get_target)
+    assert set_vector.is_equal(get_vector)
 
 
-def test_spherical_setpoints(current_driver):
+@given(random_coordinates["spherical"])
+@settings(max_examples=10)
+def test_spherical_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set points as intended. We can do this because the
     instruments are printing log messages to an IO stream. We intercept these messages and extract the log lines which
     mention that the instrument is ramping to certain values. These values should match the values of the input. In
     this test we are verifying this for spherical coordinates.
     """
-    n_repeats = 10
-    names = ["r", "theta", "phi"]
+    current_driver.spherical(set_target)
 
-    for _ in range(n_repeats):
-        set_target = {name: get_random_coordinate(name) for name in names}
-        current_driver.spherical([set_target[name] for name in names])
+    reported_ramp_targets = get_instruments_ramp_messages(current_driver)
+    get_target = {k: v["value"] for k, v in reported_ramp_targets.items()}
 
-        reported_ramp_targets = get_instruments_ramp_messages(current_driver)
-        get_target = {k: v["value"] for k, v in reported_ramp_targets.items()}
-
-        set_vector = FieldVector(**set_target)
-        get_vector = FieldVector(**get_target)
-        assert set_vector.is_equal(get_vector)
+    set_vector = FieldVector(**dict(zip(["r", "theta", "phi"], set_target)))
+    get_vector = FieldVector(**get_target)
+    assert set_vector.is_equal(get_vector)
 
 
-def test_cylindrical_setpoints(current_driver):
+@given(random_coordinates["cylindrical"])
+@settings(max_examples=10)
+def test_cylindrical_setpoints(current_driver, set_target):
     """
     Check that the individual x, y, z instruments are getting the set points as intended. We can do this because the
     instruments are printing log messages to an IO stream. We intercept these messages and extract the log lines which
     mention that the instrument is ramping to certain values. These values should match the values of the input. In
     this test we are verifying this for cylindrical coordinates.
     """
-    n_repeats = 10
-    names = ["rho", "phi", "z"]
+    current_driver.cylindrical(set_target)
 
-    for _ in range(n_repeats):
-        set_target = {name: get_random_coordinate(name) for name in names}
-        current_driver.cylindrical([set_target[name] for name in names])
+    reported_ramp_targets = get_instruments_ramp_messages(current_driver)
+    get_target = {k: v["value"] for k, v in reported_ramp_targets.items()}
 
-        reported_ramp_targets = get_instruments_ramp_messages(current_driver)
-        get_target = {k: v["value"] for k, v in reported_ramp_targets.items()}
-
-        set_vector = FieldVector(**set_target)
-        get_vector = FieldVector(**get_target)
-        assert set_vector.is_equal(get_vector)
+    set_vector = FieldVector(**dict(zip(["rho", "phi", "z"], set_target)))
+    get_vector = FieldVector(**get_target)
+    assert set_vector.is_equal(get_vector)
 
 
-def test_measured(current_driver):
+@given(random_coordinates["cartesian"])
+@settings(max_examples=10)
+def test_measured(current_driver, set_target):
     """
     Simply call the measurement methods and verify that no exceptions are raised.
     """
-    n_repeats = 10
+    current_driver.cartesian(set_target)
 
-    for _ in range(n_repeats):
-        set_target = [get_random_coordinate(name) for name in ["x", "y", "z"]]
-        current_driver.cartesian(set_target)
+    cartesian = current_driver.cartesian_measured()
+    cartesian_x = current_driver.x_measured()
+    cartesian_y = current_driver.y_measured()
+    cartesian_z = current_driver.z_measured()
 
-        cartesian = current_driver.cartesian_measured()
-        cartesian_x = current_driver.x_measured()
-        cartesian_y = current_driver.y_measured()
-        cartesian_z = current_driver.z_measured()
+    assert FieldVector(*set_target).is_equal(FieldVector(x=cartesian_x, y=cartesian_y, z=cartesian_z))
+    assert np.allclose(cartesian, [cartesian_x, cartesian_y, cartesian_z])
 
-        assert FieldVector(*set_target).is_equal(FieldVector(x=cartesian_x, y=cartesian_y, z=cartesian_z))
-        assert np.allclose(cartesian, [cartesian_x, cartesian_y, cartesian_z])
+    spherical = current_driver.spherical_measured()
+    spherical_field = current_driver.field_measured()
+    spherical_theta = current_driver.theta_measured()
+    spherical_phi = current_driver.phi_measured()
 
-        spherical = current_driver.spherical_measured()
-        spherical_field = current_driver.field_measured()
-        spherical_theta = current_driver.theta_measured()
-        spherical_phi = current_driver.phi_measured()
+    assert FieldVector(*set_target).is_equal(FieldVector(
+        r=spherical_field,
+        theta=spherical_theta,
+        phi=spherical_phi)
+    )
+    assert np.allclose(spherical, [spherical_field, spherical_theta, spherical_phi])
 
-        assert FieldVector(*set_target).is_equal(FieldVector(
-            r=spherical_field,
-            theta=spherical_theta,
-            phi=spherical_phi)
-        )
-        assert np.allclose(spherical, [spherical_field, spherical_theta, spherical_phi])
+    cylindrical = current_driver.cylindrical_measured()
+    cylindrical_rho = current_driver.rho_measured()
 
-        cylindrical = current_driver.cylindrical_measured()
-        cylindrical_rho = current_driver.rho_measured()
-
-        assert FieldVector(*set_target).is_equal(FieldVector(rho=cylindrical_rho, phi=spherical_phi, z=cartesian_z))
-        assert np.allclose(cylindrical, [cylindrical_rho, spherical_phi, cartesian_z])
+    assert FieldVector(*set_target).is_equal(FieldVector(rho=cylindrical_rho, phi=spherical_phi, z=cartesian_z))
+    assert np.allclose(cylindrical, [cylindrical_rho, spherical_phi, cartesian_z])
 
 
 def test_ramp_down_first(current_driver):
@@ -258,7 +252,7 @@ def test_ramp_down_first(current_driver):
 def test_field_limit_exception(current_driver):
     """
     Test that an exception is raised if we intentionally set the field beyond the limits. Together with the
-    test_ramp_down_first test this should prevent us from ever exceeding set point limits.
+    no_test_ramp_down_first test this should prevent us from ever exceeding set point limits.
     In this test we generate a regular grid in three-D and assert that the driver can be set to a set point if
     any of of the requirements given by field_limit is satisfied. An error *must* be raised if none of the
     safety limits are satisfied.

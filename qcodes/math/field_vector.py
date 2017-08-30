@@ -111,19 +111,12 @@ class FieldVector(object):
          1) There are contradictory inputs (e.g. x=3, y=4, z=0 and rho=6)
         """
 
-        for _ in range(1):
-
-            new_values = FieldVector._cartesian_to_other(self._x, self._y, self._z)
-            if new_values is not None:
-                self._set_attribute_values(FieldVector.attributes, new_values)
-                break
-
-            new_values = FieldVector._spherical_to_other(self._r, self._theta, self._phi)
-            if new_values is not None:
-                self._set_attribute_values(FieldVector.attributes, new_values)
-                break
-
-            new_values = FieldVector._cylindrical_to_other(self._phi, self._rho, self._z)
+        for f in [
+            lambda: FieldVector._cartesian_to_other(self._x, self._y, self._z),
+            lambda: FieldVector._spherical_to_other(self._r, self._theta, self._phi),
+            lambda: FieldVector._cylindrical_to_other(self._phi, self._rho, self._z)
+        ]:
+            new_values = f()
             if new_values is not None:
                 self._set_attribute_values(FieldVector.attributes, new_values)
                 break
