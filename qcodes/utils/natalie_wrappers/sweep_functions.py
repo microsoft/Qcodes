@@ -5,7 +5,7 @@ import qcodes as qc
 from qcodes.utils.natalie_wrappers.file_setup import CURRENT_EXPERIMENT
 from qcodes.utils.natalie_wrappers.plot_functions import _plot_setup, \
     _rescale_mpl_axes, _save_individual_plots
-from qcodes.utils.natalie_wrappers.device_image_attempt import save_device_image
+from qcodes.utils.natalie_wrappers.device_image import save_device_image
 
 
 import logging

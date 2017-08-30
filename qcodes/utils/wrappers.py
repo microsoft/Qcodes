@@ -24,8 +24,10 @@ CURRENT_EXPERIMENT = {}
 CURRENT_EXPERIMENT["logging_enabled"] = False
 pdfdisplay = {}
 
-def init(mainfolder: str, sample_name: str, station, plot_x_position=0.66,
-         annotate_image=True, display_pdf=True, display_individual_pdf=False):
+
+def init(mainfolder: str=None, sample_name: str=None, station=None,
+         plot_x_position=0.66, annotate_image=True, display_pdf=True,
+         display_individual_pdf=False):
     """
 
     Args:

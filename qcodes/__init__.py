@@ -28,6 +28,7 @@ if plotlib in {'matplotlib', 'all'}:
               'to see the full error')
 
 from qcodes.utils.wrappers import  do1d, do2d, do1dDiagonal, show_num, init
+from qcodes.utils.natalie_wrappers.file_setup import my_init
 
 from qcodes.station import Station
 from qcodes.loops import Loop, active_loop, active_data_set

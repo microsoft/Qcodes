@@ -8,6 +8,7 @@ import qcodes as qc
 log = logging.getLogger(__name__)
 CURRENT_EXPERIMENT = {}
 CURRENT_EXPERIMENT["logging_enabled"] = False
+CURRENT_EXPERIMENT["init"] = False
 pdfdisplay = {}
 
 

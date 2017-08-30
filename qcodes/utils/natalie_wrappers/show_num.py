@@ -14,7 +14,7 @@ def show_num(id, useQT=False):
         plot, data : returns the plot and the dataset
 
     """
-    if not getattr(CURRENT_EXPERIMENT, "init", True):
+    if not CURRENT_EXPERIMENT["init"]:
         raise RuntimeError("Experiment not initalized. "
                            "use qc.Init(mainfolder, samplename)")
 
