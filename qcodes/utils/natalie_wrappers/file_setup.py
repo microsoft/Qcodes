@@ -130,8 +130,10 @@ def your_init(mainfolder: str, sample_name: str, station, plot_x_position=0.66,
 def my_init(sample_name: str, station, pdf_folder=True, analysis_folder=True,
             temp_dict_folder=True, waveforms_folder=True,
             annotate_image=False, mainfolder: str= None, display_pdf=True,
-            display_individual_pdf=False, qubit_count=None):
+            display_individual_pdf=False, qubit_count=None,
+            plot_x_position=0.66,):
     basic_init(sample_name, station, mainfolder)
+    CURRENT_EXPERIMENT['plot_x_position'] = plot_x_position
     if pdf_folder:
         _set_up_pdf_preferences(display_pdf=display_pdf,
                                 display_individual_pdf=display_individual_pdf)
