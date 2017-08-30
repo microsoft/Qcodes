@@ -1,8 +1,12 @@
 from matplotlib import ticker
 from os.path import sep
+from typing import Optional, Tuple
 
 import qcodes as qc
 from qcodes.instrument.visa import VisaInstrument
+from qcodes.plots.pyqtgraph import QtPlot
+from qcodes.data.data_set import DataSet
+from qcodes.loops import Loop
 from qcodes.utils.natalie_wrappers.file_setup import CURRENT_EXPERIMENT
 from qcodes.utils.natalie_wrappers.plot_functions import _plot_setup, \
     _rescale_mpl_axes, _save_individual_plots

@@ -5,6 +5,8 @@ from os import makedirs
 import logging
 import qcodes as qc
 
+from qcodes.utils.qcodes_device_annotator import DeviceImage
+
 log = logging.getLogger(__name__)
 CURRENT_EXPERIMENT = {}
 CURRENT_EXPERIMENT["logging_enabled"] = False
