@@ -186,7 +186,11 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             update = update
             if params_to_skip_update and name in params_to_skip_update:
                 update = False
-            snap['parameters'][name] = param.snapshot(update=update)
+            try:
+                snap['parameters'][name] = param.snapshot(update=update)
+            except:
+                logging.info("Snapshot: Could not update parameter: {}".format(name))
+                snap['parameters'][name] = param.snapshot(update=False)
         for attr in set(self._meta_attrs):
             if hasattr(self, attr):
                 snap[attr] = getattr(self, attr)
