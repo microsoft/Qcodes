@@ -9,10 +9,8 @@ def show_num(id, useQT=False):
     Show  and return plot and data for id in current instrument.
     Args:
         id(number): id of instrument
-
     Returns:
         plot, data : returns the plot and the dataset
-
     """
     if not CURRENT_EXPERIMENT["init"]:
         raise RuntimeError("Experiment not initalized. "

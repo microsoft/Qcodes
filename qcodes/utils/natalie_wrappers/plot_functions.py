@@ -1,6 +1,7 @@
 import numpy as np
 from os.path import sep
 from copy import deepcopy
+import functools
 from matplotlib import ticker
 import matplotlib.pyplot as plt
 
@@ -10,18 +11,41 @@ from qcodes.utils.natalie_wrappers.file_setup import CURRENT_EXPERIMENT
 
 
 def _rescale_mpl_axes(plot):
+    def scale_formatter(i, pos, scale):
+        return "{0:g}".format(i * scale)
+
     for i, subplot in enumerate(plot.subplots):
-        for axis in 'x', 'y':
-            unit = plot.traces[i]['config'][axis].unit
-            label = plot.traces[i]['config'][axis].label
-            maxval = abs(plot.traces[0]['config'][axis].ndarray).max()
-            if unit == 'V' and maxval < 0.1:
-                unit = 'mV'
-                tx = ticker.FuncFormatter(
-                    lambda i, pos: '{0:g}'.format(i * 1e3))
-                getattr(subplot, "{}axis".format(axis)).set_major_formatter(tx)
-                getattr(subplot, "set_{}label".format(axis))(
-                    "{} ({})".format(label, unit))
+        for axis in 'x', 'y', 'z':
+            if plot.traces[i]['config'].get(axis):
+                unit = plot.traces[i]['config'][axis].unit
+                label = plot.traces[i]['config'][axis].label
+                maxval = abs(plot.traces[0]['config'][axis].ndarray).max()
+                units_to_scale = ('V')
+                if unit in units_to_scale:
+                    if maxval < 1e-6:
+                        scale = 1e9
+                        new_unit = "n" + unit
+                    elif maxval < 1e-3:
+                        scale = 1e6
+                        new_unit = "μ" + unit
+                    elif maxval < 1:
+                        scale = 1e3
+                        new_unit = "m" + unit
+                    else:
+                        continue
+                    tx = ticker.FuncFormatter(
+                        functools.partial(scale_formatter, scale=scale))
+                    new_label = "{} ({})".format(label, new_unit)
+                    if axis in ('x', 'y'):
+                        getattr(subplot, "{}axis".format(
+                            axis)).set_major_formatter(tx)
+                        getattr(subplot, "set_{}label".format(axis))(new_label)
+                    else:
+                        subplot.qcodes_colorbar.formatter = tx
+                        subplot.qcodes_colorbar.ax.yaxis.set_major_formatter(
+                            tx)
+                        subplot.qcodes_colorbar.set_label(new_label)
+                        subplot.qcodes_colorbar.update_ticks()
 
 
 def _plot_setup(data, inst_meas, useQT=True, startranges=None):
@@ -36,10 +60,7 @@ def _plot_setup(data, inst_meas, useQT=True, startranges=None):
         else:
             num_subplots += 1
     if useQT:
-        if CURRENT_EXPERIMENT.get('plot_x_position'):
-            plot = QtPlot(fig_x_position=CURRENT_EXPERIMENT['plot_x_position'])
-        else:
-            plot = QtPlot()
+        plot = QtPlot(fig_x_position=CURRENT_EXPERIMENT['plot_x_position'])
     else:
         plot = MatPlot(subplots=(1, num_subplots))
 

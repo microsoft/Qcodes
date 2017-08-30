@@ -39,7 +39,6 @@ def _set_up_exp_file(sample_name: str, mainfolder: str= None):
     CURRENT_EXPERIMENT["sample_name"] = sample_name
     CURRENT_EXPERIMENT['init'] = True
     path_to_experiment_folder = sep.join([mainfolder, sample_name, ""])
-    # TODO: is exp_folder really needed?
     CURRENT_EXPERIMENT["exp_folder"] = path_to_experiment_folder
     try:
         makedirs(path_to_experiment_folder)
@@ -70,27 +69,25 @@ def _set_up_subfolder(subfolder_name: str):
 
 
 def _init_device_image(station):
+
     di = DeviceImage(CURRENT_EXPERIMENT["exp_folder"], station)
 
     success = di.loadAnnotations()
     if not success:
         di.annotateImage()
     CURRENT_EXPERIMENT['device_image'] = di
-    log.info('Set up device image')
 
 
 def _set_up_ipython_logging():
     ipython = get_ipython()
     # turn on logging only if in ipython
     # else crash and burn
-    mainfolder = CURRENT_EXPERIMENT["mainfolder"]
-    sample_name = CURRENT_EXPERIMENT["sample_name"]
-    logfile = sep.join([mainfolder, sample_name, "commands.log"])
-
     if ipython is None:
         raise RuntimeWarning("History can't be saved. "
                              "-Refusing to proceed (use IPython/jupyter)")
     else:
+        exp_folder = CURRENT_EXPERIMENT["exp_folder"]
+        logfile = "{}{}".format(exp_folder, "commands.log")
         CURRENT_EXPERIMENT['logfile'] = logfile
         if not CURRENT_EXPERIMENT["logging_enabled"]:
             log.debug("Logging commands to: t{}".format(logfile))

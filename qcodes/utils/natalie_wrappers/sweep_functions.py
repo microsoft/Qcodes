@@ -2,6 +2,7 @@ from matplotlib import ticker
 from os.path import sep
 
 import qcodes as qc
+from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils.natalie_wrappers.file_setup import CURRENT_EXPERIMENT
 from qcodes.utils.natalie_wrappers.plot_functions import _plot_setup, \
     _rescale_mpl_axes, _save_individual_plots
@@ -16,7 +17,6 @@ def _flush_buffers(*params):
     """
     If possible, flush the VISA buffer of the instrument of the
     provided parameters. The params can be instruments as well.
-
     Supposed to be called inside doNd like so:
     _flush_buffers(inst_set, *inst_meas)
     """
@@ -42,7 +42,6 @@ def _flush_buffers(*params):
 def _select_plottables(tasks):
     """
     Helper function to select plottable tasks. Used inside the doNd functions.
-
     A task is here understood to be anything that the qc.Loop 'each' can eat.
     """
     # allow passing a single task
@@ -62,13 +61,11 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
     their plotting specifications, the device image annotation etc.
     The input loop should just be a loop ready to run and perform the desired
     measurement. The two params tuple are used for plotting.
-
     Args:
         loop: The QCoDeS loop object describing the actual measurement
         set_params: tuple of tuples. Each tuple is of the form
             (param, start, stop)
         meas_params: tuple of parameters to measure
-
     Returns:
         (plot, data)
     """
@@ -116,7 +113,7 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
         # set window back to original size
         plot.win.resize(1000, 600)
         plot.save()
-        if CURRENT_EXPERIMENT.get('pdf_subfolder'):
+        if 'pdf_subfolder' in CURRENT_EXPERIMENT:
             plt.ioff()
             pdfplot, num_subplots = _plot_setup(data, meas_params, useQT=False)
             # pad a bit more to prevent overlap between
@@ -135,8 +132,8 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
             else:
                 plt.close(pdfplot.fig)
             if num_subplots > 1:
-                _save_individual_plots(
-                    data, meas_params, pdfdisplay['individual'])
+                _save_individual_plots(data, meas_params,
+                                       pdfdisplay['individual'])
             plt.ion()
     if CURRENT_EXPERIMENT.get('device_image'):
         log.debug('Saving device image')
@@ -151,25 +148,21 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
     return plot, data
 
 
-def do1d(inst_set, start, stop, num_points, delay, *meas_params,
-         do_plots=True):
+def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True):
     """
-
     Args:
         inst_set:  Instrument to sweep over
         start:  Start of sweep
         stop:  End of sweep
         num_points:  Number of steps to perform
         delay:  Delay at every step
-        *meas_params:  any number of parameters to measure and/or tasks to
+        *inst_meas:  any number of instrument to measure and/or tasks to
           perform at each step of the sweep
         do_plots: Default True: If False no plots are produced.
             Data is still saved
              and can be displayed with show_num.
-
     Returns:
         plot, data : returns the plot and the dataset
-
     """
 
     loop = qc.Loop(inst_set.sweep(start,
@@ -177,7 +170,44 @@ def do1d(inst_set, start, stop, num_points, delay, *meas_params,
                                   num=num_points), delay).each(*inst_meas)
 
     set_params = (inst_set, start, stop),
-    meas_params = _select_plottables(meas_params)
+    meas_params = _select_plottables(inst_meas)
+
+    plot, data = _do_measurement(loop, set_params, meas_params,
+                                 do_plots=do_plots)
+
+    return plot, data
+
+
+def do1dDiagonal(inst_set, inst2_set, start, stop, num_points,
+                 delay, start2, slope, *inst_meas, do_plots=True):
+    """
+    Perform diagonal sweep in 1 dimension, given two instruments
+    Args:
+        inst_set:  Instrument to sweep over
+        inst2_set: Second instrument to sweep over
+        start:  Start of sweep
+        stop:  End of sweep
+        num_points:  Number of steps to perform
+        delay:  Delay at every step
+        start2:  Second start point
+        slope:  slope of the diagonal cut
+        *inst_meas:  any number of instrument to measure
+        do_plots: Default True: If False no plots are produced.
+            Data is still saved and can be displayed with show_num.
+    Returns:
+        plot, data : returns the plot and the dataset
+    """
+
+    # (WilliamHPNielsen) If I understand do1dDiagonal correctly, the inst2_set
+    # is supposed to be varied secretly in the background
+    set_params = ((inst_set, start, stop),)
+    meas_params = _select_plottables(inst_meas)
+
+    slope_task = qc.Task(inst2_set, (inst_set) *
+                         slope + (slope * start - start2))
+
+    loop = qc.Loop(inst_set.sweep(start, stop, num=num_points),
+                   delay).each(slope_task, *inst_meas, inst2_set)
 
     plot, data = _do_measurement(loop, set_params, meas_params,
                                  do_plots=do_plots)
@@ -187,9 +217,8 @@ def do1d(inst_set, start, stop, num_points, delay, *meas_params,
 
 def do2d(inst_set, start, stop, num_points, delay,
          inst_set2, start2, stop2, num_points2, delay2,
-         *meas_params, do_plots=True):
+         *inst_meas, do_plots=True):
     """
-
     Args:
         inst_set:  Instrument to sweep over
         start:  Start of sweep
@@ -201,23 +230,21 @@ def do2d(inst_set, start, stop, num_points, delay,
         stop2:  End of sweep for second instrument
         num_points2:  Number of steps to perform
         delay2:  Delay at every step for second instrument
-        *meas_params:
+        *inst_meas:
         do_plots: Default True: If False no plots are produced.
             Data is still saved and can be displayed with show_num.
-
     Returns:
         plot, data : returns the plot and the dataset
-
     """
 
-    for inst in meas_params:
+    for inst in inst_meas:
         if getattr(inst, "setpoints", False):
             raise ValueError("3d plotting is not supported")
 
     innerloop = qc.Loop(inst_set2.sweep(start2,
                                         stop2,
                                         num=num_points2),
-                        delay2).each(*meas_params)
+                        delay2).each(*inst_meas)
     outerloop = qc.Loop(inst_set.sweep(start,
                                        stop,
                                        num=num_points),
@@ -225,7 +252,9 @@ def do2d(inst_set, start, stop, num_points, delay,
 
     set_params = ((inst_set, start, stop),
                   (inst_set2, start2, stop2))
-    meas_params = _select_plottables(meas_params)
+    meas_params = _select_plottables(inst_meas)
 
     plot, data = _do_measurement(outerloop, set_params, meas_params,
                                  do_plots=do_plots)
+
+    return plot, data
