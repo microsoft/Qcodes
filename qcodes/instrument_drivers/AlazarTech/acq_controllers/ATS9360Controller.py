@@ -25,8 +25,6 @@ class ATS9360Controller(AcquisitionController):
         filter (default 'win'): filter to be used to filter out double freq
             component ('win' - window, 'ls' - least squared, 'ave' - averaging)
         numtaps (default 101): number of freq components used in filter
-        chan_b (default False): whether there is also a second channel of data
-            to be processed and returned. Not currently fully implemented.
         **kwargs: kwargs are forwarded to the Instrument base class
 
     TODO(nataliejpg) test filter options
@@ -41,7 +39,7 @@ class ATS9360Controller(AcquisitionController):
     filter_dict = {'win': 0, 'ls': 1, 'ave': 2}
 
     def __init__(self, name, alazar_name, filter: str = 'win',
-                 numtaps: int =101, chan_b: bool = False,
+                 numtaps: int =101,
                  **kwargs):
         super().__init__(name, alazar_name, **kwargs)
         self.filter_settings = {'filter': self.filter_dict[filter],
@@ -344,9 +342,7 @@ class ATS9360Controller(AcquisitionController):
                                            samples_per_record,
                                            self.number_of_channels)
         channel = settings['channel']
-        print(channel)
         channelData = reshaped_buf[..., channel]
-        print(channelData.shape)
         if settings['average_records'] and settings['average_buffers']:
             recordA = np.uint16(np.mean(channelData, axis=1, keepdims=True) /
                                 buffers_per_acquisition)
