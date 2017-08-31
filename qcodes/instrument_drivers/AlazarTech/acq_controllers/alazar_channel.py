@@ -34,6 +34,8 @@ class AlazarChannel(InstrumentChannel):
 
         if self.dimensions >= 3:
             raise RuntimeError("Alazar controller only supports up to 2 dimensional arrays")
+
+        self._demod = demod
         if demod:
             self.add_parameter('demod_freq',
                                label='demod freq',
@@ -82,7 +84,11 @@ class AlazarChannel(InstrumentChannel):
 
     def prepare_channel(self):
         self._parent.active_channels.append({})
-        self._parent.active_channels[0]['demod'] = False
+        self._parent.active_channels[0]['demod'] = self._demod
+        if self._demod:
+            self._parent.active_channels[0]['demod_freq'] = self.demod_freq.get()
+        else:
+            self._parent.active_channels[0]['demod_freq'] = None
         self._parent.active_channels[0]['average_buffers'] = self._average_buffers
         self._parent.active_channels[0]['average_records'] = self._average_records
         self._parent.active_channels[0]['integrate_samples'] = self._integrate_samples

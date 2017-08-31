@@ -9,7 +9,7 @@ from qcodes.instrument_drivers.AlazarTech.acq_controllers.alazar_channel import 
 from ..ATS import AcquisitionController
 from ..acquisition_parameters import AcqVariablesParam, \
     NonSettableDerivedParameter
-
+from .demodulator import Demodulator
 
 class ATS9360Controller(AcquisitionController):
     """
@@ -267,7 +267,6 @@ class ATS9360Controller(AcquisitionController):
                                " supported is {}".format(samples_per_buffer, max_samples))
 
         self.board_info = alazar.get_idn()
-        average_buffers = False
         # extend this to support more than one channel
         settings = self.active_channels[0]
         if settings['average_buffers']:
@@ -280,28 +279,13 @@ class ATS9360Controller(AcquisitionController):
                                    records_per_buffer *
                                    self.number_of_channels))
 
-        if settings['average_buffers']:
-            len_buffers = 1
-        else:
-            len_buffers = buffers_per_acquisition
-
-        if settings['average_records']:
-            len_records = 1
-        else:
-            len_records = records_per_buffer
-
-        # num_demods = self.demod_freqs.get_num_demods()
-        # if num_demods:
-        #     mat_shape = (num_demods, len_buffers,
-        #                  len_records, self.samples_per_record.get())
-        #     self.mat_shape = mat_shape
-        #     integer_list = np.arange(samples_per_record)
-        #     integer_mat = (np.outer(np.ones(len_buffers),
-        #                             np.outer(np.ones(len_records), integer_list)))
-        #     angle_mat = 2 * np.pi * \
-        #         np.outer(demod_freqs, integer_mat).reshape(mat_shape)  / sample_rate
-        #     self.cos_mat = np.cos(angle_mat)
-        #     self.sin_mat = np.sin(angle_mat)
+        if settings['demod']:
+            self.demodulator = Demodulator(buffers_per_acquisition,
+                                           records_per_buffer,
+                                           samples_per_record,
+                                           sample_rate,
+                                           self.filter_settings,
+                                           self.active_channels)
 
     def pre_acquire(self):
         pass
@@ -375,27 +359,14 @@ class ATS9360Controller(AcquisitionController):
         recordA = self._to_volts(recordA)
 
         # do demodulation
-        # if self.demod_freqs.get_num_demods():
-        #     magA, phaseA = self._fit(recordA)
-        #     if self._integrate_samples:
-        #         magA = np.mean(magA, axis=-1)
-        #         phaseA = np.mean(phaseA, axis=-1)
-
-        unpacked = []
-        if settings['integrate_samples']:
-            unpacked.append(np.mean(recordA, axis=-1))
+        if settings['demod']:
+            magA, phaseA = self.demodulator.demodulate(recordA, self.int_delay(), self.int_time())
+            data = magA[0]
         else:
-            unpacked.append(np.squeeze(recordA))
-
-        data = np.squeeze(unpacked[0])
-        # if self.demod_freqs.get_num_demods():
-        #     for i in range(magA.shape[0]):
-        #         unpacked.append(magA[i])
-        #         unpacked.append(phaseA[i])
-        # same for chan b
-        # if self.chan_b:
-        #     raise NotImplementedError('chan b code not complete')
-
+            if settings['integrate_samples']:
+                data = np.squeeze(np.mean(recordA, axis=-1))
+            else:
+                data = np.squeeze(recordA)
 
         return data
 
@@ -409,71 +380,3 @@ class ATS9360Controller(AcquisitionController):
                             ' bps != 12, centered raw samples returned')
             volt_rec = record - np.mean(record)
         return volt_rec
-
-    def _fit(self, volt_rec):
-        """
-        Applies low bandpass filter and demodulation fit,
-        and integration limits to samples array
-
-        Args:
-            record (numpy array): record from alazar to be multiplied
-                                  with the software signal, filtered and limited
-                                  to ifantegration limits shape = (samples_taken, )
-
-        Returns:
-            magnitude (numpy array): shape = (demod_length, samples_after_limiting)
-            phase (numpy array): shape = (demod_length, samples_after_limiting)
-        """
-
-        # volt_rec to matrix and multiply with demodulation signal matrices
-        alazar = self._get_alazar()
-        sample_rate = alazar.effective_sample_rate.get()
-        demod_length = self.demod_freqs.get_num_demods()
-        volt_rec_mat = np.outer(np.ones(demod_length), volt_rec).reshape(self.mat_shape)
-        re_mat = np.multiply(volt_rec_mat, self.cos_mat)
-        im_mat = np.multiply(volt_rec_mat, self.sin_mat)
-
-        # filter out higher freq component
-        cutoff = self.demod_freqs.get_max_demod_freq() / 10
-        if self.filter_settings['filter'] == 0:
-            re_filtered = helpers.filter_win(re_mat, cutoff,
-                                             sample_rate,
-                                             self.filter_settings['numtaps'],
-                                             axis=-1)
-            im_filtered = helpers.filter_win(im_mat, cutoff,
-                                             sample_rate,
-                                             self.filter_settings['numtaps'],
-                                             axis=-1)
-        elif self.filter_settings['filter'] == 1:
-            re_filtered = helpers.filter_ls(re_mat, cutoff,
-                                            sample_rate,
-                                            self.filter_settings['numtaps'],
-                                            axis=-1)
-            im_filtered = helpers.filter_ls(im_mat, cutoff,
-                                            sample_rate,
-                                            self.filter_settings['numtaps'],
-                                            axis=-1)
-        elif self.filter_settings['filter'] == 2:
-            re_filtered = re_mat
-            im_filtered = im_mat
-        else:
-            raise RuntimeError("Filter setting: {} not implemented".format(self.filter_settings['filter']))
-
-        if self._integrate_samples:
-            # apply integration limits
-            beginning = int(self.int_delay() * sample_rate)
-            end = beginning + int(self.int_time() * sample_rate)
-
-            re_limited = re_filtered[..., beginning:end]
-            im_limited = im_filtered[..., beginning:end]
-        else:
-            re_limited = re_filtered
-            im_limited = im_filtered
-
-        # convert to magnitude and phase
-        complex_mat = re_limited + im_limited * 1j
-        magnitude = abs(complex_mat)
-        phase = np.angle(complex_mat, deg=True)
-
-        return magnitude, phase
-
