@@ -1,13 +1,14 @@
 import logging
-from ..ATS import AcquisitionController
-from ..alazar_channel import AlazarChannel
+
 import numpy as np
-from qcodes import ChannelList, InstrumentChannel
+
 import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
+from qcodes import ChannelList
+from qcodes import ManualParameter
+from qcodes.instrument_drivers.AlazarTech.acq_controllers.alazar_channel import AlazarChannel
+from ..ATS import AcquisitionController
 from ..acquisition_parameters import AcqVariablesParam, \
-                                    ExpandingAlazarArrayMultiParameter, \
-                                    NonSettableDerivedParameter, \
-                                    DemodFreqParameter
+    NonSettableDerivedParameter
 
 
 class ATS9360Controller(AcquisitionController):
@@ -65,7 +66,8 @@ class ATS9360Controller(AcquisitionController):
         self.add_parameter(name='allocated_buffers',
                            alternative='not controllable in this controller',
                            parameter_class=NonSettableDerivedParameter)
-        # self.add_parameter(name='buffers_per_acquisition')
+        self.add_parameter(name='buffers_per_acquisition',
+                           parameter_class=ManualParameter)
         self.add_parameter(name='records_per_buffer',
                                parameter_class=AcqVariablesParam,
                                default_fn= lambda : 1,
@@ -76,6 +78,7 @@ class ATS9360Controller(AcquisitionController):
 
         self.samples_divisor = self._get_alazar().samples_divisor
 
+        self.active_channels = []
 
     def _update_int_time(self, value, **kwargs):
         """
@@ -163,14 +166,9 @@ class ATS9360Controller(AcquisitionController):
         if not isinstance(value, int) or value < 1:
             raise ValueError('number of averages must be a positive integer')
 
-
-        if self.acquisition._average_records:
-            self.records_per_buffer._save_val(value)
-            self.buffers_per_acquisition._save_val(1)
-            self.allocated_buffers._save_val(1)
-        else:
-            self.buffers_per_acquisition._save_val(value)
-            self.allocated_buffers._save_val(2)
+        self.records_per_buffer._save_val(value)
+        self.buffers_per_acquisition._save_val(1)
+        self.allocated_buffers._save_val(1)
 
     def _int_delay_default(self):
         """
@@ -247,20 +245,21 @@ class ATS9360Controller(AcquisitionController):
         acq_s_p_r = self.samples_per_record.get()
         inst_s_p_r = alazar.samples_per_record.get()
         sample_rate = alazar.effective_sample_rate.get()
-        if acq_s_p_r != inst_s_p_r:
-            raise Exception('acq controller samples per record {} does not match'
-                            ' instrument value {}, most likely need '
-                            'to set and check int_time and int_delay'.format(acq_s_p_r, inst_s_p_r))
+        # if acq_s_p_r != inst_s_p_r:
+        #     raise Exception('acq controller samples per record {} does not match'
+        #                     ' instrument value {}, most likely need '
+        #                     'to set and check int_time and int_delay'.format(acq_s_p_r, inst_s_p_r))
         # if acq_s_r != inst_s_r:
         #     raise Exception('acq controller sample rate {} does not match '
         #                     'instrument value {}, most likely need '
         #                     'to set and check int_time and int_delay'.format(acq_s_r, inst_s_r))
         samples_per_record = inst_s_p_r
-        demod_freqs = self.demod_freqs.get()
+        #demod_freqs = self.demod_freqs.get()
         # if len(demod_freqs) == 0:
         #     raise Exception('no demod_freqs set')
 
         records_per_buffer = alazar.records_per_buffer.get()
+        buffers_per_acquisition = alazar.buffers_per_acquisition.get()
         max_samples = self._get_alazar().get_idn()['max_samples']
         samples_per_buffer = records_per_buffer * samples_per_record
         if samples_per_buffer > max_samples:
@@ -268,41 +267,55 @@ class ATS9360Controller(AcquisitionController):
                                " supported is {}".format(samples_per_buffer, max_samples))
 
         self.board_info = alazar.get_idn()
-        self.buffer = np.zeros(samples_per_record *
-                               records_per_buffer *
-                               self.number_of_channels)
-        avg_buffers = True
-        if avg_buffers:
+        average_buffers = False
+        # extend this to support more than one channel
+        settings = self.active_channels[0]
+        if settings['average_buffers']:
+            self.buffer = np.zeros(samples_per_record *
+                                   records_per_buffer *
+                                   self.number_of_channels)
+        else:
+            self.buffer = np.zeros((buffers_per_acquisition,
+                                   samples_per_record *
+                                   records_per_buffer *
+                                   self.number_of_channels))
+
+        if settings['average_buffers']:
             len_buffers = 1
         else:
-            pass # not implemented yet
+            len_buffers = buffers_per_acquisition
 
-        if self.acquisition._average_records:
+        if settings['average_records']:
             len_records = 1
         else:
             len_records = records_per_buffer
 
-        num_demods = self.demod_freqs.get_num_demods()
-        if num_demods:
-            mat_shape = (num_demods, len_buffers,
-                         len_records, self.samples_per_record.get())
-            self.mat_shape = mat_shape
-            integer_list = np.arange(samples_per_record)
-            integer_mat = (np.outer(np.ones(len_buffers),
-                                    np.outer(np.ones(len_records), integer_list)))
-            angle_mat = 2 * np.pi * \
-                np.outer(demod_freqs, integer_mat).reshape(mat_shape)  / sample_rate
-            self.cos_mat = np.cos(angle_mat)
-            self.sin_mat = np.sin(angle_mat)
+        # num_demods = self.demod_freqs.get_num_demods()
+        # if num_demods:
+        #     mat_shape = (num_demods, len_buffers,
+        #                  len_records, self.samples_per_record.get())
+        #     self.mat_shape = mat_shape
+        #     integer_list = np.arange(samples_per_record)
+        #     integer_mat = (np.outer(np.ones(len_buffers),
+        #                             np.outer(np.ones(len_records), integer_list)))
+        #     angle_mat = 2 * np.pi * \
+        #         np.outer(demod_freqs, integer_mat).reshape(mat_shape)  / sample_rate
+        #     self.cos_mat = np.cos(angle_mat)
+        #     self.sin_mat = np.sin(angle_mat)
 
     def pre_acquire(self):
         pass
 
-    def handle_buffer(self, data):
+    def handle_buffer(self, data, buffernum=0):
         """
         Adds data from Alazar to buffer (effectively averaging)
         """
-        self.buffer += data
+        settings = self.active_channels[0]
+
+        if settings['average_buffers']:
+            self.buffer += data
+        else:
+            self.buffer[buffernum] = data
 
     def post_acquire(self):
         """
@@ -328,44 +341,63 @@ class ATS9360Controller(AcquisitionController):
         samples_per_record = alazar.samples_per_record.get()
         records_per_buffer = alazar.records_per_buffer.get()
         buffers_per_acquisition = alazar.buffers_per_acquisition.get()
-        number_of_buffers = 1 # Hardcoded for now assuming all buffers go to the same array
+        settings = self.active_channels[0]
+        if settings['average_buffers']:
+            len_buffers = 1
+        else:
+            len_buffers = buffers_per_acquisition
+
+        if settings['average_records']:
+            len_records = 1
+        else:
+            len_records = records_per_buffer
+        if settings['average_buffers']:
+            number_of_buffers = 1
+        else:
+            number_of_buffers = buffers_per_acquisition
         reshaped_buf = self.buffer.reshape(number_of_buffers,
                                            records_per_buffer,
                                            samples_per_record,
                                            self.number_of_channels)
-
-        channelAData = reshaped_buf[:, :, :, 0]
-        if self.acquisition._average_records:
-            recordA = np.uint16(np.mean(channelAData, axis=1, keepdims=True) /
+        channel = settings['channel']
+        print(channel)
+        channelData = reshaped_buf[..., channel]
+        print(channelData.shape)
+        if settings['average_records'] and settings['average_buffers']:
+            recordA = np.uint16(np.mean(channelData, axis=1, keepdims=True) /
                                 buffers_per_acquisition)
+        elif settings['average_records']:
+            recordA = np.uint16(np.mean(channelData, axis=1, keepdims=True))
+        elif settings['average_buffers']:
+            recordA = np.uint16(channelData/buffers_per_acquisition)
         else:
-            recordA = np.uint16(channelAData/buffers_per_acquisition)
-
+            recordA = np.uint16(channelData)
         recordA = self._to_volts(recordA)
 
         # do demodulation
-        if self.demod_freqs.get_num_demods():
-            magA, phaseA = self._fit(recordA)
-            if self._integrate_samples:
-                magA = np.mean(magA, axis=-1)
-                phaseA = np.mean(phaseA, axis=-1)
+        # if self.demod_freqs.get_num_demods():
+        #     magA, phaseA = self._fit(recordA)
+        #     if self._integrate_samples:
+        #         magA = np.mean(magA, axis=-1)
+        #         phaseA = np.mean(phaseA, axis=-1)
 
         unpacked = []
-        if self._integrate_samples:
+        if settings['integrate_samples']:
             unpacked.append(np.mean(recordA, axis=-1))
         else:
             unpacked.append(np.squeeze(recordA))
 
-        if self.demod_freqs.get_num_demods():
-            for i in range(magA.shape[0]):
-                unpacked.append(magA[i])
-                unpacked.append(phaseA[i])
+        data = np.squeeze(unpacked[0])
+        # if self.demod_freqs.get_num_demods():
+        #     for i in range(magA.shape[0]):
+        #         unpacked.append(magA[i])
+        #         unpacked.append(phaseA[i])
         # same for chan b
-        if self.chan_b:
-            raise NotImplementedError('chan b code not complete')
+        # if self.chan_b:
+        #     raise NotImplementedError('chan b code not complete')
 
 
-        return tuple(unpacked)
+        return data
 
     def _to_volts(self, record):
         # convert rec to volts

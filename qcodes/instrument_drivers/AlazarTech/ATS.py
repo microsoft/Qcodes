@@ -674,7 +674,6 @@ class AlazarTech_ATS(Instrument):
 
         buffer_recycling = (self.buffers_per_acquisition._get_byte() >
                             self.allocated_buffers._get_byte())
-
         while (buffers_completed < self.buffers_per_acquisition._get_byte()):
             # Wait for the buffer at the head of the list of available
             # buffers to be filled by the board.
@@ -691,7 +690,7 @@ class AlazarTech_ATS(Instrument):
             # if buffers must be recycled, extract data and repost them
             # otherwise continue to next buffer
             if buffer_recycling:
-                acquisition_controller.handle_buffer(buf.buffer)
+                acquisition_controller.handle_buffer(buf.buffer, buffers_completed)
                 self._call_dll('AlazarPostAsyncBuffer',
                                self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes)
             buffers_completed += 1
@@ -703,8 +702,8 @@ class AlazarTech_ATS(Instrument):
         # -----cleanup here-----
         # extract data if not yet done
         if not buffer_recycling:
-            for buf in self.buffer_list:
-                acquisition_controller.handle_buffer(buf.buffer)
+            for i, buf in enumerate(self.buffer_list):
+                acquisition_controller.handle_buffer(buf.buffer, i)
 
         # free up memory
         self.clear_buffers()
@@ -728,8 +727,8 @@ class AlazarTech_ATS(Instrument):
                      (buffers_completed, buffers_per_sec))
         logging.info("Captured %d records (%f records per sec)" %
                      (records_per_buffer * buffers_completed, records_per_sec))
-        logging.info("Transferred %d bytes (%f bytes per sec)" %
-                     (bytes_transferred, bytes_per_sec))
+        logging.info("Transferred {:g} bytes ({:g} "
+                     "bytes per sec)".format(bytes_transferred, bytes_per_sec))
 
         # return result
         return acquisition_controller.post_acquire()
