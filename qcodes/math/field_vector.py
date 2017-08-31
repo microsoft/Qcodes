@@ -1,7 +1,7 @@
 """
 A convenient class to keep track of vectors representing physical fields. The idea is that a vector instance
 stores a representation in cartesian, spherical and cylindrical coordinates. Giving either (x, y, z) values or
-(rho, phi, z) values or (r, theta, phi) values at instantiation will calculate the other representation immediately.
+(rho, phi, z) values or (r, theta, phi) values at instantiation we will calculate the other representation immediately.
 """
 
 import numpy as np
@@ -12,16 +12,17 @@ class FieldVector(object):
 
     def __init__(self, x=None, y=None, z=None, r=None, theta=None, phi=None, rho=None):
         """
-        :param x: float
-        :param y: float
-        :param z: float
-        :param r: float, magnitude of the vector
-        :param theta: float, the angle between the vector and the positive z-axis
-        :param phi: float, the angle of the projection of the vector on the xy plane and the positive x-axis
-        :param rho: float, the magnitude of the projection of the vector on the xy plane
+        Parameters:
+            x (float, optional): represents the norm of the projection of the vector along the x-axis
+            y (float, optional): represents the norm of the projection of the vector along the y-axis
+            z (float, optional): represents the norm of the projection of the vector along the z-axis
+            r (float, optional): represents the norm of the vector
+            theta (float, optional): represents the angle of the vector with respect to the positive z-axis
+            rho (float, optional): represents the norm of the projection of the vector on to the xy-plane
+            phi (float, optional): represents the angle of rho with respect to the positive x-axis
 
-        All inputs are optional, however the user needs to either give (x, y, z) values,
-        (r, theta, phi) values or (phi, rho, z) values.
+        Note: All inputs are optional, however the user needs to either give (x, y, z) values,
+        (r, theta, phi) values or (phi, rho, z) values for meaningful computation
         """
         self._x = x
         self._y = y
@@ -101,14 +102,19 @@ class FieldVector(object):
         x = rho * np.cos(phi)
         y = rho * np.sin(phi)
         r = np.sqrt(rho ** 2 + z ** 2)
-        theta = np.arccos(z / r)
+        if r != 0:
+            theta = np.arccos(z / r)
+        else:
+            theta = 0
 
         return x, y, z, r, theta, phi, rho
 
     def _compute_unknowns(self):
         """
-        Compute all values. This function will raise an error if:
-         1) There are contradictory inputs (e.g. x=3, y=4, z=0 and rho=6)
+        Compute all coordinates. To do this we need either the set (x, y, z) to contain no None values, or the set
+        (r, theta, phi), or the set (rho, phi, z). Given any of these sets, we can recompute the rest.
+
+        This function will raise an error if there are contradictory inputs (e.g. x=3, y=4, z=0 and rho=6).
         """
 
         for f in [
@@ -117,7 +123,7 @@ class FieldVector(object):
             lambda: FieldVector._cylindrical_to_other(self._phi, self._rho, self._z)
         ]:
             new_values = f()
-            if new_values is not None:
+            if new_values is not None:  # this will return None if any of the function arguments is None.
                 self._set_attribute_values(FieldVector.attributes, new_values)
                 break
 
@@ -128,7 +134,19 @@ class FieldVector(object):
             setattr(self, "_" + att, value)
 
     def set_vector(self, **new_values):
+        """
+        Reset the the values of the vector
 
+        Examples:
+            >>> f = FieldVector(x=0, y=2, z=6)
+            >>> f.set_vector(x=9, y=3, z=1)
+            >>> f.set_vector(r=1, theta=30.0, phi=10.0)
+            >>> f.set_vector(x=9, y=0)  # this should raise a value error: "Can only set vector with a complete value
+            # set"
+            >>> f.set_vector(x=9, y=0, r=3)  # although mathematically it is possible to compute the complete vector
+            # from the values given, this is too hard to implement with generality (and not worth it) so this to will
+            # raise the above mentioned ValueError
+        """
         names = sorted(list(new_values.keys()))
         groups = [["x", "y", "z"], ["phi", "r", "theta"], ["phi", "rho", "z"]]
         if names not in groups:
@@ -139,15 +157,28 @@ class FieldVector(object):
 
     def set_component(self, **new_values):
         """
-        Set components of the vector to some new value. It is disallowed for the user to set vector components
+        Set a single component of the vector to some new value. It is disallowed for the user to set vector components
         manually as this can lead to inconsistencies (e.g. x and rho are not independent of each other, setting
         one has to effect the other)
 
-        :param new_values: dict, keys representing parameter names and values the values to be set
+        Examples:
+            >>> f = FieldVector(x=2, y=3, z=4)
+            >>> f.set_component(r=10) # Since r is part of the set (r, theta, phi) representing spherical coordinates,
+            # setting r means that theta and phi are kept constant and only r is changed. After changing r, (x, y, z)
+            # values are recomputed, as is the rho coordinate. Internally we arrange this by setting x, y, z and rho to
+            # None and calling self._compute_unknowns()
+
+        Parameters:
+            new_values (dict): keys representing parameter names and values the values to be set
         """
 
         if len(new_values) > 1:
             raise NotImplementedError("Cannot set multiple components at once")
+            # It is not easy to properly implement a way of setting multiple components at the same time as we need to
+            # check for inconsistencies. E.g. how do we handle the following situation:
+            # >>> f = FieldVector(x=1, y=2, z=3)
+            # >>> f.set_component(y=5, r=10)
+            # After setting r=10, y will no longer be equal to 5.
 
         items = list(new_values.items())
         component_name = items[0][0]

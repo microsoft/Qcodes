@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 
 
-class MockAMI430(object):
+class MockAMI430:
     states = {
         "RAMPING to target field/current": "1",
         "HOLDING at the target field/current": "2",
@@ -22,7 +22,7 @@ class MockAMI430(object):
         "kilogauss": "0"
     }
 
-    ramp_rate_units = {  # I made this up! Could not find correct values in manual
+    ramp_rate_units = {
         "A/s": "0",
         "A/min": "1"
     }
@@ -114,11 +114,16 @@ class MockAMI430(object):
 
         [1] http://www.americanmagnetics.com/support/manuals/mn-4Q06125PS-430.pdf
 
-        :param gs: string, "get", or "set"
-        :param msg_str: string, the message string the mock instrument gets through the network socket.
-        :param key: string, one of the keys in self.handlers
-        :return: (match, args), (bool, string), if the key and the msg_str match, then match = True. If any arguments
-                                                are present in the message string these will be passed along.
+        Parameters:
+            gs (string):  "get", or "set"
+            msg_str (string): the message string the mock instrument gets.
+            key (string): one of the keys in self.handlers
+
+        Returns:
+            match (bool): if the key and the msg_str match, then match = True
+            args (string): if any arguments are present in the message string these will be passed along. This is
+                            always None when match = False
+
         """
         if msg_str == key:  # If the message string matches a key exactly we have a match with no arguments
             return True, None
@@ -157,9 +162,12 @@ class MockAMI430(object):
 
     def _handle_messages(self, msg):
         """
-        :param msg: string, a message received through the socket communication layer
-        :return: string or None,    If the type of message requests a value (a get message) then this value is returned
-                                    by this function. A set message will return a None value.
+        Parameters:
+            msg (string): a message received through the socket communication layer
+
+        Returns:
+            rval (string or None): If the type of message requests a value (a get message) then this value is returned
+            by this function. A set message will return a None value.
         """
 
         gs = {True: "get", False: "set"}[msg.endswith("?")]  # A "get" message ends with a "?" and will invoke the get

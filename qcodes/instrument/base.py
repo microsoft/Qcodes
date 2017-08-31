@@ -63,7 +63,9 @@ class InstrumentBase(Metadatable, DelegateAttributes):
     def get_mock_messages(self):
         """
         For testing purposes we might want to get log messages from the mocker.
-        :return: mocker_messages: list, str
+
+        Returns:
+            mocker_messages: list, str
         """
         if not self._testing:
             raise ValueError("Cannot get mock messages if not in testing mode")
