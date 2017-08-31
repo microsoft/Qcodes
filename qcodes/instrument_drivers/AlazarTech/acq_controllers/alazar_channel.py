@@ -95,31 +95,3 @@ class AlazarChannel(InstrumentChannel):
         self._parent.active_channels[0]['channel'] = self.alazar_channel.get()
         if self.dimensions > 0:
             self.data.set_setpoints_and_labels()
-        # self.add_parameter('single_point',
-        #                    label='single point')
-        #
-        # self.add_parameter('record_trace')
-        #
-        # self.add_parameter('buffers_vs_records_trace')
-        #
-        # self.add_parameter('samples_trace')
-        #
-        # self.add_parameter('records_vs_samples_trace')
-        #
-        #
-        # def get_data(self):
-        #     params_to_kwargs = ['samples_per_record', 'records_per_buffer',
-        #                         'buffers_per_acquisition', 'allocated_buffers']
-        #     acq_kwargs = self.acquisition_kwargs.copy()
-        #     additional_acq_kwargs = {key: val.get() for key, val in self.parameters.items() if
-        #                              key in params_to_kwargs}
-        #     acq_kwargs.update(additional_acq_kwargs)
-        #     alazar = self._parent.get_alazar()
-        #     value = alazar.acquire(acquisition_controller=self._parent,
-        #                            **self.acquisitionkwargs)
-        #     return value
-        #
-        # def prepare_buffer(self):
-        #     if self.dimensions == 0:
-        #         pass
-
