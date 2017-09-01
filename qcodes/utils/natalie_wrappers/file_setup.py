@@ -1,4 +1,5 @@
 from IPython import get_ipython
+import atexit
 from os.path import sep
 from os.path import abspath
 from os import makedirs
@@ -12,6 +13,15 @@ CURRENT_EXPERIMENT = {}
 CURRENT_EXPERIMENT["logging_enabled"] = False
 CURRENT_EXPERIMENT["init"] = False
 pdfdisplay = {}
+
+
+def close_station(station):
+    for comp in station.components:
+        print("Closing connection to {}".format(comp))
+        try:
+            qc.Instrument.find_instrument(comp).close()
+        except KeyError:
+            pass
 
 
 def _set_up_exp_file(sample_name: str, mainfolder: str= None):
@@ -111,6 +121,7 @@ def _set_up_pdf_preferences(subfolder_name: str = 'pdf', display_pdf=True,
 ########################################################################
 
 def basic_init(sample_name: str, station, mainfolder: str= None):
+    atexit.register(close_station, station)
     _set_up_exp_file(sample_name, mainfolder)
     _set_up_station(station)
     _set_up_ipython_logging()
