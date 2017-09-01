@@ -31,6 +31,9 @@ class Measure(Metadatable):
         """
         return self.run(quiet=True, location=False, **kwargs)
 
+    def get_data_set(self, *args, **kwargs):
+        return self._dummyLoop.get_data_set(*args, **kwargs)
+
     def run(self, use_threads=False, quiet=False, station=None, **kwargs):
         """
         Run the actions in this measurement and return their data as a DataSet

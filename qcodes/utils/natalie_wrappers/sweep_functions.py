@@ -9,7 +9,7 @@ from qcodes.plots.pyqtgraph import QtPlot
 from qcodes.data.data_set import DataSet
 from qcodes.loops import Loop
 from qcodes.utils.natalie_wrappers.file_setup import CURRENT_EXPERIMENT
-from qcodes.utils.natalie_wrappers.file_setup import  pdfdisplay
+from qcodes.utils.natalie_wrappers.file_setup import pdfdisplay
 from qcodes.utils.natalie_wrappers.plot_functions import _plot_setup, \
     _rescale_mpl_axes, _save_individual_plots
 from qcodes.utils.natalie_wrappers.device_image import save_device_image
@@ -79,8 +79,11 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
     _flush_buffers(*parameters)
 
     # startranges for _plot_setup
-    startranges = dict(zip((sp[0].label for sp in set_params),
-                           ((sp[1], sp[2]) for sp in set_params)))
+    try:
+        startranges = dict(zip((sp[0].label for sp in set_params),
+                               ((sp[1], sp[2]) for sp in set_params)))
+    except AttributeError:
+        startranges = None
 
     interrupted = False
 
@@ -162,7 +165,7 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True):
         stop:  End of sweep
         num_points:  Number of steps to perform
         delay:  Delay at every step
-        *inst_meas:  any number of instrument to measure and/or tasks to
+        *inst_meas:  any number of parameters to measure and/or tasks to
           perform at each step of the sweep
         do_plots: Default True: If False no plots are produced.
             Data is still saved
@@ -197,7 +200,7 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, num_points,
         delay:  Delay at every step
         start2:  Second start point
         slope:  slope of the diagonal cut
-        *inst_meas:  any number of instrument to measure
+        *inst_meas:  any number of parameters to measure
         do_plots: Default True: If False no plots are produced.
             Data is still saved and can be displayed with show_num.
     Returns:
@@ -263,4 +266,21 @@ def do2d(inst_set, start, stop, num_points, delay,
     plot, data = _do_measurement(outerloop, set_params, meas_params,
                                  do_plots=do_plots)
 
+    return plot, data
+
+
+def do0d(*inst_meas, do_plots=True):
+    """
+    Args:
+        *inst_meas:
+        do_plots: Default True: If False no plots are produced.
+            Data is still saved and can be displayed with show_num.
+    Returns:
+        plot, data : returns the plot and the dataset
+    """
+    measurement = qc.Measure(*inst_meas)
+    set_params = ((None, None, None),)
+    meas_params = _select_plottables(*inst_meas)
+    plot, data = _do_measurement(measurement, set_params, meas_params,
+                                 do_plots=do_plots)
     return plot, data
