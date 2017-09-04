@@ -4,6 +4,22 @@ import matplotlib.pyplot as plt
 from qcodes import VisaInstrument, ArrayParameter
 
 
+class WaveForm(ArrayParameter):
+    def __init__(self, name, shape, instrument, **kwargs):
+        super().__init__(name, shape, **kwargs)
+        self._instrument = instrument
+
+    def get(self):
+        """
+        Get a wave form reading from the scope
+        """
+        data = self._instrument.visa_handle.query_ascii_values(":wav:data?", converter="s")
+        # We want to get the data as ascii strings. Leaving query_ascii_values with a default converter=f will make
+        # it prone to exceptions as the internal string to float function is not smart enough to deal with empty
+        # strings.
+        return [float(d) for d in data if d != ""]
+
+
 class Rigol_DS4035(VisaInstrument):
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, terminator='\n', **kwargs)
@@ -31,9 +47,7 @@ def main():
 
     visa_address = "TCPIP::169.254.180.17::INSTR"
     dev = Rigol_DS4035("rigol_scope", visa_address)
-
-    data = dev.get_wave_form()
-    data = [float(d) for d in data if d != ""]
+    data = [float(d) for d in dev.get_wave_form() if d != ""]
 
     fig, ax = plt.subplots()
     ax.plot(data)
