@@ -5,8 +5,6 @@ import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as pgmp
 from pyqtgraph.multiprocess.remoteproxy import ClosedError
-import qcodes.utils.helpers
-
 from pyqtgraph import QtGui # note that pyqtgraph still uses the old pyqt4 layout
 
 import warnings
@@ -74,7 +72,6 @@ class QtPlot(BasePlot):
         else:
             # overrule the remote pyqtgraph class
             self.rpg = pg
-            self.qc_helpers = qcodes.utils.helpers
         try:
             self.win = self.rpg.GraphicsWindow(title=window_title)
         except ClosedError as err:
@@ -109,7 +106,6 @@ class QtPlot(BasePlot):
         pg.mkQApp()
         cls.proc = pgmp.QtProcess()  # pyqtgraph multiprocessing
         cls.rpg = cls.proc._import('pyqtgraph')
-        cls.qc_helpers = cls.proc._import('qcodes.utils.helpers')
 
     def clear(self):
         """

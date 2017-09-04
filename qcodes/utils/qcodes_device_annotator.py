@@ -10,8 +10,6 @@ import PyQt5.QtCore as core
 
 from shutil import copyfile
 import copy
-from qcodes.instrument.channel import ChannelList
-from qcodes.utils.helpers import foreground_qt_window
 
 class MakeDeviceImage(qt.QWidget):
     """
@@ -89,8 +87,6 @@ class MakeDeviceImage(qt.QWidget):
         self.move(100, 100)
         self.setWindowTitle('Generate annotated device image')
         self.show()
-        self.raise_()
-        foreground_qt_window(self)
 
     def select_font(self):
 
@@ -109,27 +105,6 @@ class MakeDeviceImage(qt.QWidget):
                 paramitem = gui.QStandardItem(param)
                 paramitem.setEditable(False)
                 item.appendRow(paramitem)
-
-            if station[inst].submodules:
-                for submodulename, submodule in station[inst].submodules.items():
-                    submoduleitem = gui.QStandardItem(submodulename)
-                    submoduleitem.setEditable(False)
-                    item.appendRow(submoduleitem)
-                    if isinstance(submodule, ChannelList):
-                        for channel in submodule:
-                            channelitem = gui.QStandardItem(channel.short_name)
-                            channelitem.setEditable(False)
-                            submoduleitem.appendRow(channelitem)
-                            for param in channel.parameters:
-                                paramitem = gui.QStandardItem(param)
-                                paramitem.setEditable(False)
-                                channelitem.appendRow(paramitem)
-                    else:
-                        for param in submodule.parameters:
-                            paramitem = gui.QStandardItem(param)
-                            paramitem.setEditable(False)
-                            submoduleitem.appendRow(paramitem)
-
 
     def loadimage(self):
         """
@@ -155,7 +130,7 @@ class MakeDeviceImage(qt.QWidget):
         if not self.treeView.selectedIndexes():
             return
         selected = self.treeView.selectedIndexes()[0]
-        selected_instrument = "_".join(self.get_full_name(selected))
+        selected_instrument = selected.parent().data()
         selected_parameter = selected.data()
         self.labelfield.setText("{}_{} ".format(selected_instrument, selected_parameter))
 
@@ -170,34 +145,28 @@ class MakeDeviceImage(qt.QWidget):
         if not self.treeView.selectedIndexes():
             return
         selected = self.treeView.selectedIndexes()[0]
-        selected_instrument = self.get_full_name(selected)
+        selected_instrument = selected.parent().data()
         selected_parameter = selected.data()
         self.click_x = event.pos().x()
         self.click_y = event.pos().y()
 
         # update the data
-        tempdict = self._data
-        for level in selected_instrument:
-            if not tempdict.get(level):
-                tempdict[level] = {}
-            tempdict = tempdict[level]
-
-        inner_data = tempdict
-
-        if selected_parameter not in inner_data.keys():
-            inner_data[selected_parameter] = {}
+        if selected_instrument not in self._data.keys():
+            self._data[selected_instrument] = {}
+        if selected_parameter not in self._data[selected_instrument].keys():
+            self._data[selected_instrument][selected_parameter] = {}
 
         if insertlabel:
-            inner_data[selected_parameter]['labelpos'] = (self.click_x, self.click_y)
-            inner_data[selected_parameter]['labelstring'] = self.labelfield.text()
+            self._data[selected_instrument][selected_parameter]['labelpos'] = (self.click_x, self.click_y)
+            self._data[selected_instrument][selected_parameter]['labelstring'] = self.labelfield.text()
         elif insertannotation:
-            inner_data[selected_parameter]['annotationpos'] = (self.click_x, self.click_y)
+            self._data[selected_instrument][selected_parameter]['annotationpos'] = (self.click_x, self.click_y)
             if self.formatterfield.text():
                 formatstring  = '{' + self.formatterfield.text() + "}"
-                inner_data[selected_parameter]['annotationformatter'] = formatstring
-                inner_data[selected_parameter]['value'] = formatstring
+                self._data[selected_instrument][selected_parameter]['annotationformatter'] = formatstring
+                self._data[selected_instrument][selected_parameter]['value'] = formatstring
             else:
-                inner_data[selected_parameter]['value'] = 'NaN'
+                self._data[selected_instrument][selected_parameter]['value'] = 'NaN'
 
 
         self._data['font'] = {}
@@ -210,29 +179,13 @@ class MakeDeviceImage(qt.QWidget):
         self.imageCanvas, _ = self._renderImage(self._data,
                                                 self.imageCanvas,
                                                 self.filename)
-    @staticmethod
-    def get_full_name(selected):
-        myp = selected
-        fullname = []
-        while hasattr(myp, 'parent') and not myp.parent() is None:
-            data = myp.parent().data()
-            if data is not None:
-                fullname.append(data)
-            else:
-                break
-            myp = myp.parent()
-        fullname.reverse()
-        return fullname
 
     def remove_label_and_annotation(self):
         selected = self.treeView.selectedIndexes()[0]
-        selected_instrument = self.get_full_name(selected)
+        selected_instrument = selected.parent().data()
         selected_parameter = selected.data()
-        tempdata = self._data
-        for level in selected_instrument:
-            tempdata = tempdata[level]
-        if selected_parameter in tempdata.keys():
-            tempdata[selected_parameter] = {}
+        if selected_parameter in self._data[selected_instrument].keys():
+            self._data[selected_instrument][selected_parameter] = {}
         # draw it
         self.imageCanvas, _ = self._renderImage(self._data,
                                                 self.imageCanvas,
@@ -252,9 +205,6 @@ class MakeDeviceImage(qt.QWidget):
         # Now forget about the original
         self.filename = rawpath
 
-        datafilename = os.path.join(self.folder, 'deviceimage_annotations.json')
-        with open(datafilename, 'w') as fid:
-            json.dump(self._data, fid)
         self.close()
 
     @staticmethod
@@ -293,17 +243,14 @@ class MakeDeviceImage(qt.QWidget):
                              core.Qt.AlignTop + core.Qt.AlignLeft,
                              title)
 
-        def recursively_paint(data):
+        for instrument, parameters in data.items():
+            for parameter, paramsettings in parameters.items():
 
-            for key, val in data.items():
-                if not hasattr(val, 'items'):
-                    continue
-                paramsettings = val
                 if 'labelpos' in paramsettings:
                     if paramsettings.get('labelstring'):
                         label_string = paramsettings.get('labelstring')
                     else:
-                        label_string = "{}_{} ".format(key, val)
+                        label_string = "{}_{} ".format(instrument, parameter)
                     if paramsettings.get('update'):
                         #parameters that are sweeped should be red.
                         painter.setBrush(gui.QColor(255, 0, 0, 100))
@@ -347,12 +294,8 @@ class MakeDeviceImage(qt.QWidget):
                                                  rectangle_width, rectangle_height),
                                      core.Qt.AlignCenter,
                                      annotationstring)
-                if hasattr(val, 'items'):
-                    recursively_paint(val)
 
-        recursively_paint(data)
-        painter.end()
-        canvas.setPixmap(pixmap)
+            canvas.setPixmap(pixmap)
 
         return canvas, pixmap
 
@@ -378,9 +321,12 @@ class DeviceImage:
             app = qt.QApplication(sys.argv)
         else:
             app = qt.QApplication.instance()
-        self.imagedrawer = MakeDeviceImage(self.folder, self.station)
-        print("Please annotate device image")
+        imagedrawer = MakeDeviceImage(self.folder, self.station)
         app.exec_()
+        imagedrawer.close()
+        self._data = imagedrawer._data
+        self.filename = imagedrawer.filename
+        self.saveAnnotations()
 
     def saveAnnotations(self):
         """
@@ -421,35 +367,28 @@ class DeviceImage:
         """
         Update the data with actual voltages from the QDac
         """
-
-        def recursiveUpdataValues(qc_inst, data, sweeptparameters):
-            for key, val in data.items():
-                try:
-                    inst_param = qc_inst.parameters[key]
-                    value = inst_param.get_latest()
-                    try:
-                        floatvalue = float(value)
-                        if val.get('annotationformatter'):
-                            valuestr = val.get('annotationformatter').format(floatvalue)
-                        elif floatvalue > 1000 or floatvalue < 0.1:
-                            valuestr = "{:.2e}".format(floatvalue)
-                        else:
-                            valuestr = "{:.2f}".format(floatvalue)
-                        if inst_param in sweeptparameters:
-                            val['update'] = True
-                    except (ValueError, TypeError):
-                        valuestr = str(value)
-                    val['value'] = valuestr
-                except KeyError:
-                    subinst = qc_inst.submodules[key]
-                    recursiveUpdataValues(subinst, val, sweeptparameters)
-
         for instrument, parameters in self._data.items():
             if instrument == 'font':
                 # skip font data
                 continue
-            qc_inst = station.components[instrument]
-            recursiveUpdataValues(qc_inst, parameters, sweeptparameters)
+            for parameter in parameters.keys():
+                value = station.components[instrument][parameter].get_latest()
+                try:
+                    floatvalue = float(station.components[instrument][parameter].get_latest())
+                    if self._data[instrument][parameter].get('annotationformatter'):
+                        valuestr = self._data[instrument][parameter].get('annotationformatter').format(floatvalue)
+                    elif floatvalue > 1000 or floatvalue < 0.1:
+                        valuestr = "{:.2e}".format(floatvalue)
+                    else:
+                        valuestr = "{:.2f}".format(floatvalue)
+                except (ValueError, TypeError):
+                    valuestr = str(value)
+                self._data[instrument][parameter]['value'] = valuestr
+                if sweeptparameters:
+                    for sweeptparameter in sweeptparameters:
+                        if sweeptparameter._instrument.name == instrument and sweeptparameter.name == parameter:
+                            self._data[instrument][parameter]['update'] = True
+
 
     def makePNG(self, counter, path=None, title=None):
         """
