@@ -306,7 +306,8 @@ class DacSlot(InstrumentChannel, DacReader):
         # Create a list of channels in the slot
         self.channels = ChannelList(self, "Slot_Channels", DacChannel)
         for i in range(4):
-            self.channels.append(DacChannel(self, "Chan{}".format(i), i))
+            self.channels.append(DacChannel(self, "Chan{}".format(i), i,
+                                            min_val=min_val, max_val=max_val))
 
         # Set the slot mode. Valid modes are:
         #   Off: Channel outputs are disconnected from the input, grounded with 10MOhm.
@@ -397,7 +398,7 @@ class Decadac(VisaInstrument, DacReader):
         slots = ChannelList(self, "Slots", DacSlot)
         for i in range(6):  # Create the 6 DAC slots
             slots.append(DacSlot(self, "Slot{}".format(i), i, min_val, max_val))
-            channels.extend(self.slots[i].channels)
+            channels.extend(slots[i].channels)
         slots.lock()
         channels.lock()
         self.add_submodule("slots", slots)
