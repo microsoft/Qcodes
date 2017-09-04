@@ -6,7 +6,7 @@ from os import makedirs
 import logging
 import qcodes as qc
 
-from qcodes.utils.qcodes_device_annotator import DeviceImage
+from qcodes.utils.natalie_wrappers.qcodes_device_annotator import DeviceImage
 
 log = logging.getLogger(__name__)
 CURRENT_EXPERIMENT = {}
