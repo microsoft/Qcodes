@@ -350,7 +350,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 return []
 
             # drop the initial value, we're already there
-            return permissive_range(start_value, value, step)[1:]
+            return permissive_range(start_value, value, step)[1:] + [value]
 
     def validate(self, value):
         """
