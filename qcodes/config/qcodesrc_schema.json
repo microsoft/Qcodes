@@ -23,6 +23,14 @@
                         "INFO",
                         "DEBUG"
                     ]
+                },
+                "register_magic" : {
+                    "description": "Register QCoDeS magic when in iPython. Can be set to True, False, or a list of magic commands to be registered",
+                    "anyOf" : [
+                        {"type": "boolean"},
+                        {"type": "array"}
+                    ],
+                    "default": true
                 }
             },
             "required":["loglevel" ]
