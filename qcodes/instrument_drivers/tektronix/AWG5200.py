@@ -1538,6 +1538,9 @@ class Tektronix_AWG5200(VisaInstrument):
         is unimportant, but the marker arrays must contain only 1's
         and 0's.
 
+        The 5200 has support for upto 4 marker channels, but this is not 
+        supported at the moment.
+        
         Args:
             w (numpy.ndarray): The waveform
             m1 (numpy.ndarray): Marker1
@@ -1565,14 +1568,6 @@ class Tektronix_AWG5200(VisaInstrument):
         if (list(m2).count(0)+list(m2).count(1)) != len(m2):
             raise TypeError('Marker 2 contains invalid values.' +
                             ' Only 0 and 1 are allowed')
-
-        outdict = {
-            'w': w,
-            #'m1': m,
-            #'m2': m,
-            'clock_freq': None,
-            'numpoints': len(w)
-        }
         
         self._values['files'][wfmname] = self._file_dict(w, m1, m2, None)
 
@@ -1587,8 +1582,6 @@ class Tektronix_AWG5200(VisaInstrument):
         s = 'WLISt:WAVeform:NEW "{}",{:d},REAL'.format(wfmname, dim)  #was INT insted of real
         self.write(s)
         # Prepare the data block
-        #number = ((2**13-1) + (2**13-1) * w + 2**14 *
-        #          np.array(m1) + 2**15 * np.array(m2))
         number = w
         number = number.astype('float32')  #was 'int' before
         ws = arr.array('f', number)   #was 'H' before
@@ -1603,10 +1596,10 @@ class Tektronix_AWG5200(VisaInstrument):
         mes = s1 + s2 + s3
         self.visa_handle.write_raw(mes)
     
-        number = m1*128+m2*64#+m3*32+m4*16
-        number = number.astype('uint8')  #was 'int' before
-        ws = arr.array('B', number)   #was 'H' before
-
+        number = m1*128+m2*64 # valid for 2 marker configuration
+        number = number.astype('uint8')  
+        ws = arr.array('B', number) 
+        
         ws = ws.tobytes()
         s1 = 'WLISt:WAVeform:MARKer:DATA "{}",'.format(wfmname)
         s1 = s1.encode('UTF-8')
