@@ -6,19 +6,29 @@ satisfy the Parameter interface. Most of the time that is easiest to do
 by either using or subclassing one of the classes defined here, but you can
 also use any class with the right attributes.
 
-TODO (alexcjohnson) update this with the real duck-typing requirements or
-create an ABC for Parameter and MultiParameter - or just remove this statement
-if everyone is happy to use these classes.
+All parameter classes are subclassed from _BaseParameter (except CombinedParameter).
+The _BaseParameter provides functionality that is common to all parameter types,
+such as ramping and scaling of values, adding delays (see documentation for 
+details).
 
 This file defines four classes of parameters:
 
-``Parameter``, ``ArrayParameter``, and ``MultiParameter`` must be subclassed:
-
-- ``Parameter`` is the base class for scalar-valued parameters, if you have
-    custom code to read or write a single value. Provides ``sweep`` and
-    ``__getitem__`` (slice notation) methods to use a settable parameter as
-    the swept variable in a ``Loop``. To use, fill in ``super().__init__``,
-    and provide a ``get`` method, a ``set`` method, or both.
+- ``Parameter`` is the base class for scalar-valued parameters. 
+    Two primary ways in which it can be used:
+    1. As an ``Instrument`` parameter that sends/receives commands. Provides a 
+       standardized interface to construct strings to pass to the 
+       instrument's ``write`` and ``ask`` methods
+    2. As a variable that stores and returns a value. For instance, for storing
+       of values you want to keep track of but cannot set or get electronically.
+    Provides ``sweep`` and ``__getitem__`` (slice notation) methods to use a 
+    settable parameter as the swept variable in a ``Loop``. 
+    
+    By default only gettable, returning its last value.
+    This behaviour can be modified in two ways:
+        1. Providing a ``get_cmd``/``set_cmd``, which can either be a callable, 
+           or a VISA command string
+        2. Creating a subclass with an explicit ``get``/``set`` method. This 
+           enables more advanced functionality.
 
 - ``ArrayParameter`` is a base class for array-valued parameters, ie anything
     for which each ``get`` call returns an array of values that all have the
@@ -35,20 +45,10 @@ This file defines four classes of parameters:
     that returns a sequence of values, and describe those values in
     ``super().__init__``.
 
-``StandardParameter`` and ``ManualParameter`` can be instantiated directly:
 
-- ``StandardParameter`` is the default class for instrument parameters
-    (see ``Instrument.add_parameter``). Can be gettable, settable, or both.
-    Provides a standardized interface to construct strings to pass to the
-    instrument's ``write`` and ``ask`` methods (but can also be given other
-    functions to execute on ``get`` or ``set``), to convert the string
-    responses to meaningful output, and optionally to ramp a setpoint with
-    stepped ``write`` calls from a single ``set``. Does not need to be
-    subclassed, just instantiated.
-
-- ``ManualParameter`` is for values you want to keep track of but cannot
-    set or get electronically. Holds the last value it was ``set`` to, and
-    returns it on ``get``.
+TODO (alexcjohnson) update this with the real duck-typing requirements or
+create an ABC for Parameter and MultiParameter - or just remove this statement
+if everyone is happy to use these classes.
 """
 
 from datetime import datetime, timedelta
