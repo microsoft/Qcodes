@@ -104,16 +104,45 @@ class _BaseParameter(Metadatable, DeferredOperations):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
             
-        # TODO
-        step (Optional[float]):
-        scale (Optional[float]):
-        inter_delay (Optional[float]):
-        post_delay (Optional[float]):
-        val_mapping
-        get_parser
-        set_parser
+        step (Optional[Union[int, float]]): max increment of parameter value.
+            Larger changes are broken into multiple steps this size.
+            When combined with delays, this acts as a ramp.
+            
+        scale (Optional[float]): Scale to multiply value with before 
+            performing set. the internally multiplied value is stored in 
+            `raw_value`. Can account for a voltage divider.
+        
+        inter_delay (Optional[Union[int, float]]): Minimum time (in seconds) 
+            between successive sets. If the previous set was less than this, 
+            it will wait until the condition is met. 
+            Can be set to 0 to go maximum speed with no errors.
+        
+        post_delay (Optional[Union[int, float]]): time (in seconds) to wait 
+            after the *start* of each set, whether part of a sweep or not. 
+            Can be set to 0 to go maximum speed with no errors.
+        
+        val_mapping (Optional[dict]): a bidirectional map data/readable values
+            to instrument codes, expressed as a dict:
+            ``{data_val: instrument_code}``
+            For example, if the instrument uses '0' to mean 1V and '1' to mean
+            10V, set val_mapping={1: '0', 10: '1'} and on the user side you
+            only see 1 and 10, never the coded '0' and '1'
+            If vals is omitted, will also construct a matching Enum validator.
+            NOTE: only applies to get if get_cmd is a string, and to set if
+            set_cmd is a string.
+            You can use ``val_mapping`` with ``get_parser``, in which case
+            ``get_parser`` acts on the return value from the instrument first,
+            then ``val_mapping`` is applied (in reverse).
+            
+        get_parser ( Optional[function]): function to transform the response
+            from get to the final output value. See also val_mapping
+            
+        set_parser (Optional[function]): function to transform the input set
+            value to an encoded value sent to the instrument.
+            See also val_mapping.
         snapshot_value (Optional[bool])
-        vals (Optional[Validators])
+        
+        vals (Optional[Validator]): a Validator object for this parameter
 
         max_val_age (Optional[float]): The max time (in seconds) to trust a
             saved value obtained from get_latest(). If this parameter has not
