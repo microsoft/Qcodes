@@ -32,6 +32,13 @@ blank_instruments = (
 )
 named_instrument = namedtuple('yesname', 'name')('astro')
 
+class MemoryParameter(Parameter):
+    def __init__(self, **kwargs):
+        self.last_values = []
+        super().__init__(set_cmd=self.add_value, **kwargs)
+
+    def add_value(self, value):
+        self.last_values.append(value)
 
 class TestParameter(TestCase):
     def test_no_name(self):
@@ -166,6 +173,30 @@ class TestParameter(TestCase):
     def test_bad_validator(self):
         with self.assertRaises(TypeError):
             Parameter('p', vals=[1, 2, 3])
+
+    def test_step_ramp(self):
+        p = MemoryParameter(name='test_step')
+        p(42)
+        self.assertEqual(p.last_values, [42])
+        p.step = 1
+
+        self.assertEqual(p.get_ramp_values(44.5, 1), [43, 44, 44.5])
+
+        p(44.5)
+        self.assertEqual(p.last_values, [42, 43, 44, 44.5])
+
+    def test_scale_raw_value(self):
+        p = Parameter(name='test_scale_raw_value', set_cmd=None)
+        p(42)
+        self.assertEqual(p.raw_value, 42)
+
+        p.scale = 2
+        self.assertEqual(p.raw_value, 42) # No set/get cmd performed
+        self.assertEqual(p(), 21)
+
+        p(10)
+        self.assertEqual(p.raw_value, 20)
+        self.assertEqual(p(), 10)
 
 
 class SimpleArrayParam(ArrayParameter):
