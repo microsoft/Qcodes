@@ -36,8 +36,8 @@ setup(name='qcodes',
       version=get_version(),
       use_2to3=False,
 
-      maintainer='Giulio Ungaretti',
-      maintainer_email='unga@nbi.ku.dk',
+      maintainer='Jens H Nielsen',
+      maintainer_email='j.h.nielsen@nbi.ku.dk',
       description='Python-based data acquisition framework developed by the '
                   'Copenhagen / Delft / Sydney / Microsoft quantum computing '
                   'consortium',
@@ -48,6 +48,7 @@ setup(name='qcodes',
           'Intended Audience :: Science/Research',
           'Programming Language :: Python :: 3 :: Only',
           'Programming Language :: Python :: 3.5',
+          'Programming Language :: Python :: 3.6',
           'Topic :: Scientific/Engineering'
       ],
       license='MIT',
@@ -58,9 +59,6 @@ setup(name='qcodes',
       install_requires= [
           'numpy>=1.10',
           'pyvisa>=1.8',
-          'ipython>=4.1.0',
-          'ipykernel!=4.6.0', # https://github.com/ipython/ipykernel/issues/240 in 4.6
-          'jupyter>=1.0.0',
           'h5py>=2.6'
       ],
 
