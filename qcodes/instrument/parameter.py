@@ -25,8 +25,12 @@ This file defines four classes of parameters:
     
     By default only gettable, returning its last value.
     This behaviour can be modified in two ways:
-        1. Providing a ``get_cmd``/``set_cmd``, which can either be a callable, 
-           or a VISA command string
+        1. Providing a ``get_cmd``/``set_cmd``, which can of the following:
+           a. callable, with zero args for get_cmd, one arg for set_cmd
+           b. VISA command string
+           c. None, in which case it retrieves its last value for ``get_cmd``, 
+              and stores a value for ``set_cmd``
+           d. False, in which case trying to get/set will raise an error.
         2. Creating a subclass with an explicit ``get``/``set`` method. This 
            enables more advanced functionality.
 
@@ -44,12 +48,15 @@ This file defines four classes of parameters:
     feed data to a ``DataSet``. To use, provide a ``get`` method
     that returns a sequence of values, and describe those values in
     ``super().__init__``.
+    
+    ``CombinedParameter`` # TODO
 
 
-TODO (alexcjohnson) update this with the real duck-typing requirements or
-create an ABC for Parameter and MultiParameter - or just remove this statement
-if everyone is happy to use these classes.
 """
+
+# TODO (alexcjohnson) update this with the real duck-typing requirements or
+# create an ABC for Parameter and MultiParameter - or just remove this statement
+# if everyone is happy to use these classes.
 
 from datetime import datetime, timedelta
 from copy import copy
@@ -74,10 +81,10 @@ from qcodes.data.data_array import DataArray
 
 class _BaseParameter(Metadatable, DeferredOperations):
     """
-    Shared behavior for simple and multi parameters. Not intended to be used
-    directly, normally you should use ``StandardParameter`` or
-    ``ManualParameter``, or create your own subclass of ``Parameter`` or
-    ``MultiParameter``.
+    Shared behavior for all parameters. Not intended to be used
+    directly, normally you should use ``Parameter``, ``ArrayParameter``, 
+    ``MultiParameter``, or ``CombinedParameter``.
+    Note that ``CombinedParameter`` is not yet a subclass of ``_BaseParameter``
 
     Args:
         name (str): the local name of the parameter. Should be a valid
@@ -94,13 +101,24 @@ class _BaseParameter(Metadatable, DeferredOperations):
             ``update=True``, for example if it takes too long to update.
             Default True.
 
-        max_val_age (Optional[int]): The max time (in seconds) to trust a
+        metadata (Optional[dict]): extra information to include with the
+            JSON snapshot of the parameter
+            
+        # TODO
+        step (Optional[float]):
+        scale (Optional[float]):
+        inter_delay (Optional[float]):
+        post_delay (Optional[float]):
+        val_mapping
+        get_parser
+        set_parser
+        snapshot_value (Optional[bool])
+        vals (Optional[Validators])
+
+        max_val_age (Optional[float]): The max time (in seconds) to trust a
             saved value obtained from get_latest(). If this parameter has not
             been set or measured more recently than this, perform an
             additional measurement.
-
-        metadata (Optional[dict]): extra information to include with the
-            JSON snapshot of the parameter
     """
 
     def __init__(self, name, instrument, snapshot_get, metadata,
