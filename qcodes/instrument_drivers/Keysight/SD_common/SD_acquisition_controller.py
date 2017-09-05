@@ -250,6 +250,8 @@ class Triggered_Controller(AcquisitionController):
                     f'timeout {self.read_timeout.get_latest():.3f}s')
             for k, trace in enumerate(np.split(ch_data, samples)):
                 buffers[ch][k] = trace
+        # store most recent data in internal variable
+        self.buffers = buffers
         return buffers
 
     def start(self):

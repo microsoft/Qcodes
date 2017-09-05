@@ -1,5 +1,4 @@
 from qcodes.utils.validators import Numbers, Enum, Ints, Anything
-from functools import partial
 from scipy.interpolate import interp1d
 
 from .SD_Module import *

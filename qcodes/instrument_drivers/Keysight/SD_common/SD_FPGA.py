@@ -10,7 +10,7 @@ class SD_FPGA(SD_Module):
     """
 
     def __init__(self, name, chassis, slot, **kwargs):
-        super().__init__(name, chassis, slot, **kwargs)
+        super().__init__(name, chassis, slot, triggers=8, **kwargs)
         # Open the device, using the specified chassis and slot number
         FPGA_name = self.SD_module.getProductNameBySlot(chassis, slot) + '_FPGA'
         if isinstance(FPGA_name, str):
