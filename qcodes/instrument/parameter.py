@@ -21,18 +21,8 @@ This file defines four classes of parameters:
     2. As a variable that stores and returns a value. For instance, for storing
        of values you want to keep track of but cannot set or get electronically.
     Provides ``sweep`` and ``__getitem__`` (slice notation) methods to use a 
-    settable parameter as the swept variable in a ``Loop``. 
-    
-    By default only gettable, returning its last value.
-    This behaviour can be modified in two ways:
-        1. Providing a ``get_cmd``/``set_cmd``, which can of the following:
-           a. callable, with zero args for get_cmd, one arg for set_cmd
-           b. VISA command string
-           c. None, in which case it retrieves its last value for ``get_cmd``, 
-              and stores a value for ``set_cmd``
-           d. False, in which case trying to get/set will raise an error.
-        2. Creating a subclass with an explicit ``get``/``set`` method. This 
-           enables more advanced functionality.
+    settable parameter as the swept variable in a ``Loop``.
+    The get/set functionality can be modified.
 
 - ``ArrayParameter`` is a base class for array-valued parameters, ie anything
     for which each ``get`` call returns an array of values that all have the
@@ -49,7 +39,9 @@ This file defines four classes of parameters:
     that returns a sequence of values, and describe those values in
     ``super().__init__``.
     
-    ``CombinedParameter`` # TODO
+    ``CombinedParameter`` Combines several parameters into a ``MultiParameter``.
+    can be easily used via the ``combine`` function. 
+    Note that it is not yet a subclass of BaseParameter.
 
 
 """
@@ -101,8 +93,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
             ``update=True``, for example if it takes too long to update.
             Default True.
 
-        metadata (Optional[dict]): extra information to include with the
-            JSON snapshot of the parameter
+        snapshot_value (Optional[bool]): False prevents parameter value to be 
+            stored in the snapshot. Useful if the value is large.
             
         step (Optional[Union[int, float]]): max increment of parameter value.
             Larger changes are broken into multiple steps this size.
@@ -140,14 +132,16 @@ class _BaseParameter(Metadatable, DeferredOperations):
         set_parser (Optional[function]): function to transform the input set
             value to an encoded value sent to the instrument.
             See also val_mapping.
-        snapshot_value (Optional[bool])
-        
+            
         vals (Optional[Validator]): a Validator object for this parameter
 
         max_val_age (Optional[float]): The max time (in seconds) to trust a
             saved value obtained from get_latest(). If this parameter has not
             been set or measured more recently than this, perform an
             additional measurement.
+        
+        metadata (Optional[dict]): extra information to include with the
+            JSON snapshot of the parameter
     """
 
     def __init__(self, name, instrument, snapshot_get, metadata,
@@ -525,21 +519,28 @@ class _BaseParameter(Metadatable, DeferredOperations):
 class Parameter(_BaseParameter):
     """
     A parameter that represents a single degree of freedom.
-    Not necessarily part of an instrument.
+    This is the standard parameter for Instruments, though it can also be 
+    used as a variable, i.e. storing/retrieving a value, or be subclassed for 
+    more complex uses.
 
-    Subclasses should define either a ``set`` method, a ``get`` method, or
-    both.
-
+    By default only gettable, returning its last value.
+    This behaviour can be modified in two ways:
+        1. Providing a ``get_cmd``/``set_cmd``, which can of the following:
+           a. callable, with zero args for get_cmd, one arg for set_cmd
+           b. VISA command string
+           c. None, in which case it retrieves its last value for ``get_cmd``, 
+              and stores a value for ``set_cmd``
+           d. False, in which case trying to get/set will raise an error.
+        2. Creating a subclass with an explicit ``get``/``set`` method. This 
+           enables more advanced functionality.
+    
     Parameters have a ``.get_latest`` method that simply returns the most
     recent set or measured value. This can be called ( ``param.get_latest()`` )
     or used in a ``Loop`` as if it were a (gettable-only) parameter itself:
 
         ``Loop(...).each(param.get_latest)``
 
-    Note: If you want ``.get`` or ``.set`` to save the measurement for
-    ``.get_latest``, you must explicitly call ``self._save_val(value)``
-    inside ``.get`` and ``.set``.
-
+           
     Args:
         name (str): the local name of the parameter. Should be a valid
             identifier, ie no spaces or special characters. If this parameter
@@ -555,34 +556,72 @@ class Parameter(_BaseParameter):
 
         unit (Optional[str]): The unit of measure. Use ``''`` for unitless.
 
-        units (Optional[str]): DEPRECATED, redirects to ``unit``.
-
-        vals (Optional[Validator]): Allowed values for setting this parameter.
-            Only relevant if settable. Defaults to ``Numbers()``
-
-        docstring (Optional[str]): documentation string for the __doc__
-            field of the object. The __doc__ field of the instance is used by
-            some help systems, but not all
-
         snapshot_get (Optional[bool]): False prevents any update to the
             parameter during a snapshot, even if the snapshot was called with
             ``update=True``, for example if it takes too long to update.
             Default True.
 
+        snapshot_value (Optional[bool]): False prevents parameter value to be 
+            stored in the snapshot. Useful if the value is large.
+
+        step (Optional[Union[int, float]]): max increment of parameter value.
+            Larger changes are broken into multiple steps this size.
+            When combined with delays, this acts as a ramp.
+            
+        scale (Optional[float]): Scale to multiply value with before 
+            performing set. the internally multiplied value is stored in 
+            `raw_value`. Can account for a voltage divider.
+        
+        inter_delay (Optional[Union[int, float]]): Minimum time (in seconds) 
+            between successive sets. If the previous set was less than this, 
+            it will wait until the condition is met. 
+            Can be set to 0 to go maximum speed with no errors.
+        
+        post_delay (Optional[Union[int, float]]): time (in seconds) to wait 
+            after the *start* of each set, whether part of a sweep or not. 
+            Can be set to 0 to go maximum speed with no errors.
+        
+        val_mapping (Optional[dict]): a bidirectional map data/readable values
+            to instrument codes, expressed as a dict:
+            ``{data_val: instrument_code}``
+            For example, if the instrument uses '0' to mean 1V and '1' to mean
+            10V, set val_mapping={1: '0', 10: '1'} and on the user side you
+            only see 1 and 10, never the coded '0' and '1'
+            If vals is omitted, will also construct a matching Enum validator.
+            NOTE: only applies to get if get_cmd is a string, and to set if
+            set_cmd is a string.
+            You can use ``val_mapping`` with ``get_parser``, in which case
+            ``get_parser`` acts on the return value from the instrument first,
+            then ``val_mapping`` is applied (in reverse).
+            
+        get_parser ( Optional[function]): function to transform the response
+            from get to the final output value. See also val_mapping
+            
+        set_parser (Optional[function]): function to transform the input set
+            value to an encoded value sent to the instrument.
+            See also val_mapping.
+            
+        vals (Optional[Validator]): Allowed values for setting this parameter.
+            Only relevant if settable. Defaults to ``Numbers()``
+
+        max_val_age (Optional[float]): The max time (in seconds) to trust a
+            saved value obtained from get_latest(). If this parameter has not
+            been set or measured more recently than this, perform an
+            additional measurement.
+            
+        docstring (Optional[str]): documentation string for the __doc__
+            field of the object. The __doc__ field of the instance is used by
+            some help systems, but not all
+
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
+    
     """
 
-    def __init__(self, name, instrument=None, label=None,
-                 get_cmd=None, set_cmd=False,
-                 initial_value=None,
-                 unit=None, vals=Numbers(), docstring=None,
-                 snapshot_get=True, snapshot_value=True, metadata=None,
-                 max_val_age=None, **kwargs):
-        # TODO (nulinspiratie) make kwargs explicit
-        super().__init__(name, instrument, snapshot_get, metadata,
-                         snapshot_value=snapshot_value, vals=vals,
-                         max_val_age=max_val_age, **kwargs)
+    def __init__(self, name, instrument=None, label=None, unit=None,
+                 get_cmd=None, set_cmd=False, initial_value=None,
+                 max_val_age=None, vals=Numbers(), docstring=None, **kwargs):
+        super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
 
         # Enable set/get methods if get_cmd/set_cmd is given
         # Called first so super().__init__ can wrap get/set methods
