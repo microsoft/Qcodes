@@ -250,7 +250,12 @@ class _BaseParameter(Metadatable, DeferredOperations):
                         value /= self.scale
 
                 if self.val_mapping is not None:
-                    value = self.inverse_val_mapping[value]
+                    if value in self.inverse_val_mapping:
+                        value = self.inverse_val_mapping[value]
+                    elif int(value) in self.inverse_val_mapping:
+                        value = self.inverse_val_mapping[int(value)]
+                    else:
+                        raise KeyError("'{}' not in val_mapping".format(value))
 
                 self._save_val(value)
                 return value
@@ -299,7 +304,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
                     set_function(val, **kwargs)
                     self.raw_value = val
-                    self._save_val(val, validate=True)
+                    self._save_val(val, validate=(self.val_mapping is None and
+                                                  self.set_parser is None))
 
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
@@ -753,6 +759,9 @@ class ArrayParameter(_BaseParameter):
                 '',
                 self.__doc__))
 
+        if not hasattr(self, 'get') and not hasattr(self, 'set'):
+            raise AttributeError('ArrayParameter must have a get, set or both')
+
 def _is_nested_sequence_or_none(obj, types, shapes):
     """Validator for MultiParameter setpoints/names/labels"""
     if obj is None:
@@ -911,6 +920,9 @@ class MultiParameter(_BaseParameter):
                 docstring,
                 '',
                 self.__doc__))
+
+        if not hasattr(self, 'get') and not hasattr(self, 'set'):
+            raise AttributeError('MultiParameter must have a get, set or both')
 
     @property
     def full_names(self):

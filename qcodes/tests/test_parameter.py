@@ -9,7 +9,7 @@ from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter,
     ManualParameter, StandardParameter, InstrumentRefParameter)
 from qcodes.utils.helpers import LogCapture
-from qcodes.utils.validators import Numbers
+import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
 
 
@@ -64,7 +64,7 @@ class TestParameter(TestCase):
             'label': name,
             'unit': '',
             'value': 42,
-            'vals': repr(Numbers())
+            'vals': repr(vals.Numbers())
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
@@ -77,7 +77,7 @@ class TestParameter(TestCase):
         docstring = 'DOCS!'
         metadata = {'gain': 100}
         p = GettableParam(name, label=label, unit=unit,
-                          vals=Numbers(5, 10), docstring=docstring,
+                          vals=vals.Numbers(5, 10), docstring=docstring,
                           snapshot_get=False, metadata=metadata)
 
         self.assertEqual(p.name, name)
@@ -103,7 +103,7 @@ class TestParameter(TestCase):
             'name': name,
             'label': label,
             'unit': unit,
-            'vals': repr(Numbers(5, 10)),
+            'vals': repr(vals.Numbers(5, 10)),
             'metadata': metadata
         }
         for k, v in snap_expected.items():
@@ -267,8 +267,8 @@ class TestArrayParameter(TestCase):
 
         p = SimpleArrayParam([1, 2, 3], name, shape)
 
-        self.assertTrue(p.has_get)
-        self.assertFalse(p.has_set)
+        self.assertTrue(hasattr(p, 'get'))
+        self.assertFalse(hasattr(p, 'set'))
 
         with self.assertRaises(AttributeError):
             SettableArray([1, 2, 3], name, shape)
@@ -410,7 +410,7 @@ class TestMultiParameter(TestCase):
         names = ['0D', '1D', '2D']
         shapes = ((), (3,), (2, 2))
         with self.assertRaises(AttributeError):
-            MultiParameter(name, names, shapes, set_cmd=None)
+            MultiParameter(name, names, shapes)
 
         p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]],
                              name, names, shapes)
@@ -471,7 +471,7 @@ class TestManualParameter(TestCase):
         def doubler(x):
             p.set(x * 2)
 
-        f = Function('f', call_cmd=doubler, args=[Numbers(-10, 10)])
+        f = Function('f', call_cmd=doubler, args=[vals.Numbers(-10, 10)])
 
         f(4)
         self.assertEqual(p.get(), 8)
@@ -529,7 +529,8 @@ class TestStandardParam(TestCase):
 
     def test_val_mapping_basic(self):
         p = Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
-                      val_mapping={'off': 0, 'on': 1})
+                      val_mapping={'off': 0, 'on': 1},
+                      vals=vals.Enum('off', 'on'))
 
         p('off')
         self.assertEqual(self._p, 0)
@@ -548,18 +549,16 @@ class TestStandardParam(TestCase):
             p()
 
     def test_val_mapping_with_parsers(self):
-        # TODO change comments, this is now possible
-        # you can't use set_parser with val_mapping... just too much
-        # indirection since you also have set_cmd
-        with self.assertRaises(TypeError):
-            Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
-                      val_mapping={'off': 0, 'on': 1},
-                      set_parser=self.parse_set_p)
+        # set_parser with val_mapping
+        Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
+                  val_mapping={'off': 0, 'on': 1},
+                  set_parser=self.parse_set_p)
 
-        # but you *can* use get_parser with val_mapping
+        # get_parser with val_mapping
         p = Parameter('p', set_cmd=self.set_p_prefixed,
                       get_cmd=self.get_p, get_parser=self.strip_prefix,
-                      val_mapping={'off': 0, 'on': 1})
+                      val_mapping={'off': 0, 'on': 1},
+                      vals=vals.Enum('off', 'on'))
 
         p('off')
         self.assertEqual(self._p, 'PVAL: 0')
