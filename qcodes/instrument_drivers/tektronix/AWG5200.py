@@ -143,7 +143,7 @@ class Tektronix_AWG5200(VisaInstrument):
         super().__init__(name, address, timeout=timeout, **kwargs)
 
         self._address = address
-        self.num_channels= num_channels
+        self.num_channels = num_channels
 
         self._values = {}
         self._values['files'] = {}
@@ -286,7 +286,7 @@ class Tektronix_AWG5200(VisaInstrument):
                            get_cmd='AWGControl:SNAMe?')
 
         # Channel parameters #
-        for i in range(1, self.num_channels+1):
+        for i in range(1, self.num_channels + 1):
             amp_cmd = 'SOURce{}:VOLTage:LEVel:IMMediate:AMPLitude'.format(i)
             offset_cmd = 'SOURce{}:VOLTage:LEVel:IMMediate:OFFS'.format(i)
             state_cmd = 'OUTPUT{}:STATE'.format(i)
@@ -393,10 +393,10 @@ class Tektronix_AWG5200(VisaInstrument):
 
     # Convenience parser
     def newlinestripper(self, string):
-            if string.endswith('\n'):
-                return string[:-1]
-            else:
-                return string
+        if string.endswith('\n'):
+            return string[:-1]
+        else:
+            return string
 
     def _tek_outofrange_get_parser(self, string):
         val = float(string)
@@ -576,12 +576,12 @@ class Tektronix_AWG5200(VisaInstrument):
         Set the state of all channels to be ON. Note: only channels with
         defined waveforms can be ON.
         """
-        for i in range(1, self.num_channels+1):
+        for i in range(1, self.num_channels + 1):
             self.set('ch{}_state'.format(i), 1)
 
     def all_channels_off(self):
         """Set the state of all channels to be OFF."""
-        for i in range(1, self.num_channels+1):
+        for i in range(1, self.num_channels + 1):
             self.set('ch{}_state'.format(i), 0)
 
     #####################
@@ -972,7 +972,7 @@ class Tektronix_AWG5200(VisaInstrument):
             if x is None:
                 return None
             else:
-                return x*1e-9
+                return x * 1e-9
         mrk1delays = [mrkdeltrans(self.ch1_m1_del.get_latest()),
                       mrkdeltrans(self.ch2_m1_del.get_latest()),
                       mrkdeltrans(self.ch3_m1_del.get_latest()),
@@ -984,40 +984,40 @@ class Tektronix_AWG5200(VisaInstrument):
 
         AWG_channel_cfg = {}
 
-        for chan in range(1, self.num_channels+1):
-            if dirouts[chan-1] is not None:
+        for chan in range(1, self.num_channels + 1):
+            if dirouts[chan - 1] is not None:
                 AWG_channel_cfg.update({'ANALOG_DIRECT_OUTPUT_{}'.format(chan):
-                                        int(dirouts[chan-1])})
-            if filters[chan-1] is not None:
+                                        int(dirouts[chan - 1])})
+            if filters[chan - 1] is not None:
                 AWG_channel_cfg.update({'ANALOG_FILTER_{}'.format(chan):
-                                        filters[chan-1]})
-            if amps[chan-1] is not None:
+                                        filters[chan - 1]})
+            if amps[chan - 1] is not None:
                 AWG_channel_cfg.update({'ANALOG_AMPLITUDE_{}'.format(chan):
-                                        amps[chan-1]})
-            if offsets[chan-1] is not None:
+                                        amps[chan - 1]})
+            if offsets[chan - 1] is not None:
                 AWG_channel_cfg.update({'ANALOG_OFFSET_{}'.format(chan):
-                                        offsets[chan-1]})
-            if mrk1highs[chan-1] is not None:
+                                        offsets[chan - 1]})
+            if mrk1highs[chan - 1] is not None:
                 AWG_channel_cfg.update({'MARKER1_HIGH_{}'.format(chan):
-                                        mrk1highs[chan-1]})
-            if mrk1lows[chan-1] is not None:
+                                        mrk1highs[chan - 1]})
+            if mrk1lows[chan - 1] is not None:
                 AWG_channel_cfg.update({'MARKER1_LOW_{}'.format(chan):
-                                        mrk1lows[chan-1]})
-            if mrk2highs[chan-1] is not None:
+                                        mrk1lows[chan - 1]})
+            if mrk2highs[chan - 1] is not None:
                 AWG_channel_cfg.update({'MARKER2_HIGH_{}'.format(chan):
-                                        mrk2highs[chan-1]})
-            if mrk2lows[chan-1] is not None:
+                                        mrk2highs[chan - 1]})
+            if mrk2lows[chan - 1] is not None:
                 AWG_channel_cfg.update({'MARKER2_LOW_{}'.format(chan):
-                                        mrk2lows[chan-1]})
-            if mrk1delays[chan-1] is not None:
+                                        mrk2lows[chan - 1]})
+            if mrk1delays[chan - 1] is not None:
                 AWG_channel_cfg.update({'MARKER1_SKEW_{}'.format(chan):
-                                        mrk1delays[chan-1]})
-            if mrk2delays[chan-1] is not None:
+                                        mrk1delays[chan - 1]})
+            if mrk2delays[chan - 1] is not None:
                 AWG_channel_cfg.update({'MARKER2_SKEW_{}'.format(chan):
-                                        mrk2delays[chan-1]})
-            if addinputs[chan-1] is not None:
+                                        mrk2delays[chan - 1]})
+            if addinputs[chan - 1] is not None:
                 AWG_channel_cfg.update({'EXTERNAL_ADD_{}'.format(chan):
-                                        addinputs[chan-1]})
+                                        addinputs[chan - 1]})
 
         return AWG_channel_cfg
 
@@ -1273,9 +1273,9 @@ class Tektronix_AWG5200(VisaInstrument):
             namelist = []
             for jj in range(len(waveforms[ii])):
                 if channels is None:
-                    thisname = 'wfm{:03d}ch{}'.format(jj+1, ii+1)
+                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, ii + 1)
                 else:
-                    thisname = 'wfm{:03d}ch{}'.format(jj+1, channels[ii])
+                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, channels[ii])
                 namelist.append(thisname)
                 package = self.pack_waveform(waveforms[ii][jj],
                                              m1s[ii][jj],
@@ -1366,9 +1366,9 @@ class Tektronix_AWG5200(VisaInstrument):
             namelist = []
             for jj in range(len(waveforms[ii])):
                 if channels is None:
-                    thisname = 'wfm{:03d}ch{}'.format(jj+1, ii+1)
+                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, ii + 1)
                 else:
-                    thisname = 'wfm{:03d}ch{}'.format(jj+1, channels[ii])
+                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, channels[ii])
                 namelist.append(thisname)
                 package = self.pack_waveform(waveforms[ii][jj],
                                              m1s[ii][jj],
@@ -1540,7 +1540,7 @@ class Tektronix_AWG5200(VisaInstrument):
 
         The 5200 has support for upto 4 marker channels, but this is not 
         supported at the moment.
-        
+
         Args:
             w (numpy.ndarray): The waveform
             m1 (numpy.ndarray): Marker1
@@ -1562,13 +1562,13 @@ class Tektronix_AWG5200(VisaInstrument):
         if min(w) < -1 or max(w) > 1:
             raise TypeError('Waveform values out of bonds.' +
                             ' Allowed values: -1 to 1 (inclusive)')
-        if (list(m1).count(0)+list(m1).count(1)) != len(m1):
+        if (list(m1).count(0) + list(m1).count(1)) != len(m1):
             raise TypeError('Marker 1 contains invalid values.' +
                             ' Only 0 and 1 are allowed')
-        if (list(m2).count(0)+list(m2).count(1)) != len(m2):
+        if (list(m2).count(0) + list(m2).count(1)) != len(m2):
             raise TypeError('Marker 2 contains invalid values.' +
                             ' Only 0 and 1 are allowed')
-        
+
         self._values['files'][wfmname] = self._file_dict(w, m1, m2, None)
 
         # if we create a waveform with the same name but different size,
@@ -1579,12 +1579,13 @@ class Tektronix_AWG5200(VisaInstrument):
         self.write(s)
 
         # create the waveform
-        s = 'WLISt:WAVeform:NEW "{}",{:d},REAL'.format(wfmname, dim)  #was INT insted of real
+        s = 'WLISt:WAVeform:NEW "{}",{:d},REAL'.format(
+            wfmname, dim)  # was INT insted of real
         self.write(s)
         # Prepare the data block
         number = w
-        number = number.astype('float32')  #was 'int' before
-        ws = arr.array('f', number)   #was 'H' before
+        number = number.astype('float32')  # was 'int' before
+        ws = arr.array('f', number)  # was 'H' before
 
         ws = ws.tobytes()
         s1 = 'WLISt:WAVeform:DATA "{}",'.format(wfmname)
@@ -1595,11 +1596,11 @@ class Tektronix_AWG5200(VisaInstrument):
 
         mes = s1 + s2 + s3
         self.visa_handle.write_raw(mes)
-    
-        number = m1*128+m2*64 # valid for 2 marker configuration
-        number = number.astype('uint8')  
-        ws = arr.array('B', number) 
-        
+
+        number = m1 * 128 + m2 * 64  # valid for 2 marker configuration
+        number = number.astype('uint8')
+        ws = arr.array('B', number)
+
         ws = ws.tobytes()
         s1 = 'WLISt:WAVeform:MARKer:DATA "{}",'.format(wfmname)
         s1 = s1.encode('UTF-8')
