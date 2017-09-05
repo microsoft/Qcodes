@@ -117,7 +117,7 @@ class Tektronix_AWG5200(VisaInstrument):
         # When the Input Method is Amplitude/Offset, it is skipped.
         'DIGITAL_LOW_N': 'd',
         'EXTERNAL_ADD_N': 'h',  # AWG5000 only
-        'PHASE_DELAY_INPUT_METHOD_N':   'h',  # Phase/DelayInme/DelayInints
+        'PHASE_DELAY_INPUT_METHOD_N': 'h',  # Phase/DelayInme/DelayInints
         'PHASE_N': 'd',  # When the Input Method is not Phase, it is skipped.
         # When the Input Method is not DelayInTime, it is skipped.
         'DELAY_IN_TIME_N': 'd',
@@ -869,10 +869,10 @@ class Tektronix_AWG5200(VisaInstrument):
             'REFERENCE_SOURCE': (1 if self.ask('SOURce1:ROSCillator:' +
                                                'SOURce?').startswith('INT')
                                  else 2),  # Internal | External
-            'EXTERNAL_REFERENCE_TYPE':   1,  # Fixed | Variable
+            'EXTERNAL_REFERENCE_TYPE': 1,  # Fixed | Variable
             'REFERENCE_CLOCK_FREQUENCY_SELECTION': 1,
             # 10 MHz | 20 MHz | 100 MHz
-            'TRIGGER_SOURCE':   1 if
+            'TRIGGER_SOURCE': 1 if
             self.get('trigger_source').startswith('EXT') else 2,
             # External | Internal
             'TRIGGER_INPUT_IMPEDANCE': (1 if self.get('trigger_impedance') ==
@@ -882,17 +882,17 @@ class Tektronix_AWG5200(VisaInstrument):
             'TRIGGER_INPUT_POLARITY': (1 if self.ask('TRIGger:' +
                                                      'POLarity?').startswith(
                                        'POS') else 2),  # Positive | Negative
-            'TRIGGER_INPUT_THRESHOLD':  self.get('trigger_level'),  # V
-            'EVENT_INPUT_IMPEDANCE':   (1 if self.get('event_impedance') ==
-                                        50. else 2),  # 50 ohm | 1 kohm
-            'EVENT_INPUT_POLARITY':  (1 if self.get('event_polarity').startswith(
-                                      'POS') else 2),  # Positive | Negative
-            'EVENT_INPUT_THRESHOLD':   self.get('event_level'),  # V
-            'JUMP_TIMING':   (1 if
-                              self.get('event_jump_timing').startswith('SYNC')
-                              else 2),  # Sync | Async
-            'RUN_MODE':   4,  # Continuous | Triggered | Gated | Sequence
-            'RUN_STATE':  0,  # On | Off
+            'TRIGGER_INPUT_THRESHOLD': self.get('trigger_level'),  # V
+            'EVENT_INPUT_IMPEDANCE': (1 if self.get('event_impedance') ==
+                                      50. else 2),  # 50 ohm | 1 kohm
+            'EVENT_INPUT_POLARITY': (1 if self.get('event_polarity').startswith(
+                'POS') else 2),  # Positive | Negative
+            'EVENT_INPUT_THRESHOLD': self.get('event_level'),  # V
+            'JUMP_TIMING': (1 if
+                            self.get('event_jump_timing').startswith('SYNC')
+                            else 2),  # Sync | Async
+            'RUN_MODE': 4,  # Continuous | Triggered | Gated | Sequence
+            'RUN_STATE': 0,  # On | Off
         }
         return AWG_sequence_cfg
 
@@ -1113,8 +1113,7 @@ class Tektronix_AWG5200(VisaInstrument):
         ii = 21
 
         wf_record_str = BytesIO()
-        wlist = list(packed_waveforms.keys())
-        wlist.sort()
+        wlist = sorted(packed_waveforms.keys())
         for wf in wlist:
             wfdat = packed_waveforms[wf]
             lenwfdat = len(wfdat)
@@ -1538,7 +1537,7 @@ class Tektronix_AWG5200(VisaInstrument):
         is unimportant, but the marker arrays must contain only 1's
         and 0's.
 
-        The 5200 has support for upto 4 marker channels, but this is not 
+        The 5200 has support for upto 4 marker channels, but this is not
         supported at the moment.
 
         Args:
