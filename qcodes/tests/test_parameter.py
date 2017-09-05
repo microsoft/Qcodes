@@ -410,7 +410,7 @@ class TestMultiParameter(TestCase):
         names = ['0D', '1D', '2D']
         shapes = ((), (3,), (2, 2))
         with self.assertRaises(AttributeError):
-            MultiParameter(name, names, shapes)
+            MultiParameter(name, names, shapes, set_cmd=None)
 
         p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]],
                              name, names, shapes)
