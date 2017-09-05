@@ -144,7 +144,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
             JSON snapshot of the parameter
     """
 
-    def __init__(self, name, instrument, snapshot_get, metadata,
+    def __init__(self, name, instrument, snapshot_get=True, metadata=None,
                  step=None, scale=None, inter_delay=0, post_delay=0,
                  val_mapping=None, get_parser=None, set_parser=None,
                  snapshot_value=True, max_val_age=None, vals=None):
