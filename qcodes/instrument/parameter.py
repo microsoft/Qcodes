@@ -197,6 +197,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         state = copy(self._latest)
         state['__class__'] = full_class(self)
+        state['full_name'] = str(self)
 
         if not self._snapshot_value:
             state.pop('value')
@@ -1136,6 +1137,7 @@ class CombinedParameter(Metadatable):
         meta_data['__class__'] = full_class(self)
         meta_data['unit'] = self.parameter.unit
         meta_data['label'] = self.parameter.label
+        meta_data['full_name'] = self.parameter.full_name
         meta_data['aggregator'] = repr(getattr(self, 'f', None))
         for param in self.parameters:
             meta_data[str(param)] = param.snapshot()
