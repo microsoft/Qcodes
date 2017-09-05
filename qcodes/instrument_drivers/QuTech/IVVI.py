@@ -468,6 +468,29 @@ class IVVI(VisaInstrument):
             return fun(ch)
         return get_func
 
+    def round_dac(self, value, dacname=None):
+        """ Round a value to the interal precision of the instrument
+
+        Args:
+            value (float): value to be rounded
+            dacname (str or int or None): name or index of dac channel
+        Returns:
+            value_round (float): rounded value
+
+        """
+        if dacname is None:
+            dacidx = 0  # assume all dacs have the same pol_num
+        elif isinstance(dacname, str):
+            dacidx = int(dacname[3:]) - 1
+        else:
+            dacidx = dacname
+
+        value_pol_corr = value - self.pol_num[dacidx]
+        value_bytes = self._mvoltage_to_bytes(value_pol_corr)
+        value_round = (value_bytes[0] * 256 + value_bytes[1]) / \
+            65535.0 * self.Fullrange + self.pol_num[dacidx]
+        return value_round
+
     def adjust_parameter_validator(self, param):
         """Adjust the parameter validator range based on the dac resolution.
 
@@ -480,19 +503,16 @@ class IVVI(VisaInstrument):
         Args:
             param (StandardParameter): a dac of the IVVI instrument
         """
-        if type(param._vals) is not Numbers:
+        if not isinstance(param._vals, Numbers):
             raise Exception('Only the Numbers validator is supported.')
         min_val = param._vals._min_value
         max_val = param._vals._max_value
-        min_val_pol_corr = min_val - self.pol_num[int(param.name[3:]) - 1]
-        max_val_pol_corr = max_val - self.pol_num[int(param.name[3:]) - 1]
-        min_val_bytes = self._mvoltage_to_bytes(min_val_pol_corr)
-        min_val_upd = (min_val_bytes[0] * 256 + min_val_bytes[1]) / \
-            65535.0 * self.Fullrange + self.pol_num[int(param.name[3:]) - 1]
-        max_val_bytes = self._mvoltage_to_bytes(max_val_pol_corr)
-        max_val_upd = (max_val_bytes[0] * 256 + max_val_bytes[1]) / \
-            65535.0 * self.Fullrange + self.pol_num[int(param.name[3:]) - 1]
+
+        min_val_upd = self.round_dac(min_val, param.name)
+        max_val_upd = self.round_dac(max_val, param.name)
+
         param._vals = Numbers(min_val_upd, max_val_upd)
+
 
 '''
 RS232 PROTOCOL

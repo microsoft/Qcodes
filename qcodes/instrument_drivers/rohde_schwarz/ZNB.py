@@ -113,7 +113,7 @@ class FrequencySweep(ArrayParameter):
                          unit='dB',
                          label='{} magnitude'.format(instrument._vna_parameter),
                          setpoint_units=('Hz',),
-                         setpoint_names=('{} frequency'.format(instrument._vna_parameter),))
+                         setpoint_names=('{}_frequency'.format(instrument._vna_parameter),))
         self.set_sweep(start, stop, npts)
         self._channel = channel
 
@@ -237,7 +237,7 @@ class ZNBChannel(InstrumentChannel):
                                         'Complex': "COMP\n"
                                         })
 
-        self.add_parameter(name='full_trace',
+        self.add_parameter(name='trace_mag_phase',
                            start=self.start(),
                            stop=self.stop(),
                            npts=self.npts(),
@@ -301,7 +301,7 @@ class ZNBChannel(InstrumentChannel):
             log.warning("Could not set start to {} setting it to {}".format(val, start))
         # update setpoints for FrequencySweep param
         self.trace.set_sweep(start, stop, npts)
-        self.full_trace.set_sweep(start, stop, npts)
+        self.trace_mag_phase.set_sweep(start, stop, npts)
 
     def _set_stop(self, val):
         channel = self._instrument_channel
@@ -316,7 +316,7 @@ class ZNBChannel(InstrumentChannel):
             log.warning("Could not set stop to {} setting it to {}".format(val, stop))
         # update setpoints for FrequencySweep param
         self.trace.set_sweep(start, stop, npts)
-        self.full_trace.set_sweep(start, stop, npts)
+        self.trace_mag_phase.set_sweep(start, stop, npts)
 
     def _set_npts(self, val):
         channel = self._instrument_channel
@@ -325,7 +325,7 @@ class ZNBChannel(InstrumentChannel):
         stop = self.stop()
         # update setpoints for FrequencySweep param
         self.trace.set_sweep(start, stop, val)
-        self.full_trace.set_sweep(start, stop, val)
+        self.trace_mag_phase.set_sweep(start, stop, val)
 
     def _set_span(self, val):
         channel = self._instrument_channel
@@ -334,7 +334,7 @@ class ZNBChannel(InstrumentChannel):
         stop = self.stop()
         npts = self.npts()
         self.trace.set_sweep(start, stop, npts)
-        self.full_trace.set_sweep(start, stop, npts)
+        self.trace_mag_phase.set_sweep(start, stop, npts)
 
     def _set_center(self, val):
         channel = self._instrument_channel
@@ -343,7 +343,7 @@ class ZNBChannel(InstrumentChannel):
         stop = self.stop()
         npts = self.npts()
         self.trace.set_sweep(start, stop, npts)
-        self.full_trace.set_sweep(start, stop, npts)
+        self.trace_mag_phase.set_sweep(start, stop, npts)
 
 
 class ZNB(VisaInstrument):

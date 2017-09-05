@@ -102,6 +102,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
+
     def __init__(self, name, instrument, snapshot_get, metadata,
                  step=None, scale=None, inter_delay=0, post_delay=0,
                  val_mapping=None, get_parser=None, set_parser=None,
@@ -517,6 +518,7 @@ class Parameter(_BaseParameter):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
+
     def __init__(self, name, instrument=None, label=None,
                  get_cmd=None, set_cmd=False,
                  initial_value=None,
@@ -578,6 +580,14 @@ class Parameter(_BaseParameter):
         to iterate over during a sweep
         """
         return SweepFixedValues(self, keys)
+
+    def increment(self, value):
+        """ Increment the parameter with a value
+
+        Args:
+            value (float): value to be added to the parameter
+        """
+        self.set(self.get() + value)
 
     def sweep(self, start, stop, step=None, num=None):
         """
@@ -678,6 +688,7 @@ class ArrayParameter(_BaseParameter):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
+
     def __init__(self, name, shape, instrument=None,
                  label=None, unit=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
@@ -834,6 +845,7 @@ class MultiParameter(_BaseParameter):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
+
     def __init__(self, name, names, shapes, instrument=None,
                  labels=None, units=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
