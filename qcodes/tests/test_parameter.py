@@ -3,12 +3,12 @@ Test suite for parameter
 """
 from collections import namedtuple
 from unittest import TestCase
+from time import sleep
 
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter,
     ManualParameter, StandardParameter, InstrumentRefParameter)
-from qcodes.utils.helpers import LogCapture
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
 
@@ -33,12 +33,25 @@ blank_instruments = (
 named_instrument = namedtuple('yesname', 'name')('astro')
 
 class MemoryParameter(Parameter):
-    def __init__(self, **kwargs):
-        self.last_values = []
-        super().__init__(set_cmd=self.add_value, **kwargs)
+    def __init__(self, get_cmd=None, **kwargs):
+        self.set_values = []
+        self.get_values = []
+        super().__init__(set_cmd=self.add_set_value,
+                         get_cmd=self.create_get_func(get_cmd), **kwargs)
 
-    def add_value(self, value):
-        self.last_values.append(value)
+    def add_set_value(self, value):
+        self.set_values.append(value)
+
+    def create_get_func(self, func):
+        def get_func():
+            if func is not None:
+                val = func()
+            else:
+                val = self._latest['value']
+            self.get_values.append(val)
+            return val
+        return get_func
+
 
 class TestParameter(TestCase):
     def test_no_name(self):
@@ -177,13 +190,13 @@ class TestParameter(TestCase):
     def test_step_ramp(self):
         p = MemoryParameter(name='test_step')
         p(42)
-        self.assertEqual(p.last_values, [42])
+        self.assertListEqual(p.set_values, [42])
         p.step = 1
 
-        self.assertEqual(p.get_ramp_values(44.5, 1), [43, 44, 44.5])
+        self.assertListEqual(p.get_ramp_values(44.5, 1), [43, 44, 44.5])
 
         p(44.5)
-        self.assertEqual(p.last_values, [42, 43, 44, 44.5])
+        self.assertListEqual(p.set_values, [42, 43, 44, 44.5])
 
     def test_scale_raw_value(self):
         p = Parameter(name='test_scale_raw_value', set_cmd=None)
@@ -198,6 +211,17 @@ class TestParameter(TestCase):
         self.assertEqual(p.raw_value, 20)
         self.assertEqual(p(), 10)
 
+    def test_latest_value(self):
+        p = MemoryParameter(name='test_latest_value', get_cmd=lambda: 21)
+
+        p(42)
+        self.assertEqual(p.get_latest(), 42)
+        self.assertListEqual(p.get_values, [])
+
+        p.get_latest.max_val_age = 0.1
+        sleep(0.2)
+        self.assertEqual(p.get_latest(), 21)
+        self.assertEqual(p.get_values, [21])
 
 class SimpleArrayParam(ArrayParameter):
     def __init__(self, return_val, *args, **kwargs):
