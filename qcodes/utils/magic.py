@@ -1,4 +1,4 @@
-from IPython.core.magic import Magics, magics_class, cell_magic
+from IPython.core.magic import Magics, magics_class, line_cell_magic
 
 
 @magics_class
@@ -9,8 +9,8 @@ class QCoDeSMagic(Magics):
         self._knowntemps = set()
         super(QCoDeSMagic, self).__init__(*args, **kwargs)
 
-    @cell_magic
-    def measurement(self, line, cell):
+    @line_cell_magic
+    def measurement(self, line, cell=None):
         """
         Create qcodes.Loop measurement using Python for syntax using iPython
         magic.
@@ -62,7 +62,7 @@ class QCoDeSMagic(Magics):
         ```
         """
 
-        if not cell:
+        if cell is None:
             # No loop provided, print documentation
             print(self.measurement.__doc__)
             return
@@ -121,7 +121,7 @@ class QCoDeSMagic(Magics):
             self.shell.run_cell(contents, store_history=True, silent=True)
 
 
-def register_magic_class(cls=QCoDeSMagic, magic_commands=None):
+def register_magic_class(cls=QCoDeSMagic, magic_commands=True):
     """
     Registers a iPython magic class
     Args:
@@ -134,7 +134,7 @@ def register_magic_class(cls=QCoDeSMagic, magic_commands=None):
     if ip is None:
         raise RuntimeError('No iPython shell found')
     else:
-        if magic_commands is not None:
+        if magic_commands is not True:
             # filter out any magic commands that are not in magic_commands
             cls.magics = {line_cell: {key: val for key, val in magics.items()
                                          if key in magic_commands}
