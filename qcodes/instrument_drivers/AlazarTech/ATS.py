@@ -19,6 +19,7 @@ from qcodes.instrument.parameter import MultiParameter, ManualParameter
 # acquisition that would overflow the board if measurement is not stopped
 # quickly enough. can this be solved by not reposting the buffers?
 
+logger = logging.getLogger(__name__)
 
 class AlazarTech_ATS(Instrument):
     """
@@ -682,7 +683,13 @@ class AlazarTech_ATS(Instrument):
 
         # check if all parameters are up to date
         for p in self.parameters.values():
-            p.get()
+            try:
+                p.get()
+            except (OSError, ctypes.ArgumentError):
+                if p.name == 'IDN':
+                    pass
+                else:
+                    raise
 
         # return result
         return acquisition_controller.post_acquire()

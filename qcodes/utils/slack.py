@@ -1,14 +1,16 @@
 import os
 import tempfile
-import logging
 from functools import partial
 from time import sleep
 import inspect
 from slacker import Slacker
+import warnings
+import logging
 import threading
 import traceback
-from requests.adapters import ConnectTimeoutError
-from requests.exceptions import HTTPError, ReadTimeout
+from requests.exceptions import ReadTimeout, HTTPError, ConnectTimeout
+from requests.packages.urllib3.exceptions import ReadTimeoutError
+
 
 from qcodes.plots.base import BasePlot
 from qcodes import config as qc_config
@@ -16,7 +18,8 @@ from qcodes.instrument.parameter import _BaseParameter
 from qcodes import active_loop, active_data_set
 
 
-logger = logging.getLogger(__name__)
+class SlackTimeoutWarning(UserWarning):
+    pass
 
 
 def convert_command(text):
@@ -87,8 +90,8 @@ class Slack(threading.Thread):
         notify/task {cmd} *args: register task with name `cmd` that is
             performed every time `update()` is called.
     """
-    def __init__(self, interval=3, config=None, auto_start=True, max_timeouts=5,
-                 **commands):
+
+    def __init__(self, interval=3, config=None, auto_start=True, **commands):
         """
         Initializes Slack bot, including auto-updating widget if in notebook
         and using multiprocessing.
@@ -100,8 +103,6 @@ class Slack(threading.Thread):
                     'bot_name': Name of the bot
                     'bot_token': Token from bot (obtained from slack website)
                     'names': Usernames to periodically check for IM messages
-            max_timeouts (int): Maximum number of timeouts before raising an
-                exception
             auto_start (Bool=True)
 
         """
@@ -126,7 +127,6 @@ class Slack(threading.Thread):
 
         self.interval = interval
         self.tasks = []
-        self.max_timeouts = max_timeouts
 
         # Flag that exits loop when set to True (called via self.exit())
         self._exit = False
@@ -158,20 +158,10 @@ class Slack(threading.Thread):
             None
         """
         while not self._exit:
-            try:
-                # Continue event loop
-                if self._is_active:
-                    # check for updates
-                    self.update()
-                    self._timeouts = 0
-            except (ConnectTimeoutError, HTTPError, ReadTimeout):
-                self._timeouts += 1
-                if self._timeouts < self.max_timeouts:
-                    logger.warning(
-                        f'Timeout {self._timeouts} of {self.max_timeouts}')
-                    sleep(30)
-                else:
-                    raise
+            # Continue event loop
+            if self._is_active:
+                # check for updates
+                self.update()
             sleep(self.interval)
 
     def stop(self):
@@ -297,7 +287,14 @@ class Slack(threading.Thread):
                 new_tasks.append(task)
         self.tasks = new_tasks
 
-        new_messages = self.get_new_im_messages()
+        new_messages = {}
+        try:
+            new_messages = self.get_new_im_messages()
+        except (ReadTimeout, HTTPError, ConnectTimeout, ReadTimeoutError) as ex:
+            # catch any timeouts caused by network delays
+            warnings.warn('error retrieving slack messages',
+                          SlackTimeoutWarning)
+            logging.info(ex)
         self.handle_messages(new_messages)
 
     def help_message(self):
@@ -325,7 +322,6 @@ class Slack(threading.Thread):
                     if kwargs:
                         msg += ' {}'.format(kwargs)
                     self.slack.chat.post_message(text=msg, channel=channel)
-                    logger.info(msg)
 
                     func = self.commands[command]
                     try:
