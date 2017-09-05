@@ -57,19 +57,9 @@ class ATS9360Controller(AcquisitionController):
                            check_and_update_fn=self._update_int_delay,
                            default_fn=self._int_delay_default,
                            parameter_class=AcqVariablesParam)
-        self.add_parameter(name='num_avg',
-                           check_and_update_fn=self._update_num_avg,
-                           default_fn= lambda : 1,
-                           parameter_class=AcqVariablesParam)
         self.add_parameter(name='allocated_buffers',
                            alternative='not controllable in this controller',
                            parameter_class=NonSettableDerivedParameter)
-        self.add_parameter(name='buffers_per_acquisition',
-                           parameter_class=ManualParameter)
-        self.add_parameter(name='records_per_buffer',
-                               parameter_class=AcqVariablesParam,
-                               default_fn= lambda : 1,
-                               check_and_update_fn=self._update_records_per_buffer)
         self.add_parameter(name='samples_per_record',
                            alternative='int_time and int_delay',
                            parameter_class=NonSettableDerivedParameter)
@@ -117,12 +107,6 @@ class ATS9360Controller(AcquisitionController):
         samples_per_record = helpers.roundup(
             samples_needed, self.samples_divisor)
         self.samples_per_record._save_val(samples_per_record)
-        # self.acquisition.set_setpoints_and_labels()
-
-    def _update_records_per_buffer(self, value, **kwargs):
-        # Hack store the value early so its useful for set_setpoints...
-        self.records_per_buffer._save_val(value)
-        # self.acquisition.set_setpoints_and_labels()
 
     def _update_int_delay(self, value, **kwargs):
         """
@@ -159,14 +143,6 @@ class ATS9360Controller(AcquisitionController):
 
         int_time = self.int_time.get()
         self._update_samples_per_record(sample_rate, int_time, value)
-
-    def _update_num_avg(self, value: int, **kwargs):
-        if not isinstance(value, int) or value < 1:
-            raise ValueError('number of averages must be a positive integer')
-
-        self.records_per_buffer._save_val(value)
-        self.buffers_per_acquisition._save_val(1)
-        self.allocated_buffers._save_val(1)
 
     def _int_delay_default(self):
         """
@@ -324,15 +300,6 @@ class ATS9360Controller(AcquisitionController):
         records_per_buffer = alazar.records_per_buffer.get()
         buffers_per_acquisition = alazar.buffers_per_acquisition.get()
         settings = self.active_channels[0]
-        if settings['average_buffers']:
-            len_buffers = 1
-        else:
-            len_buffers = buffers_per_acquisition
-
-        if settings['average_records']:
-            len_records = 1
-        else:
-            len_records = records_per_buffer
         if settings['average_buffers']:
             number_of_buffers = 1
         else:

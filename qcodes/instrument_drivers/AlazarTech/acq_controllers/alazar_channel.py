@@ -2,6 +2,7 @@ from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils import validators as vals
 from .alazar_multidim_parameters import Alazar0DParameter, Alazar1DParameter, Alazar2DParameter
+from ..acquisition_parameters import AcqVariablesParam
 
 class AlazarChannel(InstrumentChannel):
     """
@@ -45,14 +46,19 @@ class AlazarChannel(InstrumentChannel):
         self.add_parameter('alazar_channel',
                            label='Alazar Channel',
                            parameter_class=ManualParameter)
-        self.add_parameter('samples_per_record',
-                           parameter_class=ManualParameter)
+        #if not average_records:
         self.add_parameter('records_per_buffer',
                            label='records_per_buffer',
                            parameter_class=ManualParameter)
+        #if not average_buffers:
         self.add_parameter('buffers_per_acquisition',
                            label='records_per_buffer',
                            parameter_class=ManualParameter)
+        self.add_parameter('num_averages',
+                           #label='num averages',
+                           check_and_update_fn=self._update_num_avg,
+                           default_fn= lambda : 1,
+                           parameter_class=AcqVariablesParam)
         if self.dimensions == 0:
             self.add_parameter('data',
                                label='mydata',
@@ -95,3 +101,18 @@ class AlazarChannel(InstrumentChannel):
         self._parent.active_channels[0]['channel'] = self.alazar_channel.get()
         if self.dimensions > 0:
             self.data.set_setpoints_and_labels()
+
+    def _update_num_avg(self, value: int, **kwargs):
+        if not self._average_buffers and not self._average_records:
+            if value==1:
+                return
+            else:
+                raise RuntimeError("You requested averaging but are neither averaging over buffers or records")
+        if self._average_buffers and not self._average_records:
+            self.buffers_per_acquisition._save_val(value)
+        elif self._average_records and not self._average_buffers:
+            self.records_per_buffer._save_val(value)
+        elif self._average_buffers and self._average_records:
+            self.buffers_per_acquisition._save_val(1)
+            self.records_per_buffer._save_val(value)
+        # this should be smarter to ensure that no more records are used than possible
