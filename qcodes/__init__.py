@@ -27,16 +27,10 @@ if plotlib in {'matplotlib', 'all'}:
               'try "from qcodes.plots.qcmatplotlib import MatPlot" '
               'to see the full error')
 
-from qcodes.utils.natalie_wrappers.file_setup import my_init
-from qcodes.utils.natalie_wrappers.device_image import save_device_image
-from qcodes.utils.natalie_wrappers.show_num import show_num
-from qcodes.utils.natalie_wrappers.sweep_functions import do1d, do2d, do1dDiagonal
-
 from qcodes.station import Station
 from qcodes.loops import Loop, active_loop, active_data_set
 from qcodes.measure import Measure
 from qcodes.actions import Task, Wait, BreakIf
-from qcodes.monitor.monitor import Monitor
 
 from qcodes.data.data_set import DataSet, new_data, load_data
 from qcodes.data.location import FormatLocation
