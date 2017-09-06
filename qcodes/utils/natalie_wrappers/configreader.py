@@ -85,4 +85,4 @@ class Config:
             self._cfg.write(configfile)
 
     def sections(self):
-        return self.__cfg.sections()
+        return self._cfg.sections()
