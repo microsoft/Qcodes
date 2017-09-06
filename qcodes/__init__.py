@@ -61,8 +61,11 @@ from qcodes.utils import validators
 
 from qcodes.instrument_drivers.test import test_instruments, test_instrument
 
-if hasattr(__builtins__, '__IPYTHON__'):
+try:
+    get_ipython() # Check if we are in iPython
     from qcodes.utils.magic import register_magic_class
     register_magic = config.core.get('register_magic', False)
     if register_magic is not False:
         register_magic_class(magic_commands=register_magic)
+except NameError:
+    pass
