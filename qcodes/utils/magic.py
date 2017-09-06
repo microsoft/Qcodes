@@ -107,6 +107,26 @@ class QCoDeSMagic(Magics):
 
         # Add closing brackets for any remaining loops
         contents += ')' * previous_level + '\n'
+
+        if '{' in msmt_name:
+            # msmt_name contains code to be executed (withing {} braces).
+            # Usually it is executed before calling function, but if it
+            # raises an error, it is passed here without being executed.
+            # Could occur if msmt_name contains reference to loop
+
+            # Execute loop since msmt_name code may refer to it
+            exec(contents, self.shell.user_ns)
+            import re
+            keys = re.findall(r"\{([A-Za-z0-9\[\]\(\)\*.+-_]+)\}", msmt_name)
+            for key in keys:
+                if key in globals():
+                    # variable exists in current namespace
+                    val = eval(key)
+                else:
+                    # variable exists in user namespace
+                    val = eval(key, self.shell.user_ns)
+                msmt_name = msmt_name.replace(f'{{{key}}}', str(val), 1)
+
         # Add dataset
         contents += f"{data_name} = {loop_name}.get_data_set(name='{msmt_name}')"
 
