@@ -26,6 +26,7 @@ class QCoDeSMagic(Magics):
         The Loop object is by default stored in a variable named `loop`,
         and the dataset in `data`, and these can be overridden using options.
         Must be run in a Jupyter Notebook.
+        Delays can be provided in a loop by adding `-d {delay}` after `for`
 
         The following options can be passed along with the measurement name
         (e.g. %%measurement -px -d data_name {measurement_name}):
@@ -41,7 +42,7 @@ class QCoDeSMagic(Magics):
         for {sweep_vals}:
             {measure_parameter1}
             {measure_parameter2}
-            for {sweep_vals2}:
+            for -d 1 {sweep_vals2}:
                 {measure_parameter3}
 
         {Additional code}
@@ -54,7 +55,7 @@ class QCoDeSMagic(Magics):
         loop = qcodes.Loop({sweep_vals}).each(
             {measure_parameter1},
             {measure_parameter2},
-            qcodes.Loop({sweep_vals2}).each(
+            qcodes.Loop({sweep_vals2}, delay=1).each(
                 {measure_parameter3}))
         data = loop.get_data_set(name={measurement_name})
 
@@ -96,7 +97,13 @@ class QCoDeSMagic(Magics):
 
                 if line[:3] == 'for':
                     # New loop
-                    line_representation += f'qcodes.Loop({line[4:-1]}).each(\n'
+                    for_opts, for_code = self.parse_options(line[4:-1], 'd:')
+                    if 'd' in for_opts:
+                        # Delay option provided
+                        line_representation += f'qcodes.Loop({for_code}, ' \
+                                               f'delay={for_opts["d"]}).each(\n'
+                    else:
+                        line_representation += f'qcodes.Loop({for_opts}).each(\n'
                 else:
                     # Action in current loop
                     line_representation += f'{line},\n'
