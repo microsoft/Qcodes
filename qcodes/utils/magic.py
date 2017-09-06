@@ -130,6 +130,7 @@ def register_magic_class(cls=QCoDeSMagic, magic_commands=True):
             register. If not specified, all magic commands are registered
 
     """
+
     ip = get_ipython()
     if ip is None:
         raise RuntimeError('No iPython shell found')
