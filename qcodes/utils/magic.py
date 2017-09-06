@@ -103,7 +103,7 @@ class QCoDeSMagic(Magics):
                         line_representation += f'qcodes.Loop({for_code}, ' \
                                                f'delay={for_opts["d"]}).each(\n'
                     else:
-                        line_representation += f'qcodes.Loop({for_opts}).each(\n'
+                        line_representation += f'qcodes.Loop({for_code}).each(\n'
                 else:
                     # Action in current loop
                     line_representation += f'{line},\n'
