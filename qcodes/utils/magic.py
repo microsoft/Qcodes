@@ -108,7 +108,7 @@ class QCoDeSMagic(Magics):
         # Add closing brackets for any remaining loops
         contents += ')' * previous_level + '\n'
         # Add dataset
-        contents += f"{data_name} = loop.get_data_set(name='{msmt_name}')"
+        contents += f"{data_name} = {loop_name}.get_data_set(name='{msmt_name}')"
 
         for line in lines[k+1:]:
             contents += '\n' + line
