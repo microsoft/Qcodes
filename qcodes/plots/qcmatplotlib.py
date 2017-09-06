@@ -3,13 +3,13 @@ Live plotting in Jupyter notebooks
 using the nbagg backend and matplotlib
 """
 from collections import Mapping
+from collections import Sequence
 from functools import partial
 
 import matplotlib.pyplot as plt
-from matplotlib.transforms import Bbox
 import numpy as np
+from matplotlib.transforms import Bbox
 from numpy.ma import masked_invalid, getmask
-from collections import Sequence
 
 from qcodes.data.data_array import DataArray
 
@@ -84,8 +84,7 @@ class MatPlot(BasePlot):
         if isinstance(subplots, Mapping):
             if figsize is None:
                 figsize = (6, 4)
-            self.fig, self.subplots = plt.subplots(figsize=figsize, num=num,
-                                                   **subplots, squeeze=False)
+            self.fig, self.subplots = plt.subplots(figsize=figsize, num=num, squeeze=False, **subplots)
         else:
             # Format subplots as tuple (nrows, ncols)
             if isinstance(subplots, int):
