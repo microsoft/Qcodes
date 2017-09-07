@@ -41,18 +41,19 @@ class Tektronix_AWG5200(Tektronix_AWG5014):
         Returns:
             None
         """
-        super().__init__(name, address, timeout=timeout, num_channels, **kwargs)
+        super().__init__(name, address, timeout=timeout, num_channels=num_channels, **kwargs)
 
-        for i in range(1, self.num_channels+1):
-            resolution = 'SOURCE{}:DAC:RESOLUTION'.format(i)
+        for i in range(1, self.num_channels + 1):
+            resolution_cmd = 'SOURCE{}:DAC:RESOLUTION'.format(i)
             self.add_parameter('ch{}_resolution'.format(i),
                                label='Resultion for channel {}'.format(i),
-                               get_cmd=state_cmd + '?',
-                               set_cmd=state_cmd + ' {}',
+                               get_cmd=resolution_cmd + '?',
+                               set_cmd=resolution_cmd + ' {}',
                                vals=vals.Ints(0, 17),
                                get_parser=int)
-            # this driver only supports 14-bit resolution (e.g. 2 marker channels)
-            #self.set('ch{}_resolution'.format(i), 14)
+            # this driver only supports 14-bit resolution (e.g. 2 marker
+            # channels)
+            self.set('ch{}_resolution'.format(i), 14)
 
     def send_waveform_to_list(self, w, m1, m2, wfmname):
         """
@@ -133,4 +134,3 @@ class Tektronix_AWG5200(Tektronix_AWG5014):
 
         mes = s1 + s2 + s3
         self.visa_handle.write_raw(mes)
-
