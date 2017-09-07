@@ -37,4 +37,5 @@ def roundup(num, to_nearest):
 
     """
     remainder = num % to_nearest
-    return int(num if remainder == 0 else num + to_nearest - remainder)
+    divisor = num // to_nearest
+    return int(num if remainder == 0 else (divisor + 1)*to_nearest)
