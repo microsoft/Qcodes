@@ -25,13 +25,17 @@ class Alazar0DParameter(Parameter):
                          instrument=instrument)
 
     def get(self):
-        inst = self._instrument
+        channel = self._instrument
+        cntrl = channel._parent
         params_to_kwargs = ['samples_per_record', 'records_per_buffer',
                             'buffers_per_acquisition', 'allocated_buffers']
         acq_kwargs = self.acquisition_kwargs.copy()
-        additional_acq_kwargs = {key: val.get() for key, val in inst.parameters.items() if
+        controller_acq_kwargs = {key: val.get() for key, val in cntrl.parameters.items() if
              key in params_to_kwargs}
-        acq_kwargs.update(additional_acq_kwargs)
+        channel_acq_kwargs = {key: val.get() for key, val in channel.parameters.items() if
+             key in params_to_kwargs}
+        acq_kwargs.update(controller_acq_kwargs)
+        acq_kwargs.update(channel_acq_kwargs)
 
         output = self._instrument._parent._get_alazar().acquire(
             acquisition_controller=self._instrument._parent,
@@ -83,7 +87,7 @@ class Alazar1DParameter(ArrayParameter):
         # int_delay = self._instrument.int_delay.get() or 0
         # total_time = int_time + int_delay
         if not self._integrate_samples:
-            samples = self._instrument.samples_per_record.get()
+            samples = self._instrument._parent.samples_per_record.get()
             sample_rate = self._instrument._parent._get_alazar().get_sample_rate()
             start = 0
             stop = samples/sample_rate
@@ -103,13 +107,17 @@ class Alazar1DParameter(ArrayParameter):
             self.setpoints = (tuple(np.linspace(start, stop, buffers)),)
 
     def get(self):
-        inst = self._instrument
+        channel = self._instrument
+        cntrl = channel._parent
         params_to_kwargs = ['samples_per_record', 'records_per_buffer',
                             'buffers_per_acquisition', 'allocated_buffers']
         acq_kwargs = self.acquisition_kwargs.copy()
-        additional_acq_kwargs = {key: val.get() for key, val in inst.parameters.items() if
+        controller_acq_kwargs = {key: val.get() for key, val in cntrl.parameters.items() if
              key in params_to_kwargs}
-        acq_kwargs.update(additional_acq_kwargs)
+        channel_acq_kwargs = {key: val.get() for key, val in channel.parameters.items() if
+             key in params_to_kwargs}
+        acq_kwargs.update(controller_acq_kwargs)
+        acq_kwargs.update(channel_acq_kwargs)
 
         output = self._instrument._parent._get_alazar().acquire(
             acquisition_controller=self._instrument._parent,
@@ -159,7 +167,7 @@ class Alazar2DParameter(ArrayParameter):
     def set_setpoints_and_labels(self):
         records = self._instrument.records_per_buffer()
         buffers = self._instrument.buffers_per_acquisition()
-        samples = self._instrument.samples_per_record.get()
+        samples = self._instrument._parent.samples_per_record.get()
         if self._integrate_samples:
             self.shape = (buffers,records)
             inner_setpoints = tuple(np.linspace(0, records, records))
@@ -182,13 +190,17 @@ class Alazar2DParameter(ArrayParameter):
 
 
     def get(self):
-        inst = self._instrument
+        channel = self._instrument
+        cntrl = channel._parent
         params_to_kwargs = ['samples_per_record', 'records_per_buffer',
                             'buffers_per_acquisition', 'allocated_buffers']
         acq_kwargs = self.acquisition_kwargs.copy()
-        additional_acq_kwargs = {key: val.get() for key, val in inst.parameters.items() if
+        controller_acq_kwargs = {key: val.get() for key, val in cntrl.parameters.items() if
              key in params_to_kwargs}
-        acq_kwargs.update(additional_acq_kwargs)
+        channel_acq_kwargs = {key: val.get() for key, val in channel.parameters.items() if
+             key in params_to_kwargs}
+        acq_kwargs.update(controller_acq_kwargs)
+        acq_kwargs.update(channel_acq_kwargs)
 
         output = self._instrument._parent._get_alazar().acquire(
             acquisition_controller=self._instrument._parent,
