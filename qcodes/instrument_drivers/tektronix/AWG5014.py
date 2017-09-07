@@ -137,7 +137,7 @@ class Tektronix_AWG5014(VisaInstrument):
             timeout (float): visa timeout, in secs. long default (180)
                 to accommodate large waveforms
             num_channels (int): number of channels on the device
-            
+
         Returns:
             None
         """
