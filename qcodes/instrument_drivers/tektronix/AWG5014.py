@@ -286,7 +286,7 @@ class Tektronix_AWG5014(VisaInstrument):
                            get_cmd='AWGControl:SNAMe?')
 
         # Channel parameters #
-        for i in range(1, 5):
+        for i in range(1, self.num_channels+1):
             amp_cmd = 'SOURce{}:VOLTage:LEVel:IMMediate:AMPLitude'.format(i)
             offset_cmd = 'SOURce{}:VOLTage:LEVel:IMMediate:OFFS'.format(i)
             state_cmd = 'OUTPUT{}:STATE'.format(i)
@@ -575,12 +575,12 @@ class Tektronix_AWG5014(VisaInstrument):
         Set the state of all channels to be ON. Note: only channels with
         defined waveforms can be ON.
         """
-        for i in range(1, 5):
+        for i in range(1, self.num_channels+1):
             self.set('ch{}_state'.format(i), 1)
 
     def all_channels_off(self):
         """Set the state of all channels to be OFF."""
-        for i in range(1, 5):
+        for i in range(1, self.num_channels+1):
             self.set('ch{}_state'.format(i), 0)
 
     #####################
@@ -983,7 +983,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
         AWG_channel_cfg = {}
 
-        for chan in range(1, 5):
+        for chan in range(1, self.num_channels+1):
             if dirouts[chan - 1] is not None:
                 AWG_channel_cfg.update({'ANALOG_DIRECT_OUTPUT_{}'.format(chan):
                                         int(dirouts[chan - 1])})
