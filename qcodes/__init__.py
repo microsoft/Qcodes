@@ -69,3 +69,7 @@ try:
         register_magic_class(magic_commands=register_magic)
 except NameError:
     pass
+
+# Close all instruments when exiting QCoDeS
+import atexit
+atexit.register(Instrument.close_all)
