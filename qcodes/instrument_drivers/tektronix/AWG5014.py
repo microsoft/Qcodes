@@ -127,7 +127,7 @@ class Tektronix_AWG5014(VisaInstrument):
         'DC_OUTPUT_LEVEL_N': 'd',  # V
     }
 
-    def __init__(self, name, address, timeout=180, **kwargs):
+    def __init__(self, name, address, timeout=180, num_channels=4, **kwargs):
         """
         Initializes the AWG5014.
 
@@ -136,14 +136,15 @@ class Tektronix_AWG5014(VisaInstrument):
             address (string): GPIB or ethernet address as used by VISA
             timeout (float): visa timeout, in secs. long default (180)
                 to accommodate large waveforms
-
+            num_channels (int): number of channels on the device
+            
         Returns:
             None
         """
         super().__init__(name, address, timeout=timeout, **kwargs)
 
         self._address = address
-        self.num_channels = 4
+        self.num_channels = num_channels
 
         self._values = {}
         self._values['files'] = {}
@@ -386,7 +387,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
         self.set('trigger_impedance', 50)
         if self.get('clock_freq') != 1e9:
-            log.warning('AWG clock freq not set to 1GHz')
+            log.info('AWG clock freq not set to 1GHz')
 
         self.connect_message()
 
@@ -529,7 +530,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
     def change_folder(self, folder):
         """Duplicate of self.set_current_folder_name"""
-        writecmd = 'MMEMory:CDIRectory "\{}"'
+        writecmd = r'MMEMory:CDIRectory "{}"'
         return self.visa_handle.write(writecmd.format(folder))
 
     def goto_root(self):
@@ -565,8 +566,8 @@ class Tektronix_AWG5014(VisaInstrument):
             log.info('Directory already set to ' +
                      '{}'.format(folder))
         else:
-            self.write('MMEMory:MDIRectory "\%s"' % folder)
-            self.write('MMEMory:CDIRectory "\%s"' % folder)
+            self.write('MMEMory:MDIRectory "%s"' % folder)
+            self.write('MMEMory:CDIRectory "%s"' % folder)
 
         return self.get_folder_contents()
 
