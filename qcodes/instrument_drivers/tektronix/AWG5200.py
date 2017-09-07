@@ -1,21 +1,12 @@
-import struct
 import logging
-import warnings
-
-import numpy as np
 import array as arr
-
-from time import sleep, localtime
-from io import BytesIO
-
-from qcodes import VisaInstrument, validators as vals
-from pyvisa.errors import VisaIOError
 
 
 log = logging.getLogger(__name__)
 
 
-from qcodes.instrument_drivers.tektronix.AWG5014 import parsestr, Tektronix_AWG5014
+from qcodes.instrument_drivers.tektronix.AWG5014 import Tektronix_AWG5014
+from qcodes import validators as vals
 
 
 class Tektronix_AWG5200(Tektronix_AWG5014):
