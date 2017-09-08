@@ -89,9 +89,13 @@ class ATS9360Controller(AcquisitionController):
 
         alazar = self._get_alazar()
         sample_rate = alazar.effective_sample_rate.get()
-        # max_demod_freq = self.demod_freqs.get_max_demod_freq()
-        # if max_demod_freq is not None:
-        #     self.demod_freqs._verify_demod_freq(max_demod_freq)
+        max_demod_freq = 0
+        for channel in self.channels:
+            if channel._demod:
+                demod_freq = channel.demod_freq()
+                max_demod_freq = max(max_demod_freq, demod_freq)
+        if max_demod_freq > 0:
+            Demodulator.verify_demod_freq(max_demod_freq, sample_rate, value)
         if self.int_delay() is None:
             self.int_delay.to_default()
         int_delay = self.int_delay.get()
@@ -208,7 +212,6 @@ class ATS9360Controller(AcquisitionController):
                              'via update_acquisition_kwargs and should instead'
                              ' be set by setting int_time and int_delay')
         self.acquisition.acquisition_kwargs.update(**kwargs)
-        self.acquisition.set_setpoints_and_labels()
 
     def pre_start_capture(self):
         """

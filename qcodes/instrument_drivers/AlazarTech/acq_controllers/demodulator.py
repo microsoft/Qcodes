@@ -1,5 +1,7 @@
 import numpy as np
 from scipy import signal
+import logging
+logger = logging.getLogger(__name__)
 
 def filter_win(rec, cutoff, sample_rate, numtaps, axis=-1):
     """
