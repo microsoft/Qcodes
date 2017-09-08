@@ -196,26 +196,6 @@ class ATS9360Controller(AcquisitionController):
         self.filter_settings.update({'filter': self.filter_dict[filter],
                                      'numtaps': numtaps})
 
-    def update_acquisition_kwargs(self, **kwargs):
-        """
-        Updates the kwargs to be used when
-        alazar_driver.acquisition() is called via a get call of the
-        acquisition parameter. Should be used by the user for
-        updating averaging settings. If integrating over samples
-        'samples_per_record' cannot be set directly it should instead
-        be set via the int_time and int_delay parameters.
-
-        Kwargs (ints):
-            - records_per_buffer
-            - buffers_per_acquisition
-            - allocated_buffers
-        """
-        if 'samples_per_record' in kwargs:
-            raise ValueError('Samples_per_record should not be set manually '
-                             'via update_acquisition_kwargs and should instead'
-                             ' be set by setting int_time and int_delay')
-        self.acquisition.acquisition_kwargs.update(**kwargs)
-
     def pre_start_capture(self):
         """
         Called before capture start to update Acquisition Controller with
@@ -322,7 +302,12 @@ class ATS9360Controller(AcquisitionController):
         # do demodulation
         if settings['demod']:
             magA, phaseA = self.demodulator.demodulate(recordA, self.int_delay(), self.int_time())
-            data = magA[0]
+            if settings['demod_type'] == 'magnitude':
+                data = magA[0]
+            elif settings['demod_type'] == 'phase':
+                data = phaseA[0]
+            else:
+                raise RuntimeError("unknown demodulator type")
         else:
             if settings['integrate_samples']:
                 data = np.squeeze(np.mean(recordA, axis=-1))

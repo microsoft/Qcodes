@@ -40,7 +40,11 @@ class AlazarChannel(InstrumentChannel):
         if demod:
             self.add_parameter('demod_freq',
                                label='demod freq',
-                               vals=vals.Numbers(1e6,500e6),
+                               vals=vals.Numbers(1e5,500e6),
+                               parameter_class=ManualParameter)
+            self.add_parameter('demod_type',
+                               label='demod type',
+                               vals=vals.Strings(),
                                parameter_class=ManualParameter)
 
         self.add_parameter('alazar_channel',
@@ -103,6 +107,7 @@ class AlazarChannel(InstrumentChannel):
         self._parent.active_channels[0]['demod'] = self._demod
         if self._demod:
             self._parent.active_channels[0]['demod_freq'] = self.demod_freq.get()
+            self._parent.active_channels[0]['demod_type'] = self.demod_type.get()
         else:
             self._parent.active_channels[0]['demod_freq'] = None
         self._parent.active_channels[0]['average_buffers'] = self._average_buffers
