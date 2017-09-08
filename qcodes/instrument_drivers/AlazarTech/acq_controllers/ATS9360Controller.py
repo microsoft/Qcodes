@@ -1,7 +1,6 @@
 import logging
 
 import numpy as np
-import logging
 
 import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
 from qcodes import ChannelList
@@ -145,7 +144,7 @@ class ATS9360Controller(AcquisitionController):
         samples_delay_min = (self.filter_settings['numtaps'] - 1)
         int_delay_min = samples_delay_min / sample_rate
         if value < int_delay_min:
-            logging.warning(
+            logger.warning(
                 'delay is less than recommended for filter choice: '
                 '(expect delay >= {})'.format(int_delay_min))
 
@@ -338,7 +337,7 @@ class ATS9360Controller(AcquisitionController):
         if bps == 12:
             volt_rec = helpers.sample_to_volt_u12(record, bps, input_range_volts=0.4)
         else:
-            logging.warning('sample to volt conversion does not exist for'
+            logger.warning('sample to volt conversion does not exist for'
                             ' bps != 12, centered raw samples returned')
             volt_rec = record - np.mean(record)
         return volt_rec
