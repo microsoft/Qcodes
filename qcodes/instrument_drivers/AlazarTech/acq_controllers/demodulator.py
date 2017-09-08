@@ -151,3 +151,44 @@ class Demodulator:
         phase = np.angle(complex_mat, deg=True)
 
         return magnitude, phase
+
+    @staticmethod
+    def _verify_demod_freq(value, sample_rate, int_time):
+        """
+        Function to validate a demodulation frequency
+
+        Checks:
+            - 1e6 <= value <= 500e6
+            - number of oscillation measured using current 'int_time' param value
+              at this demodulation frequency value
+            - oversampling rate for this demodulation frequency
+
+        Args:
+            value: proposed demodulation frequency
+            sample_rate: Rate with witch data is sampled
+            int_time: total time that data is sampled over used for demodulation
+        Returns:
+            bool: Returns True if suitable number of oscillations are measured and
+            oversampling is > 1, False otherwise.
+        Raises:
+            ValueError: If value is not a valid demodulation frequency.
+        """
+        if (value is None) or not (1e6 <= value <= 500e6):
+            raise ValueError('demod_freqs must be 1e6 <= value <= 500e6')
+        isValid = True
+        min_oscillations_measured = int_time * value
+        oversampling = sample_rate / (2 * value)
+        if min_oscillations_measured < 10:
+            isValid = False
+            logging.warning('{} oscillation measured for largest '
+                            'demod freq, recommend at least 10: '
+                            'decrease sampling rate, take '
+                            'more samples or increase demodulation '
+                            'freq'.format(min_oscillations_measured))
+        elif oversampling < 1:
+            isValid = False
+            logging.warning('oversampling rate is {}, recommend > 1: '
+                            'increase sampling rate or decrease '
+                            'demodulation frequency'.format(oversampling))
+
+        return isValid
