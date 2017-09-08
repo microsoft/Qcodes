@@ -185,6 +185,21 @@ class Keysight_34465A(VisaInstrument):
         self.NPLC_list = PLCs[self.model]
         self._apt_times = apt_times[self.model]
 
+        def errorparser(rawmssg: str) -> (int, str):
+            """
+            Parses the error message.
+
+            Args:
+                rawmssg: The raw return value of 'SYSTem:ERRor?'
+
+            Returns:
+                The error code and the error message.
+            """
+            code = int(rawmssg.split(',')[0])
+            mssg = rawmssg.split(',')[1].strip().replace('"', '')
+
+            return code, mssg
+
         ####################################
         # PARAMETERS
 
@@ -305,6 +320,13 @@ class Keysight_34465A(VisaInstrument):
                            get_cmd='SAMPle:TIMer? MIN',
                            get_parser=float,
                            unit='s')
+
+        # SYSTEM
+        self.add_parameter('error',
+                           label='Error message',
+                           get_cmd='SYSTem:ERRor?',
+                           get_parser=errorparser
+                           )
 
         # The array parameter
         self.add_parameter('data_buffer',
