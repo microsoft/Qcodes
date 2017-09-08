@@ -116,6 +116,13 @@ class IVVI(VisaInstrument):
                            label='Dac voltages',
                            get_cmd=self._get_dacs)
 
+        self.add_parameter(
+            'trigger',
+            label='trigger',
+            set_cmd=self._send_trigger,
+            vals=Bool()
+        )
+
         # initialize pol_num, the voltage offset due to the polarity
         self.pol_num = np.zeros(self._numdacs)
         for i in range(int(self._numdacs / 4)):
@@ -467,6 +474,11 @@ class IVVI(VisaInstrument):
         def get_func():
             return fun(ch)
         return get_func
+
+    def _send_trigger(self, param):
+        msg = bytes([2, 6])
+        self.write(msg)
+        self.read()  # Flush the buffer, else the command will only work the first time.
 
     def round_dac(self, value, dacname=None):
         """ Round a value to the interal precision of the instrument
