@@ -153,7 +153,7 @@ class Demodulator:
         return magnitude, phase
 
     @staticmethod
-    def _verify_demod_freq(value, sample_rate, int_time):
+    def verify_demod_freq(value, sample_rate, int_time):
         """
         Function to validate a demodulation frequency
 
