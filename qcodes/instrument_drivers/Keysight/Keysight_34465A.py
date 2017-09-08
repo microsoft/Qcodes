@@ -426,3 +426,19 @@ class Keysight_34465A(VisaInstrument):
         # NPLC settings change with resolution
 
         self.NPLC.get()
+
+    def flush_error_queue(self, verbose:bool=True) -> None:
+        """
+        Clear the instrument error queue.
+
+        Args:
+            verbose: If true, the error messages are printed.
+                Default: True.
+        """
+
+        log.debug('Flushing error queue...')
+
+        err_code, err_message = self.error()
+        log.debug('    {}, {}'.format(err_code, err_message))
+        if verbose:
+            print(err_code, err_message)
