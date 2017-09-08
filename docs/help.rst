@@ -13,7 +13,7 @@ Chat
 
 We discuss things on slack, join us!
 You can find the maintainers' email on their commits.
-Plese send a main to j.h.nielsen(at)nbi.ku.dk if you want to join
+Plese send a mail to j.h.nielsen(at)nbi.ku.dk if you want to join
 the slack channel. Please include a few lines about who you are and 
 how you use or want to use QCoDeS.
 
