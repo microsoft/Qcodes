@@ -1,6 +1,7 @@
 import logging
 
 import numpy as np
+import logging
 
 import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
 from qcodes import ChannelList
@@ -10,6 +11,8 @@ from ..ATS import AcquisitionController
 from ..acquisition_parameters import AcqVariablesParam, \
     NonSettableDerivedParameter
 from .demodulator import Demodulator
+
+logger = logging.getLogger(__name__)
 
 class ATS9360Controller(AcquisitionController):
     """
@@ -110,6 +113,7 @@ class ATS9360Controller(AcquisitionController):
         samples_needed = total_time * sample_rate
         samples_per_record = helpers.roundup(
             samples_needed, self.samples_divisor)
+        logger.info("need {} samples round up to {}".format(samples_needed, samples_per_record))
         self.samples_per_record._save_val(samples_per_record)
 
     def _update_int_delay(self, value, **kwargs):
@@ -222,19 +226,12 @@ class ATS9360Controller(AcquisitionController):
         acq_s_p_r = self.samples_per_record.get()
         inst_s_p_r = alazar.samples_per_record.get()
         sample_rate = alazar.effective_sample_rate.get()
-        # if acq_s_p_r != inst_s_p_r:
-        #     raise Exception('acq controller samples per record {} does not match'
-        #                     ' instrument value {}, most likely need '
-        #                     'to set and check int_time and int_delay'.format(acq_s_p_r, inst_s_p_r))
-        # if acq_s_r != inst_s_r:
-        #     raise Exception('acq controller sample rate {} does not match '
-        #                     'instrument value {}, most likely need '
-        #                     'to set and check int_time and int_delay'.format(acq_s_r, inst_s_r))
-        samples_per_record = inst_s_p_r
-        #demod_freqs = self.demod_freqs.get()
-        # if len(demod_freqs) == 0:
-        #     raise Exception('no demod_freqs set')
+        if acq_s_p_r != inst_s_p_r:
+            raise Exception('acq controller samples per record {} does not match'
+                            ' instrument value {}, most likely need '
+                            'to set and check int_time and int_delay'.format(acq_s_p_r, inst_s_p_r))
 
+        samples_per_record = inst_s_p_r
         records_per_buffer = alazar.records_per_buffer.get()
         buffers_per_acquisition = alazar.buffers_per_acquisition.get()
         max_samples = self._get_alazar().get_idn()['max_samples']
@@ -272,7 +269,6 @@ class ATS9360Controller(AcquisitionController):
         Adds data from Alazar to buffer (effectively averaging)
         """
         settings = self.active_channels[0]
-
         if settings['average_buffers']:
             self.buffer += data
         else:
