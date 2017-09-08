@@ -8,6 +8,8 @@ from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import Parameter
 from qcodes.utils import validators
 
+logger = logging.getLogger(__name__)
+
 # TODO(damazter) (C) logging
 
 # these items are important for generalizing this code to multiple alazar cards
@@ -576,14 +578,14 @@ class AlazarTech_ATS(Instrument):
 
         elif mode == 'TS':
             if (samples_per_record % buffers_per_acquisition != 0):
-                logging.warning('buffers_per_acquisition is not a divisor of '
+                logger.warning('buffers_per_acquisition is not a divisor of '
                                 'samples per record which it should be in '
                                 'Ts mode, rounding down in samples per buffer '
                                 'calculation')
             samples_per_buffer = int(samples_per_record /
                                      buffers_per_acquisition)
             if self.records_per_buffer._get_byte() != 1:
-                logging.warning('records_per_buffer should be 1 in TS mode, '
+                logger.warning('records_per_buffer should be 1 in TS mode, '
                                 'defauling to 1')
                 self.records_per_buffer._set(1)
             records_per_buffer = self.records_per_buffer._get_byte()
@@ -634,7 +636,7 @@ class AlazarTech_ATS(Instrument):
         # make sure that allocated_buffers <= buffers_per_acquisition
         if (self.allocated_buffers._get_byte() >
                 self.buffers_per_acquisition._get_byte()):
-            logging.warning("'allocated_buffers' should be <= "
+            logger.warning("'allocated_buffers' should be <= "
                             "'buffers_per_acquisition'. Defaulting 'allocated_buffers'"
                             " to " + str(self.buffers_per_acquisition._get_byte()))
             self.allocated_buffers._set(
@@ -662,7 +664,7 @@ class AlazarTech_ATS(Instrument):
         start = time.clock()  # Keep track of when acquisition started
         # call the startcapture method
         self._call_dll('AlazarStartCapture', self._handle)
-        logging.info("Capturing %d buffers." % buffers_per_acquisition)
+        logger.info("Capturing %d buffers." % buffers_per_acquisition)
 
         acquisition_controller.pre_acquire()
 
@@ -723,11 +725,11 @@ class AlazarTech_ATS(Instrument):
             bytes_per_sec = bytes_transferred / transfer_time_sec
             records_per_sec = (records_per_buffer *
                                buffers_completed / transfer_time_sec)
-        logging.info("Captured %d buffers (%f buffers per sec)" %
+        logger.info("Captured %d buffers (%f buffers per sec)" %
                      (buffers_completed, buffers_per_sec))
-        logging.info("Captured %d records (%f records per sec)" %
+        logger.info("Captured %d records (%f records per sec)" %
                      (records_per_buffer * buffers_completed, records_per_sec))
-        logging.info("Transferred {:g} bytes ({:g} "
+        logger.info("Transferred {:g} bytes ({:g} "
                      "bytes per sec)".format(bytes_transferred, bytes_per_sec))
 
         # return result
@@ -768,7 +770,7 @@ class AlazarTech_ATS(Instrument):
         try:
             return_code = func(*args_out)
         except Exception as e:
-            logging.error(e)
+            logger.error(e)
             raise
 
         # check for errors
@@ -804,7 +806,7 @@ class AlazarTech_ATS(Instrument):
         """
         for b in self.buffer_list:
             b.free_mem()
-        logging.info("buffers cleared")
+        logger.info("buffers cleared")
         self.buffer_list = []
 
     def signal_to_volt(self, channel, signal):
@@ -1037,7 +1039,7 @@ class Buffer:
         """
         if self._allocated:
             self.free_mem()
-            logging.warning(
+            logger.warning(
                 'Buffer prevented memory leak; Memory released to Windows.\n'
                 'Memory should have been released before buffer was deleted.')
 
