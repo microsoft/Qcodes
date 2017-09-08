@@ -1,8 +1,7 @@
-name: qcodes_2
+name: qcodes
 channels: 
- - anaconda
+ - defaults
  - conda-forge
- - dsdale24
 dependencies:
  - h5py=2.6.0
  - matplotlib=2.0.2

@@ -3,28 +3,39 @@ Test properties of the coordinate transforms in the field vector module to test 
 implemented.
 """
 import numpy as np
+from hypothesis import given, settings
+from hypothesis.strategies import floats
+from hypothesis.strategies import tuples
 
 from qcodes.math.field_vector import FieldVector
 
+random_coordinates = {
+    "cartesian": tuples(
+        floats(min_value=0, max_value=1),  # x
+        floats(min_value=0, max_value=1),  # y
+        floats(min_value=0, max_value=1)  # z
+    ),
+    "spherical": tuples(
+        floats(min_value=0, max_value=1),  # r
+        floats(min_value=0, max_value=180),  # theta
+        floats(min_value=0, max_value=180)  # phi
+    ),
+    "cylindrical": tuples(
+        floats(min_value=0, max_value=1),  # rho
+        floats(min_value=0, max_value=180),  # phi
+        floats(min_value=0, max_value=1)  # z
+    )
+}
 
-def get_random_coordinate(coordinate_name):
-    return {
-        "x": np.random.uniform(-1, 1),
-        "y": np.random.uniform(-1, 1),
-        "z": np.random.uniform(-1, 1),
-        "r": np.random.uniform(0, 2),
-        "theta": np.random.uniform(0, 180),
-        "phi": np.random.uniform(0, 360),
-        "rho": np.random.uniform(0, 1)
-    }[coordinate_name]
 
-
-def test_spherical_properties():
+@given(random_coordinates["spherical"])
+@settings(max_examples=10)
+def test_spherical_properties(spherical0):
     """
     If the cartesian to spherical transform has been correctly implemented then we expect certain symmetrical properties
     """
     # Generate a random coordinate in spherical representation
-    spherical0 = {name: get_random_coordinate(name) for name in ["r", "theta", "phi"]}
+    spherical0 = dict(zip(["r", "theta", "phi"], spherical0))
     cartisian0 = FieldVector(**spherical0).get_components("x", "y", "z")
 
     # Mirror the theta angle in the xy-plane. This should flip the sign of the z-coordinate
@@ -54,13 +65,15 @@ def test_spherical_properties():
     assert np.allclose(cartisian0, cartisian4 * np.array([-1, -1, -1]))
 
 
-def test_cylindrical_properties():
+@given(random_coordinates["cylindrical"])
+@settings(max_examples=10)
+def test_cylindrical_properties(cylindrical0):
     """
     If the cartesian to cylindrical transform has been correctly implemented then we expect certain symmetrical
     properties
     """
     # Generate a random coordinate in cylindrical representation
-    cylindrical0 = {name: get_random_coordinate(name) for name in ["rho", "phi", "z"]}
+    cylindrical0 = dict(zip(["rho", "phi", "z"], cylindrical0))
     cartisian0 = FieldVector(**cylindrical0).get_components("x", "y", "z")
 
     # If we flip the sign of the rho coordinate, we will flip the xy coordinate
