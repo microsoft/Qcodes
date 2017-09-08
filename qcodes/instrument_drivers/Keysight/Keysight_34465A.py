@@ -357,6 +357,7 @@ class Keysight_34465A(VisaInstrument):
         self.add_function('init_measurement', call_cmd='INIT')
         self.add_function('reset', call_cmd='*RST')
         self.add_function('display_clear', call_cmd=('DISPLay:TEXT:CLEar'))
+        self.add_function('abort_measurement', call_cmd='ABORt')
 
         if not silent:
             self.connect_message()
@@ -427,7 +428,7 @@ class Keysight_34465A(VisaInstrument):
 
         self.NPLC.get()
 
-    def flush_error_queue(self, verbose:bool=True) -> None:
+    def flush_error_queue(self, verbose: bool=True) -> None:
         """
         Clear the instrument error queue.
 
@@ -442,3 +443,11 @@ class Keysight_34465A(VisaInstrument):
         log.debug('    {}, {}'.format(err_code, err_message))
         if verbose:
             print(err_code, err_message)
+
+        while err_code != 0:
+            err_code, err_message = self.error()
+            log.debug('    {}, {}'.format(err_code, err_message))
+            if verbose:
+                print(err_code, err_message)
+
+        log.debug('...flushing complete')
