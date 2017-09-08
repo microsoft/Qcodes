@@ -1,3 +1,4 @@
+# DS4034.py
 """
 The QCodes driver of the oscilloscope Rigol DS4034. Please see
 
@@ -7,19 +8,14 @@ for the programming manual for this device
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
-
 
 from qcodes import VisaInstrument
-from qcodes.utils.validators import Ints
+from qcodes.utils.validators import Ints, Bool
 
 
 class Rigol_DS4035(VisaInstrument):
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, terminator='\n', **kwargs)
-
-        model = self.get_idn()['model']
-        print("Established communication with device {}".format(model))
 
         self.add_parameter(
             "data_format",
@@ -59,6 +55,19 @@ class Rigol_DS4035(VisaInstrument):
                 'normal': 'norm'}
         )
 
+        self.add_parameter(
+            "enable_auto_scale",
+            set_cmd=":syst:aut {}",
+            vals=Bool(),
+            get_cmd=":syst:aut?"
+        )
+
+        self.add_parameter(
+            "auto_scale",
+            set_cmd=":AUToscale",
+            vals=Bool()
+        )
+
         for channel_number in range(1, 5):  # It is really unfortunate that a get parameter does not except
             # arguments.
             # TODO: Improve the design of the Parameter class
@@ -96,21 +105,3 @@ class Rigol_DS4035(VisaInstrument):
         times = self.time_base() * np.arange(0, len(data))
 
         return np.vstack([times, data])
-
-
-def main():
-
-    visa_address = "TCPIP::169.254.180.17::INSTR"
-    dev = Rigol_DS4035("rigol_scope", visa_address)
-
-    amp = dev.measure_amplitude_channel2()
-    print("The amplitude of the signal is {}".format(amp))
-
-    wave = dev.get_wave_form(1400, 2)
-
-    fig, ax = plt.subplots()
-    ax.plot(*wave)
-    plt.show()
-
-if __name__ == "__main__":
-    main()
