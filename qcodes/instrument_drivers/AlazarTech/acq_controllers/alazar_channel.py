@@ -2,7 +2,7 @@ from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils import validators as vals
 from .alazar_multidim_parameters import Alazar0DParameter, Alazar1DParameter, Alazar2DParameter
-from ..acquisition_parameters import AcqVariablesParam
+from ..acquisition_parameters import AcqVariablesParam, NonSettableDerivedParameter
 
 class AlazarChannel(InstrumentChannel):
     """
@@ -46,14 +46,24 @@ class AlazarChannel(InstrumentChannel):
         self.add_parameter('alazar_channel',
                            label='Alazar Channel',
                            parameter_class=ManualParameter)
-        #if not average_records:
-        self.add_parameter('records_per_buffer',
-                           label='records_per_buffer',
-                           parameter_class=ManualParameter)
-        #if not average_buffers:
-        self.add_parameter('buffers_per_acquisition',
-                           label='records_per_buffer',
-                           parameter_class=ManualParameter)
+        if not average_records:
+            self.add_parameter('records_per_buffer',
+                               label='records_per_buffer',
+                               parameter_class=ManualParameter)
+        else:
+            self.add_parameter('records_per_buffer',
+                               label='records_per_buffer',
+                               alternative='num_averages',
+                               parameter_class=NonSettableDerivedParameter)
+        if not average_buffers:
+            self.add_parameter('buffers_per_acquisition',
+                               label='records_per_buffer',
+                               parameter_class=ManualParameter)
+        else:
+            self.add_parameter('buffers_per_acquisition',
+                               label='records_per_buffer',
+                               alternative='num_averages',
+                               parameter_class=NonSettableDerivedParameter)
         self.add_parameter('num_averages',
                            #label='num averages',
                            check_and_update_fn=self._update_num_avg,
