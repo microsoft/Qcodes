@@ -86,7 +86,8 @@ class Keithley_2600(VisaInstrument):
                            get_cmd='source.func',
                            get_parser=float,
                            set_cmd='source.func={:d}',
-                           val_mapping={'current': 0, 'voltage': 1})
+                           val_mapping={'current': 0, 'voltage': 1},
+                           docstring='Selects the output source.')
         self.add_parameter('output',
                            get_cmd='source.output',
                            get_parser=float,
@@ -141,8 +142,15 @@ class Keithley_2600(VisaInstrument):
                            get_parser=float,
                            set_cmd='source.limiti={:.4f}',
                            unit='A')
+        # display
+        self.add_parameter('display_settext',
+                           set_cmd=self._display_settext,
+                           vals=vals.Strings())
 
         self.connect_message()
+
+    def _display_settext(self, text):
+        self.visa_handle.write('display.settext("{}")'.format(text))
 
     def get_idn(self):
         IDN = self.ask_raw('*IDN?')
@@ -152,6 +160,19 @@ class Keithley_2600(VisaInstrument):
         IDN = {'vendor': vendor, 'model': model,
                'serial': serial, 'firmware': firmware}
         return IDN
+
+    def display_clear(self):
+        """
+        This function clears the display, but also leaves it in user mode
+        """
+        self.visa_handle.write('display.clear()')
+
+    def display_normal(self):
+        """
+        A bit of a hack to get the normal screen back after having used the
+        user mode: simple send an EXIT key press event
+        """
+        self.visa_handle.write('display.sendkey(75)')
 
     def reset(self):
         """
