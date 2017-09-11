@@ -244,6 +244,14 @@ class QDac(VisaInstrument):
                            set_cmd='ver {}',
                            val_mapping={True: 1, False: 0})
 
+        self.add_parameter(name='fast_voltage_set',
+                           label='fast voltage set',
+                           parameter_class=ManualParameter,
+                           vals=vals.Bool(),
+                           initial_value=False,
+                           docstring=""""Toggles if DC voltage set should unset any ramp attached to this channel.
+                                     If you enable this you should ensure that any function generator is unset
+                                     from the channel before setting voltage""")
         # Initialise the instrument, all channels DC (unbind func. generators)
         for chan in self.chan_range:
             # Note: this call does NOT change the voltage on the channel
@@ -314,7 +322,8 @@ class QDac(VisaInstrument):
             if self.channels[chan-1].vrange.get_latest() == 1:
                 v_set = v_set*10
             # set the mode back to DC in case it had been changed
-            self.write('wav {} 0 0 0'.format(chan))
+            if not self.fast_voltage_set():
+               self.write('wav {} 0 0 0'.format(chan))
             self.write('set {} {:.6f}'.format(chan, v_set))
 
     def _set_vrange(self, chan, switchint):
