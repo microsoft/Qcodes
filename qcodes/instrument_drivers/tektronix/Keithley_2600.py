@@ -1,4 +1,5 @@
 from qcodes import VisaInstrument
+import qcodes.utils.validators as vals
 
 
 class Keithley_2600(VisaInstrument):
@@ -15,8 +16,32 @@ class Keithley_2600(VisaInstrument):
         - add ramping and such stuff
 
     """
-    def __init__(self, name, address, channel, **kwargs):
+    def __init__(self, name, address, channel, model=None, **kwargs):
         super().__init__(name, address, terminator='\n', **kwargs)
+
+        if model is None:
+            raise ValueError('Please supply Keithley model name, e.g.'
+                             '"2614B".')
+        knownmodels = ['2601B', '2602B', '2604B', '2611B', '2612B',
+                       '2614B', '2635B', '2636B']
+        if model not in knownmodels:
+            kmstring = ('{}, '*(len(knownmodels)-1)).format(*knownmodels[:-1])
+            kmstring += 'and {}.'.format(knownmodels[-1])
+            raise ValueError('Unknown model. Known model are: ' +
+                             kmstring)
+
+        self.model = model
+
+        vranges = {'2601B': [0.1, 1, 6, 40],
+                   '2602B': [0.1, 1, 6, 40],
+                   '2604B': [0.1, 1, 6, 40],
+                   '2611B': [0.2, 2, 20, 200],
+                   '2612B': [0.2, 2, 20, 200],
+                   '2614B': [0.2, 2, 20, 200],
+                   '2635B': [0.2, 2, 20, 200],
+                   '2636B': [0.2, 2, 20, 200]
+                   }
+
         self._channel = channel
 
         self.add_parameter('volt',
@@ -41,14 +66,16 @@ class Keithley_2600(VisaInstrument):
                            get_parser=float,
                            set_cmd='source.output={:d}',
                            val_mapping={'on':  1, 'off': 0})
-        # Source range
+        # volt range
         # needs get after set
         self.add_parameter('rangev',
+                           label='voltage range',
                            get_cmd='source.rangev',
                            get_parser=float,
                            set_cmd='source.rangev={:.4f}',
-                           unit='V')
-        # Measure range
+                           unit='V',
+                           vals=vals.Enum(*vranges[self.model]))
+        # current range
         # needs get after set
         self.add_parameter('rangei',
                            get_cmd='source.rangei',
