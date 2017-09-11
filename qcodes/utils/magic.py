@@ -1,5 +1,8 @@
+import sys
 from IPython.core.magic import Magics, magics_class, line_cell_magic
 
+if sys.version_info < (3, 6):
+    raise RuntimeError('Magic only supported for Python version 3.6 and up')
 
 @magics_class
 class QCoDeSMagic(Magics):
