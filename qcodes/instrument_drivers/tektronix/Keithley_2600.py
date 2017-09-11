@@ -4,19 +4,24 @@ import qcodes.utils.validators as vals
 
 class Keithley_2600(VisaInstrument):
     """
-    channel: use channel 'a' or 'b'
-
     This is the qcodes driver for the Keithley_2600 Source-Meter series,
     tested with Keithley_2614B
 
     Status: beta-version.
         TODO:
-        - Add all parameters that are in the manual
-        - range and limit should be set according to mode
+        - Make a channelised version for the two channels
         - add ramping and such stuff
 
     """
-    def __init__(self, name, address, channel, model=None, **kwargs):
+    def __init__(self, name: str, address: str, channel: str,
+                 model: str=None, **kwargs) -> None:
+        """
+        Args:
+            name: Name to use internally in QCoDeS
+            address: VISA ressource address
+            channel: Either 'a' or 'b'
+            model: The model type, e.g. '2614B'
+        """
         super().__init__(name, address, terminator='\n', **kwargs)
 
         if model is None:
@@ -42,6 +47,27 @@ class Keithley_2600(VisaInstrument):
                    '2636B': [0.2, 2, 20, 200]
                    }
 
+        # TODO: In pulsed mode, models 2611B, 2612B, and 2614B
+        # actually allow up to 10 A.
+        iranges = {'2601B': [100e-9, 1e-6, 10e-6, 100e-6,
+                             1e-3, 0.01, 0.1, 1, 3],
+                   '2602B': [100e-9, 1e-6, 10e-6, 100e-6,
+                             1e-3, 0.01, 0.1, 1, 3],
+                   '2604B': [100e-9, 1e-6, 10e-6, 100e-6,
+                             1e-3, 0.01, 0.1, 1, 3],
+                   '2611B': [100e-9, 1e-6, 10e-6, 100e-6,
+                             1e-3, 0.01, 0.1, 1, 1.5],
+                   '2612B': [100e-9, 1e-6, 10e-6, 100e-6,
+                             1e-3, 0.01, 0.1, 1, 1.5],
+                   '2614B': [100e-9, 1e-6, 10e-6, 100e-6,
+                             1e-3, 0.01, 0.1, 1, 1.5],
+                   '2634B': [1e-9, 10e-9, 100e-9, 1e-6, 10e-6, 100e-6,
+                             1e-3, 10e-6, 100e-3, 1, 1.5],
+                   '2635B': [1e-9, 10e-9, 100e-9, 1e-6, 10e-6, 100e-6,
+                             1e-3, 10e-6, 100e-3, 1, 1.5],
+                   '2636B': [1e-9, 10e-9, 100e-9, 1e-6, 10e-6, 100e-6,
+                             1e-3, 10e-6, 100e-3, 1, 1.5]}
+
         self._channel = channel
 
         self.add_parameter('volt',
@@ -66,22 +92,43 @@ class Keithley_2600(VisaInstrument):
                            get_parser=float,
                            set_cmd='source.output={:d}',
                            val_mapping={'on':  1, 'off': 0})
+        self.add_parameter('nplc',
+                           label='Number of power line cycles',
+                           set_cmd='measure.nplc={:.4f}',
+                           get_cmd='measure.nplc',
+                           get_parser=float,
+                           vals=vals.Numbers(0.001, 25))
         # volt range
-        # needs get after set
-        self.add_parameter('rangev',
-                           label='voltage range',
+        # needs get after set (WilliamHPNielsen): why?
+        self.add_parameter('sourcerange_v',
+                           label='voltage source range',
                            get_cmd='source.rangev',
                            get_parser=float,
                            set_cmd='source.rangev={:.4f}',
                            unit='V',
                            vals=vals.Enum(*vranges[self.model]))
+        self.add_parameter('measurerange_v',
+                           label='voltage measure range',
+                           get_cmd='measure.rangev',
+                           set_cmd='measure.rangev={:.4f}',
+                           unit='V',
+                           vals=vals.Enum(*vranges[self.model]))
         # current range
         # needs get after set
-        self.add_parameter('rangei',
+        self.add_parameter('sourcerange_i',
+                           label='current source range',
                            get_cmd='source.rangei',
                            get_parser=float,
                            set_cmd='source.rangei={:.4f}',
-                           unit='A')
+                           unit='A',
+                           vals=vals.Enum(*iranges[self.model]))
+        self.add_parameter('measurerange_i',
+                           label='current measure range',
+                           get_cmd='measure.rangei',
+                           get_parser=float,
+                           set_cmd='measure.rangei={:.4f}',
+                           unit='A',
+                           vals=vals.Enum(*iranges[self.model]))
         # Compliance limit
         self.add_parameter('limitv',
                            get_cmd='source.limitv',
@@ -107,7 +154,12 @@ class Keithley_2600(VisaInstrument):
         return IDN
 
     def reset(self):
+        """
+        Reset instrument to factory defaults
+        """
         self.write('reset()')
+        # remember to update all the metadata
+        self.snapshot(update=True)
 
     def ask(self, cmd):
         return super().ask('print(smu{:s}.{:s})'.format(self._channel, cmd))
