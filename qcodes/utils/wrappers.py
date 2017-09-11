@@ -473,7 +473,7 @@ def _rescale_mpl_axes(plot):
             if plot.traces[i]['config'].get(axis):
                 unit = plot.traces[i]['config'][axis].unit
                 label = plot.traces[i]['config'][axis].label
-                maxval = abs(plot.traces[0]['config'][axis].ndarray).max()
+                maxval = abs(plot.traces[i]['config'][axis].ndarray).max()
                 units_to_scale = ('V')
                 if unit in units_to_scale:
                     if maxval < 1e-6:
