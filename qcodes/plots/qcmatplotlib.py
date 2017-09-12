@@ -406,6 +406,8 @@ class MatPlot(BasePlot):
         """
         Rescale axis and units for axis that are in standard units
         i.e. V, s J ... to m μ, m
+        This scales units defined in BasePlot.standardunits only
+        to avoid prefixes on combined or non standard units
         """
         def scale_formatter(i, pos, scale):
             return "{0:g}".format(i * scale)
@@ -421,7 +423,7 @@ class MatPlot(BasePlot):
                     # allow values up to a <1000. i.e. nV is used up to 1000 nV
                     prefixes = ['n', 'μ', 'm', '', 'k', 'M', 'G']
                     thresholds = [10**(-6 + 3*n) for n in range(len(prefixes))]
-                    scales = [10 ** (9 - 3*n) for n in range(len(prefixes))]
+                    scales = [10**(9 - 3*n) for n in range(len(prefixes))]
 
                     if unit in units_to_scale:
                         scale = 1
