@@ -419,33 +419,25 @@ class MatPlot(BasePlot):
                     units_to_scale = self.standardunits
 
                     # allow values up to a <1000. i.e. nV is used up to 1000 nV
-                    smallerthan = [1e-6, 1e-3, 1, 1e3, 1e6, 1e9, 1e12]
-                    prefixes= ['n', 'μ', 'm', '', 'k', 'M', 'G']
+                    prefixes = ['n', 'μ', 'm', '', 'k', 'M', 'G']
+                    thresholds = [10**(-6 + 3*n) for n in range(len(prefixes))]
+                    scales = [10 ** (9 - 3*n) for n in range(len(prefixes))]
 
                     if unit in units_to_scale:
-                        for trialscale, prefix in zip(smallerthan, prefixes):
-                            if maxval < trialscale:
+                        scale = 1
+                        new_unit = unit
+                        for prefix, threshold, trialscale in zip(prefixes,
+                                                                 thresholds,
+                                                                 scales):
+                            if maxval < threshold:
                                 scale = trialscale
                                 new_unit = prefix + unit
                                 break
                         # special case the largest
-                        if maxval > smallerthan[-1]:
-                            scale = smallerthan[-1]
+                        if maxval > thresholds[-1]:
+                            scale = scales[-1]
                             new_unit = prefixes[-1] + unit
 
-
-
-                        # if maxval < 1e-6:
-                        #     scale = 1e9
-                        #     new_unit = "n" + unit
-                        # elif maxval < 1e-3:
-                        #     scale = 1e6
-                        #     new_unit = "μ" + unit
-                        # elif maxval < 1:
-                        #     scale = 1e3
-                        #     new_unit = "m" + unit
-                        # else:
-                        #     continue
                         tx = ticker.FuncFormatter(
                             partial(scale_formatter, scale=scale))
                         new_label = "{} ({})".format(label, new_unit)
