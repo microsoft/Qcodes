@@ -475,3 +475,35 @@ class QtPlot(BasePlot):
     def setGeometry(self, x, y, w, h):
         """ Set geometry of the plotting window """
         self.win.setGeometry(x, y, w, h)
+
+    def fixUnitScaling(self):
+        """
+        Disable SI rescaling if units are not standard units
+        """
+        axismapping = {'x': 'bottom',
+                       'y': 'left',
+                       'z': 'right'}
+        standardunits = self.standardunits
+        for i, plot in enumerate(self.subplots):
+            # make a dict mapping axis labels to axis positions
+            for axis in ('x', 'y', 'z'):
+                if self.traces[i]['config'].get(axis):
+                    unit = self.traces[i]['config'][axis].unit
+                    label = self.traces[i]['config'][axis].label
+                    #maxval = abs(self.traces[i]['config'][axis].ndarray).max()
+                    if unit not in standardunits:
+                        if axis in ('x', 'y'):
+                            ax = plot.getAxis(axismapping[axis])
+                        else:
+                            # 2D measurement
+                            # Then we should fetch the colorbar
+                            ax = self.traces[i]['plot_object']['hist'].axis
+                        ax.enableAutoSIPrefix(False)
+                        # because updateAutoSIPrefix called from
+                        # enableAutoSIPrefix doesnt actually take the
+                        # value of the argument into account we have
+                        # to manually replicate the update here
+                        ax.autoSIPrefixScale = 1.0
+                        ax.setLabel(unitPrefix='')
+                        ax.picture = None
+                        ax.update()
