@@ -489,8 +489,6 @@ class QtPlot(BasePlot):
             for axis in ('x', 'y', 'z'):
                 if self.traces[i]['config'].get(axis):
                     unit = self.traces[i]['config'][axis].unit
-                    label = self.traces[i]['config'][axis].label
-                    #maxval = abs(self.traces[i]['config'][axis].ndarray).max()
                     if unit not in standardunits:
                         if axis in ('x', 'y'):
                             ax = plot.getAxis(axismapping[axis])
