@@ -7,13 +7,16 @@ from qcodes.instrument.parameter import ManualParameter
 
 
 class RTO1024_scope_test(visa.VisaInstrument):
-    '''
-    Alpha Version of Instrument driver for the 
+    """
+    Alpha Version of Instrument driver for the
     Rohde-Schwarz RTO1024 oscilloscope.
     Currently only able to measure signal on Channel 1.
     Contains commands for acquiring an average waveform.
 
-    '''
+    TODO (WilliamHPNielsen):
+        * Channelise the channel settings
+        * Cast waveform/trace acquisition into an array parameter
+    """
 
     def __init__(self, name, address=None, timeout=5, terminator='',
                  **kwargs):
@@ -21,23 +24,28 @@ class RTO1024_scope_test(visa.VisaInstrument):
                          terminator=terminator, **kwargs)
 
         self.add_parameter('num_averages',
+                           label='Number of trace averages',
                            docstring='Number of averages for measuring '
                            'trace.',
                            get_cmd='ACQuire:COUNt' + '?',
                            set_cmd='ACQuire:COUNt ' + '{:.4f}',
                            vals=vals.Ints(1, 16777215),
                            get_parser=int)
-        self.add_parameter('Sampling_rate',
+
+        self.add_parameter('sampling_rate',
+                           label='Sample rate',
                            docstring='Number of averages for measuring '
                            'trace.',
-                           units='Sa/s',
+                           unit='Sa/s',
                            get_cmd='ACQuire:POINts:ARATe' + '?',
                            get_parser=int)
-        # resolution doesnot have to be the timescale
+
+        # resolution does not have to equal the timescale
         # TODO : Explore timebase commands
-        self.add_parameter('time_step',
+        self.add_parameter('resolution',
+                           label='Temporal resolution',
                            docstring='Resolution in seconds.',
-                           units='s',
+                           unit='s',
                            get_cmd='ACQuire:RESolution' + '?',
                            set_cmd='ACQuire:RESolution ' + '{:.2f}',
                            vals=vals.Numbers(1E-15, 0.5),
@@ -48,7 +56,7 @@ class RTO1024_scope_test(visa.VisaInstrument):
         self.add_parameter('trigger_interval',
                            docstring='Time between triggers',
                            vals=vals.Numbers(),
-                           units='s',
+                           unit='s',
                            initial_value=1,
                            parameter_class=ManualParameter)
 
@@ -62,7 +70,6 @@ class RTO1024_scope_test(visa.VisaInstrument):
 
         # write a get-set method for signal channel,
         # and all other methods dependent on signal channel
-
         self.add_parameter('signal_ch',
                            docstring='Signal channel',
                            vals=vals.Ints(1, 4),
@@ -70,23 +77,27 @@ class RTO1024_scope_test(visa.VisaInstrument):
                            parameter_class=ManualParameter)
 
         self.add_parameter('acq_rate',
-                           units='Sa/s',
+                           label='Acquisition rate',
+                           unit='Sa/s',
                            docstring='recorded waveform samples per second',
                            get_cmd='ACQuire:SRATe'+'?',
                            set_cmd='ACQuire:SRATe ' + ' {:.2f}',
                            vals=vals.Numbers(2, 20e12),
                            get_parser=float)
+
         # needs get set methods as channel no. needs to be satisfied
         self.add_parameter('y_range',
-                           units='Volt/div',
+                           unit='Volt/div',
                            get_cmd='CHANnel1:RANGe'+'?',
                            set_cmd=self.set_y_range,
                            docstring='voltage range 10 vertical divisions',
                            # todo:something fishy  here
                            vals=vals.Numbers(.01, 10),
                            get_parser=float)
+
         self.add_parameter('y_scale',
-                           units='Volt/div',
+                           label='CH 1 y scale',
+                           unit='Volt/div',
                            get_cmd='CHANnel1:SCALe'+'?',
                            set_cmd=self.set_y_scale,
                            docstring='Scale value',
@@ -94,15 +105,17 @@ class RTO1024_scope_test(visa.VisaInstrument):
                            get_parser=float)
 
         self.add_parameter('t_start',
-                           units='s',
+                           label='Waveform start time',
+                           unit='s',
                            docstring='start time, relative to trigger in s',
                            get_cmd='EXPort:WAVeform:STARt' + '?',
                            set_cmd='EXPort:WAVeform:STARt' + ' {:.2f}',
                            vals=vals.Numbers(-100E+24, 100E+24),
                            get_parser=float)
+
         self.add_parameter('t_stop',
                            units='s',
-                           docstring='stop ime of saved waveform'
+                           docstring='stop time of saved waveform'
                            'relative to trigger in s',
                            get_cmd='EXPort:WAVeform:STOP' + '?',
                            set_cmd='EXPort:WAVeform:STOP' + ' {:.2f}',
@@ -115,23 +128,6 @@ class RTO1024_scope_test(visa.VisaInstrument):
         # starts the shutdown of the system
         self.add_function('system_shutdown', call_cmd='SYSTem:EXIT')
         self.initialise()
-
-    # test these functions
-
-    def get_y_range(self):
-        self.visa_handle.ask('CHANnel%s:RANGe?' % str(self.signal_ch))
-
-    def set_y_range(self, val):
-        # get the float here correctly
-        self.visa_handle.write(
-            'CHANnel%s:RANGe{:.4f}'.format(str(self.signal_ch), val))
-
-    def get_y_scale(self):
-        self.visa_handle.ask('CHANnel%s:SCALe?' % str(self.signal_ch))
-
-    def set_y_scale(self, val):
-        self.visa_handle.write(
-            'CHANnel%s:SCALe{:.4f}'.format(str(self.signal_ch), val))
 
     def initialise(self):
         # sets the time_step, y_range, trigger and channel source
