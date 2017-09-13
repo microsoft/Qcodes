@@ -62,7 +62,7 @@ class ScopeChannel(InstrumentChannel):
         # should be dynamically updated accordingly. Cf. p 1178 of the manual
         self.add_parameter('scale',
                            label='Channel {} Y scale'.format(channum),
-                           unit='V/div'
+                           unit='V/div',
                            get_cmd='CHANnel{}:SCALe?'.format(channum),
                            set_cmd='CHANnel{}:SCALe {{}}'.format(channum),
                            )
