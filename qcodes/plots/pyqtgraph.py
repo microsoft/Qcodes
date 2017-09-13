@@ -476,7 +476,7 @@ class QtPlot(BasePlot):
         """ Set geometry of the plotting window """
         self.win.setGeometry(x, y, w, h)
 
-    def fixUnitScaling(self):
+    def fixUnitScaling(self, startranges=None):
         """
         Disable SI rescaling if units are not standard units
         """
@@ -505,3 +505,29 @@ class QtPlot(BasePlot):
                         ax.setLabel(unitPrefix='')
                         ax.picture = None
                         ax.update()
+
+                    # set limits either from dataset or
+                    setarr = self.traces[i]['config'][axis].ndarray
+                    arrmin = None
+                    arrmax = None
+                    if not np.all(np.isnan(setarr)):
+                        arrmax = setarr.max()
+                        arrmin = setarr.min()
+                    elif startranges is not None:
+                        try:
+                            paramname = self.traces[i]['config'][axis].full_name
+                            arrmax = startranges[paramname]['max']
+                            arrmin = startranges[paramname]['min']
+                        except (IndexError, KeyError):
+                            continue
+
+                    if axis == 'x':
+                        rangesetter = getattr(plot.getViewBox(), 'setXRange')
+                    elif axis == 'y':
+                        rangesetter = getattr(plot.getViewBox(), 'setYRange')
+                    else:
+                        rangesetter = None
+
+                    if rangesetter is not None and arrmin is not None and arrmax is not None:
+                        rangesetter(arrmin, arrmax)
+
