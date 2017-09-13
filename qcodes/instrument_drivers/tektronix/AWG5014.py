@@ -127,7 +127,7 @@ class Tektronix_AWG5014(VisaInstrument):
         'DC_OUTPUT_LEVEL_N': 'd',  # V
     }
 
-    def __init__(self, name, address, timeout=180, **kwargs):
+    def __init__(self, name, address, timeout=180, num_channels=4, **kwargs):
         """
         Initializes the AWG5014.
 
@@ -136,6 +136,7 @@ class Tektronix_AWG5014(VisaInstrument):
             address (string): GPIB or ethernet address as used by VISA
             timeout (float): visa timeout, in secs. long default (180)
                 to accommodate large waveforms
+            num_channels (int): number of channels on the device
 
         Returns:
             None
@@ -143,6 +144,7 @@ class Tektronix_AWG5014(VisaInstrument):
         super().__init__(name, address, timeout=timeout, **kwargs)
 
         self._address = address
+        self.num_channels = num_channels
 
         self._values = {}
         self._values['files'] = {}
@@ -285,7 +287,7 @@ class Tektronix_AWG5014(VisaInstrument):
                            get_cmd='AWGControl:SNAMe?')
 
         # Channel parameters #
-        for i in range(1, 5):
+        for i in range(1, self.num_channels+1):
             amp_cmd = 'SOURce{}:VOLTage:LEVel:IMMediate:AMPLitude'.format(i)
             offset_cmd = 'SOURce{}:VOLTage:LEVel:IMMediate:OFFS'.format(i)
             state_cmd = 'OUTPUT{}:STATE'.format(i)
@@ -385,16 +387,16 @@ class Tektronix_AWG5014(VisaInstrument):
 
         self.set('trigger_impedance', 50)
         if self.get('clock_freq') != 1e9:
-            log.warning('AWG clock freq not set to 1GHz')
+            log.info('AWG clock freq not set to 1GHz')
 
         self.connect_message()
 
     # Convenience parser
     def newlinestripper(self, string):
-            if string.endswith('\n'):
-                return string[:-1]
-            else:
-                return string
+        if string.endswith('\n'):
+            return string[:-1]
+        else:
+            return string
 
     def _tek_outofrange_get_parser(self, string):
         val = float(string)
@@ -528,7 +530,7 @@ class Tektronix_AWG5014(VisaInstrument):
 
     def change_folder(self, folder):
         """Duplicate of self.set_current_folder_name"""
-        writecmd = 'MMEMory:CDIRectory "\{}"'
+        writecmd = r'MMEMory:CDIRectory "{}"'
         return self.visa_handle.write(writecmd.format(folder))
 
     def goto_root(self):
@@ -564,8 +566,8 @@ class Tektronix_AWG5014(VisaInstrument):
             log.info('Directory already set to ' +
                      '{}'.format(folder))
         else:
-            self.write('MMEMory:MDIRectory "\%s"' % folder)
-            self.write('MMEMory:CDIRectory "\%s"' % folder)
+            self.write('MMEMory:MDIRectory "%s"' % folder)
+            self.write('MMEMory:CDIRectory "%s"' % folder)
 
         return self.get_folder_contents()
 
@@ -574,12 +576,12 @@ class Tektronix_AWG5014(VisaInstrument):
         Set the state of all channels to be ON. Note: only channels with
         defined waveforms can be ON.
         """
-        for i in range(1, 5):
+        for i in range(1, self.num_channels+1):
             self.set('ch{}_state'.format(i), 1)
 
     def all_channels_off(self):
         """Set the state of all channels to be OFF."""
-        for i in range(1, 5):
+        for i in range(1, self.num_channels+1):
             self.set('ch{}_state'.format(i), 0)
 
     #####################
@@ -970,7 +972,7 @@ class Tektronix_AWG5014(VisaInstrument):
             if x is None:
                 return None
             else:
-                return x*1e-9
+                return x * 1e-9
         mrk1delays = [mrkdeltrans(self.ch1_m1_del.get_latest()),
                       mrkdeltrans(self.ch2_m1_del.get_latest()),
                       mrkdeltrans(self.ch3_m1_del.get_latest()),
@@ -982,40 +984,40 @@ class Tektronix_AWG5014(VisaInstrument):
 
         AWG_channel_cfg = {}
 
-        for chan in range(1, 5):
-            if dirouts[chan-1] is not None:
+        for chan in range(1, self.num_channels+1):
+            if dirouts[chan - 1] is not None:
                 AWG_channel_cfg.update({'ANALOG_DIRECT_OUTPUT_{}'.format(chan):
-                                        int(dirouts[chan-1])})
-            if filters[chan-1] is not None:
+                                        int(dirouts[chan - 1])})
+            if filters[chan - 1] is not None:
                 AWG_channel_cfg.update({'ANALOG_FILTER_{}'.format(chan):
-                                        filters[chan-1]})
-            if amps[chan-1] is not None:
+                                        filters[chan - 1]})
+            if amps[chan - 1] is not None:
                 AWG_channel_cfg.update({'ANALOG_AMPLITUDE_{}'.format(chan):
-                                        amps[chan-1]})
-            if offsets[chan-1] is not None:
+                                        amps[chan - 1]})
+            if offsets[chan - 1] is not None:
                 AWG_channel_cfg.update({'ANALOG_OFFSET_{}'.format(chan):
-                                        offsets[chan-1]})
-            if mrk1highs[chan-1] is not None:
+                                        offsets[chan - 1]})
+            if mrk1highs[chan - 1] is not None:
                 AWG_channel_cfg.update({'MARKER1_HIGH_{}'.format(chan):
-                                        mrk1highs[chan-1]})
-            if mrk1lows[chan-1] is not None:
+                                        mrk1highs[chan - 1]})
+            if mrk1lows[chan - 1] is not None:
                 AWG_channel_cfg.update({'MARKER1_LOW_{}'.format(chan):
-                                        mrk1lows[chan-1]})
-            if mrk2highs[chan-1] is not None:
+                                        mrk1lows[chan - 1]})
+            if mrk2highs[chan - 1] is not None:
                 AWG_channel_cfg.update({'MARKER2_HIGH_{}'.format(chan):
-                                        mrk2highs[chan-1]})
-            if mrk2lows[chan-1] is not None:
+                                        mrk2highs[chan - 1]})
+            if mrk2lows[chan - 1] is not None:
                 AWG_channel_cfg.update({'MARKER2_LOW_{}'.format(chan):
-                                        mrk2lows[chan-1]})
-            if mrk1delays[chan-1] is not None:
+                                        mrk2lows[chan - 1]})
+            if mrk1delays[chan - 1] is not None:
                 AWG_channel_cfg.update({'MARKER1_SKEW_{}'.format(chan):
-                                        mrk1delays[chan-1]})
-            if mrk2delays[chan-1] is not None:
+                                        mrk1delays[chan - 1]})
+            if mrk2delays[chan - 1] is not None:
                 AWG_channel_cfg.update({'MARKER2_SKEW_{}'.format(chan):
-                                        mrk2delays[chan-1]})
-            if addinputs[chan-1] is not None:
+                                        mrk2delays[chan - 1]})
+            if addinputs[chan - 1] is not None:
                 AWG_channel_cfg.update({'EXTERNAL_ADD_{}'.format(chan):
-                                        addinputs[chan-1]})
+                                        addinputs[chan - 1]})
 
         return AWG_channel_cfg
 
@@ -1271,9 +1273,9 @@ class Tektronix_AWG5014(VisaInstrument):
             namelist = []
             for jj in range(len(waveforms[ii])):
                 if channels is None:
-                    thisname = 'wfm{:03d}ch{}'.format(jj+1, ii+1)
+                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, ii + 1)
                 else:
-                    thisname = 'wfm{:03d}ch{}'.format(jj+1, channels[ii])
+                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, channels[ii])
                 namelist.append(thisname)
                 package = self.pack_waveform(waveforms[ii][jj],
                                              m1s[ii][jj],
@@ -1364,9 +1366,9 @@ class Tektronix_AWG5014(VisaInstrument):
             namelist = []
             for jj in range(len(waveforms[ii])):
                 if channels is None:
-                    thisname = 'wfm{:03d}ch{}'.format(jj+1, ii+1)
+                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, ii + 1)
                 else:
-                    thisname = 'wfm{:03d}ch{}'.format(jj+1, channels[ii])
+                    thisname = 'wfm{:03d}ch{}'.format(jj + 1, channels[ii])
                 namelist.append(thisname)
                 package = self.pack_waveform(waveforms[ii][jj],
                                              m1s[ii][jj],
@@ -1557,10 +1559,10 @@ class Tektronix_AWG5014(VisaInstrument):
         if min(w) < -1 or max(w) > 1:
             raise TypeError('Waveform values out of bonds.' +
                             ' Allowed values: -1 to 1 (inclusive)')
-        if (list(m1).count(0)+list(m1).count(1)) != len(m1):
+        if (list(m1).count(0) + list(m1).count(1)) != len(m1):
             raise TypeError('Marker 1 contains invalid values.' +
                             ' Only 0 and 1 are allowed')
-        if (list(m2).count(0)+list(m2).count(1)) != len(m2):
+        if (list(m2).count(0) + list(m2).count(1)) != len(m2):
             raise TypeError('Marker 2 contains invalid values.' +
                             ' Only 0 and 1 are allowed')
 
@@ -1577,7 +1579,7 @@ class Tektronix_AWG5014(VisaInstrument):
         s = 'WLISt:WAVeform:NEW "{}",{:d},INTEGER'.format(wfmname, dim)
         self.write(s)
         # Prepare the data block
-        number = ((2**13-1) + (2**13-1) * w + 2**14 *
+        number = ((2**13 - 1) + (2**13 - 1) * w + 2**14 *
                   np.array(m1) + 2**15 * np.array(m2))
         number = number.astype('int')
         ws = arr.array('H', number)

@@ -101,6 +101,8 @@ Instrument
    IPInstrument
    VisaInstrument
 
+   InstrumentChannel
+   ChannelList
 
 Plot
 ~~~~
@@ -119,5 +121,3 @@ Utils & misc
    :toctree: generated/
 
    qcodes.utils.validators
-   qcodes.utils.helpers.in_notebook
-
