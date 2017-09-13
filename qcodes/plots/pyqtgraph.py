@@ -480,7 +480,15 @@ class QtPlot(BasePlot):
 
     def fixUnitScaling(self, startranges: Optional[Dict[str, Dict[str, Union[float,int]]]]=None):
         """
-        Disable SI rescaling if units are not standard units
+        Disable SI rescaling if units are not standard units.
+
+        Args:
+
+            startranges: The plot can automatically infer the full ranges
+                         array parameters. However it has no knowledge of the
+                         ranges or regular parameters. You can explicitly pass
+                         in the values here as a dict of the form
+                         {'paramtername': {max: value, min:value}}
         """
         axismapping = {'x': 'bottom',
                        'y': 'left',
