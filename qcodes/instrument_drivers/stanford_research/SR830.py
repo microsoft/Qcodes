@@ -108,7 +108,8 @@ class ChannelBuffer(ArrayParameter):
         # parse it
         realdata = np.fromstring(rawdata, dtype='<i2')
         numbers = realdata[::2]*2.0**(realdata[1::2]-124)
-
+        if self.shape[0] != N:
+            raise RuntimeError("SR830 got {} points in buffer expected {}".format(N, self.shape[0]))
         return numbers
 
 
