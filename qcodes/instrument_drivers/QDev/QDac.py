@@ -562,6 +562,7 @@ class QDac(VisaInstrument):
 
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
+        self._write_response = self.visa_handle.read()
 
     def read(self):
         return self.visa_handle.read()
