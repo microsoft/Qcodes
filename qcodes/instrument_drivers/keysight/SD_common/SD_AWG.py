@@ -685,6 +685,40 @@ class SD_AWG(SD_Module):
         """
         self.awg.AWGtriggerMultiple(awg_mask)
 
+
+    def awg_queue_marker_config(self, awg_number, marker_mode, pxi_mask, io_mask, trigger_value, sync_mode, length, delay):
+        """
+        Configures the queue markers for the selected awg.
+        This allows control of the internal PXI triggers and the external IO
+        trigger port by the current state of the waveform queue.
+
+        Args:
+            awg_number (int): awg number
+            marker_mode (int): Operation mode of the queue
+                Disabled                    : 0
+                On WF start                 : 1
+                On WF start after WF delay  : 2
+                On every cycle              : 3
+                End (not implemented)       : 4
+
+            pxi_mask (int): select/deselect the internal pxi trigger lines
+                            (bit0 = PXI0 etc., 1 = selected)
+            io_mask (int): select/deselect the external io port (1 = selected)
+            trigger_value (int): the value to write to the selected trigger ports
+            sync_mode (int): the mode to synchronise the pulse with
+                Immediate : 0
+                Sync10    : 1
+            length (int): marker pulse length in multiples of TCLK * 5
+            delay (int): marker pulse delay in multiples of TCLK * 5
+        """
+        result = self.awg.AWGqueueMarkerConfig(awg_number, marker_mode, pxi_mask,
+                                               io_mask,trigger_value,sync_mode,
+                                               length, delay)
+        result_name = 'AWG {} queue marker config: {} {} :'.format(
+            awg_number,marker_mode, pxi_mask, io_mask, trigger_value, sync_mode,
+                                               length, delay)
+        return result_parser(result, result_name)
+
     #
     # Functions related to creation of SD_Wave objects
     #
