@@ -5,6 +5,8 @@ import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as pgmp
 from pyqtgraph.multiprocess.remoteproxy import ClosedError
+import qcodes.utils.helpers
+
 import warnings
 from collections import namedtuple, deque
 
@@ -65,6 +67,7 @@ class QtPlot(BasePlot):
         else:
             # overrule the remote pyqtgraph class
             self.rpg = pg
+            self.qc_helpers = qcodes.utils.helpers
         try:
             self.win = self.rpg.GraphicsWindow(title=window_title)
         except ClosedError as err:
@@ -95,6 +98,7 @@ class QtPlot(BasePlot):
         pg.mkQApp()
         cls.proc = pgmp.QtProcess()  # pyqtgraph multiprocessing
         cls.rpg = cls.proc._import('pyqtgraph')
+        cls.qc_helpers = cls.proc._import('qcodes.utils.helpers')
 
     def clear(self):
         """
@@ -148,7 +152,9 @@ class QtPlot(BasePlot):
                 cycle = color_cycle
                 color = cycle[len(self.traces) % len(cycle)]
             if width is None:
-                width = 2
+                # there are currently very significant performance issues
+                # with a penwidth larger than one
+                width = 1
             kwargs['pen'] = self.rpg.mkPen(color, width=width)
 
         if antialias is None:

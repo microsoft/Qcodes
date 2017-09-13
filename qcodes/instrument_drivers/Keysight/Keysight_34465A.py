@@ -185,6 +185,21 @@ class Keysight_34465A(VisaInstrument):
         self.NPLC_list = PLCs[self.model]
         self._apt_times = apt_times[self.model]
 
+        def errorparser(rawmssg: str) -> (int, str):
+            """
+            Parses the error message.
+
+            Args:
+                rawmssg: The raw return value of 'SYSTem:ERRor?'
+
+            Returns:
+                The error code and the error message.
+            """
+            code = int(rawmssg.split(',')[0])
+            mssg = rawmssg.split(',')[1].strip().replace('"', '')
+
+            return code, mssg
+
         ####################################
         # PARAMETERS
 
@@ -269,18 +284,19 @@ class Keysight_34465A(VisaInstrument):
                                                vals.Enum('MIN', 'MAX', 'DEF')),
                            get_parser=int)
 
-        self.add_parameter('sample_count_pretrigger',
-                           label='Sample Pretrigger Count',
-                           set_cmd='SAMPle:COUNt:PRETrigger {}',
-                           get_cmd='SAMPle:COUNt:PRETrigger?',
-                           vals=vals.MultiType(vals.Numbers(0, 2e6-1),
-                                               vals.Enum('MIN', 'MAX', 'DEF')),
-                           get_parser=int,
-                           docstring=('Allows collection of the data '
-                                      'being digitized the trigger. Reserves '
-                                      'memory for pretrigger samples up to the'
-                                      ' specified num. of pretrigger samples.')
-                           )
+        if DIG:
+            self.add_parameter('sample_count_pretrigger',
+                               label='Sample Pretrigger Count',
+                               set_cmd='SAMPle:COUNt:PRETrigger {}',
+                               get_cmd='SAMPle:COUNt:PRETrigger?',
+                               vals=vals.MultiType(vals.Numbers(0, 2e6-1),
+                                                   vals.Enum('MIN', 'MAX', 'DEF')),
+                               get_parser=int,
+                               docstring=('Allows collection of the data '
+                                          'being digitized the trigger. Reserves '
+                                          'memory for pretrigger samples up to the'
+                                          ' specified num. of pretrigger samples.')
+                               )
 
         self.add_parameter('sample_source',
                            label='Sample Timing Source',
@@ -304,6 +320,13 @@ class Keysight_34465A(VisaInstrument):
                            get_cmd='SAMPle:TIMer? MIN',
                            get_parser=float,
                            unit='s')
+
+        # SYSTEM
+        self.add_parameter('error',
+                           label='Error message',
+                           get_cmd='SYSTem:ERRor?',
+                           get_parser=errorparser
+                           )
 
         # The array parameter
         self.add_parameter('data_buffer',
@@ -334,6 +357,7 @@ class Keysight_34465A(VisaInstrument):
         self.add_function('init_measurement', call_cmd='INIT')
         self.add_function('reset', call_cmd='*RST')
         self.add_function('display_clear', call_cmd=('DISPLay:TEXT:CLEar'))
+        self.add_function('abort_measurement', call_cmd='ABORt')
 
         if not silent:
             self.connect_message()
@@ -403,3 +427,27 @@ class Keysight_34465A(VisaInstrument):
         # NPLC settings change with resolution
 
         self.NPLC.get()
+
+    def flush_error_queue(self, verbose: bool=True) -> None:
+        """
+        Clear the instrument error queue.
+
+        Args:
+            verbose: If true, the error messages are printed.
+                Default: True.
+        """
+
+        log.debug('Flushing error queue...')
+
+        err_code, err_message = self.error()
+        log.debug('    {}, {}'.format(err_code, err_message))
+        if verbose:
+            print(err_code, err_message)
+
+        while err_code != 0:
+            err_code, err_message = self.error()
+            log.debug('    {}, {}'.format(err_code, err_message))
+            if verbose:
+                print(err_code, err_message)
+
+        log.debug('...flushing complete')

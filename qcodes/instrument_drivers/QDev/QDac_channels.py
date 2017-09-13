@@ -104,6 +104,20 @@ class QDacChannel(InstrumentChannel):
                            initial_value=0.01
                            )
 
+    def snapshot_base(self, update=False, params_to_skip_update=None):
+        update_currents = self._parent._update_currents and update
+        if update and not self._parent._get_status_performed:
+            self._parent._get_status(readcurrents=update_currents)
+        # call get_status rather than getting the status individually for
+        # each parameter. This is only done if _get_status_performed is False
+        # this is used to signal that the parent has already called it and
+        # no need to repeat.
+        if params_to_skip_update is None:
+            params_to_skip_update = ('v', 'i', 'irange', 'vrange')
+        snap = super().snapshot_base(update=update,
+                                     params_to_skip_update=params_to_skip_update)
+        return snap
+
 
 class QDacMultiChannelParameter(MultiChannelInstrumentParameter):
     """
@@ -163,8 +177,9 @@ class QDac(VisaInstrument):
             QDac object
         """
         super().__init__(name, address)
+        self._output_n_lines = 50
         handle = self.visa_handle
-
+        self._get_status_performed = False
         # This is the baud rate on power-up. It can be changed later but
         # you must start out with this value.
         handle.baud_rate = 480600
@@ -238,9 +253,24 @@ class QDac(VisaInstrument):
         self.connect_message()
         log.info('[*] Querying all channels for voltages and currents...')
         self._get_status(readcurrents=update_currents)
+        self._update_currents = update_currents
         log.info('[+] Done')
 
-        self._output_n_lines = 50
+    def snapshot_base(self, update=False, params_to_skip_update=None):
+        update_currents = self._update_currents and update
+        if update:
+            self._get_status(readcurrents=update_currents)
+        self._get_status_performed = True
+        # call get_status rather than getting the status individually for
+        # each parameter. We set _get_status_performed to True
+        # to indicate that each update channel does not need to call this
+        # function as opposed to when snapshot is called on an individual
+        # channel
+        snap = super().snapshot_base(update=update,
+                                     params_to_skip_update=params_to_skip_update)
+        self._get_status_performed = False
+        return snap
+
     #########################
     # Channel gets/sets
     #########################
