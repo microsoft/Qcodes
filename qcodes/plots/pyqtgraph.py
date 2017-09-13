@@ -81,6 +81,7 @@ class QtPlot(BasePlot):
                 raise err
         self.win.setBackground(theme[1])
         self.win.resize(*figsize)
+        self._orig_fig_size = figsize
         self.subplots = [self.add_subplot()]
 
         if args or kwargs:
@@ -478,9 +479,34 @@ class QtPlot(BasePlot):
         """ Set geometry of the plotting window """
         self.win.setGeometry(x, y, w, h)
 
+    def autorange(self):
+        """
+        Auto range all limits in case they were changed during interactive
+        plot. Reset colormap if changed and resize window to original size.
+        """
+        for subplot in self.subplots:
+            vBox = subplot.getViewBox()
+            vBox.enableAutoRange(vBox.XYAxes)
+        cmap = None
+        # resize histogram
+        for trace in self.traces:
+            if 'plot_object' in trace.keys():
+                if (isinstance(trace['plot_object'], dict) and
+                            'hist' in trace['plot_object'].keys()):
+                    cmap = trace['plot_object']['cmap']
+                    max = trace['config']['z'].max()
+                    min = trace['config']['z'].min()
+                    trace['plot_object']['hist'].setLevels(min, max)
+                    trace['plot_object']['hist'].vb.autoRange()
+        if cmap:
+            self.set_cmap(cmap)
+        # set window back to original size
+        self.win.resize(*self._orig_fig_size)
+
     def fixUnitScaling(self, startranges: Optional[Dict[str, Dict[str, Union[float,int]]]]=None):
         """
-        Disable SI rescaling if units are not standard units.
+        Disable SI rescaling if units are not standard units and limit
+        ranges to data if known.
 
         Args:
 
