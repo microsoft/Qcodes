@@ -145,6 +145,7 @@ class QtPlot(BasePlot):
 
         if prev_default_title == self.win.windowTitle():
             self.win.setWindowTitle(self.get_default_title())
+        self.fixUnitScaling()
 
     def _draw_plot(self, subplot_object, y, x=None, color=None, width=None,
                    antialias=None, **kwargs):
