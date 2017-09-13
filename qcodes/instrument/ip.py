@@ -36,9 +36,9 @@ class IPInstrument(Instrument):
     """
 
     def __init__(self, name, address=None, port=None, timeout=5,
-                 terminator='\n', persistent=True, write_confirmation=True,
+                 terminator='\n', persistent=True, write_confirmation=True, testing=False,
                  **kwargs):
-        super().__init__(name, **kwargs)
+        super().__init__(name, testing=testing, **kwargs)
 
         self._address = address
         self._port = port
@@ -88,7 +88,14 @@ class IPInstrument(Instrument):
         else:
             self._disconnect()
 
+    def flush_connection(self):
+        if not self._testing:
+            self._recv()
+
     def _connect(self):
+        if self._testing:
+            return
+
         if self._socket is not None:
             self._disconnect()
 
