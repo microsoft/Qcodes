@@ -83,7 +83,6 @@ def _handler(parameters, interval: int):
                 # mute browser discconects
                 except websockets.exceptions.ConnectionClosed as e:
                     log.debug(e)
-                    pass
                 await asyncio.sleep(interval)
             except CancelledError:
                 break
