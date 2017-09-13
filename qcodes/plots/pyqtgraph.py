@@ -1,6 +1,7 @@
 """
 Live plotting using pyqtgraph
 """
+from typing import Optional, Dict, Union
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as pgmp
@@ -476,7 +477,7 @@ class QtPlot(BasePlot):
         """ Set geometry of the plotting window """
         self.win.setGeometry(x, y, w, h)
 
-    def fixUnitScaling(self, startranges=None):
+    def fixUnitScaling(self, startranges: Optional[Dict[str, Dict[str, Union[float,int]]]]=None):
         """
         Disable SI rescaling if units are not standard units
         """
@@ -528,6 +529,8 @@ class QtPlot(BasePlot):
                     else:
                         rangesetter = None
 
-                    if rangesetter is not None and arrmin is not None and arrmax is not None:
+                    if (rangesetter is not None
+                        and arrmin is not None
+                        and arrmax is not None):
                         rangesetter(arrmin, arrmax)
 
