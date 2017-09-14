@@ -1,3 +1,6 @@
+from pyvisa.resources import SerialInstrument
+import pyvisa.constants as vi_const
+
 from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils.validators import Enum, Strings
 
@@ -27,7 +30,6 @@ class SensorChannel(InstrumentChannel):
         self.add_parameter('sensor_status', get_cmd='RDGST? {}'.format(self._channel),
                            val_mapping={'OK': 0, 'Invalid Reading': 1, 'Temp Underrange': 16, 'Temp Overrange': 32,
                            'Sensor Units Zero': 64, 'Sensor Units Overrange': 128}, label='Sensor_Status')
-
         self.add_parameter('sensor_name', get_cmd='INNAME? {}'.format(self._channel),
                            get_parser=str, set_cmd='INNAME {},\"{{}}\"'.format(self._channel), vals=Strings(15),
                            label='Sensor_Name')
@@ -41,6 +43,13 @@ class Model_336(VisaInstrument):
 
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, terminator="\r\n", **kwargs)
+        if isinstance(self.visa_handle, SerialInstrument):
+            # Set up serial connection parameters
+            self.visa_handle.baud_rate = 57600
+            self.visa_handle.data_bits = 7
+            self.visa_handle.stop_bits = vi_const.StopBits.one
+            self.visa_handle.flow_control = vi_const.VI_ASRL_FLOW_NONE
+            self.visa_handle.parity = vi_const.Parity.odd
 
         # Allow access to channels either by referring to the channel name
         # or through a channel list.
