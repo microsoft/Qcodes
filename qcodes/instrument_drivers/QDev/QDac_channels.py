@@ -249,9 +249,7 @@ class QDac(VisaInstrument):
                            parameter_class=ManualParameter,
                            vals=vals.Bool(),
                            initial_value=False,
-                           docstring=""""Toggles if DC voltage set should unset any ramp attached to this channel.
-                                     If you enable this you should ensure that any function generator is unset
-                                     from the channel before setting voltage""")
+                           docstring=""""Deprecated with no functionality""")
         # Initialise the instrument, all channels DC (unbind func. generators)
         for chan in self.chan_range:
             # Note: this call does NOT change the voltage on the channel
@@ -322,9 +320,8 @@ class QDac(VisaInstrument):
             if self.channels[chan-1].vrange.get_latest() == 1:
                 v_set = v_set*10
             # set the mode back to DC in case it had been changed
-            if not self.fast_voltage_set():
-               self.write('wav {} 0 0 0'.format(chan))
-            self.write('set {} {:.6f}'.format(chan, v_set))
+            # and then set the voltage
+            self.write('wav {} 0 0 0;set {} {:.6f}'.format(chan, chan, v_set))
 
     def _set_vrange(self, chan, switchint):
         """
@@ -642,18 +639,20 @@ class QDac(VisaInstrument):
         if you want to use this response, we put it in self._write_response
         (but only for the very last write call)
 
-        Note that this procedure makes it cumbersome to handle the returned
-        messages from concatenated commands, e.g. 'wav 1 1 1 0;fun 2 1 100 1 1'
-        Please don't use concatenated commands
+        In this method we expect to read one termination char per command. As
+        commands are concatenated by `;` we count the number of concatenated
+        commands as count(';') + 1 e.g. 'wav 1 1 1 0;fun 2 1 100 1 1' is two
+        commands. Note that only the response of the last command will be
+        available in `_write_response`
 
-        TODO (WilliamHPNielsen): add automatic de-concatenation of commands.
         """
         if self.debugmode:
             log.info('Sending command string: {}'.format(cmd))
 
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
-        self._write_response = self.visa_handle.read()
+        for _ in range(cmd.count(';')+1):
+            self._write_response = self.visa_handle.read()
 
     def read(self):
         return self.visa_handle.read()
