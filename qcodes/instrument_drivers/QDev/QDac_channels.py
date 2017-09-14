@@ -645,7 +645,6 @@ class QDac(VisaInstrument):
         commands. Note that only the response of the last command will be
         available in `_write_response`
 
-        TODO (WilliamHPNielsen): add automatic de-concatenation of commands.
         """
         if self.debugmode:
             log.info('Sending command string: {}'.format(cmd))
