@@ -70,13 +70,27 @@ class Anything(Validator):
     def validate(self, value, context=''):
         pass
     # NOTE(giulioungaretti): why is_numeric?
-    # it allows fort set_step in parameter
+    # it allows for set_step in parameter
     # TODO(giulioungaretti): possible refactor
     is_numeric = True
 
     def __repr__(self):
         return '<Anything>'
 
+class Nothing(Validator):
+    """allow no value to pass"""
+
+    def __init__(self, reason):
+        if reason:
+            self.reason = reason
+        else:
+            self.reason = "Nothing Validator"
+
+    def validate(self, value, context=''):
+        raise TypeError("{}; {}".format(self.reason, context))
+
+    def __repr__(self):
+        return '<Nothing({})>'.format(self.reason)
 
 class Bool(Validator):
     """
