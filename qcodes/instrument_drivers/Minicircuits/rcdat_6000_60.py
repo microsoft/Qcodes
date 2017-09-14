@@ -1,7 +1,7 @@
 
 import telnetlib
 import qcodes.instrument.base
-from qcodes.utils.validators import Numbers, Ints, Enum, MultiType
+from qcodes.utils.validators import Numbers
 
 class RCDAT_6000_60(qcodes.instrument.base.Instrument):
 
