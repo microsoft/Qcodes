@@ -73,7 +73,8 @@ class MatPlot(BasePlot):
                 self[k].add(arg, **kwargs)
 
         self.tight_layout()
-        if any(isinstance(arg, DataArray) and arg.data_set.sync()
+        if any(isinstance(arg, DataArray) and arg.data_set is not None and
+                arg.data_set.sync()
                for arg in args):
             self.updater = UpdaterThread(self.update, name='MatPlot_updater',
                                          interval=interval, max_threads=5)
