@@ -5,6 +5,8 @@ from qcodes import ChannelList, InstrumentChannel
 from qcodes.utils import validators as vals
 from cmath import phase
 import numpy as np
+import time
+from functools import partial
 from qcodes import MultiParameter, ArrayParameter
 
 log = logging.getLogger(__name__)
@@ -34,6 +36,7 @@ class FrequencySweepMagPhase(MultiParameter):
     TODO:
       - ability to choose for linear or db in magnitude return
     """
+
     def __init__(self, name, instrument, start, stop, npts, channel):
         super().__init__(name, names=("", ""), shapes=((), ()))
         self._instrument = instrument
@@ -60,7 +63,7 @@ class FrequencySweepMagPhase(MultiParameter):
         # it is possible that the instrument and qcodes disagree about
         # which parameter is measured on this channel
         instrument_parameter = self._instrument.vna_parameter()
-        if  instrument_parameter != self._instrument._vna_parameter:
+        if instrument_parameter != self._instrument._vna_parameter:
             raise RuntimeError("Invalid parameter. Tried to measure "
                                "{} got {}".format(self._instrument._vna_parameter,
                                                   instrument_parameter))
@@ -72,7 +75,8 @@ class FrequencySweepMagPhase(MultiParameter):
         # need to ensure averaged result is returned
         for avgcount in range(self._instrument.avg()):
             self._instrument.write('INIT{}:IMM; *WAI'.format(self._channel))
-        data_str = self._instrument.ask('CALC{}:DATA? SDAT'.format(self._channel)).split(',')
+        data_str = self._instrument.ask(
+            'CALC{}:DATA? SDAT'.format(self._channel)).split(',')
         data_list = [float(v) for v in data_str]
 
         # data_list of complex numbers [re1,im1,re2,im2...]
@@ -107,11 +111,13 @@ class FrequencySweep(ArrayParameter):
           get(): executes a sweep and returns magnitude and phase arrays
 
     """
+
     def __init__(self, name, instrument, start, stop, npts, channel):
         super().__init__(name, shape=(npts,),
                          instrument=instrument,
                          unit='dB',
-                         label='{} magnitude'.format(instrument._vna_parameter),
+                         label='{} magnitude'.format(
+                             instrument._vna_parameter),
                          setpoint_units=('Hz',),
                          setpoint_names=('{}_frequency'.format(instrument._vna_parameter),))
         self.set_sweep(start, stop, npts)
@@ -130,7 +136,7 @@ class FrequencySweep(ArrayParameter):
         # it is possible that the instrument and qcodes disagree about
         # which parameter is measured on this channel
         instrument_parameter = self._instrument.vna_parameter()
-        if  instrument_parameter != self._instrument._vna_parameter:
+        if instrument_parameter != self._instrument._vna_parameter:
             raise RuntimeError("Invalid parameter. Tried to measure "
                                "{} got {}".format(self._instrument._vna_parameter,
                                                   instrument_parameter))
@@ -142,13 +148,14 @@ class FrequencySweep(ArrayParameter):
         # need to ensure averaged result is returned
         for avgcount in range(self._instrument.avg()):
             self._instrument.write('INIT{}:IMM; *WAI'.format(self._channel))
-        data_str = self._instrument.ask('CALC{}:DATA? FDAT'.format(self._channel))
+        data_str = self._instrument.ask(
+            'CALC{}:DATA? FDAT'.format(self._channel))
         data = np.array(data_str.rstrip().split(',')).astype('float64')
         if self._instrument.format() in ['Polar', 'Complex',
                                          'Smith', 'Inverse Smith']:
             log.warning("QCoDeS Dataset does not currently support Complex "
                         "values. Will discard the imaginary part.")
-            data = data[0::2] + 1j*data[1::2]
+            data = data[0::2] + 1j * data[1::2]
         self._instrument._parent.cont_meas_on()
         self._save_val(data)
         return data
@@ -173,7 +180,7 @@ class ZNBChannel(InstrumentChannel):
         self.add_parameter(name='vna_parameter',
                            label='VNA parameter',
                            get_cmd="CALC{}:PAR:MEAS? '{}'".format(self._instrument_channel,
-                                                                        self._tracename),
+                                                                  self._tracename),
                            get_parser=self._strip)
         self.add_parameter(name='power',
                            label='Power',
@@ -281,7 +288,8 @@ class ZNBChannel(InstrumentChannel):
         channel = self._instrument_channel
         self.write('CALC{}:FORM {}'.format(channel, val))
         self.trace.unit = unit_mapping[val]
-        self.trace.label = "{} {}".format(self.vna_parameter(), label_mapping[val])
+        self.trace.label = "{} {}".format(
+            self.vna_parameter(), label_mapping[val])
 
     def _strip(self, var):
         "Strip newline and quotes from instrument reply"
@@ -294,11 +302,13 @@ class ZNBChannel(InstrumentChannel):
         npts = self.npts()
 
         if val >= stop:
-            raise ValueError("Stop frequency must be larger than start frequency.")
+            raise ValueError(
+                "Stop frequency must be larger than start frequency.")
         # we get start as the vna may not be able to set it to the exact value provided
         start = self.start()
         if val != start:
-            log.warning("Could not set start to {} setting it to {}".format(val, start))
+            log.warning(
+                "Could not set start to {} setting it to {}".format(val, start))
         # update setpoints for FrequencySweep param
         self.trace.set_sweep(start, stop, npts)
         self.trace_mag_phase.set_sweep(start, stop, npts)
@@ -308,12 +318,14 @@ class ZNBChannel(InstrumentChannel):
         start = self.start()
         npts = self.npts()
         if val <= start:
-            raise ValueError("Stop frequency must be larger than start frequency.")
+            raise ValueError(
+                "Stop frequency must be larger than start frequency.")
         self.write('SENS{}:FREQ:STOP {:.4f}'.format(channel, val))
         # we get stop as the vna may not be able to set it to the exact value provided
         stop = self.stop()
         if val != stop:
-            log.warning("Could not set stop to {} setting it to {}".format(val, stop))
+            log.warning(
+                "Could not set stop to {} setting it to {}".format(val, stop))
         # update setpoints for FrequencySweep param
         self.trace.set_sweep(start, stop, npts)
         self.trace_mag_phase.set_sweep(start, stop, npts)
@@ -364,6 +376,7 @@ class ZNB(VisaInstrument):
     TODO:
     - check initialisation settings and test functions
     """
+
     def __init__(self, name: str, address: str, init_s_params: bool=True, **kwargs):
 
         super().__init__(name=name, address=address, **kwargs)
@@ -385,15 +398,19 @@ class ZNB(VisaInstrument):
             self._max_freq = 20e9
             self._min_freq = 100e3
         self.add_parameter(name='num_ports',
-                            get_cmd='INST:PORT:COUN?',
-                            get_parser=int)
+                           get_cmd='INST:PORT:COUN?',
+                           get_parser=int)
         num_ports = self.num_ports()
 
         self.add_parameter(name='rf_power',
                            get_cmd='OUTP1?',
                            set_cmd='OUTP1 {}',
                            val_mapping={True: '1\n', False: '0\n'})
-
+        self.add_parameter(name='spec_mode',
+                           set_cmd=self._set_spec_mode,
+                           get_cmd=self._get_spec_mode,
+                           initial_value=False,
+                           val_mapping={True: '1\n', False: '0\n'})
         self.add_function('reset', call_cmd='*RST')
         self.add_function('tooltip_on', call_cmd='SYST:ERR:DISP ON')
         self.add_function('tooltip_off', call_cmd='SYST:ERR:DISP OFF')
@@ -402,8 +419,10 @@ class ZNB(VisaInstrument):
         self.add_function('update_display_once', call_cmd='SYST:DISP:UPD ONCE')
         self.add_function('update_display_on', call_cmd='SYST:DISP:UPD ON')
         self.add_function('update_display_off', call_cmd='SYST:DISP:UPD OFF')
-        self.add_function('display_sij_split', call_cmd='DISP:LAY GRID;:DISP:LAY:GRID {},{}'.format(num_ports, num_ports))
-        self.add_function('display_single_window', call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 1,1')
+        self.add_function('display_sij_split', call_cmd='DISP:LAY GRID;:DISP:LAY:GRID {},{}'.format(
+            num_ports, num_ports))
+        self.add_function('display_single_window',
+                          call_cmd='DISP:LAY GRID;:DISP:LAY:GRID 1,1')
         self.add_function('rf_off', call_cmd='OUTP1 OFF')
         self.add_function('rf_on', call_cmd='OUTP1 ON')
         self.clear_channels()
@@ -412,8 +431,8 @@ class ZNB(VisaInstrument):
         self.add_submodule("channels", channels)
         if init_s_params:
             n = 1
-            for i in range(1, num_ports+1):
-                for j in range(1, num_ports+1):
+            for i in range(1, num_ports + 1):
+                for j in range(1, num_ports + 1):
                     ch_name = 'S' + str(i) + str(j)
                     self.add_channel(ch_name)
                     n += 1
@@ -432,7 +451,6 @@ class ZNB(VisaInstrument):
         """
         self.write('DISP:LAY GRID;:DISP:LAY:GRID {},{}'.format(rows, cols))
 
-
     def add_channel(self, vna_parameter: str):
         n_channels = len(self.channels)
         channel = ZNBChannel(self, vna_parameter, n_channels + 1)
@@ -440,6 +458,70 @@ class ZNB(VisaInstrument):
         if n_channels == 0:
             self.display_single_window()
 
+    def count_external_generators(self):
+        num = self.ask('SYST:COMM:RDEV:GEN:COUN?').strip()
+        return int(num)
+
+    def set_external_generator(self, address, gen=1, gen_name="ext gen 1",
+                               driver="SGS100A", interface="VXI-11"):
+        self.write('SYST:COMM:RDEV:GEN{:.0f}:DEF "{}", "{}", "{}",  "{}"'.format(
+            gen, gen_name, driver, interface, address))
+
+    def get_external_generator_setup(self, num=1):
+        setup = self.ask(
+            'SYSTem:COMMunicate:RDEVice:GEN{:.0f}:DEF?'.format(num)).strip()
+        return setup
+
+    def clear_external_generator(self, num=1):
+        self.write('SYST:COMM:RDEV:GEN{:.0f}:DEL'.format(num))
+
+    def get_external_generator_numbers(self):
+        cat = self.ask('SYST:COMM:RDEV:GEN1:CAT?').strip()
+        return cat
+
+    def add_spectroscopy_channel(self, generator_address,
+                                 vna_parameter: str = "B2G1SAM"):
+        """
+        Addes a generator and uses it to generate a fixed frequency tone, the
+        response at this frequency is read out at port 2 which is also set to
+        be fixed freq. Port 1 is set as the port for sweeping etc"""
+        self.set_external_generator(generator_address)
+        self.add_channel(vna_parameter)
+        chan_num = len(self.channels)
+        self.write('SOUR{}:POW2:STAT OFF'.format(chan_num))
+        time.sleep(0.2)
+        self.write('SOUR{}:POW:GEN1:PERM ON'.format(chan_num))
+        time.sleep(0.2)
+        self.write('SOUR{}:POW1:PERM ON'.format(chan_num))
+        time.sleep(0.2)
+        self.add_parameter(
+            'readout_freq',
+            set_cmd=partial(self._set_readout_freq, chan_num),
+            get_cmd=partial(self._get_readout_freq, chan_num),
+            get_parser=float,
+            vals=vals.Numbers(self._min_freq, self._max_freq))
+        self.add_parameter(
+            'readout_power',
+            set_cmd=partial(self._set_readout_pow, chan_num),
+            get_cmd=partial(self._get_readout_pow, chan_num),
+            get_parser=int,
+            vals=vals.Numbers(-150, 25))
+
+    def _set_readout_freq(self, chan_num, freq):
+        self.write(
+            'SOUR{}:FREQ:CONV:ARB:EFR1 ON, 0, 1, {:.6f}, CW'.format(chan_num, freq))
+        self.write(
+            'SOUR{}:FREQ2:CONV:ARB:IFR 0, 1, {:.6f}, CW'.format(chan_num, freq))
+
+    def _get_readout_freq(self, chan_num, freq):
+        return self.ask('SOUR:FREQ:CONV:ARB:EFR1?').split(',')[3]
+
+    def _set_readout_pow(self, chan_num, pow):
+        self.write('SOUR{}:POW:GEN1:OFFS {:.3f}, ONLY'.format(chan_num, pow))
+        self.write('SOUR{}:POW2:OFFS {:.3f}, ONLY'.format(chan_num, pow))
+
+    def _get_readout_pow(self, chan_num):
+        return self.ask('SOUR{}:POW:GEN1:OFFS?'.format(chan_num)).split(',')[0]
 
     def _set_default_values(self):
         for channel in self.channels:
