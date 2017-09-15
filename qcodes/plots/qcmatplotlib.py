@@ -75,7 +75,6 @@ class MatPlot(BasePlot):
         self.tight_layout()
         if any(isinstance(arg, DataArray) and arg.data_set.sync()
                for arg in args):
-            logger.debug('Creating updater for MatPlot')
             self.updater = UpdaterThread(self.update, name='MatPlot_updater',
                                          interval=interval, max_threads=5)
 
