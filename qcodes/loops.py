@@ -616,7 +616,7 @@ class ActiveLoop(Metadatable):
 
     def _raise_if_stopped(self):
         if self._is_stopped:
-            self.is_stopped = False
+            ActiveLoop._is_stopped = False
             raise _QcodesBreak
 
     def set_common_attrs(self, data_set, use_threads):
@@ -927,7 +927,8 @@ class ActiveLoop(Metadatable):
                     try:
                         self.bg_task()
                     except _QcodesBreak:
-                        logging.error('QCodes break raise, stopping')
+                        log.error('QCodes break raise, stopping')
+                        print('print: QCodes break raise, stopping')
                         break
                     except Exception:
                         if self.last_task_failed:
