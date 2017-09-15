@@ -738,7 +738,13 @@ class ActiveLoop(Metadatable):
             if any(t.name == 'qcodes_loop' for t in threading.enumerate()):
                 raise RuntimeError('QCoDeS loop already running. Exiting')
 
-            loop = self.with_bg_task(self._raise_if_stopped)
+            def attach_stop_bg(loop):
+                new_loop = loop.with_bg_task(self._raise_if_stopped)
+                for action in loop:
+                    if isinstance(action, ActiveLoop):
+                        attach_stop_bg(action)
+                return new_loop
+            loop = attach_stop_bg(self)
             t = threading.Thread(target=loop.run, name='qcodes_loop',
                                  args=args,
                                  kwargs={'use_threads': use_threads,
