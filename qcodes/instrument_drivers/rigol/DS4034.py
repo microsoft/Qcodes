@@ -40,8 +40,8 @@ class Rigol_DS4035(VisaInstrument):
             get_cmd=":wav:form?",
             set_cmd=":wav:form {}",
             val_mapping={
-                'asc': 'ascii',
-                'bin': 'binary'}
+                'ascii': 'ascii',
+                'binary': 'binary'}
         )
 
         self.add_parameter(
