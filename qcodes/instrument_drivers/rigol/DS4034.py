@@ -92,6 +92,9 @@ class Rigol_DS4035(VisaInstrument):
             channel = Rigol_DS4035_Channel(self, "ch{}".format(channel_number), channel_number)
             channels.append(channel)
 
+        channels.lock()
+        self.add_submodule('channels', channels)
+
         self.add_function(
             "get_wave_form",
             call_cmd=self._get_wave_form,
