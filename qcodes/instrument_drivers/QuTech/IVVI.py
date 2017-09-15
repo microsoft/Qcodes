@@ -116,11 +116,9 @@ class IVVI(VisaInstrument):
                            label='Dac voltages',
                            get_cmd=self._get_dacs)
 
-        self.add_parameter(
+        self.add_function(
             'trigger',
-            label='trigger',
-            set_cmd=self._send_trigger,
-            vals=Bool()
+            call_cmd=self._send_trigger
         )
 
         # initialize pol_num, the voltage offset due to the polarity
@@ -475,7 +473,7 @@ class IVVI(VisaInstrument):
             return fun(ch)
         return get_func
 
-    def _send_trigger(self, param):
+    def _send_trigger(self):
         msg = bytes([2, 6])
         self.write(msg)
         self.read()  # Flush the buffer, else the command will only work the first time.
