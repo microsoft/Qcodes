@@ -36,7 +36,7 @@ class OxfordInstruments_ILM200(VisaInstrument):
             name (string)    : name of the instrument
             address (string) : instrument address
             number (int)     : ISOBUS instrument number
-                                                           (number=1 is specific to the ILM in F008)
+                (number=1 is specific to the ILM in F008)
 
         Output:
             None
@@ -112,7 +112,7 @@ class OxfordInstruments_ILM200(VisaInstrument):
 
     def get_idn(self):
         """
-        Overides the function of Instrument since ILM does not support '*IDN?'
+        Overides the function of Instrument since ILM does not support `*IDN?`
 
         This string is supposed to be a
         comma-separated list of vendor, model, serial, and firmware, but
