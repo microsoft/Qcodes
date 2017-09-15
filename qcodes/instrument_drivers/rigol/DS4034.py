@@ -95,17 +95,11 @@ class Rigol_DS4035(VisaInstrument):
         channels.lock()
         self.add_submodule('channels', channels)
 
-        self.add_function(
-            "get_wave_form",
-            call_cmd=self._get_wave_form,
-            args=[Ints(min_value=0, max_value=1400), Ints(min_value=0, max_value=4)]
-        )
-
-    def _get_wave_form(self, n_samples, channel):
+    def get_wave_form(self, n_samples, channel):
 
         self.source_channel(channel)
         self.mode("normal")
-        self.data_format("asc")
+        self.data_format("ascii")
         self.sample_point_count(n_samples)
 
         data = self.visa_handle.query_ascii_values(":wav:data?", converter="s")
@@ -113,7 +107,6 @@ class Rigol_DS4035(VisaInstrument):
         # it prone to exceptions as the internal string to float function is not smart enough to deal with empty
         # strings.
         data = [float(d) for d in data if d != ""]
-
         times = self.time_base() * np.arange(0, len(data))
 
         return np.vstack([times, data])
