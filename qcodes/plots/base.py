@@ -4,7 +4,6 @@ Live plotting in Jupyter notebooks
 
 import numpy as np
 
-
 class BasePlot:
     latest_plot = None
     """
@@ -285,6 +284,8 @@ class BasePlot:
         """
         if hasattr(self, 'update_widget'):
             self.update_widget.halt()
+        if hasattr(self, 'updater'):
+            self.updater.halt()
 
     def save(self, filename=None):
         """

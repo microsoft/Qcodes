@@ -5,6 +5,7 @@ using the nbagg backend and matplotlib
 from collections import Mapping
 from collections import Sequence
 from functools import partial
+import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,6 +15,10 @@ from numpy.ma import masked_invalid, getmask
 from qcodes.data.data_array import DataArray
 
 from .base import BasePlot
+from qcodes.utils.threading import UpdaterThread
+
+
+logger = logging.getLogger(__name__)
 
 
 class MatPlot(BasePlot):
@@ -68,6 +73,11 @@ class MatPlot(BasePlot):
                 self[k].add(arg, **kwargs)
 
         self.tight_layout()
+        if any(isinstance(arg, DataArray) and arg.data_set.sync()
+               for arg in args):
+            logger.debug('Creating updater for MatPlot')
+            self.updater = UpdaterThread(self.update, name='MatPlot_updater',
+                                         interval=interval, max_threads=5)
 
     def __getitem__(self, key):
         """

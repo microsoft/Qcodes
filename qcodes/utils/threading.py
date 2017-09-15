@@ -4,6 +4,12 @@
 # That way the things we call need not be rewritten explicitly async.
 
 import threading
+import time
+from collections import Iterable
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class RespondingThread(threading.Thread):
@@ -72,3 +78,35 @@ def thread_map(callables, args=None, kwargs=None):
         t.start()
 
     return [t.output() for t in threads]
+
+
+class UpdaterThread(threading.Thread):
+    def __init__(self, callables, interval, name=None, max_threads=None,
+                 auto_start=True):
+        super().__init__(name=name)
+        if not isinstance(callables, Iterable):
+            callables = [callables]
+        self.callables = callables
+
+        self.interval = interval
+        if max_threads is not None:
+            active_threads = sum(thread.getName()==name
+                                 for thread in threading.enumerate())
+            if  active_threads > max_threads:
+                logger.warning(f'Found {active_threads} active updater threads')
+
+        if auto_start:
+            time.sleep(interval)
+            self.start()
+
+    def run(self):
+        while not self._is_stopped:
+            for callable in self.callables:
+                callable()
+            time.sleep(self.interval)
+        else:
+            logger.warning('is stopped')
+
+    def halt(self):
+        self._is_stopped = True
+        logger.warning('Exiting')

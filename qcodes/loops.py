@@ -770,6 +770,7 @@ class ActiveLoop(Metadatable):
             if not quiet:
                 print(repr(self.data_set))
                 print(datetime.now().strftime('Started at %Y-%m-%d %H:%M:%S'))
+            data_set.active = True
             self._run_wrapper(set_active=set_active)
             ds = self.data_set
         finally:
@@ -780,6 +781,7 @@ class ActiveLoop(Metadatable):
             # again. But also if something went wrong during the loop execution
             # we want to clear the data_set attribute so we don't try to reuse
             # this one later.
+            data_set.active = False
             self.data_set = None
             if set_active:
                 ActiveLoop.active_loop = None

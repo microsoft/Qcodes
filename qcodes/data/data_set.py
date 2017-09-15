@@ -186,6 +186,7 @@ class DataSet(DelegateAttributes):
         self.write_period = write_period
         self.last_write = 0
         self.last_store = -1
+        self.active = False
 
         self.metadata = {}
 
@@ -217,7 +218,7 @@ class DataSet(DelegateAttributes):
         # version on the DataServer from the main copy)
 
         # LOCAL DataSet - no need to sync just use local data
-        return False
+        return self.active
 
     def fraction_complete(self):
         """
