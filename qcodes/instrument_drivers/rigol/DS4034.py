@@ -10,6 +10,25 @@ import numpy as np
 
 from qcodes import VisaInstrument
 from qcodes.utils.validators import Ints, Bool
+from qcodes.instrument.channel import InstrumentChannel, ChannelList
+
+
+class Rigol_DS4035_Channel(InstrumentChannel):
+
+    def __init__(self, parent, name, channel_number):
+        super().__init__(parent, name)
+
+        self.add_parameter(
+            "amplitude",
+            get_cmd=":meas:vamp? chan{}".format(channel_number)
+        )
+
+        self.add_parameter(
+            "vertical_scale",
+            get_cmd="chan{}:scale?".format(channel_number),
+            set_cmd="chan{}:scale ".format(channel_number) + "{}",
+            get_parser=float
+        )
 
 
 class Rigol_DS4035(VisaInstrument):
@@ -67,20 +86,11 @@ class Rigol_DS4035(VisaInstrument):
             vals=Bool()
         )
 
-        for channel_number in range(1, 5):  # It is really unfortunate that a get parameter does not except
-            # arguments.
-            # TODO: Improve the design of the Parameter class
-            self.add_parameter(
-                "measure_amplitude_channel{}".format(channel_number),
-                get_cmd=":meas:vamp? chan{}".format(channel_number)
-            )
+        channels = ChannelList(self, "Channels", Rigol_DS4035_Channel, snapshotable=False)
 
-            self.add_parameter(
-                "vertical_scale_channel{}".format(channel_number),
-                get_cmd="chan{}:scale?".format(channel_number),
-                set_cmd="chan{}:scale ".format(channel_number) + "{}",
-                get_parser=float
-            )
+        for channel_number in range(1, 5):
+            channel = Rigol_DS4035_Channel(self, "ch{}".format(channel_number), channel_number)
+            channels.append(channel)
 
         self.add_function(
             "get_wave_form",
