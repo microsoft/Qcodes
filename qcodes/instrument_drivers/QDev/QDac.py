@@ -164,14 +164,6 @@ class QDac(VisaInstrument):
                            docstring=""""Toggles if DC voltage set should unset any ramp attached to this channel.
                                      If you enable this you should ensure thay any function generator is unset
                                      from the channel before setting voltage""")
-        self.add_parameter(name='voltage_set_dont_wait',
-                           label='voltage set dont wait',
-                           parameter_class=ManualParameter,
-                           vals=vals.Bool(),
-                           initial_value=False,
-                           docstring=""""If enabled the voltage set does not wait for a reply from the 
-                           qdac. This is experimental and may break but has the potential to speed up
-                           stepping the qdac""")
         # Initialise the instrument, all channels DC (unbind func. generators)
         for chan in self.chan_range:
             # Note: this call does NOT change the voltage on the channel
@@ -236,7 +228,7 @@ class QDac(VisaInstrument):
             # set the mode back to DC in case it had been changed
             if not self.fast_voltage_set():
                 self.write('wav {} 0 0 0'.format(chan))
-            self.write('set {} {:.6f}'.format(chan, v_set), fast=self.voltage_set_dont_wait())
+            self.write('set {} {:.6f}'.format(chan, v_set))
 
     def _set_vrange(self, chan, switchint):
         """
@@ -552,7 +544,7 @@ class QDac(VisaInstrument):
         self.write(funmssg)
 
 
-    def write(self, cmd, fast=False):
+    def write(self, cmd):
         """
         QDac always returns something even from set commands, even when
         verbose mode is off, so we'll override write to take this out
@@ -570,8 +562,7 @@ class QDac(VisaInstrument):
 
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
-        if not fast:
-            self._write_response = self.visa_handle.read()
+        self._write_response = self.visa_handle.read()
 
     def read(self):
         return self.visa_handle.read()

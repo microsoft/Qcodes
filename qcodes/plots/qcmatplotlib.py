@@ -3,14 +3,13 @@ Live plotting in Jupyter notebooks
 using the nbagg backend and matplotlib
 """
 from collections import Mapping
+from collections import Sequence
 from functools import partial
 
 import matplotlib.pyplot as plt
-from matplotlib.transforms import Bbox
-from matplotlib import cm
 import numpy as np
+from matplotlib.transforms import Bbox
 from numpy.ma import masked_invalid, getmask
-from collections import Sequence
 
 from .base import BasePlot
 
@@ -83,8 +82,7 @@ class MatPlot(BasePlot):
         if isinstance(subplots, Mapping):
             if figsize is None:
                 figsize = (6, 4)
-            self.fig, self.subplots = plt.subplots(figsize=figsize, num=num,
-                                                   **subplots, squeeze=False)
+            self.fig, self.subplots = plt.subplots(figsize=figsize, num=num, squeeze=False, **subplots)
         else:
             # Format subplots as tuple (nrows, ncols)
             if isinstance(subplots, int):
@@ -304,9 +302,6 @@ class MatPlot(BasePlot):
             # to check for them.
             return False
 
-        if 'cmap' not in kwargs:
-            kwargs['cmap'] = cm.hot
-
         if x is not None and y is not None:
             # If x and y are provided, modify the arrays such that they
             # correspond to grid corners instead of grid centers.
@@ -345,12 +340,6 @@ class MatPlot(BasePlot):
             # Only the masked value of z is used as a mask
             args = args_masked[-1:]
 
-        if 'edgecolors' not in kwargs:
-            # Matplotlib pcolormesh per default are drawn as individual patches lined up next to each other
-            # due to rounding this produces visible gaps in some pdf viewers. To prevent this we draw each
-            # mesh with a visible edge (slightly overlapping) this assumes alpha=1 or it will produce artifacts
-            # at the overlaps
-            kwargs['edgecolors'] = 'face'
         pc = ax.pcolormesh(*args, **kwargs)
 
         # Set x and y limits if arrays are provided
