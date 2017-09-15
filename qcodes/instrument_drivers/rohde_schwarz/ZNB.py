@@ -406,11 +406,6 @@ class ZNB(VisaInstrument):
                            get_cmd='OUTP1?',
                            set_cmd='OUTP1 {}',
                            val_mapping={True: '1\n', False: '0\n'})
-        self.add_parameter(name='spec_mode',
-                           set_cmd=self._set_spec_mode,
-                           get_cmd=self._get_spec_mode,
-                           initial_value=False,
-                           val_mapping={True: '1\n', False: '0\n'})
         self.add_function('reset', call_cmd='*RST')
         self.add_function('tooltip_on', call_cmd='SYST:ERR:DISP ON')
         self.add_function('tooltip_off', call_cmd='SYST:ERR:DISP OFF')
@@ -454,6 +449,14 @@ class ZNB(VisaInstrument):
     def add_channel(self, vna_parameter: str):
         n_channels = len(self.channels)
         channel = ZNBChannel(self, vna_parameter, n_channels + 1)
+        self.write('SOUR{}:FREQ1:CONV:ARB:IFR 1, 1, 0, SWE'.format(n_channels + 1))
+        self.write('SOUR{}:FREQ2:CONV:ARB:IFR 1, 1, 0, SWE'.format(n_channels + 1))
+        self.write('SOUR{}:POW1:OFFS 0, CPAD'.format(n_channels + 1))
+        self.write('SOUR{}:POW2:OFFS 0, CPAD'.format(n_channels + 1))
+        self.write('SOUR{}:POW1:PERM OFF'.format(n_channels + 1))
+        self.write('SOUR{}:POW:GEN1:PERM OFF'.format(n_channels + 1))
+        self.write('SOUR{}:POW:GEN1:STAT OFF'.format(n_channels + 1))
+        self.write('SOUR{}:POW2:STAT ON'.format(n_channels + 1))
         self.channels.append(channel)
         if n_channels == 0:
             self.display_single_window()
@@ -480,7 +483,7 @@ class ZNB(VisaInstrument):
         return cat
 
     def add_spectroscopy_channel(self, generator_address,
-                                 vna_parameter: str = "B2G1SAM"):
+                                 vna_parameter="B2G1SAM"):
         """
         Addes a generator and uses it to generate a fixed frequency tone, the
         response at this frequency is read out at port 2 which is also set to
@@ -494,6 +497,7 @@ class ZNB(VisaInstrument):
         time.sleep(0.2)
         self.write('SOUR{}:POW1:PERM ON'.format(chan_num))
         time.sleep(0.2)
+        self.write('SOUR{}:POW:GEN1:STAT ON'.format(chan_num))
         self.add_parameter(
             'readout_freq',
             set_cmd=partial(self._set_readout_freq, chan_num),
@@ -513,7 +517,7 @@ class ZNB(VisaInstrument):
         self.write(
             'SOUR{}:FREQ2:CONV:ARB:IFR 0, 1, {:.6f}, CW'.format(chan_num, freq))
 
-    def _get_readout_freq(self, chan_num, freq):
+    def _get_readout_freq(self, chan_num):
         return self.ask('SOUR:FREQ:CONV:ARB:EFR1?').split(',')[3]
 
     def _set_readout_pow(self, chan_num, pow):
