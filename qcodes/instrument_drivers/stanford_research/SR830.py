@@ -45,7 +45,15 @@ class SR830_Channel_Array(InstrumentChannel):
 
         self.add_parameter('databuffer',
                             channel=channel_number,
-                            parameter_class=ChannelBuffer)
+                            parameter_class=ChannelBufferWrapped(parent))
+
+
+class ChannelBufferWrapped:
+    def __init__(self, instrument):
+        self._instrument = instrument
+
+    def __call__(self, name, instrument, channel):
+        return ChannelBuffer(name, self._instrument, channel)
 
 
 class ChannelBuffer(ArrayParameter):
@@ -71,9 +79,9 @@ class ChannelBuffer(ArrayParameter):
             raise ValueError('Invalid channel specifier. SR830 only has '
                              'channels 1 and 2.')
 
-        #if not isinstance(instrument, SR830):
-        #    raise ValueError('Invalid parent instrument. ChannelBuffer '
-        #                     'can only live on an SR830.')
+        if not isinstance(instrument, SR830):
+            raise ValueError('Invalid parent instrument. ChannelBuffer '
+                             'can only live on an SR830.')
 
         super().__init__(name,
                          shape=(1,),  # dummy initial shape
@@ -110,12 +118,10 @@ class ChannelBuffer(ArrayParameter):
 
         self.shape = (N,)
 
-        params = self._instrument.parameters
-        # YES, it should be: "is not 'none'" NOT "is not None"
-        if params['ch{}_ratio'.format(self.channel)].get() is not 'none':
+        if self._instrument.channels[self.channel].ratio.get() is not 'none':
             self.unit = '%'
         else:
-            disp = params['ch{}_display'.format(self.channel)].get()
+            disp = self._instrument.channels[self.channel].display.get()
             if disp == 'Phase':
                 self.unit = 'deg'
             else:
