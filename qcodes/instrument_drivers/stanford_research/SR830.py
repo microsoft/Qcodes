@@ -4,6 +4,48 @@ import numpy as np
 from qcodes import VisaInstrument
 from qcodes.instrument.parameter import ArrayParameter
 from qcodes.utils.validators import Numbers, Ints, Enum, Strings
+from qcodes.instrument.channel import InstrumentChannel, ChannelList
+
+
+class SR830_Aux_Array(InstrumentChannel):  # We see that InstrumentChannel, ChannelList are something of a misnomer
+    def __init__(self, parent, name, aux_number):
+        super().__init__(parent, name)
+
+        self.add_parameter('aux_in',
+                           label='Aux input {}'.format(aux_number),
+                           get_cmd='OAUX? {}'.format(aux_number),
+                           get_parser=float,
+                           unit='V')
+
+        self.add_parameter('aux_out',
+                           label='Aux output {}'.format(aux_number),
+                           get_cmd='AUXV? {}'.format(aux_number),
+                           get_parser=float,
+                           set_cmd='AUXV {0}, {{}}'.format(aux_number),
+                           unit='V')
+
+
+class SR830_Channel_Array(InstrumentChannel):
+    def __init__(self, parent, name, channel_number):
+        super().__init__(parent, name)
+
+        # detailed validation and mapping performed in set/get functions. Note that we only have
+        # two channels
+        self.add_parameter('ratio',
+                            label='Channel {} ratio'.format(channel_number),
+                            get_cmd=partial(parent._get_ch_ratio, channel_number),
+                            set_cmd=partial(parent._set_ch_ratio, channel_number),
+                            vals=Strings())
+
+        self.add_parameter('display',
+                            label='Channel {} display'.format(channel_number),
+                            get_cmd=partial(parent._get_ch_display, channel_number),
+                            set_cmd=partial(parent._set_ch_display, channel_number),
+                            vals=Strings())
+
+        self.add_parameter('databuffer',
+                            channel=channel_number,
+                            parameter_class=ChannelBuffer)
 
 
 class ChannelBuffer(ArrayParameter):
@@ -29,9 +71,9 @@ class ChannelBuffer(ArrayParameter):
             raise ValueError('Invalid channel specifier. SR830 only has '
                              'channels 1 and 2.')
 
-        if not isinstance(instrument, SR830):
-            raise ValueError('Invalid parent instrument. ChannelBuffer '
-                             'can only live on an SR830.')
+        #if not isinstance(instrument, SR830):
+        #    raise ValueError('Invalid parent instrument. ChannelBuffer '
+        #                     'can only live on an SR830.')
 
         super().__init__(name,
                          shape=(1,),  # dummy initial shape
@@ -323,20 +365,22 @@ class SR830(VisaInstrument):
                            get_cmd='OEXP? 3',
                            get_parser=parse_offset_get)
 
-        # Aux input/output
-        for i in [1, 2, 3, 4]:
-            self.add_parameter('aux_in{}'.format(i),
-                               label='Aux input {}'.format(i),
-                               get_cmd='OAUX? {}'.format(i),
-                               get_parser=float,
-                               unit='V')
+        aux = ChannelList(self, "Aux", SR830_Aux_Array, snapshotable=False)
+        channels = ChannelList(self, "Channel", SR830_Channel_Array, snapshotable=False)
 
-            self.add_parameter('aux_out{}'.format(i),
-                               label='Aux output {}'.format(i),
-                               get_cmd='AUXV? {}'.format(i),
-                               get_parser=float,
-                               set_cmd='AUXV {0}, {{}}'.format(i),
-                               unit='V')
+        # Aux input/output
+        for count in [1, 2, 3, 4]:
+            iaux = SR830_Aux_Array(self, "aux{}".format(count), count)
+            aux.append(iaux)
+
+            if count < 3:
+                channel = SR830_Channel_Array(self, "channel{}".format(count), count)
+                channels.append(channel)
+
+        aux.lock()
+        channels.lock()
+        self.add_submodule('channels', channels)
+        self.add_submodule('aux', aux)
 
         # Setup
         self.add_parameter('output_interface',
@@ -347,25 +391,6 @@ class SR830(VisaInstrument):
                                'RS232': '0\n',
                                'GPIB': '1\n',
                            })
-
-        # Channel setup
-        for ch in range(1, 3):
-
-            # detailed validation and mapping performed in set/get functions
-            self.add_parameter('ch{}_ratio'.format(ch),
-                               label='Channel {} ratio'.format(ch),
-                               get_cmd=partial(self._get_ch_ratio, ch),
-                               set_cmd=partial(self._set_ch_ratio, ch),
-                               vals=Strings())
-            self.add_parameter('ch{}_display'.format(ch),
-                               label='Channel {} display'.format(ch),
-                               get_cmd=partial(self._get_ch_display, ch),
-                               set_cmd=partial(self._set_ch_display, ch),
-                               vals=Strings())
-            self.add_parameter('ch{}_databuffer'.format(ch),
-                               channel=ch,
-                               parameter_class=ChannelBuffer)
-
         # Data transfer
         self.add_parameter('X',
                            get_cmd='OUTP? 1',
