@@ -1,4 +1,3 @@
-# DS4034.py
 """
 The QCodes driver of the oscilloscope Rigol DS4034. Please see
 
