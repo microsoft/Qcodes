@@ -1,7 +1,7 @@
 import logging
 import struct
 import numpy as np
-from typing import List
+from typing import List, Dict
 
 import qcodes as qc
 from qcodes import VisaInstrument, DataSet
@@ -193,6 +193,12 @@ class KeithleyChannel(InstrumentChannel):
                            parameter_class=LuaSweepParameter)
 
         self.channel = channel
+
+    # We need to avoid updating the sweep parameter
+    def snapshot_base(self, update: bool=False) -> Dict:
+        params_to_skip_update = ['fastsweep']
+        super().snapshot_base(update=update,
+                              params_to_skip_update=params_to_skip_update)
 
     def reset(self):
         """
