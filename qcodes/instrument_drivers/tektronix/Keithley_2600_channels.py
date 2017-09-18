@@ -3,7 +3,8 @@ import struct
 import numpy as np
 from typing import List
 
-from qcodes import VisaInstrument
+import qcodes as qc
+from qcodes import VisaInstrument, DataSet
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import ArrayParameter
@@ -82,7 +83,7 @@ class KeithleyChannel(InstrumentChannel):
     SMUA and SMUB.
     """
 
-    def __init__(self, parent: Instrument, name: str, channel: str):
+    def __init__(self, parent: Instrument, name: str, channel: str) -> None:
         """
         Args:
             parent: The Instrument instance to which the channel is
@@ -191,7 +192,6 @@ class KeithleyChannel(InstrumentChannel):
         self.add_parameter('fastsweep',
                            parameter_class=LuaSweepParameter)
 
-
         self.channel = channel
 
     def reset(self):
@@ -278,10 +278,11 @@ class KeithleyChannel(InstrumentChannel):
                   'format.byteorder = format.LITTLEENDIAN',
                   'printbuffer(1, {}, {}.nvbuffer1.readings)'.format(steps,
                                                                      channel)]
-        self.write(self.parent._scriptwrapper(script, debug=False))
+
+        self.write(self._parent._scriptwrapper(program=script, debug=True))
         # we must wait for the script to execute
         oldtimeout = self._parent.visa_handle.timeout
-        self.parent.visa_handle.timeout = 2*1000*steps*nplc/50 + 5000
+        self._parent.visa_handle.timeout = 2*1000*steps*nplc/50 + 5000
 
         # now poll all the data
         # The problem is that a '\n' character might by chance be present in
@@ -290,7 +291,7 @@ class KeithleyChannel(InstrumentChannel):
         received = 0
         data = b''
         while received < fullsize:
-            data_temp = self.parent.visa_handle.read_raw()
+            data_temp = self._parent.visa_handle.read_raw()
             received += len(data_temp)
             data += data_temp
 
@@ -301,7 +302,7 @@ class KeithleyChannel(InstrumentChannel):
         outdata = np.array(list(struct.iter_unpack('<f', data)))
         outdata = np.reshape(outdata, len(outdata))
 
-        self.parent.visa_handle.timeout = oldtimeout
+        self._parent.visa_handle.timeout = oldtimeout
 
         return outdata
 
@@ -436,6 +437,7 @@ class Keithley_2600(VisaInstrument):
         """
         return super().ask('print({:s})'.format(cmd))
 
+    @staticmethod
     def _scriptwrapper(program: List[str], debug: bool=False) -> str:
         """
         wraps a program so that the output can be put into
@@ -449,5 +451,6 @@ class Keithley_2600(VisaInstrument):
         mainprog = '\r\n'.join(program) + '\r\n'
         wrapped = 'loadandrunscript\r\n{}endscript\n'.format(mainprog)
         if debug:
+            log.debug('Wrapped the following script:')
             log.debug(wrapped)
         return wrapped
