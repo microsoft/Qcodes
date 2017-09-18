@@ -123,6 +123,7 @@ class Keithley_2600(VisaInstrument):
                            set_cmd='source.rangei={:.4f}',
                            unit='A',
                            vals=vals.Enum(*iranges[self.model]))
+
         self.add_parameter('measurerange_i',
                            label='current measure range',
                            get_cmd='measure.rangei',
@@ -169,8 +170,14 @@ class Keithley_2600(VisaInstrument):
 
     def display_normal(self):
         """
-        A bit of a hack to get the normal screen back after having used the
-        user mode: simple send an EXIT key press event
+        Set the display to the default mode
+        """
+        self.visa_handle.write('display.screen = SMUA_SMUB')
+
+    def exit_key(self):
+        """
+        Get back the normal screen after an error:
+        send an EXIT key press event
         """
         self.visa_handle.write('display.sendkey(75)')
 
