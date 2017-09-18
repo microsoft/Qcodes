@@ -1,3 +1,5 @@
+import warnings
+
 from qcodes import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.base import Instrument
@@ -23,7 +25,6 @@ class KeithleyChannel(InstrumentChannel):
         super().__init__(parent, name)
 
 
-
 class Keithley_2600(VisaInstrument):
     """
     This is the qcodes driver for the Keithley_2600 Source-Meter series,
@@ -44,6 +45,11 @@ class Keithley_2600(VisaInstrument):
             channel: Either 'a' or 'b'
             model: The model type, e.g. '2614B'
         """
+
+        warnings.warn("This Keithley driver is old and will be removed "
+                      "from QCoDeS soon. Use Keithley_2600_channels "
+                      "instead, it is MUCH better.", UserWarning)
+
         super().__init__(name, address, terminator='\n', **kwargs)
 
         if model is None:
