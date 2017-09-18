@@ -128,7 +128,8 @@ class RCDAT_6000_60(qcodes.instrument.base.Instrument):
                            })
         self.connect_message()
 
-    def string_to_float(self, time_string):
+    @staticmethod
+    def string_to_float(time_string):
         value, prefix = time_string.split(maxsplit=1)
         if prefix == 'Sec':
             value = float(value)
