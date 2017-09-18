@@ -146,14 +146,14 @@ class RCDAT_6000_60(qcodes.instrument.base.Instrument):
                 'serial': self.ask('*SN?'),
                 'firmware': self.ask('*FIRMWARE?')}
 
-    def ask_raw(self, command):
-        command = command + '\n\r'
+    def ask_raw(self, cmd):
+        command = cmd + '\n\r'
         self.telnet.write(command.encode('ASCII'))
         data = self.telnet.read_until(b"\n\r", timeout=1).decode('ASCII').strip()
         return data
 
-    def write_raw(self, command):
-        command = command + '\n\r'
+    def write_raw(self, cmd):
+        command = cmd + '\n\r'
         self.telnet.write(command.encode('ASCII'))
         data = self.telnet.read_until(b"\n\r", timeout=1).strip()
         if data in [b'1']:
