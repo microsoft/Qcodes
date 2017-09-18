@@ -811,7 +811,7 @@ class StandardParameter(Parameter):
             # Additionally strip white space and newline characters from the
             # right to ensure backwards compatiblity, when the visa string was
             # not stripped and contained a final newline
-            if not all(type(value) is string or int for \
+            if not all(isinstance(value, string) or isinstance(value, int) for \
                        value in val_mapping.values()):
                 raise TypeError(
                     'The values of the val_mapping should be either of type'+
