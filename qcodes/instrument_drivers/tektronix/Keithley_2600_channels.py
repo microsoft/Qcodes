@@ -323,9 +323,25 @@ class Keithley_2600(VisaInstrument):
         log.debug('Reset instrument. Re-querying settings...')
         self.snapshot(update=True)
 
-    def ask(self, cmd):
+    def ask(self, cmd: str) -> str:
         """
         Override of normal ask. This is important, since queries to the
         instrument must be wrapped in 'print()'
         """
         return super().ask('print({:s})'.format(cmd))
+
+    def _scriptwrapper(program: List[str], debug: bool=False) -> str:
+    """
+    wraps a program so that the output can be put into
+    visa_handle.write and run.
+    The script will run immediately as an anonymous script.
+
+    Args:
+        program: A list of program instructions. One line per
+        list item, e.g. ['for ii = 1, 10 do', 'print(ii)', 'end' ]
+    """
+    mainprog = '\r\n'.join(program) + '\r\n'
+    wrapped = 'loadandrunscript\r\n{}endscript\n'.format(mainprog)
+    if debug:
+        print(wrapped)
+    return wrapped
