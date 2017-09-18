@@ -25,7 +25,7 @@ class RCDAT_6000_60(qcodes.instrument.base.Instrument):
 
         self.add_parameter(name='hop_points',
                            label='number of points',
-                           unit='#',
+                           unit='',
                            get_cmd=':HOP:POINTS?',
                            set_cmd=':HOP:POINTS:{}',
                            get_parser=int,
