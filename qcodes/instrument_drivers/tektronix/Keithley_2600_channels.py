@@ -21,76 +21,9 @@ class KeithleyChannel(InstrumentChannel):
         """
 
         super().__init__(parent, name)
-
-
-
-class Keithley_2600(VisaInstrument):
-    """
-    This is the qcodes driver for the Keithley_2600 Source-Meter series,
-    tested with Keithley_2614B
-
-    Status: beta-version.
-        TODO:
-        - Make a channelised version for the two channels
-        - add ramping and such stuff
-
-    """
-    def __init__(self, name: str, address: str, channel: str,
-                 model: str=None, **kwargs) -> None:
-        """
-        Args:
-            name: Name to use internally in QCoDeS
-            address: VISA ressource address
-            channel: Either 'a' or 'b'
-            model: The model type, e.g. '2614B'
-        """
-        super().__init__(name, address, terminator='\n', **kwargs)
-
-        if model is None:
-            raise ValueError('Please supply Keithley model name, e.g.'
-                             '"2614B".')
-        knownmodels = ['2601B', '2602B', '2604B', '2611B', '2612B',
-                       '2614B', '2635B', '2636B']
-        if model not in knownmodels:
-            kmstring = ('{}, '*(len(knownmodels)-1)).format(*knownmodels[:-1])
-            kmstring += 'and {}.'.format(knownmodels[-1])
-            raise ValueError('Unknown model. Known model are: ' +
-                             kmstring)
-
-        self.model = model
-
-        vranges = {'2601B': [0.1, 1, 6, 40],
-                   '2602B': [0.1, 1, 6, 40],
-                   '2604B': [0.1, 1, 6, 40],
-                   '2611B': [0.2, 2, 20, 200],
-                   '2612B': [0.2, 2, 20, 200],
-                   '2614B': [0.2, 2, 20, 200],
-                   '2635B': [0.2, 2, 20, 200],
-                   '2636B': [0.2, 2, 20, 200]
-                   }
-
-        # TODO: In pulsed mode, models 2611B, 2612B, and 2614B
-        # actually allow up to 10 A.
-        iranges = {'2601B': [100e-9, 1e-6, 10e-6, 100e-6,
-                             1e-3, 0.01, 0.1, 1, 3],
-                   '2602B': [100e-9, 1e-6, 10e-6, 100e-6,
-                             1e-3, 0.01, 0.1, 1, 3],
-                   '2604B': [100e-9, 1e-6, 10e-6, 100e-6,
-                             1e-3, 0.01, 0.1, 1, 3],
-                   '2611B': [100e-9, 1e-6, 10e-6, 100e-6,
-                             1e-3, 0.01, 0.1, 1, 1.5],
-                   '2612B': [100e-9, 1e-6, 10e-6, 100e-6,
-                             1e-3, 0.01, 0.1, 1, 1.5],
-                   '2614B': [100e-9, 1e-6, 10e-6, 100e-6,
-                             1e-3, 0.01, 0.1, 1, 1.5],
-                   '2634B': [1e-9, 10e-9, 100e-9, 1e-6, 10e-6, 100e-6,
-                             1e-3, 10e-6, 100e-3, 1, 1.5],
-                   '2635B': [1e-9, 10e-9, 100e-9, 1e-6, 10e-6, 100e-6,
-                             1e-3, 10e-6, 100e-3, 1, 1.5],
-                   '2636B': [1e-9, 10e-9, 100e-9, 1e-6, 10e-6, 100e-6,
-                             1e-3, 10e-6, 100e-3, 1, 1.5]}
-
-        self._channel = channel
+        self.model = self._parent.model
+        vranges = self._parent._vranges
+        iranges = self._parent._iranges
 
         self.add_parameter('volt',
                            get_cmd='measure.v()',
@@ -165,6 +98,81 @@ class Keithley_2600(VisaInstrument):
                            get_parser=float,
                            set_cmd='source.limiti={:.4f}',
                            unit='A')
+
+        def write(self, cmd):
+            """
+            Prepend the channel name to all write commands.
+            """
+
+            return self._parent.write('{}.{}'.format(channel, cmd))
+
+
+class Keithley_2600(VisaInstrument):
+    """
+    This is the qcodes driver for the Keithley_2600 Source-Meter series,
+    tested with Keithley_2614B
+
+    Status: beta-version.
+        TODO:
+        - Make a channelised version for the two channels
+        - add ramping and such stuff
+
+    """
+    def __init__(self, name: str, address: str,
+                 model: str=None, **kwargs) -> None:
+        """
+        Args:
+            name: Name to use internally in QCoDeS
+            address: VISA ressource address
+            model: The model type, e.g. '2614B'
+        """
+        super().__init__(name, address, terminator='\n', **kwargs)
+
+        if model is None:
+            raise ValueError('Please supply Keithley model name, e.g.'
+                             '"2614B".')
+        knownmodels = ['2601B', '2602B', '2604B', '2611B', '2612B',
+                       '2614B', '2635B', '2636B']
+        if model not in knownmodels:
+            kmstring = ('{}, '*(len(knownmodels)-1)).format(*knownmodels[:-1])
+            kmstring += 'and {}.'.format(knownmodels[-1])
+            raise ValueError('Unknown model. Known model are: ' +
+                             kmstring)
+
+        self.model = model
+
+        self._vranges = {'2601B': [0.1, 1, 6, 40],
+                         '2602B': [0.1, 1, 6, 40],
+                         '2604B': [0.1, 1, 6, 40],
+                         '2611B': [0.2, 2, 20, 200],
+                         '2612B': [0.2, 2, 20, 200],
+                         '2614B': [0.2, 2, 20, 200],
+                         '2635B': [0.2, 2, 20, 200],
+                         '2636B': [0.2, 2, 20, 200]}
+
+        # TODO: In pulsed mode, models 2611B, 2612B, and 2614B
+        # actually allow up to 10 A.
+        self._iranges = {'2601B': [100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 0.01, 0.1, 1, 3],
+                         '2602B': [100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 0.01, 0.1, 1, 3],
+                         '2604B': [100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 0.01, 0.1, 1, 3],
+                         '2611B': [100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 0.01, 0.1, 1, 1.5],
+                         '2612B': [100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 0.01, 0.1, 1, 1.5],
+                         '2614B': [100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 0.01, 0.1, 1, 1.5],
+                         '2634B': [1e-9, 10e-9, 100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 10e-6, 100e-3, 1, 1.5],
+                         '2635B': [1e-9, 10e-9, 100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 10e-6, 100e-3, 1, 1.5],
+                         '2636B': [1e-9, 10e-9, 100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 10e-6, 100e-3, 1, 1.5]}
+
+        self._channel = channel
+
         # display
         self.add_parameter('display_settext',
                            set_cmd=self._display_settext,
@@ -194,7 +202,7 @@ class Keithley_2600(VisaInstrument):
         """
         Set the display to the default mode
         """
-        self.visa_handle.write('display.screen = display.SMUA_SMUB')
+        self.visa_handle.write('display.screen = SMUA_SMUB')
 
     def exit_key(self):
         """
