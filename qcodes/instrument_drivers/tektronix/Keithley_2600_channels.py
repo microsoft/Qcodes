@@ -188,6 +188,10 @@ class KeithleyChannel(InstrumentChannel):
                                                                 '{:.4f}'),
                            unit='A')
 
+        self.add_parameter('fastsweep',
+                           parameter_class=LuaSweepParameter)
+
+
         self.channel = channel
 
     def reset(self):
@@ -200,6 +204,26 @@ class KeithleyChannel(InstrumentChannel):
         log.debug('Reset channel {}.'.format(self.channel) +
                   'Updating settings...')
         self.snapshot(update=True)
+
+    def doFastSweep(self, start: float, stop: float,
+                    steps: int, mode: str) -> DataSet:
+        """
+        Perform a fast sweep using a deployed lua script and
+        return a QCoDeS DataSet with the sweep.
+
+        Args:
+            start: starting voltage
+            stop: end voltage
+            steps: number of steps
+            mode: What kind of sweep to make.
+                'IV' (I versus V) or 'VI' (V versus I)
+        """
+        # prepare setpoints, units, name
+        self.fastsweep.prepareSweep(start, stop, steps, mode)
+
+        data = qc.Measure(self.fastsweep).run()
+
+        return data
 
     def _fast_sweep(self, start: float, stop: float, steps: int,
                     mode: str='IV') -> np.ndarray:
