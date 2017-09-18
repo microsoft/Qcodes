@@ -201,6 +201,86 @@ class KeithleyChannel(InstrumentChannel):
                   'Updating settings...')
         self.snapshot(update=True)
 
+    def _fast_sweep(self, start: float, stop: float, steps: int,
+                    mode: str='IV') -> np.ndarray:
+        """
+        Perform a fast sweep using a deployed Lua script.
+        This is the engine that forms the script, uploads it,
+        runs it, collects the data, and casts the data correctly.
+
+        Args:
+            start: starting voltage
+            stop: end voltage
+            steps: number of steps
+            mode: What kind of sweep to make.
+                'IV' (I versus V) or 'VI' (V versus I)
+        """
+
+        channel = self.channel
+
+        # an extra visa query, a necessary precaution
+        # to avoid timing out when waiting for long
+        # measurements
+        nplc = self.nplc()
+
+        dV = (stop-start)/(steps-1)
+
+        if mode == 'IV':
+            meas = 'i'
+            sour = 'v'
+            func = '1'
+
+        if mode == 'VI':
+            meas = 'v'
+            sour = 'i'
+            func = '0'
+
+        script = ['{}.measure.nplc = {:.12f}'.format(channel, nplc),
+                  '{}.source.output = 1'.format(channel),
+                  'startX = {:.12f}'.format(start),
+                  'dX = {:.12f}'.format(dV),
+                  '{}.source.output = 1'.format(channel),
+                  '{}.source.func = {}'.format(channel, func),
+                  '{}.measure.count = 1'.format(channel),
+                  '{}.nvbuffer1.clear()'.format(channel),
+                  '{}.nvbuffer1.appendmode = 1'.format(channel),
+                  'for index = 1, {} do'.format(steps),
+                  '  target = startX + (index-1)*dX',
+                  '  {}.source.level{} = target'.format(channel, sour),
+                  '  {}.measure.{}({}.nvbuffer1)'.format(channel, meas,
+                                                         channel),
+                  'end',
+                  'format.data = format.REAL32',
+                  'format.byteorder = format.LITTLEENDIAN',
+                  'printbuffer(1, {}, {}.nvbuffer1.readings)'.format(steps,
+                                                                     channel)]
+        self.write(self.parent._scriptwrapper(script, debug=False))
+        # we must wait for the script to execute
+        oldtimeout = self._parent.visa_handle.timeout
+        self.parent.visa_handle.timeout = 2*1000*steps*nplc/50 + 5000
+
+        # now poll all the data
+        # The problem is that a '\n' character might by chance be present in
+        # the data
+        fullsize = 4*steps + 3
+        received = 0
+        data = b''
+        while received < fullsize:
+            data_temp = self.parent.visa_handle.read_raw()
+            received += len(data_temp)
+            data += data_temp
+
+        # From the manual p. 7-94, we know that a b'#0' is prepended
+        # to the data and a b'\n' is appended
+        data = data[2:-1]
+
+        outdata = np.array(list(struct.iter_unpack('<f', data)))
+        outdata = np.reshape(outdata, len(outdata))
+
+        self.parent.visa_handle.timeout = oldtimeout
+
+        return outdata
+
 
 class Keithley_2600(VisaInstrument):
     """
