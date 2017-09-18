@@ -1,10 +1,12 @@
 import logging
 import struct
 import numpy as np
+from typing import List
 
 from qcodes import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.instrument.base import Instrument
+from qcodes.instrument.parameter import ArrayParameter
 import qcodes.utils.validators as vals
 
 
@@ -331,17 +333,17 @@ class Keithley_2600(VisaInstrument):
         return super().ask('print({:s})'.format(cmd))
 
     def _scriptwrapper(program: List[str], debug: bool=False) -> str:
-    """
-    wraps a program so that the output can be put into
-    visa_handle.write and run.
-    The script will run immediately as an anonymous script.
+        """
+        wraps a program so that the output can be put into
+        visa_handle.write and run.
+        The script will run immediately as an anonymous script.
 
-    Args:
-        program: A list of program instructions. One line per
-        list item, e.g. ['for ii = 1, 10 do', 'print(ii)', 'end' ]
-    """
-    mainprog = '\r\n'.join(program) + '\r\n'
-    wrapped = 'loadandrunscript\r\n{}endscript\n'.format(mainprog)
-    if debug:
-        print(wrapped)
-    return wrapped
+        Args:
+            program: A list of program instructions. One line per
+            list item, e.g. ['for ii = 1, 10 do', 'print(ii)', 'end' ]
+        """
+        mainprog = '\r\n'.join(program) + '\r\n'
+        wrapped = 'loadandrunscript\r\n{}endscript\n'.format(mainprog)
+        if debug:
+            log.debug(wrapped)
+        return wrapped
