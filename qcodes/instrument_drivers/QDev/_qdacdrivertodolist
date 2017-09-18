@@ -1,0 +1,14 @@
+
+The instrument inherits from VisaInstrument (is this clever?), which implicitly assumes the instrument
+to speak SCPI.
+
+Okay, so, *IDN? is a VISA string? And even Instrument assumes this...
+
+*IDN? is specified already in IEEE 488.2
+
+This leads to broken functions in the API, unless we override all inherited SCPI-dependent
+functions. 
+
+* Get a list of all VisaInstrument methods
+
+* Override what we need.

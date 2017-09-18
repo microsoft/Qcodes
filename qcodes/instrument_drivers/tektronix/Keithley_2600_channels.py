@@ -1,7 +1,77 @@
+import logging
+import struct
+import numpy as np
+
 from qcodes import VisaInstrument
-from qcodes.instrument.channel import InstrumentChannel
+from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.instrument.base import Instrument
 import qcodes.utils.validators as vals
+
+
+log = logging.getLogger(__name__)
+
+
+class LuaSweepParameter(ArrayParameter):
+    """
+    Parameter class to hold the data from a
+    deployed Lua script sweep.
+    """
+
+    def __init__(self, name: str, instrument: Instrument) -> None:
+
+        super().__init__(name=name,
+                         shape=(1,),
+                         docstring='Holds a sweep')
+
+        self._instrument = instrument
+
+    def prepareSweep(self, start: float, stop: float, steps: int,
+                     mode: str) -> None:
+        """
+        Builds setpoints and labels
+
+        Args:
+            start: Starting point of the sweep
+            stop: Endpoint of the sweep
+            steps: No. of sweep steps
+            mode: Type of sweep, either 'IV' (voltage sweep)
+                or 'VI' (current sweep)
+        """
+
+        if mode not in ['IV', 'VI']:
+            raise ValueError('mode must be either "VI" or "IV"')
+
+        self.shape = (steps,)
+
+        if mode == 'IV':
+            self.unit = 'A'
+            self.setpoint_names = ('Voltage',)
+            self.setpoint_units = ('V',)
+            self.label = 'current'
+            self.name = 'iv_sweep'
+
+        if mode == 'VI':
+            self.unit = 'V'
+            self.setpoint_names = ('Current',)
+            self.setpoint_units = ('A',)
+            self.label = 'voltage'
+            self.name = 'vi_sweep'
+
+        self.setpoints = (tuple(np.linspace(start, stop, steps)),)
+
+        self.start = start
+        self.stop = stop
+        self.steps = steps
+        self.mode = mode
+
+    def get(self) -> np.ndarray:
+
+        data = self._instrument._fast_sweep(self.start,
+                                            self.stop,
+                                            self.steps,
+                                            self.mode)
+
+        return data
 
 
 class KeithleyChannel(InstrumentChannel):
@@ -20,91 +90,114 @@ class KeithleyChannel(InstrumentChannel):
                 'smua' or 'smub'
         """
 
+        if channel not in ['smua', 'smub']:
+            raise ValueError('channel must be either "smub" or "smua"')
+
         super().__init__(parent, name)
         self.model = self._parent.model
         vranges = self._parent._vranges
         iranges = self._parent._iranges
 
         self.add_parameter('volt',
-                           get_cmd='measure.v()',
+                           get_cmd='{}.measure.v()'.format(channel),
                            get_parser=float,
-                           set_cmd='source.levelv={:.12f}',
+                           set_cmd='{}.source.levelv={}'.format(channel,
+                                                                '{:.12f}'),
                            label='Voltage',
                            unit='V')
+
         self.add_parameter('curr',
-                           get_cmd='measure.i()',
+                           get_cmd='{}.measure.i()'.format(channel),
                            get_parser=float,
-                           set_cmd='source.leveli={:.12f}',
+                           set_cmd='{}.source.leveli={}'.format(channel,
+                                                                '{:.12f}'),
                            label='Current',
                            unit='A')
+
         self.add_parameter('mode',
-                           get_cmd='source.func',
+                           get_cmd='{}.source.func'.format(channel),
                            get_parser=float,
-                           set_cmd='source.func={:d}',
+                           set_cmd='{}.source.func={}'.format(channel, '{:d}'),
                            val_mapping={'current': 0, 'voltage': 1},
                            docstring='Selects the output source.')
+
         self.add_parameter('output',
-                           get_cmd='source.output',
+                           get_cmd='{}.source.output'.format(channel),
                            get_parser=float,
-                           set_cmd='source.output={:d}',
+                           set_cmd='{}.source.output={}'.format(channel,
+                                                                '{:d}'),
                            val_mapping={'on':  1, 'off': 0})
+
         self.add_parameter('nplc',
                            label='Number of power line cycles',
-                           set_cmd='measure.nplc={:.4f}',
-                           get_cmd='measure.nplc',
+                           set_cmd='{}.measure.nplc={}'.format(channel,
+                                                               '{:.4f}'),
+                           get_cmd='{}.measure.nplc'.format(channel),
                            get_parser=float,
                            vals=vals.Numbers(0.001, 25))
         # volt range
         # needs get after set (WilliamHPNielsen): why?
         self.add_parameter('sourcerange_v',
                            label='voltage source range',
-                           get_cmd='source.rangev',
+                           get_cmd='{}.source.rangev'.format(channel),
                            get_parser=float,
-                           set_cmd='source.rangev={:.4f}',
+                           set_cmd='{}.source.rangev={}'.format(channel,
+                                                                '{:.4f}'),
                            unit='V',
                            vals=vals.Enum(*vranges[self.model]))
         self.add_parameter('measurerange_v',
                            label='voltage measure range',
-                           get_cmd='measure.rangev',
-                           set_cmd='measure.rangev={:.4f}',
+                           get_cmd='{}.measure.rangev'.format(channel),
+                           set_cmd='{}.measure.rangev={}'.format(channel,
+                                                                 '{:.4f}'),
                            unit='V',
                            vals=vals.Enum(*vranges[self.model]))
         # current range
         # needs get after set
         self.add_parameter('sourcerange_i',
                            label='current source range',
-                           get_cmd='source.rangei',
+                           get_cmd='{}.source.rangei'.format(channel),
                            get_parser=float,
-                           set_cmd='source.rangei={:.4f}',
+                           set_cmd='{}.source.rangei={}'.format(channel,
+                                                                '{:.4f}'),
                            unit='A',
                            vals=vals.Enum(*iranges[self.model]))
 
         self.add_parameter('measurerange_i',
                            label='current measure range',
-                           get_cmd='measure.rangei',
+                           get_cmd='{}.measure.rangei'.format(channel),
                            get_parser=float,
-                           set_cmd='measure.rangei={:.4f}',
+                           set_cmd='{}.measure.rangei={}'.format(channel,
+                                                                 '{:.4f}'),
                            unit='A',
                            vals=vals.Enum(*iranges[self.model]))
         # Compliance limit
         self.add_parameter('limitv',
-                           get_cmd='source.limitv',
+                           get_cmd='{}.source.limitv'.format(channel),
                            get_parser=float,
-                           set_cmd='source.limitv={:.4f}',
+                           set_cmd='{}.source.limitv={}'.format(channel,
+                                                                '{:.4f}'),
                            unit='V')
         # Compliance limit
         self.add_parameter('limiti',
-                           get_cmd='source.limiti',
+                           get_cmd='{}.source.limiti'.format(channel),
                            get_parser=float,
-                           set_cmd='source.limiti={:.4f}',
+                           set_cmd='{}.source.limiti={}'.format(channel,
+                                                                '{:.4f}'),
                            unit='A')
 
-        def write(self, cmd):
-            """
-            Prepend the channel name to all write commands.
-            """
+        self.channel = channel
 
-            return self._parent.write('{}.{}'.format(channel, cmd))
+    def reset(self):
+        """
+        Reset instrument to factory defaults.
+        This resets only the relevant channel.
+        """
+        self.write('{}.reset()'.format(self.channel))
+        # remember to update all the metadata
+        log.debug('Reset channel {}.'.format(self.channel) +
+                  'Updating settings...')
+        self.snapshot(update=True)
 
 
 class Keithley_2600(VisaInstrument):
@@ -171,7 +264,16 @@ class Keithley_2600(VisaInstrument):
                          '2636B': [1e-9, 10e-9, 100e-9, 1e-6, 10e-6, 100e-6,
                                    1e-3, 10e-6, 100e-3, 1, 1.5]}
 
-        self._channel = channel
+        # Add the channel to the instrument
+        channels = ChannelList(self, "Channels", KeithleyChannel,
+                               snapshotable=False)
+        for ch in ['a', 'b']:
+            ch_name = 'smu{}'.format(ch)
+            channel = KeithleyChannel(self, ch_name, ch_name)
+            channels.append(channel)
+            self.add_submodule(ch_name, channel)
+        channels.lock()
+        self.add_submodule("channels", channels)
 
         # display
         self.add_parameter('display_settext',
@@ -202,7 +304,7 @@ class Keithley_2600(VisaInstrument):
         """
         Set the display to the default mode
         """
-        self.visa_handle.write('display.screen = SMUA_SMUB')
+        self.visa_handle.write('display.screen = display.SMUA_SMUB')
 
     def exit_key(self):
         """
@@ -213,14 +315,17 @@ class Keithley_2600(VisaInstrument):
 
     def reset(self):
         """
-        Reset instrument to factory defaults
+        Reset instrument to factory defaults.
+        This resets both channels.
         """
         self.write('reset()')
         # remember to update all the metadata
+        log.debug('Reset instrument. Re-querying settings...')
         self.snapshot(update=True)
 
     def ask(self, cmd):
-        return super().ask('print(smu{:s}.{:s})'.format(self._channel, cmd))
-
-    def write(self, cmd):
-        super().write('smu{:s}.{:s}'.format(self._channel, cmd))
+        """
+        Override of normal ask. This is important, since queries to the
+        instrument must be wrapped in 'print()'
+        """
+        return super().ask('print({:s})'.format(cmd))
