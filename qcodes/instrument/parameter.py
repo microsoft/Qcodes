@@ -805,7 +805,22 @@ class StandardParameter(Parameter):
         if val_mapping:
             if vals is None:
                 vals = Enum(*val_mapping.keys())
+            # The val_mapping dictionary should map values of arbitrary type to
+            # string values. If integers are given as a values convert them to
+            # strings.
+            # Additionally strip white space and newline characters from the
+            # right to ensure backwards compatiblity, when the visa string was
+            # not stripped and contained a final newline
+            if not all(type(value) is string or int for \
+                       value in val_mapping.values()):
+                raise TypeError(
+                    'The values of the val_mapping should be either of type'+
+                    ' int or string.')
 
+            # convert values to strings and strip newlines
+            val_mapping = {k: str(v).rstrip() for k, v in val_mapping.items()}
+
+            # swap roles of values and keys for the getter
             self._get_mapping = {v: k for k, v in val_mapping.items()}
 
             if get_parser is None:
@@ -856,22 +871,11 @@ class StandardParameter(Parameter):
         Get parser to be used in the case that a val_mapping is defined
         and a separate get_parser is not defined.
 
-        Tries to match against defined strings in the mapping dictionary. If
-        there are no matches, we try to convert the val into an integer.
+        Tries to match against defined strings in the mapping dictionary.
         """
-
-        # Try and match the raw value from the instrument directly
         try:
-            return self._get_mapping[val]
+            return self._get_mapping[val.rstrip()]
         except KeyError:
-            pass
-
-        # If there is no match, we can try to convert the parameter into a
-        # numeric value
-        try:
-            val = int(val)
-            return self._get_mapping[val]
-        except (ValueError, KeyError):
             raise KeyError('Unmapped value from instrument: {!r}'.format(val))
 
     def _valmapping_with_preparser(self, val):
