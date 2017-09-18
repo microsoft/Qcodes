@@ -494,9 +494,9 @@ class QtPlot(BasePlot):
                 if (isinstance(trace['plot_object'], dict) and
                             'hist' in trace['plot_object'].keys()):
                     cmap = trace['plot_object']['cmap']
-                    max = trace['config']['z'].max()
-                    min = trace['config']['z'].min()
-                    trace['plot_object']['hist'].setLevels(min, max)
+                    maxval = trace['config']['z'].max()
+                    minval = trace['config']['z'].min()
+                    trace['plot_object']['hist'].setLevels(minval, maxval)
                     trace['plot_object']['hist'].vb.autoRange()
         if cmap:
             self.set_cmap(cmap)
