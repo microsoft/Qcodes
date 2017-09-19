@@ -12,7 +12,7 @@ class ChannelBuffer(ArrayParameter):
 
     Currently always returns the entire buffer
     TODO (WilliamHPNielsen): Make it possible to query parts of the buffer.
-        The instrument natively supports this in its TRCL call.
+    The instrument natively supports this in its TRCL call.
     """
 
     def __init__(self, name: str, instrument: 'SR830', channel: int):
