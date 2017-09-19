@@ -653,69 +653,82 @@ class AlazarTech_ATS(Instrument):
 
         # post buffers to Alazar
         # print("made buffer list length " + str(len(self.buffer_list)))
-        for buf in self.buffer_list:
-            self._ATS_dll.AlazarPostAsyncBuffer.argtypes = [ctypes.c_uint32, ctypes.c_void_p, ctypes.c_uint32]
-            self._call_dll('AlazarPostAsyncBuffer',
-                           self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes)
-        self.allocated_buffers._set_updated()
-
-        # -----start capture here-----
-        acquisition_controller.pre_start_capture()
-        start = time.clock()  # Keep track of when acquisition started
-        # call the startcapture method
-        self._call_dll('AlazarStartCapture', self._handle)
-        logger.info("Capturing %d buffers." % buffers_per_acquisition)
-
-        acquisition_controller.pre_acquire()
-
-        # buffer handling from acquisition
-        buffers_completed = 0
-        bytes_transferred = 0
-        buffer_timeout = self.buffer_timeout._get_byte()
-        self.buffer_timeout._set_updated()
-
-        buffer_recycling = (self.buffers_per_acquisition._get_byte() >
-                            self.allocated_buffers._get_byte())
-        while (buffers_completed < self.buffers_per_acquisition._get_byte()):
-            # Wait for the buffer at the head of the list of available
-            # buffers to be filled by the board.
-            buf = self.buffer_list[buffers_completed % allocated_buffers]
-
-            self._call_dll('AlazarWaitAsyncBufferComplete',
-                           self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buffer_timeout)
-
-            # TODO(damazter) (C) last series of buffers must be handled
-            # exceptionally
-            # (and I want to test the difference) by changing buffer
-            # recycling for the last series of buffers
-
-            # if buffers must be recycled, extract data and repost them
-            # otherwise continue to next buffer
-            if buffer_recycling:
-                acquisition_controller.handle_buffer(buf.buffer, buffers_completed)
+        try:
+            for buf in self.buffer_list:
+                self._ATS_dll.AlazarPostAsyncBuffer.argtypes = [ctypes.c_uint32, ctypes.c_void_p, ctypes.c_uint32]
                 self._call_dll('AlazarPostAsyncBuffer',
                                self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes)
-            buffers_completed += 1
-            bytes_transferred += buf.size_bytes
+            self.allocated_buffers._set_updated()
 
-        # stop measurement here
-        self._call_dll('AlazarAbortAsyncRead', self._handle)
+            # -----start capture here-----
+            acquisition_controller.pre_start_capture()
+            start = time.clock()  # Keep track of when acquisition started
+            # call the startcapture method
+            capture_start = time.time()
+            self._call_dll('AlazarStartCapture', self._handle)
+            logger.info("Capturing %d buffers." % buffers_per_acquisition)
 
+            acquisition_controller.pre_acquire()
+
+            # buffer handling from acquisition
+            buffers_completed = 0
+            bytes_transferred = 0
+            buffer_timeout = self.buffer_timeout._get_byte()
+            self.buffer_timeout._set_updated()
+
+            buffer_recycling = (self.buffers_per_acquisition._get_byte() >
+                                self.allocated_buffers._get_byte())
+            while (buffers_completed < self.buffers_per_acquisition._get_byte()):
+                # Wait for the buffer at the head of the list of available
+                # buffers to be filled by the board.
+                buf = self.buffer_list[buffers_completed % allocated_buffers]
+                done_setup = time.clock()
+                self._call_dll('AlazarWaitAsyncBufferComplete',
+                               self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buffer_timeout)
+
+                # TODO(damazter) (C) last series of buffers must be handled
+                # exceptionally
+                # (and I want to test the difference) by changing buffer
+                # recycling for the last series of buffers
+
+                # if buffers must be recycled, extract data and repost them
+                # otherwise continue to next buffer
+                if buffer_recycling:
+                    acquisition_controller.handle_buffer(buf.buffer, buffers_completed)
+                    self._call_dll('AlazarPostAsyncBuffer',
+                                   self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes)
+                buffers_completed += 1
+                bytes_transferred += buf.size_bytes
+            done_capture = time.clock()
+        finally:
+            # stop measurement here
+            self._call_dll('AlazarAbortAsyncRead', self._handle)
+        time_done_abort = time.clock()
         # -----cleanup here-----
         # extract data if not yet done
         if not buffer_recycling:
             for i, buf in enumerate(self.buffer_list):
                 acquisition_controller.handle_buffer(buf.buffer, i)
-
+        time_done_handling = time.clock()
         # free up memory
         self.clear_buffers()
 
+        time_done_free_mem = time.clock()
         # check if all parameters are up to date
-        for p in self.parameters.values():
-            p.get()
+        # Getting IDN is very slow so skip that
+        for name, p in self.parameters.items():
+
+            if name != 'IDN':
+                p.get()
 
         # Compute the total transfer time, and display performance information.
-        transfer_time_sec = time.clock() - start
+        end_time = time.clock()
+        transfer_time_sec = end_time - start
+        setup_time = done_setup - start
+        capture_time = done_capture - done_setup
+        abort_time = time_done_abort - done_capture
+        handling_time = time_done_handling - time_done_abort
+        free_mem_time = time_done_free_mem - time_done_handling
         # print("Capture completed in %f sec" % transfer_time_sec)
         buffers_per_sec = 0
         bytes_per_sec = 0
@@ -731,7 +744,11 @@ class AlazarTech_ATS(Instrument):
                      (records_per_buffer * buffers_completed, records_per_sec))
         logger.info("Transferred {:g} bytes ({:g} "
                      "bytes per sec)".format(bytes_transferred, bytes_per_sec))
-
+        logger.info("Pre capture setup took {}".format(setup_time))
+        logger.info("Capture took {}".format(capture_time))
+        logger.info("abort took {}".format(abort_time))
+        logger.info("handling took {}".format(handling_time))
+        logger.info("free mem took {}".format(free_mem_time))
         # return result
         return acquisition_controller.post_acquire()
 
