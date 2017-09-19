@@ -141,7 +141,7 @@ class IPInstrument(Instrument):
 
     def _send(self, cmd):
         data = cmd + self._terminator
-        self._socket.send(data.encode())
+        self._socket.sendall(data.encode())
 
     def _recv(self):
         result = self._socket.recv(self._buffer_size)
