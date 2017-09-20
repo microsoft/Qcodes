@@ -69,6 +69,7 @@ class ATS9360Controller(AcquisitionController):
         self.samples_divisor = self._get_alazar().samples_divisor
 
         self.active_channels = []
+        self.board_info = self._get_alazar().get_idn()
 
     def _update_int_time(self, value, **kwargs):
         """
@@ -213,7 +214,6 @@ class ATS9360Controller(AcquisitionController):
         samples_per_record = inst_s_p_r
         records_per_buffer = alazar.records_per_buffer.get()
         buffers_per_acquisition = alazar.buffers_per_acquisition.get()
-        self.board_info = alazar.get_idn()
         max_samples = self.board_info['max_samples']
         samples_per_buffer = records_per_buffer * samples_per_record
         if samples_per_buffer > max_samples:
