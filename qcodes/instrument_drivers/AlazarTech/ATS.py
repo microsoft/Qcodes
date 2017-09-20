@@ -569,7 +569,13 @@ class AlazarTech_ATS(Instrument):
             records_per_acquisition = (
                 records_per_buffer * buffers_per_acquisition)
             samples_per_buffer = samples_per_record * records_per_buffer
-
+            self._ATS_dll.AlazarBeforeAsyncRead.argtypes = [ctypes.c_uint32,
+                                                            ctypes.c_uint32,
+                                                            ctypes.c_long,
+                                                            ctypes.c_uint32,
+                                                            ctypes.c_uint32,
+                                                            ctypes.c_uint32,
+                                                            ctypes.c_uint32]
             self._call_dll('AlazarBeforeAsyncRead',
                            self._handle, self.channel_selection,
                            self.transfer_offset, samples_per_record,
@@ -652,7 +658,7 @@ class AlazarTech_ATS(Instrument):
                 raise
 
         # post buffers to Alazar
-        # print("made buffer list length " + str(len(self.buffer_list)))
+        logger.info("made buffer list length {}".format(len(self.buffer_list)))
         try:
             for buf in self.buffer_list:
                 self._ATS_dll.AlazarPostAsyncBuffer.argtypes = [ctypes.c_uint32, ctypes.c_void_p, ctypes.c_uint32]
@@ -664,7 +670,6 @@ class AlazarTech_ATS(Instrument):
             acquisition_controller.pre_start_capture()
             start = time.clock()  # Keep track of when acquisition started
             # call the startcapture method
-            capture_start = time.time()
             self._call_dll('AlazarStartCapture', self._handle)
             logger.info("Capturing %d buffers." % buffers_per_acquisition)
 
@@ -678,11 +683,12 @@ class AlazarTech_ATS(Instrument):
 
             buffer_recycling = (self.buffers_per_acquisition._get_byte() >
                                 self.allocated_buffers._get_byte())
+            done_setup = time.clock()
             while (buffers_completed < self.buffers_per_acquisition._get_byte()):
                 # Wait for the buffer at the head of the list of available
                 # buffers to be filled by the board.
                 buf = self.buffer_list[buffers_completed % allocated_buffers]
-                done_setup = time.clock()
+                self._ATS_dll.AlazarWaitAsyncBufferComplete.argtypes = [ctypes.c_uint32, ctypes.c_void_p, ctypes.c_uint32]
                 self._call_dll('AlazarWaitAsyncBufferComplete',
                                self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buffer_timeout)
 
@@ -699,9 +705,9 @@ class AlazarTech_ATS(Instrument):
                                    self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes)
                 buffers_completed += 1
                 bytes_transferred += buf.size_bytes
-            done_capture = time.clock()
         finally:
             # stop measurement here
+            done_capture = time.clock()
             self._call_dll('AlazarAbortAsyncRead', self._handle)
         time_done_abort = time.clock()
         # -----cleanup here-----
@@ -781,7 +787,7 @@ class AlazarTech_ATS(Instrument):
                 update_params.append(arg)
             else:
                 args_out.append(arg)
-
+        logger.debug("calling dll func {} with args: \n {}".format(func_name, args_out))
         # run the function
         func = getattr(self._ATS_dll, func_name)
         try:

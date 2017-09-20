@@ -1,5 +1,8 @@
+import logging
 from qcodes import Parameter, MultiParameter, ArrayParameter
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 class Alazar0DParameter(Parameter):
     def __init__(self,
@@ -39,6 +42,7 @@ class Alazar0DParameter(Parameter):
         output = self._instrument._parent._get_alazar().acquire(
             acquisition_controller=self._instrument._parent,
             **acq_kwargs)
+        logger.info("calling acquire with {}".format(acq_kwargs))
         return output
 
 class Alazar1DParameter(ArrayParameter):
@@ -116,7 +120,7 @@ class Alazar1DParameter(ArrayParameter):
              key in params_to_kwargs}
         acq_kwargs.update(controller_acq_kwargs)
         acq_kwargs.update(channel_acq_kwargs)
-
+        logger.info("calling acquire with {}".format(acq_kwargs))
         output = self._instrument._parent._get_alazar().acquire(
             acquisition_controller=self._instrument._parent,
             **acq_kwargs)
@@ -198,7 +202,7 @@ class Alazar2DParameter(ArrayParameter):
              key in params_to_kwargs}
         acq_kwargs.update(controller_acq_kwargs)
         acq_kwargs.update(channel_acq_kwargs)
-
+        logger.info("calling acquire with {}".format(acq_kwargs))
         output = self._instrument._parent._get_alazar().acquire(
             acquisition_controller=self._instrument._parent,
             **acq_kwargs)
