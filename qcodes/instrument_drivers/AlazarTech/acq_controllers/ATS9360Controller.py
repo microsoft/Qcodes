@@ -213,13 +213,14 @@ class ATS9360Controller(AcquisitionController):
         samples_per_record = inst_s_p_r
         records_per_buffer = alazar.records_per_buffer.get()
         buffers_per_acquisition = alazar.buffers_per_acquisition.get()
-        max_samples = self._get_alazar().get_idn()['max_samples']
+        self.board_info = alazar.get_idn()
+        max_samples = self.board_info['max_samples']
         samples_per_buffer = records_per_buffer * samples_per_record
         if samples_per_buffer > max_samples:
             raise RuntimeError("Trying to acquire {} samples in one buffer maximum"
                                " supported is {}".format(samples_per_buffer, max_samples))
 
-        self.board_info = alazar.get_idn()
+
         # extend this to support more than one channel
         settings = self.active_channels[0]
         if settings['average_buffers']:
