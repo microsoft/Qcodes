@@ -279,7 +279,7 @@ class BasePlot:
         """
         raise NotImplementedError
 
-    def halt(self):
+    def halt(self, *args, **kwargs):
         """
         Stop automatic updates to this plot, by canceling its update widget
         """
