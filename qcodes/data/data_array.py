@@ -375,9 +375,11 @@ class DataArray(DelegateAttributes):
             if len(loop_indices) <= k or isinstance(loop_indices[k], slice):
                 sub_set_arrays.append(sub_set_array)
 
-        return DataArray(name=self.name, label=self.label, unit=self.unit,
-                         is_setpoint=self.is_setpoint, preset_data=sub_array,
-                         set_arrays=sub_set_arrays)
+        data_array = DataArray(name=self.name, label=self.label, unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=sub_array, set_arrays=sub_set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
 
     def array_slice(self, slice):
         """
