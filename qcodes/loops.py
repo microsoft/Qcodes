@@ -614,6 +614,10 @@ class ActiveLoop(Metadatable):
 
         return sp
 
+    def _raise_if_stopped(self):
+        if self._is_stopped:
+            raise _QcodesBreak
+
     def set_common_attrs(self, data_set, use_threads):
         """
         set a couple of common attributes that the main and nested loops
@@ -782,6 +786,7 @@ class ActiveLoop(Metadatable):
             self._run_wrapper(set_active=set_active)
             ds = self.data_set
         finally:
+            ActiveLoop._is_stopped = False
             if not quiet:
                 print(datetime.now().strftime('Finished at %Y-%m-%d %H:%M:%S'))
 
