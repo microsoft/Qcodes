@@ -56,6 +56,7 @@ from qcodes.station import Station
 from qcodes.data.data_set import new_data
 from qcodes.data.data_array import DataArray
 from qcodes.utils.helpers import wait_secs, full_class, tprint
+from qcodes.utils.threading import KillableThread
 from qcodes.utils.metadata import Metadatable
 from qcodes.plots.qcmatplotlib import MatPlot
 
@@ -731,7 +732,15 @@ class ActiveLoop(Metadatable):
         if thread:
             if any(t.name == 'qcodes_loop' for t in threading.enumerate()):
                 raise RuntimeError('QCoDeS loop already running. Exiting')
-            t = threading.Thread(target=self.run, name='qcodes_loop',
+
+            def attach_stop_bg(loop):
+                new_loop = loop.with_bg_task(self._raise_if_stopped)
+                for action in loop:
+                    if isinstance(action, ActiveLoop):
+                        attach_stop_bg(action)
+                return new_loop
+            loop = attach_stop_bg(self)
+            t = KillableThread(target=loop.run, name='qcodes_loop',
                                  args=args,
                                  kwargs={'use_threads': use_threads,
                                          'name': None,
