@@ -723,7 +723,6 @@ class AlazarTech_ATS(Instrument):
         # check if all parameters are up to date
         # Getting IDN is very slow so skip that
         for name, p in self.parameters.items():
-
             if name != 'IDN':
                 p.get()
 

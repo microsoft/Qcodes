@@ -59,9 +59,6 @@ class ATS9360Controller(AcquisitionController):
                            check_and_update_fn=self._update_int_delay,
                            default_fn=self._int_delay_default,
                            parameter_class=AcqVariablesParam)
-        self.add_parameter(name='allocated_buffers',
-                           alternative='not controllable in this controller',
-                           parameter_class=NonSettableDerivedParameter)
         self.add_parameter(name='samples_per_record',
                            alternative='int_time and int_delay',
                            parameter_class=NonSettableDerivedParameter)

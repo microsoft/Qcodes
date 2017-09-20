@@ -38,6 +38,10 @@ class Alazar0DParameter(Parameter):
              key in params_to_kwargs}
         acq_kwargs.update(controller_acq_kwargs)
         acq_kwargs.update(channel_acq_kwargs)
+        if acq_kwargs['buffers_per_acquisition'] > 1:
+            acq_kwargs['allocated_buffers'] = 4
+        else:
+            acq_kwargs['allocated_buffers'] = 1
 
         output = self._instrument._parent._get_alazar().acquire(
             acquisition_controller=self._instrument._parent,
