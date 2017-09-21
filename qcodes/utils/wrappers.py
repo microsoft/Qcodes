@@ -162,65 +162,7 @@ def _plot_setup(data, inst_meas, useQT=True, startranges=None):
             else:
                 plot.subplots[j + k].setTitle("")
 
-            # Avoid SI rescaling if units are not standard units
-            standardunits = ['V', 's', 'J', 'W', 'm', 'eV', 'A', 'K', 'g',
-                             'Hz', 'rad', 'T', 'H', 'F', 'Pa', 'C', 'Ω', 'Ohm',
-                             'S']
-            # make a dict mapping axis labels to axis positions
-            # TODO: will the labels for two axes ever be identical?
-            whatwhere = {}
-            for pos in ('bottom', 'left', 'right'):
-                whatwhere.update({plot.subplots[j+k].getAxis(pos).labelText:
-                                  pos})
-            tdict = {'bottom': 'setXRange', 'left': 'setYRange'}
-            # now find the data (not setpoint)
-            checkstring = '{}_{}'.format(i._instrument.name, name)
-
-            thedata = [data.arrays[d] for d in data.arrays.keys()
-                       if d == checkstring][0]
-
-            # Disable autoscale for the measured data
-            if thedata.unit not in standardunits:
-                subplot = plot.subplots[j+k]
-                try:
-                    # 1D measurement
-                    ax = subplot.getAxis(whatwhere[thedata.label])
-                    ax.enableAutoSIPrefix(False)
-                except KeyError:
-                    # 2D measurement
-                    # Then we should fetch the colorbar
-                    ax = plot.traces[j+k]['plot_object']['hist'].axis
-                    ax.enableAutoSIPrefix(False)
-                    ax.setLabel(text=thedata.label, unit=thedata.unit,
-                                unitPrefix='')
-
-            # Set up axis scaling
-            for setarr in thedata.set_arrays:
-                subplot = plot.subplots[j+k]
-                ax = subplot.getAxis(whatwhere[setarr.label])
-                # check for autoscaling
-                if setarr.unit not in standardunits:
-                    ax.enableAutoSIPrefix(False)
-                    # At this point, it has already been decided that
-                    # the scale is milli whatever
-                    # (the default empty plot is from -0.5 to 0.5)
-                    # so we must undo that
-                    ax.setScale(1e-3)
-                    ax.setLabel(text=setarr.label, unit=setarr.unit,
-                                unitPrefix='')
-                # set the axis ranges
-                if not(np.all(np.isnan(setarr))):
-                    # In this case the setpoints are "baked" into the param
-                    rangesetter = getattr(subplot.getViewBox(),
-                                          tdict[whatwhere[setarr.label]])
-                    rangesetter(setarr.min(), setarr.max())
-                else:
-                    # in this case someone must tell _create_plot what the
-                    # range should be. We get it from startranges
-                    rangesetter = getattr(subplot.getViewBox(),
-                                          tdict[whatwhere[setarr.label]])
-                    (rmin, rmax) = startranges[setarr.label]
-                    rangesetter(rmin, rmax)
+            plot.fixUnitScaling(startranges)
             QtPlot.qc_helpers.foreground_qt_window(plot.win)
 
         else:
@@ -299,7 +241,7 @@ def _save_individual_plots(data, inst_meas, display_plot=True):
         title_list = plot.get_default_title().split(sep)
         title_list.insert(-1 , CURRENT_EXPERIMENT['pdf_subfolder'])
         title = sep.join(title_list)
-        _rescale_mpl_axes(plot)
+        plot.rescale_axis()
         plot.tight_layout()
         plot.save("{}_{:03d}.pdf".format(title,
                                          counter_two))
@@ -392,9 +334,11 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
     _flush_buffers(*parameters)
 
     # startranges for _plot_setup
-    startranges = dict(zip((sp[0].label for sp in set_params),
-                           ((sp[1], sp[2]) for sp in set_params)))
-
+    startranges = {}
+    for sp in set_params:
+        minval = min(sp[1], sp[2])
+        maxval = max(sp[1], sp[2])
+        startranges[sp[0].full_name] = {'max': maxval, 'min': minval}
     interrupted = False
 
     data = loop.get_data_set()
@@ -413,30 +357,13 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
         print("Measurement Interrupted")
     if do_plots:
         # Ensure the correct scaling before saving
-        for subplot in plot.subplots:
-            vBox = subplot.getViewBox()
-            vBox.enableAutoRange(vBox.XYAxes)
-        cmap = None
-        # resize histogram
-        for trace in plot.traces:
-            if 'plot_object' in trace.keys():
-                if (isinstance(trace['plot_object'], dict) and
-                            'hist' in trace['plot_object'].keys()):
-                    cmap = trace['plot_object']['cmap']
-                    max = trace['config']['z'].max()
-                    min = trace['config']['z'].min()
-                    trace['plot_object']['hist'].setLevels(min, max)
-                    trace['plot_object']['hist'].vb.autoRange()
-        if cmap:
-            plot.set_cmap(cmap)
-        # set window back to original size
-        plot.win.resize(1000, 600)
+        plot.autorange()
         plot.save()
         plt.ioff()
         pdfplot, num_subplots = _plot_setup(data, meas_params, useQT=False)
         # pad a bit more to prevent overlap between
         # suptitle and title
-        _rescale_mpl_axes(pdfplot)
+        pdfplot.rescale_axis()
         pdfplot.fig.tight_layout(pad=3)
         title_list = plot.get_default_title().split(sep)
         title_list.insert(-1 , CURRENT_EXPERIMENT['pdf_subfolder'])
@@ -463,40 +390,6 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
     if interrupted:
         raise KeyboardInterrupt
     return plot, data
-
-def _rescale_mpl_axes(plot):
-    def scale_formatter(i, pos, scale):
-        return "{0:g}".format(i*scale)
-
-    for i, subplot in enumerate(plot.subplots):
-        for axis in 'x', 'y', 'z':
-            if plot.traces[i]['config'].get(axis):
-                unit = plot.traces[i]['config'][axis].unit
-                label = plot.traces[i]['config'][axis].label
-                maxval = abs(plot.traces[i]['config'][axis].ndarray).max()
-                units_to_scale = ('V')
-                if unit in units_to_scale:
-                    if maxval < 1e-6:
-                        scale = 1e9
-                        new_unit = "n" + unit
-                    elif maxval < 1e-3:
-                        scale = 1e6
-                        new_unit = "μ" + unit
-                    elif maxval < 1:
-                        scale = 1e3
-                        new_unit = "m" + unit
-                    else:
-                        continue
-                    tx = ticker.FuncFormatter(functools.partial(scale_formatter, scale=scale))
-                    new_label = "{} ({})".format(label, new_unit)
-                    if axis in ('x','y'):
-                        getattr(subplot, "{}axis".format(axis)).set_major_formatter(tx)
-                        getattr(subplot, "set_{}label".format(axis))(new_label)
-                    else:
-                         subplot.qcodes_colorbar.formatter = tx
-                         subplot.qcodes_colorbar.ax.yaxis.set_major_formatter(tx)
-                         subplot.qcodes_colorbar.set_label(new_label)
-                         subplot.qcodes_colorbar.update_ticks()
 
 def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True):
     """
