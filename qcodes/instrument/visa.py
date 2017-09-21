@@ -28,6 +28,8 @@ class VisaInstrument(Instrument):
 
         terminator: Read termination character(s) to look for. Default ''.
 
+        device_clear: Perform a device clear. Default True.
+
         metadata (Optional[Dict]): additional static metadata to add to this
             instrument's JSON snapshot.
 
@@ -38,7 +40,7 @@ class VisaInstrument(Instrument):
         visa_handle (pyvisa.resources.Resource): The communication channel.
     """
 
-    def __init__(self, name, address=None, timeout=5, terminator='', **kwargs):
+    def __init__(self, name, address=None, timeout=5, terminator='', device_clear=True, **kwargs):
         super().__init__(name, **kwargs)
 
         self.add_parameter('timeout',
@@ -49,6 +51,8 @@ class VisaInstrument(Instrument):
                                                vals.Enum(None)))
 
         self.set_address(address)
+        if device_clear:
+            self.device_clear()
         self.set_terminator(terminator)
         self.timeout.set(timeout)
 
@@ -76,6 +80,10 @@ class VisaInstrument(Instrument):
             resource_manager = visa.ResourceManager()
 
         self.visa_handle = resource_manager.open_resource(address)
+        self._address = address
+
+    def device_clear(self):
+        """Clear the buffers of the device"""
 
         # Serial instruments have a separate flush method to clear their buffers
         # which behaves differently to clear. This is particularly important
@@ -84,7 +92,6 @@ class VisaInstrument(Instrument):
             self.visa_handle.flush(vi_const.VI_READ_BUF_DISCARD | vi_const.VI_WRITE_BUF_DISCARD)
         else:
             self.visa_handle.clear()
-        self._address = address
 
     def set_terminator(self, terminator):
         r"""
