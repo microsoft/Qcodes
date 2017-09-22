@@ -405,8 +405,8 @@ class DataArray(DelegateAttributes):
         """
         return len(self.ndarray)
 
-    def mean(self, axis=None):
-        sub_array = np.nanmean(self, axis=axis)
+    def mean(self, axis=None, dtype=None, out=None, **kwargs):
+        sub_array = np.nanmean(self, axis=axis, dtype=dtype, out=out, **kwargs)
         if axis is None or self.ndim == 1:
             return sub_array
         else:
