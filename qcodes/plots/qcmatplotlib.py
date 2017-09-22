@@ -2,8 +2,7 @@
 Live plotting in Jupyter notebooks
 using the nbagg backend and matplotlib
 """
-from collections import Mapping
-from collections import Sequence
+from collections import Mapping, Iterable, Sequence
 from functools import partial
 import logging
 
@@ -18,7 +17,14 @@ from .base import BasePlot
 from qcodes.utils.threading import UpdaterThread
 
 
+
 logger = logging.getLogger(__name__)
+
+
+def _is_active_data_array(data_array):
+    return (isinstance(data_array, DataArray) and
+            data_array.data_set is not None and
+            data_array.data_set.sync())
 
 
 class MatPlot(BasePlot):
@@ -73,8 +79,9 @@ class MatPlot(BasePlot):
                 self[k].add(arg, **kwargs)
 
         self.tight_layout()
-        if any(isinstance(arg, DataArray) and arg.data_set is not None and
-                arg.data_set.sync()
+        if any(any(map(_is_active_data_array, arg))
+               if isinstance(arg, Iterable)
+               else _is_active_data_array(arg)
                for arg in args):
             self.updater = UpdaterThread(self.update, name='MatPlot_updater',
                                          interval=interval, max_threads=5)
