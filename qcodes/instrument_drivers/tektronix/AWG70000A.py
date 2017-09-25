@@ -219,7 +219,7 @@ class AWG70000A(VisaInstrument):
                 (self.wfmxFileFolder) is used.
         """
 
-g        if not path:
+        if not path:
             path = self.wfmxFileFolder
 
         pathstr = 'C:' + path + '\\' + filename
