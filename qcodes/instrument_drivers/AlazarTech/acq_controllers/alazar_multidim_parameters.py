@@ -1,6 +1,9 @@
 import logging
-from qcodes import Parameter, MultiParameter, ArrayParameter
+
 import numpy as np
+
+from qcodes import Parameter, ArrayParameter
+from qcodes.instrument.channel import MultiChannelInstrumentParameter
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +52,55 @@ class Alazar0DParameter(Parameter):
         logger.info("calling acquire with {}".format(acq_kwargs))
         return output
 
-class Alazar1DParameter(ArrayParameter):
+class AlazarNDParameter(ArrayParameter):
+    def __init__(self,
+                 name,
+                 shape,
+                 instrument,
+                 label,
+                 unit,
+                 setpoint_names = None,
+                 setpoint_labels = None,
+                 setpoint_units = None,
+                 average_buffers=True,
+                 average_records=True,
+                 integrate_samples=True):
+        self._integrate_samples = integrate_samples
+        self._average_records = average_records
+        self._average_buffers = average_buffers
+        super().__init__(name,
+                         shape=shape,
+                         instrument=instrument,
+                         label=label,
+                         unit=unit,
+                         setpoint_names=setpoint_names,
+                         setpoint_labels=setpoint_labels,
+                         setpoint_units=setpoint_units)
+
+    def get(self):
+        channel = self._instrument
+        cntrl = channel._parent
+        params_to_kwargs = ['samples_per_record', 'records_per_buffer',
+                            'buffers_per_acquisition', 'allocated_buffers']
+        acq_kwargs = self._instrument.acquisition_kwargs.copy()
+        controller_acq_kwargs = {key: val.get() for key, val in cntrl.parameters.items() if
+             key in params_to_kwargs}
+        channel_acq_kwargs = {key: val.get() for key, val in channel.parameters.items() if
+             key in params_to_kwargs}
+        acq_kwargs.update(controller_acq_kwargs)
+        acq_kwargs.update(channel_acq_kwargs)
+        if acq_kwargs['buffers_per_acquisition'] > 1:
+            acq_kwargs['allocated_buffers'] = 4
+        else:
+            acq_kwargs['allocated_buffers'] = 1
+
+        logger.info("calling acquire with {}".format(acq_kwargs))
+        output = self._instrument._parent._get_alazar().acquire(
+            acquisition_controller=self._instrument._parent,
+            **acq_kwargs)
+        return output
+
+class Alazar1DParameter(AlazarNDParameter):
     def __init__(self,
                  name,
                  instrument,
@@ -62,9 +113,6 @@ class Alazar1DParameter(ArrayParameter):
                  setpoint_names = None,
                  setpoint_labels = None,
                  setpoint_units = None):
-        self._integrate_samples = integrate_samples
-        self._average_records = average_records
-        self._average_buffers = average_buffers
 
         if not integrate_samples:
             setpoint_names = ('time',)
@@ -80,13 +128,15 @@ class Alazar1DParameter(ArrayParameter):
             setpoint_units = ('',)
         super().__init__(name,
                          unit=unit,
+                         instrument=instrument,
                          label=label,
                          shape=shape,
-                         instrument=instrument,
                          setpoint_names=setpoint_names,
                          setpoint_labels=setpoint_labels,
-                         setpoint_units=setpoint_units)
-
+                         setpoint_units=setpoint_units,
+                         average_buffers=average_buffers,
+                         average_records=average_records,
+                         integrate_samples=integrate_samples)
 
     def set_setpoints_and_labels(self):
         # int_time = self._instrument.int_time.get() or 0
@@ -112,25 +162,7 @@ class Alazar1DParameter(ArrayParameter):
             self.shape = (buffers,)
             self.setpoints = (tuple(np.linspace(start, stop, buffers)),)
 
-    def get(self):
-        channel = self._instrument
-        cntrl = channel._parent
-        params_to_kwargs = ['samples_per_record', 'records_per_buffer',
-                            'buffers_per_acquisition', 'allocated_buffers']
-        acq_kwargs = self._instrument.acquisition_kwargs.copy()
-        controller_acq_kwargs = {key: val.get() for key, val in cntrl.parameters.items() if
-             key in params_to_kwargs}
-        channel_acq_kwargs = {key: val.get() for key, val in channel.parameters.items() if
-             key in params_to_kwargs}
-        acq_kwargs.update(controller_acq_kwargs)
-        acq_kwargs.update(channel_acq_kwargs)
-        logger.info("calling acquire with {}".format(acq_kwargs))
-        output = self._instrument._parent._get_alazar().acquire(
-            acquisition_controller=self._instrument._parent,
-            **acq_kwargs)
-        return output
-
-class Alazar2DParameter(ArrayParameter):
+class Alazar2DParameter(AlazarNDParameter):
     def __init__(self,
                  name,
                  instrument,
@@ -166,8 +198,10 @@ class Alazar2DParameter(ArrayParameter):
                          instrument=instrument,
                          setpoint_names=setpoint_names,
                          setpoint_labels=setpoint_labels,
-                         setpoint_units=setpoint_units)
-
+                         setpoint_units=setpoint_units,
+                         average_buffers=average_buffers,
+                         average_records=average_records,
+                         integrate_samples=integrate_samples)
 
     def set_setpoints_and_labels(self):
         records = self._instrument.records_per_buffer()
@@ -194,20 +228,10 @@ class Alazar2DParameter(ArrayParameter):
         self.setpoints = (outer_setpoints, tuple(inner_setpoints for _ in range(len(outer_setpoints))))
 
 
+class AlazarMultiChannelParameter(MultiChannelInstrumentParameter):
+    """
+
+
+    """
     def get(self):
-        channel = self._instrument
-        cntrl = channel._parent
-        params_to_kwargs = ['samples_per_record', 'records_per_buffer',
-                            'buffers_per_acquisition', 'allocated_buffers']
-        acq_kwargs = self._instrument.acquisition_kwargs.copy()
-        controller_acq_kwargs = {key: val.get() for key, val in cntrl.parameters.items() if
-             key in params_to_kwargs}
-        channel_acq_kwargs = {key: val.get() for key, val in channel.parameters.items() if
-             key in params_to_kwargs}
-        acq_kwargs.update(controller_acq_kwargs)
-        acq_kwargs.update(channel_acq_kwargs)
-        logger.info("calling acquire with {}".format(acq_kwargs))
-        output = self._instrument._parent._get_alazar().acquire(
-            acquisition_controller=self._instrument._parent,
-            **acq_kwargs)
-        return output
+        pass
