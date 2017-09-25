@@ -152,8 +152,7 @@ class DS4000(VisaInstrument):
 
         # Init VisaInstrument. device_clear MUST NOT be issued, otherwise communications hangs
         # due a bug in firmware
-        # add "device_clear=False," when #752 is merged
-        super().__init__(name, address, timeout=timeout, **kwargs)
+        super().__init__(name, address, device_clear=False, timeout=timeout, **kwargs)
         self.connect_message()
 
         # functions
