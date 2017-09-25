@@ -1,3 +1,4 @@
+import math
 from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils import validators as vals
@@ -128,6 +129,14 @@ class AlazarChannel(InstrumentChannel):
         elif self._average_records and not self._average_buffers:
             self.records_per_buffer._save_val(value)
         elif self._average_buffers and self._average_records:
-            self.buffers_per_acquisition._save_val(1)
-            self.records_per_buffer._save_val(value)
-        # this should be smarter to ensure that no more records are used than possible
+            max_samples = self._parent.board_info['max_samples']
+            samples_per_rec = self._parent.samples_per_record()
+            tot_samples = value * samples_per_rec
+            if tot_samples > max_samples:
+                records = math.floor(max_samples/samples_per_rec)
+                buffers = math.ceil(max_samples/records)
+            else:
+                records = value
+                buffers = 1
+            self.buffers_per_acquisition._save_val(buffers)
+            self.records_per_buffer._save_val(records)
