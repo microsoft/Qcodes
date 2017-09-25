@@ -331,6 +331,7 @@ class AWG70000A(VisaInstrument):
         if len(shape) == 1:
             N = shape[0]
             binary_marker = b''
+            wfm = data
         else:
             N = shape[1]
             M = shape[0]
@@ -345,9 +346,17 @@ class AWG70000A(VisaInstrument):
             fmt = N*'B'  # endian-ness doesn't matter for one byte
             binary_marker = struct.pack(fmt, *markers)
 
+        # the data must be rescaled to fall between -1 and 1
+        # lest the waveform is clipped upon output
+        wfm -= np.mean(wfm)
+        wfm /= max([np.abs(wfm.min()), np.abs(wfm.max)])
+
         # TODO: Is this a fast method?
         fmt = '<' + N*'f'
         binary_wfm = struct.pack(fmt, *wfm)
         binary_out = binary_wfm + binary_marker
 
         return binary_out
+
+    @staticmethod
+    def _makeSEQ
