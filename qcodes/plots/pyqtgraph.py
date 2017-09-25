@@ -479,10 +479,13 @@ class QtPlot(BasePlot):
         """ Set geometry of the plotting window """
         self.win.setGeometry(x, y, w, h)
 
-    def autorange(self):
+    def autorange(self, reset_colorbar: bool=False):
         """
         Auto range all limits in case they were changed during interactive
         plot. Reset colormap if changed and resize window to original size.
+        Args:
+            reset_colorbar: Should the limits and colorscale of the colorbar
+                be reset. Off by default
         """
         for subplot in self.subplots:
             vBox = subplot.getViewBox()
@@ -492,7 +495,8 @@ class QtPlot(BasePlot):
         for trace in self.traces:
             if 'plot_object' in trace.keys():
                 if (isinstance(trace['plot_object'], dict) and
-                            'hist' in trace['plot_object'].keys()):
+                            'hist' in trace['plot_object'].keys() and
+                            reset_colorbar):
                     cmap = trace['plot_object']['cmap']
                     maxval = trace['config']['z'].max()
                     minval = trace['config']['z'].min()
@@ -517,8 +521,7 @@ class QtPlot(BasePlot):
                          {'paramtername': {max: value, min:value}}
         """
         axismapping = {'x': 'bottom',
-                       'y': 'left',
-                       'z': 'right'}
+                       'y': 'left'}
         standardunits = self.standardunits
         for i, plot in enumerate(self.subplots):
             # make a dict mapping axis labels to axis positions
