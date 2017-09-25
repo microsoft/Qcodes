@@ -451,7 +451,5 @@ class MatPlot(BasePlot):
                                 new_label)
                         else:
                             subplot.qcodes_colorbar.formatter = tx
-                            subplot.qcodes_colorbar.ax.yaxis.set_major_formatter(
-                                tx)
                             subplot.qcodes_colorbar.set_label(new_label)
                             subplot.qcodes_colorbar.update_ticks()
