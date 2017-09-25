@@ -286,6 +286,10 @@ class ATS9360Controller(AcquisitionController):
                                            self.number_of_channels)
         channel = settings['channel']
         channelData = reshaped_buf[..., channel]
+        # TODO(JHN) could probably get better precision
+        # if we avoid casting back to uint16 after taking the average.
+        # either change the conversion to something that supports floats
+        # or
         if settings['average_records'] and settings['average_buffers']:
             recordA = np.uint16(np.mean(channelData, axis=1, keepdims=True) /
                                 buffers_per_acquisition)
