@@ -1,6 +1,7 @@
 """
 Live plotting using pyqtgraph
 """
+from typing import Optional, Dict, Union
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as pgmp
@@ -80,6 +81,7 @@ class QtPlot(BasePlot):
                 raise err
         self.win.setBackground(theme[1])
         self.win.resize(*figsize)
+        self._orig_fig_size = figsize
         self.subplots = [self.add_subplot()]
 
         if args or kwargs:
@@ -144,6 +146,7 @@ class QtPlot(BasePlot):
 
         if prev_default_title == self.win.windowTitle():
             self.win.setWindowTitle(self.get_default_title())
+        self.fixUnitScaling()
 
     def _draw_plot(self, subplot_object, y, x=None, color=None, width=None,
                    antialias=None, **kwargs):
@@ -475,3 +478,97 @@ class QtPlot(BasePlot):
     def setGeometry(self, x, y, w, h):
         """ Set geometry of the plotting window """
         self.win.setGeometry(x, y, w, h)
+
+    def autorange(self, reset_colorbar: bool=False):
+        """
+        Auto range all limits in case they were changed during interactive
+        plot. Reset colormap if changed and resize window to original size.
+        Args:
+            reset_colorbar: Should the limits and colorscale of the colorbar
+                be reset. Off by default
+        """
+        for subplot in self.subplots:
+            vBox = subplot.getViewBox()
+            vBox.enableAutoRange(vBox.XYAxes)
+        cmap = None
+        # resize histogram
+        for trace in self.traces:
+            if 'plot_object' in trace.keys():
+                if (isinstance(trace['plot_object'], dict) and
+                            'hist' in trace['plot_object'].keys() and
+                            reset_colorbar):
+                    cmap = trace['plot_object']['cmap']
+                    maxval = trace['config']['z'].max()
+                    minval = trace['config']['z'].min()
+                    trace['plot_object']['hist'].setLevels(minval, maxval)
+                    trace['plot_object']['hist'].vb.autoRange()
+        if cmap:
+            self.set_cmap(cmap)
+        # set window back to original size
+        self.win.resize(*self._orig_fig_size)
+
+    def fixUnitScaling(self, startranges: Optional[Dict[str, Dict[str, Union[float,int]]]]=None):
+        """
+        Disable SI rescaling if units are not standard units and limit
+        ranges to data if known.
+
+        Args:
+
+            startranges: The plot can automatically infer the full ranges
+                         array parameters. However it has no knowledge of the
+                         ranges or regular parameters. You can explicitly pass
+                         in the values here as a dict of the form
+                         {'paramtername': {max: value, min:value}}
+        """
+        axismapping = {'x': 'bottom',
+                       'y': 'left'}
+        standardunits = self.standardunits
+        for i, plot in enumerate(self.subplots):
+            # make a dict mapping axis labels to axis positions
+            for axis in ('x', 'y', 'z'):
+                if self.traces[i]['config'].get(axis):
+                    unit = self.traces[i]['config'][axis].unit
+                    if unit not in standardunits:
+                        if axis in ('x', 'y'):
+                            ax = plot.getAxis(axismapping[axis])
+                        else:
+                            # 2D measurement
+                            # Then we should fetch the colorbar
+                            ax = self.traces[i]['plot_object']['hist'].axis
+                        ax.enableAutoSIPrefix(False)
+                        # because updateAutoSIPrefix called from
+                        # enableAutoSIPrefix doesnt actually take the
+                        # value of the argument into account we have
+                        # to manually replicate the update here
+                        ax.autoSIPrefixScale = 1.0
+                        ax.setLabel(unitPrefix='')
+                        ax.picture = None
+                        ax.update()
+
+                    # set limits either from dataset or
+                    setarr = self.traces[i]['config'][axis].ndarray
+                    arrmin = None
+                    arrmax = None
+                    if not np.all(np.isnan(setarr)):
+                        arrmax = setarr.max()
+                        arrmin = setarr.min()
+                    elif startranges is not None:
+                        try:
+                            paramname = self.traces[i]['config'][axis].full_name
+                            arrmax = startranges[paramname]['max']
+                            arrmin = startranges[paramname]['min']
+                        except (IndexError, KeyError):
+                            continue
+
+                    if axis == 'x':
+                        rangesetter = getattr(plot.getViewBox(), 'setXRange')
+                    elif axis == 'y':
+                        rangesetter = getattr(plot.getViewBox(), 'setYRange')
+                    else:
+                        rangesetter = None
+
+                    if (rangesetter is not None
+                        and arrmin is not None
+                        and arrmax is not None):
+                        rangesetter(arrmin, arrmax)
+

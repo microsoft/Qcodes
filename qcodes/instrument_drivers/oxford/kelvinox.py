@@ -168,7 +168,9 @@ class OxfordInstruments_Kelvinox_IGH(VisaInstrument):
     def identify(self):
         """Identify the device
 
-        Returns a string of the form `'IGH    Version 3.02 (c) OXFORD 1998\r'`
+        Returns:
+             a string of the form ``'IGH    Version 3.02 (c) OXFORD 1998\\r'``
+
         """
         log.info('Identify the device')
         return self._execute('V')
