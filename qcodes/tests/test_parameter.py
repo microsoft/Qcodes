@@ -61,7 +61,7 @@ class TestParameter(TestCase):
     def test_default_attributes(self):
         # Test the default attributes, providing only a name
         name = 'repetitions'
-        p = GettableParam(name)
+        p = GettableParam(name, vals=vals.Numbers())
         self.assertEqual(p.name, name)
         self.assertEqual(p.label, name)
         self.assertEqual(p.unit, '')
