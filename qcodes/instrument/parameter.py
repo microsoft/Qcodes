@@ -621,7 +621,7 @@ class Parameter(_BaseParameter):
 
     def __init__(self, name, instrument=None, label=None, unit=None,
                  get_cmd=None, set_cmd=False, initial_value=None,
-                 max_val_age=None, vals=Numbers(), docstring=None, **kwargs):
+                 max_val_age=None, vals=None, docstring=None, **kwargs):
         super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
 
         # Enable set/get methods if get_cmd/set_cmd is given
