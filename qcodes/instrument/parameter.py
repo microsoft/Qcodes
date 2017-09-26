@@ -112,7 +112,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         post_delay (Optional[Union[int, float]]): time (in seconds) to wait
             after the *start* of each set, whether part of a sweep or not.
             Can be set to 0 to go maximum speed with no errors.
-        
+
         val_mapping (Optional[dict]): a bidirectional map data/readable values
             to instrument codes, expressed as a dict:
             ``{data_val: instrument_code}``
@@ -125,21 +125,21 @@ class _BaseParameter(Metadatable, DeferredOperations):
             You can use ``val_mapping`` with ``get_parser``, in which case
             ``get_parser`` acts on the return value from the instrument first,
             then ``val_mapping`` is applied (in reverse).
-            
+
         get_parser ( Optional[function]): function to transform the response
             from get to the final output value. See also val_mapping
-            
+
         set_parser (Optional[function]): function to transform the input set
             value to an encoded value sent to the instrument.
             See also val_mapping.
-            
+
         vals (Optional[Validator]): a Validator object for this parameter
 
         max_val_age (Optional[float]): The max time (in seconds) to trust a
             saved value obtained from get_latest(). If this parameter has not
             been set or measured more recently than this, perform an
             additional measurement.
-        
+
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
@@ -536,14 +536,14 @@ class Parameter(_BaseParameter):
        d. False, in which case trying to get/set will raise an error.
     2. Creating a subclass with an explicit ``get``/``set`` method. This
        enables more advanced functionality.
-    
+
     Parameters have a ``.get_latest`` method that simply returns the most
     recent set or measured value. This can be called ( ``param.get_latest()`` )
     or used in a ``Loop`` as if it were a (gettable-only) parameter itself:
 
         ``Loop(...).each(param.get_latest)``
 
-           
+
     Args:
         name (str): the local name of the parameter. Should be a valid
             identifier, ie no spaces or special characters. If this parameter
@@ -570,20 +570,20 @@ class Parameter(_BaseParameter):
         step (Optional[Union[int, float]]): max increment of parameter value.
             Larger changes are broken into multiple steps this size.
             When combined with delays, this acts as a ramp.
-            
+
         scale (Optional[float]): Scale to multiply value with before
             performing set. the internally multiplied value is stored in
             `raw_value`. Can account for a voltage divider.
-        
+
         inter_delay (Optional[Union[int, float]]): Minimum time (in seconds)
             between successive sets. If the previous set was less than this,
             it will wait until the condition is met.
             Can be set to 0 to go maximum speed with no errors.
-        
+
         post_delay (Optional[Union[int, float]]): time (in seconds) to wait
             after the *start* of each set, whether part of a sweep or not.
             Can be set to 0 to go maximum speed with no errors.
-        
+
         val_mapping (Optional[dict]): a bidirectional map data/readable values
             to instrument codes, expressed as a dict:
             ``{data_val: instrument_code}``
@@ -596,14 +596,14 @@ class Parameter(_BaseParameter):
             You can use ``val_mapping`` with ``get_parser``, in which case
             ``get_parser`` acts on the return value from the instrument first,
             then ``val_mapping`` is applied (in reverse).
-            
+
         get_parser ( Optional[function]): function to transform the response
             from get to the final output value. See also val_mapping
-            
+
         set_parser (Optional[function]): function to transform the input set
             value to an encoded value sent to the instrument.
             See also val_mapping.
-            
+
         vals (Optional[Validator]): Allowed values for setting this parameter.
             Only relevant if settable. Defaults to ``Numbers()``
 
@@ -611,14 +611,14 @@ class Parameter(_BaseParameter):
             saved value obtained from get_latest(). If this parameter has not
             been set or measured more recently than this, perform an
             additional measurement.
-            
+
         docstring (Optional[str]): documentation string for the __doc__
             field of the object. The __doc__ field of the instance is used by
             some help systems, but not all
 
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
-    
+
     """
 
     def __init__(self, name, instrument=None, label=None, unit=None,
@@ -1048,7 +1048,6 @@ class GetLatest(DelegateAttributes, DeferredOperations):
             additional measurement.
     """
     def __init__(self, parameter, max_val_age=None):
-        super().__init__(None)
         self.parameter = parameter
         self.max_val_age = max_val_age
 
