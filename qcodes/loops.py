@@ -56,6 +56,7 @@ from qcodes.station import Station
 from qcodes.data.data_set import new_data
 from qcodes.data.data_array import DataArray
 from qcodes.utils.helpers import wait_secs, full_class, tprint
+from qcodes.utils.threading import KillableThread
 from qcodes.utils.metadata import Metadatable
 from qcodes.plots.qcmatplotlib import MatPlot
 
@@ -745,7 +746,7 @@ class ActiveLoop(Metadatable):
                         attach_stop_bg(action)
                 return new_loop
             loop = attach_stop_bg(self)
-            t = threading.Thread(target=loop.run, name='qcodes_loop',
+            t = KillableThread(target=loop.run, name='qcodes_loop',
                                  args=args,
                                  kwargs={'use_threads': use_threads,
                                          'name': None,
@@ -788,6 +789,7 @@ class ActiveLoop(Metadatable):
             self._run_wrapper(set_active=set_active)
             ds = self.data_set
         finally:
+            ActiveLoop._is_stopped = False
             if not quiet:
                 print(datetime.now().strftime('Finished at %Y-%m-%d %H:%M:%S'))
 

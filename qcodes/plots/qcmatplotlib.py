@@ -17,7 +17,6 @@ from .base import BasePlot
 from qcodes.utils.threading import UpdaterThread
 
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -67,7 +66,7 @@ class MatPlot(BasePlot):
             subplots = max(len(args), 1)
 
         self._init_plot(subplots, figsize, num=num)
-        
+
         # Add data to plot if passed in args, kwargs are passed to all subplots
         for k, arg in enumerate(args):
             if isinstance(arg, Sequence):
@@ -85,6 +84,7 @@ class MatPlot(BasePlot):
                for arg in args):
             self.updater = UpdaterThread(self.update, name='MatPlot_updater',
                                          interval=interval, max_threads=5)
+            self.fig.canvas.mpl_connect('close_event', self.halt)
 
     def __getitem__(self, key):
         """
@@ -149,7 +149,7 @@ class MatPlot(BasePlot):
 
         Args:
             use_offset (bool, Optional): Whether or not ticks can have an offset
-            
+
             kwargs: with the following exceptions (mostly the data!), these are
                 passed directly to the matplotlib plotting routine.
                 `subplot`: the 1-based axes number to append to (default 1)
@@ -418,7 +418,7 @@ class MatPlot(BasePlot):
     def save(self, filename=None):
         """
         Save current plot to filename, by default
-        to the location corresponding to the default 
+        to the location corresponding to the default
         title.
 
         Args:

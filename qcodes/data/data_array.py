@@ -375,9 +375,11 @@ class DataArray(DelegateAttributes):
             if len(loop_indices) <= k or isinstance(loop_indices[k], slice):
                 sub_set_arrays.append(sub_set_array)
 
-        return DataArray(name=self.name, label=self.label, unit=self.unit,
-                         is_setpoint=self.is_setpoint, preset_data=sub_array,
-                         set_arrays=sub_set_arrays)
+        data_array = DataArray(name=self.name, label=self.label, unit=self.unit,
+                               is_setpoint=self.is_setpoint,
+                               preset_data=sub_array, set_arrays=sub_set_arrays)
+        data_array.data_set = self.data_set
+        return data_array
 
     def array_slice(self, slice):
         """
@@ -402,6 +404,28 @@ class DataArray(DelegateAttributes):
         attribute to already exist.
         """
         return len(self.ndarray)
+
+    def mean(self, axis=None, dtype=None, out=None, **kwargs):
+        sub_array = np.nanmean(self, axis=axis, dtype=dtype, out=out, **kwargs)
+        if axis is None or self.ndim == 1:
+            return sub_array
+        else:
+            sub_set_arrays = []
+            for k, set_array in enumerate(self.set_arrays):
+                if k == axis:
+                    continue
+                else:
+                    if set_array.ndim > axis:
+                        loop_indices = [slice(None, None,
+                                              None)] * set_array.ndim
+                        loop_indices[axis] = 0
+                        sub_set_arrays.append(set_array[tuple(loop_indices)])
+                    else:
+                        sub_set_arrays.append(set_array)
+            return DataArray(name=self.name, label=self.label, unit=self.unit,
+                             is_setpoint=self.is_setpoint,
+                             preset_data=sub_array,
+                             set_arrays=sub_set_arrays)
 
     def flat_index(self, indices, index_fill=None):
         """
