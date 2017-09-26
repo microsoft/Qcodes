@@ -66,7 +66,7 @@ from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   warn_units)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.command import Command
-from qcodes.utils.validators import Validator, Numbers, Ints, Strings
+from qcodes.utils.validators import Validator, Numbers, Ints, Strings, Enum
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
 
@@ -156,6 +156,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         if not isinstance(vals, (Validator, type(None))):
             raise TypeError('vals must be None or a Validator')
+        elif val_mapping is not None:
+            vals = Enum(*val_mapping.keys())
         self.vals = vals
 
         self.step = step
@@ -164,7 +166,6 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self.inter_delay = inter_delay
         self.post_delay = post_delay
 
-        # TODO (nulinspiratie) handle int vs string conversion in val_mapping
         self.val_mapping = val_mapping
         if val_mapping is None:
             self.inverse_val_mapping = None
@@ -638,7 +639,7 @@ class Parameter(_BaseParameter):
 
         if not hasattr(self, 'set') and set_cmd is not False:
             if set_cmd is None:
-                self.set = partial(self._save_val, validate=True)
+                self.set = partial(self._save_val, validate=False)
             else:
                 exec_str = instrument.write if instrument else None
                 self.set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str)
