@@ -66,7 +66,7 @@ from qcodes.utils.helpers import (permissive_range, is_sequence_of,
                                   warn_units)
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.command import Command
-from qcodes.utils.validators import Validator, Numbers, Ints, Strings, Enum
+from qcodes.utils.validators import Validator, Ints, Strings, Enum
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
 
