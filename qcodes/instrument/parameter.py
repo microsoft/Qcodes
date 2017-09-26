@@ -528,14 +528,14 @@ class Parameter(_BaseParameter):
 
     By default only gettable, returning its last value.
     This behaviour can be modified in two ways:
-        1. Providing a ``get_cmd``/``set_cmd``, which can of the following:
-           a. callable, with zero args for get_cmd, one arg for set_cmd
-           b. VISA command string
-           c. None, in which case it retrieves its last value for ``get_cmd``, 
-              and stores a value for ``set_cmd``
-           d. False, in which case trying to get/set will raise an error.
-        2. Creating a subclass with an explicit ``get``/``set`` method. This 
-           enables more advanced functionality.
+    1. Providing a ``get_cmd``/``set_cmd``, which can of the following:
+       a. callable, with zero args for get_cmd, one arg for set_cmd
+       b. VISA command string
+       c. None, in which case it retrieves its last value for ``get_cmd``,
+          and stores a value for ``set_cmd``
+       d. False, in which case trying to get/set will raise an error.
+    2. Creating a subclass with an explicit ``get``/``set`` method. This
+       enables more advanced functionality.
     
     Parameters have a ``.get_latest`` method that simply returns the most
     recent set or measured value. This can be called ( ``param.get_latest()`` )
