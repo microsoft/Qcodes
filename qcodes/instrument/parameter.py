@@ -13,14 +13,14 @@ to all parameter types, such as ramping and scaling of values, adding delays
 
 This file defines four classes of parameters:
 
-- ``Parameter`` is the base class for scalar-valued parameters. 
+- ``Parameter`` is the base class for scalar-valued parameters.
     Two primary ways in which it can be used:
-    1. As an ``Instrument`` parameter that sends/receives commands. Provides a 
-       standardized interface to construct strings to pass to the 
+    1. As an ``Instrument`` parameter that sends/receives commands. Provides a
+       standardized interface to construct strings to pass to the
        instrument's ``write`` and ``ask`` methods
     2. As a variable that stores and returns a value. For instance, for storing
        of values you want to keep track of but cannot set or get electronically.
-    Provides ``sweep`` and ``__getitem__`` (slice notation) methods to use a 
+    Provides ``sweep`` and ``__getitem__`` (slice notation) methods to use a
     settable parameter as the swept variable in a ``Loop``.
     The get/set functionality can be modified.
 
@@ -38,9 +38,9 @@ This file defines four classes of parameters:
     feed data to a ``DataSet``. To use, provide a ``get`` method
     that returns a sequence of values, and describe those values in
     ``super().__init__``.
-    
+
     ``CombinedParameter`` Combines several parameters into a ``MultiParameter``.
-    can be easily used via the ``combine`` function. 
+    can be easily used via the ``combine`` function.
     Note that it is not yet a subclass of BaseParameter.
 
 
@@ -74,7 +74,7 @@ from qcodes.data.data_array import DataArray
 class _BaseParameter(Metadatable, DeferredOperations):
     """
     Shared behavior for all parameters. Not intended to be used
-    directly, normally you should use ``Parameter``, ``ArrayParameter``, 
+    directly, normally you should use ``Parameter``, ``ArrayParameter``,
     ``MultiParameter``, or ``CombinedParameter``.
     Note that ``CombinedParameter`` is not yet a subclass of ``_BaseParameter``
 
@@ -93,24 +93,24 @@ class _BaseParameter(Metadatable, DeferredOperations):
             ``update=True``, for example if it takes too long to update.
             Default True.
 
-        snapshot_value (Optional[bool]): False prevents parameter value to be 
+        snapshot_value (Optional[bool]): False prevents parameter value to be
             stored in the snapshot. Useful if the value is large.
             
         step (Optional[Union[int, float]]): max increment of parameter value.
             Larger changes are broken into multiple steps this size.
             When combined with delays, this acts as a ramp.
             
-        scale (Optional[float]): Scale to multiply value with before 
-            performing set. the internally multiplied value is stored in 
+        scale (Optional[float]): Scale to multiply value with before
+            performing set. the internally multiplied value is stored in
             `raw_value`. Can account for a voltage divider.
         
-        inter_delay (Optional[Union[int, float]]): Minimum time (in seconds) 
-            between successive sets. If the previous set was less than this, 
-            it will wait until the condition is met. 
+        inter_delay (Optional[Union[int, float]]): Minimum time (in seconds)
+            between successive sets. If the previous set was less than this,
+            it will wait until the condition is met.
             Can be set to 0 to go maximum speed with no errors.
         
-        post_delay (Optional[Union[int, float]]): time (in seconds) to wait 
-            after the *start* of each set, whether part of a sweep or not. 
+        post_delay (Optional[Union[int, float]]): time (in seconds) to wait
+            after the *start* of each set, whether part of a sweep or not.
             Can be set to 0 to go maximum speed with no errors.
         
         val_mapping (Optional[dict]): a bidirectional map data/readable values
@@ -522,8 +522,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
 class Parameter(_BaseParameter):
     """
     A parameter that represents a single degree of freedom.
-    This is the standard parameter for Instruments, though it can also be 
-    used as a variable, i.e. storing/retrieving a value, or be subclassed for 
+    This is the standard parameter for Instruments, though it can also be
+    used as a variable, i.e. storing/retrieving a value, or be subclassed for
     more complex uses.
 
     By default only gettable, returning its last value.
