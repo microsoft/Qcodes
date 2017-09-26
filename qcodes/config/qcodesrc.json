@@ -1,7 +1,8 @@
 {
     "core":{
         "loglevel": "DEBUG",
-        "default_fmt": "data/{date}/#{counter}_{name}_{time}"
+        "default_fmt": "data/{date}/#{counter}_{name}_{time}",
+        "loop_thread": false
     },
     "gui" :{
         "notebook": true,

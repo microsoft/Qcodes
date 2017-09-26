@@ -4,6 +4,13 @@
 # That way the things we call need not be rewritten explicitly async.
 
 import threading
+import ctypes
+import time
+from collections import Iterable
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class RespondingThread(threading.Thread):
@@ -72,3 +79,72 @@ def thread_map(callables, args=None, kwargs=None):
         t.start()
 
     return [t.output() for t in threads]
+
+
+class UpdaterThread(threading.Thread):
+    def __init__(self, callables, interval, name=None, max_threads=None,
+                 auto_start=True):
+        super().__init__(name=name)
+        self._is_paused = False
+
+        if not isinstance(callables, Iterable):
+            callables = [callables]
+        self.callables = callables
+
+        self.interval = interval
+        if max_threads is not None:
+            active_threads = sum(thread.getName()==name
+                                 for thread in threading.enumerate())
+            if  active_threads > max_threads:
+                logger.warning(f'Found {active_threads} active updater threads')
+
+        if auto_start:
+            time.sleep(interval)
+            self.start()
+
+    def run(self):
+        while not self._is_stopped:
+            if not self._is_paused:
+                for callable in self.callables:
+                    callable()
+            time.sleep(self.interval)
+        else:
+            logger.warning('Updater thread stopped')
+
+    def pause(self):
+        self._is_paused = True
+
+    def unpause(self):
+        self._is_paused = False
+
+    def halt(self):
+        self._is_stopped = True
+
+
+def _async_raise(tid, excobj):
+    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, ctypes.py_object(excobj))
+    if res == 0:
+        raise ValueError("nonexistent thread id")
+    elif res > 1:
+        # """if it returns a number greater than one, you're in trouble,
+        # and you should call it again with exc=NULL to revert the effect"""
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
+        raise SystemError("PyThreadState_SetAsyncExc failed")
+
+
+class KillableThread(threading.Thread):
+    def raise_exc(self, excobj):
+        assert self.isAlive(), "thread must be started"
+        for tid, tobj in threading._active.items():
+            if tobj is self:
+                _async_raise(tid, excobj)
+                return
+
+        # the thread was alive when we entered the loop, but was not found
+        # in the dict, hence it must have been already terminated. should we raise
+        # an exception here? silently ignore?
+
+    def terminate(self):
+        # must raise the SystemExit type, instead of a SystemExit() instance
+        # due to a bug in PyThreadState_SetAsyncExc
+        self.raise_exc(SystemExit)

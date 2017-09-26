@@ -50,11 +50,15 @@ from datetime import datetime
 import logging
 import time
 import numpy as np
+import threading
+from functools import partial
 
+from qcodes import config
 from qcodes.station import Station
 from qcodes.data.data_set import new_data
 from qcodes.data.data_array import DataArray
 from qcodes.utils.helpers import wait_secs, full_class, tprint
+from qcodes.utils.threading import KillableThread
 from qcodes.utils.metadata import Metadatable
 
 from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
@@ -344,6 +348,8 @@ class ActiveLoop(Metadatable):
     # Currently active loop, is set when calling loop.run(set_active=True)
     # is reset to None when active measurement is finished
     active_loop = None
+    # Flag to stop loop when running
+    _is_stopped = False
 
     def __init__(self, sweep_values, delay, *actions, then_actions=(),
                  station=None, progress_interval=None, bg_task=None,
@@ -597,6 +603,12 @@ class ActiveLoop(Metadatable):
 
         return sp
 
+    def _raise_if_stopped(self, reset=True):
+        if self._is_stopped:
+            if reset:
+                ActiveLoop._is_stopped = False
+            raise _QcodesBreak
+
     def set_common_attrs(self, data_set, use_threads):
         """
         set a couple of common attributes that the main and nested loops
@@ -665,12 +677,15 @@ class ActiveLoop(Metadatable):
         """
         return self.run(quiet=True, location=False, **kwargs)
 
-    def run(self, use_threads=False, quiet=False, station=None,
+    def run(self, thread=None, use_threads=False, quiet=False, station=None,
             progress_interval=False, set_active=True, *args, **kwargs):
         """
         Execute this loop.
 
         Args:
+            thread: Start QCoDeS in separate thread. If not specified,
+                will check qcodes.config.core.loop_thread, which is set to False
+                by default.
             use_threads: (default False): whenever there are multiple `get` calls
                 back-to-back, execute them in separate threads so they run in
                 parallel (as long as they don't block each other)
@@ -707,7 +722,39 @@ class ActiveLoop(Metadatable):
         if progress_interval is not False:
             self.progress_interval = progress_interval
 
+        if self.data_set is not None:
+            # Remove name from kwargs since a dataset is already created
+            kwargs.pop('name', None)
         data_set = self.get_data_set(*args, **kwargs)
+
+        if thread is None:
+            thread = config.core.get('loop_thread', False)
+
+        if thread:
+            if any(t.name == 'qcodes_loop' for t in threading.enumerate()):
+                raise RuntimeError('QCoDeS loop already running. Exiting')
+
+            def attach_stop_bg(loop, reset=True):
+                new_loop = loop.with_bg_task(partial(self._raise_if_stopped,
+                                                     reset=reset))
+                for action in loop:
+                    if isinstance(action, ActiveLoop):
+                        attach_stop_bg(action, reset=False)
+                return new_loop
+
+            loop = attach_stop_bg(self)
+            t = KillableThread(target=loop.run, name='qcodes_loop',
+                                 args=args,
+                                 kwargs={'thread': False,
+                                         'use_threads': use_threads,
+                                         'name': None,
+                                         'quiet': quiet,
+                                         'station': station,
+                                         'progress_interval': progress_interval,
+                                         'set_active': set_active,
+                                         **kwargs})
+            t.start()
+            return data_set
 
         self.set_common_attrs(data_set=data_set, use_threads=use_threads)
 
@@ -735,6 +782,7 @@ class ActiveLoop(Metadatable):
             self._run_wrapper()
             ds = self.data_set
         finally:
+            ActiveLoop._is_stopped = False
             if not quiet:
                 print(repr(self.data_set))
                 print(datetime.now().strftime('Finished at %Y-%m-%d %H:%M:%S'))
@@ -879,6 +927,9 @@ class ActiveLoop(Metadatable):
                 if t - last_task >= self.bg_min_delay:
                     try:
                         self.bg_task()
+                    except _QcodesBreak:
+                        log.error('QCodes break raise, stopping')
+                        break
                     except Exception:
                         if self.last_task_failed:
                             self.bg_task = None
@@ -889,7 +940,10 @@ class ActiveLoop(Metadatable):
 
         # run the background task one last time to catch the last setpoint(s)
         if self.bg_task is not None:
-            self.bg_task()
+            try:
+                self.bg_task()
+            except _QcodesBreak:
+                pass
 
         # the loop is finished - run the .then actions
         for f in self._compile_actions(self.then_actions, ()):
@@ -904,3 +958,7 @@ class ActiveLoop(Metadatable):
             finish_clock = time.perf_counter() + delay
             t = wait_secs(finish_clock)
             time.sleep(t)
+
+
+def stop():
+    ActiveLoop._is_stopped = True

@@ -23,6 +23,11 @@
                         "INFO",
                         "DEBUG"
                     ]
+                },
+                "loop_thread" :{
+                    "type" : "boolean",
+                    "description" : "Start QCoDeS loops in separate thread",
+                    "default" : false
                 }
             },
             "required":["loglevel" ]
