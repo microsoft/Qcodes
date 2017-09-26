@@ -1048,7 +1048,7 @@ class GetLatest(DelegateAttributes, DeferredOperations):
             additional measurement.
     """
     def __init__(self, parameter, max_val_age=None):
-        super().__init__()
+        super().__init__(None)
         self.parameter = parameter
         self.max_val_age = max_val_age
 
