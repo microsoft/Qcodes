@@ -95,20 +95,20 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         snapshot_value (Optional[bool]): False prevents parameter value to be
             stored in the snapshot. Useful if the value is large.
-            
+
         step (Optional[Union[int, float]]): max increment of parameter value.
             Larger changes are broken into multiple steps this size.
             When combined with delays, this acts as a ramp.
-            
+
         scale (Optional[float]): Scale to multiply value with before
             performing set. the internally multiplied value is stored in
             `raw_value`. Can account for a voltage divider.
-        
+
         inter_delay (Optional[Union[int, float]]): Minimum time (in seconds)
             between successive sets. If the previous set was less than this,
             it will wait until the condition is met.
             Can be set to 0 to go maximum speed with no errors.
-        
+
         post_delay (Optional[Union[int, float]]): time (in seconds) to wait
             after the *start* of each set, whether part of a sweep or not.
             Can be set to 0 to go maximum speed with no errors.
@@ -564,24 +564,24 @@ class Parameter(_BaseParameter):
             ``update=True``, for example if it takes too long to update.
             Default True.
 
-        snapshot_value (Optional[bool]): False prevents parameter value to be 
+        snapshot_value (Optional[bool]): False prevents parameter value to be
             stored in the snapshot. Useful if the value is large.
 
         step (Optional[Union[int, float]]): max increment of parameter value.
             Larger changes are broken into multiple steps this size.
             When combined with delays, this acts as a ramp.
             
-        scale (Optional[float]): Scale to multiply value with before 
-            performing set. the internally multiplied value is stored in 
+        scale (Optional[float]): Scale to multiply value with before
+            performing set. the internally multiplied value is stored in
             `raw_value`. Can account for a voltage divider.
         
-        inter_delay (Optional[Union[int, float]]): Minimum time (in seconds) 
-            between successive sets. If the previous set was less than this, 
-            it will wait until the condition is met. 
+        inter_delay (Optional[Union[int, float]]): Minimum time (in seconds)
+            between successive sets. If the previous set was less than this,
+            it will wait until the condition is met.
             Can be set to 0 to go maximum speed with no errors.
         
-        post_delay (Optional[Union[int, float]]): time (in seconds) to wait 
-            after the *start* of each set, whether part of a sweep or not. 
+        post_delay (Optional[Union[int, float]]): time (in seconds) to wait
+            after the *start* of each set, whether part of a sweep or not.
             Can be set to 0 to go maximum speed with no errors.
         
         val_mapping (Optional[dict]): a bidirectional map data/readable values
