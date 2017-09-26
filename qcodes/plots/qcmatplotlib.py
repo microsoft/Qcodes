@@ -7,6 +7,7 @@ from collections import Sequence
 from functools import partial
 
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 import numpy as np
 from matplotlib.transforms import Bbox
 from numpy.ma import masked_invalid, getmask
@@ -400,3 +401,55 @@ class MatPlot(BasePlot):
         the top is also added for the title.
         """
         self.fig.tight_layout(rect=[0, 0, 1, 0.95])
+
+    def rescale_axis(self):
+        """
+        Rescale axis and units for axis that are in standard units
+        i.e. V, s J ... to m μ, m
+        This scales units defined in BasePlot.standardunits only
+        to avoid prefixes on combined or non standard units
+        """
+        def scale_formatter(i, pos, scale):
+            return "{0:g}".format(i * scale)
+
+        for i, subplot in enumerate(self.subplots):
+            for axis in 'x', 'y', 'z':
+                if self.traces[i]['config'].get(axis):
+                    unit = self.traces[i]['config'][axis].unit
+                    label = self.traces[i]['config'][axis].label
+                    maxval = abs(self.traces[i]['config'][axis].ndarray).max()
+                    units_to_scale = self.standardunits
+
+                    # allow values up to a <1000. i.e. nV is used up to 1000 nV
+                    prefixes = ['n', 'μ', 'm', '', 'k', 'M', 'G']
+                    thresholds = [10**(-6 + 3*n) for n in range(len(prefixes))]
+                    scales = [10**(9 - 3*n) for n in range(len(prefixes))]
+
+                    if unit in units_to_scale:
+                        scale = 1
+                        new_unit = unit
+                        for prefix, threshold, trialscale in zip(prefixes,
+                                                                 thresholds,
+                                                                 scales):
+                            if maxval < threshold:
+                                scale = trialscale
+                                new_unit = prefix + unit
+                                break
+                        # special case the largest
+                        if maxval > thresholds[-1]:
+                            scale = scales[-1]
+                            new_unit = prefixes[-1] + unit
+
+                        tx = ticker.FuncFormatter(
+                            partial(scale_formatter, scale=scale))
+                        new_label = "{} ({})".format(label, new_unit)
+                        if axis in ('x', 'y'):
+                            getattr(subplot,
+                                    "{}axis".format(axis)).set_major_formatter(
+                                tx)
+                            getattr(subplot, "set_{}label".format(axis))(
+                                new_label)
+                        else:
+                            subplot.qcodes_colorbar.formatter = tx
+                            subplot.qcodes_colorbar.set_label(new_label)
+                            subplot.qcodes_colorbar.update_ticks()
