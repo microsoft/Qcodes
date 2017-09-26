@@ -140,10 +140,6 @@ class KillableThread(threading.Thread):
                 _async_raise(tid, excobj)
                 return
 
-        # the thread was alive when we entered the loop, but was not found
-        # in the dict, hence it must have been already terminated. should we raise
-        # an exception here? silently ignore?
-
     def terminate(self):
         # must raise the SystemExit type, instead of a SystemExit() instance
         # due to a bug in PyThreadState_SetAsyncExc
