@@ -6,10 +6,10 @@ satisfy the Parameter interface. Most of the time that is easiest to do
 by either using or subclassing one of the classes defined here, but you can
 also use any class with the right attributes.
 
-All parameter classes are subclassed from _BaseParameter (except CombinedParameter).
-The _BaseParameter provides functionality that is common to all parameter types,
-such as ramping and scaling of values, adding delays (see documentation for 
-details).
+All parameter classes are subclassed from _BaseParameter (except
+CombinedParameter). The _BaseParameter provides functionality that is common
+to all parameter types, such as ramping and scaling of values, adding delays
+(see documentation for details).
 
 This file defines four classes of parameters:
 
@@ -188,7 +188,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
-        self._meta_attrs = ['name', 'instrument', 'step', 'scale','raw_value',
+        self._meta_attrs = ['name', 'instrument', 'step', 'scale', 'raw_value',
                             'inter_delay', 'post_delay', 'val_mapping', 'vals']
 
         # Specify time of last set operation, used when comparing to delay to
@@ -322,7 +322,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     if isinstance(self.scale, collections.Iterable):
                         # Scale contains multiple elements, one for each value
                         value = tuple(val * scale for val, scale
-                                       in zip(value, self.scale))
+                                      in zip(value, self.scale))
                     else:
                         # Use single scale for all values
                         value *= self.scale
@@ -366,14 +366,15 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
     def get_ramp_values(self, value, step=None):
         """
-        Sweep to a given value from a starting value
+        Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
         It can even be overridden by a generator.
         Args:
-            value:
+            value: target value
+            step: maximum step size
 
         Returns:
-
+            List of stepped values, including target value.
         """
         if step is None:
             return [value]
@@ -388,8 +389,9 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 # isn't, even though it's valid.
                 # probably MultiType with a mix of numeric and non-numeric types
                 # just set the endpoint and move on
-                logging.warning('cannot sweep {} from {} to {} - jumping.'.format(
-                    self.name, start_value, value))
+                logging.warning(
+                    'cannot sweep {} from {} to {} - jumping.'.format(
+                        self.name, start_value, value))
                 return []
 
             # drop the initial value, we're already there
@@ -748,8 +750,6 @@ class ArrayParameter(_BaseParameter):
 
         unit (Optional[str]): The unit of measure. Use ``''`` for unitless.
 
-        units (Optional[str]): DEPRECATED, redirects to ``unit``.
-
         setpoints (Optional[Tuple[setpoint_array]]):
             ``setpoint_array`` can be a DataArray, numpy.ndarray, or sequence.
             The setpoints for each dimension of the returned array. An
@@ -791,7 +791,8 @@ class ArrayParameter(_BaseParameter):
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
 
-        if hasattr(self, 'set'):  # TODO (alexcjohnson): can we support, ala Combine?
+        if hasattr(self, 'set'):
+            # TODO (alexcjohnson): can we support, ala Combine?
             raise AttributeError('ArrayParameters do not support set '
                                  'at this time.')
 
@@ -849,6 +850,7 @@ class ArrayParameter(_BaseParameter):
 
         if not hasattr(self, 'get') and not hasattr(self, 'set'):
             raise AttributeError('ArrayParameter must have a get, set or both')
+
 
 def _is_nested_sequence_or_none(obj, types, shapes):
     """Validator for MultiParameter setpoints/names/labels"""
@@ -951,7 +953,8 @@ class MultiParameter(_BaseParameter):
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
 
-        if hasattr(self, 'set'):  # TODO (alexcjohnson): can we support, ala Combine?
+        if hasattr(self, 'set'):
+            # TODO (alexcjohnson): can we support, ala Combine?
             warnings.warn('MultiParameters do not support set at this time.')
 
         self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
@@ -1078,7 +1081,7 @@ def combine(*parameters, name, label=None, unit=None, units=None,
     Combine parameters into one sweepable parameter
 
     Args:
-        *paramters (qcodes.Parameter): the parameters to combine
+        *parameters (qcodes.Parameter): the parameters to combine
         name (str): the name of the paramter
         label (Optional[str]): the label of the combined parameter
         unit (Optional[str]): the unit of the combined parameter
