@@ -2,12 +2,14 @@ import xml.etree.ElementTree as ET
 import datetime as dt
 import numpy as np
 import struct
+import os
+import zipfile as zf
 
 from dateutil.tz import time
 from typing import List
 
 from qcodes import Instrument, VisaInstrument, validators as vals
-from qcodes.instrument.channel import ChannelList, InstrumentChannel
+from qcodes.instrument.channel import InstrumentChannel
 
 
 class AWGChannel(InstrumentChannel):
@@ -87,6 +89,17 @@ class AWGChannel(InstrumentChannel):
         self._parent.write('SOURce{}:CASSet:WAVeform "{}"'.format(self.channel,
                                                                   name))
 
+    def setSequenceTrack(self, seqname: str, tracknr: int) -> None:
+        """
+        Assign a track from a sequence to this channel.
+
+        Args:
+            seqname: Name of the sequence in the sequence list
+            tracknr: Which track to use (1 or 2)
+        """
+        args = (self.channel, seqname, tracknr)
+        self._parent.write('SOURCE{}:CASSet:SEQuence "{}", {}'.format(*args))
+
 
 class AWG70000A(VisaInstrument):
     """
@@ -123,15 +136,30 @@ class AWG70000A(VisaInstrument):
 
         # Folder on the AWG where to files are uplaoded by default
         self.wfmxFileFolder = "\\Users\\OEM\\Documents"
+        self.seqxFileFolder = "\\Users\\OEM\Documents"
 
         self.current_directory(self.wfmxFileFolder)
 
         self.connect_message()
 
     @property
+    def sequenceList(self) -> List[str]:
+        """
+        Return the sequence list as a list of strings
+        """
+        # There is no SLISt:LIST command, so we do it slightly differently
+        N = int(self.ask("SLISt:SIZE?"))
+        slist = []
+        for n in range(1, N+1):
+            resp = self.ask("SLISt:NAME? {}".format(n))
+            resp = resp.strip()
+            resp = resp.replace('"', '')
+            slist.append(resp)
+
+    @property
     def waveformList(self) -> List[str]:
         """
-        Returns the waveform list as a list of strings
+        Return the waveform list as a list of strings
         """
         resp = self.ask("WLISt:LIST?")
         resp = resp.strip()
@@ -140,13 +168,20 @@ class AWG70000A(VisaInstrument):
 
         return resp
 
+    def clearSequenceList(self):
+        """
+        Clear the sequence list
+        """
+        self.write('SLISt:SEQuence:DELete ALL')
+
     def clearWaveformList(self):
         """
-        Clears the waveform list
+        Clear the waveform list
         """
         self.write('WLISt:WAVeform:DELete ALL')
 
-    def makeWFMXFile(self, data: np.ndarray, headeronly: bool) -> bytes:
+    @staticmethod
+    def makeWFMXFile(data: np.ndarray, headeronly: bool) -> bytes:
         """
         Compose a WFMX file
 
@@ -164,10 +199,10 @@ class AWG70000A(VisaInstrument):
         else:
             raise ValueError('Input data has too many dimensions!')
 
-        wfmx_hdr = self._makeWFMXFileHeader(num_samples=N,
-                                            markers_included=markers_included)
+        wfmx_hdr = AWG70000A._makeWFMXFileHeader(num_samples=N,
+                                                 markers_included=markers_included)
         wfmx_hdr = bytes(wfmx_hdr, 'ascii')
-        wfmx_data = self._makeWFMXFileBinaryData(data)
+        wfmx_data = AWG70000A._makeWFMXFileBinaryData(data)
 
         wfmx = wfmx_hdr
 
@@ -225,14 +260,34 @@ class AWG70000A(VisaInstrument):
         pathstr = 'C:' + path + '\\' + filename
 
         self.write('MMEMory:OPEN "{}"'.format(pathstr))
+        # the above command is overlapping, but we want a blocking command
+        self.ask("*OPC?")
+
+    def loadSEQXFile(self, filename: str, path: str=None) -> None:
+        """
+        Load a seqx file from memory. All sequences in the file
+        are loaded into the sequence list.
+
+        Args:
+            filename: The name of the sequence file
+            path: Path to load from. If omitted, the default path
+                (self.seqxFileFolder) is used.
+        """
+        if not path:
+            path = self.seqxFileFolder
+
+        pathstr = 'C:{}\\{}'.format(path, filename)
+
+        self.write('MMEMory:OPEN:SASSet:SEQuence "{}"'.format(pathstr))
+        # the above command is overlapping, but we want a blocking command
+        self.ask('*OPC?')
 
     @staticmethod
     def _makeWFMXFileHeader(num_samples: int,
                             markers_included: bool) -> str:
         """
-        beta version
-
-        Try to compile a valid XML header for a .wfmx file
+        Compiles a valid XML header for a .wfmx file
+        There might be behaviour we can't capture
 
         We always use 9 digits for the number of header character
         """
@@ -349,7 +404,7 @@ class AWG70000A(VisaInstrument):
         # the data must be rescaled to fall between -1 and 1
         # lest the waveform is clipped upon output
         wfm -= np.mean(wfm)
-        wfm /= max([np.abs(wfm.min()), np.abs(wfm.max)])
+        wfm /= max([np.abs(wfm.min()), np.abs(wfm.max())])
 
         # TODO: Is this a fast method?
         fmt = '<' + N*'f'
@@ -359,4 +414,259 @@ class AWG70000A(VisaInstrument):
         return binary_out
 
     @staticmethod
-    def _makeSEQ
+    def makeSEQXFile(trig_waits: List[int],
+                     nreps: List[int],
+                     event_jumps: List[int],
+                     event_jump_to: List[int],
+                     go_to: List[int],
+                     wfms: List[List[bytes]]):
+        """
+        Make a full .seqx file (bundle)
+        A .seqx file can presumably hold several sequences, but for now
+        we support only packing a single sequence
+
+        As far as I can tell, a .seqx file is a bundle of two files and
+        two folders:
+
+        /Sequences
+            sequence.sml
+
+        /Waveforms
+            wfm1.wfmx
+            wfm2.wfmx
+            ...
+
+        setup.xml
+        userNotes.txt
+
+        Args:
+            wfms: Binary .wfmx files
+        """
+
+        seq_name = 'Sequence'
+
+        (chans, elms) = np.shape(wfms)
+        wfm_names = [['wfmch{}pos{}'.format(ch, el) for el in range(1, elms+1)]
+                     for ch in range(1, chans+1)]
+
+        print('DEBUG!')
+        print(wfm_names)
+
+        flat_wfmxs = [wfmx for lst in wfms for wfmx in lst]
+        flat_wfm_names = [name for lst in wfm_names for name in lst]
+
+        sml_file = AWG70000A._makeSMLFile(trig_waits, nreps,
+                                          event_jumps, event_jump_to,
+                                          go_to, wfm_names)
+
+        user_file = b''
+        setup_file = AWG70000A._makeSetupFile(seq_name)
+
+        filename = 'myzip.seqx'
+        if os.path.exists(filename):
+            os.remove(filename)
+
+        zipfile = zf.ZipFile(filename, mode='a')
+        zipfile.writestr('Sequences/{}.sml'.format(seq_name), sml_file)
+
+        for (name, wfile) in zip(flat_wfm_names, flat_wfmxs):
+            zipfile.writestr('Waveforms/{}.wfmx'.format(name), wfile)
+
+        zipfile.writestr('setup.xml', setup_file)
+        zipfile.writestr('userNotes.txt', user_file)
+        zipfile.close()
+
+    @staticmethod
+    def _makeSetupFile(sequence: str) -> bytes:
+        """
+        Make a setup.xml file.
+
+        Args:
+            sequence: The name of the main sequence
+        """
+        head = ET.Element('RSAPersist')
+        head.set('version', '0.1')
+        _ = ET.SubElement(head, 'Application')
+        _.text = 'Pascal'
+        _ = ET.SubElement(head, 'MainSequence')
+        _.text = sequence
+        prodspec = ET.SubElement(head, 'ProductSpecific')
+        prodspec.set('name', 'AWG70002A')
+        _ = ET.SubElement(prodspec, 'SerialNumber')
+        _.text = 'B020397'
+        _ = ET.SubElement(prodspec, 'SoftwareVersion')
+        _.text = '5.3.0128.0'
+        _ = ET.SubElement(prodspec, 'CreatorProperties')
+        _.set('name', '')
+
+        xmlstr = ET.tostringlist(head)[0].decode('ascii')
+        xmlstr = xmlstr.replace('><', '>\r\n<')
+
+        return xmlstr.encode('ascii')
+
+    @staticmethod
+    def _makeSMLFile(trig_waits: List[int],
+                     nreps: List[int],
+                     event_jumps: List[int],
+                     event_jump_to: List[int],
+                     go_to: List[int],
+                     wfm_names: List[List[str]]) -> bytes:
+        """
+        Make an xml file describing a sequence.
+
+        Args:
+            trig_waits: Wait for a trigger? If yes, you must specify the
+                trigger input. 0 for off, 1 for 'TrigA', 2 for 'TrigB',
+                3 for 'Internal'.
+            nreps: No. of repetitions. 0 corresponds to infinite.
+            event_jumps: Jump when event triggered? If yes, you must specify
+                the trigger input. 0 for off, 1 for 'TrigA', 2 for 'TrigB',
+                3 for 'Internal'.
+            event_jump_to: Jump target in case of event. 1-indexed,
+                0 means next. Must be specified for all elements.
+            go_to: Which element to play next. 1-indexed, 0 means next.
+            wfm_names: The waveforms to use. Should be packed like
+                [[wfmch1pos1, wfmch1pos2, ...], [wfmch2pos1, ...], ...]
+
+        Returns:
+            A bytestring to be saved as an .sml file
+        """
+        offsetdigits = 9
+
+        waitinputs = {0: 'None', 1: 'TrigA', 2: 'TrigB', 3: 'Internal'}
+        eventinputs = {0: 'None', 1: 'TrigA', 2: 'TrigB', 3: 'Internal'}
+
+        inputlsts = [trig_waits, nreps, event_jump_to, go_to]
+        lstlens = [len(lst) for lst in inputlsts]
+        if lstlens.count(lstlens[0]) != len(lstlens):
+            raise ValueError('All input lists must have the same length!')
+
+        # hackish check of wmfs dimensions
+        if len(np.shape(wfm_names)) != 2:
+            raise ValueError('Wrong shape of wfm_names input argument.')
+
+        if lstlens[0] != np.shape(wfm_names)[1]:
+            raise ValueError('Mismatch between number of waveforms and'
+                             ' number of sequencing steps.')
+
+        N = lstlens[0]
+        chans = np.shape(wfm_names)[0]
+
+        # for easy indexing later
+        wfm_names = np.array(wfm_names)
+
+        # form the timestamp string
+        timezone = time.timezone
+        tz_m, tz_s = divmod(timezone, 60)
+        tz_h, tz_m = divmod(tz_m, 60)
+        if np.sign(tz_h) == -1:
+            signstr = '-'
+            tz_h *= -1
+        else:
+            signstr = '+'
+        timestr = dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%s')[:-3]
+        timestr += signstr
+        timestr += '{:02.0f}:{:02.0f}'.format(tz_h, tz_m)
+
+        datafile = ET.Element('DataFile', attrib={'offset': '0'*offsetdigits,
+                                                  'version': '0.1'})
+        dsc = ET.SubElement(datafile, 'DataSetsCollection')
+        dsc.set("xmlns", "http://www.tektronix.com")
+        dsc.set("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
+        dsc.set("xsi:schemaLocation", (r"http://www.tektronix.com file:///" +
+                                       r"C:\Program%20Files\Tektronix\AWG70000" +
+                                       r"\AWG\Schemas\awgSeqDataSets.xsd"))
+        datasets = ET.SubElement(dsc, 'DataSets')
+        datasets.set('version', '1')
+        datasets.set("xmlns", "http://www.tektronix.com")
+
+        # Description of the data
+        datadesc = ET.SubElement(datasets, 'DataDescription')
+        _ = ET.SubElement(datadesc, 'SequenceName')
+        _.text = 'Sequence'
+        _ = ET.SubElement(datadesc, 'Timestamp')
+        _.text = timestr
+        _ = ET.SubElement(datadesc, 'JumpTiming')
+        _.text = 'JumpImmed'  # TODO: What does this control?
+        _ = ET.SubElement(datadesc, 'RecSampleRate')
+        _.text = 'NaN'
+        _ = ET.SubElement(datadesc, 'RepeatFlag')
+        _.text = 'false'
+        _ = ET.SubElement(datadesc, 'PatternJumpTable')
+        _.set('Enabled', 'false')
+        _.set('Count', '65536')
+        steps = ET.SubElement(datadesc, 'Steps')
+        steps.set('StepCount', '{:d}'.format(N))
+        steps.set('TrackCount', '{:d}'.format(chans))
+
+        for n in range(1, N+1):
+            step = ET.SubElement(steps, 'Step')
+            _ = ET.SubElement(step, 'StepNumber')
+            _.text = '{:d}'.format(n)
+            # repetitions
+            rep = ET.SubElement(step, 'Repeat')
+            repcount = ET.SubElement(step, 'RepeatCount')
+            if nreps[n-1] == 0:
+                rep.text = 'Infinite'
+                repcount.text = '1'
+            elif nreps[n-1] == 1:
+                rep.text = 'Once'
+                repcount.text = '1'
+            else:
+                rep.text = 'RepeatCount'
+                repcount.text = '{:d}'.format(nreps[n-1])
+            # trigger wait
+            _ = ET.SubElement(step, 'WaitInput')
+            _.text = waitinputs[trig_waits[n-1]]
+            # event jump
+            _ = ET.SubElement(step, 'EventJumpInput')
+            _.text = eventinputs[event_jumps[n-1]]
+            jumpto = ET.SubElement(step, 'EventJumpTo')
+            jumpstep = ET.SubElement(step, 'EventJumpToStep')
+            if event_jump_to[n-1] == 0:
+                jumpto.text = 'Next'
+                jumpstep.text = '1'
+            else:
+                jumpto.text = 'StepIndex'
+                jumpstep.text = '{:d}'.format(event_jump_to[n-1])
+            # Go to
+            goto = ET.SubElement(step, 'GoTo')
+            gotostep = ET.SubElement(step, 'GoToStep')
+            if go_to[n-1] == 0:
+                goto.text = 'Next'
+                gotostep.text = '1'
+            else:
+                goto.text = 'StepIndex'
+                gotostep.text = '{:d}'.format(go_to[n-1])
+
+            assets = ET.SubElement(step, 'Assets')
+            for wfm in wfm_names[:, n-1]:
+                asset = ET.SubElement(assets, 'Asset')
+                _ = ET.SubElement(asset, 'AssetName')
+                _.text = wfm
+                _ = ET.SubElement(asset, 'AssetType')
+                _.text = 'Waveform'
+
+            flags = ET.SubElement(step, 'Flags')
+            for ch in range(chans):
+                flagset = ET.SubElement(flags, 'FlagSet')
+                for flg in ['A', 'B', 'C', 'D']:
+                    _ = ET.SubElement(flagset, 'Flag')
+                    _.set('name', flg)
+                    _.text = 'NoChange'
+
+        _ = ET.SubElement(datasets, 'ProductSpecific')
+        _.set('name', '')
+        _ = ET.SubElement(datafile, 'Setup')
+
+        xmlstr = ET.tostringlist(datafile)[0].decode('ascii')
+        xmlstr = xmlstr.replace('><', '>\r\n<')
+
+        # As the final step, count the length of the header and write this
+        # in the DataFile tag attribute 'offset'
+
+        xmlstr = xmlstr.replace('0'*offsetdigits,
+                                '{num:0{pad}d}'.format(num=len(xmlstr),
+                                                       pad=offsetdigits))
+
+        return xmlstr.encode('ascii')
