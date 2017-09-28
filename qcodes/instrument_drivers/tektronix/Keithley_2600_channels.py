@@ -5,7 +5,7 @@ from typing import List, Dict
 
 import qcodes as qc
 from qcodes import VisaInstrument, DataSet
-from qcodes.instrument.channel import InstrumentChannel, ChannelList
+from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.base import Instrument
 from qcodes.instrument.parameter import ArrayParameter
 import qcodes.utils.validators as vals
