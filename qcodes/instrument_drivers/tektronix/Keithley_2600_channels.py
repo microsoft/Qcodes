@@ -318,25 +318,17 @@ class Keithley_2600(VisaInstrument):
     This is the qcodes driver for the Keithley_2600 Source-Meter series,
     tested with Keithley_2614B
 
-    Status: beta-version.
-        TODO:
-        - Make a channelised version for the two channels
-        - add ramping and such stuff
-
     """
-    def __init__(self, name: str, address: str,
-                 model: str=None, **kwargs) -> None:
+    def __init__(self, name: str, address: str, **kwargs) -> None:
         """
         Args:
             name: Name to use internally in QCoDeS
             address: VISA ressource address
-            model: The model type, e.g. '2614B'
         """
         super().__init__(name, address, terminator='\n', **kwargs)
 
-        if model is None:
-            raise ValueError('Please supply Keithley model name, e.g.'
-                             '"2614B".')
+        model = self.ask('localnode.model')
+
         knownmodels = ['2601B', '2602B', '2604B', '2611B', '2612B',
                        '2614B', '2635B', '2636B']
         if model not in knownmodels:
@@ -378,15 +370,10 @@ class Keithley_2600(VisaInstrument):
                                    1e-3, 10e-6, 100e-3, 1, 1.5]}
 
         # Add the channel to the instrument
-        channels = ChannelList(self, "Channels", KeithleyChannel,
-                               snapshotable=False)
         for ch in ['a', 'b']:
             ch_name = 'smu{}'.format(ch)
             channel = KeithleyChannel(self, ch_name, ch_name)
-            channels.append(channel)
             self.add_submodule(ch_name, channel)
-        channels.lock()
-        self.add_submodule("channels", channels)
 
         # display
         self.add_parameter('display_settext',

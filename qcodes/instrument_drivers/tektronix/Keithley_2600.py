@@ -6,25 +6,6 @@ from qcodes.instrument.base import Instrument
 import qcodes.utils.validators as vals
 
 
-class KeithleyChannel(InstrumentChannel):
-    """
-    Class to hold the two Keithley channels, i.e.
-    SMUA and SMUB.
-    """
-
-    def __init__(self, parent: Instrument, name: str, channel: str):
-        """
-        Args:
-            parent: The Instrument instance to which the channel is
-                to be attached.
-            name: The 'colloquial' name of the channel
-            channel: The name used by the Keithley, i.e. either
-                'smua' or 'smub'
-        """
-
-        super().__init__(parent, name)
-
-
 class Keithley_2600(VisaInstrument):
     """
     This is the qcodes driver for the Keithley_2600 Source-Meter series,
@@ -52,9 +33,8 @@ class Keithley_2600(VisaInstrument):
 
         super().__init__(name, address, terminator='\n', **kwargs)
 
-        if model is None:
-            raise ValueError('Please supply Keithley model name, e.g.'
-                             '"2614B".')
+        model = self.ask('localnode.model')
+
         knownmodels = ['2601B', '2602B', '2604B', '2611B', '2612B',
                        '2614B', '2635B', '2636B']
         if model not in knownmodels:
