@@ -1,4 +1,5 @@
 import numpy as np
+import time, re, logging
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes.utils.validators import Ints, Bool
@@ -7,6 +8,7 @@ from qcodes.instrument.channel import InstrumentChannel, ChannelList
 
 from collections import namedtuple
 
+log = logging.getLogger(__name__)
 
 class TraceNotReady(Exception):
     pass
@@ -25,7 +27,7 @@ class ScopeArray(ArrayParameter):
         self.channel = channel
         self._instrument = instrument
         self.raw = raw
-        self.max_read_step = 10
+        self.max_read_step = 50
         self.trace_ready = False
 
     def prepare_curvedata(self):
@@ -59,41 +61,78 @@ class ScopeArray(ArrayParameter):
         self._instrument.write(':WAVeform:FORMat BYTE')                         # Set the data type for waveforms to "BYTE"
         self._instrument.write(':WAVeform:SOURce CHAN{}'.format(self.channel))  # Set read channel
 
-        data_bin = b''
+        data_bin = bytearray()
         if self.raw:
-            self._instrument.write(':WAVeform:RESet')       # Resets the waveform data reading
-            self._instrument.write(':WAVeform:BEGin')       # Starts the waveform data reading
+            log.info('Readout of raw waveform started, %g points',self.shape[0])
+            self._instrument.write(':WAVeform:POINts {}'.format(self.shape[0]))  # Ask for the right number of points
+            self._instrument.write(':WAVeform:RESet')                            # Resets the waveform data reading
+            self._instrument.write(':WAVeform:BEGin')                            # Starts the waveform data reading
 
-            for _ in range(self.max_read_step):
+            for i in range(self.max_read_step):
                 status = self._instrument.ask(':WAVeform:STATus?').split(',')[0]
 
                 # Ask and retrive waveform data
                 # It uses .read_raw() to get a byte string since our data is binary
                 self._instrument.write(':WAVeform:DATA?')
-                data_bin += self._instrument._parent.visa_handle.read_raw()
+                data_chunk = self._instrument._parent.visa_handle.read_raw()
+                data_chuck = self._validate_strip_block(data_chunk)
+                data_bin.extend(data_chuck)
 
+                print(status, len(data_chunk), len(data_bin))
                 if status == 'IDLE':
                     self._instrument.write(':WAVeform:END')
                     break
+                else:
+                    # Wait some time to have the buffer re-filled
+                    time.sleep(0.3)
+                log.info('chucks read: %d, last chuck points: %g, total read size: %g',
+                         i, len(data_chuck), len(data_bin))
             else:
                 raise ValueError('Communication error')
-
         else:
             # Ask and retrive waveform data
             # It uses .read_raw() to get a byte string since our data is binary
+            log.info('Readout of display waveform started, %d points', self.shape[0])
             self._instrument.write(':WAVeform:DATA?')  # Query data
-            data_bin += self._instrument._parent.visa_handle.read_raw()
+            data_chunk = self._instrument._parent.visa_handle.read_raw()
+            data_bin.extend(self._validate_strip_block(data_chunk))
 
+        log.info('Readout ended, total read size: %g', len(data_bin))
+
+        log.info('Data conversion')
         # Convert data to byte array
-        data_bin = data_bin[11:]     # Strip header
-        data_bin = data_bin.strip()  # Strip \n
-        data_raw = np.fromstring(data_bin, dtype=np.uint8).astype(float)
+        data_raw = np.frombuffer(data_bin, dtype=np.uint8).astype(float)
 
         # Convert byte array to real data
         p = self.preamble
         data = (data_raw - p.yreference - p.yorigin) * p.yincrement
+        log.info('Data conversion done')
 
         return data
+
+    @staticmethod
+    def _validate_strip_block(block):
+        """
+        Given a block of raw data from the instrument, validate and then strip the header with
+        size information. Raise ValueError if the sizes don't match.
+
+        Args:
+            block (bytes): The data block
+        Returns:
+            bytes: the stripped data
+        """
+        # Validate header
+        header = block[:11].decode('ascii')
+        match = re.match(r'#9(\d{9})', header)
+        if match:
+            size = int(match[1])
+            block_nh = block[11:]  # Strip header
+            block_nh = block_nh.strip()  # Strip \n
+
+            if size == len(block_nh):
+                return block_nh
+
+        raise ValueError('Malformed data')
 
     def get_preamble(self):
         preamble_nt = namedtuple('preamble', ["format", "mode", "points", "count", "xincrement", "xorigin",
