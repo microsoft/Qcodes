@@ -546,10 +546,10 @@ class QtPlot(BasePlot):
                         ax.update()
 
                     # set limits either from dataset or
-                    setarr = self.traces[i]['config'][axis].ndarray
+                    setarr = getattr(self.traces[i]['config'][axis], 'ndarray', None)
                     arrmin = None
                     arrmax = None
-                    if not np.all(np.isnan(setarr)):
+                    if setarr and not np.all(np.isnan(setarr)):
                         arrmax = setarr.max()
                         arrmin = setarr.min()
                     elif startranges is not None:
@@ -557,7 +557,7 @@ class QtPlot(BasePlot):
                             paramname = self.traces[i]['config'][axis].full_name
                             arrmax = startranges[paramname]['max']
                             arrmin = startranges[paramname]['min']
-                        except (IndexError, KeyError):
+                        except (IndexError, KeyError, AttributeError):
                             continue
 
                     if axis == 'x':
