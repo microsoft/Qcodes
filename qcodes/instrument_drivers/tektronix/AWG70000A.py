@@ -403,7 +403,7 @@ class AWG70000A(VisaInstrument):
             tz_h *= -1
         else:
             signstr = '+'
-        timestr = dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%Sg.%f')[:-3]
+        timestr = dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
         timestr += signstr
         timestr += '{:02.0f}:{:02.0f}'.format(tz_h, tz_m)
 
