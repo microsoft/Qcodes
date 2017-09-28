@@ -32,6 +32,8 @@ class AWGChannel(InstrumentChannel):
 
         num_channels = self._parent.num_channels
 
+        fg = 'function generator'
+
         if channel not in list(range(1, num_channels+1)):
             raise ValueError('Illegal channel value.')
 
@@ -43,26 +45,82 @@ class AWGChannel(InstrumentChannel):
                            get_parser=int)
 
         # TODO: Setting high and low will change this parameter's value
-        self.add_parameter('amplitude',
-                           label='Channel {} amplitude'.format(channel),
+        self.add_parameter('fgen_amplitude',
+                           label='Channel {} {} amplitude'.format(channel, fg),
                            get_cmd='FGEN:CHANnel{}:AMPLitude?'.format(channel),
                            set_cmd='FGEN:CHANnel{}:AMPLitude {{}}'.format(channel),
+                           unit='V',
                            vals=vals.Numbers(0, 0.5),
                            get_parser=float)
 
-        self.add_parameter('frequency',
-                           label='Channel {} frequency'.format(channel),
+        self.add_parameter('fgen_offset',
+                           label='Channel {} {} offset'.format(channel, fg),
+                           get_cmd='FGEN:CHANnel{}:OFFSet?'.format(channel),
+                           set_cmd='FGEN:CHANnel{}:OFFSet {{}}'.format(channel),
+                           unit='V',
+                           vals=vals.Numbers(0, 0.250),  # depends on ampl.
+                           get_parser=float)
+
+        self.add_parameter('fgen_frequency',
+                           label='Channel {} {} frequency'.format(channel, fg),
                            get_cmd='FGEN:CHANnel{}:FREQuency?'.format(channel),
                            set_cmd='FGEN:CHANnel{}:FREQuency {{}}'.format(channel),
+                           unit='Hz',
                            vals=vals.Numbers(1, 50000000),
                            get_parser=float)
 
-        self.add_parameter('dclevel',
-                           label='Channel {} DC level'.format(channel),
+        self.add_parameter('fgen_dclevel',
+                           label='Channel {} {} DC level'.format(channel, fg),
                            get_cmd='FGEN:CHANnel{}:DCLevel?'.format(channel),
                            set_cmd='FGEN:CHANnel{}:DCLevel {{}}'.format(channel),
+                           unit='V',
                            vals=vals.Numbers(-0.25, 0.25),
                            get_parser=float)
+
+        self.add_parameter('fgen_signalpath',
+                           label='Channel {} {} signal path'.format(channel, fg),
+                           set_cmd='FGEN:CHANnel{}:PATH {{}}'.format(channel),
+                           get_cmd='FGEN:CHANnel{}:PATH?'.format(channel),
+                           val_mapping={'direct': 'DIR',
+                                        'DCamplified': 'DCAM',
+                                        'AC': 'AC'}
+                           )
+
+        self.add_parameter('fgen_period',
+                           label='Channel {} {} period'.format(channel, fg),
+                           get_cmd='FGEN:CHANnel{}:PERiod?'.format(channel),
+                           unit='s',
+                           get_parser=float)
+
+        self.add_parameter('fgen_phase',
+                           label='Channel {} {} phase'.format(channel, fg),
+                           get_cmd='FGEN:CHANnel{}:PHASe?'.format(channel),
+                           set_cmd='FGEN:CHANnel{}:PHASe {{}}'.format(channel),
+                           unit='degrees',
+                           vals=vals.Numbers(-180, 180),
+                           get_parser=float)
+
+        self.add_parameter('fgen_symmetry',
+                           label='Channel {} {} symmetry'.format(channel, fg),
+                           set_cmd='FGEN:CHANnel{}:SYMMetry {{}}'.format(channel),
+                           get_cmd='FGEN:CHANnel{}:SYMMetry?'.format(channel),
+                           unit='%',
+                           vals=vals.Numbers(0, 100),
+                           get_parser=float)
+
+        self.add_parameter('fgen_type',
+                           label='Channel {} {} type'.format(channel, fg),
+                           set_cmd='FGEN:CHANnel{}:TYPE {{}}'.format(channel),
+                           get_cmd='FGEN:CHANnel{}:TYPE?'.format(channel),
+                           val_mapping={'SINE': 'SINE',
+                                        'SQUARE': 'SQU',
+                                        'TRIANGLE': 'TRI',
+                                        'NOISE': 'NOIS',
+                                        'DC': 'DC',
+                                        'GAUSSIAN': 'GAUSS',
+                                        'EXPONENTIALRISE': 'EXPR',
+                                        'EXPONENTIALDECAY': 'EXPD',
+                                        'NONE': 'NONE'})
 
         self.add_parameter('resolution',
                            label='Channel {} bit resolution'.format(channel),
@@ -129,6 +187,12 @@ class AWG70000A(VisaInstrument):
                            get_cmd='MMEMory:CDIRectory?',
                            vals=vals.Strings())
 
+        self.add_parameter('mode',
+                           label='Instrument operation mode',
+                           set_cmd='INSTrument:MODE {}',
+                           get_cmd='INSTrument:MODE?',
+                           vals=vals.Enum('AWG', 'FGEN'))
+
         for ch_num in range(1, num_channels+1):
             ch_name = 'ch{}'.format(ch_num)
             channel = AWGChannel(self, ch_name, ch_num)
@@ -141,6 +205,20 @@ class AWG70000A(VisaInstrument):
         self.current_directory(self.wfmxFileFolder)
 
         self.connect_message()
+
+    def play(self) -> None:
+        """
+        Run the AWG/Func. Gen. This command is equivalent to pressing the
+        play button on the front panel.
+        """
+        self.write('AWGControl:RUN')
+
+    def stop(self) -> None:
+        """
+        Stop the output of the instrument. This command is equivalent to
+        pressing the stop button on the front panel.
+        """
+        self.write('AWGControl:STOP')
 
     @property
     def sequenceList(self) -> List[str]:
@@ -181,12 +259,13 @@ class AWG70000A(VisaInstrument):
         self.write('WLISt:WAVeform:DELete ALL')
 
     @staticmethod
-    def makeWFMXFile(data: np.ndarray, headeronly: bool) -> bytes:
+    def makeWFMXFile(data: np.ndarray, headeronly: bool=False) -> bytes:
         """
         Compose a WFMX file
 
         Args:
             data: A numpy array holding the data. Markers can be included.
+            headeronly: Only make the header (for debugging). Default: False.
         """
 
         shape = np.shape(data)
@@ -211,6 +290,25 @@ class AWG70000A(VisaInstrument):
 
         return wfmx
 
+    def sendSEQXFile(self, seqx: bytes, filename: str,
+                     path: str=None) -> None:
+        """
+        Send a binary seqx file to the AWG's memory
+
+        Args:
+            seqx: The binary seqx file, preferably the output of
+                makeSEQXFile.
+            filename: The name of the file on the AWG disk, including the
+                extension.
+            path: The path to the directory where the file should be saved. If
+                omitted, seqxFileFolder will be used.
+        """
+        if not path:
+            path = self.seqxFileFolder
+
+        self.sendWFMXFile(seqx, filename, path)
+
+    # TODO: refactor and make a _sendBinaryBlob
     def sendWFMXFile(self, wfmx: bytes, filename: str,
                      path: str=None) -> None:
         """
@@ -305,7 +403,7 @@ class AWG70000A(VisaInstrument):
             tz_h *= -1
         else:
             signstr = '+'
-        timestr = dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%s')[:-3]
+        timestr = dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%Sg.%f')[:-3]
         timestr += signstr
         timestr += '{:02.0f}:{:02.0f}'.format(tz_h, tz_m)
 
@@ -425,7 +523,7 @@ class AWG70000A(VisaInstrument):
         A .seqx file can presumably hold several sequences, but for now
         we support only packing a single sequence
 
-        As far as I can tell, a .seqx file is a bundle of two files and
+        For a single sequence, a .seqx file is a bundle of two files and
         two folders:
 
         /Sequences
@@ -448,9 +546,6 @@ class AWG70000A(VisaInstrument):
         (chans, elms) = np.shape(wfms)
         wfm_names = [['wfmch{}pos{}'.format(ch, el) for el in range(1, elms+1)]
                      for ch in range(1, chans+1)]
-
-        print('DEBUG!')
-        print(wfm_names)
 
         flat_wfmxs = [wfmx for lst in wfms for wfmx in lst]
         flat_wfm_names = [name for lst in wfm_names for name in lst]
@@ -564,7 +659,7 @@ class AWG70000A(VisaInstrument):
             tz_h *= -1
         else:
             signstr = '+'
-        timestr = dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%s')[:-3]
+        timestr = dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]
         timestr += signstr
         timestr += '{:02.0f}:{:02.0f}'.format(tz_h, tz_m)
 
