@@ -527,8 +527,8 @@ class QtPlot(BasePlot):
             # make a dict mapping axis labels to axis positions
             for axis in ('x', 'y', 'z'):
                 if self.traces[i]['config'].get(axis):
-                    unit = self.traces[i]['config'][axis].unit
-                    if unit not in standardunits:
+                    unit = getattr(self.traces[i]['config'][axis], 'unit', None)
+                    if unit is not None and unit not in standardunits:
                         if axis in ('x', 'y'):
                             ax = plot.getAxis(axismapping[axis])
                         else:
