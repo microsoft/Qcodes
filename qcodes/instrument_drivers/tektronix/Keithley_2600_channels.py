@@ -197,8 +197,9 @@ class KeithleyChannel(InstrumentChannel):
     # We need to avoid updating the sweep parameter
     def snapshot_base(self, update: bool=False) -> Dict:
         params_to_skip_update = ['fastsweep']
-        super().snapshot_base(update=update,
-                              params_to_skip_update=params_to_skip_update)
+        dct = super().snapshot_base(update=update,
+                                    params_to_skip_update=params_to_skip_update)
+        return dct
 
     def reset(self):
         """
@@ -218,8 +219,8 @@ class KeithleyChannel(InstrumentChannel):
         return a QCoDeS DataSet with the sweep.
 
         Args:
-            start: starting voltage
-            stop: end voltage
+            start: starting sweep value (V or A)
+            stop: end sweep value (V or A)
             steps: number of steps
             mode: What kind of sweep to make.
                 'IV' (I versus V) or 'VI' (V versus I)
