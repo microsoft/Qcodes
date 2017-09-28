@@ -236,7 +236,7 @@ class OxfordInstruments_IPS120(VisaInstrument):
 
     def get_idn(self):
         """
-        Overides the function of Instrument since IPS120 does not support '*IDN?'
+        Overides the function of Instrument since IPS120 does not support `*IDN?`
 
         This string is supposed to be a comma-separated list of vendor, model,
         serial, and firmware, but semicolon and colon are also common
