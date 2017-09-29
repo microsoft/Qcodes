@@ -78,7 +78,6 @@ class ScopeArray(ArrayParameter):
                 data_chuck = self._validate_strip_block(data_chunk)
                 data_bin.extend(data_chuck)
 
-                print(status, len(data_chunk), len(data_bin))
                 if status == 'IDLE':
                     self._instrument.write(':WAVeform:END')
                     break
