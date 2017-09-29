@@ -518,6 +518,20 @@ class _BaseParameter(Metadatable, DeferredOperations):
                       'str(parameter)')
         return str(self)
 
+    def set_validator(self, vals):
+        """
+            Deprecated Set a validator `vals` for this parameter.
+                Args:
+                    vals (Validator):  validator to set
+
+        """
+        warnings.warn(
+            "set_validator is deprected use `inst.vals = MyValidator` instead")
+        if isinstance(vals, Validator):
+            self.vals = vals
+        else:
+            raise TypeError('vals must be a Validator')
+
 
 class Parameter(_BaseParameter):
     """
