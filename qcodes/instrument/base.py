@@ -10,8 +10,8 @@ import numpy as np
 from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.validators import Anything
+from .parameter import Parameter
 from .function import Function
-from .parameter import StandardParameter
 
 
 class InstrumentBase(Metadatable, DelegateAttributes):
@@ -71,8 +71,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             raise ValueError("Cannot get mock messages if not in testing mode")
         return self.mocker.get_log_messages()
 
-    def add_parameter(self, name, parameter_class=StandardParameter,
-                      **kwargs):
+    def add_parameter(self, name, parameter_class=Parameter, **kwargs):
         """
         Bind one Parameter to this instrument.
 
@@ -323,7 +322,7 @@ class InstrumentBase(Metadatable, DelegateAttributes):
 
         """
         for k, p in self.parameters.items():
-            if p.has_get and p.has_set:
+            if hasattr(p, 'get') and hasattr(p, 'set'):
                 value = p.get()
                 if verbose:
                     print('validate_status: param %s: %s' % (k, value))
