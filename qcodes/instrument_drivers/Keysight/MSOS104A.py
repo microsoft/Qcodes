@@ -17,6 +17,10 @@ log = logging.getLogger(__name__)
 class TraceNotReady(Exception):
     pass
 
+class TraceSetPointsChanged(Exception):
+    pass
+
+
 class RawTrace(ArrayParameter):
     """
     raw_trace will return a trace from OSCIL
@@ -41,23 +45,53 @@ class RawTrace(ArrayParameter):
         self.setpoints = (t,)
         self.shape = (npts,)
 
+    def prepare_curvedata(self):
+        """
+        Prepare the scope for returning curve data
+        """
+        # To calculate set points, we must have the full preamble
+        # For the instrument to return the full preamble, the channel
+        # in question must be displayed
+
+        # shorthand
+        instr=self._instrument
+        # number of set points
+        self.npts = float(instr.ask("WAV:POIN?"))
+        # first set point
+        self.xorigin = float(instr.ask(":WAVeform:XORigin?"))
+        # step size
+        self.xincrem = float(instr.ask(":WAVeform:XINCrement?"))
+        # calculate set points
+        xdata = np.linspace(self.xorigin,
+                            self.npts * self.xincrem + self.xorigin, self.npts)
+
+        # set setpoints
+        self.setpoints = (tuple(xdata), )
+        self.shape = (self.npts, )
+
+        # make this on a per channel basis?
+        self._instrument._parent.trace_ready = True
 
     def get(self):
-        #self._instrument.write('DIGITIZE')
-        # oscil = self._instrument._parent.visa_handle
-        # the instrument should be used so self instead of oscil.
-        # ask and write are implemented, and they do exception handling
-        # and mocking
-        # also the parent is wrapped by the channel as a parent instrument
+        # when get is called the setpoints have to be known already
+        # (saving data issue). Therefor create additional prepare function that
+        # queries for the size.
+        # check if already prepared
+        if not self._instrument._parent.trace_ready:
+            raise TraceNotReady('Please run prepare_curvedata to prepare '
+                                'the scope for acquiring a trace.')
         
         # shorthand
-        oscil=self._instrument
+        instr=self._instrument
 
         # set up the instrument
         # ---------------------------------------------------------------------
 
+        # TODO:
         # check if requested number of points is less than 500 million
 
+        # get intrument state
+        state = instr.ask(':RSTate?')
         # realtime mode: only one trigger is used
         instr._parent.acquire_mode('RTIMe')
         
@@ -65,88 +99,74 @@ class RawTrace(ArrayParameter):
         # ---------------------------------------------------------------------
 
         # digitize is the actual call for acquisition, blocks
-        oscil.write(':DIGitize CHANnel{}'.format(self._channel))
+        instr.write(':DIGitize CHANnel{}'.format(self._channel))
 
-        # switch display back on
-        oscil.write(':CHANnel1:DISPlay ON')
 
         # transfer the data
         # ---------------------------------------------------------------------
 
         # switch the response header off for lower overhead
-        oscil.write(':SYSTem:HEADer OFF')
+        instr.write(':SYSTem:HEADer OFF')
         # select the channel from which to read
         self._instrument._parent.data_source('CHAN{}'.format(self._channel))
         # specifiy the data format in which to read
-        oscil.write(':WAVeform:FORMat WORD')
+        instr.write(':WAVeform:FORMat WORD')
+        instr.write(":waveform:byteorder LSBFirst")
         # streaming is only required for data > 1GB
-        oscil.write(':WAVeform:STReaming OFF')
+        instr.write(':WAVeform:STReaming OFF')
+
         # request the actual transfer
-        oscil.write(':WAVeform:DATA?')
-
-        visa_handle = oscil._parent.visa_handle
-        # first read the header
-        data = visa_handle.read_raw(2)
-
-        # then read the remaining data
-
-        # check if all data was received
-
-
-
-        npts = float(oscil.ask("WAV:POIN?"))
-        xorigin = float(oscil.ask(":WAVeform:XORigin?"))
-        yorigin = float(oscil.ask(":WAVeform:YORigin?"))
-        yinc = float(oscil.ask(":WAVeform:YINCrement?"))
-
-
-        srate = self.aquire_sample_rate.get_latest()
-
-        timestepsize = 1/srate
-        start = xorigin
-        stop = timestepsize*npts+xorigin
-        # what is the correct number of points?
-        npts = self.acquire_points.get_latest()
-
-        #
-        self.shape = (npts,)
-        self.set_sweep(start, stop, npts)
-        #TODO: fix above set when any of the above things change
-
-        # temporarily remove the termination string
-        # this should be done with the termination context manager
-        term = oscil.read_termination
-        oscil.read_termination = None
-        #self._instrument.visa_handle.end_input = False
-        # this should be bytes
-        nbits = int(2*npts +3)
-
-        oscil.write(":waveform:data?")
-        # set waveform streaming on to get data as response
-        data = oscil.read_raw(nbits)
-
-        channel_data = array.array('h')
-        channel_data.fromstring(data[2:-1]) #skip first 2 bytes and last byte
-        #channel_data.byteswap()
-        #channel_data.reverse()
-        channel_data = np.array(channel_data)
+        data = instr._parent.visa_handle.query_binary_values(
+            'WAV:DATA?', datatype='h',is_big_endian=False )
+        if len(data) != self.shape[0]:
+            raise TraceSetPointsChanged('{} points have been aquired and {} \
+            set points have been prepared in \
+            prepare_curvedata'.format(lend(data), self.shape[0]))
+        # check x data scaling
+        xorigin = float(instr.ask(":WAVeform:XORigin?"))
+        # step size
+        xincrem = float(instr.ask(":WAVeform:XINCrement?"))
+        error = self.xorigin-xorigin
+        # this is a bad workaround
+        if error > xincrem:
+            raise TraceSetPointsChanged('{} is the prepared x origin and {} \
+            is the x origin after the measurement.'.format(self.xorigin,
+                                                           xorigin))
+        error = (self.xincrem-xincrem)/xincrem
+        if error>1e-6:
+            raise TraceSetPointsChanged('{} is the prepared x increment and {} \
+            is the x increment after the measurement.'.format(self.xincrem,
+                                                              xincrem))
+        # y data scaling
+        yorigin = float(instr.ask(":WAVeform:YORigin?"))
+        yinc = float(instr.ask(":WAVeform:YINCrement?"))
+        channel_data = np.array(data)
         channel_data = np.multiply(channel_data, yinc) + yorigin
 
-        oscil.read_termination = term
+
+        # restore original state
+        # ---------------------------------------------------------------------
+
+        # switch display back on
+        instr.write(':CHANnel{}:DISPlay ON'.format(self._channel))
+        # continue refresh
+        if state == 'RUN':
+            instr.write(':RUN')
 
         return channel_data
 
-    def _setup_instrument_for_acquisition(self):
-        instr = self._instrument
-        instr.write(":waveform:format WORD")
-        instr.write(":waveform:byteorder LSBFirst")
-        instr._parent.acquire_mode('RTIMe')
-        # instr.write(":waveform:streaming 1")
 
 class MSOChannel(InstrumentChannel):
 
     def __init__(self, parent, name, channel):
         super().__init__(parent, name)
+        # display
+        self.add_parameter(name='display',
+                           label='Channel {} display on/off'.format(channel),
+                           set_cmd='CHANnel{}:DISPlay {{}}'.format(channel),
+                           get_cmd='CHANnel{}:DISPlay?'.format(channel),
+                           val_mapping={True: 1, False: 0},
+                           )
         # scaling
         self.add_parameter(name='offset',
                            label='Channel {} offset'.format(channel),
@@ -156,14 +176,18 @@ class MSOChannel(InstrumentChannel):
                            get_parser=float
                            )
 
-        self.add_parameter(name='scale',
-                           label='Channel {} scale'.format(channel),
-                           unit='V/div',
-                           set_cmd='CHAN{}:SCAL {{}}'.format(channel),
-                           get_cmd='CHAN{}:SCAL?'.format(channel),
-                           get_parser=float,
-                           vals=vals.Numbers(0,100)  # TODO: upper limit?
-                           )
+        # TODO: 
+        # scale and range are interdependent, when setting one, invalidate the
+        # the other.
+        # Scale is commented out for this reason
+        # self.add_parameter(name='scale',
+        #                    label='Channel {} scale'.format(channel),
+        #                    unit='V/div',
+        #                    set_cmd='CHAN{}:SCAL {{}}'.format(channel),
+        #                    get_cmd='CHAN{}:SCAL?'.format(channel),
+        #                    get_parser=float,
+        #                    vals=vals.Numbers(0,100)  # TODO: upper limit?
+        #                    )
 
         self.add_parameter(name='range',
                            label='Channel {} range'.format(channel),
@@ -223,12 +247,24 @@ class MSOS104A(VisaInstrument):
         # the manual (Infiniium prog guide) for an equally infiniium list.
 
         # time base
-        self.add_parameter('timebase_scale',
-                           label='Scale of the time axis',
+
+        # scale is commented out for same reason as channel scale
+        # use range instead
+        # self.add_parameter('timebase_scale',
+        #                    label='Scale of the one time devision',
+        #                    unit='s/Div',
+        #                    get_cmd=':TIMebase:SCALe?',
+        #                    set_cmd=':TIMebase:SCALe {}',
+        #                    vals=Numbers(),
+        #                    get_parser=float,
+        #                    )
+
+        self.add_parameter('timebase_range',
+                           label='Range of the time axis',
                            unit='s',
-                           get_cmd=':TIMebase:SCALe?',
-                           set_cmd=':TIMebase:SCALe {}',
-                           vals=Numbers(),
+                           get_cmd=':TIMebase:RANGe?',
+                           set_cmd=':TIMebase:RANGe {}',
+                           vals=Numbers(5e-12,20),
                            get_parser=float,
                            )
         self.add_parameter('timebase_position',
@@ -282,7 +318,8 @@ class MSOS104A(VisaInstrument):
                            vals=Numbers(),
                           )
         # Aquisition
-        #TODO: check what these points are
+        # If sample points, rate and timebase_scale are set in an
+        # incomensurate way, the scope only displays part of the waveform
         self.add_parameter('acquire_points',
                            label='sample points',
                            get_cmd='ACQ:POIN?',
