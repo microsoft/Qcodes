@@ -156,7 +156,7 @@ class RawTrace(ArrayParameter):
         return channel_data
 
 
-class MSOChannel(InstrumentChannel):
+class InfiniiumChannel(InstrumentChannel):
 
     def __init__(self, parent, name, channel):
         super().__init__(parent, name)
@@ -219,14 +219,14 @@ class MSOChannel(InstrumentChannel):
                                   params_to_skip_update=params_to_skip_update)
 
 
-class MSOS104A(VisaInstrument):
+class Infiniium(VisaInstrument):
     """
-    This is the QCoDeS driver for the Keysight MSOS104A oscilloscope from the
-    Infiniium S-series.
+    This is the QCoDeS driver for the Keysight Infiniium oscilloscopes from the
+     - tested for MSOS104A of the Infiniium S-series.
     """
     def __init__(self, name, address, timeout=20, **kwargs):
         """
-        Initialises the MSOS104A.
+        Initialises the oscilloscope.
 
         Args:
             name (str): Name of the instrument used by QCoDeS
@@ -388,11 +388,11 @@ class MSOS104A(VisaInstrument):
                             get_parser=float
                             )
         # Channels
-        channels = ChannelList(self, "Channels", MSOChannel,
+        channels = ChannelList(self, "Channels", InfiniiumChannel,
                                 snapshotable=False)
 
         for i in range(1,5):
-            channel = MSOChannel(self, 'chan{}'.format(i), i)
+            channel = InfiniiumChannel(self, 'chan{}'.format(i), i)
             channels.append(channel)
             self.add_submodule('ch{}'.format(i), channel)
         channels.lock()
