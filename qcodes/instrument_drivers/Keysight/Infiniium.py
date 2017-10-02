@@ -1,9 +1,7 @@
 import logging
-import binascii
-from typing import List, Dict
+from typing import Dict
 
 import numpy as np
-from pyvisa.errors import VisaIOError
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes import InstrumentChannel, ChannelList
@@ -80,21 +78,21 @@ class RawTrace(ArrayParameter):
         if not self._instrument._parent.trace_ready:
             raise TraceNotReady('Please run prepare_curvedata to prepare '
                                 'the scope for acquiring a trace.')
-        
+
         # shorthand
         instr=self._instrument
 
         # set up the instrument
         # ---------------------------------------------------------------------
 
-        # TODO:
+        # TODO: check numner of points
         # check if requested number of points is less than 500 million
 
         # get intrument state
         state = instr.ask(':RSTate?')
         # realtime mode: only one trigger is used
         instr._parent.acquire_mode('RTIMe')
-        
+
         # acquire the data
         # ---------------------------------------------------------------------
 
@@ -176,7 +174,7 @@ class InfiniiumChannel(InstrumentChannel):
                            get_parser=float
                            )
 
-        # TODO: 
+        # TODO:
         # scale and range are interdependent, when setting one, invalidate the
         # the other.
         # Scale is commented out for this reason
@@ -213,6 +211,7 @@ class InfiniiumChannel(InstrumentChannel):
                             channel = channel,
                             parameter_class=RawTrace
                             )
+
         def snapshot_base(self, update: bool=False) -> Dict:
             params_to_skip_update = ['trace']
             super().snapshot_base(update=update,
