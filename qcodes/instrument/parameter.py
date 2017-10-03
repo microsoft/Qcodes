@@ -657,7 +657,8 @@ class Parameter(_BaseParameter):
                 if max_val_age is not None:
                     raise SyntaxError('Must have get method or specify get_cmd '
                                       'when max_val_age is set')
-                self.get = self.get_latest
+                self.get = lambda: self.state.get('raw_value',
+                                                  self.state['value'])
             else:
                 exec_str = instrument.ask if instrument else None
                 self.get = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str)
