@@ -178,7 +178,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
         # but they all use the same attributes so snapshot is consistent.
-        self._latest = {'value': None, 'ts': None}
+        self._latest = {'value': None, 'ts': None, 'raw_value': None}
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
         if hasattr(self, 'get'):
@@ -267,7 +267,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
     def _save_val(self, value, validate=False):
         if validate:
             self.validate(value)
-        self._latest = {'value': value, 'ts': datetime.now()}
+        self._latest = {'value': value, 'ts': datetime.now(),
+                        'raw_value': self.raw_value}
 
     def _wrap_get(self, get_function):
         @wraps(get_function)
@@ -654,8 +655,7 @@ class Parameter(_BaseParameter):
                 if max_val_age is not None:
                     raise SyntaxError('Must have get method or specify get_cmd '
                                       'when max_val_age is set')
-                self.get = lambda: self.state.get('raw_value',
-                                                  self.state['value'])
+                self.get = lambda: self._latest.get('raw_value')
             else:
                 exec_str = instrument.ask if instrument else None
                 self.get = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str)
@@ -675,7 +675,7 @@ class Parameter(_BaseParameter):
         self.unit = unit if unit is not None else ''
 
         if initial_value is not None:
-            self._save_val(initial_value, validate=True)
+            self.set(initial_value)
 
         # generate default docstring
         self.__doc__ = os.linesep.join((
