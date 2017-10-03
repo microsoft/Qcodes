@@ -8,7 +8,7 @@ from time import sleep
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter,
-    StandardParameter, InstrumentRefParameter)
+    InstrumentRefParameter)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
 
@@ -65,7 +65,7 @@ class TestParameter(TestCase):
         self.assertEqual(p.name, name)
         self.assertEqual(p.label, name)
         self.assertEqual(p.unit, '')
-        self.assertEqual(p.full_name, name)
+        self.assertEqual(str(p), name)
 
         # default validator is all numbers
         p.validate(-1000)
@@ -103,7 +103,7 @@ class TestParameter(TestCase):
         self.assertEqual(p.name, name)
         self.assertEqual(p.label, label)
         self.assertEqual(p.unit, unit)
-        self.assertEqual(p.full_name, name)
+        self.assertEqual(str(p), name)
 
         with self.assertRaises(ValueError):
             p.validate(-1000)
@@ -256,7 +256,7 @@ class TestArrayParameter(TestCase):
         self.assertIsNone(p.setpoint_names)
         self.assertIsNone(p.setpoint_labels)
 
-        self.assertEqual(p.full_name, name)
+        self.assertEqual(str(p), name)
 
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
@@ -333,12 +333,12 @@ class TestArrayParameter(TestCase):
         for instrument in blank_instruments:
             p = SimpleArrayParam([6, 7], 'fred', (2,))
             p._instrument = instrument
-            self.assertEqual(p.full_name, 'fred')
+            self.assertEqual(str(p), 'fred')
 
         # and finally an instrument that really has a name
         p = SimpleArrayParam([6, 7], 'wilma', (2,))
         p._instrument = named_instrument
-        self.assertEqual(p.full_name, 'astro_wilma')
+        self.assertEqual(str(p), 'astro_wilma')
 
     def test_constructor_errors(self):
         bad_constructors = [
@@ -392,7 +392,7 @@ class TestMultiParameter(TestCase):
         self.assertIsNone(p.setpoint_names)
         self.assertIsNone(p.setpoint_labels)
 
-        self.assertEqual(p.full_name, name)
+        self.assertEqual(str(p), name)
 
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
@@ -488,7 +488,7 @@ class TestMultiParameter(TestCase):
             p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]],
                                  name, names, shapes)
             p._instrument = instrument
-            self.assertEqual(p.full_name, name)
+            self.assertEqual(str(p), name)
 
             self.assertEqual(p.full_names, names)
 
@@ -496,7 +496,7 @@ class TestMultiParameter(TestCase):
         p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]],
                              name, names, shapes)
         p._instrument = named_instrument
-        self.assertEqual(p.full_name, 'astro_mixed_dimensions')
+        self.assertEqual(str(p), 'astro_mixed_dimensions')
 
         self.assertEqual(p.full_names, ['astro_0D', 'astro_1D', 'astro_2D'])
 
@@ -551,7 +551,7 @@ class TestStandardParam(TestCase):
         return '{:d}'.format(val)
 
     def test_param_cmd_with_parsing(self):
-        p = StandardParameter('p_int', get_cmd=self.get_p, get_parser=int,
+        p = Parameter('p_int', get_cmd=self.get_p, get_parser=int,
                               set_cmd=self.set_p, set_parser=self.parse_set_p)
 
         p(5)
