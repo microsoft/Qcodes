@@ -1,5 +1,5 @@
 from unittest import TestCase
-from qcodes.instrument.parameter import StandardParameter, Parameter
+from qcodes.instrument.parameter import Parameter
 from qcodes.instrument.sweep_values import SweepValues
 
 from qcodes.utils.validators import Numbers
@@ -10,7 +10,7 @@ class TestSweepValues(TestCase):
         self.c0 = Parameter('c0', vals=Numbers(-10, 10), get_cmd=None, set_cmd=None)
         self.c1 = Parameter('c1', get_cmd=None, set_cmd=None)
 
-        self.getter = StandardParameter('c2', get_cmd=lambda: 42)
+        self.getter = Parameter('c2', get_cmd=lambda: 42)
 
     def test_errors(self):
         c0 = self.c0
