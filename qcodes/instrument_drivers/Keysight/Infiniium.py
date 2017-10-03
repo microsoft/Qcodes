@@ -237,6 +237,9 @@ class Infiniium(VisaInstrument):
                          terminator='\n', **kwargs)
         self.connect_message()
 
+        # Scope trace boolean
+        self.trace_ready = False
+
         # functions
 
         # general parameters
@@ -323,8 +326,7 @@ class Infiniium(VisaInstrument):
                            label='sample points',
                            get_cmd='ACQ:POIN?',
                            get_parser=int,
-                           #set_cmd=self._set_points,
-                           set_cmd='ACQ:POIN {}',
+                           set_cmd=self._cmd_and_invalidate('ACQ:POIN {}'),
                            unit='pts',
                            vals=vals.Numbers(min_value=1, max_value=100e6)
                            )
@@ -332,10 +334,13 @@ class Infiniium(VisaInstrument):
         self.add_parameter('acquire_sample_rate',
                             label='sample rate',
                             get_cmd= 'ACQ:SRAT?',
-                            set_cmd='ACQ:SRAT {}',
+                            set_cmd=self._cmd_and_invalidate('ACQ:SRAT {}'),
                             unit='Sa/s',
                             get_parser=float
                             )
+
+        # this parameter gets used internally for data aquisition. For now it
+        # should not be used manually
         self.add_parameter('data_source',
                            label='Waveform Data source',
                            get_cmd=':WAVeform:SOURce?',
@@ -359,7 +364,7 @@ class Infiniium(VisaInstrument):
         # ratios
         self.add_parameter('acquire_interpolate',
                             get_cmd=':ACQuire:INTerpolate?',
-                            set_cmd=':ACQuire:INTerpolate {}',
+                            set_cmd=self._cmd_and_invalidate(':ACQuire:INTerpolate {}'),
                             val_mapping={True: 1, False: 0}
                             )
 
@@ -397,6 +402,15 @@ class Infiniium(VisaInstrument):
         channels.lock()
         self.add_submodule('channels', channels)
 
+
+    def _cmd_and_invalidate(cmd:str):
+        """
+        wrapper function for get_cmd: get_cmd=self._cmd_and_invalidate(cmd)
+        executes command and sets trace_ready status to false
+        any command that effects the number of setpoints should invalidate the trace
+        """
+        self.trace_ready = False
+        self.write(cmd)
 
 
 # compatitbility/setup
