@@ -347,8 +347,13 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
                     set_function(val, **kwargs)
                     self.raw_value = val
-                    self._save_val(val, validate=(self.val_mapping is None and
-                                                  self.set_parser is None))
+                    if self.scale is not None:
+                        scaled_val = val / self.scale
+                    else:
+                        scaled_val = val
+                    self._save_val(scaled_val,
+                                   validate=(self.val_mapping is None and
+                                             self.set_parser is None))
 
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
@@ -379,7 +384,9 @@ class _BaseParameter(Metadatable, DeferredOperations):
         if step is None:
             return [value]
         else:
-            start_value = self.get_latest()
+            if self.get_latest() is None:
+                self.get()
+            start_value = self.raw_value
 
             self.validate(start_value)
 
