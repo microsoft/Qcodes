@@ -188,7 +188,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
-        self._meta_attrs = ['name', 'instrument', 'step', 'scale', 'raw_value',
+        self._meta_attrs = ['name', 'instrument', 'step', 'scale',
                             'inter_delay', 'post_delay', 'val_mapping', 'vals']
 
         # Specify time of last set operation, used when comparing to delay to
@@ -243,6 +243,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         if not self._snapshot_value:
             state.pop('value')
+            state.pop('raw_value', None)
 
         if isinstance(state['ts'], datetime):
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
