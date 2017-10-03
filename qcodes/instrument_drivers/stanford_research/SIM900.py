@@ -34,7 +34,7 @@ class SIM928(Parameter):
                          get_cmd=self.get_voltage,
                          set_cmd=self.send_cmd + '"VOLT {:.4f}"',
                          step=0.01,
-                         delay=0.035,
+                         inter_delay=0.035,
                          vals=vals.Numbers(-max_voltage, max_voltage),
                          **kwargs)
         self.channel = channel
