@@ -63,7 +63,7 @@ setup(name='qcodes',
           'ipykernel!=4.6.0', # https://github.com/ipython/ipykernel/issues/240 in 4.6
           'jupyter>=1.0.0',
           'h5py>=2.6',
-          'atexit'
+          'atexit',
           'h5py>=2.6'
       ],
 
