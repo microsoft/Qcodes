@@ -23,7 +23,8 @@ class SIM928(Parameter):
 
         max_voltage (Optional[float]): Maximum voltage (default 20)
     """
-    def __init__(self, channel, name=None, max_voltage=20, **kwargs):
+    def __init__(self, channel, name=None, max_voltage=20, step=0.001,
+                 inter_delay=0.035, **kwargs):
         if not name:
             name = 'channel_{}'.format(channel)
 
@@ -33,8 +34,8 @@ class SIM928(Parameter):
                          unit='V',
                          get_cmd=self.get_voltage,
                          set_cmd=self.send_cmd + '"VOLT {:.4f}"',
-                         step=0.01,
-                         inter_delay=0.035,
+                         step=step,
+                         inter_delay=inter_delay,
                          vals=vals.Numbers(-max_voltage, max_voltage),
                          **kwargs)
         self.channel = channel
@@ -133,6 +134,7 @@ class SIM900(VisaInstrument):
         channels = self.channels()
         channels[channel] = name
         self.channels(channels)
+
 
     def reset_slot(self, channel):
         self.write(cmdbase + 'SRST {}'.format(channel))
