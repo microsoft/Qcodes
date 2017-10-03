@@ -3,7 +3,6 @@ import ctypes
 
 from qcodes import Instrument
 import qcodes.utils.validators as vals
-from qcodes.instrument.parameter import ManualParameter
 
 from qcodes.instrument_drivers.spincore import spinapi as api
 
@@ -45,7 +44,7 @@ class PulseBlasterESRPRO(Instrument):
                            vals=vals.Numbers(0, 500))
 
         self.add_parameter('board_number',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            initial_value=board_number)
 
         self.add_function('initialize',
@@ -82,7 +81,7 @@ class PulseBlasterESRPRO(Instrument):
                           call_cmd=api.pb_get_error)
 
         self.add_parameter('instruction_sequence',
-                           parameter_class = ManualParameter,
+                           set_cmd=None,
                            initial_value=[],
                            vals=vals.Anything())
 

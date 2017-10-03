@@ -4,7 +4,7 @@ import json
 import pyperclip
 
 from qcodes import VisaInstrument
-from qcodes.instrument.parameter import StandardParameter, ManualParameter
+from qcodes.instrument.parameter import Parameter
 from qcodes.utils import validators as vals
 from time import sleep
 
@@ -12,7 +12,7 @@ from time import sleep
 logger = logging.getLogger(__name__)
 cmdbase = "TERM LF\nFLSH\nFLOQ\n"
 
-class SIM928(StandardParameter):
+class SIM928(Parameter):
     """
     This is the parameter class for the SIM928 rechargeable isolated voltage source module
 
@@ -103,8 +103,8 @@ class SIM900(VisaInstrument):
 
         # Start with empty list of channels. These are
         self.add_parameter('channels',
-                           parameter_class=ManualParameter,
                            initial_value={},
+                           set_cmd=None,
                            vals=vals.Anything(),
                            snapshot_value=False)
 
