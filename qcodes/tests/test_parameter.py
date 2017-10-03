@@ -8,7 +8,7 @@ from time import sleep
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter,
-    ManualParameter, StandardParameter, InstrumentRefParameter)
+    StandardParameter, InstrumentRefParameter)
 import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
 
@@ -521,7 +521,7 @@ class TestManualParameter(TestCase):
 
     def test_bare_function(self):
         # not a use case we want to promote, but it's there...
-        p = ManualParameter('test')
+        p = Parameter('test', get_cmd=None, set_cmd=None)
 
         def doubler(x):
             p.set(x * 2)
