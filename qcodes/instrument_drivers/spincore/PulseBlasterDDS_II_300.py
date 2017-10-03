@@ -2,7 +2,7 @@ from functools import partial, wraps
 import logging
 import numpy as np
 
-from qcodes import Instrument, ManualParameter
+from qcodes import Instrument
 from qcodes.utils.validators import Lists, Numbers
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 
@@ -95,7 +95,7 @@ class PulseBlasterDDS(Instrument):
             docstring='The core clock of the PulseBlasterDDS')
 
         self.add_parameter('board_number',
-                           parameter_class=ManualParameter,
+                           set_cmd=None,
                            initial_value=board_number)
 
         self.output_channels = ChannelList(self,
@@ -113,26 +113,26 @@ class PulseBlasterDDS(Instrument):
                 label=f'{ch_name} frequency',
                 unit='Hz',
                 # set_cmd=partial(self.set_frequencies, ch_idx),
-                parameter_class=ManualParameter,
+                set_cmd=None,
                 vals=Lists(Numbers()))
             output_channel.add_parameter(
                 'phases',
                 label=f'{ch_name} phase',
                 unit='deg',
                 # set_cmd=partial(self.set_phases, ch_idx),
-                parameter_class=ManualParameter,
+                set_cmd=None,
                 vals=Lists(Numbers()))
             output_channel.add_parameter(
                 'amplitudes',
                 label=f'{ch_name} amplitude',
                 unit='V',
                 # set_cmd=partial(self.set_amplitudes, ch_idx),
-                parameter_class=ManualParameter,
+                set_cmd=None,
                 vals=Lists(Numbers()))
 
 
         self.add_parameter('instruction_sequence',
-                           parameter_class = ManualParameter,
+                           set_cmd=None,
                            initial_value=[],
                            vals=Lists())
 

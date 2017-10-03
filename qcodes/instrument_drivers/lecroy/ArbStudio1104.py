@@ -6,7 +6,6 @@ import numbers
 from time import sleep
 from functools import partial
 from qcodes import Instrument
-from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils import validators as vals
 
 
@@ -76,8 +75,8 @@ class ArbStudio1104(Instrument):
                                vals=vals.MultiType(Multiples(2), vals.Enum(1)))
 
             self.add_parameter('ch{}_sequence'.format(ch),
-                               parameter_class=ManualParameter,
                                label='Channel {} Sequence'.format(ch),
+                               set_cmd=None,
                                initial_value=[],
                                vals=vals.Anything()) # Can we test for an (int, int) tuple list?
 
@@ -96,9 +95,9 @@ class ArbStudio1104(Instrument):
                                vals=vals.Enum(1,2,4))
 
         self.add_parameter('max_voltage',
-                           parameter_class=ManualParameter,
                            label='Maximum waveform voltage',
                            unit='V',
+                           set_cmd=None,
                            initial_value=6,
                            vals=vals.Numbers())  # Can we test
 
@@ -108,15 +107,15 @@ class ArbStudio1104(Instrument):
         #                    vals=vals.Enum(1, 2, 4))
 
         self.add_parameter('trigger_sensitivity_edge',
-                           parameter_class=ManualParameter,
                            initial_value='rising',
                            label='Trigger sensitivity edge for in/out',
+                           set_cmd=None,
                            vals=vals.Enum('rising', 'falling'))
 
         self.add_parameter('trigger_action',
-                           parameter_class=ManualParameter,
                            initial_value='start',
                            label='Trigger action',
+                           set_cmd=None,
                            vals=vals.Enum('start', 'stop', 'ignore'))
 
     def initialize(self):
