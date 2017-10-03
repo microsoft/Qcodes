@@ -529,7 +529,7 @@ class AlazarTech_ATS(Instrument):
                            self._handle, pretriggersize,
                            post_trigger_size)
 
-        number_of_channels = len(self.channel_selection._latest_value)
+        number_of_channels = len(self.channel_selection.get_latest())
         samples_per_buffer = 0
         buffers_per_acquisition = self.buffers_per_acquisition._get_byte()
         samples_per_record = self.samples_per_record._get_byte()
