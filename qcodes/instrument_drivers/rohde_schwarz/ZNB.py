@@ -345,6 +345,12 @@ class ZNBChannel(InstrumentChannel):
         self.trace.set_sweep(start, stop, npts)
         self.trace_mag_phase.set_sweep(start, stop, npts)
 
+    def snapshot_base(self, update=False, params_to_skip_update=None):
+        if params_to_skip_update is None:
+            params_to_skip_update = ('trace', 'trace_mag_phase')
+        snap = super().snapshot_base(update=update,
+                                     params_to_skip_update=params_to_skip_update)
+        return snap
 
 class ZNB(VisaInstrument):
     """
