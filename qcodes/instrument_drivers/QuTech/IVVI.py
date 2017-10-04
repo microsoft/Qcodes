@@ -6,7 +6,6 @@ import traceback
 import threading
 
 from qcodes import VisaInstrument, validators as vals
-from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils.validators import Bool, Numbers
 
 
@@ -80,7 +79,7 @@ class IVVI(VisaInstrument):
                            get_cmd=self._get_version)
 
         self.add_parameter('check_setpoints',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=False,
                            label='Check setpoints',
                            vals=Bool(),
@@ -90,7 +89,7 @@ class IVVI(VisaInstrument):
 
         # Time to wait before sending a set DAC command to the IVVI
         self.add_parameter('dac_set_sleep',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=0.05,
                            label='DAC set sleep',
                            unit='s',
@@ -102,7 +101,7 @@ class IVVI(VisaInstrument):
 
         # Minimum time to wait before the read buffer contains data
         self.add_parameter('dac_read_buffer_sleep',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=0.025,
                            label='DAC read buffer sleep',
                            unit='s',
