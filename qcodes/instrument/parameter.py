@@ -514,8 +514,11 @@ class _BaseParameter(Metadatable, DeferredOperations):
     # Deprecated
     @property
     def full_name(self):
-        warnings.warn('Attribute `full_name` is deprecated, please use '
-                      'str(parameter)')
+#        This can fully be replaced by str(parameter) in the future we
+#        may want to deprecate this but the current dataset makes heavy use
+#        of it in more complicated ways so keep it for now.
+#        warnings.warn('Attribute `full_name` is deprecated, please use '
+#                      'str(parameter)')
         return str(self)
 
     def set_validator(self, vals):

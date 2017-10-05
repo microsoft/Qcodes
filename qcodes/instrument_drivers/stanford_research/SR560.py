@@ -1,5 +1,4 @@
 from qcodes import Instrument
-from qcodes.instrument.parameter import ManualParameter
 from qcodes.instrument.parameter import MultiParameter
 from qcodes.utils.validators import Bool, Enum
 
@@ -83,27 +82,27 @@ class SR560(Instrument):
                  10000, 20000, 50000]
 
         self.add_parameter('cutoff_lo',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value='DC',
                            label='High pass',
                            unit='Hz',
                            vals=Enum(*cutoffs))
 
         self.add_parameter('cutoff_hi',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=1e6,
                            label='Low pass',
                            unit='Hz',
                            vals=Enum(*cutoffs))
 
         self.add_parameter('invert',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=True,
                            label='Inverted output',
                            vals=Bool())
 
         self.add_parameter('gain',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=10,
                            label='Gain',
                            unit=None,
