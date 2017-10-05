@@ -61,19 +61,24 @@ class Demodulator:
         self.filter_settings = filter_settings
         self.active_channels = active_channels
         self.sample_rate = sample_rate
-        settings = active_channels[0]
-        if settings['average_buffers']:
+        self.alazar_channel = active_channels[0]['channel']
+        if active_channels[0]['average_buffers']:
             len_buffers = 1
         else:
             len_buffers = buffers_per_acquisition
 
-        if settings['average_records']:
+        if active_channels[0]['average_buffers']:
             len_records = 1
         else:
             len_records = records_per_buffer
 
-        num_demods = 1
-        demod_freqs = np.array(settings['demod_freq'])
+        num_demods = len(active_channels)
+        demod_freqs = []
+        for chan in active_channels:
+            if chan['channel'] != self.alazar_channel:
+                raise RuntimeError("All demodulated signal in a Demodulator must use same physical channel")
+            demod_freqs.append(chan['demod_freq'])
+        self.demod_freqs = np.array(demod_freqs)
         mat_shape = (num_demods, len_buffers,
                      len_records, samples_per_record)
         self.mat_shape = mat_shape
@@ -108,8 +113,7 @@ class Demodulator:
         im_mat = np.multiply(volt_rec_mat, self.sin_mat)*0
 
         # filter out higher freq component
-        cutoff = self.active_channels[0]['demod_freq']/10
-        # self.demod_freqs.get_max_demod_freq() / 10
+        cutoff = max(self.demod_freqs)/10
         if self.filter_settings['filter'] == 0:
             re_filtered = filter_win(re_mat, cutoff,
                                      self.sample_rate,

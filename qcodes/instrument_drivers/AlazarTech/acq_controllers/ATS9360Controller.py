@@ -6,6 +6,7 @@ import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
 from qcodes import ChannelList
 from qcodes import ManualParameter
 from qcodes.instrument_drivers.AlazarTech.acq_controllers.alazar_channel import AlazarChannel
+from qcodes.instrument_drivers.AlazarTech.acq_controllers.alazar_multidim_parameters import AlazarMultiChannelParameter
 from ..ATS import AcquisitionController
 from ..acquisition_parameters import AcqVariablesParam, \
     NonSettableDerivedParameter
@@ -48,7 +49,8 @@ class ATS9360Controller(AcquisitionController):
                                 'numtaps': numtaps}
         self.number_of_channels = 2
 
-        channels = ChannelList(self, "Channels", AlazarChannel)
+        channels = ChannelList(self, "Channels", AlazarChannel,
+                               multichan_paramclass=AlazarMultiChannelParameter)
         self.add_submodule("channels", channels)
 
         self.add_parameter(name='int_time',
@@ -218,9 +220,9 @@ class ATS9360Controller(AcquisitionController):
                                " supported is {}".format(samples_per_buffer, max_samples))
 
 
-        # extend this to support more than one channel
-        settings = self.active_channels[0]
-        if settings['average_buffers']:
+        # We currently enforce the shape to be identical for all channels
+        # so it's safe to take the first
+        if self.active_channels[0]['average_buffers']:
             self.buffer = np.zeros(samples_per_record *
                                    records_per_buffer *
                                    self.number_of_channels)
@@ -229,14 +231,25 @@ class ATS9360Controller(AcquisitionController):
                                    samples_per_record *
                                    records_per_buffer *
                                    self.number_of_channels))
+        self.demodulators = []
 
-        if settings['demod']:
-            self.demodulator = Demodulator(buffers_per_acquisition,
-                                           records_per_buffer,
-                                           samples_per_record,
-                                           sample_rate,
-                                           self.filter_settings,
-                                           self.active_channels)
+        channelsactive = [False]*2
+        pref = {}
+        pref['channels'] = channelsactive
+
+
+        for active_channel in self.active_channels:
+                pref['channels'][active_channel['channel']] = True
+
+
+        for active_channel in self.active_channels:
+            if active_channel['demod']:
+                self.demodulators.append(Demodulator(buffers_per_acquisition,
+                                                     records_per_buffer,
+                                                     samples_per_record,
+                                                     sample_rate,
+                                                     self.filter_settings,
+                                                     active_channel))
 
     def pre_acquire(self):
         pass
@@ -286,37 +299,46 @@ class ATS9360Controller(AcquisitionController):
                                            self.number_of_channels)
         channel = settings['channel']
         channelData = reshaped_buf[..., channel]
-        # TODO(JHN) could probably get better precision
-        # if we avoid casting back to uint16 after taking the average.
-        # either change the conversion to something that supports floats
-        # or
-        if settings['average_records'] and settings['average_buffers']:
-            recordA = np.uint16(np.mean(channelData, axis=1, keepdims=True) /
-                                buffers_per_acquisition)
-        elif settings['average_records']:
-            recordA = np.uint16(np.mean(channelData, axis=1, keepdims=True))
-        elif settings['average_buffers']:
-            recordA = np.uint16(channelData/buffers_per_acquisition)
-        else:
-            recordA = np.uint16(channelData)
-        recordA = self._to_volts(recordA)
 
-        # do demodulation
-        if settings['demod']:
-            magA, phaseA = self.demodulator.demodulate(recordA, self.int_delay(), self.int_time())
-            if settings['demod_type'] == 'magnitude':
-                data = magA[0]
-            elif settings['demod_type'] == 'phase':
-                data = phaseA[0]
-            else:
-                raise RuntimeError("unknown demodulator type")
-        else:
-            if settings['integrate_samples']:
-                data = np.squeeze(np.mean(recordA, axis=-1))
-            else:
-                data = np.squeeze(recordA)
 
-        return data
+        def handle_alazar_channel(channelData, ):
+            # TODO(JHN) could probably get better precision
+            # if we avoid casting back to uint16 after taking the average.
+            # either change the conversion to something that supports floats
+            # or
+            if settings['average_records'] and settings['average_buffers']:
+                recordA = np.uint16(np.mean(channelData, axis=1, keepdims=True) /
+                                    buffers_per_acquisition)
+            elif settings['average_records']:
+                recordA = np.uint16(np.mean(channelData, axis=1, keepdims=True))
+            elif settings['average_buffers']:
+                recordA = np.uint16(channelData/buffers_per_acquisition)
+            else:
+                recordA = np.uint16(channelData)
+            recordA = self._to_volts(recordA)
+
+            data = []
+            # do demodulation
+            for active_channel in self.active_channels:
+                if active_channel['demod']:
+                    magA, phaseA = self.demodulator.demodulate(recordA, self.int_delay(), self.int_time())
+                    if active_channel['demod_type'] == 'magnitude':
+                        data = magA[0]
+                    elif active_channel['demod_type'] == 'phase':
+                        data = phaseA[0]
+                    else:
+                        raise RuntimeError("unknown demodulator type")
+                else:
+                    if active_channel['integrate_samples']:
+                        data = np.squeeze(np.mean(recordA, axis=-1))
+                    else:
+                        data = np.squeeze(recordA)
+
+            return data
+
+        outputdata = handle_alazar_channel(channelData)
+
+        return outputdata
 
     def _to_volts(self, record):
         # convert rec to volts

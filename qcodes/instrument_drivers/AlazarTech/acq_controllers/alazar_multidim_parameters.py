@@ -32,6 +32,18 @@ class Alazar0DParameter(Parameter):
     def get(self):
         channel = self._instrument
         cntrl = channel._parent
+        cntrl.active_channels = []
+        cntrl.active_channels.append({})
+        cntrl.active_channels[0]['demod'] = channel._demod
+        if channel._demod:
+            cntrl.active_channels[0]['demod_freq'] = channel.demod_freq.get()
+            cntrl.active_channels[0]['demod_type'] = channel.demod_type.get()
+        else:
+            cntrl.active_channels[0]['demod_freq'] = None
+        cntrl.active_channels[0]['average_buffers'] = channel._average_buffers
+        cntrl.active_channels[0]['average_records'] = channel._average_records
+        cntrl.active_channels[0]['integrate_samples'] = channel._integrate_samples
+        cntrl.active_channels[0]['channel'] = channel.alazar_channel.get()
         params_to_kwargs = ['samples_per_record', 'records_per_buffer',
                             'buffers_per_acquisition', 'allocated_buffers']
         acq_kwargs = self._instrument.acquisition_kwargs.copy()
@@ -78,8 +90,22 @@ class AlazarNDParameter(ArrayParameter):
                          setpoint_units=setpoint_units)
 
     def get(self):
+
         channel = self._instrument
         cntrl = channel._parent
+        cntrl.active_channels = []
+        cntrl.active_channels.append({})
+        cntrl.active_channels[0]['demod'] = channel._demod
+        if channel._demod:
+            cntrl.active_channels[0]['demod_freq'] = channel.demod_freq.get()
+            cntrl.active_channels[0]['demod_type'] = channel.demod_type.get()
+        else:
+            cntrl.active_channels[0]['demod_freq'] = None
+        cntrl.active_channels[0]['average_buffers'] = channel._average_buffers
+        cntrl.active_channels[0]['average_records'] = channel._average_records
+        cntrl.active_channels[0]['integrate_samples'] = channel._integrate_samples
+        cntrl.active_channels[0]['channel'] = channel.alazar_channel.get()
+
         params_to_kwargs = ['samples_per_record', 'records_per_buffer',
                             'buffers_per_acquisition', 'allocated_buffers']
         acq_kwargs = self._instrument.acquisition_kwargs.copy()
@@ -234,4 +260,53 @@ class AlazarMultiChannelParameter(MultiChannelInstrumentParameter):
 
     """
     def get(self):
-        pass
+        if self._param_name == 'data':
+            channel = self._channels[0]
+            cntrl = channel._parent
+            instrument = cntrl._get_alazar()
+            cntrl.active_channels = []
+
+            for i, channel in enumerate(self._channels):
+                cntrl.active_channels.append({})
+                cntrl.active_channels[i]['demod'] = channel._demod
+                if channel._demod:
+                    cntrl.active_channels[i]['demod_freq'] = channel.demod_freq.get()
+                    cntrl.active_channels[i]['demod_type'] = channel.demod_type.get()
+                else:
+                    cntrl.active_channels[i]['demod_freq'] = None
+                cntrl.active_channels[i]['average_buffers'] = channel._average_buffers
+                cntrl.active_channels[i]['average_records'] = channel._average_records
+                cntrl.active_channels[i]['integrate_samples'] = channel._integrate_samples
+                cntrl.active_channels[i]['channel'] = channel.alazar_channel.get()
+                for param in ('average_buffers, average_records', 'integrate_channels'):
+                    if cntrl.active_channels[i][param] != cntrl.active_channels[0][param]:
+                        raise RuntimeError("Trying to capture multiple channels with different values of {}"
+                                           "This is not currently supported".format(param))
+
+            params_to_kwargs = ['samples_per_record', 'records_per_buffer',
+                                'buffers_per_acquisition', 'allocated_buffers']
+            acq_kwargs = channel.acquisition_kwargs.copy()
+            controller_acq_kwargs = {key: val.get() for key, val in cntrl.parameters.items() if
+                 key in params_to_kwargs}
+            channels_acq_kwargs = []
+            for i, channel in enumerate(self._channels):
+                channels_acq_kwargs.append({key: val.get() for key, val in channel.parameters.items() if
+                     key in params_to_kwargs})
+                if channels_acq_kwargs[i] != channels_acq_kwargs:
+                    raise RuntimeError("kwargs are not the same")
+            acq_kwargs.update(controller_acq_kwargs)
+            acq_kwargs.update(channels_acq_kwargs[0])
+            if acq_kwargs['buffers_per_acquisition'] > 1:
+                acq_kwargs['allocated_buffers'] = 4
+            else:
+                acq_kwargs['allocated_buffers'] = 1
+
+            logger.info("calling acquire with {}".format(acq_kwargs))
+            output = instrument.acquire(
+                acquisition_controller=cntrl,
+                **acq_kwargs)
+            output = tuple(output for _ in range(len(self._channels)))
+        else:
+            output = tuple(chan.parameters[self._param_name].get()
+                           for chan in self._channels)
+        return output
