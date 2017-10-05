@@ -1,6 +1,5 @@
 import math
 from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils import validators as vals
 from .alazar_multidim_parameters import Alazar0DParameter, Alazar1DParameter, Alazar2DParameter
 from ..acquisition_parameters import AcqVariablesParam, NonSettableDerivedParameter
@@ -42,19 +41,19 @@ class AlazarChannel(InstrumentChannel):
             self.add_parameter('demod_freq',
                                label='demod freq',
                                vals=vals.Numbers(1e5,500e6),
-                               parameter_class=ManualParameter)
+                               get_cmd=None, set_cmd=None)
             self.add_parameter('demod_type',
                                label='demod type',
                                vals=vals.Strings(),
-                               parameter_class=ManualParameter)
+                               get_cmd=None, set_cmd=None)
 
         self.add_parameter('alazar_channel',
                            label='Alazar Channel',
-                           parameter_class=ManualParameter)
+                           get_cmd=None, set_cmd=None)
         if not average_records:
             self.add_parameter('records_per_buffer',
                                label='records_per_buffer',
-                               parameter_class=ManualParameter)
+                               get_cmd=None, set_cmd=None)
         else:
             self.add_parameter('records_per_buffer',
                                label='records_per_buffer',
@@ -63,7 +62,7 @@ class AlazarChannel(InstrumentChannel):
         if not average_buffers:
             self.add_parameter('buffers_per_acquisition',
                                label='records_per_buffer',
-                               parameter_class=ManualParameter)
+                               get_cmd=None, set_cmd=None)
         else:
             self.add_parameter('buffers_per_acquisition',
                                label='records_per_buffer',
