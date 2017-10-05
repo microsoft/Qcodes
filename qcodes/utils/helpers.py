@@ -60,7 +60,7 @@ def is_sequence(obj):
     We do not consider strings or unordered collections like sets to be
     sequences, but we do accept iterators (such as generators)
     """
-    return (isinstance(obj, (Iterator, Sequence)) and
+    return (isinstance(obj, (Iterator, Sequence, np.ndarray)) and
             not isinstance(obj, (str, bytes, io.IOBase)))
 
 

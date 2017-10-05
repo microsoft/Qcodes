@@ -6,7 +6,6 @@ import traceback
 import threading
 
 from qcodes import VisaInstrument, validators as vals
-from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils.validators import Bool, Numbers
 
 
@@ -80,7 +79,7 @@ class IVVI(VisaInstrument):
                            get_cmd=self._get_version)
 
         self.add_parameter('check_setpoints',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=False,
                            label='Check setpoints',
                            vals=Bool(),
@@ -90,7 +89,7 @@ class IVVI(VisaInstrument):
 
         # Time to wait before sending a set DAC command to the IVVI
         self.add_parameter('dac_set_sleep',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=0.05,
                            label='DAC set sleep',
                            unit='s',
@@ -102,7 +101,7 @@ class IVVI(VisaInstrument):
 
         # Minimum time to wait before the read buffer contains data
         self.add_parameter('dac_read_buffer_sleep',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=0.025,
                            label='DAC read buffer sleep',
                            unit='s',
@@ -115,6 +114,11 @@ class IVVI(VisaInstrument):
         self.add_parameter('dac voltages',
                            label='Dac voltages',
                            get_cmd=self._get_dacs)
+
+        self.add_function(
+            'trigger',
+            call_cmd=self._send_trigger
+        )
 
         # initialize pol_num, the voltage offset due to the polarity
         self.pol_num = np.zeros(self._numdacs)
@@ -468,6 +472,11 @@ class IVVI(VisaInstrument):
             return fun(ch)
         return get_func
 
+    def _send_trigger(self):
+        msg = bytes([2, 6])
+        self.write(msg)
+        self.read()  # Flush the buffer, else the command will only work the first time.
+
     def round_dac(self, value, dacname=None):
         """ Round a value to the interal precision of the instrument
 
@@ -501,7 +510,7 @@ class IVVI(VisaInstrument):
         function prevents that.
 
         Args:
-            param (StandardParameter): a dac of the IVVI instrument
+            param (Parameter): a dac of the IVVI instrument
         """
         if not isinstance(param._vals, Numbers):
             raise Exception('Only the Numbers validator is supported.')

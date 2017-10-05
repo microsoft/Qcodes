@@ -4,7 +4,7 @@ Test suite for  instument.*
 from unittest import TestCase
 from qcodes.instrument.base import Instrument
 from .instrument_mocks import DummyInstrument, MockParabola
-from qcodes.instrument.parameter import ManualParameter
+from qcodes.instrument.parameter import Parameter
 import gc
 
 
@@ -75,7 +75,7 @@ class TestInstrument(TestCase):
         # by desgin one gets the parameter if a function exists and has same
         # name
         dac1 = self.instrument['dac1']
-        self.assertTrue(isinstance(dac1, ManualParameter))
+        self.assertTrue(isinstance(dac1, Parameter))
 
     def test_instances(self):
         instruments = [self.instrument, self.instrument2]
@@ -99,13 +99,15 @@ class TestInstrument(TestCase):
 
     def test_snapshot_value(self):
         self.instrument.add_parameter('has_snapshot_value',
-                                      parameter_class=ManualParameter,
+                                      parameter_class=Parameter,
                                       initial_value=42,
-                                      snapshot_value=True)
+                                      snapshot_value=True,
+                                      get_cmd=None, set_cmd=None)
         self.instrument.add_parameter('no_snapshot_value',
-                                      parameter_class=ManualParameter,
+                                      parameter_class=Parameter,
                                       initial_value=42,
-                                      snapshot_value=False)
+                                      snapshot_value=False,
+                                      get_cmd=None, set_cmd=None)
 
         snapshot = self.instrument.snapshot()
 
