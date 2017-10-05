@@ -1,3 +1,5 @@
+import warnings
+
 from qcodes import VisaInstrument, validators as vals
 from functools import partial
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
@@ -242,6 +244,12 @@ class Keysight_33500B_Channels(VisaInstrument):
             address (string): The VISA resource name.
             silent (Optional[bool]): If True, no connect message is printed.
         """
+
+        warnings.warn("This driver is old and will be removed "
+                      "from QCoDeS soon. Please use the "
+                      "WaveformGenerator_33XXX from the file "
+                      "instrument_drivers/Keysight/KeysightAgilent_33XXX"
+                      " instead.", UserWarning)
 
         super().__init__(name, address, **kwargs)
 

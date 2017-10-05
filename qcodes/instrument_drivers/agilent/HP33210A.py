@@ -1,3 +1,5 @@
+import warnings
+
 from qcodes import VisaInstrument, validators as vals
 
 
@@ -8,6 +10,13 @@ class Agilent_HP33210A(VisaInstrument):
     Includes the essential commands from the manual
     """
     def __init__(self, name, address, reset=False, **kwargs):
+
+        warnings.warn("This driver is old and will be removed "
+                      "from QCoDeS soon. Please use the "
+                      "WaveformGenerator_33XXX from the file "
+                      "instrument_drivers/Keysight/KeysightAgilent_33XXX"
+                      " instead.", UserWarning)
+
         super().__init__(name, address, terminator='\n', **kwargs)
 
         self.add_parameter(name='frequency',
