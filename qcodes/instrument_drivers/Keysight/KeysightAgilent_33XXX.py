@@ -50,6 +50,8 @@ class OutputChannel(InstrumentChannel):
 
             return output
 
+        self.model = self._parent.model
+
         self.add_parameter('function_type',
                            label='Channel {} function type'.format(channum),
                            set_cmd='SOURce{}:FUNCtion {{}}'.format(channum),
@@ -68,6 +70,7 @@ class OutputChannel(InstrumentChannel):
                            vals=vals.Enum('CW', 'LIST', 'SWEEP', 'FIXED')
                            )
 
+        max_freq = self._parent._max_freqs[self.model]
         self.add_parameter('frequency',
                            label='Channel {} frequency'.format(channum),
                            set_cmd='SOURce{}:FREQuency {{}}'.format(channum),
@@ -75,7 +78,7 @@ class OutputChannel(InstrumentChannel):
                            get_parser=float,
                            unit='Hz',
                            # TODO: max. freq. actually really tricky
-                           vals=vals.Numbers(1e-6, 30e6)
+                           vals=vals.Numbers(1e-6, max_freq)
                            )
 
         self.add_parameter('phase',
@@ -280,12 +283,20 @@ class WaveformGenerator_33XXX(VisaInstrument):
         super().__init__(name, address, terminator='\n', **kwargs)
         self.model = self.IDN()['model']
 
+        #######################################################################
+        # Here go all model specific traits
+
         # TODO: Fill out this dict with all models
         no_of_channels = {'33210A': 1,
                           '33250A': 1,
                           '33522B': 2,
                           '33622A': 2
                           }
+
+        self._max_freqs = {'33210A': 10e6,
+                           '33250A': 80e6,
+                           '33522B': 30e6,
+                           '33622A': 120e6}
 
         self.num_channels = no_of_channels[self.model]
 
