@@ -510,7 +510,7 @@ class IVVI(VisaInstrument):
         function prevents that.
 
         Args:
-            param (StandardParameter): a dac of the IVVI instrument
+            param (Parameter): a dac of the IVVI instrument
         """
         if not isinstance(param._vals, Numbers):
             raise Exception('Only the Numbers validator is supported.')
