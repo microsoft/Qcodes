@@ -2,7 +2,7 @@ from functools import partial
 import logging
 
 from qcodes import VisaInstrument, validators as vals
-from qcodes.instrument.channel import InstrumentChannel, ChannelList
+from qcodes.instrument.channel import InstrumentChannel
 from qcodes.instrument.base import Instrument
 
 log = logging.getLogger(__name__)
