@@ -744,6 +744,7 @@ class ActiveLoop(Metadatable):
                         attach_stop_bg(action)
                 return new_loop
             loop = attach_stop_bg(self)
+            data_set.active = True
             t = KillableThread(target=loop.run, name='qcodes_loop',
                                  args=args,
                                  kwargs={'use_threads': use_threads,
