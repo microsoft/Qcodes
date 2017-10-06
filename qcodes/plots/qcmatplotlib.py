@@ -62,7 +62,7 @@ class MatPlot(BasePlot):
             subplots = max(len(args), 1)
 
         self._init_plot(subplots, figsize, num=num)
-        
+
         # Add data to plot if passed in args, kwargs are passed to all subplots
         for k, arg in enumerate(args):
             if isinstance(arg, Sequence):
@@ -100,12 +100,15 @@ class MatPlot(BasePlot):
         else:
             # Format subplots as tuple (nrows, ncols)
             if isinstance(subplots, int):
-                # self.max_subplot_columns defines the limit on how many
-                # subplots can be in one row. Adjust subplot rows and columns
-                #  accordingly
-                nrows = int(np.ceil(subplots / self.max_subplot_columns))
-                ncols = min(subplots, self.max_subplot_columns)
-                subplots = (nrows, ncols)
+                if subplots == 4:
+                    subplots = (2,2)
+                else:
+                    # self.max_subplot_columns defines the limit on how many
+                    # subplots can be in one row. Adjust subplot rows and columns
+                    #  accordingly
+                    nrows = int(np.ceil(subplots / self.max_subplot_columns))
+                    ncols = min(subplots, self.max_subplot_columns)
+                    subplots = (nrows, ncols)
 
             if figsize is None:
                 # Adjust figsize depending on rows and columns in subplots
