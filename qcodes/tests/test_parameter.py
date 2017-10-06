@@ -622,6 +622,17 @@ class TestStandardParam(TestCase):
         self._p = 'PVAL: 1'
         self.assertEqual(p(), 'on')
 
+class TestManualParameterValMapping(TestCase):
+    def test_val_mapping(self):
+        a = DummyInstrument('dummy_holder')
+        a.add_parameter('myparameter', set_cmd=None, get_cmd=None, val_mapping={'A': 0, 'B': 1})
+        a.myparameter('A')
+        assert a.myparameter() == 'A'
+        assert a.myparameter() == 'A'
+        assert a.myparameter.raw_value == 0
+
+
+
 
 class TestInstrumentRefParameter(TestCase):
     def test_get_instr(self):
