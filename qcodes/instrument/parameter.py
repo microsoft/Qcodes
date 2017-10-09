@@ -282,8 +282,16 @@ class _BaseParameter(Metadatable, DeferredOperations):
         return state
 
     def _save_val(self, value, validate=False):
+        """
+        Update latest
+        """
         if validate:
             self.validate(value)
+        if (self.get_parser is None and
+            self.set_parser is None and
+            self.val_mapping is None and
+            self.scale is None):
+                self.raw_value = value
         self._latest = {'value': value, 'ts': datetime.now(),
                         'raw_value': self.raw_value}
 
@@ -332,34 +340,33 @@ class _BaseParameter(Metadatable, DeferredOperations):
             try:
                 self.validate(value)
 
-                if self.val_mapping is not None:
-                    if self.step is not None:
-                        raise RuntimeError('Cannot ramp a value mapped parameter')
-                    # Convert set values using val_mapping dictionary
-                    mapped_value = self.val_mapping[value]
-                else:
-                    mapped_value = value
-
-                if self.scale is not None:
-                    if isinstance(self.scale, collections.Iterable):
-                        # Scale contains multiple elements, one for each value
-                        scaled_mapped_value = tuple(val * scale for val, scale
-                                                    in zip(mapped_value, self.scale))
-                    else:
-                        # Use single scale for all values
-                        scaled_mapped_value = mapped_value*self.scale
-                else:
-                    scaled_mapped_value = mapped_value
-
-                if self.set_parser is not None:
-                    parsed_scaled_mapped_value = self.set_parser(scaled_mapped_value)
-                else:
-                    parsed_scaled_mapped_value = scaled_mapped_value
-
                 # In some cases intermediate sweep values must be used.
                 # Unless `self.step` is defined, get_sweep_values will return
                 # a list containing only `value`.
-                for val in self.get_ramp_values(parsed_scaled_mapped_value, step=self.step):
+                steps = self.get_ramp_values(value, step=self.step)
+
+                for val_step in steps:
+                    if self.val_mapping is not None:
+                        # Convert set values using val_mapping dictionary
+                        mapped_value = self.val_mapping[val_step]
+                    else:
+                        mapped_value = val_step
+
+                    if self.scale is not None:
+                        if isinstance(self.scale, collections.Iterable):
+                            # Scale contains multiple elements, one for each value
+                            scaled_mapped_value = tuple(val * scale for val, scale
+                                                        in zip(mapped_value, self.scale))
+                        else:
+                            # Use single scale for all values
+                            scaled_mapped_value = mapped_value*self.scale
+                    else:
+                        scaled_mapped_value = mapped_value
+
+                    if self.set_parser is not None:
+                        parsed_scaled_mapped_value = self.set_parser(scaled_mapped_value)
+                    else:
+                        parsed_scaled_mapped_value = scaled_mapped_value
 
                     # Check if delay between set operations is required
                     t_elapsed = time.perf_counter() - self._t_last_set
@@ -371,13 +378,9 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     # Start timer to measure execution time of set_function
                     t0 = time.perf_counter()
 
-                    set_function(val, **kwargs)
-                    self.raw_value = val
-                    if self.scale is not None:
-                        scaled_val = val / self.scale
-                    else:
-                        scaled_val = val
-                    self._save_val(scaled_val,
+                    set_function(parsed_scaled_mapped_value, **kwargs)
+                    self.raw_value = parsed_scaled_mapped_value
+                    self._save_val(val_step,
                                    validate=(self.val_mapping is None and
                                              self.set_parser is None))
 
@@ -410,6 +413,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
         if step is None:
             return [value]
         else:
+            if isinstance(value, collections.Iterable) and len(value) > 1:
+                raise RuntimeError("Don't know how to step a parameter with more than one value")
             if self.get_latest() is None:
                 self.get()
             start_value = self.raw_value
@@ -691,8 +696,7 @@ class Parameter(_BaseParameter):
                 if max_val_age is not None:
                     raise SyntaxError('Must have get method or specify get_cmd '
                                       'when max_val_age is set')
-                self.get_raw = lambda: self._latest['value' if self.scale is None
-                                                    else 'raw_value']
+                self.get_raw = lambda: self._latest['raw_value']
             else:
                 exec_str = instrument.ask if instrument else None
                 self.get_raw = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str)
