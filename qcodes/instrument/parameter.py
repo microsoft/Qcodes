@@ -57,6 +57,7 @@ import logging
 import os
 import collections
 import warnings
+from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable
 from functools import partial, wraps
 import numpy
 
@@ -69,6 +70,9 @@ from qcodes.utils.command import Command
 from qcodes.utils.validators import Validator, Ints, Strings, Enum
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
+
+if TYPE_CHECKING:
+    from .base import Instrument
 
 
 class _BaseParameter(Metadatable, DeferredOperations):
@@ -144,10 +148,20 @@ class _BaseParameter(Metadatable, DeferredOperations):
             JSON snapshot of the parameter
     """
 
-    def __init__(self, name, instrument, snapshot_get=True, metadata=None,
-                 step=None, scale=None, inter_delay=0, post_delay=0,
-                 val_mapping=None, get_parser=None, set_parser=None,
-                 snapshot_value=True, max_val_age=None, vals=None):
+    def __init__(self, name: str,
+                 instrument: Optional[Instrument],
+                 snapshot_get: bool=True,
+                 metadata: Optional[dict]=None,
+                 step: Optional[Union[int, float]]=None,
+                 scale: Optional[Union[int, float]]=None,
+                 inter_delay: Union[int, float]=0,
+                 post_delay: Union[int, float]=0,
+                 val_mapping: Optional[dict]=None,
+                 get_parser: Optional[Callable]=None,
+                 set_parser: Optional[Callable]=None,
+                 snapshot_value: bool=True,
+                 max_val_age: Optional[float]=None,
+                 vals: Optional[Validator]=None):
         super().__init__(metadata)
         self.name = str(name)
         self._instrument = instrument
@@ -220,7 +234,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update: bool=False,
+                      params_to_skip_update: Sequence[str]=None) -> dict:
         """
         State of the parameter as a JSON-compatible dict.
 
@@ -228,6 +243,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
             update (bool): If True, update the state by calling
                 parameter.get().
                 If False, just use the latest values in memory.
+            params_to_skip_update: No effect but may be passed from super Class:
 
         Returns:
             dict: base snapshot
@@ -328,7 +344,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     if isinstance(self.scale, collections.Iterable):
                         # Scale contains multiple elements, one for each value
                         scaled_mapped_value = tuple(val * scale for val, scale
-                                      in zip(mapped_value, self.scale))
+                                                    in zip(mapped_value, self.scale))
                     else:
                         # Use single scale for all values
                         scaled_mapped_value = mapped_value*self.scale
@@ -655,9 +671,17 @@ class Parameter(_BaseParameter):
 
     """
 
-    def __init__(self, name, instrument=None, label=None, unit=None,
-                 get_cmd=None, set_cmd=False, initial_value=None,
-                 max_val_age=None, vals=None, docstring=None, **kwargs):
+    def __init__(self, name: str,
+                 instrument: Optional[Instrument]=None,
+                 label: Optional[str]=None,
+                 unit: Optional[str]=None,
+                 get_cmd: Optional[Union[str, function, bool]]=None,
+                 set_cmd:  Optional[Union[str, function, bool]]=False,
+                 initial_value: Optional[Union[float, int, str]]=None,
+                 max_val_age: Optional[float]=None,
+                 vals: Optional[str]=None,
+                 docstring: Optional[str]=None,
+                 **kwargs):
         super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
 
         # Enable set/get methods if get_cmd/set_cmd is given
