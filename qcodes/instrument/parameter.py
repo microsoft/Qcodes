@@ -297,11 +297,11 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 if self.val_mapping is not None:
                     if value in self.inverse_val_mapping:
                         value = self.inverse_val_mapping[value]
-                    elif int(value) in self.inverse_val_mapping:
-                        value = self.inverse_val_mapping[int(value)]
                     else:
-                        raise KeyError("'{}' not in val_mapping".format(value))
-
+                        try:
+                            value = self.inverse_val_mapping[int(value)]
+                        except (ValueError, KeyError):
+                            raise KeyError("'{}' not in val_mapping".format(value))
                 self._save_val(value)
                 return value
             except Exception as e:
@@ -317,25 +317,33 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 self.validate(value)
 
                 if self.val_mapping is not None:
+                    if self.step is not None:
+                        raise RuntimeError('Cannot ramp a value mapped parameter')
                     # Convert set values using val_mapping dictionary
-                    value = self.val_mapping[value]
+                    mapped_value = self.val_mapping[value]
+                else:
+                    mapped_value = value
 
                 if self.scale is not None:
                     if isinstance(self.scale, collections.Iterable):
                         # Scale contains multiple elements, one for each value
-                        value = tuple(val * scale for val, scale
-                                      in zip(value, self.scale))
+                        scaled_mapped_value = tuple(val * scale for val, scale
+                                      in zip(mapped_value, self.scale))
                     else:
                         # Use single scale for all values
-                        value *= self.scale
+                        scaled_mapped_value = mapped_value*self.scale
+                else:
+                    scaled_mapped_value = mapped_value
 
                 if self.set_parser is not None:
-                    value = self.set_parser(value)
+                    parsed_scaled_mapped_value = self.set_parser(scaled_mapped_value)
+                else:
+                    parsed_scaled_mapped_value = scaled_mapped_value
 
                 # In some cases intermediate sweep values must be used.
                 # Unless `self.step` is defined, get_sweep_values will return
                 # a list containing only `value`.
-                for val in self.get_ramp_values(value, step=self.step):
+                for val in self.get_ramp_values(parsed_scaled_mapped_value, step=self.step):
 
                     # Check if delay between set operations is required
                     t_elapsed = time.perf_counter() - self._t_last_set
@@ -660,7 +668,7 @@ class Parameter(_BaseParameter):
                     raise SyntaxError('Must have get method or specify get_cmd '
                                       'when max_val_age is set')
                 self.get = lambda: self._latest['value' if self.scale is None
-                                                else 'raw_value']
+                                                else 'raw_val   ue']
             else:
                 exec_str = instrument.ask if instrument else None
                 self.get = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str)
