@@ -78,3 +78,5 @@ target/
 tmp/
 
 docs/examples/data/*
+
+.idea/
