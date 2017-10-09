@@ -149,7 +149,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
     """
 
     def __init__(self, name: str,
-                 instrument: Optional[Instrument],
+                 instrument: Optional['Instrument'],
                  snapshot_get: bool=True,
                  metadata: Optional[dict]=None,
                  step: Optional[Union[int, float]]=None,
@@ -672,11 +672,11 @@ class Parameter(_BaseParameter):
     """
 
     def __init__(self, name: str,
-                 instrument: Optional[Instrument]=None,
+                 instrument: Optional['Instrument']=None,
                  label: Optional[str]=None,
                  unit: Optional[str]=None,
-                 get_cmd: Optional[Union[str, function, bool]]=None,
-                 set_cmd:  Optional[Union[str, function, bool]]=False,
+                 get_cmd: Optional[Union[str, Callable, bool]]=None,
+                 set_cmd:  Optional[Union[str, Callable, bool]]=False,
                  initial_value: Optional[Union[float, int, str]]=None,
                  max_val_age: Optional[float]=None,
                  vals: Optional[str]=None,
