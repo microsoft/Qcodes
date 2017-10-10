@@ -3,7 +3,6 @@ import logging
 import numpy as np
 import time
 
-from qcodes.instrument.parameter import ManualParameter
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
 
@@ -60,12 +59,12 @@ class SIM928(VisaInstrument):
                                label="Step size when changing the voltage "
                                      "smoothly on module "
                                      "{}".format(module_name),
-                               parameter_class=ManualParameter,
+                               get_cmd=None, set_cmd=None,
                                vals=vals.Numbers(0, 20), initial_value=0.005)
         self.add_parameter('smooth_timestep', unit='s',
                            label="Delay between sending the write commands"
                                  "when changing the voltage smoothly",
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            vals=vals.Numbers(0, 1), initial_value=0.05)
 
         super().connect_message()
