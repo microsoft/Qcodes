@@ -1,7 +1,10 @@
-
 import numpy as np
 from time import sleep
-from qcodes.instrument import visa, Instrument
+import warnings
+from distutils.version import LooseVersion
+
+from qcodes import Instrument
+from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.utils import validators as vals
 from qcodes.instrument.parameter import ManualParameter
@@ -125,23 +128,45 @@ class ScopeChannel(InstrumentChannel):
                            get_cmd='CHANnel{}:OVERload?'.format(channum)
                            )
 
+        # TODO: (WilliamHPNielsen) make this not be snapshot?
 
-class RTO1024_scope_test(visa.VisaInstrument):
+
+class RTO1000(VisaInstrument):
     """
     Alpha Version of Instrument driver for the
-    Rohde-Schwarz RTO1024 oscilloscope.
-    Currently only able to measure signal on Channel 1.
-    Contains commands for acquiring an average waveform.
+    Rohde-Schwarz RTO1000 series oscilloscopes.
 
-    TODO (WilliamHPNielsen):
-        * Channelise the channel settings
-        * Cast waveform/trace acquisition into an array parameter
     """
 
-    def __init__(self, name, address=None, timeout=5, terminator='',
+    def __init__(self, name, address=None, model=None, timeout=5,
+                 terminator='\n',
                  **kwargs):
         super().__init__(name=name, address=address, timeout=timeout,
                          terminator=terminator, **kwargs)
+
+        # With firmware versions earlier than 3.65, it seems that the
+        # model number can NOT be queried from the instrument
+        # (at least fails with RTO1024, fw 2.52.1.1), so in that case
+        # the user must provide the model manually
+        firmware_version = self.get_idn()['firmware']
+
+        if LooseVersion(firmware_version) >= LooseVersion('3.65'):
+            # strip just in case there is a newline character at the end
+            self.model = self.ask('DIAGnostic:SERVice:WFAModel?').strip()
+            if model is not None and model != self.model:
+                warnings.warn("The model number provided by the user "
+                              "does not match the instrument's response."
+                              " I am going to assume that this oscilloscope "
+                              "is a model {}".format(self.model))
+        else:
+            if model is None:
+                raise ValueError('No model number provided. Please provide '
+                                 'a model number (eg. "RTO1024").')
+            else:
+                self.model = model
+
+        # Now assign model-specific values
+        self.num_chans = int(self.model[-1])
 
         self.add_parameter('num_averages',
                            label='Number of trace averages',
@@ -215,7 +240,7 @@ class RTO1024_scope_test(visa.VisaInstrument):
                            get_parser=float)
 
         self.add_parameter('t_stop',
-                           units='s',
+                           unit='s',
                            docstring='stop time of saved waveform'
                            'relative to trigger in s',
                            get_cmd='EXPort:WAVeform:STOP' + '?',
@@ -227,7 +252,7 @@ class RTO1024_scope_test(visa.VisaInstrument):
 
         channels = ChannelList(self, 'channels', ScopeChannel)
 
-        for ch in range(1, 5):
+        for ch in range(1, self.num_chans+1):
             chan = ScopeChannel(self, 'channel{}'.format(ch), ch)
             channels.append(chan)
             self.add_submodule('ch{}'.format(ch), chan)
@@ -239,25 +264,8 @@ class RTO1024_scope_test(visa.VisaInstrument):
         self.add_function('stop_opc', call_cmd='*STOP;OPC?')
         # starts the shutdown of the system
         self.add_function('system_shutdown', call_cmd='SYSTem:EXIT')
-        self.initialise()
 
-    def initialise(self):
-        # sets the time_step, y_range, trigger and channel source
-        # also sets t_start, t_stop and num_averages
-
-        # this function is for quick debugging, will be removed in the beta
-        # version
-
-        # NOTE (WilliamHPNielsen): I broke this function with the
-        # channelisation
-
-        self.write('*RST')
-        self.time_step(1E-8)
-        self.num_averages(10)
-        self.t_start(-50e-08)
-        self.t_stop(50e-08)
-        self.y_range(0.5)
-        self.y_scale(0.05)
+        self.connect_message()
 
     # functions below need to be edited in order to make them
     # compatible with the set inputs of the functions above
