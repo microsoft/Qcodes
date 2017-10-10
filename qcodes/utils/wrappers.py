@@ -314,7 +314,8 @@ def save_device_image(sweeptparameters):
 
 
 def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
-                    do_plots: Optional[bool]=True) -> Tuple[QtPlot, DataSet]:
+                    do_plots: bool=True,
+                    use_threads: bool=True) -> Tuple[QtPlot, DataSet]:
     """
     The function to handle all the auxiliary magic of the T10 users, e.g.
     their plotting specifications, the device image annotation etc.
@@ -326,6 +327,10 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
         set_params: tuple of tuples. Each tuple is of the form
             (param, start, stop)
         meas_params: tuple of parameters to measure
+        do_plots: Whether to do a live plot
+        use_threads: Whether to use threads to parallelise simultaneous
+            measurements. If only one thing is being measured at the time
+            in loop, this does nothing.
 
     Returns:
         (plot, data)
@@ -349,9 +354,9 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
         plot = None
     try:
         if do_plots:
-            _ = loop.with_bg_task(plot.update).run()
+            _ = loop.with_bg_task(plot.update).run(use_threads=use_threads)
         else:
-            _ = loop.run()
+            _ = loop.run(use_threads=use_threads)
     except KeyboardInterrupt:
         interrupted = True
         print("Measurement Interrupted")
@@ -366,9 +371,8 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
         pdfplot.rescale_axis()
         pdfplot.fig.tight_layout(pad=3)
         title_list = plot.get_default_title().split(sep)
-        title_list.insert(-1 , CURRENT_EXPERIMENT['pdf_subfolder'])
+        title_list.insert(-1, CURRENT_EXPERIMENT['pdf_subfolder'])
         title = sep.join(title_list)
-
 
         pdfplot.save("{}.pdf".format(title))
         if pdfdisplay['combined'] or (num_subplots == 1 and pdfdisplay['individual']):
@@ -391,7 +395,9 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
         raise KeyboardInterrupt
     return plot, data
 
-def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True):
+
+def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True,
+         use_threads=True):
     """
 
     Args:
@@ -405,6 +411,8 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True):
         do_plots: Default True: If False no plots are produced.
             Data is still saved
              and can be displayed with show_num.
+        use_threads: If True and if multiple things are being measured,
+            multiple threads will be used to parallelise the waiting.
 
     Returns:
         plot, data : returns the plot and the dataset
@@ -419,13 +427,14 @@ def do1d(inst_set, start, stop, num_points, delay, *inst_meas, do_plots=True):
     meas_params = _select_plottables(inst_meas)
 
     plot, data = _do_measurement(loop, set_params, meas_params,
-                                 do_plots=do_plots)
+                                 do_plots=do_plots, use_threads=use_threads)
 
     return plot, data
 
 
 def do1dDiagonal(inst_set, inst2_set, start, stop, num_points,
-                 delay, start2, slope, *inst_meas, do_plots=True):
+                 delay, start2, slope, *inst_meas, do_plots=True,
+                 use_threads=True):
     """
     Perform diagonal sweep in 1 dimension, given two instruments
 
@@ -441,6 +450,8 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, num_points,
         *inst_meas:  any number of instrument to measure
         do_plots: Default True: If False no plots are produced.
             Data is still saved and can be displayed with show_num.
+        use_threads: If True and if multiple things are being measured,
+            multiple threads will be used to parallelise the waiting.
 
     Returns:
         plot, data : returns the plot and the dataset
@@ -458,14 +469,14 @@ def do1dDiagonal(inst_set, inst2_set, start, stop, num_points,
                    delay).each(slope_task, *inst_meas, inst2_set)
 
     plot, data = _do_measurement(loop, set_params, meas_params,
-                                 do_plots=do_plots)
+                                 do_plots=do_plots, use_threads=use_threads)
 
     return plot, data
 
 
 def do2d(inst_set, start, stop, num_points, delay,
          inst_set2, start2, stop2, num_points2, delay2,
-         *inst_meas, do_plots=True):
+         *inst_meas, do_plots=True, use_threads=True):
     """
 
     Args:
@@ -482,6 +493,8 @@ def do2d(inst_set, start, stop, num_points, delay,
         *inst_meas:
         do_plots: Default True: If False no plots are produced.
             Data is still saved and can be displayed with show_num.
+        use_threads: If True and if multiple things are being measured,
+            multiple threads will be used to parallelise the waiting.
 
     Returns:
         plot, data : returns the plot and the dataset
@@ -506,7 +519,7 @@ def do2d(inst_set, start, stop, num_points, delay,
     meas_params = _select_plottables(inst_meas)
 
     plot, data = _do_measurement(outerloop, set_params, meas_params,
-                                 do_plots=do_plots)
+                                 do_plots=do_plots, use_threads=use_threads)
 
     return plot, data
 
