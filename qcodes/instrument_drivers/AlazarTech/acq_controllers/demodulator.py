@@ -56,28 +56,23 @@ class Demodulator:
                  samples_per_record: int,
                  sample_rate: float,
                  filter_settings,
-                 active_channels):
+                 demod_freqs,
+                 average_buffers: bool=True,
+                 average_records: bool=True):
 
         self.filter_settings = filter_settings
-        self.active_channels = active_channels
         self.sample_rate = sample_rate
-        self.alazar_channel = active_channels[0]['channel']
-        if active_channels[0]['average_buffers']:
+        if average_buffers:
             len_buffers = 1
         else:
             len_buffers = buffers_per_acquisition
 
-        if active_channels[0]['average_buffers']:
+        if average_records:
             len_records = 1
         else:
             len_records = records_per_buffer
 
-        num_demods = len(active_channels)
-        demod_freqs = []
-        for chan in active_channels:
-            if chan['channel'] != self.alazar_channel:
-                raise RuntimeError("All demodulated signal in a Demodulator must use same physical channel")
-            demod_freqs.append(chan['demod_freq'])
+        num_demods = len(demod_freqs)
         self.demod_freqs = np.array(demod_freqs)
         mat_shape = (num_demods, len_buffers,
                      len_records, samples_per_record)

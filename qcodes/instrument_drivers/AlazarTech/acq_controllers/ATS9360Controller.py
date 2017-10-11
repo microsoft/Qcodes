@@ -68,6 +68,7 @@ class ATS9360Controller(AcquisitionController):
         self.samples_divisor = self._get_alazar().samples_divisor
 
         self.active_channels = []
+        self.active_channels_nested = []
         self.board_info = self._get_alazar().get_idn()
 
     def _update_int_time(self, value, **kwargs):
@@ -242,14 +243,19 @@ class ATS9360Controller(AcquisitionController):
                 pref['channels'][active_channel['channel']] = True
 
 
-        for active_channel in self.active_channels:
-            if active_channel['demod']:
+        for channel in self.active_channels_nested:
+            if channel['ndemods'] > 0:
                 self.demodulators.append(Demodulator(buffers_per_acquisition,
                                                      records_per_buffer,
                                                      samples_per_record,
                                                      sample_rate,
                                                      self.filter_settings,
-                                                     active_channel))
+                                                     channel['demod_freqs'],
+                                                     self.active_channels[0]['average_buffers'],
+                                                     self.active_channels[0]['average_buffers']
+                                                     ))
+            else:
+                self.demodulators.append(None)
 
     def pre_acquire(self):
         pass
@@ -297,11 +303,13 @@ class ATS9360Controller(AcquisitionController):
                                            records_per_buffer,
                                            samples_per_record,
                                            self.number_of_channels)
-        channel = settings['channel']
-        channelData = reshaped_buf[..., channel]
+        channelAData = reshaped_buf[..., 0]
+        channelBData = reshaped_buf[..., 1]
 
 
-        def handle_alazar_channel(channelData):
+        def handle_alazar_channel(channelData, channel_number,
+                                  raw, settings,
+                                  demod_freqs, demod_types):
             # TODO(JHN) could probably get better precision
             # if we avoid casting back to uint16 after taking the average.
             # either change the conversion to something that supports floats
@@ -318,27 +326,42 @@ class ATS9360Controller(AcquisitionController):
             recordA = self._to_volts(recordA)
 
             data = []
+            if raw:
+                if settings['integrate_samples']:
+                    data.append(np.squeeze(np.mean(recordA, axis=-1)))
+                else:
+                    data.append(np.squeeze(recordA))
             # do demodulation
-            for active_channel in self.active_channels:
-                if active_channel['demod']:
-                    magA, phaseA = self.demodulator.demodulate(recordA, self.int_delay(), self.int_time())
-                    if active_channel['demod_type'] == 'magnitude':
-                        data = magA[0]
-                    elif active_channel['demod_type'] == 'phase':
-                        data = phaseA[0]
+            if demod_freqs:
+                magA, phaseA = self.demodulator.demodulate(recordA, self.int_delay(), self.int_time())
+                for i, type, freq in enumerate(zip(demod_types, demod_freqs)):
+                    if type=='magnitude':
+                        data.append(magA[i])
+                    elif type == 'phase':
+                        data.append(phaseA[i])
                     else:
                         raise RuntimeError("unknown demodulator type")
-                else:
-                    if active_channel['integrate_samples']:
-                        data = np.squeeze(np.mean(recordA, axis=-1))
-                    else:
-                        data = np.squeeze(recordA)
-
             return data
 
-        outputdata = handle_alazar_channel(channelData)
-
-        return outputdata
+        if self.active_channels_nested[0]['nsignals']>0:
+            outputdataA = handle_alazar_channel(channelAData, 0, self.active_channels_nested[0]['raw'],
+                                                settings,
+                                                self.active_channels_nested[0]['demod_freqs'],
+                                                self.active_channels_nested[1]['demod_types'])
+        else:
+            outputdataA = []
+        if self.active_channels_nested[1]['nsignals'] > 0:
+            outputdataB = handle_alazar_channel(channelBData, 1, self.active_channels_nested[1]['raw'],
+                                                settings,
+                                                self.active_channels_nested[1]['demod_freqs'],
+                                                self.active_channels_nested[1]['demod_types'])
+        else:
+            outputdataB = []
+        outputdata = outputdataA + outputdataB
+        if len(outputdata) == 1:
+            return outputdata[0]
+        else:
+            return tuple(outputdata)
 
     def _to_volts(self, record):
         # convert rec to volts
