@@ -40,7 +40,7 @@ class AcqVariablesParam(Parameter):
         self._save_val(value)
 
     def get(self):
-        return self._latest()['value']
+        return self._latest['value']
 
     def to_default(self):
         """

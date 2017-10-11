@@ -265,6 +265,7 @@ class AlazarMultiChannelParameter(MultiChannelInstrumentParameter):
             cntrl = channel._parent
             instrument = cntrl._get_alazar()
             cntrl.active_channels = []
+            cntrl.active_channels_nested = [[], []]
 
             for i, channel in enumerate(self._channels):
                 cntrl.active_channels.append({})
@@ -278,7 +279,7 @@ class AlazarMultiChannelParameter(MultiChannelInstrumentParameter):
                 cntrl.active_channels[i]['average_records'] = channel._average_records
                 cntrl.active_channels[i]['integrate_samples'] = channel._integrate_samples
                 cntrl.active_channels[i]['channel'] = channel.alazar_channel.get()
-                for param in ('average_buffers, average_records', 'integrate_channels'):
+                for param in ('average_buffers', 'average_records', 'integrate_samples'):
                     if cntrl.active_channels[i][param] != cntrl.active_channels[0][param]:
                         raise RuntimeError("Trying to capture multiple channels with different values of {}"
                                            "This is not currently supported".format(param))
@@ -292,7 +293,7 @@ class AlazarMultiChannelParameter(MultiChannelInstrumentParameter):
             for i, channel in enumerate(self._channels):
                 channels_acq_kwargs.append({key: val.get() for key, val in channel.parameters.items() if
                      key in params_to_kwargs})
-                if channels_acq_kwargs[i] != channels_acq_kwargs:
+                if channels_acq_kwargs[i] != channels_acq_kwargs[0]:
                     raise RuntimeError("kwargs are not the same")
             acq_kwargs.update(controller_acq_kwargs)
             acq_kwargs.update(channels_acq_kwargs[0])

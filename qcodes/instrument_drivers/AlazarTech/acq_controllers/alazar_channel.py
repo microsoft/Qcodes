@@ -49,6 +49,9 @@ class AlazarChannel(InstrumentChannel):
 
         self.add_parameter('alazar_channel',
                            label='Alazar Channel',
+                           # once val mapping is fixed for
+                           # parameters
+                           #val_mapping={'A': 0, 'B': 1},
                            get_cmd=None, set_cmd=None)
         if not average_records:
             self.add_parameter('records_per_buffer',

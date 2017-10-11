@@ -301,7 +301,7 @@ class ATS9360Controller(AcquisitionController):
         channelData = reshaped_buf[..., channel]
 
 
-        def handle_alazar_channel(channelData, ):
+        def handle_alazar_channel(channelData):
             # TODO(JHN) could probably get better precision
             # if we avoid casting back to uint16 after taking the average.
             # either change the conversion to something that supports floats
