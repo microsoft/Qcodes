@@ -151,19 +151,28 @@ class ScopeChannel(InstrumentChannel):
                            get_cmd='CHANnel{}:OVERload?'.format(channum)
                            )
 
+        self.add_parameter('arithmetics',
+                           label='Channel {} arithmetics'.format(channum),
+                           set_cmd='CHANnel{}:ARIThmetics {{}}'.format(channum),
+                           get_cmd='CHANnel{}:ARIThmetics?'.format(channum),
+                           val_mapping={'AVERAGE': 'AVER',
+                                        'OFF': 'OFF',
+                                        'ENVELOPE': 'ENV'}
+                           )
+
     #########################
     # Specialised/interlinked set/getters
     def _set_range(self, value):
         self.scale._save_val(value/10)
 
-        self._instrument.write('CHANnel{}:RANGe {{}}'.format(self.channum,
-                                                             value))
+        self._parent.write('CHANnel{}:RANGe {}'.format(self.channum,
+                                                       value))
 
     def _set_scale(self, value):
         self.range._save_val(value*10)
 
-        self._instrument.write('CHANnel{}:SCALe {{}}'.format(self.channum,
-                                                             value))
+        self._parent.write('CHANnel{}:SCALe {}'.format(self.channum,
+                                                       value))
 
 
 class RTO1000(VisaInstrument):
@@ -298,12 +307,10 @@ class RTO1000(VisaInstrument):
         #########################
         #
 
-        self.add_parameter('num_averages',
-                           label='Number of trace averages',
-                           docstring='Number of averages for measuring '
-                           'trace.',
-                           get_cmd='ACQuire:COUNt' + '?',
-                           set_cmd='ACQuire:COUNt ' + '{:.4f}',
+        self.add_parameter('num_acquisitions',
+                           label='Number of single acquisitions',
+                           get_cmd='ACQuire:COUNt ?',
+                           set_cmd='ACQuire:COUNt {}',
                            vals=vals.Ints(1, 16777215),
                            get_parser=int)
 
@@ -359,6 +366,9 @@ class RTO1000(VisaInstrument):
             chan = ScopeChannel(self, 'channel{}'.format(ch), ch)
             self.add_submodule('ch{}'.format(ch), chan)
 
+        self.add_function('run_cont', call_cmd='RUN')
+        self.add_function('run_single', call_cmd='SINGle')
+        self.add_function('stop', call_cmd='STOP')
         self.add_function('reset', call_cmd='*RST')
         self.add_function('opc', call_cmd='*OPC?')
         self.add_function('stop_opc', call_cmd='*STOP;OPC?')
