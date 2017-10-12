@@ -1,3 +1,6 @@
+# All manual references are to R&S RTO Digital Oscilloscope User Manual
+# for firmware 3.65, 2017
+
 import numpy as np
 from time import sleep
 import warnings
@@ -5,9 +8,31 @@ from distutils.version import LooseVersion
 
 from qcodes import Instrument
 from qcodes.instrument.visa import VisaInstrument
-from qcodes.instrument.channel import InstrumentChannel, ChannelList
+from qcodes.instrument.channel import InstrumentChannel
 from qcodes.utils import validators as vals
-from qcodes.instrument.parameter import ManualParameter
+from qcodes.instrument.parameter import ArrayParameter
+
+
+class ScopeTrace(ArrayParameter):
+
+    def __init__(self, name: str, instrument: VisaInstrument,
+                 channel: int) -> None:
+        super().__init__(name=name,
+                         shape=(1,),
+                         label='Voltage',  # TODO: Is this sometimes dbm?
+                         unit='V',
+                         setpoint_names=('Time',),
+                         setpoint_labels=('Time',),
+                         setpoint_units=('s',),
+                         docstring='Holds scope trace')
+        self.channel = channel
+        self._instrument = instrument
+
+    def prepare_trace(self) -> None:
+        """
+        Prepare the scope for returning data, calculate the setpoints
+        """
+        pass
 
 
 class ScopeChannel(InstrumentChannel):
@@ -34,9 +59,6 @@ class ScopeChannel(InstrumentChannel):
 
         super().__init__(parent, name)
 
-        # Add the parameters
-        # Note (WilliamHPNielsen): I just slavishly typed in pp 1176-1180
-        # of the manual
         self.add_parameter('state',
                            label='Channel {} state'.format(channum),
                            get_cmd='CHANnel{}:STATe?'.format(channum),
@@ -61,23 +83,22 @@ class ScopeChannel(InstrumentChannel):
                            docstring=('Connects/disconnects the signal to/from'
                                       'the ground.'))
 
-        # NOTE (WilliamHPNielsen): This parameter depends on other parameters and
+        # NB (WilliamHPNielsen): This parameter depends on other parameters and
         # should be dynamically updated accordingly. Cf. p 1178 of the manual
         self.add_parameter('scale',
                            label='Channel {} Y scale'.format(channum),
                            unit='V/div',
                            get_cmd='CHANnel{}:SCALe?'.format(channum),
-                           set_cmd='CHANnel{}:SCALe {{}}'.format(channum),
+                           set_cmd=self._set_scale,
+                           get_parser=float,
                            )
 
-        # NOTE (WilliamHPNielsen):
-        # This parameter competes with the `scale` parameter, and they should
-        # be interlinked
         self.add_parameter('range',
                            label='Channel {} Y range'.format(channum),
-                           unit='V/div',
+                           unit='V',
                            get_cmd='CHANnel{}:RANGe?'.format(channum),
-                           set_cmd='CHANnel{}:RANGe {{}}'.format(channum),
+                           set_cmd=self._set_range,
+                           get_parser=float
                            )
 
         # TODO (WilliamHPNielsen): would it be better to recast this in terms
@@ -87,6 +108,7 @@ class ScopeChannel(InstrumentChannel):
                            unit='div',
                            get_cmd='CHANnel{}:POSition?'.format(channum),
                            set_cmd='CHANnel{}:POSition {{}}'.format(channum),
+                           get_parser=float,
                            vals=vals.Numbers(-5, 5),
                            docstring=('Positive values move the waveform up,'
                                       ' negative values move it down.'))
@@ -96,6 +118,7 @@ class ScopeChannel(InstrumentChannel):
                            unit='V',
                            get_cmd='CHANnel{}:OFFSet?'.format(channum),
                            set_cmd='CHANnel{}:OFFSet {{}}'.format(channum),
+                           get_parser=float,
                            )
 
         self.add_parameter('invert',
@@ -128,7 +151,19 @@ class ScopeChannel(InstrumentChannel):
                            get_cmd='CHANnel{}:OVERload?'.format(channum)
                            )
 
-        # TODO: (WilliamHPNielsen) make this not be snapshot?
+    #########################
+    # Specialised/interlinked set/getters
+    def _set_range(self, value):
+        self.scale._save_val(value/10)
+
+        self._instrument.write('CHANnel{}:RANGe {{}}'.format(self.channum,
+                                                             value))
+
+    def _set_scale(self, value):
+        self.range._save_val(value*10)
+
+        self._instrument.write('CHANnel{}:SCALe {{}}'.format(self.channum,
+                                                             value))
 
 
 class RTO1000(VisaInstrument):
@@ -168,6 +203,94 @@ class RTO1000(VisaInstrument):
         # Now assign model-specific values
         self.num_chans = int(self.model[-1])
 
+        self._horisontal_divs = int(self.ask('TIMebase:DIVisions?'))
+
+        self.add_parameter('display',
+                           label='Display state',
+                           set_cmd='SYSTem:DISPlay:UPDate {}',
+                           val_mapping={'remote': 0,
+                                        'view': 1})
+
+        #########################
+        # Triggering
+
+        self.add_parameter('trigger_display',
+                           label='Trigger display state',
+                           set_cmd='DISPlay:TRIGger:LINes {}',
+                           get_cmd='DISPlay:TRIGger:LINes?',
+                           val_mapping={'ON': 1, 'OFF': 0})
+
+        # TODO: (WilliamHPNielsen) There are more available trigger
+        # settings than implemented here. See p. 1261 of the manual
+        # here we just use trigger1, which is the A-trigger
+
+        self.add_parameter('trigger_source',
+                           label='Trigger source',
+                           set_cmd='TRIGger1:SOURce {}',
+                           get_cmd='TRIGger1:SOURce?',
+                           val_mapping={'CH1': 'CHAN1',
+                                        'CH2': 'CHAN2',
+                                        'CH3': 'CHAN3',
+                                        'CH4': 'CHAN4',
+                                        'EXT': 'EXT'})
+
+        self.add_parameter('trigger_type',
+                           label='Trigger type',
+                           set_cmd='TRIGger1:TYPE {}',
+                           get_cmd='TRIGger1:TYPE?',
+                           val_mapping={'EDGE': 'EDGE',
+                                        'GLITCH': 'GLIT',
+                                        'WIDTH': 'WIDT',
+                                        'RUNT': 'RUNT',
+                                        'WINDOW': 'WIND',
+                                        'TIMEOUT': 'TIM',
+                                        'INTERVAL': 'INT',
+                                        'SLEWRATE': 'SLEW',
+                                        'DATATOCLOCK': 'DAT',
+                                        'STATE': 'STAT',
+                                        'PATTERN': 'PATT',
+                                        'ANEDGE': 'ANED',
+                                        'SERPATTERN': 'SERP',
+                                        'NFC': 'NFC',
+                                        'TV': 'TV',
+                                        'CDR': 'CDR'}
+                           )
+        # See manual p. 1262 for an explanation of trigger types
+
+        self.add_parameter('trigger_level',
+                           label='Trigger level',
+                           set_cmd=self._set_trigger_level,
+                           get_cmd=self._get_trigger_level)
+
+        self.add_parameter('trigger_edge_slope',
+                           label='Edge trigger slope',
+                           set_cmd='TRIGger1:EDGE:SLOPe {}',
+                           get_cmd='TRIGger1:EDGE:SLOPe?',
+                           vals=vals.Enum('POS', 'NEG', 'EITH'))
+
+        #########################
+        # Horizontal settings
+
+        self.add_parameter('timebase_scale',
+                           label='Timebase scale',
+                           set_cmd=self._set_timebase_scale,
+                           get_cmd='TIMebase:SCALe?',
+                           unit='s/div',
+                           get_parser=float,
+                           vals=vals.Numbers(25e-12, 10000))
+
+        self.add_parameter('timebase_range',
+                           label='Timebase range',
+                           set_cmd=self._set_timebase_range,
+                           get_cmd='TIMebase:RANGe?',
+                           unit='s',
+                           get_parser=float,
+                           vals=vals.Numbers(250e-12, 100e3))
+
+
+        #########################
+        #
+
         self.add_parameter('num_averages',
                            label='Number of trace averages',
                            docstring='Number of averages for measuring '
@@ -195,31 +318,6 @@ class RTO1000(VisaInstrument):
                            set_cmd='ACQuire:RESolution ' + '{:.2f}',
                            vals=vals.Numbers(1E-15, 0.5),
                            get_parser=float)
-
-        # some difficulty in finding a command(s) for this from the manual
-        # replace this with an appropriate command(s) from the manual
-        self.add_parameter('trigger_interval',
-                           docstring='Time between triggers',
-                           vals=vals.Numbers(),
-                           unit='s',
-                           initial_value=1,
-                           parameter_class=ManualParameter)
-
-        # some difficulty in finding a command(s) for this from the manual
-        # replace this with an appropriate command(s) from the manual
-        self.add_parameter('trigger_ch',
-                           docstring='Trigger channel',
-                           vals=vals.Ints(1, 4),
-                           initial_value=2,
-                           parameter_class=ManualParameter)
-
-        # write a get-set method for signal channel,
-        # and all other methods dependent on signal channel
-        self.add_parameter('signal_ch',
-                           docstring='Signal channel',
-                           vals=vals.Ints(1, 4),
-                           initial_value=1,
-                           parameter_class=ManualParameter)
 
         self.add_parameter('acq_rate',
                            label='Acquisition rate',
@@ -250,14 +348,9 @@ class RTO1000(VisaInstrument):
 
         # Add the channels to the instrument
 
-        channels = ChannelList(self, 'channels', ScopeChannel)
-
         for ch in range(1, self.num_chans+1):
             chan = ScopeChannel(self, 'channel{}'.format(ch), ch)
-            channels.append(chan)
             self.add_submodule('ch{}'.format(ch), chan)
-        channels.lock()
-        self.add_submodule('channels', channels)
 
         self.add_function('reset', call_cmd='*RST')
         self.add_function('opc', call_cmd='*OPC?')
@@ -266,6 +359,56 @@ class RTO1000(VisaInstrument):
         self.add_function('system_shutdown', call_cmd='SYSTem:EXIT')
 
         self.connect_message()
+
+    #########################
+    # Specialised set/get functions
+
+    def _set_timebase_range(self, value):
+        """
+        Set the full range of the timebase
+        """
+        self.timebase_scale._save_val(value/self._horisontal_divs)
+
+        self.write('TIMebase:RANGe {}'.format(value))
+
+    def _set_timebase_scale(self, value):
+        """
+        Set the length of one horizontal division
+        """
+        self.timebase_range._save_val(value*self._horisontal_divs)
+
+        self.write('TIMebase:SCALe {}'.format(value))
+
+    def _set_trigger_level(self, value):
+        """
+        Set the trigger level on the currently used trigger source
+        channel
+        """
+        trans = {'CH1': 1, 'CH2': 2, 'CH3': 3, 'CH4': 4, 'EXT': 5}
+        # we use get and not get_latest because we don't trust users to
+        # not touch the front panel of an oscilloscope
+        source = trans[self.trigger_source.get()]
+        if source != 5:
+            v_range = self.submodules['ch{}'.format(source)].range()
+            offset = self.submodules['ch{}'.format(source)].offset()
+
+            if (value < -v_range/2 + offset) or (value > v_range/2 + offset):
+                raise ValueError('Trigger level outside channel range.')
+
+        self.write('TRIGger1:LEVel{}:{}'.format(source, value))
+
+    def _get_trigger_level(self):
+        """
+        Get the trigger level from the currently used trigger source
+        """
+        trans = {'CH1': 1, 'CH2': 2, 'CH3': 3, 'CH4': 4, 'EXT': 5}
+        # we use get and not get_latest because we don't trust users to
+        # not touch the front panel of an oscilloscope
+        source = trans[self.trigger_source.get()]
+
+        val = self.ask('TRIGger1:LEVel{}?'.format(source))
+
+        return float(val.strip())
 
     # functions below need to be edited in order to make them
     # compatible with the set inputs of the functions above
