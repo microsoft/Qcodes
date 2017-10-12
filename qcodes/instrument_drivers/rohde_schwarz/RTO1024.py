@@ -287,6 +287,13 @@ class RTO1000(VisaInstrument):
                            get_parser=float,
                            vals=vals.Numbers(250e-12, 100e3))
 
+        self.add_parameter('timebase_position',
+                           label='Horizontal position',
+                           set_cmd='TIMEbase:HORizontal:POSition {}',
+                           get_cmd='TIMEbase:HORizontal:POSition?',
+                           get_parser=float,
+                           unit='s',
+                           vals=vals.Numbers(-100e24, 100e24))
 
         #########################
         #
@@ -395,7 +402,7 @@ class RTO1000(VisaInstrument):
             if (value < -v_range/2 + offset) or (value > v_range/2 + offset):
                 raise ValueError('Trigger level outside channel range.')
 
-        self.write('TRIGger1:LEVel{}:{}'.format(source, value))
+        self.write('TRIGger1:LEVel{} {}'.format(source, value))
 
     def _get_trigger_level(self):
         """
