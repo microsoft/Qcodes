@@ -174,11 +174,11 @@ class _BaseParameter(Metadatable, DeferredOperations):
             vals = Enum(*val_mapping.keys())
         self.vals = vals
 
-        self._step = step
+        self.step = step
         self.scale = scale
         self.raw_value = None
-        self._inter_delay = inter_delay
-        self._post_delay = post_delay
+        self.inter_delay = inter_delay
+        self.post_delay = post_delay
 
         self.val_mapping = val_mapping
         if val_mapping is None:
