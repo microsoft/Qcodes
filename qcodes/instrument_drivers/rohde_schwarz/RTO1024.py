@@ -177,14 +177,28 @@ class ScopeChannel(InstrumentChannel):
 
 class RTO1000(VisaInstrument):
     """
-    Alpha Version of Instrument driver for the
+    QCoDeS Instrument driver for the
     Rohde-Schwarz RTO1000 series oscilloscopes.
 
     """
 
-    def __init__(self, name, address=None, model=None, timeout=5,
-                 terminator='\n',
+    def __init__(self, name: str, address: str,
+                 model: str=None, timeout: float=5.,
+                 HD: bool=True,
+                 terminator: str='\n',
                  **kwargs):
+        """
+        Args:
+            name: name of the instrument
+            address: VISA resource address
+            model: The instrument model. For newer firmware versions,
+                this can be auto-detected
+            timeout: The VISA query timeout
+            HD: Does the unit have the High Definition Option (allowing
+                16 bit vertical resolution)
+            terminator: Command termination character to strip from VISA
+                commands.
+        """
         super().__init__(name=name, address=address, timeout=timeout,
                          terminator=terminator, **kwargs)
 
@@ -305,7 +319,7 @@ class RTO1000(VisaInstrument):
                            vals=vals.Numbers(-100e24, 100e24))
 
         #########################
-        #
+        # Acquisition
 
         self.add_parameter('num_acquisitions',
                            label='Number of single acquisitions',
@@ -331,8 +345,17 @@ class RTO1000(VisaInstrument):
                            vals=vals.Numbers(2, 20e12),
                            get_parser=float)
 
-        # Add the channels to the instrument
+        #########################
+        # High definition mode (might not be available on all instruments)
 
+        if HD:
+            self.add_parameter('high_definition_state',
+                               label='High definition (16 bit) state',
+                               set_cmd='HDEFinition:STAte {}',
+                               get_cmd='HDEFinition:STAte?',
+                               val_mapping={'ON': 1, 'OFF': 0})
+
+        # Add the channels to the instrument
         for ch in range(1, self.num_chans+1):
             chan = ScopeChannel(self, 'channel{}'.format(ch), ch)
             self.add_submodule('ch{}'.format(ch), chan)
