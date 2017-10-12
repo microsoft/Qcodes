@@ -16,11 +16,15 @@ from queue import Queue, Empty
 import qcodes.config
 from qcodes.dataset.param_spec import ParamSpec
 from qcodes.instrument.parameter import _BaseParameter
-from qcodes.dataset.sqlite_base import (atomic, atomicTransaction, transaction, add_parameter,
-                                        connect, create_run, get_parameters, get_experiments,
+from qcodes.dataset.sqlite_base import (atomic, atomicTransaction,
+                                        transaction, add_parameter,
+                                        connect, create_run, get_parameters,
+                                        get_experiments,
                                         get_last_experiment, select_one_where,
-                                        length, modify_values, add_meta_data, mark_run,
-                                        modify_many_values, insert_values, insert_many_values,
+                                        length, modify_values,
+                                        add_meta_data, mark_run,
+                                        modify_many_values, insert_values,
+                                        insert_many_values,
                                         VALUES, get_data, get_metadata, one)
 
 # TODO: as of now every time a result is inserted with add_result the db is
@@ -49,7 +53,7 @@ class CompletedError(RuntimeError):
     pass
 
 
-DB =  qcodes.config["core"]["db_location"]
+DB = qcodes.config["core"]["db_location"]
 
 
 class Subscriber(Thread):
@@ -166,17 +170,18 @@ class DataSet(Sized):
     @property
     def name(self):
         return select_one_where(self.conn, "runs",
-                                 "name", "run_id", self.id)
+                                "name", "run_id", self.id)
 
     @property
     def table_name(self):
         return select_one_where(self.conn, "runs",
-                                 "result_table_name", "run_id", self.id)
+                                "result_table_name", "run_id", self.id)
 
     @property
     def counter(self):
         return select_one_where(self.conn, "runs",
-                                 "result_counter", "run_id", self.id)
+                                "result_counter", "run_id", self.id)
+
     @property
     def parameters(self)->str:
         return select_one_where(self.conn, "runs",
@@ -185,7 +190,7 @@ class DataSet(Sized):
     @property
     def exp_id(self):
         return select_one_where(self.conn, "runs",
-                                 "exp_id", "run_id", self.id)
+                                "exp_id", "run_id", self.id)
 
     def toggle_debug(self):
         """

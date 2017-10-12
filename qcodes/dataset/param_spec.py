@@ -1,7 +1,7 @@
 from qcodes.instrument.parameter import _BaseParameter
 
 
-#TODO: we should validate type somehow
+# TODO: we should validate type somehow
 # we can't accept everything (or we can but crash at runtime?)
 # we only support the types in VALUES type
 class ParamSpec():

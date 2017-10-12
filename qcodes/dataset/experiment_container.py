@@ -2,11 +2,15 @@ from collections import Sized
 from typing import Optional, List
 
 import qcodes
-from qcodes.dataset.data_set import DataSet, load_by_id, load_by_counter, new_data_set, SPECS
+from qcodes.dataset.data_set import (DataSet, load_by_id, load_by_counter,
+                                     new_data_set, SPECS)
 
-from qcodes.dataset.sqlite_base import select_one_where, finish_experiment, get_run_counter, get_runs, \
-    get_last_run, connect, transaction, one, get_last_experiment, get_experiments
-from qcodes.dataset.sqlite_base import  new_experiment as ne
+from qcodes.dataset.sqlite_base import (select_one_where, finish_experiment,
+                                        get_run_counter, get_runs,
+                                        get_last_run,
+                                        connect, transaction, one,
+                                        get_last_experiment, get_experiments)
+from qcodes.dataset.sqlite_base import new_experiment as ne
 
 DB = qcodes.config["core"]["db_location"]
 
@@ -133,8 +137,8 @@ def experiments()->List[Experiment]:
 
 
 def new_experiment(name: str,
-                    sample_name: str,
-                    format_string: Optional[str] = "{}-{}-{}") -> Experiment:
+                   sample_name: str,
+                   format_string: Optional[str] = "{}-{}-{}") -> Experiment:
     """ Create a new experiment
 
     Args:
@@ -163,6 +167,7 @@ def load_experiment(exp_id: int) -> Experiment:
     e.id = exp_id
     return e
 
+
 def load_last_experiment() -> Experiment:
     """
     Load last experiment
@@ -174,10 +179,13 @@ def load_last_experiment() -> Experiment:
     e.id = get_last_experiment(e.conn)
     return e
 
-def load_experiment_by_name(name: str, sample: Optional[str] = None) -> Experiment:
+
+def load_experiment_by_name(name: str,
+                            sample: Optional[str] = None) -> Experiment:
     """
     Try to load experiment with the specified name.
-    Nothing stops you from having many experiments with the same name and sample_name.
+    Nothing stops you from having many experiments with
+    the same name and sample_name.
     In that case this won't work. And warn you.
     Args:
         name: the name of the experiment
