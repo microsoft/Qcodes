@@ -322,42 +322,13 @@ class RTO1000(VisaInstrument):
                            get_cmd='ACQuire:POINts:ARATe' + '?',
                            get_parser=int)
 
-        # resolution does not have to equal the timescale
-        # TODO : Explore timebase commands
-        self.add_parameter('resolution',
-                           label='Temporal resolution',
-                           docstring='Resolution in seconds.',
-                           unit='s',
-                           get_cmd='ACQuire:RESolution' + '?',
-                           set_cmd='ACQuire:RESolution ' + '{:.2f}',
-                           vals=vals.Numbers(1E-15, 0.5),
-                           get_parser=float)
-
-        self.add_parameter('acq_rate',
-                           label='Acquisition rate',
+        self.add_parameter('acquisition_sample_rate',
+                           label='Acquisition sample rate',
                            unit='Sa/s',
                            docstring='recorded waveform samples per second',
                            get_cmd='ACQuire:SRATe'+'?',
                            set_cmd='ACQuire:SRATe ' + ' {:.2f}',
                            vals=vals.Numbers(2, 20e12),
-                           get_parser=float)
-
-        self.add_parameter('t_start',
-                           label='Waveform start time',
-                           unit='s',
-                           docstring='start time, relative to trigger in s',
-                           get_cmd='EXPort:WAVeform:STARt' + '?',
-                           set_cmd='EXPort:WAVeform:STARt' + ' {:.2f}',
-                           vals=vals.Numbers(-100E+24, 100E+24),
-                           get_parser=float)
-
-        self.add_parameter('t_stop',
-                           unit='s',
-                           docstring='stop time of saved waveform'
-                           'relative to trigger in s',
-                           get_cmd='EXPort:WAVeform:STOP' + '?',
-                           set_cmd='EXPort:WAVeform:STOP' + ' {:.2f}',
-                           vals=vals.Numbers(-100E+24, 100E+24),
                            get_parser=float)
 
         # Add the channels to the instrument
@@ -426,51 +397,3 @@ class RTO1000(VisaInstrument):
         val = self.ask('TRIGger1:LEVel{}?'.format(source))
 
         return float(val.strip())
-
-    # functions below need to be edited in order to make them
-    # compatible with the set inputs of the functions above
-    # acquisition rate is already set
-    def set_waveform(self):
-        # takes as an input starting and stopping times relative to trigger
-        # takes as an input no. of averages
-        # this does the measurement
-        # data is extracted only after this finishes
-        # put a sleep command here at the end
-        self.visa_handle.ask('STOP;*OPC?')
-        self.visa_handle.write('EXPort:WAVeform:FASTexport ON')
-        self.visa_handle.write('EXPort:WAVeform:INCXvalues ON')
-        self.visa_handle.write(
-            'CHANnel%s:WAVeform1:STATe 1'.format(str(self.signal_ch)))
-
-    def get_waveform(self):
-        """
-        Takes as an input channel no.
-        type(channel_number) = int, values from 1..4
-        Method to output waveform data, as x,y values map to timestamps and voltage
-
-        """
-        # TODO: currently works for one waveform per channel,
-        # the instrument supports 3 waveforms per channel
-        # TODO, in Beta version: Derieve the waiting command
-        # from an available visa command, replace this hacky way
-
-        # TODO, in Beta Version: how does changing trigger interval affect acquisition time
-        # TODO, in Beta Version: Play with the trigger intervals
-
-        self.visa_handle.ask('STOP;*OPC?')
-        self.visa_handle.write('RUNSingle')
-        # Wait until measurement finishes before extracting data.
-
-        sleep(self.num_averages() * self.trigger_interval() + 1)
-        self.visa_handle.write(
-            'EXPort:WAVeform:SOURce C%sW1'.format(str(self.signal_ch)))
-        self.visa_handle.write(
-            'CHANnel%s:ARIThmetics AVERage'.fomat(str(self.signal_ch)))
-        ret_str = self.visa_handle.ask(
-            'CHANNEL%s:WAVEFORM1:DATA?'.format(str(self.signal_ch)))
-        array = ret_str.split(',')
-        array = np.double(array)
-        x_values = array[::2]
-        y_values = array[1::2]
-
-        return x_values, y_values
