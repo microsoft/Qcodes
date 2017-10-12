@@ -466,7 +466,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         return self._step
 
     @step.setter
-    def step(self, step):
+    def step(self, step: Union[int, float]):
         """
         Configure whether this Parameter uses steps during set operations.
         If step is a positive number, this is the maximum value change
@@ -490,6 +490,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
             raise TypeError('you can only step numeric parameters')
         elif not isinstance(step, (int, float)):
             raise TypeError('step must be a number')
+        elif step == 0:
+            self._step = None
         elif step <= 0:
             raise ValueError('step must be positive')
         elif isinstance(self.vals, Ints) and not isinstance(step, int):
