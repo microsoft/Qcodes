@@ -497,6 +497,30 @@ class _BaseParameter(Metadatable, DeferredOperations):
         else:
             self._step = step
 
+    def set_step(self, value):
+        warnings.warn(
+            "set_step is deprecated use step property as in `inst.step = "
+            "stepvalue` instead")
+        self.step = value
+
+    def get_step(self):
+        warnings.warn(
+            "set_step is deprecated use step property as in `a = inst.step` "
+            "instead")
+        return self._step
+
+    def set_delay(self, value):
+        warnings.warn(
+            "set_delay is deprecated use inter_delay or post_delay property "
+            "as in `inst.inter_delay = delayvalue` instead")
+        self.post_delay = value
+
+    def get_delay(self):
+        warnings.warn(
+            "get_delay is deprecated use inter_delay or post_delay property "
+            "as in `a = inst.inter_delay` instead")
+        return self._post_delay
+
     @property
     def post_delay(self):
         """Property that returns the delay time of this parameter"""
