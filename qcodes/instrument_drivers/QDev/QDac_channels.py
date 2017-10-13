@@ -12,7 +12,6 @@ from collections import OrderedDict
 
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 from qcodes.instrument.channel import MultiChannelInstrumentParameter
-from qcodes.instrument.parameter import ManualParameter
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.utils import validators as vals
 
@@ -93,16 +92,30 @@ class QDacChannel(InstrumentChannel):
         self.add_parameter(name='sync_delay',
                            label='Channel {} sync pulse delay'.format(channum),
                            unit='s',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=0
                            )
 
         self.add_parameter(name='sync_duration',
                            label='Channel {} sync pulse duration'.format(channum),
                            unit='s',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=0.01
                            )
+
+    def snapshot_base(self, update=False, params_to_skip_update=None):
+        update_currents = self._parent._update_currents and update
+        if update and not self._parent._get_status_performed:
+            self._parent._get_status(readcurrents=update_currents)
+        # call get_status rather than getting the status individually for
+        # each parameter. This is only done if _get_status_performed is False
+        # this is used to signal that the parent has already called it and
+        # no need to repeat.
+        if params_to_skip_update is None:
+            params_to_skip_update = ('v', 'i', 'irange', 'vrange')
+        snap = super().snapshot_base(update=update,
+                                     params_to_skip_update=params_to_skip_update)
+        return snap
 
 
 class QDacMultiChannelParameter(MultiChannelInstrumentParameter):
@@ -163,8 +176,9 @@ class QDac(VisaInstrument):
             QDac object
         """
         super().__init__(name, address)
+        self._output_n_lines = 50
         handle = self.visa_handle
-
+        self._get_status_performed = False
         # This is the baud rate on power-up. It can be changed later but
         # you must start out with this value.
         handle.baud_rate = 480600
@@ -229,6 +243,12 @@ class QDac(VisaInstrument):
                            set_cmd='ver {}',
                            val_mapping={True: 1, False: 0})
 
+        self.add_parameter(name='fast_voltage_set',
+                           label='fast voltage set',
+                           get_cmd=None, set_cmd=None,
+                           vals=vals.Bool(),
+                           initial_value=False,
+                           docstring=""""Deprecated with no functionality""")
         # Initialise the instrument, all channels DC (unbind func. generators)
         for chan in self.chan_range:
             # Note: this call does NOT change the voltage on the channel
@@ -238,9 +258,24 @@ class QDac(VisaInstrument):
         self.connect_message()
         log.info('[*] Querying all channels for voltages and currents...')
         self._get_status(readcurrents=update_currents)
+        self._update_currents = update_currents
         log.info('[+] Done')
 
-        self._output_n_lines = 50
+    def snapshot_base(self, update=False, params_to_skip_update=None):
+        update_currents = self._update_currents and update
+        if update:
+            self._get_status(readcurrents=update_currents)
+        self._get_status_performed = True
+        # call get_status rather than getting the status individually for
+        # each parameter. We set _get_status_performed to True
+        # to indicate that each update channel does not need to call this
+        # function as opposed to when snapshot is called on an individual
+        # channel
+        snap = super().snapshot_base(update=update,
+                                     params_to_skip_update=params_to_skip_update)
+        self._get_status_performed = False
+        return snap
+
     #########################
     # Channel gets/sets
     #########################
@@ -284,8 +319,8 @@ class QDac(VisaInstrument):
             if self.channels[chan-1].vrange.get_latest() == 1:
                 v_set = v_set*10
             # set the mode back to DC in case it had been changed
-            self.write('wav {} 0 0 0'.format(chan))
-            self.write('set {} {:.6f}'.format(chan, v_set))
+            # and then set the voltage
+            self.write('wav {} 0 0 0;set {} {:.6f}'.format(chan, chan, v_set))
 
     def _set_vrange(self, chan, switchint):
         """
@@ -603,18 +638,20 @@ class QDac(VisaInstrument):
         if you want to use this response, we put it in self._write_response
         (but only for the very last write call)
 
-        Note that this procedure makes it cumbersome to handle the returned
-        messages from concatenated commands, e.g. 'wav 1 1 1 0;fun 2 1 100 1 1'
-        Please don't use concatenated commands
+        In this method we expect to read one termination char per command. As
+        commands are concatenated by `;` we count the number of concatenated
+        commands as count(';') + 1 e.g. 'wav 1 1 1 0;fun 2 1 100 1 1' is two
+        commands. Note that only the response of the last command will be
+        available in `_write_response`
 
-        TODO (WilliamHPNielsen): add automatic de-concatenation of commands.
         """
         if self.debugmode:
             log.info('Sending command string: {}'.format(cmd))
 
         nr_bytes_written, ret_code = self.visa_handle.write(cmd)
         self.check_error(ret_code)
-        self._write_response = self.visa_handle.read()
+        for _ in range(cmd.count(';')+1):
+            self._write_response = self.visa_handle.read()
 
     def read(self):
         return self.visa_handle.read()

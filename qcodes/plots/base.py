@@ -24,6 +24,9 @@ class BasePlot:
         self.traces = []
         self.data_updaters = set()
         self.interval = interval
+        self.standardunits = ['V', 's', 'J', 'W', 'm', 'eV', 'A', 'K', 'g',
+                              'Hz', 'rad', 'T', 'H', 'F', 'Pa', 'C', 'Ω', 'Ohm',
+                              'S']
 
     def clear(self):
         """

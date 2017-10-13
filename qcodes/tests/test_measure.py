@@ -1,7 +1,7 @@
 from unittest import TestCase
 from datetime import datetime
 
-from qcodes.instrument.parameter import ManualParameter
+from qcodes.instrument.parameter import Parameter
 from qcodes.measure import Measure
 
 from .instrument_mocks import MultiGetter, MultiSetPointParam
@@ -11,7 +11,7 @@ from numpy.testing import assert_array_equal
 
 class TestMeasure(TestCase):
     def setUp(self):
-        self.p1 = ManualParameter('P1', initial_value=1)
+        self.p1 = Parameter('P1', initial_value=1, get_cmd=None, set_cmd=None)
 
     def test_simple_scalar(self):
         data = Measure(self.p1).run_temp()

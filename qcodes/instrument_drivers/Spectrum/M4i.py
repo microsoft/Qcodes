@@ -17,7 +17,6 @@ import ctypes as ct
 from functools import partial
 from qcodes.utils.validators import Enum, Numbers, Anything
 from qcodes.instrument.base import Instrument
-from qcodes.instrument.parameter import ManualParameter
 try:
     import pyspcm
 except ImportError:
@@ -83,7 +82,7 @@ class M4i(Instrument):
         # add parameters for getting
         self.add_parameter('card_id',
                            label='card id',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=cardid,
                            vals=Anything(),
                            docstring='The card ID')
@@ -633,7 +632,7 @@ class M4i(Instrument):
         """
         if memsize is None:
             memsize = self._channel_memsize
-        posttrigger_size = int(memsize / 2)
+        posttrigger_size = 16 * int((memsize / 2) // 16)
         mV_range = getattr(self, 'range_channel_%d' % channel).get()
         cx = self._channel_mask()
         self.enable_channels(cx)
@@ -870,7 +869,7 @@ class M4i(Instrument):
         self.segment_size(memsize)
 
         if post_trigger is None:
-            pre_trigger = min(2**13, memsize / 2)
+            pre_trigger = min(2**13, 16 * int((memsize / 2) // 16))
             post_trigger = memsize - pre_trigger
         else:
             pre_trigger = memsize - post_trigger
