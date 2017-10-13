@@ -2,7 +2,6 @@
 # for firmware 3.65, 2017
 
 import numpy as np
-from time import sleep
 import warnings
 from distutils.version import LooseVersion
 
@@ -38,6 +37,27 @@ class ScopeTrace(ArrayParameter):
         """
         Prepare the scope for returning data, calculate the setpoints
         """
+
+        # we must have this nesting, since the parameter high_definition_state
+        # only exists if HD
+        if self.channel._parent.HD:
+            if self.channel._parent.high_definition_state() == 'ON':
+                dataformat = 'INT,16'
+            else:
+                dataformat = 'INT,8'
+        else:
+            dataformat = 'INT,8'
+
+        self.channel._parent.dataformat(dataformat)
+        # ensure little-endianess
+        self.channel._parent.write('FORMat:BORder LSBFirst')
+        # only export y-values
+        self.channel._parent.write('EXPort:WAVeform:INCXvalues OFF')
+        # only export one channel
+        self.channel._parent.write('EXPort:WAVeform:MULTichannel OFF')
+
+        # now get setpoints
+
         hdr = self.channel._parent.ask('CHANnel{}:'.format(self.channum) +
                                        'DATA:HEADER?')
         hdr_vals = list(map(float, hdr.split(',')))
@@ -58,33 +78,51 @@ class ScopeTrace(ArrayParameter):
         self.shape = (no_samples,)
         self.setpoints = tuple(np.linspace(t_start, t_stop, no_samples))
 
+        self._trace_ready = True
+
     def get(self):
         """
         Returns a trace
         """
 
-        # we must have this nesting, since the parameter high_definition_state
-        # only exists if HD
+        if not self._trace_ready:
+            raise ValueError('Trace not ready! Please call '
+                             'prepare_trace().')
+
+        vh = self.channel._parent.visa_handle
+        vh.write('CHANnel{}:DATA?'.format(self.channum))
+        raw_vals = vh.read_raw()
+
+        num_length = int(raw_vals[1:2])
+        no_points = int(raw_vals[2:2+num_length])
+
+        # cut of the header and the trailing '\n'
+        raw_vals = raw_vals[2+num_length:-1]
+
+        dataformat = self.channel._parent.dataformat.get_latest()
+
+        if dataformat == 'INT,8':
+            int_vals = np.fromstring(raw_vals, dtype=np.int8, count=no_points)
+        else:
+            int_vals = np.fromstring(raw_vals, dtype=np.int16,
+                                     count=no_points//2)
+
+        # now the integer values must be converted to physical
+        # values
+
+        scale = self.channel.scale()
+        no_divs = 10  # TODO: Is this ever NOT 10?
         if self.channel._parent.HD:
             if self.channel._parent.high_definition_state() == 'ON':
-                dataformat = 'INT,16'
+                quant_levels = 253*256
             else:
-                dataformat = 'INT,8'
+                quant_levels = 253
         else:
-            dataformat = 'INT,8'
+            quant_levels = 253
+        conv_factor = scale*no_divs/quant_levels
+        output = conv_factor*int_vals + self.channel.offset()
 
-        self.channel._parent.dataformat(dataformat)
-        # ensure little-endianess
-        self.channel._parent.write('FORMat:BORder LSBFirst')
-        # only export y-values
-        self.channel._parent.write('EXPort:WAVeform:INCXvalues OFF')
-        # only export one channel
-        self.channel._parent.write('EXPort:WAVeform:MULTichannel OFF')
-
-        # finally get the values
-        raw_vals = self.channel._parent.ask('CHANnel{}:DATA?'.format(self.channum))
-
-        return raw_vals
+        return output
 
 
 class ScopeChannel(InstrumentChannel):
@@ -218,6 +256,8 @@ class ScopeChannel(InstrumentChannel):
         self.add_parameter('trace',
                            channum=self.channum,
                            parameter_class=ScopeTrace)
+
+        self._trace_ready = False
 
     #########################
     # Specialised/interlinked set/getters
@@ -373,7 +413,7 @@ class RTO1000(VisaInstrument):
 
         self.add_parameter('timebase_position',
                            label='Horizontal position',
-                           set_cmd='TIMEbase:HORizontal:POSition {}',
+                           set_cmd=self._set_timebase_position,
                            get_cmd='TIMEbase:HORizontal:POSition?',
                            get_parser=float,
                            unit='s',
@@ -449,6 +489,7 @@ class RTO1000(VisaInstrument):
         """
         Set the full range of the timebase
         """
+        self._make_traces_not_ready()
         self.timebase_scale._save_val(value/self._horisontal_divs)
 
         self.write('TIMebase:RANGe {}'.format(value))
@@ -457,9 +498,26 @@ class RTO1000(VisaInstrument):
         """
         Set the length of one horizontal division
         """
+        self._make_traces_not_ready()
         self.timebase_range._save_val(value*self._horisontal_divs)
 
         self.write('TIMebase:SCALe {}'.format(value))
+
+    def _set_timebase_position(self, value):
+        """
+        Set the horizontal position
+        """
+        self._make_traces_not_ready()
+        self.write('TIMEbase:HORizontal:POSition {}'.format(value))
+
+    def _make_traces_not_ready(self):
+        """
+        Make the scope traces be not ready
+        """
+        self.ch1.trace._trace_ready = False
+        self.ch2.trace._trace_ready = False
+        self.ch3.trace._trace_ready = False
+        self.ch4.trace._trace_ready = False
 
     def _set_trigger_level(self, value):
         """
