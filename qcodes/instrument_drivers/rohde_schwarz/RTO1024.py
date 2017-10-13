@@ -15,8 +15,13 @@ from qcodes.instrument.parameter import ArrayParameter
 
 class ScopeTrace(ArrayParameter):
 
-    def __init__(self, name: str, instrument: VisaInstrument,
-                 channel: int) -> None:
+    def __init__(self, name: str, instrument: InstrumentChannel,
+                 channum: int) -> None:
+        """
+        The ScopeTrace parameter is attached to a channel of the oscilloscope.
+
+        For now, we only support reading out the entire trace.
+        """
         super().__init__(name=name,
                          shape=(1,),
                          label='Voltage',  # TODO: Is this sometimes dbm?
@@ -25,14 +30,61 @@ class ScopeTrace(ArrayParameter):
                          setpoint_labels=('Time',),
                          setpoint_units=('s',),
                          docstring='Holds scope trace')
-        self.channel = channel
-        self._instrument = instrument
+
+        self.channel = instrument
+        self.channum = channum
 
     def prepare_trace(self) -> None:
         """
         Prepare the scope for returning data, calculate the setpoints
         """
-        pass
+        hdr = self.channel._parent.ask('CHANnel{}:'.format(self.channum) +
+                                       'DATA:HEADER?')
+        hdr_vals = list(map(float, hdr.split(',')))
+        t_start = hdr_vals[0]
+        t_stop = hdr_vals[1]
+        no_samples = hdr_vals[2]
+        values_per_sample = hdr_vals[3]
+
+        # NOTE (WilliamHPNielsen):
+        # if samples are multi-valued, we need a MultiParameter
+        # instead of an arrayparameter
+        if values_per_sample > 1:
+            raise NotImplementedError('There are several values per sample '
+                                      'in this trace (are you using envelope'
+                                      ' or peak detect?). We currently do '
+                                      'not support saving such a trace.')
+
+        self.shape = (no_samples,)
+        self.setpoints = tuple(np.linspace(t_start, t_stop, no_samples))
+
+    def get(self):
+        """
+        Returns a trace
+        """
+
+        # we must have this nesting, since the parameter high_definition_state
+        # only exists if HD
+        if self.channel._parent.HD:
+            if self.channel._parent.high_definition_state() == 'ON':
+                dataformat = 'INT,16'
+            else:
+                dataformat = 'INT,8'
+        else:
+            dataformat = 'INT,8'
+
+        self.channel._parent.dataformat(dataformat)
+        # ensure little-endianess
+        self.channel._parent.write('FORMat:BORder LSBFirst')
+        # only export y-values
+        self.channel._parent.write('EXPort:WAVeform:INCXvalues OFF')
+        # only export one channel
+        self.channel._parent.write('EXPort:WAVeform:MULTichannel OFF')
+
+        # finally get the values
+        raw_vals = self.channel._parent.ask('CHANnel{}:DATA?'.format(self.channum))
+
+        return raw_vals
 
 
 class ScopeChannel(InstrumentChannel):
@@ -160,6 +212,13 @@ class ScopeChannel(InstrumentChannel):
                                         'ENVELOPE': 'ENV'}
                            )
 
+        #########################
+        # Trace
+
+        self.add_parameter('trace',
+                           channum=self.channum,
+                           parameter_class=ScopeTrace)
+
     #########################
     # Specialised/interlinked set/getters
     def _set_range(self, value):
@@ -222,6 +281,8 @@ class RTO1000(VisaInstrument):
                                  'a model number (eg. "RTO1024").')
             else:
                 self.model = model
+
+        self.HD = HD
 
         # Now assign model-specific values
         self.num_chans = int(self.model[-1])
@@ -344,6 +405,16 @@ class RTO1000(VisaInstrument):
                            set_cmd='ACQuire:SRATe ' + ' {:.2f}',
                            vals=vals.Numbers(2, 20e12),
                            get_parser=float)
+
+        #########################
+        # Data
+
+        self.add_parameter('dataformat',
+                           label='Export data format',
+                           set_cmd='FORMat:DATA {}',
+                           get_cmd='FORMat:DATA?',
+                           vals=vals.Enum('ASC,0', 'REAL,32',
+                                          'INT,8', 'INT,16'))
 
         #########################
         # High definition mode (might not be available on all instruments)
