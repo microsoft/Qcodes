@@ -1,6 +1,5 @@
 from qcodes import Instrument
 from qcodes.instrument.parameter import MultiParameter
-from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils.validators import Enum, Bool
 
 
@@ -65,39 +64,39 @@ class Ithaco_1211(Instrument):
         super().__init__(name, **kwargs)
 
         self.add_parameter('sens',
-                           parameter_class=ManualParameter,
                            initial_value=1e-8,
                            label='Sensitivity',
                            unit='A/V',
+                           get_cmd=None, set_cmd=None,
                            vals=Enum(1e-11, 1e-10, 1e-09, 1e-08, 1e-07,
                                      1e-06, 1e-05, 1e-4, 1e-3))
 
         self.add_parameter('invert',
-                           parameter_class=ManualParameter,
                            initial_value=True,
                            label='Inverted output',
+                           get_cmd=None, set_cmd=None,
                            vals=Bool())
 
         self.add_parameter('sens_factor',
-                           parameter_class=ManualParameter,
                            initial_value=1,
                            label='Sensitivity factor',
                            unit=None,
+                           get_cmd=None, set_cmd=None,
                            vals=Enum(0.1, 1, 10))
 
         self.add_parameter('suppression',
-                           parameter_class=ManualParameter,
                            initial_value=1e-7,
                            label='Suppression',
                            unit='A',
+                           get_cmd=None, set_cmd=None,
                            vals=Enum(1e-10, 1e-09, 1e-08, 1e-07, 1e-06,
                                      1e-05, 1e-4, 1e-3))
 
         self.add_parameter('risetime',
-                           parameter_class=ManualParameter,
                            initial_value=0.3,
                            label='Rise Time',
                            unit='msec',
+                           get_cmd=None, set_cmd=None,
                            vals=Enum(0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30,
                                      100, 300, 1000))
 

@@ -3,7 +3,7 @@ channels:
  - defaults
  - conda-forge
 dependencies:
- - h5py=2.6.0
+ - h5py
  - matplotlib=2.0.2
  - pyqtgraph 
  - python=3.6

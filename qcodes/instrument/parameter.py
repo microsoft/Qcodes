@@ -6,19 +6,23 @@ satisfy the Parameter interface. Most of the time that is easiest to do
 by either using or subclassing one of the classes defined here, but you can
 also use any class with the right attributes.
 
-TODO (alexcjohnson) update this with the real duck-typing requirements or
-create an ABC for Parameter and MultiParameter - or just remove this statement
-if everyone is happy to use these classes.
+All parameter classes are subclassed from _BaseParameter (except
+CombinedParameter). The _BaseParameter provides functionality that is common
+to all parameter types, such as ramping and scaling of values, adding delays
+(see documentation for details).
 
 This file defines four classes of parameters:
 
-``Parameter``, ``ArrayParameter``, and ``MultiParameter`` must be subclassed:
-
-- ``Parameter`` is the base class for scalar-valued parameters, if you have
-    custom code to read or write a single value. Provides ``sweep`` and
-    ``__getitem__`` (slice notation) methods to use a settable parameter as
-    the swept variable in a ``Loop``. To use, fill in ``super().__init__``,
-    and provide a ``get`` method, a ``set`` method, or both.
+- ``Parameter`` is the base class for scalar-valued parameters.
+    Two primary ways in which it can be used:
+    1. As an ``Instrument`` parameter that sends/receives commands. Provides a
+       standardized interface to construct strings to pass to the
+       instrument's ``write`` and ``ask`` methods
+    2. As a variable that stores and returns a value. For instance, for storing
+       of values you want to keep track of but cannot set or get electronically.
+    Provides ``sweep`` and ``__getitem__`` (slice notation) methods to use a
+    settable parameter as the swept variable in a ``Loop``.
+    The get/set functionality can be modified.
 
 - ``ArrayParameter`` is a base class for array-valued parameters, ie anything
     for which each ``get`` call returns an array of values that all have the
@@ -35,21 +39,16 @@ This file defines four classes of parameters:
     that returns a sequence of values, and describe those values in
     ``super().__init__``.
 
-``StandardParameter`` and ``ManualParameter`` can be instantiated directly:
+    ``CombinedParameter`` Combines several parameters into a ``MultiParameter``.
+    can be easily used via the ``combine`` function.
+    Note that it is not yet a subclass of BaseParameter.
 
-- ``StandardParameter`` is the default class for instrument parameters
-    (see ``Instrument.add_parameter``). Can be gettable, settable, or both.
-    Provides a standardized interface to construct strings to pass to the
-    instrument's ``write`` and ``ask`` methods (but can also be given other
-    functions to execute on ``get`` or ``set``), to convert the string
-    responses to meaningful output, and optionally to ramp a setpoint with
-    stepped ``write`` calls from a single ``set``. Does not need to be
-    subclassed, just instantiated.
 
-- ``ManualParameter`` is for values you want to keep track of but cannot
-    set or get electronically. Holds the last value it was ``set`` to, and
-    returns it on ``get``.
 """
+
+# TODO (alexcjohnson) update this with the real duck-typing requirements or
+# create an ABC for Parameter and MultiParameter - or just remove this statement
+# if everyone is happy to use these classes.
 
 from datetime import datetime, timedelta
 from copy import copy
@@ -58,26 +57,26 @@ import logging
 import os
 import collections
 import warnings
-
+from functools import partial, wraps
 import numpy
 
 from qcodes.utils.deferred_operations import DeferredOperations
-from qcodes.utils.helpers import (permissive_range, wait_secs, is_sequence,
-                                  is_sequence_of, DelegateAttributes,
-                                  full_class, named_repr, warn_units)
+from qcodes.utils.helpers import (permissive_range, is_sequence_of,
+                                  DelegateAttributes, full_class, named_repr,
+                                  warn_units)
 from qcodes.utils.metadata import Metadatable
-from qcodes.utils.command import Command, NoCommandError
-from qcodes.utils.validators import Validator, Numbers, Ints, Enum, Strings
+from qcodes.utils.command import Command
+from qcodes.utils.validators import Validator, Ints, Strings, Enum
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
 
 
 class _BaseParameter(Metadatable, DeferredOperations):
     """
-    Shared behavior for simple and multi parameters. Not intended to be used
-    directly, normally you should use ``StandardParameter`` or
-    ``ManualParameter``, or create your own subclass of ``Parameter`` or
-    ``MultiParameter``.
+    Shared behavior for all parameters. Not intended to be used
+    directly, normally you should use ``Parameter``, ``ArrayParameter``,
+    ``MultiParameter``, or ``CombinedParameter``.
+    Note that ``CombinedParameter`` is not yet a subclass of ``_BaseParameter``
 
     Args:
         name (str): the local name of the parameter. Should be a valid
@@ -94,83 +93,132 @@ class _BaseParameter(Metadatable, DeferredOperations):
             ``update=True``, for example if it takes too long to update.
             Default True.
 
+        snapshot_value (Optional[bool]): False prevents parameter value to be
+            stored in the snapshot. Useful if the value is large.
+
+        step (Optional[Union[int, float]]): max increment of parameter value.
+            Larger changes are broken into multiple steps this size.
+            When combined with delays, this acts as a ramp.
+
+        scale (Optional[float]): Scale to multiply value with before
+            performing set. the internally multiplied value is stored in
+            `raw_value`. Can account for a voltage divider.
+
+        inter_delay (Optional[Union[int, float]]): Minimum time (in seconds)
+            between successive sets. If the previous set was less than this,
+            it will wait until the condition is met.
+            Can be set to 0 to go maximum speed with no errors.
+
+        post_delay (Optional[Union[int, float]]): time (in seconds) to wait
+            after the *start* of each set, whether part of a sweep or not.
+            Can be set to 0 to go maximum speed with no errors.
+
+        val_mapping (Optional[dict]): a bidirectional map data/readable values
+            to instrument codes, expressed as a dict:
+            ``{data_val: instrument_code}``
+            For example, if the instrument uses '0' to mean 1V and '1' to mean
+            10V, set val_mapping={1: '0', 10: '1'} and on the user side you
+            only see 1 and 10, never the coded '0' and '1'
+            If vals is omitted, will also construct a matching Enum validator.
+            NOTE: only applies to get if get_cmd is a string, and to set if
+            set_cmd is a string.
+            You can use ``val_mapping`` with ``get_parser``, in which case
+            ``get_parser`` acts on the return value from the instrument first,
+            then ``val_mapping`` is applied (in reverse).
+
+        get_parser ( Optional[function]): function to transform the response
+            from get to the final output value. See also val_mapping
+
+        set_parser (Optional[function]): function to transform the input set
+            value to an encoded value sent to the instrument.
+            See also val_mapping.
+
+        vals (Optional[Validator]): a Validator object for this parameter
+
+        max_val_age (Optional[float]): The max time (in seconds) to trust a
+            saved value obtained from get_latest(). If this parameter has not
+            been set or measured more recently than this, perform an
+            additional measurement.
+
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
 
-    def __init__(self, name, instrument, snapshot_get, metadata,
-                 snapshot_value=True):
+    def __init__(self, name, instrument, snapshot_get=True, metadata=None,
+                 step=None, scale=None, inter_delay=0, post_delay=0,
+                 val_mapping=None, get_parser=None, set_parser=None,
+                 snapshot_value=True, max_val_age=None, vals=None):
         super().__init__(metadata)
-        self._snapshot_get = snapshot_get
         self.name = str(name)
         self._instrument = instrument
+        self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
 
-        self.has_get = hasattr(self, 'get')
-        self.has_set = hasattr(self, 'set')
+        if not isinstance(vals, (Validator, type(None))):
+            raise TypeError('vals must be None or a Validator')
+        elif val_mapping is not None:
+            vals = Enum(*val_mapping.keys())
+        self.vals = vals
 
-        if not (self.has_get or self.has_set):
-            raise AttributeError('A parameter must have either a get or a '
-                                 'set method, or both.')
+        self.step = step
+        self.scale = scale
+        self.raw_value = None
+        self.inter_delay = inter_delay
+        self.post_delay = post_delay
+
+        self.val_mapping = val_mapping
+        if val_mapping is None:
+            self.inverse_val_mapping = None
+        else:
+            self.inverse_val_mapping = {v: k for k, v in val_mapping.items()}
+
+        self.get_parser = get_parser
+        self.set_parser = set_parser
 
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
         # but they all use the same attributes so snapshot is consistent.
-        self._latest_value = None
-        self._latest_ts = None
-        self.get_latest = GetLatest(self)
+        self._latest = {'value': None, 'ts': None}
+        self.get_latest = GetLatest(self, max_val_age=max_val_age)
+
+        if hasattr(self, 'get'):
+            self.get = self._wrap_get(self.get)
+        if hasattr(self, 'set'):
+            self.set = self._wrap_set(self.set)
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
-        self._meta_attrs = ['name', 'instrument']
+        self._meta_attrs = ['name', 'instrument', 'step', 'scale', 'raw_value',
+                            'inter_delay', 'post_delay', 'val_mapping', 'vals']
+
+        # Specify time of last set operation, used when comparing to delay to
+        # check if additional waiting time is needed before next set
+        self._t_last_set = time.perf_counter()
+
+    def __str__(self):
+        """Include the instrument name with the Parameter name if possible."""
+        inst_name = getattr(self._instrument, 'name', '')
+        if inst_name:
+            return '{}_{}'.format(inst_name, self.name)
+        else:
+            return self.name
 
     def __repr__(self):
         return named_repr(self)
 
-    def __call__(self, *args):
+    def __call__(self, *args, **kwargs):
         if len(args) == 0:
-            if self.has_get:
+            if hasattr(self, 'get'):
                 return self.get()
             else:
                 raise NotImplementedError('no get cmd found in' +
                                           ' Parameter {}'.format(self.name))
         else:
-            if self.has_set:
-                self.set(*args)
+            if hasattr(self, 'set'):
+                self.set(*args, **kwargs)
             else:
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
-
-    def _latest(self):
-        return {
-            'value': self._latest_value,
-            'ts': self._latest_ts
-        }
-
-    # get_attrs ignores leading underscores, unless they're in this list
-    _keep_attrs = ['__doc__', '_vals']
-
-    def get_attrs(self):
-        """
-        Attributes recreated as properties in the RemoteParameter proxy.
-
-        Grab the names of all attributes that the RemoteParameter needs
-        to function like the main one (in loops etc)
-
-        Returns:
-            list: All public attribute names, plus docstring and _vals
-        """
-        out = []
-
-        for attr in dir(self):
-            # while we're keeping units as a deprecated attribute in some
-            # classes, avoid calling it here so we don't get spurious errors
-            if ((attr[0] == '_' and attr not in self._keep_attrs) or
-                    (attr != 'units' and callable(getattr(self, attr)))):
-                continue
-            out.append(attr)
-
-        return out
 
     def snapshot_base(self, update=False):
         """
@@ -185,12 +233,13 @@ class _BaseParameter(Metadatable, DeferredOperations):
             dict: base snapshot
         """
 
-        if self.has_get and self._snapshot_get and self._snapshot_value and \
-                update:
+        if hasattr(self, 'get') and self._snapshot_get \
+                and self._snapshot_value and update:
             self.get()
 
-        state = self._latest()
+        state = copy(self._latest)
         state['__class__'] = full_class(self)
+        state['full_name'] = str(self)
 
         if not self._snapshot_value:
             state.pop('value')
@@ -204,41 +253,306 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     'instrument': full_class(self._instrument),
                     'instrument_name': self._instrument.name
                 })
-
-            elif hasattr(self, attr):
-                val = getattr(self, attr)
-                attr_strip = attr.lstrip('_')  # eg _vals - do not include _
-                if isinstance(val, Validator):
-                    state[attr_strip] = repr(val)
-                else:
-                    state[attr_strip] = val
+            else:
+                val = getattr(self, attr, None)
+                if val is not None:
+                    attr_strip = attr.lstrip('_')  # strip leading underscores
+                    if isinstance(val, Validator):
+                        state[attr_strip] = repr(val)
+                    else:
+                        state[attr_strip] = val
 
         return state
 
-    def _save_val(self, value):
-        self._latest_value = value
-        self._latest_ts = datetime.now()
+    def _save_val(self, value, validate=False):
+        if validate:
+            self.validate(value)
+        self._latest = {'value': value, 'ts': datetime.now()}
+
+    def _wrap_get(self, get_function):
+        @wraps(get_function)
+        def get_wrapper(*args, **kwargs):
+            try:
+                # There might be cases where a .get also has args/kwargs
+                value = get_function(*args, **kwargs)
+                self.raw_value = value
+
+                if self.get_parser is not None:
+                    value = self.get_parser(value)
+
+                if self.scale is not None:
+                    # Scale values
+                    if isinstance(self.scale, collections.Iterable):
+                        # Scale contains multiple elements, one for each value
+                        value = tuple(value / scale for value, scale
+                                      in zip(value, self.scale))
+                    elif isinstance(value, collections.Iterable):
+                        # Use single scale for all values
+                        value = tuple(value / self.scale for value in value)
+                    else:
+                        value /= self.scale
+
+                if self.val_mapping is not None:
+                    if value in self.inverse_val_mapping:
+                        value = self.inverse_val_mapping[value]
+                    elif int(value) in self.inverse_val_mapping:
+                        value = self.inverse_val_mapping[int(value)]
+                    else:
+                        raise KeyError("'{}' not in val_mapping".format(value))
+
+                self._save_val(value)
+                return value
+            except Exception as e:
+                e.args = e.args + ('getting {}'.format(self),)
+                raise e
+
+        return get_wrapper
+
+    def _wrap_set(self, set_function):
+        @wraps(set_function)
+        def set_wrapper(value, **kwargs):
+            try:
+                self.validate(value)
+
+                if self.val_mapping is not None:
+                    # Convert set values using val_mapping dictionary
+                    value = self.val_mapping[value]
+
+                if self.scale is not None:
+                    if isinstance(self.scale, collections.Iterable):
+                        # Scale contains multiple elements, one for each value
+                        value = tuple(val * scale for val, scale
+                                      in zip(value, self.scale))
+                    else:
+                        # Use single scale for all values
+                        value *= self.scale
+
+                if self.set_parser is not None:
+                    value = self.set_parser(value)
+
+                # In some cases intermediate sweep values must be used.
+                # Unless `self.step` is defined, get_sweep_values will return
+                # a list containing only `value`.
+                for val in self.get_ramp_values(value, step=self.step):
+
+                    # Check if delay between set operations is required
+                    t_elapsed = time.perf_counter() - self._t_last_set
+                    if t_elapsed < self.inter_delay:
+                        # Sleep until time since last set is larger than
+                        # self.post_delay
+                        time.sleep(self.inter_delay - t_elapsed)
+
+                    # Start timer to measure execution time of set_function
+                    t0 = time.perf_counter()
+
+                    set_function(val, **kwargs)
+                    self.raw_value = val
+                    self._save_val(val, validate=(self.val_mapping is None and
+                                                  self.set_parser is None))
+
+                    # Update last set time (used for calculating delays)
+                    self._t_last_set = time.perf_counter()
+
+                    # Check if any delay after setting is required
+                    t_elapsed = self._t_last_set - t0
+                    if t_elapsed < self.post_delay:
+                        # Sleep until total time is larger than self.post_delay
+                        time.sleep(self.post_delay - t_elapsed)
+            except Exception as e:
+                e.args = e.args + ('setting {} to {}'.format(self, value),)
+                raise e
+
+        return set_wrapper
+
+    def get_ramp_values(self, value, step=None):
+        """
+        Return values to sweep from current value to target value.
+        This method can be overridden to have a custom sweep behaviour.
+        It can even be overridden by a generator.
+        Args:
+            value: target value
+            step: maximum step size
+
+        Returns:
+            List of stepped values, including target value.
+        """
+        if step is None:
+            return [value]
+        else:
+            start_value = self.get_latest()
+
+            self.validate(start_value)
+
+            if not (isinstance(start_value, (int, float)) and
+                    isinstance(value, (int, float))):
+                # something weird... parameter is numeric but one of the ends
+                # isn't, even though it's valid.
+                # probably MultiType with a mix of numeric and non-numeric types
+                # just set the endpoint and move on
+                logging.warning(
+                    'cannot sweep {} from {} to {} - jumping.'.format(
+                        self.name, start_value, value))
+                return []
+
+            # drop the initial value, we're already there
+            return permissive_range(start_value, value, step)[1:] + [value]
+
+    def validate(self, value):
+        """
+        Validate value
+
+        Args:
+            value (any): value to validate
+
+        """
+        if self._instrument:
+            context = (getattr(self._instrument, 'name', '') or
+                       str(self._instrument.__class__)) + '.' + self.name
+        else:
+            context = self.name
+        if self.vals is not None:
+            self.vals.validate(value, 'Parameter: ' + context)
 
     @property
-    def full_name(self):
-        """Include the instrument name with the Parameter name if possible."""
-        try:
-            inst_name = self._instrument.name
-            if inst_name:
-                return inst_name + '_' + self.name
-        except AttributeError:
-            pass
+    def step(self):
+        return self._step
 
-        return self.name
+    @step.setter
+    def step(self, step):
+        """
+        Configure whether this Parameter uses steps during set operations.
+        If step is a positive number, this is the maximum value change
+        allowed in one hardware call, so a single set can result in many
+        calls to the hardware if the starting value is far from the target.
+
+        Args:
+            step (Union[int, float]): A positive number, the largest change
+                allowed in one call. All but the final change will attempt to
+                change by +/- step exactly
+
+        Raises:
+            TypeError: if step is not numeric
+            ValueError: if step is negative
+            TypeError:  if step is not integer for an integer parameter
+            TypeError: if step is not a number
+        """
+        if step is None:
+            self._step = step
+        elif not getattr(self.vals, 'is_numeric', True):
+            raise TypeError('you can only step numeric parameters')
+        elif not isinstance(step, (int, float)):
+            raise TypeError('step must be a number')
+        elif step <= 0:
+            raise ValueError('step must be positive')
+        elif isinstance(self.vals, Ints) and not isinstance(step, int):
+            raise TypeError('step must be a positive int for an Ints parameter')
+        else:
+            self._step = step
+
+    @property
+    def post_delay(self):
+        """Property that returns the delay time of this parameter"""
+        return self._post_delay
+
+    @post_delay.setter
+    def post_delay(self, post_delay):
+        """
+        Configure this parameter with a delay between set operations.
+
+        Typically used in conjunction with set_step to create an effective
+        ramp rate, but can also be used without a step to enforce a delay
+        after every set.
+
+        Args:
+            post_delay(Union[int, float]): the target time between set calls.
+                The actual time will not be shorter than this, but may be longer
+                if the underlying set call takes longer.
+
+        Raises:
+            TypeError: If delay is not int nor float
+            ValueError: If delay is negative
+        """
+        if not isinstance(post_delay, (int, float)):
+            raise TypeError(
+                'post_delay ({}) must be a number'.format(post_delay))
+        if post_delay < 0:
+            raise ValueError(
+                'post_delay ({}) must not be negative'.format(post_delay))
+        self._post_delay = post_delay
+
+    @property
+    def inter_delay(self):
+        """Property that returns the delay time of this parameter"""
+        return self._inter_delay
+
+    @inter_delay.setter
+    def inter_delay(self, inter_delay):
+        """
+        Configure this parameter with a delay between set operations.
+
+        Typically used in conjunction with set_step to create an effective
+        ramp rate, but can also be used without a step to enforce a delay
+        between sets.
+
+        Args:
+            inter_delay(Union[int, float]): the target time between set calls.
+                The actual time will not be shorter than this, but may be longer
+                if the underlying set call takes longer.
+
+        Raises:
+            TypeError: If delay is not int nor float
+            ValueError: If delay is negative
+        """
+        if not isinstance(inter_delay, (int, float)):
+            raise TypeError(
+                'inter_delay ({}) must be a number'.format(inter_delay))
+        if inter_delay < 0:
+            raise ValueError(
+                'inter_delay ({}) must not be negative'.format(inter_delay))
+        self._inter_delay = inter_delay
+
+    # Deprecated
+    @property
+    def full_name(self):
+#        This can fully be replaced by str(parameter) in the future we
+#        may want to deprecate this but the current dataset makes heavy use
+#        of it in more complicated ways so keep it for now.
+#        warnings.warn('Attribute `full_name` is deprecated, please use '
+#                      'str(parameter)')
+        return str(self)
+
+    def set_validator(self, vals):
+        """
+            Deprecated Set a validator `vals` for this parameter.
+                Args:
+                    vals (Validator):  validator to set
+
+        """
+        warnings.warn(
+            "set_validator is deprected use `inst.vals = MyValidator` instead")
+        if isinstance(vals, Validator):
+            self.vals = vals
+        else:
+            raise TypeError('vals must be a Validator')
 
 
 class Parameter(_BaseParameter):
     """
     A parameter that represents a single degree of freedom.
-    Not necessarily part of an instrument.
+    This is the standard parameter for Instruments, though it can also be
+    used as a variable, i.e. storing/retrieving a value, or be subclassed for
+    more complex uses.
 
-    Subclasses should define either a ``set`` method, a ``get`` method, or
-    both.
+    By default only gettable, returning its last value.
+    This behaviour can be modified in two ways:
+    1. Providing a ``get_cmd``/``set_cmd``, which can of the following:
+       a. callable, with zero args for get_cmd, one arg for set_cmd
+       b. VISA command string
+       c. None, in which case it retrieves its last value for ``get_cmd``,
+          and stores a value for ``set_cmd``
+       d. False, in which case trying to get/set will raise an error.
+    2. Creating a subclass with an explicit ``get``/``set`` method. This
+       enables more advanced functionality.
 
     Parameters have a ``.get_latest`` method that simply returns the most
     recent set or measured value. This can be called ( ``param.get_latest()`` )
@@ -246,9 +560,6 @@ class Parameter(_BaseParameter):
 
         ``Loop(...).each(param.get_latest)``
 
-    Note: If you want ``.get`` or ``.set`` to save the measurement for
-    ``.get_latest``, you must explicitly call ``self._save_val(value)``
-    inside ``.get`` and ``.set``.
 
     Args:
         name (str): the local name of the parameter. Should be a valid
@@ -265,41 +576,101 @@ class Parameter(_BaseParameter):
 
         unit (Optional[str]): The unit of measure. Use ``''`` for unitless.
 
-        units (Optional[str]): DEPRECATED, redirects to ``unit``.
-
-        vals (Optional[Validator]): Allowed values for setting this parameter.
-            Only relevant if settable. Defaults to ``Numbers()``
-
-        docstring (Optional[str]): documentation string for the __doc__
-            field of the object. The __doc__ field of the instance is used by
-            some help systems, but not all
-
         snapshot_get (Optional[bool]): False prevents any update to the
             parameter during a snapshot, even if the snapshot was called with
             ``update=True``, for example if it takes too long to update.
             Default True.
 
+        snapshot_value (Optional[bool]): False prevents parameter value to be
+            stored in the snapshot. Useful if the value is large.
+
+        step (Optional[Union[int, float]]): max increment of parameter value.
+            Larger changes are broken into multiple steps this size.
+            When combined with delays, this acts as a ramp.
+
+        scale (Optional[float]): Scale to multiply value with before
+            performing set. the internally multiplied value is stored in
+            `raw_value`. Can account for a voltage divider.
+
+        inter_delay (Optional[Union[int, float]]): Minimum time (in seconds)
+            between successive sets. If the previous set was less than this,
+            it will wait until the condition is met.
+            Can be set to 0 to go maximum speed with no errors.
+
+        post_delay (Optional[Union[int, float]]): time (in seconds) to wait
+            after the *start* of each set, whether part of a sweep or not.
+            Can be set to 0 to go maximum speed with no errors.
+
+        val_mapping (Optional[dict]): a bidirectional map data/readable values
+            to instrument codes, expressed as a dict:
+            ``{data_val: instrument_code}``
+            For example, if the instrument uses '0' to mean 1V and '1' to mean
+            10V, set val_mapping={1: '0', 10: '1'} and on the user side you
+            only see 1 and 10, never the coded '0' and '1'
+            If vals is omitted, will also construct a matching Enum validator.
+            NOTE: only applies to get if get_cmd is a string, and to set if
+            set_cmd is a string.
+            You can use ``val_mapping`` with ``get_parser``, in which case
+            ``get_parser`` acts on the return value from the instrument first,
+            then ``val_mapping`` is applied (in reverse).
+
+        get_parser ( Optional[function]): function to transform the response
+            from get to the final output value. See also val_mapping
+
+        set_parser (Optional[function]): function to transform the input set
+            value to an encoded value sent to the instrument.
+            See also val_mapping.
+
+        vals (Optional[Validator]): Allowed values for setting this parameter.
+            Only relevant if settable. Defaults to ``Numbers()``
+
+        max_val_age (Optional[float]): The max time (in seconds) to trust a
+            saved value obtained from get_latest(). If this parameter has not
+            been set or measured more recently than this, perform an
+            additional measurement.
+
+        docstring (Optional[str]): documentation string for the __doc__
+            field of the object. The __doc__ field of the instance is used by
+            some help systems, but not all
+
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
+
     """
 
-    def __init__(self, name, instrument=None, label=None,
-                 unit=None, units=None, vals=None, docstring=None,
-                 snapshot_get=True, snapshot_value=True, metadata=None):
-        super().__init__(name, instrument, snapshot_get, metadata,
-                         snapshot_value=snapshot_value)
+    def __init__(self, name, instrument=None, label=None, unit=None,
+                 get_cmd=None, set_cmd=False, initial_value=None,
+                 max_val_age=None, vals=None, docstring=None, **kwargs):
+        super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
 
-        self._meta_attrs.extend(['label', 'unit', '_vals'])
+        # Enable set/get methods if get_cmd/set_cmd is given
+        # Called first so super().__init__ can wrap get/set methods
+        if not hasattr(self, 'get') and get_cmd is not False:
+            if get_cmd is None:
+                if max_val_age is not None:
+                    raise SyntaxError('Must have get method or specify get_cmd '
+                                      'when max_val_age is set')
+                self.get = self.get_latest
+            else:
+                exec_str = instrument.ask if instrument else None
+                self.get = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str)
+            self.get = self._wrap_get(self.get)
+
+        if not hasattr(self, 'set') and set_cmd is not False:
+            if set_cmd is None:
+                self.set = partial(self._save_val, validate=False)
+            else:
+                exec_str = instrument.write if instrument else None
+                self.set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str)
+            self.set = self._wrap_set(self.set)
+
+        self._meta_attrs.extend(['label', 'unit', 'vals'])
 
         self.label = name if label is None else label
-
-        if units is not None:
-            warn_units('Parameter', self)
-            if unit is None:
-                unit = units
         self.unit = unit if unit is not None else ''
 
-        self.set_validator(vals)
+        if initial_value is not None:
+            self._save_val(initial_value, validate=True)
 
         # generate default docstring
         self.__doc__ = os.linesep.join((
@@ -308,7 +679,7 @@ class Parameter(_BaseParameter):
             '* `name` %s' % self.name,
             '* `label` %s' % self.label,
             '* `unit` %s' % self.unit,
-            '* `vals` %s' % repr(self._vals)))
+            '* `vals` %s' % repr(self.vals)))
 
         if docstring is not None:
             self.__doc__ = os.linesep.join((
@@ -316,19 +687,12 @@ class Parameter(_BaseParameter):
                 '',
                 self.__doc__))
 
-    def set_validator(self, vals):
+    def __getitem__(self, keys):
         """
-        Set a validator `vals` for this parameter.
-
-        Args:
-            vals (Validator):  validator to set
+        Slice a Parameter to get a SweepValues object
+        to iterate over during a sweep
         """
-        if vals is None:
-            self._vals = Numbers()
-        elif isinstance(vals, Validator):
-            self._vals = vals
-        else:
-            raise TypeError('vals must be a Validator')
+        return SweepFixedValues(self, keys)
 
     def increment(self, value):
         """ Increment the parameter with a value
@@ -337,22 +701,6 @@ class Parameter(_BaseParameter):
             value (float): value to be added to the parameter
         """
         self.set(self.get() + value)
-
-    def validate(self, value):
-        """
-        Validate value
-
-        Args:
-            value (any): value to validate
-
-        """
-        if self._instrument:
-            context = (getattr(self._instrument, 'name', '') or
-                       str(self._instrument.__class__)) + '.' + self.name
-        else:
-            context = self.name
-
-        self._vals.validate(value, 'Parameter: ' + context)
 
     def sweep(self, start, stop, step=None, num=None):
         """
@@ -380,18 +728,6 @@ class Parameter(_BaseParameter):
         """
         return SweepFixedValues(self, start=start, stop=stop,
                                 step=step, num=num)
-
-    def __getitem__(self, keys):
-        """
-        Slice a Parameter to get a SweepValues object
-        to iterate over during a sweep
-        """
-        return SweepFixedValues(self, keys)
-
-    @property
-    def units(self):
-        warn_units('Parameter', self)
-        return self.unit
 
 
 class ArrayParameter(_BaseParameter):
@@ -431,8 +767,6 @@ class ArrayParameter(_BaseParameter):
 
         unit (Optional[str]): The unit of measure. Use ``''`` for unitless.
 
-        units (Optional[str]): DEPRECATED, redirects to ``unit``.
-
         setpoints (Optional[Tuple[setpoint_array]]):
             ``setpoint_array`` can be a DataArray, numpy.ndarray, or sequence.
             The setpoints for each dimension of the returned array. An
@@ -467,26 +801,22 @@ class ArrayParameter(_BaseParameter):
     """
 
     def __init__(self, name, shape, instrument=None,
-                 label=None, unit=None, units=None,
+                 label=None, unit=None,
                  setpoints=None, setpoint_names=None, setpoint_labels=None,
                  setpoint_units=None, docstring=None,
                  snapshot_get=True, snapshot_value=True, metadata=None):
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
 
-        if self.has_set:  # TODO (alexcjohnson): can we support, ala Combine?
+        if hasattr(self, 'set'):
+            # TODO (alexcjohnson): can we support, ala Combine?
             raise AttributeError('ArrayParameters do not support set '
                                  'at this time.')
 
-        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels', 'setpoint_units',
-                                 'label', 'unit'])
+        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
+                                 'setpoint_units', 'label', 'unit'])
 
         self.label = name if label is None else label
-
-        if units is not None:
-            warn_units('ArrayParameter', self)
-            if unit is None:
-                unit = units
         self.unit = unit if unit is not None else ''
 
         nt = type(None)
@@ -500,7 +830,7 @@ class ArrayParameter(_BaseParameter):
         sp_shape = (len(shape),)
 
         sp_types = (nt, DataArray, collections.Sequence,
-                    collections.Iterator)
+                    collections.Iterator, numpy.ndarray)
         if (setpoints is not None and
                 not is_sequence_of(setpoints, sp_types, shape=sp_shape)):
             raise ValueError('setpoints must be a tuple of arrays')
@@ -535,10 +865,8 @@ class ArrayParameter(_BaseParameter):
                 '',
                 self.__doc__))
 
-    @property
-    def units(self):
-        warn_units('ArrayParameter', self)
-        return self.unit
+        if not hasattr(self, 'get') and not hasattr(self, 'set'):
+            raise AttributeError('ArrayParameter must have a get, set or both')
 
 
 def _is_nested_sequence_or_none(obj, types, shapes):
@@ -642,15 +970,15 @@ class MultiParameter(_BaseParameter):
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
 
-        if self.has_set:  # TODO (alexcjohnson): can we support, ala Combine?
-            warnings.warn('MultiParameters do not fully support set '
-                          'at this time.')
+        if hasattr(self, 'set'):
+            # TODO (alexcjohnson): can we support, ala Combine?
+            warnings.warn('MultiParameters do not support set at this time.')
 
-        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels', 'setpoint_units',
-                                 'names', 'labels', 'units'])
+        self._meta_attrs.extend(['setpoint_names', 'setpoint_labels',
+                                 'setpoint_units', 'names', 'labels', 'units'])
 
         if not is_sequence_of(names, str):
-            raise ValueError('names must be a tuple of strings, not' +
+            raise ValueError('names must be a tuple of strings, not ' +
                              repr(names))
 
         self.names = names
@@ -666,7 +994,7 @@ class MultiParameter(_BaseParameter):
         self.shapes = shapes
 
         sp_types = (nt, DataArray, collections.Sequence,
-                    collections.Iterator)
+                    collections.Iterator, numpy.ndarray)
         if not _is_nested_sequence_or_none(setpoints, sp_types, shapes):
             raise ValueError('setpoints must be a tuple of tuples of arrays')
 
@@ -701,6 +1029,9 @@ class MultiParameter(_BaseParameter):
                 '',
                 self.__doc__))
 
+        if not hasattr(self, 'get') and not hasattr(self, 'set'):
+            raise AttributeError('MultiParameter must have a get, set or both')
+
     @property
     def full_names(self):
         """Include the instrument name with the Parameter names if possible."""
@@ -712,408 +1043,6 @@ class MultiParameter(_BaseParameter):
             pass
 
         return self.names
-
-
-def no_setter(*args, **kwargs):
-    raise NotImplementedError('This Parameter has no setter defined.')
-
-
-def no_getter(*args, **kwargs):
-    raise NotImplementedError(
-        'This Parameter has no getter, use .get_latest to get the most recent '
-        'set value.')
-
-
-class StandardParameter(Parameter):
-    """
-    Define one measurement parameter.
-
-    Args:
-        name (str): the local name of this parameter
-
-        instrument (Optional[Instrument]): the instrument this parameter
-            belongs to, if any
-
-        get_cmd (Optional[Union[str, function]]): a string or function to
-            get this parameter. You can only use a string if an instrument is
-            provided, then this string will be passed to instrument.ask
-
-        get_parser ( Optional[function]): function to transform the response
-            from get to the final output value.
-            See also val_mapping
-
-        set_cmd (Optional[Union[str, function]]): command to set this
-            parameter, either:
-
-            - a string (containing one field to .format, like "{}" etc)
-              you can only use a string if an instrument is provided,
-              this string will be passed to instrument.write
-            - a function (of one parameter)
-
-        set_parser (Optional[function]): function to transform the input set
-            value to an encoded value sent to the instrument.
-            See also val_mapping
-
-        val_mapping (Optional[dict]): a bidirectional map data/readable values
-            to instrument codes, expressed as a dict:
-            ``{data_val: instrument_code}``
-            For example, if the instrument uses '0' to mean 1V and '1' to mean
-            10V, set val_mapping={1: '0', 10: '1'} and on the user side you
-            only see 1 and 10, never the coded '0' and '1'
-
-            If vals is omitted, will also construct a matching Enum validator.
-            NOTE: only applies to get if get_cmd is a string, and to set if
-            set_cmd is a string.
-
-            You can use ``val_mapping`` with ``get_parser``, in which case
-            ``get_parser`` acts on the return value from the instrument first,
-            then ``val_mapping`` is applied (in reverse).
-
-            You CANNOT use ``val_mapping`` and ``set_parser`` together - that
-            would just provide too many ways to do the same thing.
-
-        vals (Optional[Validator]): a Validator object for this parameter
-
-        delay (Optional[Union[int, float]]): time (in seconds) to wait after
-            the *start* of each set, whether part of a sweep or not. Can be
-            set to 0 to go maximum speed with no errors.
-
-        max_delay (Optional[Union[int, float]]): If > delay, we don't emit a
-            warning unless the time taken during a single set is greater than
-            this, even though we aim for delay.
-
-        step (Optional[Union[int, float]]): max increment of parameter value.
-            Larger changes are broken into multiple steps this size.
-
-        max_val_age (Optional[Union[int, float]]): max time (in seconds) to
-            trust a saved value from this parameter as the starting point of
-            a sweep.
-
-        **kwargs: Passed to Parameter parent class
-
-    Raises:
-        NoCommandError: if get and set are not found
-    """
-
-    def __init__(self, name, instrument=None,
-                 get_cmd=None, get_parser=None,
-                 set_cmd=None, set_parser=None,
-                 delay=None, max_delay=None, step=None, max_val_age=3600,
-                 vals=None, val_mapping=None, **kwargs):
-        # handle val_mapping before super init because it impacts
-        # vals / validation in the base class
-        if val_mapping:
-            if vals is None:
-                vals = Enum(*val_mapping.keys())
-
-            self._get_mapping = {v: k for k, v in val_mapping.items()}
-
-            if get_parser is None:
-                get_parser = self._valmapping_get_parser
-            else:
-                # First run get_parser, then run the result through
-                # val_mapping
-                self._get_preparser = get_parser
-                get_parser = self._valmapping_with_preparser
-
-            if set_parser is None:
-                self._set_mapping = val_mapping
-                set_parser = self._set_mapping.__getitem__
-            else:
-                raise TypeError(
-                    'You cannot use set_parser and val_mapping together.')
-
-        super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
-
-        self._meta_attrs.extend(['sweep_step', 'sweep_delay',
-                                 'max_sweep_delay'])
-
-        # stored value from last .set() or .get()
-        # normally only used by set with a sweep, to avoid
-        # having to call .get() for every .set()
-        self._max_val_age = 0
-
-        self._set_get(get_cmd, get_parser)
-        self._set_set(set_cmd, set_parser)
-        self.set_delay(delay, max_delay)
-        self.set_step(step, max_val_age)
-
-        if not (self.has_get or self.has_set):
-            raise NoCommandError('neither set nor get cmd found in' +
-                                 ' Parameter {}'.format(self.name))
-
-    def get(self):
-        try:
-            value = self._get()
-            self._save_val(value)
-            return value
-        except Exception as e:
-            e.args = e.args + ('getting {}'.format(self.full_name),)
-            raise e
-
-    def _valmapping_get_parser(self, val):
-        """
-        Get parser to be used in the case that a val_mapping is defined
-        and a separate get_parser is not defined.
-
-        Tries to match against defined strings in the mapping dictionary. If
-        there are no matches, we try to convert the val into an integer.
-        """
-
-        # Try and match the raw value from the instrument directly
-        try:
-            return self._get_mapping[val]
-        except KeyError:
-            pass
-
-        # If there is no match, we can try to convert the parameter into a
-        # numeric value
-        try:
-            val = int(val)
-            return self._get_mapping[val]
-        except (ValueError, KeyError):
-            raise KeyError('Unmapped value from instrument: {!r}'.format(val))
-
-    def _valmapping_with_preparser(self, val):
-        return self._valmapping_get_parser(self._get_preparser(val))
-
-    def _set_get(self, get_cmd, get_parser):
-        exec_str = self._instrument.ask if self._instrument else None
-        self._get = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str,
-                            output_parser=get_parser,
-                            no_cmd_function=no_getter)
-
-        self.has_get = (get_cmd is not None)
-
-    def _set_set(self, set_cmd, set_parser):
-        # note: this does not set the final setter functions. that's handled
-        # in self.set_sweep, when we choose a swept or non-swept setter.
-        # TODO(giulioungaretti) lies! that method does not exis.
-        # probably alexj left it out :(
-        exec_str = self._instrument.write if self._instrument else None
-        self._set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str,
-                            input_parser=set_parser, no_cmd_function=no_setter)
-
-        self.has_set = set_cmd is not None
-
-    def _validate_and_set(self, value):
-        try:
-            clock = time.perf_counter()
-            self.validate(value)
-            self._set(value)
-            self._save_val(value)
-            if self._delay is not None:
-                clock, remainder = self._update_set_ts(clock)
-                time.sleep(remainder)
-        except Exception as e:
-            e.args = e.args + (
-                'setting {} to {}'.format(self.full_name, repr(value)),)
-            raise e
-
-    def _sweep_steps(self, value):
-        oldest_ok_val = datetime.now() - timedelta(seconds=self._max_val_age)
-        state = self._latest()
-        if state['ts'] is None or state['ts'] < oldest_ok_val:
-            start_value = self.get()
-        else:
-            start_value = state['value']
-
-        self.validate(start_value)
-
-        if not (isinstance(start_value, (int, float)) and
-                isinstance(value, (int, float))):
-            # something weird... parameter is numeric but one of the ends
-            # isn't, even though it's valid.
-            # probably a MultiType with a mix of numeric and non-numeric types
-            # just set the endpoint and move on
-            logging.warning('cannot sweep {} from {} to {} - jumping.'.format(
-                self.name, start_value, value))
-            return []
-
-        # drop the initial value, we're already there
-        return permissive_range(start_value, value, self._step)[1:]
-
-    def _update_set_ts(self, step_clock):
-        # calculate the delay time to the *max* delay,
-        # then take off up to the tolerance
-        tolerance = self._delay_tolerance
-        step_clock += self._delay
-        remainder = wait_secs(step_clock + tolerance)
-        if remainder <= tolerance:
-            # don't allow extra delays to compound
-            step_clock = time.perf_counter()
-            remainder = 0
-        else:
-            remainder -= tolerance
-        return step_clock, remainder
-
-    def _validate_and_sweep(self, value):
-        try:
-            self.validate(value)
-            step_clock = time.perf_counter()
-
-            for step_val in self._sweep_steps(value):
-                self._set(step_val)
-                self._save_val(step_val)
-                if self._delay is not None:
-                    step_clock, remainder = self._update_set_ts(step_clock)
-                    time.sleep(remainder)
-
-            self._set(value)
-            self._save_val(value)
-
-            if self._delay is not None:
-                step_clock, remainder = self._update_set_ts(step_clock)
-                time.sleep(remainder)
-        except Exception as e:
-            e.args = e.args + (
-                'setting {} to {}'.format(self.full_name, repr(value)),)
-            raise e
-
-    def set_step(self, step, max_val_age=None):
-        """
-        Configure whether this Parameter uses steps during set operations.
-        If step is a positive number, this is the maximum value change
-        allowed in one hardware call, so a single set can result in many
-        calls to the hardware if the starting value is far from the target.
-
-        Args:
-            step (Union[int, float]): A positive number, the largest change
-                allowed in one call. All but the final change will attempt to
-                change by +/- step exactly
-
-            max_val_age (Optional[int]): Only used with stepping, the max time
-                (in seconds) to trust a saved value. If this parameter has not
-                been set or measured more recently than this, it will be
-                measured before starting to step, so we're confident in the
-                value we're starting from.
-
-        Raises:
-            TypeError: if step is not numeric
-            ValueError: if step is negative
-            TypeError:  if step is not integer for an integer parameter
-            TypeError: if step is not a number
-            TypeError: if max_val_age is not numeric
-            ValueError: if max_val_age is negative
-        """
-        if not step:
-            # single-command setting
-            self.set = self._validate_and_set
-
-        elif not self._vals.is_numeric:
-            raise TypeError('you can only step numeric parameters')
-        elif step <= 0:
-            raise ValueError('step must be positive')
-        elif (isinstance(self._vals, Ints) and
-                not isinstance(step, int)):
-            raise TypeError(
-                'step must be a positive int for an Ints parameter')
-        elif not isinstance(step, (int, float)):
-            raise TypeError('step must be a number')
-
-        else:
-            # stepped setting
-            if max_val_age is not None:
-                if not isinstance(max_val_age, (int, float)):
-                    raise TypeError(
-                        'max_val_age must be a number')
-                if max_val_age < 0:
-                    raise ValueError('max_val_age must be non-negative')
-                self._max_val_age = max_val_age
-
-            self._step = step
-            self.set = self._validate_and_sweep
-
-    def get_delay(self):
-        """Return the delay time of this parameter. Also see `set_delay` """
-        return self._delay
-
-    def set_delay(self, delay, max_delay=None):
-        """
-        Configure this parameter with a delay between set operations.
-
-        Typically used in conjunction with set_step to create an effective
-        ramp rate, but can also be used without a step to enforce a delay
-        after every set.
-        If delay and max_delay are both None or 0, we never emit warnings
-        no matter how long the set takes.
-
-        Args:
-            delay(Union[int, float]): the target time between set calls. The
-                actual time will not be shorter than this, but may be longer
-                if the underlying set call takes longer.
-
-            max_delay(Optional[Union[int, float]]): if given, the longest time
-                allowed for the underlying set call before we emit a warning.
-
-        Raises:
-            TypeError: If delay is not int nor float
-            TypeError: If max_delay is not int nor float
-            ValueError: If delay is negative
-            ValueError: If max_delay is smaller than delay
-        """
-        if delay is None:
-            delay = 0
-        if not isinstance(delay, (int, float)):
-            raise TypeError('delay must be a number')
-        if delay < 0:
-            raise ValueError('delay must not be negative')
-        self._delay = delay
-
-        if max_delay is not None:
-            if not isinstance(max_delay, (int, float)):
-                raise TypeError(
-                    'max_delay must be a either  int or a float')
-            if max_delay < delay:
-                raise ValueError('max_delay must be no shorter than delay')
-            self._delay_tolerance = max_delay - delay
-        else:
-            self._delay_tolerance = 0
-
-        if not (self._delay or self._delay_tolerance):
-            # denotes that we shouldn't follow the wait code or
-            # emit any warnings
-            self._delay = None
-
-
-class ManualParameter(Parameter):
-    """
-    Define one parameter that reflects a manual setting / configuration.
-
-    Args:
-        name (str): the local name of this parameter
-
-        instrument (Optional[Instrument]): the instrument this applies to,
-            if any.
-
-        initial_value (Optional[str]): starting value, may be None even if
-            None does not pass the validator. None is only allowed as an
-            initial value and cannot be set after initiation.
-
-        **kwargs: Passed to Parameter parent class
-    """
-
-    def __init__(self, name, instrument=None, initial_value=None, **kwargs):
-        super().__init__(name=name, instrument=instrument, **kwargs)
-        self._meta_attrs.extend(['initial_value'])
-
-        if initial_value is not None:
-            self.validate(initial_value)
-            self._save_val(initial_value)
-
-    def set(self, value):
-        """
-        Validate and saves value
-
-        Args:
-            value (any): value to validate and save
-        """
-        self.validate(value)
-        self._save_val(value)
-
-    def get(self):
-        """ Return latest value"""
-        return self._latest()['value']
 
 
 class GetLatest(DelegateAttributes, DeferredOperations):
@@ -1129,17 +1058,35 @@ class GetLatest(DelegateAttributes, DeferredOperations):
 
     Args:
         parameter (Parameter): Parameter to be wrapped
-    """
 
-    def __init__(self, parameter):
+        max_val_age (Optional[int]): The max time (in seconds) to trust a
+            saved value obtained from get_latest(). If this parameter has not
+            been set or measured more recently than this, perform an
+            additional measurement.
+    """
+    def __init__(self, parameter, max_val_age=None):
         self.parameter = parameter
+        self.max_val_age = max_val_age
 
     delegate_attr_objects = ['parameter']
     omit_delegate_attrs = ['set']
 
     def get(self):
-        """ Return latest value"""
-        return self.parameter._latest()['value']
+        """Return latest value if time since get was less than
+        `self.max_val_age`, otherwise perform `get()` and return result
+        """
+        state = self.parameter._latest
+        if self.max_val_age is None:
+            # Return last value since max_val_age is not specified
+            return state['value']
+        else:
+            oldest_ok_val = datetime.now() - timedelta(seconds=self.max_val_age)
+            if state['ts'] is None or state['ts'] < oldest_ok_val:
+                # Time of last get exceeds max_val_age seconds, need to
+                # perform new .get()
+                return self.parameter.get()
+            else:
+                return state['value']
 
     def __call__(self):
         return self.get()
@@ -1151,7 +1098,7 @@ def combine(*parameters, name, label=None, unit=None, units=None,
     Combine parameters into one sweepable parameter
 
     Args:
-        *paramters (qcodes.Parameter): the parameters to combine
+        *parameters (qcodes.Parameter): the parameters to combine
         name (str): the name of the paramter
         label (Optional[str]): the label of the combined parameter
         unit (Optional[str]): the unit of the combined parameter
@@ -1298,14 +1245,14 @@ class CombinedParameter(Metadatable):
         meta_data['unit'] = self.parameter.unit
         meta_data['label'] = self.parameter.label
         meta_data['full_name'] = self.parameter.full_name
-        meta_data['aggreagator'] = repr(getattr(self, 'f', None))
+        meta_data['aggregator'] = repr(getattr(self, 'f', None))
         for param in self.parameters:
-            meta_data[param.full_name] = param.snapshot()
+            meta_data[str(param)] = param.snapshot()
 
         return meta_data
 
 
-class InstrumentRefParameter(ManualParameter):
+class InstrumentRefParameter(Parameter):
     """
     An InstrumentRefParameter
 
@@ -1326,6 +1273,11 @@ class InstrumentRefParameter(ManualParameter):
     sets parameters on instruments it contains.
     """
 
+    def __init__(self, *args, **kwargs):
+        kwargs['vals'] = kwargs.get('vals', Strings())
+        super().__init__(set_cmd=None, *args, **kwargs)
+
+    # TODO(nulinspiratie) check class works now it's subclassed from Parameter
     def get_instr(self):
         """
         Returns the instance of the instrument with the name equal to the
@@ -1337,16 +1289,27 @@ class InstrumentRefParameter(ManualParameter):
         # of this parameter.
         return self._instrument.find_instrument(ref_instrument_name)
 
-    def set_validator(self, vals):
-        """
-        Set a validator `vals` for this parameter.
 
-        Args:
-            vals (Validator):  validator to set
-        """
-        if vals is None:
-            self._vals = Strings()
-        elif isinstance(vals, Validator):
-            self._vals = vals
-        else:
-            raise TypeError('vals must be a Validator')
+# Deprecated parameters
+class StandardParameter(Parameter):
+    def __init__(self, name, instrument=None,
+                 get_cmd=False, get_parser=None,
+                 set_cmd=False, set_parser=None,
+                 delay=0, max_delay=None, step=None, max_val_age=3600,
+                 vals=None, val_mapping=None, **kwargs):
+        super().__init__(name, instrument=instrument,
+                 get_cmd=get_cmd, get_parser=get_parser,
+                 set_cmd=set_cmd, set_parser=set_parser,
+                 post_delay=delay, step=step, max_val_age=max_val_age,
+                 vals=vals, val_mapping=val_mapping, **kwargs)
+        warnings.warn('`StandardParameter` is deprecated, '
+                        'use `Parameter` instead. {}'.format(self))
+
+
+class ManualParameter(Parameter):
+    def __init__(self, name, instrument=None, initial_value=None, **kwargs):
+        super().__init__(name=name, instrument=instrument,
+                         get_cmd=None, set_cmd=None,
+                         initial_value=initial_value, **kwargs)
+        warnings.warn('Parameter {}: `ManualParameter` is deprecated, use '
+                        '`Parameter` instead with `set_cmd=None`.'.format(self))
