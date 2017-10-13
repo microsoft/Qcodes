@@ -63,7 +63,7 @@ class ScopeTrace(ArrayParameter):
         hdr_vals = list(map(float, hdr.split(',')))
         t_start = hdr_vals[0]
         t_stop = hdr_vals[1]
-        no_samples = hdr_vals[2]
+        no_samples = int(hdr_vals[2])
         values_per_sample = hdr_vals[3]
 
         # NOTE (WilliamHPNielsen):
@@ -76,9 +76,11 @@ class ScopeTrace(ArrayParameter):
                                       'not support saving such a trace.')
 
         self.shape = (no_samples,)
-        self.setpoints = tuple(np.linspace(t_start, t_stop, no_samples))
+        self.setpoints = (tuple(np.linspace(t_start, t_stop, no_samples)),)
 
         self._trace_ready = True
+        # we must ensure that all this took effect before proceeding
+        self.channel._parent.ask('*OPC?')
 
     def get(self):
         """
@@ -462,7 +464,7 @@ class RTO1000(VisaInstrument):
         if HD:
             self.add_parameter('high_definition_state',
                                label='High definition (16 bit) state',
-                               set_cmd='HDEFinition:STAte {}',
+                               set_cmd=self._set_hd_mode,
                                get_cmd='HDEFinition:STAte?',
                                val_mapping={'ON': 1, 'OFF': 0})
 
@@ -484,6 +486,13 @@ class RTO1000(VisaInstrument):
 
     #########################
     # Specialised set/get functions
+
+    def _set_hd_mode(self, value):
+        """
+        Set/unset the high def mode
+        """
+        self._make_traces_not_ready()
+        self.write('HDEFinition:STAte {}'.format(value))
 
     def _set_timebase_range(self, value):
         """
