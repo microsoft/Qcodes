@@ -8,7 +8,7 @@ from qcodes.loops import Loop
 from qcodes.actions import Task, Wait, BreakIf, _QcodesBreak
 from qcodes.station import Station
 from qcodes.data.data_array import DataArray
-from qcodes.instrument.parameter import ManualParameter
+from qcodes.instrument.parameter import Parameter
 from qcodes.utils.validators import Numbers
 from qcodes.utils.helpers import LogCapture
 
@@ -18,9 +18,9 @@ from .instrument_mocks import MultiGetter
 class TestLoop(TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.p1 = ManualParameter('p1', vals=Numbers(-10, 10))
-        cls.p2 = ManualParameter('p2', vals=Numbers(-10, 10))
-        cls.p3 = ManualParameter('p3', vals=Numbers(-10, 10))
+        cls.p1 = Parameter('p1', get_cmd=None, set_cmd=None, vals=Numbers(-10, 10))
+        cls.p2 = Parameter('p2', get_cmd=None, set_cmd=None,  vals=Numbers(-10, 10))
+        cls.p3 = Parameter('p3', get_cmd=None, set_cmd=None,  vals=Numbers(-10, 10))
         Station().set_measurement(cls.p2, cls.p3)
 
     def test_nesting(self):
@@ -448,7 +448,7 @@ class TestLoop(TestCase):
         self.assertEqual(len(f_calls), 1)
 
 
-class AbortingGetter(ManualParameter):
+class AbortingGetter(Parameter):
     """
     A manual parameter that can only be measured n times
     before it aborts the loop that's measuring it.
@@ -462,7 +462,7 @@ class AbortingGetter(ManualParameter):
         self._count -= 1
         if self._count <= 0:
             raise _QcodesBreak
-        return super().get()
+        return self.get_latest()
 
     def reset(self):
         self._count = self._initial_count
@@ -474,7 +474,7 @@ class Test_halt(TestCase):
         self.res = list(np.arange(0, abort_after-1, 1.))
         [self.res.append(float('nan')) for i in range(0, abort_after-1)]
 
-        p1 = AbortingGetter('p1', count=abort_after, vals=Numbers(-10, 10))
+        p1 = AbortingGetter('p1', count=abort_after, vals=Numbers(-10, 10), set_cmd=None)
         loop = Loop(p1.sweep(0, abort_after, 1), 0.005).each(p1)
         # we want to test what's in data, so get it ahead of time
         # because loop.run will not return.
@@ -486,7 +486,7 @@ class Test_halt(TestCase):
 
 class TestMetaData(TestCase):
     def test_basic(self):
-        p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10))
+        p1 = AbortingGetter('p1', count=2, vals=Numbers(-10, 10), set_cmd=None)
         sv = p1[1:3:1]
         loop = Loop(sv)
 
