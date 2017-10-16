@@ -35,7 +35,7 @@ class Keithley_2600(VisaInstrument):
 
         self._channel = channel
 
-        model = self.ask('localnode.model')
+        model = self.visa_handle.ask('print(localnode.model)')
 
         knownmodels = ['2601B', '2602B', '2604B', '2611B', '2612B',
                        '2614B', '2635B', '2636B']
