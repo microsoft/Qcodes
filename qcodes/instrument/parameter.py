@@ -161,7 +161,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
                  set_parser: Optional[Callable]=None,
                  snapshot_value: bool=True,
                  max_val_age: Optional[float]=None,
-                 vals: Optional[Validator]=None):
+                 vals: Optional[Validator]=None,
+                 delay: Optional[Union[int, float]]=None):
         super().__init__(metadata)
         self.name = str(name)
         self._instrument = instrument
@@ -177,6 +178,11 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self.step = step
         self.scale = scale
         self.raw_value = None
+        if delay is not None:
+            warnings.warn("Delay kwarg is deprecated. Replace with "
+                          "inter_delay or post_delay as needed")
+            if post_delay == 0:
+                post_delay = delay
         self.inter_delay = inter_delay
         self.post_delay = post_delay
 
@@ -466,7 +472,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         return self._step
 
     @step.setter
-    def step(self, step):
+    def step(self, step: Union[int, float]):
         """
         Configure whether this Parameter uses steps during set operations.
         If step is a positive number, this is the maximum value change
@@ -490,12 +496,38 @@ class _BaseParameter(Metadatable, DeferredOperations):
             raise TypeError('you can only step numeric parameters')
         elif not isinstance(step, (int, float)):
             raise TypeError('step must be a number')
+        elif step == 0:
+            self._step = None
         elif step <= 0:
             raise ValueError('step must be positive')
         elif isinstance(self.vals, Ints) and not isinstance(step, int):
             raise TypeError('step must be a positive int for an Ints parameter')
         else:
             self._step = step
+
+    def set_step(self, value):
+        warnings.warn(
+            "set_step is deprecated use step property as in `inst.step = "
+            "stepvalue` instead")
+        self.step = value
+
+    def get_step(self):
+        warnings.warn(
+            "set_step is deprecated use step property as in `a = inst.step` "
+            "instead")
+        return self._step
+
+    def set_delay(self, value):
+        warnings.warn(
+            "set_delay is deprecated use inter_delay or post_delay property "
+            "as in `inst.inter_delay = delayvalue` instead")
+        self.post_delay = value
+
+    def get_delay(self):
+        warnings.warn(
+            "get_delay is deprecated use inter_delay or post_delay property "
+            "as in `a = inst.inter_delay` instead")
+        return self._post_delay
 
     @property
     def post_delay(self):
