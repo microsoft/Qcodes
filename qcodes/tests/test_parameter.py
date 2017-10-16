@@ -622,14 +622,40 @@ class TestStandardParam(TestCase):
         self._p = 'PVAL: 1'
         self.assertEqual(p(), 'on')
 
+class TestManualParameterValMapping(TestCase):
+    def setUp(self):
+        self.instrument = DummyInstrument('dummy_holder')
+
+    def tearDown(self):
+        self.instrument.close()
+        del self.instrument
+
+
+    def test_val_mapping(self):
+        self.instrument.add_parameter('myparameter', set_cmd=None, get_cmd=None, val_mapping={'A': 0, 'B': 1})
+        self.instrument.myparameter('A')
+        assert self.instrument.myparameter() == 'A'
+        assert self.instrument.myparameter() == 'A'
+        assert self.instrument.myparameter.raw_value == 0
+
+
 
 class TestInstrumentRefParameter(TestCase):
+
+    def setUp(self):
+        self.a = DummyInstrument('dummy_holder')
+        self.d = DummyInstrument('dummy')
+
     def test_get_instr(self):
-        a = DummyInstrument('dummy_holder')
-        d = DummyInstrument('dummy')
-        a.add_parameter('test', parameter_class=InstrumentRefParameter)
+        self.a.add_parameter('test', parameter_class=InstrumentRefParameter)
 
-        a.test.set(d.name)
+        self.a.test.set(self.d.name)
 
-        self.assertEqual(a.test.get(), d.name)
-        self.assertEqual(a.test.get_instr(), d)
+        self.assertEqual(self.a.test.get(), self.d.name)
+        self.assertEqual(self.a.test.get_instr(), self.d)
+
+    def tearDown(self):
+        self.a.close()
+        self.d.close()
+        del self.a
+        del self.d

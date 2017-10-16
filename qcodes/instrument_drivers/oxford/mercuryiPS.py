@@ -207,8 +207,12 @@ class MercuryiPS(IPInstrument):
         self._set_fld(ax, cmd, setpoint)
         self.rtos()
         if self.hold_after_set():
-            while not all(['HOLD' == getattr(self, a.lower() + '_ACTN')() for a in ax]):
-                time.sleep(0.1)
+            try:
+                while not all(['HOLD' == getattr(self, a.lower() + '_ACTN')() for a in ax]):
+                    time.sleep(0.1)
+            except KeyboardInterrupt:
+                self.hold()
+                raise KeyboardInterrupt
 
     def _ramp_to_setpoint_and_wait(self, ax, cmd, setpoint):
         error = 0.2e-3

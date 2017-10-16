@@ -57,6 +57,7 @@ import logging
 import os
 import collections
 import warnings
+from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable
 from functools import partial, wraps
 import numpy
 
@@ -69,6 +70,9 @@ from qcodes.utils.command import Command
 from qcodes.utils.validators import Validator, Ints, Strings, Enum
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.data.data_array import DataArray
+
+if TYPE_CHECKING:
+    from .base import Instrument
 
 
 class _BaseParameter(Metadatable, DeferredOperations):
@@ -144,10 +148,20 @@ class _BaseParameter(Metadatable, DeferredOperations):
             JSON snapshot of the parameter
     """
 
-    def __init__(self, name, instrument, snapshot_get=True, metadata=None,
-                 step=None, scale=None, inter_delay=0, post_delay=0,
-                 val_mapping=None, get_parser=None, set_parser=None,
-                 snapshot_value=True, max_val_age=None, vals=None):
+    def __init__(self, name: str,
+                 instrument: Optional['Instrument'],
+                 snapshot_get: bool=True,
+                 metadata: Optional[dict]=None,
+                 step: Optional[Union[int, float]]=None,
+                 scale: Optional[Union[int, float]]=None,
+                 inter_delay: Union[int, float]=0,
+                 post_delay: Union[int, float]=0,
+                 val_mapping: Optional[dict]=None,
+                 get_parser: Optional[Callable]=None,
+                 set_parser: Optional[Callable]=None,
+                 snapshot_value: bool=True,
+                 max_val_age: Optional[float]=None,
+                 vals: Optional[Validator]=None):
         super().__init__(metadata)
         self.name = str(name)
         self._instrument = instrument
@@ -178,17 +192,27 @@ class _BaseParameter(Metadatable, DeferredOperations):
         # record of latest value and when it was set or measured
         # what exactly this means is different for different subclasses
         # but they all use the same attributes so snapshot is consistent.
-        self._latest = {'value': None, 'ts': None}
+        self._latest = {'value': None, 'ts': None, 'raw_value': None}
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
-        if hasattr(self, 'get'):
+        if hasattr(self, 'get_raw'):
+            self.get = self._wrap_get(self.get_raw)
+        elif hasattr(self, 'get'):
+            warnings.warn('Wrapping get method, original get method will not '
+                          'be directly accessible. It is recommended to '
+                          'define get_raw in your subclass instead.' )
             self.get = self._wrap_get(self.get)
-        if hasattr(self, 'set'):
+        if hasattr(self, 'set_raw'):
+            self.set = self._wrap_get(self.set_raw)
+        elif hasattr(self, 'set'):
+            warnings.warn('Wrapping set method, original set method will not '
+                          'be directly accessible. It is recommended to '
+                          'define get_raw in your subclass instead.' )
             self.set = self._wrap_set(self.set)
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
-        self._meta_attrs = ['name', 'instrument', 'step', 'scale', 'raw_value',
+        self._meta_attrs = ['name', 'instrument', 'step', 'scale',
                             'inter_delay', 'post_delay', 'val_mapping', 'vals']
 
         # Specify time of last set operation, used when comparing to delay to
@@ -220,7 +244,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 raise NotImplementedError('no set cmd found in' +
                                           ' Parameter {}'.format(self.name))
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update: bool=False,
+                      params_to_skip_update: Sequence[str]=None) -> dict:
         """
         State of the parameter as a JSON-compatible dict.
 
@@ -228,6 +253,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
             update (bool): If True, update the state by calling
                 parameter.get().
                 If False, just use the latest values in memory.
+            params_to_skip_update: No effect but may be passed from super Class:
 
         Returns:
             dict: base snapshot
@@ -243,6 +269,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         if not self._snapshot_value:
             state.pop('value')
+            state.pop('raw_value', None)
 
         if isinstance(state['ts'], datetime):
             state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
@@ -265,9 +292,18 @@ class _BaseParameter(Metadatable, DeferredOperations):
         return state
 
     def _save_val(self, value, validate=False):
+        """
+        Update latest
+        """
         if validate:
             self.validate(value)
-        self._latest = {'value': value, 'ts': datetime.now()}
+        if (self.get_parser is None and
+            self.set_parser is None and
+            self.val_mapping is None and
+            self.scale is None):
+                self.raw_value = value
+        self._latest = {'value': value, 'ts': datetime.now(),
+                        'raw_value': self.raw_value}
 
     def _wrap_get(self, get_function):
         @wraps(get_function)
@@ -295,11 +331,11 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 if self.val_mapping is not None:
                     if value in self.inverse_val_mapping:
                         value = self.inverse_val_mapping[value]
-                    elif int(value) in self.inverse_val_mapping:
-                        value = self.inverse_val_mapping[int(value)]
                     else:
-                        raise KeyError("'{}' not in val_mapping".format(value))
-
+                        try:
+                            value = self.inverse_val_mapping[int(value)]
+                        except (ValueError, KeyError):
+                            raise KeyError("'{}' not in val_mapping".format(value))
                 self._save_val(value)
                 return value
             except Exception as e:
@@ -314,26 +350,33 @@ class _BaseParameter(Metadatable, DeferredOperations):
             try:
                 self.validate(value)
 
-                if self.val_mapping is not None:
-                    # Convert set values using val_mapping dictionary
-                    value = self.val_mapping[value]
-
-                if self.scale is not None:
-                    if isinstance(self.scale, collections.Iterable):
-                        # Scale contains multiple elements, one for each value
-                        value = tuple(val * scale for val, scale
-                                      in zip(value, self.scale))
-                    else:
-                        # Use single scale for all values
-                        value *= self.scale
-
-                if self.set_parser is not None:
-                    value = self.set_parser(value)
-
                 # In some cases intermediate sweep values must be used.
                 # Unless `self.step` is defined, get_sweep_values will return
                 # a list containing only `value`.
-                for val in self.get_ramp_values(value, step=self.step):
+                steps = self.get_ramp_values(value, step=self.step)
+
+                for val_step in steps:
+                    if self.val_mapping is not None:
+                        # Convert set values using val_mapping dictionary
+                        mapped_value = self.val_mapping[val_step]
+                    else:
+                        mapped_value = val_step
+
+                    if self.scale is not None:
+                        if isinstance(self.scale, collections.Iterable):
+                            # Scale contains multiple elements, one for each value
+                            scaled_mapped_value = tuple(val * scale for val, scale
+                                                        in zip(mapped_value, self.scale))
+                        else:
+                            # Use single scale for all values
+                            scaled_mapped_value = mapped_value*self.scale
+                    else:
+                        scaled_mapped_value = mapped_value
+
+                    if self.set_parser is not None:
+                        parsed_scaled_mapped_value = self.set_parser(scaled_mapped_value)
+                    else:
+                        parsed_scaled_mapped_value = scaled_mapped_value
 
                     # Check if delay between set operations is required
                     t_elapsed = time.perf_counter() - self._t_last_set
@@ -345,10 +388,11 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     # Start timer to measure execution time of set_function
                     t0 = time.perf_counter()
 
-                    set_function(val, **kwargs)
-                    self.raw_value = val
-                    self._save_val(val, validate=(self.val_mapping is None and
-                                                  self.set_parser is None))
+                    set_function(parsed_scaled_mapped_value, **kwargs)
+                    self.raw_value = parsed_scaled_mapped_value
+                    self._save_val(val_step,
+                                   validate=(self.val_mapping is None and
+                                             self.set_parser is None))
 
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
@@ -379,7 +423,11 @@ class _BaseParameter(Metadatable, DeferredOperations):
         if step is None:
             return [value]
         else:
-            start_value = self.get_latest()
+            if isinstance(value, collections.Iterable) and len(value) > 1:
+                raise RuntimeError("Don't know how to step a parameter with more than one value")
+            if self.get_latest() is None:
+                self.get()
+            start_value = self.raw_value
 
             self.validate(start_value)
 
@@ -638,9 +686,17 @@ class Parameter(_BaseParameter):
 
     """
 
-    def __init__(self, name, instrument=None, label=None, unit=None,
-                 get_cmd=None, set_cmd=False, initial_value=None,
-                 max_val_age=None, vals=None, docstring=None, **kwargs):
+    def __init__(self, name: str,
+                 instrument: Optional['Instrument']=None,
+                 label: Optional[str]=None,
+                 unit: Optional[str]=None,
+                 get_cmd: Optional[Union[str, Callable, bool]]=None,
+                 set_cmd:  Optional[Union[str, Callable, bool]]=False,
+                 initial_value: Optional[Union[float, int, str]]=None,
+                 max_val_age: Optional[float]=None,
+                 vals: Optional[str]=None,
+                 docstring: Optional[str]=None,
+                 **kwargs):
         super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
 
         # Enable set/get methods if get_cmd/set_cmd is given
@@ -650,19 +706,19 @@ class Parameter(_BaseParameter):
                 if max_val_age is not None:
                     raise SyntaxError('Must have get method or specify get_cmd '
                                       'when max_val_age is set')
-                self.get = self.get_latest
+                self.get_raw = lambda: self._latest['raw_value']
             else:
                 exec_str = instrument.ask if instrument else None
-                self.get = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str)
-            self.get = self._wrap_get(self.get)
+                self.get_raw = Command(arg_count=0, cmd=get_cmd, exec_str=exec_str)
+            self.get = self._wrap_get(self.get_raw)
 
         if not hasattr(self, 'set') and set_cmd is not False:
             if set_cmd is None:
-                self.set = partial(self._save_val, validate=False)
+                self.set_raw = partial(self._save_val, validate=False)
             else:
                 exec_str = instrument.write if instrument else None
-                self.set = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str)
-            self.set = self._wrap_set(self.set)
+                self.set_raw = Command(arg_count=1, cmd=set_cmd, exec_str=exec_str)
+            self.set = self._wrap_set(self.set_raw)
 
         self._meta_attrs.extend(['label', 'unit', 'vals'])
 
@@ -670,7 +726,7 @@ class Parameter(_BaseParameter):
         self.unit = unit if unit is not None else ''
 
         if initial_value is not None:
-            self._save_val(initial_value, validate=True)
+            self.set(initial_value)
 
         # generate default docstring
         self.__doc__ = os.linesep.join((
