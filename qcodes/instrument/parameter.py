@@ -161,7 +161,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
                  set_parser: Optional[Callable]=None,
                  snapshot_value: bool=True,
                  max_val_age: Optional[float]=None,
-                 vals: Optional[Validator]=None):
+                 vals: Optional[Validator]=None,
+                 delay: Optional[Union[int, float]]=None):
         super().__init__(metadata)
         self.name = str(name)
         self._instrument = instrument
@@ -177,6 +178,11 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self.step = step
         self.scale = scale
         self.raw_value = None
+        if delay is not None:
+            warnings.warn("Delay kwarg is deprecated. Replace with "
+                          "inter_delay or post_delay as needed")
+            if post_delay == 0:
+                post_delay = delay
         self.inter_delay = inter_delay
         self.post_delay = post_delay
 
