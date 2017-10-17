@@ -361,7 +361,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 # a list containing only `value`.
                 steps = self.get_ramp_values(value, step=self.step)
 
-                for val_step in steps:
+                for step_index, val_step in enumerate(steps):
                     if self.val_mapping is not None:
                         # Convert set values using val_mapping dictionary
                         mapped_value = self.val_mapping[val_step]
@@ -398,7 +398,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     self.raw_value = parsed_scaled_mapped_value
                     self._save_val(val_step,
                                    validate=(self.val_mapping is None and
-                                             self.set_parser is None))
+                                             self.set_parser is None and
+                                             step_index != 0))
 
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
