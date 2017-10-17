@@ -15,6 +15,7 @@ log = logging.getLogger(__name__)
 class TraceNotReady(Exception):
     pass
 
+
 class TraceSetPointsChanged(Exception):
     pass
 
@@ -23,20 +24,20 @@ class RawTrace(ArrayParameter):
     """
     raw_trace will return a trace from OSCIL
     """
+
     def __init__(self, name, instrument, channel):
         super().__init__(name,
                          shape=(1024,),
                          label='Voltage',
                          unit='V',
                          setpoint_names=('Time',),
-                         setpoint_labels=( \
-                                'Channel {} time series'.format(channel),),
+                         setpoint_labels=(
+                             'Channel {} time series'.format(channel),),
                          setpoint_units=('s',),
                          docstring='raw trace from the scope',
                          )
         self._channel = channel
         self._instrument = instrument
-
 
     def set_sweep(self, start, stop, npts):
         t = tuple(np.linspace(float(start), float(stop), num=npts))
@@ -52,7 +53,7 @@ class RawTrace(ArrayParameter):
         # in question must be displayed
 
         # shorthand
-        instr=self._instrument
+        instr = self._instrument
         # number of set points
         self.npts = float(instr.ask("WAV:POIN?"))
         # first set point
@@ -80,7 +81,7 @@ class RawTrace(ArrayParameter):
                                 'the scope for acquiring a trace.')
 
         # shorthand
-        instr=self._instrument
+        instr = self._instrument
 
         # set up the instrument
         # ---------------------------------------------------------------------
@@ -99,7 +100,6 @@ class RawTrace(ArrayParameter):
         # digitize is the actual call for acquisition, blocks
         instr.write(':DIGitize CHANnel{}'.format(self._channel))
 
-
         # transfer the data
         # ---------------------------------------------------------------------
 
@@ -115,7 +115,7 @@ class RawTrace(ArrayParameter):
 
         # request the actual transfer
         data = instr._parent.visa_handle.query_binary_values(
-            'WAV:DATA?', datatype='h',is_big_endian=False )
+            'WAV:DATA?', datatype='h', is_big_endian=False)
         if len(data) != self.shape[0]:
             raise TraceSetPointsChanged('{} points have been aquired and {} \
             set points have been prepared in \
@@ -124,14 +124,14 @@ class RawTrace(ArrayParameter):
         xorigin = float(instr.ask(":WAVeform:XORigin?"))
         # step size
         xincrem = float(instr.ask(":WAVeform:XINCrement?"))
-        error = self.xorigin-xorigin
+        error = self.xorigin - xorigin
         # this is a bad workaround
         if error > xincrem:
             raise TraceSetPointsChanged('{} is the prepared x origin and {} \
             is the x origin after the measurement.'.format(self.xorigin,
                                                            xorigin))
-        error = (self.xincrem-xincrem)/xincrem
-        if error>1e-6:
+        error = (self.xincrem - xincrem) / xincrem
+        if error > 1e-6:
             raise TraceSetPointsChanged('{} is the prepared x increment and {} \
             is the x increment after the measurement.'.format(self.xincrem,
                                                               xincrem))
@@ -140,7 +140,6 @@ class RawTrace(ArrayParameter):
         yinc = float(instr.ask(":WAVeform:YINCrement?"))
         channel_data = np.array(data)
         channel_data = np.multiply(channel_data, yinc) + yorigin
-
 
         # restore original state
         # ---------------------------------------------------------------------
@@ -196,21 +195,21 @@ class InfiniiumChannel(InstrumentChannel):
                            vals=vals.Numbers()
                            )
         # trigger
-        self.add_parameter('trigger_level',
-                           label='Tirgger level channel {}'.format(channel),
-                           unit='V',
-                           get_cmd=':TRIGger:LEVel? CHANnel{}'.format(channel),
-                           set_cmd=\
-                               ':TRIGger:LEVel CHANnel{},{{}}'.format(channel),
-                           get_parser=float,
-                           vals=Numbers(),
-                          )
+        self.add_parameter(
+            'trigger_level',
+            label='Tirgger level channel {}'.format(channel),
+            unit='V',
+            get_cmd=':TRIGger:LEVel? CHANnel{}'.format(channel),
+            set_cmd=':TRIGger:LEVel CHANnel{},{{}}'.format(channel),
+            get_parser=float,
+            vals=Numbers(),
+        )
 
         # Acquisition
-        self.add_parameter( name='trace',
-                            channel = channel,
-                            parameter_class=RawTrace
-                            )
+        self.add_parameter(name='trace',
+                           channel=channel,
+                           parameter_class=RawTrace
+                           )
 
         def snapshot_base(self, update: bool=False) -> Dict:
             params_to_skip_update = ['trace']
@@ -223,6 +222,7 @@ class Infiniium(VisaInstrument):
     This is the QCoDeS driver for the Keysight Infiniium oscilloscopes from the
      - tested for MSOS104A of the Infiniium S-series.
     """
+
     def __init__(self, name, address, timeout=20, **kwargs):
         """
         Initialises the oscilloscope.
@@ -233,7 +233,7 @@ class Infiniium(VisaInstrument):
             timeout (float): visa timeout, in secs.
         """
 
-        super().__init__(name, address, timeout=timeout,\
+        super().__init__(name, address, timeout=timeout,
                          terminator='\n', **kwargs)
         self.connect_message()
 
@@ -266,7 +266,7 @@ class Infiniium(VisaInstrument):
                            unit='s',
                            get_cmd=':TIMebase:RANGe?',
                            set_cmd=':TIMebase:RANGe {}',
-                           vals=Numbers(5e-12,20),
+                           vals=Numbers(5e-12, 20),
                            get_parser=float,
                            )
         self.add_parameter('timebase_position',
@@ -283,7 +283,7 @@ class Infiniium(VisaInstrument):
                            get_cmd=':TIMebase:ROLL:ENABLE?',
                            set_cmd=':TIMebase:ROLL:ENABLE {}',
                            val_mapping={True: 1, False: 0}
-                          )
+                           )
 
         # trigger
         self.add_parameter('trigger_enabled',
@@ -291,26 +291,25 @@ class Infiniium(VisaInstrument):
                            get_cmd=':TRIGger:AND:ENABLe?',
                            set_cmd=':TRIGger:AND:ENABLe {}',
                            val_mapping={True: 1, False: 0}
-                          )
-
+                           )
 
         self.add_parameter('trigger_edge_source',
                            label='Source channel for the edge trigger',
                            get_cmd=':TRIGger:EDGE:SOURce?',
                            set_cmd=':TRIGger:EDGE:SOURce {}',
-                           vals = Enum( *(\
-                                ['CHANnel{}'.format(i) for i in range(1,4+1)]+\
-                                ['CHAN{}'.format(i) for i in range(1,4+1)]+\
-                                ['DIGital{}'.format(i) for i in range(16+1)]+\
-                                ['DIG{}'.format(i) for i in range(16+1)]+\
-                                ['AUX', 'LINE']))
-                          )# add enum for case insesitivity
+                           vals=Enum(*(
+                               ['CHANnel{}'.format(i) for i in range(1, 4 + 1)] +
+                               ['CHAN{}'.format(i) for i in range(1, 4 + 1)] +
+                               ['DIGital{}'.format(i) for i in range(16 + 1)] +
+                               ['DIG{}'.format(i) for i in range(16 + 1)] +
+                               ['AUX', 'LINE']))
+                           )  # add enum for case insesitivity
         self.add_parameter('trigger_edge_slope',
                            label='slope of the edge trigger',
                            get_cmd=':TRIGger:EDGE:SLOPe?',
                            set_cmd=':TRIGger:EDGE:SLOPe {}',
-                           vals = Enum('positive', 'negative', 'neither')
-                          )
+                           vals=Enum('positive', 'negative', 'neither')
+                           )
         self.add_parameter('trigger_level_aux',
                            label='Tirgger level AUX',
                            unit='V',
@@ -318,7 +317,7 @@ class Infiniium(VisaInstrument):
                            set_cmd=':TRIGger:LEVel AUX,{}',
                            get_parser=float,
                            vals=Numbers(),
-                          )
+                           )
         # Aquisition
         # If sample points, rate and timebase_scale are set in an
         # incomensurate way, the scope only displays part of the waveform
@@ -332,12 +331,12 @@ class Infiniium(VisaInstrument):
                            )
 
         self.add_parameter('acquire_sample_rate',
-                            label='sample rate',
-                            get_cmd= 'ACQ:SRAT?',
-                            set_cmd=self._cmd_and_invalidate('ACQ:SRAT {}'),
-                            unit='Sa/s',
-                            get_parser=float
-                            )
+                           label='sample rate',
+                           get_cmd='ACQ:SRAT?',
+                           set_cmd=self._cmd_and_invalidate('ACQ:SRAT {}'),
+                           unit='Sa/s',
+                           get_parser=float
+                           )
 
         # this parameter gets used internally for data aquisition. For now it
         # should not be used manually
