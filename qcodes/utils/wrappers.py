@@ -524,11 +524,13 @@ def do2d(inst_set, start, stop, num_points, delay,
     return plot, data
 
 
-def show_num(id, useQT=False):
+def show_num(id, useQT=False, **kwargs):
     """
     Show  and return plot and data for id in current instrument.
     Args:
         id(number): id of instrument
+        useQT: Use pyqtgraph as an alternative to Matplotlib
+        **kwargs: Are passed to plot function
 
     Returns:
         plot, data : returns the plot and the dataset
@@ -548,13 +550,14 @@ def show_num(id, useQT=False):
         if "set" not in value:
             if useQT:
                 plot = QtPlot(getattr(data, value),
-                              fig_x_position=CURRENT_EXPERIMENT['plot_x_position'])
+                              fig_x_position=CURRENT_EXPERIMENT['plot_x_position'],
+                              **kwargs)
                 title = "{} #{}".format(CURRENT_EXPERIMENT["sample_name"],
                                         str_id)
                 plot.subplots[0].setTitle(title)
                 plot.subplots[0].showGrid(True, True)
             else:
-                plot = MatPlot(getattr(data, value))
+                plot = MatPlot(getattr(data, value), **kwargs)
                 title = "{} #{}".format(CURRENT_EXPERIMENT["sample_name"],
                                         str_id)
                 plot.subplots[0].set_title(title)
