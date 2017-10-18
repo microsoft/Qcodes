@@ -316,7 +316,8 @@ class AlazarMultiChannelParameter(MultiChannelInstrumentParameter):
                 channels_acq_kwargs.append({key: val.get() for key, val in channel.parameters.items() if
                      key in params_to_kwargs})
                 if channels_acq_kwargs[i] != channels_acq_kwargs[0]:
-                    raise RuntimeError("kwargs are not the same")
+                    raise RuntimeError("Found non matching kwargs. Got {} and {}".format(channels_acq_kwargs[0],
+                                                                                         channels_acq_kwargs[i]))
             acq_kwargs.update(controller_acq_kwargs)
             acq_kwargs.update(channels_acq_kwargs[0])
             if acq_kwargs['buffers_per_acquisition'] > 1:
