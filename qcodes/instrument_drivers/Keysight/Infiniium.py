@@ -209,9 +209,10 @@ class InfiniiumChannel(InstrumentChannel):
                            )
 
         def snapshot_base(self, update: bool=False) -> Dict:
-            params_to_skip_update = ['trace']
-            super().snapshot_base(update=update,
-                                  params_to_skip_update=params_to_skip_update)
+            skip_update = ['trace']
+            snap = super().snapshot_base(update=update,
+                                         params_to_skip_update=skip_update)
+            return snap
 
 
 class Infiniium(VisaInstrument):
