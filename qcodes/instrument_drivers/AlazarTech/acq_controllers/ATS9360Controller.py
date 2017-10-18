@@ -67,7 +67,7 @@ class ATS9360Controller(AcquisitionController):
 
         self.samples_divisor = self._get_alazar().samples_divisor
 
-        self.active_channels = []
+        self.shape_info = {}
         self.active_channels_nested = []
         self.board_info = self._get_alazar().get_idn()
 
@@ -223,7 +223,7 @@ class ATS9360Controller(AcquisitionController):
 
         # We currently enforce the shape to be identical for all channels
         # so it's safe to take the first
-        if self.active_channels[0]['average_buffers']:
+        if self.shape_info['average_buffers']:
             self.buffer = np.zeros(samples_per_record *
                                    records_per_buffer *
                                    self.number_of_channels)
@@ -234,15 +234,6 @@ class ATS9360Controller(AcquisitionController):
                                    self.number_of_channels))
         self.demodulators = []
 
-        channelsactive = [False]*2
-        pref = {}
-        pref['channels'] = channelsactive
-
-
-        for active_channel in self.active_channels:
-                pref['channels'][active_channel['channel']] = True
-
-
         for channel in self.active_channels_nested:
             if channel['ndemods'] > 0:
                 self.demodulators.append(Demodulator(buffers_per_acquisition,
@@ -251,8 +242,9 @@ class ATS9360Controller(AcquisitionController):
                                                      sample_rate,
                                                      self.filter_settings,
                                                      channel['demod_freqs'],
-                                                     self.active_channels[0]['average_buffers'],
-                                                     self.active_channels[0]['average_buffers']
+                                                     self.shape_info['average_buffers'],
+                                                     self.shape_info['average_records'],
+                                                     self.shape_info['integrate_samples']
                                                      ))
             else:
                 self.demodulators.append(None)
@@ -264,8 +256,7 @@ class ATS9360Controller(AcquisitionController):
         """
         Adds data from Alazar to buffer (effectively averaging)
         """
-        settings = self.active_channels[0]
-        if settings['average_buffers']:
+        if self.shape_info['average_buffers']:
             self.buffer += data
         else:
             self.buffer[buffernum] = data
@@ -294,8 +285,7 @@ class ATS9360Controller(AcquisitionController):
         samples_per_record = alazar.samples_per_record.get()
         records_per_buffer = alazar.records_per_buffer.get()
         buffers_per_acquisition = alazar.buffers_per_acquisition.get()
-        settings = self.active_channels[0]
-        if settings['average_buffers']:
+        if self.shape_info['average_buffers']:
             number_of_buffers = 1
         else:
             number_of_buffers = buffers_per_acquisition
@@ -333,30 +323,34 @@ class ATS9360Controller(AcquisitionController):
                     data.append(np.squeeze(recordA))
             # do demodulation
             if demod_freqs:
-                magA, phaseA = self.demodulator.demodulate(recordA, self.int_delay(), self.int_time())
-                for i, type, freq in enumerate(zip(demod_types, demod_freqs)):
+                magA, phaseA = self.demodulators[channel_number].demodulate(recordA, self.int_delay(), self.int_time())
+                for i, type in enumerate(demod_types):
                     if type=='magnitude':
-                        data.append(magA[i])
+                        mydata = np.squeeze(magA[i])
                     elif type == 'phase':
-                        data.append(phaseA[i])
+                        mydata = np.squeeze(phaseA[i])
                     else:
                         raise RuntimeError("unknown demodulator type")
+                    if settings['integrate_samples']:
+                        mydata = np.mean(mydata, axis=-1)
+                    data.append(mydata)
             return data
 
         if self.active_channels_nested[0]['nsignals']>0:
             outputdataA = handle_alazar_channel(channelAData, 0, self.active_channels_nested[0]['raw'],
-                                                settings,
+                                                self.shape_info,
                                                 self.active_channels_nested[0]['demod_freqs'],
-                                                self.active_channels_nested[1]['demod_types'])
+                                                self.active_channels_nested[0]['demod_types'])
         else:
             outputdataA = []
         if self.active_channels_nested[1]['nsignals'] > 0:
             outputdataB = handle_alazar_channel(channelBData, 1, self.active_channels_nested[1]['raw'],
-                                                settings,
+                                                self.shape_info,
                                                 self.active_channels_nested[1]['demod_freqs'],
                                                 self.active_channels_nested[1]['demod_types'])
         else:
             outputdataB = []
+        # this is missing logic to ensure that the channels come back in the right order
         outputdata = outputdataA + outputdataB
         if len(outputdata) == 1:
             return outputdata[0]

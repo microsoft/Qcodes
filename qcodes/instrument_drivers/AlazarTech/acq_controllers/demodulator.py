@@ -58,7 +58,8 @@ class Demodulator:
                  filter_settings,
                  demod_freqs,
                  average_buffers: bool=True,
-                 average_records: bool=True):
+                 average_records: bool=True,
+                 integrate_samples: bool=True):
 
         self.filter_settings = filter_settings
         self.sample_rate = sample_rate
@@ -84,7 +85,7 @@ class Demodulator:
                     np.outer(demod_freqs, integer_mat).reshape(mat_shape) / sample_rate
         self.cos_mat = np.cos(angle_mat)
         self.sin_mat = np.sin(angle_mat)
-
+        self.integrate_samples = integrate_samples
 
     def demodulate(self, volt_rec, int_delay, int_time):
         """
@@ -102,7 +103,7 @@ class Demodulator:
         """
 
         # volt_rec to matrix and multiply with demodulation signal matrices
-        demod_length = 1 #self.demod_freqs.get_num_demods()
+        demod_length = len(self.demod_freqs)
         volt_rec_mat = np.outer(np.ones(demod_length), volt_rec).reshape(self.mat_shape)
         re_mat = np.multiply(volt_rec_mat, self.cos_mat)
         im_mat = np.multiply(volt_rec_mat, self.sin_mat)*0
@@ -133,7 +134,7 @@ class Demodulator:
         else:
             raise RuntimeError("Filter setting: {} not implemented".format(self.filter_settings['filter']))
 
-        if self.active_channels[0]['integrate_samples']:
+        if self.integrate_samples:
             # apply integration limits
             beginning = int(int_delay * self.sample_rate)
             end = beginning + int(int_time * self.sample_rate)

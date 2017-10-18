@@ -32,8 +32,6 @@ class Alazar0DParameter(Parameter):
     def get(self):
         channel = self._instrument
         cntrl = channel._parent
-        cntrl.active_channels = []
-        cntrl.active_channels.append({})
         alazar_channels = 2
         cntrl.active_channels_nested = [{'ndemods': 0,
                                          'nsignals': 0,
@@ -43,21 +41,16 @@ class Alazar0DParameter(Parameter):
                                          'raw': False} for _ in range(alazar_channels)]
         alazar_channel = channel.alazar_channel.get()
         channel_info = cntrl.active_channels_nested[alazar_channel]
-        cntrl.active_channels[0]['demod'] = channel._demod
         channel_info['nsignals'] = 1
         if channel._demod:
             channel_info['ndemods'] = 1
             channel_info['demod_freqs'].append(channel.demod_freq.get())
             channel_info['demod_types'].append(channel.demod_type.get())
-            cntrl.active_channels[0]['demod_freq'] = channel.demod_freq.get()
-            cntrl.active_channels[0]['demod_type'] = channel.demod_type.get()
         else:
             channel_info['raw'] = True
-            cntrl.active_channels[0]['demod_freq'] = None
-        cntrl.active_channels[0]['average_buffers'] = channel._average_buffers
-        cntrl.active_channels[0]['average_records'] = channel._average_records
-        cntrl.active_channels[0]['integrate_samples'] = channel._integrate_samples
-        cntrl.active_channels[0]['channel'] = channel.alazar_channel.get()
+        cntrl.shape_info['average_buffers'] = channel._average_buffers
+        cntrl.shape_info['average_records'] = channel._average_records
+        cntrl.shape_info['integrate_samples'] = channel._integrate_samples
         params_to_kwargs = ['samples_per_record', 'records_per_buffer',
                             'buffers_per_acquisition', 'allocated_buffers']
         acq_kwargs = self._instrument.acquisition_kwargs.copy()
@@ -107,8 +100,7 @@ class AlazarNDParameter(ArrayParameter):
 
         channel = self._instrument
         cntrl = channel._parent
-        cntrl.active_channels = []
-        cntrl.active_channels.append({})
+        cntrl.shape_info = {}
         alazar_channels = 2
         cntrl.active_channels_nested = [{'ndemods': 0,
                                          'nsignals': 0,
@@ -118,21 +110,16 @@ class AlazarNDParameter(ArrayParameter):
                                          'raw': False} for _ in range(alazar_channels)]
         alazar_channel = channel.alazar_channel.get()
         channel_info = cntrl.active_channels_nested[alazar_channel]
-        cntrl.active_channels[0]['demod'] = channel._demod
         channel_info['nsignals'] = 1
         if channel._demod:
             channel_info['ndemods'] = 1
             channel_info['demod_freqs'].append(channel.demod_freq.get())
             channel_info['demod_types'].append(channel.demod_type.get())
-            cntrl.active_channels[0]['demod_freq'] = channel.demod_freq.get()
-            cntrl.active_channels[0]['demod_type'] = channel.demod_type.get()
         else:
             channel_info['raw'] = True
-            cntrl.active_channels[0]['demod_freq'] = None
-        cntrl.active_channels[0]['average_buffers'] = channel._average_buffers
-        cntrl.active_channels[0]['average_records'] = channel._average_records
-        cntrl.active_channels[0]['integrate_samples'] = channel._integrate_samples
-        cntrl.active_channels[0]['channel'] = channel.alazar_channel.get()
+        cntrl.shape_info['average_buffers'] = channel._average_buffers
+        cntrl.shape_info['average_records'] = channel._average_records
+        cntrl.shape_info['integrate_samples'] = channel._integrate_samples
 
         params_to_kwargs = ['samples_per_record', 'records_per_buffer',
                             'buffers_per_acquisition', 'allocated_buffers']
@@ -292,7 +279,7 @@ class AlazarMultiChannelParameter(MultiChannelInstrumentParameter):
             channel = self._channels[0]
             cntrl = channel._parent
             instrument = cntrl._get_alazar()
-            cntrl.active_channels = []
+            cntrl.shape_info = {}
             alazar_channels = 2
             cntrl.active_channels_nested = [{'ndemods':0,
                                              'nsignals':0,
@@ -308,26 +295,16 @@ class AlazarMultiChannelParameter(MultiChannelInstrumentParameter):
                 channel_info = cntrl.active_channels_nested[alazar_channel]
                 channel_info['nsignals'] += 1
 
-
-                cntrl.active_channels.append({})
-                cntrl.active_channels[i]['demod'] = channel._demod
                 if channel._demod:
                     channel_info['ndemods'] += 1
                     channel_info['demod_freqs'].append(channel.demod_freq.get())
                     channel_info['demod_types'].append(channel.demod_type.get())
-                    cntrl.active_channels[i]['demod_freq'] = channel.demod_freq.get()
-                    cntrl.active_channels[i]['demod_type'] = channel.demod_type.get()
                 else:
                     channel_info['raw'] = True
-                    cntrl.active_channels[i]['demod_freq'] = None
-                cntrl.active_channels[i]['average_buffers'] = channel._average_buffers
-                cntrl.active_channels[i]['average_records'] = channel._average_records
-                cntrl.active_channels[i]['integrate_samples'] = channel._integrate_samples
-                cntrl.active_channels[i]['channel'] = channel.alazar_channel.get()
-                for param in ('average_buffers', 'average_records', 'integrate_samples'):
-                    if cntrl.active_channels[i][param] != cntrl.active_channels[0][param]:
-                        raise RuntimeError("Trying to capture multiple channels with different values of {}"
-                                           "This is not currently supported".format(param))
+                cntrl.shape_info['average_buffers'] = channel._average_buffers
+                cntrl.shape_info['average_records'] = channel._average_records
+                cntrl.shape_info['integrate_samples'] = channel._integrate_samples
+                cntrl.shape_info['channel'] = channel.alazar_channel.get()
 
             params_to_kwargs = ['samples_per_record', 'records_per_buffer',
                                 'buffers_per_acquisition', 'allocated_buffers']

@@ -106,17 +106,6 @@ class AlazarChannel(InstrumentChannel):
         self.acquisition_kwargs = {}
 
     def prepare_channel(self):
-        self._parent.active_channels.append({})
-        self._parent.active_channels[0]['demod'] = self._demod
-        if self._demod:
-            self._parent.active_channels[0]['demod_freq'] = self.demod_freq.get()
-            self._parent.active_channels[0]['demod_type'] = self.demod_type.get()
-        else:
-            self._parent.active_channels[0]['demod_freq'] = None
-        self._parent.active_channels[0]['average_buffers'] = self._average_buffers
-        self._parent.active_channels[0]['average_records'] = self._average_records
-        self._parent.active_channels[0]['integrate_samples'] = self._integrate_samples
-        self._parent.active_channels[0]['channel'] = self.alazar_channel.get()
         if self.dimensions > 0:
             self.data.set_setpoints_and_labels()
 
