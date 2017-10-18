@@ -1,5 +1,5 @@
 import logging
-from typing import Dict
+from typing import Dict, Callable
 from functools import partial
 
 import numpy as np
@@ -102,7 +102,7 @@ class RawTrace(ArrayParameter):
         # switch the response header off for lower overhead
         instr.write(':SYSTem:HEADer OFF')
         # select the channel from which to read
-        self._instrument._parent.data_source('CHAN{}'.format(self._channel))
+        instr._parent.data_source('CHAN{}'.format(self._channel))
         # specifiy the data format in which to read
         instr.write(':WAVeform:FORMat WORD')
         instr.write(":waveform:byteorder LSBFirst")
@@ -169,7 +169,6 @@ class InfiniiumChannel(InstrumentChannel):
                            get_parser=float
                            )
 
-        # TODO:
         # scale and range are interdependent, when setting one, invalidate the
         # the other.
         # Scale is commented out for this reason
@@ -248,7 +247,7 @@ class Infiniium(VisaInstrument):
 
         # time base
 
-        # scale is commented out for same reason as channel scale
+        # timebase_scale is commented out for same reason as channel scale
         # use range instead
         # self.add_parameter('timebase_scale',
         #                    label='Scale of the one time devision',
@@ -400,7 +399,7 @@ class Infiniium(VisaInstrument):
         self.add_submodule('channels', channels)
 
 
-    def _cmd_and_invalidate(self, cmd: str):
+    def _cmd_and_invalidate(self, cmd: str) -> Callable:
         return partial(Infiniium._cmd_and_invalidate_call, self, cmd)
 
     def _cmd_and_invalidate_call(self, cmd: str, val) -> None:
