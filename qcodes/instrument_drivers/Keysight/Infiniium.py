@@ -402,7 +402,7 @@ class Infiniium(VisaInstrument):
         self.add_submodule('channels', channels)
 
 
-    def _cmd_and_invalidate(cmd:str):
+    def _cmd_and_invalidate(self, cmd: str) -> None:
         """
         wrapper function for get_cmd: get_cmd=self._cmd_and_invalidate(cmd)
         executes command and sets trace_ready status to false
