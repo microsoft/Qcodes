@@ -410,8 +410,3 @@ class Infiniium(VisaInstrument):
         """
         self.trace_ready = False
         self.write(cmd.format(val))
-
-
-# compatitbility/setup
-# change of names with acquire_ prefix
-# add acquire_interpolate(1) to the setup
