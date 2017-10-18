@@ -1,5 +1,6 @@
 import logging
 from typing import Dict
+from functools import partial
 
 import numpy as np
 
@@ -39,11 +40,6 @@ class RawTrace(ArrayParameter):
         self._channel = channel
         self._instrument = instrument
 
-    def set_sweep(self, start, stop, npts):
-        t = tuple(np.linspace(float(start), float(stop), num=npts))
-        self.setpoints = (t,)
-        self.shape = (npts,)
-
     def prepare_curvedata(self):
         """
         Prepare the scope for returning curve data
@@ -55,7 +51,7 @@ class RawTrace(ArrayParameter):
         # shorthand
         instr = self._instrument
         # number of set points
-        self.npts = float(instr.ask("WAV:POIN?"))
+        self.npts = int(instr.ask("WAV:POIN?"))
         # first set point
         self.xorigin = float(instr.ask(":WAVeform:XORigin?"))
         # step size
@@ -204,6 +200,7 @@ class InfiniiumChannel(InstrumentChannel):
             get_parser=float,
             vals=Numbers(),
         )
+
 
         # Acquisition
         self.add_parameter(name='trace',
@@ -375,7 +372,7 @@ class Infiniium(VisaInstrument):
                                       'HRESolution', 'SEGMented',
                                       'SEGPdetect', 'SEGHres')
                             )
-
+        
         self.add_parameter('acquire_timespan',
                             get_cmd=(lambda: self.acquire_points.get_latest() \
                                             /self.acquire_sample_rate.get_latest()),
@@ -402,14 +399,16 @@ class Infiniium(VisaInstrument):
         self.add_submodule('channels', channels)
 
 
-    def _cmd_and_invalidate(self, cmd: str) -> None:
+    def _cmd_and_invalidate(self, cmd: str):
+        return partial(Infiniium._cmd_and_invalidate_call, self, cmd)
+
+    def _cmd_and_invalidate_call(self, cmd: str, val) -> None:
         """
-        wrapper function for get_cmd: get_cmd=self._cmd_and_invalidate(cmd)
         executes command and sets trace_ready status to false
         any command that effects the number of setpoints should invalidate the trace
         """
         self.trace_ready = False
-        self.write(cmd)
+        self.write(cmd.format(val))
 
 
 # compatitbility/setup
