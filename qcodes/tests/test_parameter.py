@@ -25,12 +25,26 @@ class GettableParam(Parameter):
         return 42
 
 
+class BookkeepingValidator(vals.Validator):
+    """
+    Validator that keeps track of what it validates
+    """
+    def __init__(self, min_value=-float("inf"), max_value=float("inf")):
+        self.values_validated = []
+
+    def validate(self, value, context=''):
+        self.values_validated.append(value)
+
+    is_numeric = True
+
+
 blank_instruments = (
     None,  # no instrument at all
     namedtuple('noname', '')(),  # no .name
     namedtuple('blank', 'name')('')  # blank .name
 )
 named_instrument = namedtuple('yesname', 'name')('astro')
+
 
 class MemoryParameter(Parameter):
     def __init__(self, get_cmd=None, **kwargs):
@@ -133,6 +147,19 @@ class TestParameter(TestCase):
         for attr in ['names', 'labels', 'setpoints', 'setpoint_names',
                      'setpoint_labels', 'full_names']:
             self.assertFalse(hasattr(p, attr), attr)
+
+    def test_number_of_validations(self):
+
+        p = Parameter('p', set_cmd=None, initial_value=0,
+                      vals=BookkeepingValidator())
+
+        self.assertEqual(p.vals.values_validated, [0])
+
+        p.step = 1
+        p.set(10)
+
+        self.assertEqual(p.vals.values_validated,
+                         [0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
     def test_snapshot_value(self):
         p_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
