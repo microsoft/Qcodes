@@ -57,7 +57,7 @@ import logging
 import os
 import collections
 import warnings
-from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable
+from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List
 from functools import partial, wraps
 import numpy
 
@@ -399,7 +399,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
                     self._save_val(val_step,
                                    validate=(self.val_mapping is None and
                                              self.set_parser is None and
-                                             step_index != 0))
+                                             not(step_index == len(steps)-1 or
+                                                 len(steps) == 1)))
 
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
@@ -415,7 +416,9 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         return set_wrapper
 
-    def get_ramp_values(self, value, step=None):
+    def get_ramp_values(self, value: Union[float, int],
+                        step: Union[float, int]=None) -> List[Union[float,
+                                                                    int]]:
         """
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
@@ -435,8 +438,6 @@ class _BaseParameter(Metadatable, DeferredOperations):
             if self.get_latest() is None:
                 self.get()
             start_value = self.raw_value
-
-            self.validate(start_value)
 
             if not (isinstance(start_value, (int, float)) and
                     isinstance(value, (int, float))):
