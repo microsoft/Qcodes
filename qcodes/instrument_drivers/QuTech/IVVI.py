@@ -29,7 +29,7 @@ class IVVI(VisaInstrument):
     Halfrange = Fullrange / 2
 
     def __init__(self, name, address, reset=False, numdacs=16, dac_step=10,
-                 dac_delay=.1, dac_max_delay=0.2, safe_version=True,
+                 dac_delay=.1, safe_version=True,
                  polarity=['BIP', 'BIP', 'BIP', 'BIP'],
                  use_locks=False, **kwargs):
         '''
@@ -45,7 +45,6 @@ class IVVI(VisaInstrument):
                                    default=['BIP', 'BIP', 'BIP', 'BIP']
             dac_step (float)         : max step size for dac parameter
             dac_delay (float)        : delay (in seconds) for dac
-            dac_max_delay (float)    : maximum delay before emitting a warning
             safe_version (bool)    : if True then do not send version commands
                                      to the IVVI controller
             use_locks (bool) : if True then locks are used in the `ask`
@@ -137,7 +136,6 @@ class IVVI(VisaInstrument):
                                   self.pol_num[i - 1] + self.Fullrange),
                 step=dac_step,
                 delay=dac_delay,
-                max_delay=dac_max_delay,
                 max_val_age=10)
 
         self._update_time = 5  # seconds
