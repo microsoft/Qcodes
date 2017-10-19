@@ -82,6 +82,14 @@ class _BaseParameter(Metadatable, DeferredOperations):
     ``MultiParameter``, or ``CombinedParameter``.
     Note that ``CombinedParameter`` is not yet a subclass of ``_BaseParameter``
 
+    Note:
+        If you subclass _BaseParameter you will not automatically get
+        the validation and delay control implemented in the get and set
+        wrappers. If you want this behaviour but cannot subclass Parameter
+        you can manually wrap get and set as below with
+        `self.get = self._wrap_get(self.get_raw)`
+
+
     Args:
         name (str): the local name of the parameter. Should be a valid
             identifier, ie no spaces or special characters. If this parameter
@@ -200,21 +208,6 @@ class _BaseParameter(Metadatable, DeferredOperations):
         # but they all use the same attributes so snapshot is consistent.
         self._latest = {'value': None, 'ts': None, 'raw_value': None}
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
-
-        if hasattr(self, 'get_raw'):
-            self.get = self._wrap_get(self.get_raw)
-        elif hasattr(self, 'get'):
-            warnings.warn('Wrapping get method, original get method will not '
-                          'be directly accessible. It is recommended to '
-                          'define get_raw in your subclass instead.' )
-            self.get = self._wrap_get(self.get)
-        if hasattr(self, 'set_raw'):
-            self.set = self._wrap_get(self.set_raw)
-        elif hasattr(self, 'set'):
-            warnings.warn('Wrapping set method, original set method will not '
-                          'be directly accessible. It is recommended to '
-                          'define get_raw in your subclass instead.' )
-            self.set = self._wrap_set(self.set)
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
