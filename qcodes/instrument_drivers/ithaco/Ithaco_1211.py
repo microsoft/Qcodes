@@ -30,7 +30,8 @@ class CurrentParameter(MultiParameter):
     def __init__(self, measured_param, c_amp_ins, name='curr'):
         p_name = measured_param.name
 
-        super().__init__(name=name, names=(p_name+'_raw', name), shapes=((), ()))
+        super().__init__(name=name, names=(p_name+'_raw', name), shapes=((), ()),
+                         snapshot_value=True)
 
         self._measured_param = measured_param
         self._instrument = c_amp_ins

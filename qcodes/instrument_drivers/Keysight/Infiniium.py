@@ -207,13 +207,6 @@ class InfiniiumChannel(InstrumentChannel):
                            parameter_class=RawTrace
                            )
 
-        def snapshot_base(self, update: bool=False) -> Dict:
-            skip_update = ['trace']
-            snap = super().snapshot_base(update=update,
-                                         params_to_skip_update=skip_update)
-            return snap
-
-
 class Infiniium(VisaInstrument):
     """
     This is the QCoDeS driver for the Keysight Infiniium oscilloscopes from the

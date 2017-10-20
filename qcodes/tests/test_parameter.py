@@ -287,19 +287,18 @@ class TestArrayParameter(TestCase):
 
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
-        self.assertEqual(p._get_count, 1)
+        self.assertEqual(p._get_count, 0)
         snap_expected = {
             'name': name,
             'label': name,
-            'unit': '',
-            'value': [[1, 2, 3], [4, 5, 6]]
+            'unit': ''
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
 
         self.assertIn(name, p.__doc__)
 
-    def test_explicit_attrbutes(self):
+    def test_explicit_attributes(self):
         name = 'tiny_array'
         shape = (2,)
         label = 'it takes two to tango'
@@ -313,7 +312,7 @@ class TestArrayParameter(TestCase):
                              setpoints=setpoints,
                              setpoint_names=setpoint_names,
                              setpoint_labels=setpoint_labels,
-                             docstring=docstring, snapshot_get=False,
+                             docstring=docstring, snapshot_value=True,
                              metadata=metadata)
 
         self.assertEqual(p.name, name)
@@ -326,14 +325,15 @@ class TestArrayParameter(TestCase):
 
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
-        self.assertEqual(p._get_count, 0)
+        self.assertEqual(p._get_count, 1)
         snap_expected = {
             'name': name,
             'label': label,
             'unit': unit,
             'setpoint_names': setpoint_names,
             'setpoint_labels': setpoint_labels,
-            'metadata': metadata
+            'metadata': metadata,
+            'value': [6, 7]
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
@@ -423,13 +423,12 @@ class TestMultiParameter(TestCase):
 
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
-        self.assertEqual(p._get_count, 1)
+        self.assertEqual(p._get_count, 0)
         snap_expected = {
             'name': name,
             'names': names,
             'labels': names,
-            'units': [''] * 3,
-            'value': [0, [1, 2, 3], [[4, 5], [6, 7]]]
+            'units': [''] * 3
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
@@ -456,7 +455,7 @@ class TestMultiParameter(TestCase):
                              setpoints=setpoints,
                              setpoint_names=setpoint_names,
                              setpoint_labels=setpoint_labels,
-                             docstring=docstring, snapshot_get=False,
+                             docstring=docstring, snapshot_value=True,
                              metadata=metadata)
 
         self.assertEqual(p.name, name)
@@ -471,7 +470,7 @@ class TestMultiParameter(TestCase):
 
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
-        self.assertEqual(p._get_count, 0)
+        self.assertEqual(p._get_count, 1)
         snap_expected = {
             'name': name,
             'names': names,
@@ -479,7 +478,8 @@ class TestMultiParameter(TestCase):
             'units': units,
             'setpoint_names': setpoint_names,
             'setpoint_labels': setpoint_labels,
-            'metadata': metadata
+            'metadata': metadata,
+            'value': [0, [1, 2, 3], [[4, 5], [6, 7]]]
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
