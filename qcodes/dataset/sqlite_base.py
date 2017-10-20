@@ -326,11 +326,10 @@ def insert_values(conn: sqlite3.Connection,
 def insert_many_values(conn: sqlite3.Connection,
                        formatted_name: str,
                        columns: List[str],
-                       values: List[VALUES],
+                       values: List[List[VALUES]],
                        ) -> int:
     """
     Inserts many values for the specified columns.
-    Will pad with null if not all columns are specified.
 
     NOTE this need to be committed before closing the connection.
     """
@@ -338,9 +337,10 @@ def insert_many_values(conn: sqlite3.Connection,
     # TODO: none of the code below is not form PRADA SS-2017
     # [a, b] -> (?,?), (?,?)
     # [[1,1], [2,2]]
-    _values = "(" + ",".join(["?"] * len(columns)) + ")"
+    _values = "(" + ",".join(["?"] * len(values[0])) + ")"
     # NOTE: assume that all the values have same length
-    _values_x_params = ",".join([_values] * len(values[0]))
+    _values_x_params = ",".join([_values] * len(values))
+
     query = f"""INSERT INTO "{formatted_name}"
         ({_columns})
     VALUES
