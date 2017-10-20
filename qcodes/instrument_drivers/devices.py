@@ -1,6 +1,6 @@
 from typing import Union
 
-from qcodes import Parameter, StandardParameter, Instrument
+from qcodes import Parameter, Instrument
 
 
 class VoltageDivider(Parameter):
@@ -44,7 +44,7 @@ class VoltageDivider(Parameter):
     """
 
     def __init__(self,
-                 v1: StandardParameter,
+                 v1: Parameter,
                  division_value: Union[int, float],
                  name: str=None,
                  label: str=None,

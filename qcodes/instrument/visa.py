@@ -1,4 +1,6 @@
 """Visa instrument driver based on pyvisa."""
+from typing import Sequence
+
 import visa
 import pyvisa.constants as vi_const
 import pyvisa.resources
@@ -26,6 +28,8 @@ class VisaInstrument(Instrument):
 
         terminator: Read termination character(s) to look for. Default ''.
 
+        device_clear: Perform a device clear. Default True.
+
         metadata (Optional[Dict]): additional static metadata to add to this
             instrument's JSON snapshot.
 
@@ -36,7 +40,7 @@ class VisaInstrument(Instrument):
         visa_handle (pyvisa.resources.Resource): The communication channel.
     """
 
-    def __init__(self, name, address=None, timeout=5, terminator='', **kwargs):
+    def __init__(self, name, address=None, timeout=5, terminator='', device_clear=True, **kwargs):
         super().__init__(name, **kwargs)
 
         self.add_parameter('timeout',
@@ -47,6 +51,8 @@ class VisaInstrument(Instrument):
                                                vals.Enum(None)))
 
         self.set_address(address)
+        if device_clear:
+            self.device_clear()
         self.set_terminator(terminator)
         self.timeout.set(timeout)
 
@@ -74,6 +80,10 @@ class VisaInstrument(Instrument):
             resource_manager = visa.ResourceManager()
 
         self.visa_handle = resource_manager.open_resource(address)
+        self._address = address
+
+    def device_clear(self):
+        """Clear the buffers of the device"""
 
         # Serial instruments have a separate flush method to clear their buffers
         # which behaves differently to clear. This is particularly important
@@ -82,7 +92,6 @@ class VisaInstrument(Instrument):
             self.visa_handle.flush(vi_const.VI_READ_BUF_DISCARD | vi_const.VI_WRITE_BUF_DISCARD)
         else:
             self.visa_handle.clear()
-        self._address = address
 
     def set_terminator(self, terminator):
         r"""
@@ -157,18 +166,23 @@ class VisaInstrument(Instrument):
         """
         return self.visa_handle.ask(cmd)
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update: bool=False,
+                      params_to_skip_update: Sequence[str] = None):
         """
         State of the instrument as a JSON-compatible dict.
 
         Args:
             update (bool): If True, update the state by querying the
                 instrument. If False, just use the latest values in memory.
-
+            params_to_skip_update: List of parameter names that will be skipped
+                in update even if update is True. This is useful if you have
+                parameters that are slow to update but can be updated in a
+                different way (as in the qdac)
         Returns:
             dict: base snapshot
         """
-        snap = super().snapshot_base(update=update)
+        snap = super().snapshot_base(update=update,
+                                     params_to_skip_update=params_to_skip_update)
 
         snap['address'] = self._address
         snap['terminator'] = self._terminator

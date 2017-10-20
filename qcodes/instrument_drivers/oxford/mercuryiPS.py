@@ -3,7 +3,7 @@ import re
 import time
 import numpy as np
 
-from qcodes import IPInstrument, MultiParameter, ManualParameter
+from qcodes import IPInstrument, MultiParameter
 from qcodes.utils.validators import Enum, Bool
 
 class MercuryiPSArray(MultiParameter):
@@ -80,7 +80,7 @@ class MercuryiPS(IPInstrument):
 
 
         self.add_parameter('hold_after_set',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            vals=Bool(),
                            initial_value=False,
                            docstring='Should the driver block while waiting for the Magnet power supply '

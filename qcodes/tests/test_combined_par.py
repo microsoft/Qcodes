@@ -23,6 +23,9 @@ class DumyPar(Metadatable):
         self.name = name
         self.full_name = name
 
+    def __str__(self):
+        return self.full_name
+
     def set(self, value):
         value = value * 2
         return value
@@ -115,7 +118,7 @@ class TestMultiPar(unittest.TestCase):
         out["unit"] = unit
         out["label"] = label
         out["full_name"] = name
-        out["aggreagator"] = repr(linear)
+        out["aggregator"] = repr(linear)
         for param in sweep_values.parameters:
             out[param.full_name] = {}
         self.assertEqual(out, snap)
