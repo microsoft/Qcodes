@@ -117,6 +117,23 @@ def one(curr: sqlite3.Cursor, column: str) -> Any:
         return res[0][column]
 
 
+# TODO: This is just a special case of many_many, isn't it?
+def one_column(curr: sqlite3.Cursor, column: str) -> List[Any]:
+    """
+    Get the value of one column, all its rows
+
+    Args:
+        curr: cursor to operate on
+        column: name of the column
+
+    Returns:
+        the values
+    """
+    res = curr.fetchall()
+    res = [r[0] for r in res]
+    return res
+
+
 def many(curr: sqlite3.Cursor, *columns: str) -> List[Any]:
     """Get the values of many columns from one row
     Args:
@@ -503,6 +520,59 @@ def get_data(conn: sqlite3.Connection,
         """
     c = transaction(conn, query)
     res = many_many(c, *columns)
+    return res
+
+
+def get_layout(conn: sqlite3.Connection,
+               layout_id) -> Dict[str, str]:
+    """
+    Get the layout of a single parameter for plotting it
+
+    Args:
+        conn: The database connection
+        run_id: The run_id as in the runs table
+
+    Returns:
+        A dict with name, label, and unit
+    """
+    sql = """
+    SELECT parameter, label, unit FROM layouts WHERE layout_id=?
+    """
+    c = transaction(conn, sql, layout_id)
+    t_res = many(c, 'parameter', 'label', 'unit')
+    res = dict(zip(['name', 'label', 'unit'], t_res))
+    return res
+
+
+def get_dependents(conn: sqlite3.Connection,
+                   run_id: int) -> List[int]:
+    """
+    Get dependent layout_ids for a certain run_id
+    """
+    sql = """
+    SELECT layout_id FROM layouts
+    WHERE run_id=? and layout_id in (SELECT dependent FROM dependencies)
+    """
+    c = transaction(conn, sql, run_id)
+    res = one_column(c, 'layout_id')
+    return res
+
+
+def get_dependencies(conn: sqlite3.Connection,
+                     layout_id: int) -> List[List[int]]:
+    """
+    Get the dependencies of a certain dependent variable (indexed by its
+    layout_id)
+
+    Args:
+        conn: connection to the database
+        layout_id: the layout_id of the dependent variable
+    """
+    sql = """
+    SELECT independent, axis_num FROM dependencies WHERE dependent=?
+    """
+    c = transaction(conn, sql, layout_id)
+    res = many_many(c, 'independent', 'axis_num')
     return res
 
 # Higher level Wrappers
