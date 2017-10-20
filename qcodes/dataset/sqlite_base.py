@@ -58,6 +58,29 @@ CREATE TABLE IF NOT EXISTS runs (
 );
 """
 
+_layout_table_schema = """
+CREATE TABLE IF NOT EXISTS layouts (
+    layout_id INTEGER PRIMARY KEY,
+    run_id INTEGER,
+    -- name matching column name in result table
+    parameter TEXT,
+    label TEXT,
+    unit TEXT,
+    inferred_from TEXT,
+    FOREIGN KEY(run_id)
+    REFERENCES
+        runs(run_id)
+);
+"""
+
+_dependencies_table_schema = """
+CREATE TABLE IF NOT EXISTS dependencies (
+    dependent INTEGER,
+    independent INTEGER,
+    axis_num INTEGER
+);
+"""
+
 
 # utility function to allow sqlite/numpy type
 
@@ -227,6 +250,8 @@ def init_db(conn: sqlite3.Connection)->None:
     with atomic(conn):
         transaction(conn, _experiment_table_schema)
         transaction(conn, _runs_table_schema)
+        transaction(conn, _layout_table_schema)
+        transaction(conn, _dependencies_table_schema)
 
 
 def insert_column(conn: sqlite3.Connection, table: str, name: str,
@@ -537,7 +562,7 @@ def completed(conn: sqlite3.Connection, run_id)->bool:
         run_id: id of the run to check
     """
     return bool(select_one_where(conn, "runs", "is_completed",
-                                  "run_id", run_id))
+                                 "run_id", run_id))
 
 
 def finish_experiment(conn: sqlite3.Connection, exp_id: int):
@@ -593,7 +618,8 @@ def get_last_experiment(conn: sqlite3.Connection) -> int:
     return c.fetchall()[0][0]
 
 
-def get_runs(conn: sqlite3.Connection, exp_id:Optional[int] = None)->List[sqlite3.Row]:
+def get_runs(conn: sqlite3.Connection,
+             exp_id: Optional[int] = None)->List[sqlite3.Row]:
     """ Get a list of runs.
 
     Args:
@@ -646,9 +672,9 @@ def _insert_run(conn: sqlite3.Connection, exp_id: int, name: str,
                 ):
     # get run counter and formatter from experiments
     run_counter, format_string = select_many_where(conn,
-                                                    "experiments",
-                                                    "run_counter",
-                                                    "format_string",
+                                                   "experiments",
+                                                   "run_counter",
+                                                   "format_string",
                                                    where_column="exp_id",
                                                    where_value=exp_id)
     run_counter += 1
@@ -721,10 +747,12 @@ def get_parameters(conn: sqlite3.Connection,
     return params
 
 
+# TODO: Deprecate/replace with add_parameter_2
 def add_parameter_(conn: sqlite3.Connection,
                    formatted_name: str,
                    *parameter: ParamSpec):
     """ Add parameters to the dataset
+
     NOTE: two parameters with the same name are not allowed
     Args:
         - conn: the connection to the sqlite database
@@ -750,6 +778,71 @@ def add_parameter_(conn: sqlite3.Connection,
     transaction(conn, sql, new_parameters, formatted_name)
 
 
+def add_parameter_2(conn: sqlite3.Connection,
+                    formatted_name: str,
+                    parameter: ParamSpec):
+    """ Add parameters to the dataset
+
+    This will update the layouts and dependencies tables
+
+    NOTE: two parameters with the same name are not allowed
+    Args:
+        - conn: the connection to the sqlite database
+        - formatted_name: name of the table
+        - parameter: the paraemters to add
+    """
+    p_names = []
+    p = parameter
+    insert_column(conn, formatted_name, p.name, p.type)
+    p_names.append(p.name)
+    # get old parameters column from run table
+    sql = f"""
+    SELECT parameters FROM runs
+    WHERE result_table_name=?
+    """
+    c = transaction(conn, sql, formatted_name)
+    old_parameters = one(c, 'parameters')
+    if old_parameters:
+        new_parameters = ",".join([old_parameters] + p_names)
+    else:
+        new_parameters = ",".join(p_names)
+    sql = "UPDATE runs SET parameters=? WHERE result_table_name=?"
+    transaction(conn, sql, new_parameters, formatted_name)
+
+    # get the run_id
+    sql = f"""
+    SELECT run_id FROM runs WHERE result_table_name="{formatted_name}";
+    """
+    run_id = one(transaction(conn, sql), 'run_id')
+    # Update the layouts table
+    sql = """
+    INSERT INTO layouts (run_id, parameter, label, unit, inferred_from)
+    VALUES (?,?,?,?,?)
+    """
+    c = transaction(conn, sql, run_id, p.name, p.label, p.unit,
+                    p.inferred_from)
+
+    layout_id = c.lastrowid
+
+    # update the dependencies table
+    # TODO: how to manage the axis_num?
+    if p.depends_on != '':
+        deps = p.depends_on.split(', ')
+        for ax_num, dp in enumerate(deps):
+            sql = """
+            SELECT layout_id FROM layouts
+            WHERE run_id=? and parameter=?;
+            """
+            c = transaction(conn, sql, run_id, dp)
+            dep_ind = one(c, 'layout_id')
+
+            sql = """
+            INSERT INTO dependencies (dependent, independent, axis_num)
+            VALUES (?,?,?)
+            """
+            c = transaction(conn, sql, layout_id, dep_ind, ax_num)
+
+
 def add_parameter(conn: sqlite3.Connection,
                   formatted_name: str,
                   *parameter: ParamSpec):
@@ -761,9 +854,10 @@ def add_parameter(conn: sqlite3.Connection,
         - parameter: the paraemters to add
     """
     with atomic(conn):
-        add_parameter_(conn, formatted_name, *parameter)
+        add_parameter_2(conn, formatted_name, *parameter)
 
 
+# (WilliamHPNielsen) This creates a result table, right?
 def _create_run_table(conn: sqlite3.Connection,
                       formatted_name: str,
                       parameters: Optional[List[ParamSpec]] = None,

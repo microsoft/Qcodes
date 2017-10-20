@@ -153,6 +153,10 @@ class DataSet(Sized):
         self.conn = connect(self.path_to_db)
         self._debug = False
 
+        # we need to hold the parameter specs to resolve dependent/independent
+        # variable business
+        self._paramspecs = {}
+
     def _new(self, name, exp_id, specs: SPECS = None, values=None,
              metadata=None) -> None:
         """
@@ -183,9 +187,13 @@ class DataSet(Sized):
                                 "result_counter", "run_id", self.id)
 
     @property
-    def parameters(self)->str:
+    def parameters(self) -> str:
         return select_one_where(self.conn, "runs",
                                 "parameters", "run_id", self.id)
+
+    @property
+    def paramspecs(self) -> List[ParamSpec]:
+        return self._paramspecs
 
     @property
     def exp_id(self):
@@ -202,11 +210,48 @@ class DataSet(Sized):
         self.conn = connect(self.path_to_db, self._debug)
 
     def add_parameter(self, spec: ParamSpec):
+        """
+        Add a parameter to the DataSet. To ensure sanity, parameters must be
+        added to the DataSet in a sequence matching their internal
+        dependencies, i.e. first independent parameters, next other
+        independent parameters inferred from the first ones, and finally
+        the dependent parameters
+        """
+        if self.parameters:
+            old_params = self.parameters.split(',')
+        else:
+            old_params = []
+
+        # better to catch this one early
+        # alternatively make this a warning and a NOOP
+        if spec.name in old_params:
+            raise ValueError(f'Duplicate parameter name: {spec.name}')
+
+        inf_from = spec.inferred_from.split(', ')
+        if inf_from == ['']:
+            inf_from = []
+        for ifrm in inf_from:
+            if ifrm not in old_params:
+                raise ValueError('Can not infer parameter '
+                                 f'{spec.name} from {ifrm}, '
+                                 'no such parameter in this DataSet')
+
+        dep_on = spec.depends_on.split(', ')
+        if dep_on == ['']:
+            dep_on = []
+        for dp in dep_on:
+            if dp not in old_params:
+                raise ValueError('Can not have parameter '
+                                 f'{spec.name} depend on {dp}, '
+                                 'no such parameter in this DataSet')
+
+        self._paramspecs.update({spec.name: spec})
         add_parameter(self.conn, self.table_name, spec)
 
     def get_parameters(self) -> SPECS:
         return get_parameters(self.conn, self.table_name)
 
+    # TODO: deprecate
     def add_parameters(self, specs: SPECS):
         add_parameter(self.conn, self.table_name, *specs)
 
@@ -262,6 +307,17 @@ class DataSet(Sized):
         the name of a parameter in this DataSet.
         It is an error to add results to a completed DataSet.
         """
+        # TODO: Make this check less fugly
+        for param in results.keys():
+            if self.paramspecs[param].depends_on != '':
+                deps = self.paramspecs[param].depends_on.split(', ')
+                for dep in deps:
+                    if dep not in results.keys():
+                        print(list(results.keys()))
+                        raise ValueError(f'Can not add result for {param}, '
+                                         f'since this depends on {dep}, '
+                                         'which is not being added.')
+
         if self.completed:
             raise CompletedError
         index = insert_values(self.conn, self.table_name,
