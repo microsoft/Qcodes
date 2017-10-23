@@ -24,7 +24,6 @@ install:
     - pip install -r requirements.txt
     - pip install -r test_requirements.txt --upgrade
     - pip install -r docs_requirements.txt
-    - pip install matplotlib PyQtGraph
     - pip install -e .
 
 before_script: # configure a headless display to test plot generation
