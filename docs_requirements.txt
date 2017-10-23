@@ -4,3 +4,4 @@ jsonschema
 sphinxcontrib-jsonschema
 nbconvert
 ipython
+sphinx-autodoc-typehints
