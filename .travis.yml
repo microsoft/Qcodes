@@ -23,15 +23,21 @@ branches:
 # X Display
 #
 env:
-    - TRAVISCI=true
+    - TRAVISCI=false
 # command to install dependencies
 install:
     - pip install --upgrade pip
     - pip install -r requirements.txt
     - pip install -r test_requirements.txt --upgrade
     - pip install -r docs_requirements.txt
+    - pip install matplotlib PyQtGraph
     - pip install -e .
-# command to run tests
+
+before_script: # configure a headless display to test plot generation
+    - "export DISPLAY=:99.0"
+    - "sh -e /etc/init.d/xvfb start"
+    - sleep 3 # give xvfb some time to start
+
 script:
     - cd qcodes
     - py.test --cov=qcodes --cov-report xml --cov-config=.coveragerc
