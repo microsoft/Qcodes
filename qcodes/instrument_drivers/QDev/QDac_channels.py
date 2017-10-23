@@ -218,7 +218,7 @@ class QDac(VisaInstrument):
                                multichan_paramclass=QDacMultiChannelParameter)
 
         for i in self.chan_range:
-            channel = QDacChannel(self, 'chan{}'.format(i), i)
+            channel = QDacChannel(self, 'chan{:02}'.format(i), i)
             channels.append(channel)
             # Should raise valueerror if name is invalid (silently fails now)
             self.add_submodule('ch{:02}'.format(i), channel)

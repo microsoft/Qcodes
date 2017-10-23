@@ -29,7 +29,8 @@ class VoltageParameter(MultiParameter):
         name (str): the name of the current output. Default 'curr'.
             Also used as the name of the whole parameter.
     """
-    def __init__(self, measured_param, v_amp_ins, name='volt'):
+    def __init__(self, measured_param, v_amp_ins, name='volt',
+                 snapshot_value=True):
         p_name = measured_param.name
 
         super().__init__(name=name, names=(p_name+'_raw', name), shapes=((), ()))
