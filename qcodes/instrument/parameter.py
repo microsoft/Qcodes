@@ -83,7 +83,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
     Note that ``CombinedParameter`` is not yet a subclass of ``_BaseParameter``
 
     Args:
-        name (str): the local name of the parameter. Should be a valid
+        name: the local name of the parameter. Should be a valid
             identifier, ie no spaces or special characters. If this parameter
             is part of an Instrument or Station, this should match how it will
             be referenced from that parent, ie ``instrument.name`` or
@@ -92,32 +92,32 @@ class _BaseParameter(Metadatable, DeferredOperations):
         instrument (Optional[Instrument]): the instrument this parameter
             belongs to, if any
 
-        snapshot_get (Optional[bool]): False prevents any update to the
+        snapshot_get: False prevents any update to the
             parameter during a snapshot, even if the snapshot was called with
             ``update=True``, for example if it takes too long to update.
             Default True.
 
-        snapshot_value (Optional[bool]): False prevents parameter value to be
+        snapshot_value: False prevents parameter value to be
             stored in the snapshot. Useful if the value is large.
 
-        step (Optional[Union[int, float]]): max increment of parameter value.
+        step: max increment of parameter value.
             Larger changes are broken into multiple steps this size.
             When combined with delays, this acts as a ramp.
 
-        scale (Optional[float]): Scale to multiply value with before
+        scale: Scale to multiply value with before
             performing set. the internally multiplied value is stored in
             `raw_value`. Can account for a voltage divider.
 
-        inter_delay (Optional[Union[int, float]]): Minimum time (in seconds)
+        inter_delay: Minimum time (in seconds)
             between successive sets. If the previous set was less than this,
             it will wait until the condition is met.
             Can be set to 0 to go maximum speed with no errors.
 
-        post_delay (Optional[Union[int, float]]): time (in seconds) to wait
+        post_delay: time (in seconds) to wait
             after the *start* of each set, whether part of a sweep or not.
             Can be set to 0 to go maximum speed with no errors.
 
-        val_mapping (Optional[dict]): a bidirectional map data/readable values
+        val_mapping: a bidirectional map data/readable values
             to instrument codes, expressed as a dict:
             ``{data_val: instrument_code}``
             For example, if the instrument uses '0' to mean 1V and '1' to mean
@@ -130,21 +130,21 @@ class _BaseParameter(Metadatable, DeferredOperations):
             ``get_parser`` acts on the return value from the instrument first,
             then ``val_mapping`` is applied (in reverse).
 
-        get_parser ( Optional[function]): function to transform the response
+        get_parser: function to transform the response
             from get to the final output value. See also val_mapping
 
-        set_parser (Optional[function]): function to transform the input set
+        set_parser: function to transform the input set
             value to an encoded value sent to the instrument.
             See also val_mapping.
 
-        vals (Optional[Validator]): a Validator object for this parameter
+        vals: a Validator object for this parameter
 
-        max_val_age (Optional[float]): The max time (in seconds) to trust a
+        max_val_age: The max time (in seconds) to trust a
             saved value obtained from get_latest(). If this parameter has not
             been set or measured more recently than this, perform an
             additional measurement.
 
-        metadata (Optional[dict]): extra information to include with the
+        metadata: extra information to include with the
             JSON snapshot of the parameter
     """
 
@@ -649,19 +649,19 @@ class Parameter(_BaseParameter):
 
 
     Args:
-        name (str): the local name of the parameter. Should be a valid
+        name: the local name of the parameter. Should be a valid
             identifier, ie no spaces or special characters. If this parameter
             is part of an Instrument or Station, this is how it will be
             referenced from that parent, ie ``instrument.name`` or
             ``instrument.parameters[name]``
 
-        instrument (Optional[Instrument]): the instrument this parameter
+        instrument: the instrument this parameter
             belongs to, if any
 
-        label (Optional[str]): Normally used as the axis label when this
+        label: Normally used as the axis label when this
             parameter is graphed, along with ``unit``.
 
-        unit (Optional[str]): The unit of measure. Use ``''`` for unitless.
+        unit: The unit of measure. Use ``''`` for unitless.
 
         snapshot_get (Optional[bool]): False prevents any update to the
             parameter during a snapshot, even if the snapshot was called with
@@ -711,12 +711,12 @@ class Parameter(_BaseParameter):
         vals (Optional[Validator]): Allowed values for setting this parameter.
             Only relevant if settable. Defaults to ``Numbers()``
 
-        max_val_age (Optional[float]): The max time (in seconds) to trust a
+        max_val_age: The max time (in seconds) to trust a
             saved value obtained from get_latest(). If this parameter has not
             been set or measured more recently than this, perform an
             additional measurement.
 
-        docstring (Optional[str]): documentation string for the __doc__
+        docstring: documentation string for the __doc__
             field of the object. The __doc__ field of the instance is used by
             some help systems, but not all
 

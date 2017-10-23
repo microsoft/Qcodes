@@ -43,6 +43,7 @@ extensions = [
         'sphinx.ext.mathjax',
         'sphinx.ext.viewcode',
         'sphinx.ext.githubpages',
+        'sphinx_autodoc_typehints'
         ]
 
 # include special __xxx__ that DO have a docstring
