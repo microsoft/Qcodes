@@ -4,14 +4,14 @@ Contributing
 Hi, thanks for your interest in the project! We welcome pull requests
 from developers of all skill levels.
 
-Alex Johnson (alexcjohnson) & and Giulio Ungaretti
-(unga@nbi.ku.dk) are the creators and current maintainers of
-Qcodes (aka core developers), along with a group of talented and smart
+Jens H. Nielsen (j.h.nielsen@nbi.ku.dk) & and William H.P Nielsen
+are the current maintainers of
+QCoDeS (aka core developers), along with a group of talented and smart
 volunteers. Please don't hesitate to reach out if you have any
 questions, or just need a little help getting started.
 
 Join us on Slack, where informal discussion is more than welcome. (For
-now ask us to be invited)
+now mail us to be invited)
 
 .. contents::
 
