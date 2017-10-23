@@ -10,7 +10,6 @@ except ImportError:
                          download and installation instructions.
                       ''')
 
-from qcodes.instrument.parameter import ManualParameter
 from qcodes.instrument.parameter import MultiParameter
 from qcodes.instrument.base import Instrument
 from qcodes.utils import validators as vals
@@ -496,8 +495,10 @@ class Scope(MultiParameter):
                     error_counter += 1
 
                 if error_counter >= num_retries:
-                    log.warning('[+] ZI scope acquisition failed, maximum number'
-                                'of retries performed. No data returned')
+                    log.error('[+] ZI scope acquisition failed, maximum number'
+                              'of retries performed. No data returned')
+                    raise RuntimeError('[+] ZI scope acquisition failed, maximum number'
+                              'of retries performed. No data returned')
             finally:
                 # cleanup and make ready for next scope acquisition
                 scope.finish()
@@ -796,7 +797,7 @@ class ZIUHFLI(Instrument):
                                 unit='V')
 
             self.add_parameter('signal_output{}_ampdef'.format(sigout),
-                                parameter_class=ManualParameter,
+                                get_cmd=None, set_cmd=None,
                                 initial_value='Vpk',
                                 label="Signal output amplitude's definition",
                                 unit='V',
@@ -1084,7 +1085,7 @@ class ZIUHFLI(Instrument):
                            label='Sweep timeout',
                            unit='s',
                            initial_value=600,
-                           parameter_class=ManualParameter)
+                           get_cmd=None, set_cmd=None)
 
         ########################################
         # THE SWEEP ITSELF

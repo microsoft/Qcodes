@@ -3,7 +3,7 @@ import re
 import time
 import numpy as np
 
-from qcodes import IPInstrument, MultiParameter, ManualParameter
+from qcodes import IPInstrument, MultiParameter
 from qcodes.utils.validators import Enum, Bool
 
 class MercuryiPSArray(MultiParameter):
@@ -13,7 +13,7 @@ class MercuryiPSArray(MultiParameter):
     """
     def __init__(self, name, instrument, names, units, get_cmd, set_cmd, **kwargs):
         shapes = tuple(() for i in names)
-        super().__init__(name, names, shapes, **kwargs)
+        super().__init__(name, names, shapes, snapshot_value=True, **kwargs)
         self._get = get_cmd
         self._set = set_cmd
         self._instrument = instrument
@@ -80,7 +80,7 @@ class MercuryiPS(IPInstrument):
 
 
         self.add_parameter('hold_after_set',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            vals=Bool(),
                            initial_value=False,
                            docstring='Should the driver block while waiting for the Magnet power supply '
@@ -207,8 +207,12 @@ class MercuryiPS(IPInstrument):
         self._set_fld(ax, cmd, setpoint)
         self.rtos()
         if self.hold_after_set():
-            while not all(['HOLD' == getattr(self, a.lower() + '_ACTN')() for a in ax]):
-                time.sleep(0.1)
+            try:
+                while not all(['HOLD' == getattr(self, a.lower() + '_ACTN')() for a in ax]):
+                    time.sleep(0.1)
+            except KeyboardInterrupt:
+                self.hold()
+                raise KeyboardInterrupt
 
     def _ramp_to_setpoint_and_wait(self, ax, cmd, setpoint):
         error = 0.2e-3

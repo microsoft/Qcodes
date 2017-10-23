@@ -7,7 +7,7 @@ import hypothesis.strategies as hst
 from .instrument_mocks import DummyInstrument
 from qcodes.instrument.parameter import combine
 from qcodes import Task, Loop
-from qcodes.instrument.parameter import ManualParameter
+from qcodes.instrument.parameter import Parameter
 
 
 class TestLoopCombined(TestCase):
@@ -38,7 +38,7 @@ class TestLoopCombined(TestCase):
                                y_set.reshape(npoints, 1),
                                z_set.reshape(npoints, 1)))
 
-        parameters = [ManualParameter(name) for name in ["X", "Y", "Z"]]
+        parameters = [Parameter(name, get_cmd=None, set_cmd=None) for name in ["X", "Y", "Z"]]
 
         sweep_values = combine(*parameters,
                                name="combined").sweep(setpoints)
@@ -72,7 +72,7 @@ class TestLoopCombined(TestCase):
         setpoints = np.hstack((x_set.reshape(npoints, 1),
                                y_set.reshape(npoints, 1),
                                z_set.reshape(npoints, 1)))
-        parameters = [ManualParameter(name) for name in ["X", "Y", "Z"]]
+        parameters = [Parameter(name, get_cmd=None, set_cmd=None) for name in ["X", "Y", "Z"]]
         sweep_values = combine(*parameters,
                                name="combined").sweep(setpoints)
 
@@ -110,7 +110,7 @@ class TestLoopCombined(TestCase):
         setpoints = np.hstack((x_set.reshape(npoints, 1),
                                y_set.reshape(npoints, 1),
                                z_set.reshape(npoints, 1)))
-        parameters = [ManualParameter(name) for name in ["X", "Y", "Z"]]
+        parameters = [Parameter(name, get_cmd=None, set_cmd=None) for name in ["X", "Y", "Z"]]
         sweep_values = combine(*parameters,
                                name="combined").sweep(setpoints)
 
@@ -151,7 +151,7 @@ class TestLoopCombined(TestCase):
         setpoints = np.hstack((y_set.reshape(npoints, 1),
                                z_set.reshape(npoints, 1)))
 
-        parameters = [ManualParameter(name) for name in ["X", "Y", "Z"]]
+        parameters = [Parameter(name, get_cmd=None, set_cmd=None) for name in ["X", "Y", "Z"]]
         sweep_values = combine(parameters[1], parameters[2],
                                name="combined").sweep(setpoints)
 

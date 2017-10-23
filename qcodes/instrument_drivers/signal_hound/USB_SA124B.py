@@ -4,7 +4,6 @@ import ctypes as ct
 import logging
 
 from qcodes import Instrument, validators as vals
-from qcodes.instrument.parameter import ManualParameter
 
 
 class SignalHound_USB_SA124B(Instrument):
@@ -68,28 +67,28 @@ class SignalHound_USB_SA124B(Instrument):
                            label='Frequency ',
                            unit='Hz',
                            initial_value=5e9,
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            vals=vals.Numbers())
         self.add_parameter('span',
                            label='Span ',
                            unit='Hz',
                            initial_value=.25e6,
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            vals=vals.Numbers())
         self.add_parameter('power',
                            label='Power ',
                            unit='dBm',
                            initial_value=0,
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            vals=vals.Numbers(max_value=20))
         self.add_parameter('ref_lvl',
                            label='Reference power ',
                            unit='dBm',
                            initial_value=0,
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            vals=vals.Numbers(max_value=20))
         self.add_parameter('external_reference',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=False,
                            vals=vals.Bool())
         self.add_parameter('device_type',
@@ -97,37 +96,37 @@ class SignalHound_USB_SA124B(Instrument):
 
         self.add_parameter('device_mode',
                            initial_value='sweeping',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            vals=vals.Anything())
         self.add_parameter('acquisition_mode',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value='average',
                            vals=vals.Enum('average', 'min-max'))
         self.add_parameter('scale',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value='log-scale',
                            vals=vals.Enum('log-scale', 'lin-scale',
                                           'log-full-scale', 'lin-full-scale'))
         self.add_parameter('running',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=False,
                            vals=vals.Bool())
         self.add_parameter('decimation',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=1,
                            vals=vals.Ints(1, 8))
         self.add_parameter('bandwidth',
                            label='Bandwidth',
                            unit='Hz',
                            initial_value=0,
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            vals=vals.Numbers())
         # rbw Resolution bandwidth in Hz. RBW can be arbitrary.
         self.add_parameter('rbw',
                            label='Resolution Bandwidth',
                            unit='Hz',
                            initial_value=1e3,
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            vals=vals.Numbers())
         # vbw Video bandwidth in Hz. VBW must be less than or equal to RBW.
         #  VBW can be arbitrary. For best performance use RBW as the VBW.
@@ -135,7 +134,7 @@ class SignalHound_USB_SA124B(Instrument):
                            label='Video Bandwidth',
                            unit='Hz',
                            initial_value=1e3,
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            vals=vals.Numbers())
 
         self.openDevice()
