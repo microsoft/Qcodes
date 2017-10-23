@@ -7,7 +7,7 @@ from qcodes.utils.validators import Numbers, Ints, Enum, Strings
 from qcodes.instrument.channel import InstrumentChannel, ChannelList
 
 
-class SR830AuxArray(InstrumentChannel):  # We see that InstrumentChannel, ChannelList are something of a misnomer
+class SR830AuxChannel(InstrumentChannel):  # We see that InstrumentChannel, ChannelList are something of a misnomer
     def __init__(self, parent, name, aux_number):
         super().__init__(parent, name)
 
@@ -376,12 +376,12 @@ class SR830(VisaInstrument):
                            get_cmd='OEXP? 3',
                            get_parser=parse_offset_get)
 
-        aux = ChannelList(self, "Aux", SR830AuxArray, snapshotable=False)
+        aux = ChannelList(self, "Aux", SR830AuxChannel, snapshotable=False)
         channels = ChannelList(self, "Channel", SR830ChannelArray, snapshotable=False)
 
         # Aux input/output
         for count in [1, 2, 3, 4]:
-            iaux = SR830AuxArray(self, "aux{}".format(count), count)
+            iaux = SR830AuxChannel(self, "aux{}".format(count), count)
             aux.append(iaux)
 
             if count < 3:
