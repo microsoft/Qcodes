@@ -6,10 +6,10 @@ satisfy the Parameter interface. Most of the time that is easiest to do
 by either using or subclassing one of the classes defined here, but you can
 also use any class with the right attributes.
 
-All parameter classes are subclassed from _BaseParameter (except
-CombinedParameter). The _BaseParameter provides functionality that is common
-to all parameter types, such as ramping and scaling of values, adding delays
-(see documentation for details).
+All parameter classes are subclassed from ``_BaseParameter`` (except
+``CombinedParameter``). The ``_BaseParameter`` provides functionality that is \
+common to all parameter types, such as ramping and scaling of values, adding
+delays (see documentation for details).
 
 This file defines four classes of parameters:
 
@@ -149,7 +149,10 @@ class _BaseParameter(Metadatable, DeferredOperations):
     """
 
     def __init__(self, name: str,
-                 instrument: Optional['Instrument'],
+                 instrument, # Should really be Optional['Instrument']
+                 # using quotes to avoid circular refs but that breaks sphinx
+                 # autodoc due to
+                 # https://github.com/sphinx-doc/sphinx/issues/4072
                  snapshot_get: bool=True,
                  metadata: Optional[dict]=None,
                  step: Optional[Union[int, float]]=None,
@@ -627,7 +630,9 @@ class Parameter(_BaseParameter):
 
     By default only gettable, returning its last value.
     This behaviour can be modified in two ways:
+
     1. Providing a ``get_cmd``/``set_cmd``, which can of the following:
+
        a. callable, with zero args for get_cmd, one arg for set_cmd
        b. VISA command string
        c. None, in which case it retrieves its last value for ``get_cmd``,
@@ -721,7 +726,7 @@ class Parameter(_BaseParameter):
     """
 
     def __init__(self, name: str,
-                 instrument: Optional['Instrument']=None,
+                 instrument=None,
                  label: Optional[str]=None,
                  unit: Optional[str]=None,
                  get_cmd: Optional[Union[str, Callable, bool]]=None,
@@ -897,7 +902,7 @@ class ArrayParameter(_BaseParameter):
     def __init__(self,
                  name: str,
                  shape: Sequence[int],
-                 instrument: Optional['Instrument']=None,
+                 instrument=None,
                  label: Optional[str]=None,
                  unit: Optional[str]=None,
                  setpoints: Optional[Sequence]=None,
@@ -1073,7 +1078,7 @@ class MultiParameter(_BaseParameter):
                  name: str,
                  names: Sequence[str],
                  shapes: Sequence[Sequence[Optional[int]]],
-                 instrument: Optional['Instrument']=None,
+                 instrument=None,
                  labels: Optional[Sequence[str]]=None,
                  units: Optional[Sequence[str]]=None,
                  setpoints: Optional[Sequence[Sequence]]=None,
