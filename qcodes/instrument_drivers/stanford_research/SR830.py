@@ -25,12 +25,9 @@ class SR830AuxChannel(InstrumentChannel):  # We see that InstrumentChannel, Chan
                            unit='V')
 
 
-class SR830ChannelArray(InstrumentChannel):
+class SR830Channel(InstrumentChannel):
     def __init__(self, parent, name, channel_number):
         super().__init__(parent, name)
-
-        self._parent = parent
-
         # detailed validation and mapping performed in set/get functions. Note that we only have
         # two channels
         self.add_parameter(
@@ -55,9 +52,6 @@ class SR830ChannelArray(InstrumentChannel):
             parameter_class=ChannelBuffer
         )
 
-        def get_parent():
-            return self._parent
-
 
 class ChannelBuffer(ArrayParameter):
     """
@@ -68,11 +62,11 @@ class ChannelBuffer(ArrayParameter):
     The instrument natively supports this in its TRCL call.
     """
 
-    def __init__(self, name: str, channel_array: 'SR830ChannelArray', channel: int):
+    def __init__(self, name: str, channel_array: 'SR830Channel', channel: int):
         """
         Args:
             name (str): The name of the parameter
-            channel_array (SR830ChannelArray): The channel array of the parent instrument
+            channel_array (SR830Channel): The channel array of the parent instrument
             channel (int): The relevant channel (1 or 2). The name should
                 should match this.
         """
@@ -82,7 +76,7 @@ class ChannelBuffer(ArrayParameter):
             raise ValueError('Invalid channel specifier. SR830 only has '
                              'channels 1 and 2.')
 
-        if not isinstance(channel_array, SR830ChannelArray):
+        if not isinstance(channel_array, SR830Channel):
             raise ValueError('Invalid parent instrument. ChannelBuffer '
                              'can only live on a channel buffer of SR830.')
 
@@ -96,7 +90,7 @@ class ChannelBuffer(ArrayParameter):
                                    'data buffer of one channel.')
 
         self.channel = channel
-        self._instrument = channel_array.get_parent()
+        self._instrument = channel_array.parent
 
     def prepare_buffer_readout(self):
         """
@@ -377,7 +371,7 @@ class SR830(VisaInstrument):
                            get_parser=parse_offset_get)
 
         aux = ChannelList(self, "Aux", SR830AuxChannel, snapshotable=False)
-        channels = ChannelList(self, "Channel", SR830ChannelArray, snapshotable=False)
+        channels = ChannelList(self, "Channel", SR830Channel, snapshotable=False)
 
         # Aux input/output
         for count in [1, 2, 3, 4]:
@@ -385,7 +379,7 @@ class SR830(VisaInstrument):
             aux.append(iaux)
 
             if count < 3:
-                channel = SR830ChannelArray(self, "channel{}".format(count), count)
+                channel = SR830Channel(self, "channel{}".format(count), count)
                 channels.append(channel)
 
         aux.lock()
