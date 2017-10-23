@@ -3,17 +3,18 @@ Test suite for parameter
 """
 from collections import namedtuple
 from unittest import TestCase
+from time import sleep
 
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter,
-    ManualParameter, StandardParameter, InstrumentRefParameter)
-from qcodes.utils.helpers import LogCapture
-from qcodes.utils.validators import Numbers
+    InstrumentRefParameter)
+import qcodes.utils.validators as vals
 from qcodes.tests.instrument_mocks import DummyInstrument
 
 
 class GettableParam(Parameter):
+    """ Parameter that keeps track of number of get operations"""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._get_count = 0
@@ -24,29 +25,17 @@ class GettableParam(Parameter):
         return 42
 
 
-class SimpleManualParam(Parameter):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._save_val(0)
-        self._v = 0
+class BookkeepingValidator(vals.Validator):
+    """
+    Validator that keeps track of what it validates
+    """
+    def __init__(self, min_value=-float("inf"), max_value=float("inf")):
+        self.values_validated = []
 
-    def get(self):
-        return self._v
+    def validate(self, value, context=''):
+        self.values_validated.append(value)
 
-    def set(self, v):
-        self._save_val(v)
-        self._v = v
-
-
-class SettableParam(Parameter):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._save_val(0)
-        self._v = 0
-
-    def set(self, v):
-        self._save_val(v)
-        self._v = v
+    is_numeric = True
 
 
 blank_instruments = (
@@ -57,19 +46,40 @@ blank_instruments = (
 named_instrument = namedtuple('yesname', 'name')('astro')
 
 
+class MemoryParameter(Parameter):
+    def __init__(self, get_cmd=None, **kwargs):
+        self.set_values = []
+        self.get_values = []
+        super().__init__(set_cmd=self.add_set_value,
+                         get_cmd=self.create_get_func(get_cmd), **kwargs)
+
+    def add_set_value(self, value):
+        self.set_values.append(value)
+
+    def create_get_func(self, func):
+        def get_func():
+            if func is not None:
+                val = func()
+            else:
+                val = self._latest['value']
+            self.get_values.append(val)
+            return val
+        return get_func
+
+
 class TestParameter(TestCase):
     def test_no_name(self):
         with self.assertRaises(TypeError):
-            GettableParam()
+            Parameter()
 
     def test_default_attributes(self):
         # Test the default attributes, providing only a name
         name = 'repetitions'
-        p = GettableParam(name)
+        p = GettableParam(name, vals=vals.Numbers())
         self.assertEqual(p.name, name)
         self.assertEqual(p.label, name)
         self.assertEqual(p.unit, '')
-        self.assertEqual(p.full_name, name)
+        self.assertEqual(str(p), name)
 
         # default validator is all numbers
         p.validate(-1000)
@@ -88,7 +98,7 @@ class TestParameter(TestCase):
             'label': name,
             'unit': '',
             'value': 42,
-            'vals': repr(Numbers())
+            'vals': repr(vals.Numbers())
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
@@ -101,13 +111,13 @@ class TestParameter(TestCase):
         docstring = 'DOCS!'
         metadata = {'gain': 100}
         p = GettableParam(name, label=label, unit=unit,
-                          vals=Numbers(5, 10), docstring=docstring,
+                          vals=vals.Numbers(5, 10), docstring=docstring,
                           snapshot_get=False, metadata=metadata)
 
         self.assertEqual(p.name, name)
         self.assertEqual(p.label, label)
         self.assertEqual(p.unit, unit)
-        self.assertEqual(p.full_name, name)
+        self.assertEqual(str(p), name)
 
         with self.assertRaises(ValueError):
             p.validate(-1000)
@@ -120,13 +130,14 @@ class TestParameter(TestCase):
 
         # test snapshot_get by looking at _get_count
         self.assertEqual(p._get_count, 0)
+        # Snapshot should not perform get since snapshot_get is False
         snap = p.snapshot(update=True)
         self.assertEqual(p._get_count, 0)
         snap_expected = {
             'name': name,
             'label': label,
             'unit': unit,
-            'vals': repr(Numbers(5, 10)),
+            'vals': repr(vals.Numbers(5, 10)),
             'metadata': metadata
         }
         for k, v in snap_expected.items():
@@ -137,79 +148,107 @@ class TestParameter(TestCase):
                      'setpoint_labels', 'full_names']:
             self.assertFalse(hasattr(p, attr), attr)
 
-    def test_units(self):
-        with LogCapture() as logs:
-            p = GettableParam('p', units='V')
+    def test_number_of_validations(self):
 
-        self.assertIn('deprecated', logs.value)
-        self.assertEqual(p.unit, 'V')
+        p = Parameter('p', set_cmd=None, initial_value=0,
+                      vals=BookkeepingValidator())
 
-        with LogCapture() as logs:
-            self.assertEqual(p.units, 'V')
+        self.assertEqual(p.vals.values_validated, [0])
 
-        self.assertIn('deprecated', logs.value)
+        p.step = 1
+        p.set(10)
 
-        with LogCapture() as logs:
-            p = GettableParam('p', unit='Tesla', units='Gauss')
+        self.assertEqual(p.vals.values_validated,
+                         [0, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
-        self.assertIn('deprecated', logs.value)
-        self.assertEqual(p.unit, 'Tesla')
-
-        with LogCapture() as logs:
-            self.assertEqual(p.units, 'Tesla')
-
-        self.assertIn('deprecated', logs.value)
-
-    def test_repr(self):
-        for i in [0, "foo", "", "fåil"]:
-            with self.subTest(i=i):
-                param = GettableParam(name=i)
-                s = param.__repr__()
-                st = '<{}.{}: {} at {}>'.format(
-                    param.__module__, param.__class__.__name__,
-                    param.name, id(param))
-                self.assertEqual(s, st)
+    def test_snapshot_value(self):
+        p_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
+                               snapshot_value=True)
+        p_snapshot(42)
+        snap = p_snapshot.snapshot()
+        self.assertIn('value', snap)
+        p_no_snapshot = Parameter('no_snapshot', set_cmd=None, get_cmd=None,
+                                  snapshot_value=False)
+        p_no_snapshot(42)
+        snap = p_no_snapshot.snapshot()
+        self.assertNotIn('value', snap)
 
     def test_has_set_get(self):
-        # you can't instantiate a Parameter directly anymore, only a subclass,
-        # because you need a get or a set method.
-        with self.assertRaises(AttributeError):
-            Parameter('no_get_or_set')
-
-        gp = GettableParam('1')
-        self.assertTrue(gp.has_get)
-        self.assertFalse(gp.has_set)
+        # Create parameter that has no set_cmd, and get_cmd returns last value
+        gettable_parameter = Parameter('1', set_cmd=False, get_cmd=None)
+        self.assertTrue(hasattr(gettable_parameter, 'get'))
+        self.assertFalse(hasattr(gettable_parameter, 'set'))
         with self.assertRaises(NotImplementedError):
-            gp(1)
+            gettable_parameter(1)
+        # Initial value is None if not explicitly set
+        self.assertIsNone(gettable_parameter())
 
-        sp = SettableParam('2')
-        self.assertFalse(sp.has_get)
-        self.assertTrue(sp.has_set)
+        # Create parameter that saves value during set, and has no get_cmd
+        settable_parameter = Parameter('2', set_cmd=None, get_cmd=False)
+        self.assertFalse(hasattr(settable_parameter, 'get'))
+        self.assertTrue(hasattr(settable_parameter, 'set'))
         with self.assertRaises(NotImplementedError):
-            sp()
+            settable_parameter()
+        settable_parameter(42)
 
-        sgp = SimpleManualParam('3')
-        self.assertTrue(sgp.has_get)
-        self.assertTrue(sgp.has_set)
-        sgp(22)
-        self.assertEqual(sgp(), 22)
+        settable_gettable_parameter = Parameter('3', set_cmd=None, get_cmd=None)
+        self.assertTrue(hasattr(settable_gettable_parameter, 'set'))
+        self.assertTrue(hasattr(settable_gettable_parameter, 'get'))
+        self.assertIsNone(settable_gettable_parameter())
+        settable_gettable_parameter(22)
+        self.assertEqual(settable_gettable_parameter(), 22)
 
-    def test_full_name(self):
+    def test_str_representation(self):
         # three cases where only name gets used for full_name
         for instrument in blank_instruments:
-            p = GettableParam(name='fred')
+            p = Parameter(name='fred')
             p._instrument = instrument
-            self.assertEqual(p.full_name, 'fred')
+            self.assertEqual(str(p), 'fred')
 
         # and finally an instrument that really has a name
-        p = GettableParam(name='wilma')
+        p = Parameter(name='wilma')
         p._instrument = named_instrument
-        self.assertEqual(p.full_name, 'astro_wilma')
+        self.assertEqual(str(p), 'astro_wilma')
 
     def test_bad_validator(self):
         with self.assertRaises(TypeError):
-            GettableParam('p', vals=[1, 2, 3])
+            Parameter('p', vals=[1, 2, 3])
 
+    def test_step_ramp(self):
+        p = MemoryParameter(name='test_step')
+        p(42)
+        self.assertListEqual(p.set_values, [42])
+        p.step = 1
+
+        self.assertListEqual(p.get_ramp_values(44.5, 1), [43, 44, 44.5])
+
+        p(44.5)
+        self.assertListEqual(p.set_values, [42, 43, 44, 44.5])
+
+    def test_scale_raw_value(self):
+        p = Parameter(name='test_scale_raw_value', set_cmd=None)
+        p(42)
+        self.assertEqual(p.raw_value, 42)
+
+        p.scale = 2
+        self.assertEqual(p.raw_value, 42) # No set/get cmd performed
+        self.assertEqual(p(), 21)
+
+        p(10)
+        self.assertEqual(p.raw_value, 20)
+        self.assertEqual(p(), 10)
+
+    def test_latest_value(self):
+        p = MemoryParameter(name='test_latest_value', get_cmd=lambda: 21)
+
+        p(42)
+        self.assertEqual(p.get_latest(), 42)
+        self.assertListEqual(p.get_values, [])
+
+        p.get_latest.max_val_age = 0.1
+        sleep(0.2)
+        self.assertEqual(p.get_latest(), 21)
+        self.assertEqual(p.get_values, [21])
 
 class SimpleArrayParam(ArrayParameter):
     def __init__(self, return_val, *args, **kwargs):
@@ -244,23 +283,22 @@ class TestArrayParameter(TestCase):
         self.assertIsNone(p.setpoint_names)
         self.assertIsNone(p.setpoint_labels)
 
-        self.assertEqual(p.full_name, name)
+        self.assertEqual(str(p), name)
 
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
-        self.assertEqual(p._get_count, 1)
+        self.assertEqual(p._get_count, 0)
         snap_expected = {
             'name': name,
             'label': name,
-            'unit': '',
-            'value': [[1, 2, 3], [4, 5, 6]]
+            'unit': ''
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
 
         self.assertIn(name, p.__doc__)
 
-    def test_explicit_attrbutes(self):
+    def test_explicit_attributes(self):
         name = 'tiny_array'
         shape = (2,)
         label = 'it takes two to tango'
@@ -274,7 +312,7 @@ class TestArrayParameter(TestCase):
                              setpoints=setpoints,
                              setpoint_names=setpoint_names,
                              setpoint_labels=setpoint_labels,
-                             docstring=docstring, snapshot_get=False,
+                             docstring=docstring, snapshot_value=True,
                              metadata=metadata)
 
         self.assertEqual(p.name, name)
@@ -287,44 +325,21 @@ class TestArrayParameter(TestCase):
 
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
-        self.assertEqual(p._get_count, 0)
+        self.assertEqual(p._get_count, 1)
         snap_expected = {
             'name': name,
             'label': label,
             'unit': unit,
             'setpoint_names': setpoint_names,
             'setpoint_labels': setpoint_labels,
-            'metadata': metadata
+            'metadata': metadata,
+            'value': [6, 7]
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
 
         self.assertIn(name, p.__doc__)
         self.assertIn(docstring, p.__doc__)
-
-    def test_units(self):
-        with LogCapture() as logs:
-            p = SimpleArrayParam([6, 7], 'p', (2,), units='V')
-
-        self.assertIn('deprecated', logs.value)
-        self.assertEqual(p.unit, 'V')
-
-        with LogCapture() as logs:
-            self.assertEqual(p.units, 'V')
-
-        self.assertIn('deprecated', logs.value)
-
-        with LogCapture() as logs:
-            p = SimpleArrayParam([6, 7], 'p', (2,),
-                                 unit='Tesla', units='Gauss')
-
-        self.assertIn('deprecated', logs.value)
-        self.assertEqual(p.unit, 'Tesla')
-
-        with LogCapture() as logs:
-            self.assertEqual(p.units, 'Tesla')
-
-        self.assertIn('deprecated', logs.value)
 
     def test_has_set_get(self):
         name = 'array_param'
@@ -334,8 +349,8 @@ class TestArrayParameter(TestCase):
 
         p = SimpleArrayParam([1, 2, 3], name, shape)
 
-        self.assertTrue(p.has_get)
-        self.assertFalse(p.has_set)
+        self.assertTrue(hasattr(p, 'get'))
+        self.assertFalse(hasattr(p, 'set'))
 
         with self.assertRaises(AttributeError):
             SettableArray([1, 2, 3], name, shape)
@@ -345,12 +360,12 @@ class TestArrayParameter(TestCase):
         for instrument in blank_instruments:
             p = SimpleArrayParam([6, 7], 'fred', (2,))
             p._instrument = instrument
-            self.assertEqual(p.full_name, 'fred')
+            self.assertEqual(str(p), 'fred')
 
         # and finally an instrument that really has a name
         p = SimpleArrayParam([6, 7], 'wilma', (2,))
         p._instrument = named_instrument
-        self.assertEqual(p.full_name, 'astro_wilma')
+        self.assertEqual(str(p), 'astro_wilma')
 
     def test_constructor_errors(self):
         bad_constructors = [
@@ -404,17 +419,16 @@ class TestMultiParameter(TestCase):
         self.assertIsNone(p.setpoint_names)
         self.assertIsNone(p.setpoint_labels)
 
-        self.assertEqual(p.full_name, name)
+        self.assertEqual(str(p), name)
 
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
-        self.assertEqual(p._get_count, 1)
+        self.assertEqual(p._get_count, 0)
         snap_expected = {
             'name': name,
             'names': names,
             'labels': names,
-            'units': [''] * 3,
-            'value': [0, [1, 2, 3], [[4, 5], [6, 7]]]
+            'units': [''] * 3
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
@@ -441,7 +455,7 @@ class TestMultiParameter(TestCase):
                              setpoints=setpoints,
                              setpoint_names=setpoint_names,
                              setpoint_labels=setpoint_labels,
-                             docstring=docstring, snapshot_get=False,
+                             docstring=docstring, snapshot_value=True,
                              metadata=metadata)
 
         self.assertEqual(p.name, name)
@@ -456,7 +470,7 @@ class TestMultiParameter(TestCase):
 
         self.assertEqual(p._get_count, 0)
         snap = p.snapshot(update=True)
-        self.assertEqual(p._get_count, 0)
+        self.assertEqual(p._get_count, 1)
         snap_expected = {
             'name': name,
             'names': names,
@@ -464,7 +478,8 @@ class TestMultiParameter(TestCase):
             'units': units,
             'setpoint_names': setpoint_names,
             'setpoint_labels': setpoint_labels,
-            'metadata': metadata
+            'metadata': metadata,
+            'value': [0, [1, 2, 3], [[4, 5], [6, 7]]]
         }
         for k, v in snap_expected.items():
             self.assertEqual(snap[k], v)
@@ -482,8 +497,8 @@ class TestMultiParameter(TestCase):
         p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]],
                              name, names, shapes)
 
-        self.assertTrue(p.has_get)
-        self.assertFalse(p.has_set)
+        self.assertTrue(hasattr(p, 'get'))
+        self.assertFalse(hasattr(p, 'set'))
         # We allow creation of Multiparameters with set to support
         # instruments that already make use of them.
         with self.assertWarns(UserWarning):
@@ -500,7 +515,7 @@ class TestMultiParameter(TestCase):
             p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]],
                                  name, names, shapes)
             p._instrument = instrument
-            self.assertEqual(p.full_name, name)
+            self.assertEqual(str(p), name)
 
             self.assertEqual(p.full_names, names)
 
@@ -508,7 +523,7 @@ class TestMultiParameter(TestCase):
         p = SimpleMultiParam([0, [1, 2, 3], [[4, 5], [6, 7]]],
                              name, names, shapes)
         p._instrument = named_instrument
-        self.assertEqual(p.full_name, 'astro_mixed_dimensions')
+        self.assertEqual(str(p), 'astro_mixed_dimensions')
 
         self.assertEqual(p.full_names, ['astro_0D', 'astro_1D', 'astro_2D'])
 
@@ -533,12 +548,12 @@ class TestManualParameter(TestCase):
 
     def test_bare_function(self):
         # not a use case we want to promote, but it's there...
-        p = ManualParameter('test')
+        p = Parameter('test', get_cmd=None, set_cmd=None)
 
         def doubler(x):
             p.set(x * 2)
 
-        f = Function('f', call_cmd=doubler, args=[Numbers(-10, 10)])
+        f = Function('f', call_cmd=doubler, args=[vals.Numbers(-10, 10)])
 
         f(4)
         self.assertEqual(p.get(), 8)
@@ -563,7 +578,7 @@ class TestStandardParam(TestCase):
         return '{:d}'.format(val)
 
     def test_param_cmd_with_parsing(self):
-        p = StandardParameter('p_int', get_cmd=self.get_p, get_parser=int,
+        p = Parameter('p_int', get_cmd=self.get_p, get_parser=int,
                               set_cmd=self.set_p, set_parser=self.parse_set_p)
 
         p(5)
@@ -571,20 +586,18 @@ class TestStandardParam(TestCase):
         self.assertEqual(p(), 5)
 
     def test_settable(self):
-        p = StandardParameter('p', set_cmd=self.set_p)
+        p = Parameter('p', set_cmd=self.set_p, get_cmd=False)
 
         p(10)
         self.assertEqual(self._p, 10)
         with self.assertRaises(NotImplementedError):
             p()
-        with self.assertRaises(NotImplementedError):
-            p.get()
 
-        self.assertTrue(p.has_set)
-        self.assertFalse(p.has_get)
+        self.assertTrue(hasattr(p, 'set'))
+        self.assertFalse(hasattr(p, 'get'))
 
     def test_gettable(self):
-        p = StandardParameter('p', get_cmd=self.get_p)
+        p = Parameter('p', get_cmd=self.get_p)
         self._p = 21
 
         self.assertEqual(p(), 21)
@@ -592,15 +605,14 @@ class TestStandardParam(TestCase):
 
         with self.assertRaises(NotImplementedError):
             p(10)
-        with self.assertRaises(NotImplementedError):
-            p.set(10)
 
-        self.assertTrue(p.has_get)
-        self.assertFalse(p.has_set)
+        self.assertTrue(hasattr(p, 'get'))
+        self.assertFalse(hasattr(p, 'set'))
 
     def test_val_mapping_basic(self):
-        p = StandardParameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
-                              val_mapping={'off': 0, 'on': 1})
+        p = Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
+                      val_mapping={'off': 0, 'on': 1},
+                      vals=vals.Enum('off', 'on'))
 
         p('off')
         self.assertEqual(self._p, 0)
@@ -619,17 +631,16 @@ class TestStandardParam(TestCase):
             p()
 
     def test_val_mapping_with_parsers(self):
-        # you can't use set_parser with val_mapping... just too much
-        # indirection since you also have set_cmd
-        with self.assertRaises(TypeError):
-            StandardParameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
-                              val_mapping={'off': 0, 'on': 1},
-                              set_parser=self.parse_set_p)
+        # set_parser with val_mapping
+        Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
+                  val_mapping={'off': 0, 'on': 1},
+                  set_parser=self.parse_set_p)
 
-        # but you *can* use get_parser with val_mapping
-        p = StandardParameter('p', set_cmd=self.set_p_prefixed,
-                              get_cmd=self.get_p, get_parser=self.strip_prefix,
-                              val_mapping={'off': 0, 'on': 1})
+        # get_parser with val_mapping
+        p = Parameter('p', set_cmd=self.set_p_prefixed,
+                      get_cmd=self.get_p, get_parser=self.strip_prefix,
+                      val_mapping={'off': 0, 'on': 1},
+                      vals=vals.Enum('off', 'on'))
 
         p('off')
         self.assertEqual(self._p, 'PVAL: 0')
@@ -638,14 +649,40 @@ class TestStandardParam(TestCase):
         self._p = 'PVAL: 1'
         self.assertEqual(p(), 'on')
 
+class TestManualParameterValMapping(TestCase):
+    def setUp(self):
+        self.instrument = DummyInstrument('dummy_holder')
+
+    def tearDown(self):
+        self.instrument.close()
+        del self.instrument
+
+
+    def test_val_mapping(self):
+        self.instrument.add_parameter('myparameter', set_cmd=None, get_cmd=None, val_mapping={'A': 0, 'B': 1})
+        self.instrument.myparameter('A')
+        assert self.instrument.myparameter() == 'A'
+        assert self.instrument.myparameter() == 'A'
+        assert self.instrument.myparameter.raw_value == 0
+
+
 
 class TestInstrumentRefParameter(TestCase):
+
+    def setUp(self):
+        self.a = DummyInstrument('dummy_holder')
+        self.d = DummyInstrument('dummy')
+
     def test_get_instr(self):
-        a = DummyInstrument('dummy_holder')
-        d = DummyInstrument('dummy')
-        a.add_parameter('test', parameter_class=InstrumentRefParameter)
+        self.a.add_parameter('test', parameter_class=InstrumentRefParameter)
 
-        a.test.set(d.name)
+        self.a.test.set(self.d.name)
 
-        self.assertEqual(a.test.get(), d.name)
-        self.assertEqual(a.test.get_instr(), d)
+        self.assertEqual(self.a.test.get(), self.d.name)
+        self.assertEqual(self.a.test.get_instr(), self.d)
+
+    def tearDown(self):
+        self.a.close()
+        self.d.close()
+        del self.a
+        del self.d
