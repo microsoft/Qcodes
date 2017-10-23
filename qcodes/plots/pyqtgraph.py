@@ -526,7 +526,7 @@ class QtPlot(BasePlot):
         for i, plot in enumerate(self.subplots):
             # make a dict mapping axis labels to axis positions
             for axis in ('x', 'y', 'z'):
-                if self.traces[i]['config'].get(axis):
+                if self.traces[i]['config'].get(axis) is not None:
                     unit = getattr(self.traces[i]['config'][axis], 'unit', None)
                     if unit is not None and unit not in standardunits:
                         if axis in ('x', 'y'):
