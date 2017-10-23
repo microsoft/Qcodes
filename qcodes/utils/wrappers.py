@@ -8,6 +8,7 @@ import numpy as np
 from typing import Optional, Tuple
 import functools
 import matplotlib.pyplot as plt
+from pyqtgraph.multiprocess.remoteproxy import ClosedError
 
 import qcodes as qc
 from qcodes.loops import Loop
@@ -349,7 +350,10 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
     data = loop.get_data_set()
 
     if do_plots:
-        plot, _ = _plot_setup(data, meas_params, startranges=startranges)
+        try:
+            plot, _ = _plot_setup(data, meas_params, startranges=startranges)
+        except (ClosedError, ConnectionError):
+            log.warning('Remote process crashed png will not be saved')
     else:
         plot = None
     try:
@@ -362,8 +366,11 @@ def _do_measurement(loop: Loop, set_params: tuple, meas_params: tuple,
         print("Measurement Interrupted")
     if do_plots:
         # Ensure the correct scaling before saving
-        plot.autorange()
-        plot.save()
+        try:
+            plot.autorange()
+            plot.save()
+        except (ClosedError, ConnectionError):
+            log.warning('Remote process crashed png will not be saved')
         plt.ioff()
         pdfplot, num_subplots = _plot_setup(data, meas_params, useQT=False)
         # pad a bit more to prevent overlap between
