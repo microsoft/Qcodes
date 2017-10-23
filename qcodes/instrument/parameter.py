@@ -7,7 +7,7 @@ by either using or subclassing one of the classes defined here, but you can
 also use any class with the right attributes.
 
 All parameter classes are subclassed from ``_BaseParameter`` (except
-``CombinedParameter``). The ``_BaseParameter`` provides functionality that is \
+``CombinedParameter``). The ``_BaseParameter`` provides functionality that is
 common to all parameter types, such as ramping and scaling of values, adding
 delays (see documentation for details).
 
