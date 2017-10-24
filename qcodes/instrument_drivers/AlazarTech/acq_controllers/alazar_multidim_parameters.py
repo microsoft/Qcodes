@@ -51,6 +51,7 @@ class Alazar0DParameter(Parameter):
         cntrl.shape_info['average_buffers'] = channel._average_buffers
         cntrl.shape_info['average_records'] = channel._average_records
         cntrl.shape_info['integrate_samples'] = channel._integrate_samples
+        cntrl.shape_info['output_order'] = [0]
         params_to_kwargs = ['samples_per_record', 'records_per_buffer',
                             'buffers_per_acquisition', 'allocated_buffers']
         acq_kwargs = self._instrument.acquisition_kwargs.copy()
@@ -120,6 +121,7 @@ class AlazarNDParameter(ArrayParameter):
         cntrl.shape_info['average_buffers'] = channel._average_buffers
         cntrl.shape_info['average_records'] = channel._average_records
         cntrl.shape_info['integrate_samples'] = channel._integrate_samples
+        cntrl.shape_info['output_order'] = [0]
 
         params_to_kwargs = ['samples_per_record', 'records_per_buffer',
                             'buffers_per_acquisition', 'allocated_buffers']
@@ -285,6 +287,8 @@ class AlazarMultiChannelParameter(MultiChannelInstrumentParameter):
                                              'nsignals':0,
                                              'demod_freqs':[],
                                              'demod_types': [],
+                                             'demod_order': [],
+                                             'raw_order': [],
                                              'numbers': [],
                                              'raw':False} for _ in range(alazar_channels)]
 
@@ -297,15 +301,22 @@ class AlazarMultiChannelParameter(MultiChannelInstrumentParameter):
 
                 if channel._demod:
                     channel_info['ndemods'] += 1
+                    channel_info['demod_order'].append(i)
                     channel_info['demod_freqs'].append(channel.demod_freq.get())
                     channel_info['demod_types'].append(channel.demod_type.get())
                 else:
                     channel_info['raw'] = True
+                    channel_info['raw_order'].append(i)
                 cntrl.shape_info['average_buffers'] = channel._average_buffers
                 cntrl.shape_info['average_records'] = channel._average_records
                 cntrl.shape_info['integrate_samples'] = channel._integrate_samples
                 cntrl.shape_info['channel'] = channel.alazar_channel.get()
 
+            output_order = []
+            for achan in cntrl.active_channels_nested:
+                output_order += achan['raw_order']
+                output_order += achan['demod_order']
+            cntrl.shape_info['output_order'] = output_order
             params_to_kwargs = ['samples_per_record', 'records_per_buffer',
                                 'buffers_per_acquisition', 'allocated_buffers']
             acq_kwargs = channel.acquisition_kwargs.copy()

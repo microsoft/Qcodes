@@ -350,8 +350,9 @@ class ATS9360Controller(AcquisitionController):
                                                 self.active_channels_nested[1]['demod_types'])
         else:
             outputdataB = []
-        # this is missing logic to ensure that the channels come back in the right order
+        # ensure that data gets back in the same order
         outputdata = outputdataA + outputdataB
+        outputdata = [outputdata[i] for i in self.shape_info['output_order']]
         if len(outputdata) == 1:
             return outputdata[0]
         else:
