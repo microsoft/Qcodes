@@ -32,6 +32,10 @@ class AlazarChannel(InstrumentChannel):
         self._average_buffers = average_buffers
         self._average_records = average_records
         self._integrate_samples = integrate_samples
+        if self.dimensions > 0:
+            self._stale_setpoints = True
+        else:
+            self._stale_setpoints = False
 
         if self.dimensions >= 3:
             raise RuntimeError("Alazar controller only supports up to 2 dimensional arrays")
@@ -40,22 +44,25 @@ class AlazarChannel(InstrumentChannel):
         if demod:
             self.add_parameter('demod_freq',
                                label='demod freq',
+                               initial_value=1e5,
                                vals=vals.Numbers(1e5,500e6),
                                get_cmd=None, set_cmd=None)
             self.add_parameter('demod_type',
                                label='demod type',
-                               vals=vals.Strings(),
+                               initial_value='magnitude',
+                               vals=vals.Enum('magnitude', 'phase'),
                                get_cmd=None, set_cmd=None)
 
         self.add_parameter('alazar_channel',
                            label='Alazar Channel',
-                           # once val mapping is fixed for
-                           # parameters
-                           #val_mapping={'A': 0, 'B': 1},
+                           val_mapping={'A': 0, 'B': 1},
+                           initial_value='A',
                            get_cmd=None, set_cmd=None)
         if not average_records:
             self.add_parameter('records_per_buffer',
                                label='records_per_buffer',
+                               initial_value=1,
+                               vals=vals.Ints(min_value=1),
                                get_cmd=None, set_cmd=None)
         else:
             self.add_parameter('records_per_buffer',
@@ -65,6 +72,8 @@ class AlazarChannel(InstrumentChannel):
         if not average_buffers:
             self.add_parameter('buffers_per_acquisition',
                                label='records_per_buffer',
+                               initial_value=1,
+                               vals=vals.Ints(min_value=1),
                                get_cmd=None, set_cmd=None)
         else:
             self.add_parameter('buffers_per_acquisition',
@@ -108,6 +117,7 @@ class AlazarChannel(InstrumentChannel):
     def prepare_channel(self):
         if self.dimensions > 0:
             self.data.set_setpoints_and_labels()
+            self._stale_setpoints = False
 
     def _update_num_avg(self, value: int, **kwargs):
         if not self._average_buffers and not self._average_records:

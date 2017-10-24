@@ -39,7 +39,7 @@ class Alazar0DParameter(Parameter):
                                          'demod_types': [],
                                          'numbers': [],
                                          'raw': False} for _ in range(alazar_channels)]
-        alazar_channel = channel.alazar_channel.get()
+        alazar_channel = channel.alazar_channel.raw_value
         channel_info = cntrl.active_channels_nested[alazar_channel]
         channel_info['nsignals'] = 1
         if channel._demod:
@@ -98,8 +98,9 @@ class AlazarNDParameter(ArrayParameter):
                          setpoint_units=setpoint_units)
 
     def get(self):
-
         channel = self._instrument
+        if channel._stale_setpoints:
+            raise RuntimeError("Must run prepare channel before capturing data.")
         cntrl = channel._parent
         cntrl.shape_info = {}
         alazar_channels = 2
@@ -109,7 +110,7 @@ class AlazarNDParameter(ArrayParameter):
                                          'demod_types': [],
                                          'numbers': [],
                                          'raw': False} for _ in range(alazar_channels)]
-        alazar_channel = channel.alazar_channel.get()
+        alazar_channel = channel.alazar_channel.raw_value
         channel_info = cntrl.active_channels_nested[alazar_channel]
         channel_info['nsignals'] = 1
         if channel._demod:
@@ -295,7 +296,7 @@ class AlazarMultiChannelParameter(MultiChannelInstrumentParameter):
             for i, channel in enumerate(self._channels):
                 # change this to use raw value once mapping is
                 # complete
-                alazar_channel = channel.alazar_channel.get()
+                alazar_channel = channel.alazar_channel.raw_value
                 channel_info = cntrl.active_channels_nested[alazar_channel]
                 channel_info['nsignals'] += 1
 
