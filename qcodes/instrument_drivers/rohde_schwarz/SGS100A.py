@@ -56,9 +56,9 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
                            set_cmd=self.set_status,
                            get_parser=self.parse_on_off,
                            vals=vals.Strings())
-        self.add_parameter('status',
+        self.add_parameter('IQ_state',
                            get_cmd=':IQ:STAT?',
-                           set_cmd=self.set_status,
+                           set_cmd=self.set_IQ_state,
                            get_parser=self.parse_on_off,
                            vals=vals.Strings())
         self.add_parameter('pulsemod_state',
@@ -106,7 +106,8 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
         else:
             raise ValueError('Unable to set status to %s, ' % stat +
                              'expected "ON" or "OFF"')
-    def set_status(self, stat):
+            
+    def set_IQ_state(self, stat):
         if stat.upper() in ('ON', 'OFF'):
             self.write(':IQ:STAT %s' % stat)
         else:
