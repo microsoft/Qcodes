@@ -7,6 +7,7 @@ from typing import Dict, Optional
 
 log = logging.getLogger(__name__)
 
+
 class RCDAT_6000_60_usb(USBMixin, Instrument):
     """
     Driver for the Minicircuits RCDAT-6000-60 programmable attenuator.
@@ -40,12 +41,12 @@ class RCDAT_6000_60_usb(USBMixin, Instrument):
 
     # To identify the USB device. If there are multiple connected the serial
     # number has to be supplied as well
-    vendor_id = 0x20ce # type: int
-    product_id = 0x0023 # type: int
-    
+    vendor_id = 0x20ce  # type: int
+    product_id = 0x0023  # type: int
+
     # the feature_id identifies the usb enpoint to and from which the data is
     # sent. There is only one endpoint for this simple device
-    feature_id = 0 # type: int
+    feature_id = 0  # type: int
 
     # a list of commands taken from the manual for programmable attenuators
     # p.104. Every command consists of 64 bytes. The first byte given here
@@ -55,23 +56,31 @@ class RCDAT_6000_60_usb(USBMixin, Instrument):
                                   'send_visa': bytes([1]),
                                   'get_device_model_name': bytes([40]),
                                   'get_device_serial_number': bytes([41]),
-                                  'get_firmware': bytes([99]),}
+                                  'get_firmware': bytes([99]), }
 
     # size of usb package in bytes
     package_size = 64
 
-    def __init__(self, name: str, instance_id: Optional[str] = None, **kwargs) -> None:
+    def __init__(
+            self,
+            name: str,
+            instance_id: Optional[str] = None,
+            **kwargs) -> None:
         """
         Instantiates the instrument.
 
         Args:
             name: The instrument name used by qcodes
-            instanc_id: The identification string for the instrument. If there are multiple instruments of the same type connected, an additional 'instance_id' has to be provided to identify the desired instance. Use the enumerate_devices() function to get a list of all 'instance_id's of the connected devices.
+            instanc_id: The identification string for the instrument. If there
+               are multiple instruments of the same type connected, an
+               additional 'instance_id' has to be provided to identify the
+               desired instance. Use the enumerate_devices() function to get a
+               list of all 'instance_id's of the connected devices.
         """
 
         # super refers to mixin, mixin calls super().__init__() to
         # refer to Instrument
-        super().__init__(instance_id = instance_id, name = name, **kwargs)
+        super().__init__(instance_id=instance_id, name=name, **kwargs)
 
         self.connect_message()
 
@@ -96,25 +105,31 @@ class RCDAT_6000_60_usb(USBMixin, Instrument):
 
     def ask_cmd(self, cmd: str, data: bytes = None) -> bytearray:
         # clip the first byte off because it reflects the command
-        ret  = self.ask_USB_data(self.feature_id, self._prepare_package(cmd, data))
+        ret = self.ask_USB_data(
+            self.feature_id,
+            self._prepare_package(
+                cmd,
+                data))
         return ret[1:]
 
     def get_attenuation(self) -> float:
         ret = self.ask_cmd('get_attenuation')
-        return ret[2] + float(ret[3])/4
+        return ret[2] + float(ret[3]) / 4
 
     def set_attenuation(self, attenuation: float) -> None:
         data = bytearray(2)
         data[0] = int(attenuation)
-        data[1] = int((attenuation-data[0])*4)
+        data[1] = int((attenuation - data[0]) * 4)
         self.write_cmd('set_attenuation', data)
 
     def get_idn(self) -> Dict[str, str]:
         """
         overides get_idn from 'Instrument'
         """
-        model = self._bytearray_to_string(self.ask_cmd('get_device_model_name' ))
-        serial = self._bytearray_to_string(self.ask_cmd('get_device_serial_number'))
+        model = self._bytearray_to_string(
+            self.ask_cmd('get_device_model_name'))
+        serial = self._bytearray_to_string(
+            self.ask_cmd('get_device_serial_number'))
         firmware = self._bytearray_to_string(self.ask_cmd('get_firmware'))
         return {'vendor': 'Mini-Circuits',
                 'model': model,
@@ -123,7 +138,8 @@ class RCDAT_6000_60_usb(USBMixin, Instrument):
 
     # this does not work for this instrument for no apparent reason
     def ask_visa(self, cmd: str) -> str:
-        log.error('Trying to call unimplemented function: ask_visa for RCDAT-6000-60')
+        log.error(
+            'Trying to call unimplemented function: ask_visa for RCDAT-6000-60')
         data = cmd.encode('ascii')
         return self.ask_cmd('send_visa', data)
 
@@ -137,8 +153,8 @@ class RCDAT_6000_60_usb(USBMixin, Instrument):
 
     @staticmethod
     def round_to_nearest_attenuation_value(val: float) -> float:
-        return float(round(val*4)/4)
+        return float(round(val * 4) / 4)
 
     @staticmethod
     def round_to_nearest_attenuation_value(val: float) -> float:
-        return float(round(val*4)/4)
+        return float(round(val * 4) / 4)
