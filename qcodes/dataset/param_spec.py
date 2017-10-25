@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 from qcodes.instrument.parameter import _BaseParameter
 
 
@@ -6,11 +6,12 @@ from qcodes.instrument.parameter import _BaseParameter
 # we can't accept everything (or we can but crash at runtime?)
 # we only support the types in VALUES type
 class ParamSpec():
-    def __init__(self, name: str, type: str,
+    def __init__(self, name: str,
+                 type: str,
                  label: str=None,
                  unit: str=None,
-                 inferred_from: List['ParamSpec']=None,
-                 depends_on: List['ParamSpec']=None,
+                 inferred_from: List[Union['ParamSpec', str]]=None,
+                 depends_on: List[Union['ParamSpec', str]]=None,
                  **metadata) -> None:
         """
         Args:
@@ -24,13 +25,27 @@ class ParamSpec():
         self.type = type
         self.label = '' if label is None else label
         self.unit = '' if unit is None else unit
+
+        # a bit of footwork to allow for entering either strings or ParamSpecs
         if inferred_from:
-            self.inferred_from = ', '.join([ps.name for ps in inferred_from])
+            temp_inf_from = []
+            for inff in inferred_from:
+                if hasattr(inff, 'name'):
+                    temp_inf_from.append(inff.name)
+                else:
+                    temp_inf_from.append(inff)
+            self.inferred_from = ', '.join(temp_inf_from)
         else:
             self.inferred_from = ''
 
         if depends_on:
-            self.depends_on = ', '.join([ps.name for ps in depends_on])
+            temp_dep_on = []
+            for dpn in depends_on:
+                if hasattr(dpn, 'name'):
+                    temp_dep_on.append(dpn.name)
+                else:
+                    temp_dep_on.append(dpn)
+            self.depends_on = ', '.join(temp_dep_on)
         else:
             self.depends_on = ''
 

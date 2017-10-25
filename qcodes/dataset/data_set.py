@@ -25,7 +25,10 @@ from qcodes.dataset.sqlite_base import (atomic, atomicTransaction,
                                         add_meta_data, mark_run,
                                         modify_many_values, insert_values,
                                         insert_many_values,
-                                        VALUES, get_data, get_metadata, one)
+                                        VALUES, get_data,
+                                        get_values,
+                                        get_setpoints,
+                                        get_metadata, one)
 
 # TODO: as of now every time a result is inserted with add_result the db is
 # saved same for add_results. IS THIS THE BEHAVIOUR WE WANT?
@@ -153,10 +156,6 @@ class DataSet(Sized):
         self.conn = connect(self.path_to_db)
         self._debug = False
 
-        # we need to hold the parameter specs to resolve dependent/independent
-        # variable business
-        self._paramspecs = {}
-
     def _new(self, name, exp_id, specs: SPECS = None, values=None,
              metadata=None) -> None:
         """
@@ -192,8 +191,10 @@ class DataSet(Sized):
                                 "parameters", "run_id", self.id)
 
     @property
-    def paramspecs(self) -> List[ParamSpec]:
-        return self._paramspecs
+    def paramspecs(self) -> Dict[str, ParamSpec]:
+        params = self.get_parameters()
+        param_names = [p.name for p in params]
+        return dict(zip(param_names, params))
 
     @property
     def exp_id(self):
@@ -245,11 +246,10 @@ class DataSet(Sized):
                                  f'{spec.name} depend on {dp}, '
                                  'no such parameter in this DataSet')
 
-        self._paramspecs.update({spec.name: spec})
         add_parameter(self.conn, self.table_name, spec)
 
     def get_parameters(self) -> SPECS:
-        return get_parameters(self.conn, self.table_name)
+        return get_parameters(self.conn, self.id)
 
     # TODO: deprecate
     def add_parameters(self, specs: SPECS):
@@ -473,6 +473,37 @@ class DataSet(Sized):
                         start, end)
         return data
 
+    def get_values(self, param_name: str) -> List[List[Any]]:
+        """
+        Get the values (i.e. not NULLs) of the specified parameter
+        """
+        if param_name not in self.parameters:
+            raise ValueError('Unknown parameter, not in this DataSet')
+
+        values = get_values(self.conn, self.table_name, param_name)
+
+        return values
+
+    def get_setpoints(self, param_name: str) -> List[List[Any]]:
+        """
+        Get the setpoints for the specified parameter
+
+        Args:
+            param_name: The name of the parameter for which to get the
+                setpoints
+        """
+
+        if param_name not in self.parameters:
+            raise ValueError('Unknown parameter, not in this DataSet')
+
+        print(self.paramspecs)
+        if self.paramspecs[param_name].depends_on == '':
+            raise ValueError(f'Parameter {param_name} has no setpoints.')
+
+        setpoints = get_setpoints(self.conn, self.table_name, param_name)
+
+        return setpoints
+
     # NEED to pass Any for some reason
     def subscribe(self, callback: Callable[[Any, int, Optional[Any]], None],
                   min_wait: int = 0, min_count: int = 1,
@@ -587,11 +618,12 @@ def new_data_set(name, exp_id: Optional[int] = None,
     """
     d = DataSet(DB)
     if exp_id is None:
-        if len(get_experiments(d.conn)) >0:
+        if len(get_experiments(d.conn)) > 0:
             exp_id = get_last_experiment(d.conn)
         else:
-            raise  ValueError("No experiments found."
-                              "You can start a new one with: new_experiment(name, sample_name)")
+            raise ValueError("No experiments found."
+                             "You can start a new one with:"
+                             " new_experiment(name, sample_name)")
     d._new(name, exp_id, specs, values, metadata)
     return d
 

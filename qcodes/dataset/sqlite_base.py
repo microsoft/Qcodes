@@ -454,11 +454,11 @@ def length(conn: sqlite3.Connection,
     Return the lenght of the table
 
     Args:
-        - conn: the connection to the sqlite database
-        - formatted_name: name of the table
+        conn: the connection to the sqlite database
+        formatted_name: name of the table
 
     Returns:
-        -the lenght of the table
+        the lenght of the table
     """
     query = f"select MAX(id) from '{formatted_name}'"
     c = atomicTransaction(conn, query)
@@ -520,7 +520,100 @@ def get_data(conn: sqlite3.Connection,
         """
     c = transaction(conn, query)
     res = many_many(c, *columns)
+
     return res
+
+
+def get_values(conn: sqlite3.Connection,
+               table_name: str,
+               param_name: str) -> List[List[Any]]:
+    """
+    Get the not-null values of a parameter
+
+    Args:
+        conn: Connection to the database
+        table_name: Name of the table that holds the data
+        param_name: Name of the parameter to get the setpoints of
+
+    Returns:
+        The values
+    """
+    sql = f"""
+    SELECT {param_name} FROM "{table_name}"
+    WHERE {param_name} IS NOT NULL
+    """
+    c = transaction(conn, sql)
+    res = many_many(c, param_name)
+
+    return res
+
+
+def get_setpoints(conn: sqlite3.Connection,
+                  table_name: str,
+                  param_name: str) -> List[List[List[Any]]]:
+    """
+    Get the setpoints for a given dependent parameter
+
+    Args:
+        conn: Connection to the database
+        table_name: Name of the table that holds the data
+        param_name: Name of the parameter to get the setpoints of
+
+    Returns:
+        A list of returned setpoint values. Each setpoint return value
+        is a list of lists of Any. The first list is a list of run points,
+        the second list is a list of parameter values.
+    """
+    # TODO: We do this in no less than 5 table lookups, surely
+    # this number can be reduced
+
+    # get run_id
+    sql = """
+    SELECT run_id FROM runs WHERE result_table_name = ?
+    """
+    c = transaction(conn, sql, table_name)
+    run_id = one(c, 'run_id')
+
+    # get the parameter layout id
+    sql = """
+    SELECT layout_id FROM layouts
+    WHERE parameter = ?
+    and run_id = ?
+    """
+    c = transaction(conn, sql, param_name, run_id)
+    layout_id = one(c, 'layout_id')
+
+    # get the setpoint layout ids
+    sql = """
+    SELECT independent FROM dependencies
+    WHERE dependent = ?
+    """
+    c = transaction(conn, sql, layout_id)
+    indeps = many_many(c, 'independent')
+    indeps = [idp[0] for idp in indeps]
+
+    # get the setpoint names
+    sql = f"""
+    SELECT parameter FROM layouts WHERE layout_id
+    IN {str(indeps).replace('[', '(').replace(']', ')')}
+    """
+    c = transaction(conn, sql)
+    setpoint_names = many_many(c, 'parameter')
+    setpoint_names = [spn[0] for spn in setpoint_names]
+
+    # get the actual setpoint data
+    output = []
+    for sp_name in setpoint_names:
+        sql = f"""
+        SELECT {sp_name}
+        FROM "{table_name}"
+        WHERE {param_name} IS NOT NULL
+        """
+        c = transaction(conn, sql)
+        sps = many_many(c, sp_name)
+        output.append(sps)
+
+    return output
 
 
 def get_layout(conn: sqlite3.Connection,
@@ -547,7 +640,8 @@ def get_layout(conn: sqlite3.Connection,
 def get_dependents(conn: sqlite3.Connection,
                    run_id: int) -> List[int]:
     """
-    Get dependent layout_ids for a certain run_id
+    Get dependent layout_ids for a certain run_id, i.e. the layout_ids of all
+    the dependent variables
     """
     sql = """
     SELECT layout_id FROM layouts
@@ -795,26 +889,92 @@ def _update_experiment_run_counter(conn: sqlite3.Connection, exp_id: int,
 
 
 def get_parameters(conn: sqlite3.Connection,
-                   formatted_name: str) -> List[ParamSpec]:
+                   run_id: int) -> List[ParamSpec]:
     """
     Get the list of param specs for run
 
     Args:
-        - conn: the connection to the sqlite database
-        - formatted_name: name of the table
+        conn: the connection to the sqlite database
+        run_id: The id of the run
 
     Returns:
-        - A list of param specs for this table
+        A list of param specs for this run
     """
-    # TODO: FIX mapping of types
-    c = conn.execute(f"""pragma table_info('{formatted_name}')""")
-    params: List[ParamSpec] = []
+
+    sql = f"""
+    SELECT parameter FROM layouts WHERE run_id={run_id}
+    """
+    c = conn.execute(sql)
+    param_names = many_many(c, 'parameter')
+    param_names = [p[0] for p in param_names]
+
+    parspecs = []
+
+    for param_name in param_names:
+        parspecs.append(get_paramspec(conn, run_id, param_name))
+
+    return parspecs
+
+
+def get_paramspec(conn: sqlite3.Connection,
+                  run_id: int,
+                  param_name: str) -> ParamSpec:
+    """
+    Get the ParamSpec object for the given parameter name
+    in the given run
+
+    Args:
+        conn: Connection to the database
+        run_id: The run id
+        param_name: The name of the parameter
+    """
+
+    # get table name
+    sql = f"""
+    SELECT result_table_name FROM runs WHERE run_id = {run_id}
+    """
+    c = conn.execute(sql)
+    result_table_name = one(c, 'result_table_name')
+
+    # get the data type
+    sql = f"""
+    PRAGMA TABLE_INFO("{result_table_name}")
+    """
+    c = conn.execute(sql)
     for row in c.fetchall():
-        if row['name'] == 'id':
-            continue
-        else:
-            params.append(ParamSpec(row['name'], row['type']))
-    return params
+        if row['name'] == param_name:
+            param_type = row['type']
+            break
+
+    # get everything else
+
+    sql = f"""
+    SELECT * FROM layouts
+    WHERE parameter="{param_name}" and run_id={run_id}
+    """
+    c = conn.execute(sql)
+    resp = many(c, 'layout_id', 'run_id', 'parameter', 'label', 'unit',
+                'inferred_from')
+
+    (layout_id, _, _, label, unit, inferred_from) = resp
+
+    deps = get_dependencies(conn, layout_id)
+    if len(deps) == 0:
+        depends_on = ''
+    else:
+        dps = [dp[0] for dp in deps]
+        ax_nums = [dp[1] for dp in deps]
+        depends_on = []
+        for _, dp in sorted(zip(ax_nums, dps)):
+            sql = f"""
+            SELECT parameter FROM layouts WHERE layout_id = {dp}
+            """
+            c = conn.execute(sql)
+            depends_on.append(one(c, 'parameter'))
+
+    parspec = ParamSpec(param_name, param_type, label, unit,
+                        inferred_from, depends_on)
+    return parspec
 
 
 # TODO: Deprecate/replace with add_parameter_2
