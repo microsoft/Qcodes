@@ -194,13 +194,6 @@ class KeithleyChannel(InstrumentChannel):
 
         self.channel = channel
 
-    # We need to avoid updating the sweep parameter
-    def snapshot_base(self, update: bool=False) -> Dict:
-        params_to_skip_update = ['fastsweep']
-        dct = super().snapshot_base(update=update,
-                                    params_to_skip_update=params_to_skip_update)
-        return dct
-
     def reset(self):
         """
         Reset instrument to factory defaults.

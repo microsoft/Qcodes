@@ -6,6 +6,7 @@ Legacy in many ways:
     - just test "window creation"
 """
 from unittest import TestCase, skipIf
+import numpy as np
 import os
 
 try:
@@ -43,6 +44,25 @@ class TestQtPlot(TestCase):
         """
         plotQ = QtPlot(remote=False, show_window=False, interval=0)
         plotQ.add_subplot()
+
+    def test_simple_plot(self):
+        plotQ = QtPlot(remote=False, show_window=False, interval=0)
+        plotQ.add_subplot()
+
+        main_QtPlot = QtPlot(
+            window_title='Main plotmon of TestQtPlot',
+            figsize=(600, 400))
+
+        x = np.arange(0, 10e-6, 1e-9)
+        f = 2e6
+        y = np.cos(2*np.pi*f*x)
+
+        for j in range(4):
+            main_QtPlot.add(x=x, y=y,
+                            xlabel='Time', xunit='s',
+                            ylabel='Amplitude', yunit='V',
+                            subplot=j+1,
+                            symbol='o', symbolSize=5)
 
 
 @skipIf(noMatPlot, '***matplotlib plotting cannot be tested***')

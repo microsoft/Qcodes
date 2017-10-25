@@ -1,6 +1,6 @@
 from time import time
 from functools import partial
-from qcodes import VisaInstrument, InstrumentChannel, ChannelList, ManualParameter
+from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils import validators as vals
 
 
@@ -199,9 +199,9 @@ class DacChannel(InstrumentChannel, DacReader):
 
         # Manual parameters to control whether DAC channels should ramp to voltages or jump
         self._ramp_val = vals.Numbers(0, 10)
-        self.add_parameter("enable_ramp", parameter_class=ManualParameter, initial_value=False,
+        self.add_parameter("enable_ramp", get_cmd=None, set_cmd=None, initial_value=False,
                            vals=vals.Bool())
-        self.add_parameter("ramp_rate", parameter_class=ManualParameter, initial_value=0.1,
+        self.add_parameter("ramp_rate", get_cmd=None, set_cmd=None, initial_value=0.1,
                            vals=self._ramp_val, unit="V/s")
 
         # Add ramp function to the list of functions

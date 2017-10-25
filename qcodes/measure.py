@@ -19,8 +19,8 @@ class Measure(Metadatable):
             with a dummy setpoint for consistency with other DataSets.
     """
     dummy_parameter = Parameter(name='single',
-                                set_cmd=None,
-                                label='Single Measurement')
+                                label='Single Measurement',
+                                set_cmd=None, get_cmd=None)
     active_measurement = None
 
     def __init__(self, *actions):
