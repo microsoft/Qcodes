@@ -36,7 +36,7 @@ class RC1SP4T(IPInstrument):
         else:
             val = 1 << (switch-1)
         self.write('SETP={}'.format(val))
-    
+
     def _get_switch(self):
         val = int(self.ask('SWPORT?'))
         if val == 0:
