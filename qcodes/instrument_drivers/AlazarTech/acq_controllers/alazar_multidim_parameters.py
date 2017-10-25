@@ -1,4 +1,5 @@
 import logging
+from typing import Sequence, Optional
 
 import numpy as np
 
@@ -9,17 +10,13 @@ logger = logging.getLogger(__name__)
 
 class Alazar0DParameter(Parameter):
     def __init__(self,
-                 name,
+                 name: str,
                  instrument,
-                 label,
-                 unit,
-                 average_buffers=True,
-                 average_records=True,
-                 integrate_samples=True,
-                 shape = (1,),
-                 setpoint_names = None,
-                 setpoint_labels = None,
-                 setpoint_units = None):
+                 label: str,
+                 unit: str,
+                 average_buffers: bool=True,
+                 average_records: bool=True,
+                 integrate_samples: bool=True) -> None:
         self._integrate_samples = integrate_samples
         self._average_records = average_records
         self._average_buffers = average_buffers
@@ -29,7 +26,7 @@ class Alazar0DParameter(Parameter):
                          label=label,
                          instrument=instrument)
 
-    def get_raw(self):
+    def get_raw(self) -> float:
         channel = self._instrument
         cntrl = channel._parent
         alazar_channels = 2
@@ -72,19 +69,20 @@ class Alazar0DParameter(Parameter):
         logger.info("calling acquire with {}".format(acq_kwargs))
         return output
 
+
 class AlazarNDParameter(ArrayParameter):
     def __init__(self,
-                 name,
-                 shape,
+                 name: str,
+                 shape: Sequence[int],
                  instrument,
-                 label,
-                 unit,
-                 setpoint_names = None,
-                 setpoint_labels = None,
-                 setpoint_units = None,
-                 average_buffers=True,
-                 average_records=True,
-                 integrate_samples=True):
+                 label: str,
+                 unit: str,
+                 setpoint_names: Optional[Sequence[str]] = None,
+                 setpoint_labels: Optional[Sequence[str]]=None,
+                 setpoint_units: Optional[Sequence[str]]=None,
+                 average_buffers: bool=True,
+                 average_records: bool=True,
+                 integrate_samples: bool=True) -> None:
         self._integrate_samples = integrate_samples
         self._average_records = average_records
         self._average_buffers = average_buffers
@@ -97,7 +95,7 @@ class AlazarNDParameter(ArrayParameter):
                          setpoint_labels=setpoint_labels,
                          setpoint_units=setpoint_units)
 
-    def get_raw(self):
+    def get_raw(self) -> np.ndarray:
         channel = self._instrument
         if channel._stale_setpoints:
             raise RuntimeError("Must run prepare channel before capturing data.")
@@ -144,19 +142,20 @@ class AlazarNDParameter(ArrayParameter):
             **acq_kwargs)
         return output
 
+
 class Alazar1DParameter(AlazarNDParameter):
     def __init__(self,
-                 name,
+                 name: str,
                  instrument,
-                 label,
-                 unit,
-                 average_buffers=True,
-                 average_records=True,
-                 integrate_samples=True,
-                 shape = (1,),
-                 setpoint_names = None,
-                 setpoint_labels = None,
-                 setpoint_units = None):
+                 label: str,
+                 unit: str,
+                 average_buffers: bool=True,
+                 average_records: bool=True,
+                 integrate_samples: bool=True,
+                 shape: Sequence[int] = (1,),
+                 setpoint_names: Optional[Sequence[str]] = None,
+                 setpoint_labels: Optional[Sequence[str]] = None,
+                 setpoint_units: Optional[Sequence[str]] = None):
 
         if not integrate_samples:
             setpoint_names = ('time',)
@@ -182,7 +181,7 @@ class Alazar1DParameter(AlazarNDParameter):
                          average_records=average_records,
                          integrate_samples=integrate_samples)
 
-    def set_setpoints_and_labels(self):
+    def set_setpoints_and_labels(self) -> None:
         # int_time = self._instrument.int_time.get() or 0
         # int_delay = self._instrument.int_delay.get() or 0
         # total_time = int_time + int_delay
@@ -206,19 +205,20 @@ class Alazar1DParameter(AlazarNDParameter):
             self.shape = (buffers,)
             self.setpoints = (tuple(np.linspace(start, stop, buffers)),)
 
+
 class Alazar2DParameter(AlazarNDParameter):
     def __init__(self,
-                 name,
+                 name: str,
                  instrument,
-                 label,
-                 unit,
-                 average_buffers=True,
-                 average_records=True,
-                 integrate_samples=True,
-                 shape = (1,1),
-                 setpoint_names = None,
-                 setpoint_labels = None,
-                 setpoint_units = None):
+                 label: str,
+                 unit: str,
+                 average_buffers: bool=True,
+                 average_records: bool=True,
+                 integrate_samples: bool=True,
+                 shape: Sequence[int] = (1,1),
+                 setpoint_names: Sequence[str] = None,
+                 setpoint_labels: Sequence[str] = None,
+                 setpoint_units: Sequence[str] = None) -> None:
         self._integrate_samples = integrate_samples
         self._average_records = average_records
         self._average_buffers = average_buffers
@@ -277,7 +277,7 @@ class AlazarMultiChannelParameter(MultiChannelInstrumentParameter):
 
 
     """
-    def get_raw(self):
+    def get_raw(self) -> np.ndarray:
         if self._param_name == 'data':
             channel = self._channels[0]
             cntrl = channel._parent

@@ -1,10 +1,10 @@
 import logging
+from typing import Union, Sequence, Tuple, List
 
 import numpy as np
 
 import qcodes.instrument_drivers.AlazarTech.acq_helpers as helpers
 from qcodes import ChannelList
-from qcodes import ManualParameter
 from qcodes.instrument_drivers.AlazarTech.acq_controllers.alazar_channel import AlazarChannel
 from qcodes.instrument_drivers.AlazarTech.acq_controllers.alazar_multidim_parameters import AlazarMultiChannelParameter
 from ..ATS import AcquisitionController
@@ -33,7 +33,6 @@ class ATS9360Controller(AcquisitionController):
     TODO(nataliejpg) test filter options
     TODO(JHN) Use filtfit for better performance?
     TODO(JHN) Test demod+filtering and make it more modular
-    TODO(nataliejpg) finish implementation of channel b option
     TODO(JHN) Option to not read channel b at all (Speedup)
     TODO(nataliejpg) what should be private?
     TODO(nataliejpg) where should filter_dict live?
@@ -41,9 +40,11 @@ class ATS9360Controller(AcquisitionController):
 
     filter_dict = {'win': 0, 'ls': 1, 'ave': 2}
 
-    def __init__(self, name, alazar_name, filter: str = 'win',
+    def __init__(self, name,
+                 alazar_name: str,
+                 filter: str = 'win',
                  numtaps: int =101,
-                 **kwargs):
+                 **kwargs) -> None:
         super().__init__(name, alazar_name, **kwargs)
         self.filter_settings = {'filter': self.filter_dict[filter],
                                 'numtaps': numtaps}
@@ -71,7 +72,7 @@ class ATS9360Controller(AcquisitionController):
         self.active_channels_nested = []
         self.board_info = self._get_alazar().get_idn()
 
-    def _update_int_time(self, value, **kwargs):
+    def _update_int_time(self, value: Union[float, int], **kwargs) -> None:
         """
         Function to validate value for int_time before setting parameter
         value and update instr attributes.
@@ -106,8 +107,7 @@ class ATS9360Controller(AcquisitionController):
 
     def _update_samples_per_record(self, sample_rate, int_time, int_delay):
         """
-        Keeps non settable samples_per_record up to date with int_time int_delay
-        and updates setpoints as needed.
+        Keeps non settable samples_per_record up to date with int_time int_delay.
         """
         total_time = (int_time or 0) + (int_delay or 0)
         samples_needed = total_time * sample_rate
@@ -116,13 +116,13 @@ class ATS9360Controller(AcquisitionController):
         logger.info("need {} samples round up to {}".format(samples_needed, samples_per_record))
         self.samples_per_record._save_val(samples_per_record)
 
-    def _update_int_delay(self, value, **kwargs):
+    def _update_int_delay(self, value, **kwargs) -> None:
         """
         Function to validate value for int_delay before setting parameter
         value and update instr attributes.
 
         Args:
-            value to be validated and used for instrument attribute update
+            value: new value to be validated and used for instrument attribute update
 
         Checks:
             0 <= value <= 0.1 seconds
@@ -130,9 +130,6 @@ class ATS9360Controller(AcquisitionController):
 
         Sets:
             samples_per_record of acq controller to match int_time and int_delay
-            samples_per_record of acq controller
-            acquisition_kwarg['samples_per_record'] of acquisition param
-            setpoints of acquisition param
         """
         int_delay_min = 0
         int_delay_max = 0.1
@@ -152,20 +149,19 @@ class ATS9360Controller(AcquisitionController):
         int_time = self.int_time.get()
         self._update_samples_per_record(sample_rate, int_time, value)
 
-    def _int_delay_default(self):
+    def _int_delay_default(self) -> float:
         """
         Function to generate default int_delay value
 
         Returns:
             minimum int_delay recommended for (numtaps - 1)
-            samples to be discarded as recommended for filter
         """
         alazar = self._get_alazar()
         sample_rate = alazar.effective_sample_rate.get()
         samp_delay = self.filter_settings['numtaps'] - 1
         return samp_delay / sample_rate
 
-    def _int_time_default(self):
+    def _int_time_default(self) -> float:
         """
         Function to generate default int_time value
 
@@ -185,19 +181,19 @@ class ATS9360Controller(AcquisitionController):
                       (self.int_delay() or 0))
         return total_time
 
-    def update_filter_settings(self, filter, numtaps):
+    def update_filter_settings(self, filter: str, numtaps: int):
         """
         Updates the settings of the filter for filtering out
         double frequency component for demodulation.
 
         Args:
-            filter (str): filter type ('win' or 'ls')
-            numtaps (int): numtaps for filter
+            filter: filter type ('win' or 'ls')
+            numtaps: numtaps for filter
         """
         self.filter_settings.update({'filter': self.filter_dict[filter],
                                      'numtaps': numtaps})
 
-    def pre_start_capture(self):
+    def pre_start_capture(self) -> None:
         """
         Called before capture start to update Acquisition Controller with
         Alazar acquisition params and set up software wave for demodulation.
@@ -252,28 +248,25 @@ class ATS9360Controller(AcquisitionController):
     def pre_acquire(self):
         pass
 
-    def handle_buffer(self, data, buffernum=0):
+    def handle_buffer(self, data: np.ndarray, buffernum: int=0):
         """
-        Adds data from Alazar to buffer (effectively averaging)
+        Adds data from Alazar to buffer either averaging or appending
+        depending on output type.
         """
         if self.shape_info['average_buffers']:
             self.buffer += data
         else:
             self.buffer[buffernum] = data
 
-    def post_acquire(self):
+    def post_acquire(self) -> Union[np.ndarray, Tuple[np.ndarray, ...]]:
         """
         Processes the data according to ATS9360 settings, splitting into
-        records and averaging over them, then applying demodulation fit
-        nb: currently only channel A. Depending on the value of integrate_samples
-        it may either sum over all samples or return arrays of individual samples
-        for all the data given below.
+        records and optionally averaging over them, then applying demodulation fit
+        Depending on the value of integrate_samples it may either sum over all samples
+        or return arrays of individual samples
+        for all the data given below. It may return either raw data or demodulated magnitude
+        or phase.
 
-        Returns:
-            - Raw data
-            - For each demodulation frequency:
-                * magnitude
-                * phase
         """
 
         # for ATS9360 samples are arranged in the buffer as follows:
@@ -296,10 +289,12 @@ class ATS9360Controller(AcquisitionController):
         channelAData = reshaped_buf[..., 0]
         channelBData = reshaped_buf[..., 1]
 
-
-        def handle_alazar_channel(channelData, channel_number,
-                                  raw, settings,
-                                  demod_freqs, demod_types):
+        def handle_alazar_channel(channelData,
+                                  channel_number: int,
+                                  raw: bool,
+                                  settings: dict,
+                                  demod_freqs: Sequence[float],
+                                  demod_types: Sequence[str]) -> List[np.ndarray]:
             # TODO(JHN) could probably get better precision
             # if we avoid casting back to uint16 after taking the average.
             # either change the conversion to something that supports floats

@@ -9,8 +9,8 @@ class AlazarChannel(InstrumentChannel):
     A single channel for Alazar card. This can capture and return multiple different views of the data
 
     An Alazar acquisition consists of one or more buffers, each buffer contains on or more records and each
-    records contains a number of samples. The timeseries (samples as a function of time) may optionally be demodulated
-    by a user selected frequency.
+    records contains a number of samples. The time series (samples as a function of time) may optionally be
+    demodulated by a user selected frequency.
 
     single_point: Averaged over Buffers and Records and integrated over samples
     records_trace: Averaged over buffers and integrated over samples. 1D trace as a function of records.
@@ -22,7 +22,9 @@ class AlazarChannel(InstrumentChannel):
 
 
     def __init__(self, parent, name: str, demod: bool=False, alazar_channel: str='A',
-                 average_buffers: bool=True, average_records=True, integrate_samples=True):
+                 average_buffers: bool=True,
+                 average_records: bool=True,
+                 integrate_samples: bool=True) -> None:
 
 
         super().__init__(parent, name)
@@ -114,12 +116,14 @@ class AlazarChannel(InstrumentChannel):
 
         self.acquisition_kwargs = {}
 
-    def prepare_channel(self):
+    def prepare_channel(self) -> None:
         if self.dimensions > 0:
             self.data.set_setpoints_and_labels()
             self._stale_setpoints = False
 
-    def _update_num_avg(self, value: int, **kwargs):
+    def _update_num_avg(self, value: int, **kwargs) -> None:
+        # allow unused **kwargs as the function may be
+        # called with additional unused args
         if not self._average_buffers and not self._average_records:
             if value==1:
                 return
