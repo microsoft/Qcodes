@@ -8,7 +8,7 @@ class RC1SP4T(IPInstrument):
     Mini-Circuits 1x 1P4T RF switch
 
     Args:
-            name (str): the name of the channel
+            name (str): the name of the instrument
             address (str): ip address ie "10.0.0.1"
             port (int): port to connect to default Telnet:23
     """

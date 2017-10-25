@@ -41,7 +41,7 @@ class RC4SPDT(IPInstrument):
     Mini-Circuits 4x SPDT RF switch
 
     Args:
-            name (str): the name of the channel
+            name (str): the name of the instrument
             address (str): ip address ie "10.0.0.1"
             port (int): port to connect to default Telnet:23
     """
