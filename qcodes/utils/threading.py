@@ -82,6 +82,20 @@ def thread_map(callables, args=None, kwargs=None):
 
 
 class UpdaterThread(threading.Thread):
+    """
+    Creates a thread that periodically calls functions at specified interval.
+    The thread can be started, paused, and stopped using its methods.
+
+        Args:
+            callables (list[callable]): list of callable functions.
+                args/kwargs cannot be passed
+            interval (float): interval between successive calls (in seconds)
+            name (str): thread name, used to distinguish it from other threads
+            max_threads(int): maximum number of threads with same name before
+                emitting a warning
+            auto_start (bool): If True, start periodic calling of functions
+                after waiting for interval.
+        """
     def __init__(self, callables, interval, name=None, max_threads=None,
                  auto_start=True):
         super().__init__(name=name)
@@ -133,6 +147,11 @@ def _async_raise(tid, excobj):
 
 
 class KillableThread(threading.Thread):
+    """
+    A thread that can be forcibly terminated via `KillableThread.terminate()`.
+    Is potentially unsafe and should only be used as a last resort.
+    A preferrable stopping method would be by raising a stop flag in the code.
+    """
     def raise_exc(self, excobj):
         assert self.isAlive(), "thread must be started"
         for tid, tobj in threading._active.items():
