@@ -1,0 +1,28 @@
+Changelog for QCoDeS 0.1.7
+==========================
+
+New & Improved
+--------------
+
+- New and Improved drivers:
+
+    - Fixes to DecaDac driver (#713)
+    - Driver for Oxford Kelvinox (#707)
+    - Driver for Oxford ILM 200 Helium Level Meter (#706)
+    - IPS120 Magnet driver (#660)
+    - New AMI430 driver  (#700)
+    - Driver for tektronics awg5200 (#724)
+    - Benchmark Keysight DMM software trigger (#729)
+    - Faster qdac (#730, #737)
+    - Ivvi triggers (#739)
+
+- Features:
+
+    - Improved PyQtGraph performance (#712)
+    - Improve default_parameter_name (#714)
+    - Function to Close all instruments (#715)
+    - Automatic Foreground qt window (#716) Requires pywin32 on windows not
+        installed by default
+    - Handle snapshot update failing better (#717)
+    - Cleanup dependencies for easier install (#721)
+    - Update Slack contact information (#727)

@@ -166,7 +166,7 @@ class Keysight_34465A(VisaInstrument):
                                   0.01e-6]
                        }
         if DIG:
-            res_factors['34465A'] = [30e6, 15e-6, 6e-6] + res_factors['34464A']
+            res_factors['34465A'] = [30e-6, 15e-6, 6e-6] + res_factors['34465A']
             res_factors['34470A'] = [30e-6, 10e-6, 3e-6] + res_factors['34470A']
 
         # Define the extreme aperture time values for the 34465A and 34470A
