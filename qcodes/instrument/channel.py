@@ -1,5 +1,5 @@
 """ Base class for the channel of an instrument """
-from typing import List, Tuple, Union, Optional
+from typing import List, Tuple, Union, Optional, Dict, Sequence
 
 from .base import InstrumentBase, Instrument
 from .parameter import MultiParameter, ArrayParameter
@@ -147,7 +147,7 @@ class ChannelList(Metadatable):
     def __init__(self, parent: Instrument,
                  name: str,
                  chan_type: type,
-                 chan_list: Union[List, Tuple, None]=None,
+                 chan_list: Union[List[InstrumentChannel], Tuple[InstrumentChannel, ...], None]=None,
                  snapshotable: bool=True,
                  multichan_paramclass: type = MultiChannelInstrumentParameter) -> None:
         super().__init__()
@@ -168,13 +168,13 @@ class ChannelList(Metadatable):
         self._snapshotable = snapshotable
         self._paramclass = multichan_paramclass
 
-        self._channel_mapping = {}  # provide lookup of channels by name
+        self._channel_mapping = {} # type: Dict[str, InstrumentChannel]
+        # provide lookup of channels by name
         # If a list of channels is not provided, define a list to store
         # channels. This will eventually become a locked tuple.
         if chan_list is None:
             self._locked = False
-            self._channels = [] # type: Union[List[InstrumentChannel],Tuple[InstrumentChannel], Tuple[InstrumentChannel, ...]]
-            # No idea why the last type is needed should never happen
+            self._channels = [] # type: Union[List[InstrumentChannel],Tuple[InstrumentChannel, ...]]
         else:
             self._locked = True
             self._channels = tuple(chan_list)
@@ -236,7 +236,7 @@ class ChannelList(Metadatable):
                              "together.")
 
         return ChannelList(self._parent, self._name, self._chan_type,
-                           self._channels + other._channels)
+                           list(self._channels) + list(other._channels))
 
     def append(self, obj: InstrumentChannel):
         """
@@ -313,7 +313,7 @@ class ChannelList(Metadatable):
         self._channels = tuple(self._channels)
         self._locked = True
 
-    def snapshot_base(self, update: bool=False):
+    def snapshot_base(self, update: bool=False, params_to_skip_update: Optional[Sequence[str]]=None):
         """
         State of the instrument as a JSON-compatible dict.
 
