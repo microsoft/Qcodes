@@ -15,13 +15,16 @@ class QCoDeSMagic(Magics):
     @line_cell_magic
     def measurement(self, line, cell=None):
         """
-        Create qcodes.Loop measurement using Python for syntax using iPython
-        magic.
+        Create qcodes.Loop measurement mimicking Python `for` syntax via
+        iPython magic.
         Upon execution of a notebook cell, the code is transformed from the
         for loop structure to a QCoDeS Loop before being executed.
         Can be run by having %%measurement in the first line of a cell,
         followed by the measurement name (see below for an example)
 
+        The for loop syntax differs slightly from a Python `for` loop,
+        as it uses `for {iterable}` instead of `for {element} in {iterable}`.
+        The reason is that `{element}` cannot be accessed (yet) in QCoDeS loops.
 
         Comments (#) are ignored in the loop.
         Any code after the loop will also be run, if separated by a blank
@@ -38,9 +41,8 @@ class QCoDeSMagic(Magics):
             -d <dataset_name> : Use custom name for dataset
             -l <loop_name> : Use custom name for Loop
 
-        An example for loop cell is:
+        An example for a loop cell is as follows:
 
-        ```
         %%measurement {-options} {measurement_name}
         for {sweep_vals}:
             {measure_parameter1}
@@ -64,6 +66,10 @@ class QCoDeSMagic(Magics):
 
         {Additional code}
         ```
+
+        An explicit example of the line `for {sweep_vals}:` could be
+        `for sweep_parameter.sweep(0, 42, step=1):`
+
         """
 
         if cell is None:
