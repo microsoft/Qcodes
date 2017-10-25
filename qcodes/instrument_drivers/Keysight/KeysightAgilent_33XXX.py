@@ -1,5 +1,6 @@
 from functools import partial
 import logging
+from typing import Union
 
 from qcodes import VisaInstrument, validators as vals
 from qcodes.instrument.channel import InstrumentChannel
@@ -27,7 +28,7 @@ class OutputChannel(InstrumentChannel):
         """
         super().__init__(parent, name)
 
-        def val_parser(parser: type, inputstring: str) -> str:
+        def val_parser(parser: type, inputstring: str) -> Union[float,int]:
             """
             Parses return values from instrument. Meant to be used when a query
             can return a meaningful finite number or a numeric representation
