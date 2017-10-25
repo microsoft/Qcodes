@@ -59,11 +59,11 @@ def _get_metadata(*parameters) -> Dict[float, list]:
         accumulator = metas.get(str(baseinst), [])
         accumulator.append(meta)
         metas[str(baseinst)] = accumulator
-    parameters = []
+    parameters_out = []
     for instrument in metas:
         temp = {"instrument": instrument, "parameters": metas[instrument]}
-        parameters.append(temp)
-    state = {"ts": ts, "parameters": parameters}
+        parameters_out.append(temp)
+    state = {"ts": ts, "parameters": parameters_out}
     return state
 
 
