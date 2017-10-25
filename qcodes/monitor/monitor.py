@@ -20,7 +20,7 @@ import socketserver
 import webbrowser
 
 from threading import Thread
-from typing import Dict
+from typing import Dict, Any
 from concurrent.futures import Future
 from concurrent.futures import CancelledError
 import functools
@@ -32,14 +32,14 @@ SERVER_PORT = 3000
 log = logging.getLogger(__name__)
 
 
-def _get_metadata(*parameters) -> Dict[float, list]:
+def _get_metadata(*parameters) -> Dict[str, Any]:
     """
     Return a dict that contains the parameter metadata grouped by the
     instrument it belongs to.
     """
     ts = time.time()
     # group meta data by instrument if any
-    metas = {}
+    metas = {} # type: Dict
     for parameter in parameters:
         _meta = getattr(parameter, "_latest", None)
         if _meta:
