@@ -493,7 +493,6 @@ class DataSet(Sized):
         if param_name not in self.parameters:
             raise ValueError('Unknown parameter, not in this DataSet')
 
-        print(self.paramspecs)
         if self.paramspecs[param_name].depends_on == '':
             raise ValueError(f'Parameter {param_name} has no setpoints.')
 

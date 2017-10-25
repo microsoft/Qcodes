@@ -30,23 +30,6 @@ def flatten_1D_data_for_plot(rawdata: List[List[Any]]) -> np.ndarray:
     return dataarray
 
 
-def flatten_2D_data_for_plot(rawdata: List[List[Any]],
-                             dim1: int, dim2: int) -> np.ndarray:
-    """
-    Cast the return value of the database query to a 2D numpy array
-
-    Args:
-        rawdata: The data as returned by the SQL query function
-        dim1: The first axis dimension. Should match ax_num 0 parameter
-        dim2: The second axis dimension. Should match ax_num 1 parameter
-    """
-    dataarray = np.array(rawdata)
-    shape = np.shape(dataarray)
-    dataarray = dataarray.reshape(dim1, dim2)
-
-    return dataarray
-
-
 def plot_by_id(run_id: int) -> None:
     """
     Construct all plots for a given run
@@ -86,7 +69,10 @@ def plot_by_id(run_id: int) -> None:
             # perform plotting
             fig, ax = plt.subplots()
 
-            ax.plot(first_axis_data, second_axis_data)
+            # sort for plotting
+            order = first_axis_data.argsort()
+
+            ax.plot(first_axis_data[order], second_axis_data[order])
 
             if first_axis_label == '':
                 lbl = first_axis_name
