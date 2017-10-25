@@ -24,7 +24,7 @@ class RC1SP4T(IPInstrument):
                            )
 
         self.connect_message()
-    
+
     def ask(self, cmd):
         ret = self.ask_raw(cmd)
         ret = ret.strip()
