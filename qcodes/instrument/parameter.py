@@ -162,7 +162,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                  snapshot_value: bool=True,
                  max_val_age: Optional[float]=None,
                  vals: Optional[Validator]=None,
-                 delay: Optional[Union[int, float]]=None):
+                 delay: Optional[Union[int, float]]=None) -> None:
         super().__init__(metadata)
         self.name = str(name)
         self._instrument = instrument
@@ -730,7 +730,7 @@ class Parameter(_BaseParameter):
                  max_val_age: Optional[float]=None,
                  vals: Optional[str]=None,
                  docstring: Optional[str]=None,
-                 **kwargs):
+                 **kwargs) -> None:
         super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
 
         # Enable set/get methods if get_cmd/set_cmd is given
@@ -907,7 +907,7 @@ class ArrayParameter(_BaseParameter):
                  docstring: Optional[str]=None,
                  snapshot_get: bool=True,
                  snapshot_value: bool=False,
-                 metadata: bool=None):
+                 metadata: bool=None) -> None:
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
 
@@ -1083,7 +1083,7 @@ class MultiParameter(_BaseParameter):
                  docstring: str=None,
                  snapshot_get: bool=True,
                  snapshot_value: bool=False,
-                 metadata: Optional[dict]=None):
+                 metadata: Optional[dict]=None) -> None:
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
 

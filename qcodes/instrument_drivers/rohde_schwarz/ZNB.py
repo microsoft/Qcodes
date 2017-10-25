@@ -361,7 +361,7 @@ class ZNB(VisaInstrument):
     TODO:
     - check initialisation settings and test functions
     """
-    def __init__(self, name: str, address: str, init_s_params: bool=True, **kwargs):
+    def __init__(self, name: str, address: str, init_s_params: bool=True, **kwargs) -> None:
 
         super().__init__(name=name, address=address, **kwargs)
 

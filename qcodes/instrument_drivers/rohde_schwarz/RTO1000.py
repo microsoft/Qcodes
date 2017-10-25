@@ -287,7 +287,7 @@ class RTO1000(VisaInstrument):
                  model: str=None, timeout: float=5.,
                  HD: bool=True,
                  terminator: str='\n',
-                 **kwargs):
+                 **kwargs) -> None:
         """
         Args:
             name: name of the instrument
