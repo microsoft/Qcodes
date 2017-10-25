@@ -239,7 +239,12 @@ class TestWaitSecs(TestCase):
             finish_clock = time.perf_counter() + secs
             secs_out = wait_secs(finish_clock)
             self.assertGreater(secs_out, secs - 1e-4)
-            self.assertLessEqual(secs_out, secs)
+            # add a tiny offset as this test may fail if
+            # otherwise if the two calls to perf_counter are close
+            # enough to return the same result as a + b - a cannot
+            # in general be assumed to be <= b in floating point
+            # math (here a is perf_counter() and b is the wait time
+            self.assertLessEqual(secs_out, secs+1e-14)
 
     def test_warning(self):
         with LogCapture() as logs:

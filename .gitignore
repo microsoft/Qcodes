@@ -87,3 +87,5 @@ tmp/
 venv/
 
 docs/examples/data/*
+
+.idea/
