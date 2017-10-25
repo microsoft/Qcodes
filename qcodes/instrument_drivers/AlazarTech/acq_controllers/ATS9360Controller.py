@@ -94,6 +94,7 @@ class ATS9360Controller(AcquisitionController):
                            parameter_class=DemodFreqParameter)
 
         self.samples_divisor = self._get_alazar().samples_divisor
+        self.board_info = self._get_alazar().get_idn()
 
 
     def _update_int_time(self, value, **kwargs):
@@ -280,12 +281,11 @@ class ATS9360Controller(AcquisitionController):
         #     raise Exception('no demod_freqs set')
 
         records_per_buffer = alazar.records_per_buffer.get()
-        max_samples = self._get_alazar().get_idn()['max_samples']
+        max_samples = self.board_info['max_samples']
         samples_per_buffer = records_per_buffer * samples_per_record
         if samples_per_buffer > max_samples:
             raise RuntimeError("Trying to acquire {} samples in one buffer maximum supported is {}".format(samples_per_buffer, max_samples))
 
-        self.board_info = alazar.get_idn()
         self.buffer = np.zeros(samples_per_record *
                                records_per_buffer *
                                self.number_of_channels)

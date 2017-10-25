@@ -710,8 +710,9 @@ class AlazarTech_ATS(Instrument):
         self.clear_buffers()
 
         # check if all parameters are up to date
-        for p in self.parameters.values():
-            p.get()
+        for name, p in self.parameters.items():
+            if name != 'IDN':
+                p.get()
 
         # Compute the total transfer time, and display performance information.
         transfer_time_sec = time.clock() - start
