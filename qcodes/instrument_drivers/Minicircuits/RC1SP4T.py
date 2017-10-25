@@ -4,6 +4,14 @@ from qcodes.utils import validators as vals
 
 
 class RC1SP4T(IPInstrument):
+    """
+    Mini-Circuits 1x 1P4T RF switch
+
+    Args:
+            name (str): the name of the channel
+            address (str): ip address ie "10.0.0.1"
+            port (int): port to connect to default Telnet:23
+    """
     def __init__(self, name, address, port=23):
         super().__init__(name, address, port)
         self._recv()

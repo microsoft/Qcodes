@@ -7,7 +7,7 @@ class MC_channel(InstrumentChannel):
     def __init__(self, parent, name, channel_letter):
         """
         Args:
-            parent (Instrument): The instrument the channel is a part of.
+            parent (Instrument): The instrument the channel is a part of
             name (str): the name of the channel
             channel_letter (str): channel letter ['a', 'b', 'c' or 'd'])
         """
@@ -36,7 +36,15 @@ class MC_channel(InstrumentChannel):
         return ret+1
 
 
-class RC4SPDTA18(IPInstrument):
+class RC4SPDT(IPInstrument):
+    """
+    Mini-Circuits 4x SPDT RF switch
+
+    Args:
+            name (str): the name of the channel
+            address (str): ip address ie "10.0.0.1"
+            port (int): port to connect to default Telnet:23
+    """
     def __init__(self, name, address, port=23):
         super().__init__(name, address, port)
         self._recv()
