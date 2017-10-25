@@ -83,7 +83,6 @@ class FrequencySweepMagPhase(MultiParameter):
             mag_array.append(abs(complex_num))
             phase_array.append(phase(complex_num))
         self._instrument._parent.cont_meas_on()
-        self._save_val((mag_array, phase_array))
         return mag_array, phase_array
 
 
@@ -150,7 +149,6 @@ class FrequencySweep(ArrayParameter):
                         "values. Will discard the imaginary part.")
             data = data[0::2] + 1j*data[1::2]
         self._instrument._parent.cont_meas_on()
-        self._save_val(data)
         return data
 
 
@@ -344,13 +342,6 @@ class ZNBChannel(InstrumentChannel):
         npts = self.npts()
         self.trace.set_sweep(start, stop, npts)
         self.trace_mag_phase.set_sweep(start, stop, npts)
-
-    def snapshot_base(self, update=False, params_to_skip_update=None):
-        if params_to_skip_update is None:
-            params_to_skip_update = ('trace', 'trace_mag_phase')
-        snap = super().snapshot_base(update=update,
-                                     params_to_skip_update=params_to_skip_update)
-        return snap
 
 class ZNB(VisaInstrument):
     """

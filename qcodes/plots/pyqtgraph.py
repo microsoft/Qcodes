@@ -526,9 +526,9 @@ class QtPlot(BasePlot):
         for i, plot in enumerate(self.subplots):
             # make a dict mapping axis labels to axis positions
             for axis in ('x', 'y', 'z'):
-                if self.traces[i]['config'].get(axis):
-                    unit = self.traces[i]['config'][axis].unit
-                    if unit not in standardunits:
+                if self.traces[i]['config'].get(axis) is not None:
+                    unit = getattr(self.traces[i]['config'][axis], 'unit', None)
+                    if unit is not None and unit not in standardunits:
                         if axis in ('x', 'y'):
                             ax = plot.getAxis(axismapping[axis])
                         else:
@@ -546,10 +546,10 @@ class QtPlot(BasePlot):
                         ax.update()
 
                     # set limits either from dataset or
-                    setarr = self.traces[i]['config'][axis].ndarray
+                    setarr = getattr(self.traces[i]['config'][axis], 'ndarray', None)
                     arrmin = None
                     arrmax = None
-                    if not np.all(np.isnan(setarr)):
+                    if setarr and not np.all(np.isnan(setarr)):
                         arrmax = setarr.max()
                         arrmin = setarr.min()
                     elif startranges is not None:
@@ -557,7 +557,7 @@ class QtPlot(BasePlot):
                             paramname = self.traces[i]['config'][axis].full_name
                             arrmax = startranges[paramname]['max']
                             arrmin = startranges[paramname]['min']
-                        except (IndexError, KeyError):
+                        except (IndexError, KeyError, AttributeError):
                             continue
 
                     if axis == 'x':
