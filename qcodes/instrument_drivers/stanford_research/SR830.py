@@ -154,6 +154,10 @@ class SR830(VisaInstrument):
     _N_TO_INPUT_CONFIG = {v: k for k, v in _INPUT_CONFIG_TO_N.items()}
 
     def __init__(self, name, address, **kwargs):
+
+        DeprecationWarning("This is an old driver an will be removed. Please use the the new driver: "
+                           "\"SR830_channels\"")
+
         super().__init__(name, address, **kwargs)
 
         # Reference and phase
