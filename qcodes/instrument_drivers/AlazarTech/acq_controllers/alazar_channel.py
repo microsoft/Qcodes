@@ -21,7 +21,7 @@ class AlazarChannel(InstrumentChannel):
     """
 
 
-    def __init__(self, parent, name: str, demod: bool=True, alazar_channel: str='A',
+    def __init__(self, parent, name: str, demod: bool=False, alazar_channel: str='A',
                  average_buffers: bool=True, average_records=True, integrate_samples=True):
 
 
@@ -56,7 +56,7 @@ class AlazarChannel(InstrumentChannel):
         self.add_parameter('alazar_channel',
                            label='Alazar Channel',
                            val_mapping={'A': 0, 'B': 1},
-                           initial_value='A',
+                           initial_value=alazar_channel,
                            get_cmd=None, set_cmd=None)
         if not average_records:
             self.add_parameter('records_per_buffer',
