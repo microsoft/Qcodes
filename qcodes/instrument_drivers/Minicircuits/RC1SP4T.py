@@ -16,7 +16,7 @@ class RC1SP4T(IPInstrument):
         super().__init__(name, address, port)
         self._recv()
 
-        self.add_parameter('switch', 
+        self.add_parameter('switch',
                            label='switch',
                            set_cmd=self._set_switch,
                            get_cmd=self._get_switch,
