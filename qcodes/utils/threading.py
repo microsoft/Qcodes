@@ -81,7 +81,7 @@ def thread_map(callables, args=None, kwargs=None):
     return [t.output() for t in threads]
 
 
-class UpdaterThread(threading.Thread):
+class PeriodicThread(threading.Thread):
     """
     Creates a thread that periodically calls functions at specified interval.
     The thread can be started, paused, and stopped using its methods.
@@ -110,7 +110,8 @@ class UpdaterThread(threading.Thread):
             active_threads = sum(thread.getName()==name
                                  for thread in threading.enumerate())
             if  active_threads > max_threads:
-                logger.warning('Found {} active updater threads'.format(active_threads))
+                logger.warning('Found {} active periodic threads'.format(
+                    active_threads))
 
         if auto_start:
             time.sleep(interval)
@@ -123,7 +124,7 @@ class UpdaterThread(threading.Thread):
                     callable()
             time.sleep(self.interval)
         else:
-            logger.warning('Updater thread stopped')
+            logger.warning('Periodic thread stopped')
 
     def pause(self):
         self._is_paused = True
