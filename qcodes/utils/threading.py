@@ -110,7 +110,7 @@ class UpdaterThread(threading.Thread):
             active_threads = sum(thread.getName()==name
                                  for thread in threading.enumerate())
             if  active_threads > max_threads:
-                logger.warning(f'Found {active_threads} active updater threads')
+                logger.warning('Found {} active updater threads'.format(active_threads))
 
         if auto_start:
             time.sleep(interval)
