@@ -37,13 +37,18 @@
                     "default": true
                 },
                 "plotlib": {
-                    "description": "Plotting library",
-                    "type": "string",
-                    "enum": ["QT", "matplotlib" ],
-                    "default": "matplotlib"
+                    "description": "Plotting library set to null to run without plotting",
+                    "type": ["string", "null"],
+                    "enum": ["QT", "matplotlib", "all", null],
+                    "default": "all"
+                },
+                "pyqtmaxplots": {
+                    "description": "Maximum number of PyQtPlots to automatically keep in memory",
+                    "type": "integer",
+                    "default": 100
                 }
             },
-            "required":[ "notebook", "plotlib" ]
+            "required":[ "notebook", "plotlib", "pyqtmaxplots" ]
         },
         "user":{
             "type" : "object",

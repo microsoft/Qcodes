@@ -6,7 +6,6 @@ import traceback
 import threading
 
 from qcodes import VisaInstrument, validators as vals
-from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils.validators import Bool, Numbers
 
 
@@ -30,7 +29,7 @@ class IVVI(VisaInstrument):
     Halfrange = Fullrange / 2
 
     def __init__(self, name, address, reset=False, numdacs=16, dac_step=10,
-                 dac_delay=.1, dac_max_delay=0.2, safe_version=True,
+                 dac_delay=.1, safe_version=True,
                  polarity=['BIP', 'BIP', 'BIP', 'BIP'],
                  use_locks=False, **kwargs):
         '''
@@ -46,7 +45,6 @@ class IVVI(VisaInstrument):
                                    default=['BIP', 'BIP', 'BIP', 'BIP']
             dac_step (float)         : max step size for dac parameter
             dac_delay (float)        : delay (in seconds) for dac
-            dac_max_delay (float)    : maximum delay before emitting a warning
             safe_version (bool)    : if True then do not send version commands
                                      to the IVVI controller
             use_locks (bool) : if True then locks are used in the `ask`
@@ -80,7 +78,7 @@ class IVVI(VisaInstrument):
                            get_cmd=self._get_version)
 
         self.add_parameter('check_setpoints',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=False,
                            label='Check setpoints',
                            vals=Bool(),
@@ -90,7 +88,7 @@ class IVVI(VisaInstrument):
 
         # Time to wait before sending a set DAC command to the IVVI
         self.add_parameter('dac_set_sleep',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=0.05,
                            label='DAC set sleep',
                            unit='s',
@@ -102,7 +100,7 @@ class IVVI(VisaInstrument):
 
         # Minimum time to wait before the read buffer contains data
         self.add_parameter('dac_read_buffer_sleep',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=0.025,
                            label='DAC read buffer sleep',
                            unit='s',
@@ -115,6 +113,11 @@ class IVVI(VisaInstrument):
         self.add_parameter('dac voltages',
                            label='Dac voltages',
                            get_cmd=self._get_dacs)
+
+        self.add_function(
+            'trigger',
+            call_cmd=self._send_trigger
+        )
 
         # initialize pol_num, the voltage offset due to the polarity
         self.pol_num = np.zeros(self._numdacs)
@@ -133,7 +136,6 @@ class IVVI(VisaInstrument):
                                   self.pol_num[i - 1] + self.Fullrange),
                 step=dac_step,
                 delay=dac_delay,
-                max_delay=dac_max_delay,
                 max_val_age=10)
 
         self._update_time = 5  # seconds
@@ -468,6 +470,34 @@ class IVVI(VisaInstrument):
             return fun(ch)
         return get_func
 
+    def _send_trigger(self):
+        msg = bytes([2, 6])
+        self.write(msg)
+        self.read()  # Flush the buffer, else the command will only work the first time.
+
+    def round_dac(self, value, dacname=None):
+        """ Round a value to the interal precision of the instrument
+
+        Args:
+            value (float): value to be rounded
+            dacname (str or int or None): name or index of dac channel
+        Returns:
+            value_round (float): rounded value
+
+        """
+        if dacname is None:
+            dacidx = 0  # assume all dacs have the same pol_num
+        elif isinstance(dacname, str):
+            dacidx = int(dacname[3:]) - 1
+        else:
+            dacidx = dacname
+
+        value_pol_corr = value - self.pol_num[dacidx]
+        value_bytes = self._mvoltage_to_bytes(value_pol_corr)
+        value_round = (value_bytes[0] * 256 + value_bytes[1]) / \
+            65535.0 * self.Fullrange + self.pol_num[dacidx]
+        return value_round
+
     def adjust_parameter_validator(self, param):
         """Adjust the parameter validator range based on the dac resolution.
 
@@ -478,21 +508,18 @@ class IVVI(VisaInstrument):
         function prevents that.
 
         Args:
-            param (StandardParameter): a dac of the IVVI instrument
+            param (Parameter): a dac of the IVVI instrument
         """
-        if type(param._vals) is not Numbers:
+        if not isinstance(param._vals, Numbers):
             raise Exception('Only the Numbers validator is supported.')
         min_val = param._vals._min_value
         max_val = param._vals._max_value
-        min_val_pol_corr = min_val - self.pol_num[int(param.name[3:]) - 1]
-        max_val_pol_corr = max_val - self.pol_num[int(param.name[3:]) - 1]
-        min_val_bytes = self._mvoltage_to_bytes(min_val_pol_corr)
-        min_val_upd = (min_val_bytes[0] * 256 + min_val_bytes[1]) / \
-            65535.0 * self.Fullrange + self.pol_num[int(param.name[3:]) - 1]
-        max_val_bytes = self._mvoltage_to_bytes(max_val_pol_corr)
-        max_val_upd = (max_val_bytes[0] * 256 + max_val_bytes[1]) / \
-            65535.0 * self.Fullrange + self.pol_num[int(param.name[3:]) - 1]
+
+        min_val_upd = self.round_dac(min_val, param.name)
+        max_val_upd = self.round_dac(max_val, param.name)
+
         param._vals = Numbers(min_val_upd, max_val_upd)
+
 
 '''
 RS232 PROTOCOL

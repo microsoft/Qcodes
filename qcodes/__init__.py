@@ -9,19 +9,9 @@ from qcodes.config import Config
 config = Config()
 
 from qcodes.version import __version__
-from qcodes.utils.helpers import in_notebook
 
-# code that should only be imported into the main (notebook) thread
-# in particular, importing matplotlib in the side processes takes a long
-# time and spins up other processes in order to try and get a front end
-if in_notebook():  # pragma: no cover
-    try:
-        from qcodes.plots.qcmatplotlib import MatPlot
-    except Exception:
-        print('matplotlib plotting not supported, '
-              'try "from qcodes.plots.qcmatplotlib import MatPlot" '
-              'to see the full error')
-
+plotlib = config.gui.plotlib
+if plotlib in {'QT', 'all'}:
     try:
         from qcodes.plots.pyqtgraph import QtPlot
     except Exception:
@@ -29,10 +19,26 @@ if in_notebook():  # pragma: no cover
               'try "from qcodes.plots.pyqtgraph import QtPlot" '
               'to see the full error')
 
+if plotlib in {'matplotlib', 'all'}:
+    try:
+        from qcodes.plots.qcmatplotlib import MatPlot
+    except Exception:
+        print('matplotlib plotting not supported, '
+              'try "from qcodes.plots.qcmatplotlib import MatPlot" '
+              'to see the full error')
+
+
 from qcodes.station import Station
 from qcodes.loops import Loop, active_loop, active_data_set
 from qcodes.measure import Measure
 from qcodes.actions import Task, Wait, BreakIf
+haswebsockets = True
+try:
+    import websockets
+except ImportError:
+    haswebsockets = False
+if haswebsockets:
+    from qcodes.monitor.monitor import Monitor
 
 from qcodes.data.data_set import DataSet, new_data, load_data
 from qcodes.data.location import FormatLocation

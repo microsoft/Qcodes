@@ -87,7 +87,7 @@ class Bool(Validator):
         pass
 
     def validate(self, value, context=''):
-        if not isinstance(value, bool):
+        if not isinstance(value, bool) and not isinstance(value, np.bool8):
             raise TypeError(
                 '{} is not Boolean; {}'.format(repr(value), context))
 

@@ -418,6 +418,9 @@ class DataSet(DelegateAttributes):
         vv = [v for v in arraynames if v.endswith(paramname)]
         if (len(vv) > 0):
             return vv[0]
+        vv = [v for v in arraynames if v.startswith(paramname)]
+        if (len(vv) > 0):
+            return vv[0]
 
         # try to get the first non-setpoint array
         vv = [v for v in arraynames if not self.arrays[v].is_setpoint]
@@ -635,6 +638,7 @@ class _PrettyPrintDict(dict):
     simple wrapper for a dict to repr its items on separate lines
     with a bit of indentation
     """
+
     def __repr__(self):
         body = '\n  '.join([repr(k) + ': ' + self._indent(repr(v))
                             for k, v in self.items()])

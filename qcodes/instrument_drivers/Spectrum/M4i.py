@@ -17,7 +17,6 @@ import ctypes as ct
 from functools import partial
 from qcodes.utils.validators import Enum, Numbers, Anything
 from qcodes.instrument.base import Instrument
-from qcodes.instrument.parameter import ManualParameter
 try:
     import pyspcm
 except ImportError:
@@ -83,7 +82,7 @@ class M4i(Instrument):
         # add parameters for getting
         self.add_parameter('card_id',
                            label='card id',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=cardid,
                            vals=Anything(),
                            docstring='The card ID')
@@ -576,6 +575,13 @@ class M4i(Instrument):
     def get_idn(self):
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), ('Spectrum_GMBH', szTypeToName(self.get_card_type()), self.serial_number(), ' ')))
 
+    def reset(self):
+        """ Reset the card
+
+        The pyspcm.M2CMD_CARD_RESET command is executed.
+        """
+        self.general_command(pyspcm.M2CMD_CARD_RESET)
+
     def convert_to_voltage(self, data, input_range):
         """convert an array of numbers to an array of voltages."""
         resolution = self.ADC_to_voltage()
@@ -626,7 +632,7 @@ class M4i(Instrument):
         """
         if memsize is None:
             memsize = self._channel_memsize
-        posttrigger_size = int(memsize / 2)
+        posttrigger_size = 16 * int((memsize / 2) // 16)
         mV_range = getattr(self, 'range_channel_%d' % channel).get()
         cx = self._channel_mask()
         self.enable_channels(cx)
@@ -863,7 +869,7 @@ class M4i(Instrument):
         self.segment_size(memsize)
 
         if post_trigger is None:
-            pre_trigger = min(2**13, memsize / 2)
+            pre_trigger = min(2**13, 16 * int((memsize / 2) // 16))
             post_trigger = memsize - pre_trigger
         else:
             pre_trigger = memsize - post_trigger
@@ -928,13 +934,28 @@ class M4i(Instrument):
 
     # only works if the error was not caused by running the entire program
     # (and therefore making a new M4i object)
-    def get_error_info32bit(self):
-        """Read an error from the error register."""
+    def get_error_info32bit(self, verbose=False):
+        """Read an error from the error register.
+
+        Args:
+            verbose (bool): If True then print the error message to stdout
+        Returns:
+            errorreg (int)
+            errorvalue (int)
+        """
         dwErrorReg = pyspcm.uint32(0)
         lErrorValue = pyspcm.int32(0)
 
-        pyspcm.spcm_dwGetErrorInfo_i32(self.hCard, pyspcm.byref(
-            dwErrorReg), pyspcm.byref(lErrorValue), None)
+        if verbose:
+            buffer = (ct.c_uint8 * pyspcm.ERRORTEXTLEN)()
+            pyspcm.spcm_dwGetErrorInfo_i32(self.hCard, pyspcm.byref(
+                dwErrorReg), pyspcm.byref(lErrorValue), buffer)
+            bb = (bytearray(buffer)).decode().strip('\x00')
+            print('get_error_info32bit: %d %d: %s' %
+                  (dwErrorReg.value, lErrorValue.value, bb))
+        else:
+            pyspcm.spcm_dwGetErrorInfo_i32(self.hCard, pyspcm.byref(
+                dwErrorReg), pyspcm.byref(lErrorValue), None)
         return (dwErrorReg.value, lErrorValue.value)
 
     def _param64bit(self, param):
