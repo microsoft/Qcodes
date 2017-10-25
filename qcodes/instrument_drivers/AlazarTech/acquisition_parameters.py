@@ -63,7 +63,7 @@ class AcqVariablesParam(Parameter):
         Return:
             True (if no errors raised when check_and_update_fn executed)
         """
-        val = self._latest()['value']
+        val = self._latest['value']
         self._check_and_update_instr(val, param_name=self.name)
         return True
 
