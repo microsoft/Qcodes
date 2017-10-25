@@ -921,7 +921,7 @@ class AlazarParameter(Parameter):
 
         self._set(value)
 
-    def get(self):
+    def get_raw(self):
         """
         This method returns the name of the value set for this parameter
 

@@ -29,7 +29,7 @@ class Alazar0DParameter(Parameter):
                          label=label,
                          instrument=instrument)
 
-    def get(self):
+    def get_raw(self):
         channel = self._instrument
         cntrl = channel._parent
         alazar_channels = 2
@@ -97,7 +97,7 @@ class AlazarNDParameter(ArrayParameter):
                          setpoint_labels=setpoint_labels,
                          setpoint_units=setpoint_units)
 
-    def get(self):
+    def get_raw(self):
         channel = self._instrument
         if channel._stale_setpoints:
             raise RuntimeError("Must run prepare channel before capturing data.")
@@ -277,7 +277,7 @@ class AlazarMultiChannelParameter(MultiChannelInstrumentParameter):
 
 
     """
-    def get(self):
+    def get_raw(self):
         if self._param_name == 'data':
             channel = self._channels[0]
             cntrl = channel._parent

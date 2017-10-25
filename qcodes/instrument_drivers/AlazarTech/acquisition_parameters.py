@@ -28,7 +28,7 @@ class AcqVariablesParam(Parameter):
         if default_fn is not None:
             self._get_default = default_fn
 
-    def set(self, value):
+    def set_raw(self, value):
         """
         Function which checks value using validation function and then sets
         the Parameter value to this value.
@@ -39,7 +39,7 @@ class AcqVariablesParam(Parameter):
         self._check_and_update_instr(value, param_name=self.name)
         self._save_val(value)
 
-    def get(self):
+    def get_raw(self):
         return self._latest['value']
 
     def to_default(self):
@@ -89,7 +89,7 @@ class NonSettableDerivedParameter(Parameter):
         self._alternative = alternative
         super().__init__(name, instrument=instrument, **kwargs)
 
-    def set(self, value):
+    def set_raw(self, value):
         """
         It's not possible to directly set this parameter as it's derived from other
         parameters.
@@ -97,14 +97,14 @@ class NonSettableDerivedParameter(Parameter):
         raise NotImplementedError("Cannot directly set {}. To control this parameter"
                                   "set {}".format(self.name, self._alternative))
 
-    def get(self):
+    def get_raw(self):
         return self.get_latest()
 
 
 class EffectiveSampleRateParameter(NonSettableDerivedParameter):
 
 
-    def get(self):
+    def get_raw(self):
         """
         Obtain the effective sampling rate of the acquisition
         based on clock type, clock speed and decimation
@@ -117,7 +117,8 @@ class EffectiveSampleRateParameter(NonSettableDerivedParameter):
         elif self._instrument.clock_source.get() == 'INTERNAL_CLOCK':
             rate = self._instrument.sample_rate.get()
         else:
-            raise Exception("Don't know how to get sample rate with {}".format(self._instrument.clock_source.get()))
+            raise Exception("Don't know how to get sample rate with"
+                            " {}".format(self._instrument.clock_source.get()))
 
         if rate == '1GHz_REFERENCE_CLOCK':
             rate = 1e9
