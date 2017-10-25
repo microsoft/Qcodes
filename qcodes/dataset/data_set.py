@@ -343,13 +343,10 @@ class DataSet(Sized):
         the name of a parameter in this DataSet.
         It is an error to add results to a completed DataSet.
         """
-        keys = [list(val.keys()) for val in results]
-        flattened_keys = [item for sublist in keys for item in sublist]
         values = [list(val.values()) for val in results]
-        flattened_values = [item for sublist in values for item in sublist]
         len_before_add = length(self.conn, self.table_name)
-        insert_many_values(self.conn, self.table_name, flattened_keys,
-                           flattened_values)
+        insert_many_values(self.conn, self.table_name, list(results[0].keys()),
+                           values)
         self.conn.commit()
         return len_before_add
 
