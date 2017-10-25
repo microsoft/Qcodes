@@ -57,7 +57,7 @@ import logging
 import os
 import collections
 import warnings
-from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List
+from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, Dict, Any, Sized
 from functools import partial, wraps
 import numpy
 
@@ -251,7 +251,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                                           ' Parameter {}'.format(self.name))
 
     def snapshot_base(self, update: bool=False,
-                      params_to_skip_update: Sequence[str]=None) -> dict:
+                      params_to_skip_update: Sequence[str]=None) -> Dict[str, Any]:
         """
         State of the parameter as a JSON-compatible dict.
 
@@ -416,7 +416,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
         return set_wrapper
 
-    def get_ramp_values(self, value: Union[float, int],
+    def get_ramp_values(self, value: Union[float, int, Sized],
                         step: Union[float, int]=None) -> List[Union[float,
                                                                     int]]:
         """
@@ -728,7 +728,7 @@ class Parameter(_BaseParameter):
                  set_cmd:  Optional[Union[str, Callable, bool]]=False,
                  initial_value: Optional[Union[float, int, str]]=None,
                  max_val_age: Optional[float]=None,
-                 vals: Optional[str]=None,
+                 vals: Optional[Validator]=None,
                  docstring: Optional[str]=None,
                  **kwargs) -> None:
         super().__init__(name=name, instrument=instrument, vals=vals, **kwargs)
