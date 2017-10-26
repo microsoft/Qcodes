@@ -111,7 +111,7 @@ class QtPlot(BasePlot):
         """
         self.win.clear()
         self.traces = []
-        self.subplots = []
+        self.subplots = [] # type: List[PlotItem]
 
     def add_subplot(self):
         subplot_object = self.win.addPlot()
@@ -489,8 +489,8 @@ class QtPlot(BasePlot):
             reset_colorbar: Should the limits and colorscale of the colorbar
                 be reset. Off by default
         """
-        subplotss = self.subplots # type: List[PlotItem]
-        for subplot in subplotss:
+        subplots = self.subplots # type: List[PlotItem]
+        for subplot in subplots:
             vBox = subplot.getViewBox()
             vBox.enableAutoRange(vBox.XYAxes)
         cmap = None
