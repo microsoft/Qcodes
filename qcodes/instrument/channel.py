@@ -147,7 +147,7 @@ class ChannelList(Metadatable):
     def __init__(self, parent: Instrument,
                  name: str,
                  chan_type: type,
-                 chan_list: Union[List[InstrumentChannel], Tuple[InstrumentChannel, ...], None]=None,
+                 chan_list: Optional[Sequence[InstrumentChannel]]=None,
                  snapshotable: bool=True,
                  multichan_paramclass: type = MultiChannelInstrumentParameter) -> None:
         super().__init__()
