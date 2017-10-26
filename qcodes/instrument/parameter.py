@@ -209,11 +209,11 @@ class _BaseParameter(Metadatable, DeferredOperations):
                           'define get_raw in your subclass instead.' )
             self.get = self._wrap_get(self.get)
         if hasattr(self, 'set_raw'):
-            self.set = self._wrap_get(self.set_raw)
+            self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set'):
             warnings.warn('Wrapping set method, original set method will not '
                           'be directly accessible. It is recommended to '
-                          'define get_raw in your subclass instead.' )
+                          'define set_raw in your subclass instead.' )
             self.set = self._wrap_set(self.set)
 
         # subclasses should extend this list with extra attributes they
