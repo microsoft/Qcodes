@@ -1,6 +1,59 @@
 from qcodes import IPInstrument
-import math
 from qcodes.utils import validators as vals
+from qcodes.instrument.channel import InstrumentChannel, ChannelList
+import math
+
+
+class MC_channel(InstrumentChannel):
+    def __init__(self, parent, name, channel_letter):
+        """
+        Args:
+            parent (Instrument): The instrument the channel is a part of
+            name (str): the name of the channel
+            channel_letter (str): channel letter ['a', 'b'])
+        """
+
+        super().__init__(parent, name)
+        self.channel_letter = channel_letter.upper()
+        chanlist = ['a', 'b']
+        self.channel_number = chanlist.index(channel_letter)
+
+        self.add_parameter('switch',
+                           label='switch',
+                           set_cmd=self._set_switch,
+                           get_cmd=self._get_switch,
+                           vals=vals.Ints(0, 4)
+                           )
+
+    def _set_switch(self, switch):
+        if len(self._parent.channels) > 1:
+            current_switchstate = int(self.ask('SWPORT?'))
+            mask = 0xF << (4 * (1 - self.channel_number))
+            current_switchstate = current_switchstate & mask
+        else:
+            current_switchstate = 0
+        # getting the current switch state of
+        # the other channel if more than one channel used
+
+        if switch == 0:
+            val = 0
+        else:
+            val = 1 << (switch-1)
+        val = val << (4 * self.channel_number)
+        # only one bit in each nibble can be set
+        # corrisponding to each switch state
+        # setting more than one will be ignored
+        val = val | current_switchstate
+        self.write('SETP={}'.format(val))
+        # the 'SP4T' command wont work on early devices (FW < C8)
+
+    def _get_switch(self):
+        val = int(self.ask('SWPORT?'))
+        val = (val >> (4*self.channel_number)) & 0xF
+        if val == 0:
+            return 0
+        ret = int(math.log2(val) + 1)
+        return ret
 
 
 class RC1SP4T(IPInstrument):
@@ -12,16 +65,25 @@ class RC1SP4T(IPInstrument):
             address (str): ip address ie "10.0.0.1"
             port (int): port to connect to default Telnet:23
     """
-    def __init__(self, name, address, port=23):
+    def __init__(self, name, address, port=23, no_channels = 1):
         super().__init__(name, address, port)
         self._recv()
 
-        self.add_parameter('switch',
-                           label='switch',
-                           set_cmd=self._set_switch,
-                           get_cmd=self._get_switch,
-                           vals=vals.Ints(0, 4)
-                           )
+        channels = ChannelList(self, "Channels", MC_channel,
+                               snapshotable=False)
+
+        chanlist = ['a', 'b']
+        # this driver should also work for the RC-2SP4T
+        # if 'b' is added to the chanlist
+        # i.e. chanlist = ['a', 'b']
+        # but has not been tested on hardware
+
+        for c in chanlist:
+            channel = MC_channel(self, 'channel_{}'.format(c), c)
+            channels.append(channel)
+            self.add_submodule('channel_{}'.format(c), channel)
+        channels.lock()
+        self.add_submodule('channels', channels)
 
         self.connect_message()
 
@@ -30,22 +92,7 @@ class RC1SP4T(IPInstrument):
         ret = ret.strip()
         return ret
 
-    def _set_switch(self, switch):
-        if switch == 0:
-            val = 0
-        else:
-            val = 1 << (switch-1)
-        self.write('SETP={}'.format(val))
-
-    def _get_switch(self):
-        val = int(self.ask('SWPORT?'))
-        if val == 0:
-            return 0
-        ret = int(math.log2(val) + 1)
-        return ret
-
     def get_idn(self):
-
         fw = self.ask('FIRMWARE?')
         MN = self.ask('MN?')
         SN = self.ask('SN?')
