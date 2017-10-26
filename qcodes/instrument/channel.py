@@ -416,7 +416,7 @@ class ChannelList(Metadatable):
                              ''.format(self.__class__.__name__, name))
 
     def __dir__(self) -> list:
-        names = super().__dir__()
+        names = list(super().__dir__())
         if self._channels:
             names += list(self._channels[0].parameters.keys())
             names += list(self._channels[0].functions.keys())
