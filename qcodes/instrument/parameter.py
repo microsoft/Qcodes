@@ -269,7 +269,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 and self._snapshot_value and update:
             self.get()
 
-        state = copy(self._latest)
+        state = copy(self._latest) # type: Dict[str, Any]
         state['__class__'] = full_class(self)
         state['full_name'] = str(self)
 
@@ -278,7 +278,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
             state.pop('raw_value', None)
 
         if isinstance(state['ts'], datetime):
-            state['ts'] = state['ts'].strftime('%Y-%m-%d %H:%M:%S')
+            dttime = state['ts'] # type: datetime
+            state['ts'] = dttime.strftime('%Y-%m-%d %H:%M:%S')
 
         for attr in set(self._meta_attrs):
             if attr == 'instrument' and self._instrument:
@@ -907,7 +908,7 @@ class ArrayParameter(_BaseParameter):
                  docstring: Optional[str]=None,
                  snapshot_get: bool=True,
                  snapshot_value: bool=False,
-                 metadata: bool=None) -> None:
+                 metadata: Optional[dict]=None) -> None:
         super().__init__(name, instrument, snapshot_get, metadata,
                          snapshot_value=snapshot_value)
 
