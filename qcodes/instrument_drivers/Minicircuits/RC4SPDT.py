@@ -14,8 +14,8 @@ class MC_channel(InstrumentChannel):
 
         super().__init__(parent, name)
         self.channel_letter = channel_letter.upper()
-        chanlist = ['a', 'b', 'c', 'd']
-        self.channel_number = chanlist.index(channel_letter)
+        _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+        self.channel_number = _chanlist.index(channel_letter)
 
         self.add_parameter('switch',
                            label='switch',
@@ -36,7 +36,7 @@ class MC_channel(InstrumentChannel):
         return ret+1
 
 
-class RC4SPDT(IPInstrument):
+class RC_SPDT(IPInstrument):
     """
     Mini-Circuits 4x SPDT RF switch
 
@@ -52,9 +52,11 @@ class RC4SPDT(IPInstrument):
         channels = ChannelList(self, "Channels", MC_channel,
                                snapshotable=False)
 
-        chanlist = ['a', 'b', 'c', 'd']
+        _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+        _max_channel_number = int(self.IDN()['model'][3])
+        _chanlist = _chanlist[0:_max_channel_number]
 
-        for c in chanlist:
+        for c in _chanlist:
             channel = MC_channel(self, 'channel_{}'.format(c), c)
             channels.append(channel)
             self.add_submodule('channel_{}'.format(c), channel)
