@@ -106,7 +106,7 @@ class RohdeSchwarz_SGS100A(VisaInstrument):
         else:
             raise ValueError('Unable to set status to %s, ' % stat +
                              'expected "ON" or "OFF"')
-            
+
     def set_IQ_state(self, stat):
         if stat.upper() in ('ON', 'OFF'):
             self.write(':IQ:STAT %s' % stat)
