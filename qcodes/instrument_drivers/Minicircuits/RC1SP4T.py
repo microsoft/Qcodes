@@ -56,7 +56,7 @@ class MC_channel(InstrumentChannel):
         return ret
 
 
-class SP4T(IPInstrument):
+class RC_SP4T(IPInstrument):
     """
     Mini-Circuits 1x 1P4T RF switch
 
