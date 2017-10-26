@@ -1,11 +1,12 @@
 """
 Live plotting using pyqtgraph
 """
-from typing import Optional, Dict, Union
+from typing import Optional, Dict, Union, Deque, List
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as pgmp
 from pyqtgraph.multiprocess.remoteproxy import ClosedError
+from pyqtgraph.graphicsItems.PlotItem.PlotItem import PlotItem
 import qcodes.utils.helpers
 
 import warnings
@@ -49,7 +50,8 @@ class QtPlot(BasePlot):
     # close event on win but this is difficult with remote proxy process
     # as the list of plots lives in the main process and the plot locally
     # in a remote process
-    plots = deque(maxlen=qcodes.config['gui']['pyqtmaxplots'])
+    max_len = qcodes.config['gui']['pyqtmaxplots'] # type: int
+    plots = deque(maxlen=max_len) # type: Deque['QtPlot']
 
     def __init__(self, *args, figsize=(1000, 600), interval=0.25,
                  window_title='', theme=((60, 60, 60), 'w'), show_window=True, remote=True, **kwargs):
@@ -82,7 +84,7 @@ class QtPlot(BasePlot):
         self.win.setBackground(theme[1])
         self.win.resize(*figsize)
         self._orig_fig_size = figsize
-        self.subplots = [self.add_subplot()]
+        self.subplots = [self.add_subplot()] # type: List[PlotItem]
 
         if args or kwargs:
             self.add(*args, **kwargs)
@@ -479,7 +481,7 @@ class QtPlot(BasePlot):
         """ Set geometry of the plotting window """
         self.win.setGeometry(x, y, w, h)
 
-    def autorange(self, reset_colorbar: bool=False):
+    def autorange(self, reset_colorbar: bool=False) -> None:
         """
         Auto range all limits in case they were changed during interactive
         plot. Reset colormap if changed and resize window to original size.
@@ -487,7 +489,8 @@ class QtPlot(BasePlot):
             reset_colorbar: Should the limits and colorscale of the colorbar
                 be reset. Off by default
         """
-        for subplot in self.subplots:
+        subplotss = self.subplots # type: List[PlotItem]
+        for subplot in subplotss:
             vBox = subplot.getViewBox()
             vBox.enableAutoRange(vBox.XYAxes)
         cmap = None
