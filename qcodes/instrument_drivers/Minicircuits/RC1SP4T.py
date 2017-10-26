@@ -58,7 +58,7 @@ class MC_channel(InstrumentChannel):
 
 class RC_SP4T(IPInstrument):
     """
-    Mini-Circuits 1x 1P4T RF switch
+    Mini-Circuits SP4T RF switch
 
     Args:
             name (str): the name of the instrument
