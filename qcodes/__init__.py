@@ -6,7 +6,7 @@
 
 from qcodes.config import Config
 
-config = Config()
+config = Config() # type: Config
 
 from qcodes.version import __version__
 
