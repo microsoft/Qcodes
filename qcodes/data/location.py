@@ -3,7 +3,7 @@ from datetime import datetime
 import re
 import string
 
-from qcodes import config
+import qcodes.config
 
 class SafeFormatter(string.Formatter):
 
@@ -83,9 +83,7 @@ class FormatLocation:
         as '{date:%Y-%m-%d}' or '{counter:03}'
     """
 
-    default_fmt = config['core']['default_fmt'] # type: ignore
-    # silence warning about the type of config, not sure how to do this
-    # correctly
+    default_fmt = qcodes.config['core']['default_fmt']
 
     def __init__(self, fmt=None, fmt_date=None, fmt_time=None,
                  fmt_counter=None, record=None):
