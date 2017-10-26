@@ -67,7 +67,7 @@ class RC_SP4T(IPInstrument):
     """
     def __init__(self, name, address, port=23):
         super().__init__(name, address, port)
-        self._recv()
+        self.flush_connection()
 
         channels = ChannelList(self, "Channels", MC_channel,
                                snapshotable=False)
