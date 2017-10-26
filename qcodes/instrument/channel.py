@@ -246,7 +246,7 @@ class ChannelList(Metadatable):
         Args:
             obj(chan_type): New channel to add to the list.
         """
-        if self._locked:
+        if (isinstance(self._channels, tuple) or self._locked):
             raise AttributeError("Cannot append to a locked channel list")
         if not isinstance(obj, self._chan_type):
             raise TypeError("All items in a channel list must be of the same "
@@ -292,7 +292,7 @@ class ChannelList(Metadatable):
 
             obj(chan_type): Object of type chan_type to insert.
         """
-        if self._locked:
+        if (isinstance(self._channels, tuple) or self._locked):
             raise AttributeError("Cannot insert into a locked channel list")
         if not isinstance(obj, self._chan_type):
             raise TypeError("All items in a channel list must be of the same "
