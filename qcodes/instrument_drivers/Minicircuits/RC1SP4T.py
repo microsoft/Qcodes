@@ -56,7 +56,7 @@ class MC_channel(InstrumentChannel):
         return ret
 
 
-class RC1SP4T(IPInstrument):
+class SP4T(IPInstrument):
     """
     Mini-Circuits 1x 1P4T RF switch
 
@@ -65,20 +65,18 @@ class RC1SP4T(IPInstrument):
             address (str): ip address ie "10.0.0.1"
             port (int): port to connect to default Telnet:23
     """
-    def __init__(self, name, address, port=23, no_channels = 1):
+    def __init__(self, name, address, port=23):
         super().__init__(name, address, port)
         self._recv()
 
         channels = ChannelList(self, "Channels", MC_channel,
                                snapshotable=False)
 
-        chanlist = ['a', 'b']
-        # this driver should also work for the RC-2SP4T
-        # if 'b' is added to the chanlist
-        # i.e. chanlist = ['a', 'b']
-        # but has not been tested on hardware
+        _chanlist = ['a', 'b']
+        _max_channel_number = int(self.IDN()['model'][3])
+        _chanlist = _chanlist[0:_max_channel_number]
 
-        for c in chanlist:
+        for c in _chanlist:
             channel = MC_channel(self, 'channel_{}'.format(c), c)
             channels.append(channel)
             self.add_submodule('channel_{}'.format(c), channel)
