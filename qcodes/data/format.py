@@ -190,7 +190,9 @@ class Formatter:
 
         Returns:
             Tuple(int, int): the first and last raveled indices that should
-                be saved.
+                be saved. Returns None if:
+                    * no data is present
+                    * no new data can be found
         """
         inner_setpoint = group.set_arrays[-1]
         full_dim_data = (inner_setpoint, ) + group.data

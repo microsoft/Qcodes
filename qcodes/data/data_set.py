@@ -11,6 +11,8 @@ from .io import DiskIO
 from .location import FormatLocation
 from qcodes.utils.helpers import DelegateAttributes, full_class, deep_update
 
+log = logging.getLogger(__name__)
+
 
 def new_data(location=None, loc_record=None, name=None, overwrite=False,
              io=None, **kwargs):
@@ -387,8 +389,11 @@ class DataSet(DelegateAttributes):
         self.last_store = time.time()
         if (self.write_period is not None and
                 time.time() > self.last_write + self.write_period):
+            log.debug('Attempting to write')
             self.write()
             self.last_write = time.time()
+        else:
+            log.debug('.store method: This is not the right time to write')
 
     def default_parameter_name(self, paramname='amplitude'):
         """ Return name of default parameter for plotting
@@ -464,7 +469,7 @@ class DataSet(DelegateAttributes):
             return
         self.formatter.read_metadata(self)
 
-    def write(self, write_metadata=False):
+    def write(self, write_metadata=False, only_complete=True):
         """
         Writes updates to the DataSet to storage.
         N.B. it is recommended to call data_set.finalize() when a DataSet is
@@ -472,6 +477,9 @@ class DataSet(DelegateAttributes):
 
         Args:
             write_metadata (bool): write the metadata to disk
+            only_complete (bool): passed on to the match_save_range inside
+                self.formatter.write. Used to ensure that all new data gets
+                saved even when some columns are strange.
         """
         if self.location is False:
             return
@@ -479,7 +487,8 @@ class DataSet(DelegateAttributes):
         self.formatter.write(self,
                              self.io,
                              self.location,
-                             write_metadata=write_metadata)
+                             write_metadata=write_metadata,
+                             only_complete=only_complete)
 
     def write_copy(self, path=None, io_manager=None, location=None):
         """
@@ -560,7 +569,9 @@ class DataSet(DelegateAttributes):
         Also closes the data file(s), if the ``Formatter`` we're using
         supports that.
         """
-        self.write()
+        log.debug('Finalising the DataSet. Writing.')
+        # write all new data, not only (to?) complete columns
+        self.write(only_complete=False)
 
         if hasattr(self.formatter, 'close_file'):
             self.formatter.close_file(self)
