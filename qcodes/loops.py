@@ -783,16 +783,16 @@ class ActiveLoop(Metadatable):
             return action
 
     def _run_wrapper(self, *args, **kwargs):
-        # try:
-        self._run_loop(*args, **kwargs)
-        # finally:
-        if hasattr(self, 'data_set'):
-            # TODO (giulioungaretti) WTF?
-            # somehow this does not show up in the data_set returned by
-            # run(), but it is saved to the metadata
-            ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            self.data_set.add_metadata({'loop': {'ts_end': ts}})
-            self.data_set.finalize()
+        try:
+            self._run_loop(*args, **kwargs)
+        finally:
+            if hasattr(self, 'data_set'):
+                # TODO (giulioungaretti) WTF?
+                # somehow this does not show up in the data_set returned by
+                # run(), but it is saved to the metadata
+                ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                self.data_set.add_metadata({'loop': {'ts_end': ts}})
+                self.data_set.finalize()
 
     def _run_loop(self, first_delay=0, action_indices=(),
                   loop_indices=(), current_values=(),
