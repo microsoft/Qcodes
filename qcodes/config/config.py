@@ -9,7 +9,7 @@ from os.path import expanduser
 from pathlib import Path
 
 import jsonschema
-from typing import Dict, Union
+from typing import Dict
 
 logger = logging.getLogger(__name__)
 

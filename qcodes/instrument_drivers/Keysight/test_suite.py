@@ -1,6 +1,5 @@
 from qcodes.instrument_drivers.test import DriverTestCase
 import unittest
-from typing import Optional
 
 try:
     from .M3201A import Keysight_M3201A
