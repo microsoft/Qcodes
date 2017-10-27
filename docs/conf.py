@@ -385,6 +385,7 @@ except ImportError as e:
 autodoc_mock_imports.append('pyspcm')
 autodoc_mock_imports.append('zhinst')
 autodoc_mock_imports.append('zhinst.utils')
+autodoc_mock_imports.append('spirack')
 autodoc_mock_imports.append('keysightSD1')
 autodoc_mock_imports.append('cffi')
 
