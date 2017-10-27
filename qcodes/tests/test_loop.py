@@ -24,7 +24,7 @@ class NanReturningParameter(MultiParameter):
         super().__init__(name=name, names=names, shapes=shapes,
                          instrument=instrument)
 
-    def get(self):  # this results in a nan-filled DataArray
+    def get_raw(self):  # this results in a nan-filled DataArray
         return (13,)
 
 
@@ -34,7 +34,7 @@ class TestLoop(TestCase):
         cls.p1 = Parameter('p1', get_cmd=None, set_cmd=None, vals=Numbers(-10, 10))
         cls.p2 = Parameter('p2', get_cmd=None, set_cmd=None,  vals=Numbers(-10, 10))
         cls.p3 = Parameter('p3', get_cmd=None, set_cmd=None,  vals=Numbers(-10, 10))
-        instr = DummyInstrument('dummy')
+        instr = DummyInstrument('dummy_bunny')
         cls.p4_crazy = NanReturningParameter('p4_crazy', instrument=instr)
         Station().set_measurement(cls.p2, cls.p3)
 
