@@ -227,10 +227,10 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
     def __str__(self):
         """Include the instrument name with the Parameter name if possible."""
-        inst_name = getattr(self._instrument, 'name', '')
-        if inst_name:
+        try:
+            inst_name = self._instrument.name
             return '{}_{}'.format(inst_name, self.name)
-        else:
+        except AttributeError:
             return self.name
 
     def __repr__(self):
