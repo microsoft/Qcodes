@@ -1296,7 +1296,7 @@ class CombinedParameter(Metadatable):
             setFunction(value)
         return values
 
-    def sweep(self, *array: numpy.ndarray):
+    def sweep(self, *array: numpy.ndarray) -> 'CombinedParameter':
         """
         Creates a new combined parameter to be iterated over.
         One can sweep over either:
@@ -1318,26 +1318,26 @@ class CombinedParameter(Metadatable):
             dim = set([len(a) for a in array])
             if len(dim) != 1:
                 raise ValueError('Arrays have different number of setpoints')
-            array = numpy.array(array).transpose()
+            nparray = numpy.array(array).transpose()
         else:
             # cast to array in case users
             # decide to not read docstring
             # and pass a 2d list
-            array = numpy.array(array[0])
+            nparray = numpy.array(array[0])
         new = copy(self)
         _error_msg = """ Dimensionality of array does not match\
                         the number of parameter combined. Expected a \
                         {} dimensional array, got a {} dimensional array. \
                         """
         try:
-            if array.shape[1] != self.dimensionality: # type: ignore
+            if nparray.shape[1] != self.dimensionality:
                 raise ValueError(_error_msg.format(self.dimensionality,
-                                                   array.shape[1])) # type: ignore
+                                                   nparray.shape[1]))
         except KeyError:
             # this means the array is 1d
             raise ValueError(_error_msg.format(self.dimensionality, 1))
 
-        new.setpoints = array.tolist() # type: ignore
+        new.setpoints = nparray.tolist()
         return new
 
     def _aggregate(self, *vals):
