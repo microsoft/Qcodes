@@ -1,11 +1,11 @@
 """
 Live plotting using pyqtgraph
 """
-from typing import Optional, Dict, Union, Deque, List
+from typing import Optional, Dict, Union, Deque, List, cast
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as pgmp
-from pyqtgraph.multiprocess.remoteproxy import ClosedError
+from pyqtgraph.multiprocess.remoteproxy import ClosedError, ObjectProxy
 from pyqtgraph.graphicsItems.PlotItem.PlotItem import PlotItem
 import qcodes.utils.helpers
 
@@ -84,7 +84,7 @@ class QtPlot(BasePlot):
         self.win.setBackground(theme[1])
         self.win.resize(*figsize)
         self._orig_fig_size = figsize
-        self.subplots = [self.add_subplot()] # type: List[PlotItem]
+        self.subplots = [self.add_subplot()] # type: List[Union[PlotItem, ObjectProxy]]
 
         if args or kwargs:
             self.add(*args, **kwargs)
@@ -111,7 +111,7 @@ class QtPlot(BasePlot):
         """
         self.win.clear()
         self.traces = []
-        self.subplots = [] # type: List[PlotItem]
+        self.subplots = [] # type: List[Union[PlotItem, ObjectProxy]]
 
     def add_subplot(self):
         subplot_object = self.win.addPlot()
@@ -489,7 +489,10 @@ class QtPlot(BasePlot):
             reset_colorbar: Should the limits and colorscale of the colorbar
                 be reset. Off by default
         """
-        subplots = self.subplots # type: List[PlotItem]
+        # seem to be a bug in mypy but the type of self.subplots cannot be
+        # deducted even when typed above so ignore it and cast for now
+        subplots = self.subplots # type: ignore
+        subplots = cast(List[Union[PlotItem,ObjectProxy]], subplots)
         for subplot in subplots:
             vBox = subplot.getViewBox()
             vBox.enableAutoRange(vBox.XYAxes)
@@ -526,7 +529,11 @@ class QtPlot(BasePlot):
         axismapping = {'x': 'bottom',
                        'y': 'left'}
         standardunits = self.standardunits
-        for i, plot in enumerate(self.subplots):
+        # seem to be a bug in mypy but the type of self.subplots cannot be
+        # deducted even when typed above so ignore it and cast for now
+        subplots = self.subplots # type: ignore
+        subplots = cast(List[Union[PlotItem,ObjectProxy]], subplots)
+        for i, plot in enumerate(subplots):
             # make a dict mapping axis labels to axis positions
             for axis in ('x', 'y', 'z'):
                 if self.traces[i]['config'].get(axis) is not None:
