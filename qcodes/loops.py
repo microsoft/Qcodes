@@ -63,8 +63,10 @@ from .actions import (_actions_snapshot, Task, Wait, _Measure, _Nest,
 
 log = logging.getLogger(__name__)
 
+
 def active_loop():
     return ActiveLoop.active_loop
+
 
 def active_data_set():
     loop = active_loop()
@@ -72,6 +74,7 @@ def active_data_set():
         return loop.data_set
     else:
         return None
+
 
 class Loop(Metadatable):
     """
@@ -780,16 +783,16 @@ class ActiveLoop(Metadatable):
             return action
 
     def _run_wrapper(self, *args, **kwargs):
-        # try:
-        self._run_loop(*args, **kwargs)
-        # finally:
-        if hasattr(self, 'data_set'):
-            # TODO (giulioungaretti) WTF?
-            # somehow this does not show up in the data_set returned by
-            # run(), but it is saved to the metadata
-            ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            self.data_set.add_metadata({'loop': {'ts_end': ts}})
-            self.data_set.finalize()
+        try:
+            self._run_loop(*args, **kwargs)
+        finally:
+            if hasattr(self, 'data_set'):
+                # TODO (giulioungaretti) WTF?
+                # somehow this does not show up in the data_set returned by
+                # run(), but it is saved to the metadata
+                ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                self.data_set.add_metadata({'loop': {'ts_end': ts}})
+                self.data_set.finalize()
 
     def _run_loop(self, first_delay=0, action_indices=(),
                   loop_indices=(), current_values=(),
@@ -835,12 +838,15 @@ class ActiveLoop(Metadatable):
             new_values = current_values + (value,)
             data_to_store = {}
 
-            if hasattr(self.sweep_values, "parameters"): # combined parameter
+            if hasattr(self.sweep_values, "parameters"):  # combined parameter
                 set_name = self.data_set.action_id_map[action_indices]
                 if hasattr(self.sweep_values, 'aggregate'):
                     value = self.sweep_values.aggregate(*set_val)
+                log.debug('Calling .store method of DataSet because '
+                          'sweep_values.parameters exist')
                 self.data_set.store(new_indices, {set_name: value})
-                for j, val in enumerate(set_val): # set_val list of values to set [param1_setpoint, param2_setpoint ..]
+                # set_val list of values to set [param1_setpoint, param2_setpoint ..]
+                for j, val in enumerate(set_val):
                     set_index = action_indices + (j+n_callables, )
                     set_name = (self.data_set.action_id_map[set_index])
                     data_to_store[set_name] = val
@@ -848,6 +854,8 @@ class ActiveLoop(Metadatable):
                 set_name = self.data_set.action_id_map[action_indices]
                 data_to_store[set_name] = value
 
+            log.debug('Calling .store method of DataSet because a sweep step'
+                      ' was taken')
             self.data_set.store(new_indices, data_to_store)
 
             if not self._nest_first:
@@ -856,6 +864,8 @@ class ActiveLoop(Metadatable):
 
             try:
                 for f in callables:
+                    log.debug('Going through callables at this sweep step.'
+                              ' Calling {}'.format(f))
                     f(first_delay=delay,
                       loop_indices=new_indices,
                       current_values=new_values)
@@ -889,14 +899,18 @@ class ActiveLoop(Metadatable):
 
         # run the background task one last time to catch the last setpoint(s)
         if self.bg_task is not None:
+            log.debug('Running the background task one last time.')
             self.bg_task()
 
         # the loop is finished - run the .then actions
+        log.debug('Finishing loop, running the .then actions...')
         for f in self._compile_actions(self.then_actions, ()):
+            log.debug('...running .then action {}'.format(f))
             f()
 
         # run the bg_final_task from the bg_task:
         if self.bg_final_task is not None:
+            log.debug('Running the bg_final_task')
             self.bg_final_task()
 
     def _wait(self, delay):
