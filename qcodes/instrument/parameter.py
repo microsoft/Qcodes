@@ -202,14 +202,16 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
         if hasattr(self, 'get_raw'):
-            self.get = self._wrap_get(self.get_raw)
+            self.get = self._wrap_get(self.get_raw) # type: ignore
+            # due to https://github.com/python/mypy/issues/1424
         elif hasattr(self, 'get'):
             warnings.warn('Wrapping get method, original get method will not '
                           'be directly accessible. It is recommended to '
                           'define get_raw in your subclass instead.' )
             self.get = self._wrap_get(self.get)
         if hasattr(self, 'set_raw'):
-            self.set = self._wrap_set(self.set_raw)
+            self.set = self._wrap_set(self.set_raw) # type: ignore
+            # due to https://github.com/python/mypy/issues/1424
         elif hasattr(self, 'set'):
             warnings.warn('Wrapping set method, original set method will not '
                           'be directly accessible. It is recommended to '
@@ -419,7 +421,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
 
     def get_ramp_values(self, value: Union[float, int, Sized],
                         step: Union[float, int]=None) -> List[Union[float,
-                                                                    int]]:
+                                                                    int,
+                                                                    Sized]]:
         """
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
@@ -434,7 +437,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         if step is None:
             return [value]
         else:
-            if isinstance(value, collections.Iterable) and len(value) > 1:
+            if isinstance(value, collections.Sized) and len(value) > 1:
                 raise RuntimeError("Don't know how to step a parameter with more than one value")
             if self.get_latest() is None:
                 self.get()
