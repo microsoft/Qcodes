@@ -303,5 +303,11 @@ def _plottype_from_setpoints(setpoints: List[List[List[Any]]]) -> str:
     x_check = _all_in_group_or_subgroup(xpoints)
     y_check = _all_in_group_or_subgroup(ypoints)
 
+    xrows = _rows_from_datapoints(xpoints)
+    yrows = _rows_from_datapoints(ypoints)
+
+    x_check = x_check and (len(xrows[0]) == len(yrows))
+    y_check = y_check and (len(yrows[0]) == len(xrows))
+
     if y_check and x_check:
         return 'grid'
