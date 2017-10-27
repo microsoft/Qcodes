@@ -549,7 +549,7 @@ class QtPlot(BasePlot):
                     setarr = getattr(self.traces[i]['config'][axis], 'ndarray', None)
                     arrmin = None
                     arrmax = None
-                    if setarr and not np.all(np.isnan(setarr)):
+                    if setarr is not None and not np.all(np.isnan(setarr)):
                         arrmax = setarr.max()
                         arrmin = setarr.min()
                     elif startranges is not None:
