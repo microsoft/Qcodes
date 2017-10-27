@@ -248,14 +248,14 @@ class DataSet(DelegateAttributes):
         Args:
             delay (float): seconds between iterations. Default 1.5
         """
-        logging.info(
+        log.info(
             'waiting for DataSet <{}> to complete'.format(self.location))
 
         failing = {key: False for key in self.background_functions}
 
         completed = False
         while True:
-            logging.info('DataSet: {:.0f}% complete'.format(
+            log.info('DataSet: {:.0f}% complete'.format(
                 self.fraction_complete() * 100))
 
             # first check if we're done
@@ -266,13 +266,13 @@ class DataSet(DelegateAttributes):
             # because we want things like live plotting to get the final data
             for key, fn in list(self.background_functions.items()):
                 try:
-                    logging.debug('calling {}: {}'.format(key, repr(fn)))
+                    log.debug('calling {}: {}'.format(key, repr(fn)))
                     fn()
                     failing[key] = False
                 except Exception:
-                    logging.info(format_exc())
+                    log.info(format_exc())
                     if failing[key]:
-                        logging.warning(
+                        log.warning(
                             'background function {} failed twice in a row, '
                             'removing it'.format(key))
                         del self.background_functions[key]
@@ -284,7 +284,7 @@ class DataSet(DelegateAttributes):
             # but only sleep if we're not already finished
             time.sleep(delay)
 
-        logging.info('DataSet <{}> is complete'.format(self.location))
+        log.info('DataSet <{}> is complete'.format(self.location))
 
     def get_changes(self, synced_indices):
         """
