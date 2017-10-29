@@ -1,10 +1,11 @@
 # Cryomagnetics_SMS120C, Cryomagnetics_SMS120C magnet power supply driver
+
 """
-# Created on Fri 29 Sep 2017
+# Created on Fri 29 Nov 2017
 # @author: lyeoh
 
-# Last modified by lyeoh 18/10/2017 
-# Special thanks to cjvandiepen & acorna.
+# Last modified by lyeoh 27/10/2017 
+# Special thanks to cjvandiepen, acorna, pteendebak.
 
 ---
 # Please refer to Cryogenic's magnet PS manual for further details and more functionality
@@ -17,36 +18,28 @@ This magnet PS driver has been tested with:
     
 """
 
-#from instrument import Instrument
 import visa
-import types
-import math
-#import qt
-
 import re
 import logging
-import numpy as np
 import time
 
-from qcodes import VisaInstrument  # , Instrument, IPInstrument
 from qcodes.utils.validators import Numbers, Anything
+from qcodes import VisaInstrument
 import pyvisa.constants as vi_const
 
-from functools import partial
 
+log = logging.getLogger(__name__)
 
 class CryogenicSMS120C(VisaInstrument):
-
+    
     """
-    The following hard-coded, default values for Cryogenic magnets are saftey limits
+    The following hard-coded, default values for Cryogenic magnets are safety limits
     and should not be modified. 
     - these values should be set using the corresponding arguments when the class is called.
     """
     default_current_ramp_limit = 0.0506  # [A/s]
-    default_max_current_ramp_limit = 0.12  # [A/s]
-    # default_coil_constant = 0.113375 # [T/A]
-    # default_current_rating=105.84 #[A]
-
+    default_max_current_ramp_limit = 0.12 # [A/s]
+    
     """
     Driver for the Cryogenic SMS120C magnet power supply.
     This class controls a single magnet PSU.
@@ -59,17 +52,18 @@ class CryogenicSMS120C(VisaInstrument):
         current_rating (float): maximum current rating in ampere, fixed at 105.84A
         current_ramp_limit (float): current ramp limit in ampere per second, 
             for 50mK operation 0.0506A/s (5.737E-3 T/s, 0.34422T/min) - usually used
-            for 4K operation 0.12A/s (0.013605 T/s, 0.8163 T/min) - not so recommended
+            for 4K operation 0.12A/s (0.013605 T/s, 0.8163 T/min) - not recommended
         persistent_mode (bool): check if magnet is in persistent mode (True/False)
         timing : SMS120C needs a minimum of 200ms delay between commands being sent
     """
-
-    # Reg. exp. to match a float or exponent in a string
-    _re_float_exp = '[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?'
-
+    
+    _re_float_exp = '[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?'  # Reg. exp. to match a float or exponent in a string    
+ 
     def __init__(self, name, address, coil_constant=0.113375, current_rating=105.84,
                  current_ramp_limit=0.0506,
                  reset=False, timeout=5, terminator='\r\n', **kwargs):
+        
+        log.debug('Initializing instrument')
         super().__init__(name, address, terminator=terminator, **kwargs)
 
         self.visa_handle.baud_rate = 9600
@@ -77,30 +71,26 @@ class CryogenicSMS120C(VisaInstrument):
         self.visa_handle.stop_bits = visa.constants.StopBits.one
         self.visa_handle.data_bits = 8
         self.visa_handle.flow_control = 0
-        self.visa_handle.flush(vi_const.VI_READ_BUF_DISCARD |
-                               vi_const.VI_WRITE_BUF_DISCARD)  # keep for debugging
+        self.visa_handle.flush(vi_const.VI_READ_BUF_DISCARD | vi_const.VI_WRITE_BUF_DISCARD)  #keep for debugging
 
         idn = self.IDN.get()
         print(idn)
 
-        self._coil_constant = coil_constant  # coil_constant=0.113375
+        self._coil_constant = coil_constant 
         self._current_rating = current_rating
         self._current_ramp_limit = current_ramp_limit
-        self._field_rating = coil_constant * \
-            current_rating  # corresponding max field based
+        self._field_rating = coil_constant * current_rating   #corresponding max field based
         self._field_ramp_limit = coil_constant * current_ramp_limit
-
-#       self._visa = visa.instrument(self.address,term_chars='\r\n',delay = 0.2)
 
         self.add_parameter(name='unit',
                            get_cmd=self._get_unit,
-                           # Set unit to Tesla(T 1) or Amp(T 0),
                            set_cmd=self._set_unit,
                            val_mapping={'AMPS': 0, 'TESLA': 1})
 
+
         self.add_parameter('rampStatus',
                            get_cmd=self._get_rampStatus,
-                           val_mapping={'HOLDING': 0,
+                           val_mapping={'HOLDING': 0,                           
                                         'RAMPING': 1,
                                         'QUENCH DETECTED': 2,
                                         'EXTERNAL TRIP': 3,
@@ -112,37 +102,44 @@ class CryogenicSMS120C(VisaInstrument):
                            set_cmd=self._set_polarity,
                            val_mapping={'POSITIVE': '+', 'NEGATIVE': '-'})
 
+ 
         self.add_parameter(name='switchHeater',
                            get_cmd=self._get_switchHeater,
-                           set_cmd=self._set_switchHeater,
+                           set_cmd=self._set_switchHeater, 
                            val_mapping={False: 0, True: 1})
 
-        self.add_parameter('persistent_mode',
+
+        self.add_parameter('persistentMode',
                            get_cmd=self._get_persistentMode,
                            val_mapping={False: 0, True: 1})
+
 
         self.add_parameter(name='field',
                            get_cmd=self._get_field,
                            set_cmd=self._set_field,
-                           vals=Numbers(-self._field_rating,  # i.e. ~12T, calculated
+                           vals=Numbers(-self._field_rating,  #i.e. ~12T, calculated
                                         self._field_rating))
+
 
         self.add_parameter(name='maxField',
                            get_cmd=self._get_maxField,
                            set_cmd=self._set_maxField,
-                           vals=Numbers(0,  # i.e. ~12T, calculated
+                           vals=Numbers(0,  #i.e. ~12T, calculated
                                         self._field_rating))
+
 
         self.add_parameter(name='rampRate',
                            get_cmd=self._get_rampRate,
                            set_cmd=self._set_rampRate,
-                           vals=Numbers(0,
+                           vals=Numbers(0, 
                                         self._current_ramp_limit))
+
 
         self.add_parameter('pauseRamp',
                            set_cmd=self._set_pauseRamp,
                            get_cmd=self._get_pauseRamp,
                            val_mapping={False: 0, True: 1})
+
 
     def get_idn(self):
         """
@@ -153,248 +150,213 @@ class CryogenicSMS120C(VisaInstrument):
 
         return dict(zip(('vendor', 'model', 'serial', 'firmware'), idparts))
 
-    def query(self, msg):
+
+    def query(self, msg):  
         """
-        Message outputs do not follow standard SCPI commands, 
-        self defined regexp to parse unique/variable instrument message structure.
+        Message outputs do not follow the standard SCPI format, 
+        separate regexp to parse unique/variable instrument message structures.
         """
         value = self.ask(msg)
         m = re.match(r'((\S{8})\s)+(([^:]+)(:([^:]+))?)', value)
         if m:
             if m[2] == '------->':
-                raise ValueError(
-                    'Command information or unrecognizable qualifier: "%s"' % m[3])
+                log.error('Command information or unrecognizable qualifier: "%s"' % m[3])
             else:
                 return m[4].strip(), m[6].strip()
         else:
-            raise ValueError(
-                'Malformed message received from the instrument: "%s"' % value)
+            log.error('Malformed message received from the magnet PS: "%s"' % value)
 
-    def _get_limit(self):  # Get voltage limits, returns a float
+
+    def _get_limit(self):              #Get voltage limits, returns a float
         key, value = self.query('GET VL')
-        # extract number from string
-        m = re.match(r'({}) VOLTS'.format(
-            CryogenicSMS120C._re_float_exp), value)
-        limit = float(m[1])
+        m = re.match(r'({}) VOLTS'.format(CryogenicSMS120C._re_float_exp), value)  #extract number from string
+        limit=float(m[1])        
         return limit
 
-    # get heater status, returns a boolean ON (1) or OFF (0)
-    def _get_switchHeater(self):
+    def _get_switchHeater(self):       #get heater status, returns a boolean ON (1) or OFF (0)
         key, value = self.query('HEATER')
-        if 'OFF' in value:
+        if 'OFF' in value :
             switchHeater = 0
-        elif 'ON' in value:
-            switchHeater = 1
-#            key2, value2 = self.query('GET HV')   #read switch heater voltage
-#            print(value2)
-#                temp = re.findall(r"\d+\.\d*",strHeaterVoltage)
-#                heaterVoltageOut=float(temp[0] + '.' + temp[1])
-        return switchHeater  # , heaterVoltageOut
+        elif 'ON' in value :
+            switchHeater = 1               
+        return switchHeater 
 
-    # check if magnet is in persistent mode, and if so return current in the magnet
-    def _get_persistentMode(self):
+    def _get_persistentMode(self):      # check if magnet is in persistent mode, and if so return current in the magnet
         key, value = self.query('HEATER')
         field = self._get_field()
-        # check for switch heater OFF, and non-zero current
-        if 'OFF' in value and (field != 0):
+        if 'OFF' in value and (field != 0):   #check for switch heater OFF, and non-zero current
             units = self._get_unit()
-            if units == 1:
-                print("Magnet in persistent mode, at a field of %f T" % field)
-            elif units == 0:
-                print("Magnet in persistent mode, at a field of %f A" % field)
+            if units == 1 :
+                print ("Magnet in persistent mode, at a field of %f T" %field)
+            elif units == 0 :
+                print ("Magnet in persistent mode, at a field of %f A" %field)
             persistent_Mode = True
         else:
-            print("Magnet not persistent")
-            persistent_Mode = False
+            print ("Magnet not persistent.")
+            persistent_Mode = False 
         return persistent_Mode
 
-    def _get_unit(self):  # get units, returns a boolean - Tesla (1) or Amps(0)
+    def _get_unit(self):            #get units, returns a boolean integer - Tesla (1) or Amps(0)
         key, value = self.query('TESLA')
         if value == 'TESLA':
             unit = 1
-        else:  # assume in Amps
+        else:                       #assume in Amps
             unit = 0
         return unit
 
-    # get direction of current, returns a boolean - Positive (1) or Negative(0)
-    def _get_polarity(self):
+    def _get_polarity(self):        #get direction of current, returns a string - Positive (1) or Negative(0)
         key, value = self.query('GET SIGN')
         if value == 'POSITIVE':
             polarity = '+'
-        elif value == 'NEGATIVE':  # assume Negative
+        elif value == 'NEGATIVE':   #assume Negative
             polarity = '-'
-        return polarity
+        return polarity       
 
-    def _get_maxField(self):  # Get the maximum B field, returns a float (in Amps or Tesla)
+    def _get_maxField(self):        #Get the maximum B field, returns a float (in Amps or Tesla)
         key, value = self.query('GET MAX')
         units = self._get_unit()
-        if units == 1:
-            m = re.match(r'({}) TESLA'.format(
-                CryogenicSMS120C._re_float_exp), value)
-        elif units == 0:
-            m = re.match(r'({}) AMPS'.format(
-                CryogenicSMS120C._re_float_exp), value)
-        maxField = float(m[1])
+        if units == 1 :
+            m = re.match(r'({}) TESLA'.format(CryogenicSMS120C._re_float_exp), value)
+        elif units == 0 :
+            m = re.match(r'({}) AMPS'.format(CryogenicSMS120C._re_float_exp), value)
+        maxField=float(m[1])           
         return maxField
-
-    def _get_field(self):       # Get current magnetic field, returns a float (in Amps or Tesla)
+       
+    def _get_field(self):           # Get current magnetic field, returns a float (in Amps or Tesla)
         key, value = self.query('GET OUTPUT')
         units = self._get_unit()
-        if units == 1:
+        if units == 1 :
             m = re.match(r'({}) TESLA AT ({}) VOLTS'.format(CryogenicSMS120C._re_float_exp,
-                                                            CryogenicSMS120C._re_float_exp), value)
-        elif units == 0:
-            m = re.match(r'({}) AMPS AT ({}) VOLTS'.format(CryogenicSMS120C._re_float_exp,
-                                                           CryogenicSMS120C._re_float_exp), value)
-        field = float(m[1])
+                         CryogenicSMS120C._re_float_exp), value)
+        elif units == 0 : 
+             m = re.match(r'({}) AMPS AT ({}) VOLTS'.format(CryogenicSMS120C._re_float_exp,
+                         CryogenicSMS120C._re_float_exp), value)            
+        field=float(m[1]) 
         return field
 
-    def _get_rampStatus(self):  # get current magnet status
+    def _get_rampStatus(self):      #get current magnet status, returns an integer
         key, value = self.query('RAMP STATUS')
-        if 'HOLDING' in value:  # holding on
+        if 'HOLDING' in value:      #holding on
             rampStatus = 0
-        elif 'RAMPING' in value:  # magnet ramping
+        elif 'RAMPING' in value:    #magnet ramping
             rampStatus = 1
-        elif 'QUENCH' in value:  # detect magnet quench
+        elif 'QUENCH' in value:     #detect magnet quench
             rampStatus = 2
-        elif 'EXTERNAL' in value:  # detect external trip
+        elif 'EXTERNAL' in value:   #detect external trip
             rampStatus = 3
-        elif 'FAULT' in value:  # detect either controller or power fault
+        elif 'FAULT' in value:      #detect either controller or power fault
             rampStatus = 4
-        return rampStatus
+        return rampStatus            
 
-    def _get_pauseRamp(self):  # Get the maximum B field, returns a float (in Amps or Tesla)
-        key, value = self.query('PAUSE')
+    def _get_pauseRamp(self):       #checks if controller is paused (1) or active (0), returns a boolean integer
+        key, value = self.query('PAUSE')          
         if value == 'ON':
             pauseRamp = 1
-        else:  # assume pause OFF
+        else:                       #assume pause OFF
             pauseRamp = 0
         return pauseRamp
-
-    # get current magnet ramping rate, returns a float (in units of Amps/sec only)
-    def _get_rampRate(self):
+            
+    def _get_rampRate(self):        #Get current magnet ramping rate, returns a float (in units of Amps/sec only)
         key, value = self.query('GET RATE')
-        m = re.match(
-            r'({}) A/SEC'.format(CryogenicSMS120C._re_float_exp), value)
-        rampRate = float(m[1])
+        m = re.match(r'({}) A/SEC'.format(CryogenicSMS120C._re_float_exp), value)
+        rampRate=float(m[1]) 
         return rampRate
 
-    # Set magnet sweep direction : "+" for positive B, "-" for negative B
-    def _set_polarity(self, val):
-        # using standard write as read returns an error/is non-existent.
-        self.write('DIRECTION %s' % val)
-
-    def _set_unit(self, val):  # Set unit to Tesla(T 1) or Amp(T 0),
-        # Enables us to set units of Tesla
-        self.ask('SET TPA %f' % self._coil_constant)
-        self.ask('TESLA %d' % val)
-
-    def _set_maxField(self, val):  # Set the maximum field (in Amps or Tesla)
-        self.ask('SET MAX %0.2f' % val)
-
-    def _set_switchHeater(self, val):  # Turn ON(H 1)/OFF(H 0) heater
+    def _set_polarity(self,val):    #Set magnet sweep direction : "+" for positive B, "-" for negative B
+        self.write('DIRECTION %s' %val)   # using standard write as read returns an error/is non-existent.
+  
+    def _set_unit(self,val):        # Set unit to Tesla(1) or Amps(0),
+        self.ask('SET TPA %f' %self._coil_constant)  #Enables us to set units of Tesla
+        self.ask('TESLA %d' %val)
+        
+    def _set_maxField(self,val):    #Set the maximum field (in Amps or Tesla)
+        self.ask('SET MAX %0.2f' %val)
+        
+    def _set_switchHeater(self,val): # Turn heater ON(1) or OFF(0)
         if self._get_rampStatus() == 1:
-            print('Error : Cannot switch heater during a ramp, first pause the ramp.')
+            log.error('Cannot switch heater during a ramp, first pause the ramp.')
         else:
-            # Switch ON, if currently OFF
-            if val == 1 and (self._get_switchHeater() == False):
-                strHeaterStatus = self.ask('HEATER %d' % val)
-                print(strHeaterStatus)
+            if val == 1 and (self._get_switchHeater() == False) :  # Switch ON, if currently OFF
+                strHeaterStatus = self.ask('HEATER %d' %val)
                 switchHeater = 1
-                print('Waiting 30s for switch heater to warm up')
-                time.sleep(30)  # wait for magnet to settle after switch
-            # Switch OFF, if currently ON
-            elif val == 0 and (self._get_switchHeater() == True):
-                strHeaterStatus = self.ask('HEATER %d' % val)
-                print(strHeaterStatus)
+                print ('Waiting 30s for switch heater to warm up.')
+                time.sleep(30)      #wait for magnet to settle after switch
+            elif val == 0 and (self._get_switchHeater() == True) : # Switch OFF, if currently ON
+                strHeaterStatus = self.ask('HEATER %d' %val)
                 switchHeater = 0
-                if self._get_field != 0:  # condition for persistent mode
+                if self._get_field != 0 :  # condition for persistent mode
                     self.persistent_mode = 1
-                    print('Waiting 60s for switch heater to cool')
-                    # wait for magnet to settle into persistent mode after switch
-                    time.sleep(60)
-                else:
-                    print('Waiting 30s for switch heater to cool')
-                    time.sleep(30)  # wait for magnet to settle after switch
-            else:  # assume no change to current switch heater state - regular write with no wait time
-                strHeaterStatus = self.ask('HEATER %d' % val)
-                print(strHeaterStatus)
-            return switchHeater
+                    print ('Waiting 60s for switch heater to cool.')
+                    time.sleep(60)   #wait for magnet to settle into persistent mode after switch                
+                else :
+                    print ('Waiting 30s for switch heater to cool.')
+                    time.sleep(30)   #wait for magnet to settle after switch                   
+            else:                    #assume no change to current switch heater state
+                strHeaterStatus = self.ask('HEATER %d' %val)
+                log.info(strHeaterStatus)
+            return switchHeater               
 
-    def _set_pauseRamp(self, val):  # Pause magnet controller Pause=1, Unpause=0
-        self.ask('PAUSE %d' % val)
+    def _set_pauseRamp(self,val):    #Pause magnet controller Pause=1, Unpause=0
+        self.ask('PAUSE %d' %val)
 
-    # Set ramp speed Amps/sec , check it is reasonable if it is being manually modified
-    def _set_rampRate(self, val):
-        if self._current_ramp_limit == None:
+    def _set_rampRate(self,val):     # Set ramp speed Amps/sec , check it is reasonable if it is being manually modified
+        if self._current_ramp_limit == None :
             self._current_ramp_limit = CryogenicSMS120C.default_current_ramp_limit
-
-        if val <= self._current_ramp_limit:
-            self.ask('SET RAMP %0.2f' % val)
+        
+        if val <= self._current_ramp_limit :
+            self.ask('SET RAMP %0.2f' %val)
             return True
-        elif val > CryogenicSMS120C.default_max_current_ramp_limit:
-            self.ask('SET RAMP %0.2f' %
-                     CryogenicSMS120C.default_current_ramp_limit)
-            print('Requested ramp speed is unsafe : over the max. limit ',
-                  CryogenicSMS120C.default_max_current_ramp_limit, 'A/s. Coerced to default ramp rate.')
+        elif val > CryogenicSMS120C.default_max_current_ramp_limit :
+            self.ask('SET RAMP %0.2f' %CryogenicSMS120C.default_current_ramp_limit) 
+            msg = 'Requested rate of {} is unsafe and over the maximum limit of {} A/s. Coerced to default ramp rate.'
+            log.error(msg.format(val, CryogenicSMS120C.default_max_current_ramp_limit))              
             return False
-        else:
-            print('Requested ramp speed is over the limit of ', self._current_ramp_limit,
-                  'A/s. Change limit, at your own risk after consulting the SMS120C manual.')
+        else :  
+            msg = 'Requested ramp speed is over the limit of {} A/s. Change limit, at your own risk after consulting the SMS120C manual.'
+            log.error(msg.format(self._current_ramp_limit))
             return False
-
-    # Check magnet state and ramp speed to see if it is safe to ramp
-    def _can_startRamping(self):
+      
+    def _can_startRamping(self):    # Check magnet state and ramp speed to see if it is safe to ramp, returns boolean
         state = self._get_rampStatus()
 
-        if self._get_rampRate() <= self._current_ramp_limit:
-            if state == 2:  # Quench
-                logging.error(__name__ + ': Could not ramp because of quench')
-                print(
-                    'Magnet quench detected - please check magnet status before ramping.')
+        if self._get_rampRate() <= self._current_ramp_limit :
+            if state == 2 :         # Quench
+                log.error(__name__ + ': Magnet quench detected - please check magnet status before ramping.')
                 return False
-            elif state == 1:  # Ramping
+            elif state == 1 :       # Ramping
                 if self._get_switchHeater() == 1:
-                    print('Magnet currently ramping.')
+                    print('Magnet currently ramping.')  
                     return True
                 else:
-                    print(
-                        'Magnet in unusual state : ramping with switch heater off, please check magnet status before ramping.')
+                    log.error(__name__ + ': Magnet in unusual state - ramping with switch heater off, please check magnet status before ramping.')
                     return False
-            elif state == 0:  # Holding
-                if (not self._get_persistentMode()):
+            elif state == 0 :       # Holding
+                if (not self._get_persistentMode()) :
+                    print('Magnet currently holding.')
                     return True
                 else:
-                    # print('Magnet in persistent mode.')
+                    print('Magnet in persistent mode.')                        
                     return True
-            logging.error(
-                __name__ + ': Could not ramp, state: {}'.format(state))
-            print('Could not ramp, state: {}'.format(state))
+            log.error(__name__ + ': Could not ramp, magnet in state: {}'.format(state)) 
             return False
-        else:
-            print('Cannot ramp : ramp rate is over the set limit')
+        else :
+            log.warning(__name__ + ': Could not ramp, ramp rate is over the set limit, please lower.') 
             return False
-
-    # Between any two commands, there are must be around 200ms waiting time. Otherwise it is not warranted working.
-    def _set_field(self, val):
+         
+    def _set_field(self,val):    #Between any two commands, there are must be around 200ms waiting time.       
         # check ramp status is OK
         if self._can_startRamping():
-
-            # Check that field is not outside max.field limit
-            if (self._get_unit() == 1 and (val <= self._get_maxField())) or (self._get_unit() == 0 and (val <= self._current_rating)):
-                # if (self._get_unit() == 1 and (val <= self._get_maxField())):
-                # pause the controller if it is currently ramping
-                self._set_pauseRamp(1)
-
-                # set switch heater if not already ON
-                if self._get_switchHeater() == 0:
-                    self._set_switchHeater(1)
-                self.ask('SET MID %0.2f' % val)  # Set target field
-                self._set_pauseRamp(0)  # Unpause the controller
-                # Ramp magnet/field to MID (using standard write as read returns an error/is non-existent).
-                self.write('RAMP MID')
-                print('Ramping magnetic field...')
-            else:
-                print('Target field is outside max. limits.')
-        else:
-            print('Cannot set field - check magnet status.')
+            
+        # Check that field is not outside max.field limit
+            if (self._get_unit() == 1 and (val <= self._get_maxField())) or (self._get_unit() == 0 and (val <= self._current_rating)) :
+                self._set_pauseRamp(1)               # pause the controller if it is currently ramping
+                if self._get_switchHeater() == 0 :   # set switch heater if not already ON
+                    self._set_switchHeater(1)                    
+                self.ask('SET MID %0.2f' %val)       # Set target field
+                self._set_pauseRamp(0)               # Unpause the controller                
+                self.write('RAMP MID')               # Ramp magnet/field to MID (Note: Using standard write as read returns an error/is non-existent).
+                print ('Ramping magnetic field...')
+            else :
+                log.error('Target field is outside max. limits, please lower the target value.')
+        else :
+            log.error('Cannot set field - check magnet status.') 
