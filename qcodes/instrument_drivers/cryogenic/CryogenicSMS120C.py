@@ -4,18 +4,18 @@
 # Created on Fri 29 Nov 2017
 # @author: lyeoh
 
-# Last modified by lyeoh 27/10/2017 
+# Last modified by lyeoh 27/10/2017
 # Special thanks to cjvandiepen, acorna, pteendebak.
 
 ---
 # Please refer to Cryogenic's magnet PS manual for further details and more functionality
 # This magnet PS model is not SCPI compliant.
-# Note: Some commands return more than one line in the output, 
+# Note: Some commands return more than one line in the output,
         some are unidirectional, with no return (eg. 'write' rathern than 'ask').
 
 This magnet PS driver has been tested with:
     FTDI chip drivers (USB to serial), D2XX version installed.
-    
+
 """
 
 import visa
@@ -35,7 +35,7 @@ class CryogenicSMS120C(VisaInstrument):
 
     """
     The following hard-coded, default values for Cryogenic magnets are safety limits
-    and should not be modified. 
+    and should not be modified.
     - these values should be set using the corresponding arguments when the class is called.
     """
     default_current_ramp_limit = 0.0506  # [A/s]
@@ -44,14 +44,14 @@ class CryogenicSMS120C(VisaInstrument):
     """
     Driver for the Cryogenic SMS120C magnet power supply.
     This class controls a single magnet PSU.
-    Magnet and magnet PSU limits : max B=12T, I=105.84A, V=3.5V 
+    Magnet and magnet PSU limits : max B=12T, I=105.84A, V=3.5V
 
     Args:
         name (string): a name for the instrument
         address (string): (serial to USB) COM number of the power supply
         coil_constant (float): coil constant in Tesla per ampere, fixed at 0.113375T/A
         current_rating (float): maximum current rating in ampere, fixed at 105.84A
-        current_ramp_limit (float): current ramp limit in ampere per second, 
+        current_ramp_limit (float): current ramp limit in ampere per second,
             for 50mK operation 0.0506A/s (5.737E-3 T/s, 0.34422T/min) - usually used
             for 4K operation 0.12A/s (0.013605 T/s, 0.8163 T/min) - not recommended
         persistent_mode (bool): check if magnet is in persistent mode (True/False)
@@ -148,7 +148,7 @@ class CryogenicSMS120C(VisaInstrument):
 
     def query(self, msg):
         """
-        Message outputs do not follow the standard SCPI format, 
+        Message outputs do not follow the standard SCPI format,
         separate regexp to parse unique/variable instrument message structures.
         """
         value = self.ask(msg)
@@ -320,7 +320,7 @@ class CryogenicSMS120C(VisaInstrument):
     # Set ramp speed Amps/sec , check it is reasonable if it is being manually
     # modified
     def _set_rampRate(self, val):
-        if self._current_ramp_limit == None:
+        if self._current_ramp_limit is None:
             self._current_ramp_limit = CryogenicSMS120C.default_current_ramp_limit
 
         if val <= self._current_ramp_limit:
@@ -377,7 +377,8 @@ class CryogenicSMS120C(VisaInstrument):
         if self._can_startRamping():
 
             # Check that field is not outside max.field limit
-            if (self._get_unit() == 1 and (val <= self._get_maxField())) or (self._get_unit() == 0 and (val <= self._current_rating)):
+            if (self._get_unit() == 1 and (val <= self._get_maxField())) or (
+                    self._get_unit() == 0 and (val <= self._current_rating)):
                 # pause the controller if it is currently ramping
                 self._set_pauseRamp(1)
                 if self._get_switchHeater() == 0:   # set switch heater if not already ON
