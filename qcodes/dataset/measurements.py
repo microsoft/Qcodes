@@ -1,5 +1,7 @@
 import json
 from collections import OrderedDict
+from typing import Callable
+from inspect import signature
 
 import qcodes as qc
 from qcodes import Station
@@ -52,6 +54,62 @@ class Runner:
         # finishing the measurement
         self.ds.mark_complete()
 
-        print('-'*25)
-        print('Finished dataset')
-        print(self.ds)
+
+class Measurement:
+    """
+    Measurement procedure container
+    """
+    def __init__(self, exp: Experiment=None, station=None) -> None:
+        """
+        Init
+
+        Args:
+            exp: Specify the experiment to use. If not given
+                the default one is used
+            station: The QCoDeS station to snapshot
+        """
+        # TODO: The sequence of actions probably matters A LOT
+        self.exp = exp
+        self.exitactions = OrderedDict()  # key: function, item: args
+        self.enteractions = OrderedDict()  # key: function, item: args
+        self.experiment = exp
+        self.station = station
+
+    def addBeforeRun(self, func: Callable, args: tuple) -> None:
+        """
+        Add an action to be performed before the measurement.
+
+        Args:
+            func: Function to be performed
+            args: The arguments to said function
+        """
+        # some tentative cheap checking
+        nargs = len(signature(func).parameters)
+        if len(args) != nargs:
+            raise ValueError('Mismatch between function call signature and '
+                             'the provided arguments.')
+
+        self.enteractions[func] = args
+
+    def addAfterRun(self, func: Callable, args: tuple) -> None:
+        """
+        Add an action to be performed after the measurement.
+
+        Args:
+            func: Function to be performed
+            args: The arguments to said function
+        """
+        # some tentative cheap checking
+        nargs = len(signature(func).parameters)
+        if len(args) != nargs:
+            raise ValueError('Mismatch between function call signature and '
+                             'the provided arguments.')
+
+        self.exitactions[func] = args
+
+    def run(self):
+        """
+        Returns the context manager for the experimental run
+        """
+        return Runner(self.enteractions, self.exitactions,
+                      self.experiment)
