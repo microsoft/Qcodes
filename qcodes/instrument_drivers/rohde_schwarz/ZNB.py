@@ -59,7 +59,7 @@ class FrequencySweepMagPhase(MultiParameter):
 
     def get(self):
         if not self._instrument._parent.rf_power():
-            log.warning("RF output is off")
+            log.warning("RF output is off when getting mag phase")
         # it is possible that the instrument and qcodes disagree about
         # which parameter is measured on this channel
         instrument_parameter = self._instrument.vna_parameter()
@@ -132,7 +132,7 @@ class FrequencySweep(ArrayParameter):
 
     def get(self):
         if not self._instrument._parent.rf_power():
-            log.warning("RF output is off")
+            log.warning("RF output is off when getting mag")
         # it is possible that the instrument and qcodes disagree about
         # which parameter is measured on this channel
         instrument_parameter = self._instrument.vna_parameter()
@@ -226,6 +226,10 @@ class ZNBChannel(InstrumentChannel):
         self.add_parameter(name='npts',
                            get_cmd='SENS{}:SWE:POIN?'.format(n),
                            set_cmd=self._set_npts,
+                           get_parser=int)
+        self.add_parameter(name='status',
+                           get_cmd='CONF:CHAN{}:MEAS?'.format(n),
+                           set_cmd='CONF:CHAN{}:MEAS {{}}'.format(n),
                            get_parser=int)
         self.add_parameter(name='format',
                            get_cmd='CALC{}:FORM?'.format(n),
@@ -357,6 +361,14 @@ class ZNBChannel(InstrumentChannel):
         self.trace.set_sweep(start, stop, npts)
         self.trace_mag_phase.set_sweep(start, stop, npts)
 
+    def snapshot_base(self, update=False, params_to_skip_update=None):
+        if params_to_skip_update is None:
+            params_to_skip_update = ('trace', 'trace_mag_phase')
+        snap = super().snapshot_base(update=update,
+                                     params_to_skip_update=params_to_skip_update)
+        return snap
+
+
 
 class ZNB(VisaInstrument):
     """
@@ -449,8 +461,10 @@ class ZNB(VisaInstrument):
     def add_channel(self, vna_parameter: str):
         n_channels = len(self.channels)
         channel = ZNBChannel(self, vna_parameter, n_channels + 1)
-        self.write('SOUR{}:FREQ1:CONV:ARB:IFR 1, 1, 0, SWE'.format(n_channels + 1))
-        self.write('SOUR{}:FREQ2:CONV:ARB:IFR 1, 1, 0, SWE'.format(n_channels + 1))
+        self.write(
+            'SOUR{}:FREQ1:CONV:ARB:IFR 1, 1, 0, SWE'.format(n_channels + 1))
+        self.write(
+            'SOUR{}:FREQ2:CONV:ARB:IFR 1, 1, 0, SWE'.format(n_channels + 1))
         self.write('SOUR{}:POW1:OFFS 0, CPAD'.format(n_channels + 1))
         self.write('SOUR{}:POW2:OFFS 0, CPAD'.format(n_channels + 1))
         self.write('SOUR{}:POW1:PERM OFF'.format(n_channels + 1))
@@ -467,7 +481,7 @@ class ZNB(VisaInstrument):
 
     def set_external_generator(self, address, gen=1, gen_name="ext gen 1",
                                driver="SGS100A", interface="VXI-11"):
-        self.write('SYST:COMM:RDEV:GEN{:.0f}:DEF "{}", "{}", "{}",  "{}"'.format(
+        self.write('SYST:COMM:RDEV:GEN{:.0f}:DEF "{}", "{}", "{}",  "{}", OFF, ON'.format(
             gen, gen_name, driver, interface, address))
 
     def get_external_generator_setup(self, num=1):
@@ -485,7 +499,7 @@ class ZNB(VisaInstrument):
     def add_spectroscopy_channel(self, generator_address,
                                  vna_parameter="B2G1SAM"):
         """
-        Addes a generator and uses it to generate a fixed frequency tone, the
+        Adds a generator and uses it to generate a fixed frequency tone, the
         response at this frequency is read out at port 2 which is also set to
         be fixed freq. Port 1 is set as the port for sweeping etc"""
         self.set_external_generator(generator_address)
@@ -498,6 +512,8 @@ class ZNB(VisaInstrument):
         self.write('SOUR{}:POW1:PERM ON'.format(chan_num))
         time.sleep(0.2)
         self.write('SOUR{}:POW:GEN1:STAT ON'.format(chan_num))
+        time.sleep(0.2)
+        self.write('ROSC EXT')
         self.add_parameter(
             'readout_freq',
             set_cmd=partial(self._set_readout_freq, chan_num),
@@ -510,6 +526,7 @@ class ZNB(VisaInstrument):
             get_cmd=partial(self._get_readout_pow, chan_num),
             get_parser=int,
             vals=vals.Numbers(-150, 25))
+
 
     def _set_readout_freq(self, chan_num, freq):
         self.write(
