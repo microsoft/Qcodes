@@ -7,7 +7,7 @@ from qcodes.instrument.parameter import _BaseParameter
 # we only support the types in VALUES type
 class ParamSpec():
     def __init__(self, name: str,
-                 type: str,
+                 paramtype: str,
                  label: str=None,
                  unit: str=None,
                  inferred_from: List[Union['ParamSpec', str]]=None,
@@ -22,7 +22,7 @@ class ParamSpec():
             depends_on: the parameters that this parameter depends on
         """
         self.name = name
-        self.type = type
+        self.type = paramtype
         self.label = '' if label is None else label
         self.unit = '' if unit is None else unit
 
@@ -59,11 +59,11 @@ class ParamSpec():
         return f"{self.name} ({self.type})"
 
 
-def param_spec(parameter: _BaseParameter, type: str) -> ParamSpec:
+def param_spec(parameter: _BaseParameter, paramtype: str) -> ParamSpec:
     """ Generates a ParamSpec from a qcodes parameter
 
     Args:
         - parameter: the qcodes parameter to make a spec
 
     """
-    return ParamSpec(parameter.name, type, **parameter.metadata)
+    return ParamSpec(parameter.name, paramtype, **parameter.metadata)
