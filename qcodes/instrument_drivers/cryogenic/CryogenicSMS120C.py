@@ -282,7 +282,19 @@ class CryogenicSMS120C(VisaInstrument):
     # Set magnet sweep direction : "+" for positive B, "-" for negative B
     def _set_polarity(self, val):
         # using standard write as read returns an error/is non-existent.
-        self.write('DIRECTION %s' % val)
+        if self._get_persistentMode() == False and abs(self._get_field()) <= 0.007:
+            self.write('DIRECTION %s' % val)
+            return True
+        elif self._get_persistentMode() == True:
+            log.error(
+                'Cannot switch polarity, magnet in persistent mode - please engage switch heater and go to zero field before changing sign.')
+            return False
+        elif abs(self._get_field()) > 0.007:
+            log.error('Recommended to switch sign only when field is at zero.')
+            return False
+        else:
+            log.error('Cannot switch polarity, check magnet.')
+            return False
 
     def _set_unit(self, val):        # Set unit to Tesla(1) or Amps(0),
         # Enables us to set units of Tesla
