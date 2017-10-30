@@ -347,6 +347,7 @@ class DataSet(Sized):
         len_before_add = length(self.conn, self.table_name)
         insert_many_values(self.conn, self.table_name, list(results[0].keys()),
                            values)
+        # TODO: should this not be made atomic?
         self.conn.commit()
         return len_before_add
 

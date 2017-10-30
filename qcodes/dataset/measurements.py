@@ -1,11 +1,86 @@
 import json
+import logging
+from time import monotonic
 from collections import OrderedDict
-from typing import Callable
+from typing import Callable, Union, Dict, Tuple, List
 from inspect import signature
+import numpy as np
 
 import qcodes as qc
-from qcodes import Station
+from qcodes import Station, Parameter
+from qcodes.instrument.parameter import ArrayParameter
 from qcodes.dataset.experiment_container import Experiment
+from qcodes.dataset.param_spec import ParamSpec
+from qcodes.dataset.data_set import DataSet
+
+log = logging.getLogger(__name__)
+
+
+class ParameterTypeError(Exception):
+    pass
+
+
+class DataSaver:
+    """
+    The class used byt the Runner context manager to handle the
+    datasaving to the database
+    """
+
+    def __init__(self, dataset: DataSet, write_period: float,
+                 known_parameters: List[str]) -> None:
+        self._dataset = dataset
+        self.write_period = write_period
+        self._known_parameters = known_parameters
+        self._results = []  # will be filled by addResult
+        self._last_save_time = monotonic()
+
+    def addResult(self,
+                  *res: Tuple[Union[Parameter, str],
+                              Union[str, int, float, np.ndarray]])-> None:
+        """
+        Add a result to the measurement results. Represents a measurement
+        point in the space of measurement parameters, e.g. in an experiment
+        varying two voltages and measuring two currents, a measurement point
+        is the four dimensional (v1, v2, c1, c2). The corresponding call
+        to this function would be (e.g.)
+        >> addResult((v1, 0.1), (v2, 0.2), (c1, 5), (c2, -2.1))
+
+        For better performance, this function does not immediately write to
+        the database, but keeps the results in memory. Writing happens every
+        `write_period` seconds and during the __exit__ method if this class.
+
+        Args:
+            res: a dictionary with keys that are parameter names and items
+                that are the corresponding values at this measurement point.
+
+        Raises:
+            ValueError: if a parameter name not registered in the parent
+                Measurement object is encountered.
+            ParameterTypeError: if a parameter is given a value not matching
+                its type.
+        """
+        res_dict = {}
+
+        for partial_result in res:
+            # TODO: Here we again use the str(), which may not be terrific
+            res_dict.update({str(partial_result[0]): partial_result[1]})
+
+        self._results.append(res_dict)
+        if monotonic() - self._last_save_time > self.write_period:
+            self.flushDataToDatabase()
+            self._last_save_time = monotonic()
+
+    def flushDataToDatabase(self):
+        """
+        Write the in-memory results to the database.
+        """
+        log.debug('Flushing to database')
+        try:
+            write_point = self._dataset.add_results(self._results)
+            log.debug(f'Succesfully wrote from index {write_point}')
+            self._results = []
+        except Exception as e:
+            log.warning(f'Could not commit to database; {e}')
 
 
 class Runner:
@@ -13,13 +88,25 @@ class Runner:
     Context manager for the measurement.
     Lives inside a Measurement and should never be instantiated
     outside a Measurement.
+
+    This context manager handles all the dirty business of writing data
+    to the database. Additionally, it may perform experiment bootstrapping
+    and clean-up after the measurement.
     """
-    def __init__(self, enteractions: OrderedDict, exitactions: OrderedDict,
-                 experiment: Experiment=None, station: Station=None) -> None:
+    def __init__(
+            self, enteractions: OrderedDict, exitactions: OrderedDict,
+            experiment: Experiment=None, station: Station=None,
+            write_period: float=None,
+            parameters: Dict[str, ParamSpec]=None) -> None:
+
         self.enteractions = enteractions
         self.exitactions = exitactions
         self.experiment = experiment
         self.station = station
+        self.parameters = parameters
+        # here we use 5 s as a sane default, but that value should perhaps
+        # be read from some config file
+        self.write_period = write_period if write_period is not None else 5
 
     def __enter__(self) -> None:
         # TODO: should user actions really precede the dataset?
@@ -43,9 +130,20 @@ class Runner:
 
         self.ds.add_metadata('snapshot', json.dumps(station.snapshot()))
 
-        return self.ds
+        for paramspec in self.parameters.values():
+            self.ds.add_parameter(paramspec)
+
+        print(f'Starting experimental run with id: {self.ds.id}')
+
+        self.datasaver = DataSaver(self.ds, self.write_period,
+                                   list(self.parameters.keys()))
+
+        return self.datasaver
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
+
+        self.datasaver.flushDataToDatabase()
+
         # perform the "teardown" events
         for func, args in self.exitactions.items():
             func(*args)
@@ -68,12 +166,73 @@ class Measurement:
                 the default one is used
             station: The QCoDeS station to snapshot
         """
-        # TODO: The sequence of actions probably matters A LOT
         self.exp = exp
-        self.exitactions = OrderedDict()  # key: function, item: args
-        self.enteractions = OrderedDict()  # key: function, item: args
+        self.exitactions = OrderedDict()  # key: function, value: args
+        self.enteractions = OrderedDict()  # key: function, value: args
         self.experiment = exp
         self.station = station
+        self.parameters = OrderedDict()  # key: name, value: ParamSpec
+
+    def registerParameter(
+            self, parameter: Parameter,
+            setpoints: Tuple[Parameter]=None,
+            basis: Tuple[Parameter]=None) -> None:
+        """
+        Add QCoDeS Parameter to the dataset produced by running this
+        measurement.
+
+        TODO: Does not handle metadata yet
+
+        Args:
+            parameter: The parameter to add
+            setpoints: The setpoints for this parameter. If this parameter
+                is a setpoint, it should be left blank
+            basis: The parameters that this parameter is inferred from. If
+                this parameter is not inferred from any other parameters,
+                this should be left blank.
+        """
+        # perhaps users will want a different name? But the name must be unique
+        # on a per-run basis
+        # we also use str(parameter) below, but perhaps is is better to have
+        # a more robust Parameter2String function?
+        name = str(parameter)
+        # the next one is tricky and deserves some thought
+        # TODO: How to handle types?
+        if isinstance(parameter, ArrayParameter):
+            paramtype = 'array'
+        else:
+            paramtype = 'number'
+        label = parameter.label
+        unit = parameter.unit
+
+        # now handle setpoints
+        depends_on = []
+        if setpoints:
+            for sp in setpoints:
+                if str(sp) not in list(self.parameters.keys()):
+                    raise ValueError(f'Unknown setpoint: {str(sp)}.'
+                                     ' Please register that parameter first.')
+                else:
+                    depends_on.append(str(sp))
+
+        # now handle inferred parameters
+        inf_from = []
+        if basis:
+            for inff in basis:
+                if str(inff) not in list(self.parameters.keys()):
+                    raise ValueError(f'Unknown basis parameter: {str(inff)}.'
+                                     ' Please register that parameter first.')
+                else:
+                    inf_from.append(str(inff))
+
+        paramspec = ParamSpec(name=name,
+                              paramtype=paramtype,
+                              label=label,
+                              unit=unit,
+                              inferred_from=inf_from,
+                              depends_on=depends_on)
+
+        self.parameters[str(parameter)] = paramspec
 
     def addBeforeRun(self, func: Callable, args: tuple) -> None:
         """
@@ -112,4 +271,5 @@ class Measurement:
         Returns the context manager for the experimental run
         """
         return Runner(self.enteractions, self.exitactions,
-                      self.experiment)
+                      self.experiment,
+                      parameters=self.parameters)
