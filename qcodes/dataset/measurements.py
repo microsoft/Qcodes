@@ -75,12 +75,17 @@ class DataSaver:
         Write the in-memory results to the database.
         """
         log.debug('Flushing to database')
-        try:
-            write_point = self._dataset.add_results(self._results)
-            log.debug(f'Succesfully wrote from index {write_point}')
-            self._results = []
-        except Exception as e:
-            log.warning(f'Could not commit to database; {e}')
+        if self._results != []:
+            try:
+                write_point = self._dataset.add_results(self._results)
+                log.debug(f'Succesfully wrote from index {write_point}')
+                self._results = []
+            except Exception as e:
+                log.warning(f'Could not commit to database; {e}')
+
+    @property
+    def id(self):
+        return self._dataset.id
 
 
 class Runner:
