@@ -177,6 +177,11 @@ class DacChannel(InstrumentChannel, DacReader):
         # Note we will use the older addresses to read the value from the dac rather than the newer
         # 'd' command for backwards compatibility
         self._volt_val = vals.Numbers(self.min_val, self.max_val)
+        self.add_parameter("fine_volt",
+                           get_cmd=self._get_fine_voltage,
+                           set_cmd=self._set_fine_voltage,
+                           label="Voltage", unit="V"
+                           )
         self.add_parameter("volt", get_cmd=partial(self._query_address, self._base_addr+9, 1),
                            get_parser=self._dac_code_to_v,
                            set_cmd=self._set_dac, set_parser=self._dac_v_to_code, vals=self._volt_val,
@@ -217,6 +222,35 @@ class DacChannel(InstrumentChannel, DacReader):
                                get_parser=self._dac_code_to_v,
                                set_cmd=partial(self._write_address, _INITIAL_ADDR[self._channel], versa_eeprom=True),
                                set_parser=self._dac_v_to_code, vals=vals.Numbers(self.min_val, self.max_val))
+    def _get_fine_voltage(self):
+        slot = self._parent
+        if slot.slot_mode.get_latest() not in ['Fine', 'FineCald']:
+            raise RuntimeError("Cannot get fine voltage unless slot in Fine mode")
+        if self._channel == 0:
+            fine_chan = 2
+        elif self._channel == 1:
+            fine_chan = 3
+        else:
+            raise RuntimeError("Fine mode only works for Chan 0 and 1")
+        return self.volt.get() + (slot.channels[fine_chan].volt.get()+10)/200
+
+    def _set_fine_voltage(self, voltage):
+        slot = self._parent
+        if slot.slot_mode.get_latest() not in ['Fine', 'FineCald']:
+            raise RuntimeError("Cannot get fine voltage unless slot in Fine mode")
+        if self._channel == 0:
+            fine_chan = 2
+        elif self._channel == 1:
+            fine_chan = 3
+        else:
+            raise RuntimeError("Fine mode only works for Chan 0 and 1")
+        coarse_round = round(voltage,2)
+        coarse_part = self._dac_code_to_v(self._dac_v_to_code(coarse_round-0.01))
+        
+        fine_part = voltage - coarse_part
+        fine_scaled = fine_part*200-10
+        self.volt.set(coarse_part)
+        slot.channels[fine_chan].volt.set(fine_scaled)
 
     def _ramp(self, val, rate, block=True):
         """
@@ -304,11 +338,11 @@ class DacSlot(InstrumentChannel, DacReader):
         self._VERSA_EEPROM_available = self._parent._VERSA_EEPROM_available
 
         # Create a list of channels in the slot
-        self.channels = ChannelList(self, "Slot_Channels", DacChannel)
+        channels = ChannelList(self, "Slot_Channels", DacChannel)
         for i in range(4):
-            self.channels.append(DacChannel(self, "Chan{}".format(i), i,
+            channels.append(DacChannel(self, "Chan{}".format(i), i,
                                             min_val=min_val, max_val=max_val))
-
+        self.add_submodule("channels", channels)
         # Set the slot mode. Valid modes are:
         #   Off: Channel outputs are disconnected from the input, grounded with 10MOhm.
         #   Fine: 2-channel mode. Channels 0 and 1 are output, use 2 and 3 for fine
@@ -327,7 +361,7 @@ class DacSlot(InstrumentChannel, DacReader):
                            val_mapping=slot_modes)
 
         # Enable all slots in coarse mode.
-        self.slot_mode.set("Coarse")
+        self.slot_mode.set("Fine")
 
     def write(self, cmd):
         """
@@ -394,7 +428,7 @@ class Decadac(VisaInstrument, DacReader):
         self._feature_detect()
 
         # Create channels
-        channels = ChannelList(self, "Channels", DacChannel, snapshotable=False)
+        channels = ChannelList(self, "Channels", DacChannel, snapshotable=True)
         slots = ChannelList(self, "Slots", DacSlot)
         for i in range(6):  # Create the 6 DAC slots
             slots.append(DacSlot(self, "Slot{}".format(i), i, min_val, max_val))
