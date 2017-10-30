@@ -40,7 +40,7 @@ class AcqVariablesParam(Parameter):
         self._save_val(value)
 
     def get(self):
-        return self._latest()['value']
+        return self._latest['value']
 
     def to_default(self):
         """
@@ -63,7 +63,7 @@ class AcqVariablesParam(Parameter):
         Return:
             True (if no errors raised when check_and_update_fn executed)
         """
-        val = self._latest()['value']
+        val = self._latest['value']
         self._check_and_update_instr(val, param_name=self.name)
         return True
 
