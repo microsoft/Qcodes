@@ -1,4 +1,5 @@
 from typing import List, Any, Tuple
+import logging
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,6 +10,7 @@ from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.sqlite_base import (get_dependencies, get_dependents,
                                         get_layout)
 
+log = logging.getLogger(__name__)
 DB = qc.config["core"]["db_location"]
 
 
@@ -41,13 +43,16 @@ def plot_by_id(run_id: int) -> None:
 
     conn = DataSet(DB).conn
 
+    log.debug('Plotting by ID, loading dataset')
     data = qc.load_by_id(run_id)
+    log.debug('Plotting by id, getting dependent variables')
     deps = get_dependents(conn, run_id)
 
     for dep in deps:
         recipe = get_dependencies(conn, dep)
 
         if len(recipe) == 1:  # 1D PLOTTING
+            log.debug('Plotting by id, doing a 1D plot')
             # get plotting info
 
             # THE MEASURED AXIS
@@ -67,7 +72,7 @@ def plot_by_id(run_id: int) -> None:
             first_axis_data = flatten_1D_data_for_plot(rawdata)
 
             # perform plotting
-            fig, ax = plt.subplots()
+            figure, ax = plt.subplots()
 
             # sort for plotting
             order = first_axis_data.argsort()
@@ -94,7 +99,10 @@ def plot_by_id(run_id: int) -> None:
                 unit = f'({second_axis_unit})'
             ax.set_ylabel(f'{lbl} {unit}')
 
+            return figure
+
         elif len(recipe) == 2:  # 2D PLOTTING
+            log.debug('Plotting by id, doing a 2D plot')
 
             heatmap_layout = get_layout(conn, dep)
             heatmap_name = heatmap_layout['name']
@@ -119,9 +127,11 @@ def plot_by_id(run_id: int) -> None:
             # From the setpoints, figure out which 2D plotter to use
             how_to_plot = {'grid': plot_on_a_plain_grid}
 
+            log.debug('Plotting by id, determining plottype')
             plottype = _plottype_from_setpoints(setpoints)
 
             if plottype in how_to_plot.keys():
+                log.debug('Plotting by id, doing the actual plot')
                 xpoints = flatten_1D_data_for_plot(setpoints[0])
                 ypoints = flatten_1D_data_for_plot(setpoints[1])
                 zpoints = flatten_1D_data_for_plot(heatmap_data)
@@ -150,6 +160,8 @@ def plot_by_id(run_id: int) -> None:
                 ax.set_ylabel(f'{lbl} {unit}')
 
                 # TODO: get a colorbar
+
+                return figure
 
             else:
                 raise NotImplementedError('2D data does not seem to be on a '
@@ -200,6 +212,7 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
                               np.array([yrow[-1] + dys[-1]])))
 
     # potentially slow method of filling in the data, should be optimised
+    log.debug('Sorting data onto grid for plotting')
     z_to_plot = np.full((ny, nx), np.nan)
     for (xp, yp, zp) in zip(x, y, z):
         xind = list(xrow).index(xp)
@@ -212,6 +225,8 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
     return fig
 
 
+# TODO: This function is very slow and should be rewritten but at least
+# only called once
 def _rows_from_datapoints(setpoints: np.ndarray) -> List[np.ndarray]:
     """
     Cast the (potentially) unordered setpoints into rows
@@ -223,7 +238,7 @@ def _rows_from_datapoints(setpoints: np.ndarray) -> List[np.ndarray]:
         setpoints: The raw setpoints as a one-dimensional array
 
     Returns:
-        A list of the rows
+        A list of the rowsg
     """
     checklist = list(np.sort(setpoints))
     rows = []
@@ -294,18 +309,18 @@ def _plottype_from_setpoints(setpoints: List[List[List[Any]]]) -> str:
     Returns:
         A string with the name of a plot routine, e.g. 'grid' or 'voronoi'
     """
-
+    log.debug('Point A')
     xpoints = flatten_1D_data_for_plot(setpoints[0])
     ypoints = flatten_1D_data_for_plot(setpoints[1])
-
+    log.debug('Point B')
     # Now check if this is a simple rectangular sweep,
     # possibly interrupted in the middle of one row
     x_check = _all_in_group_or_subgroup(xpoints)
     y_check = _all_in_group_or_subgroup(ypoints)
-
+    log.debug('Point C')
     xrows = _rows_from_datapoints(xpoints)
     yrows = _rows_from_datapoints(ypoints)
-
+    log.debug('Point D')
     x_check = x_check and (len(xrows[0]) == len(yrows))
     y_check = y_check and (len(yrows[0]) == len(xrows))
 
