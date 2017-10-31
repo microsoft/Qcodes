@@ -1,14 +1,6 @@
-# Cryomagnetics_SMS120C, Cryomagnetics_SMS120C magnet power supply driver
-
 """
-# Created on Fri 29 Nov 2017
-# @author: lyeoh
 
-# Last modified by lyeoh 27/10/2017
-# Special thanks to cjvandiepen, acorna, pteendebak.
-
----
-# Please refer to Cryogenic's magnet PS manual for further details and more functionality
+# Please refer to Cryogenic's Magnet Power Supply SMS120C manual for further details and functionality.
 # This magnet PS model is not SCPI compliant.
 # Note: Some commands return more than one line in the output,
         some are unidirectional, with no return (eg. 'write' rathern than 'ask').
@@ -364,7 +356,7 @@ class CryogenicSMS120C(VisaInstrument):
         if self._get_rampRate() <= self._current_ramp_limit:
             if state == 2:         # Quench
                 log.error(
-                    __name__ + ': Magnet quench detected - please check magnet status before ramping.')
+                    'Magnet quench detected - please check magnet status before ramping.')
                 return False
             elif state == 1:       # Ramping
                 if self._get_switchHeater() == 1:
@@ -372,7 +364,7 @@ class CryogenicSMS120C(VisaInstrument):
                     return True
                 else:
                     log.error(
-                        __name__ + ': Magnet in unusual state - ramping with switch heater off, please check magnet status before ramping.')
+                        'Magnet in unusual state - ramping with switch heater off, please check magnet status before ramping.')
                     return False
             elif state == 0:       # Holding
                 if (not self._get_persistentMode()):
@@ -382,11 +374,11 @@ class CryogenicSMS120C(VisaInstrument):
                     print('Magnet in persistent mode.')
                     return True
             log.error(
-                __name__ + ': Could not ramp, magnet in state: {}'.format(state))
+                'Could not ramp, magnet in state: {}'.format(state))
             return False
         else:
             log.warning(
-                __name__ + ': Could not ramp, ramp rate is over the set limit, please lower.')
+                'Could not ramp, ramp rate is over the set limit, please lower.')
             return False
 
     # Between any two commands, there are must be around 200ms waiting time.
