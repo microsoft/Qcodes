@@ -43,9 +43,7 @@ def plot_by_id(run_id: int) -> None:
 
     conn = DataSet(DB).conn
 
-    log.debug('Plotting by ID, loading dataset')
     data = qc.load_by_id(run_id)
-    log.debug('Plotting by id, getting dependent variables')
     deps = get_dependents(conn, run_id)
 
     for dep in deps:
@@ -240,13 +238,14 @@ def _rows_from_datapoints(setpoints: np.ndarray) -> List[np.ndarray]:
     Returns:
         A list of the rowsg
     """
-    checklist = list(np.sort(setpoints))
+
     rows = []
-    while len(checklist) > 0:
-        temp = np.unique(checklist)
+
+    while len(setpoints) > 0:
+        temp, inds = np.unique(setpoints, return_index=True)
         rows.append(temp)
-        for t in temp:
-            checklist.pop(checklist.index(t))
+        setpoints = np.delete(setpoints, inds)
+
     return rows
 
 
@@ -309,18 +308,18 @@ def _plottype_from_setpoints(setpoints: List[List[List[Any]]]) -> str:
     Returns:
         A string with the name of a plot routine, e.g. 'grid' or 'voronoi'
     """
-    log.debug('Point A')
+
     xpoints = flatten_1D_data_for_plot(setpoints[0])
     ypoints = flatten_1D_data_for_plot(setpoints[1])
-    log.debug('Point B')
+
     # Now check if this is a simple rectangular sweep,
     # possibly interrupted in the middle of one row
     x_check = _all_in_group_or_subgroup(xpoints)
     y_check = _all_in_group_or_subgroup(ypoints)
-    log.debug('Point C')
+
     xrows = _rows_from_datapoints(xpoints)
     yrows = _rows_from_datapoints(ypoints)
-    log.debug('Point D')
+
     x_check = x_check and (len(xrows[0]) == len(yrows))
     y_check = y_check and (len(yrows[0]) == len(xrows))
 
