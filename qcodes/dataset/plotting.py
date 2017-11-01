@@ -123,7 +123,10 @@ def plot_by_id(run_id: int) -> None:
             second_axis_unit = second_axis_layout['unit']
 
             # From the setpoints, figure out which 2D plotter to use
-            how_to_plot = {'grid': plot_on_a_plain_grid}
+            # TODO: The "decision tree" for what gets plotted how and how
+            # we check for that is still unfinished/not optimised
+            how_to_plot = {'grid': plot_on_a_plain_grid,
+                           'equidistant': plot_on_a_plain_grid}
 
             log.debug('Plotting by id, determining plottype')
             plottype = _plottype_from_setpoints(setpoints)
@@ -199,7 +202,7 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
 
     # we use a general edge calculator,
     # in the case of non-equidistantly spaced data
-    # TODO: is this in appropriate for a log ax?
+    # TODO: is this appropriate for a log ax?
     dxs = np.diff(xrow)/2
     dys = np.diff(yrow)/2
     x_edges = np.concatenate((np.array([xrow[0] - dxs[0]]),
@@ -223,8 +226,6 @@ def plot_on_a_plain_grid(x: np.ndarray, y: np.ndarray,
     return fig
 
 
-# TODO: This function is very slow and should be rewritten but at least
-# only called once
 def _rows_from_datapoints(setpoints: np.ndarray) -> List[np.ndarray]:
     """
     Cast the (potentially) unordered setpoints into rows
@@ -297,6 +298,33 @@ def _all_in_group_or_subgroup(setpoints: np.ndarray) -> bool:
     return aigos
 
 
+def _all_steps_multiples_of_min_step(rows: List[np.ndarray]) -> bool:
+    """
+    Are all steps integer multiples of the smallest step?
+    This is used in determining whether the setpoints correspond
+    to a regular grid
+
+    Args:
+        rows: the output of _rows_from_datapoints
+
+    Returns:
+        The answer to the question
+    """
+
+    steps = []
+    for row in rows:
+        # TODO: What is an appropriate precision?
+        steps += list(np.unique(np.diff(row).round(decimals=15)))
+
+    steps = np.unique((steps))
+    remainders = np.mod(steps[1:]/steps[0], 1)
+
+    # TODO: What are reasonable tolerances for allclose?
+    asmoms = bool(np.allclose(remainders, np.zeros_like(remainders)))
+
+    return asmoms
+
+
 def _plottype_from_setpoints(setpoints: List[List[List[Any]]]) -> str:
     """
     For a 2D plot, figure out what kind of visualisation we can use
@@ -308,6 +336,14 @@ def _plottype_from_setpoints(setpoints: List[List[List[Any]]]) -> str:
     Returns:
         A string with the name of a plot routine, e.g. 'grid' or 'voronoi'
     """
+    # We first check for being on a "simple" grid, which means that the data
+    # FILLS a (possibly non-equidistant) grid with at most a single rectangular
+    # hole in it
+    #
+    # Next we check whether the data can be put on an equidistant grid,
+    # but loosen the requirement that anything is filled
+    #
+    # Finally we just scatter (I think?)
 
     xpoints = flatten_1D_data_for_plot(setpoints[0])
     ypoints = flatten_1D_data_for_plot(setpoints[1])
@@ -323,5 +359,13 @@ def _plottype_from_setpoints(setpoints: List[List[List[Any]]]) -> str:
     x_check = x_check and (len(xrows[0]) == len(yrows))
     y_check = y_check and (len(yrows[0]) == len(xrows))
 
+    # this is the check that we are on a "simple" grid
     if y_check and x_check:
         return 'grid'
+
+    x_check = _all_steps_multiples_of_min_step(xrows)
+    y_check = _all_steps_multiples_of_min_step(yrows)
+
+    # this is the check that we are on an equidistant grid
+    if y_check and x_check:
+        return 'equidistant'
