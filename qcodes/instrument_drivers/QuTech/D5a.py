@@ -24,23 +24,33 @@ class D5a(Instrument):
 
     where N is the DAC number from 1 up to 16
 
-    Args:
-        name (str): name of the instrument.
-
-        spi_rack (SPI_rack): instance of the SPI_rack class as defined in
-            the spirack package. This class manages communication with the
-            individual modules.
-
-        module (int): module number as set on the hardware.
-
-        dac_delay (float): TODO
     """
 
-    def __init__(self, name, spi_rack, module, dac_delay=0.1, **kwargs):
+    def __init__(self, name, spi_rack, module, inter_delay=0.1, dac_step=10e-3,
+                 reset_voltages=False, mV=False, **kwargs):
+        """ Create instrument for the D5a module.
+        
+        The D5a module works with volts as units. For backward compatibility
+        there is the option to allow mV for the dacX parameters.
+        
+        Args:
+            name (str): name of the instrument.
+    
+            spi_rack (SPI_rack): instance of the SPI_rack class as defined in
+                the spirack package. This class manages communication with the
+                individual modules.
+    
+            module (int): module number as set on the hardware.    
+            inter_delay (float): time in seconds, passed to dac parameters of the object
+            dac_step (float): max step size (V or mV), passed to dac parameters of the object
+            reset_voltages (bool): passed to D5a_module constructor    
+            mV (bool): if True, then 
+        """
         super().__init__(name, **kwargs)
 
-        self.d5a = D5a_module(spi_rack, module)
-
+        self.d5a = D5a_module(spi_rack, module, reset_voltages=reset_voltages)
+        self._mV = mV
+        
         self._span_set_map = {
             '4v uni': 0,
             '4v bi': 2,
@@ -51,20 +61,29 @@ class D5a(Instrument):
 
         self.add_function('set_dacs_zero', call_cmd=self._set_dacs_zero)
 
+        if self._mV:
+            self._gain = 1e3
+            unit = 'mV'
+        else:
+            self._gain = 1
+            unit = 'V'
+
         for i in range(16):
             validator = self._get_validator(i)
 
+                
             self.add_parameter('dac{}'.format(i + 1),
                                label='DAC {}'.format(i + 1),
                                get_cmd=partial(self._get_dac, i),
-                               set_cmd=partial(self.d5a.set_voltage, i),
-                               units='V',
-                               validator=validator,
-                               dac_delay=dac_delay)
+                               set_cmd=partial(self._set_dac, i),
+                               unit=unit,
+                               vals=validator,
+                               step=dac_step,
+                               inter_delay=inter_delay)
 
             self.add_parameter('stepsize{}'.format(i + 1),
                                get_cmd=partial(self.d5a.get_stepsize, i),
-                               units='V')
+                               unit='V')
 
             self.add_parameter('span{}'.format(i + 1),
                                get_cmd=partial(self._get_span, i),
@@ -75,8 +94,11 @@ class D5a(Instrument):
         for i in range(16):
             self._set_dac(i, 0.0)
 
+    def _set_dac(self, dac, value):
+        return self.d5a.set_voltage(dac, value/ self._gain)
+
     def _get_dac(self, dac):
-        return self.d5a.voltages[dac]
+        return self._gain * self.d5a.voltages[dac]
 
     def _get_span(self, dac):
         return self._span_get_map[self.d5a.span[dac]]
@@ -87,11 +109,11 @@ class D5a(Instrument):
     def _get_validator(self, dac):
         span = self.d5a.span[dac]
         if span == D5a_module.range_2V_bi:
-            validator = Numbers(-1, 1)
+            validator = Numbers(-1*self._gain, 1*self._gain)
         elif span == D5a_module.range_4V_bi:
-            validator = Numbers(-2, 2)
+            validator = Numbers(-2*self._gain, 2*self._gain)
         elif span == D5a_module.range_4V_uni:
-            validator = Numbers(0, 4)
+            validator = Numbers(0, 4*self._gain)
         else:
             msg = 'The found DAC span of {} does not correspond to a known one'
             raise Exception(msg.format(span))
