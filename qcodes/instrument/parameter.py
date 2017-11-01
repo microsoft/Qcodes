@@ -237,7 +237,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
         return named_repr(self)
 
     def __call__(self, *args, **kwargs):
-        if len(args) == 0:
+        if not args and not kwargs:
             if hasattr(self, 'get'):
                 return self.get()
             else:
