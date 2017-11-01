@@ -49,7 +49,10 @@ def _get_metadata(*parameters) -> Dict[float, list]:
         # convert to string
         meta['value'] = str(meta['value'])
         if meta["ts"] is not None:
-            meta["ts"] = time.mktime(meta["ts"].timetuple())
+            try:
+                meta["ts"] = time.mktime(meta["ts"].timetuple())
+            except Exception:
+                pass
         meta["name"] = parameter.label or parameter.name
         meta["unit"] = parameter.unit
         # find the base instrument in case this is a channel parameter
