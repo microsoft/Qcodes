@@ -5,8 +5,6 @@ from qcodes import ChannelList, InstrumentChannel
 from qcodes.utils import validators as vals
 from cmath import phase
 import numpy as np
-import time
-from functools import partial
 from qcodes import MultiParameter, ArrayParameter
 
 log = logging.getLogger(__name__)
