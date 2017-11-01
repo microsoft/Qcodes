@@ -177,10 +177,14 @@ def ramp_voltages(target_voltage=None, gate_names=None, **kwargs):
     parameters = {param.name: param for param in voltage_parameters}
 
     if target_voltage is not None:
-        if gate_names is None:
-            gate_names = parameters.keys()
-        target_voltages = {gate_name: target_voltage
-                           for gate_name in gate_names}
+        if isinstance(target_voltage, dict):
+            # Accidentally passed kwargs dict without splat
+            kwargs = target_voltage
+        else:
+            if gate_names is None:
+                gate_names = parameters.keys()
+            target_voltages = {gate_name: target_voltage
+                               for gate_name in gate_names}
     elif kwargs:
         gate_names = kwargs.keys()
         target_voltages = {gate_name: val for gate_name, val in kwargs.items()}
