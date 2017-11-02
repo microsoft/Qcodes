@@ -228,12 +228,10 @@ class InstrumentBase(Metadatable, DelegateAttributes):
             name = snapshot['parameters'][par]['name']
             msg = '{0:<{1}}:'.format(name, par_field_len)
 
-            # in case of e.g. ArrayParameters, the parameter may not have
+            # in case of e.g. ArrayParameters, that usually have
+            # snapshot_value == False, the parameter may not have
             # a value in the snapshot
-            try:
-                val = snapshot['parameters'][par]['value']
-            except KeyError:
-                val = 'Not available'
+            val = snapshot['parameters'][par].get('value', 'Not available')
 
             unit = snapshot['parameters'][par].get('unit', None)
             if unit is None:
