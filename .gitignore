@@ -89,3 +89,6 @@ venv/
 docs/examples/data/*
 
 .idea/
+
+# Mac files
+.DS_Store
