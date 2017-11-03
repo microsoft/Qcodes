@@ -5,6 +5,8 @@ from collections import namedtuple
 from unittest import TestCase
 from time import sleep
 
+import numpy as np
+
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter,
@@ -249,6 +251,35 @@ class TestParameter(TestCase):
         sleep(0.2)
         self.assertEqual(p.get_latest(), 21)
         self.assertEqual(p.get_values, [21])
+
+
+class TestValsandParseParameter(TestCase):
+
+    def setUp(self):
+        self.parameter = Parameter(name='foobar',
+                                   set_cmd=None, get_cmd=None,
+                                   set_parser=lambda x: int(round(x)),
+                                   vals=vals.PermissiveInts(0))
+
+    def test_setting_int_with_float(self):
+
+        a = 0
+        b = 10
+        values = np.linspace(a, b, b-a+1)
+        for i in values:
+            self.parameter(i)
+            a = self.parameter()
+            assert isinstance(a, int)
+
+    def test_setting_int_with_float_not_close(self):
+
+        a = 0
+        b = 10
+        values = np.linspace(a, b, b-a+2)
+        for i in values[1:-2]:
+            with self.assertRaises(TypeError):
+                self.parameter(i)
+
 
 class SimpleArrayParam(ArrayParameter):
     def __init__(self, return_val, *args, **kwargs):

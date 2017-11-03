@@ -126,7 +126,8 @@ class HDF5Format(Formatter):
         return data_set._h5_base_group
 
     def write(self, data_set, io_manager=None, location=None,
-              force_write=False, flush=True, write_metadata=True):
+              force_write=False, flush=True, write_metadata=True,
+              only_complete=False):
         """
         Writes a data_set to an hdf5 file.
 
@@ -137,12 +138,16 @@ class HDF5Format(Formatter):
             force_write (bool): if True creates a new file to write to
             flush (bool) : whether to flush after writing, can be disabled
                 for testing or performance reasons
+            only_complete (bool): Not used by this formatter, but must be
+                included in the call signature to avoid an "unexpected
+                keyword argument" TypeError.
 
         N.B. It is recommended to close the file after writing, this can be
         done by calling ``HDF5Format.close_file(data_set)`` or
-        ``data_set.finalize()`` if the data_set formatter is set to an hdf5 formatter.
-        Note that this is not required if the dataset is created from a Loop as this
-        includes a data_set.finalize() statement.
+        ``data_set.finalize()`` if the data_set formatter is set to an
+        hdf5 formatter.  Note that this is not required if the dataset
+        is created from a Loop as this includes a data_set.finalize()
+        statement.
 
         The write function consists of two parts, writing DataArrays and
         writing metadata.
