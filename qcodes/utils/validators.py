@@ -87,7 +87,7 @@ class Nothing(Validator):
             self.reason = "Nothing Validator"
 
     def validate(self, value, context=''):
-        raise TypeError("{}; {}".format(self.reason, context))
+        raise RuntimeError("{}; {}".format(self.reason, context))
 
     def __repr__(self):
         return '<Nothing({})>'.format(self.reason)
