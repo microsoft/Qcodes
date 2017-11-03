@@ -1,12 +1,11 @@
 from qcodes import VisaInstrument, InstrumentChannel
-from qcodes.instrument.parameter import ManualParameter
 from qcodes.utils.validators import Numbers, Bool, Enum, Nothing, Ints
 
 def float_int(val):
     """
     Parses int that are returned in exponentiated form (i.e. 1E0)
     """
-    return int(float(val))
+    return round(float(val))
 
 class GS200Exception(Exception):
     pass
@@ -52,18 +51,18 @@ class GS200_Monitor(InstrumentChannel):
                                set_cmd=':SENS:NPLC {}',
                                set_parser=int,
                                get_cmd=':SENS:NPLC?',
-                               get_parser=float_int) 
+                               get_parser=float_int)
             self.add_parameter('delay',
                                label='Measurement Delay',
                                unit='ms',
                                vals=Ints(0, 999999),
-                               set_cmd=':SENS:DEL {}', 
+                               set_cmd=':SENS:DEL {}',
                                set_parser=int,
                                get_cmd=':SENS:DEL?',
                                get_parser=float_int)
             self.add_parameter('trigger',
                                label='Trigger Source',
-                               set_cmd=':SENS:TRIG {}', 
+                               set_cmd=':SENS:TRIG {}',
                                get_cmd=':SENS:TRIG?',
                                val_mapping={
                                     'READY': 'READ',
@@ -78,7 +77,7 @@ class GS200_Monitor(InstrumentChannel):
                                label='Measurement Interal',
                                unit='s',
                                vals=Numbers(0.1, 3600),
-                               set_cmd=':SENS:INT {}', 
+                               set_cmd=':SENS:INT {}',
                                set_parser=float,
                                get_cmd=':SENS:INT?',
                                get_parser=float)
@@ -105,7 +104,7 @@ class GS200_Monitor(InstrumentChannel):
         if not self._enabled or not self._output:
             # Check if the output is on
             self._output = self._output or self._parent.output.get() == 'on'
-            
+
             if self._parent.auto_range.get() or (self._unit == 'VOLT' and self._range < 1):
                 # Measurements will not work with autorange, or when range is <1V
                 self._enabled = False
@@ -185,7 +184,7 @@ class GS200(VisaInstrument):
                            get_cmd=lambda: self._auto_range,
                            vals=Bool())
 
-        # Note: Get and set for voltage/current will be updated by once 
+        # Note: Get and set for voltage/current will be updated by once
         # range and mode are known
         self.add_parameter('voltage',
                            label='Voltage',
