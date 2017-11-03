@@ -21,6 +21,7 @@ class S5i(Instrument):
 
         module (int): module number as set on the hardware.
     """
+
     def __init__(self, name, spi_rack, module, **kwargs):
         super().__init__(name, **kwargs)
 
