@@ -21,7 +21,7 @@ class GettableParam(Parameter):
         super().__init__(*args, **kwargs)
         self._get_count = 0
 
-    def get(self):
+    def get_raw(self):
         self._get_count += 1
         self._save_val(42)
         return 42
@@ -287,7 +287,7 @@ class SimpleArrayParam(ArrayParameter):
         self._get_count = 0
         super().__init__(*args, **kwargs)
 
-    def get(self):
+    def get_raw(self):
         self._get_count += 1
         self._save_val(self._return_val)
         return self._return_val
@@ -295,7 +295,7 @@ class SimpleArrayParam(ArrayParameter):
 
 class SettableArray(SimpleArrayParam):
     # this is not allowed - just created to raise an error in the test below
-    def set(self, v):
+    def set_raw(self, v):
         self.v = v
 
 
@@ -418,7 +418,7 @@ class SimpleMultiParam(MultiParameter):
         self._get_count = 0
         super().__init__(*args, **kwargs)
 
-    def get(self):
+    def get_raw(self):
         self._get_count += 1
         self._save_val(self._return_val)
         return self._return_val
@@ -427,7 +427,7 @@ class SimpleMultiParam(MultiParameter):
 class SettableMulti(SimpleMultiParam):
     # this is not fully suported - just created to raise a warning in the test below.
     # We test that the warning is raised
-    def set(self, v):
+    def set_raw(self, v):
         print("Calling set")
         self.v = v
 
