@@ -44,7 +44,7 @@ class D5a(Instrument):
             inter_delay (float): time in seconds, passed to dac parameters of the object
             dac_step (float): max step size (V or mV), passed to dac parameters of the object
             reset_voltages (bool): passed to D5a_module constructor    
-            mV (bool): if True, then 
+            mV (bool): if True, then use mV as units in the dac parameters
         """
         super().__init__(name, **kwargs)
 
