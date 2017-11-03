@@ -57,7 +57,7 @@ import logging
 import os
 import collections
 import warnings
-from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, Dict, Any, Sized
+from typing import Optional, Sequence, TYPE_CHECKING, Union, Callable, List, Dict, Any, Sized, cast
 from functools import partial, wraps
 import numpy
 
@@ -147,6 +147,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
         metadata (Optional[dict]): extra information to include with the
             JSON snapshot of the parameter
     """
+    get_raw = None # type: Optional[Callable]
+    set_raw = None  # type: Optional[Callable]
 
     def __init__(self, name: str,
                  instrument: Optional['Instrument'],
@@ -201,17 +203,15 @@ class _BaseParameter(Metadatable, DeferredOperations):
         self._latest = {'value': None, 'ts': None, 'raw_value': None}
         self.get_latest = GetLatest(self, max_val_age=max_val_age)
 
-        if hasattr(self, 'get_raw'):
-            self.get = self._wrap_get(self.get_raw) # type: ignore
-            # due to https://github.com/python/mypy/issues/1424
+        if hasattr(self, 'get_raw') and self.get_raw is not None:
+            self.get = self._wrap_get(self.get_raw)
         elif hasattr(self, 'get'):
             warnings.warn('Wrapping get method, original get method will not '
                           'be directly accessible. It is recommended to '
                           'define get_raw in your subclass instead.' )
             self.get = self._wrap_get(self.get)
-        if hasattr(self, 'set_raw'):
-            self.set = self._wrap_set(self.set_raw) # type: ignore
-            # due to https://github.com/python/mypy/issues/1424
+        if hasattr(self, 'set_raw') and self.set_raw is not None:
+            self.set = self._wrap_set(self.set_raw)
         elif hasattr(self, 'set'):
             warnings.warn('Wrapping set method, original set method will not '
                           'be directly accessible. It is recommended to '
