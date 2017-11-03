@@ -12,6 +12,15 @@ class GS200Exception(Exception):
     pass
 
 class GS200_Monitor(InstrumentChannel):
+    """
+    Monitor part of the GS200. This is only enabled if it is
+    installed in the GS200 (it is an optional extra).
+
+    The units will be automatically updated as required.
+
+    To measure:
+    `GS200.measure.measure()`
+    """
     def __init__(self, parent, name, present):
         super().__init__(parent, name)
 
@@ -78,12 +87,15 @@ class GS200_Monitor(InstrumentChannel):
             self.add_function('off', call_cmd=self.off)
 
     def off(self):
+        """Turn measurement off"""
         self.write(':SENS 0')
         self._enabled = False
     def on(self):
+        """Turn measurement on"""
         self.write(':SENS 1')
         self._enabled = True
     def state(self):
+        """Check measurement state"""
         state = int(self.ask(':SENS?'))
         self._enabled = bool(state)
         return state
@@ -250,19 +262,23 @@ class GS200(VisaInstrument):
         self.source_mode.get()
 
     def on(self):
+        """Turn output on"""
         self.write('OUTPUT 1')
         self.measure._output = True
 
     def off(self):
+        """Turn output off"""
         self.write('OUTPUT 0')
         self.measure._output = False
 
     def state(self):
+        """Check state"""
         state = int(self.ask('OUTPUT?'))
         self.measure._output = bool(state)
         return state
 
     def _update_vals(self, source_mode=None, source_range=None):
+        """Update validators/units as source mode/range changes"""
         # Update source mode
         if source_mode is None:
             source_mode = self.ask(":SOUR:FUNC?")
@@ -305,6 +321,7 @@ class GS200(VisaInstrument):
             self.measure._update_measurement_enabled(source_mode, source_range, False)
 
     def _set_auto_range(self, val):
+        """Change commands when autoranging"""
         # Store new autorange setting
         self._auto_range = val
         # Update validators
@@ -314,10 +331,12 @@ class GS200(VisaInstrument):
             self.measure._enabled &= val
 
     def _get_source_mode(self, val):
+        """Get output (VOLT/CURR) mode and update validators"""
         self._update_vals(source_mode=val)
         return val
 
     def _set_source_mode(self, val):
+        """Set output (VOLT/CURR) mode and update validators"""
         # Cannot set source mode when the output is on
         if self.output.get() == 'on':
             raise GS200Exception("Cannot switch mode while source is on")
@@ -327,6 +346,7 @@ class GS200(VisaInstrument):
         self._update_vals(source_mode=val)
 
     def _getset_range(self, val):
+        """Update range and validators"""
         val = float(val)
 
         # Check appropriate range depending on source mode
