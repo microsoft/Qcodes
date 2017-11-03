@@ -183,7 +183,7 @@ class ZNBChannel(InstrumentChannel):
                            unit='dBm',
                            get_cmd='SOUR{}:POW?'.format(n),
                            set_cmd='SOUR{}:POW {{:.4f}}'.format(n),
-                           get_parser=int,
+                           get_parser=lambda x: int(round(float(x))),
                            vals=vals.Numbers(-150, 25))
         self.add_parameter(name='bandwidth',
                            label='Bandwidth',
@@ -198,7 +198,7 @@ class ZNBChannel(InstrumentChannel):
                            get_cmd='SENS{}:AVER:COUN?'.format(n),
                            set_cmd='SENS{}:AVER:COUN {{:.4f}}'.format(n),
                            get_parser=int,
-                           vals=vals.Numbers(1, 5000))
+                           vals=vals.Ints(1, 5000))
         self.add_parameter(name='start',
                            get_cmd='SENS{}:FREQ:START?'.format(n),
                            set_cmd=self._set_start,
