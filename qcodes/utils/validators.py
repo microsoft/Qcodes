@@ -1,4 +1,6 @@
 import math
+from typing import Union
+
 import numpy as np
 
 BIGSTRING = 1000000000
@@ -217,6 +219,7 @@ class Ints(Validator):
         maxv = self._max_value if self._max_value < BIGINT else None
         return '<Ints{}>'.format(range_str(minv, maxv, 'v'))
 
+
 class PermissiveInts(Ints):
     """
     requires an integer or a float close to an integer
@@ -280,10 +283,11 @@ class OnOff(Validator):
 
 class Multiples(Ints):
     """
-    A validator that checks if a value is an integer multiple of a fixed devisor
-    This class extends validators.Ints such that the value is also checked for
-    being integer between an optional min_value and max_value. Furthermore this
-    validator checks that the value is an integer multiple of an fixed, integer
+    A validator that checks if a value is an integer multiple of a
+    fixed divisor. This class extends validators.Ints such that the
+    value is also checked for being integer between an optional
+    min_value and max_value. Furthermore this validator checks that
+    the value is an integer multiple of an fixed, integer
     divisor. (i.e. value % divisor == 0)
     Args:
         divisor (integer), the value need the be a multiple of this divisor
@@ -306,6 +310,43 @@ class Multiples(Ints):
 
     def __repr__(self):
         return super().__repr__()[:-1] + ', Multiples of {}>'.format(self._divisor)
+
+
+class PermissiveMultiples(Validator):
+    """
+    A validator that checks whether a value is an integer multiple
+    of a fixed divisor (to within some precision). If both value and
+    divisor are integers, the (exact) Multiples validator is used.
+
+    Args:
+        divisor: The number that the validated value should be an integer
+            multiple of.
+        precision: The maximally allowed value for
+            abs(abs((value % divisor)/divisor) - 1)
+    """
+
+    def __init__(self, divisor: Union[float, int, np.floating],
+                 precision: float=1e-5) -> None:
+        if divisor == 0:
+            raise ValueError('Can not meaningfully check for multiples of'
+                             ' zero.')
+        self.divisor = divisor
+        self.precision = precision
+        self._numval = Numbers()
+        if isinstance(divisor, int):
+            self._mulval = Multiples(divisor)
+        else:
+            self._mulval = None
+
+    def validate(self, value: Union[float, int, np.floating]) -> None:
+        self._numval.validate(value)
+        if self._mulval and isinstance(value, int):
+            self._mulval(value)
+        else:
+            remainder = abs(abs((value % self.divisor)/self.divisor) - 1)
+            if remainder > self.precision:
+                raise ValueError('{} is not (close to being) '.format(value) +
+                                 'a multiple of {}.'.format(self.divisor))
 
 
 class MultiType(Validator):
