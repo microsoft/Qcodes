@@ -1,6 +1,6 @@
 from time import time
 from functools import partial
-from qcodes import VisaInstrument, InstrumentChannel, ChannelList, ManualParameter
+from qcodes import VisaInstrument, InstrumentChannel, ChannelList
 from qcodes.utils import validators as vals
 
 
@@ -199,9 +199,9 @@ class DacChannel(InstrumentChannel, DacReader):
 
         # Manual parameters to control whether DAC channels should ramp to voltages or jump
         self._ramp_val = vals.Numbers(0, 10)
-        self.add_parameter("enable_ramp", parameter_class=ManualParameter, initial_value=False,
+        self.add_parameter("enable_ramp", get_cmd=None, set_cmd=None, initial_value=False,
                            vals=vals.Bool())
-        self.add_parameter("ramp_rate", parameter_class=ManualParameter, initial_value=0.1,
+        self.add_parameter("ramp_rate", get_cmd=None, set_cmd=None, initial_value=0.1,
                            vals=self._ramp_val, unit="V/s")
 
         # Add ramp function to the list of functions
@@ -292,6 +292,7 @@ class DacSlot(InstrumentChannel, DacReader):
     A single DAC Slot of the DECADAC
     """
     _SLOT_VAL = vals.Ints(0, 5)
+    SLOT_MODE_DEFAULT = "Coarse"
 
     def __init__(self, parent, name, slot, min_val=-5, max_val=5):
         super().__init__(parent, name)
@@ -304,11 +305,11 @@ class DacSlot(InstrumentChannel, DacReader):
         self._VERSA_EEPROM_available = self._parent._VERSA_EEPROM_available
 
         # Create a list of channels in the slot
-        self.channels = ChannelList(self, "Slot_Channels", DacChannel)
+        channels = ChannelList(self, "Slot_Channels", DacChannel)
         for i in range(4):
-            self.channels.append(DacChannel(self, "Chan{}".format(i), i,
-                                            min_val=min_val, max_val=max_val))
-
+            channels.append(DacChannel(self, "Chan{}".format(i), i,
+                                       min_val=min_val, max_val=max_val))
+        self.add_submodule("channels", channels)
         # Set the slot mode. Valid modes are:
         #   Off: Channel outputs are disconnected from the input, grounded with 10MOhm.
         #   Fine: 2-channel mode. Channels 0 and 1 are output, use 2 and 3 for fine
@@ -327,7 +328,7 @@ class DacSlot(InstrumentChannel, DacReader):
                            val_mapping=slot_modes)
 
         # Enable all slots in coarse mode.
-        self.slot_mode.set("Coarse")
+        self.slot_mode.set(DacSlot.SLOT_MODE_DEFAULT)
 
     def write(self, cmd):
         """

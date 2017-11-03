@@ -17,7 +17,6 @@ import ctypes as ct
 from functools import partial
 from qcodes.utils.validators import Enum, Numbers, Anything
 from qcodes.instrument.base import Instrument
-from qcodes.instrument.parameter import ManualParameter
 try:
     import pyspcm
 except ImportError:
@@ -83,7 +82,7 @@ class M4i(Instrument):
         # add parameters for getting
         self.add_parameter('card_id',
                            label='card id',
-                           parameter_class=ManualParameter,
+                           get_cmd=None, set_cmd=None,
                            initial_value=cardid,
                            vals=Anything(),
                            docstring='The card ID')

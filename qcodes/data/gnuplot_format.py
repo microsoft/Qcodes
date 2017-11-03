@@ -2,10 +2,14 @@ import numpy as np
 import re
 import math
 import json
+import logging
 
 from qcodes.utils.helpers import deep_update, NumpyJSONEncoder
 from .data_array import DataArray
 from .format import Formatter
+
+
+log = logging.getLogger(__name__)
 
 
 class GNUPlotFormat(Formatter):
@@ -67,7 +71,7 @@ class GNUPlotFormat(Formatter):
     """
 
     def __init__(self, extension='dat', terminator='\n', separator='\t',
-                 comment='# ', number_format='g', metadata_file=None):
+                 comment='# ', number_format='.15g', metadata_file=None):
         self.metadata_file = metadata_file or 'snapshot.json'
         # file extension: accept either with or without leading dot
         self.extension = '.' + extension.lstrip('.')
@@ -239,7 +243,8 @@ class GNUPlotFormat(Formatter):
             parts = re.split('"\s+"', labelstr[1:-1])
             return [l.replace('\\"', '"').replace('\\\\', '\\') for l in parts]
 
-    def write(self, data_set, io_manager, location, force_write=False, write_metadata=True):
+    def write(self, data_set, io_manager, location, force_write=False,
+              write_metadata=True, only_complete=True):
         """
         Write updates in this DataSet to storage.
 
@@ -249,6 +254,11 @@ class GNUPlotFormat(Formatter):
             data_set (DataSet): the data we're storing
             io_manager (io_manager): the base location to write to
             location (str): the file location within io_manager
+            only_complete (bool): passed to match_save_range, answers the
+                following question: Should we write all available new data,
+                or only complete rows? Is used to make sure that everything
+                gets written when the DataSet is finalised, even if some
+                dataarrays are strange (like, full of nans)
         """
         arrays = data_set.arrays
 
@@ -257,16 +267,20 @@ class GNUPlotFormat(Formatter):
         existing_files = set(io_manager.list(location))
         written_files = set()
 
-        # Every group gets it's own datafile
+        # Every group gets its own datafile
         for group in groups:
+            log.debug('Attempting to write the following '
+                      'group: {}'.format(group))
             fn = io_manager.join(location, group.name + self.extension)
 
             written_files.add(fn)
 
             file_exists = fn in existing_files
-            save_range = self.match_save_range(group, file_exists)
+            save_range = self.match_save_range(group, file_exists,
+                                               only_complete=only_complete)
 
             if save_range is None:
+                log.debug('Cannot match save range, skipping this group.')
                 continue
 
             overwrite = save_range[0] == 0 or force_write
@@ -276,6 +290,7 @@ class GNUPlotFormat(Formatter):
             with io_manager.open(fn, open_mode) as f:
                 if overwrite:
                     f.write(self._make_header(group))
+                    log.debug('Wrote header to file')
 
                 for i in range(save_range[0], save_range[1] + 1):
                     indices = np.unravel_index(i, shape)
@@ -291,7 +306,7 @@ class GNUPlotFormat(Formatter):
 
                     one_point = self._data_point(group, indices)
                     f.write(self.separator.join(one_point) + self.terminator)
-
+                    log.debug('Wrote to file')
             # now that we've saved the data, mark it as such in the data.
             # we mark the data arrays and the inner setpoint array. Outer
             # setpoint arrays have different dimension (so would need a

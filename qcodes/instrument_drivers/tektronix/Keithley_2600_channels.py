@@ -1,0 +1,443 @@
+import logging
+import struct
+import numpy as np
+from typing import List, Dict
+
+import qcodes as qc
+from qcodes import VisaInstrument, DataSet
+from qcodes.instrument.channel import InstrumentChannel
+from qcodes.instrument.base import Instrument
+from qcodes.instrument.parameter import ArrayParameter
+import qcodes.utils.validators as vals
+
+
+log = logging.getLogger(__name__)
+
+
+class LuaSweepParameter(ArrayParameter):
+    """
+    Parameter class to hold the data from a
+    deployed Lua script sweep.
+    """
+
+    def __init__(self, name: str, instrument: Instrument) -> None:
+
+        super().__init__(name=name,
+                         shape=(1,),
+                         docstring='Holds a sweep')
+
+        self._instrument = instrument
+
+    def prepareSweep(self, start: float, stop: float, steps: int,
+                     mode: str) -> None:
+        """
+        Builds setpoints and labels
+
+        Args:
+            start: Starting point of the sweep
+            stop: Endpoint of the sweep
+            steps: No. of sweep steps
+            mode: Type of sweep, either 'IV' (voltage sweep)
+                or 'VI' (current sweep)
+        """
+
+        if mode not in ['IV', 'VI']:
+            raise ValueError('mode must be either "VI" or "IV"')
+
+        self.shape = (steps,)
+
+        if mode == 'IV':
+            self.unit = 'A'
+            self.setpoint_names = ('Voltage',)
+            self.setpoint_units = ('V',)
+            self.label = 'current'
+            self.name = 'iv_sweep'
+
+        if mode == 'VI':
+            self.unit = 'V'
+            self.setpoint_names = ('Current',)
+            self.setpoint_units = ('A',)
+            self.label = 'voltage'
+            self.name = 'vi_sweep'
+
+        self.setpoints = (tuple(np.linspace(start, stop, steps)),)
+
+        self.start = start
+        self.stop = stop
+        self.steps = steps
+        self.mode = mode
+
+    def get(self) -> np.ndarray:
+
+        data = self._instrument._fast_sweep(self.start,
+                                            self.stop,
+                                            self.steps,
+                                            self.mode)
+
+        return data
+
+
+class KeithleyChannel(InstrumentChannel):
+    """
+    Class to hold the two Keithley channels, i.e.
+    SMUA and SMUB.
+    """
+
+    def __init__(self, parent: Instrument, name: str, channel: str) -> None:
+        """
+        Args:
+            parent: The Instrument instance to which the channel is
+                to be attached.
+            name: The 'colloquial' name of the channel
+            channel: The name used by the Keithley, i.e. either
+                'smua' or 'smub'
+        """
+
+        if channel not in ['smua', 'smub']:
+            raise ValueError('channel must be either "smub" or "smua"')
+
+        super().__init__(parent, name)
+        self.model = self._parent.model
+        vranges = self._parent._vranges
+        iranges = self._parent._iranges
+
+        self.add_parameter('volt',
+                           get_cmd='{}.measure.v()'.format(channel),
+                           get_parser=float,
+                           set_cmd='{}.source.levelv={}'.format(channel,
+                                                                '{:.12f}'),
+                           label='Voltage',
+                           unit='V')
+
+        self.add_parameter('curr',
+                           get_cmd='{}.measure.i()'.format(channel),
+                           get_parser=float,
+                           set_cmd='{}.source.leveli={}'.format(channel,
+                                                                '{:.12f}'),
+                           label='Current',
+                           unit='A')
+
+        self.add_parameter('mode',
+                           get_cmd='{}.source.func'.format(channel),
+                           get_parser=float,
+                           set_cmd='{}.source.func={}'.format(channel, '{:d}'),
+                           val_mapping={'current': 0, 'voltage': 1},
+                           docstring='Selects the output source.')
+
+        self.add_parameter('output',
+                           get_cmd='{}.source.output'.format(channel),
+                           get_parser=float,
+                           set_cmd='{}.source.output={}'.format(channel,
+                                                                '{:d}'),
+                           val_mapping={'on':  1, 'off': 0})
+
+        self.add_parameter('nplc',
+                           label='Number of power line cycles',
+                           set_cmd='{}.measure.nplc={}'.format(channel,
+                                                               '{:.4f}'),
+                           get_cmd='{}.measure.nplc'.format(channel),
+                           get_parser=float,
+                           vals=vals.Numbers(0.001, 25))
+        # volt range
+        # needs get after set (WilliamHPNielsen): why?
+        self.add_parameter('sourcerange_v',
+                           label='voltage source range',
+                           get_cmd='{}.source.rangev'.format(channel),
+                           get_parser=float,
+                           set_cmd='{}.source.rangev={}'.format(channel,
+                                                                '{:.4f}'),
+                           unit='V',
+                           vals=vals.Enum(*vranges[self.model]))
+        self.add_parameter('measurerange_v',
+                           label='voltage measure range',
+                           get_cmd='{}.measure.rangev'.format(channel),
+                           set_cmd='{}.measure.rangev={}'.format(channel,
+                                                                 '{:.4f}'),
+                           unit='V',
+                           vals=vals.Enum(*vranges[self.model]))
+        # current range
+        # needs get after set
+        self.add_parameter('sourcerange_i',
+                           label='current source range',
+                           get_cmd='{}.source.rangei'.format(channel),
+                           get_parser=float,
+                           set_cmd='{}.source.rangei={}'.format(channel,
+                                                                '{:.4f}'),
+                           unit='A',
+                           vals=vals.Enum(*iranges[self.model]))
+
+        self.add_parameter('measurerange_i',
+                           label='current measure range',
+                           get_cmd='{}.measure.rangei'.format(channel),
+                           get_parser=float,
+                           set_cmd='{}.measure.rangei={}'.format(channel,
+                                                                 '{:.4f}'),
+                           unit='A',
+                           vals=vals.Enum(*iranges[self.model]))
+        # Compliance limit
+        self.add_parameter('limitv',
+                           get_cmd='{}.source.limitv'.format(channel),
+                           get_parser=float,
+                           set_cmd='{}.source.limitv={}'.format(channel,
+                                                                '{:.4f}'),
+                           unit='V')
+        # Compliance limit
+        self.add_parameter('limiti',
+                           get_cmd='{}.source.limiti'.format(channel),
+                           get_parser=float,
+                           set_cmd='{}.source.limiti={}'.format(channel,
+                                                                '{:.4f}'),
+                           unit='A')
+
+        self.add_parameter('fastsweep',
+                           parameter_class=LuaSweepParameter)
+
+        self.channel = channel
+
+    def reset(self):
+        """
+        Reset instrument to factory defaults.
+        This resets only the relevant channel.
+        """
+        self.write('{}.reset()'.format(self.channel))
+        # remember to update all the metadata
+        log.debug('Reset channel {}.'.format(self.channel) +
+                  'Updating settings...')
+        self.snapshot(update=True)
+
+    def doFastSweep(self, start: float, stop: float,
+                    steps: int, mode: str) -> DataSet:
+        """
+        Perform a fast sweep using a deployed lua script and
+        return a QCoDeS DataSet with the sweep.
+
+        Args:
+            start: starting sweep value (V or A)
+            stop: end sweep value (V or A)
+            steps: number of steps
+            mode: What kind of sweep to make.
+                'IV' (I versus V) or 'VI' (V versus I)
+        """
+        # prepare setpoints, units, name
+        self.fastsweep.prepareSweep(start, stop, steps, mode)
+
+        data = qc.Measure(self.fastsweep).run()
+
+        return data
+
+    def _fast_sweep(self, start: float, stop: float, steps: int,
+                    mode: str='IV') -> np.ndarray:
+        """
+        Perform a fast sweep using a deployed Lua script.
+        This is the engine that forms the script, uploads it,
+        runs it, collects the data, and casts the data correctly.
+
+        Args:
+            start: starting voltage
+            stop: end voltage
+            steps: number of steps
+            mode: What kind of sweep to make.
+                'IV' (I versus V) or 'VI' (V versus I)
+        """
+
+        channel = self.channel
+
+        # an extra visa query, a necessary precaution
+        # to avoid timing out when waiting for long
+        # measurements
+        nplc = self.nplc()
+
+        dV = (stop-start)/(steps-1)
+
+        if mode == 'IV':
+            meas = 'i'
+            sour = 'v'
+            func = '1'
+
+        if mode == 'VI':
+            meas = 'v'
+            sour = 'i'
+            func = '0'
+
+        script = ['{}.measure.nplc = {:.12f}'.format(channel, nplc),
+                  '{}.source.output = 1'.format(channel),
+                  'startX = {:.12f}'.format(start),
+                  'dX = {:.12f}'.format(dV),
+                  '{}.source.output = 1'.format(channel),
+                  '{}.source.func = {}'.format(channel, func),
+                  '{}.measure.count = 1'.format(channel),
+                  '{}.nvbuffer1.clear()'.format(channel),
+                  '{}.nvbuffer1.appendmode = 1'.format(channel),
+                  'for index = 1, {} do'.format(steps),
+                  '  target = startX + (index-1)*dX',
+                  '  {}.source.level{} = target'.format(channel, sour),
+                  '  {}.measure.{}({}.nvbuffer1)'.format(channel, meas,
+                                                         channel),
+                  'end',
+                  'format.data = format.REAL32',
+                  'format.byteorder = format.LITTLEENDIAN',
+                  'printbuffer(1, {}, {}.nvbuffer1.readings)'.format(steps,
+                                                                     channel)]
+
+        self.write(self._parent._scriptwrapper(program=script, debug=True))
+        # we must wait for the script to execute
+        oldtimeout = self._parent.visa_handle.timeout
+        self._parent.visa_handle.timeout = 2*1000*steps*nplc/50 + 5000
+
+        # now poll all the data
+        # The problem is that a '\n' character might by chance be present in
+        # the data
+        fullsize = 4*steps + 3
+        received = 0
+        data = b''
+        while received < fullsize:
+            data_temp = self._parent.visa_handle.read_raw()
+            received += len(data_temp)
+            data += data_temp
+
+        # From the manual p. 7-94, we know that a b'#0' is prepended
+        # to the data and a b'\n' is appended
+        data = data[2:-1]
+
+        outdata = np.array(list(struct.iter_unpack('<f', data)))
+        outdata = np.reshape(outdata, len(outdata))
+
+        self._parent.visa_handle.timeout = oldtimeout
+
+        return outdata
+
+
+class Keithley_2600(VisaInstrument):
+    """
+    This is the qcodes driver for the Keithley_2600 Source-Meter series,
+    tested with Keithley_2614B
+
+    """
+    def __init__(self, name: str, address: str, **kwargs) -> None:
+        """
+        Args:
+            name: Name to use internally in QCoDeS
+            address: VISA ressource address
+        """
+        super().__init__(name, address, terminator='\n', **kwargs)
+
+        model = self.ask('localnode.model')
+
+        knownmodels = ['2601B', '2602B', '2604B', '2611B', '2612B',
+                       '2614B', '2635B', '2636B']
+        if model not in knownmodels:
+            kmstring = ('{}, '*(len(knownmodels)-1)).format(*knownmodels[:-1])
+            kmstring += 'and {}.'.format(knownmodels[-1])
+            raise ValueError('Unknown model. Known model are: ' +
+                             kmstring)
+
+        self.model = model
+
+        self._vranges = {'2601B': [0.1, 1, 6, 40],
+                         '2602B': [0.1, 1, 6, 40],
+                         '2604B': [0.1, 1, 6, 40],
+                         '2611B': [0.2, 2, 20, 200],
+                         '2612B': [0.2, 2, 20, 200],
+                         '2614B': [0.2, 2, 20, 200],
+                         '2635B': [0.2, 2, 20, 200],
+                         '2636B': [0.2, 2, 20, 200]}
+
+        # TODO: In pulsed mode, models 2611B, 2612B, and 2614B
+        # actually allow up to 10 A.
+        self._iranges = {'2601B': [100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 0.01, 0.1, 1, 3],
+                         '2602B': [100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 0.01, 0.1, 1, 3],
+                         '2604B': [100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 0.01, 0.1, 1, 3],
+                         '2611B': [100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 0.01, 0.1, 1, 1.5],
+                         '2612B': [100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 0.01, 0.1, 1, 1.5],
+                         '2614B': [100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 0.01, 0.1, 1, 1.5],
+                         '2634B': [1e-9, 10e-9, 100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 10e-6, 100e-3, 1, 1.5],
+                         '2635B': [1e-9, 10e-9, 100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 10e-6, 100e-3, 1, 1.5],
+                         '2636B': [1e-9, 10e-9, 100e-9, 1e-6, 10e-6, 100e-6,
+                                   1e-3, 10e-6, 100e-3, 1, 1.5]}
+
+        # Add the channel to the instrument
+        for ch in ['a', 'b']:
+            ch_name = 'smu{}'.format(ch)
+            channel = KeithleyChannel(self, ch_name, ch_name)
+            self.add_submodule(ch_name, channel)
+
+        # display
+        self.add_parameter('display_settext',
+                           set_cmd=self._display_settext,
+                           vals=vals.Strings())
+
+        self.connect_message()
+
+    def _display_settext(self, text):
+        self.visa_handle.write('display.settext("{}")'.format(text))
+
+    def get_idn(self):
+        IDN = self.ask_raw('*IDN?')
+        vendor, model, serial, firmware = map(str.strip, IDN.split(','))
+        model = model[6:]
+
+        IDN = {'vendor': vendor, 'model': model,
+               'serial': serial, 'firmware': firmware}
+        return IDN
+
+    def display_clear(self):
+        """
+        This function clears the display, but also leaves it in user mode
+        """
+        self.visa_handle.write('display.clear()')
+
+    def display_normal(self):
+        """
+        Set the display to the default mode
+        """
+        self.visa_handle.write('display.screen = display.SMUA_SMUB')
+
+    def exit_key(self):
+        """
+        Get back the normal screen after an error:
+        send an EXIT key press event
+        """
+        self.visa_handle.write('display.sendkey(75)')
+
+    def reset(self):
+        """
+        Reset instrument to factory defaults.
+        This resets both channels.
+        """
+        self.write('reset()')
+        # remember to update all the metadata
+        log.debug('Reset instrument. Re-querying settings...')
+        self.snapshot(update=True)
+
+    def ask(self, cmd: str) -> str:
+        """
+        Override of normal ask. This is important, since queries to the
+        instrument must be wrapped in 'print()'
+        """
+        return super().ask('print({:s})'.format(cmd))
+
+    @staticmethod
+    def _scriptwrapper(program: List[str], debug: bool=False) -> str:
+        """
+        wraps a program so that the output can be put into
+        visa_handle.write and run.
+        The script will run immediately as an anonymous script.
+
+        Args:
+            program: A list of program instructions. One line per
+            list item, e.g. ['for ii = 1, 10 do', 'print(ii)', 'end' ]
+        """
+        mainprog = '\r\n'.join(program) + '\r\n'
+        wrapped = 'loadandrunscript\r\n{}endscript\n'.format(mainprog)
+        if debug:
+            log.debug('Wrapped the following script:')
+            log.debug(wrapped)
+        return wrapped
