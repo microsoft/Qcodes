@@ -178,11 +178,15 @@ class GS200(VisaInstrument):
         self.add_parameter('voltage',
                            label='Voltage',
                            unit='V',
-                           set_cmd=lambda x:0, get_cmd=lambda:0) 
+                           set_cmd=":SOUR:LEV {:.5e}",
+                           get_cmd=":SOUR:LEV?",
+                           vals=Nothing(""))
         self.add_parameter('current',
                            label='Current',
                            unit='I',
-                           set_cmd=lambda x:0, get_cmd=lambda:0)
+                           set_cmd=":SOUR:LEV {:.5e}",
+                           get_cmd=":SOUR:LEV?",
+                           vals=Nothing(""))
 
         self.add_parameter('voltage_limit',
                            label='Voltage Protection Limit',
@@ -269,35 +273,29 @@ class GS200(VisaInstrument):
         # Setup source based on what mode we are in
         # Range is updated if auto-range is off
         if source_mode == 'VOLT':
-            self.current._set_set(None, None)
-            self.current._set_get(None, None)
             if self.auto_range.get():
-                self.voltage._set_set(":SOUR:LEV:AUTO {:.5e}", float)
+                self.voltage.set_raw.cmd_str = ":SOUR:LEV:AUTO {:.5e}"
             else:
-                self.voltage._set_set(":SOUR:LEV {:.5e}", float)
-            self.voltage._set_get(":SOUR:LEV?", float)
+                self.voltage.set_raw.cmd_str = ":SOUR:LEV {:.5e}"
 
-            self.current.set_validator(Nothing("Current cannot be set in voltage mode"))
+            self.current.vals = Nothing("Current cannot be set in voltage mode")
             if self.auto_range.get():
-                self.voltage.set_validator(Numbers(-30, 30))
+                self.voltage.vals = Numbers(-30, 30)
             else:
-                self.voltage.set_validator(Numbers(-source_range, source_range))
+                self.voltage.vals = Numbers(-source_range, source_range)
 
             self.range.unit = "V"
         else:
-            self.voltage._set_set(None, None)
-            self.voltage._set_get(None, None)
             if self.auto_range.get():
-                self.current._set_set(":SOUR:LEV:AUTO {:.5e}", float)
+                self.current.set_raw.cmd_str = ":SOUR:LEV:AUTO {:.5e}"
             else:
-                self.current._set_set(":SOUR:LEV {:.5e}", float)
-            self.current._set_get(":SOUR:LEV?", float)
+                self.current.set_raw.cmd_str = ":SOUR:LEV {:.5e}"
 
-            self.voltage.set_validator(Nothing("Voltage cannot be set in current mode"))
+            self.voltage.vals = Nothing("Voltage cannot be set in current mode")
             if self.auto_range.get():
-                self.current.set_validator(Numbers(-0.1, 0.1))
+                self.current.vals = Numbers(-0.1, 0.1)
             else:
-                self.current.set_validator(Numbers(-source_range, source_range))
+                self.current.vals = Numbers(-source_range, source_range)
 
             self.range.unit = "I"
 
