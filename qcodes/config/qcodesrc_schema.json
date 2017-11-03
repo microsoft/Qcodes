@@ -46,6 +46,11 @@
                     "description": "Maximum number of PyQtPlots to automatically keep in memory",
                     "type": "integer",
                     "default": 100
+                },
+                "defaultcolormap":{
+                    "description": "Default colormap to use for Heatmaps with both Matplotlib and PyQtGraph",
+                    "type": "string",
+                    "default": "hot"
                 }
             },
             "required":[ "notebook", "plotlib", "pyqtmaxplots" ]

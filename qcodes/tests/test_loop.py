@@ -482,7 +482,7 @@ class AbortingGetter(Parameter):
         # also need a _signal_queue, but that has to be added later
         super().__init__(*args, **kwargs)
 
-    def get(self):
+    def get_raw(self):
         self._count -= 1
         if self._count <= 0:
             raise _QcodesBreak
