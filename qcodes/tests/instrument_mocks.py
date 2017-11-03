@@ -171,7 +171,7 @@ class MultiGetter(MultiParameter):
         shapes = tuple(np.shape(v) for v in self._return)
         super().__init__(name='multigetter', names=names, shapes=shapes)
 
-    def get(self):
+    def get_raw(self):
         return self._return
 
 
@@ -199,7 +199,7 @@ class MultiSetPointParam(MultiParameter):
                          setpoint_names=setpoint_names,
                          setpoint_units=setpoint_units)
 
-    def get(self):
+    def get_raw(self):
         items = (np.zeros(5), np.ones(5))
         self._save_val(items)
         return items
@@ -229,7 +229,7 @@ class ArraySetPointParam(ArrayParameter):
                          setpoint_names=setpoint_names,
                          setpoint_units=setpoint_units)
 
-    def get(self):
+    def get_raw(self):
         item = np.ones(5) + 1
         self._save_val(item)
         return item

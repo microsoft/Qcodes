@@ -227,7 +227,12 @@ class InstrumentBase(Metadatable, DelegateAttributes):
         for par in sorted(snapshot['parameters']):
             name = snapshot['parameters'][par]['name']
             msg = '{0:<{1}}:'.format(name, par_field_len)
-            val = snapshot['parameters'][par]['value']
+
+            # in case of e.g. ArrayParameters, that usually have
+            # snapshot_value == False, the parameter may not have
+            # a value in the snapshot
+            val = snapshot['parameters'][par].get('value', 'Not available')
+
             unit = snapshot['parameters'][par].get('unit', None)
             if unit is None:
                 # this may be a multi parameter
