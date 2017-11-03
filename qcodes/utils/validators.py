@@ -217,6 +217,27 @@ class Ints(Validator):
         maxv = self._max_value if self._max_value < BIGINT else None
         return '<Ints{}>'.format(range_str(minv, maxv, 'v'))
 
+class PermissiveInts(Ints):
+    """
+    requires an integer or a float close to an integer
+    optional parameters min_value and max_value enforce
+    min_value <= value <= max_value
+    Note that you probably always want to use this with a
+    set_parser that converts the float repr to an actual int
+    """
+    def validate(self, value, context=''):
+        if isinstance(value, (float, np.floating)):
+            intrepr = int(round(value))
+            remainder = abs(value - intrepr)
+            if remainder < 1e-05:
+                castvalue = intrepr
+            else:
+                raise TypeError('{} is not an int or close to an int'
+                                '; {}'.format(repr(value), context))
+        else:
+            castvalue = value
+        super().validate(castvalue, context=context)
+
 
 class Enum(Validator):
     """

@@ -3,7 +3,8 @@ import math
 import numpy as np
 
 from qcodes.utils.validators import (Validator, Anything, Bool, Strings,
-                                     Numbers, Ints, Enum, MultiType,
+                                     Numbers, Ints, PermissiveInts,
+                                     Enum, MultiType,
                                      Arrays, Multiples, Lists, Callable, Dict)
 
 
@@ -349,6 +350,30 @@ class TestInts(TestCase):
 
             with self.assertRaises((TypeError, OverflowError)):
                 Ints(min_value=val)
+
+
+class TestPermissiveInts(TestCase):
+
+
+    def test_close_to_ints(self):
+        validator = PermissiveInts()
+        a = 0
+        b = 10
+        values = np.linspace(a, b, b-a+1)
+        for i in values:
+            validator.validate(i)
+
+    def test_bad_values(self):
+        validator = PermissiveInts(0, 10)
+        a = 0
+        b = 10
+        values = np.linspace(a, b, b-a+2)
+        for j,i in enumerate(values):
+            if j == 0 or j == 11:
+                validator.validate(i)
+            else:
+                with self.assertRaises(TypeError):
+                    validator.validate(i)
 
 
 class TestEnum(TestCase):
