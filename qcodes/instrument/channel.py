@@ -455,7 +455,7 @@ class ChannelListValidator(Validator):
                 "to create a validator")
         self._channel_list = channel_list
 
-    def validate(self, value: InstrumentChannel, context: str):
+    def validate(self, value, context=''):
         """
         Checks to see that value is a member of the channel list referenced by this
         validator
