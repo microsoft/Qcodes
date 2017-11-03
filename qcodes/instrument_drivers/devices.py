@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, cast
 
 from qcodes import Parameter, Instrument
 
@@ -75,6 +75,8 @@ class VoltageDivider(Parameter):
     def set_raw(self, value: Union[int, float]) -> None:
         instrument_value = value * self.division_value # type: ignore
         # disable type check due to https://github.com/python/mypy/issues/2128
+        instrument_value = cast(Union[int, float], instrument_value)
+
         self._save_val(value)
         self.v1.set(instrument_value)
 
