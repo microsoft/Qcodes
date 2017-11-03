@@ -13,7 +13,7 @@ from matplotlib.transforms import Bbox
 from numpy.ma import masked_invalid, getmask
 
 from .base import BasePlot
-
+import qcodes.config
 
 class MatPlot(BasePlot):
     """
@@ -303,6 +303,8 @@ class MatPlot(BasePlot):
             # to check for them.
             return False
 
+        if 'cmap' not in kwargs:
+            kwargs['cmap'] = qcodes.config['gui']['defaultcolormap']
         if x is not None and y is not None:
             # If x and y are provided, modify the arrays such that they
             # correspond to grid corners instead of grid centers.
