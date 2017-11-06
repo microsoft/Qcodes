@@ -910,6 +910,8 @@ class ArrayParameter(_BaseParameter):
                  instrument: Optional['Instrument']=None,
                  label: Optional[str]=None,
                  unit: Optional[str]=None,
+                 wrap_get: bool=True,
+                 wrap_set: bool=True,
                  setpoints: Optional[Sequence]=None,
                  setpoint_names: Optional[Sequence[str]]=None,
                  setpoint_labels: Optional[Sequence[str]]=None,
@@ -917,9 +919,10 @@ class ArrayParameter(_BaseParameter):
                  docstring: Optional[str]=None,
                  snapshot_get: bool=True,
                  snapshot_value: bool=False,
-                 metadata: bool=None):
+                 metadata: bool=None, ):
         super().__init__(name, instrument, snapshot_get, metadata,
-                         snapshot_value=snapshot_value)
+                         snapshot_value=snapshot_value,
+                         wrap_get=wrap_get, wrap_set=wrap_set)
 
         if hasattr(self, 'set'):
             # TODO (alexcjohnson): can we support, ala Combine?
@@ -1086,6 +1089,8 @@ class MultiParameter(_BaseParameter):
                  instrument: Optional['Instrument']=None,
                  labels: Optional[Sequence[str]]=None,
                  units: Optional[Sequence[str]]=None,
+                 wrap_get: bool=True,
+                 wrap_set: bool=True,
                  setpoints: Optional[Sequence[Sequence]]=None,
                  setpoint_names: Optional[Sequence[Sequence[str]]]=None,
                  setpoint_labels: Optional[Sequence[Sequence[str]]]=None,
@@ -1095,7 +1100,8 @@ class MultiParameter(_BaseParameter):
                  snapshot_value: bool=False,
                  metadata: Optional[dict]=None):
         super().__init__(name, instrument, snapshot_get, metadata,
-                         snapshot_value=snapshot_value)
+                         snapshot_value=snapshot_value,
+                         wrap_get=wrap_get, wrap_set=wrap_set)
 
         if hasattr(self, 'set'):
             # TODO (alexcjohnson): can we support, ala Combine?
