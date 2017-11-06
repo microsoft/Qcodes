@@ -33,6 +33,9 @@ class Measure(Metadatable):
         """
         return self.run(quiet=True, location=False, **kwargs)
 
+    def get_data_set(self, *args, **kwargs):
+        return self._dummyLoop.get_data_set(*args, **kwargs)
+
     def run(self, use_threads=False, quiet=False, station=None,
             set_active=True, **kwargs):
         """
@@ -79,7 +82,6 @@ class Measure(Metadatable):
         # Keep location as private attribute
         data_set._location = data_set.location
         data_set.location = False
-
 
         # run the measurement as if it were a Loop
         self._dummyLoop.run(use_threads=use_threads,

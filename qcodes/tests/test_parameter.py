@@ -5,6 +5,8 @@ from collections import namedtuple
 from unittest import TestCase
 from time import sleep
 
+import numpy as np
+
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter,
@@ -19,7 +21,7 @@ class GettableParam(Parameter):
         super().__init__(*args, **kwargs)
         self._get_count = 0
 
-    def get(self):
+    def get_raw(self):
         self._get_count += 1
         self._save_val(42)
         return 42
@@ -250,13 +252,42 @@ class TestParameter(TestCase):
         self.assertEqual(p.get_latest(), 21)
         self.assertEqual(p.get_values, [21])
 
+
+class TestValsandParseParameter(TestCase):
+
+    def setUp(self):
+        self.parameter = Parameter(name='foobar',
+                                   set_cmd=None, get_cmd=None,
+                                   set_parser=lambda x: int(round(x)),
+                                   vals=vals.PermissiveInts(0))
+
+    def test_setting_int_with_float(self):
+
+        a = 0
+        b = 10
+        values = np.linspace(a, b, b-a+1)
+        for i in values:
+            self.parameter(i)
+            a = self.parameter()
+            assert isinstance(a, int)
+
+    def test_setting_int_with_float_not_close(self):
+
+        a = 0
+        b = 10
+        values = np.linspace(a, b, b-a+2)
+        for i in values[1:-2]:
+            with self.assertRaises(TypeError):
+                self.parameter(i)
+
+
 class SimpleArrayParam(ArrayParameter):
     def __init__(self, return_val, *args, **kwargs):
         self._return_val = return_val
         self._get_count = 0
         super().__init__(*args, **kwargs)
 
-    def get(self):
+    def get_raw(self):
         self._get_count += 1
         self._save_val(self._return_val)
         return self._return_val
@@ -264,7 +295,7 @@ class SimpleArrayParam(ArrayParameter):
 
 class SettableArray(SimpleArrayParam):
     # this is not allowed - just created to raise an error in the test below
-    def set(self, v):
+    def set_raw(self, v):
         self.v = v
 
 
@@ -387,7 +418,7 @@ class SimpleMultiParam(MultiParameter):
         self._get_count = 0
         super().__init__(*args, **kwargs)
 
-    def get(self):
+    def get_raw(self):
         self._get_count += 1
         self._save_val(self._return_val)
         return self._return_val
@@ -396,7 +427,7 @@ class SimpleMultiParam(MultiParameter):
 class SettableMulti(SimpleMultiParam):
     # this is not fully suported - just created to raise a warning in the test below.
     # We test that the warning is raised
-    def set(self, v):
+    def set_raw(self, v):
         print("Calling set")
         self.v = v
 

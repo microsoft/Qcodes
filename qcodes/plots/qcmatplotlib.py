@@ -16,6 +16,7 @@ from numpy.ma import masked_invalid, getmask
 from qcodes.data.data_array import DataArray
 
 from .base import BasePlot
+import qcodes.config
 from qcodes.utils.threading import UpdaterThread
 
 
