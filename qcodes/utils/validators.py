@@ -318,15 +318,18 @@ class PermissiveMultiples(Validator):
     of a fixed divisor (to within some precision). If both value and
     divisor are integers, the (exact) Multiples validator is used.
 
+    We also allow negative values, meaning that zero by construction is
+    always a valid value.
+
     Args:
         divisor: The number that the validated value should be an integer
             multiple of.
-        precision: The maximally allowed value for
-            abs(abs((value % divisor)/divisor) - 1)
+        precision: The maximally allowed absolute error between the value and
+            the nearest true multiple
     """
 
     def __init__(self, divisor: Union[float, int, np.floating],
-                 precision: float=1e-5) -> None:
+                 precision: float=1e-9) -> None:
         if divisor == 0:
             raise ValueError('Can not meaningfully check for multiples of'
                              ' zero.')
@@ -334,19 +337,28 @@ class PermissiveMultiples(Validator):
         self.precision = precision
         self._numval = Numbers()
         if isinstance(divisor, int):
-            self._mulval = Multiples(divisor)
+            self._mulval = Multiples(divisor=abs(divisor))
         else:
             self._mulval = None
 
     def validate(self, value: Union[float, int, np.floating]) -> None:
         self._numval.validate(value)
+        # if zero, it passes by definition
+        if value == 0:
+            return
         if self._mulval and isinstance(value, int):
-            self._mulval(value)
+            self._mulval.validate(abs(value))
         else:
-            remainder = abs(abs((value % self.divisor)/self.divisor) - 1)
-            if remainder > self.precision:
-                raise ValueError('{} is not (close to being) '.format(value) +
-                                 'a multiple of {}.'.format(self.divisor))
+            # floating-point division cannot be trusted, so we try to
+            # multiply our way out of the problem by constructing true
+            # multiples in the relevant range and see if `value` is one
+            # of them (within rounding errors)
+            divs = int(divmod(value, self.divisor)[0])
+            true_vals = np.array([n*self.divisor for n in range(divs, divs+2)])
+            abs_errs = [abs(tv-value) for tv in true_vals]
+            if min(abs_errs) > self.precision:
+                raise ValueError('{} is not a multiple'.format(value) +
+                                 ' of {}.'.format(self.divisor))
 
 
 class MultiType(Validator):
