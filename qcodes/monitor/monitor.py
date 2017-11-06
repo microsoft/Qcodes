@@ -18,6 +18,8 @@ import json
 import http.server
 import socketserver
 import webbrowser
+import datetime
+from copy import deepcopy
 
 from threading import Thread
 from typing import Dict
@@ -43,12 +45,12 @@ def _get_metadata(*parameters) -> Dict[float, list]:
     for parameter in parameters:
         _meta = getattr(parameter, "_latest", None)
         if _meta:
-            meta = _meta()
+            meta = deepcopy(_meta)
         else:
             raise ValueError("Input is not a parameter; Refusing to proceed")
         # convert to string
         meta['value'] = str(meta['value'])
-        if meta["ts"] is not None:
+        if isinstance(meta["ts"], datetime.datetime):
             meta["ts"] = time.mktime(meta["ts"].timetuple())
         meta["name"] = parameter.label or parameter.name
         meta["unit"] = parameter.unit
