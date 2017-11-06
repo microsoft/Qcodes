@@ -48,7 +48,7 @@ class Formatter:
     ArrayGroup = namedtuple('ArrayGroup', 'shape set_arrays data name')
 
     def write(self, data_set, io_manager, location, write_metadata=True,
-              force_write=False):
+              force_write=False, only_complete=True):
         """
         Write the DataSet to storage.
 
@@ -63,6 +63,8 @@ class Formatter:
             location (str): the file location within the io_manager.
             write_metadata (bool): if True, then the metadata is written to disk
             force_write (bool): if True, then the data is written to disk
+            only_complete (bool): Used only by the gnuplot formatter's
+                overridden version of this method
         """
         raise NotImplementedError
 
@@ -190,7 +192,9 @@ class Formatter:
 
         Returns:
             Tuple(int, int): the first and last raveled indices that should
-                be saved.
+                be saved. Returns None if:
+                    * no data is present
+                    * no new data can be found
         """
         inner_setpoint = group.set_arrays[-1]
         full_dim_data = (inner_setpoint, ) + group.data
