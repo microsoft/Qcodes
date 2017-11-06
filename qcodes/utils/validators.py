@@ -341,7 +341,12 @@ class PermissiveMultiples(Validator):
         else:
             self._mulval = None
 
-    def validate(self, value: Union[float, int, np.floating]) -> None:
+    def validate(self, value: Union[float, int, np.floating],
+                 context: str) -> None:
+        """
+        Validate the given value. Note that this validator does not use
+        context for anything.
+        """
         self._numval.validate(value)
         # if zero, it passes by definition
         if value == 0:
