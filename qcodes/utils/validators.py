@@ -311,6 +311,8 @@ class Multiples(Ints):
     def __repr__(self):
         return super().__repr__()[:-1] + ', Multiples of {}>'.format(self._divisor)
 
+    is_numeric = True
+
 
 class PermissiveMultiples(Validator):
     """
@@ -364,6 +366,8 @@ class PermissiveMultiples(Validator):
             if min(abs_errs) > self.precision:
                 raise ValueError('{} is not a multiple'.format(value) +
                                  ' of {}.'.format(self.divisor))
+
+    is_numeric = True
 
 
 class MultiType(Validator):
