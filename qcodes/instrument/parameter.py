@@ -917,9 +917,9 @@ class ArrayParameter(_BaseParameter):
                  docstring: Optional[str]=None,
                  snapshot_get: bool=True,
                  snapshot_value: bool=False,
-                 metadata: bool=None):
+                 metadata: bool=None, **kwargs):
         super().__init__(name, instrument, snapshot_get, metadata,
-                         snapshot_value=snapshot_value)
+                         snapshot_value=snapshot_value, **kwargs)
 
         if hasattr(self, 'set'):
             # TODO (alexcjohnson): can we support, ala Combine?
@@ -1093,9 +1093,9 @@ class MultiParameter(_BaseParameter):
                  docstring: str=None,
                  snapshot_get: bool=True,
                  snapshot_value: bool=False,
-                 metadata: Optional[dict]=None):
+                 metadata: Optional[dict]=None, **kwargs):
         super().__init__(name, instrument, snapshot_get, metadata,
-                         snapshot_value=snapshot_value)
+                         snapshot_value=snapshot_value, **kwargs)
 
         if hasattr(self, 'set'):
             # TODO (alexcjohnson): can we support, ala Combine?
