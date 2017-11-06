@@ -1,5 +1,5 @@
 """Station objects - collect all the equipment you use to do an experiment."""
-from typing import Dict
+from typing import Dict, List, Optional, Sequence, Any
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import make_unique, DelegateAttributes
@@ -26,7 +26,7 @@ class Station(Metadatable, DelegateAttributes):
         *components (list[Any]): components to add immediately to the Station.
             can be added later via self.add_component
 
-        monitor (None): Not implememnted, the object that monitors the system continuously
+        monitor (None): Not implemented, the object that monitors the system continuously
 
         default (bool): is this station the default, which gets
             used in Loops and elsewhere that a Station can be specified, default  true
@@ -41,10 +41,11 @@ class Station(Metadatable, DelegateAttributes):
             attributes of self
     """
 
-    default = None
+    default = None # type: 'Station'
 
-    def __init__(self, *components, monitor=None, default=True,
-                 update_snapshot=True, **kwargs):
+    def __init__(self, *components: Metadatable,
+                 monitor: Any, default: bool=True,
+                 update_snapshot: bool=True, **kwargs) -> None:
         super().__init__(**kwargs)
 
         # when a new station is defined, store it in a class variable
@@ -56,21 +57,22 @@ class Station(Metadatable, DelegateAttributes):
         if default:
             Station.default = self
 
-        self.components = {} # type: Dict[str, Instrument]
+        self.components = {} # type: Dict[str, Metadatable]
         for item in components:
             self.add_component(item, update_snapshot=update_snapshot)
 
         self.monitor = monitor
 
-        self.default_measurement = []
+        self.default_measurement = [] # type: List
 
-    def snapshot_base(self, update=False):
+    def snapshot_base(self, update: bool=False,
+                      params_to_skip_update: Sequence[str]=None) -> Dict:
         """
         State of the station as a JSON-compatible dict.
 
         Args:
             update (bool): If True, update the state by querying the
-             all the childs: f.ex. instruments, parameters, components, etc.
+             all the children: f.ex. instruments, parameters, components, etc.
              If False, just use the latest values in memory.
 
         Returns:
@@ -97,7 +99,8 @@ class Station(Metadatable, DelegateAttributes):
 
         return snap
 
-    def add_component(self, component, name=None, update_snapshot=True):
+    def add_component(self, component: Metadatable, name: str=None,
+                      update_snapshot: bool=True) -> str:
         """
         Record one component as part of this Station.
 
