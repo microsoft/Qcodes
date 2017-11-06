@@ -729,6 +729,9 @@ class ActiveLoop(Metadatable):
         returns:
             a DataSet object that we can use to plot
         """
+
+        ActiveLoop._is_stopped = False
+
         if progress_interval is not False:
             self.progress_interval = progress_interval
 
@@ -789,6 +792,9 @@ class ActiveLoop(Metadatable):
                 print(datetime.now().strftime('Started at %Y-%m-%d %H:%M:%S'))
             self._run_wrapper(set_active=set_active)
             ds = self.data_set
+        except:
+            log.exception('Loop exception')
+            raise
         finally:
             ActiveLoop._is_stopped = False
             if not quiet:
