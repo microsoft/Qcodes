@@ -292,6 +292,7 @@ class DacSlot(InstrumentChannel, DacReader):
     A single DAC Slot of the DECADAC
     """
     _SLOT_VAL = vals.Ints(0, 5)
+    SLOT_MODE_DEFAULT = "Coarse"
 
     def __init__(self, parent, name, slot, min_val=-5, max_val=5):
         super().__init__(parent, name)
@@ -327,7 +328,7 @@ class DacSlot(InstrumentChannel, DacReader):
                            val_mapping=slot_modes)
 
         # Enable all slots in coarse mode.
-        self.slot_mode.set("Coarse")
+        self.slot_mode.set(DacSlot.SLOT_MODE_DEFAULT)
 
     def write(self, cmd):
         """
