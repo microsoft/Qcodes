@@ -1,4 +1,5 @@
 """Station objects - collect all the equipment you use to do an experiment."""
+from typing import Dict
 
 from qcodes.utils.metadata import Metadatable
 from qcodes.utils.helpers import make_unique, DelegateAttributes
@@ -55,7 +56,7 @@ class Station(Metadatable, DelegateAttributes):
         if default:
             Station.default = self
 
-        self.components = {}
+        self.components = {} # type: Dict[str, Instrument]
         for item in components:
             self.add_component(item, update_snapshot=update_snapshot)
 
