@@ -1,5 +1,5 @@
 import math
-from typing import Union, Tuple
+from typing import Union, Tuple, cast
 
 import numpy as np
 
@@ -171,7 +171,10 @@ class Numbers(Validator):
         else:
             raise TypeError('min_value must be a number')
 
-        if isinstance(max_value, self.validtypes) and max_value > min_value:
+        valuesok = max_value > min_value  # type: ignore
+        valuesok = cast(bool, valuesok)
+
+        if isinstance(max_value, self.validtypes) and valuesok:
             self._max_value = max_value
         else:
             raise TypeError('max_value must be a number bigger than min_value')
@@ -470,7 +473,10 @@ class Arrays(Validator):
         else:
             raise TypeError('min_value must be a number')
 
-        if isinstance(max_value, self.validtypes) and max_value > min_value:
+        valuesok = max_value > min_value  # type: ignore
+        valuesok = cast(bool, valuesok)
+
+        if isinstance(max_value, self.validtypes) and valuesok:
             self._max_value = max_value
         else:
             raise TypeError('max_value must be a number bigger than min_value')
