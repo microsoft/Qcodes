@@ -163,8 +163,8 @@ class Numbers(Validator):
 
     validtypes = (float, int, np.integer, np.floating)
 
-    def __init__(self, min_value: Union[float, int]=-float("inf"),
-                 max_value: Union[float, int]=float("inf")) -> None:
+    def __init__(self, min_value: Union[int, float]=-float("inf"),
+                 max_value: Union[int, float]=float("inf")) -> None:
 
         if isinstance(min_value, self.validtypes):
             self._min_value = min_value
