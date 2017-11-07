@@ -6,7 +6,8 @@ from unittest import TestCase
 from time import sleep
 
 import numpy as np
-
+from hypothesis import given
+import hypothesis.strategies as hst
 from qcodes import Function
 from qcodes.instrument.parameter import (
     Parameter, ArrayParameter, MultiParameter,
@@ -679,6 +680,60 @@ class TestStandardParam(TestCase):
 
         self._p = 'PVAL: 1'
         self.assertEqual(p(), 'on')
+
+    @given(scale=hst.integers(1, 100),
+           value=hst.floats(min_value=1e-9, max_value=10))
+    def test_ramp_scaled(self, scale, value):
+        p = Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p, scale=scale,
+                      initial_value=0)
+        assert p() == 0.0
+        # first set a step size
+        p.step = 0.1
+        # and a wait time
+        p.inter_delay = 1e-9 # in seconds
+        expected_output =np.linspace(0.1,10,100)
+        np.testing.assert_allclose(p.get_ramp_values(10, p.step),
+                                   expected_output)
+        p.set(value)
+        np.testing.assert_allclose(p.get(), value)
+        assert p.raw_value == value * scale
+
+    @given(value=hst.floats(min_value=1e-9, max_value=10))
+    def test_ramp_parser(self, value):
+        p = Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
+                      set_parser=lambda x: -x,
+                      get_parser=lambda x: -x,
+                      initial_value=0)
+        assert p() == 0.0
+        # first set a step size
+        p.step = 0.1
+        # and a wait time
+        p.inter_delay = 1e-9 # in seconds
+        expected_output =np.linspace(0.1,10,100)
+        np.testing.assert_allclose(p.get_ramp_values(10, p.step),
+                                   expected_output)
+        p.set(value)
+        assert p.get() == value
+        assert p.raw_value == -value
+
+    @given(scale=hst.integers(1, 100),
+           value=hst.floats(min_value=1e-9, max_value=10))
+    def test_ramp_parsed_scaled(self, scale, value):
+        p = Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p, scale=scale,
+                      set_parser=lambda x: -x,
+                      get_parser=lambda x: -x,
+                      initial_value=0)
+        assert p() == 0.0
+        # first set a step size
+        p.step = 0.1
+        # and a wait time
+        p.inter_delay = 1e-9 # in seconds
+        expected_output =np.linspace(0.1,10,100)
+        np.testing.assert_allclose(p.get_ramp_values(10, p.step),
+                                   expected_output)
+        p.set(value)
+        np.testing.assert_allclose(p.get(), value)
+        assert p.raw_value == -scale * value
 
 class TestManualParameterValMapping(TestCase):
     def setUp(self):
