@@ -169,7 +169,7 @@ class GS200(VisaInstrument):
                            label='Source Mode',
                            get_cmd=':SOUR:FUNC?',
                            set_cmd=self._set_source_mode,
-                           get_parser=self._get_source_mode,
+                           get_parser=self._source_mode_get_parser,
                            vals=Enum('VOLT', 'CURR'))
 
         self.add_parameter('range',
@@ -192,15 +192,17 @@ class GS200(VisaInstrument):
         self.add_parameter('voltage',
                            label='Voltage',
                            unit='V',
-                           set_cmd=self._output_setter_getter("VOLT", "setter"),
-                           get_cmd=self._output_setter_getter("VOLT", "getter"),
+                           set_cmd=":SOUR:LEV {:.5e}",
+                           get_cmd=":SOUR:LEV?",
+                           get_parser=self._output_get_parser("VOLT"),
                            vals=Numbers())
 
         self.add_parameter('current',
                            label='Current',
                            unit='I',
-                           set_cmd=self._output_setter_getter("CURR", "setter"),
-                           get_cmd=self._output_setter_getter("CURR", "getter"),
+                           set_cmd=":SOUR:LEV {:.5e}",
+                           get_cmd=":SOUR:LEV?",
+                           get_parser=self._output_get_parser("CURR"),
                            vals=Nothing(""))
 
         self.add_parameter('voltage_limit',
@@ -253,10 +255,6 @@ class GS200(VisaInstrument):
 
         # Reset function
         self.add_function('reset', call_cmd='*RST')
-        # Output functions
-        self.add_function('on', call_cmd=self.on)
-        self.add_function('off', call_cmd=self.off)
-
         self.connect_message()
 
         # Update the source ranges and output state
@@ -333,7 +331,7 @@ class GS200(VisaInstrument):
         if self.measure.present:
             self.measure._enabled &= val
 
-    def _get_source_mode(self, val):
+    def _source_mode_get_parser(self, val):
         """Get output (VOLT/CURR) mode and update validators"""
         self._update_vals(source_mode=val)
         return val
@@ -365,27 +363,35 @@ class GS200(VisaInstrument):
         self._update_vals(source_mode=source_mode, source_range=val)
         return val
 
-    @staticmethod
-    def assert_output_type(output_type, mode):
+    def _output_get_parser(self, output_mode):
+        """
+        Setting the current/voltage while in voltage/current mode will rightfully raise an error. However, we also
+        want to raise an error while trying to get the output when we are in the wrong output mode (e.g. getting the
+        current while in voltage mode and visa-versa)
 
-        human_readable = {
-            "CURR": "current",
-            "VOLT": "voltage"
-        }
+        Parameters
+        ----------
+        output_mode: str, ["Curr", "Volt"]
 
-        if mode != output_type:
-            raise GS200Exception("Cannot set {} while in {} mode".format(human_readable[output_type],
-                                                                         human_readable[mode]))
+        Returns
+        -------
+        output_parser: callable
+            The get parser for the current/voltage output
+        """
 
-    def _output_setter_getter(self, output_type, return_function):
+        def assert_output_type(mode):
+            human_readable = {
+                "CURR": "current",
+                "VOLT": "voltage"
+            }
 
-        def setter(output):
-            self.assert_output_type(output_type, self.source_mode())
-            self.write(":SOUR:LEV {:.5e}".format(output))
+            if mode != output_mode:
+                raise GS200Exception("Cannot get {} while in {} mode".format(human_readable[output_mode],
+                                                                             human_readable[mode]))
 
-        def getter():
-            self.assert_output_type(output_type, self.source_mode())
-            answer = self.ask(":SOUR:LEV?")
-            return float(answer)
+        def output_parser(val):
+            mode = self.source_mode()
+            assert_output_type(mode)
+            return val
 
-        return {"setter": setter, "getter": getter}[return_function]
+        return output_parser
