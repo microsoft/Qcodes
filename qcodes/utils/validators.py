@@ -1,5 +1,5 @@
 import math
-from typing import Union
+from typing import Union, Tuple
 
 import numpy as np
 
@@ -45,11 +45,19 @@ class Validator:
     base class for all value validators
     each should have its own constructor, and override:
 
+    __init__: here a private attribute, _valid_values, should be set.
+        _valid_values must be a list of at least one valid value.
+        If possible, it should include all valid values. The purpose of
+        this attribute is to make it possible to find a valid value for
+        a Parameter, given its validator.
+
     validate: function of two args: value, context
         value is what you're testing
         context is a string identifying the caller better
 
         raises an error (TypeError or ValueError) if the value fails
+
+    valid_values: a property exposing _valid_values
 
     is_numeric: is this a numeric type (so it can be swept)?
     """
@@ -60,6 +68,13 @@ class Validator:
     def validate(self, value, context=''):
         raise NotImplementedError
 
+    @property
+    def valid_values(self):
+        if not hasattr(self, '_valid_values'):
+            raise NotImplementedError
+        else:
+            return self._valid_values
+
     is_numeric = False  # is this a numeric type (so it can be swept)?
 
 
@@ -67,12 +82,12 @@ class Anything(Validator):
     """allow any value to pass"""
 
     def __init__(self):
-        pass
+        self._valid_values = [0]
 
     def validate(self, value, context=''):
         pass
     # NOTE(giulioungaretti): why is_numeric?
-    # it allows fort set_step in parameter
+    # it allows for set_step in parameter
     # TODO(giulioungaretti): possible refactor
     is_numeric = True
 
@@ -86,7 +101,7 @@ class Bool(Validator):
     """
 
     def __init__(self):
-        pass
+        self._valid_values = [True, False]
 
     def validate(self, value, context=''):
         if not isinstance(value, bool) and not isinstance(value, np.bool8):
@@ -114,6 +129,7 @@ class Strings(Validator):
         else:
             raise TypeError('max_length must be a positive integer '
                             'no smaller than min_length')
+        self._valid_values = ['.'*min_length, '.'*max_length]
 
     def validate(self, value, context=''):
         if not isinstance(value, str):
@@ -136,8 +152,8 @@ class Strings(Validator):
 class Numbers(Validator):
     """
     Args:
-        min_value (Optional[Union[float, int]):  Min value allowed, default -inf
-        max_value:  (Optional[Union[float, int]): Max  value allowed, default inf
+        min_value: Minimal value allowed, default -inf
+        max_value: Maximal value allowed, default inf
 
     Raises:
 
@@ -147,7 +163,8 @@ class Numbers(Validator):
 
     validtypes = (float, int, np.integer, np.floating)
 
-    def __init__(self, min_value=-float("inf"), max_value=float("inf")):
+    def __init__(self, min_value: Union[float, int]=-float("inf"),
+                 max_value: Union[float, int]=float("inf")) -> None:
 
         if isinstance(min_value, self.validtypes):
             self._min_value = min_value
@@ -158,6 +175,8 @@ class Numbers(Validator):
             self._max_value = max_value
         else:
             raise TypeError('max_value must be a number bigger than min_value')
+
+        self._valid_values = [min_value, max_value]
 
     def validate(self, value, context=''):
         if not isinstance(value, self.validtypes):
@@ -201,6 +220,8 @@ class Ints(Validator):
             raise TypeError(
                 'max_value must be an integer bigger than min_value')
 
+        self._valid_values = [min_value, max_value]
+
     def validate(self, value, context=''):
         if not isinstance(value, self.validtypes):
             raise TypeError(
@@ -228,6 +249,7 @@ class PermissiveInts(Ints):
     Note that you probably always want to use this with a
     set_parser that converts the float repr to an actual int
     """
+
     def validate(self, value, context=''):
         if isinstance(value, (float, np.floating)):
             intrepr = int(round(value))
@@ -253,6 +275,7 @@ class Enum(Validator):
             raise TypeError('Enum needs at least one value')
 
         self._values = set(values)
+        self._valid_values = list(values)
 
     def validate(self, value, context=''):
         try:
@@ -276,6 +299,7 @@ class OnOff(Validator):
 
     def __init__(self):
         self._validator = Enum('on', 'off')
+        self._valid_values = self._validator._valid_values
 
     def validate(self, value, context=''):
         return self._validator.validate(value, context)
@@ -301,6 +325,7 @@ class Multiples(Ints):
         if not isinstance(divisor, int) or divisor <= 0:
             raise TypeError('divisor must be a positive integer')
         self._divisor = divisor
+        self._valid_values = [divisor]
 
     def validate(self, value, context=''):
         super().validate(value=value, context=context)
@@ -342,6 +367,7 @@ class PermissiveMultiples(Validator):
             self._mulval = Multiples(divisor=abs(divisor))
         else:
             self._mulval = None
+        self._valid_values = [divisor]
 
     def validate(self, value: Union[float, int, np.floating],
                  context: str='') -> None:
@@ -380,6 +406,8 @@ class MultiType(Validator):
     allow the union of several different validators
     for example to allow numbers as well as "off":
     MultiType(Numbers(), Enum("off"))
+    The resulting validator acts as a logical OR between the
+    different validators
     """
 
     def __init__(self, *validators):
@@ -399,6 +427,10 @@ class MultiType(Validator):
                 self.is_numeric = True
 
         self._validators = tuple(validators)
+        self._valid_values = []
+        for val in self._validators:
+            self._valid_values + val._valid_values
+        self._valid_values = list(set(self._valid_values))
 
     def validate(self, value, context=''):
         args = ()
@@ -422,15 +454,16 @@ class Arrays(Validator):
     """
     Validator for numerical numpy arrays
     Args:
-        min_value (Optional[Union[float, int]):  Min value allowed, default inf
-        max_value:  (Optional[Union[float, int]): Max  value allowed, default inf
-        shape:     (Optional): None
+        min_value:  Min value allowed, default inf.
+        max_value: Max value allowed, default inf.
+        shape: The shape of the array, standard numpy format.
     """
 
     validtypes = (int, float, np.integer, np.floating)
 
-    def __init__(self, min_value=-float("inf"), max_value=float("inf"),
-                 shape=None):
+    def __init__(self, min_value: Union[float, int]=-float("inf"),
+                 max_value: Union[float, int]=float("inf"),
+                 shape: Tuple[int]=None) -> None:
 
         if isinstance(min_value, self.validtypes):
             self._min_value = min_value
@@ -442,6 +475,13 @@ class Arrays(Validator):
         else:
             raise TypeError('max_value must be a number bigger than min_value')
         self._shape = shape
+
+        if self._shape is None:
+            self._valid_values = [np.array([min_value])]
+        else:
+            val_arr = np.empty(self._shape)
+            val_arr.fill(min_value)
+            self._valid_values = [val_arr]
 
     def validate(self, value, context=''):
 
@@ -494,6 +534,7 @@ class Lists(Validator):
 
     def __init__(self, elt_validator=Anything()):
         self._elt_validator = elt_validator
+        self._valid_values = [elt_validator._valid_values]
 
     def __repr__(self):
         msg = '<Lists : '
@@ -515,8 +556,7 @@ class Callable(Validator):
     Validator for callables such as functions.
     """
     def __init__(self):
-        # exists only to overwrite parent class
-        pass
+        self._valid_values = [lambda: 0]
 
     def validate(self, value, context=''):
         if not callable(value):
@@ -532,8 +572,7 @@ class Dict(Validator):
     Validator for dictionaries
     """
     def __init__(self):
-        # exists only to overwrite parent class
-        pass
+        self._valid_values = [{0: 1}]
 
     def validate(self, value, context=''):
         if not isinstance(value, dict):
