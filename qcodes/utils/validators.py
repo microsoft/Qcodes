@@ -432,7 +432,7 @@ class MultiType(Validator):
         self._validators = tuple(validators)
         self._valid_values = []
         for val in self._validators:
-            self._valid_values + val._valid_values
+            self._valid_values += val._valid_values
         self._valid_values = list(set(self._valid_values))
 
     def validate(self, value, context=''):
