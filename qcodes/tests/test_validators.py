@@ -477,10 +477,15 @@ class TestPermissiveMultiples(TestCase):
             val = PermissiveMultiples(div)
             for mult in self.not_multiples[divind]:
                 with self.assertRaises(ValueError):
-                    print(div, mult)
                     val.validate(mult)
 
     # finally, a quick test that the precision is indeed setable
+    def test_precision(self):
+        pm_lax = PermissiveMultiples(35e-9, precision=3e-9)
+        pm_lax.validate(72e-9)
+        pm_strict = PermissiveMultiples(35e-9, precision=1e-10)
+        with self.assertRaises(ValueError):
+            pm_strict.validate(70.2e-9)
 
 
 class TestMultiType(TestCase):
