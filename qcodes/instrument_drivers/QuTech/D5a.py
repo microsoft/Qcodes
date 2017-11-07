@@ -40,10 +40,10 @@ class D5a(Instrument):
                 the spirack package. This class manages communication with the
                 individual modules.
 
-            module (int): module number as set on the hardware.    
+            module (int): module number as set on the hardware.
             inter_delay (float): time in seconds, passed to dac parameters of the object
             dac_step (float): max step size (V or mV), passed to dac parameters of the object
-            reset_voltages (bool): passed to D5a_module constructor    
+            reset_voltages (bool): passed to D5a_module constructor
             mV (bool): if True, then use mV as units in the dac parameters
         """
         super().__init__(name, **kwargs)
