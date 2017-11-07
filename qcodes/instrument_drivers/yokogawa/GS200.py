@@ -89,10 +89,12 @@ class GS200_Monitor(InstrumentChannel):
         """Turn measurement off"""
         self.write(':SENS 0')
         self._enabled = False
+
     def on(self):
         """Turn measurement on"""
         self.write(':SENS 1')
         self._enabled = True
+
     def state(self):
         """Check measurement state"""
         state = int(self.ask(':SENS?'))
@@ -152,7 +154,7 @@ class GS200(VisaInstrument):
 
     def __init__(self, name, address, **kwargs):
         super().__init__(name, address, **kwargs)
-        self.visa_handle.read_termination = "\r\n"
+        self.visa_handle.read_termination = "\n"
 
         self.add_parameter('output',
                            label='Output State',
@@ -169,9 +171,10 @@ class GS200(VisaInstrument):
                            set_cmd=self._set_source_mode,
                            get_parser=self._get_source_mode,
                            vals=Enum('VOLT', 'CURR'))
+
         self.add_parameter('range',
                            label='Source Range',
-                           unit='?', # This will be set by the get/set parser
+                           unit='?',  # This will be set by the get/set parser
                            get_cmd=':SOUR:RANG?',
                            set_cmd=':SOUR:RANG {}',
                            get_parser=self._getset_range,
@@ -189,14 +192,15 @@ class GS200(VisaInstrument):
         self.add_parameter('voltage',
                            label='Voltage',
                            unit='V',
-                           set_cmd=":SOUR:LEV {:.5e}",
-                           get_cmd=":SOUR:LEV?",
-                           vals=Nothing(""))
+                           set_cmd=self._output_setter_getter("VOLT", "setter"),
+                           get_cmd=self._output_setter_getter("VOLT", "getter"),
+                           vals=Numbers())
+
         self.add_parameter('current',
                            label='Current',
                            unit='I',
-                           set_cmd=":SOUR:LEV {:.5e}",
-                           get_cmd=":SOUR:LEV?",
+                           set_cmd=self._output_setter_getter("CURR", "setter"),
+                           get_cmd=self._output_setter_getter("CURR", "getter"),
                            vals=Nothing(""))
 
         self.add_parameter('voltage_limit',
@@ -360,3 +364,28 @@ class GS200(VisaInstrument):
         # Update validators and parameters
         self._update_vals(source_mode=source_mode, source_range=val)
         return val
+
+    @staticmethod
+    def assert_output_type(output_type, mode):
+
+        human_readable = {
+            "CURR": "current",
+            "VOLT": "voltage"
+        }
+
+        if mode != output_type:
+            raise GS200Exception("Cannot set {} while in {} mode".format(human_readable[output_type],
+                                                                         human_readable[mode]))
+
+    def _output_setter_getter(self, output_type, return_function):
+
+        def setter(output):
+            self.assert_output_type(output_type, self.source_mode())
+            self.write(":SOUR:LEV {:.5e}".format(output))
+
+        def getter():
+            self.assert_output_type(output_type, self.source_mode())
+            answer = self.ask(":SOUR:LEV?")
+            return float(answer)
+
+        return {"setter": setter, "getter": getter}[return_function]
