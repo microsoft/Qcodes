@@ -1,3 +1,5 @@
+from functools import partial
+
 from qcodes import VisaInstrument, InstrumentChannel
 from qcodes.utils.validators import Numbers, Bool, Enum, Nothing, Ints, Validator
 
@@ -223,18 +225,16 @@ class GS200(VisaInstrument):
         self.add_parameter('voltage',
                            label='Voltage',
                            unit='V',
-                           set_cmd=":SOUR:LEV {:.5e}",
-                           get_cmd=":SOUR:LEV?",
-                           get_parser=self._output_get_parser("VOLT"),
-                           vals=Numbers())
+                           set_cmd=partial(self._set_output, "VOLT"),
+                           get_cmd=partial(self._get_output, "VOLT")
+                           )
 
         self.add_parameter('current',
                            label='Current',
                            unit='I',
-                           set_cmd=":SOUR:LEV {:.5e}",
-                           get_cmd=":SOUR:LEV?",
-                           get_parser=self._output_get_parser("CURR"),
-                           vals=Numbers())
+                           set_cmd=partial(self._set_output, "CURR"),
+                           get_cmd=partial(self._get_output, "CURR")
+                           )
 
         self.add_parameter('voltage_limit',
                            label='Voltage Protection Limit',
@@ -309,7 +309,7 @@ class GS200(VisaInstrument):
         self.measure._output = bool(state)
         return state
 
-    def _update_validators_and_units(self, source_mode=None, source_range=None):
+    def _update_range_units(self, source_mode=None, source_range=None):
         """
         Update validators/units as source mode/range changes
 
@@ -327,30 +327,8 @@ class GS200(VisaInstrument):
         # Setup source based on what mode we are in
         # Range is updated if auto-range is off
         if source_mode == 'VOLT':
-            if self.auto_range.get():
-                self.voltage.set_raw.cmd_str = ":SOUR:LEV:AUTO {:.5e}"
-            else:
-                self.voltage.set_raw.cmd_str = ":SOUR:LEV {:.5e}"
-
-            self.current.vals = Nothing("Current cannot be set in voltage mode")
-            if self.auto_range.get():
-                self.voltage.vals = Numbers(-30, 30)
-            else:
-                self.voltage.vals = Numbers(-source_range, source_range)
-
             self.range.unit = "V"
         else:
-            if self.auto_range.get():
-                self.current.set_raw.cmd_str = ":SOUR:LEV:AUTO {:.5e}"
-            else:
-                self.current.set_raw.cmd_str = ":SOUR:LEV {:.5e}"
-
-            self.voltage.vals = Nothing("Voltage cannot be set in current mode")
-            if self.auto_range.get():
-                self.current.vals = Numbers(-0.1, 0.1)
-            else:
-                self.current.vals = Numbers(-source_range, source_range)
-
             self.range.unit = "I"
 
         # Finally if measurements are enabled, update measurement units
@@ -358,17 +336,58 @@ class GS200(VisaInstrument):
         if self.measure.present:
             self.measure._update_measurement_enabled(source_mode, source_range, False)
 
+    def _set_output(self, mode, output_level):
+        """
+        Set the output of the instrument.
+
+        Parameters
+        ----------
+        mode: str, ["CURR", "VOLT"]
+            The desired output mode. If the current output mode does not match the desired output, an exception is
+            raised
+
+        output_level: float
+        """
+        current_mode = self.source_mode()
+        if current_mode != mode:
+            raise ValueError("Cannot output {} while in {} mode".format(mode, current_mode))
+
+        auto_enabled = self.auto_range()
+        self_range = self.range()
+
+        if not auto_enabled and abs(output_level) > abs(self_range):
+            raise ValueError("Desired output level not in range [-{self_range:.3}, {self_range:.3}]".format(
+                self_range=self_range))
+
+        auto_str = {True: ":AUTO", False: ""}[auto_enabled]
+        cmd_str = ":SOUR:LEV{} {:.5e}".format(auto_str, output_level)
+        self.write(cmd_str)
+
+    def _get_output(self, mode):
+        """
+        Get the output of an instrument
+
+        Parameters
+        ----------
+        mode: str, ["CURR", "VOLT"]
+        """
+        current_mode = self.source_mode()
+        if current_mode != mode:
+            raise ValueError("Cannot measure {} while in {} mode".format(mode, current_mode))
+
+        answer = self.ask(":SOUR:LEV?")
+        return float(answer)
+
     def _set_auto_range(self, val):
         """
-        Enable/disable auto range. Note that the instrument itself does not provide auto range. This is implemented
-        in software.
+        Enable/disable auto range.
 
         Parameters
         ----------
         val: bool
         """
         self._auto_range = val
-        self._update_validators_and_units()
+        self._update_range_units()
         # Disable measurement if auto range is on
         if self.measure.present:
             self.measure._enabled &= val  # TODO: Sebastian, can you explain what you are doing here?
@@ -385,7 +404,7 @@ class GS200(VisaInstrument):
             raise GS200Exception("Cannot switch mode while source is on")
 
         self.write("SOUR:FUNC {}".format(mode))
-        self._update_validators_and_units(source_mode=mode)
+        self._update_range_units(source_mode=mode)
 
     def _range_set_parser(self, val):
         """
@@ -398,38 +417,5 @@ class GS200(VisaInstrument):
         """
         val = float(val)
         source_mode = self.source_mode()
-        self._update_validators_and_units(source_mode=source_mode, source_range=val)
+        self._update_range_units(source_mode=source_mode, source_range=val)
         return val
-
-    def _output_get_parser(self, output_mode):
-        """
-        Setting the current/voltage while in voltage/current mode will rightfully raise an error. However, we also
-        want to raise an error while trying to get the output when we are in the wrong output mode (e.g. getting the
-        current while in voltage mode and visa-versa). This will prevent user confusion
-
-        Parameters
-        ----------
-        output_mode: str, ["Curr", "Volt"]
-
-        Returns
-        -------
-        output_parser: callable
-            The get parser for the current/voltage output
-        """
-
-        def assert_output_type(mode):
-            human_readable = {
-                "CURR": "current",
-                "VOLT": "voltage"
-            }
-
-            if mode != output_mode:
-                raise GS200Exception("Cannot get {} while in {} mode".format(human_readable[output_mode],
-                                                                             human_readable[mode]))
-
-        def output_parser(val):
-            mode = self.source_mode()
-            assert_output_type(mode)
-            return val
-
-        return output_parser
