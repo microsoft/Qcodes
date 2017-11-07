@@ -1,14 +1,25 @@
 from qcodes import VisaInstrument, InstrumentChannel
-from qcodes.utils.validators import Numbers, Bool, Enum, Nothing, Ints
+from qcodes.utils.validators import Numbers, Bool, Enum, Nothing, Ints, Validator
 
-def float_int(val):
+
+def float_round(val):
     """
-    Parses int that are returned in exponentiated form (i.e. 1E0)
+    Rounds a floating number represented as a string
+
+    Parameters
+    ----------
+    val: str
+
+    Returns
+    -------
+    int
     """
     return round(float(val))
 
+
 class GS200Exception(Exception):
     pass
+
 
 class GS200_Monitor(InstrumentChannel):
     """
@@ -51,7 +62,7 @@ class GS200_Monitor(InstrumentChannel):
                                set_cmd=':SENS:NPLC {}',
                                set_parser=int,
                                get_cmd=':SENS:NPLC?',
-                               get_parser=float_int)
+                               get_parser=float_round)
             self.add_parameter('delay',
                                label='Measurement Delay',
                                unit='ms',
@@ -59,7 +70,7 @@ class GS200_Monitor(InstrumentChannel):
                                set_cmd=':SENS:DEL {}',
                                set_parser=int,
                                get_cmd=':SENS:DEL?',
-                               get_parser=float_int)
+                               get_parser=float_round)
             self.add_parameter('trigger',
                                label='Trigger Source',
                                set_cmd=':SENS:TRIG {}',
@@ -142,6 +153,26 @@ class GS200_Monitor(InstrumentChannel):
             self.measure.unit = 'V'
 
 
+class GS200RangeValidator(Validator):
+    def __init__(self, parent_instrument):
+        self._parent_instrument = parent_instrument
+
+    def validate(self, value, context=''):
+
+        mode = self._parent_instrument.source_mode()
+
+        if mode == "CURR":
+            valid_values = [1e-3, 10e-3, 100e-3, 200e-3]
+        else:
+            valid_values = [10e-3, 100e-3, 1e0, 10e0, 30e0]
+
+        if value not in valid_values:
+            raise ValueError("{} invalid range for mode {}".format(str(value), mode))
+
+    def __repr__(self):
+        return "GS200RangeValidator"
+
+
 class GS200(VisaInstrument):
     """
     This is the qcodes driver for the Yokogawa GS200 voltage and current source
@@ -169,7 +200,6 @@ class GS200(VisaInstrument):
                            label='Source Mode',
                            get_cmd=':SOUR:FUNC?',
                            set_cmd=self._set_source_mode,
-                           get_parser=self._source_mode_get_parser,
                            vals=Enum('VOLT', 'CURR'))
 
         self.add_parameter('range',
@@ -177,8 +207,9 @@ class GS200(VisaInstrument):
                            unit='?',  # This will be set by the get/set parser
                            get_cmd=':SOUR:RANG?',
                            set_cmd=':SOUR:RANG {}',
-                           get_parser=self._getset_range,
-                           set_parser=self._getset_range)
+                           vals=GS200RangeValidator(self),
+                           set_parser=self._range_set_parser,
+                           get_parser=float)
 
         self._auto_range = False
         self.add_parameter('auto_range',
@@ -203,7 +234,7 @@ class GS200(VisaInstrument):
                            set_cmd=":SOUR:LEV {:.5e}",
                            get_cmd=":SOUR:LEV?",
                            get_parser=self._output_get_parser("CURR"),
-                           vals=Nothing(""))
+                           vals=Numbers())
 
         self.add_parameter('voltage_limit',
                            label='Voltage Protection Limit',
@@ -211,8 +242,9 @@ class GS200(VisaInstrument):
                            vals=Ints(1, 30),
                            get_cmd=":SOUR:PROT:VOLT?",
                            set_cmd=":SOUR:PROT:VOLT {}",
-                           get_parser=float_int,
+                           get_parser=float_round,
                            set_parser=int)
+
         self.add_parameter('current_limit',
                            label='Current Protection Limit',
                            unit='I',
@@ -223,13 +255,13 @@ class GS200(VisaInstrument):
                            set_parser=float)
 
         self.add_parameter('four_wire',
-                          label='Four Wire Sensing',
-                          get_cmd=':SENS:REM?',
-                          set_cmd=':SENS:REM {}',
-                          val_mapping={
+                           label='Four Wire Sensing',
+                           get_cmd=':SENS:REM?',
+                           set_cmd=':SENS:REM {}',
+                           val_mapping={
                               'off': 0,
                               'on': 1,
-                          })
+                           })
         # Note: This feature can be used to remove common mode noise.
         # Read the manual to see if you would like to use it
         self.add_parameter('guard',
@@ -257,10 +289,9 @@ class GS200(VisaInstrument):
         self.add_function('reset', call_cmd='*RST')
         self.connect_message()
 
-        # Update the source ranges and output state
-        # This will query mode and range
-        self.output.get()
-        self.source_mode.get()
+        self.output("off")
+        self.source_mode("VOLT")
+        self.auto_range(True)
 
     def on(self):
         """Turn output on"""
@@ -278,14 +309,20 @@ class GS200(VisaInstrument):
         self.measure._output = bool(state)
         return state
 
-    def _update_vals(self, source_mode=None, source_range=None):
-        """Update validators/units as source mode/range changes"""
-        # Update source mode
+    def _update_validators_and_units(self, source_mode=None, source_range=None):
+        """
+        Update validators/units as source mode/range changes
+
+        Parameters
+        ----------
+        source_mode: str, ["CURR", "VOLT"]
+        source_range: float
+        """
         if source_mode is None:
-            source_mode = self.ask(":SOUR:FUNC?")
+            source_mode = self.source_mode()
         # Get source range if auto-range is off
-        if source_range is None and not self.auto_range.get():
-            source_range = float(self.ask("SOUR:RANG?"))
+        if source_range is None and not self.auto_range():
+            source_range = self.range()
 
         # Setup source based on what mode we are in
         # Range is updated if auto-range is off
@@ -322,52 +359,53 @@ class GS200(VisaInstrument):
             self.measure._update_measurement_enabled(source_mode, source_range, False)
 
     def _set_auto_range(self, val):
-        """Change commands when autoranging"""
-        # Store new autorange setting
+        """
+        Enable/disable auto range. Note that the instrument itself does not provide auto range. This is implemented
+        in software.
+
+        Parameters
+        ----------
+        val: bool
+        """
         self._auto_range = val
-        # Update validators
-        self._update_vals()
-        # Disable measurement if autorange is on
+        self._update_validators_and_units()
+        # Disable measurement if auto range is on
         if self.measure.present:
-            self.measure._enabled &= val
+            self.measure._enabled &= val  # TODO: Sebastian, can you explain what you are doing here?
 
-    def _source_mode_get_parser(self, val):
-        """Get output (VOLT/CURR) mode and update validators"""
-        self._update_vals(source_mode=val)
-        return val
+    def _set_source_mode(self, mode):
+        """
+        Set output mode and update validators
 
-    def _set_source_mode(self, val):
-        """Set output (VOLT/CURR) mode and update validators"""
-        # Cannot set source mode when the output is on
-        if self.output.get() == 'on':
+        Parameters
+        ----------
+        mode: str, ["CURR", "VOLT"]
+        """
+        if self.output() == 'on':
             raise GS200Exception("Cannot switch mode while source is on")
-        # Write the new mode to the instrument
-        self.write("SOUR:FUNC {}".format(val))
-        # Update the parameters and validators appropriately
-        self._update_vals(source_mode=val)
 
-    def _getset_range(self, val):
-        """Update range and validators"""
+        self.write("SOUR:FUNC {}".format(mode))
+        self._update_validators_and_units(source_mode=mode)
+
+    def _range_set_parser(self, val):
+        """
+        Update range and validators
+
+        Parameters
+        ----------
+        val: float
+            The output set range is validated by the GS200RangeValidator
+        """
         val = float(val)
-
-        # Check appropriate range depending on source mode
-        source_mode = self.ask(":SOUR:FUNC?")
-        if source_mode == 'VOLT':
-            if val not in (10e-3, 100e-3, 1e0, 10e0, 30e0):
-                raise ValueError("Invalid voltage range")
-        else:
-            if val not in (1e-3, 10e-3, 100e-3, 200e-3):
-                raise ValueError("Invalid current range")
-
-        # Update validators and parameters
-        self._update_vals(source_mode=source_mode, source_range=val)
+        source_mode = self.source_mode()
+        self._update_validators_and_units(source_mode=source_mode, source_range=val)
         return val
 
     def _output_get_parser(self, output_mode):
         """
         Setting the current/voltage while in voltage/current mode will rightfully raise an error. However, we also
         want to raise an error while trying to get the output when we are in the wrong output mode (e.g. getting the
-        current while in voltage mode and visa-versa)
+        current while in voltage mode and visa-versa). This will prevent user confusion
 
         Parameters
         ----------
