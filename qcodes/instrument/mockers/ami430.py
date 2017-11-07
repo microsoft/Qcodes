@@ -102,27 +102,31 @@ class MockAMI430:
     def message_parser(gs, msg_str, key):
         """
         * If gs = "get":
-        Let suppose key = "RAMP:RATE:UNITS", then if we get msg_str = "RAMP:RATE:UNITS?" then match will be True and
-        args = None. If msg_str = "RAMP:RATE:UNITS:10?" then match = True and args = "10". On the other hand if
-        key = "RAMP" then both "RAMP:RATE:UNITS?" and "RAMP:RATE:UNITS:10?" will cause match to be False
+        Let suppose key = "RAMP:RATE:UNITS", then if we get msg_str =
+        "RAMP:RATE:UNITS?" then match will be True and args = None. If
+        msg_str = "RAMP:RATE:UNITS:10?" then match = True and args =
+        "10". On the other hand if key = "RAMP" then both
+        "RAMP:RATE:UNITS?" and "RAMP:RATE:UNITS:10?" will cause match
+        to be False
 
         * If gs = "set"
-        If key = "STATE" and msg_str = "STATE 2,1" then match = True and args = "2,1". If key="STATE" and
-        msg_str =  STATE:ELSE 2,1 then match is False.
+        If key = "STATE" and msg_str = "STATE 2,1" then match = True
+        and args = "2,1". If key="STATE" and msg_str = STATE:ELSE 2,1
+        then match is False.
 
         Consult [1] for a complete description of the AMI430 protocol.
 
-        [1] http://www.americanmagnetics.com/support/manuals/mn-4Q06125PS-430.pdf
+        [1]
+        http://www.americanmagnetics.com/support/manuals/mn-4Q06125PS-430.pdf
 
-        Parameters:
-            gs (string):  "get", or "set"
-            msg_str (string): the message string the mock instrument gets.
-            key (string): one of the keys in self.handlers
+        Parameters: gs (string): "get", or "set" msg_str (string): the
+            message string the mock instrument gets.  key (string):
+            one of the keys in self.handlers
 
-        Returns:
-            match (bool): if the key and the msg_str match, then match = True
-            args (string): if any arguments are present in the message string these will be passed along. This is
-                            always None when match = False
+        Returns: match (bool): if the key and the msg_str match, then
+            match = True args (string): if any arguments are present
+            in the message string these will be passed along. This is
+            always None when match = False
 
         """
         if msg_str == key:  # If the message string matches a key exactly we have a match with no arguments

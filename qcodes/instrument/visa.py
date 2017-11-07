@@ -8,6 +8,7 @@ import pyvisa.resources
 from .base import Instrument
 import qcodes.utils.validators as vals
 
+
 class VisaInstrument(Instrument):
 
     """
@@ -40,7 +41,8 @@ class VisaInstrument(Instrument):
         visa_handle (pyvisa.resources.Resource): The communication channel.
     """
 
-    def __init__(self, name, address=None, timeout=5, terminator='', device_clear=True, **kwargs):
+    def __init__(self, name, address=None, timeout=5, terminator='',
+                 device_clear=True, **kwargs):
         super().__init__(name, **kwargs)
 
         self.add_parameter('timeout',
@@ -53,6 +55,7 @@ class VisaInstrument(Instrument):
         self.set_address(address)
         if device_clear:
             self.device_clear()
+
         self.set_terminator(terminator)
         self.timeout.set(timeout)
 
@@ -79,17 +82,24 @@ class VisaInstrument(Instrument):
         else:
             resource_manager = visa.ResourceManager()
 
-        self.visa_handle = resource_manager.open_resource(address)
+        if not self._testing:
+            self.visa_handle = resource_manager.open_resource(address)
+        else:
+            self.visa_handle = None
         self._address = address
 
     def device_clear(self):
         """Clear the buffers of the device"""
 
+        if self._testing:
+            return
+
         # Serial instruments have a separate flush method to clear their buffers
         # which behaves differently to clear. This is particularly important
         # for instruments which do not support SCPI commands.
         if isinstance(self.visa_handle, pyvisa.resources.SerialInstrument):
-            self.visa_handle.flush(vi_const.VI_READ_BUF_DISCARD | vi_const.VI_WRITE_BUF_DISCARD)
+            self.visa_handle.flush(
+                vi_const.VI_READ_BUF_DISCARD | vi_const.VI_WRITE_BUF_DISCARD)
         else:
             self.visa_handle.clear()
 
@@ -101,10 +111,19 @@ class VisaInstrument(Instrument):
             terminator (str): Character(s) to look for at the end of a read.
                 eg. '\r\n'.
         """
+
+        if self._testing:
+            self._terminator = ''
+            return
+
         self.visa_handle.read_termination = terminator
         self._terminator = terminator
 
     def _set_visa_timeout(self, timeout):
+        if self._testing:
+            self._testtimeout = timeout
+            return
+
         if timeout is None:
             self.visa_handle.timeout = None
         else:
@@ -112,6 +131,9 @@ class VisaInstrument(Instrument):
             self.visa_handle.timeout = timeout * 1000.0
 
     def _get_visa_timeout(self):
+        if self._testing:
+            return self._testtimeout
+
         timeout_ms = self.visa_handle.timeout
         if timeout_ms is None:
             return None
