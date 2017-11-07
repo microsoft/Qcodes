@@ -9,8 +9,6 @@ from pyqtgraph import QtGui
 from pyqtgraph.multiprocess.remoteproxy import ClosedError
 import qcodes.utils.helpers
 
-from pyqtgraph import QtGui # note that pyqtgraph still uses the old pyqt4 layout
-
 import warnings
 from collections import namedtuple, deque
 
@@ -34,10 +32,6 @@ class QtPlot(BasePlot):
 
         figsize: (width, height) tuple in pixels to pass to GraphicsWindow
             default (1000, 600)
-        fig_x_pos: fraction of screen width to place the figure at
-            0 is all the way to the left and
-            1 is all the way to the right.
-            default None let qt decide.
         interval: period in seconds between update checks
             default 0.25
         theme: tuple of (foreground_color, background_color), where each is
