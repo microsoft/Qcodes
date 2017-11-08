@@ -691,7 +691,10 @@ class TestStandardParam(TestCase):
         p.step = 0.1
         # and a wait time
         p.inter_delay = 1e-9 # in seconds
-        expected_output =np.linspace(0.1,10,100)
+        p.set(1.0)
+        np.testing.assert_allclose(p.get(), 1.0)
+        assert p.raw_value == 1.0*scale
+        expected_output =np.linspace(1.1,10,90)
         np.testing.assert_allclose(p.get_ramp_values(10, p.step),
                                    expected_output)
         p.set(value)
@@ -709,7 +712,10 @@ class TestStandardParam(TestCase):
         p.step = 0.1
         # and a wait time
         p.inter_delay = 1e-9 # in seconds
-        expected_output =np.linspace(0.1,10,100)
+        p.set(1.0)
+        assert p.get() == 1.0
+        assert p.raw_value == - 1.0
+        expected_output = np.linspace(1.1,10,90)
         np.testing.assert_allclose(p.get_ramp_values(10, p.step),
                                    expected_output)
         p.set(value)
@@ -728,7 +734,10 @@ class TestStandardParam(TestCase):
         p.step = 0.1
         # and a wait time
         p.inter_delay = 1e-9 # in seconds
-        expected_output =np.linspace(0.1,10,100)
+        p.set(1.0)
+        assert p.get() == 1.0
+        assert p.raw_value == - 1.0 * scale
+        expected_output = np.linspace(1.1,10,90)
         np.testing.assert_allclose(p.get_ramp_values(10, p.step),
                                    expected_output)
         p.set(value)
