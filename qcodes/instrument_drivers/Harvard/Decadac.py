@@ -366,6 +366,7 @@ class Decadac(VisaInstrument, DacReader):
 
         _ramp_time (int): The ramp time in ms. Default 100 ms.
     """
+    DAC_CHANNEL_CLASS = DacChannel
 
     def __init__(self, name, address, min_val=-5, max_val=5, **kwargs):
         """
@@ -395,7 +396,7 @@ class Decadac(VisaInstrument, DacReader):
         self._feature_detect()
 
         # Create channels
-        channels = ChannelList(self, "Channels", DacChannel, snapshotable=False)
+        channels = ChannelList(self, "Channels", self.DAC_CHANNEL_CLASS, snapshotable=False)
         slots = ChannelList(self, "Slots", DacSlot)
         for i in range(6):  # Create the 6 DAC slots
             slots.append(DacSlot(self, "Slot{}".format(i), i, min_val, max_val))
