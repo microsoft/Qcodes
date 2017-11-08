@@ -437,7 +437,7 @@ class _BaseParameter(Metadatable, DeferredOperations):
                 raise RuntimeError("Don't know how to step a parameter with more than one value")
             if self.get_latest() is None:
                 self.get()
-            start_value = self.raw_value
+            start_value = self.get_latest()
 
             if not (isinstance(start_value, (int, float)) and
                     isinstance(value, (int, float))):
@@ -1425,8 +1425,11 @@ class StandardParameter(Parameter):
 
 class ManualParameter(Parameter):
     def __init__(self, name, instrument=None, initial_value=None, **kwargs):
+        """
+        A simple alias for a parameter that does not have a set or
+        a get function. Useful for parameters that do not have a direct
+        instrument mapping.
+        """
         super().__init__(name=name, instrument=instrument,
                          get_cmd=None, set_cmd=None,
                          initial_value=initial_value, **kwargs)
-        warnings.warn('Parameter {}: `ManualParameter` is deprecated, use '
-                        '`Parameter` instead with `set_cmd=None`.'.format(self))

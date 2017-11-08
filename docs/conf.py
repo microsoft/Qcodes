@@ -387,6 +387,7 @@ autodoc_mock_imports.append('zhinst')
 autodoc_mock_imports.append('zhinst.utils')
 autodoc_mock_imports.append('keysightSD1')
 autodoc_mock_imports.append('cffi')
+autodoc_mock_imports.append('spirack')
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = []

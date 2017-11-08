@@ -6,7 +6,8 @@
     "gui" :{
         "notebook": true,
         "plotlib": "all",
-        "pyqtmaxplots": 100
+        "pyqtmaxplots": 100,
+        "defaultcolormap": "hot"
     },
     "user": {}
 }
