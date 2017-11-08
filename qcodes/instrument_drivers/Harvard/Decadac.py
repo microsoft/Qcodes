@@ -328,7 +328,7 @@ class DacSlot(InstrumentChannel, DacReader):
                            val_mapping=slot_modes)
 
         # Enable all slots in coarse mode.
-        self.slot_mode.set(DacSlot.SLOT_MODE_DEFAULT)
+        self.slot_mode.set(self.SLOT_MODE_DEFAULT)
 
     def write(self, cmd):
         """
