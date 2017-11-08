@@ -64,7 +64,7 @@ class MemoryParameter(Parameter):
             if func is not None:
                 val = func()
             else:
-                val = self._latest['value']
+                val = self._latest['raw_value']
             self.get_values.append(val)
             return val
         return get_func
@@ -684,62 +684,112 @@ class TestStandardParam(TestCase):
     @given(scale=hst.integers(1, 100),
            value=hst.floats(min_value=1e-9, max_value=10))
     def test_ramp_scaled(self, scale, value):
-        p = Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p, scale=scale,
-                      initial_value=0)
-        assert p() == 0.0
+        start_point = 0.0
+        p = MemoryParameter(name='p', scale=scale,
+                      initial_value=start_point)
+        assert p() == start_point
         # first set a step size
         p.step = 0.1
         # and a wait time
         p.inter_delay = 1e-9 # in seconds
-        p.set(1.0)
-        np.testing.assert_allclose(p.get(), 1.0)
-        assert p.raw_value == 1.0*scale
-        expected_output =np.linspace(1.1,10,90)
-        np.testing.assert_allclose(p.get_ramp_values(10, p.step),
-                                   expected_output)
+        first_step = 1.0
+        second_step = 10.0
+        # do a step to start from a non zero starting point where
+        # scale matters
+        p.set(first_step)
+        np.testing.assert_allclose(np.array([p.get()]),
+                                   np.array([first_step]))
+
+        expected_raw_steps = np.linspace(start_point*scale, first_step*scale, 11)
+        # getting the raw values that are actually send to the instrument.
+        # these are scaled in the set_wrapper
+        np.testing.assert_allclose(np.array(p.set_values), expected_raw_steps)
+        assert p.raw_value == first_step*scale
+        # then check the generated steps. They should not be scaled as the
+        # scaling happens when setting them
+        expected_steps = np.linspace(first_step+p.step,
+                                     second_step,90)
+        np.testing.assert_allclose(p.get_ramp_values(second_step, p.step),
+                                   expected_steps)
+        p.set(10)
+        np.testing.assert_allclose(np.array(p.set_values),
+                                   np.linspace(0.0*scale, 10*scale, 101))
         p.set(value)
         np.testing.assert_allclose(p.get(), value)
         assert p.raw_value == value * scale
 
     @given(value=hst.floats(min_value=1e-9, max_value=10))
     def test_ramp_parser(self, value):
-        p = Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p,
-                      set_parser=lambda x: -x,
-                      get_parser=lambda x: -x,
-                      initial_value=0)
-        assert p() == 0.0
+        start_point = 0.0
+        p = MemoryParameter(name='p',
+                            set_parser=lambda x: -x,
+                            get_parser=lambda x: -x,
+                            initial_value=start_point)
+        assert p() == start_point
         # first set a step size
         p.step = 0.1
         # and a wait time
         p.inter_delay = 1e-9 # in seconds
-        p.set(1.0)
-        assert p.get() == 1.0
-        assert p.raw_value == - 1.0
-        expected_output = np.linspace(1.1,10,90)
-        np.testing.assert_allclose(p.get_ramp_values(10, p.step),
-                                   expected_output)
+        first_step = 1.0
+        second_step = 10.0
+        # do a step to start from a non zero starting point where
+        # scale matters
+        p.set(first_step)
+        assert p.get() == first_step
+        assert p.raw_value == - first_step
+        np.testing.assert_allclose(np.array([p.get()]),
+                                   np.array([first_step]))
+
+        expected_raw_steps = np.linspace(-start_point, -first_step, 11)
+        # getting the raw values that are actually send to the instrument.
+        # these are parsed in the set_wrapper
+        np.testing.assert_allclose(np.array(p.set_values), expected_raw_steps)
+        assert p.raw_value == -first_step
+        # then check the generated steps. They should not be parsed as the
+        # scaling happens when setting them
+        expected_steps = np.linspace((first_step+p.step),
+                                     second_step,90)
+        np.testing.assert_allclose(p.get_ramp_values(second_step, p.step),
+                                   expected_steps)
+        p.set(second_step)
+        np.testing.assert_allclose(np.array(p.set_values),
+                                   np.linspace(-start_point, -second_step, 101))
         p.set(value)
-        assert p.get() == value
-        assert p.raw_value == -value
+        np.testing.assert_allclose(p.get(), value)
+        assert p.raw_value == - value
+
+
 
     @given(scale=hst.integers(1, 100),
            value=hst.floats(min_value=1e-9, max_value=10))
     def test_ramp_parsed_scaled(self, scale, value):
-        p = Parameter('p', set_cmd=self.set_p, get_cmd=self.get_p, scale=scale,
-                      set_parser=lambda x: -x,
-                      get_parser=lambda x: -x,
-                      initial_value=0)
-        assert p() == 0.0
+        start_point = 0.0
+        p = MemoryParameter(name='p',
+                            scale = scale,
+                            set_parser=lambda x: -x,
+                            get_parser=lambda x: -x,
+                            initial_value=start_point)
+        assert p() == start_point
         # first set a step size
         p.step = 0.1
         # and a wait time
         p.inter_delay = 1e-9 # in seconds
-        p.set(1.0)
-        assert p.get() == 1.0
-        assert p.raw_value == - 1.0 * scale
-        expected_output = np.linspace(1.1,10,90)
+        first_step = 1.0
+        second_step = 10.0
+        p.set(first_step)
+        assert p.get() == first_step
+        assert p.raw_value == - first_step * scale
+        expected_raw_steps = np.linspace(-start_point*scale, -first_step*scale, 11)
+        # getting the raw values that are actually send to the instrument.
+        # these are parsed in the set_wrapper
+        np.testing.assert_allclose(np.array(p.set_values), expected_raw_steps)
+        assert p.raw_value == - scale * first_step
+        expected_steps = np.linspace(first_step+p.step,second_step,90)
         np.testing.assert_allclose(p.get_ramp_values(10, p.step),
-                                   expected_output)
+                                   expected_steps)
+        p.set(second_step)
+        np.testing.assert_allclose(np.array(p.set_values),
+                                   np.linspace(-start_point*scale, -second_step*scale, 101))
         p.set(value)
         np.testing.assert_allclose(p.get(), value)
         assert p.raw_value == -scale * value
