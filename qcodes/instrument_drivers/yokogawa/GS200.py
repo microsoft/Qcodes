@@ -208,27 +208,18 @@ class GS200(VisaInstrument):
                            get_cmd=lambda: self._auto_range,
                            vals=Bool())
 
-        # Note: For the parameters voltage and current, we are misusing the parsers
-        # as validators. This is the easiest way to ensure that the voltage/current settings
-        # are not accessed in the wrong mode. Additionally, some validation is also done in the set_output
-        # function as the validator conditions are dependent on the source mode and whether or not we are
-        # in auto range mode.
         self.add_parameter('voltage',
                            label='Voltage',
                            unit='V',
-                           set_cmd=self._set_output,
-                           get_cmd=":SOUR:LEV?",
-                           set_parser=partial(self._mode_parser, "VOLT"),
-                           get_parser=partial(self._mode_parser, "VOLT")
+                           set_cmd=partial(self._get_set_output, "VOLT"),
+                           get_cmd=partial(self._get_set_output, "VOLT")
                            )
 
         self.add_parameter('current',
                            label='Current',
                            unit='I',
-                           set_cmd=self._set_output,
-                           get_cmd=":SOUR:LEV?",
-                           set_parser=partial(self._mode_parser, "CURR"),
-                           get_parser=partial(self._mode_parser, "CURR")
+                           set_cmd=partial(self._get_set_output, "CURR"),
+                           get_cmd=partial(self._get_set_output, "CURR")
                            )
 
         self.output_level = self.voltage   # This is changed through the source_mode interface
@@ -362,6 +353,15 @@ class GS200(VisaInstrument):
         self.output_level.inter_delay = saved_inter_delay
 
     def _get_set_output(self, mode, output_level=None):
+        """
+        Get or set the output level.
+
+        Parameters
+        ----------
+        mode: str, ["CURR", "VOLT"]
+        output_level: float, optional
+            If missing, we assume that we are getting the current level. Else we are setting it
+        """
         self._assert_mode(mode)
         if output_level is not None:
             self._set_output(output_level)
@@ -412,7 +412,6 @@ class GS200(VisaInstrument):
         if self.measure.present:
             self.measure.update_measurement_enabled(source_mode, source_range, False)
 
-
     def _set_auto_range(self, val):
         """
         Enable/disable auto range.
@@ -439,13 +438,9 @@ class GS200(VisaInstrument):
         if current_mode != mode:
             raise ValueError("Cannot get/set {} settings while in {} mode".format(mode, current_mode))
 
-    def _mode_parser(self, mode, value):
-        self._assert_mode(mode)
-        return float(value)
-
     def _set_source_mode(self, mode):
         """
-        Set output mode and update validators
+        Set output mode
 
         Parameters
         ----------
@@ -468,6 +463,7 @@ class GS200(VisaInstrument):
         ----------
         val: float
         """
-        val = self._mode_parser(mode, val)
+        self._assert_mode(mode)
+        val = float(val)
         self._update_range_units(source_mode=mode, source_range=val)
         return val
