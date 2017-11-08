@@ -41,8 +41,10 @@ class VisaInstrument(Instrument):
         visa_handle (pyvisa.resources.Resource): The communication channel.
     """
 
-    def __init__(self, name, address=None, timeout=5, terminator='',
-                 device_clear=True, **kwargs):
+
+    def __init__(self, name, address=None, timeout=5,
+                 terminator='', device_clear=True, visalib=None, **kwargs):
+
         super().__init__(name, **kwargs)
 
         self.add_parameter('timeout',
@@ -51,6 +53,10 @@ class VisaInstrument(Instrument):
                            unit='s',
                            vals=vals.MultiType(vals.Numbers(min_value=0),
                                                vals.Enum(None)))
+
+        # auxiliary VISA library to use for mocking
+        self.visalib = visalib
+        self.visabackend = None
 
         self.set_address(address)
         if device_clear:
@@ -76,11 +82,18 @@ class VisaInstrument(Instrument):
         if getattr(self, 'visa_handle', None):
             self.visa_handle.close()
 
-        if address and '@' in address:
-            address, visa_library = address.split('@')
-            resource_manager = visa.ResourceManager('@' + visa_library)
+        if self.visalib:
+            resource_manager = visa.ResourceManager(self.visalib)
+            self.visabackend = self.visalib.split('@')[1]
         else:
             resource_manager = visa.ResourceManager()
+            self.visabackend = 'ni'
+
+        # if address and '@' in address:
+        #    address, visa_library = address.split('@')
+        #    resource_manager = visa.ResourceManager('@' + visa_library)
+        # else:
+        #    resource_manager = visa.ResourceManager()
 
         if not self._testing:
             self.visa_handle = resource_manager.open_resource(address)
@@ -117,6 +130,7 @@ class VisaInstrument(Instrument):
             return
 
         self.visa_handle.read_termination = terminator
+        self.visa_handle.write_termination = terminator
         self._terminator = terminator
 
     def _set_visa_timeout(self, timeout):
@@ -173,8 +187,13 @@ class VisaInstrument(Instrument):
         Args:
             cmd (str): The command to send to the instrument.
         """
-        nr_bytes_written, ret_code = self.visa_handle.write(cmd)
-        self.check_error(ret_code)
+        # the simulation backend does not return anything on
+        # write
+        if self.visabackend == 'sim':
+            self.visa_handle.write(cmd)
+        else:
+            nr_bytes_written, ret_code = self.visa_handle.write(cmd)
+            self.check_error(ret_code)
 
     def ask_raw(self, cmd):
         """
