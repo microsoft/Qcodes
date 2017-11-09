@@ -14,8 +14,10 @@ from hypothesis.strategies import tuples
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430, AMI430_3D
 from qcodes.math.field_vector import FieldVector
 
-field_limit = [  # If any of the field limit functions are satisfied we are in the safe zone.
-    lambda x, y, z: x == 0 and y == 0 and z < 3,  # We can have higher field along the z-axis if x and y are zero.
+# If any of the field limit functions are satisfied we are in the safe zone.
+# We can have higher field along the z-axis if x and y are zero.
+field_limit = [
+    lambda x, y, z: x == 0 and y == 0 and z < 3,
     lambda x, y, z: np.linalg.norm([x, y, z]) < 2
 ]
 
@@ -23,7 +25,8 @@ field_limit = [  # If any of the field limit functions are satisfied we are in t
 @pytest.fixture(scope='module')
 def current_driver(request):
     """
-    Start three mock instruments representing current drivers for the x, y and z directions.
+    Start three mock instruments representing current drivers for the x, y,
+    and z directions.
     """
 
     driver = AMI430_3D(
@@ -39,13 +42,15 @@ def current_driver(request):
 
 def get_instruments_ramp_messages(current_driver):
     """
-    Listen to the mock instruments and parse the messages to extract the ramping targets. This is useful in determining
-    if the set targets arrive at the individual instruments correctly. The time stamps are useful to test that the
-    messages arrive in the correct order.
+    Listen to the mock instruments and parse the messages to extract the
+    ramping targets. This is useful in determining if the set targets
+    arrive at the individual instruments correctly. The time stamps are
+    useful to test that the messages arrive in the correct order.
     """
 
     search_string = "\[(.*)\] ([x, y, z]): Ramping to (.*)"
-    # We expect the log messages to be in the format "[<time stamp>] <name>: <message>", where name is either x, y or z
+    # We expect the log messages to be in the format
+    # "[<time stamp>] <name>: <message>", where name is either x, y or z
     reported_ramp_targets = {}
     messages = current_driver.get_mocker_messages()
 
@@ -54,7 +59,8 @@ def get_instruments_ramp_messages(current_driver):
         if result is not None:
             time_string, device_name, value = result.groups()
             time_value = datetime.strptime(time_string, "%d:%m:%Y-%H:%M:%S.%f")
-            reported_ramp_targets[device_name] = {"value": float(value), "time": time_value}
+            reported_ramp_targets[device_name] = {"value": float(value),
+                                                  "time": time_value}
 
     return reported_ramp_targets
 
@@ -82,7 +88,8 @@ random_coordinates = {
 @settings(max_examples=10)
 def test_cartesian_sanity(current_driver, set_target):
     """
-    A sanity check to see if the driver remember vectors in any random configuration in cartesian coordinates
+    A sanity check to see if the driver remember vectors in any random
+    configuration in cartesian coordinates
     """
     current_driver.cartesian(set_target)
     get_target = current_driver.cartesian()
@@ -100,7 +107,8 @@ def test_cartesian_sanity(current_driver, set_target):
 @settings(max_examples=10)
 def test_spherical_sanity(current_driver, set_target):
     """
-    A sanity check to see if the driver remember vectors in any random configuration in spherical coordinates
+    A sanity check to see if the driver remember vectors in any random
+    configuration in spherical coordinates
     """
     current_driver.spherical(set_target)
     get_target = current_driver.spherical()
@@ -118,7 +126,8 @@ def test_spherical_sanity(current_driver, set_target):
 @settings(max_examples=10)
 def test_cylindrical_sanity(current_driver, set_target):
     """
-    A sanity check to see if the driver remember vectors in any random configuration in cylindrical coordinates
+    A sanity check to see if the driver remember vectors in any random
+    configuration in cylindrical coordinates
     """
     current_driver.cylindrical(set_target)
     get_target = current_driver.cylindrical()
@@ -136,10 +145,13 @@ def test_cylindrical_sanity(current_driver, set_target):
 @settings(max_examples=10)
 def test_cartesian_setpoints(current_driver, set_target):
     """
-    Check that the individual x, y, z instruments are getting the set points as intended. We can do this because the
-    instruments are printing log messages to an IO stream. We intercept these messages and extract the log lines which
-    mention that the instrument is ramping to certain values. These values should match the values of the input. In
-    this test we are verifying this for cartesian coordinates.
+    Check that the individual x, y, z instruments are getting the set
+    points as intended. We can do this because the instruments are
+    printing log messages to an IO stream. We intercept these messages
+    and extract the log lines which mention that the instrument is
+    ramping to certain values. These values should match the values of
+    the input. In this test we are verifying this for cartesian
+    coordinates.
     """
     current_driver.cartesian(set_target)
 
@@ -155,10 +167,13 @@ def test_cartesian_setpoints(current_driver, set_target):
 @settings(max_examples=10)
 def test_spherical_setpoints(current_driver, set_target):
     """
-    Check that the individual x, y, z instruments are getting the set points as intended. We can do this because the
-    instruments are printing log messages to an IO stream. We intercept these messages and extract the log lines which
-    mention that the instrument is ramping to certain values. These values should match the values of the input. In
-    this test we are verifying this for spherical coordinates.
+    Check that the individual x, y, z instruments are getting the set
+    points as intended. We can do this because the instruments are
+    printing log messages to an IO stream. We intercept these messages
+    and extract the log lines which mention that the instrument is
+    ramping to certain values. These values should match the values of
+    the input. In this test we are verifying this for spherical
+    coordinates.
     """
     current_driver.spherical(set_target)
 
@@ -174,10 +189,13 @@ def test_spherical_setpoints(current_driver, set_target):
 @settings(max_examples=10)
 def test_cylindrical_setpoints(current_driver, set_target):
     """
-    Check that the individual x, y, z instruments are getting the set points as intended. We can do this because the
-    instruments are printing log messages to an IO stream. We intercept these messages and extract the log lines which
-    mention that the instrument is ramping to certain values. These values should match the values of the input. In
-    this test we are verifying this for cylindrical coordinates.
+    Check that the individual x, y, z instruments are getting the set
+    points as intended. We can do this because the instruments are
+    printing log messages to an IO stream. We intercept these messages
+    and extract the log lines which mention that the instrument is
+    ramping to certain values. These values should match the values of
+    the input. In this test we are verifying this for cylindrical
+    coordinates.
     """
     current_driver.cylindrical(set_target)
 
@@ -193,7 +211,8 @@ def test_cylindrical_setpoints(current_driver, set_target):
 @settings(max_examples=10)
 def test_measured(current_driver, set_target):
     """
-    Simply call the measurement methods and verify that no exceptions are raised.
+    Simply call the measurement methods and verify that no exceptions
+    are raised.
     """
     current_driver.cartesian(set_target)
 
@@ -202,7 +221,9 @@ def test_measured(current_driver, set_target):
     cartesian_y = current_driver.y_measured()
     cartesian_z = current_driver.z_measured()
 
-    assert FieldVector(*set_target).is_equal(FieldVector(x=cartesian_x, y=cartesian_y, z=cartesian_z))
+    assert FieldVector(*set_target).is_equal(FieldVector(x=cartesian_x,
+                                                         y=cartesian_y,
+                                                         z=cartesian_z))
     assert np.allclose(cartesian, [cartesian_x, cartesian_y, cartesian_z])
 
     spherical = current_driver.spherical_measured()
@@ -215,47 +236,63 @@ def test_measured(current_driver, set_target):
         theta=spherical_theta,
         phi=spherical_phi)
     )
-    assert np.allclose(spherical, [spherical_field, spherical_theta, spherical_phi])
+    assert np.allclose(spherical,
+                       [spherical_field, spherical_theta, spherical_phi])
 
     cylindrical = current_driver.cylindrical_measured()
     cylindrical_rho = current_driver.rho_measured()
 
-    assert FieldVector(*set_target).is_equal(FieldVector(rho=cylindrical_rho, phi=spherical_phi, z=cartesian_z))
-    assert np.allclose(cylindrical, [cylindrical_rho, spherical_phi, cartesian_z])
+    assert FieldVector(*set_target).is_equal(FieldVector(rho=cylindrical_rho,
+                                                         phi=spherical_phi,
+                                                         z=cartesian_z))
+    assert np.allclose(cylindrical, [cylindrical_rho,
+                                     spherical_phi,
+                                     cartesian_z])
 
 
 def test_ramp_down_first(current_driver):
     """
-    To prevent quenching of the magnets, we need the driver to always be within the field limits. Part of the strategy
-    of making sure that this is the case includes always performing ramp downs first. For example, if magnets x and z
-    need to be ramped up, while magnet y needs to be ramped down, ramp down magnet y first and then ramp up x and z.
-    This is tested here.
+    To prevent quenching of the magnets, we need the driver to always
+    be within the field limits. Part of the strategy of making sure
+    that this is the case includes always performing ramp downs
+    first. For example, if magnets x and z need to be ramped up, while
+    magnet y needs to be ramped down, ramp down magnet y first and
+    then ramp up x and z.  This is tested here.
     """
     names = ["x", "y", "z"]
     set_point = np.array([0.3, 0.4, 0.5])
-    current_driver.cartesian(set_point)  # Put the magnets in a well defined state
-    delta = np.array([-0.1, 0.1, 0.1])  # We begin with ramping down x first while ramping up y and z
+    # Put the magnets in a well defined state
+    current_driver.cartesian(set_point)
+    # We begin with ramping down x first while ramping up y and z
+    delta = np.array([-0.1, 0.1, 0.1])
 
     for count, ramp_down_name in enumerate(names):
-        set_point += np.roll(delta, count)  # The second iteration will ramp down y while ramping up x an z.
-        # Check if y is adjusted first. We will perform the same test with z in the third iteration
+        # The second iteration will ramp down y while ramping up x an z.
+        set_point += np.roll(delta, count)
+        # Check if y is adjusted first.
+        # We will perform the same test with z in the third iteration
 
         current_driver.cartesian(set_point)
+        # get the logging outputs from the instruments.
         reported_ramp_targets = get_instruments_ramp_messages(
-            current_driver)  # get the logging outputs from the instruments.
-        times = {k: v["time"] for k, v in reported_ramp_targets.items()}  # extract the time stamps
+            current_driver)
+        # extract the time stamps
+        times = {k: v["time"] for k, v in reported_ramp_targets.items()}
 
         for ramp_up_name in np.delete(names, count):
-            assert times[ramp_down_name] < times[ramp_up_name]  # ramp down occurs before ramp up.
+            # ramp down occurs before ramp up.
+            assert times[ramp_down_name] < times[ramp_up_name]
 
 
 def test_field_limit_exception(current_driver):
     """
-    Test that an exception is raised if we intentionally set the field beyond the limits. Together with the
-    no_test_ramp_down_first test this should prevent us from ever exceeding set point limits.
-    In this test we generate a regular grid in three-D and assert that the driver can be set to a set point if
-    any of of the requirements given by field_limit is satisfied. An error *must* be raised if none of the
-    safety limits are satisfied.
+    Test that an exception is raised if we intentionally set the field
+    beyond the limits. Together with the no_test_ramp_down_first test
+    this should prevent us from ever exceeding set point limits.  In
+    this test we generate a regular grid in three-D and assert that
+    the driver can be set to a set point if any of of the requirements
+    given by field_limit is satisfied. An error *must* be raised if
+    none of the safety limits are satisfied.
     """
     x = np.linspace(-3, 3, 11)
     y = np.copy(x)
@@ -263,7 +300,8 @@ def test_field_limit_exception(current_driver):
     set_points = zip(*[i.flatten() for i in np.meshgrid(x, y, z)])
 
     for set_point in set_points:
-        should_not_raise = any([is_safe(*set_point) for is_safe in field_limit])
+        should_not_raise = any([is_safe(*set_point)
+                                for is_safe in field_limit])
 
         if should_not_raise:
             current_driver.cartesian(set_point)
@@ -276,49 +314,62 @@ def test_field_limit_exception(current_driver):
 
 def test_cylindrical_poles(current_driver):
     """
-    Test that the phi coordinate is remembered even if the resulting vector is equivalent to the null vector
+    Test that the phi coordinate is remembered even if the resulting
+    vector is equivalent to the null vector
     """
     rho, phi, z = 0.4, 30.0, 0.5
-    current_driver.cylindrical((0.0, phi, 0.0))  # This is equivalent to the null vector
+    # This is equivalent to the null vector
+    current_driver.cylindrical((0.0, phi, 0.0))
     current_driver.rho(rho)
     current_driver.z(z)
 
-    rho_m, phi_m, z_m = current_driver.cylindrical()  # after setting the rho and z values we should have the vector as
+    # after setting the rho and z values we should have the vector as
     # originally intended.
+    rho_m, phi_m, z_m = current_driver.cylindrical()
+
     assert np.allclose([rho_m, phi_m, z_m], [rho, phi, z])
 
 
 def test_spherical_poles(current_driver):
     """
-    Test that the theta and phi coordinates are remembered even if the resulting vector is equivalent to the null vector
+    Test that the theta and phi coordinates are remembered even if the
+    resulting vector is equivalent to the null vector
     """
 
     field, theta, phi = 0.5, 30.0, 50.0
-    current_driver.spherical((0.0, theta, phi))  # If field=0, then this is equivalent to the null vector
+    # If field=0, then this is equivalent to the null vector
+    current_driver.spherical((0.0, theta, phi))
     # x, y, z = (0, 0, 0)
     current_driver.field(field)
 
-    field_m, theta_m, phi_m = current_driver.spherical()  # after setting the field we should have the vector as
+    # after setting the field we should have the vector as
     # originally intended.
+    field_m, theta_m, phi_m = current_driver.spherical()
     assert np.allclose([field_m, theta_m, phi_m], [field, theta, phi])
 
 
 def test_warning_increased_max_ramp_rate():
     """
-    Test that a warning is raised if we increase the maximum current ramp rate. We want the user to be really sure
-    what he or she is doing, as this could risk quenching the magnet
+    Test that a warning is raised if we increase the maximum current
+    ramp rate. We want the user to be really sure what he or she is
+    doing, as this could risk quenching the magnet
     """
     max_ramp_rate = AMI430.default_current_ramp_limit
-    target_ramp_rate = max_ramp_rate + 0.01  # Increasing the maximum ramp rate should raise a warning
+    # Increasing the maximum ramp rate should raise a warning
+    target_ramp_rate = max_ramp_rate + 0.01
 
     with pytest.raises(Warning) as excinfo:
-        AMI430("testing_increased_max_ramp_rate", testing=True, current_ramp_limit=target_ramp_rate)
+        AMI430("testing_increased_max_ramp_rate", testing=True,
+               current_ramp_limit=target_ramp_rate)
 
     assert "Increasing maximum ramp rate" in excinfo.value.args[0]
 
 
 def test_ramp_rate_exception(current_driver):
-    """Test that an exception is raised if we try to set the ramp rate to a higher value then is allowed"""
+    """
+    Test that an exception is raised if we try to set the ramp rate
+    to a higher value than is allowed
+    """
     max_ramp_rate = AMI430.default_current_ramp_limit
     target_ramp_rate = max_ramp_rate + 0.01
     ix = current_driver._instrument_x
@@ -326,4 +377,6 @@ def test_ramp_rate_exception(current_driver):
     with pytest.raises(Exception) as excinfo:
         ix.ramp_rate(target_ramp_rate)
 
-    assert "must be between 0 and {} inclusive".format(max_ramp_rate) in excinfo.value.args[0]
+    errmsg = "must be between 0 and {} inclusive".format(max_ramp_rate)
+
+    assert errmsg in excinfo.value.args[0]
