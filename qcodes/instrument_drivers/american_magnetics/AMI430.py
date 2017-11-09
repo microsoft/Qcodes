@@ -33,27 +33,38 @@ class AMI430(IPInstrument):
     default_current_ramp_limit = 0.06  # [A/s]
 
     def __init__(self, name, address=None, port=None, persistent_switch=True,
-                 reset=False, current_ramp_limit=None, terminator='\r\n', testing=False, **kwargs):
+                 reset=False, current_ramp_limit=None,
+                 terminator='\r\n', testing=False, **kwargs):
 
-        if None in [address, port] and not testing:
-            raise ValueError("The port and address values need to be given if not in testing mode")
+        print('Debug: {}, {}'.format(address, port))
+
+        # if None in [address, port] and not testing:
+        #    raise ValueError("The port and address values need to be"
+        #                     " given if not in testing mode")
 
         if current_ramp_limit is None:
             current_ramp_limit = AMI430.default_current_ramp_limit
 
         elif current_ramp_limit > AMI430.default_current_ramp_limit:
-            warning_message = "Increasing maximum ramp rate: we have a default current ramp rate limit of {dcrl} " \
-                              "A/s. We do not want to ramp faster then a set maximum so as to avoid quenching " \
-                              "the magnet. A value of {dcrl} A/s seems like a safe, conservative value for any " \
-                              "magnet. Change this value at your own responsibility after consulting the specs of " \
-                              "your particular magnet".format(dcrl=AMI430.default_current_ramp_limit)
+            warning_message = ("Increasing maximum ramp rate: we have a "
+                               "default current ramp rate limit of "
+                               "{}".format(AMI430.default_current_ramp_limit) +
+                               "A/s. We do not want to ramp faster than a set "
+                               "maximum so as to avoid quenching "
+                               "the magnet. A value of "
+                               "{}".format(AMI430.default_current_ramp_limit) +
+                               " A/s seems like a safe, conservative value for"
+                               " any magnet. Change this value at your own "
+                               "responsibility after consulting the specs of "
+                               "your particular magnet")
             raise Warning(warning_message)
 
-        super().__init__(name, address, port, terminator=terminator, testing=testing,
-                         write_confirmation=False, **kwargs)
+        super().__init__(name, address, port, terminator=terminator,
+                         testing=testing, write_confirmation=False, **kwargs)
 
         self._parent_instrument = None
-        # If we are in testing mode there is no need to have pauses built-in when setting field values.
+        # If we are in testing mode there is no need to have pauses
+        # built-in when setting field values.
 
         # Make sure the ramp rate time unit is seconds
         if int(self.ask('RAMP:RATE:UNITS?')) == 1:
