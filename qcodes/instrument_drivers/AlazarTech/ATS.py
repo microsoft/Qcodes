@@ -250,6 +250,26 @@ class AlazarTech_ATS(Instrument):
 
         self.buffer_list = []
 
+        self._ATS_dll.AlazarWaitAsyncBufferComplete.argtypes = [
+            ctypes.c_uint32, ctypes.c_void_p, ctypes.c_uint32]
+        self._ATS_dll.AlazarBeforeAsyncRead.argtypes = [ctypes.c_uint32,
+                                                        ctypes.c_uint32,
+                                                        ctypes.c_long,
+                                                        ctypes.c_uint32,
+                                                        ctypes.c_uint32,
+                                                        ctypes.c_uint32,
+                                                        ctypes.c_uint32]
+        self._ATS_dll.AlazarPostAsyncBuffer.argtypes = [ctypes.c_uint32,
+                                                        ctypes.c_void_p,
+                                                        ctypes.c_uint32]
+        ctypes.windll.kernel32.VirtualAlloc.argtypes = [ctypes.c_void_p,
+                                                        ctypes.c_long,
+                                                        ctypes.c_long,
+                                                        ctypes.c_long]
+        ctypes.windll.kernel32.VirtualFree.argtypes = [ctypes.c_void_p,
+                                                       ctypes.c_long,
+                                                       ctypes.c_long]
+
     def get_idn(self):
         """
         This methods gets the most relevant information of this instrument
@@ -566,13 +586,6 @@ class AlazarTech_ATS(Instrument):
             records_per_acquisition = (
                 records_per_buffer * buffers_per_acquisition)
             samples_per_buffer = samples_per_record * records_per_buffer
-            self._ATS_dll.AlazarBeforeAsyncRead.argtypes = [ctypes.c_uint32,
-                                                            ctypes.c_uint32,
-                                                            ctypes.c_long,
-                                                            ctypes.c_uint32,
-                                                            ctypes.c_uint32,
-                                                            ctypes.c_uint32,
-                                                            ctypes.c_uint32]
             self._call_dll('AlazarBeforeAsyncRead',
                            self._handle, self.channel_selection,
                            self.transfer_offset, samples_per_record,
@@ -658,7 +671,6 @@ class AlazarTech_ATS(Instrument):
         logger.info("made buffer list length {}".format(len(self.buffer_list)))
         try:
             for buf in self.buffer_list:
-                self._ATS_dll.AlazarPostAsyncBuffer.argtypes = [ctypes.c_uint32, ctypes.c_void_p, ctypes.c_uint32]
                 self._call_dll('AlazarPostAsyncBuffer',
                                self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buf.size_bytes)
             self.allocated_buffers._set_updated()
@@ -685,7 +697,6 @@ class AlazarTech_ATS(Instrument):
                 # Wait for the buffer at the head of the list of available
                 # buffers to be filled by the board.
                 buf = self.buffer_list[buffers_completed % allocated_buffers]
-                self._ATS_dll.AlazarWaitAsyncBufferComplete.argtypes = [ctypes.c_uint32, ctypes.c_void_p, ctypes.c_uint32]
                 self._call_dll('AlazarWaitAsyncBufferComplete',
                                self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buffer_timeout)
 
@@ -1020,7 +1031,6 @@ class Buffer:
         if os.name == 'nt':
             MEM_COMMIT = 0x1000
             PAGE_READWRITE = 0x4
-            ctypes.windll.kernel32.VirtualAlloc.argtypes = [ctypes.c_void_p, ctypes.c_long, ctypes.c_long, ctypes.c_long]
             ctypes.windll.kernel32.VirtualAlloc.restype = ctypes.c_void_p
             self.addr = ctypes.windll.kernel32.VirtualAlloc(
                 0, ctypes.c_long(size_bytes), MEM_COMMIT, PAGE_READWRITE)
@@ -1042,7 +1052,6 @@ class Buffer:
         self._allocated = False
         if os.name == 'nt':
             MEM_RELEASE = 0x8000
-            ctypes.windll.kernel32.VirtualFree.argtypes = [ctypes.c_void_p, ctypes.c_long, ctypes.c_long]
             ctypes.windll.kernel32.VirtualFree.restype = ctypes.c_int
             ctypes.windll.kernel32.VirtualFree(ctypes.c_void_p(self.addr), 0, MEM_RELEASE);
         else:
