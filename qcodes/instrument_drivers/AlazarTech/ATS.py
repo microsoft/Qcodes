@@ -242,9 +242,6 @@ class AlazarTech_ATS(Instrument):
         else:
             raise Exception("Unsupported OS")
 
-        # TODO (W) make the board id more general such that more than one card
-        # per system configurations are supported
-
         self._handle = self._ATS_dll.AlazarGetBoardBySystemID(system_id,
                                                               board_id)
         if not self._handle:
