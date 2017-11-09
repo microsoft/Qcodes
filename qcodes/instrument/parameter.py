@@ -235,6 +235,8 @@ class _BaseParameter(Metadatable, DeferredOperations):
         # check if additional waiting time is needed before next set
         self._t_last_set = time.perf_counter()
 
+        self.log = logging.getLogger(str(self))
+
     def __str__(self):
         """Include the instrument name with the Parameter name if possible."""
         inst_name = getattr(self._instrument, 'name', '')
@@ -411,6 +413,18 @@ class _BaseParameter(Metadatable, DeferredOperations):
                                              self.set_parser is None and
                                              not(step_index == len(steps)-1 or
                                                  len(steps) == 1)))
+
+                    if self._snapshot_value:
+                        # Add to log
+                        log_msg = f'parameter set to {val_step}'
+                        if mapped_value != val_step:
+                            log_msg += f', mapped: {mapped_value}'
+                        if scaled_mapped_value != mapped_value:
+                            log_msg += f', scaled: {scaled_mapped_value}'
+                        if parsed_scaled_mapped_value != scaled_mapped_value:
+                            log_msg += f', parsed: {parsed_scaled_mapped_value}'
+                        self.log.debug(log_msg)
+
 
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
