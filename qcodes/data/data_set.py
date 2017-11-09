@@ -390,11 +390,11 @@ class DataSet(DelegateAttributes):
         self.last_store = time.time()
         if (self.write_period is not None and
                 time.time() > self.last_write + self.write_period):
-            log.debug('Attempting to write')
+            # log.debug('Attempting to write')
             self.write()
             self.last_write = time.time()
-        else:
-            log.debug('.store method: This is not the right time to write')
+        # else:
+            # log.debug('.store method: This is not the right time to write')
 
     def default_parameter_name(self, paramname='amplitude'):
         """ Return name of default parameter for plotting
@@ -570,7 +570,7 @@ class DataSet(DelegateAttributes):
         Also closes the data file(s), if the ``Formatter`` we're using
         supports that.
         """
-        log.debug('Finalising the DataSet. Writing.')
+        # log.debug('Finalising the DataSet. Writing.')
         # write all new data, not only (to?) complete columns
         self.write(only_complete=False)
 

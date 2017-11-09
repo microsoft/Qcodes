@@ -269,8 +269,8 @@ class GNUPlotFormat(Formatter):
 
         # Every group gets its own datafile
         for group in groups:
-            log.debug('Attempting to write the following '
-                      'group: {}'.format(group))
+            # log.debug('Attempting to write the following '
+            #           'group: {}'.format(group))
             fn = io_manager.join(location, group.name + self.extension)
 
             written_files.add(fn)
@@ -280,7 +280,7 @@ class GNUPlotFormat(Formatter):
                                                only_complete=only_complete)
 
             if save_range is None:
-                log.debug('Cannot match save range, skipping this group.')
+                # log.debug('Cannot match save range, skipping this group.')
                 continue
 
             overwrite = save_range[0] == 0 or force_write
@@ -290,7 +290,7 @@ class GNUPlotFormat(Formatter):
             with io_manager.open(fn, open_mode) as f:
                 if overwrite:
                     f.write(self._make_header(group))
-                    log.debug('Wrote header to file')
+                    # log.debug('Wrote header to file')
 
                 for i in range(save_range[0], save_range[1] + 1):
                     indices = np.unravel_index(i, shape)
@@ -306,7 +306,7 @@ class GNUPlotFormat(Formatter):
 
                     one_point = self._data_point(group, indices)
                     f.write(self.separator.join(one_point) + self.terminator)
-                    log.debug('Wrote to file')
+                    # log.debug('Wrote to file')
             # now that we've saved the data, mark it as such in the data.
             # we mark the data arrays and the inner setpoint array. Outer
             # setpoint arrays have different dimension (so would need a
