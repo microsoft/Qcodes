@@ -1127,7 +1127,7 @@ class AcquisitionController(Instrument):
         raise NotImplementedError(
             'This method should be implemented in a subclass')
 
-    def handle_buffer(self, buffer):
+    def handle_buffer(self, buffer, buffer_number=None):
         """
         This method should store or process the information that is contained
         in the buffers obtained during the acquisition.
