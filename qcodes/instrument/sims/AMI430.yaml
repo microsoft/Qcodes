@@ -9,14 +9,8 @@ devices:
     dialogues:
       - q: "*IDN?"
         r: "QCoDeS, AMI430_simulation, 1337, 0.0.01"
+
     properties:
-      frequency:
-        default: 100.0
-        getter:
-          q: "FREQ?"
-          r: "{}"
-        setter:
-          q: "FREQ {}"
 
       ramp rate units:
         default: 0
@@ -42,6 +36,14 @@ devices:
         setter:
           q: 'CONF:RAMP:RATE:CURRENT:1 {}'
 
+      ramp target:
+        default: 0  # or what?
+        getter:
+          q: "FIELD:TARG?"
+          r: "{}"
+        setter:
+          q: "CONF:FIELD:TARG {}"
+
       coil constant:
         default: 0.5  # I honestly have no clue...
         getter:
@@ -57,7 +59,7 @@ devices:
           q: "CONF:FIELD:MAG"
 
       ramping state:
-        default: 3
+        default: 2  # always in holding state, always ready
         getter:
           q: "STATE?"
           r: "{}"
@@ -71,10 +73,26 @@ devices:
           q: "QU {}"
 
       persistent mode:
-        default: 1
+        default: 0
         getter:
           q: "PERS?"
           r: "{}"
+
+      persistent heater state:
+        default: 0
+        getter:
+          q: "PS?"
+          r: "{}"
+        setter:
+          q: "PS {}"
+
+      pause:
+        setter:
+          q: "PAUSE"
+
+      ramp:
+        setter:
+          q: "RAMP"
 
 
 resources:
