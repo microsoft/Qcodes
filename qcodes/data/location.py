@@ -85,6 +85,7 @@ class FormatLocation:
 
     default_fmt = config['core']['default_fmt']
 
+
     def __init__(self, fmt=None, fmt_date=None, fmt_time=None,
                  fmt_counter=None, record=None):
         # TODO(giulioungaretti) this should be
@@ -165,6 +166,7 @@ class FormatLocation:
             existing_count = max(existing_count, cnt)
 
         self.counter = existing_count + 1
+
         format_record['counter'] = self.fmt_counter.format(self.counter)
         location = self.formatter.format(loc_fmt, **format_record)
 
