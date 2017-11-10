@@ -425,7 +425,6 @@ class _BaseParameter(Metadatable, DeferredOperations):
                             log_msg += f', parsed: {parsed_scaled_mapped_value}'
                         self.log.debug(log_msg)
 
-
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
 
