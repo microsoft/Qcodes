@@ -134,7 +134,14 @@ class TestVisaInstrument(TestCase):
         self.assertEqual(rm_mock.call_args, ((),))
         self.assertEqual(address_opened[0], 'ASRL2')
 
+        # this one raises a warning
         MockBackendVisaInstrument('name3', address='ASRL3@py')
         self.assertEqual(rm_mock.call_count, 3)
         self.assertEqual(rm_mock.call_args, (('@py',),))
         self.assertEqual(address_opened[0], 'ASRL3')
+
+        # this one doesn't
+        MockBackendVisaInstrument('name4', address='ASRL4', visalib='@py')
+        self.assertEqual(rm_mock.call_count, 4)
+        self.assertEqual(rm_mock.call_args, (('@py',),))
+        self.assertEqual(address_opened[0], 'ASRL4')

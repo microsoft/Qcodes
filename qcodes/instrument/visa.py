@@ -1,5 +1,6 @@
 """Visa instrument driver based on pyvisa."""
 from typing import Sequence
+import warnings
 
 import visa
 import pyvisa.constants as vi_const
@@ -53,8 +54,23 @@ class VisaInstrument(Instrument):
                            vals=vals.MultiType(vals.Numbers(min_value=0),
                                                vals.Enum(None)))
 
-        # auxiliary VISA library to use for mocking
-        self.visalib = visalib
+        # backwards-compatibility
+        if address and '@' in address:
+            address, visa_library = address.split('@')
+            if visalib:
+                warnings.warn('You have specified the VISA library in two '
+                              'different ways. Please do not include "@" in '
+                              'the address kwarg and only use the visalib '
+                              'kwarg for that.')
+                self.visa_lib = visalib
+            else:
+                warnings.warn('You have specified the VISA library using '
+                              'an "@" in the address kwarg. Please use the '
+                              'visalib kwarg instead.')
+                self.visalib = '@' + visa_library
+        else:
+            self.visalib = visalib
+
         self.visabackend = None
 
         self.set_address(address)
@@ -66,16 +82,13 @@ class VisaInstrument(Instrument):
 
     def set_address(self, address):
         """
-        Change the address for this instrument.
+        Set the address for this instrument.
 
         Args:
-            address: The visa resource name to use to connect.
-                Optionally includes '@<backend>' at the end. For example,
-                'ASRL2' will open COM2 with the default NI backend, but
-                'ASRL2@py' will open COM2 using pyvisa-py. Note that qcodes
-                does not install (or even require) ANY backends, it is up to
-                the user to do that.
-                see eg: http://pyvisa.readthedocs.org/en/stable/names.html
+            address: The visa resource name to use to connect. The address
+                should be the actual address and just that. If you wish to
+                change the backend for VISA, use the self.visalib attribute
+                (and then call this function).
         """
         # in case we're changing the address - close the old handle first
         if getattr(self, 'visa_handle', None):
@@ -87,12 +100,6 @@ class VisaInstrument(Instrument):
         else:
             resource_manager = visa.ResourceManager()
             self.visabackend = 'ni'
-
-        # if address and '@' in address:
-        #    address, visa_library = address.split('@')
-        #    resource_manager = visa.ResourceManager('@' + visa_library)
-        # else:
-        #    resource_manager = visa.ResourceManager()
 
         self.visa_handle = resource_manager.open_resource(address)
         self._address = address
