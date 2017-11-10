@@ -119,7 +119,7 @@ class MockAMI430:
         [1]
         http://www.americanmagnetics.com/support/manuals/mn-4Q06125PS-430.pdf
 
-        Parameters: gs (string): "get", or "set" msg_str (string): the
+        Args: gs (string): "get", or "set" msg_str (string): the
             message string the mock instrument gets.  key (string):
             one of the keys in self.handlers
 
@@ -129,16 +129,21 @@ class MockAMI430:
             always None when match = False
 
         """
-        if msg_str == key:  # If the message string matches a key exactly we have a match with no arguments
+        # If the message string matches a key exactly we have a match
+        # with no arguments
+        if msg_str == key:
             return True, None
 
-        # We use regular expressions to find out if the message string and the key match. We need to replace reserved
-        # regular expression characters in the key. For instance replace "*IDN" with "\*IDN".
+        # We use regular expressions to find out if the message string
+        # and the key match. We need to replace reserved regular
+        # expression characters in the key. For instance replace
+        # "*IDN" with "\*IDN".
         reserved_re_characters = "\^${}[]().*+?|<>-&"
         for c in reserved_re_characters:
             key = key.replace(c, "\{}".format(c))
 
-        s = {"get": "(:[^:]*)?\?$", "set": "([^:]+)"}[gs]  # Get and set messages use different regular expression
+        # Get and set messages use different regular expression
+        s = {"get": "(:[^:]*)?\?$", "set": "([^:]+)"}[gs]
         # patterns to determine a match
         search_string = "^" + key + s
         r = re.search(search_string, msg_str)
@@ -161,26 +166,31 @@ class MockAMI430:
     def _log(self, msg):
 
         now = datetime.now()
-        log_line = "[{}] {}: {}".format(now.strftime("%d:%m:%Y-%H:%M:%S.%f"), self.name, msg)
+        log_line = "[{}] {}: {}".format(now.strftime("%d:%m:%Y-%H:%M:%S.%f"),
+                                        self.name, msg)
         self.log_messages.append(log_line)
 
     def _handle_messages(self, msg):
         """
-        Parameters:
-            msg (string): a message received through the socket communication layer
+        Args:
+            msg (string): a message received through the socket
+                communication layer
 
         Returns:
-            rval (string or None): If the type of message requests a value (a get message) then this value is returned
-            by this function. A set message will return a None value.
+            rval (string or None): If the type of message requests a
+                value (a get message) then this value is returned by this
+                function. A set message will return a None value.
         """
 
-        gs = {True: "get", False: "set"}[msg.endswith("?")]  # A "get" message ends with a "?" and will invoke the get
+        # A "get" message ends with a "?" and will invoke the get
         # part of the handler defined in self.handlers.
+        gs = {True: "get", False: "set"}[msg.endswith("?")]
 
         rval = None
         handler = None
 
-        for key in self.handlers:  # Find which handler is suitable to handle the message
+        # Find which handler is suitable to handle the message
+        for key in self.handlers:
             match, args = MockAMI430.message_parser(gs, msg, key)
             if not match:
                 continue
