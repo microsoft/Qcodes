@@ -1,5 +1,6 @@
 """
-A debug module for the AMI430 instrument driver. We cannot rely on the physical instrument to be present
+A debug module for the AMI430 instrument driver.
+We cannot rely on the physical instrument to be present
 which is why we need to mock it.
 """
 import re
