@@ -451,7 +451,8 @@ class MatPlot(BasePlot):
                 if self.traces[i]['config'].get(axis):
                     unit = self.traces[i]['config'][axis].unit
                     label = self.traces[i]['config'][axis].label
-                    maxval = abs(self.traces[i]['config'][axis].ndarray).max()
+                    maxval = np.nanmax(
+                        abs(self.traces[i]['config'][axis].ndarray))
                     units_to_scale = self.standardunits
 
                     # allow values up to a <1000. i.e. nV is used up to 1000 nV
