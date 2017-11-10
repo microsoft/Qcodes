@@ -1,6 +1,7 @@
 """Visa instrument driver based on pyvisa."""
 from typing import Sequence
 import warnings
+import logging
 
 import visa
 import pyvisa.constants as vi_const
@@ -8,6 +9,8 @@ import pyvisa.resources
 
 from .base import Instrument
 import qcodes.utils.validators as vals
+
+log = logging.getLogger(__name__)
 
 
 class VisaInstrument(Instrument):
@@ -180,6 +183,7 @@ class VisaInstrument(Instrument):
         """
         # the simulation backend does not return anything on
         # write
+        log.debug("Writing to instrument: {}".format(cmd))
         if self.visabackend == 'sim':
             self.visa_handle.write(cmd)
         else:
@@ -196,6 +200,7 @@ class VisaInstrument(Instrument):
         Returns:
             str: The instrument's response.
         """
+        log.debug("Querying instrument: {}".format(cmd))
         return self.visa_handle.ask(cmd)
 
     def snapshot_base(self, update: bool=False,

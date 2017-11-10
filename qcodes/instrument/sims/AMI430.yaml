@@ -56,6 +56,27 @@ devices:
         setter:
           q: "CONF:FIELD:MAG"
 
+      ramping state:
+        default: 3
+        getter:
+          q: "STATE?"
+          r: "{}"
+
+      quench state:
+        default: 0
+        getter:
+          q: "QU?"
+          r: "{}"
+        setter:
+          q: "QU {}"
+
+      persistent mode:
+        default: 1
+        getter:
+          q: "PERS?"
+          r: "{}"
+
+
 resources:
   GPIB::8::INSTR:
     device: device 1

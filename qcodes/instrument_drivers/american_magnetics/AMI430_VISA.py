@@ -98,6 +98,5 @@ class IPToVisa(VisaInstrument, IPInstrument):
         self.remove_instance(self)
 
 
-
 class AMI430_VISA(AMI430, IPToVisa):
     pass

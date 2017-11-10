@@ -354,8 +354,8 @@ class Instrument(InstrumentBase):
     Args:
         name: an identifier for this instrument, particularly for
             attaching it to a Station.
-        testing: whether we want to instantiate the real instrument (False)
-            or its mock version (True)
+        testing: whether we want to send commands to the real
+            instrument (False) or its mock version (True)
         metadata: additional static metadata to add to this
             instrument's JSON snapshot.
 

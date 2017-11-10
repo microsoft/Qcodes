@@ -24,7 +24,7 @@ field_limit = [
 
 
 @pytest.fixture(scope='module')
-def current_driver(request):
+def current_driver(request):  # (WilliamHPNielsen): what does request do?
     """
     Start three mock instruments representing current drivers for the x, y,
     and z directions.
