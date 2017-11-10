@@ -20,14 +20,18 @@ from functools import partial
 from qcodes.utils.validators import Enum, Numbers, Anything
 from qcodes.instrument.base import Instrument
 
+log = logging.getLogger(__name__)
 
 try:
     # add the location of the pyspcm header file manually
     header_dir = os.path.split(__file__)[0]
-    sys.path.append(header_dir)
+
+    if not header_dir in sys.path:
+        log.info('M4i: adding header_dir %s to sys.path' % header_dir)
+        sys.path.append(header_dir)
     import pyspcm
 except ImportError as ex:
-    logging.exception(ex)
+    log.exception(ex)
     raise ImportError('to use the M4i driver install the pyspcm module')
 
 #%% Helper functions
