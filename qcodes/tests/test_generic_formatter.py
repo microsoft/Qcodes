@@ -46,4 +46,4 @@ class TestNoSorting(TestCase):
                              )
 
     def test_can_measure(self):
-        qcodes.Measure(self.gparam).run()
+        qcodes.Measure(self.param).run()
