@@ -183,7 +183,7 @@ class VisaInstrument(Instrument):
         """
         # the simulation backend does not return anything on
         # write
-        log.debug("Writing to instrument: {}".format(cmd))
+        log.debug("Writing to instrument {}: {}".format(self.name, cmd))
         if self.visabackend == 'sim':
             self.visa_handle.write(cmd)
         else:
@@ -200,7 +200,7 @@ class VisaInstrument(Instrument):
         Returns:
             str: The instrument's response.
         """
-        log.debug("Querying instrument: {}".format(cmd))
+        log.debug("Querying instrument {}: {}".format(self.name, cmd))
         return self.visa_handle.ask(cmd)
 
     def snapshot_base(self, update: bool=False,
