@@ -1,8 +1,11 @@
+import io
 import numpy as np
 import pytest
 from hypothesis import given, settings
 from hypothesis.strategies import floats
 from hypothesis.strategies import tuples
+import logging
+from typing import List, Dict
 
 import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D
@@ -39,8 +42,37 @@ def current_driver():
     return driver
 
 
-# here the original test has a log system that we probably don't want to
-# reproduce / write tests for
+# here the original test has a homemade log system that we don't want to
+# reproduce / write tests for. Instead, we use normal logging from our
+# instrument.visa module
+iostream = io.StringIO()
+logger = logging.getLogger('qcodes.instrument.visa')
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(created)s - %(message)s')
+lh = logging.StreamHandler(iostream)
+logger.addHandler(lh)
+lh.setLevel(logging.DEBUG)
+lh.setFormatter(formatter)
+
+
+def get_messages(iostream: io.StringIO) -> List[str]:
+    """
+    Get all the lines currently in the logging output stream
+    and clear them from the stream
+
+    Args:
+        iostream: the stream to which the logging module logs
+
+    Returns:
+        The messages one-by-one, under the assumption that VISA
+            uses '\n' termination.
+    """
+    messages = iostream.getvalue().split('\n')
+    iostream.seek(0)
+    iostream.truncate(0)
+
+    return messages
+
 
 random_coordinates = {
     "cartesian": tuples(
@@ -227,3 +259,155 @@ def test_measured(current_driver, set_target):
     assert np.allclose(cylindrical, [cylindrical_rho,
                                      spherical_phi,
                                      cartesian_z])
+
+
+def get_time_dict(messages: List[str]) -> Dict[float, str]:
+    """
+    Helper function used in test_ramp_down_first
+    """
+    relevant_messages = [line for line in messages
+                         if 'CONF:FIELD:TARG' in line]
+    time_dict = {}
+    for rm in relevant_messages:
+        time = rm.split(' - ')[0]
+        name = rm[rm.find(':')-1: rm.find(':')]
+        time_dict.update({name: float(time)})
+
+    return time_dict
+
+
+def test_ramp_down_first(current_driver):
+    """
+    To prevent quenching of the magnets, we need the driver to always
+    be within the field limits. Part of the strategy of making sure
+    that this is the case includes always performing ramp downs
+    first. For example, if magnets x and z need to be ramped up, while
+    magnet y needs to be ramped down, ramp down magnet y first and
+    then ramp up x and z.  This is tested here.
+    """
+    names = ["x", "y", "z"]
+    set_point = np.array([0.3, 0.4, 0.5])
+    # Put the magnets in a well defined state
+    current_driver.cartesian(set_point)
+    # We begin with ramping down x first while ramping up y and z
+    delta = np.array([-0.1, 0.1, 0.1])
+
+    for count, ramp_down_name in enumerate(names):
+        # The second iteration will ramp down y while ramping up x and z.
+        set_point += np.roll(delta, count)
+        # Check if y is adjusted first.
+        # We will perform the same test with z in the third iteration
+
+        # clear the message stream
+        get_messages(iostream)
+
+        # make a ramp
+        current_driver.cartesian(set_point)
+        # get the logging outputs from the instruments.
+        messages = get_messages(iostream)
+        # extract the time stamps
+        times = get_time_dict(messages)
+
+        for ramp_up_name in np.delete(names, count):
+            # ramp down occurs before ramp up.
+            assert times[ramp_down_name] < times[ramp_up_name]
+
+
+def test_field_limit_exception(current_driver):
+    """
+    Test that an exception is raised if we intentionally set the field
+    beyond the limits. Together with the no_test_ramp_down_first test
+    this should prevent us from ever exceeding set point limits.  In
+    this test we generate a regular grid in three-D and assert that
+    the driver can be set to a set point if any of of the requirements
+    given by field_limit is satisfied. An error *must* be raised if
+    none of the safety limits are satisfied.
+    """
+    x = np.linspace(-3, 3, 11)
+    y = np.copy(x)
+    z = np.copy(x)
+    set_points = zip(*[i.flatten() for i in np.meshgrid(x, y, z)])
+
+    for set_point in set_points:
+        should_not_raise = any([is_safe(*set_point)
+                                for is_safe in field_limit])
+
+        if should_not_raise:
+            current_driver.cartesian(set_point)
+        else:
+            with pytest.raises(Exception) as excinfo:
+                current_driver.cartesian(set_point)
+
+            assert "field would exceed limit" in excinfo.value.args[0]
+
+
+def test_cylindrical_poles(current_driver):
+    """
+    Test that the phi coordinate is remembered even if the resulting
+    vector is equivalent to the null vector
+    """
+    rho, phi, z = 0.4, 30.0, 0.5
+    # This is equivalent to the null vector
+    current_driver.cylindrical((0.0, phi, 0.0))
+    current_driver.rho(rho)
+    current_driver.z(z)
+
+    # after setting the rho and z values we should have the vector as
+    # originally intended.
+    rho_m, phi_m, z_m = current_driver.cylindrical()
+
+    assert np.allclose([rho_m, phi_m, z_m], [rho, phi, z])
+
+
+def test_spherical_poles(current_driver):
+    """
+    Test that the theta and phi coordinates are remembered even if the
+    resulting vector is equivalent to the null vector
+    """
+
+    field, theta, phi = 0.5, 30.0, 50.0
+    # If field=0, then this is equivalent to the null vector
+    current_driver.spherical((0.0, theta, phi))
+    # x, y, z = (0, 0, 0)
+    current_driver.field(field)
+
+    # after setting the field we should have the vector as
+    # originally intended.
+    field_m, theta_m, phi_m = current_driver.spherical()
+    assert np.allclose([field_m, theta_m, phi_m], [field, theta, phi])
+
+
+def test_warning_increased_max_ramp_rate():
+    """
+    Test that a warning is raised if we increase the maximum current
+    ramp rate. We want the user to be really sure what he or she is
+    doing, as this could risk quenching the magnet
+    """
+    max_ramp_rate = AMI430_VISA.default_current_ramp_limit
+    # Increasing the maximum ramp rate should raise a warning
+    target_ramp_rate = max_ramp_rate + 0.01
+
+    with pytest.raises(Warning) as excinfo:
+        AMI430_VISA("testing_increased_max_ramp_rate",
+                    address='GPIB::4::65535::INSTR', visalib=visalib,
+                    terminator='\n', port=1,
+                    current_ramp_limit=target_ramp_rate)
+
+    assert "Increasing maximum ramp rate" in excinfo.value.args[0]
+
+
+def test_ramp_rate_exception(current_driver):
+    """
+    Test that an exception is raised if we try to set the ramp rate
+    to a higher value than is allowed
+    """
+    max_ramp_rate = AMI430_VISA.default_current_ramp_limit
+    target_ramp_rate = max_ramp_rate + 0.01
+    ix = current_driver._instrument_x
+
+    with pytest.raises(Exception) as excinfo:
+        ix.ramp_rate(target_ramp_rate)
+
+    errmsg = "must be between 0 and {} inclusive".format(max_ramp_rate)
+
+    assert errmsg in excinfo.value.args[0]
