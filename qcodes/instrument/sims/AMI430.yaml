@@ -50,13 +50,13 @@ devices:
           q: 'COIL?'
           r: '{}'
 
-      field magnitude:
+      field magnet:
         default: 0.1
         getter:
           q: "FIELD:MAG?"
           r: "{}"
         setter:
-          q: "CONF:FIELD:MAG"
+          q: "CONF:FIELD:TARG {}"  # in the simulated instrument, the target is reached
 
       ramping state:
         default: 2  # always in holding state, always ready
@@ -95,6 +95,10 @@ devices:
           q: "RAMP"
 
 
-resources:
-  GPIB::8::INSTR:
+resources:  # we always need three power supplies; one for each axis
+  GPIB::1::INSTR:
+    device: device 1
+  GPIB::2::INSTR:
+    device: device 1
+  GPIB::3::INSTR:
     device: device 1
