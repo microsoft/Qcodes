@@ -44,7 +44,7 @@ class Station(Metadatable, DelegateAttributes):
     default = None # type: 'Station'
 
     def __init__(self, *components: Metadatable,
-                 monitor: Any, default: bool=True,
+                 monitor: Any=None, default: bool=True,
                  update_snapshot: bool=True, **kwargs) -> None:
         super().__init__(**kwargs)
 
