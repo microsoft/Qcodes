@@ -29,7 +29,7 @@ devices:
           q: "CONF:FIELD:UNITS {}"
 
       ramp rate current first segment:
-        default: '1, 2, 1.3'
+        default: '50, 50, 50'
         getter:
           q: 'RAMP:RATE:CURRENT:1?'
           r: '{}'
@@ -45,7 +45,7 @@ devices:
           q: "CONF:FIELD:TARG {}"
 
       coil constant:
-        default: 0.5  # I honestly have no clue...
+        default: 1
         getter:
           q: 'COIL?'
           r: '{}'
@@ -95,10 +95,12 @@ devices:
           q: "RAMP"
 
 
-resources:  # we always need three power supplies; one for each axis
+resources:  # we always need three power supplies; one for each axis. For the testing we add a few more
   GPIB::1::INSTR:
     device: device 1
   GPIB::2::INSTR:
     device: device 1
   GPIB::3::INSTR:
+    device: device 1
+  GPIB::4::INSTR:
     device: device 1
