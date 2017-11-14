@@ -548,15 +548,13 @@ class ZIUHFLI(Instrument):
         * Add zoom-FFT
     """
 
-    def __init__(self, name, device_ID, **kwargs):
+    def __init__(self, name: str, device_ID: str, **kwargs) -> None:
         """
         Create an instance of the instrument.
 
         Args:
             name (str): The internal QCoDeS name of the instrument
             device_ID (str): The device name as listed in the web server.
-            api_level (int): Compatibility mode of the API interface. Must be 5
-              for the UHF.
         """
 
         super().__init__(name, **kwargs)
