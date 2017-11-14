@@ -1819,7 +1819,7 @@ class ZIUHFLI(Instrument):
             raise ValueError('Can not select attribute:'+
                              '{}. Only the following attributes are' +
                              ' available: ' +
-                             ('{}, '*len(attributes)).format(*attributes))
+                             ('{}, '*len(valid_attributes)).format(*valid_attributes))
 
         # internally, we use strings very similar to the ones used by the
         # instrument, but with the attribute added, e.g.
