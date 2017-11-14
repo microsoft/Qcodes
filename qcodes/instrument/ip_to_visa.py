@@ -1,11 +1,9 @@
-import time
-import warnings
-
-import qcodes.utils.validators as vals
+from qcodes.instrument.base import Instrument
 from qcodes.instrument.ip import IPInstrument
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430
 from qcodes.utils.helpers import strip_attrs
+import qcodes.utils.validators as vals
 
 """
 This module provides a class to make an IPInstrument behave like a
@@ -24,10 +22,11 @@ class IPToVisa(VisaInstrument, IPInstrument):
     IPInstrument that we'd like to use as a VISAInstrument with the
     simulation backend.
     The idea is to inject this class just before the IPInstrument in
-    the MRO. To avoid IPInstrument to ever take any effect, we avoid
-    calling super() up to the IPInstrument class and therefore explicitly
-    re-implement the whole inheritance chain in this every method that
-    cals super. These methods include __init__, close
+    the MRO. To avoid IPInstrument to ever take any effect, we sidestep
+    it during the __init__ by calling directly to Instrument (which then
+    class up through the chain) and explicitly reimplementing the __init__
+    of VisaInstrument. We also must reimplement close, as that method
+    calls super.
 
     Only meant for testing/simulation purposes!
     Do not use this for actual instrument control, there could be many
@@ -38,35 +37,12 @@ class IPToVisa(VisaInstrument, IPInstrument):
                  metadata=None, device_clear=False, terminator='\n',
                  timeout=3, **kwargs):
 
-        ##################################################
-        # __init__ of Instrument part 1
+        # remove IPInstrument-specific kwargs
+        ipkwargs = ['write_confirmation']
+        newkwargs = {kw: val for (kw, val) in kwargs.items()
+                     if kw not in ipkwargs}
 
-        self._t0 = time.time()
-        if kwargs.pop('server_name', False):
-            warnings.warn("server_name argument not supported any more",
-                          stacklevel=0)
-
-        ##################################################
-        # __init__ of BaseInstrument
-        self.name = str(name)
-        self.parameters = {}
-        self.functions = {}
-        self.submodules = {}
-
-        ##################################################
-        # __init__ of Metadatable
-        self.metadata = {}
-        self.load_metadata(metadata or {})
-
-        ##################################################
-        # __init__ of Instrument part 2
-
-        self.add_parameter('IDN', get_cmd=self.get_idn,
-                           vals=vals.Anything())
-
-        self._meta_attrs = ['name']
-
-        self.record_instance(self)
+        Instrument.__init__(self, name, metadata=metadata, **newkwargs)
 
         ##################################################
         # __init__ of VisaInstrument
