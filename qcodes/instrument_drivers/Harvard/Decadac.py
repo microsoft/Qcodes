@@ -180,7 +180,7 @@ class DacChannel(InstrumentChannel, DacReader):
         self.add_parameter("volt", get_cmd=partial(self._query_address, self._base_addr+9, 1),
                            get_parser=self._dac_code_to_v,
                            set_cmd=self._set_dac, set_parser=self._dac_v_to_code, vals=self._volt_val,
-                           label="Voltage", unit="V")
+                           label="channel {}".format(channel+self._slot*4), unit="V")
         # The limit commands are used to sweep dac voltages. They are not safety features.
         self.add_parameter("lower_ramp_limit", get_cmd=partial(self._query_address, self._base_addr+5),
                            get_parser=self._dac_code_to_v,
@@ -291,7 +291,7 @@ class DacSlot(InstrumentChannel, DacReader):
     """
     A single DAC Slot of the DECADAC
     """
-    _SLOT_VAL = vals.Ints(0, 5)
+    _SLOT_VAL = vals.Ints(0, 4)
     SLOT_MODE_DEFAULT = "Coarse"
 
     def __init__(self, parent, name, slot, min_val=-5, max_val=5):
@@ -397,7 +397,7 @@ class Decadac(VisaInstrument, DacReader):
         # Create channels
         channels = ChannelList(self, "Channels", DacChannel, snapshotable=False)
         slots = ChannelList(self, "Slots", DacSlot)
-        for i in range(6):  # Create the 6 DAC slots
+        for i in range(5):  # Create the 5 DAC slots
             slots.append(DacSlot(self, "Slot{}".format(i), i, min_val, max_val))
             channels.extend(slots[i].channels)
         slots.lock()
