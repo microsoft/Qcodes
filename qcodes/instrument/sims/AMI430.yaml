@@ -19,6 +19,7 @@ devices:
           r: "{}"
         setter:
           q: "CONF:RAMP:RATE:UNITS {}"
+          r: OK
 
       field units:
         default: 1
@@ -27,6 +28,7 @@ devices:
           r: "{}"
         setter:
           q: "CONF:FIELD:UNITS {}"
+          r: OK
 
       ramp rate current first segment:
         default: '50, 50, 50'
@@ -35,14 +37,16 @@ devices:
           r: '{}'
         setter:
           q: 'CONF:RAMP:RATE:CURRENT:1 {}'
+          r: OK
 
       ramp target:
         default: 0  # or what?
         getter:
           q: "FIELD:TARG?"
           r: "{}"
-        setter:
-          q: "CONF:FIELD:TARG {}"
+        #setter:  # this is commented out because two properties can not share a setter
+         # q: "CONF:FIELD:TARG {}"
+         # r: OK
 
       coil constant:
         default: 1
@@ -51,12 +55,13 @@ devices:
           r: '{}'
 
       field magnet:
-        default: 0.1
+        default: 0.123
         getter:
           q: "FIELD:MAG?"
           r: "{}"
         setter:
           q: "CONF:FIELD:TARG {}"  # in the simulated instrument, the target is reached
+          r: OK
 
       ramping state:
         default: 2  # always in holding state, always ready
@@ -71,6 +76,7 @@ devices:
           r: "{}"
         setter:
           q: "QU {}"
+          r: OK
 
       persistent mode:
         default: 0
@@ -85,14 +91,17 @@ devices:
           r: "{}"
         setter:
           q: "PS {}"
+          r: OK
 
       pause:
         setter:
           q: "PAUSE"
+          r: OK
 
       ramp:
         setter:
           q: "RAMP"
+          r: OK
 
 
 resources:  # we always need three power supplies; one for each axis. For the testing we add a few more

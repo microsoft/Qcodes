@@ -23,7 +23,7 @@ field_limit = [
 visalib = sims.__file__.replace('__init__.py', 'AMI430.yaml@sim')
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='function')
 def current_driver():
     """
     Start three mock instruments representing current drivers for the x, y,
@@ -39,8 +39,12 @@ def current_driver():
 
     driver = AMI430_3D("AMI430-3D", mag_x, mag_y, mag_z, field_limit)
 
-    return driver
+    yield driver
 
+    mag_x.close()
+    mag_y.close()
+    mag_z.close()
+    driver.close()
 
 # here the original test has a homemade log system that we don't want to
 # reproduce / write tests for. Instead, we use normal logging from our
@@ -93,7 +97,7 @@ random_coordinates = {
 }
 
 
-@given(random_coordinates["cartesian"])
+@given(set_target=random_coordinates["cartesian"])
 @settings(max_examples=10)
 def test_cartesian_sanity(current_driver, set_target):
     """
@@ -112,7 +116,7 @@ def test_cartesian_sanity(current_driver, set_target):
     assert np.allclose(set_target, [x, y, z])
 
 
-@given(random_coordinates["spherical"])
+@given(set_target=random_coordinates["spherical"])
 @settings(max_examples=10)
 def test_spherical_sanity(current_driver, set_target):
     """
@@ -131,7 +135,7 @@ def test_spherical_sanity(current_driver, set_target):
     assert np.allclose(set_target, [r, theta, phi])
 
 
-@given(random_coordinates["cylindrical"])
+@given(set_target=random_coordinates["cylindrical"])
 @settings(max_examples=10)
 def test_cylindrical_sanity(current_driver, set_target):
     """
@@ -150,7 +154,7 @@ def test_cylindrical_sanity(current_driver, set_target):
     assert np.allclose(set_target, [rho, phi, z])
 
 
-@given(random_coordinates["cartesian"])
+@given(set_target=random_coordinates["cartesian"])
 @settings(max_examples=10)
 def test_cartesian_setpoints(current_driver, set_target):
     """
@@ -171,7 +175,7 @@ def test_cartesian_setpoints(current_driver, set_target):
     assert set_vector.is_equal(get_vector)
 
 
-@given(random_coordinates["spherical"])
+@given(set_target=random_coordinates["spherical"])
 @settings(max_examples=10)
 def test_spherical_setpoints(current_driver, set_target):
     """
@@ -196,7 +200,7 @@ def test_spherical_setpoints(current_driver, set_target):
     assert set_vector.is_equal(get_vector)
 
 
-@given(random_coordinates["cylindrical"])
+@given(set_target=random_coordinates["cylindrical"])
 @settings(max_examples=10)
 def test_cylindrical_setpoints(current_driver, set_target):
     """
@@ -218,7 +222,7 @@ def test_cylindrical_setpoints(current_driver, set_target):
     assert set_vector.is_equal(get_vector)
 
 
-@given(random_coordinates["cartesian"])
+@given(set_target=random_coordinates["cartesian"])
 @settings(max_examples=10)
 def test_measured(current_driver, set_target):
     """
@@ -228,14 +232,15 @@ def test_measured(current_driver, set_target):
     current_driver.cartesian(set_target)
 
     cartesian = current_driver.cartesian_measured()
+
     cartesian_x = current_driver.x_measured()
     cartesian_y = current_driver.y_measured()
     cartesian_z = current_driver.z_measured()
 
+    assert np.allclose(cartesian, [cartesian_x, cartesian_y, cartesian_z])
     assert FieldVector(*set_target).is_equal(FieldVector(x=cartesian_x,
                                                          y=cartesian_y,
                                                          z=cartesian_z))
-    assert np.allclose(cartesian, [cartesian_x, cartesian_y, cartesian_z])
 
     spherical = current_driver.spherical_measured()
     spherical_field = current_driver.field_measured()

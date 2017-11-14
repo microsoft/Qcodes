@@ -185,7 +185,12 @@ class VisaInstrument(Instrument):
         # write
         log.debug("Writing to instrument {}: {}".format(self.name, cmd))
         if self.visabackend == 'sim':
-            self.visa_handle.write(cmd)
+            # if we use pyvisa-sim, we must read back the 'OK'
+            # response of the setting
+            resp = self.visa_handle.ask(cmd)
+            if resp != 'OK':
+                log.warning('Received non-OK response from instrument '
+                            '{}: {}.'.format(self.name, resp))
         else:
             nr_bytes_written, ret_code = self.visa_handle.write(cmd)
             self.check_error(ret_code)

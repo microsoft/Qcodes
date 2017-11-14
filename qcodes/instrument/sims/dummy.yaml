@@ -9,6 +9,7 @@ devices:
     dialogues:
       - q: "*IDN?"
         r: "QCoDeS, m0d3l, 1337, 0.0.01"
+
     properties:
       frequency:
         default: 100.0
@@ -17,6 +18,7 @@ devices:
           r: "{}"
         setter:
           q: "FREQ {}"
+          r: OK
 
 
 resources:
