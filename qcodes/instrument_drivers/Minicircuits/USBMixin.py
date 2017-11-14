@@ -47,7 +47,7 @@ class USBMixin:
             **kwargs) -> None:
         # as this is a mixin class it is important to call the constructor of
         # the next in line class with the super() function.
-        # So here super() refers to the second class from which the superclass
+        # So here super() refers to the second class from which the subclass
         # is inherited.
         super().__init__(*args, **kwargs)
         self.dev = None

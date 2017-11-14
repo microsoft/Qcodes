@@ -136,7 +136,8 @@ class RCDAT_6000_60_usb(USBMixin, Instrument):
                 'serial': serial,
                 'firmware': firmware}
 
-    # this does not work for this instrument for no apparent reason
+    # NOTE: the following command silently failed when tested with firmware C9-2
+    # according to the manual, it should work exactly as the other commands.
     def ask_visa(self, cmd: str) -> str:
         log.error(
             'Trying to call unimplemented function: ask_visa for RCDAT-6000-60')
