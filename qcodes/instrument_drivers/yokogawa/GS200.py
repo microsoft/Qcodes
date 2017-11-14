@@ -40,7 +40,7 @@ class GS200_Monitor(InstrumentChannel):
         name (str): instrument name
         present (bool):
     """
-    def __init__(self, parent, name, present):
+    def __init__(self, parent: GS200, name: str, present: bool):
         super().__init__(parent, name)
 
         self.present = present
