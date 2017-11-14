@@ -301,7 +301,7 @@ class GS200(VisaInstrument):
 
         self.output("off")
         self.source_mode("VOLT")
-        self.auto_range(True)
+        self.auto_range(False)
 
     def on(self):
         """Turn output on"""
