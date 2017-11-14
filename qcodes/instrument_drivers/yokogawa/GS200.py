@@ -1,7 +1,9 @@
+from typing import Optional
+
 from functools import partial
 
 from qcodes import VisaInstrument, InstrumentChannel
-from qcodes.utils.validators import Numbers, Bool, Enum, Nothing, Ints, Validator
+from qcodes.utils.validators import Numbers, Bool, Enum, Ints
 
 
 def float_round(val):
@@ -162,7 +164,7 @@ class GS200(VisaInstrument):
       kwargs (dict): kwargs to be passed to VisaInstrument class
     """
 
-    def __init__(self, name, address, **kwargs):
+    def __init__(self, name: str, address: str, **kwargs):
         super().__init__(name, address, **kwargs)
         self.visa_handle.read_termination = "\n"
 
@@ -297,50 +299,38 @@ class GS200(VisaInstrument):
         self.measure._output = bool(state)
         return state
 
-    def ramp_voltage(self, ramp_to, step, delay):
+    def ramp_voltage(self, ramp_to: float, step: float, delay: float) -> None:
         """
         Ramp the voltage from the current level to the specified output
 
-        Parameters
-        ----------
-        ramp_to: float
-            The ramp target in Volt
-        step: float
-            The ramp steps in Volt
-        delay: float
-            The time between finishing one step and starting another in seconds.
+        Args:
+            ramp_to (float): The ramp target in Volt
+            step (float): The ramp steps in Volt
+            delay (float): The time between finishing one step and starting another in seconds.
         """
         self._assert_mode("VOLT")
         self._ramp_source(ramp_to, step, delay)
 
-    def ramp_current(self, ramp_to, step, delay):
+    def ramp_current(self, ramp_to: float, step: float, delay: float) -> None:
         """
         Ramp the current from the current level to the specified output
 
-        Parameters
-        ----------
-        ramp_to: float
-            The ramp target in Ampere
-        step: float
-            The ramp steps in Ampere
-        delay: float
-            The time between finishing one step and starting another in seconds.
+        Args:
+            ramp_to (float): The ramp target in Ampere
+            step (float): The ramp steps in Ampere
+            delay (float): The time between finishing one step and starting another in seconds.
         """
         self._assert_mode("CURR")
         self._ramp_source(ramp_to, step, delay)
 
-    def _ramp_source(self, ramp_to, step, delay):
+    def _ramp_source(self, ramp_to: float, step: float, delay: float) -> None:
         """
         Ramp the output from the current level to the specified output
 
-        Parameters
-        ----------
-        ramp_to: float
-            The ramp target in Volt/Ampere
-        step: float
-            The ramp steps in Volt/Ampere
-        delay: float
-            The time between finishing one step and starting another in seconds.
+        Args:
+            ramp_to (float): The ramp target in Volt/Ampere
+            step (float): The ramp steps in Volt/Ampere
+            delay (float): The time between finishing one step and starting another in seconds.
         """
         saved_step = self.output_level.step
         saved_inter_delay = self.output_level.inter_delay
@@ -352,15 +342,13 @@ class GS200(VisaInstrument):
         self.output_level.step = saved_step
         self.output_level.inter_delay = saved_inter_delay
 
-    def _get_set_output(self, mode, output_level=None):
+    def _get_set_output(self, mode: str, output_level: float=None) -> float:
         """
         Get or set the output level.
 
-        Parameters
-        ----------
-        mode: str, ["CURR", "VOLT"]
-        output_level: float, optional
-            If missing, we assume that we are getting the current level. Else we are setting it
+        Args:
+            mode (str): "CURR" or "VOLT"
+            output_level (float), If missing, we assume that we are getting the current level. Else we are setting it
         """
         self._assert_mode(mode)
         if output_level is not None:
@@ -368,13 +356,12 @@ class GS200(VisaInstrument):
         else:
             return float(self.ask(":SOUR:LEV?"))
 
-    def _set_output(self, output_level):
+    def _set_output(self, output_level: float) -> None:
         """
         Set the output of the instrument.
 
-        Parameters
-        ----------
-        output_level: float
+        Args:
+            output_level (float): output level in Volt or Ampere, depending on the current mode
         """
         auto_enabled = self.auto_range()
 
@@ -392,14 +379,13 @@ class GS200(VisaInstrument):
         cmd_str = ":SOUR:LEV{} {:.5e}".format(auto_str, output_level)
         self.write(cmd_str)
 
-    def _update_range_units(self, source_mode=None, source_range=None):
+    def _update_range_units(self, source_mode: str=None, source_range: float=None) -> None:
         """
         Update validators/units as source mode/range changes
 
-        Parameters
-        ----------
-        source_mode: str, ["CURR", "VOLT"]
-        source_range: float
+        Args:
+            source_mode (str): "CURR" or "VOLT"
+            source_range (float):
         """
         if source_mode is None:
             source_mode = self.source_mode()
@@ -412,13 +398,12 @@ class GS200(VisaInstrument):
         if self.measure.present:
             self.measure.update_measurement_enabled(source_mode, source_range, False)
 
-    def _set_auto_range(self, val):
+    def _set_auto_range(self, val: bool) -> None:
         """
         Enable/disable auto range.
 
-        Parameters
-        ----------
-        val: bool
+        Args:
+            val (bool): auto range on or off
         """
         self._auto_range = val
         self._update_range_units()
@@ -426,25 +411,23 @@ class GS200(VisaInstrument):
         if self.measure.present:
             self.measure._enabled &= val  # TODO: Sebastian, can you explain what you are doing here?
 
-    def _assert_mode(self, mode):
+    def _assert_mode(self, mode: str) -> None:
         """
         Assert that we are in the correct mode to perform an operation
 
-        Parameters
-        ----------
-        mode: str, ["CURR", "VOLT"]
+        Args:
+            mode (str): "CURR" or "VOLT"
         """
         current_mode = self.source_mode()
         if current_mode != mode:
             raise ValueError("Cannot get/set {} settings while in {} mode".format(mode, current_mode))
 
-    def _set_source_mode(self, mode):
+    def _set_source_mode(self, mode: str) -> None:
         """
         Set output mode
 
-        Parameters
-        ----------
-        mode: str, ["CURR", "VOLT"]
+        Args:
+            mode (str): "CURR" or "VOLT"
         """
         if self.output() == 'on':
             raise GS200Exception("Cannot switch mode while source is on")
@@ -455,13 +438,13 @@ class GS200(VisaInstrument):
         self.write("SOUR:FUNC {}".format(mode))
         self._update_range_units(source_mode=mode)
 
-    def _range_set_parser(self, mode, val):
+    def _range_set_parser(self, mode: str, val: float) -> float:
         """
         Update range and validators
 
-        Parameters
-        ----------
-        val: float
+        Args:
+            mode (str): "CURR" or "VOLT"
+            val (float): value to set
         """
         self._assert_mode(mode)
         val = float(val)
