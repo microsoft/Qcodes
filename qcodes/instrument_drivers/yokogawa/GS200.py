@@ -194,25 +194,33 @@ class GS200(VisaInstrument):
                            set_cmd=self._set_source_mode,
                            vals=Enum('VOLT', 'CURR'))
 
+        # When getting the mode internally in the driver, look up the mode as recorded by the _cashed_mode property,
+        # instead of calling source_mode(). This will prevent frequent VISA calls to the instrument. Calling
+        # _set_source_mode will change the chased value.
+        self._cashed_mode = "VOLT"
+
+        # We want to cache the range value so communication with the instrument only happens when the set the
+        # range. Getting the range always returns the cached value. This value is adjusted when calling
+        # self._set_range_parser
+        self._cached_range_value = None
+
         self.add_parameter('voltage_range',
                            label='Voltage Source Range',
                            unit='V',
-                           get_cmd=':SOUR:RANG?',
-                           set_cmd=':SOUR:RANG {}',
-                           vals=Enum(10e-3, 100e-3, 1e0, 10e0, 30e0),
-                           set_parser=partial(self._range_set_parser, "VOLT"),
-                           get_parser=float)
+                           get_cmd=partial(self._get_range, "VOLT"),
+                           set_cmd=partial(self._set_range, "VOLT"),
+                           vals=Enum(10e-3, 100e-3, 1e0, 10e0, 30e0))
 
         self.add_parameter('current_range',
                            label='Current Source Range',
                            unit='I',
-                           get_cmd=':SOUR:RANG?',
-                           set_cmd=':SOUR:RANG {}',
-                           vals=Enum(1e-3, 10e-3, 100e-3, 200e-3),
-                           set_parser=partial(self._range_set_parser, "CURR"),
-                           get_parser=float)
+                           get_cmd=partial(self._get_range, "CURR"),
+                           set_cmd=partial(self._set_range, "CURR"),
+                           vals=Enum(1e-3, 10e-3, 100e-3, 200e-3)
+                           )
 
-        self.range = self.voltage_range  # This is changed through the source_mode interface
+        # This is changed through the source_mode interface
+        self.range = self.voltage_range
 
         self._auto_range = False
         self.add_parameter('auto_range',
@@ -235,7 +243,8 @@ class GS200(VisaInstrument):
                            get_cmd=partial(self._get_set_output, "CURR")
                            )
 
-        self.output_level = self.voltage   # This is changed through the source_mode interface
+        # This is changed through the source_mode interface
+        self.output_level = self.voltage
 
         self.add_parameter('voltage_limit',
                            label='Voltage Protection Limit',
@@ -379,7 +388,7 @@ class GS200(VisaInstrument):
         if not auto_enabled:
             self_range = self.range()
         else:
-            mode = self.source_mode()
+            mode = self._cashed_mode
             self_range = {"CURR": 200E-3, "VOLT": 30}[mode]
 
         if abs(output_level) > abs(self_range):
@@ -402,7 +411,7 @@ class GS200(VisaInstrument):
             return
 
         if source_mode is None:
-            source_mode = self.source_mode()
+            source_mode = self._cashed_mode
         # Get source range if auto-range is off
         if source_range is None and not self.auto_range():
             source_range = self.range()
@@ -431,9 +440,8 @@ class GS200(VisaInstrument):
         Args:
             mode (str): "CURR" or "VOLT"
         """
-        current_mode = self.source_mode()
-        if current_mode != mode:
-            raise ValueError("Cannot get/set {} settings while in {} mode".format(mode, current_mode))
+        if self._cashed_mode != mode:
+            raise ValueError("Cannot get/set {} settings while in {} mode".format(mode, self._cashed_mode))
 
     def _set_source_mode(self, mode: str) -> None:
         """
@@ -450,8 +458,11 @@ class GS200(VisaInstrument):
 
         self.write("SOUR:FUNC {}".format(mode))
         self._update_measurement_module(source_mode=mode)
+        self._cashed_mode = mode
+        # The next time the range is asked, ask from instrument and update the cached value
+        self._cached_range_value = None
 
-    def _range_set_parser(self, mode: str, val: float) -> float:
+    def _set_range(self, mode: str, val: float) -> None:
         """
         Update range and validators
 
@@ -462,4 +473,12 @@ class GS200(VisaInstrument):
         self._assert_mode(mode)
         val = float(val)
         self._update_measurement_module(source_mode=mode, source_range=val)
-        return val
+        self._cached_range_value = val
+        self.write(':SOUR:RANG {}'.format(str(val)))
+
+    def _get_range(self, mode: str) -> None:
+        self._assert_mode(mode)
+        if self._cached_range_value is None:
+            self._cached_range_value = self.ask(":SOUR:RANG?")
+
+        return self._cached_range_value
