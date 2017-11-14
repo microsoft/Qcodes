@@ -93,6 +93,7 @@ class VisaInstrument(Instrument):
                 change the backend for VISA, use the self.visalib attribute
                 (and then call this function).
         """
+
         # in case we're changing the address - close the old handle first
         if getattr(self, 'visa_handle', None):
             self.visa_handle.close()
