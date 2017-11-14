@@ -34,16 +34,21 @@ class GS200_Monitor(InstrumentChannel):
 
     To measure:
     `GS200.measure.measure()`
+
+    Args:
+        parent (GS200)
+        name (str): instrument name
+        present (bool):
     """
     def __init__(self, parent, name, present):
         super().__init__(parent, name)
 
-        # Is the feature installed in the instrument
         self.present = present
+
         # Start off with all disabled
         self._enabled = False
         self._output = False
-        # Set up monitoring paramters
+        # Set up monitoring parameters
         if present:
             self.add_parameter('enabled',
                                label='Measurement Enabled',
@@ -138,7 +143,13 @@ class GS200_Monitor(InstrumentChannel):
         elif not self._enabled:
             raise GS200Exception("Measurements are disabled")
 
-    def update_measurement_enabled(self, unit, output_range, output):
+    def update_measurement_enabled(self, unit: str, output_range: float, output: bool):
+        """
+        Args:
+            unit (str)
+            output_range (float)
+            output (bool)
+        """
         # Recheck measurement state next time we do a measurement
         self._enabled = False
         # Update output state
@@ -379,7 +390,7 @@ class GS200(VisaInstrument):
         cmd_str = ":SOUR:LEV{} {:.5e}".format(auto_str, output_level)
         self.write(cmd_str)
 
-    def _update_range_units(self, source_mode: str=None, source_range: float=None) -> None:
+    def _update_measurement_module(self, source_mode: str=None, source_range: float=None) -> None:
         """
         Update validators/units as source mode/range changes
 
@@ -387,16 +398,16 @@ class GS200(VisaInstrument):
             source_mode (str): "CURR" or "VOLT"
             source_range (float):
         """
+        if not self.measure.present:
+            return
+
         if source_mode is None:
             source_mode = self.source_mode()
         # Get source range if auto-range is off
         if source_range is None and not self.auto_range():
             source_range = self.range()
 
-        # Finally if measurements are enabled, update measurement units
-        # Source output is set to false and will be checked when a measurement is made
-        if self.measure.present:
-            self.measure.update_measurement_enabled(source_mode, source_range, False)
+        self.measure.update_measurement_enabled(source_mode, source_range, False)
 
     def _set_auto_range(self, val: bool) -> None:
         """
@@ -406,10 +417,12 @@ class GS200(VisaInstrument):
             val (bool): auto range on or off
         """
         self._auto_range = val
-        self._update_range_units()
+        self._update_measurement_module()
         # Disable measurement if auto range is on
         if self.measure.present:
-            self.measure._enabled &= val  # TODO: Sebastian, can you explain what you are doing here?
+            # Disable the measurement module if auto range is enabled, because the measurement does not work in the
+            # 10mV/100mV ranges
+            self.measure._enabled &= not val
 
     def _assert_mode(self, mode: str) -> None:
         """
@@ -436,7 +449,7 @@ class GS200(VisaInstrument):
         self.output_level = {"VOLT": self.voltage, "CURR": self.current}[mode]
 
         self.write("SOUR:FUNC {}".format(mode))
-        self._update_range_units(source_mode=mode)
+        self._update_measurement_module(source_mode=mode)
 
     def _range_set_parser(self, mode: str, val: float) -> float:
         """
@@ -448,5 +461,5 @@ class GS200(VisaInstrument):
         """
         self._assert_mode(mode)
         val = float(val)
-        self._update_range_units(source_mode=mode, source_range=val)
+        self._update_measurement_module(source_mode=mode, source_range=val)
         return val
