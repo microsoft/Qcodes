@@ -5,15 +5,13 @@ from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430
 from qcodes.utils.helpers import strip_attrs
 import qcodes.utils.validators as vals
 
-"""
-This module provides a class to make an IPInstrument behave like a
-VisaInstrument. This is only meant for use with the PyVISA-sim backend
-for testing purposes. If you really need an IPInstrument to become
-a VisaInstrument for actual instrument control, please rewrite the driver.
+# This module provides a class to make an IPInstrument behave like a
+# VisaInstrument. This is only meant for use with the PyVISA-sim backend
+# for testing purposes. If you really need an IPInstrument to become
+# a VisaInstrument for actual instrument control, please rewrite the driver.
 
-At the end of the module, a 'zoo' of was-ip-is-now-visa drivers can be found.
-Such a driver is just a two-line class definition.
-"""
+# At the end of the module, a 'zoo' of was-ip-is-now-visa drivers can be found.
+# Such a driver is just a two-line class definition.
 
 
 class IPToVisa(VisaInstrument, IPInstrument):
