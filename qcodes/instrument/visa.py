@@ -129,8 +129,10 @@ class VisaInstrument(Instrument):
                 eg. '\r\n'.
         """
         self.visa_handle.read_termination = terminator
-        self.visa_handle.write_termination = terminator
         self._terminator = terminator
+
+        if self.visabackend == 'sim':
+                self.visa_handle.write_termination = terminator
 
     def _set_visa_timeout(self, timeout):
 
