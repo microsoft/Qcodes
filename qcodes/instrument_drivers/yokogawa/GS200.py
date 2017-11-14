@@ -479,6 +479,6 @@ class GS200(VisaInstrument):
     def _get_range(self, mode: str) -> None:
         self._assert_mode(mode)
         if self._cached_range_value is None:
-            self._cached_range_value = self.ask(":SOUR:RANG?")
+            self._cached_range_value = float(self.ask(":SOUR:RANG?"))
 
         return self._cached_range_value
