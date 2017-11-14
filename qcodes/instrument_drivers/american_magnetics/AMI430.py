@@ -37,7 +37,6 @@ class AMI430(IPInstrument):
                  reset=False, current_ramp_limit=None,
                  terminator='\r\n', testing=False, **kwargs):
 
-        print('Debug: {}, {}'.format(address, port))
 
         # if None in [address, port] and not testing:
         #    raise ValueError("The port and address values need to be"
