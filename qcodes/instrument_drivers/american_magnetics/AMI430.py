@@ -6,7 +6,6 @@ from functools import partial
 import numpy as np
 
 from qcodes import Instrument, IPInstrument
-from qcodes.instrument.mockers.ami430 import MockAMI430
 from qcodes.math.field_vector import FieldVector
 from qcodes.utils.validators import Numbers, Anything
 
@@ -30,17 +29,11 @@ class AMI430(IPInstrument):
         current_ramp_limit (float): current ramp limit in ampere per second
         persistent_switch (bool): whether this magnet has a persistent switch
     """
-    mocker_class = MockAMI430
     default_current_ramp_limit = 0.06  # [A/s]
 
     def __init__(self, name, address=None, port=None, persistent_switch=True,
                  reset=False, current_ramp_limit=None,
-                 terminator='\r\n', testing=False, **kwargs):
-
-
-        # if None in [address, port] and not testing:
-        #    raise ValueError("The port and address values need to be"
-        #                     " given if not in testing mode")
+                 terminator='\r\n', **kwargs):
 
         if current_ramp_limit is None:
             current_ramp_limit = AMI430.default_current_ramp_limit
@@ -60,11 +53,9 @@ class AMI430(IPInstrument):
             raise Warning(warning_message)
 
         super().__init__(name, address, port, terminator=terminator,
-                         testing=testing, write_confirmation=False, **kwargs)
+                         write_confirmation=False, **kwargs)
 
         self._parent_instrument = None
-        # If we are in testing mode there is no need to have pauses
-        # built-in when setting field values.
 
         # Make sure the ramp rate time unit is seconds
         if int(self.ask('RAMP:RATE:UNITS?')) == 1:
@@ -158,13 +149,13 @@ class AMI430(IPInstrument):
 
     def _sleep(self, t):
         """
-        Sleep for a number of seconds t. If we are in testing mode or using
+        Sleep for a number of seconds t. If we are or using
         the PyVISA 'sim' backend, omit this
         """
 
         simmode = getattr(self, 'visabackend', False) == 'sim'
 
-        if self._testing or simmode:
+        if simmode:
             return
         else:
             time.sleep(t)
@@ -645,12 +636,3 @@ class AMI430_3D(Instrument):
     def _set_rho(self, rho):
         self._set_point.set_component(rho=rho)
         self._set_fields(self._set_point.get_components("x", "y", "z"))
-
-    def get_mocker_messages(self):
-        messages = []
-        for name in ["x", "y", "z"]:
-            instrument = getattr(self, "_instrument_{}".format(name))
-            if instrument.is_testing():
-                messages += instrument.get_mock_messages()
-
-        return messages

@@ -9,7 +9,7 @@ from typing import List, Dict
 
 import qcodes.instrument.sims as sims
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430_3D
-from qcodes.instrument_drivers.american_magnetics.AMI430_VISA import AMI430_VISA
+from qcodes.instrument.ip_to_visa import AMI430_VISA
 from qcodes.math.field_vector import FieldVector
 
 # If any of the field limit functions are satisfied we are in the safe zone.
@@ -45,6 +45,7 @@ def current_driver():
     mag_y.close()
     mag_z.close()
     driver.close()
+
 
 # here the original test has a homemade log system that we don't want to
 # reproduce / write tests for. Instead, we use normal logging from our

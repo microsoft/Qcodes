@@ -1,5 +1,3 @@
-# if this actually works...
-
 import time
 import warnings
 
@@ -7,7 +5,17 @@ import qcodes.utils.validators as vals
 from qcodes.instrument.ip import IPInstrument
 from qcodes.instrument.visa import VisaInstrument
 from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430
-from qcodes.utils.helpers import DelegateAttributes, strip_attrs, full_class
+from qcodes.utils.helpers import strip_attrs
+
+"""
+This module provides a class to make an IPInstrument behave like a
+VisaInstrument. This is only meant for use with the PyVISA-sim backend
+for testing purposes. If you really need an IPInstrument to become
+a VisaInstrument for actual instrument control, please rewrite the driver.
+
+At the end of the module, a 'zoo' of was-ip-is-now-visa drivers can be found.
+Such a driver is just a two-line class definition.
+"""
 
 
 class IPToVisa(VisaInstrument, IPInstrument):
@@ -21,16 +29,14 @@ class IPToVisa(VisaInstrument, IPInstrument):
     re-implement the whole inheritance chain in this every method that
     cals super. These methods include __init__, close
 
-    ONLY FOR TESTING/SIMULATION PURPOSES!
-    DO NOT USE THIS FOR ACTUAL INSTRUMENT CONTROL
+    Only meant for testing/simulation purposes!
+    Do not use this for actual instrument control, there could be many
+    nasty surprises.
     """
 
     def __init__(self, name, address, port, visalib,
                  metadata=None, device_clear=False, terminator='\n',
-                 timeout=3, testing=False, **kwargs):
-
-        # I'd like to get rid of this attribute ASAP
-        self._testing = testing
+                 timeout=3, **kwargs):
 
         ##################################################
         # __init__ of Instrument part 1
