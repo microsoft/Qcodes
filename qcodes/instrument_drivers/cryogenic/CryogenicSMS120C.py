@@ -71,6 +71,7 @@ class CryogenicSMS120C(VisaInstrument):
         idn = self.IDN.get()
         print(idn)
 
+        self._persistentField = 0  # temp code stub
         self._coil_constant = coil_constant
         self._current_rating = current_rating
         self._current_ramp_limit = current_ramp_limit
@@ -104,7 +105,12 @@ class CryogenicSMS120C(VisaInstrument):
 
         self.add_parameter('persistentMode',
                            get_cmd=self._get_persistentMode,
+                           set_cmd=self._set_persistentMode,
                            val_mapping={False: 0, True: 1})
+
+        self.add_parameter(name='persistentField',
+                           get_cmd=self._get_persistentField,
+                           vals=Numbers(self._persistentField))
 
         self.add_parameter(name='field',
                            get_cmd=self._get_field,
@@ -144,8 +150,8 @@ class CryogenicSMS120C(VisaInstrument):
         separate regexp to parse unique/variable instrument message structures.
 
         Returns:
-            key
-            value
+            key : unused
+            value : parsed value extracted from output message
         """
         value = self.ask(msg)
         m = re.match(r'((\S{8})\s)+(([^:]+)(:([^:]+))?)', value)
@@ -184,17 +190,39 @@ class CryogenicSMS120C(VisaInstrument):
         _, value = self.query('HEATER')
         field = self._get_field()
         # check for switch heater OFF, and non-zero current
-        if 'OFF' in value and (field != 0):
+        if 'OFF' in value and abs(field <= 0.007):
+            persistentField = self._get_persistentField()
             units = self._get_unit()
             if units == 1:
-                print("Magnet in persistent mode, at a field of %f T" % field)
+                print("Magnet in persistent mode, at a field of %f T" %
+                      persistentField)
             elif units == 0:
-                print("Magnet in persistent mode, at a field of %f A" % field)
-            persistent_Mode = True
+                print("Magnet in persistent mode, at a field of %f A" %
+                      persistentField)
+            persistentMode = True
         else:
             print("Magnet not persistent.")
-            persistent_Mode = False
-        return persistent_Mode
+            persistentMode = False
+        return persistentMode
+
+    # get units, returns a boolean integer - Tesla (1) or Amps(0)
+    def _get_persistentField(self):
+        # read persistent field from controller
+        BLeads = self._get_field()
+        if (self._get_switchHeater() == 1):
+            print("Switch heater ON, magnet not in persistent mode.")
+            persistentField = 0
+        elif (self._get_switchHeater() == 0) and (abs(BLeads) > 0.007):
+            print("Switch heater OFF, but current is still in present in leads - not in persistent mode. Leads at: %f" % BLeads)
+            perString = self.ask('GET PER')
+            m = re.match(r'((\S{8})\s)+([^:]+)', perString)
+            persistentField = float(m[2])
+        else:
+            perString = self.ask('GET PER')
+            # handles a different string return format
+            m = re.match(r'((\S{8})\s)+([^:]+)', perString)
+            persistentField = float(m[2])
+        return persistentField
 
     def _get_unit(self):  # get units, returns a boolean integer - Tesla (1) or Amps(0)
         _, value = self.query('TESLA')
@@ -298,31 +326,78 @@ class CryogenicSMS120C(VisaInstrument):
 
     def _set_switchHeater(self, val):  # Turn heater ON(1) or OFF(0)
         if self._get_rampStatus() == 1:
-            log.error('Cannot switch heater during a ramp, first pause the ramp.')
+            log.error(
+                'Cannot switch heater during a ramp, first pause the controller.')
         else:
             # Switch ON, if currently OFF
             if val == 1 and (self._get_switchHeater() == False):
                 strHeaterStatus = self.ask('HEATER %d' % val)
                 switchHeater = 1
-                print('Waiting 30s for switch heater to warm up.')
-                time.sleep(30)  # wait for magnet to settle after switch
             # Switch OFF, if currently ON
             elif val == 0 and (self._get_switchHeater() == True):
                 strHeaterStatus = self.ask('HEATER %d' % val)
                 switchHeater = 0
-                if self._get_field != 0:  # condition for persistent mode
-                    self.persistent_mode = 1
-                    print('Waiting 60s for switch heater to cool.')
-                    # wait for magnet to settle into persistent mode after
-                    # switch
-                    time.sleep(60)
-                else:
-                    print('Waiting 30s for switch heater to cool.')
-                    time.sleep(30)  # wait for magnet to settle after switch
             else:  # assume no change to current switch heater state
                 strHeaterStatus = self.ask('HEATER %d' % val)
                 log.info(strHeaterStatus)
             return switchHeater
+
+    # Move into persiostent mode (1) or out of persiatet mode(0)
+    def _set_persistentMode(self, val):
+        if self._get_rampStatus() == 0:     # Check magnet on HOLD
+            currField = self._get_field()
+            print("Leads now at %f ." % currField)
+            # Enter persistent mode from non-persistent
+            if val == 1:
+                if self._get_persistentMode() == False and (self._get_switchHeater() == True):
+                    print('Moving into persistent mode:')
+                    switchHeater = 0
+                    strHeaterStatus = self.ask('HEATER %d' % switchHeater)
+                    print(strHeaterStatus)
+                    print('Waiting 60s for switch heater to cool down.')
+                    time.sleep(60)
+                    print('Ramping down magnet leads...')
+                    self._set_field(0)
+                    while True:
+                        if self._get_rampStatus() == 0:
+                            print('Leads at zero.')
+                            persistentMode = 1
+                            persistentField = self._get_persistentField()
+                            print(
+                                'Magnet is in persistent mode at Field = %f.' % persistentField)
+                            break
+                        time.sleep(5)  # check every 5 seconds
+                elif self._get_persistentMode() == True:
+                    persistentMode = 1
+                    persistentField = self._get_persistentField()
+                    print('Already in persistent mode.')
+            # Exit persistent mode
+            elif val == 0:
+                persistentField = self._get_persistentField()
+                if self._get_persistentMode() == True and (self._get_switchHeater() == False):
+                    print('Exiting persistent mode from a field of %f' %
+                          persistentField)
+                    switchHeater = 1
+                    strHeaterStatus = self.ask('HEATER %d' % switchHeater)
+                    print(strHeaterStatus)
+                    print('Waiting 30s for switch heater to warm up.')
+                    time.sleep(30)
+                    print(
+                        'Matching magnet lead current to persistent field of %f...' % persistentField)
+                    self._set_field(persistentField)
+                    while True:
+                        if self._get_rampStatus() == 0:
+                            persistentMode = 0
+                            persistentField = 0
+                            print('Magnet is non-persistent.')
+                            break
+                        time.sleep(5)  # check every 5 seconds
+                elif self._get_persistentMode() == False:
+                    print('Magnet already non-persistent.')
+        else:
+            log.warning(
+                'Cannot change (non-)persistent mode state, check magnet status.')
+        return persistentMode, persistentField
 
     def _set_pauseRamp(self, val):  # Pause magnet controller Pause=1, Unpause=0
         self.ask('PAUSE %d' % val)
@@ -359,20 +434,11 @@ class CryogenicSMS120C(VisaInstrument):
                     'Magnet quench detected - please check magnet status before ramping.')
                 return False
             elif state == 1:       # Ramping
-                if self._get_switchHeater() == 1:
-                    print('Magnet currently ramping.')
-                    return True
-                else:
-                    log.error(
-                        'Magnet in unusual state - ramping with switch heater off, please check magnet status before ramping.')
-                    return False
+                print('Magnet currently ramping.')
+                return True
             elif state == 0:       # Holding
-                if (not self._get_persistentMode()):
-                    print('Magnet currently holding.')
-                    return True
-                else:
-                    print('Magnet in persistent mode.')
-                    return True
+                print('Magnet currently holding.')
+                return True
             log.error(
                 'Could not ramp, magnet in state: {}'.format(state))
             return False
@@ -391,8 +457,6 @@ class CryogenicSMS120C(VisaInstrument):
                     self._get_unit() == 0 and (val <= self._current_rating)):
                 # pause the controller if it is currently ramping
                 self._set_pauseRamp(1)
-                if self._get_switchHeater() == 0:   # set switch heater if not already ON
-                    self._set_switchHeater(1)
                 self.ask('SET MID %0.2f' % val)       # Set target field
                 self._set_pauseRamp(0)               # Unpause the controller
                 # Ramp magnet/field to MID (Note: Using standard write as read
