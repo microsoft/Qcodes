@@ -2,8 +2,8 @@
 Live plotting in Jupyter notebooks
 using the nbagg backend and matplotlib
 """
-from collections import Mapping
-from collections import Sequence
+from collections import Mapping, Sequence
+import os
 from functools import partial
 import logging
 
@@ -16,7 +16,6 @@ from numpy.ma import masked_invalid, getmask
 from qcodes.data.data_array import DataArray
 
 from .base import BasePlot
-import qcodes.config
 from qcodes.utils.threading import UpdaterThread
 
 
@@ -73,6 +72,8 @@ class MatPlot(BasePlot):
             else:
                 # Arg is single element, add to subplot
                 self[k].add(arg, **kwargs)
+        if args:
+            self.rescale_axis()
 
         self.tight_layout()
         if any(isinstance(arg, DataArray) and arg.data_set is not None and
@@ -169,7 +170,11 @@ class MatPlot(BasePlot):
             plot_object = self._draw_plot(ax, **kwargs)
 
         # Specify if axes ticks can have offset or not
-        ax.ticklabel_format(useOffset=use_offset)
+        try:
+            ax.ticklabel_format(useOffset=use_offset)
+        except AttributeError:
+            # Not using ScalarFormatter (axis probably rescaled)
+            pass
 
         self._update_labels(ax, kwargs)
         prev_default_title = self.get_default_title()
@@ -416,18 +421,31 @@ class MatPlot(BasePlot):
 
         return pc
 
-    def save(self, filename=None):
+    def save(self, filename=None, ext='png'):
         """
         Save current plot to filename, by default
         to the location corresponding to the default 
-        title.
+        title. Can also save as multiple extensions
 
         Args:
             filename (Optional[str]): Location of the file
+                Can contain extension, or provided separately with `ext` kwarg
+            ext (Optional[str]): File extension, by default `png`.
+                Can also be list of extensions, in which case each extension is 
+                saved separately. Is ignored if filename contains an extension.
         """
-        default = "{}.png".format(self.get_default_title())
-        filename = filename or default
-        self.fig.savefig(filename)
+        if filename is None:
+            filename = self.get_default_title()
+
+        if os.path.splitext(filename)[1]:
+            # Filename already has extension
+            filename, ext = os.path.splitext(filename)[1]
+
+        if isinstance(ext, str):
+            ext = [ext]
+
+        for ext_instance in ext:
+            self.fig.savefig('{}.{}'.format(filename, ext_instance))
 
     def tight_layout(self):
         """
@@ -444,7 +462,7 @@ class MatPlot(BasePlot):
         to avoid prefixes on combined or non standard units
         """
         def scale_formatter(i, pos, scale):
-            return "{0:g}".format(i * scale)
+            return "{0:.7g}".format(i * scale)
 
         for i, subplot in enumerate(self.subplots):
             for axis in 'x', 'y', 'z':
