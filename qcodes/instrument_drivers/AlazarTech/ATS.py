@@ -566,10 +566,6 @@ class AlazarTech_ATS(Instrument):
                            post_trigger_size)
 
         # set acquisition parameters here for NPT, TS mode
-        if self.channel_selection._get_byte() == 3:
-            number_of_channels = 2
-        else:
-            number_of_channels = 1
         samples_per_buffer = 0
         buffers_per_acquisition = self.buffers_per_acquisition._get_byte()
         samples_per_record = self.samples_per_record._get_byte()
@@ -632,10 +628,8 @@ class AlazarTech_ATS(Instrument):
         bytes_per_record = bytes_per_sample * samples_per_record
 
         # channels
-        if self.channel_selection._get_byte() == 3:
-            number_of_channels = 2
-        else:
-            number_of_channels = 1
+        channels_binrep = self.channel_selection._get_byte()
+        number_of_channels = self.get_num_channels(channels_binrep)
 
         # bytes per buffer
         bytes_per_buffer = (bytes_per_record *
@@ -878,6 +872,36 @@ class AlazarTech_ATS(Instrument):
         else:
             return rate
 
+    @staticmethod
+    def get_num_channels(byte_rep: int) -> int:
+        """
+        Return the number of channels for a specific channel mask
+
+
+        Each single channel is represented by a bitarray with one
+        non zero entry i.e. powers of two. All multichannel masks can be
+        constructed by summing the single channel ones. However, not all
+        configurations are supported. See table 4 Input Channel Configurations
+        on page 241 of the Alazar SDK manual. This contains the complete
+        mapping for all current Alazar cards. It's left to the driver to
+        ensure that only the ones supported for a specific card can be
+        selected
+        """
+        one_channels = tuple(2**i for i in range(16))
+        two_channels = (3, 5, 6, 9, 10, 12)
+        four_channels = (255,)
+        sixteen_channels = (65535,)
+
+        if byte_rep in one_channels:
+            return 1
+        elif byte_rep in two_channels:
+            return 2
+        elif byte_rep in four_channels:
+            return 4
+        elif byte_rep in sixteen_channels:
+            return 16
+        else:
+            raise RuntimeError('Invalid channel configuration supplied')
 
 class AlazarParameter(Parameter):
     """
