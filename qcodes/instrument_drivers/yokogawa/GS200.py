@@ -1,5 +1,3 @@
-from typing import Optional
-
 from functools import partial
 
 from qcodes import VisaInstrument, InstrumentChannel
