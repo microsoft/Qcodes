@@ -200,6 +200,7 @@ class AlazarTech_ATS9360(AlazarTech_ATS):
 
         self.add_parameter(name='aux_io_param',
                            parameter_class=AlazarParameter,
+                           label='AUX I/O Param',
                            unit=None,
                            value='NONE',
                            byte_to_value_dict={0: 'NONE',
