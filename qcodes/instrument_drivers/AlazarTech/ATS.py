@@ -662,7 +662,6 @@ class AlazarTech_ATS(Instrument):
                 raise
 
         # post buffers to Alazar
-        logger.info("made buffer list length {}".format(len(self.buffer_list)))
         try:
             for buf in self.buffer_list:
                 self._call_dll('AlazarPostAsyncBuffer',
@@ -674,7 +673,6 @@ class AlazarTech_ATS(Instrument):
             start = time.clock()  # Keep track of when acquisition started
             # call the startcapture method
             self._call_dll('AlazarStartCapture', self._handle)
-            logger.info("Capturing %d buffers." % buffers_per_acquisition)
 
             acquisition_controller.pre_acquire()
 
@@ -736,7 +734,6 @@ class AlazarTech_ATS(Instrument):
         abort_time = time_done_abort - done_capture
         handling_time = time_done_handling - time_done_abort
         free_mem_time = time_done_free_mem - time_done_handling
-        # print("Capture completed in %f sec" % transfer_time_sec)
         buffers_per_sec = 0
         bytes_per_sec = 0
         records_per_sec = 0
@@ -745,17 +742,18 @@ class AlazarTech_ATS(Instrument):
             bytes_per_sec = bytes_transferred / transfer_time_sec
             records_per_sec = (records_per_buffer *
                                buffers_completed / transfer_time_sec)
-        logger.info("Captured %d buffers (%f buffers per sec)" %
-                     (buffers_completed, buffers_per_sec))
-        logger.info("Captured %d records (%f records per sec)" %
-                     (records_per_buffer * buffers_completed, records_per_sec))
-        logger.info("Transferred {:g} bytes ({:g} "
-                     "bytes per sec)".format(bytes_transferred, bytes_per_sec))
-        logger.info("Pre capture setup took {}".format(setup_time))
-        logger.info("Capture took {}".format(capture_time))
-        logger.info("abort took {}".format(abort_time))
-        logger.info("handling took {}".format(handling_time))
-        logger.info("free mem took {}".format(free_mem_time))
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Captured %d buffers (%f buffers per sec)" %
+                         (buffers_completed, buffers_per_sec))
+            logger.debug("Captured %d records (%f records per sec)" %
+                         (records_per_buffer * buffers_completed, records_per_sec))
+            logger.debug("Transferred {:g} bytes ({:g} "
+                         "bytes per sec)".format(bytes_transferred, bytes_per_sec))
+            logger.debug("Pre capture setup took {}".format(setup_time))
+            logger.debug("Capture took {}".format(capture_time))
+            logger.debug("abort took {}".format(abort_time))
+            logger.debug("handling took {}".format(handling_time))
+            logger.debug("free mem took {}".format(free_mem_time))
         # return result
         return acquisition_controller.post_acquire()
 
@@ -788,7 +786,8 @@ class AlazarTech_ATS(Instrument):
                 update_params.append(arg)
             else:
                 args_out.append(arg)
-        logger.debug("calling dll func {} with args: \n {}".format(func_name, args_out))
+        # may be useful to log this but is called a lot so leave it out for now
+        # logger.debug("calling dll func {} with args: \n {}".format(func_name, args_out))
         # run the function
         func = getattr(self._ATS_dll, func_name)
         try:
